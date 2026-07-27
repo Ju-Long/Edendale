@@ -1,0 +1,33 @@
+{
+  "originHash" : "c1eb745a3e698f7465b735ca77385ce127210e63db390dc19d123931f5438f16",
+  "pins" : [
+    {
+      "identity" : "drops",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/omaralbeik/Drops.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5824681795286c36bdc4a493081a63e64e2a064e"
+      }
+    },
+    {
+      "identity" : "kingfisher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Kingfisher",
+      "state" : {
+        "revision" : "cf8be20d07654570554c8a8a4952bc8a5766a8b0",
+        "version" : "8.9.0"
+      }
+    },
+    {
+      "identity" : "swiftvlc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/harflabs/SwiftVLC.git",
+      "state" : {
+        "revision" : "4f7dc2583c854e2ca727ae6891be7004fc4c41d9",
+        "version" : "0.8.0"
+      }
+    }
+  ],
+  "version" : 3
+}

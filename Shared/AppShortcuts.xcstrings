@@ -1,0 +1,531 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Open ${target} in ${applicationName}" : {
+      "localizations" : {
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Öffne ${target} in ${applicationName}",
+              "Zeige ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open ${target} in ${applicationName}",
+              "Show ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "en-AU" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open ${target} in ${applicationName}",
+              "Show ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "en-CA" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open ${target} in ${applicationName}",
+              "Show ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open ${target} in ${applicationName}",
+              "Show ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "en-US" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open ${target} in ${applicationName}",
+              "Show ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "es-ES" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Abre ${target} en ${applicationName}",
+              "Muestra ${target} en ${applicationName}"
+            ]
+          }
+        },
+        "es-MX" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Abre ${target} en ${applicationName}",
+              "Muestra ${target} en ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ouvrir ${target} dans ${applicationName}",
+              "Afficher ${target} dans ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Apri ${target} in ${applicationName}",
+              "Mostra ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で${target}を開く",
+              "${applicationName}で${target}を表示"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 ${target} 열기",
+              "${applicationName}에서 ${target} 보기"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open ${target} in ${applicationName}",
+              "Toon ${target} in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Abrir ${target} no ${applicationName}",
+              "Mostrar ${target} no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Abrir ${target} no ${applicationName}",
+              "Mostrar ${target} no ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Открыть ${target} в ${applicationName}",
+              "Показать ${target} в ${applicationName}"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Öppna ${target} i ${applicationName}",
+              "Visa ${target} i ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 中打开 ${target}",
+              "在 ${applicationName} 中显示 ${target}"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 中開啟 ${target}",
+              "在 ${applicationName} 中顯示 ${target}"
+            ]
+          }
+        }
+      }
+    },
+    "Play a video in ${applicationName}" : {
+      "localizations" : {
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Spiele ein Video in ${applicationName} ab",
+              "Schau etwas mit ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play a video in ${applicationName}",
+              "Watch something with ${applicationName}"
+            ]
+          }
+        },
+        "en-AU" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play a video in ${applicationName}",
+              "Watch something with ${applicationName}"
+            ]
+          }
+        },
+        "en-CA" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play a video in ${applicationName}",
+              "Watch something with ${applicationName}"
+            ]
+          }
+        },
+        "en-GB" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play a video in ${applicationName}",
+              "Watch something with ${applicationName}"
+            ]
+          }
+        },
+        "en-US" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play a video in ${applicationName}",
+              "Watch something with ${applicationName}"
+            ]
+          }
+        },
+        "es-ES" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Reproduce un vídeo en ${applicationName}",
+              "Pon algo en ${applicationName}"
+            ]
+          }
+        },
+        "es-MX" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Reproduce un video en ${applicationName}",
+              "Mira algo con ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Lire une vidéo dans ${applicationName}",
+              "Regarder quelque chose avec ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Riproduci un video in ${applicationName}",
+              "Guarda qualcosa con ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}でビデオを再生",
+              "${applicationName}で何かを観る"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 비디오 재생하기",
+              "${applicationName}에서 동영상 시청하기"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Speel een video af in ${applicationName}",
+              "Kijk iets met ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Reproduzir um vídeo no ${applicationName}",
+              "Assistir a algo com o ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Reproduzir um vídeo no ${applicationName}",
+              "Ver algo com o ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Воспроизвести видео в ${applicationName}",
+              "Посмотреть что-нибудь с помощью ${applicationName}"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Spela upp en video i ${applicationName}",
+              "Titta på något med ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 中播放视频",
+              "用 ${applicationName} 看点什么"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 中播放影片",
+              "使用 ${applicationName} 觀看影片"
+            ]
+          }
+        }
+      }
+    },
+    "Search in ${applicationName}" : {
+      "localizations" : {
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Suche in ${applicationName}",
+              "Finde einen Film mit ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Search in ${applicationName}",
+              "Find a movie with ${applicationName}"
+            ]
+          }
+        },
+        "en-AU" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Search in ${applicationName}",
+              "Find a movie with ${applicationName}"
+            ]
+          }
+        },
+        "en-CA" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Search in ${applicationName}",
+              "Find a movie with ${applicationName}"
+            ]
+          }
+        },
+        "en-GB" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Search in ${applicationName}",
+              "Find a movie with ${applicationName}"
+            ]
+          }
+        },
+        "en-US" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Search in ${applicationName}",
+              "Find a movie with ${applicationName}"
+            ]
+          }
+        },
+        "es-ES" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Busca en ${applicationName}",
+              "Encuentra una película con ${applicationName}"
+            ]
+          }
+        },
+        "es-MX" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Busca en ${applicationName}",
+              "Encuentra una película con ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Rechercher dans ${applicationName}",
+              "Trouver un film avec ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Cerca in ${applicationName}",
+              "Trova un film con ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で検索",
+              "${applicationName}で映画を探す"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 검색하기",
+              "${applicationName}에서 영화 찾기"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Zoek in ${applicationName}",
+              "Vind een film met ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Buscar no ${applicationName}",
+              "Encontrar um filme com o ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Pesquisar no ${applicationName}",
+              "Encontrar um filme com o ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Найти в ${applicationName}",
+              "Найти фильм с помощью ${applicationName}"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Sök i ${applicationName}",
+              "Hitta en film med ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 中搜索",
+              "用 ${applicationName} 查找电影"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 中搜尋",
+              "使用 ${applicationName} 尋找電影"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.2"
+}

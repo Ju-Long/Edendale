@@ -1,0 +1,49 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific state
+xcuserdata/
+*.xcuserstate
+
+# Xcode build output / derived data
+build/
+DerivedData/
+
+# Swift Package Manager
+.build/
+
+# Python release tooling
+__pycache__/
+*.py[cod]
+
+# Local secrets — contain the real TMDB token/key, never commit
+Secrets.xcconfig
+/secrets.json
+/Shared/Secrets.xcconfig.tmp.*
+/secrets.json.tmp.*
+
+# Apple release credentials and signing material
+AuthKey_*.p8
+*.p12
+*.mobileprovision
+*.provisionprofile
+*.keychain-db
+/Sample Movie
+
+# Gradle / Android Kotlin
+.gradle/
+.kotlin/
+local.properties
+*.iml
+.idea/
+
+# Windows / .NET
+[Bb]in/
+[Oo]bj/
+*.user
+
+# Static Astro / Node
+node_modules/
+Web/.astro/
+Web/dist/
+/.vs
