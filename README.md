@@ -30,10 +30,10 @@ platform's implementation.
 | Branch | Responsibility |
 |---|---|
 | `main` | Universal documentation and repository metadata only |
-| `codex/apple` | Apple application and Apple-specific delivery |
-| `codex/android` | Android application and Android-specific delivery |
-| `codex/windows` | Windows application and Windows-specific delivery |
-| `codex/web` | Static website and Web-specific delivery |
+| `apple` | Apple application and Apple-specific delivery |
+| `android` | Android application and Android-specific delivery |
+| `windows` | Windows application and Windows-specific delivery |
+| `web` | Static website and Web-specific delivery |
 
 The platform branches begin with the same universal Markdown files:
 
@@ -76,7 +76,7 @@ added.
 
 ## Web implementation
 
-On `codex/web`, the repository root contains Edendale's static Astro marketing
+On `web`, the repository root contains Edendale's static Astro marketing
 and verified-link site. It has no browser player, media library, watch tracker,
 TMDB proxy, server runtime, account system, analytics, application persistence,
 or runtime credentials.
@@ -102,13 +102,13 @@ creates the production site in the generated, gitignored `dist/` directory;
 ### CI and GitHub Pages
 
 [Web CI](.github/workflows/ci.yml) runs `npm ci`, `npm run check`, and
-`npm run build` for pushes and pull requests targeting `codex/web`.
+`npm run build` for pushes and pull requests targeting `web`.
 [GitHub Pages](.github/workflows/pages.yml) repeats the checks, builds only this
 branch's static site, uploads `dist/`, and deploys it through the protected
 `github-pages` environment after an approved commit is pushed:
 
 ```sh
-git push origin codex/web
+git push origin web
 ```
 
 In **Settings → Pages**, select **GitHub Actions** as the source and configure

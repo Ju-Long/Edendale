@@ -3,7 +3,7 @@ name: Deploy website to GitHub Pages
 on:
   push:
     branches:
-      - codex/web
+      - web
     paths:
       - ".nvmrc"
       - "astro.config.mjs"
@@ -64,7 +64,7 @@ jobs:
           include-hidden-files: true
 
   deploy:
-    if: github.ref == 'refs/heads/codex/web'
+    if: github.ref == 'refs/heads/web'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

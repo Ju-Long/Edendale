@@ -3,10 +3,10 @@ name: Web CI
 on:
   push:
     branches:
-      - codex/web
+      - web
   pull_request:
     branches:
-      - codex/web
+      - web
 
 permissions:
   contents: read
