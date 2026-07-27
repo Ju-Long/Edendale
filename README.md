@@ -30,10 +30,10 @@ platform's implementation.
 | Branch | Responsibility |
 |---|---|
 | `main` | Universal documentation and repository metadata only |
-| `codex/apple` | Apple application and Apple-specific delivery |
-| `codex/android` | Android application and Android-specific delivery |
-| `codex/windows` | Windows application and Windows-specific delivery |
-| `codex/web` | Static website and Web-specific delivery |
+| `apple` | Apple application and Apple-specific delivery |
+| `android` | Android application and Android-specific delivery |
+| `windows` | Windows application and Windows-specific delivery |
+| `web` | Static website and Web-specific delivery |
 
 The platform branches begin with the same universal Markdown files:
 
@@ -48,7 +48,7 @@ through the platform branch's issue and pull-request workflow.
 
 ## Android development
 
-The `codex/android` branch contains a self-contained Kotlin application for
+The `android` branch contains a self-contained Kotlin application for
 Android phones, tablets, TV, and resizable desktop-style windows. Jetpack
 Compose owns the UI, Room owns local records, Media3 owns playback, and the
 branch implements filename parsing, TMDB access, account synchronization,

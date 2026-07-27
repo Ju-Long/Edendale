@@ -2,9 +2,9 @@ name: Android CI
 
 on:
   push:
-    branches: [codex/android]
+    branches: [android]
   pull_request:
-    branches: [codex/android]
+    branches: [android]
 
 permissions: {}
 
