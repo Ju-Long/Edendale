@@ -62,727 +62,727 @@
     <value>EDENDALE</value>
   </data>
   <data name="MoviesNavItem.Content" xml:space="preserve">
-    <value>Movies &amp; Shows</value>
+    <value>영화 및 TV 프로그램</value>
   </data>
   <data name="DownloadedNavItem.Content" xml:space="preserve">
-    <value>Downloaded</value>
+    <value>다운로드</value>
   </data>
   <data name="SearchNavItem.Content" xml:space="preserve">
-    <value>Search</value>
+    <value>검색</value>
   </data>
   <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>SETTINGS</value>
+    <value>설정</value>
   </data>
   <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>ABOUT</value>
+    <value>정보</value>
   </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
-    <value>Version</value>
+    <value>버전</value>
   </data>
   <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows core</value>
+    <value>Windows 코어</value>
   </data>
   <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB credentials</value>
+    <value>TMDB 자격 증명</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
-    <value>Watch progress</value>
+    <value>시청 진행률</value>
   </data>
   <data name="SettingsStartupHeader.Text" xml:space="preserve">
-    <value>STARTUP</value>
+    <value>시작</value>
   </data>
   <data name="SettingsLaunchAtStartupLabel.Text" xml:space="preserve">
-    <value>Launch Edendale at startup</value>
+    <value>시작 시 Edendale 실행</value>
   </data>
   <data name="SettingsSourcesHeader.Text" xml:space="preserve">
-    <value>SOURCES</value>
+    <value>소스</value>
   </data>
   <data name="SettingsNoSourcesText.Text" xml:space="preserve">
-    <value>No sources linked</value>
+    <value>연결된 소스 없음</value>
   </data>
   <data name="SourceRescanLabel.Text" xml:space="preserve">
-    <value>RESCAN</value>
+    <value>다시 검사</value>
   </data>
   <data name="SourceRemoveLabel.Text" xml:space="preserve">
-    <value>REMOVE</value>
+    <value>제거</value>
   </data>
   <data name="AddLocalFolderEllipsisLabel.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER…</value>
+    <value>로컬 폴더 추가…</value>
   </data>
   <data name="LinkNetworkSourceEllipsisLabel.Text" xml:space="preserve">
-    <value>LINK NETWORK SOURCE…</value>
+    <value>네트워크 소스 연결…</value>
   </data>
   <data name="SettingsTmdbAccountHeader.Text" xml:space="preserve">
-    <value>TMDB ACCOUNT</value>
+    <value>TMDB 계정</value>
   </data>
   <data name="SettingsTmdbAccountIntro.Text" xml:space="preserve">
-    <value>Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB — their API has no watch-progress endpoint.</value>
+    <value>TMDB 계정을 연결하여 여러 디바이스에서 즐겨찾기, 관심 목록 및 평점을 동기화하세요. 시청 시간은 TMDB에 저장되지 않습니다 — TMDB API에는 시청 진행률 엔드포인트가 없습니다.</value>
   </data>
   <data name="SettingsAccountLabel.Text" xml:space="preserve">
-    <value>Account</value>
+    <value>계정</value>
   </data>
   <data name="SettingsLastSyncLabel.Text" xml:space="preserve">
-    <value>Last sync</value>
+    <value>마지막 동기화</value>
   </data>
   <data name="SettingsAwaitingApproval.Text" xml:space="preserve">
-    <value>Approve Edendale in the browser that opened, or scan the QR code with another device.</value>
+    <value>열려 있는 브라우저에서 Edendale을 승인하거나 다른 디바이스에서 QR 코드를 스캔하세요.</value>
   </data>
   <data name="ApprovalQrImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>TMDB account approval QR code</value>
+    <value>TMDB 계정 승인 QR 코드</value>
   </data>
   <data name="ConnectButton.Content" xml:space="preserve">
-    <value>CONNECT TMDB ACCOUNT</value>
+    <value>TMDB 계정 연결</value>
   </data>
   <data name="ApproveDoneButton.Content" xml:space="preserve">
-    <value>CLICK HERE TO CONTINUE</value>
+    <value>계속하려면 여기를 클릭하세요</value>
   </data>
   <data name="CancelConnectButton.Content" xml:space="preserve">
-    <value>CANCEL</value>
+    <value>취소</value>
   </data>
   <data name="SyncNowButton.Content" xml:space="preserve">
-    <value>SYNC NOW</value>
+    <value>지금 동기화</value>
   </data>
   <data name="DisconnectButton.Content" xml:space="preserve">
-    <value>SIGN OUT</value>
+    <value>로그아웃</value>
   </data>
   <data name="SettingsYourArchiveHeader.Text" xml:space="preserve">
-    <value>YOUR ARCHIVE</value>
+    <value>내 아카이브</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>The library index stays on this device. Watch progress, favorites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved.</value>
+    <value>라이브러리 인덱스는 이 디바이스에 유지됩니다. 시청 진행률, 즐겨찾기, 관심 목록 및 평점도 여기에 저장되며, OneDrive를 설정한 경우 자체 OneDrive로 복제됩니다 — 타사 서버는 전혀 관여하지 않습니다.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
-    <value>Data folder</value>
+    <value>데이터 폴더</value>
   </data>
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
-    <value>OPEN DATA FOLDER</value>
+    <value>데이터 폴더 열기</value>
   </data>
   <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ATTRIBUTION</value>
+    <value>저작자 표시</value>
   </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
-    <value>This product uses the TMDB API but is not endorsed or certified by TMDB.</value>
+    <value>이 제품은 TMDB API를 사용하지만 TMDB의 보증이나 인증을 받지 않았습니다.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale's only network calls are to TMDB for artwork and metadata, plus user-initiated trailer playback through the privacy-enhanced YouTube embed. No analytics, ever.</value>
+    <value>Edendale의 유일한 네트워크 호출은 아트워크 및 메타데이터를 위한 TMDB와 개인 정보 보호가 강화된 YouTube 임베드를 통해 사용자가 시작한 예고편 재생뿐입니다. 분석 데이터는 절대 수집하지 않습니다.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
-    <value>LOADING THE ARCHIVE</value>
+    <value>아카이브 로드 중</value>
   </data>
   <data name="ProjectorIsDark.Text" xml:space="preserve">
-    <value>THE PROJECTOR IS DARK</value>
+    <value>프로젝터가 꺼져 있습니다</value>
   </data>
   <data name="MissingKeyMessage.Text" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, rebuild the shared DLL, and the archive lights up.</value>
+    <value>리포지토리 루트에서 init.ps1을 실행하여 TMDB 자격 증명을 추가하고 공유 DLL을 다시 빌드하면 아카이브에 불이 켜집니다.</value>
   </data>
   <data name="ReelSnapped.Text" xml:space="preserve">
-    <value>THE REEL SNAPPED</value>
+    <value>릴이 끊어졌습니다</value>
   </data>
   <data name="TryAgainButton.Content" xml:space="preserve">
-    <value>TRY AGAIN</value>
+    <value>다시 시도</value>
   </data>
   <data name="ContinueWatchingBadge.Text" xml:space="preserve">
-    <value>CONTINUE WATCHING</value>
+    <value>시청 계속하기</value>
   </data>
   <data name="HeroPlayLabel.Text" xml:space="preserve">
-    <value>PLAY</value>
+    <value>재생</value>
   </data>
   <data name="HeroDetailsLabel.Text" xml:space="preserve">
-    <value>DETAILS</value>
+    <value>세부 정보</value>
   </data>
   <data name="HeroTrailerLabel.Text" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>예고편 보기</value>
   </data>
   <data name="DetailPlayLabel.Text" xml:space="preserve">
-    <value>PLAY</value>
+    <value>재생</value>
   </data>
   <data name="DetailWatchedLabel.Text" xml:space="preserve">
-    <value>MARK WATCHED</value>
+    <value>시청함으로 표시</value>
   </data>
   <data name="DetailTrailerLabel.Text" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>예고편 보기</value>
   </data>
   <data name="DetailFavouriteLabel.Text" xml:space="preserve">
-    <value>FAVORITE</value>
+    <value>즐겨찾기</value>
   </data>
   <data name="DetailWatchlistLabel.Text" xml:space="preserve">
-    <value>WATCHLIST</value>
+    <value>관심 목록</value>
   </data>
   <data name="DetailArchiveRecordHeader.Text" xml:space="preserve">
-    <value>THE ARCHIVE RECORD</value>
+    <value>아카이브 기록</value>
   </data>
   <data name="DetailPrincipalCastHeader.Text" xml:space="preserve">
-    <value>PRINCIPAL CAST</value>
+    <value>주요 출연진</value>
   </data>
   <data name="DetailCriticalConsensusHeader.Text" xml:space="preserve">
-    <value>CRITICAL CONSENSUS</value>
+    <value>비평가 합의</value>
   </data>
   <data name="DetailBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Back</value>
+    <value>뒤로</value>
   </data>
   <data name="QueryBox.PlaceholderText" xml:space="preserve">
-    <value>Search films, series, and people…</value>
+    <value>영화, 시리즈 및 인물 검색…</value>
   </data>
   <data name="DateFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Filter by release date</value>
+    <value>개봉일로 필터링</value>
   </data>
   <data name="SearchReleaseDateHeader.Text" xml:space="preserve">
-    <value>RELEASE DATE</value>
+    <value>개봉일</value>
   </data>
   <data name="PreviousYearButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Previous year</value>
+    <value>이전 연도</value>
   </data>
   <data name="NextYearButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Next year</value>
+    <value>다음 연도</value>
   </data>
   <data name="HeatmapFewer.Text" xml:space="preserve">
-    <value>Fewer</value>
+    <value>적음</value>
   </data>
   <data name="HeatmapMore.Text" xml:space="preserve">
-    <value>More</value>
+    <value>많음</value>
   </data>
   <data name="HeatmapSummary.Text" xml:space="preserve">
-    <value>Pick a day, then a second day to close the range.</value>
+    <value>하루를 선택한 다음 범위를 닫을 두 번째 날짜를 선택하세요.</value>
   </data>
   <data name="HeatmapDoneButton.Content" xml:space="preserve">
-    <value>DONE</value>
+    <value>완료</value>
   </data>
   <data name="HeatmapClearButton.Content" xml:space="preserve">
-    <value>CLEAR</value>
+    <value>지우기</value>
   </data>
   <data name="ClearScopeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear search scope</value>
+    <value>검색 범위 지우기</value>
   </data>
   <data name="ClearDateFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear date filter</value>
+    <value>날짜 필터 지우기</value>
   </data>
   <data name="OpenPersonPageButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Open this person's page</value>
+    <value>이 인물 페이지 열기</value>
   </data>
   <data name="ClearPersonFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear person filter</value>
+    <value>인물 필터 지우기</value>
   </data>
   <data name="SearchIdleTitle.Text" xml:space="preserve">
-    <value>THE INDEX AWAITS</value>
+    <value>인덱스가 대기 중입니다</value>
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
-    <value>Search the archive for films, series, and the people who made them.</value>
+    <value>아카이브에서 영화, 시리즈 및 이를 만든 사람들을 검색하세요.</value>
   </data>
   <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
+    <value>제거</value>
   </data>
   <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
+    <value>제거</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
-    <value>THE LIBRARY
-IS SILENT</value>
+    <value>라이브러리가
+조용합니다</value>
   </data>
   <data name="LibraryIsSilentMessage.Text" xml:space="preserve">
-    <value>Connect your local film collection to begin your cinematic journey.</value>
+    <value>로컬 영화 컬렉션을 연결하여 영화 여정을 시작하십시오.</value>
   </data>
   <data name="AddLocalFolderLabel.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER</value>
+    <value>로컬 폴더 추가</value>
   </data>
   <data name="AddNetworkSourceLabel.Text" xml:space="preserve">
-    <value>ADD NETWORK SOURCE</value>
+    <value>네트워크 소스 추가</value>
   </data>
   <data name="LearnAboutSyncingButton.Content" xml:space="preserve">
-    <value>LEARN ABOUT SYNCING</value>
+    <value>동기화에 대해 알아보기</value>
   </data>
   <data name="AddLocalFolderLabelToolbar.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER</value>
+    <value>로컬 폴더 추가</value>
   </data>
   <data name="AddNetworkSourceLabelToolbar.Text" xml:space="preserve">
-    <value>ADD NETWORK SOURCE</value>
+    <value>네트워크 소스 추가</value>
   </data>
   <data name="PersonBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Back</value>
+    <value>뒤로</value>
   </data>
   <data name="PersonBackLabel.Text" xml:space="preserve">
-    <value>BACK</value>
+    <value>뒤로</value>
   </data>
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
-    <value>SHOW IN SEARCH</value>
+    <value>검색에 표시</value>
   </data>
   <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Skip Back 10s</value>
+    <value>10초 뒤로 건너뛰기</value>
   </data>
   <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Skip Forward 10s</value>
+    <value>10초 앞으로 건너뛰기</value>
   </data>
   <data name="AspectButton.Content" xml:space="preserve">
-    <value>FIT</value>
+    <value>맞춤</value>
   </data>
   <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Loop</value>
+    <value>반복</value>
   </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Subtitles &amp; Audio</value>
+    <value>자막 및 오디오</value>
   </data>
   <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>화면 속 화면</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
-    <value>Trending Today</value>
+    <value>오늘의 트렌드</value>
   </data>
   <data name="Section_PopularFilms" xml:space="preserve">
-    <value>Popular Films</value>
+    <value>인기 영화</value>
   </data>
   <data name="Section_PopularSeries" xml:space="preserve">
-    <value>Popular Series</value>
+    <value>인기 시리즈</value>
   </data>
   <data name="Section_TopRated" xml:space="preserve">
-    <value>Top Rated</value>
+    <value>최고 평점</value>
   </data>
   <data name="Section_CuratedCollections" xml:space="preserve">
-    <value>Curated Collections</value>
+    <value>선별된 컬렉션</value>
   </data>
   <data name="Section_Episodes" xml:space="preserve">
-    <value>Episodes</value>
+    <value>에피소드</value>
   </data>
   <data name="Section_FromYourLibrary" xml:space="preserve">
-    <value>From Your Library</value>
+    <value>내 라이브러리</value>
   </data>
   <data name="Section_People" xml:space="preserve">
-    <value>People</value>
+    <value>인물</value>
   </data>
   <data name="Section_TheIndex" xml:space="preserve">
-    <value>The Index</value>
+    <value>인덱스</value>
   </data>
   <data name="Section_ContinueWatching" xml:space="preserve">
-    <value>Continue Watching</value>
+    <value>시청 계속하기</value>
   </data>
   <data name="Section_Movies" xml:space="preserve">
-    <value>Movies</value>
+    <value>영화</value>
   </data>
   <data name="Section_TvShows" xml:space="preserve">
-    <value>TV Shows</value>
+    <value>TV 프로그램</value>
   </data>
   <data name="Section_Sources" xml:space="preserve">
-    <value>Sources</value>
+    <value>소스</value>
   </data>
   <data name="Section_Filmography" xml:space="preserve">
-    <value>Filmography</value>
+    <value>필모그래피</value>
   </data>
   <data name="Common_Add" xml:space="preserve">
-    <value>Add</value>
+    <value>추가</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>취소</value>
   </data>
   <data name="Common_Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>제거</value>
   </data>
   <data name="Player_ExitPictureInPicture" xml:space="preserve">
-    <value>Exit Picture in Picture</value>
+    <value>PIP 모드 종료</value>
   </data>
   <data name="Player_PictureInPicture" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>화면 속 화면</value>
   </data>
   <data name="Player_StopLooping" xml:space="preserve">
-    <value>Stop looping</value>
+    <value>반복 중지</value>
   </data>
   <data name="Player_Loop" xml:space="preserve">
-    <value>Loop</value>
+    <value>반복</value>
   </data>
   <data name="Player_AspectFill" xml:space="preserve">
-    <value>FILL</value>
+    <value>채우기</value>
   </data>
   <data name="Player_AspectFit" xml:space="preserve">
-    <value>FIT</value>
+    <value>맞춤</value>
   </data>
   <data name="Player_NoTracks" xml:space="preserve">
-    <value>No tracks available</value>
+    <value>사용 가능한 트랙 없음</value>
   </data>
   <data name="Player_AudioHeader" xml:space="preserve">
-    <value>AUDIO</value>
+    <value>오디오</value>
   </data>
   <data name="Player_AudioTrack" xml:space="preserve">
-    <value>Audio</value>
+    <value>오디오</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
-    <value>SUBTITLES</value>
+    <value>자막</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
-    <value>Off</value>
+    <value>끔</value>
   </data>
   <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Subtitle</value>
+    <value>자막</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
-    <value>This file carries none</value>
+    <value>이 파일에는 포함되어 있지 않습니다</value>
   </data>
   <data name="Player_NoLocalFile" xml:space="preserve">
-    <value>That episode has no local file in the library.</value>
+    <value>해당 에피소드에는 라이브러리에 로컬 파일이 없습니다.</value>
   </data>
   <data name="Player_PipUnavailable" xml:space="preserve">
-    <value>Picture in Picture isn't available on this version of Windows.</value>
+    <value>이 버전의 Windows에서는 PIP 모드를 사용할 수 없습니다.</value>
   </data>
   <data name="Playlist_Episodes" xml:space="preserve">
-    <value>EPISODES</value>
+    <value>에피소드</value>
   </data>
   <data name="Playlist_InThisFolder" xml:space="preserve">
-    <value>IN THIS FOLDER</value>
+    <value>이 폴더에 포함됨</value>
   </data>
   <data name="Playlist_Season" xml:space="preserve">
-    <value>SEASON {0}</value>
+    <value>시즌 {0}</value>
   </data>
   <data name="Month_1" xml:space="preserve">
-    <value>Jan</value>
+    <value>1월</value>
   </data>
   <data name="Month_2" xml:space="preserve">
-    <value>Feb</value>
+    <value>2월</value>
   </data>
   <data name="Month_3" xml:space="preserve">
-    <value>Mar</value>
+    <value>3월</value>
   </data>
   <data name="Month_4" xml:space="preserve">
-    <value>Apr</value>
+    <value>4월</value>
   </data>
   <data name="Month_5" xml:space="preserve">
-    <value>May</value>
+    <value>5월</value>
   </data>
   <data name="Month_6" xml:space="preserve">
-    <value>Jun</value>
+    <value>6월</value>
   </data>
   <data name="Month_7" xml:space="preserve">
-    <value>Jul</value>
+    <value>7월</value>
   </data>
   <data name="Month_8" xml:space="preserve">
-    <value>Aug</value>
+    <value>8월</value>
   </data>
   <data name="Month_9" xml:space="preserve">
-    <value>Sep</value>
+    <value>9월</value>
   </data>
   <data name="Month_10" xml:space="preserve">
-    <value>Oct</value>
+    <value>10월</value>
   </data>
   <data name="Month_11" xml:space="preserve">
-    <value>Nov</value>
+    <value>11월</value>
   </data>
   <data name="Month_12" xml:space="preserve">
-    <value>Dec</value>
+    <value>12월</value>
   </data>
   <data name="Library_ItemMissing" xml:space="preserve">
-    <value>This library item no longer exists.</value>
+    <value>이 라이브러리 항목이 더 이상 존재하지 않습니다.</value>
   </data>
   <data name="Library_CataloguingNewFiles" xml:space="preserve">
-    <value>CATALOGING NEW FILES</value>
+    <value>새 파일 카탈로그화 중</value>
   </data>
   <data name="Library_EnrichingMetadata" xml:space="preserve">
-    <value>ENRICHING METADATA</value>
+    <value>메타데이터 보강 중</value>
   </data>
   <data name="Library_AwaitingMetadata" xml:space="preserve">
-    <value>Awaiting metadata</value>
+    <value>메타데이터 대기 중</value>
   </data>
   <data name="Library_ImportFailed" xml:space="preserve">
-    <value>Import failed: {0}</value>
+    <value>가져오기 실패: {0}</value>
   </data>
   <data name="Library_FolderNotFound" xml:space="preserve">
-    <value>Folder not found: {0}</value>
+    <value>폴더를 찾을 수 없음: {0}</value>
   </data>
   <data name="Season_Number" xml:space="preserve">
-    <value>Season {0}</value>
+    <value>시즌 {0}</value>
   </data>
   <data name="Season_Label" xml:space="preserve">
-    <value>Season</value>
+    <value>시즌</value>
   </data>
   <data name="Season_NoEpisodes" xml:space="preserve">
-    <value>TMDB lists no episodes for this season yet.</value>
+    <value>TMDB에 아직 이 시즌의 에피소드가 등록되어 있지 않습니다.</value>
   </data>
   <data name="Detail_TmdbScore" xml:space="preserve">
-    <value>TMDB SCORE</value>
+    <value>TMDB 점수</value>
   </data>
   <data name="Detail_ScoreOutOfTen" xml:space="preserve">
-    <value>/ 10 · {0:N0} votes</value>
+    <value>/ 10 · {0:N0}표</value>
   </data>
   <data name="Detail_Catalogue" xml:space="preserve">
-    <value>CATALOG</value>
+    <value>카탈로그</value>
   </data>
   <data name="Detail_ResumePlayback" xml:space="preserve">
-    <value>RESUME PLAYBACK</value>
+    <value>재생 다시 시작</value>
   </data>
   <data name="Detail_Play" xml:space="preserve">
-    <value>PLAY</value>
+    <value>재생</value>
   </data>
   <data name="Detail_Watched" xml:space="preserve">
-    <value>WATCHED</value>
+    <value>시청함</value>
   </data>
   <data name="Detail_MarkWatched" xml:space="preserve">
-    <value>MARK WATCHED</value>
+    <value>시청함으로 표시</value>
   </data>
   <data name="Detail_WatchTrailer" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>예고편 보기</value>
   </data>
   <data name="Detail_NoTrailer" xml:space="preserve">
-    <value>NO TRAILER</value>
+    <value>예고편 없음</value>
   </data>
   <data name="Detail_Favourited" xml:space="preserve">
-    <value>FAVORITED</value>
+    <value>즐겨찾기함</value>
   </data>
   <data name="Detail_Favourite" xml:space="preserve">
-    <value>FAVORITE</value>
+    <value>즐겨찾기</value>
   </data>
   <data name="Detail_InWatchlist" xml:space="preserve">
-    <value>IN WATCHLIST</value>
+    <value>관심 목록에 있음</value>
   </data>
   <data name="Detail_Watchlist" xml:space="preserve">
-    <value>WATCHLIST</value>
+    <value>관심 목록</value>
   </data>
   <data name="Detail_Rate" xml:space="preserve">
-    <value>RATE</value>
+    <value>평가</value>
   </data>
   <data name="Detail_MarkUnwatchedTooltip" xml:space="preserve">
-    <value>Mark Unwatched</value>
+    <value>시청하지 않음으로 표시</value>
   </data>
   <data name="Detail_MarkWatchedTooltip" xml:space="preserve">
-    <value>Mark Watched</value>
+    <value>시청함으로 표시</value>
   </data>
   <data name="Source_Rescan" xml:space="preserve">
-    <value>Rescan</value>
+    <value>다시 스캔</value>
   </data>
   <data name="Source_Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>제거</value>
   </data>
   <data name="Source_RemoveTitle" xml:space="preserve">
-    <value>Remove Source</value>
+    <value>소스 제거</value>
   </data>
   <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” is removed from your library and the saved login for {1} is forgotten, unless another source still uses that server. Nothing on the server is deleted.</value>
+    <value>“{0}”이(가) 라이브러리에서 제거되고, 다른 소스가 여전히 해당 서버를 사용하지 않는 한 {1}에 저장된 로그인 정보가 삭제됩니다. 서버의 항목은 삭제되지 않습니다.</value>
   </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
-    <value>“{0}” is removed from your library. Nothing on your disk is deleted.</value>
+    <value>“{0}”이(가) 라이브러리에서 제거됩니다. 디스크의 항목은 삭제되지 않습니다.</value>
   </data>
   <data name="Smb_UsernameOptional" xml:space="preserve">
-    <value>Username (optional)</value>
+    <value>사용자 이름 (선택 사항)</value>
   </data>
   <data name="Smb_Password" xml:space="preserve">
-    <value>Password</value>
+    <value>암호</value>
   </data>
   <data name="Smb_AddNetworkSource" xml:space="preserve">
-    <value>Add Network Source</value>
+    <value>네트워크 소스 추가</value>
   </data>
   <data name="Smb_UncPrompt" xml:space="preserve">
-    <value>Enter the UNC path to your media folder:</value>
+    <value>미디어 폴더의 UNC 경로를 입력하세요:</value>
   </data>
   <data name="Smb_CredentialNote" xml:space="preserve">
-    <value>If the share needs a sign-in, add it here. It is stored encrypted on this device and reused for rescans.</value>
+    <value>공유에 로그인이 필요한 경우 여기에 추가하세요. 암호화되어 이 디바이스에 저장되며 다시 검사할 때 재사용됩니다.</value>
   </data>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
-    <value>Could not access the network path: {0}</value>
+    <value>네트워크 경로에 액세스할 수 없습니다: {0}</value>
   </data>
   <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Network Source Error</value>
+    <value>네트워크 소스 오류</value>
   </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
-    <value>Could not connect to {0}: {1}</value>
+    <value>{0}에 연결할 수 없습니다: {1}</value>
   </data>
   <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Connection Failed</value>
+    <value>연결 실패</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
-    <value>Windows could not start the network-share connector.</value>
+    <value>Windows에서 네트워크 공유 커넥터를 시작할 수 없습니다.</value>
   </data>
   <data name="Smb_Timeout" xml:space="preserve">
-    <value>Connecting to {0} timed out.</value>
+    <value>{0} 연결 시간이 초과되었습니다.</value>
   </data>
   <data name="Smb_CheckAddress" xml:space="preserve">
-    <value>Could not connect to {0}. Check the address and stored credentials.</value>
+    <value>{0}에 연결할 수 없습니다. 주소 및 저장된 자격 증명을 확인하세요.</value>
   </data>
   <data name="Privacy_Title" xml:space="preserve">
-    <value>Private by Design</value>
+    <value>개인정보 보호 중심 설계</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Your library index and watch progress stay on this device. The only network calls Edendale makes are to TMDB for artwork and metadata — nothing else is sent anywhere.</value>
+    <value>라이브러리 인덱스 및 시청 진행률은 이 디바이스에 유지됩니다. Edendale이 호출하는 네트워크는 아트워크 및 메타데이터를 위한 TMDB뿐입니다 — 그 외에는 아무것도 다른 곳으로 전송되지 않습니다.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
-    <value>Pick a day, then a second day to close the range.</value>
+    <value>하루를 선택한 다음 범위를 닫을 두 번째 날짜를 선택하세요.</value>
   </data>
   <data name="Heatmap_PickSecondDay" xml:space="preserve">
-    <value>Pick a second day to close the range.</value>
+    <value>범위를 닫을 두 번째 날짜를 선택하세요.</value>
   </data>
   <data name="Scope_All" xml:space="preserve">
-    <value>All</value>
+    <value>모두</value>
   </data>
   <data name="Scope_People" xml:space="preserve">
-    <value>People</value>
+    <value>인물</value>
   </data>
   <data name="Scope_Films" xml:space="preserve">
-    <value>Films</value>
+    <value>영화</value>
   </data>
   <data name="Scope_Series" xml:space="preserve">
-    <value>Series</value>
+    <value>시리즈</value>
   </data>
   <data name="Scope_PromptPeople" xml:space="preserve">
-    <value>Type a name to find actors and actresses.</value>
+    <value>배우를 찾으려면 이름을 입력하세요.</value>
   </data>
   <data name="Scope_PromptFilms" xml:space="preserve">
-    <value>Type a title to search films only.</value>
+    <value>영화만 검색하려면 제목을 입력하세요.</value>
   </data>
   <data name="Scope_PromptSeries" xml:space="preserve">
-    <value>Type a title to search series only.</value>
+    <value>시리즈만 검색하려면 제목을 입력하세요.</value>
   </data>
   <data name="Scope_PromptAll" xml:space="preserve">
-    <value>Type a title to search the archive.</value>
+    <value>아카이브를 검색하려면 제목을 입력하세요.</value>
   </data>
   <data name="Search_StarringPrefix" xml:space="preserve">
-    <value>STARRING {0}</value>
+    <value>주연 {0}</value>
   </data>
   <data name="Search_DateFrom" xml:space="preserve">
-    <value>From {0}</value>
+    <value>{0}부터</value>
   </data>
   <data name="Search_DateUntil" xml:space="preserve">
-    <value>Until {0}</value>
+    <value>{0}까지</value>
   </data>
   <data name="Search_TheIndex" xml:space="preserve">
-    <value>The Index</value>
+    <value>인덱스</value>
   </data>
   <data name="Search_AlsoInTitles" xml:space="preserve">
-    <value>Also in Titles</value>
+    <value>제목에도 포함됨</value>
   </data>
   <data name="Search_NothingMatches" xml:space="preserve">
-    <value>Nothing in the index matches this search.</value>
+    <value>인덱스에 이 검색과 일치하는 항목이 없습니다.</value>
   </data>
   <data name="Search_Filmography" xml:space="preserve">
-    <value>Filmography</value>
+    <value>필모그래피</value>
   </data>
   <data name="Search_FilmographyOf" xml:space="preserve">
-    <value>Filmography — {0}</value>
+    <value>필모그래피 — {0}</value>
   </data>
   <data name="Search_NoCreditedTitles" xml:space="preserve">
-    <value>No credited titles were found.</value>
+    <value>크레딧에 등록된 작품을 찾을 수 없습니다.</value>
   </data>
   <data name="Search_MissingCredentials" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale to search the full index.</value>
+    <value>리포지토리 루트에서 init.ps1을 실행하여 TMDB 자격 증명을 추가한 다음, Edendale을 다시 빌드하여 전체 인덱스를 검색하세요.</value>
   </data>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
-    <value>development build</value>
+    <value>개발 빌드</value>
   </data>
   <data name="Settings_Configured" xml:space="preserve">
-    <value>Configured</value>
+    <value>구성됨</value>
   </data>
   <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Missing — run init.ps1, then rebuild Edendale</value>
+    <value>누락됨 — init.ps1을 실행한 다음 Edendale을 다시 빌드하세요</value>
   </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
-    <value>Replicated to {0}</value>
+    <value>{0}(으)로 복제됨</value>
   </data>
   <data name="Settings_StoredOnThisDevice" xml:space="preserve">
-    <value>Stored on this device</value>
+    <value>이 디바이스에 저장됨</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
-    <value>Could not update the startup entry — Windows refused the registry change.</value>
+    <value>시작 항목을 업데이트할 수 없습니다 — Windows가 레지스트리 변경을 거부했습니다.</value>
   </data>
   <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Unavailable — TMDB credentials missing</value>
+    <value>사용할 수 없음 — TMDB 자격 증명 누락됨</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
-    <value>Connected as {0}</value>
+    <value>{0}(으)로 연결됨</value>
   </data>
   <data name="Settings_AwaitingApproval" xml:space="preserve">
-    <value>Waiting for approval on the TMDB page</value>
+    <value>TMDB 페이지에서 승인 대기 중</value>
   </data>
   <data name="Settings_NotConnected" xml:space="preserve">
-    <value>Not connected</value>
+    <value>연결되지 않음</value>
   </data>
   <data name="Tmdb_MissingCredentials" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale.</value>
+    <value>리포지토리 루트에서 init.ps1을 실행하여 TMDB 자격 증명을 추가한 다음 Edendale을 다시 빌드하세요.</value>
   </data>
   <data name="Tmdb_Unavailable" xml:space="preserve">
-    <value>TMDB is unavailable — credentials are missing.</value>
+    <value>TMDB를 사용할 수 없습니다 — 자격 증명이 누락되었습니다.</value>
   </data>
   <data name="Tmdb_NoBrowser" xml:space="preserve">
-    <value>No browser could be opened. Scan the QR code with another device.</value>
+    <value>브라우저를 열 수 없습니다. 다른 디바이스로 QR 코드를 스캔하세요.</value>
   </data>
   <data name="Tmdb_ConnectFailed" xml:space="preserve">
-    <value>Could not start the TMDB connection: {0}</value>
+    <value>TMDB 연결을 시작할 수 없습니다: {0}</value>
   </data>
   <data name="Tmdb_QrFailed" xml:space="preserve">
-    <value>The approval page is ready, but its QR code could not be created: {0}</value>
+    <value>승인 페이지가 준비되었지만 QR 코드를 생성할 수 없습니다: {0}</value>
   </data>
   <data name="Tmdb_ApprovalRejected" xml:space="preserve">
-    <value>TMDB did not accept the approval ({0}). Approve the request in the browser, then try again.</value>
+    <value>TMDB가 승인을 수락하지 않았습니다({0}). 브라우저에서 요청을 승인한 다음 다시 시도하세요.</value>
   </data>
   <data name="Tmdb_NoPendingApproval" xml:space="preserve">
-    <value>No TMDB connection is awaiting approval.</value>
+    <value>승인 대기 중인 TMDB 연결이 없습니다.</value>
   </data>
   <data name="Tmdb_NotConnected" xml:space="preserve">
-    <value>Not connected to TMDB.</value>
+    <value>TMDB에 연결되지 않았습니다.</value>
   </data>
   <data name="Tmdb_SyncStatus" xml:space="preserve">
-    <value>Synced {0} — {1} pushed, {2} pulled</value>
+    <value>{0} 동기화됨 — {1} 푸시됨, {2} 풀됨</value>
   </data>
   <data name="Tmdb_SyncFailed" xml:space="preserve">
-    <value>Sync failed: {0}</value>
+    <value>동기화 실패: {0}</value>
   </data>
   <data name="Tmdb_NotConfigured" xml:space="preserve">
-    <value>TMDB credentials are not configured. Run init.ps1 from the repository root.</value>
+    <value>TMDB 자격 증명이 구성되지 않았습니다. 리포지토리 루트에서 init.ps1을 실행하세요.</value>
   </data>
   <data name="Tmdb_RequestFailed" xml:space="preserve">
-    <value>TMDB request failed (HTTP {0})</value>
+    <value>TMDB 요청 실패 (HTTP {0})</value>
   </data>
   <data name="Tmdb_InvalidJson" xml:space="preserve">
-    <value>TMDB returned invalid JSON: {0}</value>
+    <value>TMDB에서 잘못된 JSON을 반환했습니다: {0}</value>
   </data>
   <data name="Person_NoBiography" xml:space="preserve">
-    <value>TMDB has no biography for this person yet.</value>
+    <value>TMDB에 아직 이 인물의 약력이 없습니다.</value>
   </data>
   <data name="Collection_AllArchives" xml:space="preserve">
-    <value>All Archives</value>
+    <value>모든 아카이브</value>
   </data>
   <data name="Collection_FeatureFilms" xml:space="preserve">
-    <value>Feature Films</value>
+    <value>장편 영화</value>
   </data>
   <data name="Collection_Series" xml:space="preserve">
-    <value>Series</value>
+    <value>시리즈</value>
   </data>
   <data name="Credit_Untitled" xml:space="preserve">
-    <value>Untitled</value>
+    <value>제목 없음</value>
   </data>
   <data name="Credit_Unknown" xml:space="preserve">
-    <value>Unknown</value>
+    <value>알 수 없음</value>
   </data>
   <data name="Credit_DirectedBy" xml:space="preserve">
-    <value>Directed by {0}</value>
+    <value>감독 {0}</value>
   </data>
   <data name="Credit_CreatedBy" xml:space="preserve">
-    <value>Created by {0}</value>
+    <value>제작 {0}</value>
   </data>
   <data name="Activation_UnsupportedFile" xml:space="preserve">
-    <value>Edendale cannot play {0} — unsupported file type.</value>
+    <value>Edendale에서 {0}을(를) 재생할 수 없습니다 — 지원되지 않는 파일 형식입니다.</value>
   </data>
   <data name="Activation_BadLink" xml:space="preserve">
-    <value>Edendale could not understand this link.</value>
+    <value>Edendale이 이 링크를 인식할 수 없습니다.</value>
   </data>
   <data name="Plural_ItemOne" xml:space="preserve">
-    <value>{0} item</value>
+    <value>{0}개 항목</value>
   </data>
   <data name="Plural_ItemOther" xml:space="preserve">
-    <value>{0} items</value>
+    <value>{0}개 항목</value>
   </data>
   <data name="Plural_EpisodeOne" xml:space="preserve">
-    <value>{0} episode</value>
+    <value>{0}개 에피소드</value>
   </data>
   <data name="Plural_EpisodeOther" xml:space="preserve">
-    <value>{0} episodes</value>
+    <value>{0}개 에피소드</value>
   </data>
   <data name="Plural_SeasonOne" xml:space="preserve">
-    <value>{0} season</value>
+    <value>{0}개 시즌</value>
   </data>
   <data name="Plural_SeasonOther" xml:space="preserve">
-    <value>{0} seasons</value>
+    <value>{0}개 시즌</value>
   </data>
   <data name="Plural_ReleaseOne" xml:space="preserve">
-    <value>{0} release</value>
+    <value>{0}개 릴리스</value>
   </data>
   <data name="Plural_ReleaseOther" xml:space="preserve">
-    <value>{0} releases</value>
+    <value>{0}개 릴리스</value>
   </data>
   <data name="Plural_DayOne" xml:space="preserve">
-    <value>{0} day</value>
+    <value>{0}일</value>
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
-    <value>{0} days</value>
+    <value>{0}일</value>
   </data>
 </root>

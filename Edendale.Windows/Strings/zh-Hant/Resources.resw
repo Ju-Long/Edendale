@@ -62,727 +62,727 @@
     <value>EDENDALE</value>
   </data>
   <data name="MoviesNavItem.Content" xml:space="preserve">
-    <value>Movies &amp; Shows</value>
+    <value>電影與節目</value>
   </data>
   <data name="DownloadedNavItem.Content" xml:space="preserve">
-    <value>Downloaded</value>
+    <value>已下載</value>
   </data>
   <data name="SearchNavItem.Content" xml:space="preserve">
-    <value>Search</value>
+    <value>搜尋</value>
   </data>
   <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>SETTINGS</value>
+    <value>設定</value>
   </data>
   <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>ABOUT</value>
+    <value>關於</value>
   </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
-    <value>Version</value>
+    <value>版本</value>
   </data>
   <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows core</value>
+    <value>Windows 核心</value>
   </data>
   <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB credentials</value>
+    <value>TMDB 憑證</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
-    <value>Watch progress</value>
+    <value>觀看進度</value>
   </data>
   <data name="SettingsStartupHeader.Text" xml:space="preserve">
-    <value>STARTUP</value>
+    <value>啟動</value>
   </data>
   <data name="SettingsLaunchAtStartupLabel.Text" xml:space="preserve">
-    <value>Launch Edendale at startup</value>
+    <value>在啟動時執行 Edendale</value>
   </data>
   <data name="SettingsSourcesHeader.Text" xml:space="preserve">
-    <value>SOURCES</value>
+    <value>來源</value>
   </data>
   <data name="SettingsNoSourcesText.Text" xml:space="preserve">
-    <value>No sources linked</value>
+    <value>未連結來源</value>
   </data>
   <data name="SourceRescanLabel.Text" xml:space="preserve">
-    <value>RESCAN</value>
+    <value>重新掃描</value>
   </data>
   <data name="SourceRemoveLabel.Text" xml:space="preserve">
-    <value>REMOVE</value>
+    <value>移除</value>
   </data>
   <data name="AddLocalFolderEllipsisLabel.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER…</value>
+    <value>新增本機資料夾…</value>
   </data>
   <data name="LinkNetworkSourceEllipsisLabel.Text" xml:space="preserve">
-    <value>LINK NETWORK SOURCE…</value>
+    <value>連結網路來源…</value>
   </data>
   <data name="SettingsTmdbAccountHeader.Text" xml:space="preserve">
-    <value>TMDB ACCOUNT</value>
+    <value>TMDB 帳戶</value>
   </data>
   <data name="SettingsTmdbAccountIntro.Text" xml:space="preserve">
-    <value>Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB — their API has no watch-progress endpoint.</value>
+    <value>連結您的 TMDB 帳戶，以跨裝置同步最愛、待看清單與評分。觀看進度不會同步至 TMDB — 他們的 API 沒有觀看進度端點。</value>
   </data>
   <data name="SettingsAccountLabel.Text" xml:space="preserve">
-    <value>Account</value>
+    <value>帳號</value>
   </data>
   <data name="SettingsLastSyncLabel.Text" xml:space="preserve">
-    <value>Last sync</value>
+    <value>上次同步</value>
   </data>
   <data name="SettingsAwaitingApproval.Text" xml:space="preserve">
-    <value>Approve Edendale in the browser that opened, or scan the QR code with another device.</value>
+    <value>在開啟的瀏覽器中核准 Edendale，或使用其他裝置掃描 QR 碼。</value>
   </data>
   <data name="ApprovalQrImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>TMDB account approval QR code</value>
+    <value>TMDB 帳戶核准 QR 碼</value>
   </data>
   <data name="ConnectButton.Content" xml:space="preserve">
-    <value>CONNECT TMDB ACCOUNT</value>
+    <value>連結 TMDB 帳戶</value>
   </data>
   <data name="ApproveDoneButton.Content" xml:space="preserve">
-    <value>CLICK HERE TO CONTINUE</value>
+    <value>按一下這裡繼續</value>
   </data>
   <data name="CancelConnectButton.Content" xml:space="preserve">
-    <value>CANCEL</value>
+    <value>取消</value>
   </data>
   <data name="SyncNowButton.Content" xml:space="preserve">
-    <value>SYNC NOW</value>
+    <value>立即同步</value>
   </data>
   <data name="DisconnectButton.Content" xml:space="preserve">
-    <value>SIGN OUT</value>
+    <value>登出</value>
   </data>
   <data name="SettingsYourArchiveHeader.Text" xml:space="preserve">
-    <value>YOUR ARCHIVE</value>
+    <value>您的典藏</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>The library index stays on this device. Watch progress, favorites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved.</value>
+    <value>媒體櫃索引會保留在此裝置上。觀看進度、最愛、待看清單與評分也會儲存於此，並在設定後複寫至您的個人 OneDrive 中 — 過程絕不涉及第三方伺服器。</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
-    <value>Data folder</value>
+    <value>資料資料夾</value>
   </data>
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
-    <value>OPEN DATA FOLDER</value>
+    <value>開啟資料資料夾</value>
   </data>
   <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ATTRIBUTION</value>
+    <value>歸屬</value>
   </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
-    <value>This product uses the TMDB API but is not endorsed or certified by TMDB.</value>
+    <value>本產品使用 TMDB API，但未經 TMDB 認可或認證。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale's only network calls are to TMDB for artwork and metadata, plus user-initiated trailer playback through the privacy-enhanced YouTube embed. No analytics, ever.</value>
+    <value>Edendale 唯一的網路呼叫，是向 TMDB 取得圖本與中繼資料，以及使用者透過隱私權強化的 YouTube 內嵌播放器播放預告片。絕無任何分析追蹤。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
-    <value>LOADING THE ARCHIVE</value>
+    <value>正在載入典藏</value>
   </data>
   <data name="ProjectorIsDark.Text" xml:space="preserve">
-    <value>THE PROJECTOR IS DARK</value>
+    <value>放映機尚未亮起</value>
   </data>
   <data name="MissingKeyMessage.Text" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, rebuild the shared DLL, and the archive lights up.</value>
+    <value>在存放庫根目錄執行 init.ps1 以新增 TMDB 憑證，重新建置共用 DLL，典藏便會亮起。</value>
   </data>
   <data name="ReelSnapped.Text" xml:space="preserve">
-    <value>THE REEL SNAPPED</value>
+    <value>膠卷斷裂</value>
   </data>
   <data name="TryAgainButton.Content" xml:space="preserve">
-    <value>TRY AGAIN</value>
+    <value>再試一次</value>
   </data>
   <data name="ContinueWatchingBadge.Text" xml:space="preserve">
-    <value>CONTINUE WATCHING</value>
+    <value>繼續觀看</value>
   </data>
   <data name="HeroPlayLabel.Text" xml:space="preserve">
-    <value>PLAY</value>
+    <value>播放</value>
   </data>
   <data name="HeroDetailsLabel.Text" xml:space="preserve">
-    <value>DETAILS</value>
+    <value>詳細資料</value>
   </data>
   <data name="HeroTrailerLabel.Text" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>觀看預告片</value>
   </data>
   <data name="DetailPlayLabel.Text" xml:space="preserve">
-    <value>PLAY</value>
+    <value>播放</value>
   </data>
   <data name="DetailWatchedLabel.Text" xml:space="preserve">
-    <value>MARK WATCHED</value>
+    <value>標示為已觀看</value>
   </data>
   <data name="DetailTrailerLabel.Text" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>觀看預告片</value>
   </data>
   <data name="DetailFavouriteLabel.Text" xml:space="preserve">
-    <value>FAVORITE</value>
+    <value>最愛</value>
   </data>
   <data name="DetailWatchlistLabel.Text" xml:space="preserve">
-    <value>WATCHLIST</value>
+    <value>待看清單</value>
   </data>
   <data name="DetailArchiveRecordHeader.Text" xml:space="preserve">
-    <value>THE ARCHIVE RECORD</value>
+    <value>典藏紀錄</value>
   </data>
   <data name="DetailPrincipalCastHeader.Text" xml:space="preserve">
-    <value>PRINCIPAL CAST</value>
+    <value>主要演員</value>
   </data>
   <data name="DetailCriticalConsensusHeader.Text" xml:space="preserve">
-    <value>CRITICAL CONSENSUS</value>
+    <value>影評共識</value>
   </data>
   <data name="DetailBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Back</value>
+    <value>返回</value>
   </data>
   <data name="QueryBox.PlaceholderText" xml:space="preserve">
-    <value>Search films, series, and people…</value>
+    <value>搜尋電影、影集與人物…</value>
   </data>
   <data name="DateFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Filter by release date</value>
+    <value>依發行日期篩選</value>
   </data>
   <data name="SearchReleaseDateHeader.Text" xml:space="preserve">
-    <value>RELEASE DATE</value>
+    <value>發行日期</value>
   </data>
   <data name="PreviousYearButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Previous year</value>
+    <value>上一年</value>
   </data>
   <data name="NextYearButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Next year</value>
+    <value>下一年</value>
   </data>
   <data name="HeatmapFewer.Text" xml:space="preserve">
-    <value>Fewer</value>
+    <value>較少</value>
   </data>
   <data name="HeatmapMore.Text" xml:space="preserve">
-    <value>More</value>
+    <value>較多</value>
   </data>
   <data name="HeatmapSummary.Text" xml:space="preserve">
-    <value>Pick a day, then a second day to close the range.</value>
+    <value>挑選一天，接著挑選第二天以關閉範圍。</value>
   </data>
   <data name="HeatmapDoneButton.Content" xml:space="preserve">
-    <value>DONE</value>
+    <value>完成</value>
   </data>
   <data name="HeatmapClearButton.Content" xml:space="preserve">
-    <value>CLEAR</value>
+    <value>清除</value>
   </data>
   <data name="ClearScopeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear search scope</value>
+    <value>清除搜尋範圍</value>
   </data>
   <data name="ClearDateFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear date filter</value>
+    <value>清除日期篩選</value>
   </data>
   <data name="OpenPersonPageButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Open this person's page</value>
+    <value>開啟此人物的頁面</value>
   </data>
   <data name="ClearPersonFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear person filter</value>
+    <value>清除人物篩選</value>
   </data>
   <data name="SearchIdleTitle.Text" xml:space="preserve">
-    <value>THE INDEX AWAITS</value>
+    <value>索引正在等待</value>
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
-    <value>Search the archive for films, series, and the people who made them.</value>
+    <value>在典藏中搜尋電影、影集及製作人員。</value>
   </data>
   <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
+    <value>移除</value>
   </data>
   <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
+    <value>移除</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
-    <value>THE LIBRARY
-IS SILENT</value>
+    <value>媒體櫃
+一片寂靜</value>
   </data>
   <data name="LibraryIsSilentMessage.Text" xml:space="preserve">
-    <value>Connect your local film collection to begin your cinematic journey.</value>
+    <value>連結你的本機電影收藏，展開你的電影之旅。</value>
   </data>
   <data name="AddLocalFolderLabel.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER</value>
+    <value>新增本機資料夾</value>
   </data>
   <data name="AddNetworkSourceLabel.Text" xml:space="preserve">
-    <value>ADD NETWORK SOURCE</value>
+    <value>新增網路來源</value>
   </data>
   <data name="LearnAboutSyncingButton.Content" xml:space="preserve">
-    <value>LEARN ABOUT SYNCING</value>
+    <value>了解同步</value>
   </data>
   <data name="AddLocalFolderLabelToolbar.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER</value>
+    <value>新增本機資料夾</value>
   </data>
   <data name="AddNetworkSourceLabelToolbar.Text" xml:space="preserve">
-    <value>ADD NETWORK SOURCE</value>
+    <value>新增網路來源</value>
   </data>
   <data name="PersonBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Back</value>
+    <value>返回</value>
   </data>
   <data name="PersonBackLabel.Text" xml:space="preserve">
-    <value>BACK</value>
+    <value>返回</value>
   </data>
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
-    <value>SHOW IN SEARCH</value>
+    <value>在搜尋中顯示</value>
   </data>
   <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Skip Back 10s</value>
+    <value>倒轉 10 秒</value>
   </data>
   <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Skip Forward 10s</value>
+    <value>快轉 10 秒</value>
   </data>
   <data name="AspectButton.Content" xml:space="preserve">
-    <value>FIT</value>
+    <value>適應</value>
   </data>
   <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Loop</value>
+    <value>循環播放</value>
   </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Subtitles &amp; Audio</value>
+    <value>字幕與音訊</value>
   </data>
   <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>子母畫面</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
-    <value>Trending Today</value>
+    <value>今日熱門</value>
   </data>
   <data name="Section_PopularFilms" xml:space="preserve">
-    <value>Popular Films</value>
+    <value>熱門電影</value>
   </data>
   <data name="Section_PopularSeries" xml:space="preserve">
-    <value>Popular Series</value>
+    <value>熱門影集</value>
   </data>
   <data name="Section_TopRated" xml:space="preserve">
-    <value>Top Rated</value>
+    <value>最高評分</value>
   </data>
   <data name="Section_CuratedCollections" xml:space="preserve">
-    <value>Curated Collections</value>
+    <value>精選合集</value>
   </data>
   <data name="Section_Episodes" xml:space="preserve">
-    <value>Episodes</value>
+    <value>集數</value>
   </data>
   <data name="Section_FromYourLibrary" xml:space="preserve">
-    <value>From Your Library</value>
+    <value>來自您的媒體櫃</value>
   </data>
   <data name="Section_People" xml:space="preserve">
-    <value>People</value>
+    <value>人物</value>
   </data>
   <data name="Section_TheIndex" xml:space="preserve">
-    <value>The Index</value>
+    <value>索引</value>
   </data>
   <data name="Section_ContinueWatching" xml:space="preserve">
-    <value>Continue Watching</value>
+    <value>繼續觀看</value>
   </data>
   <data name="Section_Movies" xml:space="preserve">
-    <value>Movies</value>
+    <value>電影</value>
   </data>
   <data name="Section_TvShows" xml:space="preserve">
-    <value>TV Shows</value>
+    <value>電視節目</value>
   </data>
   <data name="Section_Sources" xml:space="preserve">
-    <value>Sources</value>
+    <value>來源</value>
   </data>
   <data name="Section_Filmography" xml:space="preserve">
-    <value>Filmography</value>
+    <value>參與作品</value>
   </data>
   <data name="Common_Add" xml:space="preserve">
-    <value>Add</value>
+    <value>新增</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>取消</value>
   </data>
   <data name="Common_Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>移除</value>
   </data>
   <data name="Player_ExitPictureInPicture" xml:space="preserve">
-    <value>Exit Picture in Picture</value>
+    <value>結束子母畫面</value>
   </data>
   <data name="Player_PictureInPicture" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>子母畫面</value>
   </data>
   <data name="Player_StopLooping" xml:space="preserve">
-    <value>Stop looping</value>
+    <value>停止循環播放</value>
   </data>
   <data name="Player_Loop" xml:space="preserve">
-    <value>Loop</value>
+    <value>循環播放</value>
   </data>
   <data name="Player_AspectFill" xml:space="preserve">
-    <value>FILL</value>
+    <value>填滿</value>
   </data>
   <data name="Player_AspectFit" xml:space="preserve">
-    <value>FIT</value>
+    <value>符合</value>
   </data>
   <data name="Player_NoTracks" xml:space="preserve">
-    <value>No tracks available</value>
+    <value>沒有可用的軌道</value>
   </data>
   <data name="Player_AudioHeader" xml:space="preserve">
-    <value>AUDIO</value>
+    <value>音訊</value>
   </data>
   <data name="Player_AudioTrack" xml:space="preserve">
-    <value>Audio</value>
+    <value>音訊</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
-    <value>SUBTITLES</value>
+    <value>字幕</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
-    <value>Off</value>
+    <value>關閉</value>
   </data>
   <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Subtitle</value>
+    <value>字幕</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
-    <value>This file carries none</value>
+    <value>此檔案未包含任何軌道</value>
   </data>
   <data name="Player_NoLocalFile" xml:space="preserve">
-    <value>That episode has no local file in the library.</value>
+    <value>該集在媒體櫃中沒有本機檔案。</value>
   </data>
   <data name="Player_PipUnavailable" xml:space="preserve">
-    <value>Picture in Picture isn't available on this version of Windows.</value>
+    <value>此 Windows 版本不支援子母畫面。</value>
   </data>
   <data name="Playlist_Episodes" xml:space="preserve">
-    <value>EPISODES</value>
+    <value>集數</value>
   </data>
   <data name="Playlist_InThisFolder" xml:space="preserve">
-    <value>IN THIS FOLDER</value>
+    <value>在此資料夾中</value>
   </data>
   <data name="Playlist_Season" xml:space="preserve">
-    <value>SEASON {0}</value>
+    <value>第 {0} 季</value>
   </data>
   <data name="Month_1" xml:space="preserve">
-    <value>Jan</value>
+    <value>1月</value>
   </data>
   <data name="Month_2" xml:space="preserve">
-    <value>Feb</value>
+    <value>2月</value>
   </data>
   <data name="Month_3" xml:space="preserve">
-    <value>Mar</value>
+    <value>3月</value>
   </data>
   <data name="Month_4" xml:space="preserve">
-    <value>Apr</value>
+    <value>4月</value>
   </data>
   <data name="Month_5" xml:space="preserve">
-    <value>May</value>
+    <value>5月</value>
   </data>
   <data name="Month_6" xml:space="preserve">
-    <value>Jun</value>
+    <value>6月</value>
   </data>
   <data name="Month_7" xml:space="preserve">
-    <value>Jul</value>
+    <value>7月</value>
   </data>
   <data name="Month_8" xml:space="preserve">
-    <value>Aug</value>
+    <value>8月</value>
   </data>
   <data name="Month_9" xml:space="preserve">
-    <value>Sep</value>
+    <value>9月</value>
   </data>
   <data name="Month_10" xml:space="preserve">
-    <value>Oct</value>
+    <value>10月</value>
   </data>
   <data name="Month_11" xml:space="preserve">
-    <value>Nov</value>
+    <value>11月</value>
   </data>
   <data name="Month_12" xml:space="preserve">
-    <value>Dec</value>
+    <value>12月</value>
   </data>
   <data name="Library_ItemMissing" xml:space="preserve">
-    <value>This library item no longer exists.</value>
+    <value>此媒體櫃項目已不存在。</value>
   </data>
   <data name="Library_CataloguingNewFiles" xml:space="preserve">
-    <value>CATALOGING NEW FILES</value>
+    <value>正在編目新檔案</value>
   </data>
   <data name="Library_EnrichingMetadata" xml:space="preserve">
-    <value>ENRICHING METADATA</value>
+    <value>正在豐富中繼資料</value>
   </data>
   <data name="Library_AwaitingMetadata" xml:space="preserve">
-    <value>Awaiting metadata</value>
+    <value>正在等候後設資料</value>
   </data>
   <data name="Library_ImportFailed" xml:space="preserve">
-    <value>Import failed: {0}</value>
+    <value>匯入失敗：{0}</value>
   </data>
   <data name="Library_FolderNotFound" xml:space="preserve">
-    <value>Folder not found: {0}</value>
+    <value>找不到資料夾：{0}</value>
   </data>
   <data name="Season_Number" xml:space="preserve">
-    <value>Season {0}</value>
+    <value>第 {0} 季</value>
   </data>
   <data name="Season_Label" xml:space="preserve">
-    <value>Season</value>
+    <value>季</value>
   </data>
   <data name="Season_NoEpisodes" xml:space="preserve">
-    <value>TMDB lists no episodes for this season yet.</value>
+    <value>TMDB 尚未列出此季的任何集數。</value>
   </data>
   <data name="Detail_TmdbScore" xml:space="preserve">
-    <value>TMDB SCORE</value>
+    <value>TMDB 評分</value>
   </data>
   <data name="Detail_ScoreOutOfTen" xml:space="preserve">
-    <value>/ 10 · {0:N0} votes</value>
+    <value>/ 10 · {0:N0} 票</value>
   </data>
   <data name="Detail_Catalogue" xml:space="preserve">
-    <value>CATALOG</value>
+    <value>目錄</value>
   </data>
   <data name="Detail_ResumePlayback" xml:space="preserve">
-    <value>RESUME PLAYBACK</value>
+    <value>繼續播放</value>
   </data>
   <data name="Detail_Play" xml:space="preserve">
-    <value>PLAY</value>
+    <value>播放</value>
   </data>
   <data name="Detail_Watched" xml:space="preserve">
-    <value>WATCHED</value>
+    <value>已觀看</value>
   </data>
   <data name="Detail_MarkWatched" xml:space="preserve">
-    <value>MARK WATCHED</value>
+    <value>標示為已觀看</value>
   </data>
   <data name="Detail_WatchTrailer" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>觀看預告片</value>
   </data>
   <data name="Detail_NoTrailer" xml:space="preserve">
-    <value>NO TRAILER</value>
+    <value>沒有預告片</value>
   </data>
   <data name="Detail_Favourited" xml:space="preserve">
-    <value>FAVORITED</value>
+    <value>已加入最愛</value>
   </data>
   <data name="Detail_Favourite" xml:space="preserve">
-    <value>FAVORITE</value>
+    <value>最愛</value>
   </data>
   <data name="Detail_InWatchlist" xml:space="preserve">
-    <value>IN WATCHLIST</value>
+    <value>在待看清單中</value>
   </data>
   <data name="Detail_Watchlist" xml:space="preserve">
-    <value>WATCHLIST</value>
+    <value>待看清單</value>
   </data>
   <data name="Detail_Rate" xml:space="preserve">
-    <value>RATE</value>
+    <value>評分</value>
   </data>
   <data name="Detail_MarkUnwatchedTooltip" xml:space="preserve">
-    <value>Mark Unwatched</value>
+    <value>標示為未觀看</value>
   </data>
   <data name="Detail_MarkWatchedTooltip" xml:space="preserve">
-    <value>Mark Watched</value>
+    <value>標示為已觀看</value>
   </data>
   <data name="Source_Rescan" xml:space="preserve">
-    <value>Rescan</value>
+    <value>重新掃描</value>
   </data>
   <data name="Source_Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>移除</value>
   </data>
   <data name="Source_RemoveTitle" xml:space="preserve">
-    <value>Remove Source</value>
+    <value>移除來源</value>
   </data>
   <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” is removed from your library and the saved login for {1} is forgotten, unless another source still uses that server. Nothing on the server is deleted.</value>
+    <value>“{0}”將從您的媒體櫃中移除，且會忘記 {1} 的儲存登入資訊，除非有其他來源仍在使用該伺服器。伺服器上的任何內容都不會被刪除。</value>
   </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
-    <value>“{0}” is removed from your library. Nothing on your disk is deleted.</value>
+    <value>“{0}”將從您的媒體櫃中移除。磁碟上的任何內容都不會被刪除。</value>
   </data>
   <data name="Smb_UsernameOptional" xml:space="preserve">
-    <value>Username (optional)</value>
+    <value>使用者名稱 (選填)</value>
   </data>
   <data name="Smb_Password" xml:space="preserve">
-    <value>Password</value>
+    <value>密碼</value>
   </data>
   <data name="Smb_AddNetworkSource" xml:space="preserve">
-    <value>Add Network Source</value>
+    <value>新增網路來源</value>
   </data>
   <data name="Smb_UncPrompt" xml:space="preserve">
-    <value>Enter the UNC path to your media folder:</value>
+    <value>輸入媒體資料夾的 UNC 路徑：</value>
   </data>
   <data name="Smb_CredentialNote" xml:space="preserve">
-    <value>If the share needs a sign-in, add it here. It is stored encrypted on this device and reused for rescans.</value>
+    <value>如果共用需要登入，請在此處新增。這會加密儲存於此裝置，並在重新掃描時重複使用。</value>
   </data>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
-    <value>Could not access the network path: {0}</value>
+    <value>無法存取網路路徑：{0}</value>
   </data>
   <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Network Source Error</value>
+    <value>網路來源錯誤</value>
   </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
-    <value>Could not connect to {0}: {1}</value>
+    <value>無法連線至 {0}：{1}</value>
   </data>
   <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Connection Failed</value>
+    <value>連線失敗</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
-    <value>Windows could not start the network-share connector.</value>
+    <value>Windows 無法啟動網路共用連接器。</value>
   </data>
   <data name="Smb_Timeout" xml:space="preserve">
-    <value>Connecting to {0} timed out.</value>
+    <value>連線至 {0} 逾時。</value>
   </data>
   <data name="Smb_CheckAddress" xml:space="preserve">
-    <value>Could not connect to {0}. Check the address and stored credentials.</value>
+    <value>無法連線至 {0}。請檢查位址與儲存的憑證。</value>
   </data>
   <data name="Privacy_Title" xml:space="preserve">
-    <value>Private by Design</value>
+    <value>隱私保護源於設計</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Your library index and watch progress stay on this device. The only network calls Edendale makes are to TMDB for artwork and metadata — nothing else is sent anywhere.</value>
+    <value>您的媒體櫃索引與觀看進度會保留在此裝置上。Edendale 唯一的網路呼叫，是向 TMDB 取得圖本與中繼資料 — 絕不會將其他任何資料傳送到任何地方。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
-    <value>Pick a day, then a second day to close the range.</value>
+    <value>挑選一天，接著挑選第二天以關閉範圍。</value>
   </data>
   <data name="Heatmap_PickSecondDay" xml:space="preserve">
-    <value>Pick a second day to close the range.</value>
+    <value>挑選第二天以關閉範圍。</value>
   </data>
   <data name="Scope_All" xml:space="preserve">
-    <value>All</value>
+    <value>全部</value>
   </data>
   <data name="Scope_People" xml:space="preserve">
-    <value>People</value>
+    <value>人物</value>
   </data>
   <data name="Scope_Films" xml:space="preserve">
-    <value>Films</value>
+    <value>電影</value>
   </data>
   <data name="Scope_Series" xml:space="preserve">
-    <value>Series</value>
+    <value>影集</value>
   </data>
   <data name="Scope_PromptPeople" xml:space="preserve">
-    <value>Type a name to find actors and actresses.</value>
+    <value>輸入名稱以尋找演員。</value>
   </data>
   <data name="Scope_PromptFilms" xml:space="preserve">
-    <value>Type a title to search films only.</value>
+    <value>輸入標題以僅搜尋電影。</value>
   </data>
   <data name="Scope_PromptSeries" xml:space="preserve">
-    <value>Type a title to search series only.</value>
+    <value>輸入標題以僅搜尋影集。</value>
   </data>
   <data name="Scope_PromptAll" xml:space="preserve">
-    <value>Type a title to search the archive.</value>
+    <value>輸入標題以搜尋典藏。</value>
   </data>
   <data name="Search_StarringPrefix" xml:space="preserve">
-    <value>STARRING {0}</value>
+    <value>由 {0} 主演</value>
   </data>
   <data name="Search_DateFrom" xml:space="preserve">
-    <value>From {0}</value>
+    <value>從 {0}</value>
   </data>
   <data name="Search_DateUntil" xml:space="preserve">
-    <value>Until {0}</value>
+    <value>到 {0}</value>
   </data>
   <data name="Search_TheIndex" xml:space="preserve">
-    <value>The Index</value>
+    <value>索引</value>
   </data>
   <data name="Search_AlsoInTitles" xml:space="preserve">
-    <value>Also in Titles</value>
+    <value>也包含在標題中</value>
   </data>
   <data name="Search_NothingMatches" xml:space="preserve">
-    <value>Nothing in the index matches this search.</value>
+    <value>索引中沒有符合此搜尋的內容。</value>
   </data>
   <data name="Search_Filmography" xml:space="preserve">
-    <value>Filmography</value>
+    <value>參與作品</value>
   </data>
   <data name="Search_FilmographyOf" xml:space="preserve">
-    <value>Filmography — {0}</value>
+    <value>參與作品 — {0}</value>
   </data>
   <data name="Search_NoCreditedTitles" xml:space="preserve">
-    <value>No credited titles were found.</value>
+    <value>找不到署名的作品。</value>
   </data>
   <data name="Search_MissingCredentials" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale to search the full index.</value>
+    <value>在存放庫根目錄執行 init.ps1 以新增 TMDB 憑證，然後重新建置 Edendale 以搜尋完整索引。</value>
   </data>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
-    <value>development build</value>
+    <value>開發版本</value>
   </data>
   <data name="Settings_Configured" xml:space="preserve">
-    <value>Configured</value>
+    <value>已設定</value>
   </data>
   <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Missing — run init.ps1, then rebuild Edendale</value>
+    <value>遺失 — 執行 init.ps1，然後重新建置 Edendale</value>
   </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
-    <value>Replicated to {0}</value>
+    <value>複寫至 {0}</value>
   </data>
   <data name="Settings_StoredOnThisDevice" xml:space="preserve">
-    <value>Stored on this device</value>
+    <value>儲存於此裝置</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
-    <value>Could not update the startup entry — Windows refused the registry change.</value>
+    <value>無法更新啟動項目 — Windows 拒絕了登錄檔變更。</value>
   </data>
   <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Unavailable — TMDB credentials missing</value>
+    <value>無法使用 — 遺失 TMDB 憑證</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
-    <value>Connected as {0}</value>
+    <value>已連線為 {0}</value>
   </data>
   <data name="Settings_AwaitingApproval" xml:space="preserve">
-    <value>Waiting for approval on the TMDB page</value>
+    <value>正在等待 TMDB 頁面上的核准</value>
   </data>
   <data name="Settings_NotConnected" xml:space="preserve">
-    <value>Not connected</value>
+    <value>未連線</value>
   </data>
   <data name="Tmdb_MissingCredentials" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale.</value>
+    <value>在存放庫根目錄執行 init.ps1 以新增 TMDB 憑證，然後重新建置 Edendale。</value>
   </data>
   <data name="Tmdb_Unavailable" xml:space="preserve">
-    <value>TMDB is unavailable — credentials are missing.</value>
+    <value>TMDB 無法使用 — 遺失憑證。</value>
   </data>
   <data name="Tmdb_NoBrowser" xml:space="preserve">
-    <value>No browser could be opened. Scan the QR code with another device.</value>
+    <value>無法開啟瀏覽器。請使用其他裝置掃描 QR 碼。</value>
   </data>
   <data name="Tmdb_ConnectFailed" xml:space="preserve">
-    <value>Could not start the TMDB connection: {0}</value>
+    <value>無法啟動 TMDB 連線：{0}</value>
   </data>
   <data name="Tmdb_QrFailed" xml:space="preserve">
-    <value>The approval page is ready, but its QR code could not be created: {0}</value>
+    <value>核准頁面已準備就緒，但無法建立其 QR 碼：{0}</value>
   </data>
   <data name="Tmdb_ApprovalRejected" xml:space="preserve">
-    <value>TMDB did not accept the approval ({0}). Approve the request in the browser, then try again.</value>
+    <value>TMDB 未接受核准 ({0})。請在瀏覽器中核准要求，然後再試一次。</value>
   </data>
   <data name="Tmdb_NoPendingApproval" xml:space="preserve">
-    <value>No TMDB connection is awaiting approval.</value>
+    <value>沒有正在等待核准的 TMDB 連線。</value>
   </data>
   <data name="Tmdb_NotConnected" xml:space="preserve">
-    <value>Not connected to TMDB.</value>
+    <value>未連線至 TMDB。</value>
   </data>
   <data name="Tmdb_SyncStatus" xml:space="preserve">
-    <value>Synced {0} — {1} pushed, {2} pulled</value>
+    <value>已同步 {0} — 推送了 {1}，提取了 {2}</value>
   </data>
   <data name="Tmdb_SyncFailed" xml:space="preserve">
-    <value>Sync failed: {0}</value>
+    <value>同步失敗：{0}</value>
   </data>
   <data name="Tmdb_NotConfigured" xml:space="preserve">
-    <value>TMDB credentials are not configured. Run init.ps1 from the repository root.</value>
+    <value>未設定 TMDB 憑證。請從存放庫根目錄執行 init.ps1。</value>
   </data>
   <data name="Tmdb_RequestFailed" xml:space="preserve">
-    <value>TMDB request failed (HTTP {0})</value>
+    <value>TMDB 要求失敗 (HTTP {0})</value>
   </data>
   <data name="Tmdb_InvalidJson" xml:space="preserve">
-    <value>TMDB returned invalid JSON: {0}</value>
+    <value>TMDB 傳回無效的 JSON：{0}</value>
   </data>
   <data name="Person_NoBiography" xml:space="preserve">
-    <value>TMDB has no biography for this person yet.</value>
+    <value>TMDB 尚未提供此人物的傳記。</value>
   </data>
   <data name="Collection_AllArchives" xml:space="preserve">
-    <value>All Archives</value>
+    <value>所有封存</value>
   </data>
   <data name="Collection_FeatureFilms" xml:space="preserve">
-    <value>Feature Films</value>
+    <value>電影長片</value>
   </data>
   <data name="Collection_Series" xml:space="preserve">
-    <value>Series</value>
+    <value>影集</value>
   </data>
   <data name="Credit_Untitled" xml:space="preserve">
-    <value>Untitled</value>
+    <value>未命名</value>
   </data>
   <data name="Credit_Unknown" xml:space="preserve">
-    <value>Unknown</value>
+    <value>未知</value>
   </data>
   <data name="Credit_DirectedBy" xml:space="preserve">
-    <value>Directed by {0}</value>
+    <value>由 {0} 執導</value>
   </data>
   <data name="Credit_CreatedBy" xml:space="preserve">
-    <value>Created by {0}</value>
+    <value>由 {0} 創作</value>
   </data>
   <data name="Activation_UnsupportedFile" xml:space="preserve">
-    <value>Edendale cannot play {0} — unsupported file type.</value>
+    <value>Edendale 無法播放 {0} — 檔案類型不受支援。</value>
   </data>
   <data name="Activation_BadLink" xml:space="preserve">
-    <value>Edendale could not understand this link.</value>
+    <value>Edendale 無法解析此連結。</value>
   </data>
   <data name="Plural_ItemOne" xml:space="preserve">
-    <value>{0} item</value>
+    <value>{0} 個項目</value>
   </data>
   <data name="Plural_ItemOther" xml:space="preserve">
-    <value>{0} items</value>
+    <value>{0} 個項目</value>
   </data>
   <data name="Plural_EpisodeOne" xml:space="preserve">
-    <value>{0} episode</value>
+    <value>{0} 集</value>
   </data>
   <data name="Plural_EpisodeOther" xml:space="preserve">
-    <value>{0} episodes</value>
+    <value>{0} 集</value>
   </data>
   <data name="Plural_SeasonOne" xml:space="preserve">
-    <value>{0} season</value>
+    <value>{0} 季</value>
   </data>
   <data name="Plural_SeasonOther" xml:space="preserve">
-    <value>{0} seasons</value>
+    <value>{0} 季</value>
   </data>
   <data name="Plural_ReleaseOne" xml:space="preserve">
-    <value>{0} release</value>
+    <value>{0} 個發行版本</value>
   </data>
   <data name="Plural_ReleaseOther" xml:space="preserve">
-    <value>{0} releases</value>
+    <value>{0} 個發行版本</value>
   </data>
   <data name="Plural_DayOne" xml:space="preserve">
-    <value>{0} day</value>
+    <value>{0} 天</value>
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
-    <value>{0} days</value>
+    <value>{0} 天</value>
   </data>
 </root>

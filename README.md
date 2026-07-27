@@ -122,6 +122,29 @@ alternative for local or test processes. CI runs without credentials; do not
 commit the file or distribute a locally built binary containing personal
 credentials.
 
+### Languages
+
+Every user-facing string lives in `Edendale.Windows/Strings/<language>/Resources.resw`.
+XAML reads its copy through `x:Uid`, which MRT Core resolves; code-behind reads
+the same catalogue through `Services/Loc.cs`. `SectionHeader` takes a `TitleKey`
+instead, because `x:Uid` cannot reach a custom dependency property.
+
+`Core`, `Models`, and the data services are compiled into
+`Edendale.Windows.Tests`, which has no reference to MRT Core and no resource
+map, so they read copy through `Core/AppText.cs`. The app points
+`AppText.Resolver` at `Loc` on startup; without a resolver it falls back to the
+English defaults it carries, which keeps those tests hermetic.
+
+Headers and button labels the design sets in capitals are stored in natural case
+where the control uppercases them itself, and in capitals where it does not — so
+translations for scripts without case are left alone. `en-US` is the
+`DefaultLanguage` and the fallback for every lookup; the other locales match the
+set the Apple branch ships.
+
+When adding UI text, add the key to `Strings/en-US/Resources.resw` first, then
+to each translated file. A missing entry falls back to English rather than
+failing.
+
 ### Data and privacy
 
 Library, watch-progress, and user-media JSON live under

@@ -62,338 +62,338 @@
     <value>EDENDALE</value>
   </data>
   <data name="MoviesNavItem.Content" xml:space="preserve">
-    <value>Movies &amp; Shows</value>
+    <value>Films et séries</value>
   </data>
   <data name="DownloadedNavItem.Content" xml:space="preserve">
-    <value>Downloaded</value>
+    <value>Téléchargements</value>
   </data>
   <data name="SearchNavItem.Content" xml:space="preserve">
-    <value>Search</value>
+    <value>Rechercher</value>
   </data>
   <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>SETTINGS</value>
+    <value>PARAMÈTRES</value>
   </data>
   <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>ABOUT</value>
+    <value>À PROPOS</value>
   </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Version</value>
   </data>
   <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows core</value>
+    <value>Noyau Windows</value>
   </data>
   <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB credentials</value>
+    <value>Identifiants TMDB</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
-    <value>Watch progress</value>
+    <value>Progression de lecture</value>
   </data>
   <data name="SettingsStartupHeader.Text" xml:space="preserve">
-    <value>STARTUP</value>
+    <value>DÉMARRAGE</value>
   </data>
   <data name="SettingsLaunchAtStartupLabel.Text" xml:space="preserve">
-    <value>Launch Edendale at startup</value>
+    <value>Lancer Edendale au démarrage</value>
   </data>
   <data name="SettingsSourcesHeader.Text" xml:space="preserve">
     <value>SOURCES</value>
   </data>
   <data name="SettingsNoSourcesText.Text" xml:space="preserve">
-    <value>No sources linked</value>
+    <value>Aucune source liée</value>
   </data>
   <data name="SourceRescanLabel.Text" xml:space="preserve">
-    <value>RESCAN</value>
+    <value>RÉANALYSER</value>
   </data>
   <data name="SourceRemoveLabel.Text" xml:space="preserve">
-    <value>REMOVE</value>
+    <value>SUPPRIMER</value>
   </data>
   <data name="AddLocalFolderEllipsisLabel.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER…</value>
+    <value>AJOUTER UN DOSSIER LOCAL…</value>
   </data>
   <data name="LinkNetworkSourceEllipsisLabel.Text" xml:space="preserve">
-    <value>LINK NETWORK SOURCE…</value>
+    <value>LIER UNE SOURCE RÉSEAU…</value>
   </data>
   <data name="SettingsTmdbAccountHeader.Text" xml:space="preserve">
-    <value>TMDB ACCOUNT</value>
+    <value>COMPTE TMDB</value>
   </data>
   <data name="SettingsTmdbAccountIntro.Text" xml:space="preserve">
-    <value>Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB — their API has no watch-progress endpoint.</value>
+    <value>Connectez votre compte TMDB pour synchroniser vos favoris, votre liste à voir et vos notes sur tous vos appareils. Le temps de lecture n'est pas envoyé à TMDB — leur API n'a pas de point de terminaison pour la progression de lecture.</value>
   </data>
   <data name="SettingsAccountLabel.Text" xml:space="preserve">
-    <value>Account</value>
+    <value>Compte</value>
   </data>
   <data name="SettingsLastSyncLabel.Text" xml:space="preserve">
-    <value>Last sync</value>
+    <value>Dernière synchronisation</value>
   </data>
   <data name="SettingsAwaitingApproval.Text" xml:space="preserve">
-    <value>Approve Edendale in the browser that opened, or scan the QR code with another device.</value>
+    <value>Approuvez Edendale dans le navigateur qui s'est ouvert, ou scannez le code QR avec un autre appareil.</value>
   </data>
   <data name="ApprovalQrImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>TMDB account approval QR code</value>
+    <value>Code QR d'approbation du compte TMDB</value>
   </data>
   <data name="ConnectButton.Content" xml:space="preserve">
-    <value>CONNECT TMDB ACCOUNT</value>
+    <value>CONNECTER LE COMPTE TMDB</value>
   </data>
   <data name="ApproveDoneButton.Content" xml:space="preserve">
-    <value>CLICK HERE TO CONTINUE</value>
+    <value>CLIQUEZ ICI POUR CONTINUER</value>
   </data>
   <data name="CancelConnectButton.Content" xml:space="preserve">
-    <value>CANCEL</value>
+    <value>ANNULER</value>
   </data>
   <data name="SyncNowButton.Content" xml:space="preserve">
-    <value>SYNC NOW</value>
+    <value>SYNCHRONISER MAINTENANT</value>
   </data>
   <data name="DisconnectButton.Content" xml:space="preserve">
-    <value>SIGN OUT</value>
+    <value>SE DÉCONNECTER</value>
   </data>
   <data name="SettingsYourArchiveHeader.Text" xml:space="preserve">
-    <value>YOUR ARCHIVE</value>
+    <value>VOTRE ARCHIVE</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>The library index stays on this device. Watch progress, favorites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved.</value>
+    <value>L'index de la bibliothèque reste sur cet appareil. La progression de lecture, les favoris, votre liste à voir et les notes sont également stockés ici, et répliqués sur votre propre OneDrive lorsqu'il est configuré — aucun serveur tiers n'est impliqué.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
-    <value>Data folder</value>
+    <value>Dossier de données</value>
   </data>
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
-    <value>OPEN DATA FOLDER</value>
+    <value>OUVRIR LE DOSSIER DE DONNÉES</value>
   </data>
   <data name="SettingsAttributionHeader.Text" xml:space="preserve">
     <value>ATTRIBUTION</value>
   </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
-    <value>This product uses the TMDB API but is not endorsed or certified by TMDB.</value>
+    <value>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale's only network calls are to TMDB for artwork and metadata, plus user-initiated trailer playback through the privacy-enhanced YouTube embed. No analytics, ever.</value>
+    <value>Les seuls appels réseau d'Edendale sont vers TMDB pour les illustrations et les métadonnées, plus la lecture des bandes-annonces initiée par l'utilisateur via l'intégration YouTube respectueuse de la vie privée. Aucune analyse, jamais.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
-    <value>LOADING THE ARCHIVE</value>
+    <value>CHARGEMENT DE L'ARCHIVE</value>
   </data>
   <data name="ProjectorIsDark.Text" xml:space="preserve">
-    <value>THE PROJECTOR IS DARK</value>
+    <value>LE PROJECTEUR EST SOMBRE</value>
   </data>
   <data name="MissingKeyMessage.Text" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, rebuild the shared DLL, and the archive lights up.</value>
+    <value>Exécutez init.ps1 à la racine du dépôt pour ajouter les identifiants TMDB, recompilez la DLL partagée, et l'archive s'illumine.</value>
   </data>
   <data name="ReelSnapped.Text" xml:space="preserve">
-    <value>THE REEL SNAPPED</value>
+    <value>LA BOBINE S'EST ROMPUE</value>
   </data>
   <data name="TryAgainButton.Content" xml:space="preserve">
-    <value>TRY AGAIN</value>
+    <value>RÉESSAYER</value>
   </data>
   <data name="ContinueWatchingBadge.Text" xml:space="preserve">
-    <value>CONTINUE WATCHING</value>
+    <value>REPRENDRE LA LECTURE</value>
   </data>
   <data name="HeroPlayLabel.Text" xml:space="preserve">
-    <value>PLAY</value>
+    <value>LIRE</value>
   </data>
   <data name="HeroDetailsLabel.Text" xml:space="preserve">
-    <value>DETAILS</value>
+    <value>DÉTAILS</value>
   </data>
   <data name="HeroTrailerLabel.Text" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>VOIR LA BANDE-ANNONCE</value>
   </data>
   <data name="DetailPlayLabel.Text" xml:space="preserve">
-    <value>PLAY</value>
+    <value>LIRE</value>
   </data>
   <data name="DetailWatchedLabel.Text" xml:space="preserve">
-    <value>MARK WATCHED</value>
+    <value>MARQUER COMME VU</value>
   </data>
   <data name="DetailTrailerLabel.Text" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>VOIR LA BANDE-ANNONCE</value>
   </data>
   <data name="DetailFavouriteLabel.Text" xml:space="preserve">
-    <value>FAVORITE</value>
+    <value>FAVORI</value>
   </data>
   <data name="DetailWatchlistLabel.Text" xml:space="preserve">
-    <value>WATCHLIST</value>
+    <value>LISTE À VOIR</value>
   </data>
   <data name="DetailArchiveRecordHeader.Text" xml:space="preserve">
-    <value>THE ARCHIVE RECORD</value>
+    <value>L'ENREGISTREMENT DE L'ARCHIVE</value>
   </data>
   <data name="DetailPrincipalCastHeader.Text" xml:space="preserve">
-    <value>PRINCIPAL CAST</value>
+    <value>DISTRIBUTION PRINCIPALE</value>
   </data>
   <data name="DetailCriticalConsensusHeader.Text" xml:space="preserve">
-    <value>CRITICAL CONSENSUS</value>
+    <value>CONSENSUS CRITIQUE</value>
   </data>
   <data name="DetailBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Back</value>
+    <value>Retour</value>
   </data>
   <data name="QueryBox.PlaceholderText" xml:space="preserve">
-    <value>Search films, series, and people…</value>
+    <value>Rechercher des films, séries et personnes…</value>
   </data>
   <data name="DateFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Filter by release date</value>
+    <value>Filtrer par date de sortie</value>
   </data>
   <data name="SearchReleaseDateHeader.Text" xml:space="preserve">
-    <value>RELEASE DATE</value>
+    <value>DATE DE SORTIE</value>
   </data>
   <data name="PreviousYearButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Previous year</value>
+    <value>Année précédente</value>
   </data>
   <data name="NextYearButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Next year</value>
+    <value>Année suivante</value>
   </data>
   <data name="HeatmapFewer.Text" xml:space="preserve">
-    <value>Fewer</value>
+    <value>Moins</value>
   </data>
   <data name="HeatmapMore.Text" xml:space="preserve">
-    <value>More</value>
+    <value>Plus</value>
   </data>
   <data name="HeatmapSummary.Text" xml:space="preserve">
-    <value>Pick a day, then a second day to close the range.</value>
+    <value>Choisissez un jour, puis un deuxième jour pour fermer la plage.</value>
   </data>
   <data name="HeatmapDoneButton.Content" xml:space="preserve">
-    <value>DONE</value>
+    <value>TERMINÉ</value>
   </data>
   <data name="HeatmapClearButton.Content" xml:space="preserve">
-    <value>CLEAR</value>
+    <value>EFFACER</value>
   </data>
   <data name="ClearScopeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear search scope</value>
+    <value>Effacer la portée de la recherche</value>
   </data>
   <data name="ClearDateFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear date filter</value>
+    <value>Effacer le filtre de date</value>
   </data>
   <data name="OpenPersonPageButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Open this person's page</value>
+    <value>Ouvrir la page de cette personne</value>
   </data>
   <data name="ClearPersonFilterButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Clear person filter</value>
+    <value>Effacer le filtre de personne</value>
   </data>
   <data name="SearchIdleTitle.Text" xml:space="preserve">
-    <value>THE INDEX AWAITS</value>
+    <value>L'INDEX VOUS ATTEND</value>
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
-    <value>Search the archive for films, series, and the people who made them.</value>
+    <value>Recherchez dans l'archive des films, des séries et les personnes qui les ont créés.</value>
   </data>
   <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
+    <value>Supprimer</value>
   </data>
   <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
+    <value>Supprimer</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
-    <value>THE LIBRARY
-IS SILENT</value>
+    <value>LA BIBLIOTHÈQUE
+EST SILENCIEUSE</value>
   </data>
   <data name="LibraryIsSilentMessage.Text" xml:space="preserve">
-    <value>Connect your local film collection to begin your cinematic journey.</value>
+    <value>Connectez votre collection locale de films pour commencer votre aventure cinématographique.</value>
   </data>
   <data name="AddLocalFolderLabel.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER</value>
+    <value>AJOUTER UN DOSSIER LOCAL</value>
   </data>
   <data name="AddNetworkSourceLabel.Text" xml:space="preserve">
-    <value>ADD NETWORK SOURCE</value>
+    <value>AJOUTER UNE SOURCE RÉSEAU</value>
   </data>
   <data name="LearnAboutSyncingButton.Content" xml:space="preserve">
-    <value>LEARN ABOUT SYNCING</value>
+    <value>EN SAVOIR PLUS SUR LA SYNCHRONISATION</value>
   </data>
   <data name="AddLocalFolderLabelToolbar.Text" xml:space="preserve">
-    <value>ADD LOCAL FOLDER</value>
+    <value>AJOUTER UN DOSSIER LOCAL</value>
   </data>
   <data name="AddNetworkSourceLabelToolbar.Text" xml:space="preserve">
-    <value>ADD NETWORK SOURCE</value>
+    <value>AJOUTER UNE SOURCE RÉSEAU</value>
   </data>
   <data name="PersonBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Back</value>
+    <value>Retour</value>
   </data>
   <data name="PersonBackLabel.Text" xml:space="preserve">
-    <value>BACK</value>
+    <value>RETOUR</value>
   </data>
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
-    <value>SHOW IN SEARCH</value>
+    <value>AFFICHER DANS LA RECHERCHE</value>
   </data>
   <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Skip Back 10s</value>
+    <value>Reculer de 10s</value>
   </data>
   <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Skip Forward 10s</value>
+    <value>Avancer de 10s</value>
   </data>
   <data name="AspectButton.Content" xml:space="preserve">
-    <value>FIT</value>
+    <value>AJUSTER</value>
   </data>
   <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Loop</value>
+    <value>En boucle</value>
   </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Subtitles &amp; Audio</value>
+    <value>Sous-titres &amp; Audio</value>
   </data>
   <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>Image dans l'image</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
-    <value>Trending Today</value>
+    <value>Tendances du jour</value>
   </data>
   <data name="Section_PopularFilms" xml:space="preserve">
-    <value>Popular Films</value>
+    <value>Films populaires</value>
   </data>
   <data name="Section_PopularSeries" xml:space="preserve">
-    <value>Popular Series</value>
+    <value>Séries populaires</value>
   </data>
   <data name="Section_TopRated" xml:space="preserve">
-    <value>Top Rated</value>
+    <value>Mieux notés</value>
   </data>
   <data name="Section_CuratedCollections" xml:space="preserve">
-    <value>Curated Collections</value>
+    <value>Collections sélectionnées</value>
   </data>
   <data name="Section_Episodes" xml:space="preserve">
-    <value>Episodes</value>
+    <value>Épisodes</value>
   </data>
   <data name="Section_FromYourLibrary" xml:space="preserve">
-    <value>From Your Library</value>
+    <value>De votre bibliothèque</value>
   </data>
   <data name="Section_People" xml:space="preserve">
-    <value>People</value>
+    <value>Personnes</value>
   </data>
   <data name="Section_TheIndex" xml:space="preserve">
-    <value>The Index</value>
+    <value>L'Index</value>
   </data>
   <data name="Section_ContinueWatching" xml:space="preserve">
-    <value>Continue Watching</value>
+    <value>Reprendre la lecture</value>
   </data>
   <data name="Section_Movies" xml:space="preserve">
-    <value>Movies</value>
+    <value>Films</value>
   </data>
   <data name="Section_TvShows" xml:space="preserve">
-    <value>TV Shows</value>
+    <value>Séries TV</value>
   </data>
   <data name="Section_Sources" xml:space="preserve">
     <value>Sources</value>
   </data>
   <data name="Section_Filmography" xml:space="preserve">
-    <value>Filmography</value>
+    <value>Filmographie</value>
   </data>
   <data name="Common_Add" xml:space="preserve">
-    <value>Add</value>
+    <value>Ajouter</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Annuler</value>
   </data>
   <data name="Common_Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>Supprimer</value>
   </data>
   <data name="Player_ExitPictureInPicture" xml:space="preserve">
-    <value>Exit Picture in Picture</value>
+    <value>Quitter l'Image dans l'image</value>
   </data>
   <data name="Player_PictureInPicture" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>Image dans l'image</value>
   </data>
   <data name="Player_StopLooping" xml:space="preserve">
-    <value>Stop looping</value>
+    <value>Arrêter la boucle</value>
   </data>
   <data name="Player_Loop" xml:space="preserve">
-    <value>Loop</value>
+    <value>En boucle</value>
   </data>
   <data name="Player_AspectFill" xml:space="preserve">
-    <value>FILL</value>
+    <value>REMPLIR</value>
   </data>
   <data name="Player_AspectFit" xml:space="preserve">
-    <value>FIT</value>
+    <value>AJUSTER</value>
   </data>
   <data name="Player_NoTracks" xml:space="preserve">
-    <value>No tracks available</value>
+    <value>Aucune piste disponible</value>
   </data>
   <data name="Player_AudioHeader" xml:space="preserve">
     <value>AUDIO</value>
@@ -402,387 +402,387 @@ IS SILENT</value>
     <value>Audio</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
-    <value>SUBTITLES</value>
+    <value>SOUS-TITRES</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
-    <value>Off</value>
+    <value>Désactivé</value>
   </data>
   <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Subtitle</value>
+    <value>Sous-titre</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
-    <value>This file carries none</value>
+    <value>Ce fichier n'en contient pas</value>
   </data>
   <data name="Player_NoLocalFile" xml:space="preserve">
-    <value>That episode has no local file in the library.</value>
+    <value>Cet épisode n'a pas de fichier local dans la bibliothèque.</value>
   </data>
   <data name="Player_PipUnavailable" xml:space="preserve">
-    <value>Picture in Picture isn't available on this version of Windows.</value>
+    <value>L'Image dans l'image n'est pas disponible sur cette version de Windows.</value>
   </data>
   <data name="Playlist_Episodes" xml:space="preserve">
-    <value>EPISODES</value>
+    <value>ÉPISODES</value>
   </data>
   <data name="Playlist_InThisFolder" xml:space="preserve">
-    <value>IN THIS FOLDER</value>
+    <value>DANS CE DOSSIER</value>
   </data>
   <data name="Playlist_Season" xml:space="preserve">
-    <value>SEASON {0}</value>
+    <value>SAISON {0}</value>
   </data>
   <data name="Month_1" xml:space="preserve">
-    <value>Jan</value>
+    <value>Janv.</value>
   </data>
   <data name="Month_2" xml:space="preserve">
-    <value>Feb</value>
+    <value>Févr.</value>
   </data>
   <data name="Month_3" xml:space="preserve">
-    <value>Mar</value>
+    <value>Mars</value>
   </data>
   <data name="Month_4" xml:space="preserve">
-    <value>Apr</value>
+    <value>Avr.</value>
   </data>
   <data name="Month_5" xml:space="preserve">
-    <value>May</value>
+    <value>Mai</value>
   </data>
   <data name="Month_6" xml:space="preserve">
-    <value>Jun</value>
+    <value>Juin</value>
   </data>
   <data name="Month_7" xml:space="preserve">
-    <value>Jul</value>
+    <value>Juil.</value>
   </data>
   <data name="Month_8" xml:space="preserve">
-    <value>Aug</value>
+    <value>Août</value>
   </data>
   <data name="Month_9" xml:space="preserve">
-    <value>Sep</value>
+    <value>Sept.</value>
   </data>
   <data name="Month_10" xml:space="preserve">
-    <value>Oct</value>
+    <value>Oct.</value>
   </data>
   <data name="Month_11" xml:space="preserve">
-    <value>Nov</value>
+    <value>Nov.</value>
   </data>
   <data name="Month_12" xml:space="preserve">
-    <value>Dec</value>
+    <value>Déc.</value>
   </data>
   <data name="Library_ItemMissing" xml:space="preserve">
-    <value>This library item no longer exists.</value>
+    <value>Cet élément de la bibliothèque n'existe plus.</value>
   </data>
   <data name="Library_CataloguingNewFiles" xml:space="preserve">
-    <value>CATALOGING NEW FILES</value>
+    <value>CATALOGAGE DES NOUVEAUX FICHIERS</value>
   </data>
   <data name="Library_EnrichingMetadata" xml:space="preserve">
-    <value>ENRICHING METADATA</value>
+    <value>ENRICHISSEMENT DES MÉTADONNÉES</value>
   </data>
   <data name="Library_AwaitingMetadata" xml:space="preserve">
-    <value>Awaiting metadata</value>
+    <value>En attente des métadonnées</value>
   </data>
   <data name="Library_ImportFailed" xml:space="preserve">
-    <value>Import failed: {0}</value>
+    <value>Échec de l'importation : {0}</value>
   </data>
   <data name="Library_FolderNotFound" xml:space="preserve">
-    <value>Folder not found: {0}</value>
+    <value>Dossier introuvable : {0}</value>
   </data>
   <data name="Season_Number" xml:space="preserve">
-    <value>Season {0}</value>
+    <value>Saison {0}</value>
   </data>
   <data name="Season_Label" xml:space="preserve">
-    <value>Season</value>
+    <value>Saison</value>
   </data>
   <data name="Season_NoEpisodes" xml:space="preserve">
-    <value>TMDB lists no episodes for this season yet.</value>
+    <value>TMDB ne liste encore aucun épisode pour cette saison.</value>
   </data>
   <data name="Detail_TmdbScore" xml:space="preserve">
-    <value>TMDB SCORE</value>
+    <value>SCORE TMDB</value>
   </data>
   <data name="Detail_ScoreOutOfTen" xml:space="preserve">
     <value>/ 10 · {0:N0} votes</value>
   </data>
   <data name="Detail_Catalogue" xml:space="preserve">
-    <value>CATALOG</value>
+    <value>CATALOGUE</value>
   </data>
   <data name="Detail_ResumePlayback" xml:space="preserve">
-    <value>RESUME PLAYBACK</value>
+    <value>REPRENDRE LA LECTURE</value>
   </data>
   <data name="Detail_Play" xml:space="preserve">
-    <value>PLAY</value>
+    <value>LIRE</value>
   </data>
   <data name="Detail_Watched" xml:space="preserve">
-    <value>WATCHED</value>
+    <value>VU</value>
   </data>
   <data name="Detail_MarkWatched" xml:space="preserve">
-    <value>MARK WATCHED</value>
+    <value>MARQUER COMME VU</value>
   </data>
   <data name="Detail_WatchTrailer" xml:space="preserve">
-    <value>WATCH TRAILER</value>
+    <value>VOIR LA BANDE-ANNONCE</value>
   </data>
   <data name="Detail_NoTrailer" xml:space="preserve">
-    <value>NO TRAILER</value>
+    <value>AUCUNE BANDE-ANNONCE</value>
   </data>
   <data name="Detail_Favourited" xml:space="preserve">
-    <value>FAVORITED</value>
+    <value>EN FAVORI</value>
   </data>
   <data name="Detail_Favourite" xml:space="preserve">
-    <value>FAVORITE</value>
+    <value>FAVORI</value>
   </data>
   <data name="Detail_InWatchlist" xml:space="preserve">
-    <value>IN WATCHLIST</value>
+    <value>DANS LA LISTE À VOIR</value>
   </data>
   <data name="Detail_Watchlist" xml:space="preserve">
-    <value>WATCHLIST</value>
+    <value>LISTE À VOIR</value>
   </data>
   <data name="Detail_Rate" xml:space="preserve">
-    <value>RATE</value>
+    <value>NOTER</value>
   </data>
   <data name="Detail_MarkUnwatchedTooltip" xml:space="preserve">
-    <value>Mark Unwatched</value>
+    <value>Marquer comme non visionné</value>
   </data>
   <data name="Detail_MarkWatchedTooltip" xml:space="preserve">
-    <value>Mark Watched</value>
+    <value>Marquer comme visionné</value>
   </data>
   <data name="Source_Rescan" xml:space="preserve">
-    <value>Rescan</value>
+    <value>Réanalyser</value>
   </data>
   <data name="Source_Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>Supprimer</value>
   </data>
   <data name="Source_RemoveTitle" xml:space="preserve">
-    <value>Remove Source</value>
+    <value>Supprimer la source</value>
   </data>
   <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” is removed from your library and the saved login for {1} is forgotten, unless another source still uses that server. Nothing on the server is deleted.</value>
+    <value>“{0}” est supprimé de votre bibliothèque et la connexion enregistrée pour {1} est oubliée, à moins qu'une autre source n'utilise encore ce serveur. Rien n'est supprimé sur le serveur.</value>
   </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
-    <value>“{0}” is removed from your library. Nothing on your disk is deleted.</value>
+    <value>“{0}” est supprimé de votre bibliothèque. Rien n'est supprimé sur votre disque.</value>
   </data>
   <data name="Smb_UsernameOptional" xml:space="preserve">
-    <value>Username (optional)</value>
+    <value>Nom d'utilisateur (facultatif)</value>
   </data>
   <data name="Smb_Password" xml:space="preserve">
-    <value>Password</value>
+    <value>Mot de passe</value>
   </data>
   <data name="Smb_AddNetworkSource" xml:space="preserve">
-    <value>Add Network Source</value>
+    <value>Ajouter une source réseau</value>
   </data>
   <data name="Smb_UncPrompt" xml:space="preserve">
-    <value>Enter the UNC path to your media folder:</value>
+    <value>Entrez le chemin UNC de votre dossier multimédia :</value>
   </data>
   <data name="Smb_CredentialNote" xml:space="preserve">
-    <value>If the share needs a sign-in, add it here. It is stored encrypted on this device and reused for rescans.</value>
+    <value>Si le partage nécessite une connexion, ajoutez-la ici. Elle est stockée de manière chiffrée sur cet appareil et réutilisée pour les réanalyses.</value>
   </data>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
-    <value>Could not access the network path: {0}</value>
+    <value>Impossible d'accéder au chemin réseau : {0}</value>
   </data>
   <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Network Source Error</value>
+    <value>Erreur de source réseau</value>
   </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
-    <value>Could not connect to {0}: {1}</value>
+    <value>Impossible de se connecter à {0} : {1}</value>
   </data>
   <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Connection Failed</value>
+    <value>Échec de la connexion</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
-    <value>Windows could not start the network-share connector.</value>
+    <value>Windows n'a pas pu démarrer le connecteur de partage réseau.</value>
   </data>
   <data name="Smb_Timeout" xml:space="preserve">
-    <value>Connecting to {0} timed out.</value>
+    <value>La connexion à {0} a expiré.</value>
   </data>
   <data name="Smb_CheckAddress" xml:space="preserve">
-    <value>Could not connect to {0}. Check the address and stored credentials.</value>
+    <value>Impossible de se connecter à {0}. Vérifiez l'adresse et les identifiants stockés.</value>
   </data>
   <data name="Privacy_Title" xml:space="preserve">
-    <value>Private by Design</value>
+    <value>Confidentialité intégrée</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Your library index and watch progress stay on this device. The only network calls Edendale makes are to TMDB for artwork and metadata — nothing else is sent anywhere.</value>
+    <value>L'index de votre bibliothèque et votre progression de lecture restent sur cet appareil. Les seuls appels réseau qu'Edendale effectue sont vers TMDB pour les illustrations et les métadonnées — rien d'autre n'est envoyé nulle part.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
-    <value>Pick a day, then a second day to close the range.</value>
+    <value>Choisissez un jour, puis un deuxième jour pour fermer la plage.</value>
   </data>
   <data name="Heatmap_PickSecondDay" xml:space="preserve">
-    <value>Pick a second day to close the range.</value>
+    <value>Choisissez un deuxième jour pour fermer la plage.</value>
   </data>
   <data name="Scope_All" xml:space="preserve">
-    <value>All</value>
+    <value>Tout</value>
   </data>
   <data name="Scope_People" xml:space="preserve">
-    <value>People</value>
+    <value>Personnes</value>
   </data>
   <data name="Scope_Films" xml:space="preserve">
     <value>Films</value>
   </data>
   <data name="Scope_Series" xml:space="preserve">
-    <value>Series</value>
+    <value>Séries</value>
   </data>
   <data name="Scope_PromptPeople" xml:space="preserve">
-    <value>Type a name to find actors and actresses.</value>
+    <value>Tapez un nom pour trouver des acteurs et actrices.</value>
   </data>
   <data name="Scope_PromptFilms" xml:space="preserve">
-    <value>Type a title to search films only.</value>
+    <value>Tapez un titre pour rechercher uniquement des films.</value>
   </data>
   <data name="Scope_PromptSeries" xml:space="preserve">
-    <value>Type a title to search series only.</value>
+    <value>Tapez un titre pour rechercher uniquement des séries.</value>
   </data>
   <data name="Scope_PromptAll" xml:space="preserve">
-    <value>Type a title to search the archive.</value>
+    <value>Tapez un titre pour rechercher dans l'archive.</value>
   </data>
   <data name="Search_StarringPrefix" xml:space="preserve">
-    <value>STARRING {0}</value>
+    <value>AVEC {0}</value>
   </data>
   <data name="Search_DateFrom" xml:space="preserve">
-    <value>From {0}</value>
+    <value>De {0}</value>
   </data>
   <data name="Search_DateUntil" xml:space="preserve">
-    <value>Until {0}</value>
+    <value>Jusqu'à {0}</value>
   </data>
   <data name="Search_TheIndex" xml:space="preserve">
-    <value>The Index</value>
+    <value>L'Index</value>
   </data>
   <data name="Search_AlsoInTitles" xml:space="preserve">
-    <value>Also in Titles</value>
+    <value>Aussi dans les titres</value>
   </data>
   <data name="Search_NothingMatches" xml:space="preserve">
-    <value>Nothing in the index matches this search.</value>
+    <value>Rien dans l'index ne correspond à cette recherche.</value>
   </data>
   <data name="Search_Filmography" xml:space="preserve">
-    <value>Filmography</value>
+    <value>Filmographie</value>
   </data>
   <data name="Search_FilmographyOf" xml:space="preserve">
-    <value>Filmography — {0}</value>
+    <value>Filmographie — {0}</value>
   </data>
   <data name="Search_NoCreditedTitles" xml:space="preserve">
-    <value>No credited titles were found.</value>
+    <value>Aucun titre crédité n'a été trouvé.</value>
   </data>
   <data name="Search_MissingCredentials" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale to search the full index.</value>
+    <value>Exécutez init.ps1 à la racine du dépôt pour ajouter les identifiants TMDB, puis recompilez Edendale pour rechercher dans tout l'index.</value>
   </data>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
-    <value>development build</value>
+    <value>version de développement</value>
   </data>
   <data name="Settings_Configured" xml:space="preserve">
-    <value>Configured</value>
+    <value>Configuré</value>
   </data>
   <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Missing — run init.ps1, then rebuild Edendale</value>
+    <value>Manquants — exécutez init.ps1, puis recompilez Edendale</value>
   </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
-    <value>Replicated to {0}</value>
+    <value>Répliqué sur {0}</value>
   </data>
   <data name="Settings_StoredOnThisDevice" xml:space="preserve">
-    <value>Stored on this device</value>
+    <value>Stocké sur cet appareil</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
-    <value>Could not update the startup entry — Windows refused the registry change.</value>
+    <value>Impossible de mettre à jour l'entrée de démarrage — Windows a refusé la modification du registre.</value>
   </data>
   <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Unavailable — TMDB credentials missing</value>
+    <value>Indisponible — identifiants TMDB manquants</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
-    <value>Connected as {0}</value>
+    <value>Connecté en tant que {0}</value>
   </data>
   <data name="Settings_AwaitingApproval" xml:space="preserve">
-    <value>Waiting for approval on the TMDB page</value>
+    <value>En attente d'approbation sur la page TMDB</value>
   </data>
   <data name="Settings_NotConnected" xml:space="preserve">
-    <value>Not connected</value>
+    <value>Non connecté</value>
   </data>
   <data name="Tmdb_MissingCredentials" xml:space="preserve">
-    <value>Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale.</value>
+    <value>Exécutez init.ps1 à la racine du dépôt pour ajouter les identifiants TMDB, puis recompilez Edendale.</value>
   </data>
   <data name="Tmdb_Unavailable" xml:space="preserve">
-    <value>TMDB is unavailable — credentials are missing.</value>
+    <value>TMDB est indisponible — les identifiants sont manquants.</value>
   </data>
   <data name="Tmdb_NoBrowser" xml:space="preserve">
-    <value>No browser could be opened. Scan the QR code with another device.</value>
+    <value>Aucun navigateur n'a pu être ouvert. Scannez le code QR avec un autre appareil.</value>
   </data>
   <data name="Tmdb_ConnectFailed" xml:space="preserve">
-    <value>Could not start the TMDB connection: {0}</value>
+    <value>Impossible de démarrer la connexion TMDB : {0}</value>
   </data>
   <data name="Tmdb_QrFailed" xml:space="preserve">
-    <value>The approval page is ready, but its QR code could not be created: {0}</value>
+    <value>La page d'approbation est prête, mais son code QR n'a pas pu être créé : {0}</value>
   </data>
   <data name="Tmdb_ApprovalRejected" xml:space="preserve">
-    <value>TMDB did not accept the approval ({0}). Approve the request in the browser, then try again.</value>
+    <value>TMDB n'a pas accepté l'approbation ({0}). Approuvez la requête dans le navigateur, puis réessayez.</value>
   </data>
   <data name="Tmdb_NoPendingApproval" xml:space="preserve">
-    <value>No TMDB connection is awaiting approval.</value>
+    <value>Aucune connexion TMDB n'est en attente d'approbation.</value>
   </data>
   <data name="Tmdb_NotConnected" xml:space="preserve">
-    <value>Not connected to TMDB.</value>
+    <value>Non connecté à TMDB.</value>
   </data>
   <data name="Tmdb_SyncStatus" xml:space="preserve">
-    <value>Synced {0} — {1} pushed, {2} pulled</value>
+    <value>Synchronisé {0} — {1} envoyés, {2} récupérés</value>
   </data>
   <data name="Tmdb_SyncFailed" xml:space="preserve">
-    <value>Sync failed: {0}</value>
+    <value>Échec de la synchronisation : {0}</value>
   </data>
   <data name="Tmdb_NotConfigured" xml:space="preserve">
-    <value>TMDB credentials are not configured. Run init.ps1 from the repository root.</value>
+    <value>Les identifiants TMDB ne sont pas configurés. Exécutez init.ps1 depuis la racine du dépôt.</value>
   </data>
   <data name="Tmdb_RequestFailed" xml:space="preserve">
-    <value>TMDB request failed (HTTP {0})</value>
+    <value>La requête TMDB a échoué (HTTP {0})</value>
   </data>
   <data name="Tmdb_InvalidJson" xml:space="preserve">
-    <value>TMDB returned invalid JSON: {0}</value>
+    <value>TMDB a renvoyé un JSON invalide : {0}</value>
   </data>
   <data name="Person_NoBiography" xml:space="preserve">
-    <value>TMDB has no biography for this person yet.</value>
+    <value>TMDB n'a pas encore de biographie pour cette personne.</value>
   </data>
   <data name="Collection_AllArchives" xml:space="preserve">
-    <value>All Archives</value>
+    <value>Toutes les archives</value>
   </data>
   <data name="Collection_FeatureFilms" xml:space="preserve">
-    <value>Feature Films</value>
+    <value>Longs métrages</value>
   </data>
   <data name="Collection_Series" xml:space="preserve">
-    <value>Series</value>
+    <value>Séries</value>
   </data>
   <data name="Credit_Untitled" xml:space="preserve">
-    <value>Untitled</value>
+    <value>Sans titre</value>
   </data>
   <data name="Credit_Unknown" xml:space="preserve">
-    <value>Unknown</value>
+    <value>Inconnu</value>
   </data>
   <data name="Credit_DirectedBy" xml:space="preserve">
-    <value>Directed by {0}</value>
+    <value>Réalisé par {0}</value>
   </data>
   <data name="Credit_CreatedBy" xml:space="preserve">
-    <value>Created by {0}</value>
+    <value>Créé par {0}</value>
   </data>
   <data name="Activation_UnsupportedFile" xml:space="preserve">
-    <value>Edendale cannot play {0} — unsupported file type.</value>
+    <value>Edendale ne peut pas lire {0} — type de fichier non pris en charge.</value>
   </data>
   <data name="Activation_BadLink" xml:space="preserve">
-    <value>Edendale could not understand this link.</value>
+    <value>Edendale n'a pas pu interpréter ce lien.</value>
   </data>
   <data name="Plural_ItemOne" xml:space="preserve">
-    <value>{0} item</value>
+    <value>{0} élément</value>
   </data>
   <data name="Plural_ItemOther" xml:space="preserve">
-    <value>{0} items</value>
+    <value>{0} éléments</value>
   </data>
   <data name="Plural_EpisodeOne" xml:space="preserve">
-    <value>{0} episode</value>
+    <value>{0} épisode</value>
   </data>
   <data name="Plural_EpisodeOther" xml:space="preserve">
-    <value>{0} episodes</value>
+    <value>{0} épisodes</value>
   </data>
   <data name="Plural_SeasonOne" xml:space="preserve">
-    <value>{0} season</value>
+    <value>{0} saison</value>
   </data>
   <data name="Plural_SeasonOther" xml:space="preserve">
-    <value>{0} seasons</value>
+    <value>{0} saisons</value>
   </data>
   <data name="Plural_ReleaseOne" xml:space="preserve">
-    <value>{0} release</value>
+    <value>{0} sortie</value>
   </data>
   <data name="Plural_ReleaseOther" xml:space="preserve">
-    <value>{0} releases</value>
+    <value>{0} sorties</value>
   </data>
   <data name="Plural_DayOne" xml:space="preserve">
-    <value>{0} day</value>
+    <value>{0} jour</value>
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
-    <value>{0} days</value>
+    <value>{0} jours</value>
   </data>
 </root>
