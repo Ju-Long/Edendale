@@ -30,10 +30,10 @@ platform's implementation.
 | Branch | Responsibility |
 |---|---|
 | `main` | Universal documentation and repository metadata only |
-| `codex/apple` | Apple application and Apple-specific delivery |
-| `codex/android` | Android application and Android-specific delivery |
-| `codex/windows` | Windows application and Windows-specific delivery |
-| `codex/web` | Static website and Web-specific delivery |
+| `apple` | Apple application and Apple-specific delivery |
+| `android` | Android application and Android-specific delivery |
+| `windows` | Windows application and Windows-specific delivery |
+| `web` | Static website and Web-specific delivery |
 
 The platform branches begin with the same universal Markdown files:
 
@@ -61,7 +61,7 @@ through the platform branch's issue and pull-request workflow.
 
 ## Windows development
 
-The `codex/windows` branch contains a self-contained C# and WinUI 3 desktop
+The `windows` branch contains a self-contained C# and WinUI 3 desktop
 application. Filename parsing, library rules, watch and user-media merging,
 TMDB access, persistence, playback, SMB integration, routing, and tests are
 implemented natively in this branch; no shared runtime or generated bridge is
@@ -136,7 +136,7 @@ local filenames before optional TMDB enrichment begins.
 ### CI and release
 
 `.github/workflows/ci.yml` builds the x64 Release configuration and runs the
-domain tests only for pushes and pull requests targeting `codex/windows`. It
+domain tests only for pushes and pull requests targeting `windows`. It
 uses no credentials and publishes no artifacts.
 
 To create the current unpackaged Release build on Windows:

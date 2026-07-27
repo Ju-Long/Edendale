@@ -13,10 +13,10 @@ Read [README.md](README.md) for the product and branch model, and
 | Branch | Allowed scope |
 |---|---|
 | `main` | Universal documentation and repository metadata |
-| `codex/apple` | Apple implementation and delivery |
-| `codex/android` | Android implementation and delivery |
-| `codex/windows` | Windows implementation and delivery |
-| `codex/web` | Static Web implementation and delivery |
+| `apple` | Apple implementation and delivery |
+| `android` | Android implementation and delivery |
+| `windows` | Windows implementation and delivery |
+| `web` | Static Web implementation and delivery |
 
 Before changing files, identify the active branch and inspect its manifests,
 toolchain files, and README. Never assume that commands or directory layouts
