@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- en-CA. Generated to match Apple/Shared/Localizable.xcstrings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="detail_favorite">Favourite</string>
+</resources>

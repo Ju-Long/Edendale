@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- en-US. Generated to match Apple/Shared/Localizable.xcstrings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="settings_backup_note">Watch progress, favorites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
+    <string name="tmdb_account_intro">Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB.</string>
+</resources>

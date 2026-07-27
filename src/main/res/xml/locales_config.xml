@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The languages Edendale ships, matching Apple/Shared/Localizable.xcstrings.
+
+    Android 13+ reads this to offer Edendale in Settings > System > Languages >
+    App languages, so a reader can pick a language for this app alone rather
+    than for the whole device. Every tag here must have a matching
+    values-<qualifier>/strings.xml, and en is the base catalogue in values/.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="en-AU" />
+    <locale android:name="en-CA" />
+    <locale android:name="en-GB" />
+    <locale android:name="en-US" />
+    <locale android:name="de" />
+    <locale android:name="es-ES" />
+    <locale android:name="es-MX" />
+    <locale android:name="fr" />
+    <locale android:name="it" />
+    <locale android:name="ja" />
+    <locale android:name="ko" />
+    <locale android:name="nl" />
+    <locale android:name="pt-BR" />
+    <locale android:name="pt-PT" />
+    <locale android:name="ru" />
+    <locale android:name="sv" />
+    <locale android:name="zh-Hans" />
+    <locale android:name="zh-Hant" />
+</locale-config>
