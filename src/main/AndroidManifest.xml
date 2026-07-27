@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- One APK supports handheld Android and Android TV. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+
+    <application
+        android:name=".EdendaleApplication"
+        android:allowBackup="true"
+        android:banner="@drawable/tv_banner"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:theme="@style/Theme.Edendale">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:resizeableActivity="true">
+            <!-- Freeform/desktop windowing sizing. Without this the shell opens
+                 at a phone-shaped default (412x732dp) even on a 1920x1080dp
+                 desktop, which lands the app in PhoneShell. The default is wide
+                 enough to clear the 1100dp extended-navigation threshold in
+                 EdendaleApp. The minimum is deliberately conservative — it also
+                 governs split-screen, where a portrait phone gives each half
+                 roughly 400dp of height. -->
+            <layout
+                android:defaultWidth="1280dp"
+                android:defaultHeight="800dp"
+                android:gravity="center"
+                android:minWidth="400dp"
+                android:minHeight="400dp" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+
+            <!-- Custom scheme deep linking -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="edendale" />
+            </intent-filter>
+
+            <!-- Android App Links (verified web links) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="edendale.babasama.com" android:pathPrefix="/search" />
+                <data android:scheme="https" android:host="edendale.babasama.com" android:pathPrefix="/media" />
+                <data android:scheme="https" android:host="edendale.babasama.com" android:pathPrefix="/library" />
+                <data android:scheme="https" android:host="edendale.babasama.com" android:pathPrefix="/play" />
+            </intent-filter>
+        </activity>
+
+        <!-- In-app player; also the "Open with" target for video files, which
+             play directly without being imported into the library. -->
+        <activity
+            android:name=".player.PlayerActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorLandscape"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode">
+            <!-- screenOrientation is ignored in multi-window, so a freeform
+                 desktop window needs its own 16:9 default to open landscape. -->
+            <layout
+                android:defaultWidth="1280dp"
+                android:defaultHeight="720dp"
+                android:gravity="center"
+                android:minWidth="400dp"
+                android:minHeight="240dp" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

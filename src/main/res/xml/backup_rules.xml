@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Android Keystore keys do not leave the device, so encrypted blobs must not either. -->
+    <exclude domain="sharedpref" path="edendale_tmdb_session.xml" />
+    <exclude domain="sharedpref" path="edendale_smb_credentials.xml" />
+</full-backup-content>

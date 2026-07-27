@@ -1,0 +1,37 @@
+name: Android CI
+
+on:
+  push:
+    branches: [codex/android]
+  pull_request:
+    branches: [codex/android]
+
+permissions: {}
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Test and build Android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Run hermetic tests and build debug APK
+        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug

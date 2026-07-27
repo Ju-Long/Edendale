@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Base (English) catalogue. Every user-facing string on Android lives here;
+    translations sit in values-<locale>/strings.xml.
+
+    Labels are stored in natural case. The view layer applies .uppercase() where
+    the design calls for caps, matching Apple's .textCase(.uppercase) — that way
+    scripts without case (CJK) are left alone.
+-->
+<resources>
+    <string name="app_name">Edendale</string>
+
+    <!-- Shell -->
+    <string name="brand_wordmark">EDENDALE</string>
+    <string name="brand_initial">E</string>
+    <string name="tab_movies_shows">Movies &amp; Shows</string>
+    <string name="tab_downloaded">Downloaded</string>
+    <string name="tab_search">Search</string>
+    <string name="action_settings">Settings</string>
+    <string name="toast_local_media_unsupported">Local media links are not supported on Android.</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_go_back">Go Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_rescan">Rescan</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_try_again">Try Again</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_details">Details</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_connecting">Connecting…</string>
+    <string name="action_read_more">Read more</string>
+    <string name="action_show_less">Show less</string>
+
+    <!-- Movies &amp; Shows -->
+    <string name="shelf_trending">Trending</string>
+    <string name="shelf_popular_films">Popular Films</string>
+    <string name="shelf_popular_series">Popular Series</string>
+    <string name="shelf_top_rated">Top Rated</string>
+    <string name="section_curated_collections">Curated Collections</string>
+    <string name="hero_continue_watching">Continue Watching</string>
+    <string name="hero_featured">Featured in the Archive</string>
+    <string name="empty_projector_dark_title">The Projector Is Dark</string>
+    <string name="empty_projector_dark_message">Add a TMDB token to secrets.json and rebuild to browse movies and shows.</string>
+    <string name="empty_reel_snapped_title">The Reel Snapped</string>
+    <string name="error_archive_not_loaded">The archive could not be loaded.</string>
+    <string name="loading_the_archive">Loading the Archive</string>
+
+    <!-- Collection filters -->
+    <string name="collection_all_archives">All Archives</string>
+    <string name="collection_feature_films">Feature Films</string>
+    <string name="collection_series">Series</string>
+
+    <!-- Search scopes -->
+    <string name="scope_all">All</string>
+    <string name="scope_people">People</string>
+    <string name="scope_films">Films</string>
+    <string name="scope_series">Series</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Movies, shows, people</string>
+    <string name="search_clear_query">Clear query</string>
+    <string name="search_clear_date">Clear date</string>
+    <string name="search_clear_scope">Clear scope</string>
+    <string name="search_clear_person">Clear person</string>
+    <string name="search_any_date">Any Date</string>
+    <string name="search_date_range">%1$s to %2$s</string>
+    <string name="search_offline_title">Search Is Offline</string>
+    <string name="search_offline_message">Add a TMDB token to secrets.json and rebuild to search the archive.</string>
+    <string name="search_section_library">From Your Library</string>
+    <string name="search_section_tmdb">From TMDB</string>
+    <string name="search_section_results">Search Results</string>
+    <string name="search_section_people">People</string>
+    <string name="search_section_also_titles">Also in Titles</string>
+    <string name="search_section_trending_today">Trending Today</string>
+    <string name="search_empty_title">No Reels Found</string>
+    <string name="search_empty_message">Try another title or a shorter search phrase.</string>
+    <string name="search_prompt_title">Search the Archive</string>
+    <string name="search_prompt_message">Find films and series, then open the same rich detail view used by the home shelves.</string>
+    <string name="scope_prompt_people_title">Search People</string>
+    <string name="scope_prompt_movies_title">Search Films</string>
+    <string name="scope_prompt_shows_title">Search Series</string>
+    <string name="scope_prompt_all_title">Search the Archive</string>
+    <string name="scope_prompt_people_message">Type a name to find actors and actresses.</string>
+    <string name="scope_prompt_movies_message">Type a title to search films only.</string>
+    <string name="scope_prompt_shows_message">Type a title to search series only.</string>
+    <string name="scope_prompt_all_message">Find films and series by title or release date.</string>
+    <string name="error_search_failed">Search failed.</string>
+
+    <!-- Release heatmap -->
+    <string name="heatmap_previous_year">Previous Year</string>
+    <string name="heatmap_next_year">Next Year</string>
+    <string name="heatmap_apply_range">Apply Range</string>
+
+    <!-- Detail -->
+    <string name="detail_kind_feature_film">Feature Film</string>
+    <string name="detail_kind_series">Series</string>
+    <string name="detail_watch_trailer">Watch Trailer</string>
+    <string name="detail_hide_trailer">Hide Trailer</string>
+    <string name="detail_section_story">The Story</string>
+    <string name="detail_section_cast">Cast</string>
+    <string name="detail_mark_watched">Mark Watched</string>
+    <string name="detail_favorite">Favorite</string>
+    <string name="detail_watchlist">Watchlist</string>
+    <string name="detail_rate">Rate</string>
+    <string name="error_details_not_loaded">Details could not be loaded.</string>
+    <string name="error_season_not_loaded">This season could not be loaded.</string>
+
+    <!-- Critical consensus scorecard -->
+    <string name="consensus_tmdb">TMDB</string>
+    <string name="consensus_votes">Votes</string>
+    <string name="consensus_seasons">Seasons</string>
+    <string name="consensus_episodes">Episodes</string>
+    <string name="consensus_score_suffix">/10</string>
+
+    <!-- Seasons and episodes -->
+    <string name="section_episodes">Episodes</string>
+    <string name="season_number">Season %1$d</string>
+    <string name="season_specials">Specials</string>
+    <string name="episode_number">Episode %1$d</string>
+    <string name="episode_code">S%1$02dE%2$02d</string>
+    <string name="season_no_episodes">TMDB lists no episodes for this season yet.</string>
+    <string name="runtime_minutes">%1$d min</string>
+    <string name="metadata_separator">%1$s · %2$s</string>
+
+    <!-- Filmography -->
+    <string name="filmography_title">Filmography</string>
+    <string name="filmography_error_title">Error Loading Filmography</string>
+    <string name="filmography_error_message">Failed to load filmography.</string>
+    <string name="filmography_empty_title">No Roles Found</string>
+    <string name="filmography_empty_message">This person has no known acting roles in the archive.</string>
+    <string name="person_no_biography">TMDB has no biography for this person yet.</string>
+
+    <!-- Downloaded / library -->
+    <string name="section_continue_watching">Continue Watching</string>
+    <string name="section_movies">Movies</string>
+    <string name="section_tv_shows">TV Shows</string>
+    <string name="section_sources">Sources</string>
+    <string name="library_empty_title">The Library Is Silent</string>
+    <string name="library_empty_message">Add a file or link a source to continue.</string>
+    <string name="library_empty_message_tv">Link a source to continue.</string>
+    <string name="add_source">Add a source</string>
+    <string name="add_local_folder">Add Local Folder</string>
+    <string name="add_local_folder_ellipsis">Add Local Folder…</string>
+    <string name="add_network_source">Add Network Source</string>
+    <string name="link_network_source_ellipsis">Link Network Source…</string>
+    <string name="scanning_folder">Scanning %1$s…</string>
+    <string name="scanning">Scanning…</string>
+    <string name="enriching_metadata">Enriching metadata…</string>
+    <string name="reading">Reading…</string>
+    <string name="source_kind_network_share">Network share</string>
+    <string name="source_kind_local_folder_lower">Local folder</string>
+    <string name="source_kind_smb">SMB</string>
+    <string name="source_kind_local_folder">Local Folder</string>
+    <string name="rescan_folder">Rescan %1$s</string>
+    <string name="remove_folder">Remove %1$s</string>
+    <string name="remove_source_title">Remove Source</string>
+    <string name="remove_source_confirm_title">Remove %1$s?</string>
+    <string name="remove_source_message_smb">“%1$s” is removed from your library and the saved login for %2$s is forgotten, unless another source still uses that server. Nothing on the server is deleted.</string>
+    <string name="remove_source_message_local">“%1$s” is removed from your library. Nothing on your device is deleted.</string>
+    <string name="remove_source_message_generic">Edendale forgets this source and everything indexed from it, and any saved login for the host once no other source needs it. Nothing is deleted from your device or the share.</string>
+    <string name="mark_watched">Mark watched</string>
+    <string name="mark_unwatched">Mark unwatched</string>
+    <string name="watched">Watched</string>
+    <string name="media_type_movie">movie</string>
+    <string name="media_type_series">series</string>
+    <string name="poster_semantics">%1$s, %2$s</string>
+
+    <!-- Network share import -->
+    <string name="smb_choose_folder">Choose a Folder</string>
+    <string name="smb_host_label">Host / IP Address</string>
+    <string name="smb_host_placeholder">e.g. 192.168.1.100</string>
+    <string name="smb_username_label">Username (Optional)</string>
+    <string name="smb_password_label">Password (Optional)</string>
+    <string name="smb_no_folders">No folders here. Import this one to scan the videos it holds.</string>
+    <string name="smb_parent_folder">…</string>
+    <string name="smb_import_this_folder">Import This Folder</string>
+    <string name="error_server_unreachable">That server could not be reached.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_watch_progress">Watch Progress</string>
+    <string name="settings_stored_on_device">Stored on this device</string>
+    <string name="settings_tmdb_access">TMDB Access</string>
+    <string name="settings_tmdb_configured">Configured at build time</string>
+    <string name="settings_tmdb_missing">Add a token to secrets.json and rebuild</string>
+    <string name="settings_section_android_tv">Android TV</string>
+    <string name="settings_android_tv_note">Large type, overscan-safe margins, remote focus lift, and landscape presentation are active.</string>
+    <string name="settings_section_sources">Sources</string>
+    <string name="settings_no_sources">No sources linked</string>
+    <string name="settings_section_backup">Backup</string>
+    <string name="settings_backup_note">Watch progress, favourites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
+    <string name="settings_backup_secrets_note">Your TMDB session and any saved network-share logins are excluded from backup and device transfer: they are encrypted to this device and cannot leave it.</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_privacy_note">No analytics. Network requests are limited to TMDB and your private sync providers.</string>
+    <string name="settings_section_attribution">Attribution</string>
+    <string name="tmdb_attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
+    <string name="settings_open_source">Edendale · Free and open source</string>
+
+    <!-- TMDB account -->
+    <string name="settings_section_tmdb_account">TMDB Account</string>
+    <string name="tmdb_account_intro">Connect your TMDB account to sync favourites, your watchlist, and ratings across devices. Watch time stays out of TMDB.</string>
+    <string name="tmdb_loading_account">Loading account…</string>
+    <string name="tmdb_account_label">Account</string>
+    <string name="tmdb_not_connected">Not connected</string>
+    <string name="tmdb_connect">Connect TMDB Account</string>
+    <string name="tmdb_needs_credentials">Signing in needs TMDB credentials in secrets.json, followed by a rebuild.</string>
+    <string name="tmdb_starting_sign_in">Starting sign-in…</string>
+    <string name="tmdb_awaiting_approval">Approve Edendale in the browser that opened, or scan the QR code with another device.</string>
+    <string name="tmdb_click_to_continue">Click here to continue</string>
+    <string name="tmdb_finishing_sign_in">Finishing sign-in…</string>
+    <string name="tmdb_connected">Connected</string>
+    <string name="tmdb_connected_as">Connected as %1$s</string>
+    <string name="tmdb_last_sync">Last sync</string>
+    <string name="tmdb_sync_now">Sync now</string>
+    <string name="tmdb_sign_out">Sign out</string>
+    <string name="tmdb_qr_content_description">TMDB account approval QR code</string>
+    <string name="tmdb_error_saved_signin">The saved TMDB sign-in could not be read. Connect the account again.</string>
+    <string name="tmdb_error_start">Could not start the TMDB connection.</string>
+    <string name="tmdb_error_no_browser">No browser could be opened. Scan the QR code with another device.</string>
+    <string name="tmdb_error_approval">TMDB did not accept the approval. Approve the request, then try again.</string>
+    <string name="tmdb_error_sync">TMDB sync failed.</string>
+    <string name="tmdb_sync_status">Synced %1$s — %2$d pushed, %3$d pulled</string>
+
+    <!-- Player -->
+    <string name="player_close">Close player</string>
+    <string name="player_picture_in_picture">Picture in Picture</string>
+    <string name="player_back_10">Back 10 seconds</string>
+    <string name="player_forward_10">Forward 10 seconds</string>
+
+    <!-- Library import errors -->
+    <string name="error_folder_not_opened">That folder could not be opened.</string>
+    <string name="default_folder_name">Folder</string>
+    <string name="default_video_name">Video</string>
+    <string name="error_not_share_address">\"%1$s\" is not a share address. Try 192.168.1.10/media.</string>
+    <string name="error_source_scan">%1$s: %2$s</string>
+    <string name="error_source_partial">%1$s: part of this source could not be read, so nothing was removed from the library.</string>
+    <string name="error_permission_revoked">access to this folder was revoked — add it again</string>
+    <string name="error_folder_unopenable">the folder could not be opened</string>
+    <string name="error_share_unreachable">the share is unreachable or the credentials were rejected</string>
+    <string name="error_address_is_file">that address is a file, not a share</string>
+    <string name="error_scan_failed">the scan failed</string>
+
+    <plurals name="item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <plurals name="episode_count">
+        <item quantity="one">%1$d episode</item>
+        <item quantity="other">%1$d episodes</item>
+    </plurals>
+    <plurals name="season_count">
+        <item quantity="one">%1$d season</item>
+        <item quantity="other">%1$d seasons</item>
+    </plurals>
+</resources>

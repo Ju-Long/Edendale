@@ -46,6 +46,43 @@ The platform branches begin with the same universal Markdown files:
 `TASKS.md` is intentionally not part of the new repository. Work is tracked
 through the platform branch's issue and pull-request workflow.
 
+## Android development
+
+The `codex/android` branch contains a self-contained Kotlin application for
+Android phones, tablets, TV, and resizable desktop-style windows. Jetpack
+Compose owns the UI, Room owns local records, Media3 owns playback, and the
+branch implements filename parsing, TMDB access, account synchronization,
+search, release calendars, and merge rules natively.
+
+Requirements:
+
+- JDK 17.
+- Android SDK 35; the app supports API 26 and newer. Set `ANDROID_HOME` or
+  create a gitignored `local.properties`.
+
+TMDB-backed features are optional. To enable them locally, copy
+`secrets.example.json` to the gitignored `secrets.json`, then add the TMDB API
+Read Access Token and legacy v3 API key. Missing credentials leave the app
+buildable and disable only TMDB-backed features.
+
+Run the hermetic JVM tests and build the debug APK:
+
+```sh
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
+```
+
+Build an unsigned release APK with:
+
+```sh
+./gradlew assembleRelease
+```
+
+The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
+`build/outputs/apk/release/Edendale-release-unsigned.apk`. Release signing is
+not stored in the repository and must be supplied through protected local or
+CI configuration before distribution.
+
 ### Branch contract
 
 - `main` remains free of application source, build systems, generated output,

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Window theme only — real theming happens in Compose (Theme.kt).
+        Based on the platform dark Material theme (no extra dependency);
+        dark-first to match the Edendale "cinematic" palette and avoid a
+        white flash before Compose draws.
+    -->
+    <style name="Theme.Edendale" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/edendale_background</item>
+        <item name="android:statusBarColor">@color/edendale_background</item>
+        <item name="android:navigationBarColor">@color/edendale_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
