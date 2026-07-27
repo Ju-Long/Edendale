@@ -30,10 +30,10 @@ platform's implementation.
 | Branch | Responsibility |
 |---|---|
 | `main` | Universal documentation and repository metadata only |
-| `codex/apple` | Apple application and Apple-specific delivery |
-| `codex/android` | Android application and Android-specific delivery |
-| `codex/windows` | Windows application and Windows-specific delivery |
-| `codex/web` | Static website and Web-specific delivery |
+| `apple` | Apple application and Apple-specific delivery |
+| `android` | Android application and Android-specific delivery |
+| `windows` | Windows application and Windows-specific delivery |
+| `web` | Static website and Web-specific delivery |
 
 The platform branches begin with the same universal Markdown files:
 
@@ -48,7 +48,7 @@ through the platform branch's issue and pull-request workflow.
 
 ## Apple development
 
-The `codex/apple` branch contains the native multiplatform Xcode project for
+The `apple` branch contains the native multiplatform Xcode project for
 iOS, iPadOS, macOS, tvOS, and visionOS. It requires Xcode 26.5 or newer.
 
 Before a local build, copy `Shared/Example.xcconfig` to
