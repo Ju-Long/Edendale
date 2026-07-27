@@ -1,0 +1,88 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.LandscapeCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    IsTabStop="False">
+
+    <!-- 16:9 landscape artwork card (LandscapeCard.swift): still/backdrop
+         with caption metadata, watch-progress hairline, watched check, and
+         the same hover treatment as PosterCard. CaptionInside=True scrims
+         the caption into the artwork (curated-collection cards). -->
+    <StackPanel x:Name="Root" Spacing="8" HorizontalAlignment="Left">
+        <Border
+            x:Name="ArtworkHost"
+            CornerRadius="4"
+            Background="{StaticResource EdendaleSurfaceBrush}"
+            BorderBrush="{StaticResource EdendaleHairlineBorderBrush}"
+            BorderThickness="1">
+            <Grid>
+                <controls:SvgIcon
+                    x:Name="PlaceholderIcon"
+                    Width="36"
+                    Height="36"
+                    Foreground="{StaticResource EdendaleSurfaceHighBrush}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+                <Image x:Name="ArtworkImage" Stretch="UniformToFill" />
+
+                <StackPanel
+                    x:Name="InsideCaption"
+                    VerticalAlignment="Bottom"
+                    Padding="16,28,16,12"
+                    Spacing="2"
+                    Visibility="Collapsed">
+                    <StackPanel.Background>
+                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                            <GradientStop Color="#000A0A0F" Offset="0" />
+                            <GradientStop Color="{StaticResource EdendaleBackgroundColor}" Offset="1" />
+                        </LinearGradientBrush>
+                    </StackPanel.Background>
+                    <TextBlock
+                        x:Name="InsideTitleText"
+                        Style="{StaticResource TitleLGTextStyle}"
+                        TextTrimming="CharacterEllipsis" />
+                    <TextBlock
+                        x:Name="InsideSubtitleText"
+                        Style="{StaticResource BodySMTextStyle}"
+                        TextWrapping="NoWrap"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Border
+                    x:Name="WatchedBadge"
+                    Background="{StaticResource EdendaleSurfaceBrush}"
+                    CornerRadius="12"
+                    Width="24"
+                    Height="24"
+                    Margin="10"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Visibility="Collapsed">
+                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/eye.svg" Width="10" Height="10" Foreground="{StaticResource EdendaleGoldBrush}" />
+                </Border>
+                <Rectangle
+                    x:Name="ProgressHairline"
+                    Height="3"
+                    Fill="{StaticResource EdendaleGoldBrush}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Visibility="Collapsed" />
+            </Grid>
+        </Border>
+
+        <TextBlock
+            x:Name="TitleText"
+            FontFamily="{StaticResource TextFontFamily}"
+            FontSize="15"
+            FontWeight="SemiBold"
+            Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+            TextTrimming="CharacterEllipsis" />
+        <TextBlock
+            x:Name="SubtitleText"
+            Style="{StaticResource BodySMTextStyle}"
+            TextWrapping="NoWrap"
+            TextTrimming="CharacterEllipsis"
+            Visibility="Collapsed" />
+    </StackPanel>
+</UserControl>

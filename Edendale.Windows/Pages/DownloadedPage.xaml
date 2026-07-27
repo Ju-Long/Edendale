@@ -1,0 +1,185 @@
+<Page
+    x:Class="Edendale.Windows.Pages.DownloadedPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    xmlns:pages="using:Edendale.Windows.Pages"
+    xmlns:services="using:Edendale.Windows.Services"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{StaticResource EdendaleBackgroundBrush}"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <DataTemplate x:Key="LibraryMovieTemplate" x:DataType="services:LibraryMovie">
+            <Button Style="{StaticResource CardButtonStyle}" Click="Movie_Click" Tag="{x:Bind}">
+                <Button.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem Text="Remove" Click="RemoveMovie_Click" Tag="{x:Bind}" />
+                    </MenuFlyout>
+                </Button.ContextFlyout>
+                <controls:PosterCard
+                    Title="{x:Bind Title}"
+                    Subtitle="{x:Bind DisplaySubtitle}"
+                    ImageUrl="{x:Bind PosterUrl}"
+                    CardWidth="180"
+                    IsWatched="{x:Bind pages:DownloadedPage.MovieWatched(TmdbId)}"
+                    PlaceholderAsset="ms-appx:///Assets/Icons/film.svg" />
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="LibraryShowTemplate" x:DataType="services:LibraryShow">
+            <Button Style="{StaticResource CardButtonStyle}" Click="Show_Click" Tag="{x:Bind}">
+                <Button.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem Text="Remove" Click="RemoveShow_Click" Tag="{x:Bind}" />
+                    </MenuFlyout>
+                </Button.ContextFlyout>
+                <controls:PosterCard
+                    Title="{x:Bind Name}"
+                    Subtitle="{x:Bind DisplaySubtitle}"
+                    ImageUrl="{x:Bind PosterUrl}"
+                    CardWidth="180"
+                    PlaceholderAsset="ms-appx:///Assets/Icons/tv.svg" />
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ResumeTemplate" x:DataType="pages:ResumeEntry">
+            <Button Style="{StaticResource CardButtonStyle}" Click="Resume_Click" Tag="{x:Bind}">
+                <controls:LandscapeCard
+                    Title="{x:Bind Title}"
+                    Subtitle="{x:Bind Subtitle}"
+                    ImageUrl="{x:Bind ImageUrl}"
+                    CardWidth="320"
+                    Progress="{x:Bind Progress}"
+                    PlaceholderAsset="{x:Bind PlaceholderAsset}" />
+            </Button>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <!-- Empty state (Infuse-inspired, restyled for the archive). -->
+        <StackPanel
+            x:Name="EmptyState"
+            Spacing="32"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="Collapsed">
+            <Border
+                Width="240"
+                Height="220"
+                CornerRadius="12"
+                Background="{StaticResource EdendaleSurfaceLowBrush}"
+                HorizontalAlignment="Center">
+                <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-closed.svg" Width="72" Height="72" Foreground="{StaticResource EdendaleSurfaceHighBrush}" />
+            </Border>
+            <StackPanel Spacing="12">
+                <TextBlock
+                    Text="THE LIBRARY&#x0a;IS SILENT"
+                    FontFamily="{StaticResource DisplayFontFamily}"
+                    FontSize="56"
+                    Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                    TextAlignment="Center" />
+                <TextBlock
+                    Text="Connect your local film collection to begin your cinematic journey."
+                    Style="{StaticResource BodyLGTextStyle}"
+                    TextAlignment="Center"
+                    MaxWidth="340" />
+            </StackPanel>
+            <StackPanel Spacing="16" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Center">
+                    <Button Style="{StaticResource ArchivePrimaryButtonStyle}" Click="AddFolder_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-circle-plus.svg" Width="12" Height="12" />
+                            <TextBlock Text="ADD LOCAL FOLDER" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ArchiveSecondaryButtonStyle}" Click="AddNetworkSource_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/link.svg" Width="12" Height="12" />
+                            <TextBlock Text="ADD NETWORK SOURCE" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <Button
+                    Content="LEARN ABOUT SYNCING"
+                    Style="{StaticResource ArchiveGhostButtonStyle}"
+                    HorizontalAlignment="Center"
+                    Click="LearnSyncing_Click" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Library content -->
+        <ScrollViewer x:Name="LibraryScroll" Visibility="Collapsed">
+            <StackPanel Spacing="40" Padding="48,24,48,64">
+
+                <Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <ProgressRing
+                            x:Name="StatusRing"
+                            IsActive="False"
+                            Width="18"
+                            Height="18"
+                            Foreground="{StaticResource EdendaleGoldBrush}" />
+                        <TextBlock x:Name="StatusText" Style="{StaticResource LabelCapsTextStyle}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                        <Button
+                            Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                            Click="AddFolder_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-circle-plus.svg" Width="12" Height="12" />
+                                <TextBlock Text="ADD LOCAL FOLDER" />
+                            </StackPanel>
+                        </Button>
+                        <Button
+                            Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                            Click="AddNetworkSource_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/link.svg" Width="12" Height="12" />
+                                <TextBlock Text="ADD NETWORK SOURCE" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+                <TextBlock
+                    x:Name="ErrorText"
+                    Style="{StaticResource BodySMTextStyle}"
+                    Visibility="Collapsed" />
+
+                <StackPanel x:Name="ContinueSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader Title="Continue Watching" />
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
+                        <muxc:ItemsRepeater x:Name="ResumeRepeater" Margin="0,14" ItemTemplate="{StaticResource ResumeTemplate}">
+                            <muxc:ItemsRepeater.Layout>
+                                <muxc:StackLayout Orientation="Horizontal" Spacing="20" />
+                            </muxc:ItemsRepeater.Layout>
+                        </muxc:ItemsRepeater>
+                    </ScrollViewer>
+                </StackPanel>
+
+                <StackPanel x:Name="MoviesSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader Title="Movies" />
+                    <muxc:ItemsRepeater x:Name="MoviesRepeater" ItemTemplate="{StaticResource LibraryMovieTemplate}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                        </muxc:ItemsRepeater.Layout>
+                    </muxc:ItemsRepeater>
+                </StackPanel>
+
+                <StackPanel x:Name="ShowsSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader Title="TV Shows" />
+                    <muxc:ItemsRepeater x:Name="ShowsRepeater" ItemTemplate="{StaticResource LibraryShowTemplate}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                        </muxc:ItemsRepeater.Layout>
+                    </muxc:ItemsRepeater>
+                </StackPanel>
+
+                <StackPanel x:Name="SourcesSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader Title="Sources" />
+                    <StackPanel x:Name="SourcesList" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

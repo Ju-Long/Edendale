@@ -1,0 +1,38 @@
+# macOS metadata
+.DS_Store
+
+# Visual Studio and .NET build output
+.vs/
+[Bb]in/
+[Oo]bj/
+Generated Files/
+TestResults/
+AppPackages/
+BundleArtifacts/
+Publish/
+packages/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.binlog
+*.trx
+
+# Local TMDB credentials
+/secrets.json
+/secrets.json.tmp.*
+
+# Windows packaging and signing material
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+*.msixupload
+*.pfx
+*.p12
+*.pvk
+*.snk
+*.key
+*.publishsettings
+*.pubxml.user

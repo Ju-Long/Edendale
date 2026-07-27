@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Hermetic unit tests for the Windows app: no UI thread, no network, no
+    packaging. The app project is a WinUI 3 WinExe whose PRI generation and
+    self-contained Windows App SDK runtime make it unusable as a plain
+    ProjectReference (the same machinery that stops `dotnet build` working on
+    it), so this project *links* the specific WinUI-free source files it covers
+    instead. Anything that returns a Microsoft.UI.Xaml type — Helpers/Format.cs,
+    the pages, the controls — deliberately stays out.
+
+    Run with:  dotnet test Edendale.Windows.Tests
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Platforms>AnyCPU;x64;ARM64</Platforms>
+    <PlatformTarget Condition="'$(Platform)' == 'ARM64'">ARM64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)' == 'x64'">x64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)' != 'ARM64' and '$(Platform)' != 'x64'">AnyCPU</PlatformTarget>
+    <RootNamespace>Edendale.Windows.Tests</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="MSTest" Version="3.6.1" />
+    <!-- Required by the linked SmbCredentialsStore (DPAPI). -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Source under test, linked rather than referenced. -->
+  <ItemGroup>
+    <Compile Include="..\Edendale.Windows\Services\AppPaths.cs" Link="App\Services\AppPaths.cs" />
+    <Compile Include="..\Edendale.Windows\Services\AppRoute.cs" Link="App\Services\AppRoute.cs" />
+    <Compile Include="..\Edendale.Windows\Services\LibraryModels.cs" Link="App\Services\LibraryModels.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\TmdbClient.cs" Link="App\Services\TmdbClient.cs" />
+    <Compile Include="..\Edendale.Windows\Services\TmdbRepository.cs" Link="App\Services\TmdbRepository.cs" />
+    <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />
+    <Compile Include="..\Edendale.Windows\Core\ReleaseCalendar.cs" Link="App\Core\ReleaseCalendar.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SearchQuery.cs" Link="App\Core\SearchQuery.cs" />
+    <Compile Include="..\Edendale.Windows\Core\UserMediaMerger.cs" Link="App\Core\UserMediaMerger.cs" />
+    <Compile Include="..\Edendale.Windows\Core\WindowsCore.cs" Link="App\Core\WindowsCore.cs" />
+    <Compile Include="..\Edendale.Windows\Models\MediaModels.cs" Link="App\Models\MediaModels.cs" />
+    <Compile Include="..\Edendale.Windows\Models\UserMediaModels.cs" Link="App\Models\UserMediaModels.cs" />
+  </ItemGroup>
+
+</Project>

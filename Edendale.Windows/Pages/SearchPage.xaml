@@ -1,0 +1,348 @@
+<Page
+    x:Class="Edendale.Windows.Pages.SearchPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    xmlns:helpers="using:Edendale.Windows.Helpers"
+    xmlns:models="using:Edendale.Windows.Models"
+    xmlns:pages="using:Edendale.Windows.Pages"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{StaticResource EdendaleBackgroundBrush}"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <!-- Tag carries the item: ItemsRepeater does not set DataContext on
+             x:Bind templates, so Click handlers read Tag instead. -->
+        <DataTemplate x:Key="TmdbResultTemplate" x:DataType="models:MediaItem">
+            <Button Style="{StaticResource CardButtonStyle}" Click="Result_Click" Tag="{x:Bind}">
+                <controls:PosterCard
+                    Title="{x:Bind Title}"
+                    Subtitle="{x:Bind helpers:Format.YearText(Year)}"
+                    ImageUrl="{x:Bind PosterUrl}"
+                    CardWidth="180"
+                    PlaceholderAsset="{x:Bind helpers:Format.MediaAsset(MediaType)}" />
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="LocalResultTemplate" x:DataType="pages:LocalSearchResult">
+            <Button Style="{StaticResource CardButtonStyle}" Click="LocalResult_Click" Tag="{x:Bind}">
+                <controls:PosterCard
+                    Title="{x:Bind Title}"
+                    Subtitle="{x:Bind Subtitle}"
+                    ImageUrl="{x:Bind ImageUrl}"
+                    CardWidth="180"
+                    PlaceholderAsset="{x:Bind PlaceholderAsset}" />
+            </Button>
+        </DataTemplate>
+
+        <!-- Actor/actress result: portrait, name, best-known titles.
+             Tapping opens the person's page (biography + filmography). -->
+        <DataTemplate x:Key="PersonResultTemplate" x:DataType="models:PersonItem">
+            <Button Style="{StaticResource CardButtonStyle}" Click="PersonResult_Click" Tag="{x:Bind}">
+                <StackPanel Spacing="10" Width="132">
+                    <Border
+                        Width="112"
+                        Height="112"
+                        CornerRadius="56"
+                        HorizontalAlignment="Center"
+                        Background="{StaticResource EdendaleSurfaceBrush}"
+                        BorderBrush="{StaticResource EdendaleHairlineBorderBrush}"
+                        BorderThickness="1">
+                        <Grid>
+                            <controls:SvgIcon
+                                UriSource="ms-appx:///Assets/Icons/circle-user-fill.svg"
+                                Width="40" Height="40"
+                                Foreground="{StaticResource EdendaleSurfaceHighBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <Image Source="{x:Bind helpers:Format.Image(ProfileUrl)}" Stretch="UniformToFill" />
+                        </Grid>
+                    </Border>
+                    <TextBlock
+                        Text="{x:Bind Name}"
+                        FontFamily="{StaticResource TextFontFamily}"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        MaxLines="2" />
+                    <TextBlock
+                        Text="{x:Bind KnownForText}"
+                        Style="{StaticResource BodySMTextStyle}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        MaxLines="2" />
+                </StackPanel>
+            </Button>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Query field: quiet surface with a hairline edge, gold when focused
+             via the system accent. -->
+        <Grid Padding="48,28,48,10" ColumnSpacing="14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox
+                x:Name="QueryBox"
+                PlaceholderText="Search films, series, and people…"
+                FontFamily="{StaticResource TextFontFamily}"
+                FontSize="16"
+                Padding="16,12,16,12"
+                CornerRadius="8"
+                BorderBrush="{StaticResource EdendaleOutlineBrush}"
+                Background="{StaticResource EdendaleSurfaceLowBrush}"
+                Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                TextChanged="QueryBox_TextChanged"
+                KeyDown="QueryBox_KeyDown" />
+
+            <!-- Release-date selector (Apple's release filter, picker form). -->
+            <Button
+                x:Name="DateFilterButton"
+                Grid.Column="1"
+                Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                Padding="14,12"
+                VerticalAlignment="Stretch"
+                AutomationProperties.Name="Filter by release date">
+                <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/calendar-days.svg" Width="16" Height="16" />
+                <Button.Flyout>
+                    <!-- Release heatmap (ReleaseHeatmapView.swift): a year of
+                         release density, one column per week, two taps to
+                         commit a range. -->
+                    <Flyout Placement="BottomEdgeAlignedRight" Opening="DateFlyout_Opening">
+                        <StackPanel Spacing="14" MinWidth="420" MaxWidth="620">
+                            <TextBlock Text="RELEASE DATE" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
+
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Button
+                                    x:Name="PreviousYearButton"
+                                    Style="{StaticResource CardButtonStyle}"
+                                    Padding="6"
+                                    Click="PreviousYear_Click"
+                                    AutomationProperties.Name="Previous year">
+                                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-left.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleTextSecondaryBrush}" />
+                                </Button>
+                                <TextBlock
+                                    x:Name="HeatmapYearText"
+                                    Grid.Column="1"
+                                    FontFamily="{StaticResource DisplayFontFamily}"
+                                    FontSize="26"
+                                    Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                                    VerticalAlignment="Center" />
+                                <ProgressRing
+                                    x:Name="HeatmapRing"
+                                    Grid.Column="2"
+                                    IsActive="False"
+                                    Width="18"
+                                    Height="18"
+                                    Foreground="{StaticResource EdendaleGoldBrush}"
+                                    VerticalAlignment="Center" />
+                                <Button
+                                    x:Name="NextYearButton"
+                                    Grid.Column="3"
+                                    Style="{StaticResource CardButtonStyle}"
+                                    Padding="6"
+                                    Click="NextYear_Click"
+                                    AutomationProperties.Name="Next year">
+                                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-right.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleTextSecondaryBrush}" />
+                                </Button>
+                            </Grid>
+
+                            <ScrollViewer
+                                HorizontalScrollBarVisibility="Auto"
+                                HorizontalScrollMode="Enabled"
+                                VerticalScrollBarVisibility="Disabled"
+                                VerticalScrollMode="Disabled">
+                                <StackPanel x:Name="HeatmapColumns" Orientation="Horizontal" Spacing="3" />
+                            </ScrollViewer>
+
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="Fewer" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" />
+                                <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleSurfaceHighBrush}" />
+                                <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleHeatLowBrush}" />
+                                <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleHeatMidBrush}" />
+                                <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleGoldBrush}" />
+                                <TextBlock Text="More" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <TextBlock
+                                x:Name="HeatmapSummary"
+                                Text="Pick a day, then a second day to close the range."
+                                Style="{StaticResource BodySMTextStyle}"
+                                TextWrapping="Wrap" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Content="DONE" Style="{StaticResource ArchivePrimaryButtonStyle}" Padding="18,10" Click="ApplyDateFilter_Click" />
+                                <Button Content="CLEAR" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ClearDateFilter_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <ProgressRing
+                x:Name="SearchRing"
+                Grid.Column="2"
+                IsActive="False"
+                Width="22"
+                Height="22"
+                Foreground="{StaticResource EdendaleGoldBrush}"
+                VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- Active filters: committed date range / person filmography. -->
+        <StackPanel
+            x:Name="FilterChips"
+            Grid.Row="1"
+            Orientation="Horizontal"
+            Spacing="10"
+            Margin="48,0,48,10"
+            Visibility="Collapsed">
+            <!-- Keyword prefix scope ("actors:" / "movies:" / "shows:"). The ✕
+                 strips the prefix and keeps whatever was typed after it. -->
+            <Border
+                x:Name="ScopeChip"
+                BorderBrush="{StaticResource EdendaleGoldDeepBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="14,6"
+                Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock x:Name="ScopeChipText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
+                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearScope_Click" AutomationProperties.Name="Clear search scope">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-xmark.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleGoldBrush}" />
+                    </Button>
+                </StackPanel>
+            </Border>
+            <Border
+                x:Name="DateChip"
+                BorderBrush="{StaticResource EdendaleGoldDeepBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="14,6"
+                Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock x:Name="DateChipText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
+                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearDateFilter_Click" AutomationProperties.Name="Clear date filter">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-xmark.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleGoldBrush}" />
+                    </Button>
+                </StackPanel>
+            </Border>
+            <Border
+                x:Name="PersonChip"
+                BorderBrush="{StaticResource EdendaleGoldDeepBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="14,6"
+                Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- The name opens that person's page, so the filter is not
+                         a dead end; the ✕ clears the filter. -->
+                    <Button
+                        Style="{StaticResource CardButtonStyle}"
+                        Padding="0"
+                        Click="PersonChip_Click"
+                        AutomationProperties.Name="Open this person's page">
+                        <TextBlock x:Name="PersonChipText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
+                    </Button>
+                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearPerson_Click" AutomationProperties.Name="Clear person filter">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-xmark.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleGoldBrush}" />
+                    </Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <!-- Idle state (SearchPlaceholderView.swift): the index awaits. -->
+            <StackPanel
+                x:Name="IdleState"
+                Spacing="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <controls:SvgIcon
+                    UriSource="ms-appx:///Assets/Icons/magnifying-glass-play.svg"
+                    Width="56" Height="56"
+                    Foreground="{StaticResource EdendaleSurfaceHighBrush}"
+                    HorizontalAlignment="Center" />
+                <TextBlock
+                    Text="THE INDEX AWAITS"
+                    FontFamily="{StaticResource DisplayFontFamily}"
+                    FontSize="48"
+                    Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                    TextAlignment="Center" />
+                <TextBlock
+                    Text="Search the archive for films, series, and the people who made them."
+                    Style="{StaticResource BodyLGTextStyle}"
+                    TextAlignment="Center"
+                    MaxWidth="360" />
+            </StackPanel>
+
+            <!-- Idle: today's trending titles, so an untouched search tab is
+                 something to browse rather than a placeholder. -->
+            <ScrollViewer x:Name="TrendingScroll" Visibility="Collapsed">
+                <StackPanel Spacing="18" Padding="48,14,48,64">
+                    <controls:SectionHeader Title="Trending Today" />
+                    <muxc:ItemsRepeater x:Name="TrendingRepeater" ItemTemplate="{StaticResource TmdbResultTemplate}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                        </muxc:ItemsRepeater.Layout>
+                    </muxc:ItemsRepeater>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Results -->
+            <ScrollViewer x:Name="ResultsScroll" Visibility="Collapsed">
+                <!-- ResultSections' children are reordered in code so a people
+                     scope can lead with People (see ApplySectionOrder). -->
+                <StackPanel x:Name="ResultSections" Spacing="40" Padding="48,14,48,64">
+                    <StackPanel x:Name="LibrarySection" Spacing="18" Visibility="Collapsed">
+                        <controls:SectionHeader Title="From Your Library" />
+                        <muxc:ItemsRepeater x:Name="LocalRepeater" ItemTemplate="{StaticResource LocalResultTemplate}">
+                            <muxc:ItemsRepeater.Layout>
+                                <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                            </muxc:ItemsRepeater.Layout>
+                        </muxc:ItemsRepeater>
+                    </StackPanel>
+
+                    <StackPanel x:Name="PeopleSection" Spacing="18" Visibility="Collapsed">
+                        <controls:SectionHeader Title="People" />
+                        <muxc:ItemsRepeater x:Name="PeopleRepeater" Margin="0,4" ItemTemplate="{StaticResource PersonResultTemplate}">
+                            <muxc:ItemsRepeater.Layout>
+                                <muxc:UniformGridLayout MinItemWidth="132" MinRowSpacing="20" MinColumnSpacing="18" />
+                            </muxc:ItemsRepeater.Layout>
+                        </muxc:ItemsRepeater>
+                    </StackPanel>
+
+                    <StackPanel x:Name="TitlesSection" Spacing="18">
+                        <controls:SectionHeader x:Name="IndexHeader" Title="The Index" />
+                        <TextBlock
+                            x:Name="IndexMessage"
+                            Style="{StaticResource BodySMTextStyle}"
+                            Visibility="Collapsed" />
+                        <muxc:ItemsRepeater x:Name="ResultsRepeater" ItemTemplate="{StaticResource TmdbResultTemplate}">
+                            <muxc:ItemsRepeater.Layout>
+                                <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                            </muxc:ItemsRepeater.Layout>
+                        </muxc:ItemsRepeater>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

@@ -1,0 +1,368 @@
+<Page
+    x:Class="Edendale.Windows.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    Background="{StaticResource EdendaleBackgroundBrush}"
+    NavigationCacheMode="Required">
+
+    <!--
+        SettingsView.swift, Windows edition. Apple presents an inset-grouped
+        SwiftUI Form: an UPPERCASE label-caps header in TextSecondary sitting
+        ABOVE each grouped row container, hairline separators between rows,
+        values right-aligned and quieter than their labels. Section order is
+        Apple's and is fixed — Attribution is always last.
+    -->
+    <ScrollViewer>
+        <StackPanel Padding="48,28,48,64" Spacing="28" MaxWidth="760" HorizontalAlignment="Left">
+            <TextBlock
+                Text="SETTINGS"
+                FontFamily="{StaticResource DisplayFontFamily}"
+                FontSize="48"
+                Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+
+            <!-- ABOUT — version, Windows core, credentials, watch-progress sync -->
+            <StackPanel>
+                <TextBlock Text="ABOUT" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Version" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                            <TextBlock Grid.Column="1" x:Name="VersionText" Style="{StaticResource SettingsRowValueTextStyle}" />
+                        </Grid>
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Windows core" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                            <TextBlock Grid.Column="1" x:Name="CoreText" Style="{StaticResource SettingsRowValueTextStyle}" />
+                        </Grid>
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="TMDB credentials" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                            <TextBlock Grid.Column="1" x:Name="CredentialText" Style="{StaticResource SettingsRowValueTextStyle}" />
+                        </Grid>
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <!-- Apple's value here is "Synced via your iCloud"; Windows
+                             states what it actually does, OneDrive or nothing. -->
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Watch progress" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                x:Name="CloudSyncText"
+                                Style="{StaticResource SettingsRowValueTextStyle}"
+                                IsTextSelectionEnabled="True" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- STARTUP — desktop-only section; Apple gates it on #if os(macOS) -->
+            <StackPanel>
+                <TextBlock Text="STARTUP" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <!-- HKCU Run entry — Apple's Launch at Login, Windows edition. -->
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                Text="Launch Edendale at startup"
+                                Style="{StaticResource SettingsRowLabelTextStyle}"
+                                Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                x:Name="StartupToggle"
+                                OnContent=""
+                                OffContent=""
+                                MinWidth="0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Toggled="StartupToggle_Toggled" />
+                        </Grid>
+
+                        <!-- Registry refusals only: carries its own hairline so
+                             hiding it leaves no stranded separator. -->
+                        <Border x:Name="StartupStatusRow" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
+                            <TextBlock x:Name="StartupStatusText" Style="{StaticResource SettingsBodyRowTextStyle}" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- SOURCES — SourcesSection.swift + SourceRow.swift -->
+            <StackPanel>
+                <TextBlock Text="SOURCES" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <Border x:Name="NoSourcesRow">
+                            <TextBlock x:Name="NoSourcesText" Text="No sources linked" Style="{StaticResource SettingsBodyRowTextStyle}" />
+                        </Border>
+
+                        <!-- Each row draws its own trailing hairline, so the list
+                             stays separated from the add-source action row below
+                             however many sources there are. -->
+                        <ItemsControl x:Name="SourcesList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <Grid Padding="20,20" ColumnSpacing="14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <controls:SvgIcon
+                                                Grid.Column="0"
+                                                UriSource="{Binding IconUri}"
+                                                Width="18" Height="18"
+                                                Foreground="{StaticResource EdendaleTextSecondaryBrush}"
+                                                VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                                <TextBlock
+                                                    Text="{Binding Name}"
+                                                    FontFamily="{StaticResource TextFontFamily}"
+                                                    FontSize="15"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <TextBlock
+                                                    Text="{Binding Subtitle}"
+                                                    Style="{StaticResource BodySMTextStyle}"
+                                                    TextWrapping="NoWrap"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <!-- Credential-free by the model's contract: a local
+                                                     path or a UNC share, never a userinfo URL. -->
+                                                <TextBlock
+                                                    Text="{Binding Path}"
+                                                    Style="{StaticResource BodySMTextStyle}"
+                                                    TextWrapping="NoWrap"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                <Button
+                                                    Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    Click="RescanFolder_Click"
+                                                    Tag="{Binding Folder}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-right.svg" Width="12" Height="12" />
+                                                        <TextBlock Text="RESCAN" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button
+                                                    Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    Click="RemoveFolder_Click"
+                                                    Tag="{Binding Folder}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/trash-can.svg" Width="12" Height="12" />
+                                                        <TextBlock Text="REMOVE" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                            <Button
+                                x:Name="AddLocalFolderButton"
+                                Style="{StaticResource ArchiveGhostButtonStyle}"
+                                Click="AddFolder_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-circle-plus.svg" Width="12" Height="12" />
+                                    <TextBlock Text="ADD LOCAL FOLDER…" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                x:Name="AddNetworkFolderButton"
+                                Style="{StaticResource ArchiveGhostButtonStyle}"
+                                Click="AddNetworkFolder_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/link.svg" Width="12" Height="12" />
+                                    <TextBlock Text="LINK NETWORK SOURCE…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- TMDB ACCOUNT — TMDBAccountSection.swift. The four phases are
+                 expressed through per-button Visibility in UpdateAccountUi(). -->
+            <StackPanel>
+                <TextBlock Text="TMDB ACCOUNT" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <TextBlock
+                            Text="Connect your TMDB account to sync favourites, your watchlist, and ratings across devices. Watch time stays out of TMDB — their API has no watch-progress endpoint."
+                            Style="{StaticResource SettingsBodyRowTextStyle}" />
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Account" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                            <TextBlock Grid.Column="1" x:Name="AccountStatusText" Style="{StaticResource SettingsRowValueTextStyle}" />
+                        </Grid>
+
+                        <Border x:Name="SyncStatusRow" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
+                            <Grid Style="{StaticResource SettingsRowGridStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Last sync" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                                <TextBlock Grid.Column="1" x:Name="SyncStatusText" Style="{StaticResource SettingsRowValueTextStyle}" />
+                            </Grid>
+                        </Border>
+
+                        <Border
+                            x:Name="ApprovalPanel"
+                            Padding="20,18"
+                            Visibility="Collapsed">
+                            <StackPanel Spacing="14" HorizontalAlignment="Center">
+                                <TextBlock
+                                    Text="Approve Edendale in the browser that opened, or scan the QR code with another device."
+                                    Style="{StaticResource BodySMTextStyle}"
+                                    TextAlignment="Center"
+                                    MaxWidth="440" />
+                                <Border
+                                    Padding="20"
+                                    Background="{StaticResource EdendaleQrCodeBackgroundBrush}"
+                                    CornerRadius="4">
+                                    <Image
+                                        x:Name="ApprovalQrImage"
+                                        Width="240"
+                                        Height="240"
+                                        Stretch="Uniform"
+                                        AutomationProperties.Name="TMDB account approval QR code" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                            <Button
+                                x:Name="ConnectButton"
+                                Content="CONNECT TMDB ACCOUNT"
+                                Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                                Click="ConnectAccount_Click" />
+                            <Button
+                                x:Name="ApproveDoneButton"
+                                Content="CLICK HERE TO CONTINUE"
+                                Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                                Click="FinishConnect_Click"
+                                Visibility="Collapsed" />
+                            <Button
+                                x:Name="CancelConnectButton"
+                                Content="CANCEL"
+                                Style="{StaticResource ArchiveGhostButtonStyle}"
+                                Click="CancelConnect_Click"
+                                Visibility="Collapsed" />
+                            <Button
+                                x:Name="SyncNowButton"
+                                Content="SYNC NOW"
+                                Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                                Click="SyncNow_Click"
+                                Visibility="Collapsed" />
+                            <Button
+                                x:Name="DisconnectButton"
+                                Content="SIGN OUT"
+                                Style="{StaticResource ArchiveGhostButtonStyle}"
+                                Click="Disconnect_Click"
+                                Visibility="Collapsed" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- YOUR ARCHIVE — where the local records live. No Apple counterpart:
+                 Apple hides its store inside the app container. -->
+            <StackPanel>
+                <TextBlock Text="YOUR ARCHIVE" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <TextBlock
+                            Text="The library index stays on this device. Watch progress, favourites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved."
+                            Style="{StaticResource SettingsBodyRowTextStyle}" />
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Data folder" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                x:Name="DataPathText"
+                                Style="{StaticResource SettingsRowValueTextStyle}"
+                                IsTextSelectionEnabled="True" />
+                        </Grid>
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                            <Button
+                                Style="{StaticResource ArchiveGhostButtonStyle}"
+                                Click="OpenDataFolder_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-open.svg" Width="12" Height="12" />
+                                    <TextBlock Text="OPEN DATA FOLDER" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ATTRIBUTION — always last, never conditional -->
+            <StackPanel>
+                <TextBlock Text="ATTRIBUTION" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <TextBlock
+                            Text="This product uses the TMDB API but is not endorsed or certified by TMDB."
+                            Style="{StaticResource SettingsBodyRowTextStyle}" />
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <TextBlock
+                            Text="Edendale's only network calls are to TMDB for artwork and metadata, plus user-initiated trailer playback through the privacy-enhanced YouTube embed. No analytics, ever."
+                            Style="{StaticResource SettingsBodyRowTextStyle}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

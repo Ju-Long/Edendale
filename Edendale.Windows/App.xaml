@@ -1,0 +1,378 @@
+<Application
+    x:Class="Edendale.Windows.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedTheme="Dark">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--
+                Edendale "cinematic" palette (DESIGN.md).
+                The universal DESIGN.md tokens are the source of truth; this
+                resource dictionary is the native Windows implementation.
+            -->
+            <Color x:Key="EdendaleBackgroundColor">#0A0A0F</Color>
+            <Color x:Key="EdendaleSurfaceColor">#1F1F25</Color>
+            <Color x:Key="EdendaleSurfaceLowColor">#131318</Color>
+            <Color x:Key="EdendaleSurfaceHighColor">#2A292F</Color>
+            <Color x:Key="EdendaleGoldColor">#F4BE5D</Color>
+            <Color x:Key="EdendaleGoldDeepColor">#C9973A</Color>
+            <!-- Gold at 35% alpha, used for glows behind gold elements. -->
+            <Color x:Key="EdendaleGoldGlowColor">#59F4BE5D</Color>
+            <Color x:Key="EdendaleOnGoldColor">#422C00</Color>
+            <Color x:Key="EdendaleTextPrimaryColor">#E4E1E9</Color>
+            <Color x:Key="EdendaleTextSecondaryColor">#D3C4B1</Color>
+            <Color x:Key="EdendaleOutlineColor">#4F4537</Color>
+            <Color x:Key="EdendaleOutlineBrightColor">#9C8F7D</Color>
+            <!-- White at 6% alpha, used for hairline separators. -->
+            <Color x:Key="EdendaleHairlineBorderColor">#0FFFFFFF</Color>
+            <!-- Release-density heatmap ramp. -->
+            <Color x:Key="EdendaleHeatLowColor">#4A3A1D</Color>
+            <Color x:Key="EdendaleHeatMidColor">#8A672B</Color>
+            <Color x:Key="EdendaleQrCodeBackgroundColor">#FFFFFF</Color>
+
+            <SolidColorBrush x:Key="EdendaleBackgroundBrush" Color="{StaticResource EdendaleBackgroundColor}" />
+            <SolidColorBrush x:Key="EdendaleSurfaceBrush" Color="{StaticResource EdendaleSurfaceColor}" />
+            <SolidColorBrush x:Key="EdendaleSurfaceLowBrush" Color="{StaticResource EdendaleSurfaceLowColor}" />
+            <SolidColorBrush x:Key="EdendaleSurfaceHighBrush" Color="{StaticResource EdendaleSurfaceHighColor}" />
+            <SolidColorBrush x:Key="EdendaleGoldBrush" Color="{StaticResource EdendaleGoldColor}" />
+            <SolidColorBrush x:Key="EdendaleGoldDeepBrush" Color="{StaticResource EdendaleGoldDeepColor}" />
+            <SolidColorBrush x:Key="EdendaleGoldGlowBrush" Color="{StaticResource EdendaleGoldGlowColor}" />
+            <SolidColorBrush x:Key="EdendaleOnGoldBrush" Color="{StaticResource EdendaleOnGoldColor}" />
+            <SolidColorBrush x:Key="EdendaleTextPrimaryBrush" Color="{StaticResource EdendaleTextPrimaryColor}" />
+            <SolidColorBrush x:Key="EdendaleTextSecondaryBrush" Color="{StaticResource EdendaleTextSecondaryColor}" />
+            <SolidColorBrush x:Key="EdendaleOutlineBrush" Color="{StaticResource EdendaleOutlineColor}" />
+            <SolidColorBrush x:Key="EdendaleOutlineBrightBrush" Color="{StaticResource EdendaleOutlineBrightColor}" />
+            <SolidColorBrush x:Key="EdendaleHairlineBorderBrush" Color="{StaticResource EdendaleHairlineBorderColor}" />
+            <SolidColorBrush x:Key="EdendaleHeatLowBrush" Color="{StaticResource EdendaleHeatLowColor}" />
+            <SolidColorBrush x:Key="EdendaleHeatMidBrush" Color="{StaticResource EdendaleHeatMidColor}" />
+            <SolidColorBrush x:Key="EdendaleQrCodeBackgroundBrush" Color="{StaticResource EdendaleQrCodeBackgroundColor}" />
+
+            <!-- Projection Gold as the system accent so focus visuals,
+                 progress rings, and selection chrome stay on-palette. -->
+            <Color x:Key="SystemAccentColor">#F4BE5D</Color>
+            <Color x:Key="SystemAccentColorLight1">#F4BE5D</Color>
+            <Color x:Key="SystemAccentColorLight2">#F4BE5D</Color>
+            <Color x:Key="SystemAccentColorLight3">#F4BE5D</Color>
+            <Color x:Key="SystemAccentColorDark1">#C9973A</Color>
+            <Color x:Key="SystemAccentColorDark2">#C9973A</Color>
+            <Color x:Key="SystemAccentColorDark3">#C9973A</Color>
+
+            <!--
+                Typography (DESIGN.md): Bebas Neue for theatrical display type,
+                Inter for functional UI. Scale: display XL 96, headline LG 64,
+                headline MD 32, title LG 20 semibold, body LG 16, body SM 14,
+                label caps 12 bold with 1.2pt tracking.
+            -->
+            <FontFamily x:Key="DisplayFontFamily">ms-appx:///Assets/Fonts/BebasNeue-Regular.ttf#Bebas Neue</FontFamily>
+            <FontFamily x:Key="TextFontFamily">ms-appx:///Assets/Fonts/Inter-Variable.ttf#Inter</FontFamily>
+            <FontFamily x:Key="TextItalicFontFamily">ms-appx:///Assets/Fonts/Inter-Italic-Variable.ttf#Inter</FontFamily>
+
+            <Style x:Key="DisplayXLTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource DisplayFontFamily}" />
+                <Setter Property="FontSize" Value="96" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextPrimaryBrush}" />
+            </Style>
+            <Style x:Key="HeadlineLGTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource DisplayFontFamily}" />
+                <Setter Property="FontSize" Value="64" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextPrimaryBrush}" />
+            </Style>
+            <Style x:Key="HeadlineMDTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource DisplayFontFamily}" />
+                <Setter Property="FontSize" Value="32" />
+                <Setter Property="CharacterSpacing" Value="60" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextPrimaryBrush}" />
+            </Style>
+            <Style x:Key="TitleLGTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextPrimaryBrush}" />
+            </Style>
+            <Style x:Key="BodyLGTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextSecondaryBrush}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="BodySMTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextSecondaryBrush}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <!-- Callers supply UPPERCASE text; XAML has no text-transform. -->
+            <Style x:Key="LabelCapsTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="CharacterSpacing" Value="100" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextSecondaryBrush}" />
+            </Style>
+
+            <!--
+                Archive buttons (DESIGN.md): primary = solid deep gold with
+                sharp 4pt corners, secondary = 1px gold border, ghost =
+                label-caps text only. Hover brightens toward Gold.
+            -->
+            <Style x:Key="ArchiveButtonBaseStyle" TargetType="Button">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border
+                                x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Padding="{TemplateBinding Padding}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.BorderBrush" Value="{StaticResource EdendaleGoldBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Opacity" Value="0.8" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Opacity" Value="0.4" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <ContentPresenter
+                                    x:Name="ContentPresenter"
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ArchivePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ArchiveButtonBaseStyle}">
+                <Setter Property="Background" Value="{StaticResource EdendaleGoldDeepBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="22,13" />
+            </Style>
+
+            <Style x:Key="ArchiveSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ArchiveButtonBaseStyle}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleGoldBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource EdendaleGoldDeepBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="22,13" />
+            </Style>
+
+            <Style x:Key="ArchiveGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource ArchiveButtonBaseStyle}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleGoldBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="6,6" />
+            </Style>
+
+            <!-- Curated-collection filter chip: gold outline when checked,
+                 quiet outline otherwise (FilterChip.swift). -->
+            <Style x:Key="ArchiveChipStyle" TargetType="ToggleButton">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextSecondaryBrush}" />
+                <Setter Property="Padding" Value="14,7" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border
+                                x:Name="RootBorder"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource EdendaleOutlineBrush}"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="{TemplateBinding Padding}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.BorderBrush" Value="{StaticResource EdendaleOutlineBrightBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Opacity" Value="0.8" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Checked">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Background" Value="{StaticResource EdendaleSurfaceBrush}" />
+                                                <Setter Target="RootBorder.BorderBrush" Value="{StaticResource EdendaleGoldBrush}" />
+                                                <Setter Target="ContentPresenter.Foreground" Value="{StaticResource EdendaleGoldBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedPointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Background" Value="{StaticResource EdendaleSurfaceBrush}" />
+                                                <Setter Target="RootBorder.BorderBrush" Value="{StaticResource EdendaleGoldBrush}" />
+                                                <Setter Target="ContentPresenter.Foreground" Value="{StaticResource EdendaleGoldBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedPressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Background" Value="{StaticResource EdendaleSurfaceBrush}" />
+                                                <Setter Target="RootBorder.BorderBrush" Value="{StaticResource EdendaleGoldBrush}" />
+                                                <Setter Target="ContentPresenter.Foreground" Value="{StaticResource EdendaleGoldBrush}" />
+                                                <Setter Target="RootBorder.Opacity" Value="0.8" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <ContentPresenter
+                                    x:Name="ContentPresenter"
+                                    Content="{TemplateBinding Content}"
+                                    Foreground="{TemplateBinding Foreground}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Chrome-free wrapper for poster/landscape cards: the card draws
+                 its own hover state, the button contributes focus + invoke. -->
+            <Style x:Key="CardButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <ContentPresenter
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Glass layer (GlassCard.swift): dark panel with a 1px hairline
+                 edge. XAML has no backdrop blur over page content, so the
+                 solid Surface token stands in for the blurred glass. -->
+            <Style x:Key="GlassCardBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource EdendaleSurfaceBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource EdendaleHairlineBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="24" />
+            </Style>
+
+            <!--
+                Inset grouped form (SettingsView.swift): a SwiftUI Form on
+                Theme.background, whose section header sits ABOVE the row
+                container rather than inside it. The card owns no padding —
+                rows carry their own so the hairline separators can run to
+                the trailing edge the way an inset-grouped list does.
+            -->
+            <Style x:Key="SettingsGroupBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource EdendaleSurfaceBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource EdendaleHairlineBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="0" />
+            </Style>
+
+            <!-- Section header. Apple renders these in TextSecondary, not gold:
+                 gold marks the current or primary state, never a caption. -->
+            <Style x:Key="SettingsSectionHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource LabelCapsTextStyle}">
+                <Setter Property="Margin" Value="0,0,0,8" />
+            </Style>
+
+            <!-- Row separator, inset from the leading edge to line up with row
+                 text and flush to the trailing edge — the grouped-form cue. -->
+            <Style x:Key="SettingsRowSeparatorStyle" TargetType="Border">
+                <Setter Property="Height" Value="1" />
+                <Setter Property="Background" Value="{StaticResource EdendaleHairlineBorderBrush}" />
+                <Setter Property="Margin" Value="20,0,0,0" />
+            </Style>
+
+            <!-- Conditional rows carry their own leading hairline so hiding
+                 them never strands a separator. -->
+            <Style x:Key="SettingsConditionalRowBorderStyle" TargetType="Border">
+                <Setter Property="BorderBrush" Value="{StaticResource EdendaleHairlineBorderBrush}" />
+                <Setter Property="BorderThickness" Value="0,1,0,0" />
+            </Style>
+
+            <!-- Uniform row box: 20pt horizontal, 16pt vertical, everywhere. -->
+            <Style x:Key="SettingsRowGridStyle" TargetType="Grid">
+                <Setter Property="Padding" Value="20,16" />
+                <Setter Property="ColumnSpacing" Value="24" />
+            </Style>
+
+            <!-- LabeledContent: quiet label leading, value trailing. -->
+            <Style x:Key="SettingsRowLabelTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextSecondaryBrush}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="SettingsRowValueTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextPrimaryBrush}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="TextAlignment" Value="Right" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <!-- Full-width explanatory copy, padded like any other row. -->
+            <Style x:Key="SettingsBodyRowTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodySMTextStyle}">
+                <Setter Property="Margin" Value="20,16" />
+            </Style>
+
+            <!-- Action row: archive buttons left-aligned inside the group. -->
+            <Style x:Key="SettingsActionRowPanelStyle" TargetType="StackPanel">
+                <Setter Property="Orientation" Value="Horizontal" />
+                <Setter Property="Spacing" Value="12" />
+                <Setter Property="Margin" Value="20,10" />
+            </Style>
+
+            <!-- Sidebar shell recolor: SurfaceLow pane on the Background canvas
+                 (the macOS fixed-sidebar look). -->
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="{StaticResource EdendaleSurfaceLowColor}" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="{StaticResource EdendaleSurfaceLowColor}" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="{StaticResource EdendaleBackgroundColor}" />
+            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{StaticResource EdendaleHairlineBorderColor}" />
+            <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="{StaticResource EdendaleGoldColor}" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelected" Color="{StaticResource EdendaleGoldColor}" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="{StaticResource EdendaleGoldColor}" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPressed" Color="{StaticResource EdendaleGoldColor}" />
+            <SolidColorBrush x:Key="TopNavigationViewItemForegroundSelected" Color="{StaticResource EdendaleGoldColor}" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

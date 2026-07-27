@@ -59,6 +59,97 @@ through the platform branch's issue and pull-request workflow.
 - Universal documentation changes land on `main` first and are then propagated
   to platform branches without bringing platform code back into `main`.
 
+## Windows development
+
+The `codex/windows` branch contains a self-contained C# and WinUI 3 desktop
+application. Filename parsing, library rules, watch and user-media merging,
+TMDB access, persistence, playback, SMB integration, routing, and tests are
+implemented natively in this branch; no shared runtime or generated bridge is
+required.
+
+The current feature build includes sidebar navigation, a custom title bar,
+full-window playback with progress writes, movie and show shelves, folder
+import with background metadata enrichment, search, detail and person pages,
+and settings.
+
+### Prerequisites
+
+- Windows 10 version 1809 (build 17763) or later; Windows 11 is recommended.
+- Visual Studio 2022 17.10 or later with the **Windows application
+  development** workload.
+- .NET 8 SDK.
+
+The Windows App SDK 1.7 is restored through NuGet. Development builds are
+unpackaged and self-contained, so they do not require an MSIX certificate or a
+separately installed Windows App SDK runtime.
+
+### Build and test
+
+Open `Edendale.Windows.sln` in Visual Studio, choose **x64** or **ARM64**, and
+run with F5. From a Visual Studio Developer Command Prompt:
+
+```powershell
+msbuild Edendale.Windows.sln -restore -p:Platform=x64 -p:Configuration=Debug
+```
+
+Use Visual Studio MSBuild for the app because WinUI PRI tooling is not
+available through the standalone .NET SDK on every machine. The WinUI-free
+domain tests target plain .NET 8 and can also run on macOS or Linux:
+
+```powershell
+dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj
+```
+
+### TMDB credentials
+
+Run the Windows initializer from the repository root:
+
+```powershell
+.\init.ps1
+```
+
+If local execution policy blocks the script:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\init.ps1
+```
+
+The script writes the gitignored root `secrets.json` with
+`TMDB_READ_ACCESS_TOKEN` and `TMDB_API_KEY`, restricts the file to the current
+Windows user, and never prints either value. A local build embeds the file as a
+private assembly resource. Environment variables with the same names are an
+alternative for local or test processes. CI runs without credentials; do not
+commit the file or distribute a locally built binary containing personal
+credentials.
+
+### Data and privacy
+
+Library, watch-progress, and user-media JSON live under
+`%LOCALAPPDATA%\Edendale`. When the user has configured OneDrive, watch and
+user-media state can replicate through their OneDrive. The TMDB session and SMB
+credentials remain device-local and are protected with DPAPI.
+
+Network access is limited to TMDB, user-selected SMB and OneDrive resources,
+and a user-initiated YouTube trailer action. Import classifies and persists
+local filenames before optional TMDB enrichment begins.
+
+### CI and release
+
+`.github/workflows/ci.yml` builds the x64 Release configuration and runs the
+domain tests only for pushes and pull requests targeting `codex/windows`. It
+uses no credentials and publishes no artifacts.
+
+To create the current unpackaged Release build on Windows:
+
+```powershell
+msbuild Edendale.Windows.sln -restore -p:Platform=x64 -p:Configuration=Release
+```
+
+No signed installer or deployment workflow is configured yet. Any future
+packaging must remain Windows-only, keep signing material out of the
+repository, and gate credential-bearing release steps behind a protected
+environment.
+
 ## CI/CD isolation
 
 Every platform branch must be independently buildable and deployable. Its

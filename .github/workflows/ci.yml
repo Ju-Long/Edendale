@@ -1,0 +1,43 @@
+name: Windows CI
+
+on:
+  push:
+    branches:
+      - codex/windows
+  pull_request:
+    branches:
+      - codex/windows
+
+permissions: {}
+
+concurrency:
+  group: windows-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows (C# and WinUI 3)
+    runs-on: windows-2022
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Windows app
+        run: msbuild Edendale.Windows.sln -restore -p:Platform=x64 -p:Configuration=Release
+
+      - name: Test Windows domain
+        run: dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj --configuration Release -p:Platform=x64

@@ -1,0 +1,29 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.PlayerPlaylistPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Width="360"
+    Background="{StaticResource EdendaleSurfaceLowBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Padding="24" BorderBrush="{StaticResource EdendaleHairlineBorderBrush}" BorderThickness="0,0,0,1">
+            <TextBlock x:Name="HeaderText" Style="{StaticResource HeadlineMDTextStyle}" FontSize="20" Foreground="{StaticResource EdendaleTextPrimaryBrush}" Text="EPISODES" VerticalAlignment="Center"/>
+            <Button Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="CloseButton_Click" Padding="10">
+                <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sidebar-right.svg" Width="14" Height="14" />
+            </Button>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Padding="24">
+            <StackPanel x:Name="ItemsPanel" Spacing="20"/>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

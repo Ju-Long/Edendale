@@ -1,0 +1,114 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.PlayerControlsOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    PointerMoved="UserControl_PointerMoved"
+    PointerExited="UserControl_PointerExited"
+    Tapped="UserControl_Tapped">
+
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="ControlVisibilityStates">
+                <VisualState x:Name="ControlsVisible">
+                    <VisualState.Setters>
+                        <Setter Target="OverlayContainer.Opacity" Value="1"/>
+                        <Setter Target="OverlayContainer.IsHitTestVisible" Value="True"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="ControlsHidden">
+                    <VisualState.Setters>
+                        <Setter Target="OverlayContainer.Opacity" Value="0"/>
+                        <Setter Target="OverlayContainer.IsHitTestVisible" Value="False"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid x:Name="OverlayContainer" Background="#44000000">
+            <!-- Top Bar -->
+            <Grid VerticalAlignment="Top" Padding="24,16">
+                <Grid.Background>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#CC000000" Offset="0" />
+                        <GradientStop Color="#00000000" Offset="1" />
+                    </LinearGradientBrush>
+                </Grid.Background>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="BackButton_Click" Padding="10">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-left.svg" Width="18" Height="18" />
+                    </Button>
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleText" FontFamily="{StaticResource DisplayFontFamily}" FontSize="28" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                        <TextBlock x:Name="SubtitleText" Style="{StaticResource BodySMTextStyle}" Visibility="Collapsed" />
+                    </StackPanel>
+                </StackPanel>
+                <Button Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Click="SidebarButton_Click" Padding="10">
+                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sidebar-right.svg" Width="18" Height="18" />
+                </Button>
+            </Grid>
+
+            <!-- Center Play/Pause -->
+            <Button x:Name="CenterPlayPauseButton" Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="PlayPauseButton_Click" Padding="32">
+                <controls:SvgIcon x:Name="CenterPlayPauseIcon" UriSource="ms-appx:///Assets/Icons/pause.svg" Width="64" Height="64" />
+            </Button>
+
+            <!-- Bottom Bar -->
+            <Grid VerticalAlignment="Bottom" Padding="24,16">
+                <Grid.Background>
+                    <LinearGradientBrush StartPoint="0.5,1" EndPoint="0.5,0">
+                        <GradientStop Color="#CC000000" Offset="0" />
+                        <GradientStop Color="#00000000" Offset="1" />
+                    </LinearGradientBrush>
+                </Grid.Background>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="CurrentTimeText" Grid.Column="0" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="0,0,16,0" MinWidth="45" TextAlignment="Right" />
+                    <Slider x:Name="TimelineSlider" Grid.Column="1" VerticalAlignment="Center" ManipulationStarted="TimelineSlider_ManipulationStarted" ManipulationCompleted="TimelineSlider_ManipulationCompleted" ValueChanged="TimelineSlider_ValueChanged"/>
+                    <TextBlock x:Name="TotalTimeText" Grid.Column="2" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="45" />
+                </Grid>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="8">
+                    <!-- Controls -->
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipBack_Click" ToolTipService.ToolTip="Skip Back 10s">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-left-10.svg" Width="20" Height="20" />
+                    </Button>
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="PlayPauseButton_Click">
+                        <controls:SvgIcon x:Name="BottomPlayPauseIcon" UriSource="ms-appx:///Assets/Icons/pause.svg" Width="20" Height="20" />
+                    </Button>
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipForward_Click" ToolTipService.ToolTip="Skip Forward 10s">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-right-10.svg" Width="20" Height="20" />
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button x:Name="SpeedButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="1.0x" Click="SpeedButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14"/>
+                    <!-- Text label rather than a new glyph: FIT/FILL reads at a
+                         glance and needs no icon import. -->
+                    <Button x:Name="AspectButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="FIT" Click="AspectButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14" ToolTipService.ToolTip="Fit or fill the window"/>
+                    <Button x:Name="LoopButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="LoopButton_Click" ToolTipService.ToolTip="Loop">
+                        <controls:SvgIcon x:Name="LoopIcon" UriSource="ms-appx:///Assets/Icons/arrow-rotate-right.svg" Width="20" Height="20" />
+                    </Button>
+                    <Button x:Name="SubtitlesButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SubtitlesButton_Click" ToolTipService.ToolTip="Subtitles &amp; Audio">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/subtitles.svg" Width="20" Height="20" />
+                    </Button>
+                    <Button x:Name="PictureInPictureButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="PictureInPictureButton_Click" ToolTipService.ToolTip="Picture in Picture">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/picture-in-picture.svg" Width="20" Height="20" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

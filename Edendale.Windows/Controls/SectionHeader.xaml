@@ -1,0 +1,24 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.SectionHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="False">
+
+    <!-- Bebas section heading with a trailing hairline rule:
+         "YOUR ARCHIVE ———" (SectionHeader.swift). -->
+    <Grid ColumnSpacing="16" VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock
+            x:Name="TitleText"
+            Style="{StaticResource HeadlineMDTextStyle}"
+            VerticalAlignment="Center" />
+        <Rectangle
+            Grid.Column="1"
+            Height="1"
+            Fill="{StaticResource EdendaleOutlineBrush}"
+            VerticalAlignment="Center" />
+    </Grid>
+</UserControl>
