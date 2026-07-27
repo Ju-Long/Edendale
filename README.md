@@ -30,10 +30,10 @@ platform's implementation.
 | Branch | Responsibility |
 |---|---|
 | `main` | Universal documentation and repository metadata only |
-| `codex/apple` | Apple application and Apple-specific delivery |
-| `codex/android` | Android application and Android-specific delivery |
-| `codex/windows` | Windows application and Windows-specific delivery |
-| `codex/web` | Static website and Web-specific delivery |
+| `apple` | Apple application and Apple-specific delivery |
+| `android` | Android application and Android-specific delivery |
+| `windows` | Windows application and Windows-specific delivery |
+| `web` | Static website and Web-specific delivery |
 
 The platform branches begin with the same universal Markdown files:
 
