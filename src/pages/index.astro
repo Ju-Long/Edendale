@@ -1,0 +1,172 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+---
+
+<SiteLayout
+  title="Edendale — Your library, your history"
+  description="A free, open-source video player and personal watch tracker, built natively for Apple platforms, Android, and Windows."
+>
+  <main>
+    <section class="hero section-shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> Private by design</p>
+        <h1 id="hero-title">Your library.<br /><em>Your history.</em><br />Yours.</h1>
+        <p class="hero-lede">
+          Edendale turns the movies and shows you already own into a beautiful
+          personal archive—without turning your viewing habits into somebody
+          else’s data.
+        </p>
+        <div class="button-row">
+          <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
+            View on GitHub <span aria-hidden="true">↗</span>
+          </a>
+          <a class="button button-secondary" href="#platforms">Explore the apps</a>
+        </div>
+        <ul class="trust-list" aria-label="Edendale principles">
+          <li><span aria-hidden="true">✓</span> Local-first library</li>
+          <li><span aria-hidden="true">✓</span> No analytics</li>
+          <li><span aria-hidden="true">✓</span> Open source</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" aria-label="A stylized view of the Edendale personal archive">
+        <div class="projector-glow"></div>
+        <div class="archive-window">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <p>The Archive</p>
+            <span class="window-status">Local</span>
+          </div>
+          <div class="window-body">
+            <div class="window-heading">
+              <span>Continue watching</span>
+              <strong>Sunday evening</strong>
+            </div>
+            <div class="feature-frame">
+              <div class="film-mark" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="feature-caption">
+                <p>Now playing from your library</p>
+                <strong>Pick up exactly where you left off.</strong>
+                <div class="progress-track"><span></span></div>
+              </div>
+            </div>
+            <div class="poster-row" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+        <div class="privacy-note">
+          <span class="privacy-pulse" aria-hidden="true"></span>
+          <div>
+            <strong>Nothing leaves your library</strong>
+            <small>Your files stay on your devices.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="proof-strip" aria-label="Supported experiences">
+      <div class="section-shell proof-grid">
+        <p><strong>One archive</strong><span>Movies, shows, and progress</span></p>
+        <p><strong>Native playback</strong><span>Built for every platform</span></p>
+        <p><strong>Your cloud</strong><span>Private sync where available</span></p>
+        <p><strong>Zero telemetry</strong><span>No profiles, ads, or analytics</span></p>
+      </div>
+    </section>
+
+    <section class="section-shell feature-section" id="features" aria-labelledby="features-title">
+      <div class="section-intro">
+        <p class="eyebrow"><span></span> A better personal archive</p>
+        <h2 id="features-title">Made for the collection<br />you already have.</h2>
+        <p>
+          Edendale does the useful work—organizing, enriching, and remembering—
+          while keeping you in control.
+        </p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card feature-card-wide">
+          <span class="feature-number">01</span>
+          <div class="card-art card-art-library" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <h3>Build a library from your files</h3>
+          <p>
+            Choose your folders and Edendale sorts films and episodes locally,
+            then adds the useful details in the background.
+          </p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">02</span>
+          <div class="card-art card-art-progress" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <h3>Remember every story</h3>
+          <p>
+            Continue where you stopped and keep a personal watch history across
+            your own devices.
+          </p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">03</span>
+          <div class="card-art card-art-private" aria-hidden="true">
+            <span></span>
+          </div>
+          <h3>Private at the foundation</h3>
+          <p>
+            No accounts to sell, no viewing profile, and no analytics watching
+            what you watch.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="native-section" id="platforms" aria-labelledby="platforms-title">
+      <div class="section-shell native-grid">
+        <div class="section-intro">
+          <p class="eyebrow"><span></span> Native where it matters</p>
+          <h2 id="platforms-title">At home on<br />every screen.</h2>
+          <p>
+            Each Edendale app is built in the language and interface toolkit of
+            its platform. Familiar controls, thoughtful performance, no shared
+            web shell.
+          </p>
+        </div>
+        <div class="platform-list">
+          <article>
+            <span class="platform-monogram" aria-hidden="true">A</span>
+            <div><h3>Apple</h3><p>iPhone · iPad · Mac · Vision Pro · Apple TV</p></div>
+            <span class="platform-tech">SwiftUI</span>
+          </article>
+          <article>
+            <span class="platform-monogram" aria-hidden="true">A</span>
+            <div><h3>Android</h3><p>Phones · tablets · large screens</p></div>
+            <span class="platform-tech">Jetpack Compose</span>
+          </article>
+          <article>
+            <span class="platform-monogram" aria-hidden="true">W</span>
+            <div><h3>Windows</h3><p>A focused desktop archive</p></div>
+            <span class="platform-tech">C# · WinUI</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell closing-section" aria-labelledby="closing-title">
+      <div>
+        <p class="eyebrow"><span></span> The lights are coming up</p>
+        <h2 id="closing-title">Make your collection<br />feel like yours again.</h2>
+      </div>
+      <div class="closing-action">
+        <p>
+          Edendale is free, open source, and in active development. Follow the
+          project and help shape what comes next.
+        </p>
+        <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
+          Follow development <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </section>
+  </main>
+</SiteLayout>

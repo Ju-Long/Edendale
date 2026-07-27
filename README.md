@@ -74,6 +74,96 @@ Build commands, prerequisites, artifact names, and release procedures belong in
 the `README.md` of the relevant platform branch after its implementation is
 added.
 
+## Web implementation
+
+On `codex/web`, the repository root contains Edendale's static Astro marketing
+and verified-link site. It has no browser player, media library, watch tracker,
+TMDB proxy, server runtime, account system, analytics, application persistence,
+or runtime credentials.
+
+### Requirements and local commands
+
+Use npm 10 or newer with Node.js 22.12 or newer within the Node 22 release, or
+Node.js 24. The checked-in [.nvmrc](.nvmrc) pins Node.js 22.22.1.
+
+```sh
+nvm use
+npm ci
+npm run check
+npm run dev
+npm run build
+npm run preview
+```
+
+`npm run check` performs Astro and TypeScript validation. `npm run build`
+creates the production site in the generated, gitignored `dist/` directory;
+`npm run preview` serves that completed build locally.
+
+### CI and GitHub Pages
+
+[Web CI](.github/workflows/ci.yml) runs `npm ci`, `npm run check`, and
+`npm run build` for pushes and pull requests targeting `codex/web`.
+[GitHub Pages](.github/workflows/pages.yml) repeats the checks, builds only this
+branch's static site, uploads `dist/`, and deploys it through the protected
+`github-pages` environment after an approved commit is pushed:
+
+```sh
+git push origin codex/web
+```
+
+In **Settings → Pages**, select **GitHub Actions** as the source and configure
+`edendale.babasama.com` as the custom domain. DNS must contain a CNAME from
+`edendale.babasama.com` to `ju-long.github.io`; enable **Enforce HTTPS** after
+the certificate is ready.
+
+The Astro configuration defaults to the custom domain and a root base path. To
+test a build for the repository's default project URL instead, clear the custom
+domain:
+
+```sh
+EDENDALE_CUSTOM_DOMAIN="" npm run build
+```
+
+This fallback derives `https://ju-long.github.io/Edendale/` from
+`GITHUB_REPOSITORY`.
+
+### Universal Links and App Links
+
+The Apple association file is published at
+`/.well-known/apple-app-site-association` for application identifier
+`5678544286.com.BaBaSaMa.Edendale`. It owns `/search`, `/media/*`,
+`/library/*`, and `/play/*`, matching the Apple app's declared routes.
+
+GitHub Pages cannot control response headers. Apple requires this extensionless
+endpoint to return HTTP 200 with `Content-Type: application/json` and no
+redirect. Place a CDN or reverse proxy in front of the custom domain and add an
+exact-path response-header rule without rewriting or redirecting the path.
+Verify the live response before enabling Universal Links:
+
+```sh
+curl -I https://edendale.babasama.com/.well-known/apple-app-site-association
+```
+
+Android App Links remain intentionally disabled at the website layer until the
+release signing certificate is known. At that point, add
+`public/.well-known/assetlinks.json` with the real release certificate's SHA-256
+fingerprint:
+
+```json
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.babasama.edendale",
+      "sha256_cert_fingerprints": ["REAL_RELEASE_SHA256_FINGERPRINT"]
+    }
+  }
+]
+```
+
+Never publish a debug fingerprint or a placeholder value.
+
 ## Design
 
 All platforms follow the Cinematic Minimalism system in

@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "5678544286.com.BaBaSaMa.Edendale",
+        "paths": [
+          "/search",
+          "/media/*",
+          "/library/*",
+          "/play/*"
+        ]
+      }
+    ]
+  }
+}

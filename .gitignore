@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Astro and Node generated output
+/node_modules/
+/.astro/
+/dist/
+npm-debug.log*
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
