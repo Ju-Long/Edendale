@@ -54,7 +54,7 @@ public sealed partial class PersonPage : Page
 
         if (!WindowsCore.HasTmdbCredentials)
         {
-            SetStatus("TMDB is unavailable — credentials are missing.");
+            SetStatus(Loc.Get("Tmdb_Unavailable"));
             return;
         }
 
@@ -110,7 +110,7 @@ public sealed partial class PersonPage : Page
 
         BiographyText.Text = detail.HasBiography
             ? detail.Biography!
-            : "TMDB has no biography for this person yet.";
+            : Loc.Get("Person_NoBiography");
 
         // New text starts collapsed; the toggle reappears through
         // IsTextTrimmedChanged if this biography is long enough to clip.

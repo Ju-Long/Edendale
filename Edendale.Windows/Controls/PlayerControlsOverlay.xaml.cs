@@ -10,6 +10,7 @@ using Windows.Media.Playback;
 using Microsoft.UI.Dispatching;
 using System.ComponentModel;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Edendale.Windows.Services;
 
 namespace Edendale.Windows.Controls;
 
@@ -197,7 +198,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
     {
         ToolTipService.SetToolTip(
             PictureInPictureButton,
-            active ? "Exit Picture in Picture" : "Picture in Picture");
+            Loc.Get(active ? "Player_ExitPictureInPicture" : "Player_PictureInPicture"));
     }
 
     private void LoopButton_Click(object sender, RoutedEventArgs e)
@@ -214,7 +215,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         LoopIcon.Foreground = looping
             ? (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["EdendaleGoldBrush"]
             : (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["EdendaleTextPrimaryBrush"];
-        ToolTipService.SetToolTip(LoopButton, looping ? "Stop looping" : "Loop");
+        ToolTipService.SetToolTip(LoopButton, Loc.Get(looping ? "Player_StopLooping" : "Player_Loop"));
     }
 
     /// <summary>
@@ -224,7 +225,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private void AspectButton_Click(object sender, RoutedEventArgs e)
     {
         _aspectFill = !_aspectFill;
-        AspectButton.Content = _aspectFill ? "FILL" : "FIT";
+        AspectButton.Content = Loc.Get(_aspectFill ? "Player_AspectFill" : "Player_AspectFit");
         AspectFillChanged?.Invoke(this, _aspectFill);
         ShowControls();
     }
@@ -241,21 +242,21 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         if (_mediaPlayer?.Source is not MediaPlaybackItem item)
         {
-            flyout.Items.Add(new MenuFlyoutItem { Text = "No tracks available", IsEnabled = false });
+            flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracks"), IsEnabled = false });
             flyout.ShowAt(SubtitlesButton);
             return;
         }
 
         if (item.AudioTracks.Count > 1)
         {
-            flyout.Items.Add(new MenuFlyoutItem { Text = "AUDIO", IsEnabled = false });
+            flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_AudioHeader"), IsEnabled = false });
             for (var index = 0; index < item.AudioTracks.Count; index++)
             {
                 var trackIndex = index;
                 var track = item.AudioTracks[index];
                 var entry = new ToggleMenuFlyoutItem
                 {
-                    Text = TrackLabel(track.Label, track.Language, index, "Audio"),
+                    Text = TrackLabel(track.Label, track.Language, index, Loc.Get("Player_AudioTrack")),
                     IsChecked = item.AudioTracks.SelectedIndex == index,
                 };
                 entry.Click += (_, _) => item.AudioTracks.SelectedIndex = trackIndex;
@@ -264,7 +265,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
             flyout.Items.Add(new MenuFlyoutSeparator());
         }
 
-        flyout.Items.Add(new MenuFlyoutItem { Text = "SUBTITLES", IsEnabled = false });
+        flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_SubtitlesHeader"), IsEnabled = false });
         var subtitleIndices = new List<int>();
         for (var index = 0; index < item.TimedMetadataTracks.Count; index++)
         {
@@ -276,7 +277,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
             item.TimedMetadataTracks.GetPresentationMode((uint)index)
                 != TimedMetadataTrackPresentationMode.Disabled);
 
-        var off = new ToggleMenuFlyoutItem { Text = "Off", IsChecked = !anyShown };
+        var off = new ToggleMenuFlyoutItem { Text = Loc.Get("Player_SubtitlesOff"), IsChecked = !anyShown };
         off.Click += (_, _) =>
         {
             foreach (var index in subtitleIndices)
@@ -293,7 +294,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
             var track = item.TimedMetadataTracks[index];
             var entry = new ToggleMenuFlyoutItem
             {
-                Text = TrackLabel(track.Label, track.Language, index, "Subtitle"),
+                Text = TrackLabel(track.Label, track.Language, index, Loc.Get("Player_SubtitleTrack")),
                 IsChecked = item.TimedMetadataTracks.GetPresentationMode((uint)index)
                     != TimedMetadataTrackPresentationMode.Disabled,
             };
@@ -314,7 +315,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         if (subtitleIndices.Count == 0)
         {
-            flyout.Items.Add(new MenuFlyoutItem { Text = "This file carries none", IsEnabled = false });
+            flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracksInFile"), IsEnabled = false });
         }
 
         flyout.ShowAt(SubtitlesButton);

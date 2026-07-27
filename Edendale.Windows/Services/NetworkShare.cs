@@ -31,18 +31,18 @@ public static class NetworkShare
         startInfo.ArgumentList.Add("/persistent:no");
 
         using var process = Process.Start(startInfo)
-            ?? throw new IOException("Windows could not start the network-share connector.");
+            ?? throw new IOException(Loc.Get("Smb_ConnectorFailed"));
         process.StandardInput.WriteLine(password);
         process.StandardInput.Close();
         if (!process.WaitForExit(15_000))
         {
             process.Kill(entireProcessTree: true);
-            throw new IOException($"Connecting to {sharePath} timed out.");
+            throw new IOException(Loc.Format("Smb_Timeout", sharePath));
         }
         if (process.ExitCode == 0 || Directory.Exists(sharePath)) return;
 
         throw new IOException(
-            $"Could not connect to {sharePath}. Check the address and stored credentials.");
+            Loc.Format("Smb_CheckAddress", sharePath));
     }
 
     /// <summary>Best-effort reconnect using stored credentials; never throws.</summary>

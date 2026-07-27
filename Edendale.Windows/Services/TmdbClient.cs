@@ -37,7 +37,7 @@ internal sealed class TmdbClient
         if (!IsConfigured)
         {
             throw new WindowsCoreException(
-                "TMDB credentials are not configured. Run init.ps1 from the repository root.");
+                AppText.Get("Tmdb_NotConfigured"));
         }
 
         var query = new List<string>();
@@ -73,7 +73,7 @@ internal sealed class TmdbClient
         {
             var detail = TryReadStatusMessage(body);
             throw new WindowsCoreException(
-                $"TMDB request failed (HTTP {(int)response.StatusCode})" +
+                AppText.Format("Tmdb_RequestFailed", (int)response.StatusCode) +
                 (detail is null ? "." : $": {detail}"));
         }
 
@@ -84,7 +84,7 @@ internal sealed class TmdbClient
         }
         catch (JsonException error)
         {
-            throw new WindowsCoreException($"TMDB returned invalid JSON: {error.Message}");
+            throw new WindowsCoreException(AppText.Format("Tmdb_InvalidJson", error.Message));
         }
     }
 

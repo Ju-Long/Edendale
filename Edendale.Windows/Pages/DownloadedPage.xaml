@@ -14,7 +14,7 @@
             <Button Style="{StaticResource CardButtonStyle}" Click="Movie_Click" Tag="{x:Bind}">
                 <Button.ContextFlyout>
                     <MenuFlyout>
-                        <MenuFlyoutItem Text="Remove" Click="RemoveMovie_Click" Tag="{x:Bind}" />
+                        <MenuFlyoutItem x:Uid="RemoveMovieMenuItem" Text="Remove" Click="RemoveMovie_Click" Tag="{x:Bind}" />
                     </MenuFlyout>
                 </Button.ContextFlyout>
                 <controls:PosterCard
@@ -31,7 +31,7 @@
             <Button Style="{StaticResource CardButtonStyle}" Click="Show_Click" Tag="{x:Bind}">
                 <Button.ContextFlyout>
                     <MenuFlyout>
-                        <MenuFlyoutItem Text="Remove" Click="RemoveShow_Click" Tag="{x:Bind}" />
+                        <MenuFlyoutItem x:Uid="RemoveShowMenuItem" Text="Remove" Click="RemoveShow_Click" Tag="{x:Bind}" />
                     </MenuFlyout>
                 </Button.ContextFlyout>
                 <controls:PosterCard
@@ -74,12 +74,14 @@
             </Border>
             <StackPanel Spacing="12">
                 <TextBlock
+                    x:Uid="LibraryIsSilentTitle"
                     Text="THE LIBRARY&#x0a;IS SILENT"
                     FontFamily="{StaticResource DisplayFontFamily}"
                     FontSize="56"
                     Foreground="{StaticResource EdendaleTextPrimaryBrush}"
                     TextAlignment="Center" />
                 <TextBlock
+                    x:Uid="LibraryIsSilentMessage"
                     Text="Connect your local film collection to begin your cinematic journey."
                     Style="{StaticResource BodyLGTextStyle}"
                     TextAlignment="Center"
@@ -90,17 +92,18 @@
                     <Button Style="{StaticResource ArchivePrimaryButtonStyle}" Click="AddFolder_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-circle-plus.svg" Width="12" Height="12" />
-                            <TextBlock Text="ADD LOCAL FOLDER" />
+                            <TextBlock x:Uid="AddLocalFolderLabel" Text="ADD LOCAL FOLDER" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource ArchiveSecondaryButtonStyle}" Click="AddNetworkSource_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/link.svg" Width="12" Height="12" />
-                            <TextBlock Text="ADD NETWORK SOURCE" />
+                            <TextBlock x:Uid="AddNetworkSourceLabel" Text="ADD NETWORK SOURCE" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
                 <Button
+                    x:Uid="LearnAboutSyncingButton"
                     Content="LEARN ABOUT SYNCING"
                     Style="{StaticResource ArchiveGhostButtonStyle}"
                     HorizontalAlignment="Center"
@@ -128,7 +131,7 @@
                             Click="AddFolder_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-circle-plus.svg" Width="12" Height="12" />
-                                <TextBlock Text="ADD LOCAL FOLDER" />
+                                <TextBlock x:Uid="AddLocalFolderLabelToolbar" Text="ADD LOCAL FOLDER" />
                             </StackPanel>
                         </Button>
                         <Button
@@ -136,7 +139,7 @@
                             Click="AddNetworkSource_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/link.svg" Width="12" Height="12" />
-                                <TextBlock Text="ADD NETWORK SOURCE" />
+                                <TextBlock x:Uid="AddNetworkSourceLabelToolbar" Text="ADD NETWORK SOURCE" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -147,7 +150,7 @@
                     Visibility="Collapsed" />
 
                 <StackPanel x:Name="ContinueSection" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Continue Watching" />
+                    <controls:SectionHeader TitleKey="Section_ContinueWatching" />
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                         <muxc:ItemsRepeater x:Name="ResumeRepeater" Margin="0,14" ItemTemplate="{StaticResource ResumeTemplate}">
                             <muxc:ItemsRepeater.Layout>
@@ -158,7 +161,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="MoviesSection" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Movies" />
+                    <controls:SectionHeader TitleKey="Section_Movies" />
                     <muxc:ItemsRepeater x:Name="MoviesRepeater" ItemTemplate="{StaticResource LibraryMovieTemplate}">
                         <muxc:ItemsRepeater.Layout>
                             <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
@@ -167,7 +170,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="ShowsSection" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="TV Shows" />
+                    <controls:SectionHeader TitleKey="Section_TvShows" />
                     <muxc:ItemsRepeater x:Name="ShowsRepeater" ItemTemplate="{StaticResource LibraryShowTemplate}">
                         <muxc:ItemsRepeater.Layout>
                             <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
@@ -176,7 +179,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="SourcesSection" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Sources" />
+                    <controls:SectionHeader TitleKey="Section_Sources" />
                     <StackPanel x:Name="SourcesList" />
                 </StackPanel>
             </StackPanel>

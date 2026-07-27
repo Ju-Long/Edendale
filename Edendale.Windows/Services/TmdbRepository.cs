@@ -80,9 +80,9 @@ internal sealed class TmdbRepository
             Genres = genres,
             Collections =
             [
-                new() { Id = "all", Title = "All Archives" },
-                new() { Id = "movies", Title = "Feature Films" },
-                new() { Id = "shows", Title = "Series" },
+                new() { Id = "all", Title = AppText.Get("Collection_AllArchives") },
+                new() { Id = "movies", Title = AppText.Get("Collection_FeatureFilms") },
+                new() { Id = "shows", Title = AppText.Get("Collection_Series") },
                 .. genres.Take(6).Select(genre => new CollectionFilter
                 {
                     Id = $"genre:{genre.Id}",
@@ -206,7 +206,7 @@ internal sealed class TmdbRepository
         return new PersonDetail
         {
             Id = item.Int("id") ?? personId,
-            Name = item.String("name") ?? "Unknown",
+            Name = item.String("name") ?? AppText.Get("Credit_Unknown"),
             Biography = item.NonBlankString("biography"),
             ProfilePath = profile,
             ProfileUrl = ImageUrl(profile, "h632"),
@@ -282,7 +282,7 @@ internal sealed class TmdbRepository
         return new SeasonDetail
         {
             SeasonNumber = item.Int("season_number") ?? seasonNumber,
-            Name = item.String("name") ?? $"Season {seasonNumber}",
+            Name = item.String("name") ?? AppText.Format("Season_Number", seasonNumber),
             Overview = item.NonBlankString("overview"),
             AirDate = item.String("air_date"),
             PosterPath = poster,
@@ -646,7 +646,7 @@ internal sealed class TmdbRepository
             {
                 Id = id,
                 MediaType = type,
-                Title = item.String("title") ?? item.String("name") ?? "Untitled",
+                Title = item.String("title") ?? item.String("name") ?? AppText.Get("Credit_Untitled"),
                 Overview = item.String("overview"),
                 PosterPath = poster,
                 BackdropPath = backdrop,
@@ -669,10 +669,10 @@ internal sealed class TmdbRepository
         return MapDetail(
             item,
             "movie",
-            item.String("title") ?? "Untitled",
+            item.String("title") ?? AppText.Get("Credit_Untitled"),
             item.String("release_date"),
             item.Int("runtime"),
-            director is null ? null : $"Directed by {director}",
+            director is null ? null : AppText.Format("Credit_DirectedBy", director),
             null,
             null,
             []);
@@ -693,7 +693,7 @@ internal sealed class TmdbRepository
                 return new SeasonSummary
                 {
                     SeasonNumber = season.Int("season_number") ?? -1,
-                    Name = season.String("name") ?? "Season",
+                    Name = season.String("name") ?? AppText.Get("Season_Label"),
                     EpisodeCount = season.Int("episode_count"),
                     AirDate = season.String("air_date"),
                     PosterPath = poster,
@@ -708,10 +708,10 @@ internal sealed class TmdbRepository
         return MapDetail(
             item,
             "tv",
-            item.String("name") ?? "Untitled",
+            item.String("name") ?? AppText.Get("Credit_Untitled"),
             item.String("first_air_date"),
             runtime,
-            creator is null ? null : $"Created by {creator}",
+            creator is null ? null : AppText.Format("Credit_CreatedBy", creator),
             item.Int("number_of_seasons"),
             item.Int("number_of_episodes"),
             seasons);
@@ -776,7 +776,7 @@ internal sealed class TmdbRepository
         return new EpisodeDetail
         {
             Id = item.Int("id") ?? 0,
-            Name = item.String("name") ?? "Untitled",
+            Name = item.String("name") ?? AppText.Get("Credit_Untitled"),
             Overview = item.String("overview"),
             StillPath = still,
             StillUrl = ImageUrl(still, "w780"),

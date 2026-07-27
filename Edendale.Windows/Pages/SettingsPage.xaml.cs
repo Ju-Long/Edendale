@@ -34,7 +34,7 @@ public sealed partial class SettingsPage : Page
             IconUri = new Uri(isRemote
                 ? "ms-appx:///Assets/Icons/link.svg"
                 : "ms-appx:///Assets/Icons/folder-closed.svg");
-            var items = itemCount == 1 ? "1 item" : $"{itemCount} items";
+            var items = Loc.Plural("Plural_ItemOne", "Plural_ItemOther", itemCount);
             Subtitle = $"{(isRemote ? "SMB" : "Local Folder")} · {items}";
         }
 
@@ -50,17 +50,17 @@ public sealed partial class SettingsPage : Page
         InitializeComponent();
 
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        VersionText.Text = version is null ? "development build" : $"{version.ToString(3)} (pre-release)";
+        VersionText.Text = version is null ? Loc.Get("Settings_DevelopmentBuild") : $"{version.ToString(3)} (pre-release)";
         CoreText.Text = WindowsCore.CoreVersion;
         CredentialText.Text = WindowsCore.HasTmdbCredentials
-            ? "Configured"
-            : "Missing — run init.ps1, then rebuild Edendale";
+            ? Loc.Get("Settings_Configured")
+            : Loc.Get("Settings_CredentialsMissing");
         DataPathText.Text = AppPaths.DataDirectory;
         // Apple's equivalent row reads "Synced via your iCloud"; say what
         // Windows actually does instead of borrowing the claim.
         CloudSyncText.Text = AppPaths.CloudReplicaDirectory is string replica
-            ? $"Replicated to {replica}"
-            : "Stored on this device";
+            ? Loc.Format("Settings_ReplicatedTo", replica)
+            : Loc.Get("Settings_StoredOnThisDevice");
 
         _suppressStartupToggle = true;
         StartupToggle.IsOn = StartupService.IsEnabled;
@@ -91,7 +91,7 @@ public sealed partial class SettingsPage : Page
         _suppressStartupToggle = true;
         StartupToggle.IsOn = !wanted;
         _suppressStartupToggle = false;
-        StartupStatusText.Text = "Could not update the startup entry — Windows refused the registry change.";
+        StartupStatusText.Text = Loc.Get("Settings_StartupRefused");
         StartupStatusRow.Visibility = Visibility.Visible;
     }
 
@@ -103,12 +103,12 @@ public sealed partial class SettingsPage : Page
         // "Account" label rather than a paragraph (SettingsView.swift reads
         // "Account / Connected").
         AccountStatusText.Text = !account.CanConnect
-            ? "Unavailable — TMDB credentials missing"
+            ? Loc.Get("Settings_TmdbUnavailable")
             : account.IsConnected
-                ? $"Connected as {account.AccountLabel ?? "TMDB user"}"
+                ? Loc.Format("Settings_ConnectedAs", account.AccountLabel ?? "TMDB user")
                 : account.HasPendingApproval
-                    ? "Waiting for approval on the TMDB page"
-                    : "Not connected";
+                    ? Loc.Get("Settings_AwaitingApproval")
+                    : Loc.Get("Settings_NotConnected");
 
         SyncStatusText.Text = account.LastSyncStatus ?? "";
         SyncStatusRow.Visibility = string.IsNullOrEmpty(account.LastSyncStatus)
@@ -147,12 +147,12 @@ public sealed partial class SettingsPage : Page
             var launched = await global::Windows.System.Launcher.LaunchUriAsync(new Uri(approvalUrl));
             if (!launched)
             {
-                AccountStatusText.Text = "No browser could be opened. Scan the QR code with another device.";
+                AccountStatusText.Text = Loc.Get("Tmdb_NoBrowser");
             }
         }
         catch (Exception failure)
         {
-            AccountStatusText.Text = $"Could not start the TMDB connection: {failure.Message}";
+            AccountStatusText.Text = Loc.Format("Tmdb_ConnectFailed", failure.Message);
         }
     }
 
@@ -167,7 +167,7 @@ public sealed partial class SettingsPage : Page
         }
         catch (Exception failure)
         {
-            AccountStatusText.Text = $"The approval page is ready, but its QR code could not be created: {failure.Message}";
+            AccountStatusText.Text = Loc.Format("Tmdb_QrFailed", failure.Message);
         }
         finally
         {
@@ -184,7 +184,7 @@ public sealed partial class SettingsPage : Page
         catch (Exception failure)
         {
             AccountStatusText.Text =
-                $"TMDB did not accept the approval ({failure.Message}). Approve the request in the browser, then try again.";
+                Loc.Format("Tmdb_ApprovalRejected", failure.Message);
         }
     }
 
@@ -228,32 +228,31 @@ public sealed partial class SettingsPage : Page
     private async void AddNetworkFolder_Click(object sender, RoutedEventArgs e)
     {
         var pathBox = new TextBox { PlaceholderText = @"\\SMB-SERVER\Share\Movies" };
-        var usernameBox = new TextBox { PlaceholderText = "Username (optional)" };
-        var passwordBox = new PasswordBox { PlaceholderText = "Password" };
+        var usernameBox = new TextBox { PlaceholderText = Loc.Get("Smb_UsernameOptional") };
+        var passwordBox = new PasswordBox { PlaceholderText = Loc.Get("Smb_Password") };
 
         var dialog = new ContentDialog
         {
-            Title = "Add Network Source",
+            Title = Loc.Get("Smb_AddNetworkSource"),
             Content = new StackPanel
             {
                 Spacing = 12,
                 MinWidth = 400,
                 Children =
                 {
-                    new TextBlock { Text = "Enter the UNC path to your media folder:" },
+                    new TextBlock { Text = Loc.Get("Smb_UncPrompt") },
                     pathBox,
                     new TextBlock
                     {
-                        Text = "If the share needs a sign-in, add it here. It is stored " +
-                               "encrypted on this device and reused for rescans.",
+                        Text = Loc.Get("Smb_CredentialNote"),
                         Style = (Style)Application.Current.Resources["BodySMTextStyle"],
                     },
                     usernameBox,
                     passwordBox,
                 }
             },
-            PrimaryButtonText = "Add",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = Loc.Get("Common_Add"),
+            CloseButtonText = Loc.Get("Common_Cancel"),
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,
         };
@@ -281,18 +280,18 @@ public sealed partial class SettingsPage : Page
                 await AppServices.Library.ImportFolderAsync(path);
                 return;
             }
-            failure = $"Could not access the network path: {path}";
+            failure = Loc.Format("Smb_CouldNotAccess", path);
         }
         catch (Exception connectFailure)
         {
-            failure = $"Could not connect to {path}: {connectFailure.Message}";
+            failure = Loc.Format("Smb_ConnectFailed", path, connectFailure.Message);
         }
 
         if (failure is not null)
         {
             var errDialog = new ContentDialog
             {
-                Title = "Connection Failed",
+                Title = Loc.Get("Smb_ConnectionFailedTitle"),
                 Content = new TextBlock { Text = failure, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "OK",
                 XamlRoot = XamlRoot,
@@ -320,16 +319,15 @@ public sealed partial class SettingsPage : Page
 
         var host = SmbCredentialsStore.HostFromUncPath(folder.Path);
         var message = host is not null
-            ? $"“{folder.Name}” is removed from your library and the saved login for {host} " +
-              "is forgotten, unless another source still uses that server. Nothing on the server is deleted."
-            : $"“{folder.Name}” is removed from your library. Nothing on your disk is deleted.";
+            ? Loc.Format("Source_RemoveMessageSmb", folder.Name, host)
+            : Loc.Format("Source_RemoveMessageLocal", folder.Name);
 
         var confirm = new ContentDialog
         {
-            Title = "Remove Source",
+            Title = Loc.Get("Source_RemoveTitle"),
             Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
-            PrimaryButtonText = "Remove",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = Loc.Get("Common_Remove"),
+            CloseButtonText = Loc.Get("Common_Cancel"),
             // Destructive: the safe button is the default one.
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,

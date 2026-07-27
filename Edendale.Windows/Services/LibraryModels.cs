@@ -1,3 +1,4 @@
+using Edendale.Windows.Core;
 // Local library records persisted to %LOCALAPPDATA%\Edendale\library.json.
 // Windows-only shell state: file paths never leave this machine, mirroring
 // the local-only SwiftData store on Apple platforms.
@@ -33,7 +34,7 @@ public sealed class LibraryMovie
             var parts = new List<string>();
             if (Year is int year) parts.Add(year.ToString());
             if (RuntimeMinutes is int minutes && minutes > 0) parts.Add($"{minutes} min");
-            return parts.Count > 0 ? string.Join(" · ", parts) : "Awaiting metadata";
+            return parts.Count > 0 ? string.Join(" · ", parts) : AppText.Get("Library_AwaitingMetadata");
         }
     }
 }

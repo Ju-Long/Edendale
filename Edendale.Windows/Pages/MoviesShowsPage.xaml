@@ -44,7 +44,7 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Center">
             <ProgressRing IsActive="True" Width="36" Height="36" Foreground="{StaticResource EdendaleGoldBrush}" />
-            <TextBlock Text="LOADING THE ARCHIVE" Style="{StaticResource LabelCapsTextStyle}" HorizontalAlignment="Center" />
+            <TextBlock x:Uid="LoadingTheArchive" Text="LOADING THE ARCHIVE" Style="{StaticResource LabelCapsTextStyle}" HorizontalAlignment="Center" />
         </StackPanel>
 
         <!-- Missing TMDB key -->
@@ -56,8 +56,9 @@
             VerticalAlignment="Center"
             Visibility="Collapsed">
             <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/film.svg" Width="44" Height="44" Foreground="{StaticResource EdendaleSurfaceHighBrush}" HorizontalAlignment="Center" />
-            <TextBlock Text="THE PROJECTOR IS DARK" Style="{StaticResource HeadlineMDTextStyle}" HorizontalAlignment="Center" />
+            <TextBlock x:Uid="ProjectorIsDark" Text="THE PROJECTOR IS DARK" Style="{StaticResource HeadlineMDTextStyle}" HorizontalAlignment="Center" />
             <TextBlock
+                x:Uid="MissingKeyMessage"
                 x:Name="MissingKeyMessage"
                 Text="Run init.ps1 in the repository root to add TMDB credentials, rebuild Edendale, and the archive lights up."
                 Style="{StaticResource BodyLGTextStyle}"
@@ -72,9 +73,10 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Visibility="Collapsed">
-            <TextBlock Text="THE REEL SNAPPED" Style="{StaticResource HeadlineMDTextStyle}" HorizontalAlignment="Center" />
+            <TextBlock x:Uid="ReelSnapped" Text="THE REEL SNAPPED" Style="{StaticResource HeadlineMDTextStyle}" HorizontalAlignment="Center" />
             <TextBlock x:Name="ErrorMessageText" Style="{StaticResource BodySMTextStyle}" TextAlignment="Center" />
             <Button
+                x:Uid="TryAgainButton"
                 Content="TRY AGAIN"
                 Style="{StaticResource ArchiveSecondaryButtonStyle}"
                 HorizontalAlignment="Center"
@@ -120,7 +122,7 @@
                             MaxWidth="900">
                             <StackPanel x:Name="ContinueRow" Orientation="Horizontal" Spacing="12" Visibility="Collapsed">
                                 <Border BorderBrush="{StaticResource EdendaleGoldDeepBrush}" BorderThickness="1" CornerRadius="4" Padding="10,5">
-                                    <TextBlock Text="CONTINUE WATCHING" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
+                                    <TextBlock x:Uid="ContinueWatchingBadge" Text="CONTINUE WATCHING" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
                                 </Border>
                                 <TextBlock x:Name="RemainingText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
                             </StackPanel>
@@ -140,19 +142,19 @@
                                 <Button x:Name="HeroPlayButton" Style="{StaticResource ArchivePrimaryButtonStyle}" Click="HeroPlay_Click" Visibility="Collapsed">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/play.svg" Width="12" Height="12" />
-                                        <TextBlock x:Name="HeroPlayLabel" Text="PLAY" />
+                                        <TextBlock x:Uid="HeroPlayLabel" x:Name="HeroPlayLabel" Text="PLAY" />
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="HeroDetailsButton" Style="{StaticResource ArchiveSecondaryButtonStyle}" Click="HeroDetails_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-info.svg" Width="12" Height="12" />
-                                        <TextBlock Text="DETAILS" />
+                                        <TextBlock x:Uid="HeroDetailsLabel" Text="DETAILS" />
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="HeroTrailerButton" Style="{StaticResource ArchiveSecondaryButtonStyle}" Click="HeroTrailer_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/film.svg" Width="12" Height="12" />
-                                        <TextBlock x:Name="HeroTrailerLabel" Text="WATCH TRAILER" />
+                                        <TextBlock x:Uid="HeroTrailerLabel" x:Name="HeroTrailerLabel" Text="WATCH TRAILER" />
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
@@ -168,7 +170,7 @@
 
                 <!-- Shelves -->
                 <StackPanel x:Name="TrendingShelf" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Trending Today" Margin="48,0" />
+                    <controls:SectionHeader TitleKey="Section_TrendingToday" Margin="48,0" />
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                         <muxc:ItemsRepeater x:Name="TrendingRepeater" Margin="48,14" ItemTemplate="{StaticResource ShelfPosterTemplate}">
                             <muxc:ItemsRepeater.Layout>
@@ -179,7 +181,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="PopularMoviesShelf" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Popular Films" Margin="48,0" />
+                    <controls:SectionHeader TitleKey="Section_PopularFilms" Margin="48,0" />
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                         <muxc:ItemsRepeater x:Name="PopularMoviesRepeater" Margin="48,14" ItemTemplate="{StaticResource ShelfPosterTemplate}">
                             <muxc:ItemsRepeater.Layout>
@@ -190,7 +192,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="PopularShowsShelf" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Popular Series" Margin="48,0" />
+                    <controls:SectionHeader TitleKey="Section_PopularSeries" Margin="48,0" />
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                         <muxc:ItemsRepeater x:Name="PopularShowsRepeater" Margin="48,14" ItemTemplate="{StaticResource ShelfPosterTemplate}">
                             <muxc:ItemsRepeater.Layout>
@@ -201,7 +203,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="TopRatedShelf" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Top Rated" Margin="48,0" />
+                    <controls:SectionHeader TitleKey="Section_TopRated" Margin="48,0" />
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                         <muxc:ItemsRepeater x:Name="TopRatedRepeater" Margin="48,14" ItemTemplate="{StaticResource ShelfPosterTemplate}">
                             <muxc:ItemsRepeater.Layout>
@@ -213,7 +215,7 @@
 
                 <!-- Curated collections -->
                 <StackPanel Spacing="18">
-                    <controls:SectionHeader Title="Curated Collections" Margin="48,0" />
+                    <controls:SectionHeader TitleKey="Section_CuratedCollections" Margin="48,0" />
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                         <StackPanel x:Name="CollectionChips" Orientation="Horizontal" Spacing="10" Margin="48,0" />
                     </ScrollViewer>

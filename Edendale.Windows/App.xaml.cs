@@ -1,3 +1,4 @@
+using Edendale.Windows.Core;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
@@ -14,6 +15,9 @@ public partial class App : Application
 
     public App()
     {
+        // Core and the data services are compiled into the test library too,
+        // so they read copy through AppText; point it at the resource loader.
+        AppText.Resolver = Loc.Get;
         InitializeComponent();
     }
 

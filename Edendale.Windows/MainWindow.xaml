@@ -21,6 +21,7 @@
                 Margin="20,0,0,0"
                 Spacing="10">
                 <TextBlock
+                    x:Uid="BrandWordmark"
                     Text="EDENDALE"
                     FontFamily="{StaticResource DisplayFontFamily}"
                     FontSize="22"
@@ -48,9 +49,9 @@
             <NavigationView.MenuItems>
                 <!-- Icons are Font Awesome SVGs; PathIcon geometry is
                      assigned in code (SvgIcon.CreateIcon). -->
-                <NavigationViewItem x:Name="MoviesNavItem" Content="Movies &amp; Shows" Tag="movies" IsSelected="True" />
-                <NavigationViewItem x:Name="DownloadedNavItem" Content="Downloaded" Tag="downloaded" />
-                <NavigationViewItem x:Name="SearchNavItem" Content="Search" Tag="search" />
+                <NavigationViewItem x:Uid="MoviesNavItem" x:Name="MoviesNavItem" Content="Movies &amp; Shows" Tag="movies" IsSelected="True" />
+                <NavigationViewItem x:Uid="DownloadedNavItem" x:Name="DownloadedNavItem" Content="Downloaded" Tag="downloaded" />
+                <NavigationViewItem x:Uid="SearchNavItem" x:Name="SearchNavItem" Content="Search" Tag="search" />
             </NavigationView.MenuItems>
             <Frame x:Name="RootFrame" Background="{StaticResource EdendaleBackgroundBrush}" />
         </NavigationView>

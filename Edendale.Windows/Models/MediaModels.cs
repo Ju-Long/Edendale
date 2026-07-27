@@ -1,6 +1,7 @@
 // Windows media and TMDB domain models.
 
 using System.Text.Json.Serialization;
+using Edendale.Windows.Core;
 
 namespace Edendale.Windows.Models;
 
@@ -161,7 +162,7 @@ public sealed class SeasonSummary
     public string? Overview { get; set; }
 
     /// <summary>"Season 2" for numbered seasons, TMDB's own name for Specials.</summary>
-    public string DisplayTitle => SeasonNumber == 0 ? Name : $"Season {SeasonNumber}";
+    public string DisplayTitle => SeasonNumber == 0 ? Name : AppText.Format("Season_Number", SeasonNumber);
 }
 
 public sealed class SeasonDetail

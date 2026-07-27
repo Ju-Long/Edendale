@@ -60,7 +60,7 @@ public sealed partial class MoviesShowsPage : Page
         if (!WindowsCore.HasTmdbCredentials)
         {
             MissingKeyMessage.Text =
-                "Run init.ps1 in the repository root to add TMDB credentials, then rebuild Edendale.";
+                Loc.Get("Tmdb_MissingCredentials");
             SwitchState(MissingKeyState);
             return;
         }
@@ -152,7 +152,7 @@ public sealed partial class MoviesShowsPage : Page
     {
         _heroTrailer = null;
         _trailerUnavailable = false;
-        HeroTrailerLabel.Text = "WATCH TRAILER";
+        HeroTrailerLabel.Text = Loc.Get("Detail_WatchTrailer");
         HeroTrailerButton.IsEnabled = true;
 
         var scene = CurrentHero;
@@ -176,7 +176,7 @@ public sealed partial class MoviesShowsPage : Page
             ? AppServices.Library.MovieByTmdbId(detail.Ref.Id) is not null
             : AppServices.Library.ShowByTmdbId(detail.Ref.Id) is not null;
         HeroPlayButton.Visibility = inLibrary ? Visibility.Visible : Visibility.Collapsed;
-        HeroPlayLabel.Text = scene.IsContinueWatching ? "RESUME PLAYBACK" : "PLAY";
+        HeroPlayLabel.Text = Loc.Get(scene.IsContinueWatching ? "Detail_ResumePlayback" : "Detail_Play");
 
         UpdateHeroDots();
     }
@@ -299,7 +299,7 @@ public sealed partial class MoviesShowsPage : Page
         if (_heroTrailer is null)
         {
             _trailerUnavailable = true;
-            HeroTrailerLabel.Text = "NO TRAILER";
+            HeroTrailerLabel.Text = Loc.Get("Detail_NoTrailer");
             HeroTrailerButton.IsEnabled = false;
             return;
         }

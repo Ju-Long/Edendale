@@ -41,13 +41,13 @@ public sealed partial class PlayerPlaylistPanel : UserControl
 
             if (show != null)
             {
-                HeaderText.Text = "EPISODES";
+                HeaderText.Text = Loc.Get("Playlist_Episodes");
                 PopulateShow(show, request.FilePath);
                 return;
             }
         }
 
-        HeaderText.Text = "IN THIS FOLDER";
+        HeaderText.Text = Loc.Get("Playlist_InThisFolder");
         PopulateFolder(request.FilePath);
     }
 
@@ -58,7 +58,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
             var seasonStack = new StackPanel { Spacing = 6 };
             seasonStack.Children.Add(new TextBlock
             {
-                Text = $"SEASON {season}",
+                Text = Loc.Format("Playlist_Season", season),
                 Style = (Style)Application.Current.Resources["LabelCapsStyle"]
             });
 

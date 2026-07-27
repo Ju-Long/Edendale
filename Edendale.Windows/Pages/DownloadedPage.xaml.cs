@@ -77,12 +77,12 @@ public sealed partial class DownloadedPage : Page
         if (library.IsImporting)
         {
             StatusRing.IsActive = true;
-            StatusText.Text = "CATALOGUING NEW FILES";
+            StatusText.Text = Loc.Get("Library_CataloguingNewFiles");
         }
         else if (library.IsEnriching)
         {
             StatusRing.IsActive = true;
-            StatusText.Text = "ENRICHING METADATA";
+            StatusText.Text = Loc.Get("Library_EnrichingMetadata");
         }
         else
         {
@@ -187,7 +187,7 @@ public sealed partial class DownloadedPage : Page
             });
             text.Children.Add(new TextBlock
             {
-                Text = count == 1 ? "1 item" : $"{count} items",
+                Text = Loc.Plural("Plural_ItemOne", "Plural_ItemOther", count),
                 Style = (Style)Application.Current.Resources["BodySMTextStyle"],
             });
             Grid.SetColumn(text, 1);
@@ -199,7 +199,7 @@ public sealed partial class DownloadedPage : Page
                 Content = new Controls.SvgIcon { UriSource = new Uri("ms-appx:///Assets/Icons/arrow-rotate-right.svg"), Width = 14, Height = 14 },
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            ToolTipService.SetToolTip(rescan, "Rescan");
+            ToolTipService.SetToolTip(rescan, Loc.Get("Source_Rescan"));
             rescan.Click += async (_, _) => await AppServices.Library.RescanFolderAsync(folder);
             Grid.SetColumn(rescan, 2);
             row.Children.Add(rescan);
@@ -210,7 +210,7 @@ public sealed partial class DownloadedPage : Page
                 Content = new Controls.SvgIcon { UriSource = new Uri("ms-appx:///Assets/Icons/trash-can.svg"), Width = 14, Height = 14 },
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            ToolTipService.SetToolTip(remove, "Remove");
+            ToolTipService.SetToolTip(remove, Loc.Get("Source_Remove"));
             remove.Click += (_, _) => AppServices.Library.RemoveFolder(folder);
             Grid.SetColumn(remove, 3);
             row.Children.Add(remove);
@@ -245,32 +245,31 @@ public sealed partial class DownloadedPage : Page
     private async void AddNetworkSource_Click(object sender, RoutedEventArgs e)
     {
         var pathBox = new TextBox { PlaceholderText = @"\\SMB-SERVER\Share\Movies" };
-        var usernameBox = new TextBox { PlaceholderText = "Username (optional)" };
-        var passwordBox = new PasswordBox { PlaceholderText = "Password" };
+        var usernameBox = new TextBox { PlaceholderText = Loc.Get("Smb_UsernameOptional") };
+        var passwordBox = new PasswordBox { PlaceholderText = Loc.Get("Smb_Password") };
 
         var dialog = new ContentDialog
         {
-            Title = "Add Network Source",
+            Title = Loc.Get("Smb_AddNetworkSource"),
             Content = new StackPanel
             {
                 Spacing = 12,
                 MinWidth = 400,
                 Children =
                 {
-                    new TextBlock { Text = "Enter the UNC path to your media folder:" },
+                    new TextBlock { Text = Loc.Get("Smb_UncPrompt") },
                     pathBox,
                     new TextBlock
                     {
-                        Text = "If the share needs a sign-in, add it here. It is stored " +
-                               "encrypted on this device and reused for rescans.",
+                        Text = Loc.Get("Smb_CredentialNote"),
                         Style = (Style)Application.Current.Resources["BodySMTextStyle"],
                     },
                     usernameBox,
                     passwordBox,
                 }
             },
-            PrimaryButtonText = "Add",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = Loc.Get("Common_Add"),
+            CloseButtonText = Loc.Get("Common_Cancel"),
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,
         };
@@ -300,7 +299,7 @@ public sealed partial class DownloadedPage : Page
                 await AppServices.Library.ImportFolderAsync(path);
                 return;
             }
-            failure = $"Could not access the network path: {path}";
+            failure = Loc.Format("Smb_CouldNotAccess", path);
         }
         catch (Exception connectFailure)
         {
@@ -309,7 +308,7 @@ public sealed partial class DownloadedPage : Page
 
         var errorDialog = new ContentDialog
         {
-            Title = "Network Source Error",
+            Title = Loc.Get("Smb_ErrorTitle"),
             Content = failure,
             CloseButtonText = "OK",
             XamlRoot = XamlRoot,
@@ -321,10 +320,8 @@ public sealed partial class DownloadedPage : Page
     {
         var dialog = new ContentDialog
         {
-            Title = "Private by Design",
-            Content = "Your library index and watch progress stay on this device. " +
-                      "The only network calls Edendale makes are to TMDB for artwork and metadata — " +
-                      "nothing else is sent anywhere.",
+            Title = Loc.Get("Privacy_Title"),
+            Content = Loc.Get("Privacy_Body"),
             CloseButtonText = "OK",
             XamlRoot = XamlRoot,
         };

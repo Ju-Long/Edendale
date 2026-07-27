@@ -305,18 +305,18 @@ public sealed partial class DetailPage : Page
         if (hasScore)
         {
             ScoreTiles.Children.Add(ScoreTile(
-                "TMDB SCORE",
+                Loc.Get("Detail_TmdbScore"),
                 detail.Score!.Value.ToString("0.0"),
-                detail.VoteCount is int votes ? $"/ 10 · {votes:N0} votes" : "/ 10"));
+                detail.VoteCount is int votes ? Loc.Format("Detail_ScoreOutOfTen", votes) : "/ 10"));
         }
         if (hasCatalogue)
         {
             var seasons = detail.SeasonCount!.Value;
             var episodes = detail.EpisodeCount!.Value;
             ScoreTiles.Children.Add(ScoreTile(
-                "CATALOGUE",
+                Loc.Get("Detail_Catalogue"),
                 seasons.ToString(),
-                $"{(seasons == 1 ? "season" : "seasons")} · {episodes} episodes"));
+                $"{Loc.Plural("Plural_SeasonOne", "Plural_SeasonOther", seasons)} · {Loc.Plural("Plural_EpisodeOne", "Plural_EpisodeOther", episodes)}"));
         }
 
         TaglineQuoteText.Text = $"“{detail.Tagline}”";
@@ -367,18 +367,18 @@ public sealed partial class DetailPage : Page
         if (_localMovie?.TmdbId is int tmdbId
             && AppServices.WatchProgress.Get(tmdbId, "movie") is { IsCompleted: false, Position: > 0.005 })
         {
-            PlayLabel.Text = "RESUME PLAYBACK";
+            PlayLabel.Text = Loc.Get("Detail_ResumePlayback");
         }
         else
         {
-            PlayLabel.Text = "PLAY";
+            PlayLabel.Text = Loc.Get("Detail_Play");
         }
 
         if (WatchKey is { } key)
         {
             WatchedButton.Visibility = Visibility.Visible;
             var watched = AppServices.WatchProgress.IsWatched(key.Id, key.Type);
-            WatchedLabel.Text = watched ? "WATCHED" : "MARK WATCHED";
+            WatchedLabel.Text = Loc.Get(watched ? "Detail_Watched" : "Detail_MarkWatched");
             WatchedIcon.UriSource = new Uri(watched ? "ms-appx:///Assets/Icons/eye-slash.svg" : "ms-appx:///Assets/Icons/eye.svg");
         }
         else
@@ -405,7 +405,7 @@ public sealed partial class DetailPage : Page
     {
         _trailer = null;
         _trailerUnavailable = false;
-        TrailerLabel.Text = "WATCH TRAILER";
+        TrailerLabel.Text = Loc.Get("Detail_WatchTrailer");
         TrailerButton.IsEnabled = true;
     }
 
@@ -434,7 +434,7 @@ public sealed partial class DetailPage : Page
         if (_trailer is null)
         {
             _trailerUnavailable = true;
-            TrailerLabel.Text = "NO TRAILER";
+            TrailerLabel.Text = Loc.Get("Detail_NoTrailer");
             TrailerButton.IsEnabled = false;
             return;
         }
@@ -467,17 +467,17 @@ public sealed partial class DetailPage : Page
 
         var favourite = AppServices.UserMedia.IsFavourite(reference.Id, reference.MediaType);
         FavouriteIcon.UriSource = new Uri(favourite ? "ms-appx:///Assets/Icons/heart-fill.svg" : "ms-appx:///Assets/Icons/heart.svg");
-        FavouriteLabel.Text = favourite ? "FAVOURITED" : "FAVOURITE";
+        FavouriteLabel.Text = Loc.Get(favourite ? "Detail_Favourited" : "Detail_Favourite");
 
         var listed = AppServices.UserMedia.IsWatchlisted(reference.Id, reference.MediaType);
         WatchlistIcon.UriSource = new Uri(listed ? "ms-appx:///Assets/Icons/bookmark-slash.svg" : "ms-appx:///Assets/Icons/bookmark-plus.svg");
-        WatchlistLabel.Text = listed ? "IN WATCHLIST" : "WATCHLIST";
+        WatchlistLabel.Text = Loc.Get(listed ? "Detail_InWatchlist" : "Detail_Watchlist");
 
         var rating = AppServices.UserMedia.RatingFor(reference.Id, reference.MediaType);
         _suppressRatingEvent = true;
         RatingInput.Value = rating is double value ? value / 2 : -1;
         _suppressRatingEvent = false;
-        RatingLabel.Text = rating is double stored ? $"{stored:0.#} / 10" : "RATE";
+        RatingLabel.Text = rating is double stored ? $"{stored:0.#} / 10" : Loc.Get("Detail_Rate");
     }
 
     private void ToggleFavourite_Click(object sender, RoutedEventArgs e)
@@ -549,7 +549,7 @@ public sealed partial class DetailPage : Page
         {
             SeasonsList.Children.Add(new TextBlock
             {
-                Text = $"Season {season}",
+                Text = Loc.Format("Season_Number", season),
                 Style = (Style)Application.Current.Resources["TitleLGTextStyle"],
                 Margin = new Thickness(0, 12, 0, 0),
             });
@@ -606,7 +606,7 @@ public sealed partial class DetailPage : Page
             var flyout = new MenuFlyout();
             var toggle = new MenuFlyoutItem
             {
-                Text = watched ? "Mark Unwatched" : "Mark Watched",
+                Text = Loc.Get(watched ? "Detail_MarkUnwatchedTooltip" : "Detail_MarkWatchedTooltip"),
             };
             toggle.Click += (_, _) =>
             {
@@ -728,7 +728,7 @@ public sealed partial class DetailPage : Page
 
         if (episodes.Count == 0)
         {
-            ShowSeasonMessage("TMDB lists no episodes for this season yet.");
+            ShowSeasonMessage(Loc.Get("Season_NoEpisodes"));
             return;
         }
 
@@ -765,7 +765,7 @@ public sealed partial class DetailPage : Page
         button.Click += (_, _) => ToggleTmdbEpisodeWatched(episode.Id);
 
         var flyout = new MenuFlyout();
-        var toggle = new MenuFlyoutItem { Text = watched ? "Mark Unwatched" : "Mark Watched" };
+        var toggle = new MenuFlyoutItem { Text = Loc.Get(watched ? "Detail_MarkUnwatchedTooltip" : "Detail_MarkWatchedTooltip") };
         toggle.Click += (_, _) => ToggleTmdbEpisodeWatched(episode.Id);
         flyout.Items.Add(toggle);
         button.ContextFlyout = flyout;

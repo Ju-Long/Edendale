@@ -177,7 +177,7 @@ public sealed class LibraryService
         }
         catch (Exception failure)
         {
-            ErrorMessage = $"Import failed: {failure.Message}";
+            ErrorMessage = Loc.Format("Library_ImportFailed", failure.Message);
         }
         finally
         {
@@ -200,7 +200,7 @@ public sealed class LibraryService
 
         if (!Directory.Exists(folder.Path))
         {
-            ErrorMessage = $"Folder not found: {folder.Path}";
+            ErrorMessage = Loc.Format("Library_FolderNotFound", folder.Path);
             return false;
         }
 

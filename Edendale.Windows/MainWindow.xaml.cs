@@ -135,7 +135,7 @@ public sealed partial class MainWindow : Window
                 }
                 else
                 {
-                    ShowActivationMessage("That episode has no local file in the library.");
+                    ShowActivationMessage(Loc.Get("Player_NoLocalFile"));
                 }
                 break;
 
@@ -154,12 +154,12 @@ public sealed partial class MainWindow : Window
                 }
                 else
                 {
-                    ShowActivationMessage("This library item no longer exists.");
+                    ShowActivationMessage(Loc.Get("Library_ItemMissing"));
                 }
                 break;
 
             default:
-                ShowActivationMessage("This library item no longer exists.");
+                ShowActivationMessage(Loc.Get("Library_ItemMissing"));
                 break;
         }
     }
@@ -320,7 +320,7 @@ public sealed partial class MainWindow : Window
         {
             // The compact-overlay presenter needs Windows 10 1903 or newer;
             // on anything older the player just stays full window.
-            ShowActivationMessage("Picture in Picture isn't available on this version of Windows.");
+            ShowActivationMessage(Loc.Get("Player_PipUnavailable"));
             return;
         }
 

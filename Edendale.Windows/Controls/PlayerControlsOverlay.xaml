@@ -82,13 +82,13 @@
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="8">
                     <!-- Controls -->
-                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipBack_Click" ToolTipService.ToolTip="Skip Back 10s">
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipBack_Click" x:Uid="SkipBackButton" ToolTipService.ToolTip="Skip Back 10s">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-left-10.svg" Width="20" Height="20" />
                     </Button>
                     <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="PlayPauseButton_Click">
                         <controls:SvgIcon x:Name="BottomPlayPauseIcon" UriSource="ms-appx:///Assets/Icons/pause.svg" Width="20" Height="20" />
                     </Button>
-                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipForward_Click" ToolTipService.ToolTip="Skip Forward 10s">
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipForward_Click" x:Uid="SkipForwardButton" ToolTipService.ToolTip="Skip Forward 10s">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-right-10.svg" Width="20" Height="20" />
                     </Button>
                 </StackPanel>
@@ -97,14 +97,14 @@
                     <Button x:Name="SpeedButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="1.0x" Click="SpeedButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14"/>
                     <!-- Text label rather than a new glyph: FIT/FILL reads at a
                          glance and needs no icon import. -->
-                    <Button x:Name="AspectButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="FIT" Click="AspectButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14" ToolTipService.ToolTip="Fit or fill the window"/>
-                    <Button x:Name="LoopButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="LoopButton_Click" ToolTipService.ToolTip="Loop">
+                    <Button x:Uid="AspectButton" x:Name="AspectButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="FIT" Click="AspectButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14" ToolTipService.ToolTip="Fit or fill the window"/>
+                    <Button x:Name="LoopButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="LoopButton_Click" x:Uid="LoopButton" ToolTipService.ToolTip="Loop">
                         <controls:SvgIcon x:Name="LoopIcon" UriSource="ms-appx:///Assets/Icons/arrow-rotate-right.svg" Width="20" Height="20" />
                     </Button>
-                    <Button x:Name="SubtitlesButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SubtitlesButton_Click" ToolTipService.ToolTip="Subtitles &amp; Audio">
+                    <Button x:Name="SubtitlesButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SubtitlesButton_Click" x:Uid="SubtitlesButton" ToolTipService.ToolTip="Subtitles &amp; Audio">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/subtitles.svg" Width="20" Height="20" />
                     </Button>
-                    <Button x:Name="PictureInPictureButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="PictureInPictureButton_Click" ToolTipService.ToolTip="Picture in Picture">
+                    <Button x:Name="PictureInPictureButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="PictureInPictureButton_Click" x:Uid="PictureInPictureButton" ToolTipService.ToolTip="Picture in Picture">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/picture-in-picture.svg" Width="20" Height="20" />
                     </Button>
                 </StackPanel>

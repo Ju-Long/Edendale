@@ -67,7 +67,7 @@ public sealed class TmdbAccountService
     public async Task CompleteConnectAsync()
     {
         var token = _pendingRequestToken
-            ?? throw new InvalidOperationException("No TMDB connection is awaiting approval.");
+            ?? throw new InvalidOperationException(Loc.Get("Tmdb_NoPendingApproval"));
         var session = await WindowsCore.TmdbAuthFinishAsync(token);
         _pendingRequestToken = null;
         _pendingApprovalUrl = null;
@@ -111,7 +111,7 @@ public sealed class TmdbAccountService
     public async Task<string?> SyncNowAsync()
     {
         var session = _session;
-        if (session is null || !CanConnect) return "Not connected to TMDB.";
+        if (session is null || !CanConnect) return Loc.Get("Tmdb_NotConnected");
         if (Interlocked.Exchange(ref _syncRunning, 1) == 1) return null;
         try
         {
@@ -119,12 +119,12 @@ public sealed class TmdbAccountService
                 session.SessionId, session.AccountId, _store.All);
             _store.ReplaceAll(outcome.Records);
             LastSyncStatus =
-                $"Synced {DateTime.Now:HH:mm} — {outcome.Pushed} pushed, {outcome.Pulled} pulled";
+                Loc.Format("Tmdb_SyncStatus", DateTime.Now.ToString("HH:mm"), outcome.Pushed, outcome.Pulled);
             return null;
         }
         catch (Exception failure)
         {
-            LastSyncStatus = $"Sync failed: {failure.Message}";
+            LastSyncStatus = Loc.Format("Tmdb_SyncFailed", failure.Message);
             return failure.Message;
         }
         finally

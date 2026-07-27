@@ -5,11 +5,8 @@ namespace Edendale.Windows.Core;
 
 internal static class ReleaseCalendar
 {
-    private static readonly string[] MonthNames =
-    [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
+    /// <summary>Abbreviated month name, 1-based, from the string catalogue.</summary>
+    private static string MonthName(int month) => AppText.Get($"Month_{month}");
 
     public static ReleaseYearGrid CreateYearGrid(int year)
     {
@@ -20,11 +17,11 @@ internal static class ReleaseCalendar
 
         var grid = new ReleaseYearGrid { Year = year };
         var slots = EmptyWeek();
-        string? monthLabel = "Jan";
+        string? monthLabel = MonthName(1);
 
         for (var date = new DateOnly(year, 1, 1); date.Year == year; date = date.AddDays(1))
         {
-            if (date.Day == 1 && date.Month > 1) monthLabel = MonthNames[date.Month - 1];
+            if (date.Day == 1 && date.Month > 1) monthLabel = MonthName(date.Month);
 
             var dayOfWeek = (int)date.DayOfWeek;
             slots[dayOfWeek] = new ReleaseDaySlot
@@ -60,8 +57,9 @@ internal static class ReleaseCalendar
         }
 
         var dayCount = end.DayNumber - start.DayNumber + 1;
-        var countText = dayCount == 1 ? "1 day" : $"{dayCount} days";
-        if (start == end) return $"{start.Day} {Month(start)} {start.Year} · 1 day";
+        var countText = AppText.Plural("Plural_DayOne", "Plural_DayOther", dayCount);
+        // dayCount is 1 here, so countText already reads "1 day".
+        if (start == end) return $"{start.Day} {Month(start)} {start.Year} · {countText}";
         if (start.Year != end.Year)
         {
             return $"{start.Day} {Month(start)} {start.Year} – " +
@@ -75,7 +73,7 @@ internal static class ReleaseCalendar
         return $"{start.Day} – {end.Day} {Month(start)} {start.Year} · {countText}";
     }
 
-    private static string Month(DateOnly value) => MonthNames[value.Month - 1];
+    private static string Month(DateOnly value) => MonthName(value.Month);
 
     private static List<ReleaseDaySlot?> EmptyWeek() =>
         [null, null, null, null, null, null, null];

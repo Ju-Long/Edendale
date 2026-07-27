@@ -40,6 +40,7 @@
     <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\TmdbClient.cs" Link="App\Services\TmdbClient.cs" />
     <Compile Include="..\Edendale.Windows\Services\TmdbRepository.cs" Link="App\Services\TmdbRepository.cs" />
+    <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />
     <Compile Include="..\Edendale.Windows\Core\ReleaseCalendar.cs" Link="App\Core\ReleaseCalendar.cs" />
     <Compile Include="..\Edendale.Windows\Core\SearchQuery.cs" Link="App\Core\SearchQuery.cs" />

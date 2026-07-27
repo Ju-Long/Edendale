@@ -57,19 +57,19 @@
                         <Button x:Name="PlayButton" Style="{StaticResource ArchivePrimaryButtonStyle}" Click="Play_Click" Visibility="Collapsed">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/play.svg" Width="12" Height="12" Foreground="{Binding Foreground, ElementName=PlayLabel}" />
-                                <TextBlock x:Name="PlayLabel" Text="PLAY" />
+                                <TextBlock x:Uid="DetailPlayLabel" x:Name="PlayLabel" Text="PLAY" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="WatchedButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ToggleWatched_Click" Visibility="Collapsed">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon x:Name="WatchedIcon" UriSource="ms-appx:///Assets/Icons/eye.svg" Width="12" Height="12" Foreground="{Binding Foreground, ElementName=WatchedLabel}" />
-                                <TextBlock x:Name="WatchedLabel" Text="MARK WATCHED" />
+                                <TextBlock x:Uid="DetailWatchedLabel" x:Name="WatchedLabel" Text="MARK WATCHED" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="TrailerButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="Trailer_Click" Visibility="Collapsed">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/film.svg" Width="12" Height="12" Foreground="{Binding Foreground, ElementName=TrailerLabel}" />
-                                <TextBlock x:Name="TrailerLabel" Text="WATCH TRAILER" />
+                                <TextBlock x:Uid="DetailTrailerLabel" x:Name="TrailerLabel" Text="WATCH TRAILER" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -80,13 +80,13 @@
                         <Button x:Name="FavouriteButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ToggleFavourite_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon x:Name="FavouriteIcon" UriSource="ms-appx:///Assets/Icons/heart.svg" Width="12" Height="12" Foreground="{Binding Foreground, ElementName=FavouriteLabel}" />
-                                <TextBlock x:Name="FavouriteLabel" Text="FAVOURITE" />
+                                <TextBlock x:Uid="DetailFavouriteLabel" x:Name="FavouriteLabel" Text="FAVOURITE" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="WatchlistButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ToggleWatchlist_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon x:Name="WatchlistIcon" UriSource="ms-appx:///Assets/Icons/bookmark-plus.svg" Width="12" Height="12" Foreground="{Binding Foreground, ElementName=WatchlistLabel}" />
-                                <TextBlock x:Name="WatchlistLabel" Text="WATCHLIST" />
+                                <TextBlock x:Uid="DetailWatchlistLabel" x:Name="WatchlistLabel" Text="WATCHLIST" />
                             </StackPanel>
                         </Button>
                         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -115,7 +115,7 @@
                 <StackPanel Spacing="40">
                     <Border x:Name="ArchiveRecordCard" Style="{StaticResource GlassCardBorderStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="14">
-                            <TextBlock Text="THE ARCHIVE RECORD" Style="{StaticResource HeadlineMDTextStyle}" />
+                            <TextBlock x:Uid="DetailArchiveRecordHeader" Text="THE ARCHIVE RECORD" Style="{StaticResource HeadlineMDTextStyle}" />
                             <TextBlock
                                 x:Name="OverviewText"
                                 Style="{StaticResource BodyLGTextStyle}"
@@ -142,7 +142,7 @@
                     </Border>
 
                     <StackPanel x:Name="CastSection" Spacing="16" Visibility="Collapsed">
-                        <TextBlock Text="PRINCIPAL CAST" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
+                        <TextBlock x:Uid="DetailPrincipalCastHeader" Text="PRINCIPAL CAST" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
                         <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
                             <StackPanel x:Name="CastList" Orientation="Horizontal" Spacing="18" />
                         </ScrollViewer>
@@ -150,7 +150,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" x:Name="ConsensusSection" Spacing="16" Visibility="Collapsed">
-                    <TextBlock Text="CRITICAL CONSENSUS" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
+                    <TextBlock x:Uid="DetailCriticalConsensusHeader" Text="CRITICAL CONSENSUS" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
                     <Border Style="{StaticResource GlassCardBorderStyle}" Padding="20">
                         <StackPanel x:Name="ScoreTiles" Spacing="20" />
                     </Border>
@@ -174,7 +174,7 @@
 
             <!-- Local show episodes, grouped by season. -->
             <StackPanel x:Name="EpisodesSection" Spacing="18" Margin="48,0" Visibility="Collapsed">
-                <controls:SectionHeader Title="Episodes" />
+                <controls:SectionHeader TitleKey="Section_Episodes" />
                 <StackPanel x:Name="SeasonsList" Spacing="12" />
             </StackPanel>
 
@@ -182,7 +182,7 @@
                  show has no imported copy. Seasons arrive with the detail
                  response; each episode list is fetched on demand. -->
             <StackPanel x:Name="TmdbSeasonsSection" Spacing="14" Margin="48,0" Visibility="Collapsed">
-                <controls:SectionHeader Title="Episodes" />
+                <controls:SectionHeader TitleKey="Section_Episodes" />
                 <ScrollViewer
                     HorizontalScrollBarVisibility="Hidden"
                     HorizontalScrollMode="Enabled"
@@ -220,6 +220,7 @@
             Background="#66131318"
             CornerRadius="20"
             Click="Back_Click"
+            x:Uid="DetailBackButton"
             AutomationProperties.Name="Back">
             <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-left.svg" Width="16" Height="16" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
         </Button>

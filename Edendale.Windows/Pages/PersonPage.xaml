@@ -34,10 +34,11 @@
             Margin="48,24,48,0"
             HorizontalAlignment="Left"
             Click="Back_Click"
+            x:Uid="PersonBackButton"
             AutomationProperties.Name="Back">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-left.svg" Width="14" Height="14" />
-                <TextBlock Text="BACK" Style="{StaticResource LabelCapsTextStyle}" />
+                <TextBlock x:Uid="PersonBackLabel" Text="BACK" Style="{StaticResource LabelCapsTextStyle}" />
             </StackPanel>
         </Button>
 
@@ -158,14 +159,14 @@
                             Click="ShowInSearch_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/magnifying-glass-play.svg" Width="14" Height="14" />
-                                <TextBlock Text="SHOW IN SEARCH" Style="{StaticResource LabelCapsTextStyle}" />
+                                <TextBlock x:Uid="ShowInSearchLabel" Text="SHOW IN SEARCH" Style="{StaticResource LabelCapsTextStyle}" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
                 </Grid>
 
                 <StackPanel x:Name="FilmographySection" Spacing="18" Visibility="Collapsed">
-                    <controls:SectionHeader Title="Filmography" />
+                    <controls:SectionHeader TitleKey="Section_Filmography" />
                     <muxc:ItemsRepeater x:Name="FilmographyRepeater" ItemTemplate="{StaticResource FilmographyTemplate}">
                         <muxc:ItemsRepeater.Layout>
                             <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />

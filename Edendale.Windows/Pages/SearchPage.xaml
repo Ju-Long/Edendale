@@ -94,6 +94,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBox
+                x:Uid="QueryBox"
                 x:Name="QueryBox"
                 PlaceholderText="Search films, series, and people…"
                 FontFamily="{StaticResource TextFontFamily}"
@@ -108,6 +109,7 @@
 
             <!-- Release-date selector (Apple's release filter, picker form). -->
             <Button
+                x:Uid="DateFilterButton"
                 x:Name="DateFilterButton"
                 Grid.Column="1"
                 Style="{StaticResource ArchiveSecondaryButtonStyle}"
@@ -121,7 +123,7 @@
                          commit a range. -->
                     <Flyout Placement="BottomEdgeAlignedRight" Opening="DateFlyout_Opening">
                         <StackPanel Spacing="14" MinWidth="420" MaxWidth="620">
-                            <TextBlock Text="RELEASE DATE" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
+                            <TextBlock x:Uid="SearchReleaseDateHeader" Text="RELEASE DATE" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
 
                             <Grid ColumnSpacing="10">
                                 <Grid.ColumnDefinitions>
@@ -131,6 +133,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Button
+                                    x:Uid="PreviousYearButton"
                                     x:Name="PreviousYearButton"
                                     Style="{StaticResource CardButtonStyle}"
                                     Padding="6"
@@ -154,6 +157,7 @@
                                     Foreground="{StaticResource EdendaleGoldBrush}"
                                     VerticalAlignment="Center" />
                                 <Button
+                                    x:Uid="NextYearButton"
                                     x:Name="NextYearButton"
                                     Grid.Column="3"
                                     Style="{StaticResource CardButtonStyle}"
@@ -173,23 +177,24 @@
                             </ScrollViewer>
 
                             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBlock Text="Fewer" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" />
+                                <TextBlock x:Uid="HeatmapFewer" Text="Fewer" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" />
                                 <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleSurfaceHighBrush}" />
                                 <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleHeatLowBrush}" />
                                 <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleHeatMidBrush}" />
                                 <Border Width="11" Height="11" CornerRadius="2" Background="{StaticResource EdendaleGoldBrush}" />
-                                <TextBlock Text="More" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" />
+                                <TextBlock x:Uid="HeatmapMore" Text="More" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" />
                             </StackPanel>
 
                             <TextBlock
+                                x:Uid="HeatmapSummary"
                                 x:Name="HeatmapSummary"
                                 Text="Pick a day, then a second day to close the range."
                                 Style="{StaticResource BodySMTextStyle}"
                                 TextWrapping="Wrap" />
 
                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                <Button Content="DONE" Style="{StaticResource ArchivePrimaryButtonStyle}" Padding="18,10" Click="ApplyDateFilter_Click" />
-                                <Button Content="CLEAR" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ClearDateFilter_Click" />
+                                <Button x:Uid="HeatmapDoneButton" Content="DONE" Style="{StaticResource ArchivePrimaryButtonStyle}" Padding="18,10" Click="ApplyDateFilter_Click" />
+                                <Button x:Uid="HeatmapClearButton" Content="CLEAR" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ClearDateFilter_Click" />
                             </StackPanel>
                         </StackPanel>
                     </Flyout>
@@ -225,7 +230,7 @@
                 Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock x:Name="ScopeChipText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
-                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearScope_Click" AutomationProperties.Name="Clear search scope">
+                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearScope_Click" x:Uid="ClearScopeButton" AutomationProperties.Name="Clear search scope">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-xmark.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleGoldBrush}" />
                     </Button>
                 </StackPanel>
@@ -239,7 +244,7 @@
                 Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock x:Name="DateChipText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
-                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearDateFilter_Click" AutomationProperties.Name="Clear date filter">
+                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearDateFilter_Click" x:Uid="ClearDateFilterButton" AutomationProperties.Name="Clear date filter">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-xmark.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleGoldBrush}" />
                     </Button>
                 </StackPanel>
@@ -258,10 +263,11 @@
                         Style="{StaticResource CardButtonStyle}"
                         Padding="0"
                         Click="PersonChip_Click"
+                        x:Uid="OpenPersonPageButton"
                         AutomationProperties.Name="Open this person's page">
                         <TextBlock x:Name="PersonChipText" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
                     </Button>
-                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearPerson_Click" AutomationProperties.Name="Clear person filter">
+                    <Button Style="{StaticResource CardButtonStyle}" Padding="2" Click="ClearPerson_Click" x:Uid="ClearPersonFilterButton" AutomationProperties.Name="Clear person filter">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/circle-xmark.svg" Width="14" Height="14" Foreground="{StaticResource EdendaleGoldBrush}" />
                     </Button>
                 </StackPanel>
@@ -281,12 +287,14 @@
                     Foreground="{StaticResource EdendaleSurfaceHighBrush}"
                     HorizontalAlignment="Center" />
                 <TextBlock
+                    x:Uid="SearchIdleTitle"
                     Text="THE INDEX AWAITS"
                     FontFamily="{StaticResource DisplayFontFamily}"
                     FontSize="48"
                     Foreground="{StaticResource EdendaleTextPrimaryBrush}"
                     TextAlignment="Center" />
                 <TextBlock
+                    x:Uid="SearchIdleMessage"
                     Text="Search the archive for films, series, and the people who made them."
                     Style="{StaticResource BodyLGTextStyle}"
                     TextAlignment="Center"
@@ -297,7 +305,7 @@
                  something to browse rather than a placeholder. -->
             <ScrollViewer x:Name="TrendingScroll" Visibility="Collapsed">
                 <StackPanel Spacing="18" Padding="48,14,48,64">
-                    <controls:SectionHeader Title="Trending Today" />
+                    <controls:SectionHeader TitleKey="Section_TrendingToday" />
                     <muxc:ItemsRepeater x:Name="TrendingRepeater" ItemTemplate="{StaticResource TmdbResultTemplate}">
                         <muxc:ItemsRepeater.Layout>
                             <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
@@ -312,7 +320,7 @@
                      scope can lead with People (see ApplySectionOrder). -->
                 <StackPanel x:Name="ResultSections" Spacing="40" Padding="48,14,48,64">
                     <StackPanel x:Name="LibrarySection" Spacing="18" Visibility="Collapsed">
-                        <controls:SectionHeader Title="From Your Library" />
+                        <controls:SectionHeader TitleKey="Section_FromYourLibrary" />
                         <muxc:ItemsRepeater x:Name="LocalRepeater" ItemTemplate="{StaticResource LocalResultTemplate}">
                             <muxc:ItemsRepeater.Layout>
                                 <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
@@ -321,7 +329,7 @@
                     </StackPanel>
 
                     <StackPanel x:Name="PeopleSection" Spacing="18" Visibility="Collapsed">
-                        <controls:SectionHeader Title="People" />
+                        <controls:SectionHeader TitleKey="Section_People" />
                         <muxc:ItemsRepeater x:Name="PeopleRepeater" Margin="0,4" ItemTemplate="{StaticResource PersonResultTemplate}">
                             <muxc:ItemsRepeater.Layout>
                                 <muxc:UniformGridLayout MinItemWidth="132" MinRowSpacing="20" MinColumnSpacing="18" />
@@ -330,7 +338,7 @@
                     </StackPanel>
 
                     <StackPanel x:Name="TitlesSection" Spacing="18">
-                        <controls:SectionHeader x:Name="IndexHeader" Title="The Index" />
+                        <controls:SectionHeader x:Name="IndexHeader" TitleKey="Section_TheIndex" />
                         <TextBlock
                             x:Name="IndexMessage"
                             Style="{StaticResource BodySMTextStyle}"

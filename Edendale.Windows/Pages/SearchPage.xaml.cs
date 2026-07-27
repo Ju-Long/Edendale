@@ -359,7 +359,7 @@ public sealed partial class SearchPage : Page
                 ToolTipService.SetToolTip(
                     cell,
                     $"{slot.Day} {MonthName(slot.Month)} {slot.Year} · " +
-                    (releases == 1 ? "1 release" : $"{releases} releases"));
+                    Loc.Plural("Plural_ReleaseOne", "Plural_ReleaseOther", releases));
                 cell.Tapped += HeatmapCell_Tapped;
                 ApplySelectionOutline(cell, slot.DateKey);
                 stack.Children.Add(cell);
@@ -424,8 +424,8 @@ public sealed partial class SearchPage : Page
         if (_pendingFrom is null || _pendingTo is null)
         {
             HeatmapSummary.Text = _heatmapAnchor is null
-                ? "Pick a day, then a second day to close the range."
-                : "Pick a second day to close the range.";
+                ? Loc.Get("Heatmap_PickFirstDay")
+                : Loc.Get("Heatmap_PickSecondDay");
             return;
         }
         HeatmapSummary.Text = WindowsCore.SelectionSummary(
@@ -453,8 +453,8 @@ public sealed partial class SearchPage : Page
 
     private static string MonthName(int month) => month switch
     {
-        1 => "Jan", 2 => "Feb", 3 => "Mar", 4 => "Apr", 5 => "May", 6 => "Jun",
-        7 => "Jul", 8 => "Aug", 9 => "Sep", 10 => "Oct", 11 => "Nov", _ => "Dec",
+        >= 1 and <= 11 => Loc.Get($"Month_{month}"),
+        _ => Loc.Get("Month_12"),
     };
 
     private bool HasScope => _scope != "all";
@@ -468,7 +468,7 @@ public sealed partial class SearchPage : Page
         if (HasScope) ScopeChipText.Text = ScopeLabel(_scope).ToUpperInvariant();
 
         PersonChip.Visibility = _activePersonId is null ? Visibility.Collapsed : Visibility.Visible;
-        PersonChipText.Text = $"STARRING {_activePersonName.ToUpperInvariant()}";
+        PersonChipText.Text = Loc.Format("Search_StarringPrefix", _activePersonName.ToUpperInvariant());
 
         FilterChips.Visibility = HasDateFilter || HasScope || _activePersonId is not null
             ? Visibility.Visible
@@ -477,18 +477,18 @@ public sealed partial class SearchPage : Page
 
     private static string ScopeLabel(string scope) => scope switch
     {
-        "people" => "People",
-        "movies" => "Films",
-        "shows" => "Series",
-        _ => "All",
+        "people" => Loc.Get("Scope_People"),
+        "movies" => Loc.Get("Scope_Films"),
+        "shows" => Loc.Get("Scope_Series"),
+        _ => Loc.Get("Scope_All"),
     };
 
     private static string ScopePromptMessage(string scope) => scope switch
     {
-        "people" => "Type a name to find actors and actresses.",
-        "movies" => "Type a title to search films only.",
-        "shows" => "Type a title to search series only.",
-        _ => "Type a title to search the archive.",
+        "people" => Loc.Get("Scope_PromptPeople"),
+        "movies" => Loc.Get("Scope_PromptFilms"),
+        "shows" => Loc.Get("Scope_PromptSeries"),
+        _ => Loc.Get("Scope_PromptAll"),
     };
 
     /// <summary>Strips the keyword prefix, keeping whatever was typed after it.</summary>
@@ -525,8 +525,8 @@ public sealed partial class SearchPage : Page
         return (from, to) switch
         {
             (not null, not null) => from == to ? from : $"{from} – {to}",
-            (not null, null) => $"From {from}",
-            _ => $"Until {to}",
+            (not null, null) => Loc.Format("Search_DateFrom", from),
+            _ => Loc.Format("Search_DateUntil", to),
         };
     }
 
@@ -562,15 +562,14 @@ public sealed partial class SearchPage : Page
         }
 
         var generation = ++_searchGeneration;
-        IndexHeader.Title = "The Index";
+        IndexHeader.Title = Loc.Get("Search_TheIndex");
         BuildLocalResults(query, yearFilter);
 
         if (!WindowsCore.HasTmdbCredentials)
         {
             PeopleSection.Visibility = Visibility.Collapsed;
             SetIndexMessage(
-                "Run init.ps1 in the repository root to add TMDB credentials, then rebuild " +
-                "Edendale to search the full index.");
+                Loc.Get("Search_MissingCredentials"));
             ShowResults();
             return;
         }
@@ -601,7 +600,7 @@ public sealed partial class SearchPage : Page
                 _scopeTerm = scoped.Term;
                 UpdateFilterChips();
                 ApplySectionOrder(scoped.LeadsWithPeople);
-                IndexHeader.Title = scoped.LeadsWithPeople ? "Also in Titles" : "The Index";
+                IndexHeader.Title = Loc.Get(scoped.LeadsWithPeople ? "Search_AlsoInTitles" : "Search_TheIndex");
 
                 // "actors:" with nothing after it: say what the scope does
                 // rather than reporting no matches for an empty term.
@@ -635,7 +634,7 @@ public sealed partial class SearchPage : Page
             ResultsRepeater.ItemsSource = items;
             PeopleRepeater.ItemsSource = people;
             PeopleSection.Visibility = people.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            SetIndexMessage(items.Count == 0 ? "Nothing in the index matches this search." : null);
+            SetIndexMessage(items.Count == 0 ? Loc.Get("Search_NothingMatches") : null);
         }
         catch (Exception failure)
         {
@@ -671,15 +670,15 @@ public sealed partial class SearchPage : Page
 
         var generation = ++_searchGeneration;
         IndexHeader.Title = string.IsNullOrEmpty(personName)
-            ? "Filmography"
-            : $"Filmography — {personName}";
+            ? Loc.Get("Search_Filmography")
+            : Loc.Format("Search_FilmographyOf", personName);
         LibrarySection.Visibility = Visibility.Collapsed;
         PeopleSection.Visibility = Visibility.Collapsed;
         ResultsRepeater.ItemsSource = new List<MediaItem>();
 
         if (!WindowsCore.HasTmdbCredentials)
         {
-            SetIndexMessage("TMDB is unavailable — credentials are missing.");
+            SetIndexMessage(Loc.Get("Tmdb_Unavailable"));
             ShowResults();
             return;
         }
@@ -691,7 +690,7 @@ public sealed partial class SearchPage : Page
             var items = await WindowsCore.LoadPersonFilmographyAsync(personId);
             if (generation != _searchGeneration) return;
             ResultsRepeater.ItemsSource = items;
-            SetIndexMessage(items.Count == 0 ? "No credited titles were found." : null);
+            SetIndexMessage(items.Count == 0 ? Loc.Get("Search_NoCreditedTitles") : null);
         }
         catch (Exception failure)
         {

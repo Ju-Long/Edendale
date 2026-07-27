@@ -72,7 +72,7 @@ public static class ActivationService
         if (playable is null)
         {
             shell.ShowActivationMessage(
-                $"Edendale cannot play {Path.GetFileName(paths[0])} — unsupported file type.");
+                Loc.Format("Activation_UnsupportedFile", Path.GetFileName(paths[0])));
             return;
         }
 
@@ -131,7 +131,7 @@ public static class ActivationService
         }
         else
         {
-            shell.ShowActivationMessage("Edendale could not understand this link.");
+            shell.ShowActivationMessage(Loc.Get("Activation_BadLink"));
         }
     }
 }

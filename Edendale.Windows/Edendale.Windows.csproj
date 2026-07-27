@@ -15,6 +15,9 @@
     <WindowsPackageType>None</WindowsPackageType>
     <!-- Ship the Windows App SDK runtime with the app so no separate runtime install is needed. -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Base language for MRT Core: every lookup falls back here when the
+         user's preferred language has no Strings/<lang>/Resources.resw. -->
+    <DefaultLanguage>en-US</DefaultLanguage>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Program.cs owns Main for the single-instance activation redirect. -->
