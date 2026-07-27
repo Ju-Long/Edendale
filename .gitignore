@@ -1,38 +1,49 @@
-# macOS metadata
+# macOS
 .DS_Store
 
-# Visual Studio and .NET build output
-.vs/
-[Bb]in/
-[Oo]bj/
-Generated Files/
-TestResults/
-AppPackages/
-BundleArtifacts/
-Publish/
-packages/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.binlog
-*.trx
+# Xcode user-specific state
+xcuserdata/
+*.xcuserstate
 
-# Local TMDB credentials
+# Xcode build output / derived data
+build/
+DerivedData/
+
+# Swift Package Manager
+.build/
+
+# Python release tooling
+__pycache__/
+*.py[cod]
+
+# Local secrets — contain the real TMDB token/key, never commit
+Secrets.xcconfig
 /secrets.json
+/Apple/Shared/Secrets.xcconfig.tmp.*
 /secrets.json.tmp.*
 
-# Windows packaging and signing material
-*.appx
-*.appxbundle
-*.appxupload
-*.msix
-*.msixbundle
-*.msixupload
-*.pfx
+# Apple release credentials and signing material
+AuthKey_*.p8
 *.p12
-*.pvk
-*.snk
-*.key
-*.publishsettings
-*.pubxml.user
+*.mobileprovision
+*.provisionprofile
+*.keychain-db
+/Sample Movie
+
+# Gradle / Android Kotlin
+.gradle/
+.kotlin/
+local.properties
+*.iml
+.idea/
+
+# Windows / .NET
+[Bb]in/
+[Oo]bj/
+*.user
+
+# Static Astro / Node
+node_modules/
+Web/.astro/
+Web/dist/
+/.vs
