@@ -83,6 +83,31 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
 
+### Languages
+
+Every user-facing string lives in `src/main/res/values/strings.xml`, with
+translations in `values-<qualifier>/strings.xml` for the same locales the Apple
+branch ships. Composables read them through `stringResource` and
+`pluralStringResource`; view models and `LibraryRepository`, which have no
+Compose scope, read them through `AppStrings` in `Localization.kt`.
+
+Labels are stored in natural case. The view layer applies `.uppercase()` where
+the design calls for capitals, so scripts without case are left alone. Counts
+use `<plurals>` so each language gets its own CLDR categories rather than a
+hardcoded singular and plural.
+
+`Localization.kt` also maps `SearchScope` and `CollectionFilter` onto the
+catalogue, so the strings those types carry stay translatable; the mapping is
+exhaustive, so adding a case fails the build instead of leaking English.
+Formatting helpers in `LibraryPresentation.kt` take a formatter argument with an
+English default, which keeps the hermetic tests in `src/test` runnable without a
+`Context`.
+
+`res/xml/locales_config.xml` lists the shipping languages, so Android 13+ offers
+Edendale in Settings → System → Languages → App languages and a reader can pick
+a language for this app alone. Every tag there needs a matching `values-`
+directory. A missing entry falls back to English rather than failing.
+
 ### Branch contract
 
 - `main` remains free of application source, build systems, generated output,
