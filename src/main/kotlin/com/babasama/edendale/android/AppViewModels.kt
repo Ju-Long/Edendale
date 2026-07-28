@@ -362,10 +362,14 @@ data class SearchUiState(
         get() = scope != SearchScope.ALL && SearchQuery.parse(query).term.isEmpty()
 }
 
+// The repository is built in the body rather than taken as a defaulted
+// constructor parameter: AndroidViewModelFactory looks up <init>(Application) by
+// reflection, and a default argument makes Kotlin emit only the two-arg and
+// synthetic overloads, so viewModel() dies with NoSuchMethodException on launch.
 class SearchViewModel(
-    application: Application,
-    private val repository: BrowseRepository = AndroidEdendaleCore.browseRepository(),
+    application: Application
 ) : AndroidViewModel(application) {
+    private val repository: BrowseRepository = AndroidEdendaleCore.browseRepository()
     private val strings = AppStrings(application)
 
     var state by mutableStateOf(SearchUiState())
