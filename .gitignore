@@ -19,7 +19,8 @@ __pycache__/
 # Local secrets — contain the real TMDB token/key, never commit
 Secrets.xcconfig
 /secrets.json
-/Apple/Shared/Secrets.xcconfig.tmp.*
+
+/Shared/Secrets.xcconfig.tmp.*
 /secrets.json.tmp.*
 
 # Apple release credentials and signing material

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24F74" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" usedWithSwiftData="NO">
+    <entity name="CDWatchProgress" representedClassName="CDWatchProgress" syncable="YES">
+        <attribute name="tmdbId" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="mediaType" attributeType="String" defaultValueString="movie"/>
+        <attribute name="position" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="watchedSeconds" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="lastWatchedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isCompleted" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="showTmdbId" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="seasonNumber" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="episodeNumber" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <!-- No uniqueness constraint: NSPersistentCloudKitContainer rejects constrained
+             entities (the store fails to load). WatchProgressStore.update() dedupes by
+             fetching on (tmdbId, mediaType) before inserting. -->
+    </entity>
+    <entity name="CDUserMedia" representedClassName="CDUserMedia" syncable="YES">
+        <attribute name="tmdbId" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="mediaType" attributeType="String" defaultValueString="movie"/>
+        <attribute name="isFavorite" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="inWatchlist" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="rating" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <!-- Same rule as CDWatchProgress: no uniqueness constraint (CloudKit rejects
+             them); UserMediaStore dedupes by fetching on (tmdbId, mediaType). -->
+    </entity>
+</model>
