@@ -348,12 +348,21 @@ private fun WideNavigation(
                 .padding(horizontal = 12.dp, vertical = 22.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                text = stringResource(if (extended) R.string.brand_wordmark else R.string.brand_initial),
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            if (extended) {
+                Text(
+                    text = stringResource(R.string.brand_wordmark),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                Icon(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(56.dp).padding(8.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             AppTab.entries.forEach { tab ->
                 NavigationButton(
                     tab = tab,

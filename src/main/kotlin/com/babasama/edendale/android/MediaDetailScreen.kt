@@ -245,10 +245,16 @@ private fun DetailContent(
                             isTelevision = isTelevision,
                             onToggleFavourite = onToggleFavourite,
                             onToggleWatchlist = onToggleWatchlist,
-                            onSetRating = onSetRating,
                             onToggleWatched = onToggleWatched,
                         )
                     }
+                    // Five stars take a line of their own; sharing one with the
+                    // badges and toggles ran them off the edge of a phone hero.
+                    StarRatingRow(
+                        rating = state.userMedia?.rating,
+                        onSetRating = { onSetRating(detail.ref, it) },
+                        isTelevision = isTelevision,
+                    )
                 }
             }
         }
@@ -408,7 +414,6 @@ private fun UserMediaActions(
     isTelevision: Boolean,
     onToggleFavourite: (com.babasama.edendale.domain.MediaRef) -> Unit,
     onToggleWatchlist: (com.babasama.edendale.domain.MediaRef) -> Unit,
-    onSetRating: (com.babasama.edendale.domain.MediaRef, Double?) -> Unit,
     onToggleWatched: (com.babasama.edendale.domain.MediaRef) -> Unit,
 ) {
     // These take D-pad focus like any other control, but without a lift they
@@ -447,16 +452,6 @@ private fun UserMediaActions(
                 painter = painterResource(id = if (userMedia?.watchlist == true) R.drawable.ic_bookmark_slash else R.drawable.ic_bookmark_plus),
                 contentDescription = stringResource(R.string.detail_watchlist),
                 tint = if (userMedia?.watchlist == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        androidx.compose.material3.IconButton(
-            onClick = { onSetRating(detail.ref, if (userMedia?.rating != null) null else 10.0) },
-            modifier = focusable,
-        ) {
-            Icon(
-                painter = painterResource(id = if (userMedia?.rating != null) R.drawable.ic_star_fill else R.drawable.ic_star),
-                contentDescription = stringResource(R.string.detail_rate),
-                tint = if (userMedia?.rating != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -262,6 +262,25 @@ interface LibraryDao {
     @Query("SELECT * FROM library_episode WHERE tmdbId = :tmdbId LIMIT 1")
     suspend fun episodeByTmdbId(tmdbId: Int): LibraryEpisodeEntity?
 
+    // The player's playlist panel resolves what it is playing by URI — the
+    // exact string handed to PlayerActivity is these tables' primary key —
+    // and lists neighbours from the same imported source.
+
+    @Query("SELECT * FROM library_show WHERE key = :key LIMIT 1")
+    suspend fun showByKey(key: String): LibraryShowEntity?
+
+    @Query("SELECT * FROM library_movie WHERE uri = :uri LIMIT 1")
+    suspend fun movieByUri(uri: String): LibraryMovieEntity?
+
+    @Query("SELECT * FROM library_episode WHERE uri = :uri LIMIT 1")
+    suspend fun episodeByUri(uri: String): LibraryEpisodeEntity?
+
+    @Query("SELECT * FROM library_movie WHERE folderUri = :folderUri")
+    suspend fun moviesInFolder(folderUri: String): List<LibraryMovieEntity>
+
+    @Query("SELECT * FROM library_episode WHERE folderUri = :folderUri")
+    suspend fun episodesInFolder(folderUri: String): List<LibraryEpisodeEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertFolder(folder: LibraryFolderEntity)
 

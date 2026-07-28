@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -546,25 +547,41 @@ fun Modifier.tvFocusLift(
 fun StarRatingRow(
     rating: Double?,
     onSetRating: (Double?) -> Unit,
+    modifier: Modifier = Modifier,
     isTelevision: Boolean = false,
 ) {
     val current = rating ?: 0.0
     val starSize = if (isTelevision) 30.dp else 24.dp
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // IconButton centres a 48dp touch target on the icon, which indents the row
+    // against whatever it sits under. Pull that padding back off the leading
+    // edge so the stars line up with the text above them.
+    val leadingInset = (48.dp - starSize) / 2
+    Row(
+        modifier = modifier.offset(x = -leadingInset),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         (1..5).forEach { index ->
             val full = index * 2.0
             val half = full - 1.0
+            val lit = current >= half
             val icon = when {
                 current >= full -> R.drawable.ic_star_fill
-                current >= half -> R.drawable.ic_star_half
+                lit -> R.drawable.ic_star_half
                 else -> R.drawable.ic_star
             }
-            IconButton(onClick = { onSetRating(nextStarRating(index, current)) }) {
+            IconButton(
+                onClick = { onSetRating(nextStarRating(index, current)) },
+                // Without a lift these read as dead icons under a D-pad.
+                modifier = Modifier.tvFocusLift(isTelevision, CircleShape),
+            ) {
                 Icon(
                     painter = painterResource(id = icon),
-                    contentDescription = null,
+                    // Every star is the same glyph, so the score it sets is the
+                    // only thing that tells them apart by ear.
+                    contentDescription = stringResource(R.string.detail_rate_score, full.toInt()),
                     modifier = Modifier.size(starSize),
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = if (lit) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

@@ -14,51 +14,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.util.Rational
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -68,24 +30,24 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.babasama.edendale.android.EdendaleApplication
-import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
+import com.babasama.edendale.android.isTelevisionDevice
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.res.stringResource
 
 /**
  * Full-screen in-app player. Resumes from stored watch progress, writes
@@ -93,6 +55,12 @@ import androidx.compose.ui.res.stringResource
  * the end (~95%) or at STATE_ENDED. Files without a TMDB match play fine but
  * record no progress because watch state is keyed by TMDB id.
  * Also the target of "Open with" VIEW intents for video mime types.
+ *
+ * Input routing: this activity owns only the keys that must work with
+ * nothing focused — transport media keys and Back/Menu. D-pad keys are
+ * deliberately left to Compose: consuming their ACTION_DOWN here would
+ * strand the ACTION_UP, which Compose discards as an orphan, so no control
+ * could ever be clicked. Volume keys pass straight through to the system.
  */
 class PlayerActivity : ComponentActivity() {
 
@@ -102,10 +70,22 @@ class PlayerActivity : ComponentActivity() {
     private var resumeFraction: Double? = null
     private var resumeApplied = false
     private var completedWritten = false
-    private val controlsVisible = mutableStateOf(true)
-    private val inPipMode = mutableStateOf(false)
 
-    /** Absent on Android TV and on handhelds where the OEM dropped PiP. */
+    /** One-shot auto-skip latches, reset on every item switch. */
+    private var recapPending = false
+    private var creditsHandled = false
+
+    private var isTelevision = false
+    private lateinit var chrome: PlayerChromeState
+
+    private val inPipMode = mutableStateOf(false)
+    private val titleState = mutableStateOf("")
+    private val subtitleState = mutableStateOf<String?>(null)
+    private val currentUriState = mutableStateOf("")
+    private val playlistState = mutableStateOf<PlayerPlaylist?>(null)
+    private val tracksState = mutableStateOf(Tracks.EMPTY)
+
+    /** Absent on handhelds where the OEM dropped PiP; present on TV from API 34. */
     private val supportsPip: Boolean by lazy {
         packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     }
@@ -151,17 +131,22 @@ class PlayerActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
+        isTelevision = isTelevisionDevice()
+        chrome = PlayerChromeState(getSharedPreferences("player", MODE_PRIVATE))
+
         val uri = intent.data ?: intent.getStringExtra(EXTRA_URI)?.let(Uri::parse)
         if (uri == null) {
             finish()
             return
         }
-        val title = intent.getStringExtra(EXTRA_TITLE)
+        titleState.value = intent.getStringExtra(EXTRA_TITLE)
             ?: displayName(uri)
             ?: uri.lastPathSegment
-            ?: "Video"
+            ?: getString(R.string.default_video_name)
+        currentUriState.value = uri.toString()
 
         val tmdbId = intent.getIntExtra(EXTRA_TMDB_ID, -1)
+        val showTmdbId = intent.getIntExtra(EXTRA_SHOW_TMDB_ID, -1).takeIf { it > 0 }
         if (tmdbId > 0) {
             progressKey = ProgressKey(
                 tmdbId = tmdbId,
@@ -170,25 +155,37 @@ class PlayerActivity : ComponentActivity() {
                 } else {
                     WatchMediaType.MOVIE
                 },
-                showTmdbId = intent.getIntExtra(EXTRA_SHOW_TMDB_ID, -1).takeIf { it > 0 },
+                showTmdbId = showTmdbId,
                 season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 },
                 episode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 },
             )
         }
-        dataStore = LocalDataStore((application as EdendaleApplication).database)
+        val app = application as EdendaleApplication
+        dataStore = LocalDataStore(app.database)
+        recapPending = chrome.skipRecap
 
-        val customDataSourceFactory = androidx.media3.datasource.DataSource.Factory {
-            if (uri.scheme == "smb") {
-                SmbDataSource(this)
-            } else {
-                androidx.media3.datasource.DefaultDataSource(this, false)
-            }
-        }
-        val mediaSourceFactory = androidx.media3.exoplayer.source.DefaultMediaSourceFactory(customDataSourceFactory)
+        // One factory for the whole session, resolved per request: the item
+        // playing can change mid-session via the playlist panel, so the
+        // scheme must not be captured once at onCreate. DefaultDataSource
+        // routes any scheme it doesn't recognise (smb) to the base source.
+        val mediaSourceFactory = DefaultMediaSourceFactory(
+            DataSource.Factory { DefaultDataSource(this, SmbDataSource(this)) },
+        )
 
         val exoPlayer = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSourceFactory)
-            .setAudioAttributes(AudioAttributes.DEFAULT, true)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    // Focus handling accepts only USAGE_MEDIA/GAME; MOVIE is
+                    // a content type, not a usage.
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                    .build(),
+                true,
+            )
+            // Pause-free playback through unplugged headphones is never what
+            // the viewer wants; media3 registers the receiver itself.
+            .setHandleAudioBecomingNoisy(true)
             .build()
         player = exoPlayer
         exoPlayer.addListener(object : Player.Listener {
@@ -206,18 +203,31 @@ class PlayerActivity : ComponentActivity() {
             override fun onIsPlayingChanged(isPlaying: Boolean) = updatePipParams()
 
             override fun onVideoSizeChanged(videoSize: VideoSize) = updatePipParams()
+
+            override fun onTracksChanged(tracks: Tracks) {
+                tracksState.value = tracks
+            }
         })
 
         lifecycleScopedStart(exoPlayer, uri)
+        loadPlaylist(uri.toString(), showTmdbId)
 
         setContent {
             EdendaleTheme {
                 PlayerScreen(
                     player = exoPlayer,
-                    title = title,
-                    controlsVisible = controlsVisible,
+                    chrome = chrome,
+                    isTelevision = isTelevision,
+                    title = titleState,
+                    subtitle = subtitleState,
+                    currentUri = currentUriState,
+                    playlist = playlistState,
+                    tracks = tracksState,
                     inPipMode = inPipMode,
+                    supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
+                    onAutoPipChanged = ::updatePipParams,
+                    onSelectEntry = ::switchTo,
                     onClose = { finish() },
                 )
             }
@@ -249,8 +259,139 @@ class PlayerActivity : ComponentActivity() {
         val duration = exoPlayer.duration
         if (duration != C.TIME_UNSET && duration > 0) {
             resumeApplied = true
-            exoPlayer.seekTo((duration * fraction).toLong())
+            // A resume replaces the recap skip; resuming straight into the
+            // credits window must not trip auto-skip and bounce right out.
+            recapPending = false
+            val target = (duration * fraction).toLong()
+            if (chrome.skipCredits) {
+                PlayerLogic.creditsStartMillis(duration)?.let { creditsStart ->
+                    if (target >= creditsStart) creditsHandled = true
+                }
+            }
+            exoPlayer.seekTo(target)
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Playlist switching
+    // ------------------------------------------------------------------
+
+    private fun loadPlaylist(uriString: String, showTmdbId: Int?) {
+        val app = application as EdendaleApplication
+        writeScope.launch {
+            val playlist = runCatching {
+                loadPlayerPlaylist(
+                    dao = app.database.libraryDao(),
+                    repository = app.libraryRepository,
+                    uriString = uriString,
+                    showTmdbIdExtra = showTmdbId,
+                )
+            }.getOrNull() ?: return@launch
+            withContext(Dispatchers.Main) {
+                if (isDestroyed) return@withContext
+                playlistState.value = playlist
+                // The launch intent carries no episode code; backfill the
+                // subtitle line once the library row is known.
+                playlist.entries.firstOrNull { it.uri == currentUriState.value }
+                    ?.let { subtitleState.value = it.detail }
+            }
+        }
+    }
+
+    /**
+     * Plays another playlist entry in place. Flushing the outgoing item's
+     * progress must precede the re-key — writeProgress reads the player's
+     * live position, so reversing the order files the old position under
+     * the new key.
+     */
+    internal fun switchTo(entry: PlaylistEntry) {
+        val exoPlayer = player ?: return
+        writeProgress()
+        resumeFraction = null
+        resumeApplied = false
+        completedWritten = false
+        recapPending = chrome.skipRecap
+        creditsHandled = false
+        progressKey = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
+            ProgressKey(
+                tmdbId = tmdbId,
+                mediaType = if (entry.isEpisode) WatchMediaType.EPISODE else WatchMediaType.MOVIE,
+                showTmdbId = entry.showTmdbId,
+                season = entry.season,
+                episode = entry.episode,
+            )
+        }
+        titleState.value = entry.title
+        subtitleState.value = entry.detail
+        currentUriState.value = entry.uri
+        lifecycleScopedStart(exoPlayer, Uri.parse(entry.uri))
+        chrome.showControls()
+    }
+
+    // ------------------------------------------------------------------
+    // Auto-skip
+    // ------------------------------------------------------------------
+
+    /**
+     * Driven by the UI's position ticker. Applies the skip-recap jump once
+     * the duration is known and ends (or loops) playback at the credits.
+     */
+    internal fun onPlaybackTick(positionMillis: Long, durationMillis: Long) {
+        val exoPlayer = player ?: return
+        if (durationMillis <= 0) return
+        // Never skip ahead of a resume seek that hasn't landed yet.
+        if (resumeFraction != null && !resumeApplied) return
+
+        if (recapPending) {
+            recapPending = false
+            val target = PlayerLogic.recapSkipTargetMillis(durationMillis)
+            if (target != null && positionMillis < target) exoPlayer.seekTo(target)
+        }
+
+        if (chrome.skipCredits && !creditsHandled) {
+            val creditsStart = PlayerLogic.creditsStartMillis(durationMillis) ?: return
+            if (positionMillis >= creditsStart) {
+                creditsHandled = true
+                if (chrome.loopEnabled) {
+                    // Credits are over as far as the viewer cares — restart.
+                    exoPlayer.seekTo(0)
+                } else {
+                    writeProgress(completed = true)
+                    finish()
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Window brightness (handheld swipe gesture)
+    // ------------------------------------------------------------------
+
+    /** Level in 0…1, or -1 to hand control back to the system. */
+    internal fun setWindowBrightness(level: Float) {
+        val attributes = window.attributes
+        attributes.screenBrightness = if (level < 0f) {
+            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        } else {
+            level.coerceIn(0f, 1f)
+        }
+        // The reassignment is what applies it.
+        window.attributes = attributes
+    }
+
+    /**
+     * The window override reads as -1 until set once, so the first gesture
+     * seeds its baseline from the system setting instead.
+     */
+    internal fun windowBrightnessBaseline(): Float {
+        val current = window.attributes.screenBrightness
+        if (current >= 0f) return current
+        val system = Settings.System.getInt(
+            contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS,
+            128,
+        )
+        return (system / 255f).coerceIn(0f, 1f)
     }
 
     override fun onStart() {
@@ -268,6 +409,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onDestroy() {
         writeProgress()
         unregisterPipReceiver()
+        setWindowBrightness(-1f)
         player?.release()
         player = null
         super.onDestroy()
@@ -286,7 +428,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
-            supportsPip && player?.isPlaying == true
+            supportsPip && chrome.autoPip && player?.isPlaying == true
         ) {
             enterPictureInPicture()
         }
@@ -300,10 +442,11 @@ class PlayerActivity : ComponentActivity() {
         inPipMode.value = isInPictureInPictureMode
         // The floating window is too small for the app's own chrome — it uses
         // the system's remote actions instead.
-        controlsVisible.value = !isInPictureInPictureMode
         if (isInPictureInPictureMode) {
+            chrome.hideControls()
             registerPipReceiver()
         } else {
+            chrome.showControls()
             unregisterPipReceiver()
             // Leaving PiP without coming back to the foreground means the user
             // closed the floating window; end the session rather than leave a
@@ -317,7 +460,7 @@ class PlayerActivity : ComponentActivity() {
         runCatching { enterPictureInPictureMode(pipParams()) }
     }
 
-    private fun updatePipParams() {
+    internal fun updatePipParams() {
         if (!supportsPip) return
         runCatching { setPictureInPictureParams(pipParams()) }
     }
@@ -327,7 +470,7 @@ class PlayerActivity : ComponentActivity() {
             .setAspectRatio(videoAspectRatio())
             .setActions(pipActions())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setAutoEnterEnabled(player?.isPlaying == true)
+            builder.setAutoEnterEnabled(player?.isPlaying == true && chrome.autoPip)
             builder.setSeamlessResizeEnabled(true)
         }
         return builder.build()
@@ -350,9 +493,9 @@ class PlayerActivity : ComponentActivity() {
     private fun pipActions(): List<RemoteAction> {
         val playing = player?.isPlaying == true
         val playPause = if (playing) {
-            pipAction(R.drawable.ic_pause, "Pause", PIP_CONTROL_PAUSE)
+            pipAction(R.drawable.ic_pause, getString(R.string.action_pause), PIP_CONTROL_PAUSE)
         } else {
-            pipAction(R.drawable.ic_play, "Play", PIP_CONTROL_PLAY)
+            pipAction(R.drawable.ic_play, getString(R.string.action_play), PIP_CONTROL_PLAY)
         }
         if (maxNumPictureInPictureActions < 3) return listOf(playPause)
         return listOf(
@@ -392,15 +535,87 @@ class PlayerActivity : ComponentActivity() {
         pipReceiverRegistered = false
     }
 
+    // ------------------------------------------------------------------
+    // Key routing
+    // ------------------------------------------------------------------
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        // Any remote/keyboard key first brings the controls back on TV.
-        if (event.action == KeyEvent.ACTION_DOWN && !controlsVisible.value &&
-            event.keyCode != KeyEvent.KEYCODE_BACK
-        ) {
-            controlsVisible.value = true
+        // Never intercept volume keys — the system (or the TV/AVR) owns them.
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN,
+            KeyEvent.KEYCODE_VOLUME_MUTE,
+            -> return super.dispatchKeyEvent(event)
+        }
+
+        if (!::chrome.isInitialized) return super.dispatchKeyEvent(event)
+
+        val exoPlayer = player
+        if (exoPlayer != null && event.keyCode in TRANSPORT_KEYS) {
+            // Consume both halves so no orphan ACTION_UP reaches a child.
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                handleTransportKey(exoPlayer, event.keyCode)
+            }
             return true
         }
+
+        if (event.keyCode == KeyEvent.KEYCODE_BACK || event.keyCode == KeyEvent.KEYCODE_MENU) {
+            // Compose maps Back to a focus Exit at its root and silently
+            // consumes it whenever focus is nested, so it never reaches the
+            // default back handling — handle it before Compose sees it.
+            if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) handleBack()
+            return true
+        }
+
         return super.dispatchKeyEvent(event)
+    }
+
+    /**
+     * On TV, Back peels one layer at a time — panel, scrub preview,
+     * timeline/HUD, controls, then the player itself. A handheld's back
+     * button keeps its platform meaning and exits once panels are gone.
+     */
+    private fun handleBack() {
+        when {
+            chrome.activePanel != null -> chrome.closePanel()
+            !isTelevision -> finish()
+            chrome.dismissRemotePresentation() -> Unit
+            chrome.controlsVisible -> chrome.hideControls()
+            else -> finish()
+        }
+    }
+
+    private fun handleTransportKey(exoPlayer: ExoPlayer, keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_HEADSETHOOK,
+            -> {
+                if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
+                chrome.showControls()
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                exoPlayer.play()
+                chrome.showControls()
+            }
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                exoPlayer.pause()
+                chrome.showControls()
+            }
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD ->
+                seekBy(exoPlayer, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+            KeyEvent.KEYCODE_MEDIA_REWIND ->
+                seekBy(exoPlayer, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+            KeyEvent.KEYCODE_MEDIA_NEXT -> switchToNeighbor(+1)
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> switchToNeighbor(-1)
+            KeyEvent.KEYCODE_MEDIA_STOP -> finish()
+        }
+    }
+
+    private fun switchToNeighbor(offset: Int) {
+        val entries = playlistState.value?.entries ?: return
+        val index = entries.indexOfFirst { it.uri == currentUriState.value }
+        if (index < 0) return
+        entries.getOrNull(index + offset)?.let(::switchTo)
     }
 
     internal fun writeProgress(completed: Boolean = false) {
@@ -410,7 +625,7 @@ class PlayerActivity : ComponentActivity() {
         val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
         val position = exoPlayer.currentPosition.coerceIn(0, duration)
         val fraction = position.toDouble() / duration
-        val isCompleted = completed || fraction >= COMPLETE_FRACTION
+        val isCompleted = completed || fraction >= PlayerLogic.COMPLETE_FRACTION
         if (completedWritten && !isCompleted) return
         completedWritten = isCompleted
         writeScope.launch {
@@ -443,7 +658,6 @@ class PlayerActivity : ComponentActivity() {
         private const val EXTRA_SHOW_TMDB_ID = "edendale.showTmdbId"
         private const val EXTRA_SEASON = "edendale.season"
         private const val EXTRA_EPISODE = "edendale.episode"
-        private const val COMPLETE_FRACTION = 0.95
 
         private const val ACTION_PIP_CONTROL = "com.babasama.edendale.PIP_CONTROL"
         private const val EXTRA_PIP_CONTROL = "edendale.pipControl"
@@ -455,6 +669,18 @@ class PlayerActivity : ComponentActivity() {
         /** The system rejects PiP aspect ratios outside 1:2.39 … 2.39:1. */
         private const val MIN_PIP_ASPECT = 1.0 / 2.39
         private const val MAX_PIP_ASPECT = 2.39
+
+        private val TRANSPORT_KEYS = intArrayOf(
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_HEADSETHOOK,
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+            KeyEvent.KEYCODE_MEDIA_REWIND,
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_STOP,
+        )
 
         fun play(
             context: Context,
@@ -478,281 +704,5 @@ class PlayerActivity : ComponentActivity() {
                 },
             )
         }
-    }
-}
-
-@Composable
-private fun PlayerScreen(
-    player: ExoPlayer,
-    title: String,
-    controlsVisible: androidx.compose.runtime.MutableState<Boolean>,
-    inPipMode: androidx.compose.runtime.State<Boolean>,
-    onEnterPip: (() -> Unit)?,
-    onClose: () -> Unit,
-) {
-    var isPlaying by remember { mutableStateOf(player.isPlaying) }
-    var isBuffering by remember { mutableStateOf(true) }
-    var positionMillis by remember { mutableLongStateOf(0L) }
-    var durationMillis by remember { mutableLongStateOf(0L) }
-    var dragFraction by remember { mutableStateOf<Float?>(null) }
-    val activity = androidx.compose.ui.platform.LocalContext.current as? PlayerActivity
-
-    DisposableListener(player) { state, playing ->
-        isBuffering = state == Player.STATE_BUFFERING
-        isPlaying = playing
-    }
-
-    LaunchedEffect(player) {
-        var lastWrite = 0L
-        while (isActive) {
-            positionMillis = player.currentPosition
-            durationMillis = player.duration.takeIf { it != C.TIME_UNSET } ?: 0L
-            val now = System.currentTimeMillis()
-            if (player.isPlaying && now - lastWrite >= 5_000) {
-                lastWrite = now
-                activity?.writeProgress()
-            }
-            delay(500)
-        }
-    }
-
-    LaunchedEffect(controlsVisible.value, isPlaying, inPipMode.value) {
-        if (controlsVisible.value && isPlaying && !inPipMode.value) {
-            delay(4_000)
-            controlsVisible.value = false
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                enabled = !inPipMode.value,
-            ) { controlsVisible.value = !controlsVisible.value },
-    ) {
-        AndroidView(
-            factory = { viewContext ->
-                PlayerView(viewContext).apply {
-                    useController = false
-                    this.player = player
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        if (isBuffering && !inPipMode.value) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-
-        AnimatedVisibility(
-            visible = controlsVisible.value && !inPipMode.value,
-            modifier = Modifier.fillMaxSize(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            PlayerControls(
-                title = title,
-                isPlaying = isPlaying,
-                positionMillis = dragFraction
-                    ?.let { (it * durationMillis).toLong() }
-                    ?: positionMillis,
-                durationMillis = durationMillis,
-                onPlayPause = {
-                    if (player.isPlaying) player.pause() else player.play()
-                },
-                onSeekBack = { player.seekTo((player.currentPosition - 10_000).coerceAtLeast(0)) },
-                onSeekForward = {
-                    val target = player.currentPosition + 10_000
-                    player.seekTo(if (durationMillis > 0) target.coerceAtMost(durationMillis) else target)
-                },
-                onScrub = { fraction -> dragFraction = fraction },
-                onScrubFinished = {
-                    dragFraction?.let { fraction ->
-                        if (durationMillis > 0) player.seekTo((durationMillis * fraction).toLong())
-                    }
-                    dragFraction = null
-                },
-                onEnterPip = onEnterPip,
-                onClose = onClose,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DisposableListener(
-    player: ExoPlayer,
-    onUpdate: (state: Int, playing: Boolean) -> Unit,
-) {
-    androidx.compose.runtime.DisposableEffect(player) {
-        val listener = object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) =
-                onUpdate(playbackState, player.isPlaying)
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) =
-                onUpdate(player.playbackState, isPlaying)
-        }
-        player.addListener(listener)
-        onDispose { player.removeListener(listener) }
-    }
-}
-
-@Composable
-private fun PlayerControls(
-    title: String,
-    isPlaying: Boolean,
-    positionMillis: Long,
-    durationMillis: Long,
-    onPlayPause: () -> Unit,
-    onSeekBack: () -> Unit,
-    onSeekForward: () -> Unit,
-    onScrub: (Float) -> Unit,
-    onScrubFinished: () -> Unit,
-    onEnterPip: (() -> Unit)?,
-    onClose: () -> Unit,
-) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        EdendaleColors.Background.copy(alpha = .82f),
-                        Color.Transparent,
-                        Color.Transparent,
-                        EdendaleColors.Background.copy(alpha = .9f),
-                    ),
-                ),
-            ),
-    ) {
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_xmark),
-                    contentDescription = stringResource(R.string.player_close),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            if (onEnterPip != null) {
-                Spacer(Modifier.width(8.dp))
-                IconButton(onClick = onEnterPip) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_picture_in_picture),
-                        contentDescription = stringResource(R.string.player_picture_in_picture),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalArrangement = Arrangement.spacedBy(36.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onSeekBack, modifier = Modifier.size(56.dp)) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_rotate_left_10),
-                    contentDescription = stringResource(R.string.player_back_10),
-                    modifier = Modifier.size(34.dp),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-            Surface(
-                onClick = onPlayPause,
-                modifier = Modifier.size(76.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play,
-                        ),
-                        contentDescription = stringResource(if (isPlaying) R.string.action_pause else R.string.action_play),
-                        modifier = Modifier.size(30.dp),
-                    )
-                }
-            }
-            IconButton(onClick = onSeekForward, modifier = Modifier.size(56.dp)) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_rotate_right_10),
-                    contentDescription = stringResource(R.string.player_forward_10),
-                    modifier = Modifier.size(34.dp),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 18.dp),
-        ) {
-            Slider(
-                value = if (durationMillis > 0) {
-                    (positionMillis.toFloat() / durationMillis).coerceIn(0f, 1f)
-                } else {
-                    0f
-                },
-                onValueChange = onScrub,
-                onValueChangeFinished = onScrubFinished,
-                modifier = Modifier.fillMaxWidth(),
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = EdendaleColors.SurfaceHigh,
-                ),
-            )
-            Row(Modifier.fillMaxWidth()) {
-                Text(
-                    text = formatTime(positionMillis),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = formatTime(durationMillis),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-private fun formatTime(millis: Long): String {
-    if (millis <= 0) return "0:00"
-    val totalSeconds = millis / 1000
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return if (hours > 0) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%d:%02d".format(minutes, seconds)
     }
 }

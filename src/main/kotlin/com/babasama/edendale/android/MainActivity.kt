@@ -1,5 +1,6 @@
 package com.babasama.edendale.android
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -38,15 +39,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
         val isTelevision = isTelevisionDevice()
-
-        if (isTelevision) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            WindowCompat.getInsetsController(window, window.decorView).apply {
-                hide(WindowInsetsCompat.Type.systemBars())
-                systemBarsBehavior =
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        }
+        applyTelevisionWindow(isTelevision)
 
         enableEdgeToEdge()
         WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -65,9 +58,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun isTelevisionDevice(): Boolean {
-        val modeType = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
-        return modeType == Configuration.UI_MODE_TYPE_TELEVISION ||
-            packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+    private fun applyTelevisionWindow(isTelevision: Boolean) {
+
+        if (isTelevision) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                hide(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
     }
+}
+
+/**
+ * Whether this device drives the app with a remote rather than touch. Shared
+ * by [MainActivity] and the player, which is its own activity — two private
+ * copies of this predicate would drift.
+ */
+internal fun Context.isTelevisionDevice(): Boolean {
+    val modeType = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+    return modeType == Configuration.UI_MODE_TYPE_TELEVISION ||
+        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 }

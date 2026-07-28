@@ -107,7 +107,7 @@
     <string name="detail_mark_watched">Mark Watched</string>
     <string name="detail_favorite">Favorite</string>
     <string name="detail_watchlist">Watchlist</string>
-    <string name="detail_rate">Rate</string>
+    <string name="detail_rate_score">Rate %1$d out of 10</string>
     <string name="error_details_not_loaded">Details could not be loaded.</string>
     <string name="error_season_not_loaded">This season could not be loaded.</string>
 
@@ -234,6 +234,30 @@
     <string name="player_picture_in_picture">Picture in Picture</string>
     <string name="player_back_10">Back 10 seconds</string>
     <string name="player_forward_10">Forward 10 seconds</string>
+    <string name="player_adjustments">Adjustments</string>
+    <string name="player_speed">Speed</string>
+    <string name="player_reset">Reset</string>
+    <string name="player_subtitles">Subtitles</string>
+    <string name="player_subtitles_off">Off</string>
+    <string name="player_subtitles_none">No subtitle tracks in this file.</string>
+    <string name="player_track_number">Track %1$d</string>
+    <string name="player_playback">Playback</string>
+    <string name="player_skip_recap">Skip Recap</string>
+    <string name="player_skip_recap_detail">Jump past the first 90 seconds</string>
+    <string name="player_skip_credits">Skip Credits</string>
+    <string name="player_skip_credits_detail">End playback at the final 3 minutes</string>
+    <string name="player_loop">Loop Video</string>
+    <string name="player_loop_detail">Restart playback when it ends</string>
+    <string name="player_auto_pip">Auto Picture in Picture</string>
+    <string name="player_auto_pip_detail">Float the video when you leave the app mid-play</string>
+    <string name="player_aspect_ratio">Aspect Ratio</string>
+    <string name="player_aspect_fit">Fit</string>
+    <string name="player_aspect_fill">Fill</string>
+    <string name="player_episodes">Episodes</string>
+    <string name="player_in_this_folder">In This Folder</string>
+    <string name="player_volume">Volume</string>
+    <string name="player_brightness">Brightness</string>
+    <string name="player_seek_seconds">%1$ds</string>
 
     <!-- Library import errors -->
     <string name="error_folder_not_opened">That folder could not be opened.</string>
