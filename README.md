@@ -46,39 +46,6 @@ The platform branches begin with the same universal Markdown files:
 `TASKS.md` is intentionally not part of the new repository. Work is tracked
 through the platform branch's issue and pull-request workflow.
 
-## Apple development
-
-The `apple` branch contains the native multiplatform Xcode project for
-iOS, iPadOS, macOS, tvOS, and visionOS. It requires Xcode 26.5 or newer.
-
-Before a local build, copy `Shared/Example.xcconfig` to
-`Shared/Secrets.xcconfig` and add the TMDB read access token. The generated
-file is gitignored.
-
-Resolve dependencies and inspect the shared schemes:
-
-```sh
-xcodebuild -resolvePackageDependencies -project Edendale.xcodeproj
-xcodebuild -list -project Edendale.xcodeproj
-```
-
-Run the native macOS build and tests:
-
-```sh
-xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
-  -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO
-xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
-  -destination 'platform=macOS'
-```
-
-### Xcode Cloud
-
-Xcode Cloud automatically runs the executable
-`ci_scripts/ci_post_clone.sh`. Configure `TMDB_READ_ACCESS_TOKEN` as a secret
-workflow environment variable; `TMDB_API_KEY` is an optional legacy fallback.
-The script generates the gitignored `Shared/Secrets.xcconfig` in Xcode Cloud's
-temporary checkout without printing credential values.
-
 ### Branch contract
 
 - `main` remains free of application source, build systems, generated output,
