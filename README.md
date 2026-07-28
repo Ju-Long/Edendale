@@ -126,6 +126,10 @@ hierarchy, color semantics, typography, and privacy principles.
 - **Isolated delivery:** a platform can change, test, and release without
   affecting another platform's pipeline.
 
+## License
+
+Edendale is licensed under the [Mozilla Public License 2.0](LICENSE).
+
 ---
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.

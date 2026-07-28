@@ -19,6 +19,7 @@ __pycache__/
 # Local secrets — contain the real TMDB token/key, never commit
 Secrets.xcconfig
 /secrets.json
+
 /Shared/Secrets.xcconfig.tmp.*
 /secrets.json.tmp.*
 
