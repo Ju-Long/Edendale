@@ -4,39 +4,32 @@ on:
   push:
     branches:
       - web
-    paths:
-      - ".nvmrc"
-      - "astro.config.mjs"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.json"
-      - "docs/**"
-      - "public/**"
-      - "src/**"
-      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions: {}
 
+# Production deployments must be allowed to finish. Queued runs coalesce, but an
+# in-flight deploy is never cancelled.
 concurrency:
   group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       pages: read
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -44,7 +37,7 @@ jobs:
 
       - name: Configure GitHub Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Install dependencies
         run: npm ci
@@ -57,8 +50,18 @@ jobs:
           EDENDALE_CUSTOM_DOMAIN: edendale.babasama.com
         run: npm run build
 
+      # upload-pages-artifact v4 began excluding dotfiles by default; v5 restored
+      # them behind include-hidden-files. Universal Links break silently if the
+      # association file is dropped, so assert it survived the build.
+      - name: Verify static output
+        run: |
+          test -f dist/.nojekyll
+          test -f dist/CNAME
+          test -f dist/.well-known/apple-app-site-association
+          test -f dist/app_icon.png
+
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
           include-hidden-files: true
@@ -69,6 +72,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs: build
     permissions:
       pages: write
@@ -76,4 +80,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

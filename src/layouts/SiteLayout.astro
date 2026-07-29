@@ -11,7 +11,7 @@ interface Props {
 const { title, description, noIndex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const home = import.meta.env.BASE_URL;
-const socialImage = new URL(`${home}og.png`, Astro.site);
+const socialImage = new URL(`${home}app_icon.png`, Astro.site);
 ---
 
 <!doctype html>

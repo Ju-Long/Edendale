@@ -44,6 +44,14 @@ local.properties
 
 # Static Astro / Node
 node_modules/
+# The Astro project is at the repository root on the `web` branch.
+/.astro/
+/dist/
 Web/.astro/
 Web/dist/
+# The site is built and deployed with npm; keep other lockfiles out.
+/bun.lock
+/bun.lockb
+/pnpm-lock.yaml
+/yarn.lock
 /.vs

@@ -95,21 +95,34 @@ npm run build
 npm run preview
 ```
 
-`npm run check` performs Astro and TypeScript validation. `npm run build`
-creates the production site in the generated, gitignored `dist/` directory;
-`npm run preview` serves that completed build locally.
+`npm run check` performs Astro and TypeScript validation; `astro build` does not
+run these diagnostics, so this step is the only thing that catches type errors.
+`npm run build` creates the production site in the generated, gitignored `dist/`
+directory; `npm run preview` serves that completed build locally.
 
 ### CI and GitHub Pages
 
 [Web CI](.github/workflows/ci.yml) runs `npm ci`, `npm run check`, and
-`npm run build` for pushes and pull requests targeting `web`.
-[GitHub Pages](.github/workflows/pages.yml) repeats the checks, builds only this
-branch's static site, uploads `dist/`, and deploys it through the protected
-`github-pages` environment after an approved commit is pushed:
+`npm run build` for pull requests targeting `web`.
+[GitHub Pages](.github/workflows/pages.yml) runs the same checks on every push to
+`web`, builds only this branch's static site, uploads `dist/`, and deploys it
+through the protected `github-pages` environment:
 
 ```sh
 git push origin web
 ```
+
+Both workflows then assert that `dist/` still contains `.nojekyll`, `CNAME`,
+`.well-known/apple-app-site-association`, and `app_icon.png`. Those files are
+referenced by path rather than imported, so nothing else in the build fails when
+one goes missing. `actions/upload-pages-artifact` also stopped including
+dotfiles by default in v4, which is why `include-hidden-files: true` is set.
+
+Every action is pinned to a commit SHA. The deploy workflow does not cancel runs
+already in progress, so a production deployment is always allowed to finish.
+`workflow_dispatch` is declared but inert: GitHub only offers the manual trigger
+for workflows present on the default branch, and `main` is documentation-only.
+Recovering a skipped deploy therefore requires another push to `web`.
 
 In **Settings → Pages**, select **GitHub Actions** as the source and configure
 `edendale.babasama.com` as the custom domain. DNS must contain a CNAME from
