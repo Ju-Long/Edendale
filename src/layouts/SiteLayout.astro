@@ -37,6 +37,8 @@ const socialImage = new URL(`${home}app_icon.png`, Astro.site);
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
     <link rel="icon" type="image/png" href={appIcon.src} />
+
+    <script src="https://kit.fontawesome.com/0241f4b5e7.js" crossorigin="anonymous" is:inline></script>
     <title>{title}</title>
   </head>
   <body>
@@ -51,7 +53,9 @@ const socialImage = new URL(`${home}app_icon.png`, Astro.site);
           <a href={`${home}#features`}>Features</a>
           <a href={`${home}#platforms`}>Platforms</a>
           <a class="header-github" href="https://github.com/Ju-Long/Edendale">
-            GitHub <span aria-hidden="true">↗</span>
+            <i class="fa-brands fa-github" aria-hidden="true"></i>
+            GitHub
+            <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
           </a>
         </nav>
       </div>
@@ -66,7 +70,10 @@ const socialImage = new URL(`${home}app_icon.png`, Astro.site);
           <span><strong>Edendale</strong><small>Your stories stay yours.</small></span>
         </a>
         <p>Free and open source · No analytics · Built with care</p>
-        <a href="https://github.com/Ju-Long/Edendale">Source on GitHub <span aria-hidden="true">↗</span></a>
+        <a href="https://github.com/Ju-Long/Edendale">
+          Source on GitHub
+          <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
+        </a>
       </div>
     </footer>
   </body>

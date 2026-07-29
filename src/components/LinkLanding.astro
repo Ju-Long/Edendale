@@ -15,8 +15,14 @@ const { heading = "Continue in Edendale" } = Astro.props;
       use the button below or return to the project site.
     </p>
     <div class="button-row">
-      <a class="button button-primary" href="#" data-open-app hidden>Open in Edendale</a>
-      <a class="button button-secondary" href={import.meta.env.BASE_URL}>Visit Edendale</a>
+      <a class="button button-primary" href="#" data-open-app hidden>
+        Open in Edendale
+        <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+      </a>
+      <a class="button button-secondary" href={import.meta.env.BASE_URL}>
+        <i class="fa-solid fa-house" aria-hidden="true"></i>
+        Visit Edendale
+      </a>
     </div>
     <p class="link-detail" data-link-detail>
       Edendale is not installed or this link is unavailable on this device.

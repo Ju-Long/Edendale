@@ -18,14 +18,19 @@ import SiteLayout from "../layouts/SiteLayout.astro";
         </p>
         <div class="button-row">
           <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
-            View on GitHub <span aria-hidden="true">↗</span>
+            <i class="fa-brands fa-github" aria-hidden="true"></i>
+            View on GitHub
+            <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
           </a>
-          <a class="button button-secondary" href="#platforms">Explore the apps</a>
+          <a class="button button-secondary" href="#platforms">
+            Explore the apps
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </a>
         </div>
         <ul class="trust-list" aria-label="Edendale principles">
-          <li><span aria-hidden="true">✓</span> Local-first library</li>
-          <li><span aria-hidden="true">✓</span> No analytics</li>
-          <li><span aria-hidden="true">✓</span> Open source</li>
+          <li><i class="fa-solid fa-check" aria-hidden="true"></i> Local-first library</li>
+          <li><i class="fa-solid fa-check" aria-hidden="true"></i> No analytics</li>
+          <li><i class="fa-solid fa-check" aria-hidden="true"></i> Open source</li>
         </ul>
       </div>
 
@@ -135,17 +140,23 @@ import SiteLayout from "../layouts/SiteLayout.astro";
         </div>
         <div class="platform-list">
           <article>
-            <span class="platform-monogram" aria-hidden="true">A</span>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-apple"></i>
+            </span>
             <div><h3>Apple</h3><p>iPhone · iPad · Mac · Vision Pro · Apple TV</p></div>
             <span class="platform-tech">SwiftUI</span>
           </article>
           <article>
-            <span class="platform-monogram" aria-hidden="true">A</span>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-android"></i>
+            </span>
             <div><h3>Android</h3><p>Phones · tablets · large screens</p></div>
             <span class="platform-tech">Jetpack Compose</span>
           </article>
           <article>
-            <span class="platform-monogram" aria-hidden="true">W</span>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-windows"></i>
+            </span>
             <div><h3>Windows</h3><p>A focused desktop archive</p></div>
             <span class="platform-tech">C# · WinUI</span>
           </article>
@@ -164,7 +175,8 @@ import SiteLayout from "../layouts/SiteLayout.astro";
           project and help shape what comes next.
         </p>
         <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
-          Follow development <span aria-hidden="true">↗</span>
+          Follow development
+          <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
         </a>
       </div>
     </section>

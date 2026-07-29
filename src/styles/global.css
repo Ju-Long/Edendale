@@ -184,10 +184,17 @@ img {
 }
 
 .site-header .header-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 9px 14px;
   border: 1px solid var(--line-gold);
   border-radius: 999px;
   color: var(--gold);
+}
+
+.icon-external {
+  font-size: 0.72em;
 }
 
 .hero {
@@ -325,7 +332,7 @@ h2 {
   list-style: none;
 }
 
-.trust-list span {
+.trust-list .fa-check {
   margin-right: 4px;
   color: var(--gold);
 }
@@ -835,7 +842,6 @@ h2 {
   border: 1px solid var(--line-gold);
   border-radius: 50%;
   color: var(--gold);
-  font-family: var(--display);
   font-size: 21px;
 }
 
@@ -890,6 +896,9 @@ h2 {
 }
 
 .site-footer > div > a:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   justify-self: end;
 }
 
