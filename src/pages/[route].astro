@@ -1,7 +1,14 @@
 ---
 import LinkLanding from "../components/LinkLanding.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
+import { DEFAULT_LOCALE } from "../i18n/utils.ts";
 
+/**
+ * These routes stay unprefixed on purpose: `apple-app-site-association` claims
+ * `/search`, `/media/*`, `/library/*`, and `/play/*` exactly, and a localized
+ * copy at `/es/media/…` would be a link that silently stops opening the app.
+ * They localize their text in the browser instead — see `localeMode="browser"`.
+ */
 export function getStaticPaths() {
   return ["search", "media", "library", "play"].map((route) => ({
     params: { route },
@@ -10,8 +17,19 @@ export function getStaticPaths() {
 ---
 
 <SiteLayout
-  title="Open in Edendale"
-  description="Continue this link in the Edendale app."
+  titleKey="meta.link.title"
+  descriptionKey="meta.link.description"
+  locale={DEFAULT_LOCALE}
+  localeMode="browser"
+  browserKeys={[
+    "link.eyebrow",
+    "link.heading",
+    "link.body",
+    "link.open",
+    "link.visit",
+    "link.unavailable",
+    "link.explicit",
+  ]}
   noIndex
 >
   <main><LinkLanding /></main>

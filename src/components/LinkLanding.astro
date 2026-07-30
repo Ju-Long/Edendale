@@ -1,31 +1,34 @@
 ---
+import { DEFAULT_LOCALE, useTranslations, type UIKey } from "../i18n/utils.ts";
+
 interface Props {
-  heading?: string;
+  headingKey?: UIKey;
 }
 
-const { heading = "Continue in Edendale" } = Astro.props;
+const { headingKey = "link.heading" } = Astro.props;
+
+// App-link pages live on one unprefixed URL each, so they are rendered in the
+// default language and re-labelled in the browser by SiteLayout's script.
+const t = useTranslations(DEFAULT_LOCALE);
 ---
 
 <section class="link-page section-shell" aria-labelledby="link-title">
   <div class="link-card">
-    <p class="eyebrow"><span></span> App link</p>
-    <h1 id="link-title">{heading}</h1>
-    <p>
-      This link belongs to the Edendale app. If it did not open automatically,
-      use the button below or return to the project site.
-    </p>
+    <p class="eyebrow"><span></span> <span data-i18n="link.eyebrow">{t("link.eyebrow")}</span></p>
+    <h1 id="link-title" data-i18n={headingKey}>{t(headingKey)}</h1>
+    <p data-i18n="link.body">{t("link.body")}</p>
     <div class="button-row">
       <a class="button button-primary" href="#" data-open-app hidden>
-        Open in Edendale
+        <span data-i18n="link.open">{t("link.open")}</span>
         <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
       </a>
-      <a class="button button-secondary" href={import.meta.env.BASE_URL}>
+      <a class="button button-secondary" href={import.meta.env.BASE_URL} data-locale-home>
         <i class="fa-solid fa-house" aria-hidden="true"></i>
-        Visit Edendale
+        <span data-i18n="link.visit">{t("link.visit")}</span>
       </a>
     </div>
-    <p class="link-detail" data-link-detail>
-      Edendale is not installed or this link is unavailable on this device.
+    <p class="link-detail" data-link-detail data-i18n="link.unavailable">
+      {t("link.unavailable")}
     </p>
   </div>
 </section>
@@ -50,7 +53,12 @@ const { heading = "Continue in Edendale" } = Astro.props;
   if (appButton && linkDetail && isAppRoute) {
     appButton.href = `edendale://${route}${window.location.search}`;
     appButton.hidden = false;
+    // The layout's inline language script has already run by the time this
+    // module executes, so its resolved strings are the right source for the
+    // note that replaces `link.unavailable` here.
+    linkDetail.removeAttribute("data-i18n");
     linkDetail.textContent =
+      window.__edendaleStrings?.["link.explicit"] ??
       "The app opens only after you choose Open in Edendale.";
   }
 </script>

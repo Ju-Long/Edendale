@@ -1,37 +1,182 @@
 ---
+import { getAbsoluteLocaleUrl } from "astro:i18n";
+
+import LanguagePicker from "../components/LanguagePicker.astro";
+import {
+  alternateLinks,
+  clientLocales,
+  clientStrings,
+  getLocale,
+  homeUrl,
+  LOCALES,
+  useTranslations,
+  type LocalePath,
+  type UIKey,
+} from "../i18n/utils.ts";
 import appIcon from "../../docs/icon.png";
 import "../styles/global.css";
 
+/**
+ * How this URL decides which language it shows.
+ *
+ * - `static` — the URL belongs to exactly one language. Every localized route.
+ * - `auto` — `/` only. Serves the default language, then sends a visitor whose
+ *   browser asks for another language to that language's URL.
+ * - `browser` — the app-link pages. They must keep the single, unprefixed URLs
+ *   that `apple-app-site-association` claims, so they cannot have one URL per
+ *   language; they localize their chrome in the browser instead.
+ */
+type LocaleMode = "static" | "auto" | "browser";
+
 interface Props {
-  title: string;
-  description: string;
+  titleKey: UIKey;
+  descriptionKey: UIKey;
+  locale: LocalePath;
+  localeMode?: LocaleMode;
   noIndex?: boolean;
+  /** Page-specific keys to include in a `browser` page's string table. */
+  browserKeys?: readonly UIKey[];
 }
 
-const { title, description, noIndex = false } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const home = import.meta.env.BASE_URL;
-const socialImage = new URL(`${home}app_icon.png`, Astro.site);
+const {
+  titleKey,
+  descriptionKey,
+  locale,
+  localeMode = "static",
+  noIndex = false,
+  browserKeys = [],
+} = Astro.props;
+
+const t = useTranslations(locale);
+const definition = getLocale(locale);
+const title = t(titleKey);
+const description = t(descriptionKey);
+
+const resolveInBrowser = localeMode === "browser";
+const canonical = resolveInBrowser
+  ? new URL(Astro.url.pathname, Astro.site).href
+  : getAbsoluteLocaleUrl(locale);
+const alternates = resolveInBrowser ? [] : alternateLinks();
+
+const home = homeUrl(locale);
+const socialImage = new URL(
+  `${import.meta.env.BASE_URL}app_icon.png`,
+  Astro.site,
+);
+
+// Only the two dynamic modes ship a script; a plain localized page needs none.
+const needsScript = localeMode !== "static";
+const i18n = {
+  mode: localeMode,
+  locales: clientLocales(),
+  strings: resolveInBrowser
+    ? clientStrings([
+        titleKey,
+        descriptionKey,
+        "chrome.skipToContent",
+        "chrome.homeAria",
+        "chrome.brandTagline",
+        "chrome.navAria",
+        "chrome.navFeatures",
+        "chrome.navPlatforms",
+        "chrome.navGithub",
+        "chrome.footerTagline",
+        "chrome.footerNote",
+        "chrome.footerSource",
+        "language.aria",
+        ...browserKeys,
+      ])
+    : null,
+  titleKey,
+  descriptionKey,
+};
 ---
 
 <!doctype html>
-<html lang="en">
+<html
+  lang={definition.lang}
+  dir={definition.dir}
+  data-typeface={definition.typeface}
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {
+      /*
+        This runs before the body is parsed: in `auto` mode the redirect happens
+        without painting the wrong language, and in `browser` mode it resolves
+        the language once so the script at the end of the body can apply it.
+      */
+      needsScript && (
+        <script is:inline define:vars={{ i18n }}>
+          window.__edendaleLocale = (function () {
+            var locales = i18n.locales;
+            var chosen = locales[0];
+
+            // RFC 4647 lookup: try each language the browser asks for, then drop
+            // its trailing subtags, before moving on to the next preference.
+            var requested =
+              (navigator.languages && navigator.languages.length
+                ? navigator.languages
+                : [navigator.language]) || [];
+
+            outer: for (var i = 0; i < requested.length; i += 1) {
+              var tag = String(requested[i] || "")
+                .toLowerCase()
+                .replace(/_/g, "-");
+              while (tag) {
+                for (var j = 0; j < locales.length; j += 1) {
+                  if (locales[j].claims.indexOf(tag) !== -1) {
+                    chosen = locales[j];
+                    break outer;
+                  }
+                }
+                var cut = tag.lastIndexOf("-");
+                if (cut < 0) break;
+                tag = tag.slice(0, cut);
+              }
+            }
+
+            if (
+              i18n.mode === "auto" &&
+              chosen !== locales[0] &&
+              chosen.homeHref !== location.pathname
+            ) {
+              // `replace`, not `assign`: the back button returns to wherever the
+              // visitor came from instead of bouncing through here again.
+              location.replace(chosen.homeHref + location.search + location.hash);
+            }
+
+            return chosen;
+          })();
+        </script>
+      )
+    }
     <meta name="theme-color" content="#09090d" />
     <meta name="description" content={description} />
     {noIndex && <meta name="robots" content="noindex,follow" />}
     <link rel="canonical" href={canonical} />
+    {
+      alternates.map((alternate) => (
+        <link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />
+      ))
+    }
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Edendale" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={definition.ogLocale} />
+    {
+      !resolveInBrowser &&
+        LOCALES.filter((entry) => entry.path !== locale).map((entry) => (
+          <meta property="og:locale:alternate" content={entry.ogLocale} />
+        ))
+    }
     <meta property="og:image" content={socialImage} />
     <meta property="og:image:width" content="1024" />
     <meta property="og:image:height" content="1024" />
-    <meta property="og:image:alt" content="Edendale — your private cinematic archive." />
+    <meta property="og:image:alt" content={t("meta.socialAlt")} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
@@ -42,19 +187,34 @@ const socialImage = new URL(`${home}app_icon.png`, Astro.site);
     <title>{title}</title>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to content</a>
+    <a class="skip-link" href="#main-content" data-i18n="chrome.skipToContent">
+      {t("chrome.skipToContent")}
+    </a>
     <header class="site-header">
       <div class="section-shell header-inner">
-        <a class="brand" href={home} aria-label="Edendale home">
+        <a
+          class="brand"
+          href={home}
+          aria-label={t("chrome.homeAria")}
+          data-i18n-aria="chrome.homeAria"
+          data-locale-home
+        >
           <img src={appIcon.src} alt="" width="46" height="46" />
-          <span><strong>Edendale</strong><small>Personal cinema</small></span>
+          <span>
+            <strong>Edendale</strong>
+            <small data-i18n="chrome.brandTagline">{t("chrome.brandTagline")}</small>
+          </span>
         </a>
-        <nav aria-label="Primary navigation">
-          <a href={`${home}#features`}>Features</a>
-          <a href={`${home}#platforms`}>Platforms</a>
+        <nav aria-label={t("chrome.navAria")} data-i18n-aria="chrome.navAria">
+          <a href={`${home}#features`} data-locale-home-hash="features">
+            <span data-i18n="chrome.navFeatures">{t("chrome.navFeatures")}</span>
+          </a>
+          <a href={`${home}#platforms`} data-locale-home-hash="platforms">
+            <span data-i18n="chrome.navPlatforms">{t("chrome.navPlatforms")}</span>
+          </a>
           <a class="header-github" href="https://github.com/Ju-Long/Edendale">
             <i class="fa-brands fa-github" aria-hidden="true"></i>
-            GitHub
+            <span data-i18n="chrome.navGithub">{t("chrome.navGithub")}</span>
             <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
           </a>
         </nav>
@@ -65,16 +225,79 @@ const socialImage = new URL(`${home}app_icon.png`, Astro.site);
     </div>
     <footer class="site-footer">
       <div class="section-shell footer-inner">
-        <a class="brand brand-small" href={home}>
+        <a class="brand brand-small" href={home} data-locale-home>
           <img src={appIcon.src} alt="" width="34" height="34" />
-          <span><strong>Edendale</strong><small>Your stories stay yours.</small></span>
+          <span>
+            <strong>Edendale</strong>
+            <small data-i18n="chrome.footerTagline">{t("chrome.footerTagline")}</small>
+          </span>
         </a>
-        <p>Free and open source · No analytics · Built with care</p>
-        <a href="https://github.com/Ju-Long/Edendale">
-          Source on GitHub
-          <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
-        </a>
+        <p data-i18n="chrome.footerNote">{t("chrome.footerNote")}</p>
+        <div class="footer-actions">
+          <LanguagePicker locale={locale} resolveInBrowser={resolveInBrowser} />
+          <a class="footer-source" href="https://github.com/Ju-Long/Edendale">
+            <span data-i18n="chrome.footerSource">{t("chrome.footerSource")}</span>
+            <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
+          </a>
+        </div>
       </div>
     </footer>
+    {
+      /*
+        `browser` mode only. The language was already resolved in the head, so
+        this just applies it — at the end of the body, where the elements exist.
+      */
+      resolveInBrowser && (
+        <script is:inline define:vars={{ i18n }}>
+          (function () {
+            var locale = window.__edendaleLocale;
+            if (!locale) return;
+            var strings = i18n.strings[locale.path];
+            if (!strings) return;
+            window.__edendaleStrings = strings;
+
+            var root = document.documentElement;
+            root.lang = locale.lang;
+            root.dir = locale.dir;
+            root.dataset.typeface = locale.typeface;
+
+            document.title = strings[i18n.titleKey];
+            var description = document.querySelector('meta[name="description"]');
+            if (description) description.content = strings[i18n.descriptionKey];
+
+            document.querySelectorAll("[data-i18n]").forEach(function (node) {
+              var value = strings[node.dataset.i18n];
+              if (value) node.textContent = value;
+            });
+            document.querySelectorAll("[data-i18n-aria]").forEach(function (node) {
+              var value = strings[node.dataset.i18nAria];
+              if (value) node.setAttribute("aria-label", value);
+            });
+
+            document.querySelectorAll("[data-locale-home]").forEach(function (node) {
+              node.href = locale.homeHref;
+            });
+            document.querySelectorAll("[data-locale-home-hash]").forEach(function (node) {
+              node.href = locale.homeHref + "#" + node.dataset.localeHomeHash;
+            });
+
+            var label = document.querySelector("[data-language-current]");
+            if (label) {
+              label.textContent = locale.nativeName;
+              label.lang = locale.lang;
+            }
+            document
+              .querySelectorAll("[data-language-option][aria-current]")
+              .forEach(function (node) {
+                node.removeAttribute("aria-current");
+              });
+            var selected = document.querySelector(
+              '[data-language-option="' + locale.path + '"]',
+            );
+            if (selected) selected.setAttribute("aria-current", "true");
+          })();
+        </script>
+      )
+    }
   </body>
 </html>

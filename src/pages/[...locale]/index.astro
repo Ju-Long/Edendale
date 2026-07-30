@@ -1,0 +1,213 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { lines, LOCALES, useTranslations, type LocalePath } from "../../i18n/utils.ts";
+
+/**
+ * One source file, one page per language, plus the automatic entry point.
+ *
+ * - `/` serves English and redirects a visitor whose browser asks for another
+ *   language to that language, the way apple.com routes to `/jp/` or `/de/`.
+ * - `/en/` serves the same English page without redirecting, so choosing
+ *   English from the picker is a URL and not a stored preference.
+ * - `/es/`, `/ja/`, … serve their language directly.
+ */
+export function getStaticPaths() {
+  return [
+    { params: { locale: undefined }, props: { locale: "en" as LocalePath, automatic: true } },
+    ...LOCALES.map((entry) => ({
+      params: { locale: entry.path },
+      props: { locale: entry.path as LocalePath, automatic: false },
+    })),
+  ];
+}
+
+const { locale, automatic } = Astro.props;
+const t = useTranslations(locale);
+
+// Headings carry their own line breaks so each language can wrap where its
+// words allow. The hero highlights its middle line in gold.
+const heroTitle = lines(t("hero.title"));
+const heroAccent = heroTitle.length > 2 ? 1 : -1;
+const featuresTitle = lines(t("features.title"));
+const platformsTitle = lines(t("platforms.title"));
+const closingTitle = lines(t("closing.title"));
+---
+
+<SiteLayout
+  titleKey="meta.home.title"
+  descriptionKey="meta.home.description"
+  locale={locale}
+  localeMode={automatic ? "auto" : "static"}
+>
+  <main>
+    <section class="hero section-shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> {t("hero.eyebrow")}</p>
+        <h1 id="hero-title">
+          {heroTitle.map((line, index) => (
+            <Fragment>
+              {index > 0 && <br />}
+              {index === heroAccent ? <em>{line}</em> : line}
+            </Fragment>
+          ))}
+        </h1>
+        <p class="hero-lede">{t("hero.lede")}</p>
+        <div class="button-row">
+          <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
+            <i class="fa-brands fa-github" aria-hidden="true"></i>
+            {t("hero.ctaSource")}
+            <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
+          </a>
+          <a class="button button-secondary" href="#platforms">
+            {t("hero.ctaExplore")}
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </a>
+        </div>
+        <ul class="trust-list" aria-label={t("hero.trustAria")}>
+          <li><i class="fa-solid fa-check" aria-hidden="true"></i> {t("hero.trustLocal")}</li>
+          <li><i class="fa-solid fa-check" aria-hidden="true"></i> {t("hero.trustAnalytics")}</li>
+          <li><i class="fa-solid fa-check" aria-hidden="true"></i> {t("hero.trustOpenSource")}</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" aria-label={t("hero.visualAria")}>
+        <div class="projector-glow"></div>
+        <div class="archive-window">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <p>{t("hero.windowTitle")}</p>
+            <span class="window-status">{t("hero.windowStatus")}</span>
+          </div>
+          <div class="window-body">
+            <div class="window-heading">
+              <span>{t("hero.windowResume")}</span>
+              <strong>{t("hero.windowMoment")}</strong>
+            </div>
+            <div class="feature-frame">
+              <div class="film-mark" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="feature-caption">
+                <p>{t("hero.windowNowPlaying")}</p>
+                <strong>{t("hero.windowPickUp")}</strong>
+                <div class="progress-track"><span></span></div>
+              </div>
+            </div>
+            <div class="poster-row" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+        <div class="privacy-note">
+          <span class="privacy-pulse" aria-hidden="true"></span>
+          <div>
+            <strong>{t("hero.privacyTitle")}</strong>
+            <small>{t("hero.privacyBody")}</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="proof-strip" aria-label={t("proof.aria")}>
+      <div class="section-shell proof-grid">
+        <p><strong>{t("proof.archiveTitle")}</strong><span>{t("proof.archiveBody")}</span></p>
+        <p><strong>{t("proof.playbackTitle")}</strong><span>{t("proof.playbackBody")}</span></p>
+        <p><strong>{t("proof.cloudTitle")}</strong><span>{t("proof.cloudBody")}</span></p>
+        <p><strong>{t("proof.telemetryTitle")}</strong><span>{t("proof.telemetryBody")}</span></p>
+      </div>
+    </section>
+
+    <section class="section-shell feature-section" id="features" aria-labelledby="features-title">
+      <div class="section-intro">
+        <p class="eyebrow"><span></span> {t("features.eyebrow")}</p>
+        <h2 id="features-title">
+          {featuresTitle.map((line, index) => (
+            <Fragment>{index > 0 && <br />}{line}</Fragment>
+          ))}
+        </h2>
+        <p>{t("features.lede")}</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card feature-card-wide">
+          <span class="feature-number">01</span>
+          <div class="card-art card-art-library" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <h3>{t("features.libraryTitle")}</h3>
+          <p>{t("features.libraryBody")}</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">02</span>
+          <div class="card-art card-art-progress" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <h3>{t("features.progressTitle")}</h3>
+          <p>{t("features.progressBody")}</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">03</span>
+          <div class="card-art card-art-private" aria-hidden="true">
+            <span></span>
+          </div>
+          <h3>{t("features.privacyTitle")}</h3>
+          <p>{t("features.privacyBody")}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="native-section" id="platforms" aria-labelledby="platforms-title">
+      <div class="section-shell native-grid">
+        <div class="section-intro">
+          <p class="eyebrow"><span></span> {t("platforms.eyebrow")}</p>
+          <h2 id="platforms-title">
+            {platformsTitle.map((line, index) => (
+              <Fragment>{index > 0 && <br />}{line}</Fragment>
+            ))}
+          </h2>
+          <p>{t("platforms.lede")}</p>
+        </div>
+        <div class="platform-list">
+          <article>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-apple"></i>
+            </span>
+            <div><h3>Apple</h3><p>{t("platforms.appleDevices")}</p></div>
+            <span class="platform-tech">SwiftUI</span>
+          </article>
+          <article>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-android"></i>
+            </span>
+            <div><h3>Android</h3><p>{t("platforms.androidDevices")}</p></div>
+            <span class="platform-tech">Jetpack Compose</span>
+          </article>
+          <article>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-windows"></i>
+            </span>
+            <div><h3>Windows</h3><p>{t("platforms.windowsDevices")}</p></div>
+            <span class="platform-tech">C# · WinUI</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell closing-section" aria-labelledby="closing-title">
+      <div>
+        <p class="eyebrow"><span></span> {t("closing.eyebrow")}</p>
+        <h2 id="closing-title">
+          {closingTitle.map((line, index) => (
+            <Fragment>{index > 0 && <br />}{line}</Fragment>
+          ))}
+        </h2>
+      </div>
+      <div class="closing-action">
+        <p>{t("closing.body")}</p>
+        <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
+          {t("closing.cta")}
+          <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
+        </a>
+      </div>
+    </section>
+  </main>
+</SiteLayout>

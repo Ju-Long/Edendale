@@ -38,6 +38,7 @@
   --glow: rgb(244 190 93 / 16%);
   --page: min(1180px, calc(100vw - 40px));
   --display: "Bebas Neue", Impact, sans-serif;
+  --display-scale: 1;
   --body: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--ink);
   color: var(--cream);
@@ -249,7 +250,7 @@ h2 {
 
 h1 {
   max-width: 660px;
-  font-size: clamp(66px, 7vw, 106px);
+  font-size: calc(clamp(66px, 7vw, 106px) * var(--display-scale));
 }
 
 h1 em {
@@ -258,7 +259,7 @@ h1 em {
 }
 
 h2 {
-  font-size: clamp(52px, 6vw, 82px);
+  font-size: calc(clamp(52px, 6vw, 82px) * var(--display-scale));
 }
 
 .hero-lede {
@@ -890,16 +891,119 @@ h2 {
 }
 
 .site-footer p,
-.site-footer > div > a:last-child {
+.footer-source {
   color: var(--muted);
   font-size: 10px;
 }
 
-.site-footer > div > a:last-child {
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  justify-content: end;
+  justify-self: end;
+}
+
+.footer-source {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  justify-self: end;
+  white-space: nowrap;
+}
+
+.footer-source:hover {
+  color: var(--cream);
+}
+
+/* Language picker — a plain disclosure so it works without JavaScript. */
+.language-picker {
+  position: relative;
+}
+
+.language-picker > summary {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 650;
+  gap: 8px;
+  list-style: none;
+  transition: border-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
+}
+
+.language-picker > summary::-webkit-details-marker {
+  display: none;
+}
+
+.language-picker > summary:hover,
+.language-picker[open] > summary {
+  border-color: var(--line-gold);
+  color: var(--gold);
+}
+
+.language-picker .icon-caret {
+  font-size: 0.66em;
+  transition: transform 160ms ease;
+}
+
+.language-picker[open] .icon-caret {
+  transform: rotate(180deg);
+}
+
+.language-picker > ul {
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 8px;
+  margin: 0;
+  border: 1px solid var(--line-gold);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 46%);
+  gap: 2px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+}
+
+.language-picker > ul a {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  gap: 9px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.language-picker > ul a:hover {
+  background: var(--surface-high);
+  color: var(--cream);
+}
+
+.language-picker .icon-selected {
+  color: var(--gold);
+  font-size: 0.8em;
+  visibility: hidden;
+}
+
+.language-picker > ul a[aria-current="true"] {
+  color: var(--gold);
+}
+
+.language-picker > ul a[aria-current="true"] .icon-selected {
+  visibility: visible;
 }
 
 .link-page {
@@ -921,7 +1025,7 @@ h2 {
 }
 
 .link-card h1 {
-  font-size: clamp(50px, 8vw, 78px);
+  font-size: calc(clamp(50px, 8vw, 78px) * var(--display-scale));
 }
 
 .link-card > p:not(.eyebrow) {
@@ -1020,7 +1124,7 @@ h2 {
   }
 
   h1 {
-    font-size: clamp(59px, 18vw, 82px);
+    font-size: calc(clamp(59px, 18vw, 82px) * var(--display-scale));
   }
 
   .archive-window {
@@ -1108,16 +1212,25 @@ h2 {
     align-items: start;
   }
 
+  /* Stack the footer rather than clipping labels: the language picker needs a
+     readable name, and so does the source link beside it. */
   .footer-inner {
-    min-height: 100px;
+    min-height: 0;
+    padding-block: 26px;
+    gap: 18px;
+    grid-template-columns: 1fr;
+    justify-items: start;
   }
 
-  .site-footer > div > a:last-child {
-    font-size: 0;
+  .footer-actions {
+    justify-content: start;
+    justify-self: start;
   }
 
-  .site-footer > div > a:last-child span {
-    font-size: 16px;
+  .language-picker > ul {
+    right: auto;
+    left: 0;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1130,4 +1243,119 @@ h2 {
   .site-header nav a {
     transition: none;
   }
+}
+
+/* Language-specific typography ------------------------------------------- */
+
+/*
+  Bebas Neue is extremely condensed, so an English headline fits a column that
+  the same sentence in French or German overruns. Each headline carries its own
+  authored line breaks, so the fix is to scale the display size per language
+  rather than let a line wrap somewhere the design did not choose.
+
+  Tuning a language: set the scale so the longest authored line still fits at
+  every width. `--display-scale` feeds `h1`, `h2`, and `.link-card h1`.
+*/
+html[lang="fr"] {
+  --display-scale: 0.78;
+}
+
+html[lang="de"] {
+  --display-scale: 0.8;
+}
+
+html[lang="es"],
+html[lang="pt-BR"] {
+  --display-scale: 0.88;
+}
+
+/*
+  The mobile headline floor is 59px, which is generous once a language has words
+  as long as "bibliothèque". French takes one more step down so its longest line
+  still fits the 320px minimum width.
+*/
+@media (max-width: 680px) {
+  html[lang="fr"] {
+    --display-scale: 0.66;
+  }
+}
+
+/*
+  Bebas Neue carries no CJK glyphs, and uppercasing with label tracking is wrong
+  for Japanese, Korean, and Chinese. Those languages get their platform display
+  face and normal casing. The Latin wordmark, the section numerals, and the
+  platform names stay on Bebas Neue, because they are never translated.
+*/
+html[lang="ja"] {
+  --display-cjk: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    "Noto Sans JP", sans-serif;
+}
+
+html[lang="ko"] {
+  --display-cjk: "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR",
+    "Malgun Gothic", sans-serif;
+}
+
+html[lang="zh-Hans"] {
+  --display-cjk: "PingFang SC", "Noto Sans SC", "Source Han Sans SC",
+    "Microsoft YaHei", sans-serif;
+}
+
+html[data-typeface="cjk"] {
+  --body: "Inter", var(--display-cjk);
+  /* Inter has no CJK weights to slant or embolden; let the system supply them. */
+  font-synthesis: weight;
+}
+
+/*
+  CJK glyphs are full-width, so a headline occupies roughly one em per character
+  where Bebas Neue — very condensed — fits three. These ceilings keep the longest
+  authored line inside its column instead of breaking mid-word, which CJK text
+  does silently because it has no spaces to break on.
+*/
+html[data-typeface="cjk"] :is(h1, h2) {
+  font-family: var(--display-cjk);
+  font-size: clamp(26px, 3.6vw, 46px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.18;
+  text-transform: none;
+}
+
+html[data-typeface="cjk"] h2 {
+  font-size: clamp(23px, 3.1vw, 40px);
+}
+
+html[data-typeface="cjk"] .link-card h1 {
+  font-size: clamp(23px, 3.1vw, 40px);
+}
+
+html[data-typeface="cjk"]
+  :is(
+    .window-heading span,
+    .feature-caption strong,
+    .proof-grid strong,
+    .feature-card h3
+  ) {
+  font-family: var(--display-cjk);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+html[data-typeface="cjk"] :is(.feature-caption strong, .feature-card h3) {
+  font-size: clamp(20px, 2.2vw, 27px);
+}
+
+html[data-typeface="cjk"]
+  :is(
+    .brand small,
+    .eyebrow,
+    .window-status,
+    .window-heading strong,
+    .feature-caption p
+  ) {
+  letter-spacing: 0.04em;
+  text-transform: none;
 }

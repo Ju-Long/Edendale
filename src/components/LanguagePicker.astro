@@ -1,0 +1,49 @@
+---
+import { LOCALES, pickerUrl, useTranslations, type LocalePath } from "../i18n/utils.ts";
+
+interface Props {
+  /** The language currently rendered, or omitted on client-localized pages. */
+  locale: LocalePath;
+  /**
+   * Set on pages that pick their language in the browser: the summary label and
+   * the selected item are filled in by script instead of at build time.
+   */
+  resolveInBrowser?: boolean;
+}
+
+const { locale, resolveInBrowser = false } = Astro.props;
+const t = useTranslations(locale);
+const current = LOCALES.find((entry) => entry.path === locale) ?? LOCALES[0];
+---
+
+{/*
+  A plain disclosure so the picker works with no JavaScript: every language is a
+  real link to a real URL, the way apple.com's region picker is.
+*/}
+<details class="language-picker" data-language-picker>
+  <summary aria-label={t("language.aria")}>
+    <i class="fa-solid fa-globe" aria-hidden="true"></i>
+    <span data-language-current lang={resolveInBrowser ? undefined : current.lang}>
+      {resolveInBrowser ? t("language.label") : current.nativeName}
+    </span>
+    <i class="fa-solid fa-chevron-down icon-caret" aria-hidden="true"></i>
+  </summary>
+  <ul aria-label={t("language.aria")}>
+    {
+      LOCALES.map((entry) => (
+        <li>
+          <a
+            href={pickerUrl(entry.path)}
+            hreflang={entry.lang}
+            lang={entry.lang}
+            data-language-option={entry.path}
+            aria-current={!resolveInBrowser && entry.path === locale ? "true" : undefined}
+          >
+            <i class="fa-solid fa-check icon-selected" aria-hidden="true"></i>
+            {entry.nativeName}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</details>

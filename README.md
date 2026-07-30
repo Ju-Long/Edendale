@@ -79,7 +79,8 @@ added.
 On `web`, the repository root contains Edendale's static Astro marketing
 and verified-link site. It has no browser player, media library, watch tracker,
 TMDB proxy, server runtime, account system, analytics, application persistence,
-or runtime credentials.
+or runtime credentials. It is published in eight languages and matches the
+visitor's browser language automatically; see [Languages](#languages).
 
 ### Requirements and local commands
 
@@ -139,6 +140,63 @@ EDENDALE_CUSTOM_DOMAIN="" npm run build
 
 This fallback derives `https://ju-long.github.io/Edendale/` from
 `GITHUB_REPOSITORY`.
+
+### Languages
+
+The site ships English, Spanish, French, German, Brazilian Portuguese,
+Japanese, Korean, and Simplified Chinese through Astro's built-in
+[i18n routing](https://docs.astro.build/en/guides/internationalization/),
+configured with `prefixDefaultLocale: false`. English keeps the unprefixed
+URLs and every other language is served from `/<locale>/`, the same shape
+apple.com uses for `/` and `/jp/`.
+
+| URL | Serves |
+|---|---|
+| `/` | English, and redirects a visitor whose browser asks for another shipped language to that language |
+| `/en/` | English, with no redirect, canonical back to `/` |
+| `/es/`, `/fr/`, `/de/`, `/pt-br/`, `/ja/`, `/ko/`, `/zh-hans/` | That language |
+| `/search/`, `/media/`, `/library/`, `/play/`, `/404` | The app-link pages, which stay unprefixed |
+
+Detection is a small inline script in `<head>`. It matches
+`navigator.languages` against the shipped locales using RFC 4647 lookup — each
+tag is tried, then progressively shortened, before moving to the next
+preference — so `en-GB` resolves to English, `zh-Hans-CN` and `zh-TW` to
+Simplified Chinese, and `pt-PT` to Brazilian Portuguese. It runs before the
+body is parsed, redirects with `location.replace` so the back button still
+works, and only ever runs on `/`. Every other URL is a fixed language.
+
+DESIGN.md forbids this site from storing preferences, so nothing is written to
+`localStorage` or a cookie. The URL is the memory instead: that is what `/en/`
+exists for, and it is where the language picker in the footer sends anyone who
+chooses English. The picker is a plain `<details>` disclosure of real links, so
+it works with JavaScript disabled.
+
+The app-link pages are the exception to per-language URLs. Universal Links match
+the exact paths in `apple-app-site-association`, so a localized copy at
+`/es/media/…` would be a link that silently stopped opening the app. Those pages
+keep one unprefixed URL each and localize their text in the browser instead;
+`SiteLayout`'s `localeMode="browser"` inlines every language's copy of the few
+strings they use.
+
+Adding a language:
+
+1. Append an entry to [`src/i18n/locales.ts`](src/i18n/locales.ts) — the URL
+   segment, its `lang` tag, its name in its own language, and the browser tags
+   it claims.
+2. Add its dictionary to [`src/i18n/ui.ts`](src/i18n/ui.ts). It is typed as a
+   complete `Dictionary`, so `npm run check` fails until every key is present.
+3. Check the headline widths. Headings carry authored line breaks (`\n` in the
+   dictionary) so each language wraps where its words allow, and
+   `--display-scale` in [`global.css`](src/styles/global.css) sizes the
+   condensed display face per language — French and German need noticeably less
+   than English. Languages marked `typeface: "cjk"` also get a platform CJK
+   face, normal casing, and their own size ramp, because Bebas Neue has no CJK
+   glyphs.
+
+Every locale is currently left-to-right. `dir` is already wired from the locale
+registry to `<html>`, but the stylesheet still uses some physical properties
+(the skip link, the picker's alignment), so adding a right-to-left language
+needs a pass over those first.
 
 ### Universal Links and App Links
 

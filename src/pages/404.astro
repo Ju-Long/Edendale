@@ -1,12 +1,24 @@
 ---
 import LinkLanding from "../components/LinkLanding.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
+import { DEFAULT_LOCALE } from "../i18n/utils.ts";
 ---
 
 <SiteLayout
-  title="Open in Edendale"
-  description="Continue this link in the Edendale app, or return to the Edendale project site."
+  titleKey="meta.link.title"
+  descriptionKey="meta.notFound.description"
+  locale={DEFAULT_LOCALE}
+  localeMode="browser"
+  browserKeys={[
+    "link.eyebrow",
+    "link.headingNotFound",
+    "link.body",
+    "link.open",
+    "link.visit",
+    "link.unavailable",
+    "link.explicit",
+  ]}
   noIndex
 >
-  <main><LinkLanding heading="This link opens in Edendale" /></main>
+  <main><LinkLanding headingKey="link.headingNotFound" /></main>
 </SiteLayout>
