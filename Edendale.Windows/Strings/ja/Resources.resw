@@ -371,6 +371,9 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>キャンセル</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>削除</value>
   </data>
@@ -784,5 +787,74 @@
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} 日</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>オンライン字幕</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>オンラインで字幕を検索…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>このファイル</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>字幕の言語</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>優先する言語</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>検索中…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>再生中の項目がありません。</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>この作品の字幕は見つかりませんでした。</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>ダウンロード中…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>聴覚障害者向け</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>自動翻訳</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} 件のダウンロード</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>この字幕を読み込めませんでした。</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>このビルドでは字幕サービスが設定されていません。</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>字幕サービスに接続できませんでした。</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>字幕サービスから予期しない応答がありました。</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>字幕の検索に失敗しました (HTTP {0})。</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>本日のリクエスト上限に達しました。明日もう一度お試しください。</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>この字幕をダウンロードできませんでした。</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>字幕サービスがこのビルドの API キーを拒否しました。</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>このファイルはまだ TMDB と一致していないため、検索の手がかりがありません。</value>
   </data>
 </root>

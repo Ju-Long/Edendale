@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <Grid Padding="24" BorderBrush="{StaticResource EdendaleHairlineBorderBrush}" BorderThickness="0,0,0,1">
-            <TextBlock x:Name="HeaderText" Style="{StaticResource HeadlineMDTextStyle}" FontSize="20" Foreground="{StaticResource EdendaleTextPrimaryBrush}" Text="EPISODES" VerticalAlignment="Center"/>
+            <TextBlock x:Name="HeaderText" Style="{StaticResource HeadlineMDTextStyle}" FontSize="20" Foreground="{StaticResource EdendaleTextPrimaryBrush}" d:Text="EPISODES" VerticalAlignment="Center"/>
             <Button Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="CloseButton_Click" Padding="10">
                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sidebar-right.svg" Width="14" Height="14" />
             </Button>

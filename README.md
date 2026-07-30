@@ -70,7 +70,7 @@ required.
 The current feature build includes sidebar navigation, a custom title bar,
 full-window playback with progress writes, movie and show shelves, folder
 import with background metadata enrichment, search, detail and person pages,
-and settings.
+online subtitle search, and settings.
 
 ### Prerequisites
 
@@ -100,27 +100,77 @@ domain tests target plain .NET 8 and can also run on macOS or Linux:
 dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj
 ```
 
-### TMDB credentials
+### API credentials
 
-Run the Windows initializer from the repository root:
+Run the credentials tool from the repository root. It needs only the .NET 8
+SDK the build already requires, so there is no script execution policy to
+work around:
 
-```powershell
-.\init.ps1
+```bash
+dotnet run --project tools/Edendale.Secrets
 ```
 
-If local execution policy blocks the script:
+It prompts for each credential with the input hidden. Enter keeps a value that
+is already set, so adding one key does not mean retyping the others, and `-`
+clears an optional one. To see what is configured without revealing anything:
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\init.ps1
+```bash
+dotnet run --project tools/Edendale.Secrets -- --show
 ```
 
-The script writes the gitignored root `secrets.json` with
-`TMDB_READ_ACCESS_TOKEN` and `TMDB_API_KEY`, restricts the file to the current
-Windows user, and never prints either value. A local build embeds the file as a
-private assembly resource. Environment variables with the same names are an
-alternative for local or test processes. CI runs without credentials; do not
-commit the file or distribute a locally built binary containing personal
-credentials.
+For scripted setup, a flag reads one line from standard input. Values are
+never accepted as command-line arguments, which would leave them in shell
+history and in the process list:
+
+```bash
+printf '%s\n' "$WYZIE_KEY" | dotnet run --project tools/Edendale.Secrets -- --wyzie-key -
+```
+
+The tool writes the gitignored root `secrets.json` with
+`TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, and `WYZIE_API_KEY`. It serializes
+the file rather than concatenating it, writes through a sibling temporary file
+that is restricted to the current Windows user before any secret reaches it,
+renames that over the destination, and verifies the resulting ACL. It never
+prints a value — only how many characters each one has. A local build embeds
+the file as a private assembly resource. Environment variables of the same
+names override it at runtime and are an alternative for local or test
+processes. CI runs without credentials; do not commit the file or distribute a
+locally built binary containing personal credentials.
+
+The Wyzie key is optional. Get one at
+[store.wyzie.io/redeem](https://store.wyzie.io/redeem); leave the prompt empty
+to build without it, and the player hides the online subtitle search rather
+than offering a dead entry.
+
+> Windows PowerShell 5.1 mangles multi-line strings piped into a native
+> program. Use a file redirect or `cmd /c` when feeding several values at once,
+> or just run the tool interactively.
+
+### Online subtitles
+
+The player's subtitles button offers a search against
+[Wyzie Subs](https://docs.wyzie.io), alongside whatever tracks the file already
+carries. It runs only when the reader opens the browser — never on import and
+never on the playback fast path.
+
+Wyzie matches on an id, so a request sends the item's TMDB id — the series id
+plus season and episode for television — with the wanted ISO 639-1 languages
+and the API key. Neither the file nor its name leaves the device. Because the
+lookup is by id, **an item the library has not matched to TMDB cannot be
+searched at all**; the browser says so instead of showing an empty list. The
+search asks for SubRip only, since that is what the Windows timed-text reader
+renders.
+
+Results are ordered by the reader's language preference, then human-authored
+uploads over machine-translated ones, then popularity. Picking one downloads it
+straight from the returned URL, decodes it using the character set the service
+reported — subtitles are routinely published in a legacy code page — and
+rewrites it as UTF-8 in `%LOCALAPPDATA%\Edendale\Subtitles`, so re-selecting
+one costs nothing. That cache is device-local and never enters the OneDrive
+replica.
+
+There is no account and no session to store: a key is the whole of the
+service's authentication, and its allowance is per key per day.
 
 ### Languages
 
@@ -144,6 +194,20 @@ set the Apple branch ships.
 When adding UI text, add the key to `Strings/en-US/Resources.resw` first, then
 to each translated file. A missing entry falls back to English rather than
 failing.
+
+`en-AU`, `en-CA`, and `en-GB` are the exception: they hold only the keys whose
+spelling differs from `en-US` (favourite, catalogue) and inherit everything
+else, so a new key belongs in them only when it spells something differently.
+
+Dates, times, and numbers shown to the reader are formatted in
+`CultureInfo.CurrentCulture`, which follows the regional format Windows is set
+to and moves independently of the UI language: the search date range takes its
+field order from the culture's long date, playback rate takes its decimal mark,
+and the sync clock uses `"t"` rather than a fixed 24-hour pattern. Dates that
+are keys rather than copy — the release-heatmap `yyyy-MM-dd` strings and the
+bounds sent to TMDB — stay on `CultureInfo.InvariantCulture` so a Buddhist or
+Hijri regional calendar cannot reach the wire, mirroring the Gregorian
+`HeatmapCalendar` the Apple branch pins.
 
 ### Data and privacy
 

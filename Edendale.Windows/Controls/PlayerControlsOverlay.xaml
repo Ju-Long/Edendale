@@ -110,5 +110,101 @@
                 </StackPanel>
             </Grid>
         </Grid>
+
+        <!-- Online subtitle browser. A sibling of OverlayContainer rather than
+             a child, so the auto-hide that fades the controls never takes the
+             open panel with it. -->
+        <Border x:Name="SubtitleBrowser"
+                Visibility="Collapsed"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="0,80,24,104"
+                Width="460"
+                MaxHeight="560"
+                CornerRadius="16"
+                Background="{StaticResource EdendaleSurfaceLowBrush}"
+                BorderBrush="{StaticResource EdendaleHairlineBorderBrush}"
+                BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Padding="20,16" BorderBrush="{StaticResource EdendaleHairlineBorderBrush}" BorderThickness="0,0,0,1">
+                    <TextBlock x:Uid="SubtitleBrowserHeader"
+                               Style="{StaticResource LabelCapsTextStyle}"
+                               Text="ONLINE SUBTITLES"
+                               VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource ArchiveGhostButtonStyle}"
+                            x:Uid="SubtitleBrowserCloseButton"
+                            ToolTipService.ToolTip="Close"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Padding="8"
+                            Click="SubtitleBrowserClose_Click">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-left.svg" Width="14" Height="14"/>
+                    </Button>
+                </Grid>
+
+                <!-- What is being searched for -->
+                <TextBlock x:Name="SubtitleBrowserSubject"
+                           Grid.Row="1"
+                           Margin="20,12,20,0"
+                           Style="{StaticResource BodySMTextStyle}"
+                           Foreground="{StaticResource EdendaleTextSecondaryBrush}"
+                           TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis"/>
+
+                <!-- Language filter -->
+                <Grid Grid.Row="2" Margin="20,12,20,12" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="SubtitleLanguageBox"
+                              Grid.Column="0"
+                              HorizontalAlignment="Stretch"
+                              SelectionChanged="SubtitleLanguageBox_SelectionChanged"/>
+                    <Button x:Name="SubtitleRefreshButton"
+                            x:Uid="SubtitleRefreshButton"
+                            Grid.Column="1"
+                            Style="{StaticResource ArchiveSecondaryButtonStyle}"
+                            Content="Search"
+                            Click="SubtitleRefresh_Click"/>
+                </Grid>
+
+                <!-- Results, or the state that replaces them -->
+                <Grid Grid.Row="3" MinHeight="120">
+                    <ScrollViewer x:Name="SubtitleResultsScroller" Padding="20,0,20,16" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="SubtitleResultsPanel" Spacing="6"/>
+                    </ScrollViewer>
+
+                    <StackPanel x:Name="SubtitleStatePanel"
+                                Visibility="Collapsed"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Margin="24,8"
+                                Spacing="12">
+                        <ProgressRing x:Name="SubtitleProgressRing"
+                                      Width="28"
+                                      Height="28"
+                                      IsActive="False"
+                                      Visibility="Collapsed"
+                                      HorizontalAlignment="Center"
+                                      Foreground="{StaticResource EdendaleGoldBrush}"/>
+                        <TextBlock x:Name="SubtitleStateText"
+                                   Style="{StaticResource BodySMTextStyle}"
+                                   Foreground="{StaticResource EdendaleTextSecondaryBrush}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

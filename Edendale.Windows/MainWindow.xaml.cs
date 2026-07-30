@@ -205,7 +205,8 @@ public sealed partial class MainWindow : Window
             ClosePlayer();
         });
         PlayerElement.SetMediaPlayer(_mediaPlayer);
-        ControlsOverlay.SetMediaPlayer(_mediaPlayer, request.Title.ToUpperInvariant(), request.Subtitle);
+        ControlsOverlay.SetMediaPlayer(
+            _mediaPlayer, request.Title.ToUpperInvariant(), request.Subtitle, request);
 
         PlayerOverlay.Visibility = Visibility.Visible;
         ControlsOverlay.Focus(FocusState.Programmatic);

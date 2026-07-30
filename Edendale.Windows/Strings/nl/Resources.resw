@@ -371,6 +371,9 @@ IS STIL</value>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Annuleer</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>Verwijder</value>
   </data>
@@ -784,5 +787,74 @@ IS STIL</value>
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} dagen</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>ONLINE ONDERTITELS</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>Zoeken</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>Ondertitels online zoeken…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>Dit bestand</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>Ondertiteltaal</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>Voorkeurstalen</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>Zoeken…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>Er wordt niets afgespeeld.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>Geen ondertitels gevonden voor deze titel.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>Downloaden…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>SDH</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>Automatisch vertaald</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} downloads</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>Deze ondertitel kon niet worden geladen.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>De ondertiteldienst is niet ingesteld voor deze versie.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>Kan de ondertiteldienst niet bereiken.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>De ondertiteldienst gaf een onverwacht antwoord.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>Zoeken naar ondertitels mislukt (HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>De aanvraaglimiet voor vandaag is bereikt. Probeer het morgen opnieuw.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>Deze ondertitel kon niet worden gedownload.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>De ondertiteldienst heeft de API-sleutel van deze versie geweigerd.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>Dit bestand is nog niet gekoppeld aan TMDB, dus er is niets om op te zoeken.</value>
   </data>
 </root>

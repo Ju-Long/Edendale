@@ -27,6 +27,21 @@ public static class AppPaths
     public static string SmbCredentialsFile => Path.Combine(DataDirectory, "smb-credentials.bin");
 
     /// <summary>
+    /// Downloaded subtitle files, kept so re-selecting one costs nothing
+    /// against the daily quota. Device-local, like the library itself, and
+    /// deliberately outside the cloud replica.
+    /// </summary>
+    public static string SubtitleCacheDirectory
+    {
+        get
+        {
+            var directory = Path.Combine(DataDirectory, "Subtitles");
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+    }
+
+    /// <summary>
     /// Cloud replica root inside the user's OneDrive (Windows' default cloud
     /// storage), or null when OneDrive is not set up on this machine. Not
     /// created here — CloudSyncService creates it when it starts replicating.

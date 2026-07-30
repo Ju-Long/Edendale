@@ -293,7 +293,7 @@ public sealed partial class SettingsPage : Page
             {
                 Title = Loc.Get("Smb_ConnectionFailedTitle"),
                 Content = new TextBlock { Text = failure, TextWrapping = TextWrapping.Wrap },
-                CloseButtonText = "OK",
+                CloseButtonText = Loc.Get("Common_OK"),
                 XamlRoot = XamlRoot,
             };
             await errDialog.ShowAsync();

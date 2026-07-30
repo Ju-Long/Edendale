@@ -1,7 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
@@ -9,7 +14,9 @@ using Windows.Media.Core;
 using Windows.Media.Playback;
 using Microsoft.UI.Dispatching;
 using System.ComponentModel;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Edendale.Windows.Core;
 using Edendale.Windows.Services;
 
 namespace Edendale.Windows.Controls;
@@ -22,6 +29,16 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private bool _isSliderManipulating;
     private bool _aspectFill;
 
+    /// <summary>What is playing, for the online subtitle search. Null for a bare file.</summary>
+    private PlaybackRequest? _playback;
+
+    private CancellationTokenSource? _subtitleWork;
+
+    /// <summary>Null means "search the reader's preferred languages".</summary>
+    private IReadOnlyList<string>? _subtitleLanguages;
+
+    private bool _languageBoxReady;
+
     public event RoutedEventHandler? CloseRequested;
     public event RoutedEventHandler? PlaylistRequested;
     public event RoutedEventHandler? PictureInPictureRequested;
@@ -33,6 +50,9 @@ public sealed partial class PlayerControlsOverlay : UserControl
     {
         this.InitializeComponent();
 
+        // The XAML default is design-time only; the reader's decimal mark wins.
+        SpeedButton.Content = RateLabel(1.0);
+
         _hideTimer = DispatcherQueue.CreateTimer();
         _hideTimer.Interval = TimeSpan.FromSeconds(3);
         _hideTimer.Tick += (s, e) => HideControls();
@@ -42,7 +62,13 @@ public sealed partial class PlayerControlsOverlay : UserControl
         _progressTimer.Tick += (s, e) => UpdateProgress();
     }
 
-    public void SetMediaPlayer(MediaPlayer? player, string title, string? subtitle)
+    /// <summary>
+    /// Binds the overlay to a player. <paramref name="request"/> is what the
+    /// online subtitle search matches on; without it the browser still opens
+    /// but can only search by the file's own hash.
+    /// </summary>
+    public void SetMediaPlayer(
+        MediaPlayer? player, string title, string? subtitle, PlaybackRequest? request = null)
     {
         if (_mediaPlayer != null)
         {
@@ -50,6 +76,10 @@ public sealed partial class PlayerControlsOverlay : UserControl
             _mediaPlayer.PlaybackSession.PositionChanged -= PlaybackSession_PositionChanged;
             _mediaPlayer.PlaybackSession.NaturalDurationChanged -= PlaybackSession_NaturalDurationChanged;
         }
+
+        // A different item invalidates any in-flight search and its results.
+        CloseSubtitleBrowser();
+        _playback = request;
 
         _mediaPlayer = player;
         TitleText.Text = title;
@@ -78,6 +108,10 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
     private void HideControls()
     {
+        // The subtitle browser is anchored to the bottom bar, so leave the
+        // controls up for as long as it is open.
+        if (SubtitleBrowser.Visibility == Visibility.Visible) return;
+
         if (_mediaPlayer?.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
         {
             VisualStateManager.GoToState(this, "ControlsHidden", true);
@@ -185,8 +219,12 @@ public sealed partial class PlayerControlsOverlay : UserControl
             _ => 1.0
         };
         _mediaPlayer.PlaybackSession.PlaybackRate = nextRate;
-        SpeedButton.Content = $"{nextRate:0.0}x";
+        SpeedButton.Content = RateLabel(nextRate);
     }
+
+    /// <summary>Playback rate with the reader's decimal mark — "1,5x" in German.</summary>
+    private static string RateLabel(double rate) =>
+        string.Format(CultureInfo.CurrentCulture, "{0:0.0}x", rate);
 
     private void PictureInPictureButton_Click(object sender, RoutedEventArgs e)
     {
@@ -243,6 +281,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         if (_mediaPlayer?.Source is not MediaPlaybackItem item)
         {
             flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracks"), IsEnabled = false });
+            AddOnlineSearchItem(flyout);
             flyout.ShowAt(SubtitlesButton);
             return;
         }
@@ -318,7 +357,22 @@ public sealed partial class PlayerControlsOverlay : UserControl
             flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracksInFile"), IsEnabled = false });
         }
 
+        AddOnlineSearchItem(flyout);
         flyout.ShowAt(SubtitlesButton);
+    }
+
+    /// <summary>
+    /// Offers the online subtitle browser, but only on a build that carries an
+    /// API key — otherwise the entry would lead nowhere.
+    /// </summary>
+    private void AddOnlineSearchItem(MenuFlyout flyout)
+    {
+        if (!AppServices.Subtitles.IsConfigured) return;
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+        var online = new MenuFlyoutItem { Text = Loc.Get("Subtitles_SearchOnline") };
+        online.Click += (_, _) => OpenSubtitleBrowser();
+        flyout.Items.Add(online);
     }
 
     private static string TrackLabel(string? label, string? language, int index, string fallback)
@@ -389,4 +443,325 @@ public sealed partial class PlayerControlsOverlay : UserControl
         }
         return $"{time.Minutes}:{time.Seconds:D2}";
     }
+
+    // ------------------------------------------------------------------
+    // Online subtitles (Wyzie Subs)
+    //
+    // Nothing here runs until the reader opens the browser: the search is an
+    // explicit action, like trailer playback. Only the item's TMDB id and the
+    // wanted languages leave the device — never the file or its name.
+    // ------------------------------------------------------------------
+
+    private void OpenSubtitleBrowser()
+    {
+        BuildLanguageBox();
+
+        SubtitleBrowserSubject.Text = _playback is null
+            ? Loc.Get("Subtitles_ThisFile")
+            : string.Join(" · ", new[] { _playback.Title, _playback.Subtitle }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
+
+        SubtitleBrowser.Visibility = Visibility.Visible;
+        ShowControls();
+
+        if (SubtitleResultsPanel.Children.Count == 0) _ = RunSearchAsync();
+    }
+
+    private void CloseSubtitleBrowser()
+    {
+        _subtitleWork?.Cancel();
+        _subtitleWork = null;
+
+        SubtitleBrowser.Visibility = Visibility.Collapsed;
+        SubtitleResultsPanel.Children.Clear();
+    }
+
+    private void SubtitleBrowserClose_Click(object sender, RoutedEventArgs e) => CloseSubtitleBrowser();
+
+    private void SubtitleRefresh_Click(object sender, RoutedEventArgs e) => _ = RunSearchAsync();
+
+    private void SubtitleLanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Populating the box raises this too; ignore it until the reader owns
+        // the selection.
+        if (!_languageBoxReady) return;
+
+        _subtitleLanguages = (SubtitleLanguageBox.SelectedItem as ComboBoxItem)?.Tag as IReadOnlyList<string>;
+        _ = RunSearchAsync();
+    }
+
+    /// <summary>
+    /// Preferred languages first, then every offered language by its own name
+    /// in the reader's language — so the filter needs no translated copy.
+    /// </summary>
+    private void BuildLanguageBox()
+    {
+        if (SubtitleLanguageBox.Items.Count > 0) return;
+
+        _languageBoxReady = false;
+        AutomationProperties.SetName(SubtitleLanguageBox, Loc.Get("Subtitles_Language"));
+
+        SubtitleLanguageBox.Items.Add(new ComboBoxItem
+        {
+            Content = Loc.Get("Subtitles_PreferredLanguages"),
+            Tag = null,
+        });
+
+        foreach (var code in SubtitleLanguages.Offered
+            .OrderBy(SubtitleLanguages.DisplayName, StringComparer.CurrentCulture))
+        {
+            SubtitleLanguageBox.Items.Add(new ComboBoxItem
+            {
+                Content = SubtitleLanguages.DisplayName(code),
+                Tag = (IReadOnlyList<string>)new[] { code },
+            });
+        }
+
+        SubtitleLanguageBox.SelectedIndex = 0;
+        _subtitleLanguages = null;
+        _languageBoxReady = true;
+    }
+
+    private async Task RunSearchAsync()
+    {
+        _subtitleWork?.Cancel();
+        var work = new CancellationTokenSource();
+        _subtitleWork = work;
+
+        SubtitleResultsPanel.Children.Clear();
+        ShowBrowserState(Loc.Get("Subtitles_Searching"), busy: true);
+
+        try
+        {
+            if (_playback is null)
+            {
+                ShowBrowserState(Loc.Get("Subtitles_NoFile"), busy: false);
+                return;
+            }
+
+            // Wyzie looks items up by id, so a file the library never matched
+            // to TMDB has nothing to search by. Say so plainly rather than
+            // returning an empty list that reads like "none exist".
+            if (!SubtitleService.CanSearch(_playback))
+            {
+                ShowBrowserState(Loc.Get("Subtitles_NotMatched"), busy: false);
+                return;
+            }
+
+            var results = await AppServices.Subtitles.SearchAsync(
+                _playback, _subtitleLanguages, work.Token);
+
+            if (work.IsCancellationRequested) return;
+
+            if (results.Count == 0)
+            {
+                ShowBrowserState(Loc.Get("Subtitles_NoResults"), busy: false);
+                return;
+            }
+
+            RenderResults(results);
+            ShowBrowserState(null, busy: false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer search or by the panel closing.
+        }
+        catch (SubtitleServiceException error)
+        {
+            if (!work.IsCancellationRequested) ShowBrowserState(error.Message, busy: false);
+        }
+        finally
+        {
+            if (ReferenceEquals(_subtitleWork, work)) _subtitleWork = null;
+            work.Dispose();
+        }
+    }
+
+    private void RenderResults(IReadOnlyList<SubtitleCandidate> results)
+    {
+        SubtitleResultsPanel.Children.Clear();
+        foreach (var candidate in results)
+        {
+            SubtitleResultsPanel.Children.Add(CreateSubtitleRow(candidate));
+        }
+    }
+
+    private UIElement CreateSubtitleRow(SubtitleCandidate candidate)
+    {
+        var button = new Button
+        {
+            Style = (Style)Application.Current.Resources["ArchiveGhostButtonStyle"],
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(12, 10, 12, 10),
+            CornerRadius = new CornerRadius(12),
+        };
+
+        var lines = new StackPanel { Spacing = 2 };
+        lines.Children.Add(new TextBlock
+        {
+            Text = candidate.Release ?? candidate.FileName ?? candidate.LanguageLabel,
+            Style = (Style)Application.Current.Resources["BodyLGTextStyle"],
+            Foreground = (Brush)Application.Current.Resources["EdendaleTextPrimaryBrush"],
+            TextWrapping = TextWrapping.NoWrap,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+        lines.Children.Add(new TextBlock
+        {
+            Text = DescribeCandidate(candidate),
+            Style = (Style)Application.Current.Resources["BodySMTextStyle"],
+            Foreground = (Brush)Application.Current.Resources["EdendaleTextSecondaryBrush"],
+            TextWrapping = TextWrapping.NoWrap,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+
+        button.Content = lines;
+        AutomationProperties.SetName(button, $"{candidate.Release ?? ""} {DescribeCandidate(candidate)}".Trim());
+        button.Click += (_, _) => _ = SelectCandidateAsync(candidate);
+        return button;
+    }
+
+    /// <summary>
+    /// The detail line: the language as the provider labels it, then the
+    /// qualities worth choosing between, then where it came from.
+    /// </summary>
+    private static string DescribeCandidate(SubtitleCandidate candidate)
+    {
+        var parts = new List<string> { candidate.LanguageLabel };
+        if (candidate.IsHearingImpaired) parts.Add(Loc.Get("Subtitles_HearingImpaired"));
+        if (candidate.IsAiTranslated) parts.Add(Loc.Get("Subtitles_AutoTranslated"));
+        if (!string.IsNullOrWhiteSpace(candidate.Origin)) parts.Add(candidate.Origin);
+        if (candidate.DownloadCount > 0) parts.Add(Loc.Format("Subtitles_Downloads", candidate.DownloadCount));
+        if (!string.IsNullOrWhiteSpace(candidate.Source)) parts.Add(candidate.Source);
+        return string.Join(" · ", parts);
+    }
+
+    /// <summary>Downloads the chosen subtitle, attaches it, and turns it on.</summary>
+    private async Task SelectCandidateAsync(SubtitleCandidate candidate)
+    {
+        _subtitleWork?.Cancel();
+        var work = new CancellationTokenSource();
+        _subtitleWork = work;
+
+        ShowBrowserState(Loc.Get("Subtitles_Downloading"), busy: true);
+
+        try
+        {
+            var downloaded = await AppServices.Subtitles.DownloadAsync(candidate, work.Token);
+            if (work.IsCancellationRequested) return;
+
+            if (_mediaPlayer?.Source is not MediaPlaybackItem item)
+            {
+                ShowBrowserState(Loc.Get("Subtitles_AttachFailed"), busy: false);
+                return;
+            }
+
+            var attached = await AttachSubtitleAsync(item, downloaded);
+            if (work.IsCancellationRequested) return;
+
+            if (!attached)
+            {
+                ShowBrowserState(Loc.Get("Subtitles_AttachFailed"), busy: false);
+                return;
+            }
+
+            CloseSubtitleBrowser();
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded.
+        }
+        catch (SubtitleServiceException error)
+        {
+            if (!work.IsCancellationRequested) ShowBrowserState(error.Message, busy: false);
+        }
+        catch (IOException)
+        {
+            if (!work.IsCancellationRequested) ShowBrowserState(Loc.Get("Subtitles_AttachFailed"), busy: false);
+        }
+        finally
+        {
+            if (ReferenceEquals(_subtitleWork, work)) _subtitleWork = null;
+            work.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Adds the downloaded file to the playing item as an external timed-text
+    /// track and presents it, disabling any other subtitle track so exactly
+    /// one shows — the same rule the in-file track menu follows.
+    /// </summary>
+    private async Task<bool> AttachSubtitleAsync(MediaPlaybackItem item, DownloadedSubtitle downloaded)
+    {
+        var resolution = new TaskCompletionSource<string?>();
+        var label = downloaded.Candidate.LanguageLabel;
+
+        var source = TimedTextSource.CreateFromUri(
+            new Uri(downloaded.FilePath), downloaded.Candidate.Language);
+
+        void OnResolved(TimedTextSource sender, TimedTextSourceResolveResultEventArgs args)
+        {
+            sender.Resolved -= OnResolved;
+            if (args.Error is not null || args.Tracks.Count == 0)
+            {
+                resolution.TrySetResult(null);
+                return;
+            }
+
+            args.Tracks[0].Label = label;
+            resolution.TrySetResult(args.Tracks[0].Id);
+        }
+
+        source.Resolved += OnResolved;
+        item.Source.ExternalTimedTextSources.Add(source);
+
+        // Resolution is off-thread and can fail silently on a malformed file;
+        // never leave the panel spinning on it.
+        var finished = await Task.WhenAny(resolution.Task, Task.Delay(TimeSpan.FromSeconds(15)));
+        if (finished != resolution.Task) return false;
+
+        var trackId = await resolution.Task;
+        if (trackId is null) return false;
+
+        PresentOnly(item, trackId);
+        return true;
+    }
+
+    /// <summary>Turns on the track with <paramref name="trackId"/> and turns every other one off.</summary>
+    private static void PresentOnly(MediaPlaybackItem item, string trackId)
+    {
+        for (var index = 0; index < item.TimedMetadataTracks.Count; index++)
+        {
+            var track = item.TimedMetadataTracks[index];
+            if (track.TimedMetadataKind is not (TimedMetadataKind.Subtitle or TimedMetadataKind.Caption))
+            {
+                continue;
+            }
+
+            item.TimedMetadataTracks.SetPresentationMode(
+                (uint)index,
+                track.Id == trackId
+                    ? TimedMetadataTrackPresentationMode.PlatformPresented
+                    : TimedMetadataTrackPresentationMode.Disabled);
+        }
+    }
+
+    /// <summary>
+    /// Busy shows the ring, a message replaces the list, and null restores the
+    /// results.
+    /// </summary>
+    private void ShowBrowserState(string? message, bool busy)
+    {
+        var hasState = busy || message is not null;
+        SubtitleStatePanel.Visibility = hasState ? Visibility.Visible : Visibility.Collapsed;
+        SubtitleResultsScroller.Visibility = hasState ? Visibility.Collapsed : Visibility.Visible;
+
+        SubtitleProgressRing.IsActive = busy;
+        SubtitleProgressRing.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+
+        SubtitleStateText.Text = message ?? "";
+        SubtitleStateText.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
+        SubtitleRefreshButton.IsEnabled = !busy;
+    }
+
 }

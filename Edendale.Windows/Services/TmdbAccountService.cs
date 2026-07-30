@@ -118,8 +118,10 @@ public sealed class TmdbAccountService
             var outcome = await WindowsCore.SyncUserMediaAsync(
                 session.SessionId, session.AccountId, _store.All);
             _store.ReplaceAll(outcome.Records);
+            // "t" is the reader's own short clock — 24-hour where that is the
+            // norm, "2:35 PM" where it is not.
             LastSyncStatus =
-                Loc.Format("Tmdb_SyncStatus", DateTime.Now.ToString("HH:mm"), outcome.Pushed, outcome.Pulled);
+                Loc.Format("Tmdb_SyncStatus", DateTime.Now.ToString("t"), outcome.Pushed, outcome.Pulled);
             return null;
         }
         catch (Exception failure)

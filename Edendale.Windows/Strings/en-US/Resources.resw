@@ -371,6 +371,9 @@ IS SILENT</value>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>Remove</value>
   </data>
@@ -784,5 +787,74 @@ IS SILENT</value>
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} days</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>ONLINE SUBTITLES</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>Search online subtitles…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>This file</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>Subtitle language</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>Preferred languages</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>Searching…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>Nothing is playing.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>No subtitles found for this title.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>Downloading…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>SDH</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>Auto-translated</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} downloads</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>That subtitle could not be loaded.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>The subtitle service is not set up for this build.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>Could not reach the subtitle service.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>The subtitle service returned an unexpected response.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>Subtitle search failed (HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>Today's subtitle request limit is used up. Try again tomorrow.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>That subtitle could not be downloaded.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>The subtitle service rejected this build's API key.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>This file isn't matched to TMDB yet, so there is nothing to search by.</value>
   </data>
 </root>

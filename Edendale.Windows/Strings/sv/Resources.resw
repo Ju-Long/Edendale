@@ -371,6 +371,9 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>Avbryt</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>Ta bort</value>
   </data>
@@ -784,5 +787,74 @@
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} dagar</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>UNDERTEXTER ONLINE</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>Sök</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>Sök undertexter online…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>Den här filen</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>Undertextspråk</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>Föredragna språk</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>Söker…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>Inget spelas upp.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>Inga undertexter hittades för den här titeln.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>Hämtar…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>SDH</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>Automatiskt översatt</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} hämtningar</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>Den här undertexten kunde inte läsas in.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>Undertexttjänsten är inte konfigurerad i den här versionen.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>Det gick inte att nå undertexttjänsten.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>Undertexttjänsten gav ett oväntat svar.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>Sökningen efter undertexter misslyckades (HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>Dagens förfrågningsgräns är förbrukad. Försök igen i morgon.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>Den här undertexten kunde inte hämtas.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>Undertexttjänsten avvisade den här versionens API-nyckel.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>Den här filen är ännu inte kopplad till TMDB, så det finns inget att söka på.</value>
   </data>
 </root>

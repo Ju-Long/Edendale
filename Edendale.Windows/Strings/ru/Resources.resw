@@ -371,6 +371,9 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>Отменить</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>ОК</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>Удалить</value>
   </data>
@@ -784,5 +787,74 @@
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} дней</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>СУБТИТРЫ ОНЛАЙН</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>Искать</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>Искать субтитры в сети…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>Этот файл</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>Язык субтитров</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>Предпочитаемые языки</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>Поиск…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>Ничего не воспроизводится.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>Субтитры для этого фильма не найдены.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>Загрузка…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>SDH</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>Автоперевод</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>Загрузок: {0:N0}</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>Не удалось загрузить эти субтитры.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>Служба субтитров не настроена в этой сборке.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>Не удалось связаться со службой субтитров.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>Служба субтитров вернула неожиданный ответ.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>Поиск субтитров не выполнен (HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>Дневной лимит запросов исчерпан. Попробуйте завтра.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>Не удалось скачать эти субтитры.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>Служба субтитров отклонила ключ API этой сборки.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>Этот файл ещё не сопоставлен с TMDB, поэтому искать не по чему.</value>
   </data>
 </root>

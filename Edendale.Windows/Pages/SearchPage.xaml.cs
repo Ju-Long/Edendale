@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Edendale.Windows.Pages;
@@ -411,8 +412,8 @@ public sealed partial class SearchPage : Page
     {
         var selected = _pendingFrom is not null
             && _pendingTo is not null
-            && string.CompareOrdinal(dateKey, _pendingFrom.Value.ToString("yyyy-MM-dd")) >= 0
-            && string.CompareOrdinal(dateKey, _pendingTo.Value.ToString("yyyy-MM-dd")) <= 0;
+            && string.CompareOrdinal(dateKey, DayKey(_pendingFrom.Value)) >= 0
+            && string.CompareOrdinal(dateKey, DayKey(_pendingTo.Value)) <= 0;
         cell.BorderThickness = new Thickness(selected ? 1.5 : 0);
         cell.BorderBrush = selected
             ? (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["EdendaleTextPrimaryBrush"]
@@ -429,8 +430,8 @@ public sealed partial class SearchPage : Page
             return;
         }
         HeatmapSummary.Text = WindowsCore.SelectionSummary(
-            _pendingFrom.Value.ToString("yyyy-MM-dd"),
-            _pendingTo.Value.ToString("yyyy-MM-dd"));
+            DayKey(_pendingFrom.Value),
+            DayKey(_pendingTo.Value));
     }
 
     /// <summary>Four buckets from the busiest day, matching the legend swatches.</summary>
@@ -520,8 +521,10 @@ public sealed partial class SearchPage : Page
 
     private string DateRangeLabel()
     {
-        var from = _releaseFrom?.ToString("d MMM yyyy");
-        var to = _releaseTo?.ToString("d MMM yyyy");
+        var pattern = AbbreviatedDatePattern();
+        var culture = CultureInfo.CurrentCulture;
+        var from = _releaseFrom?.ToString(pattern, culture);
+        var to = _releaseTo?.ToString(pattern, culture);
         return (from, to) switch
         {
             (not null, not null) => from == to ? from : $"{from} – {to}",
@@ -530,10 +533,37 @@ public sealed partial class SearchPage : Page
         };
     }
 
-    /// <summary>"yyyy-MM-dd" bounds — TMDB's release-date format, compared lexicographically.</summary>
+    /// <summary>
+    /// Day, abbreviated month, and year in the reader's own order — SearchModel
+    /// .swift's <c>.dateTime.day().month(.abbreviated).year()</c>. .NET has no
+    /// standard specifier for that shape, so it comes off the culture's long
+    /// date: drop the weekday, then narrow the month. Japanese gets
+    /// "2026年7月30日" rather than a British day-month-year read backwards.
+    /// </summary>
+    private static string AbbreviatedDatePattern()
+    {
+        var pattern = Regex
+            .Replace(CultureInfo.CurrentCulture.DateTimeFormat.LongDatePattern, @"\s*'?d{3,4}'?,?\s*", " ")
+            .Replace("MMMM", "MMM")
+            .Trim();
+
+        return pattern.Length == 0 ? "d MMM yyyy" : pattern;
+    }
+
+    /// <summary>
+    /// "yyyy-MM-dd" bounds — TMDB's release-date format, compared lexicographically.
+    /// </summary>
     private (string From, string To) DayBounds() => (
-        _releaseFrom?.ToString("yyyy-MM-dd") ?? "0000-01-01",
-        _releaseTo?.ToString("yyyy-MM-dd") ?? "9999-12-31");
+        _releaseFrom is { } from ? DayKey(from) : "0000-01-01",
+        _releaseTo is { } to ? DayKey(to) : "9999-12-31");
+
+    /// <summary>
+    /// The Gregorian "yyyy-MM-dd" key for a day. Invariant on purpose: these
+    /// strings are matched against <see cref="ReleaseCalendar"/>'s keys and sent
+    /// to TMDB, so a Buddhist or Hijri regional calendar must not reach them.
+    /// </summary>
+    private static string DayKey(DateTimeOffset day) =>
+        day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     // ------------------------------------------------------------------
     // Search

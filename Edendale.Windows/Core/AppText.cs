@@ -36,9 +36,18 @@ internal static class AppText
 
         ["Library_AwaitingMetadata"] = "Awaiting metadata",
 
-        ["Tmdb_NotConfigured"] = "TMDB credentials are not configured. Run init.ps1 from the repository root.",
+        ["Tmdb_NotConfigured"] = "TMDB credentials are not configured. Run the Edendale.Secrets tool from the repository root.",
         ["Tmdb_InvalidJson"] = "TMDB returned invalid JSON: {0}",
         ["Tmdb_RequestFailed"] = "TMDB request failed (HTTP {0})",
+
+        ["Subtitles_NotConfigured"] = "The subtitle service is not set up for this build.",
+        ["Subtitles_Offline"] = "Could not reach the subtitle service.",
+        ["Subtitles_RequestFailed"] = "The subtitle service returned an unexpected response.",
+        ["Subtitles_RequestFailedCode"] = "Subtitle search failed (HTTP {0}).",
+        ["Subtitles_KeyRejected"] = "The subtitle service rejected this build's API key.",
+        ["Subtitles_QuotaReached"] = "Today's subtitle request limit is used up. Try again tomorrow.",
+        ["Subtitles_NoResults"] = "No subtitles found for this title.",
+        ["Subtitles_DownloadFailed"] = "That subtitle could not be downloaded.",
 
         ["Collection_AllArchives"] = "All Archives",
         ["Collection_FeatureFilms"] = "Feature Films",

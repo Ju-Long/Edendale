@@ -29,6 +29,8 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <!-- DPAPI protection for the stored TMDB session (TmdbAccountService). -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <!-- Legacy code pages for subtitle files, which are rarely UTF-8. -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
   </ItemGroup>
 
@@ -44,8 +46,11 @@
     </Content>
   </ItemGroup>
 
-  <!-- Local credentials remain gitignored and are embedded only in local binaries. -->
+  <!-- Local credentials remain gitignored and are embedded only in local binaries.
+       The same file is exposed under a second name for the services that are
+       not TMDB (Wyzie Subs); each reads only the keys it owns. -->
   <ItemGroup Condition="Exists('..\secrets.json')">
     <EmbeddedResource Include="..\secrets.json" LogicalName="Edendale.TmdbSecrets" />
+    <EmbeddedResource Include="..\secrets.json" LogicalName="Edendale.LocalSecrets" />
   </ItemGroup>
 </Project>

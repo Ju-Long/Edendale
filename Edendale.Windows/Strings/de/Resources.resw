@@ -371,6 +371,9 @@ IST STUMM</value>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>Entfernen</value>
   </data>
@@ -784,5 +787,74 @@ IST STUMM</value>
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} Tage</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>ONLINE-UNTERTITEL</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>Untertitel online suchen…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>Diese Datei</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>Untertitelsprache</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>Bevorzugte Sprachen</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>Wird gesucht…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>Es wird nichts wiedergegeben.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>Keine Untertitel für diesen Titel gefunden.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>Wird geladen…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>SDH</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>Automatisch übersetzt</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} Downloads</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>Dieser Untertitel konnte nicht geladen werden.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>Der Untertiteldienst ist für diese Version nicht eingerichtet.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>Der Untertiteldienst ist nicht erreichbar.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>Der Untertiteldienst hat unerwartet geantwortet.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>Untertitelsuche fehlgeschlagen (HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>Das heutige Anfragelimit ist aufgebraucht. Versuchen Sie es morgen erneut.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>Dieser Untertitel konnte nicht heruntergeladen werden.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>Der Untertiteldienst hat den API-Schlüssel dieser Version abgelehnt.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>Diese Datei ist noch keinem TMDB-Eintrag zugeordnet, daher gibt es nichts, wonach gesucht werden kann.</value>
   </data>
 </root>

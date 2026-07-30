@@ -371,6 +371,9 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>취소</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>확인</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>제거</value>
   </data>
@@ -784,5 +787,74 @@
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0}일</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>온라인 자막</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>검색</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>온라인 자막 검색…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>이 파일</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>자막 언어</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>선호하는 언어</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>검색 중…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>재생 중인 항목이 없습니다.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>이 작품의 자막을 찾지 못했습니다.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>다운로드 중…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>청각 장애인용</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>자동 번역</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>다운로드 {0:N0}회</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>이 자막을 불러오지 못했습니다.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>이 빌드에는 자막 서비스가 설정되어 있지 않습니다.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>자막 서비스에 연결할 수 없습니다.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>자막 서비스가 예기치 않은 응답을 반환했습니다.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>자막 검색에 실패했습니다(HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>오늘의 요청 한도를 모두 사용했습니다. 내일 다시 시도하세요.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>이 자막을 다운로드하지 못했습니다.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>자막 서비스가 이 빌드의 API 키를 거부했습니다.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>이 파일은 아직 TMDB와 연결되지 않아 검색할 기준이 없습니다.</value>
   </data>
 </root>

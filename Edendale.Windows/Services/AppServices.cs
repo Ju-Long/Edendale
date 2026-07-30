@@ -10,6 +10,7 @@ public static class AppServices
     public static PlayerSession Player { get; } = new();
     public static CloudSyncService CloudSync { get; } = new(UserMedia, WatchProgress);
     public static TmdbAccountService Account { get; } = new(UserMedia);
+    public static SubtitleService Subtitles { get; } = new();
 
     /// <summary>Launch-time side effects: OneDrive merge + TMDB account sync.</summary>
     public static void StartBackgroundSync()

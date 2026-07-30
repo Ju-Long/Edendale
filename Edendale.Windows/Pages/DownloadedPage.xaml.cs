@@ -310,7 +310,7 @@ public sealed partial class DownloadedPage : Page
         {
             Title = Loc.Get("Smb_ErrorTitle"),
             Content = failure,
-            CloseButtonText = "OK",
+            CloseButtonText = Loc.Get("Common_OK"),
             XamlRoot = XamlRoot,
         };
         await errorDialog.ShowAsync();
@@ -322,7 +322,7 @@ public sealed partial class DownloadedPage : Page
         {
             Title = Loc.Get("Privacy_Title"),
             Content = Loc.Get("Privacy_Body"),
-            CloseButtonText = "OK",
+            CloseButtonText = Loc.Get("Common_OK"),
             XamlRoot = XamlRoot,
         };
         await dialog.ShowAsync();

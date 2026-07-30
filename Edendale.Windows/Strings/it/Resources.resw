@@ -371,6 +371,9 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>Annulla</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>Rimuovi</value>
   </data>
@@ -784,5 +787,74 @@
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} giorni</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>SOTTOTITOLI ONLINE</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Chiudi</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>Cerca</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>Cerca sottotitoli online…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>Questo file</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>Lingua dei sottotitoli</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>Lingue preferite</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>Ricerca in corso…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>Nessuna riproduzione in corso.</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>Nessun sottotitolo trovato per questo titolo.</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>Download in corso…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>SDH</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>Tradotto automaticamente</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} download</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>Impossibile caricare questo sottotitolo.</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>Il servizio di sottotitoli non è configurato in questa versione.</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>Impossibile raggiungere il servizio di sottotitoli.</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>Il servizio di sottotitoli ha restituito una risposta imprevista.</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>Ricerca dei sottotitoli non riuscita (HTTP {0}).</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>Hai esaurito il limite di richieste di oggi. Riprova domani.</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>Impossibile scaricare questo sottotitolo.</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>Il servizio di sottotitoli ha rifiutato la chiave API di questa versione.</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>Questo file non è ancora associato a TMDB, quindi non c'è nulla su cui cercare.</value>
   </data>
 </root>

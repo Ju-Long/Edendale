@@ -371,6 +371,9 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>取消</value>
   </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>好</value>
+  </data>
   <data name="Common_Remove" xml:space="preserve">
     <value>移除</value>
   </data>
@@ -784,5 +787,74 @@
   </data>
   <data name="Plural_DayOther" xml:space="preserve">
     <value>{0} 天</value>
+  </data>
+  <data name="SubtitleBrowserHeader.Text" xml:space="preserve">
+    <value>在线字幕</value>
+  </data>
+  <data name="SubtitleBrowserCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="SubtitleRefreshButton.Content" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Subtitles_SearchOnline" xml:space="preserve">
+    <value>在线搜索字幕…</value>
+  </data>
+  <data name="Subtitles_ThisFile" xml:space="preserve">
+    <value>此文件</value>
+  </data>
+  <data name="Subtitles_Language" xml:space="preserve">
+    <value>字幕语言</value>
+  </data>
+  <data name="Subtitles_PreferredLanguages" xml:space="preserve">
+    <value>首选语言</value>
+  </data>
+  <data name="Subtitles_Searching" xml:space="preserve">
+    <value>正在搜索…</value>
+  </data>
+  <data name="Subtitles_NoFile" xml:space="preserve">
+    <value>当前没有播放内容。</value>
+  </data>
+  <data name="Subtitles_NoResults" xml:space="preserve">
+    <value>未找到该影片的字幕。</value>
+  </data>
+  <data name="Subtitles_Downloading" xml:space="preserve">
+    <value>正在下载…</value>
+  </data>
+  <data name="Subtitles_HearingImpaired" xml:space="preserve">
+    <value>听障字幕</value>
+  </data>
+  <data name="Subtitles_AutoTranslated" xml:space="preserve">
+    <value>自动翻译</value>
+  </data>
+  <data name="Subtitles_Downloads" xml:space="preserve">
+    <value>{0:N0} 次下载</value>
+  </data>
+  <data name="Subtitles_AttachFailed" xml:space="preserve">
+    <value>无法加载该字幕。</value>
+  </data>
+  <data name="Subtitles_NotConfigured" xml:space="preserve">
+    <value>此版本未配置字幕服务。</value>
+  </data>
+  <data name="Subtitles_Offline" xml:space="preserve">
+    <value>无法连接到字幕服务。</value>
+  </data>
+  <data name="Subtitles_RequestFailed" xml:space="preserve">
+    <value>字幕服务返回了意外的响应。</value>
+  </data>
+  <data name="Subtitles_RequestFailedCode" xml:space="preserve">
+    <value>字幕搜索失败 (HTTP {0})。</value>
+  </data>
+  <data name="Subtitles_QuotaReached" xml:space="preserve">
+    <value>今日请求次数已用完。请明天再试。</value>
+  </data>
+  <data name="Subtitles_DownloadFailed" xml:space="preserve">
+    <value>无法下载该字幕。</value>
+  </data>
+  <data name="Subtitles_KeyRejected" xml:space="preserve">
+    <value>字幕服务拒绝了此版本的 API 密钥。</value>
+  </data>
+  <data name="Subtitles_NotMatched" xml:space="preserve">
+    <value>此文件尚未匹配到 TMDB，因此没有可供搜索的依据。</value>
   </data>
 </root>

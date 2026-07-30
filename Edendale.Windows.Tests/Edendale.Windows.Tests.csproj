@@ -30,6 +30,8 @@
     <PackageReference Include="MSTest" Version="3.6.1" />
     <!-- Required by the linked SmbCredentialsStore (DPAPI). -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <!-- Required by the linked SubtitleService (legacy subtitle code pages). -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
 
   <!-- Source under test, linked rather than referenced. -->
@@ -37,13 +39,17 @@
     <Compile Include="..\Edendale.Windows\Services\AppPaths.cs" Link="App\Services\AppPaths.cs" />
     <Compile Include="..\Edendale.Windows\Services\AppRoute.cs" Link="App\Services\AppRoute.cs" />
     <Compile Include="..\Edendale.Windows\Services\LibraryModels.cs" Link="App\Services\LibraryModels.cs" />
+    <Compile Include="..\Edendale.Windows\Services\PlayerSession.cs" Link="App\Services\PlayerSession.cs" />
     <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SubtitleService.cs" Link="App\Services\SubtitleService.cs" />
+    <Compile Include="..\Edendale.Windows\Services\WyzieClient.cs" Link="App\Services\WyzieClient.cs" />
     <Compile Include="..\Edendale.Windows\Services\TmdbClient.cs" Link="App\Services\TmdbClient.cs" />
     <Compile Include="..\Edendale.Windows\Services\TmdbRepository.cs" Link="App\Services\TmdbRepository.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />
     <Compile Include="..\Edendale.Windows\Core\ReleaseCalendar.cs" Link="App\Core\ReleaseCalendar.cs" />
     <Compile Include="..\Edendale.Windows\Core\SearchQuery.cs" Link="App\Core\SearchQuery.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SubtitleMatching.cs" Link="App\Core\SubtitleMatching.cs" />
     <Compile Include="..\Edendale.Windows\Core\UserMediaMerger.cs" Link="App\Core\UserMediaMerger.cs" />
     <Compile Include="..\Edendale.Windows\Core\WindowsCore.cs" Link="App\Core\WindowsCore.cs" />
     <Compile Include="..\Edendale.Windows\Models\MediaModels.cs" Link="App\Models\MediaModels.cs" />
