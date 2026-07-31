@@ -20,6 +20,7 @@ struct KeychainStore {
     enum Key: String {
         case tmdbUserSession = "tmdb-user-session"
         case tmdbV3Session = "tmdb-v3-session"
+        case wyzieAPIKey = "wyzie-api-key"
     }
 
     let service: String

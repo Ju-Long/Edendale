@@ -72,5 +72,7 @@
 			</dict>
 		</dict>
 	</array>
+	<key>WyzieAPIKey</key>
+	<string>$(WYZIE_API_KEY)</string>
 </dict>
 </plist>

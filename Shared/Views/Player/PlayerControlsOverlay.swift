@@ -302,7 +302,7 @@ struct PlayerControlsOverlay: View {
     private func panelContent(_ panel: PlayerChromeModel.SidePanel) -> some View {
         switch panel {
         case .settings:
-            PlayerSettingsPanel(chrome: chrome, player: player)
+            PlayerSettingsPanel(chrome: chrome, player: player, item: item)
         case .playlist:
             PlayerPlaylistPanel(chrome: chrome, item: item)
         }

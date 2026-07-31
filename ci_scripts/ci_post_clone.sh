@@ -7,8 +7,9 @@
 #
 # In Xcode Cloud, Secrets.xcconfig doesn't exist (it's gitignored), so we
 # regenerate it from environment variables configured on the workflow. Mark
-# TMDB_READ_ACCESS_TOKEN (and optionally TMDB_API_KEY) as *Secret* env vars in
-# the Xcode Cloud workflow so they're encrypted and masked in build logs.
+# TMDB_READ_ACCESS_TOKEN (and optionally TMDB_API_KEY and WYZIE_API_KEY) as
+# *Secret* env vars in the Xcode Cloud workflow so they're encrypted and
+# masked in build logs.
 #
 # Never echo the token values here — that would leak them into the build log.
 
@@ -33,6 +34,7 @@ umask 077
 {
   printf 'TMDB_READ_ACCESS_TOKEN = %s\n' "${TMDB_READ_ACCESS_TOKEN:-}"
   printf 'TMDB_API_KEY = %s\n' "${TMDB_API_KEY:-}"
+  printf 'WYZIE_API_KEY = %s\n' "${WYZIE_API_KEY:-}"
 } > "$SECRETS_FILE"
 
 echo "Generated Secrets.xcconfig for Xcode Cloud build."

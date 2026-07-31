@@ -14,6 +14,7 @@ struct EdendaleApp: App {
     @State private var watchStore = WatchProgressStore()
     @State private var userMediaStore = UserMediaStore()
     @State private var tmdbAccount = TMDBAccountStore()
+    @State private var wyzieKeys = WyzieKeyStore()
     @State private var playerSession: PlayerSession
     @State private var appRouter = AppRouter.shared
 
@@ -40,6 +41,7 @@ struct EdendaleApp: App {
                 .environment(watchStore)
                 .environment(userMediaStore)
                 .environment(tmdbAccount)
+                .environment(wyzieKeys)
                 .environment(playerSession)
                 .environment(appRouter)
                 .environment(\.ratingProviders, [TMDBRatingsProvider()])
@@ -53,6 +55,7 @@ struct EdendaleApp: App {
             PlayerWindowRoot()
                 .environment(library)
                 .environment(watchStore)
+                .environment(wyzieKeys)
                 .environment(playerSession)
                 .environment(appRouter)
         }

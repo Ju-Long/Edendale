@@ -111,4 +111,21 @@ struct PlaybackItem: Identifiable {
     /// What the player's top-center title displays: metadata name when
     /// present, otherwise the file name.
     var displayTitle: String { title ?? fileName ?? String(localized: "Now Playing") }
+
+    /// Identifiers for an online subtitle lookup: the TMDB id plus, for a show,
+    /// the season/episode pair. `nil` when the file has no TMDB match, which is
+    /// what the panel uses to explain that online search is unavailable.
+    var subtitleLookup: (id: String, season: Int?, episode: Int?)? {
+        if let tmdbId = movie?.tmdbId {
+            return (String(tmdbId), nil, nil)
+        }
+        if let episode, let showTmdbId = episode.show?.tmdbId {
+            return (
+                String(showTmdbId),
+                episode.seasonNumber,
+                episode.episodeNumber
+            )
+        }
+        return nil
+    }
 }

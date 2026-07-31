@@ -61,8 +61,13 @@ struct SettingsView: View {
 
                 TMDBAccountSection()
 
+                WyzieSubtitlesSection()
+
                 Section {
                     Text("This product uses the TMDB API but is not endorsed or certified by TMDB.")
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.textSecondary)
+                    Text("Online subtitles are provided by Wyzie Subs.")
                         .font(Typography.bodySM)
                         .foregroundStyle(Theme.textSecondary)
                 } header: {

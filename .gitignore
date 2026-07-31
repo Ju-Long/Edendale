@@ -48,3 +48,6 @@ node_modules/
 Web/.astro/
 Web/dist/
 /.vs
+/.astro
+bun.lock
+/dist

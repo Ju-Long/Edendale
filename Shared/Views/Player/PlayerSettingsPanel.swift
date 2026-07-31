@@ -12,6 +12,8 @@ import SwiftVLC
 struct PlayerSettingsPanel: View {
     @Bindable var chrome: PlayerChromeModel
     let player: Player
+    let item: PlaybackItem
+    @State private var onlineSubtitles = OnlineSubtitlesModel()
 
     var body: some View {
         ScrollView {
@@ -22,12 +24,21 @@ struct PlayerSettingsPanel: View {
                 #endif
                 speedSection
                 subtitleSection
+                OnlineSubtitlesSection(
+                    model: onlineSubtitles,
+                    chrome: chrome,
+                    player: player,
+                    item: item
+                )
                 playbackSection
                 aspectSection
             }
             .padding(24)
         }
         .scrollIndicators(.hidden)
+        .onChange(of: item.id) {
+            onlineSubtitles.reset()
+        }
     }
 
     #if os(visionOS)

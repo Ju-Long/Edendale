@@ -53,7 +53,9 @@ iOS, iPadOS, macOS, tvOS, and visionOS. It requires Xcode 26.5 or newer.
 
 Before a local build, copy `Shared/Example.xcconfig` to
 `Shared/Secrets.xcconfig` and add the TMDB read access token. The generated
-file is gitignored.
+file is gitignored. `WYZIE_API_KEY` is optional and enables online subtitle
+search; claim a free key at https://store.wyzie.io/redeem, or enter it later in
+Settings.
 
 Resolve dependencies and inspect the shared schemes:
 
@@ -76,8 +78,9 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 Xcode Cloud automatically runs the executable
 `ci_scripts/ci_post_clone.sh`. Configure `TMDB_READ_ACCESS_TOKEN` as a secret
 workflow environment variable; `TMDB_API_KEY` is an optional legacy fallback.
-The script generates the gitignored `Shared/Secrets.xcconfig` in Xcode Cloud's
-temporary checkout without printing credential values.
+`WYZIE_API_KEY` is also an optional secret workflow variable. The script
+generates the gitignored `Shared/Secrets.xcconfig` in Xcode Cloud's temporary
+checkout without printing credential values.
 
 ### Branch contract
 

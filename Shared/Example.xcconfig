@@ -13,3 +13,9 @@ TMDB_READ_ACCESS_TOKEN =
 // Legacy fallback: the short v3 "API Key", sent as an api_key URL query parameter.
 // Only used when TMDB_READ_ACCESS_TOKEN is empty; prefer the read access token above.
 TMDB_API_KEY =
+
+// Optional: enables explicit online subtitle searches through Wyzie Subs.
+// Claim a free key at https://store.wyzie.io/redeem, then copy this file to
+// Shared/Secrets.xcconfig and enter it below. Without a key, online subtitle
+// search shows a setup state while the rest of Edendale continues to work.
+WYZIE_API_KEY =
