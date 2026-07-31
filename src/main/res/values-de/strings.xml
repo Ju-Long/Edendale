@@ -165,7 +165,7 @@
     <string name="settings_backup_note">Wiedergabefortschritt, Favoriten, Watchlist und Bewertungen werden über Android Auto Backup in deinem Google Drive gesichert, sodass sie zurückkehren, wenn du ein neues Gerät einrichtest. Das Backup richtet sich nach der Systemeinstellung deines Geräts — Edendale fügt nichts Eigenes hinzu.</string>
     <string name="settings_backup_secrets_note">Deine TMDB-Sitzung und alle gespeicherten Logins für Netzwerkfreigaben sind vom Backup und der Geräteübertragung ausgeschlossen: Sie sind an dieses Gerät verschlüsselt und können es nicht verlassen.</string>
     <string name="settings_section_privacy">Datenschutz</string>
-    <string name="settings_privacy_note">Keine Analyse. Netzwerkanfragen beschränken sich auf TMDB und deine privaten Sync-Anbieter.</string>
+    <string name="settings_privacy_note">Keine Analyse. Netzwerkanfragen beschränken sich auf TMDB, Wyzie nach einer ausdrücklichen Untertitelsuche und deine privaten Sync-Anbieter.</string>
     <string name="settings_section_attribution">Namensnennung</string>
     <string name="tmdb_attribution">Dieses Produkt verwendet die TMDB-API, wird jedoch nicht von TMDB befürwortet oder zertifiziert.</string>
     <string name="settings_open_source">Edendale · Kostenlos und Open Source</string>
@@ -242,5 +242,41 @@
     <plurals name="season_count">
         <item quantity="one">%1$d Staffel</item>
         <item quantity="other">%1$d Staffeln</item>
+    </plurals>
+    <string name="action_save">Speichern</string>
+    <string name="settings_section_subtitles">Untertitel</string>
+    <string name="wyzie_loading_key">API-Schlüssel wird geladen…</string>
+    <string name="wyzie_api_key">API-Schlüssel</string>
+    <string name="wyzie_key_saved">Schlüssel gespeichert</string>
+    <string name="wyzie_key_encrypted">Der Schlüssel wird verschlüsselt auf diesem Gerät gespeichert.</string>
+    <string name="wyzie_using_build_key">Der Schlüssel aus secrets.json wird verwendet.</string>
+    <string name="wyzie_key_required">Die Online-Untertitelsuche benötigt deinen eigenen Wyzie-API-Schlüssel. Rufe store.wyzie.io/redeem auf, schließe die Schritte auf der Website ab, um dein Abo einzulösen, und füge den Schlüssel unten ein.</string>
+    <string name="wyzie_get_free_key">Kostenlosen Schlüssel abrufen</string>
+    <string name="wyzie_error_key_storage">Der Wyzie-API-Schlüssel konnte nicht aktualisiert werden.</string>
+    <string name="wyzie_error_no_browser">Es konnte kein Browser geöffnet werden. Rufe store.wyzie.io/redeem auf einem anderen Gerät auf.</string>
+    <string name="wyzie_error_missing_key">Füge in den Einstellungen einen Wyzie-API-Schlüssel hinzu.</string>
+    <string name="wyzie_error_authorization">Wyzie hat den konfigurierten API-Schlüssel nicht akzeptiert.</string>
+    <string name="wyzie_error_http">Wyzie hat HTTP %1$d zurückgegeben.</string>
+    <string name="wyzie_error_empty_file">Die heruntergeladene Untertiteldatei war leer.</string>
+    <string name="wyzie_error_file_too_large">Die Untertiteldatei ist größer als 5 MiB.</string>
+    <string name="wyzie_error_bad_url">Wyzie hat einen ungültigen Untertitellink zurückgegeben.</string>
+    <string name="wyzie_error_search">Die Online-Untertitelsuche ist fehlgeschlagen.</string>
+    <string name="wyzie_error_download">Der Untertitel konnte nicht heruntergeladen werden.</string>
+    <string name="player_online_subtitles">Online-Untertitel</string>
+    <string name="player_online_needs_key">Füge in den Einstellungen einen Wyzie-API-Schlüssel hinzu, um online nach Untertiteln zu suchen.</string>
+    <string name="player_online_needs_tmdb">Die Online-Untertitelsuche benötigt eine TMDB-Zuordnung für diese Datei.</string>
+    <string name="player_online_language">Sprache</string>
+    <string name="player_online_all_languages">Alle Sprachen</string>
+    <string name="player_online_hearing_impaired">Hörgeschädigt</string>
+    <string name="player_online_hearing_impaired_detail">Nur Untertitel für Hörgeschädigte</string>
+    <string name="player_online_search">Suchen</string>
+    <string name="player_online_searching">Suche läuft…</string>
+    <string name="player_online_none_found">Keine Untertitel gefunden.</string>
+    <string name="player_online_download">Herunterladen</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">%1$d weitere Übereinstimmung.</item>
+        <item quantity="other">%1$d weitere Übereinstimmungen.</item>
     </plurals>
 </resources>

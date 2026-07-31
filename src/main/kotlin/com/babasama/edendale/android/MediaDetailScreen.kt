@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -74,7 +72,12 @@ fun MediaDetailScreen(
                 title = stringResource(R.string.empty_reel_snapped_title),
                 message = state.errorMessage,
                 action = {
-                    Button(onClick = onBack) { Text(stringResource(R.string.action_go_back)) }
+                    ArchiveButton(
+                        label = stringResource(R.string.action_go_back),
+                        onClick = onBack,
+                        kind = ArchiveButtonKind.Primary,
+                        isTelevision = isTelevision,
+                    )
                 },
             )
             state.detail != null -> DetailContent(
@@ -416,43 +419,52 @@ private fun UserMediaActions(
     onToggleWatchlist: (com.babasama.edendale.domain.MediaRef) -> Unit,
     onToggleWatched: (com.babasama.edendale.domain.MediaRef) -> Unit,
 ) {
-    // These take D-pad focus like any other control, but without a lift they
-    // showed nothing at all when focused, so on TV they read as dead icons.
-    val focusable = Modifier.tvFocusLift(isTelevision, CircleShape)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         // Shows are marked watched per episode in the season browser, so the
         // whole-title toggle only makes sense for movies.
         if (detail.ref.mediaType == com.babasama.edendale.domain.MediaType.MOVIE) {
-            androidx.compose.material3.IconButton(
+            ArchiveIconButton(
                 onClick = { onToggleWatched(detail.ref) },
-                modifier = focusable,
-            ) {
+                isTelevision = isTelevision,
+            ) { focused ->
                 Icon(
                     painter = painterResource(id = if (isWatched) R.drawable.ic_eye else R.drawable.ic_eye_slash),
                     contentDescription = stringResource(R.string.detail_mark_watched),
-                    tint = if (isWatched) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = stateTint(focused, isWatched),
                 )
             }
         }
-        androidx.compose.material3.IconButton(
+        ArchiveIconButton(
             onClick = { onToggleFavourite(detail.ref) },
-            modifier = focusable,
-        ) {
+            isTelevision = isTelevision,
+        ) { focused ->
             Icon(
                 painter = painterResource(id = if (userMedia?.favourite == true) R.drawable.ic_heart_fill else R.drawable.ic_heart),
                 contentDescription = stringResource(R.string.detail_favorite),
-                tint = if (userMedia?.favourite == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                tint = stateTint(focused, userMedia?.favourite == true),
             )
         }
-        androidx.compose.material3.IconButton(
+        ArchiveIconButton(
             onClick = { onToggleWatchlist(detail.ref) },
-            modifier = focusable,
-        ) {
+            isTelevision = isTelevision,
+        ) { focused ->
             Icon(
                 painter = painterResource(id = if (userMedia?.watchlist == true) R.drawable.ic_bookmark_slash else R.drawable.ic_bookmark_plus),
                 contentDescription = stringResource(R.string.detail_watchlist),
-                tint = if (userMedia?.watchlist == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                tint = stateTint(focused, userMedia?.watchlist == true),
             )
         }
     }
+}
+
+/**
+ * Tint for a toggle glyph that colours itself when it is on. Gold says "on"
+ * here and gold is also the focus fill, so focus takes the glyph with it —
+ * otherwise the focused favourite disappears into its own highlight.
+ */
+@Composable
+private fun stateTint(focused: Boolean, on: Boolean): Color = when {
+    focused -> EdendaleColors.OnGold
+    on -> MaterialTheme.colorScheme.primary
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
 }

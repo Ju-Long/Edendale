@@ -17,8 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -78,15 +76,11 @@ fun SeasonBrowser(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(seasons, key = { it.seasonNumber }) { season ->
-                FilterChip(
+                ArchiveFilterChip(
                     selected = season.seasonNumber == selectedSeason,
                     onClick = { onSelectSeason(season.seasonNumber) },
                     label = { Text(seasonTitle(season).uppercase()) },
-                    modifier = Modifier.tvFocusLift(isTelevision),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
+                    isTelevision = isTelevision,
                 )
             }
         }

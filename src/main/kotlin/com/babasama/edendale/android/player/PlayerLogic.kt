@@ -4,6 +4,28 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
+internal data class WyzieLookup(
+    val id: String,
+    val season: Int?,
+    val episode: Int?,
+)
+
+/**
+ * Derives Wyzie's lookup identity without ever substituting an episode's own
+ * TMDB id for its series id.
+ */
+internal fun subtitleLookup(
+    tmdbId: Int?,
+    isEpisode: Boolean,
+    showTmdbId: Int?,
+    season: Int?,
+    episode: Int?,
+): WyzieLookup? = if (isEpisode) {
+    showTmdbId?.takeIf { it > 0 }?.let { WyzieLookup(it.toString(), season, episode) }
+} else {
+    tmdbId?.takeIf { it > 0 }?.let { WyzieLookup(it.toString(), null, null) }
+}
+
 /**
  * Pure playback rules — speed stepping, time formatting, auto-skip windows,
  * relative-seek clamping and hold-drag scrub math. Deliberately free of

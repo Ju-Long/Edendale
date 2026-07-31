@@ -196,6 +196,22 @@ class PlayerLogicTest {
     }
 
     @Test
+    fun subtitleLookupUsesMovieIdAndEpisodeSeriesId() {
+        assertEquals(WyzieLookup("278", null, null), subtitleLookup(278, false, null, null, null))
+        val episode = subtitleLookup(
+            tmdbId = 62085,
+            isEpisode = true,
+            showTmdbId = 1396,
+            season = 2,
+            episode = 8,
+        )
+        assertEquals(WyzieLookup("1396", 2, 8), episode)
+        assertFalse(episode?.id == "62085")
+        assertNull(subtitleLookup(null, false, null, null, null))
+        assertNull(subtitleLookup(62085, true, null, 2, 8))
+    }
+
+    @Test
     fun scrubTargetSweepsTheConfiguredWindow() {
         // A full-width drag on a 600 s file moves 300 s → +0.5 of position.
         assertEquals(

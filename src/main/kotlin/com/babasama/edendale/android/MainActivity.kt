@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val route by pendingRoute.collectAsState()
-            EdendaleTheme {
+            EdendaleTheme(isTelevision = isTelevision) {
                 EdendaleApp(
                     isTelevision = isTelevision,
                     pendingRoute = route,

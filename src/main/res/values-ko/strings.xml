@@ -165,7 +165,7 @@
     <string name="settings_backup_note">시청 기록, 즐겨찾기, 관심 목록, 별점이 Android Auto Backup을 통해 Google Drive에 백업되므로 새 기기를 설정할 때 복원할 수 있습니다. 백업은 기기의 시스템 설정을 따르며 — Edendale은 자체적으로 추가하는 항목이 없습니다.</string>
     <string name="settings_backup_secrets_note">TMDB 세션 및 저장된 네트워크 공유 로그인 정보는 백업 및 기기 전송에서 제외됩니다: 이 기기에 암호화되어 외부로 유출될 수 없습니다.</string>
     <string name="settings_section_privacy">개인정보 보호</string>
-    <string name="settings_privacy_note">분석 데이터 수집이 없습니다. 네트워크 요청은 TMDB 및 개인 동기화 제공업체로만 제한됩니다.</string>
+    <string name="settings_privacy_note">분석 데이터 수집이 없습니다. 네트워크 요청은 TMDB, 명시적인 자막 검색 후의 Wyzie 및 개인 동기화 제공업체로만 제한됩니다.</string>
     <string name="settings_section_attribution">저작자 표시</string>
     <string name="tmdb_attribution">이 제품은 TMDB API를 사용하지만 TMDB의 보증이나 인증을 받지 않았습니다.</string>
     <string name="settings_open_source">Edendale · 무료 및 오픈 소스</string>
@@ -239,5 +239,40 @@
     </plurals>
     <plurals name="season_count">
         <item quantity="other">시즌 %1$d개</item>
+    </plurals>
+    <string name="action_save">저장</string>
+    <string name="settings_section_subtitles">자막</string>
+    <string name="wyzie_loading_key">API 키 불러오는 중…</string>
+    <string name="wyzie_api_key">API 키</string>
+    <string name="wyzie_key_saved">키 저장됨</string>
+    <string name="wyzie_key_encrypted">키는 이 기기에 암호화되어 저장됩니다.</string>
+    <string name="wyzie_using_build_key">secrets.json의 키를 사용 중입니다.</string>
+    <string name="wyzie_key_required">온라인 자막 검색에는 본인의 Wyzie API 키가 필요합니다. store.wyzie.io/redeem을 방문해 사이트의 단계를 완료하여 구독을 등록한 다음, 아래에 키를 붙여넣으세요.</string>
+    <string name="wyzie_get_free_key">무료 키 받기</string>
+    <string name="wyzie_error_key_storage">Wyzie API 키를 업데이트할 수 없습니다.</string>
+    <string name="wyzie_error_no_browser">브라우저를 열 수 없습니다. 다른 기기에서 store.wyzie.io/redeem을 방문하세요.</string>
+    <string name="wyzie_error_missing_key">설정에서 Wyzie API 키를 추가하세요.</string>
+    <string name="wyzie_error_authorization">Wyzie가 설정된 API 키를 허용하지 않았습니다.</string>
+    <string name="wyzie_error_http">Wyzie가 HTTP %1$d을(를) 반환했습니다.</string>
+    <string name="wyzie_error_empty_file">다운로드한 자막 파일이 비어 있습니다.</string>
+    <string name="wyzie_error_file_too_large">자막 파일이 5 MiB보다 큽니다.</string>
+    <string name="wyzie_error_bad_url">Wyzie가 잘못된 자막 링크를 반환했습니다.</string>
+    <string name="wyzie_error_search">온라인 자막 검색에 실패했습니다.</string>
+    <string name="wyzie_error_download">자막을 다운로드할 수 없습니다.</string>
+    <string name="player_online_subtitles">온라인 자막</string>
+    <string name="player_online_needs_key">온라인 자막을 검색하려면 설정에서 Wyzie API 키를 추가하세요.</string>
+    <string name="player_online_needs_tmdb">이 파일의 온라인 자막을 검색하려면 TMDB 일치 항목이 필요합니다.</string>
+    <string name="player_online_language">언어</string>
+    <string name="player_online_all_languages">모든 언어</string>
+    <string name="player_online_hearing_impaired">청각 장애인용</string>
+    <string name="player_online_hearing_impaired_detail">청각 장애인용 자막만</string>
+    <string name="player_online_search">검색</string>
+    <string name="player_online_searching">검색 중…</string>
+    <string name="player_online_none_found">자막을 찾지 못했습니다.</string>
+    <string name="player_online_download">다운로드</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="other">%1$d개가 더 일치합니다.</item>
     </plurals>
 </resources>

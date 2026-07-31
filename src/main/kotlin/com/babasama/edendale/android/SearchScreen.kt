@@ -3,7 +3,10 @@ package com.babasama.edendale.android
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,10 +31,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
@@ -126,7 +129,8 @@ fun SearchScreen(
                 viewModel.setRange(start, end)
                 showHeatmap = false
             },
-            onDismiss = { showHeatmap = false }
+            onDismiss = { showHeatmap = false },
+            isTelevision = isTelevision,
         )
     }
 
@@ -208,7 +212,10 @@ fun SearchScreen(
                             trailingIcon = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (state.query.isNotEmpty()) {
-                                        IconButton(onClick = { viewModel.updateQuery("") }) {
+                                        ArchiveIconButton(
+                                            onClick = { viewModel.updateQuery("") },
+                                            isTelevision = isTelevision,
+                                        ) { _ ->
                                             Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.search_clear_query))
                                         }
                                     }
@@ -229,14 +236,14 @@ fun SearchScreen(
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             items(state.suggestionPeople.size) { index ->
                                 val person = state.suggestionPeople[index]
-                                ListItem(
-                                    headlineContent = { Text(person.name) },
-                                    leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
-                                    modifier = Modifier.clickable {
+                                SuggestionRow(
+                                    label = person.name,
+                                    icon = Icons.Default.Person,
+                                    onClick = {
                                         expanded = false
                                         if (isTelevision) closeTvSearch()
                                         viewModel.selectPerson(person)
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -244,15 +251,15 @@ fun SearchScreen(
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             items(state.recentSearches.size) { index ->
                                 val recent = state.recentSearches[index]
-                                ListItem(
-                                    headlineContent = { Text(recent) },
-                                    leadingContent = { Icon(Icons.Default.History, contentDescription = null) },
-                                    modifier = Modifier.clickable {
+                                SuggestionRow(
+                                    label = recent,
+                                    icon = Icons.Default.History,
+                                    onClick = {
                                         expanded = false
                                         if (isTelevision) closeTvSearch()
                                         viewModel.updateQuery(recent)
                                         viewModel.submitSearch(recent)
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -267,7 +274,7 @@ fun SearchScreen(
                 .padding(horizontal = edgeMargin, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
+            ArchiveFilterChip(
                 selected = state.selectedRange != null,
                 onClick = { showHeatmap = true },
                 label = {
@@ -277,6 +284,7 @@ fun SearchScreen(
                         Text(stringResource(R.string.search_any_date))
                     }
                 },
+                isTelevision = isTelevision,
                 leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
                 trailingIcon = {
                     if (state.selectedRange != null) {
@@ -290,10 +298,11 @@ fun SearchScreen(
             )
 
             if (state.scope != SearchScope.ALL) {
-                FilterChip(
+                ArchiveFilterChip(
                     selected = true,
                     onClick = { viewModel.clearScope() },
                     label = { Text(stringResource(state.scope.labelRes())) },
+                    isTelevision = isTelevision,
                     trailingIcon = { Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.search_clear_scope)) }
                 )
             }
@@ -301,10 +310,11 @@ fun SearchScreen(
             if (state.activePerson != null) {
                 // The label opens that person's page, so the filter chip is
                 // not a dead end; the trailing ✕ clears the filter.
-                FilterChip(
+                ArchiveFilterChip(
                     selected = true,
                     onClick = { onOpenPerson(state.activePerson.id, state.activePerson.name) },
                     label = { Text(state.activePerson.name) },
+                    isTelevision = isTelevision,
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     trailingIcon = {
                         Icon(
@@ -497,6 +507,35 @@ fun SearchScreen(
 }
 
 /**
+ * One suggestion under the search field. A stack of near-identical rows is
+ * where a focus ring is least legible, so the focused row takes the fill.
+ */
+@Composable
+private fun SuggestionRow(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    ListItem(
+        headlineContent = { Text(label) },
+        leadingContent = { Icon(icon, contentDescription = null) },
+        modifier = Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = LocalIndication.current,
+            onClick = onClick,
+        ),
+        colors = ListItemDefaults.colors(
+            containerColor = if (focused) EdendaleColors.Gold else Color.Transparent,
+            headlineColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            leadingIconColor = if (focused) EdendaleColors.OnGold
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+    )
+}
+
+/**
  * The resting state of the TV search field: it looks like the real input bar but
  * is an ordinary focus target, so Down carries on into the results. Select swaps
  * in the live field and raises the keyboard.
@@ -507,6 +546,8 @@ private fun TvCollapsedSearchField(
     onActivate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
     Surface(
         onClick = onActivate,
         modifier = modifier
@@ -514,8 +555,9 @@ private fun TvCollapsedSearchField(
             .height(56.dp)
             .tvFocusLift(true),
         shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        color = if (focused) EdendaleColors.Gold else MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+        interactionSource = interactionSource,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp),

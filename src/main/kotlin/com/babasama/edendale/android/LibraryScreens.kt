@@ -18,13 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -112,13 +109,13 @@ fun SourceRow(
                     color = MaterialTheme.colorScheme.outline,
                 )
             }
-            IconButton(onClick = onRescan, modifier = Modifier.tvFocusLift(isTelevision)) {
+            ArchiveIconButton(onClick = onRescan, isTelevision = isTelevision) { _ ->
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_rotate_right),
                     contentDescription = stringResource(R.string.rescan_folder, folder.displayName),
                 )
             }
-            IconButton(onClick = onRemove, modifier = Modifier.tvFocusLift(isTelevision)) {
+            ArchiveIconButton(onClick = onRemove, isTelevision = isTelevision) { _ ->
                 Icon(
                     painter = painterResource(id = R.drawable.ic_trash_can),
                     contentDescription = stringResource(R.string.remove_folder, folder.displayName),
@@ -134,6 +131,7 @@ fun RemoveSourceDialog(
     displayName: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    isTelevision: Boolean = false,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -142,10 +140,19 @@ fun RemoveSourceDialog(
             Text(stringResource(R.string.remove_source_message_generic))
         },
         confirmButton = {
-            Button(onClick = onConfirm) { Text(stringResource(R.string.action_remove)) }
+            ArchiveButton(
+                label = stringResource(R.string.action_remove),
+                onClick = onConfirm,
+                kind = ArchiveButtonKind.Secondary,
+                isTelevision = isTelevision,
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            ArchiveButton(
+                label = stringResource(R.string.action_cancel),
+                onClick = onDismiss,
+                isTelevision = isTelevision,
+            )
         },
     )
 }
@@ -360,20 +367,22 @@ private fun LocalEpisodeRow(
                 // Episodes only carry watch state once enrichment has given them
                 // a TMDB id — progress is keyed by that id, not by file path.
                 if (episode.tmdbId != null) {
-                    IconButton(
+                    ArchiveIconButton(
                         onClick = onToggleWatched,
-                        modifier = Modifier.tvFocusLift(isTelevision),
-                    ) {
+                        isTelevision = isTelevision,
+                    ) { focused ->
                         Icon(
                             painter = painterResource(id = R.drawable.ic_check),
                             contentDescription = stringResource(
                                 if (progress?.isCompleted == true) R.string.mark_unwatched
                                 else R.string.mark_watched,
                             ),
-                            tint = if (progress?.isCompleted == true) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.outline
+                            // The watched tick is gold, and so is the focus
+                            // fill, so focus has to take the glyph with it.
+                            tint = when {
+                                focused -> EdendaleColors.OnGold
+                                progress?.isCompleted == true -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.outline
                             },
                         )
                     }

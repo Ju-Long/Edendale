@@ -1,5 +1,7 @@
 package com.babasama.edendale.android
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,14 +15,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -54,7 +55,11 @@ fun rememberLibrary(): LibraryRepository {
  * `LibraryRepository.importSmbFolder` normalises like any other typed address.
  */
 @Composable
-fun SmbImportDialog(onDismiss: () -> Unit, onImport: (String, String, String) -> Unit) {
+fun SmbImportDialog(
+    onDismiss: () -> Unit,
+    onImport: (String, String, String) -> Unit,
+    isTelevision: Boolean = false,
+) {
     val library = rememberLibrary()
     val scope = rememberCoroutineScope()
     val unreachableMessage = stringResource(R.string.error_server_unreachable)
@@ -151,9 +156,15 @@ fun SmbImportDialog(onDismiss: () -> Unit, onImport: (String, String, String) ->
                         }
                     }
                 } else {
+                    // The attempt in flight captured these three values, so
+                    // editing them mid-connect would leave the form describing
+                    // something other than what is being tried. They unlock
+                    // again when the attempt fails; success replaces them with
+                    // the folder browser.
                     OutlinedTextField(
                         value = host,
                         onValueChange = { host = it },
+                        enabled = !loading,
                         label = { Text(stringResource(R.string.smb_host_label)) },
                         placeholder = { Text(stringResource(R.string.smb_host_placeholder)) },
                         singleLine = true,
@@ -162,12 +173,14 @@ fun SmbImportDialog(onDismiss: () -> Unit, onImport: (String, String, String) ->
                     OutlinedTextField(
                         value = user,
                         onValueChange = { user = it },
+                        enabled = !loading,
                         label = { Text(stringResource(R.string.smb_username_label)) },
                         singleLine = true,
                     )
                     OutlinedTextField(
                         value = pass,
                         onValueChange = { pass = it },
+                        enabled = !loading,
                         label = { Text(stringResource(R.string.smb_password_label)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
@@ -185,23 +198,30 @@ fun SmbImportDialog(onDismiss: () -> Unit, onImport: (String, String, String) ->
         },
         confirmButton = {
             if (browsing) {
-                Button(
+                ArchiveButton(
+                    label = stringResource(R.string.smb_import_this_folder),
                     onClick = { onImport(urlFor(path), user, pass) },
                     enabled = !loading && path.isNotEmpty(),
-                ) {
-                    Text(stringResource(R.string.smb_import_this_folder))
-                }
+                    kind = ArchiveButtonKind.Primary,
+                    isTelevision = isTelevision,
+                )
             } else {
-                Button(
+                ArchiveButton(
+                    label = stringResource(
+                        if (loading) R.string.action_connecting else R.string.action_connect,
+                    ),
                     onClick = { open(typedPath) },
                     enabled = server.isNotBlank() && !loading,
-                ) {
-                    Text(stringResource(if (loading) R.string.action_connecting else R.string.action_connect))
-                }
+                    kind = ArchiveButtonKind.Primary,
+                    isTelevision = isTelevision,
+                )
             }
         },
         dismissButton = {
-            TextButton(
+            ArchiveButton(
+                label = stringResource(
+                    if (browsing) R.string.action_back else R.string.action_cancel,
+                ),
                 onClick = {
                     if (browsing) {
                         browsing = false
@@ -210,9 +230,8 @@ fun SmbImportDialog(onDismiss: () -> Unit, onImport: (String, String, String) ->
                         onDismiss()
                     }
                 },
-            ) {
-                Text(stringResource(if (browsing) R.string.action_back else R.string.action_cancel))
-            }
+                isTelevision = isTelevision,
+            )
         }
     )
 }
@@ -220,12 +239,20 @@ fun SmbImportDialog(onDismiss: () -> Unit, onImport: (String, String, String) ->
 /** One tappable folder in the SMB browser; a Surface so the D-pad can focus it. */
 @Composable
 private fun SmbFolderRow(label: String, iconRes: Int, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    // No focus ring here: the row is already its own focus target, and adding a
+    // focusable wrapper would make the D-pad stop twice on every folder.
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(EdendaleRadii.Soft.dp),
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        // A transparent row gives focus nothing to change, and the browser is a
+        // list of near-identical folder names — the fill is what says which one
+        // the remote is on.
+        color = if (focused) EdendaleColors.Gold else Color.Transparent,
+        contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+        interactionSource = interactionSource,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
@@ -252,6 +279,7 @@ fun ScanErrorNotice(
     message: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    isTelevision: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -275,7 +303,11 @@ fun ScanErrorNotice(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_dismiss)) }
+            ArchiveButton(
+                label = stringResource(R.string.action_dismiss),
+                onClick = onDismiss,
+                isTelevision = isTelevision,
+            )
         }
     }
 }

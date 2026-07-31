@@ -165,7 +165,7 @@
     <string name="settings_backup_note">觀看進度、最愛、待看清單與評分將透過 Android Auto Backup 備份至你的 Google Drive，因此設定新裝置時可以全部還原。備份作業會遵循裝置的系統設定 — Edendale 不會擅自加入任何額外內容。</string>
     <string name="settings_backup_secrets_note">你的 TMDB 工作階段和任何已儲存的網路共用登入資訊都不會被備份或轉移到其他裝置：它們已加密並綁定於此裝置，無法被匯出。</string>
     <string name="settings_section_privacy">隱私權</string>
-    <string name="settings_privacy_note">無分析追蹤。網路請求僅限於 TMDB 和你的私人同步服務供應商。</string>
+    <string name="settings_privacy_note">無分析追蹤。網路請求僅限於 TMDB、明確搜尋字幕後的 Wyzie 和你的私人同步服務供應商。</string>
     <string name="settings_section_attribution">授權標示</string>
     <string name="tmdb_attribution">本產品使用 TMDB API，但未經 TMDB 認可或認證。</string>
     <string name="settings_open_source">Edendale · 免費且開放原始碼</string>
@@ -239,5 +239,40 @@
     </plurals>
     <plurals name="season_count">
         <item quantity="other">%1$d 季</item>
+    </plurals>
+    <string name="action_save">儲存</string>
+    <string name="settings_section_subtitles">字幕</string>
+    <string name="wyzie_loading_key">正在載入 API 金鑰…</string>
+    <string name="wyzie_api_key">API 金鑰</string>
+    <string name="wyzie_key_saved">金鑰已儲存</string>
+    <string name="wyzie_key_encrypted">金鑰已加密儲存在此裝置上。</string>
+    <string name="wyzie_using_build_key">正在使用 secrets.json 中的金鑰。</string>
+    <string name="wyzie_key_required">線上字幕搜尋需要你自己的 Wyzie API 金鑰。請造訪 store.wyzie.io/redeem，依網站步驟兌換你的訂閱，然後在下方貼上金鑰。</string>
+    <string name="wyzie_get_free_key">取得免費金鑰</string>
+    <string name="wyzie_error_key_storage">無法更新 Wyzie API 金鑰。</string>
+    <string name="wyzie_error_no_browser">無法開啟瀏覽器。請在其他裝置上造訪 store.wyzie.io/redeem。</string>
+    <string name="wyzie_error_missing_key">請在「設定」中加入 Wyzie API 金鑰。</string>
+    <string name="wyzie_error_authorization">Wyzie 不接受已設定的 API 金鑰。</string>
+    <string name="wyzie_error_http">Wyzie 傳回了 HTTP %1$d。</string>
+    <string name="wyzie_error_empty_file">下載的字幕檔案是空的。</string>
+    <string name="wyzie_error_file_too_large">字幕檔案大於 5 MiB。</string>
+    <string name="wyzie_error_bad_url">Wyzie 傳回了無效的字幕連結。</string>
+    <string name="wyzie_error_search">線上字幕搜尋失敗。</string>
+    <string name="wyzie_error_download">無法下載字幕。</string>
+    <string name="player_online_subtitles">線上字幕</string>
+    <string name="player_online_needs_key">請在「設定」中加入 Wyzie API 金鑰以搜尋線上字幕。</string>
+    <string name="player_online_needs_tmdb">線上字幕搜尋需要此檔案具有 TMDB 配對項目。</string>
+    <string name="player_online_language">語言</string>
+    <string name="player_online_all_languages">所有語言</string>
+    <string name="player_online_hearing_impaired">聽障字幕</string>
+    <string name="player_online_hearing_impaired_detail">只顯示聽障字幕</string>
+    <string name="player_online_search">搜尋</string>
+    <string name="player_online_searching">正在搜尋…</string>
+    <string name="player_online_none_found">找不到字幕。</string>
+    <string name="player_online_download">下載</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="other">還有 %1$d 個配對項目。</item>
     </plurals>
 </resources>

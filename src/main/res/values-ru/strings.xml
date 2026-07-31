@@ -165,7 +165,7 @@
     <string name="settings_backup_note">Прогресс просмотра, избранное, список просмотра и оценки отправляются через Android Auto Backup на ваш Google Drive, поэтому они восстановятся при настройке нового устройства. Резервное копирование следует системным настройкам вашего устройства — Edendale не добавляет ничего от себя.</string>
     <string name="settings_backup_secrets_note">Ваша сессия TMDB и любые сохраненные логины для сетевых папок исключены из резервного копирования и переноса на другие устройства: они зашифрованы для этого устройства и не могут его покинуть.</string>
     <string name="settings_section_privacy">Конфиденциальность</string>
-    <string name="settings_privacy_note">Никакой аналитики. Сетевые запросы ограничены TMDB и вашими частными провайдерами синхронизации.</string>
+    <string name="settings_privacy_note">Никакой аналитики. Сетевые запросы ограничены TMDB, Wyzie после явного поиска субтитров и вашими частными провайдерами синхронизации.</string>
     <string name="settings_section_attribution">Атрибуция</string>
     <string name="tmdb_attribution">Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.</string>
     <string name="settings_open_source">Edendale · Бесплатное и открытое ПО</string>
@@ -248,5 +248,43 @@
         <item quantity="few">%1$d сезона</item>
         <item quantity="many">%1$d сезонов</item>
         <item quantity="other">%1$d сезонов</item>
+    </plurals>
+    <string name="action_save">Сохранить</string>
+    <string name="settings_section_subtitles">Субтитры</string>
+    <string name="wyzie_loading_key">Загрузка ключа API…</string>
+    <string name="wyzie_api_key">Ключ API</string>
+    <string name="wyzie_key_saved">Ключ сохранён</string>
+    <string name="wyzie_key_encrypted">Ключ хранится на этом устройстве в зашифрованном виде.</string>
+    <string name="wyzie_using_build_key">Используется ключ из secrets.json.</string>
+    <string name="wyzie_key_required">Для поиска субтитров в интернете нужен собственный ключ API Wyzie. Перейдите на store.wyzie.io/redeem, выполните шаги на сайте, чтобы активировать подписку, затем вставьте ключ ниже.</string>
+    <string name="wyzie_get_free_key">Получить бесплатный ключ</string>
+    <string name="wyzie_error_key_storage">Не удалось обновить ключ API Wyzie.</string>
+    <string name="wyzie_error_no_browser">Не удалось открыть браузер. Перейдите на store.wyzie.io/redeem на другом устройстве.</string>
+    <string name="wyzie_error_missing_key">Добавьте ключ API Wyzie в настройках.</string>
+    <string name="wyzie_error_authorization">Wyzie не принял настроенный ключ API.</string>
+    <string name="wyzie_error_http">Wyzie вернул код HTTP %1$d.</string>
+    <string name="wyzie_error_empty_file">Загруженный файл субтитров пуст.</string>
+    <string name="wyzie_error_file_too_large">Размер файла субтитров превышает 5 МиБ.</string>
+    <string name="wyzie_error_bad_url">Wyzie вернул недействительную ссылку на субтитры.</string>
+    <string name="wyzie_error_search">Не удалось найти субтитры в интернете.</string>
+    <string name="wyzie_error_download">Не удалось загрузить субтитры.</string>
+    <string name="player_online_subtitles">Субтитры из интернета</string>
+    <string name="player_online_needs_key">Добавьте ключ API Wyzie в настройках, чтобы искать субтитры в интернете.</string>
+    <string name="player_online_needs_tmdb">Для поиска субтитров в интернете этому файлу нужно соответствие в TMDB.</string>
+    <string name="player_online_language">Язык</string>
+    <string name="player_online_all_languages">Все языки</string>
+    <string name="player_online_hearing_impaired">Для слабослышащих</string>
+    <string name="player_online_hearing_impaired_detail">Только субтитры для слабослышащих</string>
+    <string name="player_online_search">Искать</string>
+    <string name="player_online_searching">Поиск…</string>
+    <string name="player_online_none_found">Субтитры не найдены.</string>
+    <string name="player_online_download">Загрузить</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">Ещё %1$d совпадение.</item>
+        <item quantity="few">Ещё %1$d совпадения.</item>
+        <item quantity="many">Ещё %1$d совпадений.</item>
+        <item quantity="other">Ещё %1$d совпадения.</item>
     </plurals>
 </resources>

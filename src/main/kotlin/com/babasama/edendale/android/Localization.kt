@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.tmdb.CollectionFilter
+import com.babasama.edendale.wyzie.WyzieException
 
 /**
  * Localization plumbing for the parts of the app that cannot call
@@ -35,6 +36,23 @@ class AppStrings(private val context: Context) {
 
     fun syncStatus(time: String, pushed: Int, pulled: Int): String =
         context.getString(R.string.tmdb_sync_status, time, pushed, pulled)
+
+    // Wyzie subtitle search/download. Server text is retained by the service
+    // exception for diagnostics and tests, but never surfaced verbatim where
+    // it could echo request data.
+    fun wyzieError(error: Throwable, download: Boolean): String = when (error) {
+        is WyzieException.MissingKey -> context.getString(R.string.wyzie_error_missing_key)
+        is WyzieException.BadStatus -> when (error.code) {
+            401, 403 -> context.getString(R.string.wyzie_error_authorization)
+            else -> context.getString(R.string.wyzie_error_http, error.code)
+        }
+        is WyzieException.EmptyFile -> context.getString(R.string.wyzie_error_empty_file)
+        is WyzieException.FileTooLarge -> context.getString(R.string.wyzie_error_file_too_large)
+        is WyzieException.BadUrl -> context.getString(R.string.wyzie_error_bad_url)
+        else -> context.getString(
+            if (download) R.string.wyzie_error_download else R.string.wyzie_error_search,
+        )
+    }
 
     // Library import
     val folderNotOpened: String get() = context.getString(R.string.error_folder_not_opened)

@@ -4,10 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,30 +21,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,6 +52,10 @@ import androidx.compose.ui.unit.sp
 import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SmbClient
+import com.babasama.edendale.android.data.WyzieKeyStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SettingsScreen(
@@ -81,6 +81,7 @@ fun SettingsScreen(
 
     if (showSmbDialog) {
         SmbImportDialog(
+            isTelevision = isTelevision,
             onDismiss = { showSmbDialog = false },
             onImport = { host, user, pass ->
                 library.importSmbFolder(host, user, pass)
@@ -112,6 +113,26 @@ fun SettingsScreen(
     }
 
     val context = LocalContext.current
+    val settingsScope = rememberCoroutineScope()
+    val wyzieKeyStore = remember(context) { WyzieKeyStore(context) }
+    var wyzieKeyStatus by remember { mutableStateOf<WyzieKeyStatus?>(null) }
+    var wyzieKeyInput by remember { mutableStateOf("") }
+    var wyzieKeyMessage by remember { mutableStateOf<String?>(null) }
+    val wyzieStorageError = stringResource(R.string.wyzie_error_key_storage)
+    val wyzieBrowserError = stringResource(R.string.wyzie_error_no_browser)
+
+    LaunchedEffect(wyzieKeyStore) {
+        wyzieKeyStatus = withContext(Dispatchers.IO) {
+            runCatching {
+                WyzieKeyStatus(
+                    hasUserKey = wyzieKeyStore.hasUserKey(),
+                    usesBuildKey = wyzieKeyStore.usesBuildKey(),
+                )
+            }.getOrNull()
+        }
+        if (wyzieKeyStatus == null) wyzieKeyMessage = wyzieStorageError
+    }
+
     val versionName = remember(context) {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
             .getOrNull()
@@ -268,6 +289,56 @@ fun SettingsScreen(
         }
 
         item {
+            WyzieKeySettingsSection(
+                status = wyzieKeyStatus,
+                keyInput = wyzieKeyInput,
+                message = wyzieKeyMessage,
+                isTelevision = isTelevision,
+                onKeyInputChanged = {
+                    wyzieKeyInput = it
+                    wyzieKeyMessage = null
+                },
+                onOpenStore = {
+                    val result = runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(WYZIE_REDEEM_URL)),
+                        )
+                    }
+                    if (result.isFailure) wyzieKeyMessage = wyzieBrowserError
+                },
+                onSave = {
+                    settingsScope.launch {
+                        val result = runCatching { wyzieKeyStore.save(wyzieKeyInput) }
+                        if (result.isSuccess) {
+                            wyzieKeyInput = ""
+                            wyzieKeyMessage = null
+                            wyzieKeyStatus = WyzieKeyStatus(
+                                hasUserKey = true,
+                                usesBuildKey = false,
+                            )
+                        } else {
+                            wyzieKeyMessage = wyzieStorageError
+                        }
+                    }
+                },
+                onRemove = {
+                    settingsScope.launch {
+                        val result = runCatching { wyzieKeyStore.clear() }
+                        if (result.isSuccess) {
+                            wyzieKeyMessage = null
+                            wyzieKeyStatus = WyzieKeyStatus(
+                                hasUserKey = false,
+                                usesBuildKey = wyzieKeyStore.buildKey.isNotEmpty(),
+                            )
+                        } else {
+                            wyzieKeyMessage = wyzieStorageError
+                        }
+                    }
+                },
+            )
+        }
+
+        item {
             // Windows shows the equivalent OneDrive status; on Android the
             // platform default is Auto Backup, which needs no wiring of ours.
             SettingsSection(
@@ -298,6 +369,111 @@ fun SettingsScreen(
                 SettingsRowDivider()
                 InfoRow(stringResource(R.string.settings_open_source))
             }
+        }
+    }
+}
+
+private data class WyzieKeyStatus(
+    val hasUserKey: Boolean,
+    val usesBuildKey: Boolean,
+)
+
+@Composable
+private fun WyzieKeySettingsSection(
+    status: WyzieKeyStatus?,
+    keyInput: String,
+    message: String?,
+    isTelevision: Boolean,
+    onKeyInputChanged: (String) -> Unit,
+    onOpenStore: () -> Unit,
+    onSave: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    SettingsSection(
+        header = stringResource(R.string.settings_section_subtitles),
+        isTelevision = isTelevision,
+        focusableContent = false,
+    ) {
+        when {
+            status == null -> AccountProgressRow(stringResource(R.string.wyzie_loading_key))
+
+            status.hasUserKey -> {
+                FocusableRows(isTelevision) {
+                    LabeledRow(
+                        label = stringResource(R.string.wyzie_api_key),
+                        value = stringResource(R.string.wyzie_key_saved),
+                    )
+                    SettingsRowDivider()
+                    InfoRow(stringResource(R.string.wyzie_key_encrypted))
+                }
+                SettingsRowDivider()
+                SettingsActionRow {
+                    ArchiveButton(
+                        label = stringResource(R.string.action_remove),
+                        isTelevision = isTelevision,
+                        onClick = onRemove,
+                    )
+                }
+            }
+
+            else -> {
+                FocusableRows(isTelevision) {
+                    InfoRow(
+                        stringResource(
+                            if (status.usesBuildKey) {
+                                R.string.wyzie_using_build_key
+                            } else {
+                                R.string.wyzie_key_required
+                            },
+                        ),
+                    )
+                }
+                if (!status.usesBuildKey) {
+                    SettingsRowDivider()
+                    SettingsActionRow {
+                        ArchiveButton(
+                            label = stringResource(R.string.wyzie_get_free_key),
+                            kind = ArchiveButtonKind.Secondary,
+                            isTelevision = isTelevision,
+                            onClick = onOpenStore,
+                        )
+                    }
+                }
+                SettingsRowDivider()
+                OutlinedTextField(
+                    value = keyInput,
+                    onValueChange = onKeyInputChanged,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    label = { Text(stringResource(R.string.wyzie_api_key)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                )
+                SettingsRowDivider()
+                SettingsActionRow {
+                    ArchiveButton(
+                        label = stringResource(R.string.action_save),
+                        enabled = keyInput.isNotBlank(),
+                        kind = ArchiveButtonKind.Secondary,
+                        isTelevision = isTelevision,
+                        onClick = onSave,
+                    )
+                }
+            }
+        }
+
+        message?.let {
+            SettingsRowDivider()
+            Text(
+                text = it,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                style = BodyCopyStyle(),
+                color = EdendaleColors.Gold,
+            )
         }
     }
 }
@@ -688,101 +864,7 @@ private fun RemoveSourceDialog(
     )
 }
 
-private enum class ArchiveButtonKind { Primary, Secondary, Ghost }
-
-@Composable
-private fun ArchiveButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    kind: ArchiveButtonKind = ArchiveButtonKind.Ghost,
-    iconRes: Int? = null,
-    isTelevision: Boolean = false,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val hovered by interactionSource.collectIsHoveredAsState()
-    val focused by interactionSource.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(EdendaleRadii.Soft.dp)
-    // Apple casts the glow on hover for filled/outlined kinds, but only on focus for ghost.
-    val glowing = focused || (hovered && kind != ArchiveButtonKind.Ghost)
-    val contentPadding = when {
-        kind == ArchiveButtonKind.Ghost && isTelevision -> PaddingValues(20.dp, 12.dp)
-        kind == ArchiveButtonKind.Ghost -> PaddingValues(6.dp, 6.dp)
-        isTelevision -> PaddingValues(32.dp, 16.dp)
-        else -> PaddingValues(22.dp, 14.dp)
-    }
-    val buttonModifier = modifier
-        .tvFocusLift(isTelevision)
-        .shadow(
-            elevation = if (glowing) 14.dp else 0.dp,
-            shape = shape,
-            ambientColor = EdendaleColors.Gold,
-            spotColor = EdendaleColors.Gold,
-        )
-    val content: @Composable RowScope.() -> Unit = {
-        if (iconRes != null) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(if (isTelevision) 18.dp else 12.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            text = label.uppercase(),
-            maxLines = 1,
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontSize = if (isTelevision) 16.sp else 12.sp,
-                lineHeight = if (isTelevision) 22.sp else 16.sp,
-            ),
-        )
-    }
-
-    when (kind) {
-        ArchiveButtonKind.Primary -> Button(
-            onClick = onClick,
-            modifier = buttonModifier,
-            shape = shape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = EdendaleColors.GoldDeep,
-                contentColor = EdendaleColors.Background,
-            ),
-            contentPadding = contentPadding,
-            interactionSource = interactionSource,
-            content = content,
-        )
-
-        ArchiveButtonKind.Secondary -> OutlinedButton(
-            onClick = onClick,
-            modifier = buttonModifier,
-            shape = shape,
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = EdendaleColors.Gold,
-            ),
-            border = BorderStroke(
-                1.dp,
-                if (glowing) EdendaleColors.Gold else EdendaleColors.GoldDeep,
-            ),
-            contentPadding = contentPadding,
-            interactionSource = interactionSource,
-            content = content,
-        )
-
-        ArchiveButtonKind.Ghost -> TextButton(
-            onClick = onClick,
-            modifier = buttonModifier,
-            shape = shape,
-            colors = ButtonDefaults.textButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = EdendaleColors.Gold,
-            ),
-            contentPadding = contentPadding,
-            interactionSource = interactionSource,
-            content = content,
-        )
-    }
-}
+private const val WYZIE_REDEEM_URL = "https://store.wyzie.io/redeem"
 
 @Composable
 private fun LabelCapsStyle() = MaterialTheme.typography.labelLarge.copy(

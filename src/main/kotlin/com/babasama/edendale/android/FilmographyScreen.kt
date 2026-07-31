@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -81,13 +80,27 @@ fun FilmographyScreen(
                 },
                 title = stringResource(R.string.filmography_error_title),
                 message = state.errorMessage,
-                action = { Button(onClick = onBack) { Text(stringResource(R.string.action_go_back)) } },
+                action = {
+                    ArchiveButton(
+                        label = stringResource(R.string.action_go_back),
+                        onClick = onBack,
+                        kind = ArchiveButtonKind.Primary,
+                        isTelevision = isTelevision,
+                    )
+                },
             )
             state.items.isEmpty() && state.detail == null -> ArchiveEmptyState(
                 icon = { Icon(painterResource(id = R.drawable.ic_magnifying_glass_play), contentDescription = null) },
                 title = stringResource(R.string.filmography_empty_title),
                 message = stringResource(R.string.filmography_empty_message),
-                action = { Button(onClick = onBack) { Text(stringResource(R.string.action_go_back)) } },
+                action = {
+                    ArchiveButton(
+                        label = stringResource(R.string.action_go_back),
+                        onClick = onBack,
+                        kind = ArchiveButtonKind.Primary,
+                        isTelevision = isTelevision,
+                    )
+                },
             )
             else -> {
                 LazyColumn(

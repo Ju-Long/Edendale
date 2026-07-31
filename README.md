@@ -60,10 +60,31 @@ Requirements:
 - Android SDK 35; the app supports API 26 and newer. Set `ANDROID_HOME` or
   create a gitignored `local.properties`.
 
-TMDB-backed features are optional. To enable them locally, copy
+TMDB- and Wyzie-backed features are optional. To enable them locally, copy
 `secrets.example.json` to the gitignored `secrets.json`, then add the TMDB API
-Read Access Token and legacy v3 API key. Missing credentials leave the app
-buildable and disable only TMDB-backed features.
+Read Access Token and legacy v3 API key and, optionally, `WYZIE_API_KEY` for
+online subtitle search. Missing credentials leave the app buildable and disable
+only the dependent features.
+
+### Redeeming your own Wyzie API key
+
+Wyzie keys are issued per person; Edendale ships none and never shares one
+between readers. To get your own:
+
+1. Visit <https://store.wyzie.io/redeem>.
+2. Complete the steps on the site to redeem a subscription for your account.
+3. Copy the API key the site issues you.
+4. Either paste it into Settings → Subtitles in the app, or add it to
+   `secrets.json` as `WYZIE_API_KEY` for a build-time default.
+
+A key entered in the app’s Settings is stored encrypted on the device, is
+excluded from backup and device transfer, and overrides the build-time key.
+Removing it in Settings falls back to the build-time key when one exists.
+Never commit a redeemed key: `secrets.json` is gitignored and must stay that
+way.
+
+Online subtitle search, like trailer playback, starts only after an explicit
+user action; opening the player or its settings panel never sends a search.
 
 Run the hermetic JVM tests and build the debug APK:
 

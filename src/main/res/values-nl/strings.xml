@@ -165,7 +165,7 @@
     <string name="settings_backup_note">Kijkvoortgang, favorieten, kijklijst en beoordelingen liften mee met Android Auto Backup naar je Google Drive, zodat ze terugkeren wanneer je een nieuw apparaat instelt. De back-up volgt de systeeminstelling van je apparaat — Edendale voegt daar zelf niets aan toe.</string>
     <string name="settings_backup_secrets_note">Je TMDB-sessie en alle opgeslagen inloggegevens voor netwerkshares zijn uitgesloten van back-ups en overdracht naar een ander apparaat: ze zijn op dit apparaat versleuteld en kunnen het niet verlaten.</string>
     <string name="settings_section_privacy">Privacy</string>
-    <string name="settings_privacy_note">Geen analyses. Netwerkverzoeken zijn beperkt tot TMDB en je privé synchronisatieproviders.</string>
+    <string name="settings_privacy_note">Geen analyses. Netwerkverzoeken zijn beperkt tot TMDB, Wyzie na een expliciete ondertitelzoekopdracht en je privé synchronisatieproviders.</string>
     <string name="settings_section_attribution">Naamsvermelding</string>
     <string name="tmdb_attribution">Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB.</string>
     <string name="settings_open_source">Edendale · Gratis en open-source</string>
@@ -242,5 +242,41 @@
     <plurals name="season_count">
         <item quantity="one">%1$d seizoen</item>
         <item quantity="other">%1$d seizoenen</item>
+    </plurals>
+    <string name="action_save">Opslaan</string>
+    <string name="settings_section_subtitles">Ondertitels</string>
+    <string name="wyzie_loading_key">API-sleutel laden…</string>
+    <string name="wyzie_api_key">API-sleutel</string>
+    <string name="wyzie_key_saved">Sleutel opgeslagen</string>
+    <string name="wyzie_key_encrypted">De sleutel wordt versleuteld op dit apparaat bewaard.</string>
+    <string name="wyzie_using_build_key">De sleutel uit secrets.json wordt gebruikt.</string>
+    <string name="wyzie_key_required">Voor online ondertitels zoeken is je eigen Wyzie-API-sleutel nodig. Ga naar store.wyzie.io/redeem, doorloop de stappen op de site om je abonnement te verzilveren en plak de sleutel hieronder.</string>
+    <string name="wyzie_get_free_key">Gratis sleutel ophalen</string>
+    <string name="wyzie_error_key_storage">De Wyzie-API-sleutel kon niet worden bijgewerkt.</string>
+    <string name="wyzie_error_no_browser">Er kon geen browser worden geopend. Ga op een ander apparaat naar store.wyzie.io/redeem.</string>
+    <string name="wyzie_error_missing_key">Voeg in Instellingen een Wyzie-API-sleutel toe.</string>
+    <string name="wyzie_error_authorization">Wyzie heeft de ingestelde API-sleutel niet geaccepteerd.</string>
+    <string name="wyzie_error_http">Wyzie heeft HTTP %1$d geretourneerd.</string>
+    <string name="wyzie_error_empty_file">Het gedownloade ondertitelbestand was leeg.</string>
+    <string name="wyzie_error_file_too_large">Het ondertitelbestand is groter dan 5 MiB.</string>
+    <string name="wyzie_error_bad_url">Wyzie heeft een ongeldige ondertitellink geretourneerd.</string>
+    <string name="wyzie_error_search">Online ondertitels zoeken is mislukt.</string>
+    <string name="wyzie_error_download">De ondertitel kon niet worden gedownload.</string>
+    <string name="player_online_subtitles">Online ondertitels</string>
+    <string name="player_online_needs_key">Voeg in Instellingen een Wyzie-API-sleutel toe om online ondertitels te zoeken.</string>
+    <string name="player_online_needs_tmdb">Voor online ondertitels zoeken heeft dit bestand een TMDB-overeenkomst nodig.</string>
+    <string name="player_online_language">Taal</string>
+    <string name="player_online_all_languages">Alle talen</string>
+    <string name="player_online_hearing_impaired">Slechthorend</string>
+    <string name="player_online_hearing_impaired_detail">Alleen ondertitels voor slechthorenden</string>
+    <string name="player_online_search">Zoeken</string>
+    <string name="player_online_searching">Zoeken…</string>
+    <string name="player_online_none_found">Geen ondertitels gevonden.</string>
+    <string name="player_online_download">Downloaden</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">Nog %1$d overeenkomst.</item>
+        <item quantity="other">Nog %1$d overeenkomsten.</item>
     </plurals>
 </resources>

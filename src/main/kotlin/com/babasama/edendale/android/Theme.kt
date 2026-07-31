@@ -1,10 +1,17 @@
 package com.babasama.edendale.android
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -141,11 +148,49 @@ private val EdendaleTypography = Typography(
     ),
 )
 
+/**
+ * The state layer every control paints over its own container. Material's
+ * default focus layer is the content colour at ten percent, which on this
+ * palette is invisible from a sofa, so focus gets DESIGN.md's gold spotlight
+ * instead — and a heavier one on a remote, where focus is the cursor rather
+ * than a rare keyboard state.
+ */
+private val TvRippleAlpha = RippleAlpha(
+    draggedAlpha = .18f,
+    focusedAlpha = .26f,
+    hoveredAlpha = .10f,
+    pressedAlpha = .22f,
+)
+
+private val PointerRippleAlpha = RippleAlpha(
+    draggedAlpha = .16f,
+    focusedAlpha = .16f,
+    hoveredAlpha = .08f,
+    pressedAlpha = .18f,
+)
+
+/**
+ * Material's components resolve a ripple for themselves, but a bare `clickable`
+ * falls back to Foundation's debug indication, which paints black — nothing at
+ * all against this background. Handing both the same ripple gives every
+ * focusable one appearance, Material control or not.
+ */
+private val EdendaleRipple = ripple()
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EdendaleTheme(content: @Composable () -> Unit) {
+fun EdendaleTheme(isTelevision: Boolean = false, content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = EdendaleDarkColorScheme,
         typography = EdendaleTypography,
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(
+            LocalIndication provides EdendaleRipple,
+            LocalRippleConfiguration provides RippleConfiguration(
+                color = EdendaleColors.Gold,
+                rippleAlpha = if (isTelevision) TvRippleAlpha else PointerRippleAlpha,
+            ),
+            content = content,
+        )
+    }
 }

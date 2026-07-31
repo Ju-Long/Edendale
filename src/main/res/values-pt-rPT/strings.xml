@@ -165,7 +165,7 @@
     <string name="settings_backup_note">O progresso de visualização, os favoritos, a lista de observação e as classificações viajam com o Android Auto Backup para o seu Google Drive, para que regressem quando configurar um novo dispositivo. A cópia de segurança segue a definição do sistema do seu dispositivo — o Edendale não adiciona nada por si.</string>
     <string name="settings_backup_secrets_note">A sua sessão do TMDB e quaisquer inícios de sessão de partilhas de rede guardados são excluídos da cópia de segurança e da transferência do dispositivo: estão encriptados para este dispositivo e não podem sair dele.</string>
     <string name="settings_section_privacy">Privacidade</string>
-    <string name="settings_privacy_note">Sem análise de dados. Os pedidos de rede limitam-se ao TMDB e aos seus fornecedores de sincronização privada.</string>
+    <string name="settings_privacy_note">Sem análise de dados. Os pedidos de rede limitam-se ao TMDB, à Wyzie após uma pesquisa explícita de legendas e aos seus fornecedores de sincronização privada.</string>
     <string name="settings_section_attribution">Atribuição</string>
     <string name="tmdb_attribution">Este produto utiliza a API do TMDB mas não é endossado nem certificado pelo TMDB.</string>
     <string name="settings_open_source">Edendale · Gratuito e de código aberto</string>
@@ -242,5 +242,41 @@
     <plurals name="season_count">
         <item quantity="one">%1$d temporada</item>
         <item quantity="other">%1$d temporadas</item>
+    </plurals>
+    <string name="action_save">Guardar</string>
+    <string name="settings_section_subtitles">Legendas</string>
+    <string name="wyzie_loading_key">A carregar chave da API…</string>
+    <string name="wyzie_api_key">Chave da API</string>
+    <string name="wyzie_key_saved">Chave guardada</string>
+    <string name="wyzie_key_encrypted">A chave é guardada encriptada neste dispositivo.</string>
+    <string name="wyzie_using_build_key">A usar a chave de secrets.json.</string>
+    <string name="wyzie_key_required">A pesquisa de legendas online precisa da sua própria chave da API Wyzie. Visite store.wyzie.io/redeem, conclua os passos no site para resgatar a sua subscrição e cole a chave abaixo.</string>
+    <string name="wyzie_get_free_key">Obter uma chave gratuita</string>
+    <string name="wyzie_error_key_storage">Não foi possível atualizar a chave da API Wyzie.</string>
+    <string name="wyzie_error_no_browser">Não foi possível abrir um navegador. Visite store.wyzie.io/redeem noutro dispositivo.</string>
+    <string name="wyzie_error_missing_key">Adicione uma chave da API Wyzie nas Definições.</string>
+    <string name="wyzie_error_authorization">A Wyzie não aceitou a chave da API configurada.</string>
+    <string name="wyzie_error_http">A Wyzie devolveu HTTP %1$d.</string>
+    <string name="wyzie_error_empty_file">O ficheiro de legendas transferido estava vazio.</string>
+    <string name="wyzie_error_file_too_large">O ficheiro de legendas é maior do que 5 MiB.</string>
+    <string name="wyzie_error_bad_url">A Wyzie devolveu uma ligação de legendas inválida.</string>
+    <string name="wyzie_error_search">A pesquisa de legendas online falhou.</string>
+    <string name="wyzie_error_download">Não foi possível transferir a legenda.</string>
+    <string name="player_online_subtitles">Legendas online</string>
+    <string name="player_online_needs_key">Adicione uma chave da API Wyzie nas Definições para pesquisar legendas online.</string>
+    <string name="player_online_needs_tmdb">A pesquisa de legendas online precisa de uma correspondência no TMDB para este ficheiro.</string>
+    <string name="player_online_language">Idioma</string>
+    <string name="player_online_all_languages">Todos os idiomas</string>
+    <string name="player_online_hearing_impaired">Deficiência auditiva</string>
+    <string name="player_online_hearing_impaired_detail">Apenas legendas para pessoas com deficiência auditiva</string>
+    <string name="player_online_search">Pesquisar</string>
+    <string name="player_online_searching">A pesquisar…</string>
+    <string name="player_online_none_found">Não foram encontradas legendas.</string>
+    <string name="player_online_download">Transferir</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">Mais %1$d correspondência.</item>
+        <item quantity="other">Mais %1$d correspondências.</item>
     </plurals>
 </resources>

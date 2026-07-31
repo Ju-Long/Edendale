@@ -165,7 +165,7 @@
     <string name="settings_backup_note">Visningsförlopp, favoriter, din visningslista och betyg åker med Android Auto Backup till din Google Drive, så de återvänder när du konfigurerar en ny enhet. Säkerhetskopieringen följer din enhets systeminställning — Edendale lägger inte till något eget.</string>
     <string name="settings_backup_secrets_note">Din TMDB-session och eventuella sparade inloggningar för nätverksresurser exkluderas från säkerhetskopiering och enhetsöverföring: de är krypterade till denna enhet och kan inte lämna den.</string>
     <string name="settings_section_privacy">Integritet</string>
-    <string name="settings_privacy_note">Ingen analys. Nätverksförfrågningar begränsas till TMDB och dina privata synkroniseringsleverantörer.</string>
+    <string name="settings_privacy_note">Ingen analys. Nätverksförfrågningar begränsas till TMDB, Wyzie efter en uttrycklig undertextsökning och dina privata synkroniseringsleverantörer.</string>
     <string name="settings_section_attribution">Erkännande</string>
     <string name="tmdb_attribution">Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</string>
     <string name="settings_open_source">Edendale · Gratis och öppen källkod</string>
@@ -242,5 +242,41 @@
     <plurals name="season_count">
         <item quantity="one">%1$d säsong</item>
         <item quantity="other">%1$d säsonger</item>
+    </plurals>
+    <string name="action_save">Spara</string>
+    <string name="settings_section_subtitles">Undertexter</string>
+    <string name="wyzie_loading_key">Läser in API-nyckel…</string>
+    <string name="wyzie_api_key">API-nyckel</string>
+    <string name="wyzie_key_saved">Nyckeln har sparats</string>
+    <string name="wyzie_key_encrypted">Nyckeln lagras krypterad på den här enheten.</string>
+    <string name="wyzie_using_build_key">Nyckeln från secrets.json används.</string>
+    <string name="wyzie_key_required">Sökning efter undertexter online kräver en egen Wyzie API-nyckel. Besök store.wyzie.io/redeem, slutför stegen på webbplatsen för att lösa in din prenumeration och klistra in nyckeln nedan.</string>
+    <string name="wyzie_get_free_key">Hämta en kostnadsfri nyckel</string>
+    <string name="wyzie_error_key_storage">Wyzie API-nyckeln kunde inte uppdateras.</string>
+    <string name="wyzie_error_no_browser">Ingen webbläsare kunde öppnas. Besök store.wyzie.io/redeem på en annan enhet.</string>
+    <string name="wyzie_error_missing_key">Lägg till en Wyzie API-nyckel i Inställningar.</string>
+    <string name="wyzie_error_authorization">Wyzie accepterade inte den inställda API-nyckeln.</string>
+    <string name="wyzie_error_http">Wyzie returnerade HTTP %1$d.</string>
+    <string name="wyzie_error_empty_file">Den hämtade undertextfilen var tom.</string>
+    <string name="wyzie_error_file_too_large">Undertextfilen är större än 5 MiB.</string>
+    <string name="wyzie_error_bad_url">Wyzie returnerade en ogiltig undertextlänk.</string>
+    <string name="wyzie_error_search">Sökningen efter undertexter online misslyckades.</string>
+    <string name="wyzie_error_download">Undertexten kunde inte hämtas.</string>
+    <string name="player_online_subtitles">Undertexter online</string>
+    <string name="player_online_needs_key">Lägg till en Wyzie API-nyckel i Inställningar för att söka efter undertexter online.</string>
+    <string name="player_online_needs_tmdb">Sökning efter undertexter online kräver en TMDB-träff för den här filen.</string>
+    <string name="player_online_language">Språk</string>
+    <string name="player_online_all_languages">Alla språk</string>
+    <string name="player_online_hearing_impaired">Hörselskadad</string>
+    <string name="player_online_hearing_impaired_detail">Endast undertexter för hörselskadade</string>
+    <string name="player_online_search">Sök</string>
+    <string name="player_online_searching">Söker…</string>
+    <string name="player_online_none_found">Inga undertexter hittades.</string>
+    <string name="player_online_download">Hämta</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">%1$d träff till.</item>
+        <item quantity="other">%1$d träffar till.</item>
     </plurals>
 </resources>

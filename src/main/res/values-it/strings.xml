@@ -165,7 +165,7 @@
     <string name="settings_backup_note">I progressi di visione, i preferiti, la watchlist e le valutazioni sfruttano Android Auto Backup verso il tuo Google Drive, così li ritroverai configurando un nuovo dispositivo. Il backup segue le impostazioni di sistema del tuo dispositivo — Edendale non aggiunge nulla di suo.</string>
     <string name="settings_backup_secrets_note">La tua sessione TMDB e tutti gli accessi salvati per le condivisioni di rete sono esclusi dal backup e dal trasferimento sul dispositivo: sono crittografati per questo dispositivo e non possono uscirne.</string>
     <string name="settings_section_privacy">Privacy</string>
-    <string name="settings_privacy_note">Nessuna analisi. Le richieste di rete sono limitate a TMDB e ai tuoi provider di sincronizzazione privati.</string>
+    <string name="settings_privacy_note">Nessuna analisi. Le richieste di rete sono limitate a TMDB, Wyzie dopo una ricerca esplicita di sottotitoli e ai tuoi provider di sincronizzazione privati.</string>
     <string name="settings_section_attribution">Attribuzione</string>
     <string name="tmdb_attribution">Questo prodotto utilizza l\'API di TMDB ma non è approvato o certificato da TMDB.</string>
     <string name="settings_open_source">Edendale · Gratuito e open source</string>
@@ -242,5 +242,41 @@
     <plurals name="season_count">
         <item quantity="one">%1$d stagione</item>
         <item quantity="other">%1$d stagioni</item>
+    </plurals>
+    <string name="action_save">Salva</string>
+    <string name="settings_section_subtitles">Sottotitoli</string>
+    <string name="wyzie_loading_key">Caricamento chiave API…</string>
+    <string name="wyzie_api_key">Chiave API</string>
+    <string name="wyzie_key_saved">Chiave salvata</string>
+    <string name="wyzie_key_encrypted">La chiave è archiviata in forma crittografata su questo dispositivo.</string>
+    <string name="wyzie_using_build_key">È in uso la chiave di secrets.json.</string>
+    <string name="wyzie_key_required">La ricerca di sottotitoli online richiede la tua chiave API Wyzie. Visita store.wyzie.io/redeem, completa i passaggi sul sito per riscattare il tuo abbonamento e incolla la chiave qui sotto.</string>
+    <string name="wyzie_get_free_key">Ottieni una chiave gratuita</string>
+    <string name="wyzie_error_key_storage">Impossibile aggiornare la chiave API Wyzie.</string>
+    <string name="wyzie_error_no_browser">Impossibile aprire un browser. Visita store.wyzie.io/redeem su un altro dispositivo.</string>
+    <string name="wyzie_error_missing_key">Aggiungi una chiave API Wyzie nelle Impostazioni.</string>
+    <string name="wyzie_error_authorization">Wyzie non ha accettato la chiave API configurata.</string>
+    <string name="wyzie_error_http">Wyzie ha restituito HTTP %1$d.</string>
+    <string name="wyzie_error_empty_file">Il file dei sottotitoli scaricato era vuoto.</string>
+    <string name="wyzie_error_file_too_large">Il file dei sottotitoli supera 5 MiB.</string>
+    <string name="wyzie_error_bad_url">Wyzie ha restituito un link ai sottotitoli non valido.</string>
+    <string name="wyzie_error_search">La ricerca di sottotitoli online non è riuscita.</string>
+    <string name="wyzie_error_download">Impossibile scaricare i sottotitoli.</string>
+    <string name="player_online_subtitles">Sottotitoli online</string>
+    <string name="player_online_needs_key">Aggiungi una chiave API Wyzie nelle Impostazioni per cercare sottotitoli online.</string>
+    <string name="player_online_needs_tmdb">La ricerca di sottotitoli online richiede una corrispondenza TMDB per questo file.</string>
+    <string name="player_online_language">Lingua</string>
+    <string name="player_online_all_languages">Tutte le lingue</string>
+    <string name="player_online_hearing_impaired">Non udenti</string>
+    <string name="player_online_hearing_impaired_detail">Solo sottotitoli per non udenti</string>
+    <string name="player_online_search">Cerca</string>
+    <string name="player_online_searching">Ricerca…</string>
+    <string name="player_online_none_found">Nessun sottotitolo trovato.</string>
+    <string name="player_online_download">Scarica</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">%1$d altra corrispondenza.</item>
+        <item quantity="other">%1$d altre corrispondenze.</item>
     </plurals>
 </resources>

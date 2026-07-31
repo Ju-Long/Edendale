@@ -1,17 +1,23 @@
 package com.babasama.edendale.android
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,13 +33,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -508,6 +522,18 @@ fun Modifier.tvFocusableBlock(enabled: Boolean): Modifier = if (!enabled) this e
 }
 
 /**
+ * Container and content a control paints while it holds focus. Scaling and
+ * ringing a control leaves its own colours untouched, which is right for a
+ * poster — the artwork is the subject — and wrong for a bare glyph or label,
+ * which reads identically focused and unfocused from across a room. Filling
+ * with gold and handing the content [EdendaleColors.OnGold] to draw on is the
+ * same pair the player's segmented controls already use for "selected", so
+ * focus and selection speak one visual language.
+ */
+private val FocusedContainer = EdendaleColors.Gold
+private val FocusedContent = EdendaleColors.OnGold
+
+/**
  * [shape] should match the control being lifted — round icon buttons need a
  * circle, or the ring reads as a stray box floating around the glyph.
  */
@@ -535,6 +561,229 @@ fun Modifier.tvFocusLift(
                     .border(2.dp, EdendaleColors.Gold, shape)
             } else Modifier,
         )
+}
+
+/** The three button weights the design language uses. */
+enum class ArchiveButtonKind { Primary, Secondary, Ghost }
+
+/**
+ * The app's button. Every kind repaints its own container and label on focus
+ * rather than leaning on Material's state layer, because a remote has no
+ * pointer: the focused control is the only thing saying where you are, and it
+ * has to say it from the far side of a room.
+ */
+@Composable
+fun ArchiveButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    kind: ArchiveButtonKind = ArchiveButtonKind.Ghost,
+    iconRes: Int? = null,
+    isTelevision: Boolean = false,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val hovered by interactionSource.collectIsHoveredAsState()
+    val focused by interactionSource.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(EdendaleRadii.Soft.dp)
+    // Apple casts the glow on hover for filled/outlined kinds, but only on focus for ghost.
+    val glowing = focused || (hovered && kind != ArchiveButtonKind.Ghost)
+    val contentPadding = when {
+        kind == ArchiveButtonKind.Ghost && isTelevision -> PaddingValues(20.dp, 12.dp)
+        kind == ArchiveButtonKind.Ghost -> PaddingValues(6.dp, 6.dp)
+        isTelevision -> PaddingValues(32.dp, 16.dp)
+        else -> PaddingValues(22.dp, 14.dp)
+    }
+    // Filled buttons already sit on gold, so focus brightens them the rest of
+    // the way; the transparent kinds gain the fill outright and swap their
+    // label to the dark ink that reads on it.
+    val container by animateColorAsState(
+        targetValue = when {
+            kind == ArchiveButtonKind.Primary && focused -> EdendaleColors.Gold
+            kind == ArchiveButtonKind.Primary -> EdendaleColors.GoldDeep
+            focused -> FocusedContainer
+            else -> Color.Transparent
+        },
+        animationSpec = tween(140),
+        label = "Button focus container",
+    )
+    val labelColor by animateColorAsState(
+        targetValue = when {
+            kind == ArchiveButtonKind.Primary -> EdendaleColors.Background
+            focused -> FocusedContent
+            else -> EdendaleColors.Gold
+        },
+        animationSpec = tween(140),
+        label = "Button focus content",
+    )
+    val buttonModifier = modifier
+        .tvFocusLift(isTelevision, shape)
+        .shadow(
+            elevation = if (glowing) 14.dp else 0.dp,
+            shape = shape,
+            ambientColor = EdendaleColors.Gold,
+            spotColor = EdendaleColors.Gold,
+        )
+    val content: @Composable RowScope.() -> Unit = {
+        if (iconRes != null) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(if (isTelevision) 18.dp else 12.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(
+            text = label.uppercase(),
+            maxLines = 1,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontSize = if (isTelevision) 16.sp else 12.sp,
+                lineHeight = if (isTelevision) 22.sp else 16.sp,
+            ),
+        )
+    }
+
+    when (kind) {
+        ArchiveButtonKind.Primary -> Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = container,
+                contentColor = labelColor,
+            ),
+            contentPadding = contentPadding,
+            interactionSource = interactionSource,
+            content = content,
+        )
+
+        ArchiveButtonKind.Secondary -> OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+            shape = shape,
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = container,
+                contentColor = labelColor,
+            ),
+            border = BorderStroke(
+                1.dp,
+                if (glowing) EdendaleColors.Gold else EdendaleColors.GoldDeep,
+            ),
+            contentPadding = contentPadding,
+            interactionSource = interactionSource,
+            content = content,
+        )
+
+        ArchiveButtonKind.Ghost -> TextButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+            shape = shape,
+            colors = ButtonDefaults.textButtonColors(
+                containerColor = container,
+                contentColor = labelColor,
+            ),
+            contentPadding = contentPadding,
+            interactionSource = interactionSource,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Filter chip whose focus reads as clearly as its selection. Unselected chips
+ * are outlines on the background, so Material leaves focus with nothing to
+ * change; here focus fills the chip the same gold selection uses, and the ring
+ * and lift of [tvFocusLift] are what separate "the remote is here" from "this
+ * one is on".
+ */
+@Composable
+fun ArchiveFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    isTelevision: Boolean = false,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    val container by animateColorAsState(
+        targetValue = if (focused) FocusedContainer else Color.Transparent,
+        animationSpec = tween(140),
+        label = "Chip focus container",
+    )
+    val ink by animateColorAsState(
+        targetValue = if (focused) FocusedContent else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(140),
+        label = "Chip focus content",
+    )
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = label,
+        modifier = modifier.tvFocusLift(isTelevision, FilterChipDefaults.shape),
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = container,
+            labelColor = ink,
+            iconColor = ink,
+            selectedContainerColor = if (focused) FocusedContainer
+            else MaterialTheme.colorScheme.primary,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        interactionSource = interactionSource,
+    )
+}
+
+/**
+ * Icon button that answers the D-pad. A plain [IconButton] leaves a lone glyph
+ * on a transparent container, so focus changes nothing you can see; this fills
+ * the circle and inverts the glyph.
+ *
+ * [content] is handed the focus state because glyphs that already colour
+ * themselves to show state — a gold heart for a favourite — would otherwise
+ * disappear into the gold fill. Buttons whose glyph takes the ambient content
+ * colour can ignore it.
+ */
+@Composable
+fun ArchiveIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isTelevision: Boolean = false,
+    content: @Composable (focused: Boolean) -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    val container by animateColorAsState(
+        targetValue = if (focused) FocusedContainer else Color.Transparent,
+        animationSpec = tween(140),
+        label = "Icon button focus container",
+    )
+    val glyph by animateColorAsState(
+        targetValue = if (focused) FocusedContent else LocalContentColor.current,
+        animationSpec = tween(140),
+        label = "Icon button focus content",
+    )
+    IconButton(
+        onClick = onClick,
+        modifier = modifier.tvFocusLift(isTelevision, CircleShape),
+        enabled = enabled,
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = container,
+            contentColor = glyph,
+        ),
+        interactionSource = interactionSource,
+    ) {
+        content(focused)
+    }
 }
 
 /**
@@ -569,19 +818,23 @@ fun StarRatingRow(
                 lit -> R.drawable.ic_star_half
                 else -> R.drawable.ic_star
             }
-            IconButton(
+            // Five identical glyphs in a row: without a fill, nothing says
+            // which one the remote is on.
+            ArchiveIconButton(
                 onClick = { onSetRating(nextStarRating(index, current)) },
-                // Without a lift these read as dead icons under a D-pad.
-                modifier = Modifier.tvFocusLift(isTelevision, CircleShape),
-            ) {
+                isTelevision = isTelevision,
+            ) { focused ->
                 Icon(
                     painter = painterResource(id = icon),
                     // Every star is the same glyph, so the score it sets is the
                     // only thing that tells them apart by ear.
                     contentDescription = stringResource(R.string.detail_rate_score, full.toInt()),
                     modifier = Modifier.size(starSize),
-                    tint = if (lit) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = when {
+                        focused -> FocusedContent
+                        lit -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
             }
         }

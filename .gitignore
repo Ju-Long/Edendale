@@ -50,3 +50,6 @@ node_modules/
 Web/.astro/
 Web/dist/
 /.vs
+/.astro
+/dist
+*.lock

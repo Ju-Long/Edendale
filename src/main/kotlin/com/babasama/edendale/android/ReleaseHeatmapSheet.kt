@@ -22,10 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -39,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -52,7 +51,8 @@ fun ReleaseHeatmapSheet(
     onLoadHeatmap: (Int) -> Unit,
     selectedRange: Pair<String, String>?,
     onRangeSelected: (String, String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isTelevision: Boolean = false,
 ) {
     val thisYear = remember { Calendar.getInstance().get(Calendar.YEAR) }
     var currentYear by remember { mutableIntStateOf(thisYear) }
@@ -88,20 +88,22 @@ fun ReleaseHeatmapSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
+                ArchiveIconButton(
                     onClick = { currentYear -= 1 },
-                    enabled = currentYear > 1874
-                ) {
+                    enabled = currentYear > 1874,
+                    isTelevision = isTelevision,
+                ) { _ ->
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.heatmap_previous_year))
                 }
                 Text(
                     text = currentYear.toString(),
                     style = MaterialTheme.typography.titleLarge
                 )
-                IconButton(
+                ArchiveIconButton(
                     onClick = { currentYear += 1 },
-                    enabled = currentYear < thisYear
-                ) {
+                    enabled = currentYear < thisYear,
+                    isTelevision = isTelevision,
+                ) { _ ->
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.heatmap_next_year))
                 }
             }
@@ -146,14 +148,19 @@ fun ReleaseHeatmapSheet(
                                     }
                                 }
 
+                                // A grid of near-identical squares is the worst
+                                // case for a D-pad, so the focused day takes a
+                                // gold ring on top of its heat colour.
+                                var focused by remember { mutableStateOf(false) }
                                 Box(
                                     modifier = Modifier
                                         .size(16.dp)
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(bgColor)
+                                        .onFocusChanged { focused = it.isFocused }
                                         .border(
-                                            width = 1.dp,
-                                            color = Color.White,
+                                            width = if (focused) 2.dp else 1.dp,
+                                            color = if (focused) EdendaleColors.Gold else Color.White,
                                             shape = RoundedCornerShape(4.dp)
                                         )
                                         .clickable {
@@ -180,17 +187,18 @@ fun ReleaseHeatmapSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = startSelection != null && endSelection != null,
+            ArchiveButton(
+                label = stringResource(R.string.heatmap_apply_range),
                 onClick = {
                     if (startSelection != null && endSelection != null) {
                         onRangeSelected(startSelection!!, endSelection!!)
                     }
-                }
-            ) {
-                Text(stringResource(R.string.heatmap_apply_range))
-            }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = startSelection != null && endSelection != null,
+                kind = ArchiveButtonKind.Primary,
+                isTelevision = isTelevision,
+            )
         }
     }
 }

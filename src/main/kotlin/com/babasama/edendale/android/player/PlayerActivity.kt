@@ -29,6 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
@@ -36,15 +37,25 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.babasama.edendale.AndroidEdendaleCore
+import com.babasama.edendale.cacheWyzieSubtitle
+import com.babasama.edendale.android.AppStrings
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
+import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.isTelevisionDevice
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
+import com.babasama.edendale.wyzie.WyzieException
+import com.babasama.edendale.wyzie.WyzieSubtitle
+import com.babasama.edendale.wyzie.WyzieSubtitleQuery
+import com.babasama.edendale.wyzie.WyzieSubtitleService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -77,6 +88,12 @@ class PlayerActivity : ComponentActivity() {
 
     private var isTelevision = false
     private lateinit var chrome: PlayerChromeState
+    private lateinit var onlineSubtitles: OnlineSubtitlesState
+    private lateinit var wyzieKeyStore: WyzieKeyStore
+    private lateinit var wyzieService: WyzieSubtitleService
+    private val appStrings by lazy { AppStrings(this) }
+    private var searchJob: Job? = null
+    private var downloadJob: Job? = null
 
     private val inPipMode = mutableStateOf(false)
     private val titleState = mutableStateOf("")
@@ -84,6 +101,18 @@ class PlayerActivity : ComponentActivity() {
     private val currentUriState = mutableStateOf("")
     private val playlistState = mutableStateOf<PlayerPlaylist?>(null)
     private val tracksState = mutableStateOf(Tracks.EMPTY)
+    private val wyzieConfiguredState = mutableStateOf(false)
+    private val wyzieLookupState = mutableStateOf<WyzieLookup?>(null)
+
+    private data class AttachedSubtitle(
+        val subtitle: WyzieSubtitle,
+        val label: String,
+        val configuration: MediaItem.SubtitleConfiguration,
+    )
+
+    /** Sideloaded tracks survive switches within this player session only. */
+    private val attachedSubtitles = mutableMapOf<String, MutableList<AttachedSubtitle>>()
+    private var pendingSubtitleSelection: AttachedSubtitle? = null
 
     /** Absent on handhelds where the OEM dropped PiP; present on TV from API 34. */
     private val supportsPip: Boolean by lazy {
@@ -132,7 +161,14 @@ class PlayerActivity : ComponentActivity() {
         }
 
         isTelevision = isTelevisionDevice()
-        chrome = PlayerChromeState(getSharedPreferences("player", MODE_PRIVATE))
+        val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
+        chrome = PlayerChromeState(playerPreferences)
+        onlineSubtitles = OnlineSubtitlesState(playerPreferences)
+        wyzieKeyStore = WyzieKeyStore(this)
+        wyzieService = AndroidEdendaleCore.wyzieService()
+        // The build key is safe to inspect synchronously; encrypted preference
+        // access stays on writeScope below.
+        wyzieConfiguredState.value = wyzieKeyStore.buildKey.isNotEmpty()
 
         val uri = intent.data ?: intent.getStringExtra(EXTRA_URI)?.let(Uri::parse)
         if (uri == null) {
@@ -145,19 +181,29 @@ class PlayerActivity : ComponentActivity() {
             ?: getString(R.string.default_video_name)
         currentUriState.value = uri.toString()
 
-        val tmdbId = intent.getIntExtra(EXTRA_TMDB_ID, -1)
+        val tmdbId = intent.getIntExtra(EXTRA_TMDB_ID, -1).takeIf { it > 0 }
+        val isEpisode = intent.getBooleanExtra(EXTRA_IS_EPISODE, false)
         val showTmdbId = intent.getIntExtra(EXTRA_SHOW_TMDB_ID, -1).takeIf { it > 0 }
-        if (tmdbId > 0) {
+        val season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 }
+        val episode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
+        wyzieLookupState.value = subtitleLookup(
+            tmdbId = tmdbId,
+            isEpisode = isEpisode,
+            showTmdbId = showTmdbId,
+            season = season,
+            episode = episode,
+        )
+        if (tmdbId != null) {
             progressKey = ProgressKey(
                 tmdbId = tmdbId,
-                mediaType = if (intent.getBooleanExtra(EXTRA_IS_EPISODE, false)) {
+                mediaType = if (isEpisode) {
                     WatchMediaType.EPISODE
                 } else {
                     WatchMediaType.MOVIE
                 },
                 showTmdbId = showTmdbId,
-                season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 },
-                episode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 },
+                season = season,
+                episode = episode,
             )
         }
         val app = application as EdendaleApplication
@@ -206,14 +252,17 @@ class PlayerActivity : ComponentActivity() {
 
             override fun onTracksChanged(tracks: Tracks) {
                 tracksState.value = tracks
+                selectPendingOnlineSubtitle(exoPlayer, tracks)
             }
         })
+
+        refreshWyzieConfigured()
 
         lifecycleScopedStart(exoPlayer, uri)
         loadPlaylist(uri.toString(), showTmdbId)
 
         setContent {
-            EdendaleTheme {
+            EdendaleTheme(isTelevision = isTelevision) {
                 PlayerScreen(
                     player = exoPlayer,
                     chrome = chrome,
@@ -223,11 +272,16 @@ class PlayerActivity : ComponentActivity() {
                     currentUri = currentUriState,
                     playlist = playlistState,
                     tracks = tracksState,
+                    onlineSubtitles = onlineSubtitles,
+                    wyzieConfigured = wyzieConfiguredState,
+                    wyzieLookup = wyzieLookupState,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
                     onAutoPipChanged = ::updatePipParams,
                     onSelectEntry = ::switchTo,
+                    onSearchOnlineSubtitles = ::searchOnlineSubtitles,
+                    onDownloadOnlineSubtitle = ::downloadOnlineSubtitle,
                     onClose = { finish() },
                 )
             }
@@ -244,7 +298,7 @@ class PlayerActivity : ComponentActivity() {
                 ?.takeIf { it in 0.02..0.94 }
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
-                exoPlayer.setMediaItem(MediaItem.fromUri(uri))
+                exoPlayer.setMediaItem(mediaItem(uri))
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
                 applyPendingResume()
@@ -307,6 +361,12 @@ class PlayerActivity : ComponentActivity() {
     internal fun switchTo(entry: PlaylistEntry) {
         val exoPlayer = player ?: return
         writeProgress()
+        searchJob?.cancel()
+        downloadJob?.cancel()
+        searchJob = null
+        downloadJob = null
+        pendingSubtitleSelection = null
+        onlineSubtitles.reset()
         resumeFraction = null
         resumeApplied = false
         completedWritten = false
@@ -321,12 +381,154 @@ class PlayerActivity : ComponentActivity() {
                 episode = entry.episode,
             )
         }
+        wyzieLookupState.value = subtitleLookup(
+            tmdbId = entry.tmdbId,
+            isEpisode = entry.isEpisode,
+            showTmdbId = entry.showTmdbId,
+            season = entry.season,
+            episode = entry.episode,
+        )
         titleState.value = entry.title
         subtitleState.value = entry.detail
         currentUriState.value = entry.uri
         lifecycleScopedStart(exoPlayer, Uri.parse(entry.uri))
         chrome.showControls()
     }
+
+    // ------------------------------------------------------------------
+    // Online subtitles
+    // ------------------------------------------------------------------
+
+    /**
+     * Re-read on every foreground pass, not just at onCreate: a viewer who
+     * floats the player into PiP, saves a key in Settings, and comes back
+     * returns to this same instance, and a failed search latches the flag
+     * false. Reads the encrypted store off the main thread.
+     */
+    private fun refreshWyzieConfigured() {
+        writeScope.launch {
+            val configured = runCatching { wyzieKeyStore.isConfigured() }.getOrDefault(false)
+            withContext(Dispatchers.Main) {
+                if (!isDestroyed) wyzieConfiguredState.value = configured
+            }
+        }
+    }
+
+    private fun searchOnlineSubtitles() {
+        val lookup = wyzieLookupState.value ?: return
+        val language = onlineSubtitles.language
+        val hearingImpaired = onlineSubtitles.hearingImpaired
+        searchJob?.cancel()
+        onlineSubtitles.startSearch()
+        chrome.noteInteraction()
+
+        // Privacy boundary: a Wyzie request is launched only by this callback,
+        // which is wired exclusively to the viewer's explicit Search action.
+        searchJob = writeScope.launch {
+            try {
+                val key = wyzieKeyStore.resolvedKey()
+                val results = wyzieService.search(
+                    query = WyzieSubtitleQuery(
+                        id = lookup.id,
+                        season = lookup.season,
+                        episode = lookup.episode,
+                        language = language.takeIf { it.isNotBlank() },
+                        hearingImpaired = hearingImpaired,
+                    ),
+                    key = key,
+                )
+                withContext(Dispatchers.Main) {
+                    if (!isDestroyed) onlineSubtitles.showResults(results)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                val message = appStrings.wyzieError(error, download = false)
+                withContext(Dispatchers.Main) {
+                    if (!isDestroyed) {
+                        if (error is WyzieException.MissingKey) {
+                            wyzieConfiguredState.value = false
+                        }
+                        onlineSubtitles.fail(message, clearResults = true)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun downloadOnlineSubtitle(subtitle: WyzieSubtitle) {
+        if (downloadJob?.isActive == true || subtitle.id in onlineSubtitles.downloadedIds) return
+        onlineSubtitles.startDownload(subtitle.id)
+        chrome.noteInteraction()
+        downloadJob = writeScope.launch {
+            try {
+                val file = cacheWyzieSubtitle(this@PlayerActivity, wyzieService, subtitle)
+                withContext(Dispatchers.Main) {
+                    if (isDestroyed) return@withContext
+                    attachOnlineSubtitle(subtitle, Uri.fromFile(file))
+                    onlineSubtitles.finishDownload(subtitle.id)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                val message = appStrings.wyzieError(error, download = true)
+                withContext(Dispatchers.Main) {
+                    if (!isDestroyed) onlineSubtitles.fail(message, clearResults = false)
+                }
+            }
+        }
+    }
+
+    private fun attachOnlineSubtitle(subtitle: WyzieSubtitle, fileUri: Uri) {
+        val exoPlayer = player ?: return
+        val playingUri = currentUriState.value
+        val label = getString(R.string.player_online_subtitle_label, subtitle.display)
+        val configuration = MediaItem.SubtitleConfiguration.Builder(fileUri)
+            .setMimeType(subtitleMimeType(subtitle.format))
+            .setLanguage(subtitle.language)
+            .setLabel(label)
+            .setId(subtitle.id)
+            .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+            .build()
+        val attachments = attachedSubtitles.getOrPut(playingUri) { mutableListOf() }
+        val attached = AttachedSubtitle(subtitle, label, configuration)
+        val existingIndex = attachments.indexOfFirst { it.subtitle.id == subtitle.id }
+        if (existingIndex >= 0) {
+            attachments[existingIndex] = attached
+        } else {
+            attachments += attached
+        }
+
+        val position = exoPlayer.currentPosition.coerceAtLeast(0)
+        val playWhenReady = exoPlayer.playWhenReady
+        pendingSubtitleSelection = attached
+        resumeApplied = true
+        exoPlayer.trackSelectionParameters = exoPlayer.trackSelectionParameters
+            .buildUpon()
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+            .build()
+        exoPlayer.setMediaItem(mediaItem(Uri.parse(playingUri)), position)
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = playWhenReady
+    }
+
+    private fun selectPendingOnlineSubtitle(exoPlayer: ExoPlayer, tracks: Tracks) {
+        val pending = pendingSubtitleSelection ?: return
+        val options = textTrackOptions(tracks)
+        val option = options.firstOrNull { it.id == pending.subtitle.id }
+            ?: options.firstOrNull { it.label == pending.label }
+            ?: options.firstOrNull { it.language == pending.subtitle.language }
+            ?: return
+        pendingSubtitleSelection = null
+        selectTextTrack(exoPlayer, option)
+    }
+
+    private fun mediaItem(uri: Uri): MediaItem = MediaItem.Builder()
+        .setUri(uri)
+        .setSubtitleConfigurations(
+            attachedSubtitles[uri.toString()].orEmpty().map { it.configuration },
+        )
+        .build()
 
     // ------------------------------------------------------------------
     // Auto-skip
@@ -398,6 +600,7 @@ class PlayerActivity : ComponentActivity() {
         super.onStart()
         player?.playWhenReady = true
         updatePipParams()
+        if (::wyzieKeyStore.isInitialized) refreshWyzieConfigured()
     }
 
     override fun onStop() {
@@ -408,6 +611,8 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         writeProgress()
+        searchJob?.cancel()
+        downloadJob?.cancel()
         unregisterPipReceiver()
         setWindowBrightness(-1f)
         player?.release()
@@ -705,4 +910,12 @@ class PlayerActivity : ComponentActivity() {
             )
         }
     }
+}
+
+internal fun subtitleMimeType(format: String): String = when (format.trim().lowercase()) {
+    "srt", "subrip" -> MimeTypes.APPLICATION_SUBRIP
+    "vtt", "webvtt" -> MimeTypes.TEXT_VTT
+    "ass", "ssa" -> MimeTypes.TEXT_SSA
+    "ttml", "dfxp", "xml" -> MimeTypes.APPLICATION_TTML
+    else -> MimeTypes.APPLICATION_SUBRIP
 }

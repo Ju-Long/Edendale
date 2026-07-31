@@ -28,8 +28,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -107,7 +105,12 @@ fun MoviesShowsScreen(
                 message = state.errorMessage ?: stringResource(R.string.error_archive_not_loaded),
                 modifier = Modifier.padding(padding),
                 action = {
-                    OutlinedButton(onClick = viewModel::load) { Text(stringResource(R.string.action_try_again)) }
+                    ArchiveButton(
+                        label = stringResource(R.string.action_try_again),
+                        onClick = viewModel::load,
+                        kind = ArchiveButtonKind.Secondary,
+                        isTelevision = isTelevision,
+                    )
                 },
             )
             LoadPhase.LOADED -> {
@@ -515,15 +518,11 @@ private fun CollectionsSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(filters, key = { it.title }) { filter ->
-                FilterChip(
+                ArchiveFilterChip(
                     selected = selected == filter,
                     onClick = { onSelect(filter) },
                     label = { Text(filter.localizedTitle().uppercase()) },
-                    modifier = Modifier.tvFocusLift(isTelevision),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
+                    isTelevision = isTelevision,
                 )
             }
         }

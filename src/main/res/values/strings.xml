@@ -199,7 +199,7 @@
     <string name="settings_backup_note">Watch progress, favourites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
     <string name="settings_backup_secrets_note">Your TMDB session and any saved network-share logins are excluded from backup and device transfer: they are encrypted to this device and cannot leave it.</string>
     <string name="settings_section_privacy">Privacy</string>
-    <string name="settings_privacy_note">No analytics. Network requests are limited to TMDB and your private sync providers.</string>
+    <string name="settings_privacy_note">No analytics. Network requests are limited to TMDB, Wyzie after an explicit subtitle search, and your private sync providers.</string>
     <string name="settings_section_attribution">Attribution</string>
     <string name="tmdb_attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
     <string name="settings_open_source">Edendale · Free and open source</string>
@@ -283,5 +283,43 @@
     <plurals name="season_count">
         <item quantity="one">%1$d season</item>
         <item quantity="other">%1$d seasons</item>
+    </plurals>
+
+    <!-- Wyzie subtitle search and key configuration -->
+    <string name="action_save">Save</string>
+    <string name="settings_section_subtitles">Subtitles</string>
+    <string name="wyzie_loading_key">Loading API key…</string>
+    <string name="wyzie_api_key">API Key</string>
+    <string name="wyzie_key_saved">Key saved</string>
+    <string name="wyzie_key_encrypted">The key is stored encrypted on this device.</string>
+    <string name="wyzie_using_build_key">Using the key from secrets.json.</string>
+    <string name="wyzie_key_required">Online subtitle search needs your own Wyzie API key. Visit store.wyzie.io/redeem, complete the steps on the site to redeem your subscription, then paste the key below.</string>
+    <string name="wyzie_get_free_key">Get a Free Key</string>
+    <string name="wyzie_error_key_storage">The Wyzie API key could not be updated.</string>
+    <string name="wyzie_error_no_browser">No browser could be opened. Visit store.wyzie.io/redeem on another device.</string>
+    <string name="wyzie_error_missing_key">Add a Wyzie API key in Settings.</string>
+    <string name="wyzie_error_authorization">Wyzie did not accept the configured API key.</string>
+    <string name="wyzie_error_http">Wyzie returned HTTP %1$d.</string>
+    <string name="wyzie_error_empty_file">The downloaded subtitle file was empty.</string>
+    <string name="wyzie_error_file_too_large">The subtitle file is larger than 5 MiB.</string>
+    <string name="wyzie_error_bad_url">Wyzie returned an invalid subtitle link.</string>
+    <string name="wyzie_error_search">Online subtitle search failed.</string>
+    <string name="wyzie_error_download">The subtitle could not be downloaded.</string>
+    <string name="player_online_subtitles">Online Subtitles</string>
+    <string name="player_online_needs_key">Add a Wyzie API key in Settings to search online subtitles.</string>
+    <string name="player_online_needs_tmdb">Online subtitle search needs a TMDB match for this file.</string>
+    <string name="player_online_language">Language</string>
+    <string name="player_online_all_languages">All languages</string>
+    <string name="player_online_hearing_impaired">Hearing Impaired</string>
+    <string name="player_online_hearing_impaired_detail">Only hearing-impaired subtitles</string>
+    <string name="player_online_search">Search</string>
+    <string name="player_online_searching">Searching…</string>
+    <string name="player_online_none_found">No subtitles found.</string>
+    <string name="player_online_download">Download</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">%1$d more matched.</item>
+        <item quantity="other">%1$d more matched.</item>
     </plurals>
 </resources>

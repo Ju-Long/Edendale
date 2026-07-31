@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -72,10 +73,14 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.focusable
@@ -90,7 +95,9 @@ import androidx.media3.ui.PlayerView
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleRadii
 import com.babasama.edendale.android.R
+import com.babasama.edendale.android.ArchiveIconButton
 import com.babasama.edendale.android.tvFocusLift
+import com.babasama.edendale.wyzie.WyzieSubtitle
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -111,11 +118,16 @@ internal fun PlayerScreen(
     currentUri: State<String>,
     playlist: State<PlayerPlaylist?>,
     tracks: State<Tracks>,
+    onlineSubtitles: OnlineSubtitlesState,
+    wyzieConfigured: State<Boolean>,
+    wyzieLookup: State<WyzieLookup?>,
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
+    onSearchOnlineSubtitles: () -> Unit,
+    onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
     onClose: () -> Unit,
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
@@ -298,10 +310,15 @@ internal fun PlayerScreen(
                 currentUri = currentUri.value,
                 playlist = playlist.value,
                 tracks = tracks.value,
+                onlineSubtitles = onlineSubtitles,
+                wyzieConfigured = wyzieConfigured.value,
+                wyzieLookup = wyzieLookup.value,
                 supportsPip = supportsPip,
                 panelFocus = panelFocus,
                 onAutoPipChanged = onAutoPipChanged,
                 onSelectEntry = onSelectEntry,
+                onSearchOnlineSubtitles = onSearchOnlineSubtitles,
+                onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
             )
 
             PlayerHudView(chrome)
@@ -411,6 +428,11 @@ private fun PlayerControlsOverlay(
     // Focus moving between controls counts as activity: keep the chrome up
     // while the user is navigating.
     val chipDidFocus = { chrome.showControls() }
+    // An open panel owns the remote. Leaving these focusable lets a press that
+    // runs out of panel walk into transport the viewer never aimed at — and it
+    // is what stops the panel from telling a sideways press apart from "leave".
+    // Touch is unaffected: the panel's scrim already swallows taps out here.
+    val controlsFocusable = chrome.activePanel == null
 
     Box(
         Modifier
@@ -441,6 +463,7 @@ private fun PlayerControlsOverlay(
                 contentDescription = stringResource(R.string.player_close),
                 isTelevision = isTelevision,
                 modifier = Modifier.focusRequester(topFocus),
+                canFocus = controlsFocusable,
                 onFocus = chipDidFocus,
                 onClick = onClose,
             )
@@ -467,6 +490,7 @@ private fun PlayerControlsOverlay(
                     iconRes = R.drawable.ic_picture_in_picture,
                     contentDescription = stringResource(R.string.player_picture_in_picture),
                     isTelevision = isTelevision,
+                    canFocus = controlsFocusable,
                     onFocus = chipDidFocus,
                     onClick = onEnterPip,
                 )
@@ -477,6 +501,7 @@ private fun PlayerControlsOverlay(
                     contentDescription = stringResource(R.string.player_episodes),
                     isTelevision = isTelevision,
                     isActive = chrome.activePanel == PlayerPanel.PLAYLIST,
+                    canFocus = controlsFocusable,
                     onFocus = chipDidFocus,
                     onClick = { chrome.openPanel(PlayerPanel.PLAYLIST) },
                 )
@@ -486,6 +511,7 @@ private fun PlayerControlsOverlay(
                 contentDescription = stringResource(R.string.player_adjustments),
                 isTelevision = isTelevision,
                 isActive = chrome.activePanel == PlayerPanel.SETTINGS,
+                canFocus = controlsFocusable,
                 onFocus = chipDidFocus,
                 onClick = { chrome.openPanel(PlayerPanel.SETTINGS) },
             )
@@ -504,18 +530,20 @@ private fun PlayerControlsOverlay(
             horizontalArrangement = Arrangement.spacedBy(36.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(
+            ArchiveIconButton(
                 onClick = { seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS) },
                 modifier = Modifier
                     .size(56.dp)
-                    .onFocusChanged { if (it.isFocused) chipDidFocus() }
-                    .tvFocusLift(isTelevision, CircleShape),
-            ) {
+                    .focusProperties { canFocus = controlsFocusable }
+                    .onFocusChanged { if (it.isFocused) chipDidFocus() },
+                isTelevision = isTelevision,
+            ) { focused ->
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_rotate_left_10),
                     contentDescription = stringResource(R.string.player_back_10),
                     modifier = Modifier.size(34.dp),
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = if (focused) EdendaleColors.OnGold
+                    else MaterialTheme.colorScheme.onBackground,
                 )
             }
             Surface(
@@ -526,6 +554,7 @@ private fun PlayerControlsOverlay(
                 modifier = Modifier
                     .size(76.dp)
                     .focusRequester(centerFocus)
+                    .focusProperties { canFocus = controlsFocusable }
                     .onFocusChanged { if (it.isFocused) chipDidFocus() }
                     .tvFocusLift(isTelevision, CircleShape),
                 shape = CircleShape,
@@ -552,18 +581,20 @@ private fun PlayerControlsOverlay(
                     }
                 }
             }
-            IconButton(
+            ArchiveIconButton(
                 onClick = { seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS) },
                 modifier = Modifier
                     .size(56.dp)
-                    .onFocusChanged { if (it.isFocused) chipDidFocus() }
-                    .tvFocusLift(isTelevision, CircleShape),
-            ) {
+                    .focusProperties { canFocus = controlsFocusable }
+                    .onFocusChanged { if (it.isFocused) chipDidFocus() },
+                isTelevision = isTelevision,
+            ) { focused ->
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_rotate_right_10),
                     contentDescription = stringResource(R.string.player_forward_10),
                     modifier = Modifier.size(34.dp),
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = if (focused) EdendaleColors.OnGold
+                    else MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
@@ -596,6 +627,7 @@ private fun PlayerControlsOverlay(
                 },
                 durationMillis = durationMillis,
                 isTelevision = isTelevision,
+                canFocus = controlsFocusable,
                 focusRequester = timelineFocus,
                 upFocus = centerFocus,
                 modifier = Modifier.weight(1f),
@@ -617,19 +649,27 @@ private fun PlayerChip(
     isTelevision: Boolean,
     modifier: Modifier = Modifier,
     isActive: Boolean = false,
+    canFocus: Boolean = true,
     onFocus: () -> Unit = {},
     onClick: () -> Unit,
 ) {
-    IconButton(
+    ArchiveIconButton(
         onClick = onClick,
         modifier = modifier
-            .onFocusChanged { if (it.isFocused) onFocus() }
-            .tvFocusLift(isTelevision, CircleShape),
-    ) {
+            .focusProperties { this.canFocus = canFocus }
+            .onFocusChanged { if (it.isFocused) onFocus() },
+        isTelevision = isTelevision,
+    ) { focused ->
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = contentDescription,
-            tint = if (isActive) EdendaleColors.Gold else MaterialTheme.colorScheme.onBackground,
+            // An active chip is already gold, which is also the focus fill, so
+            // focus has to take the glyph with it or it vanishes.
+            tint = when {
+                focused -> EdendaleColors.OnGold
+                isActive -> EdendaleColors.Gold
+                else -> MaterialTheme.colorScheme.onBackground
+            },
         )
     }
 }
@@ -651,6 +691,7 @@ private fun TimelineBar(
     displayedFraction: Float,
     durationMillis: Long,
     isTelevision: Boolean,
+    canFocus: Boolean,
     focusRequester: FocusRequester,
     upFocus: FocusRequester,
     modifier: Modifier = Modifier,
@@ -685,7 +726,7 @@ private fun TimelineBar(
             }
             .focusRequester(focusRequester)
             .focusProperties {
-                canFocus = isTelevision
+                this.canFocus = isTelevision && canFocus
                 up = upFocus
             }
             .onFocusChanged {
@@ -919,10 +960,15 @@ private fun BoxScope.PlayerPanels(
     currentUri: String,
     playlist: PlayerPlaylist?,
     tracks: Tracks,
+    onlineSubtitles: OnlineSubtitlesState,
+    wyzieConfigured: Boolean,
+    wyzieLookup: WyzieLookup?,
     supportsPip: Boolean,
     panelFocus: FocusRequester,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
+    onSearchOnlineSubtitles: () -> Unit,
+    onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
 ) {
     // Tap anywhere outside the panel to dismiss it. Never a focus target —
     // a full-screen focusable would trap the D-pad.
@@ -968,10 +1014,15 @@ private fun BoxScope.PlayerPanels(
             chrome = chrome,
             isTelevision = isTelevision,
             tracks = tracks,
+            onlineSubtitles = onlineSubtitles,
+            wyzieConfigured = wyzieConfigured,
+            wyzieLookup = wyzieLookup,
             supportsPip = supportsPip,
             panelWidth = panelWidth,
             panelFocus = panelFocus,
             onAutoPipChanged = onAutoPipChanged,
+            onSearchOnlineSubtitles = onSearchOnlineSubtitles,
+            onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
         )
     }
 }
@@ -980,12 +1031,38 @@ private fun BoxScope.PlayerPanels(
 private fun PanelSurface(
     panelWidth: androidx.compose.ui.unit.Dp,
     panelFocus: FocusRequester,
+    onDismiss: () -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+    // The panel hugs the trailing edge, so leaving it means moving toward the
+    // leading one — left under LTR, right under RTL.
+    val exitDirection = if (LocalLayoutDirection.current == LayoutDirection.Ltr) {
+        FocusDirection.Left
+    } else {
+        FocusDirection.Right
+    }
+    val exitKey = if (exitDirection == FocusDirection.Left) {
+        Key.DirectionLeft
+    } else {
+        Key.DirectionRight
+    }
     Surface(
         modifier = Modifier
             .width(panelWidth)
             .fillMaxHeight()
+            // Speed and Aspect Ratio lay their controls out in a row, so a
+            // sideways press has to try the panel's own focus search first and
+            // only means "leave" when nothing is there. The controls behind are
+            // deactivated while a panel is open, so that search can never
+            // wander out into the transport.
+            .onKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown || event.key != exitKey) {
+                    return@onKeyEvent false
+                }
+                if (!focusManager.moveFocus(exitDirection)) onDismiss()
+                true
+            }
             .focusRequester(panelFocus)
             .focusGroup(),
         color = EdendaleColors.SurfaceLow.copy(alpha = .97f),
@@ -1037,6 +1114,7 @@ private fun PanelRow(
     modifier: Modifier = Modifier,
     detail: String? = null,
     selected: Boolean = false,
+    enabled: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -1054,7 +1132,11 @@ private fun PanelRow(
                 },
                 shape,
             )
-            .clickable(onClick = onClick)
+            // Inert rows stay clickable so they stay focusable: a row that
+            // drops its focus target the moment it disables (Search while a
+            // search runs, results while a download runs) strands the D-pad
+            // with nothing focused. Same idiom as the playing PlaylistRow.
+            .clickable { if (enabled) onClick() }
             .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1063,7 +1145,11 @@ private fun PanelRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (selected || focused) EdendaleColors.Gold else MaterialTheme.colorScheme.onBackground,
+                color = when {
+                    selected || focused -> EdendaleColors.Gold
+                    enabled -> MaterialTheme.colorScheme.onBackground
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1089,12 +1175,17 @@ private fun SettingsPanel(
     chrome: PlayerChromeState,
     isTelevision: Boolean,
     tracks: Tracks,
+    onlineSubtitles: OnlineSubtitlesState,
+    wyzieConfigured: Boolean,
+    wyzieLookup: WyzieLookup?,
     supportsPip: Boolean,
     panelWidth: androidx.compose.ui.unit.Dp,
     panelFocus: FocusRequester,
     onAutoPipChanged: () -> Unit,
+    onSearchOnlineSubtitles: () -> Unit,
+    onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
 ) {
-    PanelSurface(panelWidth, panelFocus) {
+    PanelSurface(panelWidth, panelFocus, onDismiss = { chrome.closePanel() }) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
@@ -1110,6 +1201,14 @@ private fun SettingsPanel(
 
             SpeedSection(player, chrome, isTelevision)
             SubtitleSection(player, chrome, tracks)
+            OnlineSubtitlesSection(
+                state = onlineSubtitles,
+                chrome = chrome,
+                isConfigured = wyzieConfigured,
+                lookup = wyzieLookup,
+                onSearch = onSearchOnlineSubtitles,
+                onDownload = onDownloadOnlineSubtitle,
+            )
             PlaybackSection(player, chrome, supportsPip, onAutoPipChanged)
             AspectSection(chrome, isTelevision)
         }
@@ -1235,6 +1334,206 @@ private fun SelectedCheck() {
 }
 
 @Composable
+private fun OnlineSubtitlesSection(
+    state: OnlineSubtitlesState,
+    chrome: PlayerChromeState,
+    isConfigured: Boolean,
+    lookup: WyzieLookup?,
+    onSearch: () -> Unit,
+    onDownload: (WyzieSubtitle) -> Unit,
+) {
+    var languagesExpanded by remember { mutableStateOf(false) }
+    LaunchedEffect(lookup) {
+        languagesExpanded = false
+    }
+    val selectedLanguage = state.language.takeIf { it.isNotBlank() }
+        ?.let(::localizedLanguageName)
+        ?: stringResource(R.string.player_online_all_languages)
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PanelLabel(stringResource(R.string.player_online_subtitles))
+        when {
+            !isConfigured -> SecondaryPanelCopy(
+                stringResource(R.string.player_online_needs_key),
+            )
+
+            lookup == null -> SecondaryPanelCopy(
+                stringResource(R.string.player_online_needs_tmdb),
+            )
+
+            else -> {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    PanelRow(
+                        title = stringResource(R.string.player_online_language),
+                        detail = selectedLanguage,
+                        onClick = {
+                            languagesExpanded = !languagesExpanded
+                            chrome.showControls()
+                        },
+                    )
+                    if (languagesExpanded) {
+                        ONLINE_SUBTITLE_LANGUAGES.forEach { code ->
+                            val selected = state.language == code
+                            PanelRow(
+                                title = if (code.isEmpty()) {
+                                    stringResource(R.string.player_online_all_languages)
+                                } else {
+                                    localizedLanguageName(code)
+                                },
+                                selected = selected,
+                                trailing = if (selected) {
+                                    { SelectedCheck() }
+                                } else {
+                                    null
+                                },
+                                modifier = Modifier.padding(start = 12.dp),
+                                onClick = {
+                                    state.updateLanguage(code)
+                                    languagesExpanded = false
+                                    chrome.showControls()
+                                },
+                            )
+                        }
+                    }
+                    ToggleRow(
+                        title = stringResource(R.string.player_online_hearing_impaired),
+                        detail = stringResource(R.string.player_online_hearing_impaired_detail),
+                        checked = state.hearingImpaired,
+                    ) {
+                        state.updateHearingImpaired(it)
+                        chrome.showControls()
+                    }
+                    PanelRow(
+                        title = stringResource(R.string.player_online_search),
+                        enabled = state.phase !is OnlineSubtitlePhase.Searching &&
+                            state.downloadingId == null,
+                        onClick = {
+                            chrome.showControls()
+                            onSearch()
+                        },
+                    )
+                }
+
+                when (val phase = state.phase) {
+                    OnlineSubtitlePhase.Idle -> Unit
+                    OnlineSubtitlePhase.Searching -> OnlineSubtitleProgress()
+                    OnlineSubtitlePhase.Results -> {
+                        if (state.results.isEmpty()) {
+                            SecondaryPanelCopy(stringResource(R.string.player_online_none_found))
+                        }
+                    }
+                    is OnlineSubtitlePhase.Failed -> Text(
+                        text = phase.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = EdendaleColors.Gold,
+                    )
+                }
+
+                if (state.results.isNotEmpty()) {
+                    OnlineSubtitleResults(state, chrome, onDownload)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OnlineSubtitleProgress() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = EdendaleColors.Gold,
+        )
+        SecondaryPanelCopy(stringResource(R.string.player_online_searching))
+    }
+}
+
+@Composable
+private fun OnlineSubtitleResults(
+    state: OnlineSubtitlesState,
+    chrome: PlayerChromeState,
+    onDownload: (WyzieSubtitle) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        state.results.take(MAX_ONLINE_SUBTITLE_ROWS).forEach { subtitle ->
+            val downloaded = subtitle.id in state.downloadedIds
+            val downloading = state.downloadingId == subtitle.id
+            val enabled = !downloaded && state.downloadingId == null
+            PanelRow(
+                title = subtitle.display,
+                detail = onlineSubtitleDetail(subtitle),
+                selected = downloaded,
+                enabled = enabled,
+                trailing = {
+                    when {
+                        downloading -> CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = EdendaleColors.Gold,
+                        )
+                        downloaded -> SelectedCheck()
+                        else -> Text(
+                            text = stringResource(R.string.player_online_download).uppercase(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = EdendaleColors.Gold,
+                        )
+                    }
+                },
+                onClick = {
+                    chrome.showControls()
+                    onDownload(subtitle)
+                },
+            )
+        }
+        val remaining = state.results.size - MAX_ONLINE_SUBTITLE_ROWS
+        if (remaining > 0) {
+            SecondaryPanelCopy(
+                pluralStringResource(
+                    R.plurals.player_online_more_matched,
+                    remaining,
+                    remaining,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SecondaryPanelCopy(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+private fun localizedLanguageName(code: String): String =
+    Locale.forLanguageTag(code).displayLanguage
+        .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+
+@Composable
+private fun onlineSubtitleDetail(subtitle: WyzieSubtitle): String? =
+    listOfNotNull(
+        subtitle.release?.takeIf { it.isNotBlank() }
+            ?: subtitle.fileName?.takeIf { it.isNotBlank() },
+        subtitle.format.takeIf { it.isNotBlank() }?.uppercase(Locale.ROOT),
+        stringResource(R.string.player_online_hi).takeIf { subtitle.isHearingImpaired },
+    ).joinToString(" · ").takeIf { it.isNotBlank() }
+
+private val ONLINE_SUBTITLE_LANGUAGES = listOf(
+    "",
+    "en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "tr", "ar", "hi", "id",
+    "ja", "ko", "zh", "sv", "da", "no", "fi", "cs", "el", "he", "th", "vi", "ro",
+    "hu", "uk",
+)
+
+private const val MAX_ONLINE_SUBTITLE_ROWS = 25
+
+@Composable
 private fun PlaybackSection(
     player: ExoPlayer,
     chrome: PlayerChromeState,
@@ -1346,7 +1645,7 @@ private fun PlaylistPanel(
     panelFocus: FocusRequester,
     onSelectEntry: (PlaylistEntry) -> Unit,
 ) {
-    PanelSurface(panelWidth, panelFocus) {
+    PanelSurface(panelWidth, panelFocus, onDismiss = { chrome.closePanel() }) {
         Column(Modifier.padding(24.dp)) {
             PanelHeader(
                 title = stringResource(
@@ -1595,6 +1894,7 @@ private fun BoxScope.PlayerGestureLayer(
 internal data class PlayerTrackOption(
     val group: TrackGroup,
     val trackIndex: Int,
+    val id: String?,
     val label: String?,
     val language: String?,
     val isSelected: Boolean,
@@ -1609,6 +1909,7 @@ internal fun textTrackOptions(tracks: Tracks): List<PlayerTrackOption> =
             PlayerTrackOption(
                 group = group.mediaTrackGroup,
                 trackIndex = index,
+                id = format.id,
                 label = format.label,
                 language = format.language,
                 isSelected = group.isTrackSelected(index),

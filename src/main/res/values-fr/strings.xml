@@ -165,7 +165,7 @@
     <string name="settings_backup_note">La progression, les favoris, la liste de suivi et les notes utilisent Android Auto Backup vers votre Google Drive, pour être restaurés sur un nouvel appareil. La sauvegarde suit les paramètres système — Edendale n\'y ajoute rien.</string>
     <string name="settings_backup_secrets_note">Votre session TMDB et les identifiants réseau enregistrés sont exclus de la sauvegarde et du transfert d\'appareil : ils sont chiffrés sur cet appareil et ne peuvent le quitter.</string>
     <string name="settings_section_privacy">Confidentialité</string>
-    <string name="settings_privacy_note">Aucune analyse. Les requêtes réseau sont limitées à TMDB et à vos fournisseurs de synchronisation privés.</string>
+    <string name="settings_privacy_note">Aucune analyse. Les requêtes réseau sont limitées à TMDB, Wyzie après une recherche explicite de sous-titres et vos fournisseurs de synchronisation privés.</string>
     <string name="settings_section_attribution">Attribution</string>
     <string name="tmdb_attribution">Ce produit utilise l\'API TMDB mais n\'est ni approuvé ni certifié par TMDB.</string>
     <string name="settings_open_source">Edendale · Gratuit et open source</string>
@@ -242,5 +242,41 @@
     <plurals name="season_count">
         <item quantity="one">%1$d saison</item>
         <item quantity="other">%1$d saisons</item>
+    </plurals>
+    <string name="action_save">Enregistrer</string>
+    <string name="settings_section_subtitles">Sous-titres</string>
+    <string name="wyzie_loading_key">Chargement de la clé API…</string>
+    <string name="wyzie_api_key">Clé API</string>
+    <string name="wyzie_key_saved">Clé enregistrée</string>
+    <string name="wyzie_key_encrypted">La clé est stockée de façon chiffrée sur cet appareil.</string>
+    <string name="wyzie_using_build_key">Utilisation de la clé de secrets.json.</string>
+    <string name="wyzie_key_required">La recherche de sous-titres en ligne nécessite votre propre clé API Wyzie. Consultez store.wyzie.io/redeem, suivez les étapes sur le site pour activer votre abonnement, puis collez la clé ci-dessous.</string>
+    <string name="wyzie_get_free_key">Obtenir une clé gratuite</string>
+    <string name="wyzie_error_key_storage">La clé API Wyzie n’a pas pu être mise à jour.</string>
+    <string name="wyzie_error_no_browser">Aucun navigateur n’a pu être ouvert. Consultez store.wyzie.io/redeem sur un autre appareil.</string>
+    <string name="wyzie_error_missing_key">Ajoutez une clé API Wyzie dans les réglages.</string>
+    <string name="wyzie_error_authorization">Wyzie n’a pas accepté la clé API configurée.</string>
+    <string name="wyzie_error_http">Wyzie a renvoyé HTTP %1$d.</string>
+    <string name="wyzie_error_empty_file">Le fichier de sous-titres téléchargé était vide.</string>
+    <string name="wyzie_error_file_too_large">Le fichier de sous-titres dépasse 5 Mio.</string>
+    <string name="wyzie_error_bad_url">Wyzie a renvoyé un lien de sous-titres non valide.</string>
+    <string name="wyzie_error_search">La recherche de sous-titres en ligne a échoué.</string>
+    <string name="wyzie_error_download">Le sous-titre n’a pas pu être téléchargé.</string>
+    <string name="player_online_subtitles">Sous-titres en ligne</string>
+    <string name="player_online_needs_key">Ajoutez une clé API Wyzie dans les réglages pour rechercher des sous-titres en ligne.</string>
+    <string name="player_online_needs_tmdb">La recherche de sous-titres en ligne nécessite une correspondance TMDB pour ce fichier.</string>
+    <string name="player_online_language">Langue</string>
+    <string name="player_online_all_languages">Toutes les langues</string>
+    <string name="player_online_hearing_impaired">Malentendants</string>
+    <string name="player_online_hearing_impaired_detail">Sous-titres pour malentendants uniquement</string>
+    <string name="player_online_search">Rechercher</string>
+    <string name="player_online_searching">Recherche…</string>
+    <string name="player_online_none_found">Aucun sous-titre trouvé.</string>
+    <string name="player_online_download">Télécharger</string>
+    <string name="player_online_hi">HI</string>
+    <string name="player_online_subtitle_label">%1$s · Wyzie</string>
+    <plurals name="player_online_more_matched">
+        <item quantity="one">%1$d correspondance supplémentaire.</item>
+        <item quantity="other">%1$d correspondances supplémentaires.</item>
     </plurals>
 </resources>

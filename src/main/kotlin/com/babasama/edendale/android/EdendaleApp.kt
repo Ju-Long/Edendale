@@ -3,6 +3,8 @@ package com.babasama.edendale.android
 import androidx.activity.compose.BackHandler
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.LaunchedEffect
@@ -478,7 +480,7 @@ private fun TvShell(
                         )
                     }
                     Spacer(Modifier.weight(1f))
-                    IconButton(onClick = onOpenSettings, modifier = Modifier.tvFocusLift(true)) {
+                    ArchiveIconButton(onClick = onOpenSettings, isTelevision = true) { _ ->
                         Icon(painterResource(id = R.drawable.ic_gear_complex), contentDescription = stringResource(R.string.action_settings))
                     }
                 }
@@ -507,16 +509,28 @@ private fun TvShell(
 
 @Composable
 private fun TvNavigationTab(tab: AppTab, selected: Boolean, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
     Surface(
         onClick = onClick,
         modifier = Modifier
             .height(54.dp)
             .tvFocusLift(true),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-        else androidx.compose.ui.graphics.Color.Transparent,
-        contentColor = if (selected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.onSurfaceVariant,
+        // Focus fills gold with dark ink, selection is a dark chip with gold
+        // ink — the tab strip is where the two states most often coexist, so
+        // they have to be told apart at a glance and not just by a ring.
+        color = when {
+            focused -> EdendaleColors.Gold
+            selected -> MaterialTheme.colorScheme.secondaryContainer
+            else -> androidx.compose.ui.graphics.Color.Transparent
+        },
+        contentColor = when {
+            focused -> EdendaleColors.OnGold
+            selected -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        interactionSource = interactionSource,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 18.dp),

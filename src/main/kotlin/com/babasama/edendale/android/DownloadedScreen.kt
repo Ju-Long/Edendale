@@ -2,6 +2,11 @@ package com.babasama.edendale.android
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -110,6 +115,7 @@ fun DownloadedScreen(
         } else {
             RemoveSourceDialog(
                 displayName = folder.displayName,
+                isTelevision = isTelevision,
                 onDismiss = { pendingRemoval = null },
                 onConfirm = {
                     library.removeFolder(treeUri)
@@ -158,6 +164,7 @@ fun DownloadedScreen(
                         ScanErrorNotice(
                             message = scanError,
                             onDismiss = library::clearError,
+                            isTelevision = isTelevision,
                             modifier = Modifier.padding(horizontal = edgeMargin),
                         )
                     }
@@ -413,7 +420,10 @@ fun AddSourceMenu(isTelevision: Boolean, modifier: Modifier = Modifier) {
     }
 
     Box(modifier) {
-        IconButton(onClick = { expanded = true }) {
+        ArchiveIconButton(
+            onClick = { expanded = true },
+            isTelevision = isTelevision,
+        ) { _ ->
             Icon(
                 painter = painterResource(id = R.drawable.ic_plus),
                 contentDescription = stringResource(R.string.add_source),
@@ -422,31 +432,21 @@ fun AddSourceMenu(isTelevision: Boolean, modifier: Modifier = Modifier) {
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             // Android TV cannot browse local folders reliably; network only.
             if (!isTelevision) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.add_local_folder)) },
+                AddSourceMenuItem(
+                    labelRes = R.string.add_local_folder,
+                    iconRes = R.drawable.ic_folder_open,
                     onClick = {
                         expanded = false
                         folderPicker.launch(null)
                     },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_folder_open),
-                            contentDescription = null,
-                        )
-                    },
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.add_network_source)) },
+            AddSourceMenuItem(
+                labelRes = R.string.add_network_source,
+                iconRes = R.drawable.ic_link,
                 onClick = {
                     expanded = false
                     showSmbDialog = true
-                },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_link),
-                        contentDescription = null,
-                    )
                 },
             )
         }
@@ -454,6 +454,7 @@ fun AddSourceMenu(isTelevision: Boolean, modifier: Modifier = Modifier) {
 
     if (showSmbDialog) {
         SmbImportDialog(
+            isTelevision = isTelevision,
             onDismiss = { showSmbDialog = false },
             onImport = { host, user, pass ->
                 library.importSmbFolder(host, user, pass)
@@ -461,6 +462,40 @@ fun AddSourceMenu(isTelevision: Boolean, modifier: Modifier = Modifier) {
             },
         )
     }
+}
+
+/**
+ * A menu row carries no container colour of its own, so Material has nothing to
+ * tint on focus and the D-pad appears to do nothing inside the popup. This
+ * paints the row itself and flips the label and glyph to match.
+ */
+@Composable
+private fun AddSourceMenuItem(
+    @StringRes labelRes: Int,
+    @DrawableRes iconRes: Int,
+    onClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    DropdownMenuItem(
+        text = { Text(stringResource(labelRes)) },
+        onClick = onClick,
+        modifier = Modifier.background(
+            if (focused) EdendaleColors.Gold else Color.Transparent,
+        ),
+        leadingIcon = {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+            )
+        },
+        colors = MenuDefaults.itemColors(
+            textColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            leadingIconColor = if (focused) EdendaleColors.OnGold
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        interactionSource = interactionSource,
+    )
 }
 
 @Composable
@@ -481,6 +516,7 @@ private fun DownloadedEmptyState(
 
     if (showSmbDialog) {
         SmbImportDialog(
+            isTelevision = isTelevision,
             onDismiss = { showSmbDialog = false },
             onImport = { host, user, pass ->
                 library.importSmbFolder(host, user, pass)
@@ -509,27 +545,28 @@ private fun DownloadedEmptyState(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (!isTelevision) {
-                    Button(
+                    ArchiveButton(
+                        label = stringResource(R.string.add_local_folder),
                         onClick = { folderPicker.launch(null) },
                         modifier = Modifier.widthIn(min = 240.dp),
-                    ) {
-                        Icon(painterResource(id = R.drawable.ic_folder_open), contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.add_local_folder))
-                    }
+                        kind = ArchiveButtonKind.Primary,
+                        iconRes = R.drawable.ic_folder_open,
+                        isTelevision = false,
+                    )
                 }
-                Button(
+                ArchiveButton(
+                    label = stringResource(R.string.add_network_source),
                     onClick = { showSmbDialog = true },
                     modifier = Modifier.widthIn(min = 240.dp),
-                ) {
-                    Icon(painterResource(id = R.drawable.ic_link), contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.add_network_source))
-                }
+                    kind = ArchiveButtonKind.Primary,
+                    iconRes = R.drawable.ic_link,
+                    isTelevision = isTelevision,
+                )
                 if (scanError != null) {
                     ScanErrorNotice(
                         message = scanError,
                         onDismiss = onDismissError,
+                        isTelevision = isTelevision,
                         modifier = Modifier.widthIn(max = 420.dp),
                     )
                 }
