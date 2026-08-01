@@ -159,26 +159,26 @@ struct PlayerSettingsPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Playback").labelCaps()
 
-            Toggle(isOn: $chrome.skipRecap) {
+            ArchiveToggle(isOn: $chrome.skipRecap) {
                 optionLabel(
                     String(localized: "Skip Recap"),
                     detail: String(localized: "Jump past the first 90 seconds")
                 )
             }
-            Toggle(isOn: $chrome.skipCredits) {
+            ArchiveToggle(isOn: $chrome.skipCredits) {
                 optionLabel(
                     String(localized: "Skip Credits"),
                     detail: String(localized: "End playback at the final 3 minutes")
                 )
             }
-            Toggle(isOn: $chrome.loopEnabled) {
+            ArchiveToggle(isOn: $chrome.loopEnabled) {
                 optionLabel(
                     String(localized: "Loop Video"),
                     detail: String(localized: "Restart playback when it ends")
                 )
             }
             #if os(iOS)
-            Toggle(isOn: $chrome.autoPiP) {
+            ArchiveToggle(isOn: $chrome.autoPiP) {
                 optionLabel(
                     String(localized: "Auto Picture in Picture"),
                     detail: String(localized: "Float the video when you leave the app mid-play")
@@ -186,7 +186,6 @@ struct PlayerSettingsPanel: View {
             }
             #endif
         }
-        .tint(Theme.gold)
     }
 
     private func optionLabel(_ title: String, detail: String) -> some View {

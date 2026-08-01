@@ -50,22 +50,21 @@ struct DownloadedView: View {
             // tvOS renders a large navigation title as a giant mid-screen overlay.
             #if !os(tvOS)
             .navigationTitle("Downloaded")
+            #endif
             .toolbar {
                 if !isEmpty {
                     ToolbarItem(placement: .primaryAction) {
+                    #if os(tvOS)
+                        Button {
+                            showLinkSource = true
+                        } label: {
+                            Label("Link Network Source…", image: .link)
+                        }
+                        .archiveButtonStyle(.ghost)
+                    #else
                         addMenu
+                    #endif
                     }
-                }
-            }
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showLinkSource = true
-                    } label: {
-                        Label("Link Network Source…", image: .link)
-                    }
-                    .archiveButtonStyle(.ghost)
                 }
             }
             .navigationDestination(for: Movie.self) { MediaDetailView(source: .localMovie($0)) }

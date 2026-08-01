@@ -65,9 +65,11 @@ struct PlayerTimeline: View {
         .scaleEffect(isFocused ? 1.02 : 1, anchor: .center)
         .animation(.easeOut(duration: 0.15), value: isFocused)
         // Gaining focus counts as activity — keep the chrome up while the
-        // user is lining up a seek.
+        // user is lining up a seek. Reaching the timeline also means focus
+        // stepped out of an open side panel, which dismisses it (`closePanel`
+        // keeps the chrome up as well).
         .onChange(of: isFocused) { _, focused in
-            if focused { chrome.showControls() }
+            if focused { chrome.closePanel() }
         }
         #endif
     }

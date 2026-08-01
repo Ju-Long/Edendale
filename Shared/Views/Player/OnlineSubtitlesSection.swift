@@ -60,10 +60,13 @@ struct OnlineSubtitlesSection: View {
         }
         .archiveButtonStyle(.secondary)
 
-        Toggle("Hearing Impaired", isOn: $model.hearingImpaired)
-            .font(Typography.bodySM)
-            .foregroundStyle(Theme.textPrimary)
-            .tint(Theme.gold)
+        // Font and color ride on the label, not the control: on tvOS the
+        // control also draws the On/Off state, which owns its own color.
+        ArchiveToggle(isOn: $model.hearingImpaired) {
+            Text("Hearing Impaired")
+                .font(Typography.bodySM)
+                .foregroundStyle(Theme.textPrimary)
+        }
 
         PlayerTextChip(
             label: String(localized: "Search"),

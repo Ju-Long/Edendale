@@ -38,29 +38,31 @@ struct ExpandableText: View {
 
     // MARK: - Toggle
 
+    /// `.plain` left tvOS to paint its own white focus platter behind the
+    /// gold caps; the ghost archive style highlights the toggle itself and
+    /// keeps the label legible (colors come from the style, never the label).
     private var toggle: some View {
         Button {
             withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() }
         } label: {
             HStack(spacing: 8) {
                 Text(expanded ? String(localized: "Show Less") : String(localized: "Read More"))
-                    .labelCaps(Theme.gold)
                 chevron
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .archiveButtonStyle(.ghost)
     }
 
     /// Down and up glyphs stacked and crossfaded by the expanded state:
     /// the down chevron fades out and the up chevron fades in on expand.
+    /// Font and color are inherited from the button style so the glyph
+    /// tracks the label — including when focus flips both to `OnGold`.
     private var chevron: some View {
         ZStack {
             Image(.chevronDown).opacity(expanded ? 0 : 1)
             Image(.chevronUp).opacity(expanded ? 1 : 0)
         }
-        .font(.system(size: 11))
-        .foregroundStyle(Theme.gold)
     }
 
     // MARK: - Truncation detection

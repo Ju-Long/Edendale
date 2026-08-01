@@ -27,7 +27,14 @@ struct PlayerControlsOverlay: View {
     /// Up couldn't reliably climb to the top-bar tools; pinning focus to the
     /// center on each reveal — with each row wrapped in its own `focusSection`
     /// — makes Up/Down move predictably between top tools, center, and timeline.
-    private enum ControlFocus: Hashable { case center }
+    private enum ControlFocus: Hashable {
+        case center
+        /// The top-bar chip owning a side panel. Focus collapses back onto it
+        /// whenever that panel is dismissed.
+        case tool(PlayerChromeModel.SidePanel)
+        /// The invisible strip along an open panel's leading edge.
+        case panelEscape
+    }
     @FocusState private var focusedControl: ControlFocus?
     /// Siri Remote touch reader for the press-and-hold speed gesture. Lives
     /// for the whole session; created and torn down with the overlay.
@@ -70,6 +77,14 @@ struct PlayerControlsOverlay: View {
         .onDisappear {
             remoteInput?.invalidate()
             remoteInput = nil
+        }
+        // However a panel is dismissed — Menu, its header chip, or a left move
+        // onto the escape guide — focus collapses back onto the tool that owns
+        // it. Left to itself the focus engine picks an arbitrary control once
+        // the panel (and whatever inside it held focus) leaves the hierarchy.
+        .onChange(of: chrome.activePanel) { previous, current in
+            guard current == nil, let previous else { return }
+            Task { @MainActor in focusedControl = .tool(previous) }
         }
         #endif
     }
@@ -155,7 +170,15 @@ struct PlayerControlsOverlay: View {
     /// Focus moving between controls counts as activity: restart the
     /// auto-hide countdown so the chrome never vanishes mid-navigation.
     private func chipDidFocus() {
+        #if os(tvOS)
+        // Every control that reports focus here sits outside the side panels,
+        // so focus landing on one means it navigated out of an open panel:
+        // dismiss it rather than stranding focus on a chip the panel covers.
+        // `closePanel` restarts the auto-hide countdown too.
+        chrome.closePanel()
+        #else
         chrome.showControls()
+        #endif
     }
 
     private var titleBlock: some View {
@@ -205,6 +228,9 @@ struct PlayerControlsOverlay: View {
             ) {
                 chrome.openPanel(.playlist)
             }
+            #if os(tvOS)
+            .focused($focusedControl, equals: .tool(.playlist))
+            #endif
 
             PlayerIconChip(
                 icon: .sidebarRight,
@@ -213,6 +239,9 @@ struct PlayerControlsOverlay: View {
             ) {
                 chrome.openPanel(.settings)
             }
+            #if os(tvOS)
+            .focused($focusedControl, equals: .tool(.settings))
+            #endif
         }
     }
 
@@ -279,6 +308,12 @@ struct PlayerControlsOverlay: View {
                         .onTapGesture { chrome.closePanel() }
                 }
 
+                #if os(tvOS)
+                if chrome.activePanel != nil {
+                    panelEscapeGuide(trailingInset: proxy.safeAreaInsets.trailing)
+                }
+                #endif
+
                 // Keyed by panel identity so switching directly between the
                 // playlist and settings cross-slides instead of hard-swapping;
                 // the move transition slides each panel in/out along the
@@ -290,6 +325,13 @@ struct PlayerControlsOverlay: View {
                         .frame(width: panelWidth + proxy.safeAreaInsets.trailing)
                         .frame(maxHeight: .infinity)
                         .glassBackground(in: Rectangle())
+                        #if os(tvOS)
+                        // Group the panel so vertical moves keep stepping
+                        // through its own rows. Without a section the top bar
+                        // — a section itself — outranks the row directly above
+                        // and Up leaves the panel (dismissing it) mid-list.
+                        .focusSection()
+                        #endif
                         .id(panel)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
@@ -315,6 +357,35 @@ struct PlayerControlsOverlay: View {
         340
         #endif
     }
+
+    #if os(tvOS)
+    /// Invisible focus target hugging an open panel's leading edge: moving
+    /// left out of the panel lands here and dismisses it.
+    ///
+    /// The focus engine always takes the *nearest* candidate in the direction
+    /// of travel, so a control that genuinely sits to the left inside the
+    /// panel — the −/+ speed chips, the Fit/Fill segments — wins over this
+    /// strip and the panel stays open. Focus reaching the guide therefore
+    /// means the move had nowhere left to go inside the panel.
+    ///
+    /// Reading the remote directly can't make that distinction: an
+    /// `onMoveCommand` attached to the panel fires even when the focus engine
+    /// *does* move focus within it, so it would dismiss on every left press.
+    private func panelEscapeGuide(trailingInset: CGFloat) -> some View {
+        Color.clear
+            .frame(width: 12)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .focusable()
+            .focused($focusedControl, equals: .panelEscape)
+            .focusEffectDisabled()
+            .accessibilityHidden(true)
+            .padding(.trailing, panelWidth + trailingInset)
+            .onChange(of: focusedControl) { _, focus in
+                if focus == .panelEscape { chrome.closePanel() }
+            }
+    }
+    #endif
 
     // MARK: - tvOS reveal
 
