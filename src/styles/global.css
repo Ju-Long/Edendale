@@ -22,6 +22,100 @@
   font-weight: 100 900;
 }
 
+/*
+ * Font Awesome Free 7.3.1, self-hosted.
+ *
+ * The kit at kit.fontawesome.com would send every visitor's address to a third
+ * party on every page view, which the site's own privacy claims rule out. Only
+ * the glyphs this site actually draws are declared below — adding an `fa-`
+ * class to a template means adding its codepoint here too, or the icon renders
+ * as blank space. Codepoints come from the Free package's `fontawesome.css`
+ * (solid) and `brands.css` (brands).
+ *
+ * Icons are CC BY 4.0, fonts SIL OFL 1.1, code MIT — Fonticons, Inc.
+ */
+@font-face {
+  font-family: "Font Awesome 7 Free";
+  src: url("../assets/fonts/fa-solid-900.woff2") format("woff2");
+  font-display: block;
+  font-style: normal;
+  font-weight: 900;
+}
+
+@font-face {
+  font-family: "Font Awesome 7 Brands";
+  src: url("../assets/fonts/fa-brands-400.woff2") format("woff2");
+  font-display: block;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.fa-solid,
+.fa-brands {
+  display: var(--fa-display, inline-block);
+  width: var(--fa-width, 1.25em);
+  font-family: var(--fa-family);
+  font-style: normal;
+  font-weight: var(--fa-style);
+  font-synthesis: none;
+  font-variant: normal;
+  line-height: 1;
+  text-align: center;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.fa-solid {
+  --fa-family: "Font Awesome 7 Free";
+  --fa-style: 900;
+}
+
+.fa-brands {
+  --fa-family: "Font Awesome 7 Brands";
+  --fa-style: 400;
+}
+
+:is(.fa-solid, .fa-brands)::before {
+  content: var(--fa);
+}
+
+.fa-arrow-up-right-from-square {
+  --fa: "\f08e";
+}
+
+.fa-check {
+  --fa: "\f00c";
+}
+
+.fa-chevron-down {
+  --fa: "\f078";
+}
+
+.fa-globe {
+  --fa: "\f0ac";
+}
+
+.fa-house {
+  --fa: "\f015";
+}
+
+.fa-android {
+  --fa: "\f17b";
+}
+
+.fa-apple {
+  --fa: "\f179";
+}
+
+.fa-github {
+  --fa: "\f09b";
+}
+
+.fa-windows {
+  --fa: "\f17a";
+}
+
 :root {
   color-scheme: dark;
   --ink: #09090d;
