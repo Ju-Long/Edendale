@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -69,10 +70,29 @@ fun DownloadedScreen(
     onOpenSettings: () -> Unit,
     onOpenShow: (String) -> Unit = {},
 ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        DownloadedScreenContent(
+            isTelevision = isTelevision,
+            availableWidth = maxWidth,
+            contentPadding = contentPadding,
+            onOpenSettings = onOpenSettings,
+            onOpenShow = onOpenShow,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DownloadedScreenContent(
+    isTelevision: Boolean,
+    availableWidth: Dp,
+    contentPadding: PaddingValues,
+    onOpenSettings: () -> Unit,
+    onOpenShow: (String) -> Unit,
+) {
     val context = LocalContext.current
     val library = rememberLibrary()
-    val windowSize = currentWindowSizeDp()
-    val edgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
+    val edgeMargin = if (isTelevision || availableWidth >= 600.dp) 48.dp else 20.dp
 
     val movies by library.movies.collectAsState(initial = emptyList())
     val shows by library.shows.collectAsState(initial = emptyList())
@@ -92,11 +112,11 @@ fun DownloadedScreen(
     val spacing = if (isTelevision) 20.dp else 14.dp
     val preferredPoster: Dp = when {
         isTelevision -> 210.dp
-        windowSize.width >= 600.dp -> 170.dp
+        availableWidth >= 600.dp -> 170.dp
         else -> 150.dp
     }
     val (columns, cellWidth) = libraryGridMetrics(
-        availableWidth = windowSize.width,
+        availableWidth = availableWidth,
         edgeMargin = edgeMargin,
         spacing = spacing,
         preferredWidth = preferredPoster,
@@ -381,7 +401,10 @@ private fun <T> androidx.compose.foundation.lazy.LazyListScope.posterRows(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = edgeMargin),
-            horizontalArrangement = Arrangement.spacedBy(spacing),
+            horizontalArrangement = Arrangement.spacedBy(
+                space = spacing,
+                alignment = Alignment.CenterHorizontally,
+            ),
         ) {
             rows[index].forEach { item -> cell(item) }
             repeat(columns - rows[index].size) {

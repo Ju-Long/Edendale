@@ -1,6 +1,7 @@
 package com.babasama.edendale.android
 
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
@@ -83,8 +84,8 @@ private fun Int.pad(): String = toString().padStart(2, '0')
 // MARK: - Grid layout
 
 /**
- * Cell width that tiles [columns] posters edge to edge inside the content
- * margins, so library grids line up instead of leaving a ragged trailing gap.
+ * Fits as many preferred-width posters as the content area can hold without
+ * squeezing in a partial extra column. The row centers the unused width.
  */
 internal fun libraryGridMetrics(
     availableWidth: Dp,
@@ -92,9 +93,9 @@ internal fun libraryGridMetrics(
     spacing: Dp,
     preferredWidth: Dp,
 ): Pair<Int, Dp> {
-    val content = (availableWidth - edgeMargin * 2).coerceAtLeast(preferredWidth)
-    val columns = ((content + spacing) / (preferredWidth + spacing)).toInt().coerceAtLeast(2)
-    val cell = (content - spacing * (columns - 1)) / columns
+    val content = (availableWidth - edgeMargin * 2).coerceAtLeast(0.dp)
+    val columns = ((content + spacing) / (preferredWidth + spacing)).toInt().coerceAtLeast(1)
+    val cell = preferredWidth.coerceAtMost(content)
     return columns to cell
 }
 

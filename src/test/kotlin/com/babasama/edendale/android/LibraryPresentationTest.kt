@@ -239,7 +239,7 @@ class LibraryPresentationTest {
     // MARK: - Grid layout
 
     @Test
-    fun `grid cells tile the content width exactly`() {
+    fun `grid keeps preferred card width and admits only complete columns`() {
         val (columns, cell) = libraryGridMetrics(
             availableWidth = 1000.dp,
             edgeMargin = 20.dp,
@@ -249,7 +249,10 @@ class LibraryPresentationTest {
 
         val content = 1000.dp - 40.dp
         val used = cell * columns + 14.dp * (columns - 1)
-        assertEquals(content.value, used.value, 0.01f)
+        val withAnotherColumn = cell * (columns + 1) + 14.dp * columns
+        assertEquals(150f, cell.value, 0.01f)
+        assertTrue(used <= content)
+        assertTrue(withAnotherColumn > content)
     }
 
     @Test
@@ -260,12 +263,17 @@ class LibraryPresentationTest {
     }
 
     @Test
-    fun `a narrow window still gets two columns`() {
-        // One poster would be wider than the window; a single-column "grid"
-        // reads as a list, so two is the floor.
+    fun `a narrow window does not squeeze in a second column`() {
         val (columns, cell) = libraryGridMetrics(200.dp, 20.dp, 14.dp, 150.dp)
-        assertEquals(2, columns)
-        assertTrue(cell.value > 0f)
+        assertEquals(1, columns)
+        assertEquals(150f, cell.value, 0.01f)
+    }
+
+    @Test
+    fun `landscape content width excludes a clipped fourth column`() {
+        val (columns, cell) = libraryGridMetrics(731.dp, 48.dp, 14.dp, 170.dp)
+        assertEquals(3, columns)
+        assertEquals(170f, cell.value, 0.01f)
     }
 
     // MARK: - Formatting
