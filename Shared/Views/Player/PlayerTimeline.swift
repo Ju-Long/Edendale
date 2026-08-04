@@ -72,6 +72,36 @@ struct PlayerTimeline: View {
             if focused { chrome.closePanel() }
         }
         #endif
+        // The bar is drawn shapes plus a drag gesture, so without this it is
+        // not an element at all — seeking would be unreachable off tvOS.
+        .accessibilityElement()
+        .accessibilityLabel("Timeline")
+        .accessibilityValue(valueText)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: chrome.seek(bySeconds: 10)
+            case .decrement: chrome.seek(bySeconds: -10)
+            @unknown default: break
+            }
+            chrome.showControls()
+        }
+    }
+
+    /// Elapsed of total, e.g. "12:04 of 1:38:20" — the same two numbers the
+    /// bottom bar prints either side of the bar.
+    private var valueText: String {
+        let elapsed = PlayerLogic.timestamp(currentSeconds)
+        guard let duration = player.duration, duration.playbackSeconds > 0 else {
+            return elapsed
+        }
+        return String(localized: "\(elapsed) of \(PlayerLogic.timestamp(duration))")
+    }
+
+    private var currentSeconds: Double {
+        if chrome.isScrubbing, let duration = player.duration {
+            return chrome.scrubPosition * duration.playbackSeconds
+        }
+        return player.currentTime.playbackSeconds
     }
 
     // MARK: - Metrics

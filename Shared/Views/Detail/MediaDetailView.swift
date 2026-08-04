@@ -99,37 +99,58 @@ struct MediaDetailView: View {
                 .frame(maxWidth: .infinity)
 
             VStack(alignment: .leading, spacing: 16) {
-                if let tagline = detail?.tagline {
-                    Text(tagline)
-                        .labelCaps(Theme.gold)
+                Group {
+                    if let tagline = detail?.tagline {
+                        Text(tagline)
+                            .labelCaps(Theme.gold)
+                    }
+
+                    Text(title)
+                        .font(Typography.display(titleSize))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.5)
+
+                    if let genre = genres.first {
+                        Text(genre.uppercased())
+                            .font(Typography.labelCaps)
+                            .kerning(1)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: Theme.Radius.soft)
+                                    .strokeBorder(Theme.outline, lineWidth: 1)
+                            }
+                    }
+
+                    metaRow
                 }
-                
-                Text(title)
-                    .font(Typography.display(titleSize))
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.5)
-                
-                if let genre = genres.first {
-                    Text(genre.uppercased())
-                        .font(Typography.labelCaps)
-                        .kerning(1)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: Theme.Radius.soft)
-                                .strokeBorder(Theme.outline, lineWidth: 1)
-                        }
-                }
-                
-                metaRow
-                
+                // Tagline, title, genre badge, year, runtime, and studio are
+                // one masthead — read as one stop, with the title as the
+                // heading the rotor lands on.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(title)
+                .accessibilityValue(headerAccessibilityValue)
+                .accessibilityAddTraits(.isHeader)
+
                 actionRow
                     .padding(.top, 8)
             }
             .padding(edgeMargin)
         }
+    }
+
+    /// Everything the masthead says besides the title, in the order it is
+    /// drawn. The metadata row's dot separators carry no meaning.
+    private var headerAccessibilityValue: String {
+        var parts: [String] = []
+        if let tagline = detail?.tagline { parts.append(tagline) }
+        if let genre = genres.first { parts.append(genre) }
+        if let year { parts.append(String(year)) }
+        if let runtimeText { parts.append(runtimeText) }
+        if let attribution { parts.append(attribution) }
+        return parts.joined(separator: ", ")
     }
 
     private var metaRow: some View {
@@ -152,7 +173,10 @@ struct MediaDetailView: View {
     }
 
     private var dot: some View {
-        Circle().fill(Theme.outline).frame(width: 3, height: 3)
+        Circle()
+            .fill(Theme.outline)
+            .frame(width: 3, height: 3)
+            .accessibilityHidden(true)
     }
 
     private var actionRow: some View {
@@ -174,6 +198,11 @@ struct MediaDetailView: View {
                         Label("Watchlist", image: userMediaStore.isInWatchlist(ref) ? .check : .plus)
                     }
                     .archiveButtonStyle(.secondary)
+                    // Unlike Favorite and Mark Watched, this button's text
+                    // never changes — only its glyph does, so membership has
+                    // to be spoken.
+                    .accessibilityAddTraits(.isToggle)
+                    .accessibilityValue(userMediaStore.isInWatchlist(ref) ? Text("On") : Text("Off"))
                     
                     Button {
                         userMediaStore.toggleFavorite(ref)
@@ -202,11 +231,15 @@ struct MediaDetailView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 28)
-                            
+                                .accessibilityHidden(true)
+
                             Text("Watch Trailer")
                         }
                     }
                     .archiveButtonStyle(.secondary)
+                    // Playback leaves the app entirely — worth saying before
+                    // the jump, not after.
+                    .accessibilityHint("Opens the YouTube app.")
                 }
                 #endif
             }
@@ -225,6 +258,10 @@ struct MediaDetailView: View {
                 .archiveButtonStyle(.ghost)
             }
         }
+        // Play, Watchlist, Favorite, rating, and Mark Watched are one bank
+        // of controls on this title.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Actions")
     }
 
     // MARK: - Archive record
@@ -238,9 +275,12 @@ struct MediaDetailView: View {
                         .font(Typography.headlineMD)
                         .textCase(.uppercase)
                         .foregroundStyle(Theme.textPrimary)
+                        .accessibilityAddTraits(.isHeader)
                     ExpandableText(text: overview)
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("The Archive Record")
         }
     }
 
@@ -249,7 +289,9 @@ struct MediaDetailView: View {
     private var castSection: some View {
         if let cast = detail?.cast, !cast.isEmpty {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Principal Cast").labelCaps(Theme.gold)
+                Text("Principal Cast")
+                    .labelCaps(Theme.gold)
+                    .accessibilityAddTraits(.isHeader)
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: 18) {
                         ForEach(cast) { member in
@@ -261,6 +303,8 @@ struct MediaDetailView: View {
                 // Let the tvOS focus enlargement / glow bleed past the shelf.
                 .scrollClipDisabled()
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Principal Cast")
         }
     }
 
@@ -300,6 +344,10 @@ struct MediaDetailView: View {
         #else
         .buttonStyle(.plain)
         #endif
+        // The button already folds its portrait and caption into one element;
+        // this pins the reading to the name and says where the tap goes.
+        .accessibilityLabel(member.name)
+        .accessibilityHint("Shows this person's filmography.")
     }
 
     // MARK: - Critical consensus
@@ -308,7 +356,9 @@ struct MediaDetailView: View {
     private var consensusSection: some View {
         if let detail, !ratings.isEmpty || detail.seasonCount != nil || detail.tagline != nil {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Critical Consensus").labelCaps(Theme.gold)
+                Text("Critical Consensus")
+                    .labelCaps(Theme.gold)
+                    .accessibilityAddTraits(.isHeader)
 
                 GlassCard(padding: 20) {
                     VStack(alignment: .leading, spacing: 20) {
@@ -327,7 +377,11 @@ struct MediaDetailView: View {
 
                 if let tagline = detail.tagline {
                     HStack(spacing: 14) {
-                        Rectangle().fill(Theme.goldDeep).frame(width: 2)
+                        // Quote rule, not content.
+                        Rectangle()
+                            .fill(Theme.goldDeep)
+                            .frame(width: 2)
+                            .accessibilityHidden(true)
                         Text("“\(tagline)”")
                             .font(Typography.bodyLG.italic())
                             .foregroundStyle(Theme.textPrimary)
@@ -335,6 +389,9 @@ struct MediaDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            // Heading, scorecard, and pull quote are one rail.
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Critical Consensus")
         }
     }
 
@@ -349,6 +406,7 @@ struct MediaDetailView: View {
                         .font(Typography.titleLG)
                         .foregroundStyle(Theme.textPrimary)
                         .padding(.vertical, 12)
+                        .accessibilityAddTraits(.isHeader)
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: episodeSpacing) {
                             ForEach(show.episodes(for: season)) { episode in
@@ -363,8 +421,13 @@ struct MediaDetailView: View {
                     .scrollClipDisabled()
                     .padding(.horizontal, -edgeMargin)
                 }
+                // Each season heading and its shelf are one group.
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Season \(season)")
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Episodes")
     }
 
     @ViewBuilder
@@ -387,6 +450,7 @@ struct MediaDetailView: View {
         #else
         .buttonStyle(.plain)
         #endif
+        .accessibilityHint("Plays this episode.")
         .contextMenu {
             if let tmdbId = episode.tmdbId {
                 Button {

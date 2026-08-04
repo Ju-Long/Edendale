@@ -53,6 +53,36 @@ struct PlayerHUDView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
         .glassBackground(in: Capsule())
+        // Caption, value, and the unlabeled level bar are one piece of
+        // feedback — and the bar's fill is the whole message for volume and
+        // brightness, so it has to be spelled out.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(description(for: hud))
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    /// The pill said in words, including the levels the bar only draws.
+    private func description(for hud: PlayerChromeModel.HUD) -> String {
+        switch hud {
+        case .volume(let level):
+            String(localized: "Volume \(percent(Double(level)))")
+        case .mute(let isMuted):
+            isMuted ? String(localized: "Muted") : String(localized: "Unmuted")
+        case .brightness(let level):
+            String(localized: "Brightness \(percent(level))")
+        case .speed(let rate):
+            String(localized: "Speed \(PlayerLogic.rateLabel(rate))")
+        case .seek(let seconds):
+            seconds < 0
+                ? String(localized: "Back \(abs(seconds)) seconds")
+                : String(localized: "Forward \(seconds) seconds")
+        case .scrub(let target, let offset):
+            "\(target), \(offset)"
+        }
+    }
+
+    private func percent(_ level: Double) -> String {
+        min(max(level, 0), 1).formatted(.percent.precision(.fractionLength(0)))
     }
 
     private func caption(_ text: String) -> some View {

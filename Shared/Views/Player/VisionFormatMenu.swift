@@ -57,6 +57,7 @@ struct VisionFormatMenu: View {
             HStack(spacing: 10) {
                 Image(.eye)
                     .font(.system(size: 15, weight: .bold))
+                    .accessibilityHidden(true)
                 if showsTitle {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Video Format")
@@ -80,6 +81,8 @@ struct VisionFormatMenu: View {
         }
         .playerChipStyle()
         .accessibilityLabel("Video Format")
+        // In the icon-only form the current preset is not shown at all.
+        .accessibilityValue(selection.preset.title)
     }
 
     private var selection: VisionFormatSelection {

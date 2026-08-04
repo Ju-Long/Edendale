@@ -149,6 +149,7 @@ struct PlayerControlsOverlay: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Top bar
@@ -195,6 +196,9 @@ struct PlayerControlsOverlay: View {
             }
         }
         .allowsHitTesting(false)
+        // Title and subtitle name one thing that is playing.
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     private var trailingTools: some View {
@@ -202,18 +206,19 @@ struct PlayerControlsOverlay: View {
             #if os(iOS) || os(macOS)
             PlayerIconChip(
                 icon: .pictureInPicture,
-               isActive: pipController?.isActive == true,
-               onFocus: chipDidFocus
+                label: String(localized: "Picture in Picture"),
+                isActive: pipController?.isActive == true,
+                onFocus: chipDidFocus
             ) {
                 pipController?.toggle()
             }
             .disabled(pipController?.isPossible != true)
-            .accessibilityLabel("Picture in Picture")
             #endif
 
             #if os(iOS)
             PlayerIconChip(
                 icon: chrome.isOrientationLocked ? .mobileRotateLock : .mobileRotateUnlock,
+                label: String(localized: "Rotation Lock"),
                 isActive: chrome.isOrientationLocked,
                 onFocus: chipDidFocus
             ) {
@@ -223,6 +228,7 @@ struct PlayerControlsOverlay: View {
 
             PlayerIconChip(
                 icon: .listTree,
+                label: String(localized: "Playlist"),
                 isActive: chrome.activePanel == .playlist,
                 onFocus: chipDidFocus
             ) {
@@ -234,6 +240,7 @@ struct PlayerControlsOverlay: View {
 
             PlayerIconChip(
                 icon: .sidebarRight,
+                label: String(localized: "Adjustments"),
                 isActive: chrome.activePanel == .settings,
                 onFocus: chipDidFocus
             ) {
@@ -253,6 +260,7 @@ struct PlayerControlsOverlay: View {
             ProgressView()
                 .controlSize(.large)
                 .tint(Theme.gold)
+                .accessibilityLabel("Buffering")
         } else {
             Button {
                 chrome.togglePlayPause()
@@ -264,6 +272,7 @@ struct PlayerControlsOverlay: View {
                     .contentShape(Circle())
             }
             .playerChipStyle(onFocus: chipDidFocus)
+            .accessibilityLabel(player.isPlaying ? Text("Pause") : Text("Play"))
             #if os(tvOS)
             .focused($focusedControl, equals: .center)
             #endif
@@ -274,10 +283,14 @@ struct PlayerControlsOverlay: View {
 
     private var bottomBar: some View {
         HStack(spacing: 16) {
+            // The two timestamps flanking the bar are already spoken as the
+            // timeline's value ("12:04 of 1:38:20"), so leaving them as
+            // separate elements would say the same numbers three times.
             Text(PlayerLogic.timestamp(displayedTime))
                 .font(Typography.bodySM)
                 .monospacedDigit()
                 .foregroundStyle(Theme.textPrimary)
+                .accessibilityHidden(true)
 
             PlayerTimeline(chrome: chrome, player: player)
 
@@ -285,6 +298,7 @@ struct PlayerControlsOverlay: View {
                 .font(Typography.bodySM)
                 .monospacedDigit()
                 .foregroundStyle(Theme.textSecondary)
+                .accessibilityHidden(true)
         }
     }
 
@@ -306,6 +320,9 @@ struct PlayerControlsOverlay: View {
                     Color.clear
                         .contentShape(Rectangle())
                         .onTapGesture { chrome.closePanel() }
+                        // Dismissal is reachable from the panel's own close
+                        // chip; this is a pointer convenience only.
+                        .accessibilityHidden(true)
                 }
 
                 #if os(tvOS)
@@ -325,6 +342,10 @@ struct PlayerControlsOverlay: View {
                         .frame(width: panelWidth + proxy.safeAreaInsets.trailing)
                         .frame(maxHeight: .infinity)
                         .glassBackground(in: Rectangle())
+                        // A panel is a modal-feeling layer: keep the chrome
+                        // beneath it out of the reading order while it is up.
+                        .accessibilityElement(children: .contain)
+                        .accessibilityAddTraits(.isModal)
                         #if os(tvOS)
                         // Group the panel so vertical moves keep stepping
                         // through its own rows. Without a section the top bar
@@ -406,6 +427,7 @@ struct PlayerControlsOverlay: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(RevealCatcherButtonStyle())
+        .accessibilityLabel("Show playback controls")
         .onMoveCommand { direction in
             switch direction {
             case .left:
@@ -439,6 +461,9 @@ private struct RevealCatcherButtonStyle: ButtonStyle {
 /// Circular icon button used in the player's top toolbar.
 struct PlayerIconChip: View {
     let icon: ImageResource
+    /// Spoken name for the control. Required, not optional: the chip's glyph
+    /// is its only visible label, so a chip without one is silent.
+    let label: String
     var isActive = false
     var onFocus: (() -> Void)? = nil
     let action: () -> Void
@@ -460,6 +485,9 @@ struct PlayerIconChip: View {
         // Color (gold when focused or active) is owned by the chip style, so
         // the focus highlight isn't overridden by a label-level foreground.
         .playerChipStyle(isActive: isActive, onFocus: onFocus)
+        .accessibilityLabel(label)
+        // The gold ring is the only sign a chip is latched on.
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -489,5 +517,6 @@ struct PlayerTextChip: View {
                 .contentShape(Capsule())
         }
         .playerChipStyle(isActive: isActive, onFocus: onFocus)
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }

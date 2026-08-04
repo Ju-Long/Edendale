@@ -112,6 +112,7 @@ struct DownloadedView: View {
         } label: {
             Image(.plus)
         }
+        .accessibilityLabel("Add Source")
     }
 
     // MARK: - Library content
@@ -143,6 +144,7 @@ struct DownloadedView: View {
                     .labelCaps()
             }
             .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .combine)
         }
 
         if let message = library.errorMessage {
@@ -209,6 +211,7 @@ struct DownloadedView: View {
                             #else
                             .buttonStyle(.plain)
                             #endif
+                            .accessibilityHint("Resumes playback.")
                         }
                     }
                     .padding(.horizontal, edgeMargin)
@@ -218,6 +221,8 @@ struct DownloadedView: View {
                 // instead of being clipped to a hard edge.
                 .scrollClipDisabled()
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Continue Watching")
         }
     }
 
@@ -243,7 +248,7 @@ struct DownloadedView: View {
         if !gridMovies.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: String(localized: "Movies"))
-                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: gridSpacing) {
+                LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
                     ForEach(gridMovies) { movie in
                         NavigationLink(value: movie) {
                             PosterCard(
@@ -256,6 +261,7 @@ struct DownloadedView: View {
                             )
                         }
                         .posterButtonStyle()
+                        .accessibilityHint("Opens the archive record.")
                         .contextMenu {
                             Button(role: .destructive) {
                                 library.removeMovie(movie)
@@ -267,6 +273,8 @@ struct DownloadedView: View {
                 }
             }
             .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Movies")
         }
     }
 
@@ -275,7 +283,7 @@ struct DownloadedView: View {
         if !shows.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: String(localized: "TV Shows"))
-                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: gridSpacing) {
+                LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
                     ForEach(shows) { show in
                         NavigationLink(value: show) {
                             PosterCard(
@@ -287,6 +295,7 @@ struct DownloadedView: View {
                             )
                         }
                         .posterButtonStyle()
+                        .accessibilityHint("Opens the archive record.")
                         .contextMenu {
                             Button(role: .destructive) {
                                 library.removeTVShow(show)
@@ -298,6 +307,8 @@ struct DownloadedView: View {
                 }
             }
             .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("TV Shows")
         }
     }
 
@@ -349,12 +360,17 @@ struct DownloadedView: View {
                                 }
                             }
                             .overlay(alignment: .bottom) {
-                                Rectangle().fill(Theme.hairline).frame(height: 1)
+                                Rectangle()
+                                    .fill(Theme.hairline)
+                                    .frame(height: 1)
+                                    .accessibilityHidden(true)
                             }
                     }
                 }
             }
             .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Sources")
         }
     }
 
@@ -480,9 +496,11 @@ private struct FolderRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
+            // The glyph only restates the kind already named in `subtitle`.
             Image(folder.isRemote ? .link : .folderOpen)
                 .font(.system(size: 18))
                 .foregroundStyle(Theme.textSecondary)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(folder.name)
                     .font(Typography.text(15, weight: .semibold))
@@ -494,6 +512,11 @@ private struct FolderRow: View {
             Spacer()
         }
         .padding(.vertical, 12)
+        // Icon, name, and counts are one source; Rescan and Remove arrive as
+        // custom actions from the context menu attached by the caller.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(folder.name)
+        .accessibilityValue(subtitle)
     }
 
     private var subtitle: String {
@@ -525,6 +548,8 @@ private struct EmptyLibraryState: View {
                     .foregroundStyle(Theme.surfaceHigh)
             }
             .frame(width: 240, height: 220)
+            // The archival illustration; the heading below carries the message.
+            .accessibilityHidden(true)
 
             VStack(spacing: 12) {
                 Text("The Library\nIs Silent")
@@ -538,6 +563,9 @@ private struct EmptyLibraryState: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 340)
             }
+            // Heading and supporting copy are one empty state; the actions
+            // below stay separate controls.
+            .accessibilityElement(children: .combine)
 
             actions
         }

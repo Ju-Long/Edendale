@@ -122,6 +122,7 @@ struct SearchView: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 60)
+                .accessibilityLabel("Loading trending titles")
         } else {
             initialState
         }
@@ -139,6 +140,7 @@ struct SearchView: View {
         } else if model.isSearching && model.results.isEmpty && model.people.isEmpty {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityLabel("Searching")
         } else if model.results.isEmpty && model.people.isEmpty {
             if localMatches.isEmpty { emptyState }
         } else if model.scope == .people {
@@ -161,6 +163,8 @@ struct SearchView: View {
                 }
                 resultsList
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(header ?? String(localized: "Results"))
         }
     }
 
@@ -182,11 +186,14 @@ struct SearchView: View {
                             )
                         }
                         .cardLinkStyle()
+                        .accessibilityHint("Opens this person's page.")
                     }
                 }
                 .padding(.horizontal, edgeMargin)
                 .padding(.vertical, 14)
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("People")
         }
     }
 
@@ -197,6 +204,7 @@ struct SearchView: View {
             Image(model.scope == .people ? .circleUserFill : .magnifyingGlassPlay)
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
             Text(scopePromptTitle)
                 .font(Typography.headlineMD)
                 .foregroundStyle(Theme.textPrimary)
@@ -207,6 +215,7 @@ struct SearchView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 60)
+        .accessibilityElement(children: .combine)
     }
 
     private var scopePromptTitle: String {
@@ -244,6 +253,7 @@ struct SearchView: View {
                     )
                 }
                 .cardLinkStyle()
+                .accessibilityHint("Opens the archive record.")
             }
         }
         .padding(.horizontal, edgeMargin)
@@ -376,6 +386,16 @@ struct SearchView: View {
         .onTapGesture {
             showingDateFilter = true
         }
+        // The chip's main action is a bare `onTapGesture`, which assistive
+        // technology cannot see at all. One element carries both the summary
+        // and the two things the chip can do.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Date filter")
+        .accessibilityValue(model.selectionSummary ?? "")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens the date filter.")
+        .accessibilityAction { showingDateFilter = true }
+        .accessibilityAction(named: Text("Clear")) { model.clearSelection() }
     }
 
     /// Chip shown while the results are a cast member's filmography — mirrors
@@ -402,6 +422,14 @@ struct SearchView: View {
         .clipShape(Capsule())
         .overlay(Capsule().stroke(Theme.gold.opacity(0.3), lineWidth: 1))
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Name link and ✕ button read as one filter, with the ✕ as a named
+        // action rather than an unlabeled glyph.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Starring \(person.name)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens this person's page.")
+        .accessibilityAction { path.append(person) }
+        .accessibilityAction(named: Text("Clear")) { model.clearPerson() }
     }
 
     /// Chip shown while a keyword prefix is scoping the query. The ✕ strips
@@ -424,8 +452,11 @@ struct SearchView: View {
         .clipShape(Capsule())
         .overlay(Capsule().stroke(Theme.gold.opacity(0.3), lineWidth: 1))
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(model.scope.label)
+        .accessibilityAction(named: Text("Clear")) { model.clearScope() }
     }
-    
+
     // MARK: - Local library
 
     /// A local hit: either an imported movie or an imported show. Only the
@@ -468,6 +499,8 @@ struct SearchView: View {
             .padding(.horizontal, edgeMargin)
             .padding(.vertical, 14)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("From Your Library")
     }
 
     private func localCard(_ movie: Movie) -> some View {
@@ -482,6 +515,7 @@ struct SearchView: View {
             )
         }
         .cardLinkStyle()
+        .accessibilityHint("Opens the archive record.")
     }
 
     private func localCard(_ show: TVShow) -> some View {
@@ -495,6 +529,7 @@ struct SearchView: View {
             )
         }
         .cardLinkStyle()
+        .accessibilityHint("Opens the archive record.")
     }
 
     private var resultsList: some View { mediaGrid(model.results) }
@@ -541,6 +576,7 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
             Text("No Results Found")
                 .font(Typography.headlineMD)
                 .foregroundStyle(Theme.textPrimary)
@@ -549,13 +585,15 @@ struct SearchView: View {
                 .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
     }
-    
+
     private var initialState: some View {
         VStack(spacing: 12) {
             Image(.magnifyingGlassPlay)
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
             Text("Search the Archive")
                 .font(Typography.headlineMD)
                 .foregroundStyle(Theme.textPrimary)
@@ -564,6 +602,7 @@ struct SearchView: View {
                 .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 

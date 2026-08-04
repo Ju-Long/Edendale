@@ -281,6 +281,7 @@ struct PlayerExitButton: View {
                 .glassBackground(in: Capsule())
         }
         .playerChipStyle(onFocus: onFocus)
+        .accessibilityLabel("Close Player")
     }
 }
 
@@ -295,6 +296,7 @@ struct PlaybackErrorView: View {
             Image(.filmCircleExclamation)
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
             Text("Unable to Play")
                 .font(Typography.headlineMD)
                 .textCase(.uppercase)
@@ -307,6 +309,8 @@ struct PlaybackErrorView: View {
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Heading and cause are one message.
+        .accessibilityElement(children: .combine)
     }
 }
 

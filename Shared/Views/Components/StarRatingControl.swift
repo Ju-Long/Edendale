@@ -46,6 +46,31 @@ struct StarRatingControl: View {
                 .fill(Theme.surfaceLow)
             #endif
         }
+        // Five identical glyph buttons whose only difference is fill state
+        // make a poor set of stops. The row is one adjustable control
+        // instead: swipe up/down moves the rating a half star at a time.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Your rating")
+        .accessibilityValue(valueText)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                setRating(min(current + 1, 10))
+            case .decrement:
+                let next = current - 1
+                setRating(next > 0 ? next : nil)
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    /// Spoken as stars rather than TMDB's 0–10 scale, matching what the row
+    /// draws.
+    private var valueText: String {
+        guard let rating, rating > 0 else { return String(localized: "Not rated") }
+        let stars = (rating / 2).formatted(.number.precision(.fractionLength(0...1)))
+        return String(localized: "\(stars) of 5 stars")
     }
 
     /// The cycle for one star: full → half → removed → full → …

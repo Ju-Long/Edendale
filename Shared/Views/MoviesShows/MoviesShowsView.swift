@@ -471,6 +471,11 @@ struct MoviesShowsView: View {
             heroLayers(hero)
         }
         .buttonStyle(HeroFocusButtonStyle())
+        // The whole hero is already one button here, so it gets the whole
+        // hero's reading rather than the concatenation of its fragments.
+        .accessibilityLabel(hero.detail.title)
+        .accessibilityValue(heroAccessibilityValue(hero))
+        .accessibilityHint("Opens the archive record.")
         .focusSection()
         .focused($heroFocused)
         .onChange(of: heroFocused) { _, focused in
@@ -528,6 +533,36 @@ struct MoviesShowsView: View {
                     heroMeta(hero.detail)
                 }
                 .opacity(showingTrailer && isCurrentScene(hero) ? 0 : 1)
+                // Badge, remaining time, title, year, studio, and genres are
+                // one caption for one title — six stops would read as noise
+                // before the actions below are ever reached.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(hero.detail.title)
+                .accessibilityValue(heroAccessibilityValue(hero))
+                .accessibilityHidden(showingTrailer && isCurrentScene(hero))
+                // The hero's actions are reachable from its caption too, so
+                // the whole scene can be acted on without walking down into
+                // the button row.
+                #if !os(tvOS)
+                .accessibilityActions {
+                    if heroInLibrary {
+                        Button(
+                            hero.isContinueWatching
+                                ? String(localized: "Resume Playback")
+                                : String(localized: "Play")
+                        ) {
+                            playOrOpen(hero)
+                        }
+                    }
+                    Button(String(localized: "Details")) {
+                        zoomSource = nil
+                        path.append(hero.detail.ref)
+                    }
+                    if !heroTrailerUnavailable {
+                        Button(trailerButtonTitle) { toggleTrailer(hero) }
+                    }
+                }
+                #endif
 
                 // On tvOS the whole hero is a single focusable button, so no
                 // inner controls: select opens the detail page, where Play
@@ -581,6 +616,10 @@ struct MoviesShowsView: View {
             TrailerPlayerView(youTubeKey: trailer.key) {
                 withAnimation { showingTrailer = false }
             }
+            // The hero's caption is hidden while this plays, so the embed is
+            // otherwise an unnamed region where the artwork used to be.
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Trailer")
         } else {
             BackdropImage(url: hero.detail.backdropURL)
         }
@@ -592,6 +631,24 @@ struct MoviesShowsView: View {
         return showingTrailer
             ? String(localized: "Hide Trailer")
             : String(localized: "Watch Trailer")
+    }
+
+    /// Everything the hero caption says besides the title: the Continue
+    /// Watching badge and its remaining time, then the metadata row whose
+    /// hairline dividers carry no meaning of their own.
+    private func heroAccessibilityValue(_ hero: MoviesShowsModel.Hero) -> String {
+        var parts: [String] = []
+        if hero.isContinueWatching {
+            parts.append(String(localized: "Continue watching"))
+            if let remaining = hero.remainingText { parts.append(remaining) }
+        }
+        let detail = hero.detail
+        if let year = detail.year { parts.append(String(year)) }
+        if let attribution = detail.attribution { parts.append(attribution) }
+        if !detail.genres.isEmpty {
+            parts.append(detail.genres.prefix(2).joined(separator: ", "))
+        }
+        return parts.joined(separator: ", ")
     }
 
     private func heroMeta(_ detail: MediaDetail) -> some View {
@@ -614,7 +671,10 @@ struct MoviesShowsView: View {
     }
 
     private var metaDivider: some View {
-        Rectangle().fill(Theme.outline).frame(width: 1, height: 14)
+        Rectangle()
+            .fill(Theme.outline)
+            .frame(width: 1, height: 14)
+            .accessibilityHidden(true)
     }
 
     // MARK: - Hero rotation
@@ -848,6 +908,8 @@ struct MoviesShowsView: View {
                 .padding(.vertical, 16)
                 #endif
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Collection filters")
 
             LazyVGrid(columns: collectionColumns, spacing: collectionSpacing) {
                 ForEach(Array(model.collectionItems.prefix(12))) { item in
@@ -863,12 +925,16 @@ struct MoviesShowsView: View {
                     #else
                     .buttonStyle(.plain)
                     #endif
+                    .accessibilityHint("Opens the archive record.")
                 }
             }
             .padding(.horizontal, edgeMargin)
             .opacity(model.isLoadingCollection ? 0.4 : 1)
             .animation(.easeOut(duration: 0.2), value: model.isLoadingCollection)
         }
+        // Heading, filter chips, and grid are one section.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Curated Collections")
     }
 
     // MARK: - Layout metrics
@@ -982,6 +1048,9 @@ private struct CollectionCard: View {
         #if !os(tvOS)
         .onHover { isHovering = $0 }
         #endif
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.title)
+        .accessibilityValue(item.year.map(String.init) ?? "")
     }
 }
 
@@ -995,15 +1064,18 @@ private struct ArchiveLoadingState: View {
             Text("Loading the archive").labelCaps()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 
 private struct MissingKeyState: View {
     var body: some View {
         VStack(spacing: 18) {
+            // Archival illustration; the heading beneath says the same thing.
             Image(.clapperboard)
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
             Text("The Projector Is Dark")
                 .font(Typography.headlineMD)
                 .textCase(.uppercase)
@@ -1016,6 +1088,8 @@ private struct MissingKeyState: View {
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Heading and its explanation are one empty state.
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1025,15 +1099,20 @@ private struct ArchiveErrorState: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            Text("The Reel Snapped")
-                .font(Typography.headlineMD)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.textPrimary)
-            Text(message)
-                .font(Typography.bodySM)
-                .foregroundStyle(Theme.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
+            Group {
+                Text("The Reel Snapped")
+                    .font(Typography.headlineMD)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.textPrimary)
+                Text(message)
+                    .font(Typography.bodySM)
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+            // Heading and cause read together; Try Again stays its own
+            // control.
+            .accessibilityElement(children: .combine)
             Button("Try Again", action: retry)
                 .archiveButtonStyle(.secondary)
         }

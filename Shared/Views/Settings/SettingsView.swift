@@ -28,7 +28,7 @@ struct SettingsView: View {
                 } header: {
                     Text("About").labelCaps()
                 }
-
+                
                 #if os(macOS)
                 Section {
                     Toggle("Launch at Login", isOn: launchAtLogin)
@@ -80,6 +80,8 @@ struct SettingsView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("", image: .xmark) { dismiss() }
                         .archiveButtonStyle(.ghost)
+                        // The title is empty so the glyph can stand alone.
+                        .accessibilityLabel("Close")
                 }
             }
             #endif
@@ -150,6 +152,7 @@ struct SettingsToolbarModifier: ViewModifier {
                         } label: {
                             Image(.gearComplex)
                         }
+                        .accessibilityLabel("Settings")
                     }
                 }
             }

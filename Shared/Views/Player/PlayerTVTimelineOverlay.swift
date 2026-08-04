@@ -64,6 +64,16 @@ struct PlayerTVTimelineOverlay: View {
             }
         }
         .allowsHitTesting(false)
+        // Elapsed, bar, and duration are one read-out that changes as the
+        // remote seeks.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Timeline")
+        .accessibilityValue(
+            String(
+                localized: "\(PlayerLogic.timestamp(displayedSeconds)) of \(PlayerLogic.timestamp(player.duration ?? .zero))"
+            )
+        )
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
 #endif

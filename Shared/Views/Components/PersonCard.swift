@@ -43,6 +43,10 @@ struct PersonCard: View {
         .animation(.easeOut(duration: 0.18), value: isHovering)
         .onHover { isHovering = $0 }
         #endif
+        // Portrait, name, and role are one person, not three stops.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(name)
+        .accessibilityValue(subtitle ?? "")
     }
 
     private var portrait: some View {

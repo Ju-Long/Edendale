@@ -24,7 +24,7 @@ struct HeroPageIndicator: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+            ForEach(Array(items.enumerated()), id: \.offset) { index, _ in
                 // tvOS shows plain dots: focusable buttons here would add
                 // focus stops between the hero button and the shelves.
                 #if os(tvOS)
@@ -36,10 +36,30 @@ struct HeroPageIndicator: View {
                         dot(isSelected: selection == index)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(item.title)
                 #endif
             }
         }
+        // A row of identical dots is the platform's page control, so it
+        // reads as one: swipe up/down steps between featured titles instead
+        // of stopping on every dot.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Featured titles")
+        .accessibilityValue(valueText)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                if selection + 1 < items.count { onSelect(selection + 1) }
+            case .decrement:
+                if selection > 0 { onSelect(selection - 1) }
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    private var valueText: String {
+        guard items.indices.contains(selection) else { return "" }
+        return String(localized: "\(items[selection].title), \(selection + 1) of \(items.count)")
     }
 
     private func dot(isSelected: Bool) -> some View {

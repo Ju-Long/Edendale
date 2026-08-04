@@ -136,6 +136,8 @@ struct ReleaseHeatmapView: View {
             Text(verbatim: String(year))
                 .font(Typography.headlineMD)
                 .foregroundStyle(Theme.textPrimary)
+                .accessibilityLabel("Year \(year)")
+                .accessibilityAddTraits(.isHeader)
 
             if canGoForward {
                 Button(action: onNextYear) {
@@ -150,6 +152,7 @@ struct ReleaseHeatmapView: View {
                     .controlSize(.small)
                     .tint(Theme.gold)
                     .padding(.leading, 4)
+                    .accessibilityLabel("Loading releases")
             }
 
             Spacer(minLength: 12)
@@ -199,6 +202,10 @@ struct ReleaseHeatmapView: View {
         .scrollIndicatorsFlash(onAppear: true)
         .opacity(isLoading ? 0.45 : 1)
         .animation(.easeOut(duration: 0.2), value: isLoading)
+        // One named container around 365 day squares, so the rotor can step
+        // past the whole grid in a single move.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Release calendar, \(year)")
         #if os(tvOS)
         // Pair to the header section so vertical moves cross cleanly between
         // the two instead of getting trapped in the horizontal scroll.
@@ -223,6 +230,9 @@ struct ReleaseHeatmapView: View {
             }
         }
         .frame(width: gridWidth, height: 12, alignment: .topLeading)
+        // Column guides for the eye; every square already announces its
+        // full date.
+        .accessibilityHidden(true)
     }
 
     private func dayCell(_ day: YearGrid.Day) -> some View {
@@ -261,6 +271,14 @@ struct ReleaseHeatmapView: View {
         }
         #endif
         .accessibilityLabel(accessibilityText(for: day, count: count))
+        // Membership in the range is drawn as a border, and the two-tap
+        // ritual is not discoverable from the square alone.
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityHint(
+            pendingAnchor == nil
+                ? Text("Starts a date range.")
+                : Text("Finishes the date range.")
+        )
     }
 
     // tvOS squares are larger and read from across the room, so the focus
@@ -307,6 +325,8 @@ struct ReleaseHeatmapView: View {
                 .font(Typography.bodySM)
                 .foregroundStyle(statusColor)
                 .lineLimit(2)
+                // Rewritten by hover, focus, and every selection step.
+                .accessibilityAddTraits(.updatesFrequently)
 
             Spacer(minLength: 12)
 

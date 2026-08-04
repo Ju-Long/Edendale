@@ -36,6 +36,7 @@ struct PersonDetailView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
+                        .accessibilityLabel("Loading filmography")
                 }
             }
             .padding(.vertical, 24)
@@ -92,24 +93,38 @@ struct PersonDetailView: View {
             RoundedRectangle(cornerRadius: Theme.Radius.glass)
                 .strokeBorder(Theme.hairline, lineWidth: 1)
         }
+        // The name beside it is the content; the portrait adds nothing to say.
+        .accessibilityHidden(true)
     }
 
     private var biography: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if let department = detail?.knownForDepartment {
-                Text(department).labelCaps(Theme.gold)
-            }
+            Group {
+                if let department = detail?.knownForDepartment {
+                    Text(department).labelCaps(Theme.gold)
+                }
 
-            Text(detail?.name ?? person.name)
-                .font(Typography.headlineMD)
-                .foregroundStyle(Theme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(detail?.name ?? person.name)
+                    .font(Typography.headlineMD)
+                    .foregroundStyle(Theme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if let vitals = detail?.vitals {
-                Text(vitals)
-                    .font(Typography.bodySM)
-                    .foregroundStyle(Theme.textSecondary)
+                if let vitals = detail?.vitals {
+                    Text(vitals)
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
+            // Department, name, and vitals are one identification line; the
+            // biography below stays separate so it can be skipped.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(detail?.name ?? person.name)
+            .accessibilityValue(
+                [detail?.knownForDepartment, detail?.vitals]
+                    .compactMap { $0 }
+                    .joined(separator: ", ")
+            )
+            .accessibilityAddTraits(.isHeader)
 
             if let biography = detail?.biography {
                 ExpandableText(text: biography, collapsedLineLimit: 8)
@@ -140,6 +155,7 @@ struct PersonDetailView: View {
         }
         .archiveButtonStyle(.ghost)
         .padding(.top, 4)
+        .accessibilityHint("Filters the Search tab to this person's titles.")
     }
 
     // MARK: - Filmography
@@ -165,11 +181,15 @@ struct PersonDetailView: View {
                     #else
                     .buttonStyle(.plain)
                     #endif
+                    .accessibilityHint("Opens the archive record.")
                 }
             }
             .padding(.horizontal, edgeMargin)
             .padding(.vertical, 14)
         }
+        // Heading and grid are one section.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Filmography")
     }
 
     private var failureState: some View {
@@ -177,6 +197,7 @@ struct PersonDetailView: View {
             Image(.filmCircleExclamation)
                 .font(.system(size: 40))
                 .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
             Text("Could Not Load This Person")
                 .font(Typography.titleLG)
                 .foregroundStyle(Theme.textPrimary)

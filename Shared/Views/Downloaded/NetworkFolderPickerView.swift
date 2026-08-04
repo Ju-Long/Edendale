@@ -100,6 +100,7 @@ struct NetworkFolderPickerView: View {
                             .font(Typography.bodySM)
                             .foregroundStyle(Theme.textSecondary)
                     }
+                    .accessibilityElement(children: .combine)
                 }
             }
         }

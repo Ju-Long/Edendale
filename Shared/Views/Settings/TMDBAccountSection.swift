@@ -48,6 +48,7 @@ struct TMDBAccountSection: View {
                         .font(Typography.bodySM)
                         .foregroundStyle(Theme.textSecondary)
                 }
+                .accessibilityElement(children: .combine)
 
             case .signedOut:
                 signedOutContent

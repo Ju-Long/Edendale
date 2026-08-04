@@ -95,6 +95,11 @@ struct MediaShelf: View {
                     metrics = new
                 }
             }
+            // The header and its cards are one shelf: VoiceOver announces
+            // the shelf name once on entry instead of repeating it, and
+            // rotor navigation can skip the whole shelf in one move.
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(title)
         }
     }
 
@@ -121,6 +126,7 @@ struct MediaShelf: View {
         #else
         .buttonStyle(.plain)
         #endif
+        .accessibilityHint("Opens the archive record.")
 
         // tvOS: `matchedTransitionSource` clips the card to its original
         // bounds, which cuts off the focus expansion — no zoom source there.

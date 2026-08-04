@@ -38,5 +38,8 @@ struct BackdropImage: View {
                 )
             }
             .clipped()
+            // Decoration behind the hero copy; the title beside it is the
+            // content.
+            .accessibilityHidden(true)
     }
 }

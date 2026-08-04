@@ -28,6 +28,9 @@ struct FilterChip: View {
         #else
         .buttonStyle(.plain)
         #endif
+        // Selection is carried by the gold fill alone, so it has to be said.
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

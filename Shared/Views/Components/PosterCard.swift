@@ -31,6 +31,18 @@ struct PosterCard: View {
     @State private var isHovering = false
 
     var body: some View {
+        // Artwork, caption, watch hairline, and the watched check are four
+        // fragments of one title, so they read as a single element instead
+        // of four stops — the artwork itself carries no information the
+        // caption doesn't already say.
+        card
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(title)
+            .accessibilityValue(accessibilityValue)
+    }
+
+    @ViewBuilder
+    private var card: some View {
         #if os(tvOS)
         poster
             .frame(width: width)
@@ -60,6 +72,21 @@ struct PosterCard: View {
     private var glowColor: Color {
         if isSpotlit { return Theme.accent }
         return isHovering ? Theme.goldGlow : .clear
+    }
+
+    /// Everything the card shows besides the title: the caption line, plus
+    /// the watch state the progress hairline and corner check convey purely
+    /// visually.
+    private var accessibilityValue: String {
+        var parts: [String] = []
+        if let subtitle { parts.append(subtitle) }
+        if isWatched {
+            parts.append(String(localized: "Watched"))
+        } else if let progress, progress > 0 {
+            parts.append(String(localized: "\(Int(progress * 100))% watched"))
+        }
+        if isSpotlit { parts.append(String(localized: "Now featured")) }
+        return parts.joined(separator: ", ")
     }
 
     private var poster: some View {

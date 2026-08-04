@@ -36,15 +36,19 @@ struct SectionHeader: View {
                 .foregroundStyle(Theme.textPrimary)
                 .lineLimit(1)
                 .fixedSize()
+                // The trait rides on the title alone; on the HStack it would
+                // also land on the scrubber, which is a control, not a heading.
+                .accessibilityAddTraits(.isHeader)
             if let scrubber, scrubber.isScrollable {
-                ScrubberRule(scrubber: scrubber)
+                ScrubberRule(scrubber: scrubber, label: title)
             } else {
+                // A decorative rule with nothing to announce.
                 Rectangle()
                     .fill(Theme.outline)
                     .frame(height: 1)
+                    .accessibilityHidden(true)
             }
         }
-        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -52,6 +56,8 @@ struct SectionHeader: View {
 /// width mirrors how much of the shelf is visible.
 private struct ScrubberRule: View {
     let scrubber: SectionScrubber
+    /// Section name, so the control announces which shelf it scrolls.
+    let label: String
 
     private let thumbHeight: CGFloat = 5
     private let minThumbWidth: CGFloat = 28
@@ -85,7 +91,26 @@ private struct ScrubberRule: View {
                     }
             )
             #endif
+            // A drag target has nothing to grab onto with an assistive
+            // pointer, so the rule doubles as an adjustable control: swipe
+            // up/down (or a remote's clock face) steps the shelf along.
+            .accessibilityElement()
+            .accessibilityLabel("\(label) scroll position")
+            .accessibilityValue(Text(percentText))
+            .accessibilityAdjustableAction { direction in
+                let step = max(scrubber.visibleFraction, 0.1)
+                let current = min(max(scrubber.progress, 0), 1)
+                switch direction {
+                case .increment: scrubber.onScrub(min(current + step, 1))
+                case .decrement: scrubber.onScrub(max(current - step, 0))
+                @unknown default: break
+                }
+            }
         }
         .frame(height: 16) // generous hit area around the 5pt thumb
+    }
+
+    private var percentText: String {
+        (min(max(scrubber.progress, 0), 1)).formatted(.percent.precision(.fractionLength(0)))
     }
 }

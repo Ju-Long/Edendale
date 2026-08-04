@@ -34,6 +34,18 @@ struct ExpandableText: View {
                 toggle
             }
         }
+        // The copy and its reveal toggle are one passage: the full text is
+        // always read (clipping is a visual limit, not an editorial one) and
+        // expanding is offered as an action rather than a separate stop.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+        .accessibilityActions {
+            if isTruncated {
+                Button(expanded ? "Show Less" : "Read More") {
+                    withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() }
+                }
+            }
+        }
     }
 
     // MARK: - Toggle

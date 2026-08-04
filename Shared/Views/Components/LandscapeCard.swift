@@ -31,6 +31,16 @@ struct LandscapeCard: View {
     private var height: CGFloat { width * 9 / 16 }
 
     var body: some View {
+        // One element, same reasoning as PosterCard: the still, caption,
+        // progress hairline, and watched check all describe one item.
+        card
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(title)
+            .accessibilityValue(accessibilityValue)
+    }
+
+    @ViewBuilder
+    private var card: some View {
         #if os(tvOS)
         artwork
             .frame(width: width)
@@ -54,6 +64,19 @@ struct LandscapeCard: View {
         .animation(.easeOut(duration: 0.18), value: isHovering)
         .onHover { isHovering = $0 }
         #endif
+    }
+
+    /// The caption line plus the watch state carried only by the progress
+    /// hairline and the corner check.
+    private var accessibilityValue: String {
+        var parts: [String] = []
+        if let subtitle { parts.append(subtitle) }
+        if isWatched {
+            parts.append(String(localized: "Watched"))
+        } else if let progress, progress > 0 {
+            parts.append(String(localized: "\(Int(progress * 100))% watched"))
+        }
+        return parts.joined(separator: ", ")
     }
 
     private var artwork: some View {

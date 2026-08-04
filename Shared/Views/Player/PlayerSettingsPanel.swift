@@ -44,7 +44,7 @@ struct PlayerSettingsPanel: View {
     #if os(visionOS)
     private var visionFormatSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Spatial Video").labelCaps()
+            Text("Spatial Video").labelCaps().accessibilityAddTraits(.isHeader)
             VisionFormatMenu(showsTitle: true)
         }
     }
@@ -58,8 +58,13 @@ struct PlayerSettingsPanel: View {
                 .font(Typography.headlineMD)
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.textPrimary)
+                .accessibilityAddTraits(.isHeader)
             Spacer()
-            PlayerIconChip(icon: .sidebarRight, isActive: true) {
+            PlayerIconChip(
+                icon: .sidebarRight,
+                label: String(localized: "Close Adjustments"),
+                isActive: true
+            ) {
                 chrome.closePanel()
             }
         }
@@ -91,13 +96,31 @@ struct PlayerSettingsPanel: View {
                 }
             }
         }
+        // "−", the rate, and "+" are one stepper — spoken separately, the
+        // glyph chips say nothing about what they change. Reset rides along
+        // as a named action so it stays reachable.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Speed")
+        .accessibilityValue(PlayerLogic.rateLabel(chrome.baseRate))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: chrome.increaseRate()
+            case .decrement: chrome.decreaseRate()
+            @unknown default: break
+            }
+        }
+        .accessibilityActions {
+            if chrome.baseRate != 1.0 {
+                Button(String(localized: "Reset")) { chrome.resetRate() }
+            }
+        }
     }
 
     // MARK: - Subtitles
 
     private var subtitleSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Subtitles").labelCaps()
+            Text("Subtitles").labelCaps().accessibilityAddTraits(.isHeader)
 
             if player.subtitleTracks.isEmpty {
                 Text("No subtitle tracks in this file.")
@@ -119,6 +142,8 @@ struct PlayerSettingsPanel: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Subtitles")
     }
 
     private func subtitleRow(name: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
@@ -133,9 +158,12 @@ struct PlayerSettingsPanel: View {
                     .lineLimit(1)
                 Spacer()
                 if isSelected {
+                    // Selection is announced as a trait below, not as a
+                    // trailing glyph with no name.
                     Image(.check)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(Theme.gold)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, 12)
@@ -144,6 +172,8 @@ struct PlayerSettingsPanel: View {
             .contentShape(Rectangle())
         }
         .playerChipStyle()
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     private func trackLabel(_ track: Track) -> String {
@@ -157,7 +187,7 @@ struct PlayerSettingsPanel: View {
 
     private var playbackSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Playback").labelCaps()
+            Text("Playback").labelCaps().accessibilityAddTraits(.isHeader)
 
             ArchiveToggle(isOn: $chrome.skipRecap) {
                 optionLabel(
@@ -186,6 +216,8 @@ struct PlayerSettingsPanel: View {
             }
             #endif
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Playback")
     }
 
     private func optionLabel(_ title: String, detail: String) -> some View {
@@ -197,20 +229,25 @@ struct PlayerSettingsPanel: View {
                 .font(Typography.bodySM)
                 .foregroundStyle(Theme.textSecondary)
         }
+        // Name and explanation are one option label.
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Aspect ratio
 
     private var aspectSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Aspect Ratio").labelCaps()
+            Text("Aspect Ratio").labelCaps().accessibilityAddTraits(.isHeader)
 
             Picker("Aspect Ratio", selection: $chrome.aspectFill) {
                 Text("Fit").tag(false)
                 Text("Fill").tag(true)
             }
             .pickerStyle(.segmented)
+            // The caps heading above stands in for the picker's own label,
+            // which `labelsHidden` takes away.
             .labelsHidden()
+            .accessibilityLabel("Aspect Ratio")
         }
     }
 }

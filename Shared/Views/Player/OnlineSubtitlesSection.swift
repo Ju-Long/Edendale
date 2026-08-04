@@ -20,7 +20,7 @@ struct OnlineSubtitlesSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Online Subtitles").labelCaps()
+            Text("Online Subtitles").labelCaps().accessibilityAddTraits(.isHeader)
 
             if !keys.isConfigured {
                 Text("A Wyzie API key is needed for online subtitle search. Add one in Settings.")
@@ -59,6 +59,10 @@ struct OnlineSubtitlesSection: View {
             }
         }
         .archiveButtonStyle(.secondary)
+        // The visible title folds the current language into the control name;
+        // split so the choice is announced as a value that changes.
+        .accessibilityLabel("Language")
+        .accessibilityValue(selectedLanguageLabel)
 
         // Font and color ride on the label, not the control: on tvOS the
         // control also draws the On/Off state, which owns its own color.
@@ -95,6 +99,7 @@ struct OnlineSubtitlesSection: View {
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
             }
+            .accessibilityElement(children: .combine)
         case .failed(let message):
             Text(message)
                 .font(Typography.bodySM)
@@ -158,6 +163,24 @@ struct OnlineSubtitlesSection: View {
             model.downloadedIDs.contains(subtitle.id)
                 || model.downloadingID != nil
         )
+        // Release, format, and the trailing state glyph are one result.
+        .accessibilityLabel(subtitle.display)
+        .accessibilityValue(resultAccessibilityValue(for: subtitle))
+        .accessibilityHint("Downloads this subtitle and applies it.")
+    }
+
+    /// The detail line, plus the download state the trailing spinner or check
+    /// conveys only by shape.
+    private func resultAccessibilityValue(for subtitle: WyzieSubtitle) -> String {
+        var parts: [String] = []
+        let detail = resultDetail(for: subtitle)
+        if !detail.isEmpty { parts.append(detail) }
+        if model.downloadingID == subtitle.id {
+            parts.append(String(localized: "Downloading"))
+        } else if model.downloadedIDs.contains(subtitle.id) {
+            parts.append(String(localized: "Downloaded"))
+        }
+        return parts.joined(separator: ", ")
     }
 
     @ViewBuilder

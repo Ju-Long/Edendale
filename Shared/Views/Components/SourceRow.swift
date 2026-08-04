@@ -53,9 +53,11 @@ struct SourceRow: View {
     @ViewBuilder
     private var content: some View {
         HStack(spacing: 14) {
+            // The glyph only restates the kind badge in `subtitle`.
             Image(folder.isRemote ? .link : .folderClosed)
                 .font(.system(size: 18))
                 .foregroundStyle(Theme.textSecondary)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(folder.name)
                     .font(Typography.text(15, weight: .semibold))
@@ -73,6 +75,12 @@ struct SourceRow: View {
             }
         }
         .padding(.vertical, 12)
+        // Icon, name, kind, count, and path are one source. Rescan and
+        // Remove reach VoiceOver as custom actions through the swipe
+        // actions and context menu already attached to this element.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(folder.name)
+        .accessibilityValue("\(subtitle), \(folder.folderPath)")
     }
 
     #if os(tvOS)

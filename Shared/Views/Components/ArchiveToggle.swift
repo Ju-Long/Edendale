@@ -38,12 +38,19 @@ struct ArchiveToggle<Label: View>: View {
                     .font(Typography.bodyLG)
                     .textCase(.uppercase)
                     .foregroundStyle(isOn ? Theme.gold : Theme.textSecondary)
+                    // Spoken as the element's value below, not as a second
+                    // word tacked onto its label.
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .contentShape(Rectangle())
         }
         .archiveRowStyle()
+        // A row button standing in for a switch still has to sound like one.
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(isOn ? Text("On") : Text("Off"))
         #else
         Toggle(isOn: $isOn) { label }
             .tint(Theme.gold)

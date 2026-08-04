@@ -170,6 +170,7 @@ struct EdendaleWidgetContentView: View {
                     Rectangle()
                         .fill(Color("Outline"))
                         .frame(height: 1)
+                        .accessibilityHidden(true)
                 }
             }
 
@@ -194,19 +195,25 @@ struct EdendaleWidgetContentView: View {
                 .foregroundStyle(Color("TextSecondary"))
                 .lineLimit(1)
         }
+        // Shelf name and the app's wordmark are one banner line.
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     private var unavailableState: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
             Spacer()
-            Text("Open Edendale")
-                .font(.headline)
-                .foregroundStyle(Color("TextPrimary"))
-            Text("Launch the app once to prepare this widget.")
-                .font(.caption)
-                .foregroundStyle(Color("TextSecondary"))
-                .lineLimit(3)
+            Group {
+                Text("Open Edendale")
+                    .font(.headline)
+                    .foregroundStyle(Color("TextPrimary"))
+                Text("Launch the app once to prepare this widget.")
+                    .font(.caption)
+                    .foregroundStyle(Color("TextSecondary"))
+                    .lineLimit(3)
+            }
+            .accessibilityElement(children: .combine)
             Spacer()
         }
         .padding(14)
@@ -216,13 +223,16 @@ struct EdendaleWidgetContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             header
             Spacer()
-            Text(content.emptyTitle)
-                .font(.headline)
-                .foregroundStyle(Color("TextPrimary"))
-            Text(content.emptyMessage)
-                .font(.caption)
-                .foregroundStyle(Color("TextSecondary"))
-                .lineLimit(3)
+            Group {
+                Text(content.emptyTitle)
+                    .font(.headline)
+                    .foregroundStyle(Color("TextPrimary"))
+                Text(content.emptyMessage)
+                    .font(.caption)
+                    .foregroundStyle(Color("TextSecondary"))
+                    .lineLimit(3)
+            }
+            .accessibilityElement(children: .combine)
             Spacer()
         }
         .padding(14)
@@ -248,6 +258,9 @@ private struct EdendaleWidgetPoster: View {
             posterImage
         }
         .clipShape(RoundedRectangle(cornerRadius: 7))
+        // Artwork, or an "E" monogram standing in for it — the row's title
+        // is what identifies the item.
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

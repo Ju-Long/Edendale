@@ -39,6 +39,10 @@ struct TMDBSeasonBrowser: View {
                     seasonBody(season)
                 }
             }
+            // Heading, season picker, and the selected season's shelf are one
+            // browser.
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Episodes")
             .task(id: selectedSeason) { await loadSelectedSeason() }
             .onAppear {
                 if selectedSeason == nil { selectedSeason = seasons.first?.seasonNumber }
@@ -63,6 +67,8 @@ struct TMDBSeasonBrowser: View {
             .padding(.vertical, chipRowPadding)
         }
         .scrollClipDisabled()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Seasons")
     }
 
     /// "Season 2" for numbered seasons, TMDB's own name for Specials.
@@ -92,6 +98,7 @@ struct TMDBSeasonBrowser: View {
             ProgressView()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 24)
+                .accessibilityLabel("Loading episodes")
         } else if let errorMessage {
             message(errorMessage)
         }
@@ -117,6 +124,13 @@ struct TMDBSeasonBrowser: View {
         #else
         .buttonStyle(.plain)
         #endif
+        // These episodes have no local file, so the card toggles watch state
+        // instead of playing — nothing on the card says so.
+        .accessibilityHint(
+            watchStore.isWatched(episode.id, mediaType: .episode)
+                ? Text("Marks this episode unwatched.")
+                : Text("Marks this episode watched.")
+        )
         .contextMenu {
             Button {
                 toggleWatched(episode)

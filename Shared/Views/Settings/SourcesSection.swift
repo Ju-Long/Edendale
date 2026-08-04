@@ -48,7 +48,8 @@ struct SourcesSection: View {
                     Image(.folderCirclePlus)
                         .font(.system(size: 18))
                         .foregroundStyle(Theme.accent)
-                    
+                        .accessibilityHidden(true)
+
                     Text("Add Local Folder…")
                         .font(Typography.text(15, weight: .semibold))
                         .foregroundStyle(Theme.accent)
@@ -64,7 +65,8 @@ struct SourcesSection: View {
                     Image(.link)
                         .font(.system(size: 18))
                         .foregroundStyle(Theme.accent)
-                    
+                        .accessibilityHidden(true)
+
                     Text("Link Network Source…")
                         .font(Typography.text(15, weight: .semibold))
                         .foregroundStyle(Theme.accent)

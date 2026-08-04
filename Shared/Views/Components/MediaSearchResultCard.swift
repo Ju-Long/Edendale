@@ -61,6 +61,24 @@ struct MediaSearchResultCard: View {
         #if !os(tvOS)
         .onHover { isHovering = $0 }
         #endif
+        // Poster, badge, title, date, and overview are one result.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(accessibilityValue)
+    }
+
+    /// Everything under the title, in the order it is drawn, with the media
+    /// type spelled out — the poster placeholder is the only other thing
+    /// that distinguishes a show from a film.
+    private var accessibilityValue: String {
+        var parts: [String] = []
+        parts.append(
+            mediaType == .tv ? String(localized: "TV show") : String(localized: "Movie")
+        )
+        if isDownloaded { parts.append(String(localized: "Downloaded")) }
+        if let dateText { parts.append(dateText) }
+        if let overview, !overview.isEmpty { parts.append(overview) }
+        return parts.joined(separator: ", ")
     }
 
     private var poster: some View {

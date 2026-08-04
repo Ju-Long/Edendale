@@ -84,7 +84,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Example.xcconfig,
-				Secrets.xcconfig,
 			);
 			target = 27BC63B52FBDBE64005EAD5C /* Edendale */;
 		};

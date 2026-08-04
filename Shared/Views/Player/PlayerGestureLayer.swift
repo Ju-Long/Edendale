@@ -56,6 +56,21 @@ struct PlayerGestureLayer: View {
             }
             .contentShape(Rectangle())
             .simultaneousGesture(trackGesture(size: geo.size))
+            // Every control on this layer is an invisible gesture zone, and
+            // VoiceOver claims the taps and swipes that drive them. One
+            // element for the whole surface, with the gestures restated as
+            // actions, is the only way these stay reachable.
+            .accessibilityElement()
+            .accessibilityLabel("Video")
+            .accessibilityHint("Shows or hides the playback controls.")
+            .accessibilityAction { chrome.toggleControls() }
+            .accessibilityActions {
+                Button(player.isPlaying ? String(localized: "Pause") : String(localized: "Play")) {
+                    chrome.togglePlayPause()
+                }
+                Button(String(localized: "Back 10 seconds")) { chrome.seek(bySeconds: -10) }
+                Button(String(localized: "Forward 10 seconds")) { chrome.seek(bySeconds: 10) }
+            }
         }
     }
 

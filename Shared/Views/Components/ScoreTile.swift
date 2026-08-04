@@ -28,5 +28,9 @@ struct ScoreTile: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Source, score, and suffix are one reading: "TMDB, 8.4 / 10".
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(source)
+        .accessibilityValue([value, suffix].compactMap { $0 }.joined(separator: " "))
     }
 }

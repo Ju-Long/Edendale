@@ -40,8 +40,12 @@ struct PlayerPlaylistPanel: View {
                 .font(Typography.headlineMD)
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.textPrimary)
+                .accessibilityAddTraits(.isHeader)
             Spacer()
-            PlayerIconChip(icon: .sidebarRight) {
+            PlayerIconChip(
+                icon: .sidebarRight,
+                label: String(localized: "Close Playlist")
+            ) {
                 chrome.closePanel()
             }
         }
@@ -53,7 +57,9 @@ struct PlayerPlaylistPanel: View {
         VStack(alignment: .leading, spacing: 20) {
             ForEach(show.availableSeasons, id: \.self) { season in
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Season \(season)").labelCaps()
+                    Text("Season \(season)")
+                        .labelCaps()
+                        .accessibilityAddTraits(.isHeader)
 
                     ForEach(show.episodes(for: season)) { episode in
                         row(
@@ -65,6 +71,8 @@ struct PlayerPlaylistPanel: View {
                         }
                     }
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Season \(season)")
             }
         }
     }
@@ -114,9 +122,11 @@ struct PlayerPlaylistPanel: View {
                 }
                 Spacer()
                 if isCurrent {
+                    // "Now playing" is announced as a selected trait below.
                     Image(.play)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.gold)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, 12)
@@ -125,5 +135,9 @@ struct PlayerPlaylistPanel: View {
             .contentShape(Rectangle())
         }
         .playerChipStyle()
+        // Title, episode code, and the playing marker are one row.
+        .accessibilityLabel(title)
+        .accessibilityValue(detail ?? "")
+        .accessibilityAddTraits(isCurrent ? [.isButton, .isSelected] : .isButton)
     }
 }
