@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Edendale (Unpackaged)": {
+      "commandName": "Project"
+    },
+    "Edendale (Packaged)": {
+      "commandName": "MsixPackage"
+    }
+  }
+}

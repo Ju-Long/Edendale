@@ -1,0 +1,46 @@
+<Project>
+
+  <!--
+    Shared identity and version metadata for every project in the branch.
+    Imported automatically by MSBuild, so the app, the tests, and the secrets
+    tool all carry the same product and copyright fields.
+
+    VersionPrefix is the version under development. Assemblies and MSIX both
+    require numeric parts, so the product's "0.26" is carried as 0.26.0 here
+    and widened to 0.26.0.0 where a four-part number is demanded.
+
+    The release workflow passes -p:VersionPrefix=<tag>, not -p:Version. The
+    derived versions below are computed from VersionPrefix, and setting Version
+    directly would leave them stranded at the value below. A local build
+    therefore reports a bare 0.26.0 while a release reports 0.26.0+<commit>,
+    which is what distinguishes the two in a bug report.
+  -->
+
+  <PropertyGroup>
+    <Product>Edendale</Product>
+    <Company>Edendale contributors</Company>
+    <Authors>Edendale contributors</Authors>
+    <Copyright>Copyright (c) 2026 Edendale contributors</Copyright>
+    <VersionPrefix>0.26.0</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      AssemblyVersion stays on the major version alone so that a patch release
+      never breaks an already-loaded assembly reference. FileVersion carries
+      the precise number that Explorer's Details tab shows, which is what a bug
+      reporter can actually read off their machine.
+    -->
+    <AssemblyVersion>$(VersionPrefix.Split('.')[0]).0.0.0</AssemblyVersion>
+    <FileVersion>$(VersionPrefix).0</FileVersion>
+    <!--
+      The commit is appended by the release workflow via SourceRevisionId. Left
+      empty locally, .NET would still append a "+<hash>" suffix from the repo,
+      so it is disabled and set explicitly instead.
+    -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <InformationalVersion Condition="'$(SourceRevisionId)' == ''">$(VersionPrefix)</InformationalVersion>
+    <InformationalVersion Condition="'$(SourceRevisionId)' != ''">$(VersionPrefix)+$(SourceRevisionId)</InformationalVersion>
+  </PropertyGroup>
+
+</Project>

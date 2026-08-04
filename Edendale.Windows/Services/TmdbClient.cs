@@ -113,7 +113,7 @@ internal sealed class TmdbClient
 
 internal static class TmdbCredentials
 {
-    private const string ResourceName = "Edendale.TmdbSecrets";
+    private const string ResourceName = "Edendale.LocalSecrets";
 
     public static (string BearerToken, string ApiKey) Load()
     {

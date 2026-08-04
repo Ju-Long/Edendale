@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  MSIX identity for the packaged release build. Local development still runs
+  unpackaged (see WindowsPackageType in Edendale.Windows.csproj), so this
+  manifest only takes effect when the build sets EdendalePackaged=true.
+
+  Publisher must match the signing certificate's subject exactly, byte for
+  byte, or installation fails with a certificate mismatch. Version is stamped
+  by the release workflow from the git tag; 0.0.0.0 marks a local build.
+-->
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="Edendale.Edendale"
+    Publisher="CN=Edendale"
+    Version="0.0.0.0" />
+
+  <Properties>
+    <DisplayName>Edendale</DisplayName>
+    <PublisherDisplayName>Edendale contributors</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily
+      Name="Windows.Desktop"
+      MinVersion="10.0.17763.0"
+      MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+
+  <!-- Declared so the package advertises the locales the app actually ships;
+       these mirror the Strings/<lang>/Resources.resw folders. -->
+  <Resources>
+    <Resource Language="en-US" />
+    <Resource Language="en-AU" />
+    <Resource Language="en-CA" />
+    <Resource Language="en-GB" />
+    <Resource Language="de" />
+    <Resource Language="es-ES" />
+    <Resource Language="es-MX" />
+    <Resource Language="fr" />
+    <Resource Language="it" />
+    <Resource Language="ja" />
+    <Resource Language="ko" />
+    <Resource Language="nl" />
+    <Resource Language="pt-BR" />
+    <Resource Language="pt-PT" />
+    <Resource Language="ru" />
+    <Resource Language="sv" />
+    <Resource Language="zh-Hans" />
+    <Resource Language="zh-Hant" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="Edendale.exe" EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="Edendale"
+        Description="Free, open-source video player and personal watch tracker."
+        BackgroundColor="#0A0A0F"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\SmallTile.png"
+          Square310x310Logo="Assets\LargeTile.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0A0A0F" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Packaged Win32 desktop apps require full trust to run at all. -->
+    <rescap:Capability Name="runFullTrust" />
+    <!--
+      The library stores plain filesystem paths and re-reads them on later
+      launches through Win32 APIs (LibraryService, MediaSource.CreateFromUri).
+      Without this the picker grant lasts one session and the library breaks on
+      second launch. This is a restricted capability: Microsoft Store
+      submission requires written justification and often refuses it, which is
+      why Edendale ships as a sideloaded MSIX.
+    -->
+    <rescap:Capability Name="broadFileSystemAccess" />
+    <!-- TMDB metadata, Wyzie subtitles, and trailer playback. -->
+    <Capability Name="internetClient" />
+    <!-- SMB shares on the user's own network. -->
+    <Capability Name="privateNetworkClientServer" />
+  </Capabilities>
+
+</Package>

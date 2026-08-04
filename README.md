@@ -222,9 +222,14 @@ local filenames before optional TMDB enrichment begins.
 
 ### CI and release
 
-`.github/workflows/ci.yml` builds the x64 Release configuration and runs the
-domain tests only for pushes and pull requests targeting `windows`. It
-uses no credentials and publishes no artifacts.
+`.github/workflows/ci.yml` runs the domain tests once and builds the x86, x64,
+and ARM64 Release configurations only for pushes and pull requests targeting
+`windows`. It uses no credentials. Each architecture uploads its unpackaged
+build as the workflow artifact `edendale-windows-<arch>`, kept for 30 days.
+
+ARM32 and architecture-neutral builds are not produced. The Windows App SDK
+ships no `win-arm` runtime, and the self-contained WinUI runtime requires a
+concrete architecture.
 
 To create the current unpackaged Release build on Windows:
 
@@ -232,10 +237,69 @@ To create the current unpackaged Release build on Windows:
 msbuild Edendale.Windows.sln -restore -p:Platform=x64 -p:Configuration=Release
 ```
 
-No signed installer or deployment workflow is configured yet. Any future
-packaging must remain Windows-only, keep signing material out of the
-repository, and gate credential-bearing release steps behind a protected
-environment.
+Substitute `x86` or `ARM64` for another architecture.
+
+CI artifacts are unsigned, carry no API credentials, and still require the
+.NET 8 Desktop Runtime. They are for verifying a change, not for distribution.
+
+### Releases
+
+`.github/workflows/release.yml` produces the shipping build. Pushing a `v*`
+tag, or running the workflow manually with a version, builds a packaged MSIX
+for each architecture, combines them into one signed `.msixbundle`, and opens a
+draft GitHub Release. Unlike a CI build, a release package is self-contained:
+it carries both the Windows App SDK and .NET, so a user installs nothing first.
+
+```powershell
+git tag v0.26
+git push origin v0.26
+```
+
+The current version lives in `Directory.Build.props` as `VersionPrefix`. Tags
+may be two-part or three-part — `v0.26` and `v0.26.0` both build 0.26.0 — and
+the release attaches to whichever tag was actually pushed. Assemblies carry
+three parts and the MSIX identity four, so 0.26 widens to 0.26.0 and 0.26.0.0.
+
+Both release jobs run in the protected `release` environment, so no secret is
+readable until the environment's reviewers approve the run. It requires:
+
+| Secret | Purpose |
+|---|---|
+| `TMDB_READ_ACCESS_TOKEN` | Embedded so releases enrich metadata out of the box |
+| `TMDB_API_KEY` | Fallback for the token above |
+| `WYZIE_API_KEY` | Online subtitle lookup |
+| `SIGNING_CERTIFICATE_BASE64` | Base64 of the code-signing `.pfx` |
+| `SIGNING_CERTIFICATE_PASSWORD` | Password for that `.pfx` |
+
+The workflow reads the certificate's subject and stamps it into
+`Package.appxmanifest` as the package `Publisher`, because MSIX refuses to
+install when the two differ by even a space. Signing material never enters the
+repository, and `secrets.json` is written at build time and deleted before any
+artifact is uploaded.
+
+A release build embeds the TMDB credential in the shipped binary. That
+credential is extractable from a public package and all traffic bills to the
+account that owns it, which is an accepted trade for working enrichment on
+first launch.
+
+To build a packaged MSIX locally, opt in explicitly — everyday builds stay
+unpackaged so `F5` needs no certificate:
+
+```powershell
+msbuild Edendale.Windows\Edendale.Windows.csproj -restore -p:Platform=x64 -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:EdendalePackaged=true -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
+```
+
+### Installing a sideloaded release
+
+Edendale ships outside the Microsoft Store, so Windows will not install the
+package until its signing certificate is trusted. Install the public
+certificate into `Local Machine\Trusted People`, then open the `.msixbundle`.
+
+The package declares the `broadFileSystemAccess` restricted capability. The
+library stores plain filesystem paths and re-reads them on later launches, so
+without it a folder added today would be unreadable tomorrow. That capability
+requires written justification for Store submission and is frequently refused,
+which is why distribution is sideloaded rather than through the Store.
 
 ## CI/CD isolation
 

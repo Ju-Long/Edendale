@@ -8,13 +8,26 @@
     <AssemblyName>Edendale</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-    <Platforms>x64;ARM64</Platforms>
-    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
-    <!-- Unpackaged during development: run/debug without MSIX packaging or a certificate. -->
-    <WindowsPackageType>None</WindowsPackageType>
+    <!--
+      Unpackaged during development: run/debug without MSIX packaging or a
+      certificate. The release workflow passes -p:EdendalePackaged=true to
+      build the signed MSIX instead, so the everyday F5 path is unchanged.
+    -->
+    <EdendalePackaged Condition="'$(EdendalePackaged)' == ''">false</EdendalePackaged>
+    <WindowsPackageType Condition="'$(EdendalePackaged)' != 'true'">None</WindowsPackageType>
+    <WindowsPackageType Condition="'$(EdendalePackaged)' == 'true'">MSIX</WindowsPackageType>
+    <EnableMsixTooling Condition="'$(EdendalePackaged)' == 'true'">true</EnableMsixTooling>
     <!-- Ship the Windows App SDK runtime with the app so no separate runtime install is needed. -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!--
+      The installer also carries .NET itself, so installing Edendale never
+      sends the user off to download a runtime first. Only release packages pay
+      the size: local unpackaged builds stay framework-dependent and quick.
+    -->
+    <SelfContained Condition="'$(EdendalePackaged)' == 'true'">true</SelfContained>
     <!-- Base language for MRT Core: every lookup falls back here when the
          user's preferred language has no Strings/<lang>/Resources.resw. -->
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -23,6 +36,15 @@
     <!-- Program.cs owns Main for the single-instance activation redirect. -->
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
+
+  <!-- The Windows App SDK packaging targets reject an AppxManifest whenever
+       WindowsPackageType is None, so the manifest joins the build only for
+       packaged releases. -->
+  <ItemGroup Condition="'$(EdendalePackaged)' == 'true'">
+    <AppxManifest Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
@@ -38,19 +60,32 @@
     <Content Include="Assets\Fonts\*.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The SIL Open Font License requires its text to travel with the fonts,
+         so it ships next to them rather than living only in the repository. -->
+    <Content Include="Assets\Fonts\OFL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\LICENSE" Link="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- MSIX tile, app list, and splash imagery, generated from icon.ico. -->
+    <Content Include="Assets\*.png" />
     <Content Include="Assets\Icons\*.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <!-- Local credentials remain gitignored and are embedded only in local binaries.
-       The same file is exposed under a second name for the services that are
-       not TMDB (Wyzie Subs); each reads only the keys it owns. -->
+       One resource carries every service's keys (TMDB, Wyzie Subs); each service
+       reads only the keys it owns. A second EmbeddedResource over the same path
+       is a duplicate item to the SDK regardless of LogicalName (NETSDK1022). -->
   <ItemGroup Condition="Exists('..\secrets.json')">
-    <EmbeddedResource Include="..\secrets.json" LogicalName="Edendale.TmdbSecrets" />
     <EmbeddedResource Include="..\secrets.json" LogicalName="Edendale.LocalSecrets" />
   </ItemGroup>
 </Project>

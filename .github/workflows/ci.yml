@@ -15,12 +15,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  windows:
-    name: Windows (C# and WinUI 3)
+  test:
+    name: Windows domain tests
+    runs-on: windows-2022
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # The domain tests are WinUI-free plain .NET 8 and architecture
+      # independent, so they run once rather than per build platform.
+      - name: Test Windows domain
+        run: dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj --configuration Release
+
+  build:
+    name: Windows ${{ matrix.arch }} (C# and WinUI 3)
     runs-on: windows-2022
     timeout-minutes: 45
     permissions:
       contents: read
+    strategy:
+      # One architecture failing must not hide the state of the others.
+      fail-fast: false
+      matrix:
+        include:
+          # ARM32 and architecture-neutral are deliberately absent: the Windows
+          # App SDK ships no win-arm runtime, and the self-contained WinUI
+          # runtime needs a concrete architecture, so neither can be produced.
+          - platform: x86
+            arch: x86
+          - platform: x64
+            arch: x64
+          - platform: ARM64
+            arch: arm64
     steps:
       - name: Check out
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -36,8 +73,20 @@ jobs:
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      # Visual Studio MSBuild, not the plain .NET SDK: WinUI PRI tooling is not
+      # available through `dotnet build`. ARM64 cross-compiles from the x64
+      # runner because the platform-specific binaries are copied per runtime
+      # identifier rather than recompiled.
       - name: Build Windows app
-        run: msbuild Edendale.Windows.sln -restore -p:Platform=x64 -p:Configuration=Release
+        run: msbuild Edendale.Windows.sln -restore -p:Platform=${{ matrix.platform }} -p:Configuration=Release
 
-      - name: Test Windows domain
-        run: dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj --configuration Release -p:Platform=x64
+      # Unpackaged build carrying its own Windows App SDK runtime. It is
+      # unsigned and still needs the .NET 8 Desktop Runtime on the target
+      # machine, so it is a build artifact and not a release installer.
+      - name: Upload ${{ matrix.arch }} build
+        uses: actions/upload-artifact@v4
+        with:
+          name: edendale-windows-${{ matrix.arch }}
+          path: Edendale.Windows/bin/${{ matrix.platform }}/Release/net8.0-windows10.0.19041.0/
+          if-no-files-found: error
+          retention-days: 30

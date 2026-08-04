@@ -1,0 +1,300 @@
+name: Windows Release
+
+# Signed, packaged releases for the Windows branch only. Triggered by a version
+# tag; workflow_dispatch exists so a release can be rehearsed without moving a
+# tag. Every credential-bearing step runs in the protected `release`
+# environment, so approval is required before any secret is readable.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build, without the leading v (e.g. 1.2.3)'
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: windows-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Resolve version
+    # Windows like every other job here: this branch owns a Windows-only
+    # pipeline and does not borrow another platform's runner.
+    runs-on: windows-2022
+    permissions: {}
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      package: ${{ steps.resolve.outputs.package }}
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Resolve version
+        id: resolve
+        shell: bash
+        # Passed through the environment rather than interpolated into the
+        # script body, so a crafted input cannot execute as shell.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            version="$INPUT_VERSION"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          # A two-part tag is accepted so the product's own numbering (v0.26)
+          # can be tagged as-is; assemblies need three parts and MSIX identity
+          # needs four, so it is widened rather than rejected.
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "::error::Version '$version' must be MAJOR.MINOR or MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          if [ "$(printf '%s' "$version" | tr -cd . | wc -c)" -eq 1 ]; then
+            version="$version.0"
+          fi
+
+          # The release must attach to the tag that triggered it. Normalising
+          # v0.26 to 0.26.0 and then publishing "v0.26.0" would silently create
+          # a second tag, so the original ref is carried through untouched.
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="v$version"
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "package=$version.0" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Building $version (package $version.0) for tag $tag"
+
+  build:
+    name: Package ${{ matrix.arch }}
+    needs: version
+    runs-on: windows-2022
+    timeout-minutes: 60
+    # Protected environment: the TMDB and signing secrets below are unreadable
+    # until this environment's reviewers approve the run.
+    environment: release
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: x86
+            rid: win-x86
+            arch: x86
+          - platform: x64
+            rid: win-x64
+            arch: x64
+          - platform: ARM64
+            rid: win-arm64
+            arch: arm64
+    steps:
+      - name: Check out
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # Written to the repository root because the app project embeds
+      # ../secrets.json as Edendale.LocalSecrets when it exists. The file is
+      # gitignored and never uploaded; only the compiled resource ships.
+      - name: Write API credentials
+        shell: pwsh
+        env:
+          TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          WYZIE_API_KEY: ${{ secrets.WYZIE_API_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:TMDB_READ_ACCESS_TOKEN -and -not $env:TMDB_API_KEY) {
+            Write-Error 'No TMDB credential configured; the release would ship without metadata enrichment.'
+          }
+          @{
+            TMDB_READ_ACCESS_TOKEN = "$env:TMDB_READ_ACCESS_TOKEN"
+            TMDB_API_KEY           = "$env:TMDB_API_KEY"
+            WYZIE_API_KEY          = "$env:WYZIE_API_KEY"
+          } | ConvertTo-Json | Set-Content -Path secrets.json -Encoding utf8
+          Write-Output 'secrets.json written'
+
+      # The signing certificate decides the package Publisher: MSIX refuses to
+      # install when Identity/@Publisher differs from the certificate subject by
+      # even a space, so the subject is read from the certificate and stamped in
+      # rather than kept in sync by hand.
+      - name: Stamp package identity
+        shell: pwsh
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.SIGNING_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\signing.pfx",
+            [Convert]::FromBase64String($env:CERTIFICATE_BASE64))
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
+            "$env:RUNNER_TEMP\signing.pfx", $env:CERTIFICATE_PASSWORD)
+
+          $manifest = 'Edendale.Windows\Package.appxmanifest'
+          $xml = [xml](Get-Content $manifest -Raw)
+          $xml.Package.Identity.Publisher = $cert.Subject
+          $xml.Package.Identity.Version = '${{ needs.version.outputs.package }}'
+          $xml.Save((Resolve-Path $manifest))
+          Write-Output "Publisher set from certificate subject; version ${{ needs.version.outputs.package }}"
+
+      - name: Build packaged MSIX
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          msbuild Edendale.Windows\Edendale.Windows.csproj `
+            -restore `
+            -p:Configuration=Release `
+            -p:Platform=${{ matrix.platform }} `
+            -p:RuntimeIdentifier=${{ matrix.rid }} `
+            -p:EdendalePackaged=true `
+            -p:GenerateAppxPackageOnBuild=true `
+            -p:AppxPackageSigningEnabled=false `
+            -p:UapAppxPackageBuildMode=SideloadOnly `
+            -p:AppxBundle=Never `
+            -p:VersionPrefix=${{ needs.version.outputs.version }} `
+            -p:SourceRevisionId=$($env:GITHUB_SHA.Substring(0,7))
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # Credentials are removed before anything leaves the job, so a packaging
+      # mistake cannot put the plaintext file into an artifact.
+      - name: Remove API credentials
+        if: always()
+        shell: pwsh
+        run: Remove-Item secrets.json -Force -ErrorAction SilentlyContinue
+
+      - name: Collect package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msix = Get-ChildItem -Recurse -Filter *.msix -Path 'Edendale.Windows\bin' |
+                  Select-Object -First 1
+          if (-not $msix) { Write-Error 'No .msix was produced' }
+          New-Item -ItemType Directory -Force -Path staging | Out-Null
+          Copy-Item $msix.FullName "staging\Edendale-${{ needs.version.outputs.version }}-${{ matrix.arch }}.msix"
+          Write-Output "collected $($msix.Name) ($([math]::Round($msix.Length/1MB,1)) MB)"
+
+      - name: Upload unsigned package
+        uses: actions/upload-artifact@v4
+        with:
+          name: msix-${{ matrix.arch }}
+          path: staging/*.msix
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Bundle, sign, and publish
+    needs: [version, build]
+    runs-on: windows-2022
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      # Required to create the GitHub Release and attach the packages.
+      contents: write
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: msix-*
+          path: packages
+          merge-multiple: true
+
+      # A single .msixbundle lets one download install the correct
+      # architecture, so users never have to know what CPU they have.
+      - name: Create bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter makeappx.exe |
+                      Where-Object { $_.FullName -match '\\x64\\' } |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $makeappx) { Write-Error 'makeappx.exe not found' }
+          Write-Output "using $($makeappx.FullName)"
+
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          & $makeappx.FullName bundle /d packages /p "out\Edendale-${{ needs.version.outputs.version }}.msixbundle" /bv ${{ needs.version.outputs.package }} /o
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Sign bundle
+        shell: pwsh
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.SIGNING_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pfx = "$env:RUNNER_TEMP\signing.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CERTIFICATE_BASE64))
+
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter signtool.exe |
+                      Where-Object { $_.FullName -match '\\x64\\' } |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { Write-Error 'signtool.exe not found' }
+
+          # Timestamping is what keeps already-installed copies trusted after
+          # the signing certificate itself expires.
+          & $signtool.FullName sign `
+            /fd SHA256 `
+            /f $pfx `
+            /p $env:CERTIFICATE_PASSWORD `
+            /tr http://timestamp.digicert.com `
+            /td SHA256 `
+            "out\Edendale-${{ needs.version.outputs.version }}.msixbundle"
+          $code = $LASTEXITCODE
+          Remove-Item $pfx -Force -ErrorAction SilentlyContinue
+          if ($code -ne 0) { exit $code }
+
+      - name: Verify signature
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter signtool.exe |
+                      Where-Object { $_.FullName -match '\\x64\\' } |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+          & $signtool.FullName verify /pa /v "out\Edendale-${{ needs.version.outputs.version }}.msixbundle"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # The GitHub CLI ships on the runner, so publishing needs no third-party
+      # action and no extra supply-chain surface for a credentialed step.
+      # Draft, so the release is reviewed before anyone can download it.
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '${{ needs.version.outputs.version }}'
+          # Built as an array rather than a here-string: a here-string's closing
+          # marker must sit at column zero, which makes it hostage to YAML
+          # indentation.
+          $notes = @(
+            "Edendale $version for Windows.",
+            "",
+            "``Edendale-$version.msixbundle`` installs the right build for x86, x64, or ARM64 automatically.",
+            "",
+            "Windows will not install a sideloaded package until its signing certificate is trusted on the machine. See the README for the install steps."
+          ) -join "`n"
+          gh release create '${{ needs.version.outputs.tag }}' `
+            "out\Edendale-$version.msixbundle" `
+            --title "Edendale $version" `
+            --notes $notes `
+            --draft
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

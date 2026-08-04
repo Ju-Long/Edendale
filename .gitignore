@@ -42,6 +42,19 @@ local.properties
 [Oo]bj/
 *.user
 
+# Windows packaging output — release packages come from CI, never from a
+# working tree, and a local build embeds the real secrets.json
+AppPackages/
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+
+# Windows release signing material
+*.pfx
+*.cer
+*.snk
+
 # Static Astro / Node
 node_modules/
 Web/.astro/
