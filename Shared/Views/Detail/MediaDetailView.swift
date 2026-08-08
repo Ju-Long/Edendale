@@ -77,6 +77,7 @@ struct MediaDetailView: View {
             }
             .padding(.bottom, 64)
         }
+        .ignoresSafeArea(.all, edges: .top)
         .background(Theme.background)
         .task { await loadDetail() }
         .task {

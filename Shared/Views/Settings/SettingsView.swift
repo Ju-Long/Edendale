@@ -87,13 +87,9 @@ struct SettingsView: View {
             #endif
             .background(Theme.background)
             .navigationTitle("Settings")
-            // tvOS sheets are full-screen takeovers; pushing the link-source
-            // flow keeps the remote's back button working naturally.
-            #if os(tvOS)
-            .navigationDestination(isPresented: $showLinkSource) { AddNetworkSourceView() }
-            #else
+            // Sheet on every platform — see DownloadedView; tvOS presents it
+            // full screen and the Menu button walks back out of it.
             .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
-            #endif
             #if !os(tvOS)
             .fileImporter(
                 isPresented: $showImporter,

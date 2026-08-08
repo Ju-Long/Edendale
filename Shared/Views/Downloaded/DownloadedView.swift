@@ -71,13 +71,10 @@ struct DownloadedView: View {
             .navigationDestination(for: TVShow.self) { MediaDetailView(source: .localShow($0)) }
             .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             .settingsToolbar()
-            // tvOS sheets are full-screen takeovers; pushing the link-source
-            // flow keeps the remote's back button working naturally.
-            #if os(tvOS)
-            .navigationDestination(isPresented: $showLinkSource) { AddNetworkSourceView() }
-            #else
+            // Sheet on every platform: AddNetworkSourceView brings its own
+            // NavigationStack, and a second navigationDestination(isPresented:)
+            // on this path-driven stack is what wedged the flow on tvOS.
             .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
-            #endif
             #if !os(tvOS)
             .fileImporter(
                 isPresented: $showImporter,

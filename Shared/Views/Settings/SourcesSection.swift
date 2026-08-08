@@ -44,16 +44,11 @@ struct SourcesSection: View {
             Button {
                 showImporter = true
             } label: {
-                HStack {
-                    Image(.folderCirclePlus)
-                        .font(.system(size: 18))
-                        .foregroundStyle(Theme.accent)
-                        .accessibilityHidden(true)
-
-                    Text("Add Local Folder…")
-                        .font(Typography.text(15, weight: .semibold))
-                        .foregroundStyle(Theme.accent)
-                }
+                // A bare Label, never a hand-built HStack with its own
+                // foreground: the focus flood recolors the whole label to
+                // OnGold, and a label-level color would defeat it (the gold
+                // caps would vanish into the gold fill). See ArchiveButtonStyle.
+                Label("Add Local Folder…", image: .folderCirclePlus)
             }
             .archiveButtonStyle(.ghost)
             #endif
@@ -61,16 +56,7 @@ struct SourcesSection: View {
             Button {
                 showLinkSource = true
             } label: {
-                HStack {
-                    Image(.link)
-                        .font(.system(size: 18))
-                        .foregroundStyle(Theme.accent)
-                        .accessibilityHidden(true)
-
-                    Text("Link Network Source…")
-                        .font(Typography.text(15, weight: .semibold))
-                        .foregroundStyle(Theme.accent)
-                }
+                Label("Link Network Source…", image: .link)
             }
             .archiveButtonStyle(.ghost)
         } header: {

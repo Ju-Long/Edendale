@@ -7,11 +7,11 @@
 //  index. The only entry point for network sources on every platform, and
 //  the only library entry point at all on tvOS (no local file access there).
 //
-//  Presentation differs by platform: iOS/macOS/visionOS show this as a
-//  sheet wrapping its own NavigationStack; tvOS pushes it onto
-//  DownloadedView's stack (sheets are full-screen takeovers there), so the
-//  tvOS body attaches its destinations to the enclosing stack instead of
-//  nesting one.
+//  Presented as a sheet on every platform, wrapping its own NavigationStack
+//  so the browse levels push inside the sheet. tvOS shows sheets full
+//  screen and maps the remote's Menu button to "pop a level, then dismiss",
+//  which is exactly the flow this needs — no separate tvOS presentation
+//  path, only the usual tvOS trims (no navigation title, no toolbar).
 //
 
 import SwiftUI
@@ -26,36 +26,23 @@ struct AddNetworkSourceView: View {
     @State private var isConnecting = false
     @State private var errorMessage: String?
 
-    #if os(tvOS)
-    /// Root of the validated share; setting it pushes the folder picker
-    /// onto the enclosing NavigationStack.
-    @State private var rootLocation: BrowseLocation?
-    @State private var isBrowsing = false
-    #else
+    /// Drives the browse levels: connecting appends the share root, and each
+    /// subfolder in NetworkFolderPickerView appends another BrowseLocation.
     @State private var path = NavigationPath()
-    #endif
 
     var body: some View {
-        #if os(tvOS)
-        content
-            .navigationDestination(for: BrowseLocation.self) { location in
-                NetworkFolderPickerView(location: location, onIndex: index)
-            }
-            .navigationDestination(isPresented: $isBrowsing) {
-                if let rootLocation {
-                    NetworkFolderPickerView(location: rootLocation, onIndex: index)
-                }
-            }
-        #else
         NavigationStack(path: $path) {
             content
                 .navigationDestination(for: BrowseLocation.self) { location in
                     NetworkFolderPickerView(location: location, onIndex: index)
                 }
         }
+        // A sheet defaults to a small form; this one browses a whole share,
+        // so ask for the page size wherever the platform resizes sheets
+        // (macOS, iPadOS, visionOS — ignored on iPhone and tvOS).
+        .presentationSizing(.form)
         #if os(macOS)
-        .frame(minWidth: 520, minHeight: 480)
-        #endif
+        .frame(minWidth: 640, minHeight: 560)
         #endif
     }
 
@@ -156,13 +143,11 @@ struct AddNetworkSourceView: View {
         Task {
             do {
                 try await connector.validate()
-                let location = BrowseLocation(connector: connector, url: connector.root, name: connector.host)
-                #if os(tvOS)
-                rootLocation = location
-                isBrowsing = true
-                #else
-                path.append(location)
-                #endif
+                path.append(BrowseLocation(
+                    connector: connector,
+                    url: connector.root,
+                    name: connector.host
+                ))
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -190,10 +175,7 @@ struct AddNetworkSourceView: View {
                 displayName: displayName
             )
         }
-        #if os(tvOS)
-        // Pop the picker levels first, then the form itself.
-        isBrowsing = false
-        #endif
+        // Dismissing the sheet takes its whole navigation stack with it.
         dismiss()
     }
 }

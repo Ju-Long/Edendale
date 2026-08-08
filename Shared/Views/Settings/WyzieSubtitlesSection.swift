@@ -28,18 +28,12 @@ struct WyzieSubtitlesSection: View {
                 }
                 .archiveButtonStyle(.ghost)
             } else {
-                if keys.usesBuildKey {
-                    Text("Using the key from Secrets.xcconfig.")
-                        .font(Typography.bodySM)
-                        .foregroundStyle(Theme.textSecondary)
-                } else {
-                    Text("Online subtitle search needs a free Wyzie API key from store.wyzie.io/redeem.")
-                        .font(Typography.bodySM)
-                        .foregroundStyle(Theme.textSecondary)
-
-                    Link("Get a Free Key", destination: redeemURL)
-                        .archiveButtonStyle(.secondary)
-                }
+                Text("Online subtitle search needs your own Wyzie API key for unrestricted access. Visit store.wyzie.io/redeem, complete the steps on the site to redeem your subscription, then paste the key below.")
+                    .font(Typography.bodySM)
+                    .foregroundStyle(Theme.textSecondary)
+                
+                Link("Redeem a Key", destination: redeemURL)
+                    .archiveButtonStyle(.secondary)
 
                 SecureField("Wyzie API Key", text: $enteredKey)
 

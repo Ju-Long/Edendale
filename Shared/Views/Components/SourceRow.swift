@@ -21,22 +21,34 @@ struct SourceRow: View {
     @State private var isConfirmingRemove = false
 
     var body: some View {
-        Group {
-            if showsActions {
-                #if os(tvOS)
-                // tvOS has no swipe actions, so Rescan and Remove ride on the
-                // row's trailing edge as focusable buttons instead.
-                trailingActionRow
-                #else
-                content
-                    .sourceSwipeActions(
-                        onRescan: onRescan,
-                        onRequestRemove: requestRemoveConfirmation
-                    )
-                #endif
-            } else {
-                content.contextMenu { menuItems }
-            }
+        Menu {
+            Button("Rescan", image: .arrowRotateRight, action: onRescan)
+                .archiveButtonStyle(.secondary)
+                .accessibilityLabel("Rescan")
+            Button("Remove", image: .trashCan, action: requestRemoveConfirmation)
+                .archiveButtonStyle(.secondary)
+                .accessibilityLabel("Remove")
+        } label: {
+            content
+        }
+        // Full-width data row: a quiet surface fill + gold border on focus,
+        // not the button style's solid-gold flood (which would swallow the
+        // name/path) and not tvOS's default white platter (illegible content).
+        .archiveRowStyle()
+        .modify { view in
+            #if !os(tvOS)
+            view
+                .swipeActions(edge: .leading) {
+                    Button(action: onRescan) {
+                        Label("Rescan", image: .arrowRotateRight)
+                    }
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive, action: requestRemoveConfirmation) {
+                        Label("Remove", image: .trashCan)
+                    }
+                }
+            #endif
         }
         .alert("Remove Source", isPresented: $isConfirmingRemove) {
             Button("Cancel", role: .cancel) {}
@@ -71,8 +83,11 @@ struct SourceRow: View {
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
                     .truncationMode(.middle)
             }
+            
+            Spacer()
         }
         .padding(.vertical, 12)
         // Icon, name, kind, count, and path are one source. Rescan and
@@ -82,26 +97,6 @@ struct SourceRow: View {
         .accessibilityLabel(folder.name)
         .accessibilityValue("\(subtitle), \(folder.folderPath)")
     }
-
-    #if os(tvOS)
-    /// The row plus its two trailing controls, standing in for the swipe
-    /// actions tvOS can't offer. Focus moves left/right between Rescan and
-    /// Remove; Remove routes through the same confirmation alert as every
-    /// other surface.
-    @ViewBuilder
-    private var trailingActionRow: some View {
-        HStack(spacing: 12) {
-            content
-            Spacer(minLength: 0)
-            Button("", image: .arrowRotateRight, action: onRescan)
-                .archiveButtonStyle(.secondary)
-                .accessibilityLabel("Rescan")
-            Button("", image: .trashCan, action: requestRemoveConfirmation)
-                .archiveButtonStyle(.secondary)
-                .accessibilityLabel("Remove")
-        }
-    }
-    #endif
 
     /// Kind badge and item count, e.g. "SMB · 12 items".
     private var subtitle: String {
@@ -132,24 +127,3 @@ struct SourceRow: View {
         }
     }
 }
-
-#if !os(tvOS)
-private extension View {
-    func sourceSwipeActions(
-        onRescan: @escaping () -> Void,
-        onRequestRemove: @escaping () -> Void
-    ) -> some View {
-        self
-            .swipeActions(edge: .leading) {
-                Button(action: onRescan) {
-                    Label("Rescan", image: .arrowRotateRight)
-                }
-            }
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                Button(role: .destructive, action: onRequestRemove) {
-                    Label("Remove", image: .trashCan)
-                }
-            }
-    }
-}
-#endif
