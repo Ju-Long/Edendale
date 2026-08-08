@@ -32,6 +32,26 @@ struct Persistence {
         }
     }()
 
+    // MARK: - SwiftData (local TMDB watchlist mirror)
+
+    /// Portable account state stays independent from device-specific library
+    /// paths and access grants, even though both use SwiftData locally.
+    static var watchlistModelContainer: ModelContainer = {
+        let schema = Schema([WatchlistItem.self])
+        let config = ModelConfiguration(
+            "Watchlist",
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            fatalError("Could not create Watchlist ModelContainer: \(error)")
+        }
+    }()
+
     // MARK: - CoreData + CloudKit (iCloud-synced watch progress)
 
     static var cloudPersistentContainer: NSPersistentCloudKitContainer = {

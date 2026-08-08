@@ -63,6 +63,7 @@ struct MoviesShowsView: View {
     @Environment(MoviesShowsModel.self) private var model
     @Environment(TMDBAccountStore.self) private var tmdbAccount
     @Environment(WatchProgressStore.self) private var watchStore
+    @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     @Environment(\.modelContext) private var modelContext
     #if !os(macOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -158,6 +159,12 @@ struct MoviesShowsView: View {
             .settingsToolbar()
         }
         .task { await model.load(watchStore: watchStore) }
+        .task(id: audienceVerificationKey) {
+            await youngAudienceFilter.verify(audienceRefs)
+        }
+        .onChange(of: visibleHeroRefs) { _, _ in
+            heroIndex = 0
+        }
     }
 
     // MARK: - Content
@@ -165,17 +172,26 @@ struct MoviesShowsView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 48) {
-                if !model.heroScenes.isEmpty {
+                if youngAudienceFilter.isVerifying(audienceRefs) {
+                    HStack(spacing: 12) {
+                        ProgressView().tint(Theme.gold)
+                        Text("Verifying audience ratings").labelCaps()
+                    }
+                    .padding(.horizontal, edgeMargin)
+                    .accessibilityElement(children: .combine)
+                }
+
+                if !heroScenes.isEmpty {
                     heroPager
                 }
 
                 if tmdbAccount.isSignedIn {
-                    shelf(String(localized: "Trending"), items: model.trending)
+                    shelf(String(localized: "Trending"), items: youngAudienceFilter.visible(model.trending))
                 }
 
-                shelf(String(localized: "Popular Films"), items: model.popularMovies)
-                shelf(String(localized: "Popular Series"), items: model.popularShows)
-                shelf(String(localized: "Top Rated"), items: model.topRated)
+                shelf(String(localized: "Popular Films"), items: youngAudienceFilter.visible(model.popularMovies))
+                shelf(String(localized: "Popular Series"), items: youngAudienceFilter.visible(model.popularShows))
+                shelf(String(localized: "Top Rated"), items: youngAudienceFilter.visible(model.topRated))
                 collectionsSection
             }
             .padding(.bottom, 64)
@@ -187,8 +203,33 @@ struct MoviesShowsView: View {
 
     // MARK: - Hero
 
+    private var heroScenes: [MoviesShowsModel.Hero] {
+        model.heroScenes.filter { youngAudienceFilter.allows($0.detail.ref) }
+    }
+
+    private var visibleHeroRefs: [MediaRef] {
+        heroScenes.map { $0.detail.ref }
+    }
+
+    private var audienceRefs: [MediaRef] {
+        model.heroScenes.map { $0.detail.ref }
+            + model.trending.map(\.ref)
+            + model.popularMovies.map(\.ref)
+            + model.popularShows.map(\.ref)
+            + model.topRated.map(\.ref)
+            + model.collectionItems.map(\.ref)
+    }
+
+    private var audienceVerificationKey: YoungAudienceVerificationKey {
+        YoungAudienceVerificationKey(
+            isEnabled: youngAudienceFilter.isEnabled,
+            contextIdentifier: youngAudienceFilter.contextIdentifier,
+            refs: audienceRefs
+        )
+    }
+
     private var currentHero: MoviesShowsModel.Hero? {
-        let scenes = model.heroScenes
+        let scenes = heroScenes
         guard !scenes.isEmpty else { return nil }
         // heroIndex can sit on a duplicate edge page (-1 or count) mid-wrap;
         // Swift's % keeps the dividend's sign, so normalize before subscripting.
@@ -214,13 +255,13 @@ struct MoviesShowsView: View {
                     LazyHStack(spacing: 0) {
                         // Duplicate last page: paging backward past the first
                         // scene lands here, then snaps to the real last page.
-                        if model.heroScenes.count > 1, let last = model.heroScenes.last {
+                        if heroScenes.count > 1, let last = heroScenes.last {
                             heroSurface(last)
                                 .containerRelativeFrame(.horizontal)
                                 .id(-1)
                         }
 
-                        ForEach(Array(model.heroScenes.enumerated()), id: \.offset) { index, hero in
+                        ForEach(Array(heroScenes.enumerated()), id: \.offset) { index, hero in
                             heroSurface(hero)
                                 .containerRelativeFrame(.horizontal)
                                 .id(index)
@@ -228,10 +269,10 @@ struct MoviesShowsView: View {
 
                         // Duplicate first page: paging forward past the last
                         // scene lands here, then snaps to the real page 0.
-                        if model.heroScenes.count > 1, let first = model.heroScenes.first {
+                        if heroScenes.count > 1, let first = heroScenes.first {
                             heroSurface(first)
                                 .containerRelativeFrame(.horizontal)
-                                .id(model.heroScenes.count)
+                                .id(heroScenes.count)
                         }
                     }
                     .scrollTargetLayout()
@@ -250,7 +291,7 @@ struct MoviesShowsView: View {
                           let page = nearestHeroIndex(for: metrics)
                     else { return }
                     // Duplicate edge pages resolve to their real counterparts.
-                    let count = model.heroScenes.count
+                    let count = heroScenes.count
                     let index = (page % count + count) % count
                     if index != heroIndex { heroIndex = index }
                 }
@@ -261,7 +302,7 @@ struct MoviesShowsView: View {
                 .highPriorityGesture(heroMouseDragGesture, isEnabled: !showingTrailer)
                 .frame(height: heroHeight)
 
-                if model.heroScenes.count > 1 {
+                if heroScenes.count > 1 {
                     HeroPageIndicator(
                         items: heroIndicatorItems,
                         selection: heroIndicatorSelection,
@@ -276,21 +317,21 @@ struct MoviesShowsView: View {
                 TabView(selection: $heroIndex) {
                     // Duplicate last page: swiping backward past the first
                     // scene lands here, then snaps to the real last page.
-                    if model.heroScenes.count > 1, let last = model.heroScenes.last {
+                    if heroScenes.count > 1, let last = heroScenes.last {
                         heroSurface(last)
                             .tag(-1)
                     }
 
-                    ForEach(Array(model.heroScenes.enumerated()), id: \.offset) { index, hero in
+                    ForEach(Array(heroScenes.enumerated()), id: \.offset) { index, hero in
                         heroSurface(hero)
                             .tag(index)
                     }
 
                     // Duplicate first page: swiping forward past the last
                     // scene lands here, then snaps to the real page 0.
-                    if model.heroScenes.count > 1, let first = model.heroScenes.first {
+                    if heroScenes.count > 1, let first = heroScenes.first {
                         heroSurface(first)
-                            .tag(model.heroScenes.count)
+                            .tag(heroScenes.count)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
@@ -299,14 +340,14 @@ struct MoviesShowsView: View {
                     // A manual swipe landed on a duplicate edge page; a
                     // programmatic wrap snaps in its animation completion.
                     guard !isHeroWrapping else { return }
-                    if newValue == model.heroScenes.count {
+                    if newValue == heroScenes.count {
                         snapHeroToStart()
                     } else if newValue == -1 {
                         snapHeroToEnd()
                     }
                 }
 
-                if model.heroScenes.count > 1 {
+                if heroScenes.count > 1 {
                     HeroPageIndicator(
                         items: heroIndicatorItems,
                         selection: heroIndicatorSelection,
@@ -328,13 +369,13 @@ struct MoviesShowsView: View {
     /// Dot to highlight — duplicate edge pages (-1 or count) read as their
     /// real counterparts mid-wrap.
     private var heroIndicatorSelection: Int {
-        guard !model.heroScenes.isEmpty else { return 0 }
-        let count = model.heroScenes.count
+        guard !heroScenes.isEmpty else { return 0 }
+        let count = heroScenes.count
         return (heroIndex % count + count) % count
     }
 
     private var heroIndicatorItems: [HeroPageIndicatorItem] {
-        model.heroScenes.enumerated().map { index, hero in
+        heroScenes.enumerated().map { index, hero in
             HeroPageIndicatorItem(
                 id: index,
                 title: hero.detail.title,
@@ -383,7 +424,7 @@ struct MoviesShowsView: View {
                 // real page one slot right of its logical index (see
                 // nearestHeroIndex) — without this the drag lands one page
                 // ahead going forward and refuses to move going backward.
-                let hasDuplicates = model.heroScenes.count > 1
+                let hasDuplicates = heroScenes.count > 1
                 let startIndex = Int((startOffset / pageWidth).rounded()) - (hasDuplicates ? 1 : 0)
                 let projected = abs(value.predictedEndTranslation.width) > abs(value.translation.width)
                     ? value.predictedEndTranslation.width
@@ -405,14 +446,14 @@ struct MoviesShowsView: View {
     /// Nearest page for a scroll offset, including the duplicate edge pages
     /// (index -1 and count) when the pager loops.
     private func nearestHeroIndex(for metrics: HeroScrollMetrics) -> Int? {
-        guard !model.heroScenes.isEmpty, metrics.pageWidth > 0 else { return nil }
-        let hasDuplicates = model.heroScenes.count > 1
+        guard !heroScenes.isEmpty, metrics.pageWidth > 0 else { return nil }
+        let hasDuplicates = heroScenes.count > 1
         
         let logicalIndex = (metrics.offset / metrics.pageWidth).rounded()
         let index = Int(logicalIndex) - (hasDuplicates ? 1 : 0)
 
         let firstPage = hasDuplicates ? -1 : 0
-        let lastPage = hasDuplicates ? model.heroScenes.count : model.heroScenes.count - 1
+        let lastPage = hasDuplicates ? heroScenes.count : heroScenes.count - 1
         
         return min(max(index, firstPage), lastPage)
     }
@@ -430,7 +471,7 @@ struct MoviesShowsView: View {
                 pendingHeroIndex = nil
             } else if !isDraggingHero,
                       let page = nearestHeroIndex(for: heroScrollMetrics) {
-                let count = model.heroScenes.count
+                let count = heroScenes.count
                 heroIndex = (page % count + count) % count
             }
 
@@ -438,10 +479,10 @@ struct MoviesShowsView: View {
             // identical content) for the real page.
             if !isDraggingHero,
                let page = nearestHeroIndex(for: heroScrollMetrics) {
-                if page == model.heroScenes.count {
+                if page == heroScenes.count {
                     heroScrollPosition.scrollTo(id: 0, anchor: .center)
                 } else if page == -1 {
-                    heroScrollPosition.scrollTo(id: model.heroScenes.count - 1, anchor: .center)
+                    heroScrollPosition.scrollTo(id: heroScenes.count - 1, anchor: .center)
                 }
             }
         case .decelerating, .animating:
@@ -698,7 +739,7 @@ struct MoviesShowsView: View {
     /// to the per-platform rules, then rotates. Reads the clock only —
     /// mutating nothing keeps the tick free.
     private func tickHeroRotation() {
-        guard case .loaded = model.phase, model.heroScenes.count > 1 else { return }
+        guard case .loaded = model.phase, heroScenes.count > 1 else { return }
         guard !heroRotationPaused else { return }
         if heroClock.progress() >= 1 { advanceHeroScene() }
     }
@@ -714,8 +755,8 @@ struct MoviesShowsView: View {
     /// Stepping past the bounds loops: the pager animates onto a duplicate
     /// edge page, then snaps (invisibly) to the real page on the opposite side.
     private func selectHeroScene(_ requestedIndex: Int, animated: Bool = true) {
-        guard !model.heroScenes.isEmpty else { return }
-        let count = model.heroScenes.count
+        guard !heroScenes.isEmpty else { return }
+        let count = heroScenes.count
         let shouldAnimate = animated && !reduceMotion
         let wrapsForward = requestedIndex >= count && count > 1
         let wrapsBackward = requestedIndex < 0 && count > 1
@@ -772,7 +813,7 @@ struct MoviesShowsView: View {
     /// Trades the duplicate first page (heroIndex == count) for the real one
     /// without animation — identical content, so the jump is invisible.
     private func snapHeroToStart() {
-        guard heroIndex == model.heroScenes.count else { return }
+        guard heroIndex == heroScenes.count else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { heroIndex = 0 }
@@ -784,7 +825,7 @@ struct MoviesShowsView: View {
         guard heroIndex == -1 else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
-        withTransaction(transaction) { heroIndex = model.heroScenes.count - 1 }
+        withTransaction(transaction) { heroIndex = heroScenes.count - 1 }
     }
     #endif
 
@@ -912,7 +953,7 @@ struct MoviesShowsView: View {
             .accessibilityLabel("Collection filters")
 
             LazyVGrid(columns: collectionColumns, spacing: collectionSpacing) {
-                ForEach(Array(model.collectionItems.prefix(12))) { item in
+                ForEach(Array(youngAudienceFilter.visible(model.collectionItems).prefix(12))) { item in
                     Button {
                         zoomSource = nil
                         path.append(item.ref)

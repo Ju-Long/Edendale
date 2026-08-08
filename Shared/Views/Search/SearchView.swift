@@ -11,6 +11,7 @@ import SwiftData
 struct SearchView: View {
     @Environment(WatchProgressStore.self) private var watchStore
     @Environment(SearchCoordinator.self) private var coordinator
+    @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     #if !os(macOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -55,6 +56,9 @@ struct SearchView: View {
             #endif
             .searchable(text: $model.searchText, prompt: "Movies, shows, people")
             .task { await model.loadTrendingIfNeeded() }
+            .task(id: audienceVerificationKey) {
+                await youngAudienceFilter.verify(audienceRefs)
+            }
             .navigationDestination(for: MediaRef.self) { ref in
                 MediaDetailView(source: .tmdb(ref))
             }
@@ -114,11 +118,11 @@ struct SearchView: View {
     /// staring at a placeholder.
     @ViewBuilder
     private var idleContent: some View {
-        if !model.trending.isEmpty {
+        if !visibleTrending.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                mediaGrid(model.trending)
+                mediaGrid(visibleTrending)
             }
-        } else if model.isLoadingTrending {
+        } else if model.isLoadingTrending || youngAudienceFilter.isVerifying(trendingRefs) {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 60)
@@ -137,11 +141,16 @@ struct SearchView: View {
 
         if model.query.isAwaitingTerm && model.selectedRange == nil && model.activePerson == nil {
             scopePrompt
-        } else if model.isSearching && model.results.isEmpty && model.people.isEmpty {
+        } else if model.isSearching && visibleResults.isEmpty && model.people.isEmpty {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityLabel("Searching")
-        } else if model.results.isEmpty && model.people.isEmpty {
+        } else if youngAudienceFilter.isVerifying(resultAndLocalRefs)
+                    && visibleResults.isEmpty && localMatches.isEmpty {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityLabel("Verifying audience ratings")
+        } else if visibleResults.isEmpty && model.people.isEmpty {
             if localMatches.isEmpty { emptyState }
         } else if model.scope == .people {
             // A people prefix reorders — people lead, titles still follow.
@@ -155,7 +164,7 @@ struct SearchView: View {
 
     @ViewBuilder
     private func titleResults(header: String?) -> some View {
-        if !model.results.isEmpty {
+        if !visibleResults.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 if let header {
                     SectionHeader(title: header)
@@ -262,9 +271,9 @@ struct SearchView: View {
 
     /// Only lock scrolling when the screen genuinely has nothing in it.
     private var isScrollEmpty: Bool {
-        model.results.isEmpty
+        visibleResults.isEmpty
             && model.people.isEmpty
-            && model.trending.isEmpty
+            && visibleTrending.isEmpty
             && localMatches.isEmpty
     }
 
@@ -473,11 +482,17 @@ struct SearchView: View {
         guard needle.count > 1 else { return [] }
 
         let movies = libraryMovies
-            .filter { $0.displayTitle.localizedCaseInsensitiveContains(needle) }
+            .filter {
+                $0.displayTitle.localizedCaseInsensitiveContains(needle)
+                    && isVisibleToSelectedAudience($0)
+            }
             .sorted { $0.displayTitle.localizedCompare($1.displayTitle) == .orderedAscending }
             .map(LocalMatch.movie)
         let shows = libraryShows
-            .filter { $0.displayName.localizedCaseInsensitiveContains(needle) }
+            .filter {
+                $0.displayName.localizedCaseInsensitiveContains(needle)
+                    && isVisibleToSelectedAudience($0)
+            }
             .sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending }
             .map(LocalMatch.show)
         return movies + shows
@@ -532,7 +547,65 @@ struct SearchView: View {
         .accessibilityHint("Opens the archive record.")
     }
 
-    private var resultsList: some View { mediaGrid(model.results) }
+    private var resultsList: some View { mediaGrid(visibleResults) }
+
+    private var visibleResults: [TMDBMediaItem] {
+        youngAudienceFilter.visible(model.results)
+    }
+
+    private var visibleTrending: [TMDBMediaItem] {
+        youngAudienceFilter.visible(model.trending)
+    }
+
+    private var trendingRefs: [MediaRef] {
+        model.trending.map(\.ref)
+    }
+
+    private var localCandidateRefs: [MediaRef] {
+        guard model.activePerson == nil else { return [] }
+        let needle = model.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard needle.count > 1 else { return [] }
+
+        let movieRefs = libraryMovies.compactMap { movie -> MediaRef? in
+            guard movie.displayTitle.localizedCaseInsensitiveContains(needle),
+                  let id = movie.tmdbId else { return nil }
+            return MediaRef(id: id, mediaType: .movie)
+        }
+        let showRefs = libraryShows.compactMap { show -> MediaRef? in
+            guard show.displayName.localizedCaseInsensitiveContains(needle),
+                  let id = show.tmdbId else { return nil }
+            return MediaRef(id: id, mediaType: .tv)
+        }
+        return movieRefs + showRefs
+    }
+
+    private var resultAndLocalRefs: [MediaRef] {
+        model.results.map(\.ref) + localCandidateRefs
+    }
+
+    private var audienceRefs: [MediaRef] {
+        trendingRefs + resultAndLocalRefs
+    }
+
+    private var audienceVerificationKey: YoungAudienceVerificationKey {
+        YoungAudienceVerificationKey(
+            isEnabled: youngAudienceFilter.isEnabled,
+            contextIdentifier: youngAudienceFilter.contextIdentifier,
+            refs: audienceRefs
+        )
+    }
+
+    private func isVisibleToSelectedAudience(_ movie: Movie) -> Bool {
+        guard youngAudienceFilter.isEnabled else { return true }
+        guard let id = movie.tmdbId else { return false }
+        return youngAudienceFilter.allows(MediaRef(id: id, mediaType: .movie))
+    }
+
+    private func isVisibleToSelectedAudience(_ show: TVShow) -> Bool {
+        guard youngAudienceFilter.isEnabled else { return true }
+        guard let id = show.tmdbId else { return false }
+        return youngAudienceFilter.allows(MediaRef(id: id, mediaType: .tv))
+    }
 
     private var edgeMargin: CGFloat {
         #if os(macOS) || os(tvOS)

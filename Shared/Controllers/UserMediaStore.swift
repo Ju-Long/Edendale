@@ -2,11 +2,11 @@
 //  UserMediaStore.swift
 //  Edendale
 //
-//  Per-title account state — favourite, watchlist, the user's own rating.
+//  Per-title account state — favourite and the user's own rating.
 //  Local-first: every change lands in the iCloud CoreData store immediately
 //  (same container as WatchProgressStore), then is pushed to the connected
-//  TMDB account best-effort when one is signed in. syncFromTMDB() runs on
-//  launch/sign-in and merges the account's TMDB lists both ways.
+//  TMDB account best-effort when one is signed in. Watchlist has its own
+//  local SwiftData store and TMDB sync path (WatchlistStore).
 //
 
 import Foundation
@@ -45,7 +45,6 @@ final class UserMediaStore {
     }
 
     func isFavorite(_ ref: MediaRef) -> Bool { state(for: ref).isFavorite }
-    func isInWatchlist(_ ref: MediaRef) -> Bool { state(for: ref).inWatchlist }
     func rating(for ref: MediaRef) -> Double? { state(for: ref).rating }
 
     // MARK: - Write
@@ -61,17 +60,6 @@ final class UserMediaStore {
         pushToTMDB { try await $0.setFavorite(favorite, for: ref) }
     }
 
-    func toggleWatchlist(_ ref: MediaRef) {
-        setWatchlist(!isInWatchlist(ref), for: ref)
-    }
-
-    func setWatchlist(_ inWatchlist: Bool, for ref: MediaRef) {
-        var s = state(for: ref)
-        s.inWatchlist = inWatchlist
-        save(s)
-        pushToTMDB { try await $0.setWatchlist(inWatchlist, for: ref) }
-    }
-
     /// Sets (0.5...10) or clears (nil) the user's rating.
     func setRating(_ value: Double?, for ref: MediaRef) {
         var s = state(for: ref)
@@ -82,7 +70,7 @@ final class UserMediaStore {
 
     // MARK: - TMDB sync
 
-    /// Merges the connected account's TMDB lists with local state, both ways
+    /// Merges the connected account's favorites and ratings with local state, both ways
     /// and additively: anything on TMDB is adopted locally, anything local
     /// that TMDB lacks is pushed up. Removals only travel through explicit
     /// user actions, never through sync — safer when either side is stale.
@@ -91,13 +79,10 @@ final class UserMediaStore {
         do {
             async let favoriteMovies = account.favorites(.movie)
             async let favoriteShows = account.favorites(.tv)
-            async let watchlistMovies = account.watchlist(.movie)
-            async let watchlistShows = account.watchlist(.tv)
             async let ratedMovies = account.rated(.movie)
             async let ratedShows = account.rated(.tv)
 
             let favorites = Set(try await favoriteMovies + favoriteShows)
-            let watchlist = Set(try await watchlistMovies + watchlistShows)
             let ratings = Dictionary(
                 (try await ratedMovies + ratedShows).map { ($0.ref, $0.rating) },
                 uniquingKeysWith: { first, _ in first }
@@ -107,9 +92,6 @@ final class UserMediaStore {
             for ref in favorites where !isFavorite(ref) {
                 var s = state(for: ref); s.isFavorite = true; save(s)
             }
-            for ref in watchlist where !isInWatchlist(ref) {
-                var s = state(for: ref); s.inWatchlist = true; save(s)
-            }
             for (ref, value) in ratings where rating(for: ref) == nil {
                 var s = state(for: ref); s.rating = value; save(s)
             }
@@ -118,9 +100,6 @@ final class UserMediaStore {
             for s in states.values {
                 if s.isFavorite && !favorites.contains(s.ref) {
                     try await account.setFavorite(true, for: s.ref)
-                }
-                if s.inWatchlist && !watchlist.contains(s.ref) {
-                    try await account.setWatchlist(true, for: s.ref)
                 }
                 if let value = s.rating, ratings[s.ref] == nil {
                     try await account.setRating(value, for: s.ref)
@@ -132,8 +111,8 @@ final class UserMediaStore {
     }
 
     /// Pulls the connected account's state for a single title and makes local
-    /// state match it — used when a detail page opens so its favourite,
-    /// watchlist and rating controls reflect what TMDB currently holds,
+    /// state match it — used when a detail page opens so its favourite and
+    /// rating controls reflect what TMDB currently holds,
     /// including changes made on another device or the web. Unlike the launch
     /// `syncFromTMDB()`, this title is authoritative: a value cleared on TMDB
     /// is cleared locally too, since the user is looking at exactly this title
@@ -144,10 +123,8 @@ final class UserMediaStore {
             let remote = try await account.accountState(for: ref)
             var s = state(for: ref)
             guard s.isFavorite != remote.isFavorite
-                || s.inWatchlist != remote.inWatchlist
                 || s.rating != remote.rating else { return }
             s.isFavorite = remote.isFavorite
-            s.inWatchlist = remote.inWatchlist
             s.rating = remote.rating
             save(s)
         } catch {
@@ -206,7 +183,7 @@ final class UserMediaStore {
             var rebuilt: [String: UserMediaState] = [:]
             for cd in results {
                 let dto = cd.toDTO()
-                rebuilt[cacheKey(dto.ref)] = dto
+                if !dto.isEmpty { rebuilt[cacheKey(dto.ref)] = dto }
             }
             states = rebuilt
         } catch {

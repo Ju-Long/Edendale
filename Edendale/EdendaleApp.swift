@@ -12,9 +12,11 @@ import SwiftData
 struct EdendaleApp: App {
     @State private var library: LibraryController
     @State private var watchStore = WatchProgressStore()
-    @State private var userMediaStore = UserMediaStore()
+    @State private var watchlistStore: WatchlistStore
+    @State private var userMediaStore: UserMediaStore
     @State private var tmdbAccount = TMDBAccountStore()
     @State private var wyzieKeys = WyzieKeyStore()
+    @State private var youngAudienceFilter = YoungAudienceFilter()
     @State private var playerSession: PlayerSession
     @State private var appRouter = AppRouter.shared
 
@@ -29,8 +31,13 @@ struct EdendaleApp: App {
             modelContext: Persistence.sharedModelContainer.mainContext
         )
         let ws = WatchProgressStore()
+        let watchlistStore = WatchlistStore(
+            modelContext: Persistence.watchlistModelContainer.mainContext
+        )
         _library = State(initialValue: library)
         _watchStore = State(initialValue: ws)
+        _watchlistStore = State(initialValue: watchlistStore)
+        _userMediaStore = State(initialValue: UserMediaStore())
         _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws))
     }
 
@@ -39,9 +46,11 @@ struct EdendaleApp: App {
             ContentView()
                 .environment(library)
                 .environment(watchStore)
+                .environment(watchlistStore)
                 .environment(userMediaStore)
                 .environment(tmdbAccount)
                 .environment(wyzieKeys)
+                .environment(youngAudienceFilter)
                 .environment(playerSession)
                 .environment(appRouter)
                 .environment(\.ratingProviders, [TMDBRatingsProvider()])

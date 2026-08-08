@@ -25,10 +25,6 @@ struct TMDBAccountClient: Sendable {
     private static let v3BaseURL = "https://api.themoviedb.org/3"
     private static let v4BaseURL = "https://api.themoviedb.org/4"
 
-    /// v4 list endpoints page at 20 items; cap the pull so a huge account
-    /// can't turn launch sync into hundreds of requests.
-    private static let maxListPages = 5
-
     private static let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
@@ -50,8 +46,14 @@ struct TMDBAccountClient: Sendable {
     }
 
     func watchlist(_ type: TMDBMediaType) async throws -> [MediaRef] {
-        try await fetchV4List("/\(type.rawValue)/watchlist", as: IDOnly.self)
-            .map { MediaRef(id: $0.id, mediaType: type) }
+        try await watchlistItems(type).map(\.ref)
+    }
+
+    /// Full list snapshots are persisted locally so Watchlist remains useful
+    /// offline and does not need one detail request per title after a pull.
+    func watchlistItems(_ type: TMDBMediaType) async throws -> [TMDBMediaItem] {
+        try await fetchV4List("/\(type.rawValue)/watchlist", as: TMDBMediaItemRaw.self)
+            .compactMap { $0.item(defaultType: type) }
     }
 
     /// Titles the user rated on TMDB, with their rating value.
@@ -144,14 +146,14 @@ struct TMDBAccountClient: Sendable {
 
     // MARK: - Requests
 
-    /// Pulls every page of a v4 account list (up to `maxListPages`).
+    /// Pulls every page of a v4 account list.
     private func fetchV4List<T: Decodable>(_ path: String, as type: T.Type) async throws -> [T] {
         guard let user = TMDBUserSession.current else { throw TMDBError.missingCredentials }
         let base = "\(Self.v4BaseURL)/account/\(user.accountId)\(path)"
 
         var items: [T] = []
         var page = 1
-        while page <= Self.maxListPages {
+        while true {
             let response: Page<T> = try await send(
                 "GET", url: "\(base)?page=\(page)", bearer: user.accessToken
             )

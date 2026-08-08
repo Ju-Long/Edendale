@@ -2,8 +2,8 @@
 //  CDUserMedia.swift
 //  Edendale
 //
-//  CoreData managed object for iCloud-synced per-title account state
-//  (favourite / watchlist / rating), keyed by TMDB id + media type.
+//  CoreData managed object for iCloud-synced favourite/rating state, keyed by
+//  TMDB id + media type. `inWatchlist` remains only to migrate older stores.
 //
 
 import CoreData
@@ -32,7 +32,6 @@ extension CDUserMedia {
                 mediaType: TMDBMediaType(rawValue: mediaType) ?? .movie
             ),
             isFavorite: isFavorite,
-            inWatchlist: inWatchlist,
             rating: rating > 0 ? rating : nil,
             updatedAt: updatedAt ?? Date()
         )
@@ -43,7 +42,7 @@ extension CDUserMedia {
         tmdbId = Int32(dto.ref.id)
         mediaType = dto.ref.mediaType.rawValue
         isFavorite = dto.isFavorite
-        inWatchlist = dto.inWatchlist
+        inWatchlist = false
         rating = dto.rating ?? 0
         updatedAt = dto.updatedAt
     }

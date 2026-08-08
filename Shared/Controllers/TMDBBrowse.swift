@@ -11,13 +11,13 @@ import Foundation
 
 // MARK: - Shared types
 
-enum TMDBMediaType: String, Codable, Hashable, Sendable {
+nonisolated enum TMDBMediaType: String, Codable, Hashable, Sendable {
     case movie
     case tv
 }
 
 /// Lightweight handle for navigation: enough to fetch a full detail record.
-struct MediaRef: Hashable, Sendable {
+nonisolated struct MediaRef: Hashable, Sendable {
     let id: Int
     let mediaType: TMDBMediaType
 }
@@ -367,6 +367,8 @@ struct MediaDetail: Sendable {
     let overview: String?
     let posterPath: String?
     let backdropPath: String?
+    /// Raw movie release date or TV first-air date from TMDB.
+    let releaseDate: String?
     let year: Int?
     let runtimeMinutes: Int?
     let genres: [String]
@@ -390,6 +392,7 @@ struct MediaDetail: Sendable {
         overview = m.overview
         posterPath = m.posterPath
         backdropPath = m.backdropPath
+        releaseDate = m.releaseDate
         year = m.releaseDate.flatMap { Int($0.prefix(4)) }
         runtimeMinutes = m.runtime
         genres = (m.genres ?? []).map(\.name)
@@ -411,6 +414,7 @@ struct MediaDetail: Sendable {
         overview = t.overview
         posterPath = t.posterPath
         backdropPath = t.backdropPath
+        releaseDate = t.firstAirDate
         year = t.firstAirDate.flatMap { Int($0.prefix(4)) }
         runtimeMinutes = t.episodeRunTime?.first
         genres = (t.genres ?? []).map(\.name)

@@ -21,8 +21,10 @@ struct MediaDetailView: View {
     let source: MediaDetailSource
 
     @Environment(WatchProgressStore.self) private var watchStore
+    @Environment(WatchlistStore.self) private var watchlistStore
     @Environment(UserMediaStore.self) private var userMediaStore
     @Environment(SearchCoordinator.self) private var searchCoordinator
+    @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     #if !os(macOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -47,6 +49,24 @@ struct MediaDetailView: View {
     #endif
 
     var body: some View {
+        Group {
+            if isVisibleToSelectedAudience {
+                detailContent
+            } else if youngAudienceFilter.isVerifying(sourceMediaRef.map { [$0] } ?? []) {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityLabel("Verifying audience rating")
+            } else {
+                audienceRestrictedState
+            }
+        }
+        .background(Theme.background)
+        .task(id: audienceVerificationKey) {
+            await youngAudienceFilter.verify(sourceMediaRef.map { [$0] } ?? [])
+        }
+    }
+
+    private var detailContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 40) {
                 header
@@ -85,6 +105,49 @@ struct MediaDetailView: View {
                 await userMediaStore.refreshFromTMDB(mediaRef)
             }
         }
+    }
+
+    private var sourceMediaRef: MediaRef? {
+        switch source {
+        case .tmdb(let ref): ref
+        case .localMovie(let movie):
+            movie.tmdbId.map { MediaRef(id: $0, mediaType: .movie) }
+        case .localShow(let show):
+            show.tmdbId.map { MediaRef(id: $0, mediaType: .tv) }
+        }
+    }
+
+    private var isVisibleToSelectedAudience: Bool {
+        guard youngAudienceFilter.isEnabled else { return true }
+        guard let sourceMediaRef else { return false }
+        return youngAudienceFilter.allows(sourceMediaRef)
+    }
+
+    private var audienceVerificationKey: YoungAudienceVerificationKey {
+        YoungAudienceVerificationKey(
+            isEnabled: youngAudienceFilter.isEnabled,
+            contextIdentifier: youngAudienceFilter.contextIdentifier,
+            refs: sourceMediaRef.map { [$0] } ?? []
+        )
+    }
+
+    private var audienceRestrictedState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.2.slash")
+                .font(.system(size: 44))
+                .foregroundStyle(Theme.surfaceHigh)
+                .accessibilityHidden(true)
+            Text("Unavailable for Young Audiences")
+                .font(Typography.headlineMD)
+                .foregroundStyle(Theme.textPrimary)
+            Text("This title is not verified as PG or PG-13.")
+                .font(Typography.bodyLG)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Header
@@ -194,16 +257,16 @@ struct MediaDetailView: View {
             FlowLayout(spacing: 12, lineSpacing: 8) {
                 if let ref = mediaRef {
                     Button {
-                        userMediaStore.toggleWatchlist(ref)
+                        watchlistStore.toggle(ref, metadata: watchlistMetadata)
                     } label: {
-                        Label("Watchlist", image: userMediaStore.isInWatchlist(ref) ? .check : .plus)
+                        Label("Watchlist", image: watchlistStore.isInWatchlist(ref) ? .check : .plus)
                     }
                     .archiveButtonStyle(.secondary)
                     // Unlike Favorite and Mark Watched, this button's text
                     // never changes — only its glyph does, so membership has
                     // to be spoken.
                     .accessibilityAddTraits(.isToggle)
-                    .accessibilityValue(userMediaStore.isInWatchlist(ref) ? Text("On") : Text("Off"))
+                    .accessibilityValue(watchlistStore.isInWatchlist(ref) ? Text("On") : Text("Off"))
                     
                     Button {
                         userMediaStore.toggleFavorite(ref)
@@ -506,6 +569,7 @@ struct MediaDetailView: View {
         }
         guard let ref else { return }
         detail = try? await TMDBService.shared.mediaDetail(ref)
+        if let detail { watchlistStore.updateMetadata(detail) }
 
         #if os(tvOS)
         trailer = try? await TMDBService.shared.bestTrailer(ref)
@@ -628,6 +692,15 @@ struct MediaDetailView: View {
         case .tmdb(let ref): return ref
         case .localMovie(let movie): return movie.tmdbId.map { MediaRef(id: $0, mediaType: .movie) }
         case .localShow(let show): return show.tmdbId.map { MediaRef(id: $0, mediaType: .tv) }
+        }
+    }
+
+    private var watchlistMetadata: WatchlistMetadata? {
+        if let detail { return WatchlistMetadata(detail) }
+        return switch source {
+        case .tmdb: nil
+        case .localMovie(let movie): WatchlistMetadata(movie)
+        case .localShow(let show): WatchlistMetadata(show)
         }
     }
 

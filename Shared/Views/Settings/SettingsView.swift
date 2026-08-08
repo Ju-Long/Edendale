@@ -13,6 +13,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(LibraryController.self) private var library
+    @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     @State private var showImporter = false
     @State private var showLinkSource = false
     #if os(macOS)
@@ -27,6 +28,22 @@ struct SettingsView: View {
                     LabeledContent("Watch Progress", value: String(localized: "Synced via your iCloud"))
                 } header: {
                     Text("About").labelCaps()
+                }
+
+                Section {
+                    Toggle(
+                        "Young Audience Friendly",
+                        isOn: Binding(
+                            get: { youngAudienceFilter.isEnabled },
+                            set: { youngAudienceFilter.isEnabled = $0 }
+                        )
+                    )
+
+                    Text("Only show movies and series rated PG or PG-13, including equivalent TV labels.")
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.textSecondary)
+                } header: {
+                    Text("Audience").labelCaps()
                 }
                 
                 #if os(macOS)

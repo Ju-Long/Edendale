@@ -15,6 +15,7 @@ struct PersonDetailView: View {
     let person: PersonRef
 
     @Environment(SearchCoordinator.self) private var searchCoordinator
+    @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     #if !os(macOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -28,15 +29,21 @@ struct PersonDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
-                if !filmography.isEmpty {
+                if !visibleFilmography.isEmpty {
                     filmographySection
                 } else if loadFailed {
                     failureState
-                } else if isLoading {
+                } else if isLoading || youngAudienceFilter.isVerifying(filmographyRefs) {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
                         .accessibilityLabel("Loading filmography")
+                } else if youngAudienceFilter.isEnabled && !filmography.isEmpty {
+                    Text("No PG or PG-13 titles are available in this filmography.")
+                        .font(Typography.bodyLG)
+                        .foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
                 }
             }
             .padding(.vertical, 24)
@@ -50,6 +57,9 @@ struct PersonDetailView: View {
         #endif
         .navigationDestination(for: MediaRef.self) { MediaDetailView(source: .tmdb($0)) }
         .task(id: person.id) { await load() }
+        .task(id: audienceVerificationKey) {
+            await youngAudienceFilter.verify(filmographyRefs)
+        }
     }
 
     // MARK: - Header
@@ -166,7 +176,7 @@ struct PersonDetailView: View {
                 .padding(.horizontal, edgeMargin)
 
             LazyVGrid(columns: gridColumns, alignment: .center, spacing: 20) {
-                ForEach(filmography, id: \.ref) { item in
+                ForEach(visibleFilmography, id: \.ref) { item in
                     NavigationLink(value: item.ref) {
                         PosterCard(
                             title: item.title,
@@ -190,6 +200,22 @@ struct PersonDetailView: View {
         // Heading and grid are one section.
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Filmography")
+    }
+
+    private var filmographyRefs: [MediaRef] {
+        filmography.map(\.ref)
+    }
+
+    private var visibleFilmography: [TMDBMediaItem] {
+        youngAudienceFilter.visible(filmography)
+    }
+
+    private var audienceVerificationKey: YoungAudienceVerificationKey {
+        YoungAudienceVerificationKey(
+            isEnabled: youngAudienceFilter.isEnabled,
+            contextIdentifier: youngAudienceFilter.contextIdentifier,
+            refs: filmographyRefs
+        )
     }
 
     private var failureState: some View {

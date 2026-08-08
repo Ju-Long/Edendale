@@ -15,6 +15,7 @@ struct DownloadedView: View {
     @Environment(LibraryController.self) private var library
     @Environment(WatchProgressStore.self) private var watchStore
     @Environment(PlayerSession.self) private var playerSession
+    @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     #if !os(macOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -27,7 +28,41 @@ struct DownloadedView: View {
     @State private var showImporter = false
     @State private var showLinkSource = false
 
-    private var isEmpty: Bool { movies.isEmpty && shows.isEmpty && folders.isEmpty }
+    private var isEmpty: Bool {
+        visibleMovies.isEmpty && visibleShows.isEmpty && folders.isEmpty
+    }
+
+    private var visibleMovies: [Movie] {
+        movies.filter { movie in
+            guard youngAudienceFilter.isEnabled else { return true }
+            guard let id = movie.tmdbId else { return false }
+            return youngAudienceFilter.allows(MediaRef(id: id, mediaType: .movie))
+        }
+    }
+
+    private var visibleShows: [TVShow] {
+        shows.filter { show in
+            guard youngAudienceFilter.isEnabled else { return true }
+            guard let id = show.tmdbId else { return false }
+            return youngAudienceFilter.allows(MediaRef(id: id, mediaType: .tv))
+        }
+    }
+
+    private var audienceRefs: [MediaRef] {
+        movies.compactMap { movie in
+            movie.tmdbId.map { MediaRef(id: $0, mediaType: .movie) }
+        } + shows.compactMap { show in
+            show.tmdbId.map { MediaRef(id: $0, mediaType: .tv) }
+        }
+    }
+
+    private var audienceVerificationKey: YoungAudienceVerificationKey {
+        YoungAudienceVerificationKey(
+            isEnabled: youngAudienceFilter.isEnabled,
+            contextIdentifier: youngAudienceFilter.contextIdentifier,
+            refs: audienceRefs
+        )
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -47,6 +82,9 @@ struct DownloadedView: View {
             // files added outside the app surface without a manual rescan.
             // The @Query rows refresh automatically once new items are saved.
             .task { await library.rescanAllFolders() }
+            .task(id: audienceVerificationKey) {
+                await youngAudienceFilter.verify(audienceRefs)
+            }
             // tvOS renders a large navigation title as a giant mid-screen overlay.
             #if !os(tvOS)
             .navigationTitle("Downloaded")
@@ -130,6 +168,15 @@ struct DownloadedView: View {
 
     @ViewBuilder
     private var statusRows: some View {
+        if youngAudienceFilter.isVerifying(audienceRefs) {
+            HStack(spacing: 12) {
+                ProgressView().tint(Theme.gold)
+                Text("Verifying audience ratings").labelCaps()
+            }
+            .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .combine)
+        }
+
         if library.isImporting || library.isEnriching {
             HStack(spacing: 12) {
                 ProgressView().tint(Theme.gold)
@@ -159,10 +206,10 @@ struct DownloadedView: View {
         let items: [ResumeItem] = watchStore.inProgress.compactMap { progress in
             switch progress.mediaType {
             case .movie:
-                return movies.first { $0.tmdbId == progress.tmdbId }
+                return visibleMovies.first { $0.tmdbId == progress.tmdbId }
                     .map { ResumeItem(progress: progress, payload: .movie($0)) }
             case .episode:
-                return shows.lazy.flatMap(\.episodes).first { $0.tmdbId == progress.tmdbId }
+                return visibleShows.lazy.flatMap(\.episodes).first { $0.tmdbId == progress.tmdbId }
                     .map { ResumeItem(progress: progress, payload: .episode($0)) }
             }
         }
@@ -238,7 +285,7 @@ struct DownloadedView: View {
     private var moviesSection: some View {
         // Anything currently in Continue Watching is shown there with its
         // resume progress; leaving it out here keeps each movie to one card.
-        let gridMovies = movies.filter { movie in
+        let gridMovies = visibleMovies.filter { movie in
             guard let id = movie.tmdbId else { return true }
             return !resumeMovieIDs.contains(id)
         }
@@ -277,11 +324,11 @@ struct DownloadedView: View {
 
     @ViewBuilder
     private var showsSection: some View {
-        if !shows.isEmpty {
+        if !visibleShows.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: String(localized: "TV Shows"))
                 LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
-                    ForEach(shows) { show in
+                    ForEach(visibleShows) { show in
                         NavigationLink(value: show) {
                             PosterCard(
                                 title: show.displayName,
