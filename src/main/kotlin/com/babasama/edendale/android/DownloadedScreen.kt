@@ -57,6 +57,7 @@ import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
 import com.babasama.edendale.android.player.PlayerActivity
+import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
@@ -65,6 +66,7 @@ import com.babasama.edendale.domain.tmdbImageUrl
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadedScreen(
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     contentPadding: PaddingValues = PaddingValues(),
     onOpenSettings: () -> Unit,
@@ -72,6 +74,7 @@ fun DownloadedScreen(
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         DownloadedScreenContent(
+            audienceFilter = audienceFilter,
             isTelevision = isTelevision,
             availableWidth = maxWidth,
             contentPadding = contentPadding,
@@ -84,6 +87,7 @@ fun DownloadedScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DownloadedScreenContent(
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     availableWidth: Dp,
     contentPadding: PaddingValues,
@@ -94,18 +98,40 @@ private fun DownloadedScreenContent(
     val library = rememberLibrary()
     val edgeMargin = if (isTelevision || availableWidth >= 600.dp) 48.dp else 20.dp
 
-    val movies by library.movies.collectAsState(initial = emptyList())
-    val shows by library.shows.collectAsState(initial = emptyList())
+    val allMovies by library.movies.collectAsState(initial = emptyList())
+    val allShows by library.shows.collectAsState(initial = emptyList())
     val episodes by library.episodes.collectAsState(initial = emptyList())
     val folders by library.folders.collectAsState(initial = emptyList())
     val progressList by library.watchProgress.collectAsState(initial = emptyList())
     val activity by library.activity.collectAsState(initial = LibraryActivity())
     val scanError = activity.errorMessage
 
+    // Young Audience filter: an imported title is shown only when its TMDB
+    // enrichment verifies it as PG / PG-13; an un-enriched file has no id to
+    // verify, so it fails closed while the preference is on.
+    val audienceRefs = remember(allMovies, allShows) {
+        (allMovies.mapNotNull { m -> m.tmdbId?.let { MediaRef(it, MediaType.MOVIE) } } +
+            allShows.mapNotNull { s -> s.tmdbId?.let { MediaRef(it, MediaType.TV) } }).distinct()
+    }
+    LaunchedEffect(audienceRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
+        audienceFilter.verify(audienceRefs)
+    }
+    val movies = if (!audienceFilter.isEnabled) allMovies else allMovies.filter {
+        it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.MOVIE)) } == true
+    }
+    val shows = if (!audienceFilter.isEnabled) allShows else allShows.filter {
+        it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.TV)) } == true
+    }
+    val visibleShowKeys = remember(shows) { shows.map { it.key }.toSet() }
+    val visibleEpisodes = if (!audienceFilter.isEnabled) episodes else episodes.filter {
+        it.showKey in visibleShowKeys
+    }
+    val audienceVerifying = audienceFilter.isVerifying(audienceRefs)
+
     val runtimeFormat = rememberRuntimeFormat()
     val progressByKey = remember(progressList) { progressList.byStorageKey() }
-    val continueEntries = remember(progressList, movies, episodes, shows) {
-        continueWatching(progressList, movies, episodes, shows)
+    val continueEntries = remember(progressList, movies, visibleEpisodes, shows) {
+        continueWatching(progressList, movies, visibleEpisodes, shows)
     }
     val episodeCounts = remember(episodes) { episodes.groupingBy { it.showKey }.eachCount() }
 
@@ -210,6 +236,12 @@ private fun DownloadedScreenContent(
                                     .padding(top = 8.dp),
                             )
                         }
+                    }
+                }
+
+                if (audienceVerifying) {
+                    item("audience-verifying") {
+                        AudienceVerifyingRow(edgeMargin = edgeMargin)
                     }
                 }
 
@@ -335,7 +367,7 @@ private fun DownloadedScreenContent(
                     }
                     items(folders.size, key = { folders[it].treeUri }) { index ->
                         val folder = folders[index]
-                        val count = movies.count { it.folderUri == folder.treeUri } +
+                        val count = allMovies.count { it.folderUri == folder.treeUri } +
                             episodes.count { it.folderUri == folder.treeUri }
                         SourceRow(
                             folder = folder,

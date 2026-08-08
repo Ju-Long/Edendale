@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,7 @@ import com.babasama.edendale.domain.PersonDetail
 @Composable
 fun FilmographyScreen(
     state: FilmographyUiState,
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     onBack: () -> Unit,
     onOpenDetail: (MediaRef) -> Unit,
@@ -58,6 +60,13 @@ fun FilmographyScreen(
     BackHandler(onBack = onBack)
     val windowSize = currentWindowSizeDp()
     val edgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
+
+    val filmographyRefs = state.items.map { it.ref }
+    LaunchedEffect(filmographyRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
+        audienceFilter.verify(filmographyRefs)
+    }
+    val visibleItems = audienceFilter.visible(state.items)
+    val audienceVerifying = audienceFilter.isVerifying(filmographyRefs)
     // The Back chip floats in a sibling Box, and D-pad Down does not cross from
     // it into the list, which left the filmography cards unreachable on TV.
     val listFocus = remember { FocusRequester() }
@@ -122,7 +131,7 @@ fun FilmographyScreen(
                             stacked = windowSize.width < 600.dp && !isTelevision,
                         )
                     }
-                    if (state.items.isNotEmpty()) {
+                    if (visibleItems.isNotEmpty()) {
                         item("title") {
                             SectionHeader(
                                 title = stringResource(R.string.filmography_title),
@@ -132,10 +141,30 @@ fun FilmographyScreen(
                         }
                         item("results") {
                             FilmographyGrid(
-                                items = state.items,
+                                items = visibleItems,
                                 edgeMargin = edgeMargin,
                                 isTelevision = isTelevision,
                                 onOpenDetail = onOpenDetail,
+                            )
+                        }
+                    } else if (audienceVerifying) {
+                        item("verifying") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 40.dp),
+                                contentAlignment = Alignment.Center,
+                            ) { CircularProgressIndicator() }
+                        }
+                    } else if (audienceFilter.isEnabled && state.items.isNotEmpty()) {
+                        item("filtered") {
+                            Text(
+                                text = stringResource(R.string.filmography_no_young_audience_titles),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = edgeMargin, vertical = 40.dp),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -61,6 +65,7 @@ import kotlinx.coroutines.withContext
 fun SettingsScreen(
     isTelevision: Boolean,
     tmdbAccount: TmdbAccountViewModel,
+    audienceFilter: YoungAudienceFilter,
     contentPadding: PaddingValues = PaddingValues(),
     onDismiss: (() -> Unit)? = null,
 ) {
@@ -195,6 +200,14 @@ fun SettingsScreen(
                     ),
                 )
             }
+        }
+
+        item {
+            AudienceSettingsSection(
+                isEnabled = audienceFilter.isEnabled,
+                isTelevision = isTelevision,
+                onToggle = { audienceFilter.isEnabled = it },
+            )
         }
 
         if (isTelevision) {
@@ -368,6 +381,60 @@ fun SettingsScreen(
                 InfoRow(stringResource(R.string.tmdb_attribution))
                 SettingsRowDivider()
                 InfoRow(stringResource(R.string.settings_open_source))
+            }
+        }
+    }
+}
+
+/**
+ * The Young Audience preference. The whole row is one focus target — it fills
+ * gold under the remote and the switch shows state — so the toggle is reachable
+ * with the D-pad without a separately focusable control nested inside.
+ */
+@Composable
+private fun AudienceSettingsSection(
+    isEnabled: Boolean,
+    isTelevision: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    SettingsSection(
+        header = stringResource(R.string.settings_section_audience),
+        isTelevision = isTelevision,
+        focusableContent = false,
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val focused by interactionSource.collectIsFocusedAsState()
+        Surface(
+            onClick = { onToggle(!isEnabled) },
+            modifier = Modifier.fillMaxWidth(),
+            color = if (focused) EdendaleColors.Gold else Color.Transparent,
+            contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            interactionSource = interactionSource,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_young_audience_title),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_young_audience_description),
+                        style = BodyCopyStyle(),
+                        color = if (focused) EdendaleColors.OnGold
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Switch(checked = isEnabled, onCheckedChange = null)
             }
         }
     }

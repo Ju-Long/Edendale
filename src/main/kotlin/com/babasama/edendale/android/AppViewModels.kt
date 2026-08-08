@@ -236,7 +236,14 @@ class BrowseViewModel(
     fun toggleWatchlist(ref: MediaRef) {
         viewModelScope.launch {
             val inWatchlist = detailState.userMedia?.watchlist == true
-            dataStore.setWatchlist(ref, !inWatchlist)
+            // Snapshot the title and poster so the Watchlist tab can render the
+            // card without a per-title fetch, and it stays useful offline.
+            dataStore.setWatchlist(
+                ref,
+                !inWatchlist,
+                title = detailState.detail?.title,
+                posterPath = detailState.detail?.posterPath,
+            )
             detailState = detailState.copy(userMedia = dataStore.getUserMedia(ref))
         }
     }

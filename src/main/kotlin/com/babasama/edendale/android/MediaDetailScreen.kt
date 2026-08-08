@@ -2,6 +2,7 @@ package com.babasama.edendale.android
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,19 +17,27 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -39,9 +48,11 @@ import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.tmdbImageUrl
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailScreen(
     state: DetailUiState,
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     onBack: () -> Unit,
     onToggleFavourite: (com.babasama.edendale.domain.MediaRef) -> Unit = {},
@@ -53,58 +64,192 @@ fun MediaDetailScreen(
     onToggleEpisodeWatched: (com.babasama.edendale.tmdb.TmdbEpisodeDetail) -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+    val ref = state.ref
+    androidx.compose.runtime.LaunchedEffect(
+        ref,
+        audienceFilter.isEnabled,
+        audienceFilter.contextIdentifier,
     ) {
-        when {
-            state.isLoading -> ArchiveLoadingState()
-            state.errorMessage != null -> ArchiveEmptyState(
-                icon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_film),
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.outline,
-                    )
-                },
-                title = stringResource(R.string.empty_reel_snapped_title),
-                message = state.errorMessage,
-                action = {
-                    ArchiveButton(
-                        label = stringResource(R.string.action_go_back),
-                        onClick = onBack,
-                        kind = ArchiveButtonKind.Primary,
-                        isTelevision = isTelevision,
-                    )
-                },
-            )
-            state.detail != null -> DetailContent(
-                state = state,
+        if (ref != null) audienceFilter.verify(listOf(ref))
+    }
+    // Fails closed: an enabled filter blocks the page until this title is
+    // verified as PG / PG-13, so a deep link cannot flash restricted content.
+    val audienceBlocked = ref != null && audienceFilter.isEnabled && !audienceFilter.allows(ref)
+    val windowSize = currentWindowSizeDp()
+    val topBarEdgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
+    val contentFocus = androidx.compose.runtime.remember { FocusRequester() }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            DetailTopBar(
+                detail = state.detail?.takeUnless { audienceBlocked },
+                userMedia = state.userMedia,
+                isWatched = state.watchProgress?.isCompleted == true,
                 isTelevision = isTelevision,
+                edgeMargin = topBarEdgeMargin,
+                contentFocus = contentFocus,
                 onBack = onBack,
                 onToggleFavourite = onToggleFavourite,
                 onToggleWatchlist = onToggleWatchlist,
-                onSetRating = onSetRating,
                 onToggleWatched = onToggleWatched,
-                onOpenFilmography = onOpenFilmography,
-                onSelectSeason = onSelectSeason,
-                onToggleEpisodeWatched = onToggleEpisodeWatched,
             )
+        },
+    ) { _ ->
+        // The detail artwork remains full-bleed behind the transparent top bar.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRequester(contentFocus)
+                .focusGroup(),
+        ) {
+            when {
+                state.isLoading -> ArchiveLoadingState()
+                state.errorMessage != null -> ArchiveEmptyState(
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_film),
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.outline,
+                        )
+                    },
+                    title = stringResource(R.string.empty_reel_snapped_title),
+                    message = state.errorMessage,
+                    action = {
+                        ArchiveButton(
+                            label = stringResource(R.string.action_go_back),
+                            onClick = onBack,
+                            kind = ArchiveButtonKind.Primary,
+                            isTelevision = isTelevision,
+                        )
+                    },
+                )
+                audienceBlocked -> {
+                    if (audienceFilter.isVerifying(listOf(ref!!))) {
+                        ArchiveLoadingState()
+                    } else {
+                        AudienceRestrictedState(isTelevision = isTelevision, onBack = onBack)
+                    }
+                }
+                state.detail != null -> DetailContent(
+                    state = state,
+                    isTelevision = isTelevision,
+                    onSetRating = onSetRating,
+                    onOpenFilmography = onOpenFilmography,
+                    onSelectSeason = onSelectSeason,
+                    onToggleEpisodeWatched = onToggleEpisodeWatched,
+                )
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailTopBar(
+    detail: MediaDetail?,
+    userMedia: com.babasama.edendale.domain.UserMediaRecord?,
+    isWatched: Boolean,
+    isTelevision: Boolean,
+    edgeMargin: androidx.compose.ui.unit.Dp,
+    contentFocus: FocusRequester,
+    onBack: () -> Unit,
+    onToggleFavourite: (com.babasama.edendale.domain.MediaRef) -> Unit,
+    onToggleWatchlist: (com.babasama.edendale.domain.MediaRef) -> Unit,
+    onToggleWatched: (com.babasama.edendale.domain.MediaRef) -> Unit,
+) {
+    TopAppBar(
+        title = {},
+        navigationIcon = {
+            Box(
+                modifier = Modifier
+                    .padding(start = edgeMargin)
+                    .background(
+                        color = EdendaleColors.SurfaceLow.copy(alpha = .9f),
+                        shape = CircleShape,
+                    ),
+            ) {
+                ArchiveIconButton(
+                    onClick = onBack,
+                    modifier = Modifier.focusProperties {
+                        if (isTelevision) down = contentFocus
+                    },
+                    isTelevision = isTelevision,
+                ) { focused ->
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_chevron_left),
+                        contentDescription = stringResource(R.string.action_back),
+                        tint = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        },
+        actions = {
+            detail?.let {
+                Box(
+                    modifier = Modifier
+                        .padding(end = edgeMargin)
+                        .background(
+                            color = EdendaleColors.SurfaceLow.copy(alpha = .9f),
+                            shape = RoundedCornerShape(50),
+                        ),
+                ) {
+                    UserMediaActions(
+                        detail = it,
+                        userMedia = userMedia,
+                        isWatched = isWatched,
+                        isTelevision = isTelevision,
+                        onToggleFavourite = onToggleFavourite,
+                        onToggleWatchlist = onToggleWatchlist,
+                        onToggleWatched = onToggleWatched,
+                        modifier = Modifier.focusProperties {
+                            if (isTelevision) down = contentFocus
+                        },
+                    )
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
+        ),
+    )
+}
+
+@Composable
+private fun AudienceRestrictedState(
+    isTelevision: Boolean,
+    onBack: () -> Unit,
+) {
+    ArchiveEmptyState(
+        icon = {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_circle_xmark),
+                contentDescription = null,
+                modifier = Modifier.size(if (isTelevision) 64.dp else 48.dp),
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        },
+        title = stringResource(R.string.audience_restricted_title),
+        message = stringResource(R.string.audience_restricted_message),
+        action = {
+            ArchiveButton(
+                label = stringResource(R.string.action_go_back),
+                onClick = onBack,
+                kind = ArchiveButtonKind.Primary,
+                isTelevision = isTelevision,
+            )
+        },
+    )
 }
 
 @Composable
 private fun DetailContent(
     state: DetailUiState,
     isTelevision: Boolean,
-    onBack: () -> Unit,
-    onToggleFavourite: (com.babasama.edendale.domain.MediaRef) -> Unit,
-    onToggleWatchlist: (com.babasama.edendale.domain.MediaRef) -> Unit,
     onSetRating: (com.babasama.edendale.domain.MediaRef, Double?) -> Unit,
-    onToggleWatched: (com.babasama.edendale.domain.MediaRef) -> Unit,
     onOpenFilmography: (Int, String) -> Unit,
     onSelectSeason: (Int) -> Unit,
     onToggleEpisodeWatched: (com.babasama.edendale.tmdb.TmdbEpisodeDetail) -> Unit,
@@ -180,25 +325,6 @@ private fun DetailContent(
                         ),
                 )
                 }
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(edgeMargin)
-                        .tvFocusLift(isTelevision),
-                    onClick = onBack,
-                    shape = RoundedCornerShape(50),
-                    color = EdendaleColors.SurfaceLow.copy(alpha = .9f),
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(painterResource(id = R.drawable.ic_chevron_left), contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.action_back))
-                    }
-                }
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -239,20 +365,9 @@ private fun DetailContent(
                             Text(stringResource(if (showTrailer) R.string.detail_hide_trailer else R.string.detail_watch_trailer))
                         }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        DetailMetadata(detail, state.watchProgress)
-                        UserMediaActions(
-                            detail = detail,
-                            userMedia = state.userMedia,
-                            isWatched = state.watchProgress?.isCompleted == true,
-                            isTelevision = isTelevision,
-                            onToggleFavourite = onToggleFavourite,
-                            onToggleWatchlist = onToggleWatchlist,
-                            onToggleWatched = onToggleWatched,
-                        )
-                    }
-                    // Five stars take a line of their own; sharing one with the
-                    // badges and toggles ran them off the edge of a phone hero.
+                    DetailMetadata(detail, state.watchProgress)
+                    // Five stars take a line of their own so the metadata stays
+                    // readable within the phone hero.
                     StarRatingRow(
                         rating = state.userMedia?.rating,
                         onSetRating = { onSetRating(detail.ref, it) },
@@ -418,8 +533,12 @@ private fun UserMediaActions(
     onToggleFavourite: (com.babasama.edendale.domain.MediaRef) -> Unit,
     onToggleWatchlist: (com.babasama.edendale.domain.MediaRef) -> Unit,
     onToggleWatched: (com.babasama.edendale.domain.MediaRef) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         // Shows are marked watched per episode in the season browser, so the
         // whole-title toggle only makes sense for movies.
         if (detail.ref.mediaType == com.babasama.edendale.domain.MediaType.MOVIE) {

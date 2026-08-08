@@ -2,8 +2,10 @@ package com.babasama.edendale
 
 import android.content.Context
 import com.babasama.edendale.tmdb.BrowseRepository
+import com.babasama.edendale.tmdb.ContentCertificationProvider
 import com.babasama.edendale.tmdb.TmdbAccountApi
 import com.babasama.edendale.tmdb.TmdbApi
+import com.babasama.edendale.tmdb.TmdbContentCertificationProvider
 import com.babasama.edendale.tmdb.TmdbTransport
 import com.babasama.edendale.tmdb.UserMediaSyncEngine
 import com.babasama.edendale.wyzie.MAX_SUBTITLE_BYTES
@@ -34,6 +36,16 @@ object AndroidEdendaleCore {
     fun accountApi(): TmdbAccountApi = TmdbAccountApi(AndroidTmdbTransport())
 
     fun syncEngine(): UserMediaSyncEngine = UserMediaSyncEngine(accountApi())
+
+    /**
+     * Young Audience certification lookups. [regionProvider] is read on each
+     * request so a device region change is picked up without rebuilding the
+     * provider; its cache is invalidated by the changed region identifier.
+     */
+    fun contentCertificationProvider(
+        regionProvider: () -> String,
+    ): ContentCertificationProvider =
+        TmdbContentCertificationProvider(TmdbApi(AndroidTmdbTransport()), regionProvider)
 
     fun wyzieService(): WyzieSubtitleService = WyzieSubtitleService(AndroidWyzieTransport())
 

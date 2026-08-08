@@ -14,6 +14,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Movies &amp; Shows</string>
+    <string name="tab_watchlist">Watchlist</string>
     <string name="tab_downloaded">Downloaded</string>
     <string name="tab_search">Search</string>
     <string name="action_settings">Settings</string>
@@ -322,4 +323,17 @@
         <item quantity="one">%1$d more matched.</item>
         <item quantity="other">%1$d more matched.</item>
     </plurals>
+
+    <!-- Watchlist -->
+    <string name="watchlist_remove">Remove from Watchlist</string>
+    <string name="watchlist_no_young_audience_titles">No PG or PG-13 titles are currently in your watchlist.</string>
+
+    <!-- Young Audience filter -->
+    <string name="settings_section_audience">Audience</string>
+    <string name="settings_young_audience_title">Young Audience Friendly</string>
+    <string name="settings_young_audience_description">Only show movies and series rated PG or PG-13, including equivalent TV labels.</string>
+    <string name="audience_verifying">Verifying audience ratings</string>
+    <string name="audience_restricted_title">Unavailable for Young Audiences</string>
+    <string name="audience_restricted_message">This title is not verified as PG or PG-13.</string>
+    <string name="filmography_no_young_audience_titles">No PG or PG-13 titles are available in this filmography.</string>
 </resources>

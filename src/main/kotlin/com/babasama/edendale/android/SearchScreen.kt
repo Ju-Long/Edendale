@@ -81,6 +81,7 @@ import com.babasama.edendale.domain.tmdbImageUrl
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     onOpenDetail: (MediaRef) -> Unit,
     onOpenPerson: (Int, String) -> Unit,
@@ -117,6 +118,34 @@ fun SearchScreen(
         )
     }
     val localProgressByKey = remember(localProgress) { localProgress.byStorageKey() }
+
+    // Young Audience filter: hide anything not verified as PG / PG-13. Local
+    // matches without a TMDB id cannot be verified, so they fail closed too.
+    val audienceRefs = remember(state.results, state.trending, localMatches) {
+        (state.results.map { it.ref } +
+            state.trending.map { it.ref } +
+            localMatches.movies.mapNotNull { m -> m.tmdbId?.let { MediaRef(it, MediaType.MOVIE) } } +
+            localMatches.shows.mapNotNull { s -> s.tmdbId?.let { MediaRef(it, MediaType.TV) } })
+            .distinct()
+    }
+    LaunchedEffect(audienceRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
+        audienceFilter.verify(audienceRefs)
+    }
+    val visibleResults = audienceFilter.visible(state.results)
+    val visibleTrending = audienceFilter.visible(state.trending)
+    val visibleLocal = if (!audienceFilter.isEnabled) {
+        localMatches
+    } else {
+        LocalMatches(
+            movies = localMatches.movies.filter {
+                it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.MOVIE)) } == true
+            },
+            shows = localMatches.shows.filter {
+                it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.TV)) } == true
+            },
+        )
+    }
+    val audienceVerifying = audienceFilter.isVerifying(audienceRefs)
 
     LaunchedEffect(Unit) { viewModel.loadTrendingIfNeeded() }
 
@@ -330,7 +359,7 @@ fun SearchScreen(
         // Resolved out here: the LazyListScope builders below are not composable,
         // so they cannot reach stringResource themselves.
         val tmdbHeader = stringResource(
-            if (localMatches.isEmpty) R.string.search_section_results else R.string.search_section_tmdb,
+            if (visibleLocal.isEmpty) R.string.search_section_results else R.string.search_section_tmdb,
         )
         val alsoInTitlesHeader = stringResource(R.string.search_section_also_titles)
 
@@ -352,7 +381,7 @@ fun SearchScreen(
             // Section builders, so a people-scoped query can lead with people
             // and still show titles underneath.
             fun LazyListScope.librarySection() {
-                if (localMatches.isEmpty) return
+                if (visibleLocal.isEmpty) return
                 item("library-header") {
                     SectionHeader(
                         title = stringResource(R.string.search_section_library),
@@ -362,7 +391,7 @@ fun SearchScreen(
                 }
                 item("library") {
                     LibraryResultsGrid(
-                        matches = localMatches,
+                        matches = visibleLocal,
                         progressByKey = localProgressByKey,
                         edgeMargin = edgeMargin,
                         isTelevision = isTelevision,
@@ -372,7 +401,7 @@ fun SearchScreen(
             }
 
             fun LazyListScope.titleSection(header: String) {
-                if (state.results.isEmpty()) return
+                if (visibleResults.isEmpty()) return
                 item("titles-header") {
                     SectionHeader(
                         title = header,
@@ -382,7 +411,7 @@ fun SearchScreen(
                 }
                 item("titles") {
                     SearchResultsGrid(
-                        items = state.results,
+                        items = visibleResults,
                         edgeMargin = edgeMargin,
                         isTelevision = isTelevision,
                         onOpenDetail = onOpenDetail,
@@ -428,7 +457,10 @@ fun SearchScreen(
                         modifier = Modifier.height(if (isTelevision) 360.dp else 300.dp),
                     )
                 }
-                state.isSearching && localMatches.isEmpty -> item("loading") {
+                (state.isSearching || audienceVerifying) &&
+                    visibleResults.isEmpty() &&
+                    state.people.isEmpty() &&
+                    visibleLocal.isEmpty -> item("loading") {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -437,9 +469,10 @@ fun SearchScreen(
                     ) { CircularProgressIndicator() }
                 }
                 state.hasSearched &&
-                    state.results.isEmpty() &&
+                    !audienceVerifying &&
+                    visibleResults.isEmpty() &&
                     state.people.isEmpty() &&
-                    localMatches.isEmpty -> item("empty") {
+                    visibleLocal.isEmpty -> item("empty") {
                     ArchiveEmptyState(
                         icon = { Icon(painterResource(id = R.drawable.ic_magnifying_glass_play), contentDescription = null) },
                         title = stringResource(R.string.search_empty_title),
@@ -447,7 +480,7 @@ fun SearchScreen(
                         modifier = Modifier.height(320.dp),
                     )
                 }
-                state.results.isNotEmpty() || state.people.isNotEmpty() -> {
+                visibleResults.isNotEmpty() || state.people.isNotEmpty() -> {
                     if (state.scope == SearchScope.PEOPLE) {
                         // A people prefix reorders — people lead, titles follow.
                         peopleSection()
@@ -459,10 +492,10 @@ fun SearchScreen(
                 }
                 // Local hits already fill the screen while TMDB is still working
                 // or came back with nothing.
-                !localMatches.isEmpty -> Unit
+                !visibleLocal.isEmpty -> Unit
                 // Nothing searched for yet: browse today's trending titles
                 // rather than staring at a placeholder.
-                state.trending.isNotEmpty() -> {
+                visibleTrending.isNotEmpty() -> {
                     item("trending-header") {
                         SectionHeader(
                             title = stringResource(R.string.search_section_trending_today),
@@ -472,7 +505,7 @@ fun SearchScreen(
                     }
                     item("trending") {
                         SearchResultsGrid(
-                            items = state.trending,
+                            items = visibleTrending,
                             edgeMargin = edgeMargin,
                             isTelevision = isTelevision,
                             onOpenDetail = onOpenDetail,

@@ -67,6 +67,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun MoviesShowsScreen(
     viewModel: BrowseViewModel,
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     onOpenDetail: (MediaRef) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
@@ -118,6 +119,7 @@ fun MoviesShowsScreen(
                 if (catalog != null) {
                     MoviesShowsContent(
                         catalog = catalog,
+                        audienceFilter = audienceFilter,
                         selectedCollection = state.selectedCollection,
                         collectionItems = state.collectionItems,
                         isLoadingCollection = state.isLoadingCollection,
@@ -163,6 +165,7 @@ fun MoviesShowsScreen(
 @Composable
 private fun MoviesShowsContent(
     catalog: com.babasama.edendale.tmdb.HomeCatalog,
+    audienceFilter: YoungAudienceFilter,
     selectedCollection: CollectionFilter,
     collectionItems: List<MediaItem>,
     isLoadingCollection: Boolean,
@@ -185,6 +188,21 @@ private fun MoviesShowsContent(
         else -> 140.dp
     }
 
+    val audienceRefs = remember(catalog, collectionItems) {
+        (catalog.heroScenes.map { it.detail.ref } +
+            catalog.trending.map { it.ref } +
+            catalog.popularMovies.map { it.ref } +
+            catalog.popularShows.map { it.ref } +
+            catalog.topRated.map { it.ref } +
+            collectionItems.map { it.ref }).distinct()
+    }
+    LaunchedEffect(audienceRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
+        audienceFilter.verify(audienceRefs)
+    }
+
+    val heroScenes = catalog.heroScenes.filter { audienceFilter.allows(it.detail.ref) }
+    val verifying = audienceFilter.isVerifying(audienceRefs)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -193,10 +211,15 @@ private fun MoviesShowsContent(
         ),
         verticalArrangement = Arrangement.spacedBy(if (isTelevision) 56.dp else 48.dp),
     ) {
-        if (catalog.heroScenes.isNotEmpty()) {
+        if (verifying) {
+            item("audience-verifying") {
+                AudienceVerifyingRow(edgeMargin = edgeMargin)
+            }
+        }
+        if (heroScenes.isNotEmpty()) {
             item("hero") {
                 HeroPager(
-                    scenes = catalog.heroScenes,
+                    scenes = heroScenes,
                     edgeMargin = edgeMargin,
                     isTelevision = isTelevision,
                     onOpenDetail = onOpenDetail,
@@ -207,7 +230,7 @@ private fun MoviesShowsContent(
         item("trending") {
             MediaShelf(
                 title = stringResource(R.string.shelf_trending),
-                items = catalog.trending,
+                items = audienceFilter.visible(catalog.trending),
                 edgeMargin = edgeMargin,
                 posterWidth = posterWidth,
                 isTelevision = isTelevision,
@@ -217,7 +240,7 @@ private fun MoviesShowsContent(
         item("popular-movies") {
             MediaShelf(
                 title = stringResource(R.string.shelf_popular_films),
-                items = catalog.popularMovies,
+                items = audienceFilter.visible(catalog.popularMovies),
                 edgeMargin = edgeMargin,
                 posterWidth = posterWidth,
                 isTelevision = isTelevision,
@@ -227,7 +250,7 @@ private fun MoviesShowsContent(
         item("popular-tv") {
             MediaShelf(
                 title = stringResource(R.string.shelf_popular_series),
-                items = catalog.popularShows,
+                items = audienceFilter.visible(catalog.popularShows),
                 edgeMargin = edgeMargin,
                 posterWidth = posterWidth,
                 isTelevision = isTelevision,
@@ -237,7 +260,7 @@ private fun MoviesShowsContent(
         item("top-rated") {
             MediaShelf(
                 title = stringResource(R.string.shelf_top_rated),
-                items = catalog.topRated,
+                items = audienceFilter.visible(catalog.topRated),
                 edgeMargin = edgeMargin,
                 posterWidth = posterWidth,
                 isTelevision = isTelevision,
@@ -248,7 +271,7 @@ private fun MoviesShowsContent(
             CollectionsSection(
                 filters = catalog.collectionFilters(),
                 selected = selectedCollection,
-                items = collectionItems.take(12),
+                items = audienceFilter.visible(collectionItems).take(12),
                 loading = isLoadingCollection,
                 edgeMargin = edgeMargin,
                 isTelevision = isTelevision,
@@ -256,6 +279,29 @@ private fun MoviesShowsContent(
                 onOpenDetail = onOpenDetail,
             )
         }
+    }
+}
+
+/** A one-line "verifying audience ratings" status for filter-gated shelves. */
+@Composable
+internal fun AudienceVerifyingRow(edgeMargin: Dp) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = edgeMargin),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = stringResource(R.string.audience_verifying).uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

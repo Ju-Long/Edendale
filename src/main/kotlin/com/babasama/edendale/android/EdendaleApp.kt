@@ -50,6 +50,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,9 @@ private enum class AppTab(
     val selectedIcon: Int,
 ) {
     MOVIES(R.string.tab_movies_shows, R.drawable.ic_film, R.drawable.ic_film),
+    // Watchlist sits between Movies and Downloaded, and only appears while the
+    // watchlist holds a title (see the visible-tab list in EdendaleApp).
+    WATCHLIST(R.string.tab_watchlist, R.drawable.film_stack, R.drawable.film_stack),
     DOWNLOADED(R.string.tab_downloaded, R.drawable.ic_folder_closed, R.drawable.ic_folder_closed),
     SEARCH(R.string.tab_search, R.drawable.ic_magnifying_glass_play, R.drawable.ic_magnifying_glass_play),
 }
@@ -87,6 +91,8 @@ fun EdendaleApp(
     val browseViewModel: BrowseViewModel = viewModel()
     val searchViewModel: SearchViewModel = viewModel()
     val tmdbAccountViewModel: TmdbAccountViewModel = viewModel()
+    val watchlistViewModel: WatchlistViewModel = viewModel()
+    val audienceFilter = (viewModel<AudienceFilterViewModel>()).filter
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.MOVIES) }
     var showSettingsSheet by rememberSaveable { mutableStateOf(false) }
     // The local show drill-in is reachable from both Downloaded and Search, so
@@ -96,6 +102,29 @@ fun EdendaleApp(
         selectedTab = tab
     }
     val context = LocalContext.current
+
+    // The Watchlist tab appears only while the list holds a title. Its refs are
+    // verified here (not just on the tab) so a fully filtered-out watchlist can
+    // hide the tab, and so the count survives switching tabs.
+    val watchlistRecords by watchlistViewModel.items.collectAsState()
+    val watchlistRefs = watchlistRecords.map { it.ref }
+    LaunchedEffect(watchlistRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
+        audienceFilter.verify(watchlistRefs)
+    }
+    val hasWatchlist = watchlistRecords.isNotEmpty() && (
+        !audienceFilter.isEnabled ||
+            audienceFilter.isVerifying(watchlistRefs) ||
+            watchlistRecords.any { audienceFilter.allows(it.ref) }
+        )
+    val tabs = buildList {
+        add(AppTab.MOVIES)
+        if (hasWatchlist) add(AppTab.WATCHLIST)
+        add(AppTab.DOWNLOADED)
+        add(AppTab.SEARCH)
+    }
+    LaunchedEffect(hasWatchlist) {
+        if (!hasWatchlist && selectedTab == AppTab.WATCHLIST) selectedTab = AppTab.MOVIES
+    }
 
     LaunchedEffect(pendingRoute) {
         if (pendingRoute != null) {
@@ -138,6 +167,7 @@ fun EdendaleApp(
     if (browseViewModel.filmographyState.personId != null) {
         FilmographyScreen(
             state = browseViewModel.filmographyState,
+            audienceFilter = audienceFilter,
             isTelevision = isTelevision,
             onBack = browseViewModel::closeFilmography,
             onOpenDetail = browseViewModel::openDetail,
@@ -148,6 +178,7 @@ fun EdendaleApp(
     if (browseViewModel.detailState.ref != null) {
         MediaDetailScreen(
             state = browseViewModel.detailState,
+            audienceFilter = audienceFilter,
             isTelevision = isTelevision,
             onBack = browseViewModel::closeDetail,
             onToggleFavourite = { browseViewModel.toggleFavourite(it) },
@@ -177,6 +208,7 @@ fun EdendaleApp(
             SettingsScreen(
                 isTelevision = true,
                 tmdbAccount = tmdbAccountViewModel,
+                audienceFilter = audienceFilter,
                 contentPadding = PaddingValues(top = 24.dp, bottom = 24.dp),
                 onDismiss = { showSettingsSheet = false },
             )
@@ -188,26 +220,35 @@ fun EdendaleApp(
         val compactPortrait = !isTelevision && maxWidth < 600.dp && maxHeight > maxWidth
         when {
             isTelevision -> TvShell(
+                tabs = tabs,
                 selectedTab = selectedTab,
                 onSelectTab = openTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
+                watchlistViewModel = watchlistViewModel,
+                audienceFilter = audienceFilter,
                 onOpenSettings = { showSettingsSheet = true },
                 onOpenShow = { openShowKey = it },
             )
             compactPortrait -> PhoneShell(
+                tabs = tabs,
                 selectedTab = selectedTab,
                 onSelectTab = openTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
+                watchlistViewModel = watchlistViewModel,
+                audienceFilter = audienceFilter,
                 onOpenSettings = { showSettingsSheet = true },
                 onOpenShow = { openShowKey = it },
             )
             else -> WideShell(
+                tabs = tabs,
                 selectedTab = selectedTab,
                 onSelectTab = openTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
+                watchlistViewModel = watchlistViewModel,
+                audienceFilter = audienceFilter,
                 extendedNavigation = maxWidth >= 1100.dp,
                 onOpenSettings = { showSettingsSheet = true },
                 onOpenShow = { openShowKey = it },
@@ -224,6 +265,7 @@ fun EdendaleApp(
                 SettingsScreen(
                     isTelevision = false,
                     tmdbAccount = tmdbAccountViewModel,
+                    audienceFilter = audienceFilter,
                     contentPadding = PaddingValues(bottom = 24.dp),
                 )
             }
@@ -234,10 +276,13 @@ fun EdendaleApp(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PhoneShell(
+    tabs: List<AppTab>,
     selectedTab: AppTab,
     onSelectTab: (AppTab) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
+    watchlistViewModel: WatchlistViewModel,
+    audienceFilter: YoungAudienceFilter,
     onOpenSettings: () -> Unit,
     onOpenShow: (String) -> Unit,
 ) {
@@ -245,7 +290,7 @@ private fun PhoneShell(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
-                AppTab.entries.forEach { tab ->
+                tabs.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { onSelectTab(tab) },
@@ -265,6 +310,8 @@ private fun PhoneShell(
             tab = selectedTab,
             browseViewModel = browseViewModel,
             searchViewModel = searchViewModel,
+            watchlistViewModel = watchlistViewModel,
+            audienceFilter = audienceFilter,
             isTelevision = false,
             contentPadding = padding,
             onOpenSettings = onOpenSettings,
@@ -276,16 +323,20 @@ private fun PhoneShell(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WideShell(
+    tabs: List<AppTab>,
     selectedTab: AppTab,
     onSelectTab: (AppTab) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
+    watchlistViewModel: WatchlistViewModel,
+    audienceFilter: YoungAudienceFilter,
     extendedNavigation: Boolean,
     onOpenSettings: () -> Unit,
     onOpenShow: (String) -> Unit,
 ) {
     Row(Modifier.fillMaxSize()) {
         WideNavigation(
+            tabs = tabs,
             selectedTab = selectedTab,
             onSelectTab = onSelectTab,
             extended = extendedNavigation,
@@ -308,6 +359,8 @@ private fun WideShell(
                 tab = selectedTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
+                watchlistViewModel = watchlistViewModel,
+                audienceFilter = audienceFilter,
                 isTelevision = false,
                 contentPadding = PaddingValues(),
                 onOpenSettings = onOpenSettings,
@@ -329,6 +382,7 @@ private fun railInsets(): WindowInsets =
 
 @Composable
 private fun WideNavigation(
+    tabs: List<AppTab>,
     selectedTab: AppTab?,
     onSelectTab: (AppTab) -> Unit,
     extended: Boolean,
@@ -365,7 +419,7 @@ private fun WideNavigation(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            AppTab.entries.forEach { tab ->
+            tabs.forEach { tab ->
                 NavigationButton(
                     tab = tab,
                     selected = selectedTab == tab,
@@ -439,10 +493,13 @@ private fun NavigationButton(
 
 @Composable
 private fun TvShell(
+    tabs: List<AppTab>,
     selectedTab: AppTab,
     onSelectTab: (AppTab) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
+    watchlistViewModel: WatchlistViewModel,
+    audienceFilter: YoungAudienceFilter,
     onOpenSettings: () -> Unit,
     onOpenShow: (String) -> Unit,
 ) {
@@ -472,7 +529,7 @@ private fun TvShell(
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
-                    AppTab.entries.forEach { tab ->
+                    tabs.forEach { tab ->
                         TvNavigationTab(
                             tab = tab,
                             selected = selectedTab == tab,
@@ -498,6 +555,8 @@ private fun TvShell(
                 tab = selectedTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
+                watchlistViewModel = watchlistViewModel,
+                audienceFilter = audienceFilter,
                 isTelevision = true,
                 contentPadding = padding,
                 onOpenSettings = onOpenSettings,
@@ -548,6 +607,8 @@ private fun AppTabContent(
     tab: AppTab,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
+    watchlistViewModel: WatchlistViewModel,
+    audienceFilter: YoungAudienceFilter,
     isTelevision: Boolean,
     contentPadding: PaddingValues,
     onOpenSettings: () -> Unit,
@@ -556,12 +617,22 @@ private fun AppTabContent(
     when (tab) {
         AppTab.MOVIES -> MoviesShowsScreen(
             viewModel = browseViewModel,
+            audienceFilter = audienceFilter,
+            isTelevision = isTelevision,
+            onOpenDetail = browseViewModel::openDetail,
+            contentPadding = contentPadding,
+            onOpenSettings = onOpenSettings,
+        )
+        AppTab.WATCHLIST -> WatchlistScreen(
+            viewModel = watchlistViewModel,
+            audienceFilter = audienceFilter,
             isTelevision = isTelevision,
             onOpenDetail = browseViewModel::openDetail,
             contentPadding = contentPadding,
             onOpenSettings = onOpenSettings,
         )
         AppTab.DOWNLOADED -> DownloadedScreen(
+            audienceFilter = audienceFilter,
             isTelevision = isTelevision,
             contentPadding = contentPadding,
             onOpenSettings = onOpenSettings,
@@ -569,6 +640,7 @@ private fun AppTabContent(
         )
         AppTab.SEARCH -> SearchScreen(
             viewModel = searchViewModel,
+            audienceFilter = audienceFilter,
             isTelevision = isTelevision,
             onOpenDetail = browseViewModel::openDetail,
             onOpenPerson = browseViewModel::openFilmography,

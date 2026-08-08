@@ -279,6 +279,23 @@ class TmdbApi(private val transport: TmdbTransport) {
             ?: youtube.firstOrNull { it.type == "Teaser" }
     }
 
+    /**
+     * The title's certification in [regionCode], or null when the region has
+     * none. Movies read `/release_dates` (theatrical precedence), TV reads
+     * `/content_ratings`; both feed the Young Audience filter.
+     */
+    suspend fun contentCertification(ref: MediaRef, regionCode: String): String? =
+        when (ref.mediaType) {
+            MediaType.MOVIE -> parseMovieCertification(
+                fetch("/movie/${ref.id}/release_dates"),
+                regionCode,
+            )
+            MediaType.TV -> parseTvCertification(
+                fetch("/tv/${ref.id}/content_ratings"),
+                regionCode,
+            )
+        }
+
     private suspend fun fetch(
         path: String,
         parameters: Map<String, String> = emptyMap(),
