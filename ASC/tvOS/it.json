@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Libreria film e serie privata",
+  "privacyPolicyUrl": "https://policies.babasama.com/it/edendale/privacy",
+  "promotionalText": "Riproduci sul grande schermo film e serie che possiedi: libreria privata e senza pubblicità con dettagli TMDB, Continua a guardare e Watchlist.",
+  "description": "Edendale è un riproduttore video gratuito e open source e un tracker personale per Apple TV. Riproduce i film e le serie che già possiedi sul grande schermo: nessun account, nessuna pubblicità, nessuna analisi dei dati.\n\nPENSATO PER IL SOGGIORNO\n- Un'interfaccia basata sul focus progettata per il Siri Remote.\n- Locandine grandi e cinematografiche per film, serie, stagioni ed episodi.\n- Ricerca rapida nella tua libreria e tra le persone al suo interno.\n\nRIPRODUCI CIÒ CHE POSSIEDI\n- Riproduci dalle tue condivisioni di rete (SMB) o file locali del dispositivo.\n- Comodi controlli sullo schermo con timeline completa, capitoli, playlist e selezione di tracce audio e sottotitoli.\n- Carica sottotitoli online su richiesta, oppure usa le tracce all'interno dei tuoi file.\n\nUNA LIBRERIA RICCA DI DETTAGLI\n- I nomi dei file vengono classificati localmente, poi arricchiti in modo opzionale con i metadati di TMDB.\n- Sfoglia cast, troupe, stagioni, episodi e date di uscita in un layout creato per la TV.\n\nTRACCIA E CONTINUA\n- Continua a guardare ricorda il tuo punto su ogni titolo.\n- Mantieni una Watchlist di cosa guardare dopo e valuta ciò che hai visto.\n- Un filtro per i più piccoli mantiene il soggiorno adatto all'età.\n\nPRIVATO BY DESIGN\n- Nessun account Edendale e nessuna analisi dei dati. La tua libreria e la cronologia di visione restano con te e con i servizi che scegli di connettere.\n\nEdendale utilizza l'API di TMDB ma non è approvato o certificato da TMDB.",
+  "keywords": "film,serie,video,player,libreria,watchlist,sottotitoli,tracker,tmdb,tv,cinema",
+  "whatsNew": "Benvenuto in Edendale: un riproduttore video gratuito, open source e tracker personale.\n\n- Riproduci i film e le serie che già possiedi dalle tue condivisioni di rete e dai file locali del dispositivo.\n- Dettagli TMDB per film, serie, persone, stagioni ed episodi.\n- Continua a guardare, una Watchlist e valutazioni, tutto creato per il grande schermo.\n- Un filtro per i più piccoli per il soggiorno.\n- Privato by design: nessun account, nessuna pubblicità, nessuna analisi dei dati.\n\nGrazie per aver provato Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

@@ -1,0 +1,14 @@
+# App Store Connect API signing key — never commit (also covered by repo root .gitignore)
+AuthKey_*.p8
+*.p8
+
+# Local auth / machine-specific overrides
+.asc/
+*.local.json
+
+# Temp
+*.tmp
+*.tmp.*
+
+# Derived clean version-field dirs for asc --from-dir deploy
+.build/

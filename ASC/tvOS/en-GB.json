@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Private film & show library",
+  "privacyPolicyUrl": "https://policies.babasama.com/en-gb/edendale/privacy",
+  "promotionalText": "Play the films and shows you own on the big screen: a private, ad-free library with rich TMDB details, Continue Watching, and a Watchlist.",
+  "description": "Edendale is a free, open-source video player and personal watch tracker for Apple TV. It plays the films and shows you already own on the big screen: no account, no ads, no analytics.\n\nMADE FOR THE LIVING ROOM\n- A focus-driven interface designed for the Siri Remote.\n- Big, cinematic artwork for your films, shows, seasons, and episodes.\n- Fast search across your library and the people in it.\n\nPLAY WHAT YOU OWN\n- Play from your own network shares (SMB) or device-local files.\n- Comfortable on-screen controls with a full timeline, chapters, playlists, and audio and subtitle track selection.\n- Load online subtitles on demand, or use the tracks inside your files.\n\nA LIBRARY WITH REAL DETAIL\n- Filenames are classified locally, then optionally enriched with metadata from TMDB.\n- Browse cast, crew, seasons, episodes, and release dates in a layout built for TV.\n\nTRACK AND CONTINUE\n- Continue Watching remembers your place on every title.\n- Keep a Watchlist of what to watch next, and rate what you have seen.\n- A Young Audience filter keeps the living room age-appropriate.\n\nPRIVATE BY DESIGN\n- No Edendale account and no analytics. Your library and watch history stay with you and the services you choose to connect.\n\nEdendale uses the TMDB API but is not endorsed or certified by TMDB.",
+  "keywords": "film,show,programme,video,player,media,library,watchlist,subtitles,tracker,tmdb,tv,cinema",
+  "whatsNew": "Welcome to Edendale: a free, open-source video player and personal watch tracker.\n\n- Play the films and shows you already own from your own network shares and device-local files.\n- Rich TMDB details for films, shows, people, seasons, and episodes.\n- Continue Watching, a Watchlist, and ratings, all built for the big screen.\n- A Young Audience filter for the living room.\n- Private by design: no account, no ads, no analytics.\n\nThank you for trying Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

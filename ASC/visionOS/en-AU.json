@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Private movie & show library",
+  "privacyPolicyUrl": "https://policies.babasama.com/en-au/edendale/privacy",
+  "promotionalText": "Play the movies and shows you own in your own space: a private, ad-free library with rich TMDB details, Continue Watching, and reviews.",
+  "description": "Edendale is a free, open-source video player and personal watch tracker for Apple Vision Pro. It plays the movies and shows you already own in your own space: no account, no ads, no analytics.\n\nCINEMA IN YOUR SPACE\n- A spatial interface with ornament tabs and large, cinematic artwork.\n- A native, immersive player for comfortable full-screen viewing.\n- Fast search across your library and the people in it.\n\nPLAY WHAT YOU OWN\n- Open device-local files or connect your own network shares (SMB).\n- Native playback controls with chapters, playlists, and audio and subtitle track selection.\n- Search and load online subtitles on demand, or use the tracks inside your files.\n\nA LIBRARY WITH REAL DETAIL\n- Filenames are classified locally, then optionally enriched with metadata from TMDB.\n- Explore movies, shows, seasons, episodes, cast, crew, release dates, and trailers.\n- Trailers only open after you choose to play them.\n\nTRACK, RATE, REVIEW\n- Continue Watching remembers your place across your library.\n- Rate titles, write private reviews, and build a Watchlist of what is next.\n\nPRIVATE BY DESIGN\n- No Edendale account and no analytics. Your library and watch history stay on device and the services you choose to connect.\n\nEdendale uses the TMDB API but is not endorsed or certified by TMDB.",
+  "keywords": "movie,show,video,player,media,library,watchlist,subtitles,tracker,tmdb,films,spatial,cinema",
+  "whatsNew": "Welcome to Edendale: a free, open-source video player and personal watch tracker.\n\n- Play the movies and shows you already own in your own space, from device-local files and your own network shares.\n- A native, immersive player built for Apple Vision Pro.\n- Rich TMDB details for movies, shows, people, seasons, and episodes.\n- Continue Watching, ratings, private reviews, and a Watchlist.\n- Private by design: no account, no ads, no analytics.\n\nThank you for trying Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

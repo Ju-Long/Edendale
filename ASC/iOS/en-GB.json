@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Private film & show library",
+  "privacyPolicyUrl": "https://policies.babasama.com/en-gb/edendale/privacy",
+  "promotionalText": "Play the films and shows you already own: a private, ad-free library with rich TMDB details, Continue Watching, ratings, and Home Screen widgets.",
+  "description": "Edendale is a free, open-source video player and personal watch tracker for iPhone and iPad. It plays the films and shows you already own and turns them into a beautiful private library: no account, no ads, no analytics.\n\nPLAY YOUR OWN VIDEO\n- Open individual video files, import whole folders, or connect your own network shares (SMB).\n- Smooth playback with gesture controls, chapters, playlists, and audio and subtitle track selection.\n- Search and load online subtitles on demand, or use the tracks already inside your files.\n\nA LIBRARY WITH REAL DETAIL\n- Edendale reads your filenames locally, then optionally enriches them with metadata from TMDB.\n- Browse films, shows, seasons, episodes, cast, crew, release dates, and trailers.\n- Trailers only ever open after you tap play.\n\nTRACK, RATE, REVIEW\n- Pick up where you left off with Continue Watching.\n- Rate what you have seen, write private reviews, and keep a Watchlist of what is next.\n- A Young Audience filter keeps age-appropriate content front and centre.\n\nHOME SCREEN WIDGETS\n- Continue Watching and Trending widgets put your library one tap away.\n\nPRIVATE BY DESIGN\n- There is no Edendale account and no tracking. Your library and watch history live on your device and the services you choose to connect.\n\nEdendale uses the TMDB API but is not endorsed or certified by TMDB.",
+  "keywords": "film,show,programme,video,player,media,library,watchlist,subtitles,tracker,tmdb,offline,widgets",
+  "whatsNew": "Welcome to Edendale: a free, open-source video player and personal watch tracker.\n\n- Play the films and shows you already own, from files, folders, and your own network shares.\n- Rich TMDB details for films, shows, people, seasons, and episodes.\n- Continue Watching, ratings, private reviews, and a Watchlist.\n- Continue Watching and Trending Home Screen widgets.\n- Private by design: no account, no ads, no analytics.\n\nThank you for trying Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

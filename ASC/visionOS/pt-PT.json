@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Biblioteca de filmes e séries",
+  "privacyPolicyUrl": "https://policies.babasama.com/pt-pt/edendale/privacy",
+  "promotionalText": "Veja os filmes e séries que possui no seu espaço: uma biblioteca privada sem anúncios, com detalhes ricos do TMDB, Continuar a Ver e críticas.",
+  "description": "O Edendale é um leitor de vídeo gratuito de código aberto e registo pessoal de visualização para o Apple Vision Pro. Reproduz os filmes e séries que já possui no seu próprio espaço: sem conta, sem anúncios, sem análises.\n\nCINEMA NO SEU ESPAÇO\n- Uma interface espacial com separadores em ornamento e arte grande e cinematográfica.\n- Um leitor imersivo nativo para visualização confortável em ecrã inteiro.\n- Pesquisa rápida em toda a biblioteca e nas pessoas que nela participam.\n\nREPRODUZA O QUE POSSUI\n- Abra ficheiros locais do dispositivo ou ligue as suas partilhas de rede (SMB).\n- Controlos nativos de reprodução com capítulos, listas de reprodução e seleção de faixas de áudio e legendas.\n- Pesquise e carregue legendas online a pedido, ou use as faixas contidas nos seus ficheiros.\n\nUMA BIBLIOTECA COM VERDADEIRO DETALHE\n- Os nomes dos ficheiros são classificados localmente e, opcionalmente, enriquecidos com metadados do TMDB.\n- Explore filmes, séries, temporadas, episódios, elenco, equipa, datas de lançamento e trailers.\n- Os trailers só abrem depois de escolher reproduzi-los.\n\nREGISTE, CLASSIFIQUE, AVALIE\n- O Continuar a Ver recorda a sua posição em toda a biblioteca.\n- Classifique títulos, escreva críticas privadas e crie uma Lista para ver com o que se segue.\n\nPRIVADO POR CONCEÇÃO\n- Sem conta Edendale e sem análises. A sua biblioteca e histórico ficam no dispositivo e nos serviços que escolher ligar.\n\nO Edendale utiliza a API do TMDB, mas não é aprovado nem certificado pelo TMDB.",
+  "keywords": "filme,série,leitor,vídeo,biblioteca,legendas,tmdb,filmes,séries,espacial,cinema,registo",
+  "whatsNew": "Bem-vindo ao Edendale: um leitor de vídeo gratuito de código aberto e registo de visualização pessoal.\n\n- Reproduza os filmes e séries que já possui no seu próprio espaço, a partir de ficheiros locais ou das suas partilhas de rede.\n- Um leitor imersivo nativo criado para o Apple Vision Pro.\n- Detalhes ricos do TMDB para filmes, séries, pessoas, temporadas e episódios.\n- Continuar a Ver, classificações, críticas privadas e uma Lista para ver.\n- Privado por conceção: sem conta, sem anúncios, sem análises.\n\nObrigado por experimentar o Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

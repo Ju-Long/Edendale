@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Privat film- & seriebibliotek",
+  "privacyPolicyUrl": "https://policies.babasama.com/sv/edendale/privacy",
+  "promotionalText": "Gör dina filmer och serier till ett privat bibliotek på din Mac, med TMDB-detaljer, Fortsätt titta, betyg, recensioner och nätverksdelningar.",
+  "description": "Edendale är en gratis videospelare och personlig tracker med öppen källkod för Mac. Den spelar upp filmer och serier som du redan äger och organiserar dem i ett innehållsrikt privat bibliotek: inget konto, ingen reklam, ingen dataanalys.\n\nBYGGD FÖR SKRIVBORDET\n- Ett fullständigt bibliotek i sidofältet med snabb sökning bland dina filmer, serier och skådespelare.\n- Uppspelning i fönster eller helskärm som inte är i vägen.\n- Välj att starta Edendale vid inloggning så att ditt bibliotek alltid är redo.\n\nSPELA UPP ALLT DU ÄGER\n- Öppna enskilda filer, importera hela mappar eller bläddra bland dina egna nätverksdelningar (SMB).\n- Exakta uppspelningskontroller med kapitel, spellistor samt val av ljud- och undertextspår.\n- Sök och ladda ner undertexter på nätet vid behov, eller använd spåren inuti dina filer.\n\nETT BIBLIOTEK MED RIKTIGA DETALJER\n- Filnamn klassificeras lokalt och berikas därefter valfritt med metadata från TMDB.\n- Utforska filmer, serier, säsonger, avsnitt, skådespelare, filmteam, premiärdatum och trailers.\n- Trailers öppnas endast när du har valt att spela upp dem.\n\nFÖLJ, BETYGSÄTT, RECENSERA\n- Fortsätt titta kommer ihåg var du var i hela ditt bibliotek.\n- Betygsätt titlar, skriv privata recensioner och bygg en tittlista för vad du vill se härnäst.\n\nPRIVAT FRÅN GRUNDEN\n- Inget Edendale-konto och ingen dataanalys. Ditt bibliotek och din visningshistorik stannar på din Mac och i de tjänster du väljer att ansluta.\n\nEdendale använder TMDB:s API men är inte godkänd eller certifierad av TMDB.",
+  "keywords": "film,serie,videospelare,mediabibliotek,undertexter,tmdb,filmer,nätverk,smb,tittlista",
+  "whatsNew": "Välkommen till Edendale: en gratis videospelare och personlig tracker med öppen källkod.\n\n- Spela upp de filmer och serier du redan äger, från filer, mappar och dina egna nätverksdelningar (SMB).\n- Fylliga TMDB-detaljer för filmer, serier, personer, säsonger och avsnitt.\n- Fortsätt titta, betyg, privata recensioner och en tittlista.\n- Välj att starta vid inloggning så att ditt bibliotek alltid är redo.\n- Privat från grunden: inget konto, ingen reklam, ingen dataanalys.\n\nTack för att du testar Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

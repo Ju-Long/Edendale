@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Biblioteca de filmes e séries",
+  "privacyPolicyUrl": "https://policies.babasama.com/pt-br/edendale/privacy",
+  "promotionalText": "Assista aos filmes e séries que você tem no seu espaço: uma biblioteca privada e sem anúncios com detalhes do TMDB, Continuar Assistindo e análises.",
+  "description": "O Edendale é um reprodutor de vídeo de código aberto e rastreador pessoal gratuito para Apple Vision Pro. Ele reproduz os filmes e séries que você já possui no seu próprio espaço: sem conta, sem anúncios, sem coleta de dados.\n\nCINEMA NO SEU ESPAÇO\n- Uma interface espacial com abas ornamentais e artes grandes e cinematográficas.\n- Um reprodutor nativo e imersivo para visualização confortável em tela cheia.\n- Pesquisa rápida por toda a sua biblioteca e as pessoas nela.\n\nREPRODUZA O QUE É SEU\n- Abra arquivos locais do dispositivo ou conecte seus próprios compartilhamentos de rede (SMB).\n- Controles de reprodução nativos com capítulos, listas de reprodução e seleção de faixas de áudio e legenda.\n- Pesquise e carregue legendas online sob demanda, ou use as faixas contidas nos seus arquivos.\n\nUMA BIBLIOTECA COM DETALHES REAIS\n- Os nomes de arquivo são classificados localmente, e então, opcionalmente, enriquecidos com metadados do TMDB.\n- Explore filmes, séries, temporadas, episódios, elenco, equipe, datas de lançamento e trailers.\n- Os trailers só são abertos depois que você escolhe reproduzi-los.\n\nACOMPANHE, AVALIE E ANALISE\n- O Continuar Assistindo lembra onde você parou em toda a sua biblioteca.\n- Avalie títulos, escreva análises privadas e crie uma Lista do que assistir em seguida.\n\nPRIVADO POR NATUREZA\n- Não há conta do Edendale e nem coleta de dados. Sua biblioteca e histórico de exibição permanecem no dispositivo e nos serviços que você escolhe conectar.\n\nO Edendale usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.",
+  "keywords": "filme,série,player,vídeo,biblioteca,lista,legendas,tmdb,filmes,espacial,cinema,rastreador",
+  "whatsNew": "Bem-vindo ao Edendale: um reprodutor de vídeo de código aberto e rastreador pessoal gratuito.\n\n- Reproduza os filmes e séries que você já possui no seu próprio espaço, a partir de arquivos locais do dispositivo e seus compartilhamentos de rede.\n- Um reprodutor nativo e imersivo feito para o Apple Vision Pro.\n- Ricos detalhes do TMDB para filmes, séries, pessoas, temporadas e episódios.\n- Continuar Assistindo, avaliações, análises privadas e uma Lista.\n- Privado por natureza: sem conta, sem anúncios, sem coleta de dados.\n\nObrigado por testar o Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

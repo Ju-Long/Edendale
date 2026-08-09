@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Privat film- & seriebibliotek",
+  "privacyPolicyUrl": "https://policies.babasama.com/sv/edendale/privacy",
+  "promotionalText": "Spela upp filmer och serier du redan äger: ett privat, reklamfritt bibliotek med TMDB-detaljer, Fortsätt titta, betyg och widgets för hemskärmen.",
+  "description": "Edendale är en gratis videospelare och personlig tracker med öppen källkod för iPhone och iPad. Den spelar upp filmer och serier som du redan äger och gör dem till ett vackert privat bibliotek: inget konto, ingen reklam, ingen dataanalys.\n\nSPELA UPP DINA EGNA VIDEOR\n- Öppna enskilda videofiler, importera hela mappar eller anslut dina egna nätverksdelningar (SMB).\n- Jämn uppspelning med gestkontroller, kapitel, spellistor samt val av ljud- och undertextspår.\n- Sök och ladda ner undertexter på nätet vid behov, eller använd spåren som redan finns i dina filer.\n\nETT BIBLIOTEK MED RIKTIGA DETALJER\n- Edendale läser dina filnamn lokalt och berikar dem därefter valfritt med metadata från TMDB.\n- Bläddra bland filmer, serier, säsonger, avsnitt, skådespelare, filmteam, premiärdatum och trailers.\n- Trailers öppnas alltid först när du trycker på spela.\n\nFÖLJ, BETYGSÄTT, RECENSERA\n- Återuppta tittandet där du slutade med funktionen Fortsätt titta.\n- Betygsätt vad du har sett, skriv privata recensioner och behåll en tittlista på vad du ska se härnäst.\n- Ett barnvänligt filter håller åldersanpassat innehåll i fokus.\n\nWIDGETS PÅ HEMSKÄRMEN\n- Widgets för Fortsätt titta och Trender gör ditt bibliotek tillgängligt med ett enda tryck.\n\nPRIVAT FRÅN GRUNDEN\n- Det finns inget Edendale-konto och ingen spårning. Ditt bibliotek och din visningshistorik finns på din enhet och i de tjänster du väljer att ansluta.\n\nEdendale använder TMDB:s API men är inte godkänd eller certifierad av TMDB.",
+  "keywords": "film,serie,videospelare,mediabibliotek,undertexter,tmdb,filmer,offline,widgets,tittlista",
+  "whatsNew": "Välkommen till Edendale: en gratis videospelare och personlig tracker med öppen källkod.\n\n- Spela upp de filmer och serier du redan äger, från filer, mappar och dina egna nätverksdelningar.\n- Fylliga TMDB-detaljer för filmer, serier, personer, säsonger och avsnitt.\n- Fortsätt titta, betyg, privata recensioner och en tittlista.\n- Hemskärmswidgets för Fortsätt titta och Trender.\n- Privat från grunden: inget konto, ingen reklam, ingen dataanalys.\n\nTack för att du testar Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}

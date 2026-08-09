@@ -1,0 +1,13 @@
+{
+  "name": "Edendale",
+  "subtitle": "Vidéothèque privée",
+  "privacyPolicyUrl": "https://policies.babasama.com/fr-fr/edendale/privacy",
+  "promotionalText": "Lisez vos films et séries sur grand écran: une bibliothèque privée sans pub, avec infos TMDB, Reprendre la lecture et Liste de lecture.",
+  "description": "Edendale est un lecteur vidéo gratuit et open-source pour Apple TV. Il lit les films et séries que vous possédez déjà sur grand écran: pas de compte, pas de pub, pas d'analyse de données.\n\nFAIT POUR LE SALON\n- Une interface pensée pour la concentration et conçue pour la Siri Remote.\n- De grandes affiches pour vos films, séries, saisons et épisodes.\n- Recherche rapide dans votre bibliothèque et parmi les acteurs.\n\nLISEZ CE QUE VOUS POSSÉDEZ\n- Lisez depuis vos propres partages réseau (SMB) ou des fichiers locaux sur l'appareil.\n- Contrôles à l'écran confortables avec chronologie, chapitres, listes de lecture, et sélection audio et sous-titres.\n- Chargez des sous-titres en ligne à la demande, ou utilisez ceux de vos fichiers.\n\nUNE BIBLIOTHÈQUE DÉTAILLÉE\n- Les noms de fichiers sont classés localement, puis enrichis avec les métadonnées de TMDB.\n- Parcourez la distribution, l'équipe technique, les saisons, les épisodes et les dates de sortie dans une présentation conçue pour la télévision.\n\nSUIVEZ ET REPRENEZ\n- Reprendre la lecture mémorise votre position pour chaque titre.\n- Gardez une Liste de lecture de ce qu'il faut regarder ensuite, et notez ce que vous avez vu.\n- Un filtre Jeune public garde le salon adapté à l'âge.\n\nPRIVÉ PAR CONCEPTION\n- Pas de compte Edendale ni d'analyse de données. Votre bibliothèque et votre historique restent avec vous et les services que vous choisissez de connecter.\n\nEdendale utilise l'API de TMDB mais n'est pas approuvé ni certifié par TMDB.",
+  "keywords": "film,série,lecteur,vidéothèque,sous-titres,tmdb,tv,cinéma,suivi",
+  "whatsNew": "Bienvenue dans Edendale: un lecteur vidéo gratuit, open-source et un outil de suivi personnel.\n\n- Lisez les films et séries que vous possédez déjà depuis vos partages réseau et vos fichiers locaux.\n- De riches détails TMDB pour les films, séries, personnes, saisons et épisodes.\n- Reprendre la lecture, une Liste de lecture et des notes, tous conçus pour le grand écran.\n- Un filtre Jeune public pour le salon.\n- Privé par conception: pas de compte, pas de pub, pas d'analyse de données.\n\nMerci d'essayer Edendale.",
+  "supportUrl": "https://edendale.babasama.com",
+  "marketingUrl": "https://edendale.babasama.com",
+  "version": "26.0",
+  "copyright": "2026 Long Ju"
+}
