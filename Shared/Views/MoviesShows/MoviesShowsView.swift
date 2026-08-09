@@ -506,8 +506,7 @@ struct MoviesShowsView: View {
         // trailer (see `heroFocusDidChange`), and select opens the detail
         // page — including while the trailer is playing.
         Button {
-            zoomSource = nil
-            path.append(hero.detail.ref)
+            openHeroDetail(hero)
         } label: {
             heroLayers(hero)
         }
@@ -542,68 +541,12 @@ struct MoviesShowsView: View {
 
     private func heroLayers(_ hero: MoviesShowsModel.Hero) -> some View {
         ZStack(alignment: .bottomLeading) {
-            heroBackdrop(hero)
+            heroBackdropSurface(hero)
                 .frame(height: heroHeight)
                 .frame(maxWidth: .infinity)
 
             VStack(alignment: .leading, spacing: 18) {
-                Group {
-                    if hero.isContinueWatching {
-                        HStack(spacing: 12) {
-                            Text("Continue Watching")
-                                .labelCaps(Theme.gold)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: Theme.Radius.soft)
-                                        .strokeBorder(Theme.goldDeep, lineWidth: 1)
-                                }
-                            if let remaining = hero.remainingText {
-                                Text(remaining).labelCaps(Theme.gold)
-                            }
-                        }
-                    }
-
-                    Text(hero.detail.title)
-                        .font(Typography.display(heroTitleSize))
-                        .textCase(.uppercase)
-                        .foregroundStyle(Theme.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.6)
-
-                    heroMeta(hero.detail)
-                }
-                .opacity(showingTrailer && isCurrentScene(hero) ? 0 : 1)
-                // Badge, remaining time, title, year, studio, and genres are
-                // one caption for one title — six stops would read as noise
-                // before the actions below are ever reached.
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(hero.detail.title)
-                .accessibilityValue(heroAccessibilityValue(hero))
-                .accessibilityHidden(showingTrailer && isCurrentScene(hero))
-                // The hero's actions are reachable from its caption too, so
-                // the whole scene can be acted on without walking down into
-                // the button row.
-                #if !os(tvOS)
-                .accessibilityActions {
-                    if heroInLibrary {
-                        Button(
-                            hero.isContinueWatching
-                                ? String(localized: "Resume Playback")
-                                : String(localized: "Play")
-                        ) {
-                            playOrOpen(hero)
-                        }
-                    }
-                    Button(String(localized: "Details")) {
-                        zoomSource = nil
-                        path.append(hero.detail.ref)
-                    }
-                    if !heroTrailerUnavailable {
-                        Button(trailerButtonTitle) { toggleTrailer(hero) }
-                    }
-                }
-                #endif
+                heroCaption(hero)
 
                 // On tvOS the whole hero is a single focusable button, so no
                 // inner controls: select opens the detail page, where Play
@@ -626,8 +569,7 @@ struct MoviesShowsView: View {
 
                     HStack(spacing: 14) {
                         Button {
-                            zoomSource = nil
-                            path.append(hero.detail.ref)
+                            openHeroDetail(hero)
                         } label: {
                             Label("Details", image: .filmCircleInfo)
                         }
@@ -647,6 +589,99 @@ struct MoviesShowsView: View {
             }
             .padding(edgeMargin)
         }
+    }
+
+    /// Makes the static artwork a detail target without wrapping the hero's
+    /// Play and Trailer controls in a nested button. An active trailer keeps
+    /// its own hit testing so its playback controls remain interactive.
+    @ViewBuilder
+    private func heroBackdropSurface(_ hero: MoviesShowsModel.Hero) -> some View {
+        #if os(tvOS)
+        heroBackdrop(hero)
+        #else
+        if showingTrailer, isCurrentScene(hero) {
+            heroBackdrop(hero)
+        } else {
+            Button {
+                openHeroDetail(hero)
+            } label: {
+                heroBackdrop(hero)
+            }
+            .buttonStyle(.plain)
+            // The caption is the hero's named accessibility element; this
+            // second visual hit target should not create a duplicate stop.
+            .accessibilityHidden(true)
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private func heroCaption(_ hero: MoviesShowsModel.Hero) -> some View {
+        #if os(tvOS)
+        heroCaptionContent(hero)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(hero.detail.title)
+            .accessibilityValue(heroAccessibilityValue(hero))
+        #else
+        Button {
+            openHeroDetail(hero)
+        } label: {
+            heroCaptionContent(hero)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(hero.detail.title)
+        .accessibilityValue(heroAccessibilityValue(hero))
+        .accessibilityHint("Opens the archive record.")
+        .allowsHitTesting(!(showingTrailer && isCurrentScene(hero)))
+        .accessibilityHidden(showingTrailer && isCurrentScene(hero))
+        // Default activation opens Details; the other hero actions stay
+        // available without duplicating the visible controls below.
+        .accessibilityActions {
+            if heroInLibrary {
+                Button(
+                    hero.isContinueWatching
+                        ? String(localized: "Resume Playback")
+                        : String(localized: "Play")
+                ) {
+                    playOrOpen(hero)
+                }
+            }
+            if !heroTrailerUnavailable {
+                Button(trailerButtonTitle) { toggleTrailer(hero) }
+            }
+        }
+        #endif
+    }
+
+    private func heroCaptionContent(_ hero: MoviesShowsModel.Hero) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if hero.isContinueWatching {
+                HStack(spacing: 12) {
+                    Text("Continue Watching")
+                        .labelCaps(Theme.gold)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Theme.Radius.soft)
+                                .strokeBorder(Theme.goldDeep, lineWidth: 1)
+                        }
+                    if let remaining = hero.remainingText {
+                        Text(remaining).labelCaps(Theme.gold)
+                    }
+                }
+            }
+
+            Text(hero.detail.title)
+                .font(Typography.display(heroTitleSize))
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.6)
+
+            heroMeta(hero.detail)
+        }
+        .opacity(showingTrailer && isCurrentScene(hero) ? 0 : 1)
+        .accessibilityHidden(showingTrailer && isCurrentScene(hero))
     }
 
     @ViewBuilder
@@ -895,10 +930,14 @@ struct MoviesShowsView: View {
                let movie = Movie.first(tmdbId: hero.detail.ref.id, in: modelContext) {
                 await playerSession.play(movie: movie)
             } else {
-                zoomSource = nil
-                path.append(hero.detail.ref)
+                openHeroDetail(hero)
             }
         }
+    }
+
+    private func openHeroDetail(_ hero: MoviesShowsModel.Hero) {
+        zoomSource = nil
+        path.append(hero.detail.ref)
     }
 
     /// Whether the downloaded library holds this title — gates the hero's

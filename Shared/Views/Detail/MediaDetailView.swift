@@ -28,6 +28,9 @@ struct MediaDetailView: View {
     #if !os(macOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
 
     @Environment(PlayerSession.self) private var playerSession
 
@@ -99,12 +102,145 @@ struct MediaDetailView: View {
         }
         .ignoresSafeArea(.all, edges: .top)
         .background(Theme.background)
+        .toolbar {
+            #if !os(tvOS)
+            ToolbarItemGroup(placement: .primaryAction) {
+                if let ref = mediaRef {
+                    ratingControl(for: ref)
+                }
+
+                if let watchKey {
+                    watchedButton(watchKey)
+                        .labelStyle(.iconOnly)
+                }
+
+                if let ref = mediaRef {
+                    favoriteButton(ref)
+                        .labelStyle(.iconOnly)
+
+                    watchlistButton(ref)
+                        .labelStyle(.iconOnly)
+                }
+            }
+            #endif
+        }
         .task { await loadDetail() }
         .task {
             if let mediaRef {
                 await userMediaStore.refreshFromTMDB(mediaRef)
             }
         }
+    }
+
+    // MARK: - Toolbar actions
+
+    @ViewBuilder
+    private func ratingControl(for ref: MediaRef) -> some View {
+        if usesCompactRatingPicker {
+            compactRatingPicker(for: ref)
+        } else {
+            StarRatingControl(rating: userMediaStore.rating(for: ref)) { value in
+                userMediaStore.setRating(value, for: ref)
+            }
+        }
+    }
+
+    private func compactRatingPicker(for ref: MediaRef) -> some View {
+        let rating = userMediaStore.rating(for: ref)
+
+        return Menu {
+            Picker("Your rating", selection: ratingBinding(for: ref)) {
+                // TMDB may sync a half-step rating. Keep that exact current
+                // value selected until the user chooses an integer below.
+                if let rating, rating.rounded() != rating {
+                    Text(rating, format: .number.precision(.fractionLength(1)))
+                        .tag(rating as Double?)
+                }
+                Text("Not rated").tag(nil as Double?)
+                ForEach(1...10, id: \.self) { score in
+                    Text(score, format: .number)
+                        .tag(Double(score) as Double?)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Label("Your rating", image: rating == nil ? .star : .starFill)
+        }
+        .labelStyle(.iconOnly)
+        .accessibilityValue(ratingAccessibilityValue(rating))
+    }
+
+    private func ratingBinding(for ref: MediaRef) -> Binding<Double?> {
+        Binding(
+            get: { userMediaStore.rating(for: ref) },
+            set: { userMediaStore.setRating($0, for: ref) }
+        )
+    }
+
+    private func ratingAccessibilityValue(_ rating: Double?) -> Text {
+        guard let rating else { return Text("Not rated") }
+        let value = rating.formatted(.number.precision(.fractionLength(0...1)))
+        return Text("\(value) of 10")
+    }
+
+    private func watchedButton(
+        _ key: (id: Int, type: WatchMediaType),
+        visibleTitle: String? = nil,
+        showsStateIcon: Bool = false
+    ) -> some View {
+        let actionTitle = isWatched(key)
+            ? String(localized: "Mark Unwatched")
+            : String(localized: "Mark Watched")
+
+        return Button {
+            toggleWatched(key)
+        } label: {
+            Label(
+                visibleTitle ?? actionTitle,
+                image: showsStateIcon
+                    ? (isWatched(key) ? .eye : .eyeSlash)
+                    : (isWatched(key) ? .eyeSlash : .eye)
+            )
+        }
+        .accessibilityLabel(actionTitle)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(isWatched(key) ? Text("On") : Text("Off"))
+    }
+
+    private func favoriteButton(_ ref: MediaRef, visibleTitle: String? = nil) -> some View {
+        let actionTitle = userMediaStore.isFavorite(ref)
+            ? String(localized: "Remove Favourite")
+            : String(localized: "Favorite")
+
+        return Button {
+            userMediaStore.toggleFavorite(ref)
+        } label: {
+            Label(
+                visibleTitle ?? actionTitle,
+                image: userMediaStore.isFavorite(ref) ? .heartFill : .heart
+            )
+        }
+        .accessibilityLabel(actionTitle)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(userMediaStore.isFavorite(ref) ? Text("On") : Text("Off"))
+    }
+
+    private func watchlistButton(_ ref: MediaRef, visibleTitle: String? = nil) -> some View {
+        let actionTitle = watchlistStore.isInWatchlist(ref)
+            ? String(localized: "Remove from Watchlist")
+            : String(localized: "Watchlist")
+
+        return Button {
+            watchlistStore.toggle(ref, metadata: watchlistMetadata)
+        } label: {
+            Label(
+                visibleTitle ?? actionTitle,
+                image: watchlistStore.isInWatchlist(ref) ? .bookmarkFill : .bookmark
+            )
+        }
+        .accessibilityLabel(actionTitle)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(watchlistStore.isInWatchlist(ref) ? Text("On") : Text("Off"))
     }
 
     private var sourceMediaRef: MediaRef? {
@@ -159,51 +295,104 @@ struct MediaDetailView: View {
             // aspect-fills and clips).
             BackdropImage(url: backdropURL)
                 .ignoresSafeArea(.all, edges: .horizontal)
-                .containerRelativeFrame(.vertical)
                 .frame(maxWidth: .infinity)
 
-            VStack(alignment: .leading, spacing: 16) {
-                Group {
-                    if let tagline = detail?.tagline {
-                        Text(tagline)
-                            .labelCaps(Theme.gold)
-                    }
-
-                    Text(title)
-                        .font(Typography.display(titleSize))
-                        .textCase(.uppercase)
-                        .foregroundStyle(Theme.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.5)
-
-                    if let genre = genres.first {
-                        Text(genre.uppercased())
-                            .font(Typography.labelCaps)
-                            .kerning(1)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: Theme.Radius.soft)
-                                    .strokeBorder(Theme.outline, lineWidth: 1)
-                            }
-                    }
-
-                    metaRow
-                }
-                // Tagline, title, genre badge, year, runtime, and studio are
-                // one masthead — read as one stop, with the title as the
-                // heading the rotor lands on.
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(title)
-                .accessibilityValue(headerAccessibilityValue)
-                .accessibilityAddTraits(.isHeader)
-
-                actionRow
-                    .padding(.top, 8)
+            #if os(tvOS)
+            // Keep the action rail and playback controls in one layout tree.
+            // The rail's full-width focus section guides an Up press from the
+            // lower-left Play button without a detour through the cast shelf.
+            VStack(alignment: .leading, spacing: 0) {
+                tvOSTopActionRail
+                Spacer(minLength: 32)
+                headerMasthead
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(edgeMargin)
+            #else
+            headerMasthead
+                .padding(edgeMargin)
+            #endif
+        }
+        .containerRelativeFrame(.vertical)
+    }
+
+    private var headerMasthead: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Group {
+                if let tagline = detail?.tagline {
+                    Text(tagline)
+                        .labelCaps(Theme.gold)
+                }
+
+                Text(title)
+                    .font(Typography.display(titleSize))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.5)
+
+                if let genre = genres.first {
+                    Text(genre.uppercased())
+                        .font(Typography.labelCaps)
+                        .kerning(1)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Theme.Radius.soft)
+                                .strokeBorder(Theme.outline, lineWidth: 1)
+                        }
+                }
+
+                metaRow
+            }
+            // Tagline, title, genre badge, year, runtime, and studio are one
+            // masthead, with the title as the heading the rotor lands on.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(title)
+            .accessibilityValue(headerAccessibilityValue)
+            .accessibilityAddTraits(.isHeader)
+
+            actionRow
+                .padding(.top, 8)
         }
     }
+
+    #if os(tvOS)
+    @ViewBuilder
+    private var tvOSTopActionRail: some View {
+        if let ref = mediaRef {
+            HStack(alignment: .center, spacing: 20) {
+                ratingControl(for: ref)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Theme.surfaceLow, in: RoundedRectangle(cornerRadius: Theme.Radius.soft))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Theme.Radius.soft)
+                        .strokeBorder(Theme.hairline, lineWidth: 1)
+                }
+
+                if let watchKey {
+                    watchedButton(
+                        watchKey,
+                        visibleTitle: String(localized: "Watched"),
+                        showsStateIcon: true
+                    )
+                        .archiveButtonStyle(.secondary, active: isWatched(watchKey))
+                }
+
+                favoriteButton(ref, visibleTitle: String(localized: "Favourites"))
+                    .archiveButtonStyle(.secondary, active: userMediaStore.isFavorite(ref))
+
+                watchlistButton(ref, visibleTitle: String(localized: "Watchlist"))
+                    .archiveButtonStyle(.secondary, active: watchlistStore.isInWatchlist(ref))
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .focusSection()
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Actions")
+        }
+    }
+    #endif
 
     /// Everything the masthead says besides the title, in the order it is
     /// drawn. The metadata row's dot separators carry no meaning.
@@ -243,46 +432,17 @@ struct MediaDetailView: View {
             .accessibilityHidden(true)
     }
 
+    @ViewBuilder
     private var actionRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if isPlayable {
-                Button {
-                    play()
-                } label: {
-                    Label(playLabel, image: .play)
-                }
-                .archiveButtonStyle(.primary)
-            }
-            
-            FlowLayout(spacing: 12, lineSpacing: 8) {
-                if let ref = mediaRef {
+        if hasContentActions {
+            VStack(alignment: .leading, spacing: 8) {
+                if isPlayable {
                     Button {
-                        watchlistStore.toggle(ref, metadata: watchlistMetadata)
+                        play()
                     } label: {
-                        Label("Watchlist", image: watchlistStore.isInWatchlist(ref) ? .check : .plus)
+                        Label(playLabel, image: .play)
                     }
-                    .archiveButtonStyle(.secondary)
-                    // Unlike Favorite and Mark Watched, this button's text
-                    // never changes — only its glyph does, so membership has
-                    // to be spoken.
-                    .accessibilityAddTraits(.isToggle)
-                    .accessibilityValue(watchlistStore.isInWatchlist(ref) ? Text("On") : Text("Off"))
-                    
-                    Button {
-                        userMediaStore.toggleFavorite(ref)
-                    } label: {
-                        Label(
-                            userMediaStore.isFavorite(ref)
-                                ? String(localized: "Remove Favourite")
-                                : String(localized: "Favorite"),
-                            image: userMediaStore.isFavorite(ref) ? .heartFill : .heart
-                        )
-                    }
-                    .archiveButtonStyle(.secondary, active: userMediaStore.isFavorite(ref))
-                    
-                    StarRatingControl(rating: userMediaStore.rating(for: ref)) { value in
-                        userMediaStore.setRating(value, for: ref)
-                    }
+                    .archiveButtonStyle(.primary)
                 }
 
                 #if os(tvOS)
@@ -307,25 +467,22 @@ struct MediaDetailView: View {
                 }
                 #endif
             }
-            
-            if let watchKey {
-                Button {
-                    toggleWatched(watchKey)
-                } label: {
-                    Label(
-                        isWatched(watchKey)
-                            ? String(localized: "Watched")
-                            : String(localized: "Mark Watched"),
-                        image: isWatched(watchKey) ? .eyeSlash : .eye
-                    )
-                }
-                .archiveButtonStyle(.ghost)
-            }
+            #if os(tvOS)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .focusSection()
+            #endif
+            // Play and trailer are the content-level actions on this title.
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Actions")
         }
-        // Play, Watchlist, Favorite, rating, and Mark Watched are one bank
-        // of controls on this title.
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Actions")
+    }
+
+    private var hasContentActions: Bool {
+        if isPlayable { return true }
+        #if os(tvOS)
+        if let trailer { return TrailerPlayerView.canOpenExternally(trailer.key) }
+        #endif
+        return false
     }
 
     // MARK: - Archive record
@@ -734,6 +891,18 @@ struct MediaDetailView: View {
         true
         #else
         horizontalSizeClass == .regular
+        #endif
+    }
+
+    /// Portrait iPhone toolbars use one menu item. Landscape iPhone and every
+    /// larger device keep the directly clickable five-star control.
+    private var usesCompactRatingPicker: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+            && horizontalSizeClass == .compact
+            && verticalSizeClass == .regular
+        #else
+        false
         #endif
     }
 

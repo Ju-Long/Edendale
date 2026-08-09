@@ -38,14 +38,6 @@ struct StarRatingControl: View {
                 .archiveButtonStyle(.ghost, active: current >= half)
             }
         }
-        .background {
-            RoundedRectangle(cornerRadius: Theme.Radius.soft)
-                .strokeBorder(Theme.goldDeep, lineWidth: 1)
-            #if os(tvOS)
-            RoundedRectangle(cornerRadius: Theme.Radius.soft)
-                .fill(Theme.surfaceLow)
-            #endif
-        }
         // Five identical glyph buttons whose only difference is fill state
         // make a poor set of stops. The row is one adjustable control
         // instead: swipe up/down moves the rating a half star at a time.
