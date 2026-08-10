@@ -26,6 +26,14 @@ internal object SmbClient {
             setProperty("jcifs.smb.client.connTimeout", "8000")
             setProperty("jcifs.smb.client.responseTimeout", "20000")
             setProperty("jcifs.smb.client.soTimeout", "35000")
+            // Personal shares are never DFS namespaces, and the default referral
+            // probe adds a round trip (and, against NAS/Samba that answer slowly,
+            // a stall) to every path we resolve — scanning and playback alike.
+            setProperty("jcifs.smb.client.dfs.disabled", "true")
+            // Bigger transfer buffers let a single SMB2 read move ~1 MB instead
+            // of 64 KB, which is what keeps a high-bitrate title ahead of playback.
+            setProperty("jcifs.smb.client.rcv_buf_size", "1048576")
+            setProperty("jcifs.smb.client.snd_buf_size", "1048576")
         }
         BaseContext(PropertyConfiguration(properties))
     }

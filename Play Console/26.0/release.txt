@@ -1,0 +1,696 @@
+<af>
+Nuwe in hierdie vrystelling:
+• Kyklys: Hou tred met flieks en reekse.
+• Jong Gehoor-filter: Veilige kyk vir kinders.
+• Wyzie-onderskrifte: Aanlyn onderskrifsoektog.
+• Verbeterde Android TV- en tabletspeler.
+• Foutoplossings en prestasieverbeterings.
+</af>
+<am>
+በዚህ እትም አዲስ፦
+• የምልከታ ዝርዝር፡ ፊልሞችን እና ተከታታዮችን ይከታተሉ።
+• የወጣት ታዳሚ ማጣሪያ፡ ለልጆች ደህንነቱ የተጠበቀ እይታ።
+• የዋይዚ የትርጉም ጽሑፎች፡ የመስመር ላይ የትርጉም ጽሑፍ ፍለጋ።
+• የተሻሻለ የAndroid TV እና የጡባዊ ማጫወቻ።
+• የሳንካ ጥገናዎች እና የአፈጻጸም ማሻሻያዎች።
+</am>
+<ar>
+الجديد في هذا الإصدار:
+• قائمة المشاهدة: تتبع الأفلام والمسلسلات.
+• فلتر الجمهور الصغير: مشاهدة آمنة للأطفال.
+• ترجمات Wyzie: بحث عن الترجمات عبر الإنترنت.
+• تحسين مشغل Android TV والأجهزة اللوحية.
+• إصلاحات الأخطاء وتحسينات الأداء.
+</ar>
+<az-AZ>
+Bu buraxılışda yeniliklər:
+• İzləmə siyahısı: Filmləri və serialları izləyin.
+• Gənc Auditoriya Filtri: Uşaqlar üçün təhlükəsiz baxış.
+• Wyzie Altyazıları: Onlayn altyazı axtarışı.
+• Təkmilləşdirilmiş Android TV və planşet oynadıcısı.
+• Səhv düzəlişləri və performans təkmilləşdirmələri.
+</az-AZ>
+<be>
+Новае ў гэтым выпуску:
+• Спіс прагляду: Адсочвайце фільмы і серыялы.
+• Фільтр для юнай аўдыторыі: Бяспечны прагляд для дзяцей.
+• Субцітры Wyzie: Анлайн-пошук субцітраў.
+• Палепшаны плэер для Android TV і планшэтаў.
+• Выпраўленні памылак і паляпшэнні прадукцыйнасці.
+</be>
+<bg>
+Ново в тази версия:
+• Списък за гледане: Следете филми и сериали.
+• Филтър за млада аудитория: Безопасно гледане за деца.
+• Субтитри Wyzie: Онлайн търсене на субтитри.
+• Подобрен плейър за Android TV и таблети.
+• Отстранени грешки и подобрена производителност.
+</bg>
+<bn-BD>
+এই আপডেটে নতুন যা আছে:
+• ওয়াচলিস্ট: সিনেমা এবং সিরিজের ট্র্যাক রাখুন।
+• তরুণ দর্শক ফিল্টার: শিশুদের জন্য নিরাপদ দেখার সুযোগ।
+• Wyzie সাবটাইটেল: অনলাইন সাবটাইটেল অনুসন্ধান।
+• উন্নত Android TV এবং ট্যাবলেট প্লেয়ার।
+• বাগ সংশোধন এবং কর্মক্ষমতা উন্নতি।
+</bn-BD>
+<ca>
+Novetats d'aquesta versió:
+• Llista de seguiment: Fes un seguiment de pel·lícules i sèries.
+• Filtre per a públic jove: Visionat segur per a nens.
+• Subtítols Wyzie: Cerca de subtítols en línia.
+• Reproductor millorat per a Android TV i tauletes.
+• Correcció d'errors i millores de rendiment.
+</ca>
+<cs-CZ>
+Novinky v této verzi:
+• Seznam ke zhlédnutí: Sledujte filmy a seriály.
+• Filtr pro mladé publikum: Bezpečné sledování pro děti.
+• Titulky Wyzie: Online vyhledávání titulků.
+• Vylepšený přehrávač pro Android TV a tablety.
+• Opravy chyb a vylepšení výkonu.
+</cs-CZ>
+<da-DK>
+Nyt i denne udgivelse:
+• observationsliste: Hold styr på film og serier.
+• Filter til ungt publikum: Sikker visning for børn.
+• Wyzie-undertekster: Online søgning efter undertekster.
+• Forbedret afspiller til Android TV og tablets.
+• Fejlrettelser og forbedringer af ydeevne.
+</da-DK>
+<de-DE>
+Neu in dieser Version:
+• Merkliste: Behalten Sie Filme und Serien im Blick.
+• Filter für junges Publikum: Sicheres Ansehen für Kinder.
+• Wyzie-Untertitel: Online-Untertitelsuche.
+• Verbesserter Player für Android TV und Tablets.
+• Fehlerbehebungen und Leistungsverbesserungen.
+</de-DE>
+<el-GR>
+Νέα σε αυτήν την έκδοση:
+• Λίστα παρακολούθησης: Παρακολουθήστε ταινίες και σειρές.
+• Φίλτρο νεανικού κοινού: Ασφαλής προβολή για παιδιά.
+• Υπότιτλοι Wyzie: Ηλεκτρονική αναζήτηση υποτίτλων.
+• Βελτιωμένο πρόγραμμα αναπαραγωγής Android TV και tablet.
+• Διορθώσεις σφαλμάτων και βελτιώσεις απόδοσης.
+</el-GR>
+<en-AU>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-AU>
+<en-CA>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-CA>
+<en-GB>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-GB>
+<en-IN>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-IN>
+<en-SG>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-SG>
+<en-US>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-US>
+<en-ZA>
+New in this release:
+• Watchlist: Keep track of movies and series.
+• Young Audience Filter: Safe viewing for kids.
+• Wyzie Subtitles: Online subtitle search.
+• Improved Android TV and tablet player.
+• Bug fixes and performance improvements.
+</en-ZA>
+<es-419>
+Novedades de esta versión:
+• Lista de seguimiento: Haz un seguimiento de películas y series.
+• Filtro para público joven: Visualización segura para niños.
+• Subtítulos Wyzie: Búsqueda de subtítulos en línea.
+• Reproductor mejorado para Android TV y tablets.
+• Correcciones de errores y mejoras de rendimiento.
+</es-419>
+<es-ES>
+Novedades de esta versión:
+• Lista de seguimiento: Haz un seguimiento de películas y series.
+• Filtro para público joven: Visualización segura para niños.
+• Subtítulos Wyzie: Búsqueda de subtítulos en línea.
+• Reproductor mejorado para Android TV y tablets.
+• Correcciones de errores y mejoras de rendimiento.
+</es-ES>
+<es-US>
+Novedades de esta versión:
+• Lista de seguimiento: Haz un seguimiento de películas y series.
+• Filtro para público joven: Visualización segura para niños.
+• Subtítulos Wyzie: Búsqueda de subtítulos en línea.
+• Reproductor mejorado para Android TV y tablets.
+• Correcciones de errores y mejoras de rendimiento.
+</es-US>
+<et>
+Uus selles versioonis:
+• Jälgimisloend: Jälgige filme ja seriaale.
+• Noore publiku filter: Ohutu vaatamine lastele.
+• Wyzie subtiitrid: Internetipõhine subtiitrite otsing.
+• Täiustatud Android TV ja tahvelarvuti mängija.
+• Veaparandused ja jõudluse täiustused.
+</et>
+<eu-ES>
+Bertsio honetako berriak:
+• Jarraipen-zerrenda: Egin film eta serieen jarraipena.
+• Ikusle gazteentzako iragazkia: Haurrentzako ikustaldi segurua.
+• Wyzie azpitituluak: Lineako azpitituluen bilaketa.
+• Android TV eta tabletetarako erreproduzitzaile hobetua.
+• Akatsen konponketak eta errendimenduaren hobekuntzak.
+</eu-ES>
+<fa>
+موارد جدید در این نسخه:
+• فهرست تماشا: فیلم‌ها و سریال‌ها را دنبال کنید.
+• فیلتر مخاطب جوان: تماشای ایمن برای کودکان.
+• زیرنویس‌های Wyzie: جستجوی آنلاین زیرنویس.
+• پخش‌کننده بهبودیافته Android TV و رایانه لوحی.
+• رفع اشکالات و بهبود عملکرد.
+</fa>
+<fa-AE>
+موارد جدید در این نسخه:
+• فهرست تماشا: فیلم‌ها و سریال‌ها را دنبال کنید.
+• فیلتر مخاطب جوان: تماشای ایمن برای کودکان.
+• زیرنویس‌های Wyzie: جستجوی آنلاین زیرنویس.
+• پخش‌کننده بهبودیافته Android TV و رایانه لوحی.
+• رفع اشکالات و بهبود عملکرد.
+</fa-AE>
+<fa-AF>
+موارد جدید در این نسخه:
+• فهرست تماشا: فیلم‌ها و سریال‌ها را دنبال کنید.
+• فیلتر مخاطب جوان: تماشای ایمن برای کودکان.
+• زیرنویس‌های Wyzie: جستجوی آنلاین زیرنویس.
+• پخش‌کننده بهبودیافته Android TV و رایانه لوحی.
+• رفع اشکالات و بهبود عملکرد.
+</fa-AF>
+<fa-IR>
+موارد جدید در این نسخه:
+• فهرست تماشا: فیلم‌ها و سریال‌ها را دنبال کنید.
+• فیلتر مخاطب جوان: تماشای ایمن برای کودکان.
+• زیرنویس‌های Wyzie: جستجوی آنلاین زیرنویس.
+• پخش‌کننده بهبودیافته Android TV و رایانه لوحی.
+• رفع اشکالات و بهبود عملکرد.
+</fa-IR>
+<fi-FI>
+Uutta tässä versiossa:
+• Katselulista: Pidä kirjaa elokuvista ja sarjoista.
+• Nuoren yleisön suodatin: Turvallinen katselu lapsille.
+• Wyzie-tekstitykset: Tekstitysten verkkohaku.
+• Parannettu Android TV - ja tablettisoitin.
+• Virheenkorjauksia ja suorituskykyparannuksia.
+</fi-FI>
+<fil>
+Bago sa release na ito:
+• Watchlist: Subaybayan ang mga pelikula at serye.
+• Young Audience Filter: Ligtas na panonood para sa mga bata.
+• Mga Subtitle ng Wyzie: Online na paghahanap ng subtitle.
+• Pinahusay na Android TV at tablet player.
+• Mga pag-aayos ng bug at pagpapabuti ng performance.
+</fil>
+<fr-CA>
+Nouveautés de cette version :
+• Liste de suivi : Gardez une trace des films et séries.
+• Filtre pour jeune public : Visionnage sécurisé pour les enfants.
+• Sous-titres Wyzie : Recherche de sous-titres en ligne.
+• Lecteur Android TV et tablette amélioré.
+• Corrections de bugs et améliorations des performances.
+</fr-CA>
+<fr-FR>
+Nouveautés de cette version :
+• Liste de suivi : Gardez une trace des films et séries.
+• Filtre pour jeune public : Visionnage sécurisé pour les enfants.
+• Sous-titres Wyzie : Recherche de sous-titres en ligne.
+• Lecteur Android TV et tablette amélioré.
+• Corrections de bugs et améliorations des performances.
+</fr-FR>
+<gl-ES>
+Novidades desta versión:
+• Lista de seguimento: Fai un seguimento de películas e series.
+• Filtro para público mozo: Visualización segura para nenos.
+• Subtítulos Wyzie: Busca de subtítulos en liña.
+• Reprodutor mellorado para Android TV e tabletas.
+• Correccións de erros e melloras de rendemento.
+</gl-ES>
+<gu>
+આ રીલીઝમાં નવું:
+• વૉચલિસ્ટ: મૂવીઝ અને સિરીઝનો ટ્રૅક રાખો.
+• યુવા પ્રેક્ષકો ફિલ્ટર: બાળકો માટે સુરક્ષિત જોવાનું.
+• Wyzie સબટાઈટલ: ઓનલાઈન સબટાઈટલ શોધ.
+• સુધારેલ Android TV અને ટેબ્લેટ પ્લેયર.
+• બગ ફિક્સેસ અને પ્રદર્શન સુધારણા.
+</gu>
+<hi-IN>
+इस रिलीज़ में नया:
+• वॉचलिस्ट: फ़िल्मों और सीरीज़ पर नज़र रखें।
+• युवा दर्शक फ़िल्टर: बच्चों के लिए सुरक्षित दृश्य।
+• Wyzie उपशीर्षक: ऑनलाइन उपशीर्षक खोज।
+• बेहतर Android TV और टैबलेट प्लेयर।
+• बग फिक्स और प्रदर्शन में सुधार।
+</hi-IN>
+<hr>
+Novo u ovom izdanju:
+• Popis za praćenje: Pratite filmove i serije.
+• Filter za mladu publiku: Sigurno gledanje za djecu.
+• Wyzie titlovi: Mrežno pretraživanje titlova.
+• Poboljšani uređaj za reprodukciju za Android TV i tablete.
+• Ispravci grešaka i poboljšanja performansi.
+</hr>
+<hu-HU>
+Újdonságok ebben a verzióban:
+• Figyelőlista: Kövesse nyomon a filmeket és sorozatokat.
+• Fiatal közönségszűrő: Biztonságos megtekintés gyerekeknek.
+• Wyzie feliratok: Online feliratkeresés.
+• Továbbfejlesztett Android TV és táblagép lejátszó.
+• Hibajavítások és teljesítményfejlesztések.
+</hu-HU>
+<hy-AM>
+Նորույթներ այս թողարկման մեջ.
+• Դիտման ցուցակ. Հետևեք ֆիլմերին և սերիալներին:
+• Երիտասարդ լսարանի զտիչ. Անվտանգ դիտում երեխաների համար:
+• Wyzie ենթագրեր. Ենթագրերի առցանց որոնում:
+• Բարելավված Android TV և պլանշետային նվագարկիչ:
+• Սխալների ուղղումներ և կատարողականի բարելավումներ:
+</hy-AM>
+<id>
+Baru di rilis ini:
+• Daftar Tonton: Lacak film dan serial.
+• Filter Penonton Muda: Tontonan aman untuk anak-anak.
+• Subtitel Wyzie: Pencarian subtitel online.
+• Pemutar Android TV dan tablet yang disempurnakan.
+• Perbaikan bug dan peningkatan performa.
+</id>
+<is-IS>
+Nýtt í þessari útgáfu:
+• Vaktlisti: Haltu utan um kvikmyndir og þætti.
+• Sía fyrir unga áhorfendur: Öruggt áhorf fyrir börn.
+• Wyzie skjátextar: Skjátextaleit á netinu.
+• Bættur spilari fyrir Android TV og spjaldtölvur.
+• Villuleiðréttingar og afkastaumbætur.
+</is-IS>
+<it-IT>
+Novità in questa versione:
+• Lista di titoli da guardare: Tieni traccia di film e serie.
+• Filtro per pubblico giovane: Visione sicura per i bambini.
+• Sottotitoli Wyzie: Ricerca sottotitoli online.
+• Lettore per Android TV e tablet migliorato.
+• Correzioni di bug e miglioramenti delle prestazioni.
+</it-IT>
+<iw-IL>
+חדש בגרסה זו:
+• רשימת צפייה: עקוב אחר סרטים וסדרות.
+• מסנן לקהל צעיר: צפייה בטוחה לילדים.
+• כתוביות Wyzie: חיפוש כתוביות מקוון.
+• נגן משופר ל-Android TV ולטאבלטים.
+• תיקוני באגים ושיפורי ביצועים.
+</iw-IL>
+<ja-JP>
+このバージョンの新機能：
+• ウォッチリスト：映画やシリーズを記録。
+• 若年層向けフィルタ：子供向けの安全な視聴。
+• Wyzie字幕：オンライン字幕検索。
+• Android TVおよびタブレットプレーヤーの改善。
+• バグ修正とパフォーマンスの向上。
+</ja-JP>
+<ka-GE>
+სიახლეები ამ ვერსიაში:
+• სანახავი სია: თვალი ადევნეთ ფილმებსა და სერიალებს.
+• ახალგაზრდა აუდიტორიის ფილტრი: უსაფრთხო ყურება ბავშვებისთვის.
+• Wyzie სუბტიტრები: სუბტიტრების ონლაინ ძიება.
+• გაუმჯობესებული Android TV და პლანშეტის პლეერი.
+• შეცდომების გამოსწორება და წარმადობის გაუმჯობესება.
+</ka-GE>
+<kk>
+Бұл нұсқадағы жаңалықтар:
+• Көру тізімі: Фильмдер мен серияларды қадағалаңыз.
+• Жас көрермен фильтрі: Балаларға қауіпсіз көру.
+• Wyzie субтитрлері: Субтитрлерді онлайн іздеу.
+• Android TV және планшет ойнатқышы жақсартылды.
+• Қателерді түзету және өнімділікті арттыру.
+</kk>
+<km-KH>
+ថ្មីនៅក្នុងកំណែនេះ៖
+• បញ្ជីមើល៖ តាមដានភាពយន្ត និងរឿងភាគ។
+• តម្រងទស្សនិកជនវ័យក្មេង៖ ការមើលដោយសុវត្ថិភាពសម្រាប់កុមារ។
+• ចំណងជើងរង Wyzie៖ ស្វែងរកចំណងជើងរងតាមអ៊ីនធឺណិត។
+• កម្មវិធីចាក់ Android TV និងថេប្លេតដែលបានកែលម្អ។
+• ការជួសជុលកំហុស និងការកែលម្អដំណើរការ។
+</km-KH>
+<kn-IN>
+ಈ ಆವೃತ್ತಿಯಲ್ಲಿ ಹೊಸದು:
+• ವೀಕ್ಷಣೆ ಪಟ್ಟಿ: ಚಲನಚಿತ್ರಗಳು ಮತ್ತು ಸರಣಿಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ.
+• ಯುವ ಪ್ರೇಕ್ಷಕರ ಫಿಲ್ಟರ್: ಮಕ್ಕಳಿಗಾಗಿ ಸುರಕ್ಷಿತ ವೀಕ್ಷಣೆ.
+• Wyzie ಉಪಶೀರ್ಷಿಕೆಗಳು: ಆನ್‌ಲೈನ್ ಉಪಶೀರ್ಷಿಕೆ ಹುಡುಕಾಟ.
+• ಸುಧಾರಿತ Android TV ಮತ್ತು ಟ್ಯಾಬ್ಲೆಟ್ ಪ್ಲೇಯರ್.
+• ದೋಷ ಪರಿಹಾರಗಳು ಮತ್ತು ಕಾರ್ಯಕ್ಷಮತೆ ಸುಧಾರಣೆಗಳು.
+</kn-IN>
+<ko-KR>
+이번 업데이트의 새로운 기능:
+• 관심 목록: 영화 및 시리즈를 추적하세요.
+• 젊은 시청자용 필터: 어린이를 위한 안전한 시청.
+• Wyzie 자막: 온라인 자막 검색.
+• 개선된 Android TV 및 태블릿 플레이어.
+• 버그 수정 및 성능 개선.
+</ko-KR>
+<ky-KG>
+Бул чыгарылыштагы жаңылыктар:
+• Көрүү тизмеси: Тасмаларды жана серияларды көзөмөлдөңүз.
+• Жаш көрүүчү чыпкасы: Балдар үчүн коопсуз көрүү.
+• Wyzie субтитрлери: Субтитрлерди онлайн издөө.
+• Жакшыртылган Android TV жана планшет ойноткучу.
+• Мүчүлүштүктөрдү оңдоо жана өндүрүмдүүлүктү жогорулатуу.
+</ky-KG>
+<lo-LA>
+ໃໝ່ໃນເວີຊັນນີ້:
+• ລາຍການເບິ່ງ: ຕິດຕາມໜັງ ແລະ ຊີຣີ.
+• ຕົວກັ່ນຕອງສຳລັບເດັກນ້ອຍ: ການເບິ່ງທີ່ປອດໄພສຳລັບເດັກ.
+• ຄຳບັນຍາຍ Wyzie: ຄົ້ນຫາຄຳບັນຍາຍອອນລາຍ.
+• ປັບປຸງຕົວຫຼິ້ນ Android TV ແລະ ແທັບເລັດ.
+• ແກ້ໄຂຂໍ້ຜິດພາດ ແລະ ປັບປຸງປະສິດທິພາບ.
+</lo-LA>
+<lt>
+Naujienos šioje versijoje:
+• Stebėjimo sąrašas: Sekite filmus ir serialus.
+• Jaunosios auditorijos filtras: Saugus žiūrėjimas vaikams.
+• „Wyzie“ subtitrai: Subtitrų paieška internete.
+• Patobulintas „Android TV“ ir planšetinių kompiuterių grotuvas.
+• Klaidų ištaisymai ir našumo patobulinimai.
+</lt>
+<lv>
+Jaunumi šajā laidienā:
+• Skatīšanās saraksts: Sekojiet līdzi filmām un seriāliem.
+• Jaunās auditorijas filtrs: Droša skatīšanās bērniem.
+• Wyzie subtitri: Subtitru meklēšana tiešsaistē.
+• Uzlabots Android TV un planšetdatoru atskaņotājs.
+• Kļūdu labojumi un veiktspējas uzlabojumi.
+</lv>
+<mk-MK>
+Ново во ова издание:
+• Список за гледање: Следете ги филмовите и сериите.
+• Филтер за млада публика: Безбедно гледање за деца.
+• Wyzie преводи: Онлајн пребарување на преводи.
+• Подобрен плеер за Android TV и таблети.
+• Поправки на грешки и подобрувања на перформансите.
+</mk-MK>
+<ml-IN>
+ഈ റിലീസിലെ പുതിയവ:
+• വാച്ച് ലിസ്റ്റ്: സിനിമകളും സീരീസുകളും ട്രാക്ക് ചെയ്യുക.
+• യുവ പ്രേക്ഷക ഫിൽട്ടർ: കുട്ടികൾക്ക് സുരക്ഷിതമായ കാഴ്‌ച.
+• Wyzie സബ്ടൈറ്റിലുകൾ: ഓൺലൈൻ സബ്ടൈറ്റിൽ തിരയൽ.
+• മെച്ചപ്പെടുത്തിയ Android TV, ടാബ്‌ലെറ്റ് പ്ലെയർ.
+• ബഗ് പരിഹാരങ്ങളും പ്രകടന മെച്ചപ്പെടുത്തലുകളും.
+</ml-IN>
+<mn-MN>
+Энэ хувилбарын шинэчлэл:
+• Үзэх жагсаалт: Кино, цувралыг бүртгэх.
+• Залуу үзэгчийн шүүлтүүр: Хүүхдэд аюулгүй үзэх.
+• Wyzie хадмал: Онлайн хадмал хайлт.
+• Android TV болон таблет тоглуулагч сайжирсан.
+• Алдаа засвар болон хурдны сайжруулалт.
+</mn-MN>
+<mr-IN>
+या प्रकाशनात नवीन काय आहे:
+• वॉचलिस्ट: चित्रपट आणि मालिकांचा मागोवा ठेवा.
+• तरुण प्रेक्षक फिल्टर: मुलांसाठी सुरक्षित पाहणे.
+• Wyzie सबटायटल्स: ऑनलाइन सबटायटल शोध.
+• सुधारित Android TV आणि टॅब्लेट प्लेयर.
+• बग निराकरणे आणि कार्यप्रदर्शन सुधारणा.
+</mr-IN>
+<ms>
+Baharu dalam keluaran ini:
+• Senarai Tontonan: Jejaki filem dan siri.
+• Penapis Khalayak Muda: Tontonan selamat untuk kanak-kanak.
+• Sarikata Wyzie: Carian sarikata dalam talian.
+• Pemain Android TV dan tablet yang dipertingkatkan.
+• Pembetulan pepijat dan peningkatan prestasi.
+</ms>
+<ms-MY>
+Baharu dalam keluaran ini:
+• Senarai Tontonan: Jejaki filem dan siri.
+• Penapis Khalayak Muda: Tontonan selamat untuk kanak-kanak.
+• Sarikata Wyzie: Carian sarikata dalam talian.
+• Pemain Android TV dan tablet yang dipertingkatkan.
+• Pembetulan pepijat dan peningkatan prestasi.
+</ms-MY>
+<my-MM>
+ဤဗားရှင်းတွင် အသစ်များ-
+• ကြည့်ရန်စာရင်း- ရုပ်ရှင်များနှင့် စီးရီးများကို မှတ်သားထားပါ။
+• လူငယ်ပရိသတ် စစ်ထုတ်မှု- ကလေးများအတွက် လုံခြုံစွာကြည့်ရှုခြင်း။
+• Wyzie စာတန်းထိုးများ- အွန်လိုင်း စာတန်းထိုးရှာဖွေခြင်း။
+• ပိုမိုကောင်းမွန်သော Android TV နှင့် တက်ဘလက် ဖွင့်စက်။
+• ချို့ယွင်းချက်ပြင်ဆင်မှုများနှင့် လုပ်ဆောင်ချက် တိုးတက်မှုများ။
+</my-MM>
+<ne-NP>
+यस संस्करणमा नयाँ:
+• वाचलिस्ट: चलचित्र र शृङ्खलाहरूको ट्र्याक राख्नुहोस्।
+• युवा दर्शक फिल्टर: बच्चाहरूको लागि सुरक्षित हेराइ।
+• Wyzie उपशीर्षकहरू: अनलाइन उपशीर्षक खोज।
+• सुधारिएको Android TV र ट्याब्लेट प्लेयर।
+• बग समाधान र प्रदर्शन सुधारहरू।
+</ne-NP>
+<nl-NL>
+Nieuw in deze release:
+• Kijklijst: Houd films en series bij.
+• Filter voor jong publiek: Veilig kijken voor kinderen.
+• Wyzie-ondertitels: Online ondertitels zoeken.
+• Verbeterde speler voor Android TV en tablets.
+• Bugfixes en prestatieverbeteringen.
+</nl-NL>
+<no-NO>
+Nytt i denne utgivelsen:
+• Visningsliste: Hold oversikt over filmer og serier.
+• Filter for ungt publikum: Trygg titting for barn.
+• Wyzie-undertekster: Undertekstsøk på nettet.
+• Forbedret spiller for Android TV og nettbrett.
+• Feilrettinger og ytelsesforbedringer.
+</no-NO>
+<pa>
+ਇਸ ਰੀਲੀਜ਼ ਵਿੱਚ ਨਵਾਂ:
+• ਵਾਚਲਿਸਟ: ਫਿਲਮਾਂ ਅਤੇ ਸੀਰੀਜ਼ 'ਤੇ ਨਜ਼ਰ ਰੱਖੋ।
+• ਨੌਜਵਾਨ ਦਰਸ਼ਕ ਫਿਲਟਰ: ਬੱਚਿਆਂ ਲਈ ਸੁਰੱਖਿਅਤ ਦ੍ਰਿਸ਼।
+• Wyzie ਉਪਸਿਰਲੇਖ: ਔਨਲਾਈਨ ਉਪਸਿਰਲੇਖ ਖੋਜ।
+• ਬਿਹਤਰ Android TV ਅਤੇ ਟੈਬਲੈੱਟ ਪਲੇਅਰ।
+• ਬੱਗ ਫਿਕਸ ਅਤੇ ਪ੍ਰਦਰਸ਼ਨ ਵਿੱਚ ਸੁਧਾਰ।
+</pa>
+<pl-PL>
+Nowości w tej wersji:
+• Lista do obejrzenia: Śledź filmy i seriale.
+• Filtr dla młodych widzów: Bezpieczne oglądanie dla dzieci.
+• Napisy Wyzie: Wyszukiwanie napisów online.
+• Ulepszony odtwarzacz na Android TV i tablety.
+• Poprawki błędów i ulepszenia wydajności.
+</pl-PL>
+<pt-BR>
+Novidades nesta versão:
+• Lista de interesses: Acompanhe filmes e séries.
+• Filtro para público jovem: Visualização segura para crianças.
+• Legendas Wyzie: Pesquisa de legendas online.
+• Reprodutor melhorado para Android TV e tablets.
+• Correções de bugs e melhorias de desempenho.
+</pt-BR>
+<pt-PT>
+Novidades nesta versão:
+• Lista de observação: Acompanhe filmes e séries.
+• Filtro para público jovem: Visualização segura para crianças.
+• Legendas Wyzie: Pesquisa de legendas online.
+• Leitor melhorado para Android TV e tablets.
+• Correções de erros e melhorias de desempenho.
+</pt-PT>
+<rm>
+Nov en questa versiun:
+• Glista da guardar: Tegna evidenta da films e serias.
+• Filter per giuven public: Guardar segir per uffants.
+• Sut-titels Wyzie: Tschertga da sut-titels online.
+• Meildrá giugader per Android TV e tablets.
+• Correcturas da sbagls ed augment da la prestaziun.
+</rm>
+<ro>
+Noutăți în această versiune:
+• Lista de urmărire: Ține evidența filmelor și serialelor.
+• Filtru pentru publicul tânăr: Vizionare sigură pentru copii.
+• Subtitrări Wyzie: Căutare de subtitrări online.
+• Player îmbunătățit pentru Android TV și tablete.
+• Remedieri de erori și îmbunătățiri ale performanței.
+</ro>
+<ru-RU>
+Новое в этой версии:
+• Список просмотра: Отслеживайте фильмы и сериалы.
+• Фильтр для юной аудитории: Безопасный просмотр для детей.
+• Субтитры Wyzie: Онлайн-поиск субтитров.
+• Улучшенный плеер для Android TV и планшетов.
+• Исправления ошибок и улучшения производительности.
+</ru-RU>
+<si-LK>
+මෙම නිකුතුවේ නවතම දෑ:
+• නැරඹුම් ලැයිස්තුව: චිත්‍රපට සහ කතාමාලා නිරීක්ෂණය කරන්න.
+• තරුණ ප්‍රේක්ෂක පෙරහන: ළමයින්ට ආරක්ෂිතව නැරඹීමට.
+• Wyzie උපසිරැසි: මාර්ගගත උපසිරැසි සෙවුම.
+• වැඩිදියුණු කළ Android TV සහ ටැබ්ලට් ධාවකය.
+• දෝෂ නිවැරදි කිරීම් සහ ක්‍රියාකාරීත්වයේ වැඩිදියුණු කිරීම්.
+</si-LK>
+<sk>
+Novinky v tejto verzii:
+• Zoznam na pozeranie: Sledujte filmy a seriály.
+• Filter pre mladé publikum: Bezpečné pozeranie pre deti.
+• Titulky Wyzie: Online vyhľadávanie titulkov.
+• Vylepšený prehrávač pre Android TV a tablety.
+• Opravy chýb a vylepšenia výkonu.
+</sk>
+<sl>
+Novosti v tej različici:
+• Seznam za ogled: Spremljajte filme in serije.
+• Filter za mlado občinstvo: Varno gledanje za otroke.
+• Podnapisi Wyzie: Spletno iskanje podnapisov.
+• Izboljšan predvajalnik za Android TV in tablične računalnike.
+• Odpravljene napake in izboljšave delovanja.
+</sl>
+<sq>
+Të rejat në këtë version:
+• Lista e shikimit: Ndiq filmat dhe serialet.
+• Filtri i publikut të ri: Shikim i sigurt për fëmijët.
+• Titrat Wyzie: Kërkim i titrave në internet.
+• Luajtës i përmirësuar për Android TV dhe tableta.
+• Rregullime të gabimeve dhe përmirësime të performancës.
+</sq>
+<sr>
+Ново у овом издању:
+• Листа за гледање: Пратите филмове и серије.
+• Филтер за младу публику: Безбедно гледање за децу.
+• Wyzie титлови: Онлајн претрага титлова.
+• Побољшан плејер за Android TV и таблете.
+• Исправке грешака и побољшања перформанси.
+</sr>
+<sv-SE>
+Nytt i den här versionen:
+• Tittlista: Håll koll på filmer och serier.
+• Filter för ung publik: Säker visning för barn.
+• Wyzie-undertexter: Sökning efter undertexter online.
+• Förbättrad spelare för Android TV och surfplattor.
+• Felkorrigeringar och prestandaförbättringar.
+</sv-SE>
+<sw>
+Mapya katika toleo hili:
+• Orodha ya kutazama: Fuatilia filamu na mfululizo.
+• Kichujio cha Hadhira Changa: Utazamaji salama kwa watoto.
+• Manukuu ya Wyzie: Utafutaji wa manukuu mtandaoni.
+• Kichezaji kilichoboreshwa cha Android TV na kompyuta kibao.
+• Marekebisho ya hitilafu na uboreshaji wa utendaji.
+</sw>
+<ta-IN>
+இந்த வெளியீட்டில் புதியவை:
+• வாட்ச்லிஸ்ட்: திரைப்படங்கள் மற்றும் தொடர்களைக் கண்காணிக்கவும்.
+• இளம் பார்வையாளர் வடிப்பான்: குழந்தைகளுக்கான பாதுகாப்பான பார்வை.
+• Wyzie வசனங்கள்: ஆன்லைன் வசனத் தேடல்.
+• மேம்படுத்தப்பட்ட Android TV மற்றும் டேப்லெட் பிளேயர்.
+• பிழைத் திருத்தங்கள் மற்றும் செயல்திறன் மேம்பாடுகள்.
+</ta-IN>
+<te-IN>
+ఈ విడుదలలో కొత్తవి:
+• వాచ్‌లిస్ట్: చలనచిత్రాలు మరియు సిరీస్‌లను ట్రాక్ చేయండి.
+• యువ ప్రేక్షకుల ఫిల్టర్: పిల్లల కోసం సురక్షితమైన వీక్షణ.
+• Wyzie ఉపశీర్షికలు: ఆన్‌లైన్ ఉపశీర్షిక శోధన.
+• మెరుగుపరచబడిన Android TV మరియు టాబ్లెట్ ప్లేయర్.
+• బగ్ పరిష్కారాలు మరియు పనితీరు మెరుగుదలలు.
+</te-IN>
+<th>
+มีอะไรใหม่ในรุ่นนี้:
+• รายการสิ่งที่อยากดู: ติดตามภาพยนตร์และซีรีส์
+• ตัวกรองสำหรับผู้ชมวัยเยาว์: การรับชมที่ปลอดภัยสำหรับเด็ก
+• คำบรรยาย Wyzie: ค้นหาคำบรรยายออนไลน์
+• ปรับปรุงโปรแกรมเล่นสำหรับ Android TV และแท็บเล็ต
+• แก้ไขข้อบกพร่องและปรับปรุงประสิทธิภาพ
+</th>
+<tr-TR>
+Bu sürümdeki yenilikler:
+• İzleme Listesi: Filmleri ve dizileri takip edin.
+• Genç Kitle Filtresi: Çocuklar için güvenli izleme.
+• Wyzie Altyazıları: Çevrimiçi altyazı araması.
+• Geliştirilmiş Android TV ve tablet oynatıcısı.
+• Hata düzeltmeleri ve performans iyileştirmeleri.
+</tr-TR>
+<uk>
+Нове у цій версії:
+• Список перегляду: Відстежуйте фільми та серіали.
+• Фільтр для юної аудиторії: Безпечний перегляд для дітей.
+• Субтитри Wyzie: Онлайн-пошук субтитрів.
+• Покращений плеєр для Android TV та планшетів.
+• Виправлення помилок та покращення продуктивності.
+</uk>
+<ur>
+اس ریلیز میں نیا کیا ہے:
+• واچ لسٹ: فلموں اور سیریز پر نظر رکھیں۔
+• نوجوان سامعین کا فلٹر: بچوں کے لیے محفوظ نظارہ۔
+• Wyzie سب ٹائٹلز: آن لائن سب ٹائٹل تلاش۔
+• بہتر Android TV اور ٹیبلیٹ پلیئر۔
+• بگ کی اصلاحات اور کارکردگی میں بہتری۔
+</ur>
+<vi>
+Tính năng mới trong bản phát hành này:
+• Danh sách xem: Theo dõi phim và loạt phim.
+• Bộ lọc khán giả trẻ: Xem an toàn cho trẻ em.
+• Phụ đề Wyzie: Tìm kiếm phụ đề trực tuyến.
+• Trình phát máy tính bảng và Android TV được cải tiến.
+• Sửa lỗi và cải thiện hiệu suất.
+</vi>
+<zh-CN>
+此版本的新功能：
+• 观看列表：追踪您想看的电影和剧集。
+• 青少年观众过滤器：儿童安全观看。
+• Wyzie 字幕：在线搜索字幕。
+• 改进了 Android TV 和平板电脑播放器。
+• 修复了已知问题并提升了性能。
+</zh-CN>
+<zh-HK>
+此版本的新功能：
+• 觀看清單：追蹤你想看的電影和影集。
+• 青少年觀眾篩選器：兒童安全觀看。
+• Wyzie 字幕：線上搜尋字幕。
+• 改進了 Android TV 和平板電腦播放器。
+• 修復了已知問題並提升了效能。
+</zh-HK>
+<zh-TW>
+此版本的新功能：
+• 觀看清單：追蹤你想看的電影和影集。
+• 青少年觀眾篩選器：兒童安全觀看。
+• Wyzie 字幕：線上搜尋字幕。
+• 改進了 Android TV 和平板電腦播放器。
+• 修復了已知問題並提升了效能。
+</zh-TW>
+<zu>
+Okusha kule nguqulo:
+• Uhlu lokubuka: Landelela amamuvi nochungechunge.
+• Isihlungi Sezithameli Ezincane: Ukubuka okuphephile kwezingane.
+• Imibhalo engezansi ye-Wyzie: Ukusesha kwemibhalo engezansi ku-inthanethi.
+• Isidlali se-Android TV nethebhulethi esithuthukisiwe.
+• Ukulungiswa kweziphazamisi nokuthuthukiswa kokusebenza.
+</zu>
