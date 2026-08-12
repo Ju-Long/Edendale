@@ -57,10 +57,6 @@ internal static class UserMediaMerger
             own, other,
             own.FavouriteUpdatedAt, own.FavouriteDirty,
             other.FavouriteUpdatedAt, other.FavouriteDirty);
-        var watchlist = Winner(
-            own, other,
-            own.WatchlistUpdatedAt, own.WatchlistDirty,
-            other.WatchlistUpdatedAt, other.WatchlistDirty);
         var rating = Winner(
             own, other,
             own.RatingUpdatedAt, own.RatingDirty,
@@ -76,9 +72,6 @@ internal static class UserMediaMerger
             Favourite = favourite.Favourite,
             FavouriteUpdatedAt = favourite.FavouriteUpdatedAt,
             FavouriteDirty = favourite.FavouriteDirty,
-            Watchlist = watchlist.Watchlist,
-            WatchlistUpdatedAt = watchlist.WatchlistUpdatedAt,
-            WatchlistDirty = watchlist.WatchlistDirty,
             Rating = rating.Rating,
             RatingUpdatedAt = rating.RatingUpdatedAt,
             RatingDirty = rating.RatingDirty,

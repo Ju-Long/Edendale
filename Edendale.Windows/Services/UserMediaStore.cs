@@ -63,19 +63,6 @@ public sealed class UserMediaStore
         }
     }
 
-    public IReadOnlyList<UserMediaRecord> WatchlistItems
-    {
-        get
-        {
-            lock (_gate)
-            {
-                return [.. _records.Values
-                    .Where(record => record.Watchlist)
-                    .OrderByDescending(record => record.WatchlistUpdatedAt)];
-            }
-        }
-    }
-
     public UserMediaRecord? Get(int tmdbId, string mediaType)
     {
         lock (_gate) return _records.GetValueOrDefault($"{mediaType}:{tmdbId}");
@@ -83,9 +70,6 @@ public sealed class UserMediaStore
 
     public bool IsFavourite(int tmdbId, string mediaType) =>
         Get(tmdbId, mediaType)?.Favourite == true;
-
-    public bool IsWatchlisted(int tmdbId, string mediaType) =>
-        Get(tmdbId, mediaType)?.Watchlist == true;
 
     /// <summary>The stored TMDB rating (0.5–10), or null when unrated.</summary>
     public double? RatingFor(int tmdbId, string mediaType) =>
@@ -97,14 +81,6 @@ public sealed class UserMediaStore
             record.Favourite = value;
             record.FavouriteUpdatedAt = NowMillis();
             record.FavouriteDirty = true;
-        });
-
-    public void SetWatchlist(int tmdbId, string mediaType, bool value, string? title = null, string? posterPath = null) =>
-        Edit(tmdbId, mediaType, title, posterPath, record =>
-        {
-            record.Watchlist = value;
-            record.WatchlistUpdatedAt = NowMillis();
-            record.WatchlistDirty = true;
         });
 
     /// <summary>value is on TMDB's 0.5–10 scale; null clears the rating.</summary>

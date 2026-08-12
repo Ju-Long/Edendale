@@ -149,7 +149,7 @@
     <value>SEU ARQUIVO</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>O índice da biblioteca permanece neste dispositivo. O progresso de exibição, os favoritos, a sua lista de interesse e as classificações também são armazenados aqui e replicados para o seu próprio OneDrive quando configurado — nenhum servidor de terceiros é envolvido.</value>
+    <value>O índice da biblioteca permanece neste dispositivo. O progresso de exibição, os favoritos e as avaliações também são armazenados aqui e replicados no seu próprio OneDrive quando configurado — nenhum servidor de terceiros jamais é envolvido. Sua lista de interesse é armazenada aqui e sincronizada com sua conta TMDB quando você conecta uma.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Pasta de dados</value>
@@ -856,5 +856,41 @@ ESTÁ SILENCIOSA</value>
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>Este arquivo ainda não foi associado ao TMDB, então não há por onde buscar.</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>VERIFICANDO CLASSIFICAÇÕES</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>No momento, não há títulos PG ou PG-13 na sua lista de interesse.</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>Nenhum título PG ou PG-13 disponível nesta filmografia.</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>Filme</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>Série de TV</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>Lista de interesse</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>Remover da lista de interesse</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>PÚBLICO</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>Adequado para público jovem</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>Mostrar apenas filmes e séries classificados como PG ou PG-13, incluindo as classificações de TV equivalentes.</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>Indisponível para público jovem</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>Este título não foi verificado como PG ou PG-13.</value>
   </data>
 </root>

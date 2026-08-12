@@ -6,20 +6,26 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <RootNamespace>Edendale.Windows</RootNamespace>
     <AssemblyName>Edendale</AssemblyName>
+    <!-- Visual Studio's local Secrets connected service and Manage User
+         Secrets command use this ID. Values stay in the current user's
+         profile and are loaded only by Debug builds. -->
+    <UserSecretsId>Edendale-Windows-Development</UserSecretsId>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <!--
-      Unpackaged during development: run/debug without MSIX packaging or a
-      certificate. The release workflow passes -p:EdendalePackaged=true to
-      build the signed MSIX instead, so the everyday F5 path is unchanged.
+      Keep the project MSIX-capable so Visual Studio exposes Package and
+      Publish (including Store association). The launchSettings "Project"
+      profile still runs the app unpackaged for ordinary local development;
+      a package is generated only when the packaged profile or release command
+      explicitly requests one.
     -->
     <EdendalePackaged Condition="'$(EdendalePackaged)' == ''">false</EdendalePackaged>
-    <WindowsPackageType Condition="'$(EdendalePackaged)' != 'true'">None</WindowsPackageType>
-    <WindowsPackageType Condition="'$(EdendalePackaged)' == 'true'">MSIX</WindowsPackageType>
-    <EnableMsixTooling Condition="'$(EdendalePackaged)' == 'true'">true</EnableMsixTooling>
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <EnableMsixTooling>true</EnableMsixTooling>
     <!-- Ship the Windows App SDK runtime with the app so no separate runtime install is needed. -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <!--
@@ -35,18 +41,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Program.cs owns Main for the single-instance activation redirect. -->
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
+    <GenerateTestArtifacts>True</GenerateTestArtifacts>
   </PropertyGroup>
 
-  <!-- The Windows App SDK packaging targets reject an AppxManifest whenever
-       WindowsPackageType is None, so the manifest joins the build only for
-       packaged releases. -->
-  <ItemGroup Condition="'$(EdendalePackaged)' == 'true'">
+  <!-- A manifest makes this a standard single-project MSIX app for Visual
+       Studio tooling. The unpackaged launch profile ignores package identity. -->
+  <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.7" Condition="'$(Configuration)' == 'Debug'" PrivateAssets="all" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <!-- DPAPI protection for the stored TMDB session (TmdbAccountService). -->

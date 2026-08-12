@@ -49,6 +49,8 @@ public sealed partial class DetailPage : Page
         });
         AppServices.UserMedia.Changed += (_, _) =>
             DispatcherQueue.TryEnqueue(UpdateUserMediaActions);
+        AppServices.Watchlist.Changed += (_, _) =>
+            DispatcherQueue.TryEnqueue(UpdateUserMediaActions);
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -57,8 +59,50 @@ public sealed partial class DetailPage : Page
         _args = e.Parameter as DetailNavArgs ?? new DetailNavArgs();
         ResetTrailer();
         ResolveLocalItems();
+
+        // A title that is not verified PG/PG-13 shows only the notice while the
+        // Young Audience filter is on (MediaDetailView's audience gate).
+        if (!await ApplyAudienceGateAsync()) return;
+
         RenderLocalFallback();
         await LoadDetailAsync();
+    }
+
+    // ------------------------------------------------------------------
+    // Young Audience gate
+    // ------------------------------------------------------------------
+
+    private enum AudienceGate { Allowed, Restricted, Verifying }
+
+    private async Task<bool> ApplyAudienceGateAsync()
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled)
+        {
+            SetAudienceGate(AudienceGate.Allowed);
+            return true;
+        }
+
+        if (ResolvedRef is not { } reference)
+        {
+            // No TMDB id to verify (an unmatched local file) — hidden while on.
+            SetAudienceGate(AudienceGate.Restricted);
+            return false;
+        }
+
+        if (filter.IsVerifying([reference])) SetAudienceGate(AudienceGate.Verifying);
+        await filter.VerifyAsync([reference]);
+        var allowed = filter.Allows(reference);
+        SetAudienceGate(allowed ? AudienceGate.Allowed : AudienceGate.Restricted);
+        return allowed;
+    }
+
+    private void SetAudienceGate(AudienceGate state)
+    {
+        ContentScroll.Visibility = state == AudienceGate.Allowed ? Visibility.Visible : Visibility.Collapsed;
+        AudienceRestricted.Visibility = state == AudienceGate.Restricted ? Visibility.Visible : Visibility.Collapsed;
+        AudienceVerifyRing.Visibility = state == AudienceGate.Verifying ? Visibility.Visible : Visibility.Collapsed;
+        AudienceVerifyRing.IsActive = state == AudienceGate.Verifying;
     }
 
     private void Back_Click(object sender, RoutedEventArgs e) => NavigationService.GoBack();
@@ -131,6 +175,8 @@ public sealed partial class DetailPage : Page
             return; // The local fallback already rendered.
         }
         RenderDetail();
+        // Keep a saved card's snapshot current when its full record loads.
+        if (_detail is { } loaded) AppServices.Watchlist.UpdateMetadata(loaded);
     }
 
     private void RenderDetail()
@@ -469,7 +515,7 @@ public sealed partial class DetailPage : Page
         FavouriteIcon.UriSource = new Uri(favourite ? "ms-appx:///Assets/Icons/heart-fill.svg" : "ms-appx:///Assets/Icons/heart.svg");
         FavouriteLabel.Text = Loc.Get(favourite ? "Detail_Favourited" : "Detail_Favourite");
 
-        var listed = AppServices.UserMedia.IsWatchlisted(reference.Id, reference.MediaType);
+        var listed = AppServices.Watchlist.IsInWatchlist(reference);
         WatchlistIcon.UriSource = new Uri(listed ? "ms-appx:///Assets/Icons/bookmark-slash.svg" : "ms-appx:///Assets/Icons/bookmark-plus.svg");
         WatchlistLabel.Text = Loc.Get(listed ? "Detail_InWatchlist" : "Detail_Watchlist");
 
@@ -495,13 +541,32 @@ public sealed partial class DetailPage : Page
     private void ToggleWatchlist_Click(object sender, RoutedEventArgs e)
     {
         if (ResolvedRef is not { } reference) return;
-        var (title, posterPath) = DisplaySnapshot;
-        AppServices.UserMedia.SetWatchlist(
-            reference.Id,
-            reference.MediaType,
-            !AppServices.UserMedia.IsWatchlisted(reference.Id, reference.MediaType),
-            title,
-            posterPath);
+        AppServices.Watchlist.Toggle(reference, BuildWatchlistMetadata());
+    }
+
+    /// <summary>Best offline snapshot for a new or refreshed watchlist card.</summary>
+    private WatchlistMetadata BuildWatchlistMetadata()
+    {
+        if (_detail is { } detail) return WatchlistMetadata.From(detail);
+        if (_localMovie is { } movie)
+        {
+            return new WatchlistMetadata
+            {
+                Title = movie.Title,
+                PosterUrl = movie.PosterUrl,
+                ReleaseDate = movie.Year?.ToString(),
+            };
+        }
+        if (_localShow is { } show)
+        {
+            return new WatchlistMetadata
+            {
+                Title = show.Name,
+                PosterUrl = show.PosterUrl,
+                ReleaseDate = show.FirstAirYear?.ToString(),
+            };
+        }
+        return new WatchlistMetadata();
     }
 
     private void Rating_ValueChanged(RatingControl sender, object args)

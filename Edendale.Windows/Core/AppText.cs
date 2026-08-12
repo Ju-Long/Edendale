@@ -36,6 +36,9 @@ internal static class AppText
 
         ["Library_AwaitingMetadata"] = "Awaiting metadata",
 
+        ["Watchlist_FallbackMovie"] = "Movie",
+        ["Watchlist_FallbackShow"] = "TV Show",
+
         ["Tmdb_NotConfigured"] = "TMDB credentials are not configured. Run the Edendale.Secrets tool from the repository root.",
         ["Tmdb_InvalidJson"] = "TMDB returned invalid JSON: {0}",
         ["Tmdb_RequestFailed"] = "TMDB request failed (HTTP {0})",

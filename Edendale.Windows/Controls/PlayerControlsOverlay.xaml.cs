@@ -95,7 +95,6 @@ public sealed partial class PlayerControlsOverlay : UserControl
             UpdatePlayPauseIcon();
             UpdateDuration();
             UpdateProgress();
-            UpdateLoopIcon();
 
             _progressTimer.Start();
             ShowControls();
@@ -237,23 +236,6 @@ public sealed partial class PlayerControlsOverlay : UserControl
         ToolTipService.SetToolTip(
             PictureInPictureButton,
             Loc.Get(active ? "Player_ExitPictureInPicture" : "Player_PictureInPicture"));
-    }
-
-    private void LoopButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_mediaPlayer == null) return;
-        _mediaPlayer.IsLoopingEnabled = !_mediaPlayer.IsLoopingEnabled;
-        UpdateLoopIcon();
-        ShowControls();
-    }
-
-    private void UpdateLoopIcon()
-    {
-        var looping = _mediaPlayer?.IsLoopingEnabled == true;
-        LoopIcon.Foreground = looping
-            ? (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["EdendaleGoldBrush"]
-            : (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["EdendaleTextPrimaryBrush"];
-        ToolTipService.SetToolTip(LoopButton, Loc.Get(looping ? "Player_StopLooping" : "Player_Loop"));
     }
 
     /// <summary>

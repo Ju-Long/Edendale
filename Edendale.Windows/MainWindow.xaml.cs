@@ -31,6 +31,7 @@ public sealed partial class MainWindow : Window
         AppWindow.SetIcon("Assets\\icon.ico");
 
         MoviesNavItem.Icon = Controls.SvgIcon.CreateIcon("film");
+        WatchlistNavItem.Icon = Controls.SvgIcon.CreateIcon("film-stack");
         DownloadedNavItem.Icon = Controls.SvgIcon.CreateIcon("folder-closed");
         SearchNavItem.Icon = Controls.SvgIcon.CreateIcon("magnifying-glass-play");
 
@@ -39,6 +40,36 @@ public sealed partial class MainWindow : Window
 
         AppServices.Player.PlaybackRequested += (_, request) =>
             DispatcherQueue.TryEnqueue(() => OpenPlayer(request));
+
+        // The Watchlist tab appears only when a visible item is saved.
+        AppServices.Watchlist.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchlistTab);
+        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchlistTab);
+        UpdateWatchlistTab();
+    }
+
+    // ------------------------------------------------------------------
+    // Watchlist tab visibility (RootView.hasWatchlistItems parity)
+    // ------------------------------------------------------------------
+
+    private async void UpdateWatchlistTab()
+    {
+        var items = AppServices.Watchlist.Items;
+        var filter = AppServices.YoungAudience;
+        if (filter.IsEnabled && items.Count > 0)
+        {
+            await filter.VerifyAsync(items.Select(item => item.Ref));
+        }
+
+        var hasVisible = items.Any(item => filter.Allows(item.Ref));
+        WatchlistNavItem.Visibility = hasVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        // The audience filter can empty the watchlist while it is open; fall
+        // back to Movies & Shows so the reader is never stranded on a dead tab.
+        if (!hasVisible && (Nav.SelectedItem as NavigationViewItem)?.Tag as string == "watchlist")
+        {
+            SelectSidebar("movies");
+            NavigateRoot(typeof(MoviesShowsPage));
+        }
     }
 
     // ------------------------------------------------------------------
@@ -58,6 +89,7 @@ public sealed partial class MainWindow : Window
         switch ((args.SelectedItem as NavigationViewItem)?.Tag as string)
         {
             case "movies": NavigateRoot(typeof(MoviesShowsPage)); break;
+            case "watchlist": NavigateRoot(typeof(WatchlistPage)); break;
             case "downloaded": NavigateRoot(typeof(DownloadedPage)); break;
             case "search": NavigateRoot(typeof(SearchPage)); break;
         }
@@ -114,24 +146,27 @@ public sealed partial class MainWindow : Window
                 break;
 
             case AppRoute.PlayMovie playMovie:
-                if (AppServices.Library.MovieByTmdbId(playMovie.TmdbId) is { } libraryMovie)
+                _ = GatedPlayAsync(playMovie.TmdbId, "movie", () =>
                 {
-                    AppServices.Player.Play(libraryMovie);
-                }
-                else
-                {
-                    // No playable local file — open details instead of
-                    // pretending playback succeeded (Apple Phase 12 rule).
-                    NavigationService.Navigate(typeof(DetailPage), new DetailNavArgs(
-                        Ref: new Models.MediaRef { Id = playMovie.TmdbId, MediaType = "movie" }));
-                }
+                    if (AppServices.Library.MovieByTmdbId(playMovie.TmdbId) is { } libraryMovie)
+                    {
+                        AppServices.Player.Play(libraryMovie);
+                    }
+                    else
+                    {
+                        // No playable local file — open details instead of
+                        // pretending playback succeeded (Apple Phase 12 rule).
+                        NavigationService.Navigate(typeof(DetailPage), new DetailNavArgs(
+                            Ref: new Models.MediaRef { Id = playMovie.TmdbId, MediaType = "movie" }));
+                    }
+                });
                 break;
 
             case AppRoute.PlayEpisode playEpisode:
                 if (AppServices.Library.EpisodeByTmdbId(playEpisode.TmdbId) is { } episode
                     && AppServices.Library.ShowForEpisode(episode) is { } episodeShow)
                 {
-                    AppServices.Player.Play(episodeShow, episode);
+                    _ = GatedPlayShowAsync(episodeShow, () => AppServices.Player.Play(episodeShow, episode));
                 }
                 else
                 {
@@ -141,7 +176,7 @@ public sealed partial class MainWindow : Window
 
             case AppRoute.PlayLocalMovie playLocal
                 when AppServices.Library.Movies.FirstOrDefault(m => m.Id == playLocal.Id) is { } localFile:
-                AppServices.Player.Play(localFile);
+                _ = GatedPlayMovieAsync(localFile);
                 break;
 
             case AppRoute.PlayLocalEpisode playLocalEpisode:
@@ -150,7 +185,7 @@ public sealed partial class MainWindow : Window
                     .FirstOrDefault(pair => pair.Episode.Id == playLocalEpisode.Id);
                 if (match.Episode is not null)
                 {
-                    AppServices.Player.Play(match.Show, match.Episode);
+                    _ = GatedPlayShowAsync(match.Show, () => AppServices.Player.Play(match.Show, match.Episode));
                 }
                 else
                 {
@@ -176,6 +211,40 @@ public sealed partial class MainWindow : Window
     {
         ActivationBar.Message = message;
         ActivationBar.IsOpen = true;
+    }
+
+    // ------------------------------------------------------------------
+    // Young Audience playback gate (AppRouter.isVisibleToSelectedAudience)
+    // ------------------------------------------------------------------
+
+    private async Task GatedPlayAsync(int tmdbId, string mediaType, Action play)
+    {
+        if (await AudiencePermitsAsync(new Models.MediaRef { Id = tmdbId, MediaType = mediaType })) play();
+    }
+
+    private Task GatedPlayMovieAsync(LibraryMovie movie) =>
+        GatedPlayLocalAsync(movie.TmdbId, "movie", () => AppServices.Player.Play(movie));
+
+    private Task GatedPlayShowAsync(LibraryShow show, Action play) =>
+        GatedPlayLocalAsync(show.TmdbId, "tv", play);
+
+    /// <summary>An unmatched local item (no TMDB id) is hidden while the filter is on.</summary>
+    private async Task GatedPlayLocalAsync(int? tmdbId, string mediaType, Action play)
+    {
+        if (AppServices.YoungAudience.IsEnabled)
+        {
+            if (tmdbId is not int id) return;
+            if (!await AudiencePermitsAsync(new Models.MediaRef { Id = id, MediaType = mediaType })) return;
+        }
+        play();
+    }
+
+    private static async Task<bool> AudiencePermitsAsync(Models.MediaRef reference)
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled) return true;
+        await filter.VerifyAsync([reference]);
+        return filter.Allows(reference);
     }
 
     // ------------------------------------------------------------------

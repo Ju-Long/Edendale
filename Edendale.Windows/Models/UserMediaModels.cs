@@ -5,7 +5,9 @@ namespace Edendale.Windows.Models;
 /// <summary>
 /// Per-title user state keyed by TMDB id + media type ("movie"/"tv").
 /// Each field carries its own last-write timestamp (cloud-replica merge) and
-/// dirty flag (pending TMDB account push).
+/// dirty flag (pending TMDB account push). The watchlist is not here — it lives
+/// in its own local-first <see cref="WatchlistRecord"/> store (TMDB is its only
+/// cloud), mirroring the Apple branch's split of WatchlistItem from CDUserMedia.
 /// </summary>
 public sealed class UserMediaRecord
 {
@@ -17,9 +19,6 @@ public sealed class UserMediaRecord
     public bool Favourite { get; set; }
     public long FavouriteUpdatedAt { get; set; }
     public bool FavouriteDirty { get; set; }
-    public bool Watchlist { get; set; }
-    public long WatchlistUpdatedAt { get; set; }
-    public bool WatchlistDirty { get; set; }
     public double? Rating { get; set; }
     public long RatingUpdatedAt { get; set; }
     public bool RatingDirty { get; set; }
@@ -28,8 +27,7 @@ public sealed class UserMediaRecord
 
     /// <summary>Stateless records are pruned from local and remote replicas.</summary>
     public bool HasState =>
-        Favourite || Watchlist || Rating is not null ||
-        FavouriteDirty || WatchlistDirty || RatingDirty;
+        Favourite || Rating is not null || FavouriteDirty || RatingDirty;
 }
 
 /// <summary>Step one of the TMDB connect flow.</summary>

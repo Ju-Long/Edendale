@@ -79,9 +79,9 @@ online subtitle search, and settings.
   development** workload.
 - .NET 8 SDK.
 
-The Windows App SDK 1.7 is restored through NuGet. Development builds are
-unpackaged and self-contained, so they do not require an MSIX certificate or a
-separately installed Windows App SDK runtime.
+The Windows App SDK 1.7 is restored through NuGet. Use the **Edendale
+(Unpackaged)** launch profile for ordinary development; it does not require an
+MSIX certificate. Store packaging remains available from the same project.
 
 ### Build and test
 
@@ -136,6 +136,15 @@ the file as a private assembly resource. Environment variables of the same
 names override it at runtime and are an alternative for local or test
 processes. CI runs without credentials; do not commit the file or distribute a
 locally built binary containing personal credentials.
+
+For Visual Studio Debug launches, **Manage User Secrets** or the local Secrets
+connected service can hold the same three flat keys. Debug startup loads those
+values into the current process before Edendale creates its services. Existing
+environment variables take priority, and User Secrets then override the
+embedded root `secrets.json`. This is development-only: .NET User Secrets are
+not encrypted and do not travel in a Release/MSIX package. Store builds still
+need the intended distribution credentials in the root `secrets.json` or the
+protected release environment.
 
 The Wyzie key is optional. Get one at
 [store.wyzie.io/redeem](https://store.wyzie.io/redeem); leave the prompt empty
@@ -251,14 +260,15 @@ draft GitHub Release. Unlike a CI build, a release package is self-contained:
 it carries both the Windows App SDK and .NET, so a user installs nothing first.
 
 ```powershell
-git tag v0.26
-git push origin v0.26
+git tag v26.0
+git push origin v26.0
 ```
 
-The current version lives in `Directory.Build.props` as `VersionPrefix`. Tags
-may be two-part or three-part — `v0.26` and `v0.26.0` both build 0.26.0 — and
+The current version lives in `Directory.Build.props` as `VersionPrefix`; its
+four-part local Store-package form is mirrored in `Package.appxmanifest`. Tags
+may be two-part or three-part — `v26.0` and `v26.0.0` both build 26.0.0 — and
 the release attaches to whichever tag was actually pushed. Assemblies carry
-three parts and the MSIX identity four, so 0.26 widens to 0.26.0 and 0.26.0.0.
+three parts and the MSIX identity four, so 26.0 widens to 26.0.0 and 26.0.0.0.
 
 Both release jobs run in the protected `release` environment, so no secret is
 readable until the environment's reviewers approve the run. It requires:
@@ -288,6 +298,14 @@ unpackaged so `F5` needs no certificate:
 ```powershell
 msbuild Edendale.Windows\Edendale.Windows.csproj -restore -p:Platform=x64 -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:EdendalePackaged=true -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
 ```
+
+Visual Studio recognizes `Edendale.Windows` as a single-project MSIX app while
+the **Edendale (Unpackaged)** launch profile keeps ordinary F5 runs
+unpackaged. After creating the matching **MSIX or PWA app** in Partner Center,
+reload the solution, right-click the `Edendale.Windows` project, and choose
+**Package and Publish → Associate App with the Store**. The architecture
+publish profiles under `Properties/PublishProfiles` select the matching
+`win-x86`, `win-x64`, or `win-arm64` runtime.
 
 ### Installing a sideloaded release
 

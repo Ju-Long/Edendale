@@ -87,6 +87,17 @@
         <ScrollViewer x:Name="ContentScroll" Visibility="Collapsed">
             <StackPanel Spacing="48" Padding="0,0,0,64">
 
+                <!-- Young Audience verification in progress (MoviesShowsView). -->
+                <StackPanel
+                    x:Name="AudienceVerifyingRow"
+                    Orientation="Horizontal"
+                    Spacing="12"
+                    Margin="48,12,48,0"
+                    Visibility="Collapsed">
+                    <ProgressRing IsActive="True" Width="18" Height="18" Foreground="{StaticResource EdendaleGoldBrush}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="AudienceVerifyingText" Style="{StaticResource LabelCapsTextStyle}" VerticalAlignment="Center" />
+                </StackPanel>
+
                 <!-- Hero pager: backdrop + scrims + kicker + display title +
                      meta + actions; auto-advances every 10s, paused on hover. -->
                 <StackPanel Spacing="16">

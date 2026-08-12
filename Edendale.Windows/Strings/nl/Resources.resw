@@ -149,7 +149,7 @@
     <value>JE ARCHIEF</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>De bibliotheekindex blijft op dit apparaat. Kijkvoortgang, favorieten, je kijklijst en beoordelingen worden hier ook opgeslagen en gerepliceerd naar je eigen OneDrive zodra deze is ingesteld — er is nooit een server van derden bij betrokken.</value>
+    <value>De bibliotheekindex blijft op dit apparaat. Kijkvoortgang, favorieten en beoordelingen worden hier ook opgeslagen en gerepliceerd naar je eigen OneDrive wanneer die is ingesteld — er is nooit een externe server bij betrokken. Je kijklijst wordt hier opgeslagen en gesynchroniseerd met je TMDB-account zodra je er een verbindt.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Gegevensmap</value>
@@ -856,5 +856,41 @@ IS STIL</value>
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>Dit bestand is nog niet gekoppeld aan TMDB, dus er is niets om op te zoeken.</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>LEEFTIJDSCLASSIFICATIES CONTROLEREN</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>Er staan momenteel geen PG- of PG-13-titels in je kijklijst.</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>Geen PG- of PG-13-titels beschikbaar in deze filmografie.</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>Film</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>Tv-serie</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>Kijklijst</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>Verwijderen uit kijklijst</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>PUBLIEK</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>Geschikt voor jong publiek</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>Toon alleen films en series met PG- of PG-13-classificatie, inclusief gelijkwaardige tv-labels.</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>Niet beschikbaar voor jong publiek</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>Deze titel is niet geverifieerd als PG of PG-13.</value>
   </data>
 </root>

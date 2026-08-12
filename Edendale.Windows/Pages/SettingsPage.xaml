@@ -78,6 +78,43 @@
                 </Border>
             </StackPanel>
 
+            <!-- AUDIENCE — Young Audience filter (SettingsView.swift Audience section) -->
+            <StackPanel>
+                <TextBlock x:Uid="SettingsAudienceHeader" Text="AUDIENCE" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+                <Border Style="{StaticResource SettingsGroupBorderStyle}">
+                    <StackPanel>
+                        <Grid Style="{StaticResource SettingsRowGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                x:Uid="SettingsYoungAudienceLabel"
+                                Text="Young Audience Friendly"
+                                Style="{StaticResource SettingsRowLabelTextStyle}"
+                                Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                                VerticalAlignment="Center" />
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                x:Name="AudienceToggle"
+                                OnContent=""
+                                OffContent=""
+                                MinWidth="0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Toggled="AudienceToggle_Toggled" />
+                        </Grid>
+
+                        <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                        <TextBlock
+                            x:Uid="SettingsYoungAudienceDescription"
+                            Text="Only show movies and series rated PG or PG-13, including equivalent TV labels."
+                            Style="{StaticResource SettingsBodyRowTextStyle}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
             <!-- STARTUP — desktop-only section; Apple gates it on #if os(macOS) -->
             <StackPanel>
                 <TextBlock x:Uid="SettingsStartupHeader" Text="STARTUP" Style="{StaticResource SettingsSectionHeaderTextStyle}" />

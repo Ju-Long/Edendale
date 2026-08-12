@@ -6,13 +6,13 @@
     tool all carry the same product and copyright fields.
 
     VersionPrefix is the version under development. Assemblies and MSIX both
-    require numeric parts, so the product's "0.26" is carried as 0.26.0 here
-    and widened to 0.26.0.0 where a four-part number is demanded.
+    require numeric parts, so the product's "26.0" is carried as 26.0.0 here
+    and widened to 26.0.0.0 where a four-part number is demanded.
 
     The release workflow passes -p:VersionPrefix=<tag>, not -p:Version. The
     derived versions below are computed from VersionPrefix, and setting Version
     directly would leave them stranded at the value below. A local build
-    therefore reports a bare 0.26.0 while a release reports 0.26.0+<commit>,
+    therefore reports a bare 26.0.0 while a release reports 26.0.0+<commit>,
     which is what distinguishes the two in a bug report.
   -->
 
@@ -21,7 +21,7 @@
     <Company>Edendale contributors</Company>
     <Authors>Edendale contributors</Authors>
     <Copyright>Copyright (c) 2026 Edendale contributors</Copyright>
-    <VersionPrefix>0.26.0</VersionPrefix>
+    <VersionPrefix>26.0.0</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -30,6 +30,10 @@ public sealed partial class MoviesShowsPage : Page
     {
         InitializeComponent();
         Loaded += async (_, _) => await EnsureLoadedAsync();
+        // Re-filter shelves/hero/collection when the audience preference or a
+        // certification decision changes.
+        AppServices.YoungAudience.Changed += (_, _) =>
+            DispatcherQueue.TryEnqueue(() => ApplyAudienceContent(resetHero: false));
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -96,21 +100,67 @@ public sealed partial class MoviesShowsPage : Page
 
     private void ShowContent()
     {
-        var catalog = HomeSession.Catalog!;
         SwitchState(ContentScroll);
+        BuildCollectionChips(HomeSession.Catalog!);
+        ApplyAudienceContent(resetHero: true);
+    }
 
-        BindShelf(TrendingShelf, TrendingRepeater, catalog.Trending);
-        BindShelf(PopularMoviesShelf, PopularMoviesRepeater, catalog.PopularMovies);
-        BindShelf(PopularShowsShelf, PopularShowsRepeater, catalog.PopularShows);
-        BindShelf(TopRatedShelf, TopRatedRepeater, catalog.TopRated);
+    /// <summary>
+    /// Binds every shelf, the collection grid, and the hero pager through the
+    /// Young Audience filter. Re-run when the preference or a certification
+    /// decision changes; a changed visible-hero set resets the pager.
+    /// </summary>
+    private void ApplyAudienceContent(bool resetHero)
+    {
+        if (HomeSession.Catalog is not { } catalog || ContentScroll.Visibility != Visibility.Visible) return;
+        var filter = AppServices.YoungAudience;
 
-        BuildCollectionChips(catalog);
-        CollectionRepeater.ItemsSource = HomeSession.CollectionItems.Take(12).ToList();
+        BindShelf(TrendingShelf, TrendingRepeater, filter.Visible(catalog.Trending));
+        BindShelf(PopularMoviesShelf, PopularMoviesRepeater, filter.Visible(catalog.PopularMovies));
+        BindShelf(PopularShowsShelf, PopularShowsRepeater, filter.Visible(catalog.PopularShows));
+        BindShelf(TopRatedShelf, TopRatedRepeater, filter.Visible(catalog.TopRated));
+        CollectionRepeater.ItemsSource = filter.Visible(HomeSession.CollectionItems).Take(12).ToList();
 
-        _heroIndex = 0;
-        BuildHeroDots();
-        ApplyHeroScene();
-        StartHeroTimer();
+        var newHero = catalog.HeroScenes.Where(scene => filter.Allows(scene.Detail.Ref)).ToList();
+        var heroChanged = resetHero
+            || !newHero.Select(scene => scene.Detail.Ref.Id).SequenceEqual(_visibleHeroScenes.Select(scene => scene.Detail.Ref.Id));
+        _visibleHeroScenes = newHero;
+        if (heroChanged)
+        {
+            _heroIndex = 0;
+            BuildHeroDots();
+            ApplyHeroScene();
+            StartHeroTimer();
+        }
+
+        UpdateAudienceVerifying();
+        _ = VerifyAudienceAsync();
+    }
+
+    private void UpdateAudienceVerifying()
+    {
+        var verifying = AppServices.YoungAudience.IsVerifying(AudienceRefs());
+        AudienceVerifyingText.Text = Loc.Get("Audience_Verifying");
+        AudienceVerifyingRow.Visibility = verifying ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static IEnumerable<MediaRef> AudienceRefs()
+    {
+        if (HomeSession.Catalog is not { } catalog) return [];
+        return catalog.HeroScenes.Select(scene => scene.Detail.Ref)
+            .Concat(catalog.Trending.Select(item => item.Ref))
+            .Concat(catalog.PopularMovies.Select(item => item.Ref))
+            .Concat(catalog.PopularShows.Select(item => item.Ref))
+            .Concat(catalog.TopRated.Select(item => item.Ref))
+            .Concat(HomeSession.CollectionItems.Select(item => item.Ref));
+    }
+
+    private async Task VerifyAudienceAsync()
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled) return;
+        var refs = AudienceRefs().ToList();
+        if (refs.Count > 0) await filter.VerifyAsync(refs);
     }
 
     private static void BindShelf(UIElement shelf, ItemsRepeater repeater, List<MediaItem> items)
@@ -123,7 +173,10 @@ public sealed partial class MoviesShowsPage : Page
     // Hero rotation
     // ------------------------------------------------------------------
 
-    private List<HeroScene> HeroScenes => HomeSession.Catalog?.HeroScenes ?? [];
+    /// <summary>Hero scenes the audience filter permits — the pager's source.</summary>
+    private List<HeroScene> _visibleHeroScenes = [];
+
+    private List<HeroScene> HeroScenes => _visibleHeroScenes;
 
     private void StartHeroTimer()
     {
@@ -356,7 +409,10 @@ public sealed partial class MoviesShowsPage : Page
         try
         {
             HomeSession.CollectionItems = await WindowsCore.LoadCollectionAsync(collectionId);
-            CollectionRepeater.ItemsSource = HomeSession.CollectionItems.Take(12).ToList();
+            CollectionRepeater.ItemsSource =
+                AppServices.YoungAudience.Visible(HomeSession.CollectionItems).Take(12).ToList();
+            UpdateAudienceVerifying();
+            _ = VerifyAudienceAsync();
         }
         catch
         {

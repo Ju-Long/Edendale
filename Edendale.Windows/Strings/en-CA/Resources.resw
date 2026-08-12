@@ -71,7 +71,7 @@
     <value>Connect your TMDB account to sync favourites, your watchlist, and ratings across devices. Watch time stays out of TMDB — their API has no watch-progress endpoint.</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>The library index stays on this device. Watch progress, favourites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved.</value>
+    <value>The library index stays on this device. Watch progress, favourites, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved. Your watchlist is stored here and mirrors to your TMDB account when you connect one.</value>
   </data>
   <data name="Detail_Catalogue" xml:space="preserve">
     <value>CATALOGUE</value>

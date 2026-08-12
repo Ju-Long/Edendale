@@ -26,9 +26,42 @@ public sealed partial class PersonPage : Page
     private bool _biographyExpanded;
     private int _loadGeneration;
 
+    /// <summary>Unfiltered credits, kept so the audience filter re-applies live.</summary>
+    private List<MediaItem> _filmography = [];
+
     public PersonPage()
     {
         InitializeComponent();
+        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(() =>
+        {
+            BindFilmography();
+            _ = VerifyAudienceAsync();
+        });
+    }
+
+    private void BindFilmography()
+    {
+        var filter = AppServices.YoungAudience;
+        var visible = filter.Visible(_filmography);
+        FilmographyRepeater.ItemsSource = visible;
+        FilmographySection.Visibility = visible.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        if (_filmography.Count > 0 && visible.Count == 0
+            && filter.IsEnabled && !filter.IsVerifying(_filmography.Select(item => item.Ref)))
+        {
+            SetStatus(Loc.Get("Person_NoYoungAudienceTitles"));
+        }
+        else if (visible.Count > 0)
+        {
+            SetStatus(null);
+        }
+    }
+
+    private async Task VerifyAudienceAsync()
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled || _filmography.Count == 0) return;
+        await filter.VerifyAsync(_filmography.Select(item => item.Ref).ToList());
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -78,11 +111,11 @@ public sealed partial class PersonPage : Page
         {
             var credits = await creditsTask;
             if (generation != _loadGeneration) return;
-            FilmographyRepeater.ItemsSource = credits;
-            FilmographySection.Visibility = credits.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             // A filmography arriving after a failed biography still gives the
-            // page something to show.
-            if (credits.Count > 0) SetStatus(null);
+            // page something to show; the audience filter trims it.
+            _filmography = credits;
+            BindFilmography();
+            _ = VerifyAudienceAsync();
         }
         catch (Exception failure)
         {

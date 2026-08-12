@@ -1,29 +1,37 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 
 <!--
-  MSIX identity for the packaged release build. Local development still runs
-  unpackaged (see WindowsPackageType in Edendale.Windows.csproj), so this
-  manifest only takes effect when the build sets EdendalePackaged=true.
+  MSIX identity for packaged builds. Visual Studio always sees this manifest
+  so its Package and Publish commands are available; the unpackaged launch
+  profile still starts the executable without registering a package.
 
   Publisher must match the signing certificate's subject exactly, byte for
-  byte, or installation fails with a certificate mismatch. Version is stamped
-  by the release workflow from the git tag; 0.0.0.0 marks a local build.
+  byte, or installation fails with a certificate mismatch. The checked-in
+  version mirrors Directory.Build.props for local Store packaging; tagged
+  releases stamp it again from the tag.
 -->
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap rescap">
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  IgnorableNamespaces="uap rescap mp">
 
   <Identity
-    Name="Edendale.Edendale"
-    Publisher="CN=Edendale"
-    Version="0.0.0.0" />
+    Name="LongJu.Edendale"
+    Publisher="CN=C4738BFE-2E22-4A2E-B398-D004D760ABE2"
+    Version="26.0.0.0" />
+
+  <!-- Edendale has no Windows Phone predecessor. The Store schema still
+       requires PhonePublisherId whenever association adds PhoneIdentity. -->
+  <mp:PhoneIdentity
+    PhoneProductId="04939c38-d94a-415f-a943-d6dbe1977f97"
+    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
     <DisplayName>Edendale</DisplayName>
-    <PublisherDisplayName>Edendale contributors</PublisherDisplayName>
+    <PublisherDisplayName>Long Ju</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -91,5 +99,4 @@
     <!-- SMB shares on the user's own network. -->
     <Capability Name="privateNetworkClientServer" />
   </Capabilities>
-
 </Package>

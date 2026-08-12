@@ -67,6 +67,10 @@ public sealed partial class SettingsPage : Page
         StartupToggle.IsEnabled = StartupService.IsAvailable;
         _suppressStartupToggle = false;
 
+        _suppressAudienceToggle = true;
+        AudienceToggle.IsOn = AppServices.YoungAudience.IsEnabled;
+        _suppressAudienceToggle = false;
+
         AppServices.Account.StateChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateAccountUi);
         AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateSourcesUi);
         UpdateAccountUi();
@@ -74,8 +78,15 @@ public sealed partial class SettingsPage : Page
     }
 
     private bool _suppressStartupToggle;
+    private bool _suppressAudienceToggle;
     private string? _renderedApprovalUrl;
     private string? _renderingApprovalUrl;
+
+    private void AudienceToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppressAudienceToggle) return;
+        AppServices.YoungAudience.IsEnabled = AudienceToggle.IsOn;
+    }
 
     private void StartupToggle_Toggled(object sender, RoutedEventArgs e)
     {

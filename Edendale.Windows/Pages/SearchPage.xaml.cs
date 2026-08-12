@@ -65,6 +65,12 @@ public sealed partial class SearchPage : Page
     private List<MediaItem> _trending = [];
     private bool _loadingTrending;
 
+    // Unfiltered TMDB results and local matches, kept so the Young Audience
+    // filter can re-apply live (toggle or a resolved certification) without
+    // another network round-trip.
+    private List<MediaItem> _rawResults = [];
+    private List<LocalSearchResult> _rawLocal = [];
+
     // The scope the current query's keyword prefix asks for, and the query
     // with that prefix stripped (as parsed by the Windows domain layer, so clearing
     // the chip can never eat a colon that belongs to a title).
@@ -74,6 +80,93 @@ public sealed partial class SearchPage : Page
     public SearchPage()
     {
         InitializeComponent();
+        // Re-filter the current view when the preference or a decision changes.
+        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(ReapplyAudience);
+    }
+
+    // ------------------------------------------------------------------
+    // Young Audience filter
+    // ------------------------------------------------------------------
+
+    private void BindResults() =>
+        ResultsRepeater.ItemsSource = AppServices.YoungAudience.Visible(_rawResults);
+
+    /// <summary>
+    /// The index status line after filtering. A blocked-only set reads as
+    /// "nothing" once verification settles; while still checking, stay quiet.
+    /// </summary>
+    private void UpdateResultsMessage()
+    {
+        var filter = AppServices.YoungAudience;
+        if (filter.Visible(_rawResults).Count > 0
+            || filter.IsVerifying(_rawResults.Select(item => item.Ref)))
+        {
+            SetIndexMessage(null);
+            return;
+        }
+        if (_activePersonId is not null)
+        {
+            SetIndexMessage(Loc.Get("Search_NoCreditedTitles"));
+            return;
+        }
+        // Local or people matches carry the screen; no "nothing" claim then.
+        if (PeopleSection.Visibility == Visibility.Visible || LibrarySection.Visibility == Visibility.Visible)
+        {
+            SetIndexMessage(null);
+            return;
+        }
+        SetIndexMessage(Loc.Get("Search_NothingMatches"));
+    }
+
+    private void BindLocal()
+    {
+        var visible = _rawLocal.Where(LocalVisible).ToList();
+        LocalRepeater.ItemsSource = visible;
+        LibrarySection.Visibility = visible.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static bool LocalVisible(LocalSearchResult result)
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled) return true;
+        var tmdbId = result.Movie?.TmdbId ?? result.Show?.TmdbId;
+        var mediaType = result.Show is not null ? "tv" : "movie";
+        return tmdbId is int id && filter.Allows(new MediaRef { Id = id, MediaType = mediaType });
+    }
+
+    private IEnumerable<MediaRef> AudienceRefs()
+    {
+        var refs = _rawResults.Select(item => item.Ref).Concat(_trending.Select(item => item.Ref));
+        foreach (var result in _rawLocal)
+        {
+            var tmdbId = result.Movie?.TmdbId ?? result.Show?.TmdbId;
+            if (tmdbId is int id) refs = refs.Append(new MediaRef { Id = id, MediaType = result.Show is not null ? "tv" : "movie" });
+        }
+        return refs;
+    }
+
+    private async Task VerifyAudienceAsync()
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled) return;
+        var refs = AudienceRefs().ToList();
+        if (refs.Count > 0) await filter.VerifyAsync(refs);
+    }
+
+    private void ReapplyAudience()
+    {
+        var filter = AppServices.YoungAudience;
+        if (TrendingScroll.Visibility == Visibility.Visible)
+        {
+            TrendingRepeater.ItemsSource = filter.Visible(_trending);
+        }
+        if (ResultsScroll.Visibility == Visibility.Visible)
+        {
+            BindLocal();
+            BindResults();
+            UpdateResultsMessage();
+        }
+        _ = VerifyAudienceAsync();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -189,7 +282,8 @@ public sealed partial class SearchPage : Page
         try
         {
             _trending = await WindowsCore.LoadTrendingAsync();
-            TrendingRepeater.ItemsSource = _trending;
+            TrendingRepeater.ItemsSource = AppServices.YoungAudience.Visible(_trending);
+            _ = VerifyAudienceAsync();
             // Only take the screen if the user has not started searching.
             if (_trending.Count > 0 && ResultsScroll.Visibility != Visibility.Visible)
             {
@@ -636,6 +730,7 @@ public sealed partial class SearchPage : Page
                 // rather than reporting no matches for an empty term.
                 if (scoped.Term.Length == 0 && scoped.Scope != "all")
                 {
+                    _rawResults = [];
                     ResultsRepeater.ItemsSource = new List<MediaItem>();
                     PeopleRepeater.ItemsSource = new List<PersonItem>();
                     PeopleSection.Visibility = Visibility.Collapsed;
@@ -661,14 +756,17 @@ public sealed partial class SearchPage : Page
                 items = items.Where(i => i.Year == yearFilter.Value).ToList();
             }
 
-            ResultsRepeater.ItemsSource = items;
+            _rawResults = items;
             PeopleRepeater.ItemsSource = people;
             PeopleSection.Visibility = people.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            SetIndexMessage(items.Count == 0 ? Loc.Get("Search_NothingMatches") : null);
+            BindResults();
+            UpdateResultsMessage();
+            _ = VerifyAudienceAsync();
         }
         catch (Exception failure)
         {
             if (generation != _searchGeneration) return;
+            _rawResults = [];
             ResultsRepeater.ItemsSource = new List<MediaItem>();
             PeopleSection.Visibility = Visibility.Collapsed;
             SetIndexMessage(failure.Message);
@@ -704,6 +802,7 @@ public sealed partial class SearchPage : Page
             : Loc.Format("Search_FilmographyOf", personName);
         LibrarySection.Visibility = Visibility.Collapsed;
         PeopleSection.Visibility = Visibility.Collapsed;
+        _rawResults = [];
         ResultsRepeater.ItemsSource = new List<MediaItem>();
 
         if (!WindowsCore.HasTmdbCredentials)
@@ -719,8 +818,10 @@ public sealed partial class SearchPage : Page
         {
             var items = await WindowsCore.LoadPersonFilmographyAsync(personId);
             if (generation != _searchGeneration) return;
-            ResultsRepeater.ItemsSource = items;
-            SetIndexMessage(items.Count == 0 ? Loc.Get("Search_NoCreditedTitles") : null);
+            _rawResults = items;
+            BindResults();
+            UpdateResultsMessage();
+            _ = VerifyAudienceAsync();
         }
         catch (Exception failure)
         {
@@ -760,8 +861,8 @@ public sealed partial class SearchPage : Page
     {
         if (query.Length == 0)
         {
-            LocalRepeater.ItemsSource = new List<LocalSearchResult>();
-            LibrarySection.Visibility = Visibility.Collapsed;
+            _rawLocal = [];
+            BindLocal();
             return;
         }
 
@@ -800,8 +901,8 @@ public sealed partial class SearchPage : Page
             });
         }
 
-        LocalRepeater.ItemsSource = results;
-        LibrarySection.Visibility = results.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _rawLocal = results;
+        BindLocal();
     }
 
     // ------------------------------------------------------------------

@@ -149,7 +149,7 @@
     <value>DITT ARKIV</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>Biblioteksindexet stannar på den här enheten. Visningsförlopp, favoriter, din visningslista och betyg sparas också här, och replikeras till din egen OneDrive när det är konfigurerat — ingen tredjepartsserver är någonsin inblandad.</value>
+    <value>Bibliotekets index stannar på den här enheten. Visningsförlopp, favoriter och betyg lagras också här och replikeras till ditt eget OneDrive när det är konfigurerat – ingen tredjepartsserver är någonsin inblandad. Din visningslista lagras här och synkroniseras med ditt TMDB-konto när du ansluter ett.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Datamapp</value>
@@ -856,5 +856,41 @@
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>Den här filen är ännu inte kopplad till TMDB, så det finns inget att söka på.</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>VERIFIERAR ÅLDERSKLASSIFICERINGAR</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>Det finns för närvarande inga PG- eller PG-13-titlar i din visningslista.</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>Inga PG- eller PG-13-titlar tillgängliga i denna filmografi.</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>Film</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>TV-serie</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>Visningslista</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>Ta bort från visningslista</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>PUBLIK</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>Lämplig för ung publik</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>Visa endast filmer och serier klassificerade som PG eller PG-13, inklusive motsvarande TV-märkningar.</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>Inte tillgänglig för ung publik</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>Den här titeln är inte verifierad som PG eller PG-13.</value>
   </data>
 </root>

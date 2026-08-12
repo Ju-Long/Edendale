@@ -2,9 +2,11 @@
 // token → user approval in the default browser → session. The session id is
 // a credential, so it is persisted DPAPI-protected (current user) in
 // %LOCALAPPDATA%\Edendale\tmdb-session.bin and never enters the OneDrive
-// replica. Favourites, watchlist, and ratings sync two-way through the
-// Windows sync engine: on launch, after local edits (debounced), and on demand
-// from Settings. Watch time has no TMDB API and never syncs here.
+// replica. Favourites and ratings sync two-way through the Windows sync engine:
+// on launch, after local edits (debounced), and on demand from Settings. The
+// watchlist has moved to its own local-first WatchlistStore and syncs through
+// there (cloud takes priority); this service just exposes the session it needs.
+// Watch time has no TMDB API and never syncs here.
 
 using System.Security.Cryptography;
 using System.Text;
@@ -41,6 +43,10 @@ public sealed class TmdbAccountService
     }
 
     public bool IsConnected => _session is not null;
+
+    /// <summary>The connected session for account-scoped calls (watchlist), or null.</summary>
+    internal (string SessionId, int AccountId)? CurrentSession =>
+        _session is { } session ? (session.SessionId, session.AccountId) : null;
 
     public bool HasPendingApproval => _pendingRequestToken is not null;
 

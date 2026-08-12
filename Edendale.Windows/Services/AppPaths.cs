@@ -20,6 +20,16 @@ public static class AppPaths
     public static string WatchProgressFile => Path.Combine(DataDirectory, "watch-progress.json");
     public static string UserMediaFile => Path.Combine(DataDirectory, "user-media.json");
 
+    /// <summary>
+    /// The local-first watchlist. Device-local like the library and,
+    /// deliberately, outside the OneDrive replica — TMDB is the watchlist's
+    /// only cloud (parity with Apple's local-only Watchlist container).
+    /// </summary>
+    public static string WatchlistFile => Path.Combine(DataDirectory, "watchlist.json");
+
+    /// <summary>The Young Audience preference; device-local, never replicated.</summary>
+    public static string AudiencePreferenceFile => Path.Combine(DataDirectory, "audience.json");
+
     /// <summary>DPAPI-protected TMDB session; never leaves this device.</summary>
     public static string TmdbSessionFile => Path.Combine(DataDirectory, "tmdb-session.bin");
 

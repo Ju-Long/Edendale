@@ -370,23 +370,17 @@ internal sealed class TmdbRepository
     {
         var favouritesTask = LoadAccountItemsAsync(sessionId, accountId, "favorite/movies", "movie");
         var favouriteShowsTask = LoadAccountItemsAsync(sessionId, accountId, "favorite/tv", "tv");
-        var watchlistTask = LoadAccountItemsAsync(sessionId, accountId, "watchlist/movies", "movie");
-        var watchlistShowsTask = LoadAccountItemsAsync(sessionId, accountId, "watchlist/tv", "tv");
         var ratingsTask = LoadAccountRatingsAsync(sessionId, accountId, "rated/movies", "movie");
         var showRatingsTask = LoadAccountRatingsAsync(sessionId, accountId, "rated/tv", "tv");
         await Task.WhenAll(
-            favouritesTask, favouriteShowsTask, watchlistTask, watchlistShowsTask,
-            ratingsTask, showRatingsTask);
+            favouritesTask, favouriteShowsTask, ratingsTask, showRatingsTask);
 
         var favourites = (await favouritesTask).Concat(await favouriteShowsTask)
-            .ToDictionary(ItemKey, StringComparer.Ordinal);
-        var watchlist = (await watchlistTask).Concat(await watchlistShowsTask)
             .ToDictionary(ItemKey, StringComparer.Ordinal);
         var ratings = (await ratingsTask).Concat(await showRatingsTask)
             .ToDictionary(item => ItemKey(item.Item), StringComparer.Ordinal);
         var localKeys = local.Select(record => record.StorageKey).ToHashSet(StringComparer.Ordinal);
         var remoteOnly = favourites.Values
-            .Concat(watchlist.Values)
             .Concat(ratings.Values.Select(rating => rating.Item))
             .Where(item => !localKeys.Contains(ItemKey(item)))
             .GroupBy(ItemKey, StringComparer.Ordinal)
@@ -425,24 +419,6 @@ internal sealed class TmdbRepository
                 pulled++;
             }
 
-            var remoteWatchlisted = watchlist.ContainsKey(key);
-            if (record.WatchlistDirty)
-            {
-                if (record.Watchlist != remoteWatchlisted)
-                {
-                    await SetAccountFlagAsync(
-                        sessionId, accountId, record, "watchlist", "watchlist", record.Watchlist);
-                    pushed++;
-                }
-                record.WatchlistDirty = false;
-            }
-            else if (record.Watchlist != remoteWatchlisted)
-            {
-                record.Watchlist = remoteWatchlisted;
-                record.WatchlistUpdatedAt = now;
-                pulled++;
-            }
-
             var remoteRating = ratings.GetValueOrDefault(key)?.Rating;
             if (record.RatingDirty)
             {
@@ -461,7 +437,6 @@ internal sealed class TmdbRepository
             }
 
             var display = favourites.GetValueOrDefault(key)
-                ?? watchlist.GetValueOrDefault(key)
                 ?? ratings.GetValueOrDefault(key)?.Item;
             if (display is not null)
             {
@@ -473,6 +448,56 @@ internal sealed class TmdbRepository
         }
 
         return new UserMediaSyncOutcome { Records = records, Pushed = pushed, Pulled = pulled };
+    }
+
+    // ------------------------------------------------------------------
+    // Watchlist (its own local-first store; TMDB is its only cloud)
+    // ------------------------------------------------------------------
+
+    /// <summary>The connected account's complete movie or TV watchlist.</summary>
+    public Task<List<MediaItem>> WatchlistItemsAsync(string sessionId, int accountId, string mediaType)
+    {
+        ValidateMediaType(mediaType);
+        var segment = mediaType == "tv" ? "watchlist/tv" : "watchlist/movies";
+        return LoadAccountItemsAsync(sessionId, accountId, segment, mediaType);
+    }
+
+    /// <summary>Adds or removes one title on the account watchlist.</summary>
+    public Task SetWatchlistAsync(string sessionId, int accountId, MediaRef reference, bool inWatchlist)
+    {
+        ValidateMediaType(reference.MediaType);
+        return _client.SendAsync(
+            HttpMethod.Post,
+            $"/account/{accountId}/watchlist",
+            new Dictionary<string, string> { ["session_id"] = sessionId },
+            new Dictionary<string, object>
+            {
+                ["media_type"] = reference.MediaType,
+                ["media_id"] = reference.Id,
+                ["watchlist"] = inWatchlist,
+            });
+    }
+
+    // ------------------------------------------------------------------
+    // Content certification (Young Audience filter)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// The region's certification for a title, or null when the region carries
+    /// none. A public endpoint — no account session is required. Throws on a
+    /// network/HTTP failure so the caller can treat it as "unavailable".
+    /// </summary>
+    public async Task<string?> ContentCertificationAsync(int id, string mediaType, string regionCode)
+    {
+        ValidateMediaType(mediaType);
+        if (mediaType == "movie")
+        {
+            var payload = await _client.GetAsync($"/movie/{id}/release_dates");
+            return ContentCertification.Movie(payload, regionCode);
+        }
+
+        var ratings = await _client.GetAsync($"/tv/{id}/content_ratings");
+        return ContentCertification.Tv(ratings, regionCode);
     }
 
     private Task<List<MediaItem>> PopularAsync(string mediaType) =>
@@ -815,9 +840,6 @@ internal sealed class TmdbRepository
         Favourite = record.Favourite,
         FavouriteUpdatedAt = record.FavouriteUpdatedAt,
         FavouriteDirty = record.FavouriteDirty,
-        Watchlist = record.Watchlist,
-        WatchlistUpdatedAt = record.WatchlistUpdatedAt,
-        WatchlistDirty = record.WatchlistDirty,
         Rating = record.Rating,
         RatingUpdatedAt = record.RatingUpdatedAt,
         RatingDirty = record.RatingDirty,

@@ -99,16 +99,17 @@ public sealed class WindowsCoreTests
     [TestMethod]
     public void MergeUserMedia_ResolvesFieldByField()
     {
-        // The favourite was set here later; the watchlist was set on the other
-        // device later. A field-wise merge keeps one of each.
+        // The favourite was set here later; the rating was set on the other
+        // device later. A field-wise merge keeps one of each. (The watchlist has
+        // moved to its own store and no longer rides this merge.)
         var here = new UserMediaRecord
         {
             TmdbId = 603,
             MediaType = "movie",
             Favourite = true,
             FavouriteUpdatedAt = 900,
-            Watchlist = false,
-            WatchlistUpdatedAt = 100,
+            Rating = 6.0,
+            RatingUpdatedAt = 100,
         };
         var there = new UserMediaRecord
         {
@@ -116,14 +117,14 @@ public sealed class WindowsCoreTests
             MediaType = "movie",
             Favourite = false,
             FavouriteUpdatedAt = 200,
-            Watchlist = true,
-            WatchlistUpdatedAt = 800,
+            Rating = 9.0,
+            RatingUpdatedAt = 800,
         };
 
         var merged = WindowsCore.MergeUserMedia([here], [there]).Single();
 
         Assert.IsTrue(merged.Favourite, "the newer favourite write should win");
-        Assert.IsTrue(merged.Watchlist, "the newer watchlist write should win");
+        Assert.AreEqual(9.0, merged.Rating, "the newer rating write should win");
         Assert.AreEqual("movie:603", merged.StorageKey);
     }
 

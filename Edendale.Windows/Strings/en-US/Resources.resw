@@ -149,7 +149,7 @@
     <value>YOUR ARCHIVE</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>The library index stays on this device. Watch progress, favorites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved.</value>
+    <value>The library index stays on this device. Watch progress, favorites, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved. Your watchlist is stored here and mirrors to your TMDB account when you connect one.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Data folder</value>
@@ -856,5 +856,41 @@ IS SILENT</value>
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>This file isn't matched to TMDB yet, so there is nothing to search by.</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>VERIFYING AUDIENCE RATINGS</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>No PG or PG-13 titles are currently in your watchlist.</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>No PG or PG-13 titles are available in this filmography.</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>Movie</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>TV Show</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>Watchlist</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>Remove from Watchlist</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>AUDIENCE</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>Young Audience Friendly</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>Only show movies and series rated PG or PG-13, including equivalent TV labels.</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>Unavailable for Young Audiences</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>This title is not verified as PG or PG-13.</value>
   </data>
 </root>

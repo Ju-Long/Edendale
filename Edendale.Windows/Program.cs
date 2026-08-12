@@ -36,6 +36,12 @@ public static class Program
             return;
         }
 
+#if DEBUG
+        // Visual Studio User Secrets are a development-only override. Release
+        // and Store packages never load the per-user development store.
+        Services.DevelopmentSecrets.ApplyToEnvironment();
+#endif
+
         Microsoft.UI.Xaml.Application.Start(callbackParams =>
         {
             var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());

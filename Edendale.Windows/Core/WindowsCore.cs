@@ -91,6 +91,16 @@ public static class WindowsCore
         IReadOnlyList<UserMediaRecord> local) =>
         Tmdb.SyncUserMediaAsync(sessionId, accountId, local);
 
+    public static Task<List<MediaItem>> WatchlistItemsAsync(string sessionId, int accountId, string mediaType) =>
+        Tmdb.WatchlistItemsAsync(sessionId, accountId, mediaType);
+
+    public static Task SetWatchlistAsync(string sessionId, int accountId, MediaRef reference, bool inWatchlist) =>
+        Tmdb.SetWatchlistAsync(sessionId, accountId, reference, inWatchlist);
+
+    /// <summary>Region certification for a title; null when the region has none.</summary>
+    public static Task<string?> ContentCertificationAsync(int id, string mediaType, string regionCode) =>
+        Tmdb.ContentCertificationAsync(id, mediaType, regionCode);
+
     public static List<UserMediaRecord> MergeUserMedia(
         IReadOnlyList<UserMediaRecord> first,
         IReadOnlyList<UserMediaRecord> second) =>

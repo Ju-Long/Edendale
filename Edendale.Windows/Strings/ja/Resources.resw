@@ -149,7 +149,7 @@
     <value>あなたのアーカイブ</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>ライブラリのインデックスはこのデバイスに保持されます。視聴状況、お気に入り、ウォッチリスト、評価もここに保存され、設定されている場合は自身の OneDrive に複製されます — サードパーティのサーバーが関与することは一切ありません。</value>
+    <value>ライブラリのインデックスはこのデバイスに残ります。再生の進行状況、お気に入り、評価もここに保存され、設定されている場合はご自身の OneDrive に複製されます。第三者のサーバーが関与することは一切ありません。ウォッチリストはこのデバイスに保存され、TMDB アカウントを接続するとそのアカウントと同期されます。</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>データ フォルダー</value>
@@ -856,5 +856,41 @@
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>このファイルはまだ TMDB と一致していないため、検索の手がかりがありません。</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>視聴年齢区分を確認中</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>現在、ウォッチリストにPGまたはPG-13の作品はありません。</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>このフィルモグラフィにはPGまたはPG-13の作品がありません。</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>テレビ番組</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>ウォッチリスト</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>ウォッチリストから削除</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>視聴者</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>若い視聴者向け</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>PGまたはPG-13（および同等のテレビ区分）の映画と番組のみを表示します。</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>若い視聴者は視聴できません</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>この作品はPGまたはPG-13として確認されていません。</value>
   </data>
 </root>

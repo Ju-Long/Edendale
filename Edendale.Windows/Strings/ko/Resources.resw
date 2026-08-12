@@ -149,7 +149,7 @@
     <value>내 아카이브</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>라이브러리 인덱스는 이 디바이스에 유지됩니다. 시청 진행률, 즐겨찾기, 관심 목록 및 평점도 여기에 저장되며, OneDrive를 설정한 경우 자체 OneDrive로 복제됩니다 — 타사 서버는 전혀 관여하지 않습니다.</value>
+    <value>라이브러리 색인은 이 기기에 유지됩니다. 시청 진행률, 즐겨찾기, 평점도 여기에 저장되며 OneDrive가 설정되어 있으면 사용자 본인의 OneDrive에 복제됩니다. 제3자 서버는 절대 관여하지 않습니다. 관심 목록은 이 기기에 저장되며 TMDB 계정을 연결하면 해당 계정과 동기화됩니다.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>데이터 폴더</value>
@@ -856,5 +856,41 @@
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>이 파일은 아직 TMDB와 연결되지 않아 검색할 기준이 없습니다.</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>관람 등급 확인 중</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>현재 관심 목록에 PG 또는 PG-13 등급의 콘텐츠가 없습니다.</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>이 필모그래피에는 PG 또는 PG-13 등급의 콘텐츠가 없습니다.</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>영화</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>TV 프로그램</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>관심 목록</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>관심 목록에서 제거</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>시청자</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>청소년 시청 적합</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>PG 또는 PG-13 등급(동등한 TV 등급 포함)의 영화와 시리즈만 표시합니다.</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>청소년 시청 불가</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>이 콘텐츠는 PG 또는 PG-13으로 확인되지 않았습니다.</value>
   </data>
 </root>

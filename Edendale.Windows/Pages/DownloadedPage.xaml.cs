@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Edendale.Windows.Models;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -37,6 +38,34 @@ public sealed partial class DownloadedPage : Page
         InitializeComponent();
         AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(RefreshAll);
         AppServices.WatchProgress.Changed += (_, _) => DispatcherQueue.TryEnqueue(RefreshAll);
+        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(RefreshAll);
+    }
+
+    /// <summary>Library titles (that carry a TMDB id) the audience filter checks.</summary>
+    private static List<MediaRef> LibraryAudienceRefs()
+    {
+        var library = AppServices.Library;
+        return
+        [
+            .. library.Movies.Where(movie => movie.TmdbId is not null)
+                .Select(movie => new MediaRef { Id = movie.TmdbId!.Value, MediaType = "movie" }),
+            .. library.Shows.Where(show => show.TmdbId is not null)
+                .Select(show => new MediaRef { Id = show.TmdbId!.Value, MediaType = "tv" }),
+        ];
+    }
+
+    /// <summary>An unmatched local file (no TMDB id) is hidden while the filter is on.</summary>
+    private static bool AudienceAllows(int? tmdbId, string mediaType)
+    {
+        var filter = AppServices.YoungAudience;
+        if (!filter.IsEnabled) return true;
+        return tmdbId is int id && filter.Allows(new MediaRef { Id = id, MediaType = mediaType });
+    }
+
+    private async System.Threading.Tasks.Task VerifyAudienceAsync()
+    {
+        var refs = LibraryAudienceRefs();
+        if (refs.Count > 0) await AppServices.YoungAudience.VerifyAsync(refs);
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -84,6 +113,11 @@ public sealed partial class DownloadedPage : Page
             StatusRing.IsActive = true;
             StatusText.Text = Loc.Get("Library_EnrichingMetadata");
         }
+        else if (AppServices.YoungAudience.IsVerifying(LibraryAudienceRefs()))
+        {
+            StatusRing.IsActive = true;
+            StatusText.Text = Loc.Get("Audience_Verifying");
+        }
         else
         {
             StatusRing.IsActive = false;
@@ -93,7 +127,8 @@ public sealed partial class DownloadedPage : Page
         ErrorText.Visibility = library.ErrorMessage is null ? Visibility.Collapsed : Visibility.Visible;
 
         // Continue Watching: newest first, joined to local files (Apple parity).
-        var movies = library.Movies;
+        // The audience filter hides blocked titles here and in every grid below.
+        var movies = library.Movies.Where(m => AudienceAllows(m.TmdbId, "movie")).ToList();
         var resumeEntries = new List<ResumeEntry>();
         foreach (var progress in AppServices.WatchProgress.InProgress)
         {
@@ -117,7 +152,7 @@ public sealed partial class DownloadedPage : Page
                 var episode = library.EpisodeByTmdbId(progress.TmdbId);
                 if (episode is null) continue;
                 var show = library.ShowForEpisode(episode);
-                if (show is null) continue;
+                if (show is null || !AudienceAllows(show.TmdbId, "tv")) continue;
                 resumeEntries.Add(new ResumeEntry
                 {
                     Title = show.Name,
@@ -144,11 +179,15 @@ public sealed partial class DownloadedPage : Page
         MoviesSection.Visibility = gridMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         MoviesRepeater.ItemsSource = gridMovies;
 
-        var shows = library.Shows;
+        var shows = library.Shows.Where(s => AudienceAllows(s.TmdbId, "tv")).ToList();
         ShowsSection.Visibility = shows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ShowsRepeater.ItemsSource = shows;
 
         BuildSources(library);
+
+        // Resolve certifications for anything not yet decided; the filter's
+        // Changed event re-runs this and the blocked titles drop out.
+        _ = VerifyAudienceAsync();
     }
 
     private void BuildSources(LibraryService library)

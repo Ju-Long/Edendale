@@ -1,0 +1,84 @@
+<Page
+    x:Class="Edendale.Windows.Pages.WatchlistPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    xmlns:pages="using:Edendale.Windows.Pages"
+    xmlns:models="using:Edendale.Windows.Models"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    Background="{StaticResource EdendaleBackgroundBrush}"
+    NavigationCacheMode="Required">
+
+    <!--
+        WatchlistView.swift, Windows edition. Movies and shows saved for later,
+        grouped into adaptive poster grids. Reached only while the sidebar's
+        Watchlist tab is visible, which the shell shows only when a saved title
+        survives the Young Audience filter.
+    -->
+    <Page.Resources>
+        <DataTemplate x:Key="WatchlistCardTemplate" x:DataType="models:WatchlistRecord">
+            <Button Style="{StaticResource CardButtonStyle}" Click="Card_Click" Tag="{x:Bind}">
+                <Button.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem
+                            x:Uid="RemoveFromWatchlistMenuItem"
+                            Text="Remove from Watchlist"
+                            Click="Remove_Click"
+                            Tag="{x:Bind}" />
+                    </MenuFlyout>
+                </Button.ContextFlyout>
+                <controls:PosterCard
+                    Title="{x:Bind DisplayTitle}"
+                    Subtitle="{x:Bind SubtitleText}"
+                    ImageUrl="{x:Bind PosterUrl}"
+                    CardWidth="180"
+                    PlaceholderAsset="{x:Bind pages:WatchlistPage.PlaceholderFor(MediaType)}" />
+            </Button>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <ScrollViewer x:Name="ContentScroll">
+            <StackPanel Spacing="40" Padding="48,24,48,64">
+
+                <!-- Verifying / empty audience state, shown when the filter has
+                     hidden every saved title (or is still checking). -->
+                <StackPanel
+                    x:Name="AudienceState"
+                    Orientation="Horizontal"
+                    Spacing="12"
+                    Visibility="Collapsed">
+                    <ProgressRing
+                        x:Name="VerifyRing"
+                        IsActive="False"
+                        Width="18"
+                        Height="18"
+                        Foreground="{StaticResource EdendaleGoldBrush}"
+                        VerticalAlignment="Center" />
+                    <TextBlock
+                        x:Name="AudienceStateText"
+                        Style="{StaticResource BodyLGTextStyle}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel x:Name="MoviesSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader TitleKey="Section_Movies" />
+                    <muxc:ItemsRepeater x:Name="MoviesRepeater" ItemTemplate="{StaticResource WatchlistCardTemplate}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                        </muxc:ItemsRepeater.Layout>
+                    </muxc:ItemsRepeater>
+                </StackPanel>
+
+                <StackPanel x:Name="ShowsSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader TitleKey="Section_TvShows" />
+                    <muxc:ItemsRepeater x:Name="ShowsRepeater" ItemTemplate="{StaticResource WatchlistCardTemplate}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:UniformGridLayout MinItemWidth="180" MinRowSpacing="20" MinColumnSpacing="20" />
+                        </muxc:ItemsRepeater.Layout>
+                    </muxc:ItemsRepeater>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

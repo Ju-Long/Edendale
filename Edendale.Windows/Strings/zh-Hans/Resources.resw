@@ -149,7 +149,7 @@
     <value>你的档案</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>媒体库索引保留在此设备上。观看进度、收藏、待看清单和评分也存储于此，并会在设置后复制到你自己的 OneDrive — 绝对不涉及任何第三方服务器。</value>
+    <value>媒体库索引保留在此设备上。观看进度、收藏和评分也存储在这里，并在设置了 OneDrive 后复制到您自己的 OneDrive——绝不涉及任何第三方服务器。您的待看清单存储在此设备上，并在您连接 TMDB 账户后与该账户同步。</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>数据文件夹</value>
@@ -856,5 +856,41 @@
   </data>
   <data name="Subtitles_NotMatched" xml:space="preserve">
     <value>此文件尚未匹配到 TMDB，因此没有可供搜索的依据。</value>
+  </data>
+  <data name="Audience_Verifying" xml:space="preserve">
+    <value>正在核查观众分级</value>
+  </data>
+  <data name="Watchlist_NoYoungAudienceTitles" xml:space="preserve">
+    <value>您的待看清单中目前没有 PG 或 PG-13 分级的作品。</value>
+  </data>
+  <data name="Person_NoYoungAudienceTitles" xml:space="preserve">
+    <value>此影人作品中没有 PG 或 PG-13 分级的作品。</value>
+  </data>
+  <data name="Watchlist_FallbackMovie" xml:space="preserve">
+    <value>电影</value>
+  </data>
+  <data name="Watchlist_FallbackShow" xml:space="preserve">
+    <value>电视节目</value>
+  </data>
+  <data name="WatchlistNavItem.Content" xml:space="preserve">
+    <value>待看清单</value>
+  </data>
+  <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
+    <value>从待看清单中移除</value>
+  </data>
+  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
+    <value>受众</value>
+  </data>
+  <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
+    <value>适合青少年观看</value>
+  </data>
+  <data name="SettingsYoungAudienceDescription.Text" xml:space="preserve">
+    <value>仅显示分级为 PG 或 PG-13（含同等电视分级）的电影和剧集。</value>
+  </data>
+  <data name="DetailAudienceRestrictedTitle.Text" xml:space="preserve">
+    <value>不适合青少年观看</value>
+  </data>
+  <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
+    <value>此作品未被确认为 PG 或 PG-13 分级。</value>
   </data>
 </root>

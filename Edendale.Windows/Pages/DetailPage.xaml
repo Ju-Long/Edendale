@@ -6,7 +6,7 @@
     Background="{StaticResource EdendaleBackgroundBrush}">
 
     <Grid>
-        <ScrollViewer>
+        <ScrollViewer x:Name="ContentScroll">
         <StackPanel Spacing="40" Padding="0,0,0,64">
 
             <!-- Cinematic hero: backdrop + scrim, gold tagline kicker, Bebas
@@ -74,8 +74,9 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Favourite / watchlist / rating — stored locally, synced
-                         to OneDrive and (when connected) the TMDB account. -->
+                    <!-- Favourite and rating stay local and replicate to OneDrive
+                         (and the TMDB account when connected). Watchlist is its
+                         own local-first store — TMDB is that one's only cloud. -->
                     <StackPanel x:Name="UserMediaRow" Orientation="Horizontal" Spacing="14" Visibility="Collapsed">
                         <Button x:Name="FavouriteButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="ToggleFavourite_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -207,6 +208,45 @@
             </StackPanel>
         </StackPanel>
         </ScrollViewer>
+
+        <!-- Young Audience gate (MediaDetailView.audienceRestrictedState):
+             a title not verified PG/PG-13 shows this notice instead of the
+             record while the filter is on; a spinner covers verification. -->
+        <StackPanel
+            x:Name="AudienceRestricted"
+            Spacing="12"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            MaxWidth="420"
+            Padding="24"
+            Visibility="Collapsed">
+            <controls:SvgIcon
+                UriSource="ms-appx:///Assets/Icons/film-circle-exclamation.svg"
+                Width="44" Height="44"
+                Foreground="{StaticResource EdendaleSurfaceHighBrush}"
+                HorizontalAlignment="Center" />
+            <TextBlock
+                x:Uid="DetailAudienceRestrictedTitle"
+                Text="Unavailable for Young Audiences"
+                Style="{StaticResource HeadlineMDTextStyle}"
+                TextAlignment="Center"
+                HorizontalAlignment="Center" />
+            <TextBlock
+                x:Uid="DetailAudienceRestrictedMessage"
+                Text="This title is not verified as PG or PG-13."
+                Style="{StaticResource BodyLGTextStyle}"
+                TextAlignment="Center"
+                HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <ProgressRing
+            x:Name="AudienceVerifyRing"
+            IsActive="False"
+            Width="36" Height="36"
+            Foreground="{StaticResource EdendaleGoldBrush}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="Collapsed" />
 
         <!-- The one back affordance in the app: detail pages are the only
              pushed navigation, so the arrow lives here, not the sidebar. -->
