@@ -3,15 +3,22 @@
 //  Edendale
 //
 //  The "TMDB Account" section of SettingsView. Drives TMDBAccountStore's
-//  sign-in flow: show the themoviedb.org approval page as a QR code, attempt
-//  to open it in the device browser, then exchange the approved request token.
+//  sign-in flow: presents the themoviedb.org approval page inside an
+//  ASWebAuthenticationSession (required by App Review Guideline 5.1.1).
+//  Shows the approval page as a QR code fallback on cancel.
 //
 
+import AuthenticationServices
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+#if canImport(AppKit)
+import AppKit
+#endif
 
 struct TMDBAccountSection: View {
     @Environment(TMDBAccountStore.self) private var account
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         Section {
@@ -70,10 +77,29 @@ struct TMDBAccountSection: View {
             Text("Connect your TMDB account — sign in, or create one for free, on themoviedb.org.")
                 .font(Typography.bodySM)
                 .foregroundStyle(Theme.textSecondary)
-            
+
             Button("Connect TMDB Account") {
                 Task {
-                    if let url = await account.beginSignIn() { openURL(url) }
+                    guard let url = await account.beginSignIn() else { return }
+                    let session = ASWebAuthenticationSession(
+                        url: url,
+                        callbackURLScheme: "edendale"
+                    ) { _, error in
+                        if error != nil {
+                            // ASWebAuthenticationSessionError.canceledLogin
+                            // leaves the request token valid; the user can
+                            // retry or use the QR fallback below.
+                            return
+                        }
+                        Task { @MainActor in
+                            await account.completeSignIn()
+                        }
+                    }
+#if !os(tvOS)
+                    session.prefersEphemeralWebBrowserSession = true
+                    session.presentationContextProvider = WebAuthContext.shared
+#endif
+                    session.start()
                 }
             }
             .archiveButtonStyle(.secondary)
@@ -84,3 +110,27 @@ struct TMDBAccountSection: View {
         }
     }
 }
+
+// MARK: - ASWebAuthenticationSession presentation context
+
+#if !os(tvOS)
+/// Shared presentation context provider so ASWebAuthenticationSession can
+/// present its authentication sheet from a SwiftUI view hierarchy.
+/// tvOS manages its own presentation and does not expose this protocol.
+private final class WebAuthContext: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = WebAuthContext()
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+#if os(macOS)
+        NSApplication.shared.keyWindow ?? NSApp.windows.first!
+#else
+        UIApplication.shared
+            .connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }
+        ?? ASPresentationAnchor()
+#endif
+    }
+}
+#endif

@@ -3,11 +3,12 @@
 //  Edendale
 //
 //  Connects a personal TMDB account through the v4 auth flow: create a request
-//  token → the user approves it on themoviedb.org (signing in or signing up
-//  there) → exchange it for a permanent user access token. The token lives in
-//  the iCloud-synchronized keychain (KeychainStore), so other devices on the
-//  same iCloud account are signed in automatically, and TMDBService prefers it
-//  over the build-time credentials.
+//  token (with a redirect_to for ASWebAuthenticationSession) → the user
+//  approves it on themoviedb.org (signing in or signing up there) inside the
+//  system authentication sheet → exchange it for a permanent user access token.
+//  The token lives in the iCloud-synchronized keychain (KeychainStore), so
+//  other devices on the same iCloud account are signed in automatically, and
+//  TMDBService prefers it over the build-time credentials.
 //
 //  Content data still comes from v3 (the only version with content endpoints);
 //  besides auth, v4 also serves the signed-in account's lists — favorites,
@@ -51,12 +52,13 @@ final class TMDBAccountStore {
 
     // MARK: - Flow
 
-    /// Step 1: create a request token and return the themoviedb.org page where
-    /// the user signs in (or creates an account) and approves Edendale.
+    /// Step 1: create a request token and return the themoviedb.org approval
+    /// page URL. The caller presents it in an ASWebAuthenticationSession so
+    /// the user signs in without leaving the app (App Review 5.1.1).
     func beginSignIn() async -> URL? {
         lastError = nil
         do {
-            let token = try await TMDBAuthClient().createRequestToken()
+            let token = try await TMDBAuthClient().createRequestToken(redirectTo: "edendale://tmdb-auth")
             phase = .awaitingApproval(requestToken: token)
             return Self.approvalURL(for: token)
         } catch {
@@ -143,9 +145,13 @@ private struct TMDBAuthClient {
 
     private static let baseURL = "https://api.themoviedb.org/4/auth"
 
-    func createRequestToken() async throws -> String {
+    func createRequestToken(redirectTo: String? = nil) async throws -> String {
         struct Response: Decodable { let requestToken: String }
-        let response: Response = try await send("POST", path: "/request_token")
+        var body: [String: String] = [:]
+        if let redirectTo {
+            body["redirect_to"] = redirectTo
+        }
+        let response: Response = try await send("POST", path: "/request_token", body: body)
         return response.requestToken
     }
 
