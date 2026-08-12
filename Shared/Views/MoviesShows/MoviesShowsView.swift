@@ -849,18 +849,22 @@ struct MoviesShowsView: View {
     /// without animation — identical content, so the jump is invisible.
     private func snapHeroToStart() {
         guard heroIndex == heroScenes.count else { return }
+        isHeroWrapping = true
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { heroIndex = 0 }
+        Task { @MainActor in isHeroWrapping = false }
     }
 
     /// Trades the duplicate last page (heroIndex == -1) for the real one
     /// without animation — identical content, so the jump is invisible.
     private func snapHeroToEnd() {
         guard heroIndex == -1 else { return }
+        isHeroWrapping = true
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { heroIndex = heroScenes.count - 1 }
+        Task { @MainActor in isHeroWrapping = false }
     }
     #endif
 
