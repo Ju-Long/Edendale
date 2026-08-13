@@ -14,6 +14,9 @@
 		27BC63ED2FBDBF1E005EAD5C /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63EC2FBDBF1E005EAD5C /* Kingfisher */; };
 		27BC63F02FBDBF68005EAD5C /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63EF2FBDBF68005EAD5C /* Drops */; };
 		27CF16C2000000000000A551 /* Shared Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27CF16C1000000000000A551 /* Shared Assets.xcassets */; };
+		27ED01AB00000000000000AB /* SwiftVLC in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01AE00000000000000AE /* SwiftVLC */; };
+		27ED01AC00000000000000AC /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01AF00000000000000AF /* Kingfisher */; };
+		27ED01AD00000000000000AD /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01B000000000000000B0 /* Drops */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +66,7 @@
 		27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27CF16C0000000000000C0F1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = Shared/Secrets.xcconfig; sourceTree = "<group>"; };
 		27CF16C1000000000000A551 /* Shared Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Shared Assets.xcassets"; path = Shared/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		27ED01A100000000000000A1 /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -90,9 +94,25 @@
 		27BC63D92FBDBE65005EAD5C /* Exceptions for "Edendale" folder in "Edendale" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"Info-tvOS.plist",
 				Info.plist,
 			);
 			target = 27BC63B52FBDBE64005EAD5C /* Edendale */;
+		};
+		27ED01A900000000000000A9 /* Exceptions for "Edendale" folder in "Edendale TV" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Info-tvOS.plist",
+				Info.plist,
+			);
+			target = 27ED01A200000000000000A2 /* Edendale TV */;
+		};
+		27ED01AA00000000000000AA /* Exceptions for "Shared" folder in "Edendale TV" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Example.xcconfig,
+			);
+			target = 27ED01A200000000000000A2 /* Edendale TV */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -109,6 +129,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				27BC63D92FBDBE65005EAD5C /* Exceptions for "Edendale" folder in "Edendale" target */,
+				27ED01A900000000000000A9 /* Exceptions for "Edendale" folder in "Edendale TV" target */,
 			);
 			path = Edendale;
 			sourceTree = "<group>";
@@ -127,6 +148,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				2758F9DD2FDEA39F00D779E6 /* Exceptions for "Shared" folder in "Edendale" target */,
+				27ED01AA00000000000000AA /* Exceptions for "Shared" folder in "Edendale TV" target */,
 				272FE0663007C3CE00900892 /* Exceptions for "Shared" folder in "WidgetsExtension" target */,
 			);
 			path = Shared;
@@ -165,6 +187,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27ED01A400000000000000A4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27ED01AC00000000000000AC /* Kingfisher in Frameworks */,
+				27ED01AD00000000000000AD /* Drops in Frameworks */,
+				27ED01AB00000000000000AB /* SwiftVLC in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -207,6 +239,7 @@
 			isa = PBXGroup;
 			children = (
 				27BC63B62FBDBE64005EAD5C /* Edendale.app */,
+				27ED01A100000000000000A1 /* Edendale.app */,
 				27BC63C72FBDBE65005EAD5C /* EdendaleTests.xctest */,
 				27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */,
 				270D2C603004C7B200741225 /* WidgetsExtension.appex */,
@@ -313,6 +346,32 @@
 			productReference = 27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		27ED01A200000000000000A2 /* Edendale TV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 27ED01A800000000000000A8 /* Build configuration list for PBXNativeTarget "Edendale TV" */;
+			buildPhases = (
+				27ED01A300000000000000A3 /* Sources */,
+				27ED01A400000000000000A4 /* Frameworks */,
+				27ED01A500000000000000A5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				27BC63B82FBDBE64005EAD5C /* Edendale */,
+				27BC63F12FBDC061005EAD5C /* Shared */,
+			);
+			name = "Edendale TV";
+			packageProductDependencies = (
+				27ED01AE00000000000000AE /* SwiftVLC */,
+				27ED01AF00000000000000AF /* Kingfisher */,
+				27ED01B000000000000000B0 /* Drops */,
+			);
+			productName = Edendale;
+			productReference = 27ED01A100000000000000A1 /* Edendale.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -336,6 +395,9 @@
 					27BC63D02FBDBE65005EAD5C = {
 						CreatedOnToolsVersion = 26.5;
 						TestTargetID = 27BC63B52FBDBE64005EAD5C;
+					};
+					27ED01A200000000000000A2 = {
+						CreatedOnToolsVersion = 26.6;
 					};
 				};
 			};
@@ -377,6 +439,7 @@
 			projectRoot = "";
 			targets = (
 				27BC63B52FBDBE64005EAD5C /* Edendale */,
+				27ED01A200000000000000A2 /* Edendale TV */,
 				27BC63C62FBDBE65005EAD5C /* EdendaleTests */,
 				27BC63D02FBDBE65005EAD5C /* EdendaleUITests */,
 				270D2C5F3004C7B200741225 /* WidgetsExtension */,
@@ -414,6 +477,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		27ED01A500000000000000A5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -439,6 +509,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		27BC63CD2FBDBE65005EAD5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27ED01A300000000000000A3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -568,13 +645,12 @@
 			baseConfigurationReference = 27CF16C0000000000000C0F1 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=appletvos*]" = "Brand Assets";
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Edendale/Edendale.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5678544286;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -614,15 +690,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3,7";
-				TVOS_DEPLOYMENT_TARGET = 18.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
@@ -632,13 +707,12 @@
 			baseConfigurationReference = 27CF16C0000000000000C0F1 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=appletvos*]" = "Brand Assets";
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Edendale/Edendale.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5678544286;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -678,15 +752,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3,7";
-				TVOS_DEPLOYMENT_TARGET = 18.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
@@ -911,6 +984,74 @@
 			};
 			name = Release;
 		};
+		27ED01A600000000000000A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 27CF16C0000000000000C0F1 /* Secrets.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Brand Assets";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = Edendale/Edendale.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5678544286;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Edendale/Info-tvOS.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
+				PRODUCT_NAME = Edendale;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 18.0;
+			};
+			name = Debug;
+		};
+		27ED01A700000000000000A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 27CF16C0000000000000C0F1 /* Secrets.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Brand Assets";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = Edendale/Edendale.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5678544286;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Edendale/Info-tvOS.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
+				PRODUCT_NAME = Edendale;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 18.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -959,6 +1100,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		27ED01A800000000000000A8 /* Build configuration list for PBXNativeTarget "Edendale TV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27ED01A600000000000000A6 /* Debug */,
+				27ED01A700000000000000A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1000,6 +1150,21 @@
 			productName = Kingfisher;
 		};
 		27BC63EF2FBDBF68005EAD5C /* Drops */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27BC63EE2FBDBF68005EAD5C /* XCRemoteSwiftPackageReference "Drops" */;
+			productName = Drops;
+		};
+		27ED01AE00000000000000AE /* SwiftVLC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27BC63E52FBDBEA8005EAD5C /* XCRemoteSwiftPackageReference "SwiftVLC" */;
+			productName = SwiftVLC;
+		};
+		27ED01AF00000000000000AF /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27BC63EB2FBDBF1E005EAD5C /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		27ED01B000000000000000B0 /* Drops */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 27BC63EE2FBDBF68005EAD5C /* XCRemoteSwiftPackageReference "Drops" */;
 			productName = Drops;
