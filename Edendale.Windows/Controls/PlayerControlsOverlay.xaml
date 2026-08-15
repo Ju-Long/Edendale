@@ -76,7 +76,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="CurrentTimeText" Grid.Column="0" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="0,0,16,0" MinWidth="45" TextAlignment="Right" />
-                    <Slider x:Name="TimelineSlider" Grid.Column="1" VerticalAlignment="Center" ManipulationStarted="TimelineSlider_ManipulationStarted" ManipulationCompleted="TimelineSlider_ManipulationCompleted" ValueChanged="TimelineSlider_ValueChanged"/>
+                    <Slider x:Name="TimelineSlider" Grid.Column="1" VerticalAlignment="Center" ValueChanged="TimelineSlider_ValueChanged"/>
                     <TextBlock x:Name="TotalTimeText" Grid.Column="2" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="45" />
                 </Grid>
 

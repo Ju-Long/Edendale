@@ -60,6 +60,11 @@ public sealed partial class PlayerControlsOverlay : UserControl
         _progressTimer = DispatcherQueue.CreateTimer();
         _progressTimer.Interval = TimeSpan.FromMilliseconds(250);
         _progressTimer.Tick += (s, e) => UpdateProgress();
+
+        TimelineSlider.AddHandler(PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
+        TimelineSlider.AddHandler(PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
+        TimelineSlider.AddHandler(PointerCanceledEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
+        TimelineSlider.AddHandler(PointerCaptureLostEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
     }
 
     /// <summary>
@@ -183,13 +188,14 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private void SkipBack_Click(object sender, RoutedEventArgs e) => Skip(-10);
     private void SkipForward_Click(object sender, RoutedEventArgs e) => Skip(10);
 
-    private void TimelineSlider_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
+    private void TimelineSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isSliderManipulating = true;
     }
 
-    private void TimelineSlider_ManipulationCompleted(object sender, ManipulationCompletedRoutedEventArgs e)
+    private void TimelineSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
+        if (!_isSliderManipulating) return;
         _isSliderManipulating = false;
         if (_mediaPlayer == null) return;
 
