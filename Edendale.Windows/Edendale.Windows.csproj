@@ -45,7 +45,7 @@
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Always</AppxBundle>
@@ -63,13 +63,24 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.7" Condition="'$(Configuration)' == 'Debug'" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
+    <PackageReference Include="LibVLCSharp.WinUI" Version="3.10.1" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250909003" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <!-- DPAPI protection for the stored TMDB session (TmdbAccountService). -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <!-- Legacy code pages for subtitle files, which are rarely UTF-8. -->
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
+    <!-- Native VLC engine and LGPL codec plug-ins for x86, x64, and ARM64. -->
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+  </ItemGroup>
+
+  <!-- Import libraries are build-time artifacts and do not belong in the
+       application. Keep the native DLLs and VLC's runtime data/plugins. -->
+  <ItemGroup>
+    <VlcWindowsX64IncludeFiles Include="libvlc.dll;libvlccore.dll;hrtfs\%2A%2A;lua\%2A%2A;plugins\%2A%2A" />
+    <VlcWindowsX86IncludeFiles Include="libvlc.dll;libvlccore.dll;hrtfs\%2A%2A;lua\%2A%2A;plugins\%2A%2A" />
+    <VlcWindowsArm64IncludeFiles Include="libvlc.dll;libvlccore.dll;hrtfs\%2A%2A;lua\%2A%2A;plugins\%2A%2A" />
   </ItemGroup>
 
   <ItemGroup>
@@ -79,6 +90,9 @@
     <!-- The SIL Open Font License requires its text to travel with the fonts,
          so it ships next to them rather than living only in the repository. -->
     <Content Include="Assets\Fonts\OFL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Licenses\LGPL-2.1.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\LICENSE" Link="LICENSE.txt">

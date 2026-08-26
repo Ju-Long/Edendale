@@ -10,10 +10,8 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Windows.Media.Core;
-using Windows.Media.Playback;
+using LibVLCSharp.Shared;
 using Microsoft.UI.Dispatching;
-using System.ComponentModel;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Edendale.Windows.Core;
@@ -77,9 +75,12 @@ public sealed partial class PlayerControlsOverlay : UserControl
     {
         if (_mediaPlayer != null)
         {
-            _mediaPlayer.PlaybackSession.PlaybackStateChanged -= PlaybackSession_PlaybackStateChanged;
-            _mediaPlayer.PlaybackSession.PositionChanged -= PlaybackSession_PositionChanged;
-            _mediaPlayer.PlaybackSession.NaturalDurationChanged -= PlaybackSession_NaturalDurationChanged;
+            _mediaPlayer.Playing -= MediaPlayer_StateChanged;
+            _mediaPlayer.Paused -= MediaPlayer_StateChanged;
+            _mediaPlayer.Stopped -= MediaPlayer_StateChanged;
+            _mediaPlayer.EndReached -= MediaPlayer_StateChanged;
+            _mediaPlayer.EncounteredError -= MediaPlayer_StateChanged;
+            _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
         }
 
         // A different item invalidates any in-flight search and its results.
@@ -93,9 +94,12 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         if (_mediaPlayer != null)
         {
-            _mediaPlayer.PlaybackSession.PlaybackStateChanged += PlaybackSession_PlaybackStateChanged;
-            _mediaPlayer.PlaybackSession.PositionChanged += PlaybackSession_PositionChanged;
-            _mediaPlayer.PlaybackSession.NaturalDurationChanged += PlaybackSession_NaturalDurationChanged;
+            _mediaPlayer.Playing += MediaPlayer_StateChanged;
+            _mediaPlayer.Paused += MediaPlayer_StateChanged;
+            _mediaPlayer.Stopped += MediaPlayer_StateChanged;
+            _mediaPlayer.EndReached += MediaPlayer_StateChanged;
+            _mediaPlayer.EncounteredError += MediaPlayer_StateChanged;
+            _mediaPlayer.LengthChanged += MediaPlayer_LengthChanged;
 
             UpdatePlayPauseIcon();
             UpdateDuration();
@@ -116,7 +120,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         // controls up for as long as it is open.
         if (SubtitleBrowser.Visibility == Visibility.Visible) return;
 
-        if (_mediaPlayer?.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+        if (_mediaPlayer?.IsPlaying == true)
         {
             VisualStateManager.GoToState(this, "ControlsHidden", true);
         }
@@ -163,7 +167,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
     {
         if (_mediaPlayer == null) return;
 
-        if (_mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+        if (_mediaPlayer.IsPlaying)
         {
             _mediaPlayer.Pause();
             ShowControls();
@@ -178,10 +182,9 @@ public sealed partial class PlayerControlsOverlay : UserControl
     public void Skip(double seconds)
     {
         if (_mediaPlayer == null) return;
-        var newPosition = _mediaPlayer.PlaybackSession.Position.TotalSeconds + seconds;
-        var duration = _mediaPlayer.PlaybackSession.NaturalDuration.TotalSeconds;
-        newPosition = Math.Max(0, Math.Min(newPosition, duration));
-        _mediaPlayer.PlaybackSession.Position = TimeSpan.FromSeconds(newPosition);
+        var newPosition = _mediaPlayer.Time + (long)(seconds * 1000);
+        newPosition = Math.Max(0, Math.Min(newPosition, _mediaPlayer.Length));
+        _mediaPlayer.Time = newPosition;
         ShowControls();
     }
 
@@ -199,22 +202,21 @@ public sealed partial class PlayerControlsOverlay : UserControl
         _isSliderManipulating = false;
         if (_mediaPlayer == null) return;
 
-        var duration = _mediaPlayer.PlaybackSession.NaturalDuration.TotalSeconds;
-        _mediaPlayer.PlaybackSession.Position = TimeSpan.FromSeconds(TimelineSlider.Value * duration / 100);
+        _mediaPlayer.Position = (float)(TimelineSlider.Value / 100);
     }
 
     private void TimelineSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (!_isSliderManipulating || _mediaPlayer == null) return;
-        var duration = _mediaPlayer.PlaybackSession.NaturalDuration.TotalSeconds;
-        var pos = TimeSpan.FromSeconds(e.NewValue * duration / 100);
+        var duration = Math.Max(0, _mediaPlayer.Length);
+        var pos = TimeSpan.FromMilliseconds(e.NewValue * duration / 100);
         CurrentTimeText.Text = FormatTime(pos);
     }
 
     private void SpeedButton_Click(object sender, RoutedEventArgs e)
     {
         if (_mediaPlayer == null) return;
-        var currentRate = _mediaPlayer.PlaybackSession.PlaybackRate;
+        var currentRate = (double)_mediaPlayer.Rate;
         double nextRate = currentRate switch
         {
             1.0 => 1.25,
@@ -223,7 +225,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
             2.0 => 0.5,
             _ => 1.0
         };
-        _mediaPlayer.PlaybackSession.PlaybackRate = nextRate;
+        _mediaPlayer.SetRate((float)nextRate);
         SpeedButton.Content = RateLabel(nextRate);
     }
 
@@ -256,17 +258,13 @@ public sealed partial class PlayerControlsOverlay : UserControl
         ShowControls();
     }
 
-    /// <summary>
-    /// Audio and subtitle tracks of the playing item. Requires the source to be
-    /// a <see cref="MediaPlaybackItem"/> — a bare MediaSource exposes no track
-    /// lists — which is how MainWindow builds it.
-    /// </summary>
+    /// <summary>Audio and subtitle tracks discovered by LibVLC.</summary>
     private void SubtitlesButton_Click(object sender, RoutedEventArgs e)
     {
         ShowControls();
         var flyout = new MenuFlyout { Placement = FlyoutPlacementMode.Top };
 
-        if (_mediaPlayer?.Source is not MediaPlaybackItem item)
+        if (_mediaPlayer is not { } player)
         {
             flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracks"), IsEnabled = false });
             AddOnlineSearchItem(flyout);
@@ -274,73 +272,56 @@ public sealed partial class PlayerControlsOverlay : UserControl
             return;
         }
 
-        if (item.AudioTracks.Count > 1)
+        // LibVLC includes a synthetic "disable" entry on some outputs. The
+        // Edendale menu presents playable audio streams only.
+        var audioTracks = player.AudioTrackDescription
+            .Where(track => track.Id >= 0)
+            .ToArray();
+        if (audioTracks.Length > 1)
         {
             flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_AudioHeader"), IsEnabled = false });
-            for (var index = 0; index < item.AudioTracks.Count; index++)
+            for (var index = 0; index < audioTracks.Length; index++)
             {
-                var trackIndex = index;
-                var track = item.AudioTracks[index];
+                var track = audioTracks[index];
+                var trackId = track.Id;
                 var entry = new ToggleMenuFlyoutItem
                 {
-                    Text = TrackLabel(track.Label, track.Language, index, Loc.Get("Player_AudioTrack")),
-                    IsChecked = item.AudioTracks.SelectedIndex == index,
+                    Text = TrackLabel(track.Name, null, index, Loc.Get("Player_AudioTrack")),
+                    IsChecked = player.AudioTrack == trackId,
                 };
-                entry.Click += (_, _) => item.AudioTracks.SelectedIndex = trackIndex;
+                entry.Click += (_, _) => player.SetAudioTrack(trackId);
                 flyout.Items.Add(entry);
             }
             flyout.Items.Add(new MenuFlyoutSeparator());
         }
 
         flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_SubtitlesHeader"), IsEnabled = false });
-        var subtitleIndices = new List<int>();
-        for (var index = 0; index < item.TimedMetadataTracks.Count; index++)
-        {
-            var kind = item.TimedMetadataTracks[index].TimedMetadataKind;
-            if (kind is TimedMetadataKind.Subtitle or TimedMetadataKind.Caption) subtitleIndices.Add(index);
-        }
+        var subtitleTracks = player.SpuDescription
+            .Where(track => track.Id >= 0)
+            .ToArray();
 
-        var anyShown = subtitleIndices.Any(index =>
-            item.TimedMetadataTracks.GetPresentationMode((uint)index)
-                != TimedMetadataTrackPresentationMode.Disabled);
-
-        var off = new ToggleMenuFlyoutItem { Text = Loc.Get("Player_SubtitlesOff"), IsChecked = !anyShown };
-        off.Click += (_, _) =>
+        var off = new ToggleMenuFlyoutItem
         {
-            foreach (var index in subtitleIndices)
-            {
-                item.TimedMetadataTracks.SetPresentationMode(
-                    (uint)index, TimedMetadataTrackPresentationMode.Disabled);
-            }
+            Text = Loc.Get("Player_SubtitlesOff"),
+            IsChecked = player.Spu < 0,
         };
+        off.Click += (_, _) => player.SetSpu(-1);
         flyout.Items.Add(off);
 
-        foreach (var index in subtitleIndices)
+        for (var index = 0; index < subtitleTracks.Length; index++)
         {
-            var trackIndex = index;
-            var track = item.TimedMetadataTracks[index];
+            var track = subtitleTracks[index];
+            var trackId = track.Id;
             var entry = new ToggleMenuFlyoutItem
             {
-                Text = TrackLabel(track.Label, track.Language, index, Loc.Get("Player_SubtitleTrack")),
-                IsChecked = item.TimedMetadataTracks.GetPresentationMode((uint)index)
-                    != TimedMetadataTrackPresentationMode.Disabled,
+                Text = TrackLabel(track.Name, null, index, Loc.Get("Player_SubtitleTrack")),
+                IsChecked = player.Spu == trackId,
             };
-            entry.Click += (_, _) =>
-            {
-                // Exactly one subtitle track at a time, like the Apple player.
-                foreach (var other in subtitleIndices)
-                {
-                    item.TimedMetadataTracks.SetPresentationMode(
-                        (uint)other,
-                        other == trackIndex
-                            ? TimedMetadataTrackPresentationMode.PlatformPresented
-                            : TimedMetadataTrackPresentationMode.Disabled);
-                }
-            };
+            entry.Click += (_, _) => player.SetSpu(trackId);
             flyout.Items.Add(entry);
         }
 
-        if (subtitleIndices.Count == 0)
+        if (subtitleTracks.Length == 0)
         {
             flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracksInFile"), IsEnabled = false });
         }
@@ -370,12 +351,12 @@ public sealed partial class PlayerControlsOverlay : UserControl
         return $"{fallback} {index + 1}";
     }
 
-    private void PlaybackSession_PlaybackStateChanged(MediaPlaybackSession sender, object args)
+    private void MediaPlayer_StateChanged(object? sender, EventArgs args)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
             UpdatePlayPauseIcon();
-            if (sender.PlaybackState == MediaPlaybackState.Playing)
+            if (_mediaPlayer?.IsPlaying == true)
             {
                 _hideTimer.Start();
             }
@@ -386,12 +367,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         });
     }
 
-    private void PlaybackSession_PositionChanged(MediaPlaybackSession sender, object args)
-    {
-        DispatcherQueue.TryEnqueue(UpdateProgress);
-    }
-
-    private void PlaybackSession_NaturalDurationChanged(MediaPlaybackSession sender, object args)
+    private void MediaPlayer_LengthChanged(object? sender, EventArgs args)
     {
         DispatcherQueue.TryEnqueue(UpdateDuration);
     }
@@ -399,7 +375,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private void UpdatePlayPauseIcon()
     {
         if (_mediaPlayer == null) return;
-        var isPlaying = _mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing;
+        var isPlaying = _mediaPlayer.IsPlaying;
         var iconUri = isPlaying ? "ms-appx:///Assets/Icons/pause.svg" : "ms-appx:///Assets/Icons/play.svg";
         CenterPlayPauseIcon.UriSource = new Uri(iconUri);
         BottomPlayPauseIcon.UriSource = new Uri(iconUri);
@@ -408,19 +384,19 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private void UpdateDuration()
     {
         if (_mediaPlayer == null) return;
-        TotalTimeText.Text = FormatTime(_mediaPlayer.PlaybackSession.NaturalDuration);
+        TotalTimeText.Text = FormatTime(TimeSpan.FromMilliseconds(Math.Max(0, _mediaPlayer.Length)));
     }
 
     private void UpdateProgress()
     {
         if (_mediaPlayer == null || _isSliderManipulating) return;
-        var duration = _mediaPlayer.PlaybackSession.NaturalDuration.TotalSeconds;
-        var position = _mediaPlayer.PlaybackSession.Position;
+        var duration = _mediaPlayer.Length;
+        var position = Math.Max(0, _mediaPlayer.Time);
         if (duration > 0)
         {
-            TimelineSlider.Value = (position.TotalSeconds / duration) * 100;
+            TimelineSlider.Value = (double)position / duration * 100;
         }
-        CurrentTimeText.Text = FormatTime(position);
+        CurrentTimeText.Text = FormatTime(TimeSpan.FromMilliseconds(position));
     }
 
     private string FormatTime(TimeSpan time)
@@ -638,13 +614,13 @@ public sealed partial class PlayerControlsOverlay : UserControl
             var downloaded = await AppServices.Subtitles.DownloadAsync(candidate, work.Token);
             if (work.IsCancellationRequested) return;
 
-            if (_mediaPlayer?.Source is not MediaPlaybackItem item)
+            if (_mediaPlayer is not { } player)
             {
                 ShowBrowserState(Loc.Get("Subtitles_AttachFailed"), busy: false);
                 return;
             }
 
-            var attached = await AttachSubtitleAsync(item, downloaded);
+            var attached = AttachSubtitle(player, downloaded);
             if (work.IsCancellationRequested) return;
 
             if (!attached)
@@ -674,65 +650,12 @@ public sealed partial class PlayerControlsOverlay : UserControl
         }
     }
 
-    /// <summary>
-    /// Adds the downloaded file to the playing item as an external timed-text
-    /// track and presents it, disabling any other subtitle track so exactly
-    /// one shows — the same rule the in-file track menu follows.
-    /// </summary>
-    private async Task<bool> AttachSubtitleAsync(MediaPlaybackItem item, DownloadedSubtitle downloaded)
-    {
-        var resolution = new TaskCompletionSource<string?>();
-        var label = downloaded.Candidate.LanguageLabel;
-
-        var source = TimedTextSource.CreateFromUri(
-            new Uri(downloaded.FilePath), downloaded.Candidate.Language);
-
-        void OnResolved(TimedTextSource sender, TimedTextSourceResolveResultEventArgs args)
-        {
-            sender.Resolved -= OnResolved;
-            if (args.Error is not null || args.Tracks.Count == 0)
-            {
-                resolution.TrySetResult(null);
-                return;
-            }
-
-            args.Tracks[0].Label = label;
-            resolution.TrySetResult(args.Tracks[0].Id);
-        }
-
-        source.Resolved += OnResolved;
-        item.Source.ExternalTimedTextSources.Add(source);
-
-        // Resolution is off-thread and can fail silently on a malformed file;
-        // never leave the panel spinning on it.
-        var finished = await Task.WhenAny(resolution.Task, Task.Delay(TimeSpan.FromSeconds(15)));
-        if (finished != resolution.Task) return false;
-
-        var trackId = await resolution.Task;
-        if (trackId is null) return false;
-
-        PresentOnly(item, trackId);
-        return true;
-    }
-
-    /// <summary>Turns on the track with <paramref name="trackId"/> and turns every other one off.</summary>
-    private static void PresentOnly(MediaPlaybackItem item, string trackId)
-    {
-        for (var index = 0; index < item.TimedMetadataTracks.Count; index++)
-        {
-            var track = item.TimedMetadataTracks[index];
-            if (track.TimedMetadataKind is not (TimedMetadataKind.Subtitle or TimedMetadataKind.Caption))
-            {
-                continue;
-            }
-
-            item.TimedMetadataTracks.SetPresentationMode(
-                (uint)index,
-                track.Id == trackId
-                    ? TimedMetadataTrackPresentationMode.PlatformPresented
-                    : TimedMetadataTrackPresentationMode.Disabled);
-        }
-    }
+    /// <summary>Adds the downloaded file as LibVLC's selected subtitle slave.</summary>
+    private static bool AttachSubtitle(MediaPlayer player, DownloadedSubtitle downloaded) =>
+        player.AddSlave(
+            MediaSlaveType.Subtitle,
+            new Uri(downloaded.FilePath).AbsoluteUri,
+            select: true);
 
     /// <summary>
     /// Busy shows the ring, a message replaces the list, and null restores the

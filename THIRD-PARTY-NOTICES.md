@@ -24,7 +24,10 @@ are reproduced exactly as they appear in each font binary's name table.
 
 | Component | Version | Copyright | License |
 |---|---|---|---|
-| Microsoft Windows App SDK | 1.7.250401001 | © Microsoft Corporation. All rights reserved. | Microsoft Software License Terms (Windows App SDK) |
+| LibVLCSharp.WinUI | 3.10.1 | Copyright © VideoLAN and LibVLCSharp contributors | LGPL-2.1-or-later |
+| VideoLAN LibVLC for Windows | 3.0.23.1 | Copyright © VideoLAN and VLC authors | LGPL-2.1-or-later |
+| SharpDX (core, Direct3D11, DXGI) | 4.2.0 | Copyright © 2010-2016 Alexandre Mutel | MIT |
+| Microsoft Windows App SDK | 1.7.250909003 | © Microsoft Corporation. All rights reserved. | Microsoft Software License Terms (Windows App SDK) |
 | QRCoder | 1.8.0 | Copyright © 2013-2025 Raffael Herrmann. Copyright © 2024-2025 Shane Krueger. All rights reserved. | MIT |
 | System.Security.Cryptography.ProtectedData | 8.0.0 | © Microsoft Corporation. All rights reserved. | MIT |
 | System.Text.Encoding.CodePages | 8.0.0 | © Microsoft Corporation. All rights reserved. | MIT |
@@ -37,9 +40,18 @@ package as `license.txt`, and online at https://aka.ms/windowsappsdk/license.
 `Microsoft.Windows.SDK.BuildTools` is intentionally absent: it supplies
 compile-time tooling only and none of it is redistributed.
 
+LibVLCSharp and the LibVLC engine are dynamically linked libraries. The full
+LGPL 2.1 text ships as `Assets/Licenses/LGPL-2.1.txt`; the corresponding source
+and build history are available from VideoLAN's
+[LibVLCSharp](https://code.videolan.org/videolan/LibVLCSharp) and
+[VLC](https://code.videolan.org/videolan/vlc) repositories. Edendale does not
+modify either library. The packages keep LibVLC under
+`libvlc/<architecture>` so a recipient can inspect or replace those
+shared-library files independently of Edendale.
+
 ## MIT License
 
-Applies to QRCoder, System.Security.Cryptography.ProtectedData, and
+Applies to SharpDX, QRCoder, System.Security.Cryptography.ProtectedData, and
 System.Text.Encoding.CodePages, with the copyright holders named above.
 
 ```

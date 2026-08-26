@@ -1,11 +1,11 @@
 using Edendale.Windows.Pages;
 using Edendale.Windows.Services;
+using LibVLCSharp.Platforms.Windows;
+using LibVLCSharp.Shared;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.Media.Core;
-using Windows.Media.Playback;
 
 namespace Edendale.Windows;
 
@@ -16,10 +16,13 @@ namespace Edendale.Windows;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
+    private LibVLC? _libVlc;
     private MediaPlayer? _mediaPlayer;
     private PlaybackRequest? _currentPlayback;
     private DispatcherQueueTimer? _progressTimer;
     private bool _isCompactOverlay;
+    private bool _resumePending;
+    private bool _aspectFill;
 
     public MainWindow()
     {
@@ -29,6 +32,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         AppWindow.Resize(new global::Windows.Graphics.SizeInt32(1440, 900));
         AppWindow.SetIcon("Assets\\icon.ico");
+        Closed += MainWindow_Closed;
 
         MoviesNavItem.Icon = Controls.SvgIcon.CreateIcon("film");
         WatchlistNavItem.Icon = Controls.SvgIcon.CreateIcon("film-stack");
@@ -256,62 +260,150 @@ public sealed partial class MainWindow : Window
         ClosePlayerCore();
 
         PlaylistPanel.Visibility = Visibility.Collapsed;
-
         _currentPlayback = request;
+        _resumePending = true;
 
-        // A MediaPlaybackItem rather than a bare MediaSource: only the item
-        // exposes the audio and subtitle track lists the overlay's track menu
-        // reads.
-        _mediaPlayer = new MediaPlayer
+        PlayerOverlay.Visibility = Visibility.Visible;
+        ControlsOverlay.SetMediaPlayer(
+            null, request.Title.ToUpperInvariant(), request.Subtitle, request);
+        ControlsOverlay.Focus(FocusState.Programmatic);
+
+        // The WinUI VideoView creates its Direct3D swap chain only after it is
+        // visible. The first playback request therefore waits for Initialized;
+        // later requests can start immediately on the existing LibVLC engine.
+        if (_libVlc is not null) StartPlayback(request);
+    }
+
+    private void PlayerElement_Initialized(object sender, InitializedEventArgs e)
+    {
+        if (_libVlc is not null) return;
+
+        try
         {
-            Source = new MediaPlaybackItem(MediaSource.CreateFromUri(new Uri(request.FilePath))),
-            AutoPlay = true,
-        };
-        _mediaPlayer.MediaOpened += (player, _) => DispatcherQueue.TryEnqueue(() => ResumeIfNeeded(player));
-        _mediaPlayer.MediaEnded += (_, _) => DispatcherQueue.TryEnqueue(() =>
+            _libVlc = new LibVLC(e.SwapChainOptions);
+            if (_currentPlayback is not null) StartPlayback(_currentPlayback);
+        }
+        catch (VLCException)
         {
+            ClosePlayer();
+            ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
+        }
+    }
+
+    private void StartPlayback(PlaybackRequest request)
+    {
+        if (_libVlc is null || !ReferenceEquals(request, _currentPlayback)) return;
+
+        try
+        {
+            var player = new MediaPlayer(_libVlc);
+            player.Playing += MediaPlayer_Playing;
+            player.LengthChanged += MediaPlayer_LengthChanged;
+            player.EndReached += MediaPlayer_EndReached;
+            player.EncounteredError += MediaPlayer_EncounteredError;
+
+            _mediaPlayer = player;
+            PlayerElement.MediaPlayer = player;
+            ControlsOverlay.SetMediaPlayer(
+                player, request.Title.ToUpperInvariant(), request.Subtitle, request);
+
+            using var media = new Media(_libVlc, new Uri(request.FilePath));
+            if (!player.Play(media))
+            {
+                ClosePlayer();
+                ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
+                return;
+            }
+
+            _progressTimer = DispatcherQueue.CreateTimer();
+            _progressTimer.Interval = TimeSpan.FromSeconds(5);
+            _progressTimer.Tick += (_, _) => WriteProgress();
+            _progressTimer.Start();
+        }
+        catch (VLCException)
+        {
+            ClosePlayer();
+            ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
+        }
+    }
+
+    private void MediaPlayer_Playing(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            ResumeIfNeeded(player);
+            ApplyAspectMode();
+        });
+    }
+
+    private void MediaPlayer_LengthChanged(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (ReferenceEquals(player, _mediaPlayer)) ResumeIfNeeded(player);
+        });
+    }
+
+    private void MediaPlayer_EndReached(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
             CompleteCurrent();
             ClosePlayer();
         });
-        PlayerElement.SetMediaPlayer(_mediaPlayer);
-        ControlsOverlay.SetMediaPlayer(
-            _mediaPlayer, request.Title.ToUpperInvariant(), request.Subtitle, request);
+    }
 
-        PlayerOverlay.Visibility = Visibility.Visible;
-        ControlsOverlay.Focus(FocusState.Programmatic);
-
-        _progressTimer = DispatcherQueue.CreateTimer();
-        _progressTimer.Interval = TimeSpan.FromSeconds(5);
-        _progressTimer.Tick += (_, _) => WriteProgress();
-        _progressTimer.Start();
+    private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            ClosePlayer();
+            ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
+        });
     }
 
     /// <summary>Resume from the stored position when half-watched (Apple parity).</summary>
     private void ResumeIfNeeded(MediaPlayer player)
     {
-        if (_currentPlayback?.TmdbId is not int tmdbId) return;
-        var progress = AppServices.WatchProgress.Get(tmdbId, _currentPlayback.MediaType);
-        if (progress is null || progress.IsCompleted || progress.Position <= 0.005) return;
-
-        var duration = player.PlaybackSession.NaturalDuration;
-        if (duration.TotalSeconds > 0)
+        if (!_resumePending) return;
+        if (_currentPlayback?.TmdbId is not int tmdbId)
         {
-            player.PlaybackSession.Position = TimeSpan.FromSeconds(duration.TotalSeconds * progress.Position);
+            _resumePending = false;
+            return;
+        }
+        var progress = AppServices.WatchProgress.Get(tmdbId, _currentPlayback.MediaType);
+        if (progress is null || progress.IsCompleted || progress.Position <= 0.005)
+        {
+            _resumePending = false;
+            return;
+        }
+
+        if (player.Length > 0)
+        {
+            player.Time = (long)(player.Length * progress.Position);
+            _resumePending = false;
         }
     }
 
     private void WriteProgress()
     {
         if (_mediaPlayer is null || _currentPlayback?.TmdbId is not int tmdbId) return;
-        var session = _mediaPlayer.PlaybackSession;
-        var duration = session.NaturalDuration.TotalSeconds;
-        if (duration <= 0) return;
+        var durationMilliseconds = _mediaPlayer.Length;
+        if (durationMilliseconds <= 0) return;
+        var positionMilliseconds = Math.Max(0, _mediaPlayer.Time);
 
         AppServices.WatchProgress.Update(
             tmdbId,
             _currentPlayback.MediaType,
-            session.Position.TotalSeconds / duration,
-            session.Position.TotalSeconds,
+            (double)positionMilliseconds / durationMilliseconds,
+            positionMilliseconds / 1000.0,
             _currentPlayback.ShowTmdbId,
             _currentPlayback.SeasonNumber,
             _currentPlayback.EpisodeNumber);
@@ -337,9 +429,39 @@ public sealed partial class MainWindow : Window
     /// <summary>Fit letterboxes the frame; fill crops it to the window.</summary>
     private void ControlsOverlay_AspectFillChanged(object? sender, bool fill)
     {
-        PlayerElement.Stretch = fill
-            ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill
-            : Microsoft.UI.Xaml.Media.Stretch.Uniform;
+        _aspectFill = fill;
+        ApplyAspectMode();
+    }
+
+    private void PlayerElement_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_aspectFill) ApplyAspectMode();
+    }
+
+    private void ApplyAspectMode()
+    {
+        if (_mediaPlayer is null) return;
+
+        if (!_aspectFill)
+        {
+            _mediaPlayer.CropGeometry = null;
+            _mediaPlayer.Scale = 0;
+            return;
+        }
+
+        var width = Math.Max(1, (int)Math.Round(PlayerElement.ActualWidth));
+        var height = Math.Max(1, (int)Math.Round(PlayerElement.ActualHeight));
+        var divisor = GreatestCommonDivisor(width, height);
+        _mediaPlayer.CropGeometry = $"{width / divisor}:{height / divisor}";
+    }
+
+    private static int GreatestCommonDivisor(int left, int right)
+    {
+        while (right != 0)
+        {
+            (left, right) = (right, left % right);
+        }
+        return left;
     }
 
     private void PlaylistPanel_CloseRequested(object sender, RoutedEventArgs e)
@@ -452,10 +574,23 @@ public sealed partial class MainWindow : Window
         if (_mediaPlayer is not null)
         {
             ControlsOverlay.SetMediaPlayer(null, "", "");
-            PlayerElement.SetMediaPlayer(null);
+            PlayerElement.MediaPlayer = null;
+            _mediaPlayer.Playing -= MediaPlayer_Playing;
+            _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
+            _mediaPlayer.EndReached -= MediaPlayer_EndReached;
+            _mediaPlayer.EncounteredError -= MediaPlayer_EncounteredError;
+            _mediaPlayer.Stop();
             _mediaPlayer.Dispose();
             _mediaPlayer = null;
         }
+        _resumePending = false;
         _currentPlayback = null;
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        ClosePlayerCore();
+        _libVlc?.Dispose();
+        _libVlc = null;
     }
 }

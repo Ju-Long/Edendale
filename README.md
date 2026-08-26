@@ -72,6 +72,12 @@ full-window playback with progress writes, movie and show shelves, folder
 import with background metadata enrichment, search, detail and person pages,
 online subtitle search, and settings.
 
+Playback is powered by the official LibVLCSharp WinUI control and the bundled
+LibVLC 3 engine. It does not require a separate VLC installation and gives the
+player VLC's container, codec, hardware-decoding, embedded-track, and external
+subtitle support on x86, x64, and ARM64. The tradeoff is about 100 MB of native
+VLC runtime files in each architecture-specific build before packaging.
+
 ### Prerequisites
 
 - Windows 10 version 1809 (build 17763) or later; Windows 11 is recommended.
@@ -79,9 +85,10 @@ online subtitle search, and settings.
   development** workload.
 - .NET 8 SDK.
 
-The Windows App SDK 1.7 is restored through NuGet. Use the **Edendale
-(Unpackaged)** launch profile for ordinary development; it does not require an
-MSIX certificate. Store packaging remains available from the same project.
+The Windows App SDK 1.7, LibVLCSharp, and the native LibVLC engine are restored
+through NuGet. Use the **Edendale (Unpackaged)** launch profile for ordinary
+development; it does not require an MSIX certificate. Store packaging remains
+available from the same project.
 
 ### Build and test
 
@@ -174,9 +181,9 @@ Results are ordered by the reader's language preference, then human-authored
 uploads over machine-translated ones, then popularity. Picking one downloads it
 straight from the returned URL, decodes it using the character set the service
 reported — subtitles are routinely published in a legacy code page — and
-rewrites it as UTF-8 in `%LOCALAPPDATA%\Edendale\Subtitles`, so re-selecting
-one costs nothing. That cache is device-local and never enters the OneDrive
-replica.
+rewrites it as UTF-8 in `%LOCALAPPDATA%\Edendale\Subtitles` before attaching it
+to LibVLC, so re-selecting one costs nothing. That cache is device-local and
+never enters the OneDrive replica.
 
 There is no account and no session to store: a key is the whole of the
 service's authentication, and its allowance is per key per day.
@@ -264,7 +271,9 @@ git tag v26.0
 git push origin v26.0
 ```
 
-The current version lives in `Directory.Build.props` as `VersionPrefix`; its
+The package carries the Windows App SDK, .NET, and the architecture-matched
+LibVLC engine; users do not need to install VLC separately. The current version
+lives in `Directory.Build.props` as `VersionPrefix`; its
 four-part local Store-package form is mirrored in `Package.appxmanifest`. Tags
 may be two-part or three-part — `v26.0` and `v26.0.0` both build 26.0.0 — and
 the release attaches to whichever tag was actually pushed. Assemblies carry

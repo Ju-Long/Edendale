@@ -21,7 +21,7 @@
   <Identity
     Name="LongJu.Edendale"
     Publisher="CN=C4738BFE-2E22-4A2E-B398-D004D760ABE2"
-    Version="26.0.4.0" />
+    Version="26.0.5.0" />
 
   <!-- Edendale has no Windows Phone predecessor. The Store schema still
        requires PhonePublisherId whenever association adds PhoneIdentity. -->
