@@ -25,7 +25,7 @@ final class TVRemoteInput {
     /// Dwell before a sustained touch becomes a hold. Long enough that a
     /// flick across the edge — which also fires a seek move command — lifts
     /// before it ever counts as a hold.
-    private static let dwell: Duration = .milliseconds(450)
+    private static let dwell: Duration = .milliseconds(300)
 
     private var dwellTask: Task<Void, Never>?
     /// Rate of the hold currently in effect, nil while idle.

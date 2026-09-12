@@ -197,7 +197,15 @@ final class PlayerChromeModel {
     // MARK: - Transport
 
     func togglePlayPause() {
-        player?.togglePlayPause()
+        guard let player else { return }
+        player.togglePlayPause()
+        // Re-apply the rate after resuming to force VLC's time pipeline to
+        // re-sync. Without this kick, rapid play/pause toggling can stall
+        // the internal clock — isPlaying stays true but position and time
+        // events stop advancing.
+        if player.isPlaying {
+            try? player.setRate(holdRate ?? baseRate)
+        }
         showControls()
     }
 
@@ -258,7 +266,7 @@ final class PlayerChromeModel {
     func setBaseRate(_ rate: Float) {
         baseRate = PlayerLogic.normalizedRate(rate)
         if holdRate == nil {
-            try? player?.setRate(baseRate)
+            applyRate(baseRate)
         }
         showControls()
     }
@@ -266,15 +274,28 @@ final class PlayerChromeModel {
     /// Press-and-hold speed override (0.5× on the left, 1.5× on the right).
     func beginHoldRate(_ rate: Float) {
         holdRate = rate
-        try? player?.setRate(rate)
+        applyRate(rate)
         showHUD(.speed(rate), sticky: true)
     }
 
     func endHoldRate() {
         guard holdRate != nil else { return }
         holdRate = nil
-        try? player?.setRate(baseRate)
+        applyRate(baseRate)
         dismissHUD()
+    }
+
+    /// Sets the VLC rate and flushes the decode buffer so the new speed
+    /// takes effect immediately rather than playing through stale frames
+    /// decoded at the old rate. The flush is a same-position seek, which
+    /// forces VLC to re-decode from the current point at the new clock.
+    private func applyRate(_ rate: Float) {
+        guard let player else { return }
+        try? player.setRate(rate)
+        let pos = player.position
+        if pos > 0, pos < 1 {
+            player.position = pos
+        }
     }
 
     // MARK: - HUD
