@@ -71,6 +71,8 @@ struct SettingsView: View {
                 }
                 #endif
 
+                AudioEnhancementSection()
+
                 SourcesSection(
                     showImporter: $showImporter,
                     showLinkSource: $showLinkSource

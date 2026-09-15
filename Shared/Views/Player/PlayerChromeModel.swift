@@ -129,6 +129,10 @@ final class PlayerChromeModel {
     private unowned let session: PlayerSession
     private let watchStore: WatchProgressStore
     private var lastSavedTime: Duration?
+    /// Set after `saveCompletionProgress` writes a finished entry, so that
+    /// neither `sessionWillEnd` nor periodic `playbackTimeChanged` saves
+    /// overwrite the completed status with a lower position.
+    private var completionSaved = false
     /// Saved fractional position (0...1) to seek to once the resumed media
     /// reports a duration and becomes seekable. Cleared after it is applied.
     private var pendingResumePosition: Double?
@@ -465,6 +469,7 @@ final class PlayerChromeModel {
         creditsSkipped = false
         awaitingRecapSkip = skipRecap
         lastSavedTime = nil
+        completionSaved = false
         pendingResumePosition = resumePosition
             ?? (resuming ? savedResumePosition() : nil)
         if holdRate == nil, baseRate != 1.0 {
@@ -477,11 +482,13 @@ final class PlayerChromeModel {
     }
 
     func sessionWillEnd() {
-        let time = lastKnownTime
-        if let duration = lastKnownDuration ?? player?.duration {
-            saveProgress(time: time, duration: duration)
+        if !completionSaved {
+            let time = lastKnownTime
+            if let duration = lastKnownDuration ?? player?.duration {
+                saveProgress(time: time, duration: duration)
+            }
         }
-        
+
         hideTask?.cancel()
         hudTask?.cancel()
         #if os(tvOS)
@@ -494,6 +501,40 @@ final class PlayerChromeModel {
             isOrientationLocked = false
         }
         #endif
+    }
+
+    /// Writes a completed watch-progress entry for the current item so
+    /// it leaves Continue Watching before the next episode starts.
+    func saveCompletionProgress() {
+        guard let item = session.item,
+              let duration = lastKnownDuration ?? player?.duration
+        else { return }
+        let durationSeconds = duration.playbackSeconds
+        guard durationSeconds > 0 else { return }
+
+        if let movie = item.movie, let tmdbId = movie.tmdbId {
+            watchStore.update(WatchProgress(
+                tmdbId: tmdbId,
+                mediaType: .movie,
+                position: 1.0,
+                watchedSeconds: durationSeconds,
+                isCompleted: true,
+                lastWatchedAt: Date()
+            ))
+        } else if let episode = item.episode, let tmdbId = episode.tmdbId {
+            watchStore.update(WatchProgress(
+                tmdbId: tmdbId,
+                mediaType: .episode,
+                position: 1.0,
+                watchedSeconds: durationSeconds,
+                isCompleted: true,
+                showTmdbId: episode.show?.tmdbId,
+                seasonNumber: episode.seasonNumber,
+                episodeNumber: episode.episodeNumber,
+                lastWatchedAt: Date()
+            ))
+        }
+        completionSaved = true
     }
 
     /// Drives auto-skip off the player's time events.
@@ -548,15 +589,14 @@ final class PlayerChromeModel {
            time >= creditsStart {
             creditsSkipped = true
             if loopEnabled {
-                // Credits are over as far as the viewer cares — restart.
                 player.seek(to: .zero)
             } else {
-                session.end()
+                session.advanceToNextOrEnd()
+                return
             }
         }
 
-        // Save progress every ~5 seconds.
-        if let duration = player.duration {
+        if !completionSaved, let duration = player.duration {
             if lastSavedTime == nil || abs(time.playbackSeconds - lastSavedTime!.playbackSeconds) > 5.0 {
                 lastSavedTime = time
                 saveProgress(time: time, duration: duration)

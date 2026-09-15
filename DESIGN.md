@@ -26,11 +26,17 @@ reference for another.
 | OutlineBright | `#9C8F7D` | Hover and focus borders |
 | GoldGlow | Gold at 35% | Focus glow |
 | HairlineBorder | White at 6% | One-pixel translucent edges |
+| PlaylistActiveBackground | `#FFFFFF` | Current or focused playlist row fill |
+| PlaylistActiveText | `#000000` | Text and icons on an active playlist row |
 | HeatLow / HeatMid | `#4A3A1D` / `#8A672B` | Release heatmap ramp |
 
 Use semantic tokens through the active platform's resource system. Do not
 derive new production colors from arbitrary literals, runtime brightness, or
 untracked opacity changes; add a named token when a new role is needed.
+
+Playlist selection uses the requested white fill and black text as a distinct
+state. The active or focused row also uses the larger title size; a playing
+indicator distinguishes the current file from another focused row.
 
 ## Typography
 

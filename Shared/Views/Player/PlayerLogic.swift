@@ -183,6 +183,84 @@ enum PlayerLogic {
         return max(videoAspect / containerAspect, containerAspect / videoAspect)
     }
 
+    // MARK: - Episode progression
+
+    /// The next locally stored episode strictly after `current` in
+    /// season/episode order, including cross-season advancement.
+    /// Skips duplicate encodes of the current episode. Returns `nil`
+    /// when `current` is the last available episode or does not
+    /// belong to `show`. Season-0 specials advance among themselves
+    /// and into season 1; main seasons never go backwards to season 0
+    /// because tuple ordering naturally excludes lower-numbered seasons.
+    static func nextEpisode(after current: Episode, in show: TVShow) -> Episode? {
+        guard show.episodes.contains(where: { $0.id == current.id }) else { return nil }
+        return show.episodes
+            .filter {
+                ($0.seasonNumber, $0.episodeNumber)
+                    > (current.seasonNumber, current.episodeNumber)
+            }
+            .min {
+                ($0.seasonNumber, $0.episodeNumber)
+                    < ($1.seasonNumber, $1.episodeNumber)
+            }
+    }
+
+    /// Identifies the furthest completed episode per show from a
+    /// collection of watch progress entries. Used by Continue Watching
+    /// to resolve next-up candidates without writing progress for
+    /// unwatched episodes.
+    static func highestCompletedPerShow(
+        _ entries: some Sequence<WatchProgress>
+    ) -> [Int: (season: Int, episode: Int, lastWatchedAt: Date)] {
+        var result: [Int: (season: Int, episode: Int, lastWatchedAt: Date)] = [:]
+        for p in entries {
+            guard p.mediaType == .episode,
+                  p.isCompleted,
+                  let showId = p.showTmdbId,
+                  let season = p.seasonNumber,
+                  let episode = p.episodeNumber
+            else { continue }
+            if let existing = result[showId] {
+                if (season, episode) > (existing.season, existing.episode) {
+                    result[showId] = (season, episode, p.lastWatchedAt)
+                }
+            } else {
+                result[showId] = (season, episode, p.lastWatchedAt)
+            }
+        }
+        return result
+    }
+
+    /// Resolves next-up episodes for Continue Watching. For each show
+    /// that has a completed episode and no episode already in progress,
+    /// returns the next stored episode after the furthest completed one.
+    static func nextUpEpisodes(
+        allProgress: some Sequence<WatchProgress>,
+        inProgressShowTmdbIds: Set<Int>,
+        shows: [TVShow]
+    ) -> [(episode: Episode, lastWatchedAt: Date)] {
+        let highest = highestCompletedPerShow(allProgress)
+        var candidates: [Int: Episode] = [:]
+        // A completed episode may have been removed after viewing. Its
+        // portable season/episode coordinates still identify the successor.
+        // Merge duplicate local show records into one next-up card.
+        for show in shows {
+            guard let showID = show.tmdbId,
+                  !inProgressShowTmdbIds.contains(showID),
+                  let completed = highest[showID] else { continue }
+            for episode in show.episodes {
+                let order = (episode.seasonNumber, episode.episodeNumber)
+                guard order > (completed.season, completed.episode) else { continue }
+                if let existing = candidates[showID],
+                   order >= (existing.seasonNumber, existing.episodeNumber) { continue }
+                candidates[showID] = episode
+            }
+        }
+        return candidates.compactMap { showID, episode in
+            highest[showID].map { (episode: episode, lastWatchedAt: $0.lastWatchedAt) }
+        }
+    }
+
     // MARK: - Folder siblings
 
     /// Video files sitting in the same folder as `url`, sorted by name —

@@ -73,6 +73,59 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
   -destination 'platform=macOS'
 ```
 
+Run the unit suite without signing or screen access:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' -only-testing:EdendaleTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Debug unit-test hosts use in-memory library, watchlist, and watch-progress
+stores with CloudKit disabled. Normal app launches and UI tests retain their
+usual persistence. The command above excludes UI tests; run the full signed
+test command when an interactive test environment is available.
+
+Compile the tvOS app without signing:
+
+```sh
+xcodebuild build -project Edendale.xcodeproj -scheme 'Edendale TV' \
+  -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+Compile the visionOS app without launching a simulator:
+
+```sh
+xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=visionOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+The playlist opens at the current file and highlights current or focused rows
+with larger text on a white background. Identified episodes and the current
+identified movie include landscape artwork and stacked title/playtime details;
+unknown sibling files retain their filename fallback. Player Adjustments
+offers video and audio track selection when a file contains multiple tracks
+of that type.
+
+Settings includes adjustable Flat, Movies (default), Music, Dialogue, and Night
+Mode equalizer profiles. Profile selection and adjustments persist locally;
+changing profiles resets the adjustments. Player Adjustments also offers an
+Audio Booster, off by default, that adds 10 dB of preamp gain within the
+equalizer's bounds and restores the unboosted setting when disabled. Profiles
+and booster changes apply during playback and carry over between files.
+Night Mode changes the frequency balance; it does not compress dynamic range.
+These controls do not affect visionOS spatial/multiview playback in the system
+player. tvOS uses remote-operated increment/decrement controls for adjustments.
+
+Episodes automatically advance to the next stored episode in season/episode
+order, including the next season and stored specials, without replaying an
+alternate file of the same episode. A newer manual playback request cancels
+pending automatic advancement. Finished episodes retain their completed watch
+state. Continue Watching suggests the next stored episode after the furthest
+completed one when that show has no episode already in progress. This also
+works after removing a watched file and does not create watch progress for the
+unwatched suggestion. Duplicate show records produce one next-up card.
+
 ### Xcode Cloud
 
 Xcode Cloud automatically runs the executable

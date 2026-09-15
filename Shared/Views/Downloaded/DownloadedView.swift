@@ -201,9 +201,12 @@ struct DownloadedView: View {
 
     // MARK: - Continue watching
 
-    /// Everything half-watched that maps back to a local file, newest first.
+    /// Everything half-watched or next-up that maps back to a local file,
+    /// newest first. Next-up episodes appear after a completed episode
+    /// when the show has a stored successor and no episode already in
+    /// progress — without writing progress for the unwatched episode.
     private var resumeItems: [ResumeItem] {
-        let items: [ResumeItem] = watchStore.inProgress.compactMap { progress in
+        let inProgressItems: [ResumeItem] = watchStore.inProgress.compactMap { progress in
             switch progress.mediaType {
             case .movie:
                 return visibleMovies.first { $0.tmdbId == progress.tmdbId }
@@ -213,7 +216,40 @@ struct DownloadedView: View {
                     .map { ResumeItem(progress: progress, payload: .episode($0)) }
             }
         }
-        return Array(items.prefix(12))
+
+        let showsAlreadyInProgress = Set(inProgressItems.compactMap { item -> Int? in
+            if case .episode(let ep) = item.payload { return ep.show?.tmdbId }
+            return nil
+        })
+
+        let nextUpItems: [ResumeItem] = PlayerLogic.nextUpEpisodes(
+            allProgress: watchStore.progressMap.values,
+            inProgressShowTmdbIds: showsAlreadyInProgress,
+            shows: visibleShows
+        ).map { next in
+            ResumeItem(
+                progress: WatchProgress(
+                    tmdbId: next.episode.tmdbId ?? 0,
+                    mediaType: .episode,
+                    position: 0,
+                    showTmdbId: next.episode.show?.tmdbId,
+                    seasonNumber: next.episode.seasonNumber,
+                    episodeNumber: next.episode.episodeNumber,
+                    lastWatchedAt: next.lastWatchedAt
+                ),
+                payload: .episode(next.episode),
+                isNextUp: true
+            )
+        }
+
+        let merged = (inProgressItems + nextUpItems)
+            .sorted {
+                if $0.progress.lastWatchedAt == $1.progress.lastWatchedAt {
+                    return $0.id < $1.id
+                }
+                return $0.progress.lastWatchedAt > $1.progress.lastWatchedAt
+            }
+        return Array(merged.prefix(12))
     }
 
     /// tmdbIds of movies already surfaced in Continue Watching, so the poster
@@ -255,7 +291,7 @@ struct DownloadedView: View {
                             #else
                             .buttonStyle(.plain)
                             #endif
-                            .accessibilityHint("Resumes playback.")
+                            .accessibilityHint(item.isNextUp ? "Plays next episode." : "Resumes playback.")
                         }
                     }
                     .padding(.horizontal, edgeMargin)
@@ -476,7 +512,9 @@ struct DownloadedView: View {
 
 // MARK: - Continue watching item
 
-/// A half-watched progress record joined back to its local library item.
+/// A half-watched or next-up progress record joined back to its local
+/// library item. Next-up items have no persisted progress — they surface
+/// the successor episode after a completed one without writing watch data.
 private struct ResumeItem: Identifiable {
     enum Payload {
         case movie(Movie)
@@ -485,8 +523,20 @@ private struct ResumeItem: Identifiable {
 
     let progress: WatchProgress
     let payload: Payload
+    let isNextUp: Bool
 
-    var id: String { "\(progress.mediaType.rawValue)-\(progress.tmdbId)" }
+    init(progress: WatchProgress, payload: Payload, isNextUp: Bool = false) {
+        self.progress = progress
+        self.payload = payload
+        self.isNextUp = isNextUp
+    }
+
+    var id: String {
+        if isNextUp, case .episode(let ep) = payload {
+            return "nextup-\(ep.id)"
+        }
+        return "\(progress.mediaType.rawValue)-\(progress.tmdbId)"
+    }
 
     var title: String {
         switch payload {
@@ -497,8 +547,12 @@ private struct ResumeItem: Identifiable {
 
     var subtitle: String {
         switch payload {
-        case .movie: String(localized: "\(Int(progress.position * 100))% watched")
-        case .episode(let episode): "\(episode.episodeCode) · \(episode.displayTitle)"
+        case .movie: return String(localized: "\(Int(progress.position * 100))% watched")
+        case .episode(let episode):
+            if isNextUp {
+                return String(localized: "Up Next · \(episode.episodeCode)")
+            }
+            return "\(episode.episodeCode) · \(episode.displayTitle)"
         }
     }
 

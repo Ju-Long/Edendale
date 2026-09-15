@@ -2,8 +2,8 @@
 //  PlayerSettingsPanel.swift
 //  Edendale
 //
-//  The ellipsis sidebar: playback speed in 0.05× steps, subtitle track
-//  selection, auto-skip toggles, loop, and fit/fill aspect control.
+//  The ellipsis sidebar: playback speed in 0.05× steps, video/audio/subtitle
+//  track selection, auto-skip toggles, loop, and fit/fill aspect control.
 //
 
 import SwiftUI
@@ -13,6 +13,7 @@ struct PlayerSettingsPanel: View {
     @Bindable var chrome: PlayerChromeModel
     let player: Player
     let item: PlaybackItem
+    @Environment(AudioEnhancementController.self) private var audioEnhancement
     @State private var onlineSubtitles = OnlineSubtitlesModel()
 
     var body: some View {
@@ -23,6 +24,12 @@ struct PlayerSettingsPanel: View {
                 visionFormatSection
                 #endif
                 speedSection
+                if player.videoTracks.count > 1 {
+                    videoTrackSection
+                }
+                if player.audioTracks.count > 1 {
+                    audioTrackSection
+                }
                 subtitleSection
                 OnlineSubtitlesSection(
                     model: onlineSubtitles,
@@ -116,6 +123,96 @@ struct PlayerSettingsPanel: View {
         }
     }
 
+    // MARK: - Video Track
+
+    private var videoTrackSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Video Track").labelCaps().accessibilityAddTraits(.isHeader)
+
+            VStack(spacing: 4) {
+                ForEach(player.videoTracks) { track in
+                    subtitleRow(
+                        name: videoTrackLabel(track),
+                        isSelected: selectedVideoTrackID == track.id
+                    ) {
+                        selectVideoTrack(track)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Video Track")
+    }
+
+    private var selectedVideoTrackID: String? {
+        // SwiftVLC explicitly invalidates selectedAudioTrack on every track
+        // refresh. Observe that signal because Track equality uses only its
+        // ID, so selection-only updates do not invalidate the track arrays.
+        _ = player.selectedAudioTrack
+        return player.videoTracks.first(where: \.isSelected)?.id
+    }
+
+    private func videoTrackLabel(_ track: Track) -> String {
+        var label = track.name
+        if let language = track.language, !language.isEmpty,
+           !label.localizedCaseInsensitiveContains(language) {
+            label += " (\(language))"
+        }
+        if let width = track.width, let height = track.height, width > 0, height > 0 {
+            label += " — \(width)×\(height)"
+        }
+        return label
+    }
+
+    // SwiftVLC exposes selectedAudioTrack and selectedSubtitleTrack but not
+    // selectedVideoTrack. The underlying selectTrack method resolves by the
+    // Track's stable ID and calls libvlc_media_player_select_track, which is
+    // type-agnostic — passing a video Track through the audio setter selects
+    // the correct video track at the libVLC level without affecting audio.
+    private func selectVideoTrack(_ track: Track) {
+        player.selectedAudioTrack = track
+    }
+
+    // MARK: - Audio Track
+
+    private var audioTrackSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Audio Track").labelCaps().accessibilityAddTraits(.isHeader)
+
+            VStack(spacing: 4) {
+                ForEach(player.audioTracks) { track in
+                    subtitleRow(
+                        name: audioTrackLabel(track),
+                        isSelected: player.selectedAudioTrack?.id == track.id
+                    ) {
+                        player.selectedAudioTrack = track
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audio Track")
+    }
+
+    private func audioTrackLabel(_ track: Track) -> String {
+        var label = track.name
+        if let language = track.language, !language.isEmpty,
+           !label.localizedCaseInsensitiveContains(language) {
+            label += " (\(language))"
+        }
+        if let channels = track.channels, channels > 0 {
+            let channelDesc: String = switch channels {
+            case 1: String(localized: "Mono")
+            case 2: String(localized: "Stereo")
+            case 6: "5.1"
+            case 8: "7.1"
+            default: "\(channels)ch"
+            }
+            label += " — \(channelDesc)"
+        }
+        return label
+    }
+
     // MARK: - Subtitles
 
     private var subtitleSection: some View {
@@ -205,6 +302,15 @@ struct PlayerSettingsPanel: View {
                 optionLabel(
                     String(localized: "Loop Video"),
                     detail: String(localized: "Restart playback when it ends")
+                )
+            }
+            ArchiveToggle(isOn: Binding(
+                get: { audioEnhancement.boosterEnabled },
+                set: { audioEnhancement.setBooster($0) }
+            )) {
+                optionLabel(
+                    String(localized: "Audio Booster"),
+                    detail: String(localized: "Increase audio gain for quiet recordings")
                 )
             }
             #if os(iOS)

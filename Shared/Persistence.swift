@@ -9,6 +9,20 @@ import CoreData
 
 struct Persistence {
 
+    /// Hosted unit tests must not open the user's stores or initialize
+    /// entitlement-dependent CloudKit services. UI tests launch a separate
+    /// application process without XCTest loaded and retain normal storage.
+    static let isRunningUnitTests: Bool = {
+        #if DEBUG
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCTestConfigurationFilePath"] != nil
+            || environment["XCTestBundlePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+        #else
+        return false
+        #endif
+    }()
+
     // MARK: - SwiftData (local-only library data)
 
     static var sharedModelContainer: ModelContainer = {
@@ -23,7 +37,7 @@ struct Persistence {
         // SwiftData defaults to `.automatic` and, because the app carries a CloudKit
         // entitlement (used by the WatchProgress store below), it would try to mirror
         // this store too and fail CloudKit's "all attributes/relationships optional" rule.
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isRunningUnitTests, cloudKitDatabase: .none)
 
         do {
             return try ModelContainer(for: schema, configurations: [config])
@@ -41,7 +55,7 @@ struct Persistence {
         let config = ModelConfiguration(
             "Watchlist",
             schema: schema,
-            isStoredInMemoryOnly: false,
+            isStoredInMemoryOnly: isRunningUnitTests,
             cloudKitDatabase: .none
         )
 
@@ -61,10 +75,15 @@ struct Persistence {
             fatalError("Missing persistent store description for WatchProgress")
         }
 
-        // Point at the correct iCloud container
-        description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-            containerIdentifier: AppIdentifiers.iCloudContainer
-        )
+        if isRunningUnitTests {
+            description.type = NSInMemoryStoreType
+            description.url = nil
+            description.cloudKitContainerOptions = nil
+        } else {
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: AppIdentifiers.iCloudContainer
+            )
+        }
 
         // Enable remote change notifications so we can merge iCloud pushes
         description.setOption(

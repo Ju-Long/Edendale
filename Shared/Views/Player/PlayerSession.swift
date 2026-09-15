@@ -38,8 +38,14 @@ final class PlayerSession {
 
     private let library: LibraryController
     private let watchStore: WatchProgressStore
+    private let audioEnhancement: AudioEnhancementController
+    private let makePlayer: @MainActor () -> Player
     private var eventTask: Task<Void, Never>?
     private var activePlaybackRequestID = UUID()
+    /// Keeps the previous item's security scope alive until the next
+    /// file starts playing, so the outgoing media's native resources
+    /// (VLC decode thread, file handles) are not revoked mid-teardown.
+    private var retainedPreviousScope: PlaybackScope?
 
     #if os(visionOS)
     /// A spatial or multiview asset routed through the system visionOS
@@ -64,9 +70,16 @@ final class PlayerSession {
     /// A presented item is holding its playback start for `surfaceDidAttach`.
     private var awaitingSurface = false
 
-    init(library: LibraryController, watchStore: WatchProgressStore) {
+    init(
+        library: LibraryController,
+        watchStore: WatchProgressStore,
+        audioEnhancement: AudioEnhancementController? = nil,
+        playerFactory: (@MainActor () -> Player)? = nil
+    ) {
         self.library = library
         self.watchStore = watchStore
+        self.audioEnhancement = audioEnhancement ?? AudioEnhancementController()
+        self.makePlayer = playerFactory ?? { Player() }
     }
 
     var isPresented: Bool { item != nil }
@@ -102,9 +115,15 @@ final class PlayerSession {
         Task { await presentPrepared(newItem, requestID: requestID) }
     }
 
+    /// Whether an automatic advance is preparing the next episode.
+    /// Scoped to a request generation so a newer manual play wins.
+    private var advanceRequestID: UUID?
+    private var advanceInFlight: Bool { advanceRequestID != nil }
+
     private func beginPlaybackRequest() -> UUID {
         let requestID = UUID()
         activePlaybackRequestID = requestID
+        advanceRequestID = nil
         #if os(visionOS)
         visionFormatSelection = VisionFormatSelection()
         visionResumePositionOverride = nil
@@ -138,7 +157,11 @@ final class PlayerSession {
         }
         #endif
 
-        let player = self.player ?? Player()
+        // Keep the outgoing file accessible until the next media starts;
+        // VLC's decode thread may still read from it during teardown.
+        retainedPreviousScope = item?.scope
+
+        let player = self.player ?? makePlayer()
         self.player = player
         let chrome = self.chrome ?? PlayerChromeModel(session: self, watchStore: self.watchStore)
         self.chrome = chrome
@@ -175,6 +198,7 @@ final class PlayerSession {
     private func startPlayback() {
         guard let player, let chrome, let url = item?.url else { return }
         do {
+            audioEnhancement.apply(to: player)
             try player.play(url: url)
             #if os(visionOS)
             let resumePosition = vlcResumePositionOverride
@@ -192,6 +216,7 @@ final class PlayerSession {
     /// Ends the session: stops playback, releases the scoped file access,
     /// and dismisses the player on every platform (hosts observe `item`).
     func end() {
+        advanceRequestID = nil
         activePlaybackRequestID = UUID()
 
         #if os(visionOS)
@@ -204,10 +229,12 @@ final class PlayerSession {
         eventTask?.cancel()
         eventTask = nil
         chrome?.sessionWillEnd()
+        audioEnhancement.detach()
         player?.stop()
         player = nil
         chrome = nil
         item = nil
+        retainedPreviousScope = nil
         surfaceReady = false
         awaitingSurface = false
         #if os(visionOS)
@@ -230,6 +257,7 @@ final class PlayerSession {
         eventTask?.cancel()
         eventTask = nil
         chrome?.sessionWillEnd()
+        audioEnhancement.detach()
         player?.stop()
         player = nil
         chrome = nil
@@ -283,7 +311,7 @@ final class PlayerSession {
             visionReachedEnd = true
             if let visionDuration { visionCurrentTime = visionDuration }
             saveVisionProgress(completed: true)
-            end()
+            advanceToNextOrEnd()
 
         case .dismissalRequested:
             end()
@@ -480,24 +508,78 @@ final class PlayerSession {
         #endif
     }
 
+    // MARK: - Episode progression
+
+    /// Advances to the next locally stored episode or ends the session.
+    /// Idempotent: concurrent calls (credits-skip + buffered stop event)
+    /// collapse into one transition. The advance request is established
+    /// synchronously so a newer manual `play` (which calls
+    /// `beginPlaybackRequest`) invalidates it. No further time events
+    /// or saves run after this returns — the caller must not continue
+    /// processing the old media.
+    func advanceToNextOrEnd() {
+        guard !advanceInFlight else { return }
+
+        eventTask?.cancel()
+        eventTask = nil
+
+        chrome?.saveCompletionProgress()
+
+        guard let currentEpisode = item?.episode,
+              let show = currentEpisode.show,
+              let next = PlayerLogic.nextEpisode(after: currentEpisode, in: show)
+        else {
+            end()
+            return
+        }
+
+        let requestID = beginPlaybackRequest()
+        advanceRequestID = requestID
+
+        Task { [weak self] in
+            guard let self,
+                  self.advanceRequestID == requestID
+            else { return }
+            let newItem = await self.library.preparePlayback(episode: next)
+            guard self.advanceRequestID == requestID else { return }
+            await self.presentPrepared(newItem, requestID: requestID)
+            // visionOS inspection can suspend before presentation. Keep the
+            // advance guarded throughout that work, without clearing a newer
+            // request that may have replaced it while we were suspended.
+            if self.advanceRequestID == requestID {
+                self.advanceRequestID = nil
+            }
+        }
+    }
+
     // MARK: - Event handling
 
     /// Watches the player's event stream for end-of-media so loop and
-    /// auto-exit behave the same on every platform.
+    /// auto-exit behave the same on every platform. Each iteration
+    /// checks cancellation, the playback generation, and the player
+    /// identity so buffered events from a previous media never trigger
+    /// actions on the current one.
     private func startEventLoop() {
         eventTask?.cancel()
         guard let player else { return }
         let events = player.events
+        let generation = activePlaybackRequestID
+        let expectedPlayer = player
         eventTask = Task { [weak self] in
             for await event in events {
-                guard let self, let chrome = self.chrome else { return }
+                guard !Task.isCancelled,
+                      let self,
+                      self.activePlaybackRequestID == generation,
+                      self.player === expectedPlayer,
+                      let chrome = self.chrome
+                else { return }
                 switch event {
                 case .stateChanged(.stopped), .mediaStopping:
                     guard chrome.reachedEndNaturally else { continue }
                     if chrome.loopEnabled {
                         self.replayCurrent()
                     } else {
-                        self.end()
+                        self.advanceToNextOrEnd()
                     }
                 case .timeChanged(let time):
                     chrome.playbackTimeChanged(time)

@@ -17,6 +17,7 @@ struct EdendaleApp: App {
     @State private var tmdbAccount = TMDBAccountStore()
     @State private var wyzieKeys = WyzieKeyStore()
     @State private var youngAudienceFilter = YoungAudienceFilter()
+    @State private var audioEnhancement = AudioEnhancementController()
     @State private var playerSession: PlayerSession
     @State private var appRouter = AppRouter.shared
 
@@ -38,7 +39,9 @@ struct EdendaleApp: App {
         _watchStore = State(initialValue: ws)
         _watchlistStore = State(initialValue: watchlistStore)
         _userMediaStore = State(initialValue: UserMediaStore())
-        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws))
+        let audioEnhancement = AudioEnhancementController()
+        _audioEnhancement = State(initialValue: audioEnhancement)
+        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement))
     }
 
     var body: some Scene {
@@ -51,6 +54,7 @@ struct EdendaleApp: App {
                 .environment(tmdbAccount)
                 .environment(wyzieKeys)
                 .environment(youngAudienceFilter)
+                .environment(audioEnhancement)
                 .environment(playerSession)
                 .environment(appRouter)
                 .environment(\.ratingProviders, [TMDBRatingsProvider()])
@@ -65,6 +69,7 @@ struct EdendaleApp: App {
                 .environment(library)
                 .environment(watchStore)
                 .environment(wyzieKeys)
+                .environment(audioEnhancement)
                 .environment(playerSession)
                 .environment(appRouter)
         }
