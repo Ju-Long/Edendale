@@ -13,6 +13,7 @@ import SwiftVLC
 
 struct PlayerScreen: View {
     @Environment(PlayerSession.self) private var session
+    @Environment(VideoAdjustmentController.self) private var videoAdjustment
 
     #if os(iOS) || os(macOS)
     @State private var pipController: PiPController?
@@ -48,7 +49,7 @@ struct PlayerScreen: View {
         .focused($keyboardFocused)
         .focusEffectDisabled()
         .onKeyPress(
-            keys: [.leftArrow, .rightArrow, .upArrow, .downArrow, "m", .space, .escape],
+            keys: [.leftArrow, .rightArrow, .upArrow, .downArrow, "f", "m", .space, .escape],
             phases: [.down, .repeat],
             action: handleKeyPress
         )
@@ -146,9 +147,25 @@ struct PlayerScreen: View {
                 }
                 #endif
 
+                if let upcoming = chrome.upcomingEpisode {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            PlayerUpNextView(episode: upcoming) {
+                                Task { await session.play(episode: upcoming) }
+                            }
+                            .padding(.top, 16)
+                            .padding(.trailing, 16)
+                        }
+                        Spacer()
+                    }
+                    .allowsHitTesting(true)
+                }
+
                 PlayerHUDView(chrome: chrome)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: session.chrome?.upcomingEpisode?.id)
         #if os(tvOS)
         .animation(.easeInOut(duration: 0.2), value: session.chrome?.timelineVisible)
         #endif
@@ -218,16 +235,24 @@ struct PlayerScreen: View {
             chrome.seek(bySeconds: 10)
         case .upArrow:
             if commandPressed {
-                chrome.adjustBrightness(by: PlayerLogic.levelStep)
+                let current = videoAdjustment.values[.brightness]
+                videoAdjustment.set(.brightness, to: current + VideoAdjustment.brightness.step)
+                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
             } else {
                 chrome.adjustVolume(by: PlayerLogic.levelStep)
             }
         case .downArrow:
             if commandPressed {
-                chrome.adjustBrightness(by: -PlayerLogic.levelStep)
+                let current = videoAdjustment.values[.brightness]
+                videoAdjustment.set(.brightness, to: current - VideoAdjustment.brightness.step)
+                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
             } else {
                 chrome.adjustVolume(by: -PlayerLogic.levelStep)
             }
+        #if os(macOS)
+        case "f" where !commandPressed && press.phase == .down:
+            NSApp.keyWindow?.toggleFullScreen(nil)
+        #endif
         case "m" where !commandPressed && press.phase == .down:
             chrome.toggleMute()
         case .space:

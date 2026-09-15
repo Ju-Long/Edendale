@@ -97,39 +97,19 @@ enum PlayerLogic {
         timestamp(duration.playbackSeconds)
     }
 
-    // MARK: - Auto-skip windows
+    // MARK: - Upcoming episode preview
 
-    /// How far "skip recap" jumps from the start of an episode.
-    static let recapLength: Duration = .seconds(90)
-    /// How close to the end "skip credits" takes effect.
-    static let creditsLength: Duration = .seconds(180)
-    /// Media shorter than this never auto-skips — the windows would eat
-    /// most of the runtime.
+    /// Short clips do not show an upcoming-episode card.
     static let minimumSkippableDuration: Duration = .seconds(600)
-
-    /// Where playback should jump when skip-recap applies at start, or nil
-    /// when the media is too short.
-    static func recapSkipTarget(duration: Duration?) -> Duration? {
-        guard let duration, duration >= minimumSkippableDuration else { return nil }
-        return recapLength
-    }
-
-    /// The time after which skip-credits should end playback, or nil when
-    /// the media is too short to have a credits window.
-    static func creditsStart(duration: Duration?) -> Duration? {
-        guard let duration, duration >= minimumSkippableDuration else { return nil }
-        return duration - creditsLength
-    }
+    /// How close to the end the "Up Next" preview appears for TV episodes.
+    static let upcomingPreviewThreshold: Duration = .seconds(30)
 
     // MARK: - End-of-media
 
     /// Whether a stop at `time` (of `duration`) counts as reaching the end,
-    /// rather than a user-initiated stop mid-file. The 95% arm lets a
-    /// skip-credits stop count as finished — that preference ends playback a
-    /// full `creditsLength` before the tail, well outside a tight tail
-    /// window. The 2-second arm still catches short clips (below
-    /// `minimumSkippableDuration`), where 95% would sit further in than
-    /// two seconds and a genuine finish could miss it.
+    /// rather than a user-initiated stop mid-file. Keep the existing 95%
+    /// completion policy and two-second tolerance for short clips. A manual
+    /// terminal-credits skip saves completion explicitly in PlayerSession.
     static func isNaturalEnd(time: Duration, duration: Duration?) -> Bool {
         guard let duration, duration > .zero else { return false }
         return time >= duration * 0.95 || time >= duration - .seconds(2)

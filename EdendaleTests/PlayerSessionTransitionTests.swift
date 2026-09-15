@@ -62,6 +62,91 @@ struct PlayerSessionTransitionTests {
         #expect(fixture.watchStore.progress(for: fixture.first.tmdbId!, mediaType: .episode)?.isCompleted == true)
     }
 
+    @Test func terminalCreditsSkipAdvancesOnceAndPreservesCompletion() async throws {
+        let name = "SegmentSessionTests-\(UUID())"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let segments = PlayerSegmentController(defaults: defaults) { request in
+            [PlaybackSegment(kind: .credits, start: 0.1, end: request.duration, reachesEnd: true)]
+        }
+        segments.isEnabled = true
+        let fixture = try Fixture(nativeMedia: true, segmentSkipping: segments)
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        fixture.session.surfaceDidAttach()
+        for _ in 0..<100 {
+            if segments.activeSegment != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(segments.activeSegment != nil)
+        fixture.session.skipCurrentSegment()
+        fixture.session.skipCurrentSegment()
+        for _ in 0..<100 {
+            if fixture.session.item?.episode?.id == fixture.second.id { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(fixture.session.item?.episode?.id == fixture.second.id)
+        let progress = fixture.watchStore.progress(for: fixture.first.tmdbId!, mediaType: .episode)
+        #expect(progress?.isCompleted == true)
+        #expect(progress?.position == 1)
+        fixture.session.end()
+        #expect(fixture.watchStore.progress(for: fixture.first.tmdbId!, mediaType: .episode)?.isCompleted == true)
+    }
+
+    @Test func boundedCreditsSeekKeepsPausedPlaybackAndResumePosition() async throws {
+        let name = "SegmentSessionTests-\(UUID())"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let segments = PlayerSegmentController(defaults: defaults) { _ in
+            [PlaybackSegment(kind: .credits, start: 0.1, end: 10, reachesEnd: false)]
+        }
+        segments.isEnabled = true
+        let fixture = try Fixture(nativeMedia: true, segmentSkipping: segments)
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.second)
+        fixture.session.surfaceDidAttach()
+        for _ in 0..<100 {
+            if segments.activeSegment != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(segments.activeSegment != nil)
+        let player = try #require(fixture.session.player)
+        player.pause()
+        fixture.session.skipCurrentSegment()
+        #expect(player.currentTime == .seconds(10))
+        #expect(!player.isPlaying)
+        #expect(fixture.session.item?.episode?.id == fixture.second.id)
+        fixture.session.end()
+        let progress = fixture.watchStore.progress(for: fixture.second.tmdbId!, mediaType: .episode)
+        #expect(progress?.isCompleted == false)
+        #expect(abs((progress?.position ?? 0) - 1.0 / 3.0) < 0.01)
+    }
+
+    @Test func terminalCreditsSkipHonorsLoopWithoutAdvancingEpisode() async throws {
+        let name = "SegmentSessionTests-\(UUID())"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let segments = PlayerSegmentController(defaults: defaults) { request in
+            [PlaybackSegment(kind: .credits, start: 0.1, end: request.duration, reachesEnd: true)]
+        }
+        segments.isEnabled = true
+        let fixture = try Fixture(nativeMedia: true, segmentSkipping: segments)
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        fixture.session.surfaceDidAttach()
+        fixture.session.chrome?.loopEnabled = true
+        for _ in 0..<100 {
+            if segments.activeSegment != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(segments.activeSegment != nil)
+        fixture.session.skipCurrentSegment()
+        for _ in 0..<20 { await Task.yield() }
+        #expect(fixture.session.item?.episode?.id == fixture.first.id)
+        #expect(fixture.session.chrome?.loopEnabled == true)
+        #expect(segments.activeSegment == nil)
+    }
+
     @MainActor
     private final class Fixture {
         let directory: URL
@@ -74,7 +159,7 @@ struct PlayerSessionTransitionTests {
         let container: ModelContainer
         let show: TVShow
 
-        init(nativeMedia: Bool = false) throws {
+        init(nativeMedia: Bool = false, segmentSkipping: PlayerSegmentController? = nil) throws {
             directory = FileManager.default.temporaryDirectory
                 .appendingPathComponent("SessionTransition-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -105,7 +190,8 @@ struct PlayerSessionTransitionTests {
             session = PlayerSession(
                 library: LibraryController(modelContext: container.mainContext),
                 watchStore: watchStore,
-                playerFactory: { Player(instance: instance) }
+                playerFactory: { Player(instance: instance) },
+                segmentSkipping: segmentSkipping ?? PlayerSegmentController(lookup: { _ in [] })
             )
         }
 

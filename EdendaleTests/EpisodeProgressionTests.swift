@@ -221,22 +221,15 @@ struct EpisodeProgressionTests {
 
     @Test func creditsSkipPositionIsNotNaturalEndForShortEpisodes() {
         let shortEpisode = Duration.seconds(1320)
-        if let creditsStart = PlayerLogic.creditsStart(duration: shortEpisode) {
-            let isEnd = PlayerLogic.isNaturalEnd(time: creditsStart, duration: shortEpisode)
-            #expect(!isEnd)
-        }
+        #expect(!PlayerLogic.isNaturalEnd(time: .seconds(1140), duration: shortEpisode))
     }
 
     @Test func creditsStartIsNotNaturalEnd() {
         let duration = Duration.seconds(2400)
-        guard let creditsStart = PlayerLogic.creditsStart(duration: duration) else {
-            Issue.record("Expected credits window for 40-minute media")
-            return
-        }
         // Credits start (2220s = 92.5%) falls below the 95% natural-end
         // threshold. Skip Credits writes completion explicitly via
         // saveCompletionProgress rather than relying on isNaturalEnd.
-        #expect(!PlayerLogic.isNaturalEnd(time: creditsStart, duration: duration))
+        #expect(!PlayerLogic.isNaturalEnd(time: .seconds(2220), duration: duration))
     }
 
     @Test func explicitCompletionPositionIsNaturalEnd() {

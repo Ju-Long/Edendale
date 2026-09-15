@@ -93,6 +93,13 @@ xcodebuild build -project Edendale.xcodeproj -scheme 'Edendale TV' \
   -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
 
+Compile the iOS/iPadOS app without signing:
+
+```sh
+xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
 Compile the visionOS app without launching a simulator:
 
 ```sh
@@ -125,6 +132,54 @@ state. Continue Watching suggests the next stored episode after the furthest
 completed one when that show has no episode already in progress. This also
 works after removing a watched file and does not create watch progress for the
 unwatched suggestion. Duplicate show records produce one next-up card.
+
+### Intro, recap, and credits prompts
+
+Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
+Playback → Skip Prompts**, to use community timestamps from
+[TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The old
+90-second recap and final-three-minutes credits auto-skips have been removed;
+their saved preferences do not enable the new network feature.
+
+During a known segment, a **Skip Intro**, **Skip Recap**, or **Skip Credits**
+button appears at the bottom trailing edge, independently of hidden playback
+controls. Press the button to skip; playback never skips automatically. On
+keyboard platforms, **S** activates the visible prompt. On tvOS, **Down** from
+the hidden-controls surface focuses the prompt when one is available. Prompts
+hide while scrubbing or using a side panel. Bounded credits seek only to that
+range's end, preserving gaps for additional scenes. A terminal credits skip
+marks the item complete and advances to the next stored episode, ends playback
+if none exists, or restarts the file when Loop Video is enabled.
+
+The native Swift client calls `GET https://api.theintrodb.org/v3/media` directly
+from the device after the player reports a finite duration. Movies use their
+TMDB ID; episodes use the **show's** TMDB ID plus TMDB season/episode numbers.
+Requests include the video duration in milliseconds to help match release
+versions. No account, API key, filename, video upload, library scan, or server
+proxy is involved. The provider receives the media identifiers, runtime, and
+the device's public IP address. See its
+[privacy policy](https://theintrodb.org/docs/privacy) and
+[usage terms](https://theintrodb.org/docs/terms).
+
+Only a small in-memory cache exists during the playback session; timestamps
+are not saved to the library, disk, watch progress, or iCloud. Closing playback
+or disabling prompts clears the cache. Missing data, network errors, invalid
+ranges, and rate limits leave normal playback available without a prompt.
+Playback and initial import never wait for this service.
+
+Coverage depends on community submissions and the local file's edition; the
+provider can fall back to the most popular edition even when duration is sent.
+Unidentified files, season-zero specials, and runtimes beyond the provider's
+six-hour timestamp range receive no lookup. Anime uses TMDB episode numbering;
+combined episodes and alternate numbering are not remapped. Preview segments
+and local audio/video detection are outside this first stage. Prompts work in
+the SwiftVLC player on iOS, iPadOS, macOS, tvOS, and standard visionOS playback;
+visionOS spatial/multiview playback through AVKit needs a separate integration.
+
+The macOS unit command above includes API decoding, identity matching, request
+deduplication, failures, stale responses, preference migration, and real VLC
+skip/progress/loop regression tests. Android and Windows need independent
+native implementations of the same behavior; the static Web branch is unaffected.
 
 ### Xcode Cloud
 

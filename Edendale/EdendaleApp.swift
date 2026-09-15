@@ -18,6 +18,7 @@ struct EdendaleApp: App {
     @State private var wyzieKeys = WyzieKeyStore()
     @State private var youngAudienceFilter = YoungAudienceFilter()
     @State private var audioEnhancement = AudioEnhancementController()
+    @State private var videoAdjustment = VideoAdjustmentController()
     @State private var playerSession: PlayerSession
     @State private var appRouter = AppRouter.shared
 
@@ -40,8 +41,10 @@ struct EdendaleApp: App {
         _watchlistStore = State(initialValue: watchlistStore)
         _userMediaStore = State(initialValue: UserMediaStore())
         let audioEnhancement = AudioEnhancementController()
+        let videoAdjustment = VideoAdjustmentController()
         _audioEnhancement = State(initialValue: audioEnhancement)
-        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement))
+        _videoAdjustment = State(initialValue: videoAdjustment)
+        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment))
     }
 
     var body: some Scene {
@@ -55,6 +58,7 @@ struct EdendaleApp: App {
                 .environment(wyzieKeys)
                 .environment(youngAudienceFilter)
                 .environment(audioEnhancement)
+                .environment(videoAdjustment)
                 .environment(playerSession)
                 .environment(appRouter)
                 .environment(\.ratingProviders, [TMDBRatingsProvider()])
@@ -70,10 +74,12 @@ struct EdendaleApp: App {
                 .environment(watchStore)
                 .environment(wyzieKeys)
                 .environment(audioEnhancement)
+                .environment(videoAdjustment)
                 .environment(playerSession)
                 .environment(appRouter)
         }
         .defaultSize(width: 1280, height: 720)
+        .windowStyle(.hiddenTitleBar)
         #endif
     }
 }

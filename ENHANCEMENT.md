@@ -2,8 +2,8 @@
 
 Requested Apple player fixes and enhancements, recorded on branch `apple-26.1`.
 Checked items are implemented in this checkout and verified with the checks
-listed below. Unchecked items remain unfinished. Advanced enhancements are
-deferred for a later discussion.
+listed below. Unchecked items remain unfinished. ADV-01 starts with community
+timestamps; local detection and spatial AVKit playback remain future work.
 
 ## Errors and bug fixes
 
@@ -68,20 +68,29 @@ deferred for a later discussion.
   **top right** of the player for a TV series. Movies should not show this
   preview.
 
-## Advanced enhancements — deferred
+## Advanced enhancements
 
-- [ ] **ADV-01 — Explore dynamic segment detection and skip prompts.** Revisit
-  later to compare possible solutions before choosing an implementation.
-  Detect recaps, theme songs, opening scenes, and credit scenes across **anime,
-  TV shows, and movies**. When an applicable segment is detected, display a
-  **Skip** prompt button at the **bottom trailing** edge of the player so the
-  user can choose to skip it.
+- [x] **ADV-01, first stage — IntroDB timestamp lookup and manual skip prompts.**
+  The SwiftVLC player uses [TheIntroDB](https://theintrodb.org/docs) to retrieve
+  intro, recap, and credits ranges for identified movies and TV/anime episodes.
+  **Skip Prompts** defaults off and is available in Settings and Player
+  Adjustments. Once enabled, a button at the **bottom trailing** edge appears
+  during a known segment, even with playback controls hidden. Skipping requires
+  a button press. Bounded credits preserve following scenes; terminal credits
+  use the existing completion, next-episode, and loop behavior.
 
-  Inspiration:
+  Anonymous requests use TMDB identifiers and actual runtime, start during
+  playback, and do not delay import or playback. Temporary timestamps stay in
+  memory for the session. The old fixed recap/credits auto-skips are removed;
+  their preferences do not enable this new network feature. See
+  [README.md](README.md#intro-recap-and-credits-prompts) for privacy, controls,
+  provider constraints, and test commands.
+
+- [ ] **ADV-01, future stages — Coverage beyond provider timestamps.** Spatial
+  AVKit playback, season-zero specials, combined/alternate episode numbering,
+  and local scene detection remain unimplemented. Community coverage and
+  edition matching can leave gaps. The original local-detection reference is
   [recurring-content-detector](https://github.com/nielstenboom/recurring-content-detector.git).
-  Detecting segments while the user is already watching may be difficult;
-  begin with small research steps and compare alternative approaches. No
-  detection method, processing schedule, or dependency has been selected.
 
 ## Notes for future implementation
 
@@ -120,6 +129,23 @@ deferred for a later discussion.
   CloudKit so the suite runs without signing entitlements or opening the
   user's library and watch-progress databases.
 - **Remaining work:** BUG-05 play/pause synchronization and ENH-06 upcoming
-  episode preview remain unchecked. ADV-01 remains deferred.
+  episode preview remain unchecked. ADV-01's first stage is implemented;
+  additional detection coverage and spatial AVKit support remain future work.
 - **Parity:** the nine completed product changes also affect `android` and
   `windows`; their native implementations remain pending. `web` is unaffected.
+
+## IntroDB implementation verification — 15 September 2026
+
+- **Checks passed:** macOS app/test compilation and all **169 unit tests**;
+  unsigned iOS, tvOS, and visionOS Simulator builds; `git diff --check`.
+  Commands are documented in [README.md](README.md#apple-development).
+- **Regression coverage:** canonical show IDs, missing and malformed data,
+  null/no-segment values, multiple ranges and credits gaps, request limits,
+  session cache lifetime, stale/cancelled responses, opt-in migration, and
+  manual-seek validation. Real VLC fixtures verify terminal-credit progression,
+  duplicate presses, loop behavior, paused seeking, and saved resume position.
+- **Remaining verification:** visual layout, hardware remote navigation,
+  VoiceOver, and timestamp alignment against real titles need on-device checks.
+  Existing build warnings remain outside this feature's scope.
+- **Parity:** this behavior also affects `android` and `windows`; their native
+  implementations are pending. `web` remains static and is unaffected.

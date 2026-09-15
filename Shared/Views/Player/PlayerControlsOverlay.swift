@@ -12,6 +12,10 @@ import SwiftUI
 import SwiftVLC
 
 struct PlayerControlsOverlay: View {
+    @Environment(PlayerSession.self) private var session
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var segmentFocused: Bool
+    @State private var segmentHovered = false
     let chrome: PlayerChromeModel
     let player: Player
     let item: PlaybackItem
@@ -66,10 +70,22 @@ struct PlayerControlsOverlay: View {
             }
             #endif
 
+            segmentPrompt
             panelHost
         }
         .animation(.easeInOut(duration: 0.2), value: chrome.controlsVisible)
         .animation(.easeInOut(duration: 0.25), value: chrome.activePanel)
+        .onChange(of: visibleSegment) { _, segment in
+            if segment == nil { segmentFocused = false }
+        }
+        .onChange(of: player.currentTime) { _, time in
+            // VLC publishes optimistic seek times even while paused, when
+            // its native time-event stream can remain silent.
+            session.segmentSkipping.update(
+                time: time.playbackSeconds, duration: player.duration?.playbackSeconds,
+                isSeekable: player.isSeekable
+            )
+        }
         #if os(tvOS)
         .onAppear {
             if remoteInput == nil { remoteInput = TVRemoteInput(chrome: chrome) }
@@ -87,6 +103,45 @@ struct PlayerControlsOverlay: View {
             Task { @MainActor in focusedControl = .tool(previous) }
         }
         #endif
+    }
+
+    private var visibleSegment: PlaybackSegment? {
+        guard chrome.activePanel == nil, !chrome.isScrubbing else { return nil }
+        return session.segmentSkipping.activeSegment
+    }
+
+    /// Independent of the transport's auto-hide timer. The opaque semantic
+    /// surface stays readable against bright video without covering subtitles
+    /// at the center of the frame. No animated movement is needed for focus.
+    @ViewBuilder
+    private var segmentPrompt: some View {
+        if let segment = visibleSegment {
+            Button(action: session.skipCurrentSegment) {
+                Text(segment.kind.title)
+                    .font(Typography.bodyLG)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(segmentFocused || segmentHovered ? Theme.gold : Theme.textPrimary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Theme.Radius.card)
+                            .strokeBorder(segmentFocused || segmentHovered ? Theme.gold : Theme.outline, lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .focused($segmentFocused)
+            .focusEffectDisabled()
+            #if !os(tvOS)
+            .onHover { segmentHovered = $0 }
+            .keyboardShortcut("s", modifiers: [])
+            #endif
+            .accessibilityHint("Skip this segment and continue playback")
+            .padding(.horizontal, 24)
+            .padding(.bottom, chrome.controlsVisible ? 100 : 48)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .transaction { if reduceMotion { $0.animation = nil } }
+        }
     }
 
     #if os(tvOS)
@@ -265,14 +320,14 @@ struct PlayerControlsOverlay: View {
             Button {
                 chrome.togglePlayPause()
             } label: {
-                Image(player.isPlaying ? .pause : .play)
+                Image(chrome.isPlaybackActive ? .pause : .play)
                     .font(.system(size: 34, weight: .bold))
                     .frame(width: 88, height: 88)
                     .glassBackground(in: Circle())
                     .contentShape(Circle())
             }
             .playerChipStyle(onFocus: chipDidFocus)
-            .accessibilityLabel(player.isPlaying ? Text("Pause") : Text("Play"))
+            .accessibilityLabel(chrome.isPlaybackActive ? Text("Pause") : Text("Play"))
             #if os(tvOS)
             .focused($focusedControl, equals: .center)
             #endif
@@ -435,7 +490,11 @@ struct PlayerControlsOverlay: View {
             case .right:
                 chrome.remoteSeek(bySeconds: 10)
             case .down:
-                chrome.showTimeline()
+                if visibleSegment != nil {
+                    segmentFocused = true
+                } else {
+                    chrome.showTimeline()
+                }
             case .up:
                 chrome.showControls()
             @unknown default:

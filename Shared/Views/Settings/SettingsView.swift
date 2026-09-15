@@ -73,6 +73,8 @@ struct SettingsView: View {
 
                 AudioEnhancementSection()
 
+                SegmentSkippingSection()
+
                 SourcesSection(
                     showImporter: $showImporter,
                     showLinkSource: $showLinkSource

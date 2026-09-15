@@ -36,9 +36,12 @@ final class PlayerSession {
     /// Chrome (controls) state for the session.
     private(set) var chrome: PlayerChromeModel?
 
+    let segmentSkipping: PlayerSegmentController
+
     private let library: LibraryController
     private let watchStore: WatchProgressStore
     private let audioEnhancement: AudioEnhancementController
+    private let videoAdjustment: VideoAdjustmentController
     private let makePlayer: @MainActor () -> Player
     private var eventTask: Task<Void, Never>?
     private var activePlaybackRequestID = UUID()
@@ -74,12 +77,16 @@ final class PlayerSession {
         library: LibraryController,
         watchStore: WatchProgressStore,
         audioEnhancement: AudioEnhancementController? = nil,
-        playerFactory: (@MainActor () -> Player)? = nil
+        videoAdjustment: VideoAdjustmentController? = nil,
+        playerFactory: (@MainActor () -> Player)? = nil,
+        segmentSkipping: PlayerSegmentController? = nil
     ) {
         self.library = library
         self.watchStore = watchStore
         self.audioEnhancement = audioEnhancement ?? AudioEnhancementController()
+        self.videoAdjustment = videoAdjustment ?? VideoAdjustmentController()
         self.makePlayer = playerFactory ?? { Player() }
+        self.segmentSkipping = segmentSkipping ?? PlayerSegmentController()
     }
 
     var isPresented: Bool { item != nil }
@@ -170,6 +177,8 @@ final class PlayerSession {
         // fully-formed session.
         item = newItem
 
+        segmentSkipping.begin(itemID: newItem.id, media: newItem.segmentLookup)
+
         guard newItem.url != nil else { return }
         #if os(iOS) || os(macOS) || os(visionOS)
         // The host may still be presenting; hold playback until its video
@@ -200,6 +209,7 @@ final class PlayerSession {
         do {
             audioEnhancement.apply(to: player)
             try player.play(url: url)
+            videoAdjustment.apply(to: player)
             #if os(visionOS)
             let resumePosition = vlcResumePositionOverride
             vlcResumePositionOverride = nil
@@ -216,6 +226,7 @@ final class PlayerSession {
     /// Ends the session: stops playback, releases the scoped file access,
     /// and dismisses the player on every platform (hosts observe `item`).
     func end() {
+        segmentSkipping.end()
         advanceRequestID = nil
         activePlaybackRequestID = UUID()
 
@@ -230,6 +241,7 @@ final class PlayerSession {
         eventTask = nil
         chrome?.sessionWillEnd()
         audioEnhancement.detach()
+        videoAdjustment.detach()
         player?.stop()
         player = nil
         chrome = nil
@@ -258,6 +270,7 @@ final class PlayerSession {
         eventTask = nil
         chrome?.sessionWillEnd()
         audioEnhancement.detach()
+        videoAdjustment.detach()
         player?.stop()
         player = nil
         chrome = nil
@@ -271,6 +284,8 @@ final class PlayerSession {
         visionResumePositionOverride = initialPosition
         visionNativeItem = newItem
         item = newItem
+        // Spatial AVKit presentation does not yet expose a skip action.
+        segmentSkipping.begin(itemID: newItem.id, media: nil)
         setIdleTimerDisabled(true)
     }
 
@@ -510,6 +525,32 @@ final class PlayerSession {
 
     // MARK: - Episode progression
 
+    /// Manual skip only. Bounded credits seek within the current file; only
+    /// a terminal credits range enters the completion/episode transition path.
+    func skipCurrentSegment() {
+        guard let player, let chrome,
+              let action = segmentSkipping.consumeSkip(
+                at: player.currentTime.playbackSeconds,
+                duration: player.duration?.playbackSeconds,
+                isSeekable: player.isSeekable
+              )
+        else { return }
+        switch action {
+        case .seek(let target):
+            player.seek(to: .seconds(target))
+            // Paused seeks may not emit another native time event. Keep
+            // progress and prompt state current if the user closes now.
+            chrome.playbackTimeChanged(.seconds(target))
+        case .finish:
+            if chrome.loopEnabled {
+                chrome.saveCompletionProgress()
+                replayCurrent()
+            } else {
+                advanceToNextOrEnd()
+            }
+        }
+    }
+
     /// Advances to the next locally stored episode or ends the session.
     /// Idempotent: concurrent calls (credits-skip + buffered stop event)
     /// collapse into one transition. The advance request is established
@@ -592,6 +633,7 @@ final class PlayerSession {
 
     private func replayCurrent() {
         guard let player, let url = item?.url else { return }
+        if let item { segmentSkipping.begin(itemID: item.id, media: item.segmentLookup) }
         try? player.play(url: url)
         chrome?.playbackDidStart(resuming: false)
     }

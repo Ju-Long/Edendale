@@ -65,7 +65,7 @@ struct PlayerGestureLayer: View {
             .accessibilityHint("Shows or hides the playback controls.")
             .accessibilityAction { chrome.toggleControls() }
             .accessibilityActions {
-                Button(player.isPlaying ? String(localized: "Pause") : String(localized: "Play")) {
+                Button(chrome.isPlaybackActive ? String(localized: "Pause") : String(localized: "Play")) {
                     chrome.togglePlayPause()
                 }
                 Button(String(localized: "Back 10 seconds")) { chrome.seek(bySeconds: -10) }

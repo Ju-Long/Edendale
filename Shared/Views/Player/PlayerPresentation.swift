@@ -128,4 +128,17 @@ struct PlaybackItem: Identifiable {
         }
         return nil
     }
+
+    /// Unsupported numbering (including season-zero specials) and unidentified
+    /// files remain playable without an online segment lookup.
+    var segmentLookup: IntroDBMedia? {
+        if let tmdbID = movie?.tmdbId { return IntroDBMedia(tmdbID: tmdbID) }
+        if let episode, let showID = episode.show?.tmdbId {
+            return IntroDBMedia(
+                tmdbID: showID, season: episode.seasonNumber,
+                episode: episode.episodeNumber
+            )
+        }
+        return nil
+    }
 }

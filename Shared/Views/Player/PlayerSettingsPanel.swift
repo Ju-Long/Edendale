@@ -3,7 +3,7 @@
 //  Edendale
 //
 //  The ellipsis sidebar: playback speed in 0.05× steps, video/audio/subtitle
-//  track selection, auto-skip toggles, loop, and fit/fill aspect control.
+//  track selection, skip prompts, loop, and fit/fill aspect control.
 //
 
 import SwiftUI
@@ -14,6 +14,8 @@ struct PlayerSettingsPanel: View {
     let player: Player
     let item: PlaybackItem
     @Environment(AudioEnhancementController.self) private var audioEnhancement
+    @Environment(VideoAdjustmentController.self) private var videoAdjustment
+    @Environment(PlayerSession.self) private var session
     @State private var onlineSubtitles = OnlineSubtitlesModel()
 
     var body: some View {
@@ -39,6 +41,7 @@ struct PlayerSettingsPanel: View {
                 )
                 playbackSection
                 aspectSection
+                pictureSection
             }
             .padding(24)
         }
@@ -286,18 +289,18 @@ struct PlayerSettingsPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Playback").labelCaps().accessibilityAddTraits(.isHeader)
 
-            ArchiveToggle(isOn: $chrome.skipRecap) {
+            ArchiveToggle(isOn: Binding(
+                get: { session.segmentSkipping.isEnabled },
+                set: { session.segmentSkipping.isEnabled = $0 }
+            )) {
                 optionLabel(
-                    String(localized: "Skip Recap"),
-                    detail: String(localized: "Jump past the first 90 seconds")
+                    String(localized: "Skip Prompts"),
+                    detail: String(localized: "Look up intro, recap, and credits timestamps with TheIntroDB")
                 )
             }
-            ArchiveToggle(isOn: $chrome.skipCredits) {
-                optionLabel(
-                    String(localized: "Skip Credits"),
-                    detail: String(localized: "End playback at the final 3 minutes")
-                )
-            }
+            Text("When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.")
+                .font(Typography.bodySM)
+                .foregroundStyle(Theme.textSecondary)
             ArchiveToggle(isOn: $chrome.loopEnabled) {
                 optionLabel(
                     String(localized: "Loop Video"),
@@ -355,5 +358,16 @@ struct PlayerSettingsPanel: View {
             .labelsHidden()
             .accessibilityLabel("Aspect Ratio")
         }
+    }
+
+    // MARK: - Picture
+
+    private var pictureSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Picture").labelCaps().accessibilityAddTraits(.isHeader)
+            VideoAdjustmentControls(controller: videoAdjustment)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Picture")
     }
 }
