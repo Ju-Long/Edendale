@@ -57,12 +57,23 @@ file is gitignored. `WYZIE_API_KEY` is optional and enables online subtitle
 search; claim a free key at https://store.wyzie.io/redeem, or enter it later in
 Settings.
 
-Resolve dependencies and inspect the shared schemes:
+Build the local FFmpeg XCFramework (requires Xcode and downloads FFmpeg 7.1.1
+source), then resolve dependencies and inspect the shared schemes:
 
 ```sh
+bash Vendor/FFmpeg/build-ffmpeg.sh
 xcodebuild -resolvePackageDependencies -project Edendale.xcodeproj
 xcodebuild -list -project Edendale.xcodeproj
 ```
+
+The FFmpeg source download is checked against a pinned SHA-256 checksum. Its
+source, intermediate frameworks, and final XCFramework are gitignored; commit
+the build script and Xcode project references, not the generated binaries.
+For a faster single-platform setup, use
+`bash Vendor/FFmpeg/build-ffmpeg.sh --platform ios` (also accepts `macos`,
+`tvos`, and `visionos`). This replaces the XCFramework with only that platform's
+device/simulator variants; rerun without `--platform` to restore all platforms.
+Use `--clean` when changing FFmpeg build options to rebuild cached slices.
 
 Run the native macOS build and tests:
 
@@ -198,6 +209,27 @@ workflow environment variable; `TMDB_API_KEY` is an optional legacy fallback.
 `WYZIE_API_KEY` is also an optional secret workflow variable. The script
 generates the gitignored `Shared/Secrets.xcconfig` in Xcode Cloud's temporary
 checkout without printing credential values.
+
+The same post-clone script downloads and compiles FFmpeg for
+`CI_PRODUCT_PLATFORM`, including simulator slices for test actions, and creates
+`Vendor/FFmpeg/FFmpeg.xcframework` before the app build. No FFmpeg environment
+variables, hosting credentials, or committed binary are required. Allow extra
+build time for the source compilation. Both app targets link the resulting
+static framework without embedding it. Their FFmpeg paths are resolved by the
+Xcode project, so `Secrets.xcconfig` only needs credentials.
+
+To reproduce the iOS archive locally after building FFmpeg:
+
+```sh
+xcodebuild archive -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=iOS' -archivePath build/Edendale.xcarchive \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+This unsigned archive checks compilation and linking; Xcode Cloud manages
+signing and distribution. Configure the Cloud workflow to use this Apple branch
+and the shared `Edendale` scheme. The post-clone hook does not upload or release
+the app or build another platform branch.
 
 ### Branch contract
 

@@ -56,7 +56,8 @@ CVPixelBufferRef _Nullable edendale_create_pixel_buffer_from_sw_frame(
     int height = frame->height;
 
     NSDictionary *pixelAttributes = @{
-        (id)kCVPixelBufferIOSurfacePropertiesKey: @{}
+        (id)kCVPixelBufferIOSurfacePropertiesKey: @{},
+        (id)kCVPixelBufferMetalCompatibilityKey: @YES
     };
 
     CVPixelBufferRef pixelBuffer = NULL;

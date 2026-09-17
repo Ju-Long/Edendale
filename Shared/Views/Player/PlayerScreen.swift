@@ -192,6 +192,7 @@ struct PlayerScreen: View {
     private func videoSurface(player: PlaybackEngine) -> some View {
         EnhancedVideoPlayer(
             ringBuffer: player.ringBuffer,
+            presentationTime: player.videoPresentationTime,
             aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
             isPaused: !player.isPlaying,
             onSurfaceReady: { _ in session.surfaceDidAttach() }

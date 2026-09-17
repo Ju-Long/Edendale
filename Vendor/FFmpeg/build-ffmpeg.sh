@@ -3,17 +3,44 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FFMPEG_VERSION="7.1.1"
+FFMPEG_SHA256="733984395e0dbbe5c046abda2dc49a5544e7e0e1e2366bba849222ae9e3a03b1"
 SRC_DIR="${SCRIPT_DIR}/ffmpeg-${FFMPEG_VERSION}"
 BUILD_ROOT="${SCRIPT_DIR}/build"
 FRAMEWORKS_DIR="${SCRIPT_DIR}/frameworks"
 XCFRAMEWORK_DIR="${SCRIPT_DIR}/FFmpeg.xcframework"
 NCPU=$(sysctl -n hw.ncpu || echo 4)
+PLATFORM="all"
+CLEAN=false
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --platform)
+            PLATFORM="${2:?--platform requires all, ios, macos, tvos, or visionos}"
+            shift 2
+            ;;
+        --clean)
+            CLEAN=true
+            shift
+            ;;
+        *)
+            echo "error: Unknown argument: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+case "${PLATFORM}" in
+    all|ios|macos|tvos|visionos) ;;
+    *) echo "error: Unsupported FFmpeg platform: ${PLATFORM}" >&2; exit 1 ;;
+esac
 
 # 1. Download FFmpeg source if not present
 if [ ! -d "${SRC_DIR}" ]; then
     echo "==> Downloading FFmpeg ${FFMPEG_VERSION}..."
     cd "${SCRIPT_DIR}"
-    curl -LO "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+    curl --fail --location --retry 3 --output "ffmpeg-${FFMPEG_VERSION}.tar.xz" \
+        "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+    printf '%s  %s\n' "${FFMPEG_SHA256}" "ffmpeg-${FFMPEG_VERSION}.tar.xz" | shasum -a 256 -c -
     tar -xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
     rm "ffmpeg-${FFMPEG_VERSION}.tar.xz"
 fi
@@ -110,28 +137,32 @@ build_slice() {
     make install
 }
 
-if [ "${1:-}" = "--clean" ]; then
+if [ "${CLEAN}" = true ]; then
     echo "==> Cleaning build directory..."
     rm -rf "${BUILD_ROOT}" "${FRAMEWORKS_DIR}"
 fi
 mkdir -p "${BUILD_ROOT}" "${FRAMEWORKS_DIR}"
 
-# Build all platform slices
-build_slice "macos" "arm64" "macosx" "-mmacosx-version-min=15.0" false
-build_slice "macos" "x86_64" "macosx" "-mmacosx-version-min=15.0" true
-
-build_slice "ios" "arm64" "iphoneos" "-miphoneos-version-min=18.0" false
-
-build_slice "ios-sim" "arm64" "iphonesimulator" "-target arm64-apple-ios18.0-simulator" false
-build_slice "ios-sim" "x86_64" "iphonesimulator" "-target x86_64-apple-ios18.0-simulator" true
-
-build_slice "tvos" "arm64" "appletvos" "-mappletvos-version-min=18.0" false
-
-build_slice "tvos-sim" "arm64" "appletvsimulator" "-target arm64-apple-tvos18.0-simulator" false
-build_slice "tvos-sim" "x86_64" "appletvsimulator" "-target x86_64-apple-tvos18.0-simulator" true
-
-build_slice "xros" "arm64" "xros" "-target arm64-apple-xros2.0" false
-build_slice "xrsimulator" "arm64" "xrsimulator" "-target arm64-apple-xros2.0-simulator" false
+# Local builds default to every platform. Cloud only needs the current action's
+# platform, including its simulator variant for build/test actions.
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = macos ]; then
+    build_slice "macos" "arm64" "macosx" "-mmacosx-version-min=15.0" false
+    build_slice "macos" "x86_64" "macosx" "-mmacosx-version-min=15.0" true
+fi
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = ios ]; then
+    build_slice "ios" "arm64" "iphoneos" "-miphoneos-version-min=18.0" false
+    build_slice "ios-sim" "arm64" "iphonesimulator" "-target arm64-apple-ios18.0-simulator" false
+    build_slice "ios-sim" "x86_64" "iphonesimulator" "-target x86_64-apple-ios18.0-simulator" true
+fi
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = tvos ]; then
+    build_slice "tvos" "arm64" "appletvos" "-mappletvos-version-min=18.0" false
+    build_slice "tvos-sim" "arm64" "appletvsimulator" "-target arm64-apple-tvos18.0-simulator" false
+    build_slice "tvos-sim" "x86_64" "appletvsimulator" "-target x86_64-apple-tvos18.0-simulator" true
+fi
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = visionos ]; then
+    build_slice "xros" "arm64" "xros" "-target arm64-apple-xros2.0" false
+    build_slice "xrsimulator" "arm64" "xrsimulator" "-target arm64-apple-xros2.0-simulator" false
+fi
 
 # Assemble Framework bundles for each platform variant
 create_framework() {
@@ -244,25 +275,33 @@ EOF
 EOF
 }
 
-create_framework "macos" "macos-arm64" "macos-x86_64"
-create_framework "ios" "ios-arm64"
-create_framework "ios-simulator" "ios-sim-arm64" "ios-sim-x86_64"
-create_framework "tvos" "tvos-arm64"
-create_framework "tvos-simulator" "tvos-sim-arm64" "tvos-sim-x86_64"
-create_framework "xros" "xros-arm64"
-create_framework "xrsimulator" "xrsimulator-arm64"
+FRAMEWORK_ARGS=()
+add_framework() {
+    create_framework "$@"
+    FRAMEWORK_ARGS+=(-framework "${FRAMEWORKS_DIR}/$1/FFmpeg.framework")
+}
+
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = macos ]; then
+    add_framework "macos" "macos-arm64" "macos-x86_64"
+fi
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = ios ]; then
+    add_framework "ios" "ios-arm64"
+    add_framework "ios-simulator" "ios-sim-arm64" "ios-sim-x86_64"
+fi
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = tvos ]; then
+    add_framework "tvos" "tvos-arm64"
+    add_framework "tvos-simulator" "tvos-sim-arm64" "tvos-sim-x86_64"
+fi
+if [ "${PLATFORM}" = all ] || [ "${PLATFORM}" = visionos ]; then
+    add_framework "xros" "xros-arm64"
+    add_framework "xrsimulator" "xrsimulator-arm64"
+fi
 
 # Create final XCFramework
 echo "==> Assembling FFmpeg.xcframework..."
 rm -rf "${XCFRAMEWORK_DIR}"
 xcodebuild -create-xcframework \
-    -framework "${FRAMEWORKS_DIR}/macos/FFmpeg.framework" \
-    -framework "${FRAMEWORKS_DIR}/ios/FFmpeg.framework" \
-    -framework "${FRAMEWORKS_DIR}/ios-simulator/FFmpeg.framework" \
-    -framework "${FRAMEWORKS_DIR}/tvos/FFmpeg.framework" \
-    -framework "${FRAMEWORKS_DIR}/tvos-simulator/FFmpeg.framework" \
-    -framework "${FRAMEWORKS_DIR}/xros/FFmpeg.framework" \
-    -framework "${FRAMEWORKS_DIR}/xrsimulator/FFmpeg.framework" \
+    "${FRAMEWORK_ARGS[@]}" \
     -output "${XCFRAMEWORK_DIR}"
 
 echo "==> Successfully created ${XCFRAMEWORK_DIR}!"

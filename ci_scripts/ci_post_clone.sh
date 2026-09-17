@@ -38,3 +38,20 @@ umask 077
 } > "$SECRETS_FILE"
 
 echo "Generated Secrets.xcconfig for Xcode Cloud build."
+
+# FFmpeg is generated, not committed. Prepare it before Xcode resolves the local
+# XCFramework reference. Keep secrets out of the dependency compiler environment.
+unset TMDB_READ_ACCESS_TOKEN TMDB_API_KEY WYZIE_API_KEY
+case "${CI_PRODUCT_PLATFORM:-}" in
+  iOS) FFMPEG_PLATFORM=ios ;;
+  macOS) FFMPEG_PLATFORM=macos ;;
+  tvOS) FFMPEG_PLATFORM=tvos ;;
+  visionOS) FFMPEG_PLATFORM=visionos ;;
+  *)
+    echo "error: Unsupported or missing CI_PRODUCT_PLATFORM for FFmpeg." >&2
+    exit 1
+    ;;
+esac
+
+/bin/bash "$CI_PRIMARY_REPOSITORY_PATH/Vendor/FFmpeg/build-ffmpeg.sh" \
+  --platform "$FFMPEG_PLATFORM"

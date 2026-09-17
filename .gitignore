@@ -52,3 +52,6 @@ Web/dist/
 bun.lock
 /dist
 /Vendor/FFmpeg/FFmpeg.xcframework
+/Vendor/FFmpeg/ffmpeg-*/
+/Vendor/FFmpeg/ffmpeg-*.tar.xz
+/Vendor/FFmpeg/frameworks/

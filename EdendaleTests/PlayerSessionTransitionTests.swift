@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 import Testing
-import SwiftVLC
 @testable import Edendale
 
 // Exercise real session requests without attaching a video surface or starting
@@ -183,14 +182,10 @@ struct PlayerSessionTransitionTests {
             show.episodes = [second, first]
             first.show = show
             second.show = show
-            let instance = try VLCInstance(arguments: [
-                "--ignore-config", "--no-video", "--aout=dummy", "--no-stats"
-            ])
             watchStore = WatchProgressStore()
             session = PlayerSession(
                 library: LibraryController(modelContext: container.mainContext),
                 watchStore: watchStore,
-                playerFactory: { Player(instance: instance) },
                 segmentSkipping: segmentSkipping ?? PlayerSegmentController(lookup: { _ in [] })
             )
         }

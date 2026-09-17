@@ -14,6 +14,7 @@ import SwiftUI
 /// SwiftUI wrapper presenting video content rendered by `EnhancedVideoView`.
 public struct EnhancedVideoPlayer: View {
     public var ringBuffer: FrameRingBuffer?
+    public var presentationTime: CMTime
     public var currentPixelBuffer: CVPixelBuffer?
     public var currentTexture: MTLTexture?
     public var aspectMode: VideoAspectMode
@@ -23,6 +24,7 @@ public struct EnhancedVideoPlayer: View {
 
     public init(
         ringBuffer: FrameRingBuffer? = nil,
+        presentationTime: CMTime = .zero,
         currentPixelBuffer: CVPixelBuffer? = nil,
         currentTexture: MTLTexture? = nil,
         aspectMode: VideoAspectMode = .fit,
@@ -31,6 +33,7 @@ public struct EnhancedVideoPlayer: View {
         onSurfaceReady: ((EnhancedVideoView) -> Void)? = nil
     ) {
         self.ringBuffer = ringBuffer
+        self.presentationTime = presentationTime
         self.currentPixelBuffer = currentPixelBuffer
         self.currentTexture = currentTexture
         self.aspectMode = aspectMode
@@ -42,6 +45,7 @@ public struct EnhancedVideoPlayer: View {
     public var body: some View {
         EnhancedVideoPlayerRepresentable(
             ringBuffer: ringBuffer,
+            presentationTime: presentationTime,
             currentPixelBuffer: currentPixelBuffer,
             currentTexture: currentTexture,
             aspectMode: aspectMode,
@@ -55,6 +59,7 @@ public struct EnhancedVideoPlayer: View {
 #if os(macOS)
 private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
     let ringBuffer: FrameRingBuffer?
+    let presentationTime: CMTime
     let currentPixelBuffer: CVPixelBuffer?
     let currentTexture: MTLTexture?
     let aspectMode: VideoAspectMode
@@ -81,6 +86,7 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
 
     private func apply(to view: EnhancedVideoView) {
         view.ringBuffer = ringBuffer
+        view.currentDisplayTime = presentationTime
         view.aspectMode = aspectMode
         view.isPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
@@ -90,11 +96,13 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
         if let currentTexture {
             view.currentTexture = currentTexture
         }
+        if isPaused { view.draw() }
     }
 }
 #else
 private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     let ringBuffer: FrameRingBuffer?
+    let presentationTime: CMTime
     let currentPixelBuffer: CVPixelBuffer?
     let currentTexture: MTLTexture?
     let aspectMode: VideoAspectMode
@@ -121,6 +129,7 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
 
     private func apply(to view: EnhancedVideoView) {
         view.ringBuffer = ringBuffer
+        view.currentDisplayTime = presentationTime
         view.aspectMode = aspectMode
         view.isPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
@@ -130,6 +139,7 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
         if let currentTexture {
             view.currentTexture = currentTexture
         }
+        if isPaused { view.draw() }
     }
 }
 #endif

@@ -63,6 +63,7 @@ final class PlaybackEngine {
     private(set) var isPlaying: Bool = false
     /// Whether the loaded media supports seeking.
     private(set) var isSeekable: Bool = true
+    private(set) var videoPresentationTime: CMTime = .invalid
 
     /// Normalised position (0 ... 1).  Settable — the setter seeks.
     var position: Double {
@@ -128,6 +129,7 @@ final class PlaybackEngine {
     // MARK: - Pipeline components
 
     private(set) var decoder: (any MediaDecoder)?
+    private var openGeneration = 0
     let ringBuffer = FrameRingBuffer()
     let enhancementPipeline: EnhancementPipeline?
 
@@ -157,9 +159,12 @@ final class PlaybackEngine {
     /// opens the media, and populates track information.
     func open(url: URL) async throws {
         close()
+        let request = openGeneration
         state = .opening
 
         let kind = await FormatRouter.route(url)
+        try Task.checkCancellation()
+        guard openGeneration == request else { throw CancellationError() }
         let newDecoder: any MediaDecoder
         switch kind {
         case .avFoundation:
@@ -172,6 +177,8 @@ final class PlaybackEngine {
         wireCallbacks(newDecoder)
 
         let info = try await newDecoder.open(url: url)
+        try Task.checkCancellation()
+        guard openGeneration == request else { throw CancellationError() }
         populateTracks(from: info)
 
         if info.duration.isValid, info.duration.seconds.isFinite, info.duration.seconds > 0 {
@@ -228,9 +235,11 @@ final class PlaybackEngine {
     }
 
     func close() {
+        openGeneration += 1
         decoder?.close()
         decoder = nil
         ringBuffer.clear()
+        videoPresentationTime = .invalid
         enhancementPipeline?.reset()
         #if os(iOS) || os(macOS)
         pipSource.detach()
@@ -290,22 +299,36 @@ final class PlaybackEngine {
     // MARK: - Private — callback wiring
 
     private func wireCallbacks(_ decoder: any MediaDecoder) {
-        decoder.onStateChanged = { [weak self] decoderState in
-            self?.handleDecoderState(decoderState)
+        decoder.onStateChanged = { [weak self, weak decoder] decoderState in
+            guard let self, self.decoder === decoder else { return }
+            self.handleDecoderState(decoderState)
         }
-        decoder.onTimeChanged = { [weak self] cmTime in
-            self?.handleTimeChanged(cmTime)
+        decoder.onTimeChanged = { [weak self, weak decoder] cmTime in
+            guard let self, self.decoder === decoder else { return }
+            self.handleTimeChanged(cmTime)
         }
-        if let avDecoder = decoder as? AVFoundationDecoder {
-            avDecoder.onVideoFrame = { [weak self] frame in
-                guard let self else { return }
+        let receiveFrame: @MainActor (DecodedVideoFrame) -> Void = { [weak self, weak decoder] frame in
+                guard let self, self.decoder === decoder else { return }
                 self.ringBuffer.push(frame)
+                self.videoPresentationTime = frame.presentationTime
                 #if os(iOS) || os(macOS)
                 self.pipSource.enqueue(
                     pixelBuffer: frame.pixelBuffer,
                     presentationTime: frame.presentationTime,
                     duration: frame.duration
                 )
+                #endif
+        }
+        if let avDecoder = decoder as? AVFoundationDecoder {
+            avDecoder.onVideoFrame = receiveFrame
+        } else if let ffmpeg = decoder as? FFmpegDecoder {
+            ffmpeg.onVideoFrame = receiveFrame
+            ffmpeg.onDiscontinuity = { [weak self] in
+                self?.ringBuffer.clear()
+                self?.videoPresentationTime = .invalid
+                self?.enhancementPipeline?.reset()
+                #if os(iOS) || os(macOS)
+                self?.pipSource.displayLayer.sampleBufferRenderer.flush()
                 #endif
             }
         }
@@ -354,9 +377,13 @@ final class PlaybackEngine {
     // MARK: - Private — audio
 
     private func applyAudioSettings() {
-        guard let avDecoder = decoder as? AVFoundationDecoder else { return }
-        avDecoder.avPlayer?.isMuted = isMuted
-        avDecoder.avPlayer?.volume = volume
+        if let avDecoder = decoder as? AVFoundationDecoder {
+            avDecoder.avPlayer?.isMuted = isMuted
+            avDecoder.avPlayer?.volume = volume
+        } else if let ffmpeg = decoder as? FFmpegDecoder {
+            ffmpeg.isMuted = isMuted
+            ffmpeg.volume = volume
+        }
     }
 
     // MARK: - Private — tracks
@@ -381,12 +408,12 @@ final class PlaybackEngine {
                 type: .video
             )
         }
-        audioTracks = info.audioTracks.map { track in
+        audioTracks = info.audioTracks.enumerated().map { index, track in
             PlaybackTrack(
                 id: "a\(track.index)",
                 name: track.title ?? track.language ?? "Track \(track.index + 1)",
                 language: track.language,
-                isSelected: track.index == 0,
+                isSelected: index == 0,
                 width: nil,
                 height: nil,
                 channels: track.channelCount,

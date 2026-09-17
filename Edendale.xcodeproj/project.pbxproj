@@ -17,6 +17,8 @@
 		27ED01AB00000000000000AB /* SwiftVLC in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01AE00000000000000AE /* SwiftVLC */; };
 		27ED01AC00000000000000AC /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01AF00000000000000AF /* Kingfisher */; };
 		27ED01AD00000000000000AD /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01B000000000000000B0 /* Drops */; };
+		27FF00010000000000000001 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
+		27FF00010000000000000002 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +69,7 @@
 		27CF16C0000000000000C0F1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = Shared/Secrets.xcconfig; sourceTree = "<group>"; };
 		27CF16C1000000000000A551 /* Shared Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Shared Assets.xcassets"; path = Shared/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		27ED01A100000000000000A1 /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -173,6 +176,7 @@
 				27BC63ED2FBDBF1E005EAD5C /* Kingfisher in Frameworks */,
 				27BC63F02FBDBF68005EAD5C /* Drops in Frameworks */,
 				27BC63E72FBDBEA8005EAD5C /* SwiftVLC in Frameworks */,
+				27FF00010000000000000001 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,6 +201,7 @@
 				27ED01AC00000000000000AC /* Kingfisher in Frameworks */,
 				27ED01AD00000000000000AD /* Drops in Frameworks */,
 				27ED01AB00000000000000AB /* SwiftVLC in Frameworks */,
+				27FF00010000000000000002 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -206,6 +211,7 @@
 		270D2C613004C7B200741225 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */,
 				270D2C623004C7B200741225 /* WidgetKit.framework */,
 				270D2C643004C7B200741225 /* SwiftUI.framework */,
 			);
@@ -667,6 +673,10 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = Edendale/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -695,6 +705,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
@@ -729,6 +740,10 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = Edendale/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -757,6 +772,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
@@ -997,6 +1013,10 @@
 				DEVELOPMENT_TEAM = 5678544286;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = "Edendale/Info-tvOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -1011,6 +1031,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
@@ -1031,6 +1052,10 @@
 				DEVELOPMENT_TEAM = 5678544286;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = "Edendale/Info-tvOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -1045,6 +1070,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;

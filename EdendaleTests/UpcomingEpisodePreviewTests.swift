@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 import Testing
-import SwiftVLC
 @testable import Edendale
 
 @MainActor
@@ -269,14 +268,10 @@ struct UpcomingEpisodePreviewTests {
             shortEpisode.show = shortShow
             shortSecond.show = shortShow
 
-            let instance = try VLCInstance(arguments: [
-                "--ignore-config", "--no-video", "--aout=dummy", "--no-stats"
-            ])
             watchStore = WatchProgressStore()
             session = PlayerSession(
                 library: LibraryController(modelContext: container.mainContext),
                 watchStore: watchStore,
-                playerFactory: { Player(instance: instance) },
                 segmentSkipping: PlayerSegmentController(lookup: { _ in [] })
             )
             firstItem = PlaybackItem(
