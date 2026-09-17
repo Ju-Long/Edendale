@@ -9,7 +9,6 @@
 //
 
 import Foundation
-import SwiftVLC
 
 @MainActor
 @Observable
@@ -110,7 +109,7 @@ final class OnlineSubtitlesModel {
         }
     }
 
-    func download(_ subtitle: WyzieSubtitle, into player: Player) async {
+    func download(_ subtitle: WyzieSubtitle, into player: PlaybackEngine) async {
         guard downloadingID == nil, !downloadedIDs.contains(subtitle.id) else { return }
         downloadingID = subtitle.id
         if !results.isEmpty {

@@ -51,3 +51,4 @@ Web/dist/
 /.astro
 bun.lock
 /dist
+/Vendor/FFmpeg/FFmpeg.xcframework

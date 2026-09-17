@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import SwiftVLC
 
 @MainActor
 @Observable
@@ -105,14 +104,20 @@ final class PlayerChromeModel {
 
     // MARK: - Playback state for display
 
-    /// Whether the session intends to be playing. The play/pause button reads
-    /// this instead of `player.isPlaying` so the icon stays correct across
-    /// file switches, where VLC's internal intent flag resets momentarily.
-    private(set) var isPlaybackActive = false
-
-    /// The next episode to show in the "Up Next" preview near end of media.
-    /// Non-nil only for TV episodes with ≥30 s remaining and a successor.
-    private(set) var upcomingEpisode: Episode?
+    /// Derive the preview from observable transport values so paused seeks,
+    /// loop changes and file switches update it without waiting for a tick.
+    var upcomingEpisode: Episode? {
+        guard let player,
+              player.state == .playing || player.state == .paused || player.state == .buffering
+        else { return nil }
+        return PlayerLogic.upcomingEpisode(
+            time: player.currentTime,
+            duration: player.duration,
+            loopEnabled: loopEnabled,
+            episode: session.item?.episode,
+            show: session.item?.episode?.show
+        )
+    }
 
     // MARK: - End-of-media bookkeeping
 
@@ -137,7 +142,7 @@ final class PlayerChromeModel {
         self.watchStore = watchStore
     }
 
-    private var player: Player? { session.player }
+    private var player: PlaybackEngine? { session.player }
 
     // MARK: - Visibility control
 
@@ -198,13 +203,8 @@ final class PlayerChromeModel {
     func togglePlayPause() {
         guard let player else { return }
         player.togglePlayPause()
-        isPlaybackActive = player.isPlaying
-        // Re-apply the rate after resuming to force VLC's time pipeline to
-        // re-sync. Without this kick, rapid play/pause toggling can stall
-        // the internal clock — isPlaying stays true but position and time
-        // events stop advancing.
         if player.isPlaying {
-            try? player.setRate(holdRate ?? baseRate)
+            player.setRate(holdRate ?? baseRate)
         }
         showControls()
     }
@@ -270,13 +270,13 @@ final class PlayerChromeModel {
         dismissHUD()
     }
 
-    /// Sets the VLC rate and flushes the decode buffer so the new speed
+    /// Sets the decoder rate and flushes the decode buffer so the new speed
     /// takes effect immediately rather than playing through stale frames
     /// decoded at the old rate. The flush is a same-position seek, which
-    /// forces VLC to re-decode from the current point at the new clock.
+    /// forces re-decode from the current point at the new clock.
     private func applyRate(_ rate: Float) {
         guard let player else { return }
-        try? player.setRate(rate)
+        player.setRate(rate)
         let pos = player.position
         if pos > 0, pos < 1 {
             player.position = pos
@@ -445,30 +445,37 @@ final class PlayerChromeModel {
         resuming: Bool = true,
         resumePosition: Double? = nil
     ) {
-        isPlaybackActive = true
-        upcomingEpisode = nil
         lastKnownTime = .zero
         lastKnownDuration = nil
         lastSavedTime = nil
         completionSaved = false
         pendingResumePosition = resumePosition
             ?? (resuming ? savedResumePosition() : nil)
-        if holdRate == nil, baseRate != 1.0 {
-            try? player?.setRate(baseRate)
-        }
+        player?.setRate(holdRate ?? baseRate)
         showControls()
     }
 
-    func sessionWillEnd() {
-        isPlaybackActive = false
-        upcomingEpisode = nil
-
-        if !completionSaved {
-            let time = lastKnownTime
-            if let duration = lastKnownDuration ?? player?.duration {
-                saveProgress(time: time, duration: duration)
-            }
+    /// Saves in-progress playback position before a media switch. Does not
+    /// clear timers, orientation lock, or other session state that carries
+    /// over between files.
+    func saveProgressBeforeSwitch() {
+        guard !completionSaved, pendingResumePosition == nil else { return }
+        // Paused seeks publish currentTime without necessarily emitting a
+        // native time event. Use that position while the transport is live;
+        // a stopped player has already reset it, so use the cached clock then.
+        let time: Duration
+        if let player, player.state == .playing || player.state == .paused {
+            time = player.currentTime
+        } else {
+            time = lastKnownTime
         }
+        if let duration = lastKnownDuration ?? player?.duration {
+            saveProgress(time: time, duration: duration)
+        }
+    }
+
+    func sessionWillEnd() {
+        saveProgressBeforeSwitch()
 
         hideTask?.cancel()
         hudTask?.cancel()
@@ -552,21 +559,6 @@ final class PlayerChromeModel {
             duration: player.duration?.playbackSeconds,
             isSeekable: player.isSeekable
         )
-
-        // Up-next preview for TV episodes nearing the end.
-        if let duration = player.duration {
-            let remaining = duration - time
-            if upcomingEpisode == nil,
-               remaining <= PlayerLogic.upcomingPreviewThreshold,
-               remaining > .zero,
-               duration >= PlayerLogic.minimumSkippableDuration,
-               let episode = session.item?.episode,
-               episode.show?.tmdbId != nil || episode.tmdbId != nil,
-               let show = episode.show,
-               let next = PlayerLogic.nextEpisode(after: episode, in: show) {
-                upcomingEpisode = next
-            }
-        }
 
         if !completionSaved, let duration = player.duration {
             if lastSavedTime == nil || abs(time.playbackSeconds - lastSavedTime!.playbackSeconds) > 5.0 {

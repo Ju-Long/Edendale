@@ -9,7 +9,6 @@
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerControlsOverlay: View {
     @Environment(PlayerSession.self) private var session
@@ -17,12 +16,12 @@ struct PlayerControlsOverlay: View {
     @FocusState private var segmentFocused: Bool
     @State private var segmentHovered = false
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
     let item: PlaybackItem
     let exit: () -> Void
 
     #if os(iOS) || os(macOS)
-    let pipController: PiPController?
+    let pipSource: SampleBufferPiPSource?
     #endif
 
     #if os(tvOS)
@@ -79,8 +78,8 @@ struct PlayerControlsOverlay: View {
             if segment == nil { segmentFocused = false }
         }
         .onChange(of: player.currentTime) { _, time in
-            // VLC publishes optimistic seek times even while paused, when
-            // its native time-event stream can remain silent.
+            // The engine publishes optimistic seek times even while paused,
+            // when the decoder's time-event stream can remain silent.
             session.segmentSkipping.update(
                 time: time.playbackSeconds, duration: player.duration?.playbackSeconds,
                 isSeekable: player.isSeekable
@@ -262,12 +261,12 @@ struct PlayerControlsOverlay: View {
             PlayerIconChip(
                 icon: .pictureInPicture,
                 label: String(localized: "Picture in Picture"),
-                isActive: pipController?.isActive == true,
+                isActive: pipSource?.isActive == true,
                 onFocus: chipDidFocus
             ) {
-                pipController?.toggle()
+                pipSource?.toggle()
             }
-            .disabled(pipController?.isPossible != true)
+            .disabled(pipSource?.isPossible != true)
             #endif
 
             #if os(iOS)
@@ -320,14 +319,14 @@ struct PlayerControlsOverlay: View {
             Button {
                 chrome.togglePlayPause()
             } label: {
-                Image(chrome.isPlaybackActive ? .pause : .play)
+                Image(player.isPlaying ? .pause : .play)
                     .font(.system(size: 34, weight: .bold))
                     .frame(width: 88, height: 88)
                     .glassBackground(in: Circle())
                     .contentShape(Circle())
             }
             .playerChipStyle(onFocus: chipDidFocus)
-            .accessibilityLabel(chrome.isPlaybackActive ? Text("Pause") : Text("Play"))
+            .accessibilityLabel(player.isPlaying ? Text("Pause") : Text("Play"))
             #if os(tvOS)
             .focused($focusedControl, equals: .center)
             #endif

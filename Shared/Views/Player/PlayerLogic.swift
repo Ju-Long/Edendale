@@ -99,10 +99,29 @@ enum PlayerLogic {
 
     // MARK: - Upcoming episode preview
 
-    /// Short clips do not show an upcoming-episode card.
-    static let minimumSkippableDuration: Duration = .seconds(600)
     /// How close to the end the "Up Next" preview appears for TV episodes.
     static let upcomingPreviewThreshold: Duration = .seconds(30)
+
+    /// Resolves the upcoming episode for the "Up Next" preview, or nil when
+    /// the preview should be hidden. Recomputed on every time tick so seeking
+    /// back out of the window dismisses it.
+    static func upcomingEpisode(
+        time: Duration,
+        duration: Duration?,
+        loopEnabled: Bool,
+        episode: Episode?,
+        show: TVShow?
+    ) -> Episode? {
+        guard let duration, duration > .zero,
+              !loopEnabled,
+              let episode, let show
+        else { return nil }
+        let remaining = duration - time
+        guard remaining <= upcomingPreviewThreshold, remaining > .zero,
+              let next = nextEpisode(after: episode, in: show)
+        else { return nil }
+        return next
+    }
 
     // MARK: - End-of-media
 

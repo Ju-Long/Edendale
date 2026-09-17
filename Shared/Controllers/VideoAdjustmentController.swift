@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import SwiftVLC
 
 nonisolated enum VideoAdjustment: String, CaseIterable, Identifiable, Sendable {
     case brightness, contrast, gamma, saturation, hue
@@ -81,7 +80,7 @@ final class VideoAdjustmentController {
     private(set) var values: VideoAdjustmentValues
     private(set) var isShowingOriginal = false
     @ObservationIgnored private let defaults: UserDefaults
-    @ObservationIgnored private weak var player: Player?
+    @ObservationIgnored private weak var engine: PlaybackEngine?
 
     init(defaults: UserDefaults = AppIdentifiers.defaults) {
         self.defaults = defaults
@@ -115,15 +114,17 @@ final class VideoAdjustmentController {
         persistAndApply()
     }
 
-    func apply(to player: Player) {
-        if self.player !== player { detach() }
-        self.player = player
+    func apply(to engine: PlaybackEngine) {
+        if self.engine !== engine { detach() }
+        self.engine = engine
         apply()
     }
 
     func detach() {
-        player?.withAdjustments { $0.isEnabled = false }
-        player = nil
+        if let pipeline = engine?.enhancementPipeline {
+            pipeline.adjustments = VideoAdjustmentValues()
+        }
+        engine = nil
         isShowingOriginal = false
     }
 
@@ -135,14 +136,8 @@ final class VideoAdjustmentController {
     }
 
     private func apply() {
+        guard let pipeline = engine?.enhancementPipeline else { return }
         let current = effectiveValues
-        player?.withAdjustments {
-            $0.isEnabled = !current.isNeutral
-            $0.brightness = current.brightness
-            $0.contrast = current.contrast
-            $0.gamma = current.gamma
-            $0.saturation = current.saturation
-            $0.hue = current.hue
-        }
+        pipeline.adjustments = current
     }
 }

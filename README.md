@@ -133,6 +133,15 @@ completed one when that show has no episode already in progress. This also
 works after removing a watched file and does not create watch progress for the
 unwatched suggestion. Duplicate show records produce one next-up card.
 
+When a TV episode has a locally stored successor, an **Up Next** card appears
+at the top right during its final 30 seconds. It shows artwork, the episode
+code and title, and starts that episode when selected. The card clears when
+seeking earlier, enabling Loop Video, or ending playback, and remains
+reachable when controls are visible. Movies, files without episode context,
+unknown durations, and the final stored episode do not show it. The native
+visionOS system-player route uses the same preview rule. Artwork has a
+readable fallback, focus is visible, and transitions honor Reduce Motion.
+
 ### Intro, recap, and credits prompts
 
 Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →

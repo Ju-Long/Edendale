@@ -7,11 +7,10 @@
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerSettingsPanel: View {
     @Bindable var chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
     let item: PlaybackItem
     @Environment(AudioEnhancementController.self) private var audioEnhancement
     @Environment(VideoAdjustmentController.self) private var videoAdjustment
@@ -148,14 +147,10 @@ struct PlayerSettingsPanel: View {
     }
 
     private var selectedVideoTrackID: String? {
-        // SwiftVLC explicitly invalidates selectedAudioTrack on every track
-        // refresh. Observe that signal because Track equality uses only its
-        // ID, so selection-only updates do not invalidate the track arrays.
-        _ = player.selectedAudioTrack
-        return player.videoTracks.first(where: \.isSelected)?.id
+        player.videoTracks.first(where: \.isSelected)?.id
     }
 
-    private func videoTrackLabel(_ track: Track) -> String {
+    private func videoTrackLabel(_ track: PlaybackTrack) -> String {
         var label = track.name
         if let language = track.language, !language.isEmpty,
            !label.localizedCaseInsensitiveContains(language) {
@@ -167,13 +162,8 @@ struct PlayerSettingsPanel: View {
         return label
     }
 
-    // SwiftVLC exposes selectedAudioTrack and selectedSubtitleTrack but not
-    // selectedVideoTrack. The underlying selectTrack method resolves by the
-    // Track's stable ID and calls libvlc_media_player_select_track, which is
-    // type-agnostic — passing a video Track through the audio setter selects
-    // the correct video track at the libVLC level without affecting audio.
-    private func selectVideoTrack(_ track: Track) {
-        player.selectedAudioTrack = track
+    private func selectVideoTrack(_ track: PlaybackTrack) {
+        player.selectVideoTrack(track)
     }
 
     // MARK: - Audio Track
@@ -197,7 +187,7 @@ struct PlayerSettingsPanel: View {
         .accessibilityLabel("Audio Track")
     }
 
-    private func audioTrackLabel(_ track: Track) -> String {
+    private func audioTrackLabel(_ track: PlaybackTrack) -> String {
         var label = track.name
         if let language = track.language, !language.isEmpty,
            !label.localizedCaseInsensitiveContains(language) {
@@ -276,7 +266,7 @@ struct PlayerSettingsPanel: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    private func trackLabel(_ track: Track) -> String {
+    private func trackLabel(_ track: PlaybackTrack) -> String {
         if let language = track.language, !language.isEmpty, !track.name.localizedCaseInsensitiveContains(language) {
             return "\(track.name) (\(language))"
         }

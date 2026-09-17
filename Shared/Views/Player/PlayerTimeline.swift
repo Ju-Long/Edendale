@@ -8,11 +8,10 @@
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerTimeline: View {
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
 
     #if os(tvOS)
     @FocusState private var isFocused: Bool

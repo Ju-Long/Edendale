@@ -14,11 +14,10 @@
 
 #if os(iOS) || os(visionOS)
 import SwiftUI
-import SwiftVLC
 
 struct PlayerGestureLayer: View {
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
 
     private enum Side { case left, right }
 
@@ -65,7 +64,7 @@ struct PlayerGestureLayer: View {
             .accessibilityHint("Shows or hides the playback controls.")
             .accessibilityAction { chrome.toggleControls() }
             .accessibilityActions {
-                Button(chrome.isPlaybackActive ? String(localized: "Pause") : String(localized: "Play")) {
+                Button(player.isPlaying ? String(localized: "Pause") : String(localized: "Play")) {
                     chrome.togglePlayPause()
                 }
                 Button(String(localized: "Back 10 seconds")) { chrome.seek(bySeconds: -10) }

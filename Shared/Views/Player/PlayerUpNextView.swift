@@ -14,6 +14,8 @@ struct PlayerUpNextView: View {
     let onPlay: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var isFocused: Bool
+    @State private var isHovered = false
 
     private var imageURL: URL? {
         episode.stillURL ?? episode.show?.backdropURL
@@ -26,17 +28,26 @@ struct PlayerUpNextView: View {
                 details
             }
             .padding(10)
-            .glassBackground(in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .strokeBorder(isFocused || isHovered ? Theme.gold : Theme.outline, lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
+        .focused($isFocused)
+        .focusEffectDisabled()
+        #if !os(tvOS)
+        .onHover { isHovered = $0 }
+        #endif
         .frame(maxWidth: 280)
-        .transition(.asymmetric(
+        .transition(reduceMotion ? .identity : .asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .opacity
         ))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Up Next: \(episode.episodeCode) \(episode.displayTitle)"))
-        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Play the next episode now")
     }
 
     private var artwork: some View {

@@ -7,13 +7,12 @@
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct OnlineSubtitlesSection: View {
     @Environment(WyzieKeyStore.self) private var keys
     @Bindable var model: OnlineSubtitlesModel
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
     let item: PlaybackItem
 
     private let resultLimit = 25

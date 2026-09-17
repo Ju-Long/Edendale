@@ -9,14 +9,14 @@
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerScreen: View {
     @Environment(PlayerSession.self) private var session
     @Environment(VideoAdjustmentController.self) private var videoAdjustment
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     #if os(iOS) || os(macOS)
-    @State private var pipController: PiPController?
+    private var pipSource: SampleBufferPiPSource? { session.player?.pipSource }
     #endif
 
     #if os(iOS)
@@ -60,17 +60,18 @@ struct PlayerScreen: View {
         .persistentSystemOverlays(
             (session.chrome?.controlsVisible ?? true) ? .automatic : .hidden
         )
-        // SwiftVLC always arms auto-PiP (`canStartPictureInPictureAutomatically
-        // FromInline`). When the user has turned the preference off, cancel a
-        // window the system opened as we left the foreground. Gating on
-        // `scenePhase != .active` leaves a foreground button-press PiP alone —
-        // that fires while the app is still active, so it never trips here.
-        .onChange(of: pipController?.isActive ?? false) { _, active in
+        // The player view always arms auto-PiP
+        // (`canStartPictureInPictureAutomaticallyFromInline`). When the user
+        // has turned the preference off, cancel a window the system opened as
+        // we left the foreground. Gating on `scenePhase != .active` leaves a
+        // foreground button-press PiP alone — that fires while the app is
+        // still active, so it never trips here.
+        .onChange(of: pipSource?.isActive ?? false) { _, active in
             guard active,
                   scenePhase != .active,
                   session.chrome?.autoPiP == false
             else { return }
-            pipController?.stop()
+            pipSource?.stop()
         }
         #endif
         #if os(tvOS)
@@ -85,7 +86,7 @@ struct PlayerScreen: View {
         .onDisappear {
             // The host closed underneath us (macOS red button or cover
             // dismissal), so release the player and its file access. On
-            // visionOS, changing a packed-video override can swap this VLC
+            // visionOS, changing a packed-video override can swap the decoder
             // surface for AVKit inside the same cover; that is not a session
             // dismissal.
             #if os(visionOS)
@@ -101,17 +102,10 @@ struct PlayerScreen: View {
     // MARK: - Layers
 
     @ViewBuilder
-    private func playback(player: Player, item: PlaybackItem) -> some View {
+    private func playback(player: PlaybackEngine, item: PlaybackItem) -> some View {
         ZStack {
-            GeometryReader { geo in
-                let scale = videoFillScale(player: player, container: geo.size)
-                videoSurface(player: player)
-                    .scaleEffect(scale)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
-                    .animation(.easeInOut(duration: 0.25), value: scale)
-            }
-            .ignoresSafeArea()
+            videoSurface(player: player)
+                .ignoresSafeArea()
 
             #if os(iOS) || os(visionOS)
             if let chrome = session.chrome {
@@ -127,7 +121,7 @@ struct PlayerScreen: View {
                     player: player,
                     item: item,
                     exit: exit,
-                    pipController: pipController
+                    pipSource: pipSource
                 )
                 #else
                 PlayerControlsOverlay(
@@ -147,67 +141,61 @@ struct PlayerScreen: View {
                 }
                 #endif
 
-                if let upcoming = chrome.upcomingEpisode {
+                if let upcoming = chrome.upcomingEpisode,
+                   chrome.activePanel == nil, !chrome.isScrubbing {
                     VStack {
                         HStack {
                             Spacer()
                             PlayerUpNextView(episode: upcoming) {
                                 Task { await session.play(episode: upcoming) }
                             }
-                            .padding(.top, 16)
-                            .padding(.trailing, 16)
+                            .padding(.top, chrome.controlsVisible ? upNextControlsInset : 16)
+                            .padding(.trailing, upNextTrailingInset)
                         }
                         Spacer()
                     }
                     .allowsHitTesting(true)
+                    .transaction { if reduceMotion { $0.animation = nil } }
                 }
 
                 PlayerHUDView(chrome: chrome)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: session.chrome?.upcomingEpisode?.id)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: session.chrome?.upcomingEpisode?.id)
         #if os(tvOS)
         .animation(.easeInOut(duration: 0.2), value: session.chrome?.timelineVisible)
         #endif
     }
 
-    /// The raw VLC video surface. Fit/fill is layered on top by the caller
-    /// as a scale-and-clip transform, so this stays a plain host view.
-    @ViewBuilder
-    private func videoSurface(player: Player) -> some View {
-        #if os(iOS) || os(macOS)
-        VideoPlayer(
-            player: player,
-            pipController: $pipController,
-            onSurfaceReady: session.surfaceDidAttach
-        )
+    // Keep the card below the visible toolbar, with the same safe margin as
+    // the native controls. It stays reachable when a remote reveals controls.
+    private var upNextControlsInset: CGFloat {
+        #if os(tvOS)
+        140
         #else
-        VideoPlayer(
-            player: player,
-            onSurfaceReady: session.surfaceDidAttach
-        )
+        88
         #endif
     }
 
-    /// Scale that makes the letterboxed surface cover `container` when the
-    /// user picks "Fill"; 1 (fit) otherwise or until the video size is known.
-    private func videoFillScale(player: Player, container: CGSize) -> CGFloat {
-        guard session.chrome?.aspectFill == true else { return 1 }
-        return PlayerLogic.aspectFillScale(
-            container: container,
-            video: videoNaturalSize(player)
-        )
+    private var upNextTrailingInset: CGFloat {
+        #if os(tvOS)
+        60
+        #else
+        20
+        #endif
     }
 
-    /// The active video track's coded pixel size, or `.zero` before tracks
-    /// resolve (which yields a fit scale of 1).
-    private func videoNaturalSize(_ player: Player) -> CGSize {
-        let track = player.videoTracks.first { $0.isSelected }
-            ?? player.videoTracks.first
-        guard let width = track?.width, let height = track?.height else {
-            return .zero
-        }
-        return CGSize(width: width, height: height)
+    /// The Metal video surface. Aspect mode (fit/fill) is handled natively
+    /// by the `EnhancedVideoView` renderer, so no scale-and-clip hack is
+    /// needed here.
+    @ViewBuilder
+    private func videoSurface(player: PlaybackEngine) -> some View {
+        EnhancedVideoPlayer(
+            ringBuffer: player.ringBuffer,
+            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+            isPaused: !player.isPlaying,
+            onSurfaceReady: { _ in session.surfaceDidAttach() }
+        )
     }
 
     private var failure: some View {

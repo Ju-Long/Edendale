@@ -9,11 +9,10 @@
 
 #if os(tvOS)
 import SwiftUI
-import SwiftVLC
 
 struct PlayerTVTimelineOverlay: View {
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
 
     private var progress: Double {
         let value = chrome.isScrubbing ? chrome.scrubPosition : player.position

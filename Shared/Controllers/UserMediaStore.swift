@@ -178,6 +178,7 @@ final class UserMediaStore {
     /// Reload all records from CoreData into the in-memory cache.
     private func loadAll() {
         let request = NSFetchRequest<CDUserMedia>(entityName: "CDUserMedia")
+        request.shouldRefreshRefetchedObjects = true
         do {
             let results = try viewContext.fetch(request)
             var rebuilt: [String: UserMediaState] = [:]
