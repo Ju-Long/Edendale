@@ -21,6 +21,8 @@ public struct EnhancedVideoPlayer: View {
     public var isPaused: Bool
     public var testPatternEnabled: Bool
     var enhancementPipeline: EnhancementPipeline?
+    var subtitleEngine: SubtitleEngine?
+    var pipSource: SampleBufferPiPSource?
     public var onSurfaceReady: ((EnhancedVideoView) -> Void)?
 
     init(
@@ -32,6 +34,8 @@ public struct EnhancedVideoPlayer: View {
         isPaused: Bool = false,
         testPatternEnabled: Bool = false,
         enhancementPipeline: EnhancementPipeline? = nil,
+        subtitleEngine: SubtitleEngine? = nil,
+        pipSource: SampleBufferPiPSource? = nil,
         onSurfaceReady: ((EnhancedVideoView) -> Void)? = nil
     ) {
         self.ringBuffer = ringBuffer
@@ -42,6 +46,8 @@ public struct EnhancedVideoPlayer: View {
         self.isPaused = isPaused
         self.testPatternEnabled = testPatternEnabled
         self.enhancementPipeline = enhancementPipeline
+        self.subtitleEngine = subtitleEngine
+        self.pipSource = pipSource
         self.onSurfaceReady = onSurfaceReady
     }
 
@@ -55,6 +61,9 @@ public struct EnhancedVideoPlayer: View {
             isPaused: isPaused,
             testPatternEnabled: testPatternEnabled,
             enhancementPipeline: enhancementPipeline,
+            subtitleEngine: subtitleEngine,
+            subtitleRevision: subtitleEngine?.revision ?? 0,
+            pipSource: pipSource,
             onSurfaceReady: onSurfaceReady
         )
     }
@@ -70,6 +79,9 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
     let isPaused: Bool
     let testPatternEnabled: Bool
     let enhancementPipeline: EnhancementPipeline?
+    let subtitleEngine: SubtitleEngine?
+    let subtitleRevision: UInt
+    let pipSource: SampleBufferPiPSource?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
 
     func makeNSView(context: Context) -> EnhancedVideoView {
@@ -84,23 +96,30 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
     }
 
     static func dismantleNSView(_ nsView: EnhancedVideoView, coordinator: ()) {
+        nsView.pipSource = nil
+        nsView.isPlaybackPaused = true
         nsView.isPaused = true
     }
 
     private func apply(to view: EnhancedVideoView) {
         view.ringBuffer = ringBuffer
+        let timeChanged = view.currentDisplayTime != presentationTime
         view.currentDisplayTime = presentationTime
         view.aspectMode = aspectMode
-        view.isPaused = isPaused
+        view.isPlaybackPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
         view.enhancementPipeline = enhancementPipeline
+        view.subtitleEngine = subtitleEngine
+        let subtitleChanged = view.subtitleRevision != subtitleRevision
+        view.subtitleRevision = subtitleRevision
+        view.pipSource = pipSource
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
         }
         if let currentTexture {
             view.currentTexture = currentTexture
         }
-        if isPaused { view.draw() }
+        if isPaused && (timeChanged || subtitleChanged) { view.draw() }
     }
 }
 #else
@@ -113,6 +132,9 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     let isPaused: Bool
     let testPatternEnabled: Bool
     let enhancementPipeline: EnhancementPipeline?
+    let subtitleEngine: SubtitleEngine?
+    let subtitleRevision: UInt
+    let pipSource: SampleBufferPiPSource?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
 
     func makeUIView(context: Context) -> EnhancedVideoView {
@@ -127,23 +149,30 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     }
 
     static func dismantleUIView(_ uiView: EnhancedVideoView, coordinator: ()) {
+        uiView.pipSource = nil
+        uiView.isPlaybackPaused = true
         uiView.isPaused = true
     }
 
     private func apply(to view: EnhancedVideoView) {
         view.ringBuffer = ringBuffer
+        let timeChanged = view.currentDisplayTime != presentationTime
         view.currentDisplayTime = presentationTime
         view.aspectMode = aspectMode
-        view.isPaused = isPaused
+        view.isPlaybackPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
         view.enhancementPipeline = enhancementPipeline
+        view.subtitleEngine = subtitleEngine
+        let subtitleChanged = view.subtitleRevision != subtitleRevision
+        view.subtitleRevision = subtitleRevision
+        view.pipSource = pipSource
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
         }
         if let currentTexture {
             view.currentTexture = currentTexture
         }
-        if isPaused { view.draw() }
+        if isPaused && (timeChanged || subtitleChanged) { view.draw() }
     }
 }
 #endif

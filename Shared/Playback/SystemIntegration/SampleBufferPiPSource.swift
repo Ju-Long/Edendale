@@ -2,6 +2,7 @@ import AVFoundation
 import AVKit
 import CoreMedia
 import CoreVideo
+import Observation
 
 #if os(iOS) || os(macOS)
 
@@ -46,6 +47,7 @@ private final class PiPEnqueueState: @unchecked Sendable {
 /// hidden behind the Metal rendering surface during normal playback and becomes
 /// visible only when PiP is active.
 @MainActor
+@Observable
 final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
 
     let displayLayer = AVSampleBufferDisplayLayer()
@@ -54,15 +56,27 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
 
     private weak var engine: PlaybackEngine?
     private let enqueueState = PiPEnqueueState()
+    private var timebase: CMTimebase?
+    #if os(iOS)
+    var automaticallyStartsFromInline = true {
+        didSet { pipController?.canStartPictureInPictureAutomaticallyFromInline = automaticallyStartsFromInline }
+    }
+    #endif
 
     var onWillStart: (() -> Void)?
     var onDidStart: (() -> Void)?
     var onWillStop: (() -> Void)?
     var onDidStop: (() -> Void)?
-    var onRestoreUI: (() -> Void)?
+    var onRestoreUI: ((@escaping (Bool) -> Void) -> Void)?
 
     override init() {
         super.init()
+        CMTimebaseCreateWithSourceClock(
+            allocator: kCFAllocatorDefault,
+            sourceClock: CMClockGetHostTimeClock(),
+            timebaseOut: &timebase
+        )
+        displayLayer.controlTimebase = timebase
         displayLayer.videoGravity = .resizeAspect
         #if os(iOS)
         displayLayer.preventsDisplaySleepDuringVideoPlayback = true
@@ -72,6 +86,7 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
     func attach(to engine: PlaybackEngine) {
         self.engine = engine
         setupPiPController()
+        invalidatePlaybackState()
     }
 
     func detach() {
@@ -82,6 +97,19 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         displayLayer.sampleBufferRenderer.flush()
         enqueueState.reset()
         isActive = false
+        if let timebase { CMTimebaseSetRate(timebase, rate: 0) }
+    }
+
+    /// AVKit caches these delegate values; refresh after transport/duration changes.
+    func invalidatePlaybackState() {
+        synchronizePlaybackClock()
+        pipController?.invalidatePlaybackState()
+    }
+
+    func synchronizePlaybackClock() {
+        guard let timebase, let engine else { return }
+        CMTimebaseSetTime(timebase, time: CMTime(seconds: engine.currentTime.playbackSeconds, preferredTimescale: 60000))
+        CMTimebaseSetRate(timebase, rate: engine.isPlaying ? Double(engine.playbackRate) : 0)
     }
 
     /// Enqueue a processed frame into the sample buffer layer for PiP.
@@ -107,6 +135,9 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         guard let sampleBuffer else { return }
 
         let renderer = displayLayer.sampleBufferRenderer
+        if renderer.status == .failed {
+            renderer.flush()
+        }
         if renderer.isReadyForMoreMediaData {
             renderer.enqueue(sampleBuffer)
         }
@@ -115,6 +146,7 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
     // MARK: - PiP controls
 
     func start() {
+        invalidatePlaybackState()
         pipController?.startPictureInPicture()
     }
 
@@ -142,7 +174,7 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         let controller = AVPictureInPictureController(contentSource: contentSource)
         controller.delegate = self
         #if os(iOS)
-        controller.canStartPictureInPictureAutomaticallyFromInline = true
+        controller.canStartPictureInPictureAutomaticallyFromInline = automaticallyStartsFromInline
         #endif
         pipController = controller
     }
@@ -155,8 +187,9 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController
     ) {
         Task { @MainActor [weak self] in
-            self?.isActive = true
-            self?.onWillStart?()
+            guard let self, self.pipController === pictureInPictureController else { return }
+            self.isActive = true
+            self.onWillStart?()
         }
     }
 
@@ -164,7 +197,9 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController
     ) {
         Task { @MainActor [weak self] in
-            self?.onDidStart?()
+            guard let self, self.pipController === pictureInPictureController else { return }
+            self.invalidatePlaybackState()
+            self.onDidStart?()
         }
     }
 
@@ -172,7 +207,8 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController
     ) {
         Task { @MainActor [weak self] in
-            self?.onWillStop?()
+            guard let self, self.pipController === pictureInPictureController else { return }
+            self.onWillStop?()
         }
     }
 
@@ -180,8 +216,20 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController
     ) {
         Task { @MainActor [weak self] in
-            self?.isActive = false
-            self?.onDidStop?()
+            guard let self, self.pipController === pictureInPictureController else { return }
+            self.isActive = false
+            self.onDidStop?()
+        }
+    }
+
+    nonisolated func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        failedToStartPictureInPictureWithError error: Error
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self, self.pipController === pictureInPictureController else { return }
+            self.isActive = false
+            self.onDidStop?()
         }
     }
 
@@ -190,8 +238,16 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
     ) {
         Task { @MainActor [weak self] in
-            self?.onRestoreUI?()
-            completionHandler(true)
+            guard let self, self.pipController === pictureInPictureController else {
+                completionHandler(false)
+                return
+            }
+            if let restore = self.onRestoreUI {
+                restore(completionHandler)
+            } else {
+                // macOS keeps the original player window available.
+                completionHandler(self.engine != nil)
+            }
         }
     }
 }
@@ -204,7 +260,8 @@ extension SampleBufferPiPSource: AVPictureInPictureSampleBufferPlaybackDelegate 
         setPlaying playing: Bool
     ) {
         Task { @MainActor [weak self] in
-            guard let engine = self?.engine else { return }
+            guard let self, self.pipController === pictureInPictureController else { return }
+            guard let engine = self.engine else { return }
             if playing { engine.play() } else { engine.pause() }
         }
     }
@@ -213,10 +270,10 @@ extension SampleBufferPiPSource: AVPictureInPictureSampleBufferPlaybackDelegate 
         _ pictureInPictureController: AVPictureInPictureController
     ) -> CMTimeRange {
         let dur: CMTime
-        if let d = MainActor.assumeIsolated({ self.engine?.duration }) {
+        if let d = MainActor.assumeIsolated({ self.engine?.duration }), d.playbackSeconds > 0 {
             dur = CMTime(seconds: d.playbackSeconds, preferredTimescale: 600)
         } else {
-            dur = CMTime(seconds: 0, preferredTimescale: 600)
+            dur = .positiveInfinity
         }
         return CMTimeRange(start: .zero, duration: dur)
     }
@@ -238,11 +295,36 @@ extension SampleBufferPiPSource: AVPictureInPictureSampleBufferPlaybackDelegate 
         completion: @escaping () -> Void
     ) {
         Task { @MainActor [weak self] in
+            guard let self, self.pipController === pictureInPictureController else {
+                completion()
+                return
+            }
             let seconds = skipInterval.seconds
-            self?.engine?.seek(by: .seconds(seconds))
+            self.engine?.seek(by: .seconds(seconds))
             completion()
         }
     }
+}
+
+#else
+
+@MainActor
+final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
+    let displayLayer = CALayer()
+    var isActive: Bool = false
+    var isPossible: Bool = false
+    var onWillStart: (() -> Void)?
+    var onDidStart: (() -> Void)?
+    var onWillStop: (() -> Void)?
+    var onDidStop: (() -> Void)?
+    var onRestoreUI: ((@escaping (Bool) -> Void) -> Void)?
+
+    func attach(to engine: PlaybackEngine) {}
+    func detach() {}
+    func enqueue(pixelBuffer: CVPixelBuffer, presentationTime: CMTime, duration: CMTime) {}
+    func start() {}
+    func stop() {}
+    func toggle() {}
 }
 
 #endif

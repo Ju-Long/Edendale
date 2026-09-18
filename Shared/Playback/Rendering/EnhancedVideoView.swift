@@ -6,6 +6,7 @@
 //  intake, aspect ratio fitting/filling, and frame pacing.
 //
 
+import AVFoundation
 import CoreGraphics
 import CoreMedia
 import CoreVideo
@@ -31,11 +32,52 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     /// The GPU enhancement pipeline (upscale, sharpen, denoise, color adjustments).
     var enhancementPipeline: EnhancementPipeline?
 
+    /// External subtitle engine for compositing text/image subtitle overlays.
+    var subtitleEngine: SubtitleEngine?
+    var subtitleRevision: UInt = 0
+    private var compositingTexture: MTLTexture?
+
     /// The frame intake ring buffer populated by media decoders.
     public var ringBuffer: FrameRingBuffer?
 
     /// Aspect ratio presentation mode (.fit for letterbox/pillarbox, .fill for cropped full bleed).
-    public var aspectMode: VideoAspectMode = .fit
+    public var aspectMode: VideoAspectMode = .fit {
+        didSet {
+            #if os(iOS) || os(macOS)
+            updatePiPLayer()
+            #endif
+        }
+    }
+
+    /// External PiP sample buffer source to keep attached to the active window hierarchy.
+    var pipSource: SampleBufferPiPSource? {
+        didSet {
+            guard oldValue !== pipSource else { return }
+            oldValue?.displayLayer.removeFromSuperlayer()
+            if let pipSource {
+                #if os(macOS)
+                wantsLayer = true
+                layer?.insertSublayer(pipSource.displayLayer, at: 0)
+                #else
+                layer.insertSublayer(pipSource.displayLayer, at: 0)
+                #endif
+                updatePiPLayer()
+            }
+        }
+    }
+
+    private func updatePiPLayer() {
+        guard let displayLayer = pipSource?.displayLayer else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        displayLayer.frame = bounds
+        #if os(iOS) || os(macOS)
+        if let sbLayer = displayLayer as? AVSampleBufferDisplayLayer {
+            sbLayer.videoGravity = (aspectMode == .fill) ? .resizeAspectFill : .resizeAspect
+        }
+        #endif
+        CATransaction.commit()
+    }
 
     /// Target frame rate in Hz for frame presentation pacing. Default 60.0.
     public var targetFrameRate: Float = 60.0 {
@@ -61,6 +103,34 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
     /// Fired once when the view has non-zero bounds and is ready for rendering.
     public var onReady: ((EnhancedVideoView) -> Void)?
+
+    /// Whether playback is paused from the player/view perspective.
+    public var isPlaybackPaused: Bool = false {
+        didSet {
+            updatePauseState()
+        }
+    }
+
+    /// Whether the application is in the background or hidden.
+    public private(set) var isAppBackgrounded: Bool = false {
+        didSet {
+            updatePauseState()
+        }
+    }
+
+    private nonisolated(unsafe) var lifecycleObservers: [NSObjectProtocol] = []
+
+    private func updatePauseState() {
+        let shouldPause = isPlaybackPaused || isAppBackgrounded
+        if self.isPaused != shouldPause {
+            self.isPaused = shouldPause
+        }
+        if shouldPause {
+            if !isAppBackgrounded && bounds.width > 0 && bounds.height > 0 {
+                self.draw()
+            }
+        }
+    }
 
     // Internal animation state for test pattern
     private var testPatternPhase: Double = 0.0
@@ -105,6 +175,52 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         #if os(tvOS)
         UIApplication.shared.isIdleTimerDisabled = true
         #endif
+
+        setupLifecycleObservers()
+    }
+
+    private func setupLifecycleObservers() {
+        #if os(macOS)
+        let hideObs = NotificationCenter.default.addObserver(
+            forName: NSApplication.didHideNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppBackground()
+        }
+        let unhideObs = NotificationCenter.default.addObserver(
+            forName: NSApplication.didUnhideNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppForeground()
+        }
+        lifecycleObservers.append(contentsOf: [hideObs, unhideObs])
+        #else
+        let bgObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppBackground()
+        }
+        let fgObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppForeground()
+        }
+        lifecycleObservers.append(contentsOf: [bgObs, fgObs])
+        #endif
+    }
+
+    private func handleAppBackground() {
+        isAppBackgrounded = true
+    }
+
+    private func handleAppForeground() {
+        isAppBackgrounded = false
     }
 
     // MARK: - Layout & Surface Ready
@@ -112,16 +228,21 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     #if os(macOS)
     public override func layout() {
         super.layout()
+        updatePiPLayer()
         reportReadyIfNeeded()
     }
     #else
     public override func layoutSubviews() {
         super.layoutSubviews()
+        updatePiPLayer()
         reportReadyIfNeeded()
     }
 
     public override func didMoveToWindow() {
         super.didMoveToWindow()
+        #if os(iOS)
+        updatePiPLayer()
+        #endif
         #if !os(visionOS)
         if let window {
             contentScaleFactor = window.screen.scale
@@ -141,13 +262,22 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     override public var canBecomeFocused: Bool {
         false
     }
+    #endif
 
     deinit {
+        #if os(iOS) || os(macOS)
+        pipSource?.displayLayer.removeFromSuperlayer()
+        #endif
+        for obs in lifecycleObservers {
+            NotificationCenter.default.removeObserver(obs)
+        }
+        lifecycleObservers.removeAll()
+        #if os(tvOS)
         MainActor.assumeIsolated {
             UIApplication.shared.isIdleTimerDisabled = false
         }
+        #endif
     }
-    #endif
 
     // MARK: - Direct Input Methods
 
@@ -175,7 +305,7 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
     private var drawCallCount = 0
     public func draw(in view: MTKView) {
-        guard bounds.width > 0, bounds.height > 0 else { return }
+        guard !isAppBackgrounded, bounds.width > 0, bounds.height > 0 else { return }
 
         drawCallCount += 1
         if drawCallCount <= 5 || drawCallCount % 300 == 0 {
@@ -217,6 +347,21 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         if let pipeline = enhancementPipeline {
             pipeline.displaySize = drawableSize
             renderTexture = pipeline.process(source: renderTexture, commandBuffer: commandBuffer)
+        }
+
+        // Subtitle compositing
+        if let subtitleEngine, subtitleEngine.isEnabled, subtitleEngine.activeFormat != nil {
+            subtitleEngine.setCanvasSize(CGSize(width: renderTexture.width, height: renderTexture.height))
+            if let subTexture = subtitleEngine.renderSubtitleTexture(at: currentDisplayTime),
+               let outputTexture = ensureCompositingTexture(width: renderTexture.width, height: renderTexture.height) {
+                subtitleEngine.compositor.composite(
+                    video: renderTexture,
+                    subtitle: subTexture,
+                    output: outputTexture,
+                    commandBuffer: commandBuffer
+                )
+                renderTexture = outputTexture
+            }
         }
 
         // Render to screen
@@ -262,6 +407,23 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         onFramePresented?(currentDisplayTime)
     }
 
+    private func ensureCompositingTexture(width: Int, height: Int) -> MTLTexture? {
+        if let existing = compositingTexture,
+           existing.width == width, existing.height == height {
+            return existing
+        }
+        let desc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm,
+            width: width,
+            height: height,
+            mipmapped: false
+        )
+        desc.usage = [.shaderRead, .shaderWrite]
+        let tex = metalContext.device.makeTexture(descriptor: desc)
+        compositingTexture = tex
+        return tex
+    }
+
     private func resolveVideoTexture() -> VideoTexture? {
         if testPatternEnabled {
             testPatternPhase += 0.03
@@ -284,6 +446,9 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
         if let ringBuffer {
             if let frame = ringBuffer.latestFrame(atOrBefore: currentDisplayTime) ?? ringBuffer.latestFrame() {
+                if frame.presentationTime.isValid, frame.presentationTime.isNumeric {
+                    self.currentDisplayTime = frame.presentationTime
+                }
                 return textureCache.videoTexture(from: frame.pixelBuffer)
             }
         }

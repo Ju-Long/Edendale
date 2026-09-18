@@ -10,8 +10,10 @@ import CoreGraphics
 import CoreMedia
 import Foundation
 import Metal
+import Observation
 
 /// Unified controller orchestrating subtitle decoders, renderers, and Metal compositing.
+@Observable
 public final class SubtitleEngine: @unchecked Sendable {
     public let device: MTLDevice
 
@@ -22,7 +24,10 @@ public final class SubtitleEngine: @unchecked Sendable {
 
     public private(set) var activeFormat: SubtitleTrackFormat?
     public private(set) var canvasSize: CGSize = CGSize(width: 1920, height: 1080)
-    public var isEnabled: Bool = true
+    public private(set) var revision: UInt = 0
+    public var isEnabled: Bool = true {
+        didSet { if isEnabled != oldValue { revision &+= 1 } }
+    }
 
     public init(device: MTLDevice = MTLCreateSystemDefaultDevice()!) {
         self.device = device
@@ -36,6 +41,7 @@ public final class SubtitleEngine: @unchecked Sendable {
     public func selectFormat(_ format: SubtitleTrackFormat?) {
         guard activeFormat != format else { return }
         activeFormat = format
+        revision &+= 1
     }
 
     /// Update frame / canvas resolution.
@@ -49,15 +55,23 @@ public final class SubtitleEngine: @unchecked Sendable {
 
     /// Ingest a text-based subtitle event.
     public func addEvent(_ event: DecodedSubtitleEvent) {
+        revision &+= 1
         switch activeFormat {
         case .ass, .ssa:
-            assRenderer.addEvent(event)
+            timedTextRenderer.addAssEvent(event)
+            if AssRenderer.isAvailable {
+                assRenderer.addEvent(event)
+            }
         case .srt, .webvtt:
             timedTextRenderer.addEvent(event)
         default:
             // Auto-detect format if unset
-            if event.text.contains("Dialogue:") || event.text.contains("[Script Info]") {
-                assRenderer.addEvent(event)
+            let isAssChunk = TimedTextRenderer.extractDialogueText(from: event.text) != event.text
+            if event.text.contains("Dialogue:") || event.text.contains("[Script Info]") || isAssChunk {
+                timedTextRenderer.addAssEvent(event)
+                if AssRenderer.isAvailable {
+                    assRenderer.addEvent(event)
+                }
             } else {
                 timedTextRenderer.addEvent(event)
             }
@@ -66,34 +80,60 @@ public final class SubtitleEngine: @unchecked Sendable {
 
     /// Ingest full ASS script file or header data.
     public func addAssScriptData(_ data: Data) {
-        assRenderer.addScriptData(data)
+        revision &+= 1
+        if let script = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) {
+            timedTextRenderer.loadAssScript(from: script)
+        }
+        if AssRenderer.isAvailable {
+            assRenderer.addScriptData(data)
+        }
     }
 
     /// Ingest full SRT or WebVTT content.
     public func loadTimedText(from string: String) {
+        revision &+= 1
         timedTextRenderer.loadSubtitles(from: string)
     }
 
     /// Ingest an image-based subtitle cue (PGS, VobSub).
     public func addImageCue(_ cue: ImageSubtitleCue) {
+        revision &+= 1
         imageSubtitleRenderer.addCue(cue)
     }
 
     /// Reset all renderers and cues.
     public func reset() {
+        revision &+= 1
         assRenderer.reset()
         timedTextRenderer.reset()
         imageSubtitleRenderer.reset()
     }
 
+    /// Reading revision makes paused track/cue changes observable to SwiftUI.
+    public func activeTextCues(at time: CMTime) -> [TimedTextRenderer.TimedTextCue] {
+        _ = revision
+        guard isEnabled, let activeFormat, !activeFormat.isImageBased else { return [] }
+        return timedTextRenderer.activeCues(at: time)
+    }
+
+    public func activeImageCues(at time: CMTime) -> [ImageSubtitleCue] {
+        _ = revision
+        guard isEnabled, activeFormat?.isImageBased == true else { return [] }
+        return imageSubtitleRenderer.activeCues(at: time)
+    }
+
     /// Render active subtitles at the given playback time into an overlay texture.
     /// Returns `nil` if subtitles are disabled or no cues are active.
     public func renderSubtitleTexture(at time: CMTime) -> MTLTexture? {
-        guard isEnabled, let activeFormat else { return nil }
+        guard isEnabled, time.isValid, time.isNumeric, let activeFormat else { return nil }
 
         switch activeFormat {
         case .ass, .ssa:
-            return assRenderer.render(at: time)
+            if AssRenderer.isAvailable {
+                return assRenderer.render(at: time)
+            } else {
+                return timedTextRenderer.render(at: time)
+            }
         case .srt, .webvtt:
             return timedTextRenderer.render(at: time)
         case .pgs, .vobsub:

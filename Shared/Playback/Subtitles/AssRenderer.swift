@@ -27,6 +27,14 @@ import libass
 
 /// Renders Advanced SubStation Alpha (ASS) and SubStation Alpha (SSA) subtitles using libass.
 public final class AssRenderer: @unchecked Sendable {
+    public static var isAvailable: Bool {
+        #if canImport(SwiftLibass) || canImport(libass)
+        return true
+        #else
+        return false
+        #endif
+    }
+
     private let device: MTLDevice?
 
     #if canImport(SwiftLibass) || canImport(libass)

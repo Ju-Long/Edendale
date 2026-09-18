@@ -150,6 +150,67 @@ xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
   -destination 'generic/platform=visionOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
 
+### Picture in Picture and subtitles
+
+On iOS/iPadOS, starting PiP dismisses the full-screen player while preserving
+playback and file access. Restore returns to the same session; closing PiP ends
+the hidden session. PiP transport controls refresh from the playback state and
+use the media clock. The automatic PiP preference does not disable the manual
+PiP button.
+
+Embedded FFmpeg subtitles decode alongside audio/video. Changing tracks uses a
+bounded seek at the current position instead of scanning the entire file, and
+preserves the playing/paused state. ASS fallback rendering strips packet fields
+from dialogue text. `PlayerScreen` hosts a native SwiftUI subtitle overlay above
+the video and PiP source layer. It follows the playback clock, updates while
+paused, displays simultaneous text cues, and positions bitmap cues relative to
+the fitted/filled video. Text stays clear of visible transport controls and the
+overlay does not intercept gestures. SRT, WebVTT, and ASS downloads use the same
+overlay as embedded tracks, including CRLF files and UTF-16 files with a BOM.
+
+Run the playback regressions, then compile the iOS/iPadOS app:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/SubtitleEngineTests \
+  -only-testing:EdendaleTests/PlayerSessionTransitionTests \
+  -only-testing:EdendaleTests/EnhancedVideoRenderingTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+The subtitle fixture contains generated test video/audio with SRT and ASS
+tracks; see `EdendaleTests/Fixtures/generate-subtitle-fixture.sh` to reproduce it.
+On an iPhone/iPad, additionally verify manual PiP, a single pause/play tap,
+return to the app, restore/close, and subtitle selection on the original media.
+These are Apple playback fixes; other platform branches require no rule change.
+
+For the subtitle overlay, download/import, and decoder regressions (including
+rendered-pixel checks), run:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/PlayerSubtitleOverlayTests \
+  -only-testing:EdendaleTests/SubtitleEngineTests \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/WyzieSubtitleTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -only-testing:EdendaleTests/PlayerSubtitleOverlayTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+The second command requires the named simulator; choose an installed iPhone or
+iPad simulator if it is unavailable. These tests use synthetic embedded tracks
+and downloaded-file payloads without contacting the subtitle provider. A PNG
+preview of the actual overlay is written to the test host's temporary directory;
+its path is printed in the test log.
+
 The playlist opens at the current file and highlights current or focused rows
 with larger text on a white background. Identified episodes and the current
 identified movie include landscape artwork and stacked title/playtime details;

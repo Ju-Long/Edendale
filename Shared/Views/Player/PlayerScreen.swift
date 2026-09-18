@@ -8,6 +8,7 @@
 //  on macOS.
 //
 
+import CoreMedia
 import SwiftUI
 
 struct PlayerScreen: View {
@@ -17,10 +18,6 @@ struct PlayerScreen: View {
 
     #if os(iOS) || os(macOS)
     private var pipSource: SampleBufferPiPSource? { session.player?.pipSource }
-    #endif
-
-    #if os(iOS)
-    @Environment(\.scenePhase) private var scenePhase
     #endif
 
     #if !os(tvOS)
@@ -62,18 +59,8 @@ struct PlayerScreen: View {
         .persistentSystemOverlays(
             (session.chrome?.controlsVisible ?? true) ? .automatic : .hidden
         )
-        // The player view always arms auto-PiP
-        // (`canStartPictureInPictureAutomaticallyFromInline`). When the user
-        // has turned the preference off, cancel a window the system opened as
-        // we left the foreground. Gating on `scenePhase != .active` leaves a
-        // foreground button-press PiP alone — that fires while the app is
-        // still active, so it never trips here.
-        .onChange(of: pipSource?.isActive ?? false) { _, active in
-            guard active,
-                  scenePhase != .active,
-                  session.chrome?.autoPiP == false
-            else { return }
-            pipSource?.stop()
+        .onChange(of: session.chrome?.autoPiP ?? true, initial: true) { _, enabled in
+            pipSource?.automaticallyStartsFromInline = enabled
         }
         #endif
         #if os(tvOS)
@@ -86,6 +73,7 @@ struct PlayerScreen: View {
         .onExitCommand { handleExitCommand() }
         #endif
         .onDisappear {
+            session.surfaceDidDetach()
             // The host closed underneath us (macOS red button or cover
             // dismissal), so release the player and its file access. On
             // visionOS, changing a packed-video override can swap the decoder
@@ -96,7 +84,7 @@ struct PlayerScreen: View {
                 session.end()
             }
             #else
-            if session.isPresented { session.end() }
+            if session.isPlayerPresented { session.end() }
             #endif
         }
     }
@@ -108,6 +96,15 @@ struct PlayerScreen: View {
         ZStack {
             videoSurface(player: player)
                 .ignoresSafeArea()
+
+            PlayerSubtitleOverlay(
+                engine: player.subtitleEngine,
+                time: CMTime(seconds: player.currentTime.playbackSeconds, preferredTimescale: 60000),
+                videoSize: player.decoder?.mediaInfo?.naturalSize ?? .zero,
+                aspectFill: session.chrome?.aspectFill == true,
+                controlsVisible: session.chrome?.controlsVisible == true
+            )
+            .ignoresSafeArea()
 
             #if os(iOS) || os(visionOS)
             if let chrome = session.chrome {
@@ -192,6 +189,18 @@ struct PlayerScreen: View {
     /// needed here.
     @ViewBuilder
     private func videoSurface(player: PlaybackEngine) -> some View {
+        #if os(iOS) || os(macOS)
+        EnhancedVideoPlayer(
+            ringBuffer: player.ringBuffer,
+            presentationTime: player.videoPresentationTime,
+            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+            isPaused: !player.isPlaying,
+            enhancementPipeline: player.enhancementPipeline,
+            // Subtitles are drawn once, by the native overlay above this view.
+            pipSource: player.pipSource,
+            onSurfaceReady: { _ in session.surfaceDidAttach() }
+        )
+        #else
         EnhancedVideoPlayer(
             ringBuffer: player.ringBuffer,
             presentationTime: player.videoPresentationTime,
@@ -200,6 +209,7 @@ struct PlayerScreen: View {
             enhancementPipeline: player.enhancementPipeline,
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
+        #endif
     }
 
     private var failure: some View {

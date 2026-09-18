@@ -159,5 +159,10 @@ public protocol MediaDecoder: AnyObject {
     func setRate(_ rate: Float)
     func selectAudioTrack(_ index: Int)
     func selectSubtitleTrack(_ index: Int?)
+    func setVideoDecodingEnabled(_ enabled: Bool)
     func close()
+}
+
+extension MediaDecoder {
+    public func setVideoDecodingEnabled(_ enabled: Bool) {}
 }

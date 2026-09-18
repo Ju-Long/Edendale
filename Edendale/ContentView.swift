@@ -57,9 +57,9 @@ struct ContentView: View {
     #if os(iOS) || os(tvOS) || os(visionOS)
     private var playerPresented: Binding<Bool> {
         Binding(
-            get: { session.isPresented },
+            get: { session.isPlayerPresented },
             set: { presented in
-                if !presented { session.end() }
+                if !presented && !session.isHiddenForPictureInPicture { session.end() }
             }
         )
     }

@@ -15,11 +15,11 @@ import Metal
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
 import AppKit
 typealias PlatformFont = NSFont
-typealias PlatformColor = NSColor
+public typealias PlatformColor = NSColor
 #elseif canImport(UIKit)
 import UIKit
 typealias PlatformFont = UIFont
-typealias PlatformColor = UIColor
+public typealias PlatformColor = UIColor
 #endif
 
 /// Renders SRT and WebVTT subtitles using Core Text with styling, outline stroke, and positioning.
@@ -49,7 +49,8 @@ public final class TimedTextRenderer: @unchecked Sendable {
         }
 
         public func contains(time: CMTime) -> Bool {
-            return time >= start && time <= end
+            guard time.isValid, time.isNumeric else { return false }
+            return time >= start && time < end
         }
     }
 
@@ -80,13 +81,57 @@ public final class TimedTextRenderer: @unchecked Sendable {
 
     /// Add a decoded subtitle event.
     public func addEvent(_ event: DecodedSubtitleEvent) {
+        if (event.text.hasPrefix("Dialogue:") || event.text.contains("Dialogue:")),
+           let parsed = parseAssDialogueLine(event.text, id: cues.count + 1) {
+            addCue(parsed)
+            return
+        }
+        let cleaned = Self.extractDialogueText(from: event.text)
         let cue = TimedTextCue(
             id: cues.count + 1,
             start: event.start,
             end: event.end,
-            rawText: event.text
+            rawText: cleaned
         )
         addCue(cue)
+    }
+
+    /// Ingest the normalized ASS chunk emitted by FFmpeg's subtitle decoders.
+    public func addAssEvent(_ event: DecodedSubtitleEvent) {
+        // FFmpeg/libass chunks are ReadOrder,Layer,Style,Name,MarginL,MarginR,
+        // MarginV,Effect,Text. Their timing comes from the packet, not the text.
+        let cleaned = Self.extractDialogueText(from: event.text)
+        addEvent(DecodedSubtitleEvent(text: cleaned, start: event.start, end: event.end))
+    }
+
+    /// Strips ASS chunk metadata (e.g. `45,,Default,,0,0,0,,<text>`) emitted by
+    /// FFmpeg or Matroska subtitle decoders, returning only the dialogue text.
+    public static func extractDialogueText(from rawText: String) -> String {
+        var text = rawText
+        if text.hasPrefix("Dialogue:") {
+            text = String(text.dropFirst("Dialogue:".count)).trimmingCharacters(in: .whitespaces)
+        }
+        let fields = text.split(separator: ",", maxSplits: 8, omittingEmptySubsequences: false)
+        guard fields.count == 9 else { return rawText }
+
+        let readOrder = fields[0].trimmingCharacters(in: .whitespaces)
+        let layer = fields[1].trimmingCharacters(in: .whitespaces)
+        let marginL = fields[4].trimmingCharacters(in: .whitespaces)
+        let marginR = fields[5].trimmingCharacters(in: .whitespaces)
+        let marginV = fields[6].trimmingCharacters(in: .whitespaces)
+
+        let validReadOrder = readOrder.isEmpty || Int(readOrder) != nil
+        let validLayer = layer.isEmpty || Int(layer) != nil
+        let validMargins = (marginL.isEmpty || Int(marginL) != nil) &&
+                           (marginR.isEmpty || Int(marginR) != nil) &&
+                           (marginV.isEmpty || Int(marginV) != nil)
+
+        let hasNumericField = Int(readOrder) != nil || Int(layer) != nil || Int(marginL) != nil
+        guard validReadOrder && validLayer && validMargins && hasNumericField else {
+            return rawText
+        }
+
+        return String(fields[8])
     }
 
     /// Parse and load a full SRT or WebVTT string.
@@ -96,11 +141,23 @@ public final class TimedTextRenderer: @unchecked Sendable {
         activeCueIndex = nil
     }
 
+    /// Parse and load a full ASS / SSA script file.
+    public func loadAssScript(from string: String) {
+        cues = parseAssScript(string)
+        cachedTexture = nil
+        activeCueIndex = nil
+    }
+
     /// Reset all loaded cues.
     public func reset() {
         cues.removeAll()
         cachedTexture = nil
         activeCueIndex = nil
+    }
+
+    /// Cues for the native player overlay, including simultaneous dialogue.
+    public func activeCues(at time: CMTime) -> [TimedTextCue] {
+        cues.filter { $0.contains(time: time) }
     }
 
     /// Render subtitles at the specified playback time into an overlay texture.
@@ -181,7 +238,8 @@ public final class TimedTextRenderer: @unchecked Sendable {
 
         CTFrameDraw(frame, context)
 
-        // Upload context bitmap to MTLTexture
+        // Upload context bitmap to MTLTexture.
+        // Reverse rows so that bottom-left CGContext coordinate space maps to top-left Metal texture orientation
         guard let pixelData = context.data else { return nil }
 
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -196,20 +254,39 @@ public final class TimedTextRenderer: @unchecked Sendable {
             return nil
         }
 
-        texture.replace(
-            region: MTLRegionMake2D(0, 0, frameWidth, frameHeight),
-            mipmapLevel: 0,
-            withBytes: pixelData,
-            bytesPerRow: bytesPerRow
-        )
+        var flippedBuffer = [UInt8](repeating: 0, count: frameHeight * bytesPerRow)
+        flippedBuffer.withUnsafeMutableBytes { dstPtr in
+            guard let dstBase = dstPtr.baseAddress else { return }
+            let srcBase = pixelData
+            for y in 0..<frameHeight {
+                let srcOffset = (frameHeight - 1 - y) * bytesPerRow
+                let dstOffset = y * bytesPerRow
+                memcpy(dstBase.advanced(by: dstOffset), srcBase.advanced(by: srcOffset), bytesPerRow)
+            }
+        }
+
+        flippedBuffer.withUnsafeBytes { raw in
+            guard let base = raw.baseAddress else { return }
+            texture.replace(
+                region: MTLRegionMake2D(0, 0, frameWidth, frameHeight),
+                mipmapLevel: 0,
+                withBytes: base,
+                bytesPerRow: bytesPerRow
+            )
+        }
 
         return texture
     }
 
     // MARK: - Attributed String & Tag Parsing
 
-    public func buildAttributedString(from rawText: String) -> NSAttributedString {
-        let baseFontSize = max(18.0, CGFloat(frameHeight) * fontSizeRatio)
+    public func buildAttributedString(
+        from rawText: String,
+        fontSize: CGFloat? = nil,
+        textColor: PlatformColor = .white,
+        outlineColor: PlatformColor = .black
+    ) -> NSAttributedString {
+        let baseFontSize = fontSize ?? max(18.0, CGFloat(frameHeight) * fontSizeRatio)
         let baseFont = makeFont(size: baseFontSize, bold: false, italic: false)
 
         let paragraphStyle = NSMutableParagraphStyle()
@@ -220,13 +297,14 @@ public final class TimedTextRenderer: @unchecked Sendable {
         // High legibility styling: white fill + black stroke outline
         let baseAttributes: [NSAttributedString.Key: Any] = [
             .font: baseFont,
-            .foregroundColor: PlatformColor.white,
-            .strokeColor: PlatformColor.black,
+            .foregroundColor: textColor,
+            .strokeColor: outlineColor,
             .strokeWidth: -3.0, // Negative strokeWidth applies both fill and stroke
             .paragraphStyle: paragraphStyle
         ]
 
-        let parsedNodes = parseMarkup(rawText)
+        let cleanedText = Self.extractDialogueText(from: rawText)
+        let parsedNodes = parseMarkup(cleanedText)
         let result = NSMutableAttributedString()
 
         for node in parsedNodes {
@@ -258,9 +336,10 @@ public final class TimedTextRenderer: @unchecked Sendable {
 
     /// Parses HTML tags (`<b>`, `<i>`, `<u>`, `<font color="...">`) and ASS tags (`{\b1}`, `{\i1}`).
     private func parseMarkup(_ text: String) -> [MarkupNode] {
-        // Normalize line breaks
+        // Normalize line breaks and spaces
         let cleaned = text.replacingOccurrences(of: "\\N", with: "\n")
                           .replacingOccurrences(of: "\\n", with: "\n")
+                          .replacingOccurrences(of: "\\h", with: " ")
                           .replacingOccurrences(of: "<br>", with: "\n")
                           .replacingOccurrences(of: "<br/>", with: "\n")
 
@@ -411,7 +490,12 @@ public final class TimedTextRenderer: @unchecked Sendable {
 
     public func parse(_ content: String) -> [TimedTextCue] {
         var result: [TimedTextCue] = []
-        let lines = content.components(separatedBy: .newlines)
+        // CRLF must be normalized as a pair: splitting on each newline scalar
+        // creates blank lines between timestamps and dialogue and discards cues.
+        let lines = content.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: "\u{FEFF}", with: "")
+            .components(separatedBy: "\n")
 
         var currentIndex = 0
         var currentStart: CMTime?
@@ -494,5 +578,43 @@ public final class TimedTextRenderer: @unchecked Sendable {
         let totalSeconds = hours * 3600.0 + minutes * 60.0 + seconds
         guard totalSeconds >= 0 else { return nil }
         return CMTime(seconds: totalSeconds, preferredTimescale: 600)
+    }
+
+    // MARK: - ASS / SSA Parser
+
+    /// Parses dialogue lines from an ASS/SSA script file content.
+    public func parseAssScript(_ content: String) -> [TimedTextCue] {
+        var result: [TimedTextCue] = []
+        let lines = content.components(separatedBy: .newlines)
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("Dialogue:") || trimmed.contains("Dialogue:") {
+                if let cue = parseAssDialogueLine(trimmed, id: result.count + 1) {
+                    result.append(cue)
+                }
+            }
+        }
+        return result
+    }
+
+    /// Parses a single ASS/SSA dialogue line:
+    /// Dialogue: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+    public func parseAssDialogueLine(_ line: String, id: Int = 0) -> TimedTextCue? {
+        guard let colonIndex = line.firstIndex(of: ":") else { return nil }
+        let afterColon = String(line[line.index(after: colonIndex)...]).trimmingCharacters(in: .whitespaces)
+        let parts = afterColon.components(separatedBy: ",")
+        guard parts.count >= 10 else { return nil }
+
+        let startStr = parts[1].trimmingCharacters(in: .whitespaces)
+        let endStr = parts[2].trimmingCharacters(in: .whitespaces)
+        guard let start = parseTimestamp(startStr), let end = parseTimestamp(endStr) else { return nil }
+
+        // Dialogue text is the 9th comma onwards
+        let textParts = parts[9...]
+        let rawText = textParts.joined(separator: ",")
+        guard !rawText.isEmpty else { return nil }
+
+        return TimedTextCue(id: id, start: start, end: end, rawText: rawText)
     }
 }

@@ -50,7 +50,7 @@ public struct ImageSubtitleCue: Sendable, Equatable {
     }
 
     public func contains(time: CMTime) -> Bool {
-        return time >= start && time <= end
+        return time.isValid && time.isNumeric && time >= start && time < end
     }
 }
 

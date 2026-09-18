@@ -13,6 +13,12 @@ import CoreMedia
 import Foundation
 import Observation
 
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - Playback state
 
 /// Transport state exposed to views.
@@ -57,9 +63,22 @@ final class PlaybackEngine {
     /// The playback clock in `Duration`.
     private(set) var currentTime: Duration = .zero
     /// Total duration of the loaded media.
-    private(set) var duration: Duration?
+    private(set) var duration: Duration? {
+        didSet {
+            #if os(iOS) || os(macOS)
+            if duration != oldValue { pipSource.invalidatePlaybackState() }
+            #endif
+        }
+    }
     /// Whether the decoder is actively outputting.
-    private(set) var isPlaying: Bool = false
+    private(set) var isPlaying: Bool = false {
+        didSet {
+            #if os(iOS) || os(macOS)
+            if isPlaying != oldValue { pipSource.invalidatePlaybackState() }
+            #endif
+        }
+    }
+    private(set) var playbackRate: Float = 1
     /// Whether the loaded media supports seeking.
     private(set) var isSeekable: Bool = true
     private(set) var videoPresentationTime: CMTime = .invalid
@@ -73,6 +92,8 @@ final class PlaybackEngine {
         set {
             guard let d = duration, d > .zero else { return }
             let clamped = min(max(newValue, 0), 1)
+            currentTime = .seconds(d.playbackSeconds * clamped)
+            onTimeChanged?(currentTime)
             let target = CMTime(
                 seconds: d.playbackSeconds * clamped,
                 preferredTimescale: 600
@@ -113,15 +134,29 @@ final class PlaybackEngine {
     var selectedSubtitleTrack: PlaybackTrack? {
         get { subtitleTracks.first(where: \.isSelected) }
         set {
+            guard newValue?.id != selectedSubtitleTrack?.id else { return }
             for i in subtitleTracks.indices { subtitleTracks[i].isSelected = false }
             guard let track = newValue else {
                 decoder?.selectSubtitleTrack(nil)
+                subtitleEngine.reset()
+                subtitleEngine.selectFormat(nil)
                 return
             }
             if let idx = subtitleTracks.firstIndex(where: { $0.id == track.id }) {
                 subtitleTracks[idx].isSelected = true
             }
-            decoder?.selectSubtitleTrack(track.trackIndex)
+            if track.id.hasPrefix("ext-") {
+                decoder?.selectSubtitleTrack(nil)
+                activateExternalSubtitle(id: track.id)
+            } else if decoder is FFmpegDecoder {
+                subtitleEngine.reset()
+                subtitleEngine.selectFormat(nil)
+                decoder?.selectSubtitleTrack(track.trackIndex)
+            } else {
+                subtitleEngine.reset()
+                subtitleEngine.selectFormat(.srt)
+                decoder?.selectSubtitleTrack(track.trackIndex)
+            }
         }
     }
 
@@ -131,10 +166,27 @@ final class PlaybackEngine {
     private var openGeneration = 0
     let ringBuffer = FrameRingBuffer()
     let enhancementPipeline: EnhancementPipeline?
+    let subtitleEngine = SubtitleEngine()
+    private var externalSubtitleData: [String: (format: SubtitleTrackFormat, content: String)] = [:]
 
     #if os(iOS) || os(macOS)
     let pipSource = SampleBufferPiPSource()
     #endif
+
+    // MARK: - Audio EQ
+
+    private var audioProcessor: AudioEQProcessor?
+
+    func installAudioProcessor(_ processor: AudioEQProcessor?) {
+        audioProcessor = processor
+        if let avDecoder = decoder as? AVFoundationDecoder {
+            let changed = avDecoder.audioProcessor !== processor
+            avDecoder.audioProcessor = processor
+            if changed { avDecoder.installAudioTap() }
+        } else if let ffmpeg = decoder as? FFmpegDecoder {
+            ffmpeg.audioProcessor = processor
+        }
+    }
 
     // MARK: - Session callbacks
 
@@ -142,6 +194,13 @@ final class PlaybackEngine {
     var onEnded: (() -> Void)?
     /// Fired on every periodic time tick from the decoder.
     var onTimeChanged: ((Duration) -> Void)?
+    var onPictureInPictureStarted: (() -> Void)?
+    var onPictureInPictureStopped: (() -> Void)?
+
+    // MARK: - App Lifecycle & PiP Coordination
+
+    private var isAppBackgrounded = false
+    private nonisolated(unsafe) var lifecycleObservers: [NSObjectProtocol] = []
 
     // MARK: - Init
 
@@ -150,6 +209,78 @@ final class PlaybackEngine {
         #if os(iOS) || os(macOS)
         pipSource.attach(to: self)
         #endif
+        setupLifecycleObservers()
+    }
+
+    deinit {
+        for obs in lifecycleObservers {
+            NotificationCenter.default.removeObserver(obs)
+        }
+        lifecycleObservers.removeAll()
+    }
+
+    private func setupLifecycleObservers() {
+        #if os(macOS)
+        let hideObs = NotificationCenter.default.addObserver(
+            forName: NSApplication.didHideNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppBackgroundChanged(isBackgrounded: true)
+        }
+        let unhideObs = NotificationCenter.default.addObserver(
+            forName: NSApplication.didUnhideNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppBackgroundChanged(isBackgrounded: false)
+        }
+        lifecycleObservers.append(contentsOf: [hideObs, unhideObs])
+        #elseif os(iOS)
+        let bgObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppBackgroundChanged(isBackgrounded: true)
+        }
+        let fgObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAppBackgroundChanged(isBackgrounded: false)
+        }
+        lifecycleObservers.append(contentsOf: [bgObs, fgObs])
+        #endif
+
+        #if os(iOS) || os(macOS)
+        pipSource.onWillStart = { [weak self] in
+            self?.updateVideoDecodingState()
+        }
+        pipSource.onDidStart = { [weak self] in
+            self?.updateVideoDecodingState()
+            self?.onPictureInPictureStarted?()
+        }
+        pipSource.onDidStop = { [weak self] in
+            self?.updateVideoDecodingState()
+            self?.onPictureInPictureStopped?()
+        }
+        #endif
+    }
+
+    private func handleAppBackgroundChanged(isBackgrounded: Bool) {
+        self.isAppBackgrounded = isBackgrounded
+        updateVideoDecodingState()
+    }
+
+    private func updateVideoDecodingState() {
+        #if os(iOS) || os(macOS)
+        let shouldDecodeVideo = !isAppBackgrounded || pipSource.isActive
+        #else
+        let shouldDecodeVideo = true
+        #endif
+        decoder?.setVideoDecodingEnabled(shouldDecodeVideo)
     }
 
     // MARK: - Lifecycle
@@ -178,6 +309,7 @@ final class PlaybackEngine {
 
         decoder = newDecoder
         wireCallbacks(newDecoder)
+        updateVideoDecodingState()
 
         debugPrint("[PlaybackEngine.open] calling decoder.open(url:)...")
         let info = try await newDecoder.open(url: url)
@@ -221,18 +353,27 @@ final class PlaybackEngine {
         } else {
             capped = targetSeconds
         }
+        currentTime = .seconds(capped)
+        onTimeChanged?(currentTime)
         let target = CMTime(seconds: capped, preferredTimescale: 600)
         Task { try? await decoder.seek(to: target) }
     }
 
     func seek(to time: Duration) {
         guard let decoder else { return }
+        currentTime = time
+        onTimeChanged?(currentTime)
         let target = CMTime(seconds: time.playbackSeconds, preferredTimescale: 600)
         Task { try? await decoder.seek(to: target) }
     }
 
     func setRate(_ rate: Float) {
+        guard rate.isFinite, rate > 0 else { return }
+        playbackRate = min(max(rate, 0.25), 4)
         decoder?.setRate(rate)
+        #if os(iOS) || os(macOS)
+        pipSource.synchronizePlaybackClock()
+        #endif
     }
 
     func stop() {
@@ -248,6 +389,9 @@ final class PlaybackEngine {
         ringBuffer.clear()
         videoPresentationTime = .invalid
         enhancementPipeline?.reset()
+        subtitleEngine.reset()
+        subtitleEngine.selectFormat(nil)
+        externalSubtitleData.removeAll()
         #if os(iOS) || os(macOS)
         pipSource.detach()
         pipSource.attach(to: self)
@@ -256,6 +400,7 @@ final class PlaybackEngine {
         isPlaying = false
         currentTime = .zero
         duration = nil
+        playbackRate = 1
         videoTracks = []
         audioTracks = []
         subtitleTracks = []
@@ -263,29 +408,88 @@ final class PlaybackEngine {
 
     // MARK: - External subtitles
 
-    // TODO: Wire external subtitle loading through SubtitleEngine instead of
-    // appending a placeholder track. Currently downloads appear to succeed but
-    // the file is never parsed or rendered.
     func addExternalTrack(from url: URL, type: ExternalTrackType = .subtitle, select: Bool = true) throws {
+        guard type == .subtitle else { return }
+
+        let ext = url.pathExtension.lowercased()
+        guard let format = Self.subtitleFormat(for: ext) else {
+            throw ExternalSubtitleError.unsupportedFormat(ext)
+        }
+
+        let data = try Data(contentsOf: url)
+        let content: String
+        if data.starts(with: [0xFF, 0xFE]) || data.starts(with: [0xFE, 0xFF]),
+           let decoded = String(data: data, encoding: .utf16) {
+            content = decoded
+        } else if let decoded = String(data: data, encoding: .utf8)
+                    ?? String(data: data, encoding: .isoLatin1) {
+            content = decoded
+        } else {
+            throw ExternalSubtitleError.unreadableText
+        }
+
         let index = subtitleTracks.count
+        let trackID = "ext-\(index)"
+
+        externalSubtitleData[trackID] = (format: format, content: content)
+
         let track = PlaybackTrack(
-            id: "ext-\(index)",
+            id: trackID,
             name: url.deletingPathExtension().lastPathComponent,
             language: nil,
-            isSelected: select,
+            isSelected: false,
             width: nil,
             height: nil,
             channels: nil,
-            trackIndex: index,
+            trackIndex: -1,
             type: .subtitle
         )
-        if select {
-            for i in subtitleTracks.indices { subtitleTracks[i].isSelected = false }
-        }
         subtitleTracks.append(track)
+
+        if select {
+            selectedSubtitleTrack = track
+        }
     }
 
     enum ExternalTrackType { case subtitle, audio }
+
+    enum ExternalSubtitleError: LocalizedError {
+        case unsupportedFormat(String)
+        case unreadableText
+
+        var errorDescription: String? {
+            switch self {
+            case .unsupportedFormat(let ext):
+                return "Unsupported subtitle format: .\(ext)"
+            case .unreadableText:
+                return String(localized: "The subtitle file could not be read as text.")
+            }
+        }
+    }
+
+    private static func subtitleFormat(for ext: String) -> SubtitleTrackFormat? {
+        switch ext {
+        case "srt": return .srt
+        case "vtt", "webvtt": return .webvtt
+        case "ass": return .ass
+        case "ssa": return .ssa
+        default: return nil
+        }
+    }
+
+    private func activateExternalSubtitle(id: String) {
+        guard let data = externalSubtitleData[id] else { return }
+        subtitleEngine.reset()
+        subtitleEngine.selectFormat(data.format)
+        switch data.format {
+        case .ass, .ssa:
+            subtitleEngine.addAssScriptData(Data(data.content.utf8))
+        case .srt, .webvtt:
+            subtitleEngine.loadTimedText(from: data.content)
+        case .pgs, .vobsub:
+            break
+        }
+    }
 
     // MARK: - Video-track selection
     func selectVideoTrack(_ track: PlaybackTrack) {
@@ -320,8 +524,35 @@ final class PlaybackEngine {
         }
         if let avDecoder = decoder as? AVFoundationDecoder {
             avDecoder.onVideoFrame = receiveFrame
+            avDecoder.onSubtitleEvent = { [weak self, weak avDecoder] event in
+                guard let self, self.decoder === avDecoder,
+                      let track = self.selectedSubtitleTrack, !track.id.hasPrefix("ext-") else { return }
+                // AVFoundation sends the complete currently visible text, then
+                // nil to clear it. Neither event may overwrite a downloaded track.
+                self.subtitleEngine.reset()
+                if let event {
+                    self.subtitleEngine.addEvent(event)
+                }
+            }
         } else if let ffmpeg = decoder as? FFmpegDecoder {
             ffmpeg.onVideoFrame = receiveFrame
+            ffmpeg.onSubtitleConfiguration = { [weak self, weak ffmpeg] format, header in
+                guard let self, self.decoder === ffmpeg,
+                      let track = self.selectedSubtitleTrack, !track.id.hasPrefix("ext-") else { return }
+                self.subtitleEngine.reset()
+                self.subtitleEngine.selectFormat(format)
+                if format == .ass || format == .ssa { self.subtitleEngine.addAssScriptData(header) }
+            }
+            ffmpeg.onSubtitleEvent = { [weak self, weak ffmpeg] event in
+                guard let self, self.decoder === ffmpeg,
+                      let track = self.selectedSubtitleTrack, !track.id.hasPrefix("ext-") else { return }
+                self.subtitleEngine.addEvent(event)
+            }
+            ffmpeg.onImageSubtitleCue = { [weak self, weak ffmpeg] cue in
+                guard let self, self.decoder === ffmpeg,
+                      self.selectedSubtitleTrack?.trackIndex == cue.trackIndex else { return }
+                self.subtitleEngine.addImageCue(cue)
+            }
             ffmpeg.onDiscontinuity = { [weak self] in
                 self?.ringBuffer.clear()
                 self?.videoPresentationTime = .invalid
@@ -364,6 +595,9 @@ final class PlaybackEngine {
     private func handleTimeChanged(_ cmTime: CMTime) {
         guard cmTime.isValid, cmTime.seconds.isFinite else { return }
         currentTime = .seconds(cmTime.seconds)
+        #if os(iOS) || os(macOS)
+        pipSource.synchronizePlaybackClock()
+        #endif
 
         if let info = decoder?.mediaInfo,
            info.duration.isValid, info.duration.seconds.isFinite, info.duration.seconds > 0 {

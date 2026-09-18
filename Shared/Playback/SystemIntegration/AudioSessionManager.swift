@@ -12,7 +12,7 @@ final class AudioSessionManager {
     private var interruptionObserver: NSObjectProtocol?
     private weak var engine: PlaybackEngine?
 
-    func activate(for engine: PlaybackEngine) {
+    func activate(for engine: PlaybackEngine) async {
         self.engine = engine
 
         let session = AVAudioSession.sharedInstance()
@@ -31,12 +31,23 @@ final class AudioSessionManager {
                 options: [.allowAirPlay]
             )
             #endif
-            try session.setActive(true)
+            if #available(iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *) {
+                try await session.activate(options: [])
+            } else {
+                try await Task.detached {
+                    try session.setActive(true)
+                }.value
+            }
+            guard self.engine === engine else {
+                deactivate()
+                return
+            }
             isActivated = true
         } catch {
             // Non-fatal — playback still works, just no background audio
         }
 
+        guard self.engine === engine else { return }
         observeRouteChanges()
         observeInterruptions()
     }
@@ -56,13 +67,21 @@ final class AudioSessionManager {
         guard isActivated else { return }
         isActivated = false
 
-        do {
-            try AVAudioSession.sharedInstance().setActive(
-                false,
-                options: .notifyOthersOnDeactivation
-            )
-        } catch {
-            // Best-effort deactivation
+        if #available(iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *) {
+            AVAudioSession.sharedInstance().deactivate(options: .notifyOthersOnDeactivation) { _, _ in
+                // Best-effort deactivation
+            }
+        } else {
+            Task.detached {
+                do {
+                    try AVAudioSession.sharedInstance().setActive(
+                        false,
+                        options: .notifyOthersOnDeactivation
+                    )
+                } catch {
+                    // Best-effort deactivation
+                }
+            }
         }
     }
 

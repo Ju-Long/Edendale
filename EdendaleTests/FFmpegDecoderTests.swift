@@ -1,4 +1,5 @@
 import AVFoundation
+import AVKit
 import CoreMedia
 import Foundation
 import Testing
@@ -9,6 +10,111 @@ private final class FFmpegTestResources: NSObject { }
 @MainActor
 @Suite(.serialized)
 struct FFmpegDecoderTests {
+    @Test func selectingEmbeddedSubtitlesKeepsFramesMovingAndRendersCues() async throws {
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        try await engine.open(url: fixture("decoder-subtitles"))
+        engine.subtitleEngine.setCanvasSize(CGSize(width: 320, height: 180))
+        let track = try #require(engine.subtitleTracks.first)
+        engine.play()
+        try await wait { engine.currentTime.playbackSeconds > 0.3 }
+        let before = engine.videoPresentationTime.seconds
+        engine.selectedSubtitleTrack = track
+        try await wait {
+            engine.videoPresentationTime.seconds > before + 0.3 &&
+            engine.subtitleEngine.renderSubtitleTexture(at: engine.videoPresentationTime) != nil
+        }
+        #expect(engine.isPlaying)
+        #expect(engine.state == .playing)
+        // Reselecting the same row must not clear the already selected renderer.
+        engine.selectedSubtitleTrack = track
+        #expect(engine.subtitleEngine.renderSubtitleTexture(at: engine.videoPresentationTime) != nil)
+        engine.selectedSubtitleTrack = nil
+        #expect(engine.subtitleEngine.activeFormat == nil)
+        let time = engine.currentTime.playbackSeconds
+        try await wait { engine.currentTime.playbackSeconds > time + 0.2 }
+        #expect(engine.subtitleEngine.activeFormat == nil)
+    }
+
+    @Test func pausedSubtitleSelectionRapidSwitchAndSeekPreserveState() async throws {
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        try await engine.open(url: fixture("decoder-subtitles"))
+        engine.subtitleEngine.setCanvasSize(CGSize(width: 320, height: 180))
+        let decoder = try #require(engine.decoder as? FFmpegDecoder)
+        engine.pause()
+        try await decoder.seek(to: CMTime(seconds: 0.5, preferredTimescale: 600))
+        let first = try #require(engine.subtitleTracks.first)
+        let last = try #require(engine.subtitleTracks.last)
+        engine.selectedSubtitleTrack = first
+        engine.selectedSubtitleTrack = last
+        try await wait { engine.subtitleEngine.renderSubtitleTexture(at: CMTime(seconds: 0.5, preferredTimescale: 600)) != nil }
+        #expect(engine.selectedSubtitleTrack?.id == last.id)
+        #expect(!engine.isPlaying)
+        #expect(abs(engine.currentTime.playbackSeconds - 0.5) < 0.03)
+        try await decoder.seek(to: CMTime(seconds: 2.5, preferredTimescale: 600))
+        try await wait { engine.subtitleEngine.renderSubtitleTexture(at: CMTime(seconds: 2.5, preferredTimescale: 600)) != nil }
+        #expect(!engine.isPlaying)
+        #expect(engine.subtitleEngine.renderSubtitleTexture(at: CMTime(seconds: 0.5, preferredTimescale: 600)) == nil)
+        engine.selectedSubtitleTrack = first
+        engine.selectedSubtitleTrack = nil
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(engine.selectedSubtitleTrack == nil)
+        #expect(engine.subtitleEngine.activeFormat == nil)
+    }
+
+    @Test func subtitleDemuxingReturnsTextInsteadOfScanningToEOF() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        try reader.open(url: fixture("decoder-subtitles"))
+        let tracks = try #require(reader.mediaInfo["subtitle"] as? [[String: Any]])
+        #expect(tracks.count == 2)
+        for track in tracks {
+            let configuration = try reader.selectSubtitleTrack(try #require(track["index"] as? Int))
+            #expect(configuration["format"] as? String == "ass")
+            try reader.seek(seconds: 0)
+            var cue: EDFFmpegFrame?
+            for _ in 0..<100 {
+                cue = try reader.readBatch().first(where: { $0.subtitle != nil })
+                if cue != nil { break }
+            }
+            let first = try #require(cue)
+            #expect(!reader.atEnd)
+            #expect(first.presentationTime < 0.3)
+            #expect(first.duration > 1)
+            #expect((first.subtitle?["texts"] as? [String])?.first?.contains("first") == true ||
+                    (first.subtitle?["texts"] as? [String])?.first?.contains("First") == true)
+        }
+    }
+
+    #if os(iOS) || os(macOS)
+    @Test func pipTransportUsesOneRequestAndMatchesThePlaybackClock() async throws {
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        try await engine.open(url: fixture())
+        let source = engine.pipSource
+        let controller = try #require(source.pipController)
+        engine.play()
+        try await wait { engine.currentTime.playbackSeconds > 0.1 }
+        #expect(!source.pictureInPictureControllerIsPlaybackPaused(controller))
+        let timebase = try #require(source.displayLayer.controlTimebase)
+        #expect(CMTimebaseGetRate(timebase) == 1)
+        source.pictureInPictureController(controller, setPlaying: false)
+        try await wait { !engine.isPlaying }
+        #expect(source.pictureInPictureControllerIsPlaybackPaused(controller))
+        #expect(CMTimebaseGetRate(timebase) == 0)
+        source.pictureInPictureController(controller, setPlaying: true)
+        try await wait { engine.isPlaying }
+        #expect(!source.pictureInPictureControllerIsPlaybackPaused(controller))
+        engine.setRate(1.5)
+        #expect(CMTimebaseGetRate(timebase) == 1.5)
+        #expect(abs(CMTimebaseGetTime(timebase).seconds - engine.currentTime.playbackSeconds) < 0.1)
+    }
+    #endif
+
     private func fixture(_ name: String = "decoder-h264-aac") throws -> URL {
         let bundle = Bundle(for: FFmpegTestResources.self)
         return try #require(bundle.url(forResource: name, withExtension: "mkv")
@@ -218,5 +324,50 @@ struct FFmpegDecoderTests {
             #expect(nsError.localizedDescription.contains("SMB connect failed"))
         }
     }
-}
 
+    @Test func videoDecodingDisabledSkipsVideoFramesWhileContinuingAudio() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        try reader.open(url: fixture())
+
+        reader.videoDecodingEnabled = false
+        var videoCount = 0
+        var audioCount = 0
+
+        for _ in 0..<10 {
+            if reader.atEnd { break }
+            let batch = try reader.readBatch()
+            videoCount += batch.filter { $0.pixelBuffer != nil }.count
+            audioCount += batch.filter { $0.audioSampleBuffer != nil }.count
+        }
+
+        #expect(videoCount == 0, "Video frames should be skipped when videoDecodingEnabled is false")
+        #expect(audioCount > 0, "Audio frames should continue to decode when videoDecodingEnabled is false")
+
+        try reader.seek(seconds: 0)
+        reader.videoDecodingEnabled = true
+        #expect(reader.recreateVideoDecoder(), "recreateVideoDecoder should succeed")
+
+        var resumedVideoCount = 0
+        for _ in 0..<100 {
+            if reader.atEnd { break }
+            let batch = try reader.readBatch()
+            resumedVideoCount += batch.filter { $0.pixelBuffer != nil }.count
+        }
+        #expect(resumedVideoCount > 0, "Video frames should resume decoding when videoDecodingEnabled is true")
+    }
+
+    @Test func decoderSetVideoDecodingEnabledControlsVideoPumping() async throws {
+        let decoder = FFmpegDecoder(hardwareDecoding: false)
+        defer { decoder.close() }
+        _ = try await decoder.open(url: fixture())
+        decoder.play()
+
+        decoder.setVideoDecodingEnabled(false)
+        #expect(!decoder.isVideoDecodingEnabled)
+
+        try await Task.sleep(for: .milliseconds(150))
+        decoder.setVideoDecodingEnabled(true)
+        #expect(decoder.isVideoDecodingEnabled)
+    }
+}

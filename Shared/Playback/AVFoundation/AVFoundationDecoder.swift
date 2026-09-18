@@ -9,11 +9,15 @@ import AVFoundation
 import CoreMedia
 import CoreVideo
 import Foundation
+import MediaToolbox
 import QuartzCore
 import VideoToolbox
 
 #if os(macOS)
 import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
 #endif
 
 // MARK: - Pixel Format Configuration
@@ -57,6 +61,8 @@ final class DisplayLinkDriver: NSObject, @unchecked Sendable {
     private var fallbackTimer: DispatchSourceTimer?
     #else
     private var caDisplayLink: CADisplayLink?
+    private var backgroundTimer: DispatchSourceTimer?
+    private nonisolated(unsafe) var backgroundObservers: [NSObjectProtocol] = []
     #endif
 
     init(onTick: @escaping @Sendable () -> Void) {
@@ -86,6 +92,7 @@ final class DisplayLinkDriver: NSObject, @unchecked Sendable {
         let link = CADisplayLink(target: self, selector: #selector(handleTick))
         link.add(to: .main, forMode: .common)
         self.caDisplayLink = link
+        setupBackgroundHandling()
         #endif
     }
 
@@ -97,8 +104,60 @@ final class DisplayLinkDriver: NSObject, @unchecked Sendable {
         #if os(macOS)
         fallbackTimer?.cancel()
         fallbackTimer = nil
+        #else
+        stopBackgroundTimer()
+        for obs in backgroundObservers {
+            NotificationCenter.default.removeObserver(obs)
+        }
+        backgroundObservers.removeAll()
         #endif
     }
+
+    #if !os(macOS)
+    private func setupBackgroundHandling() {
+        guard backgroundObservers.isEmpty else { return }
+        let bgObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleBackgroundTransition(isBackground: true)
+        }
+        let fgObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleBackgroundTransition(isBackground: false)
+        }
+        backgroundObservers = [bgObs, fgObs]
+    }
+
+    private func handleBackgroundTransition(isBackground: Bool) {
+        guard isRunning else { return }
+        if isBackground {
+            startBackgroundTimer()
+        } else {
+            stopBackgroundTimer()
+        }
+    }
+
+    private func startBackgroundTimer() {
+        guard backgroundTimer == nil else { return }
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(16))
+        timer.setEventHandler { [weak self] in
+            self?.handleTick()
+        }
+        timer.resume()
+        backgroundTimer = timer
+    }
+
+    private func stopBackgroundTimer() {
+        backgroundTimer?.cancel()
+        backgroundTimer = nil
+    }
+    #endif
 
     @objc private func handleTick() {
         guard isRunning else { return }
@@ -134,6 +193,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     public var onStateChanged: (@MainActor (DecoderState) -> Void)?
     public var onTimeChanged: (@MainActor (CMTime) -> Void)?
     public var onVideoFrame: (@MainActor (DecodedVideoFrame) -> Void)?
+    public var onSubtitleEvent: (@MainActor (DecodedSubtitleEvent?) -> Void)?
 
     public let pixelFormatPreference: PixelFormatPreference
 
@@ -146,6 +206,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     private var player: AVPlayer?
     private var playerItem: AVPlayerItem?
     private var videoOutput: AVPlayerItemVideoOutput?
+    private var legibleOutput: AVPlayerItemLegibleOutput?
     private var displayLinkDriver: DisplayLinkDriver?
 
     private var timeObserverToken: Any?
@@ -158,8 +219,11 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     private var nominalFrameDuration: CMTime = CMTime(value: 1, timescale: 60)
     private var currentPlaybackRate: Float = 1.0
 
+    private var isExplicitlyPaused: Bool = false
     private var audibleSelectionGroup: AVMediaSelectionGroup?
     private var legibleSelectionGroup: AVMediaSelectionGroup?
+
+    var audioProcessor: AudioEQProcessor?
 
     // MARK: - Initialization & Cleanup
 
@@ -217,12 +281,18 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
             item.add(output)
             output.setDelegate(self, queue: .main)
 
+            let legible = AVPlayerItemLegibleOutput()
+            legible.suppressesPlayerRendering = true
+            legible.setDelegate(self, queue: .main)
+            item.add(legible)
+
             let player = AVPlayer(playerItem: item)
             player.actionAtItemEnd = .pause
 
             self.player = player
             self.playerItem = item
             self.videoOutput = output
+            self.legibleOutput = legible
 
             setupObservations(for: player, item: item)
 
@@ -247,6 +317,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
             debugPrint("[AVFoundationDecoder.play] ❌ no player")
             return
         }
+        isExplicitlyPaused = false
         let rate = currentPlaybackRate > 0 ? currentPlaybackRate : 1.0
         player.rate = rate
         state = .playing
@@ -255,6 +326,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     }
 
     public func pause() {
+        isExplicitlyPaused = true
         guard let player else { return }
         player.pause()
         state = .paused
@@ -264,6 +336,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     public func seek(to time: CMTime) async throws {
         guard let player else { return }
         let previousState = state
+        let wasPlaying = !isExplicitlyPaused && (previousState == .playing || state == .playing)
         state = .seeking
 
         let finished = await player.seek(
@@ -274,13 +347,16 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
 
         if finished {
             tryFetchFrame(at: time)
+            onTimeChanged?(time)
         }
 
-        if previousState == .playing {
+        if wasPlaying {
+            isExplicitlyPaused = false
             state = .playing
             player.rate = currentPlaybackRate > 0 ? currentPlaybackRate : 1.0
             displayLinkDriver?.start()
         } else {
+            isExplicitlyPaused = true
             state = .paused
             displayLinkDriver?.stop()
         }
@@ -313,8 +389,14 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
         displayLinkDriver?.stop()
         removeObservations()
 
+        playerItem?.audioMix = nil
+
         if let item = playerItem, let output = videoOutput {
             item.remove(output)
+        }
+
+        if let item = playerItem, let legible = legibleOutput {
+            item.remove(legible)
         }
 
         player?.pause()
@@ -323,10 +405,12 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
         player = nil
         playerItem = nil
         videoOutput = nil
+        legibleOutput = nil
         mediaInfo = nil
         currentVideoFormatDescription = nil
         audibleSelectionGroup = nil
         legibleSelectionGroup = nil
+        isExplicitlyPaused = false
 
         if state != .idle {
             state = .idle
@@ -655,12 +739,15 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
                 guard let self else { return }
                 switch observedPlayer.timeControlStatus {
                 case .playing:
+                    guard !self.isExplicitlyPaused else { return }
                     if self.state != .playing && self.state != .seeking {
                         self.state = .playing
+                        self.displayLinkDriver?.start()
                     }
                 case .paused:
-                    if self.state == .playing {
+                    if self.state != .paused && self.state != .seeking {
                         self.state = .paused
+                        self.displayLinkDriver?.stop()
                     }
                 default:
                     break
@@ -735,6 +822,136 @@ extension AVFoundationDecoder: AVPlayerItemOutputPullDelegate {
     public nonisolated func outputSequenceWasFlushed(_ sender: AVPlayerItemOutput) {
         // Handled on seek or discontinuity.
     }
+}
+
+// MARK: - AVPlayerItemLegibleOutputPushDelegate
+
+extension AVFoundationDecoder: AVPlayerItemLegibleOutputPushDelegate {
+    public func legibleOutput(
+        _ output: AVPlayerItemLegibleOutput,
+        didOutputAttributedStrings strings: [NSAttributedString],
+        nativeDurationForSample duration: [NSValue],
+        atItemTime itemTime: CMTime
+    ) {
+        guard !strings.isEmpty else {
+            onSubtitleEvent?(nil)
+            return
+        }
+
+        let fullText = strings.map(\.string).joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fullText.isEmpty else {
+            onSubtitleEvent?(nil)
+            return
+        }
+
+        let dur = duration.first?.timeValue ?? CMTime(seconds: 4, preferredTimescale: 600)
+        let validDuration = (dur.isValid && dur.seconds > 0) ? dur : CMTime(seconds: 4, preferredTimescale: 600)
+        let end = itemTime + validDuration
+
+        let event = DecodedSubtitleEvent(
+            text: fullText,
+            start: itemTime,
+            end: end
+        )
+        onSubtitleEvent?(event)
+    }
+}
+
+// MARK: - Audio Processing Tap
+
+extension AVFoundationDecoder {
+
+    func installAudioTap() {
+        guard let item = playerItem, let processor = audioProcessor else {
+            playerItem?.audioMix = nil
+            return
+        }
+        #if os(visionOS)
+        guard let audioTrack = item.tracks.first(where: { $0.assetTrack?.mediaType == .audio })?.assetTrack else { return }
+        #else
+        guard let audioTrack = item.asset.tracks(withMediaType: .audio).first ?? item.tracks.first(where: { $0.assetTrack?.mediaType == .audio })?.assetTrack else { return }
+        #endif
+
+        let params = AVMutableAudioMixInputParameters(track: audioTrack)
+        let context = Unmanaged.passRetained(processor)
+
+        var callbacks = MTAudioProcessingTapCallbacks(
+            version: kMTAudioProcessingTapCallbacksVersion_0,
+            clientInfo: context.toOpaque(),
+            init: eqTapInit,
+            finalize: eqTapFinalize,
+            prepare: eqTapPrepare,
+            unprepare: nil,
+            process: eqTapProcess
+        )
+
+        var tap: MTAudioProcessingTap?
+        let status = MTAudioProcessingTapCreate(
+            kCFAllocatorDefault,
+            &callbacks,
+            kMTAudioProcessingTapCreationFlag_PostEffects,
+            &tap
+        )
+        guard status == noErr, let tap else {
+            context.release()
+            return
+        }
+
+        params.audioTapProcessor = tap
+
+        let mix = AVMutableAudioMix()
+        mix.inputParameters = [params]
+        item.audioMix = mix
+    }
+}
+
+nonisolated private func eqTapInit(
+    _ tap: MTAudioProcessingTap,
+    _ clientInfo: UnsafeMutableRawPointer?,
+    _ tapStorageOut: UnsafeMutablePointer<UnsafeMutableRawPointer?>
+) {
+    tapStorageOut.pointee = clientInfo
+}
+
+nonisolated private func eqTapFinalize(_ tap: MTAudioProcessingTap) {
+    let storage = MTAudioProcessingTapGetStorage(tap)
+    Unmanaged<AudioEQProcessor>.fromOpaque(storage).release()
+}
+
+nonisolated private func eqTapPrepare(
+    _ tap: MTAudioProcessingTap,
+    _ maxFrames: CMItemCount,
+    _ processingFormat: UnsafePointer<AudioStreamBasicDescription>
+) {
+    let asbd = processingFormat.pointee
+    let processor = Unmanaged<AudioEQProcessor>
+        .fromOpaque(MTAudioProcessingTapGetStorage(tap))
+        .takeUnretainedValue()
+    processor.configure(
+        sampleRate: asbd.mSampleRate,
+        channelCount: Int(asbd.mChannelsPerFrame)
+    )
+}
+
+nonisolated private func eqTapProcess(
+    _ tap: MTAudioProcessingTap,
+    _ numberFrames: CMItemCount,
+    _ flags: MTAudioProcessingTapFlags,
+    _ bufferListInOut: UnsafeMutablePointer<AudioBufferList>,
+    _ numberFramesOut: UnsafeMutablePointer<CMItemCount>,
+    _ flagsOut: UnsafeMutablePointer<MTAudioProcessingTapFlags>
+) {
+    var sourceFlags: MTAudioProcessingTapFlags = 0
+    let status = MTAudioProcessingTapGetSourceAudio(
+        tap, numberFrames, bufferListInOut,
+        &sourceFlags, nil, numberFramesOut
+    )
+    guard status == noErr else { return }
+
+    let processor = Unmanaged<AudioEQProcessor>
+        .fromOpaque(MTAudioProcessingTapGetStorage(tap))
+        .takeUnretainedValue()
+    processor.process(bufferListInOut, frameCount: Int(numberFramesOut.pointee))
 }
 
 // MARK: - FourCC Codec Conversion Helpers

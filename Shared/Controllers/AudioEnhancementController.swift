@@ -2,24 +2,24 @@
 //  AudioEnhancementController.swift
 //  Edendale
 //
-//  Persisted audio enhancement profiles backed by SwiftVLC's 10-band
+//  Persisted audio enhancement profiles backed by a 10-band parametric
 //  equalizer. The selected profile, per-band user adjustments, and
 //  booster state are stored in UserDefaults and applied to the active
-//  player on each media start and whenever the user changes settings
-//  mid-playback.
+//  playback engine on each media start and whenever the user changes
+//  settings mid-playback.
 //
 //  Profile preamps are negative, offsetting each curve's peak band
 //  boost to leave more headroom with the booster off.
 //  The booster adds a fixed preamp gain through the same equalizer,
 //  changing effective output immediately without touching volume.
 //
-//  visionOS native AVKit playback does not route through VLC, so
-//  equalizer profiles have no effect when the system player is active.
+//  visionOS native AVKit playback does not route through the custom
+//  pipeline, so equalizer profiles have no effect when the system
+//  player is active.
 //
 
 import Foundation
 import Observation
-import SwiftVLC
 
 // MARK: - Profile definition
 
@@ -114,14 +114,14 @@ final class AudioEnhancementController {
             _userPreampAdjustment = 0
             _userBandAdjustments = Array(repeating: 0, count: AudioEnhancementProfile.bandCount)
             persistUserAdjustments()
-            rebuildEqualizer()
+            pushToProcessor()
         }
     }
 
     private(set) var boosterEnabled: Bool {
         didSet {
             defaults.set(boosterEnabled, forKey: DefaultsKey.booster)
-            updateLiveEqualizer()
+            pushToProcessor()
         }
     }
 
@@ -140,10 +140,10 @@ final class AudioEnhancementController {
     private let defaults: UserDefaults
 
     @ObservationIgnored
-    private var liveEqualizer: Equalizer?
+    let processor = AudioEQProcessor()
 
     @ObservationIgnored
-    private weak var attachedPlayer: Player?
+    private weak var engine: PlaybackEngine?
 
     init(defaults: UserDefaults = AppIdentifiers.defaults) {
         self.defaults = defaults
@@ -161,6 +161,8 @@ final class AudioEnhancementController {
                 AudioEnhancementProfile.clampAmplification($0)
             }
         }
+
+        pushToProcessor()
     }
 
     // MARK: - Selection
@@ -200,21 +202,21 @@ final class AudioEnhancementController {
     func setUserPreampAdjustment(_ value: Float) {
         _userPreampAdjustment = AudioEnhancementProfile.clampPreamp(value)
         persistUserAdjustments()
-        updateLiveEqualizer()
+        pushToProcessor()
     }
 
     func setUserBandAdjustment(_ value: Float, at index: Int) {
         guard index >= 0, index < AudioEnhancementProfile.bandCount else { return }
         _userBandAdjustments[index] = AudioEnhancementProfile.clampAmplification(value)
         persistUserAdjustments()
-        updateLiveEqualizer()
+        pushToProcessor()
     }
 
     func resetUserAdjustments() {
         _userPreampAdjustment = 0
         _userBandAdjustments = Array(repeating: 0, count: AudioEnhancementProfile.bandCount)
         persistUserAdjustments()
-        updateLiveEqualizer()
+        pushToProcessor()
     }
 
     var hasUserAdjustments: Bool {
@@ -222,22 +224,17 @@ final class AudioEnhancementController {
             || _userBandAdjustments.contains(where: { $0 != 0 })
     }
 
-    // MARK: - Player integration
+    // MARK: - Engine integration
 
-    func apply(to player: Player) {
-        if attachedPlayer !== player {
-            attachedPlayer?.equalizer = nil
-        }
-        attachedPlayer = player
-        let eq = buildEqualizer()
-        liveEqualizer = eq
-        player.equalizer = isEffectivelyFlat ? nil : eq
+    func apply(to engine: PlaybackEngine) {
+        if self.engine !== engine { detach() }
+        self.engine = engine
+        engine.installAudioProcessor(isEffectivelyFlat ? nil : processor)
     }
 
     func detach() {
-        attachedPlayer?.equalizer = nil
-        attachedPlayer = nil
-        liveEqualizer = nil
+        engine?.installAudioProcessor(nil)
+        engine = nil
     }
 
     // MARK: - Private
@@ -247,34 +244,10 @@ final class AudioEnhancementController {
         defaults.set(_userBandAdjustments, forKey: DefaultsKey.userBands)
     }
 
-    private func rebuildEqualizer() {
-        guard let player = attachedPlayer else {
-            liveEqualizer = nil
-            return
+    private func pushToProcessor() {
+        processor.update(preamp: effectivePreamp, bands: effectiveBands)
+        if let engine {
+            engine.installAudioProcessor(isEffectivelyFlat ? nil : processor)
         }
-        apply(to: player)
-    }
-
-    private func updateLiveEqualizer() {
-        guard let eq = liveEqualizer else {
-            rebuildEqualizer()
-            return
-        }
-        if isEffectivelyFlat {
-            attachedPlayer?.equalizer = nil
-            return
-        }
-        eq.preamp = effectivePreamp
-        eq.bands = effectiveBands
-        if attachedPlayer?.equalizer == nil {
-            attachedPlayer?.equalizer = eq
-        }
-    }
-
-    private func buildEqualizer() -> Equalizer {
-        let eq = Equalizer()
-        eq.preamp = effectivePreamp
-        eq.bands = effectiveBands
-        return eq
     }
 }

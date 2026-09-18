@@ -7,6 +7,7 @@
 //  and EnhancedVideoView rendering.
 //
 
+import AVFoundation
 import CoreGraphics
 import CoreMedia
 import CoreVideo
@@ -49,8 +50,8 @@ struct EnhancedVideoRenderingTests {
         let latest = buffer.latestFrame()
         #expect(latest?.presentationTime.value == 40)
 
-        let after15 = buffer.latestFrame(after: CMTime(value: 15, timescale: 10))
-        #expect(after15?.presentationTime.value == 20)
+        let after25 = buffer.latestFrame(atOrBefore: CMTime(value: 25, timescale: 10))
+        #expect(after25?.presentationTime.value == 20)
     }
 
     @Test("FrameRingBuffer queries by time and prunes stale frames")
@@ -131,18 +132,18 @@ struct EnhancedVideoRenderingTests {
             return
         }
 
-        guard let texture = cache.texture(from: pixelBuffer) else {
+        guard let videoTex = cache.videoTexture(from: pixelBuffer) else {
             Issue.record("Failed to convert pixel buffer to texture")
             return
         }
 
-        #expect(texture.width == 128)
-        #expect(texture.height == 128)
-        #expect(texture.pixelFormat == .bgra8Unorm)
+        #expect(videoTex.lumaTexture.width == 128)
+        #expect(videoTex.lumaTexture.height == 128)
+        #expect(videoTex.lumaTexture.pixelFormat == .bgra8Unorm)
 
         // Second call should return cached texture
-        let texture2 = cache.texture(from: pixelBuffer)
-        #expect(texture2 != nil)
+        let videoTex2 = cache.videoTexture(from: pixelBuffer)
+        #expect(videoTex2 != nil)
 
         cache.flush()
     }
@@ -261,5 +262,45 @@ struct EnhancedVideoRenderingTests {
             view.render(texture: tex)
             #expect(view.currentTexture != nil)
         }
+    }
+
+    @MainActor
+    @Test("EnhancedVideoView respects playback pause and app background state")
+    func enhancedVideoViewPauseAndBackgroundState() {
+        let view = EnhancedVideoView(frame: CGRect(x: 0, y: 0, width: 640, height: 480))
+        #expect(!view.isPlaybackPaused)
+        #expect(!view.isAppBackgrounded)
+        #expect(!view.isPaused)
+
+        view.isPlaybackPaused = true
+        #expect(view.isPlaybackPaused)
+        #expect(view.isPaused)
+
+        view.isPlaybackPaused = false
+        #expect(!view.isPlaybackPaused)
+        #expect(!view.isPaused)
+    }
+
+    @MainActor
+    @Test("EnhancedVideoView manages PiP source layer attachment")
+    func enhancedVideoViewPiPLayerAttachment() {
+        let view = EnhancedVideoView(frame: CGRect(x: 0, y: 0, width: 640, height: 480))
+        let pip = SampleBufferPiPSource()
+
+        #expect(pip.displayLayer.superlayer == nil)
+
+        view.pipSource = pip
+        #expect(pip.displayLayer.superlayer != nil)
+        #expect(pip.displayLayer.frame == view.bounds)
+
+        view.aspectMode = .fill
+        #if os(iOS) || os(macOS)
+        if let sbLayer = pip.displayLayer as? AVSampleBufferDisplayLayer {
+            #expect(sbLayer.videoGravity == .resizeAspectFill)
+        }
+        #endif
+
+        view.pipSource = nil
+        #expect(pip.displayLayer.superlayer == nil)
     }
 }

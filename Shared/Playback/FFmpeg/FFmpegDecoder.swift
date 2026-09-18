@@ -32,10 +32,18 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
                             sampleRate: track["sampleRate"] as? Int ?? 0,
                             language: track["language"] as? String, title: track["title"] as? String)
                     }
+                    let subs = (values["subtitle"] as? [[String: Any]] ?? []).map { track in
+                        SubtitleTrackInfo(
+                            index: track["index"] as? Int ?? 0,
+                            codec: track["codec"] as? String ?? "unknown",
+                            language: track["language"] as? String,
+                            title: track["title"] as? String,
+                            isImageBased: track["isImageBased"] as? Bool ?? false)
+                    }
                     let seconds = values["duration"] as? Double ?? 0
                     continuation.resume(returning: MediaInfo(
                         duration: seconds > 0 ? CMTime(seconds: seconds, preferredTimescale: 600) : .indefinite,
-                        videoTracks: videos, audioTracks: audio, subtitleTracks: [],
+                        videoTracks: videos, audioTracks: audio, subtitleTracks: subs,
                         naturalSize: CGSize(width: values["width"] as? Double ?? 0, height: values["height"] as? Double ?? 0),
                         frameRate: values["frameRate"] as? Float ?? 0, isHDR: values["hdr"] as? Bool ?? false))
                 } catch { continuation.resume(throwing: error) }
@@ -57,14 +65,24 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
         }
     }
 
-    func seek(seconds: Double, audioTrack: Int?) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+    func seek(seconds: Double, audioTrack: Int?, subtitleTrack: Int?) async throws -> [String: Any] {
+        try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
                     if let audioTrack { try self.reader.selectAudioTrack(audioTrack) }
+                    let configuration = try self.reader.selectSubtitleTrack(subtitleTrack ?? -1)
                     try self.reader.seek(seconds: seconds)
-                    continuation.resume()
+                    continuation.resume(returning: configuration)
                 } catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+
+    func setVideoDecodingEnabled(_ enabled: Bool) {
+        queue.async {
+            self.reader.videoDecodingEnabled = enabled
+            if enabled {
+                _ = self.reader.recreateVideoDecoder()
             }
         }
     }
@@ -100,8 +118,14 @@ public final class FFmpegDecoder: MediaDecoder {
     public var onTimeChanged: (@MainActor (CMTime) -> Void)?
     public var onVideoFrame: (@MainActor (DecodedVideoFrame) -> Void)?
     var onDiscontinuity: (() -> Void)?
+    var onSubtitleConfiguration: ((SubtitleTrackFormat?, Data) -> Void)?
+    var onSubtitleEvent: ((DecodedSubtitleEvent) -> Void)?
+    var onImageSubtitleCue: ((ImageSubtitleCue) -> Void)?
+    private var selectedSubtitleIndex: Int?
+    private var subtitleSelectionGeneration = 0
     public var volume: Float = 1 { didSet { audioRenderer?.volume = min(max(volume, 0), 1) } }
     public var isMuted = false { didSet { audioRenderer?.isMuted = isMuted } }
+    var audioProcessor: AudioEQProcessor?
 
     private let hardwareDecoding: Bool
     private var worker: FFmpegWorker?
@@ -112,6 +136,7 @@ public final class FFmpegDecoder: MediaDecoder {
     private var generation = 0
     private var videos: [DecodedVideoFrame] = []
     private var bufferedUntil = 0.0
+    private var audioBufferedUntil = 0.0
     private var eof = false
     private var wantsToPlay = false
     private var clockRunning = false
@@ -139,6 +164,9 @@ public final class FFmpegDecoder: MediaDecoder {
         let request = generation
         state = .opening
         let worker = FFmpegWorker(hardwareDecoding: hardwareDecoding)
+        if !isVideoDecodingEnabled {
+            worker.setVideoDecodingEnabled(false)
+        }
         self.worker = worker
         do {
             debugPrint("[FFmpegDecoder.open] calling worker.open...")
@@ -160,6 +188,12 @@ public final class FFmpegDecoder: MediaDecoder {
                 sync.addRenderer(renderer)
                 audioRenderer = renderer
                 usingWallClock = false
+                if let firstAudio = info.audioTracks.first {
+                    audioProcessor?.configure(
+                        sampleRate: Double(firstAudio.sampleRate),
+                        channelCount: firstAudio.channelCount
+                    )
+                }
                 debugPrint("[FFmpegDecoder.open] audio renderer attached, wallClock=false")
             } else {
                 usingWallClock = true
@@ -243,13 +277,16 @@ public final class FFmpegDecoder: MediaDecoder {
         var target = max(seconds, 0)
         if let duration = mediaInfo?.duration.seconds, duration.isFinite { target = min(target, duration) }
         do {
-            try await worker.seek(seconds: target, audioTrack: audioTrack)
+            let configuration = try await worker.seek(seconds: target, audioTrack: audioTrack, subtitleTrack: selectedSubtitleIndex)
             guard generation == request else { throw CancellationError() }
+            let format = (configuration["format"] as? String).flatMap(SubtitleTrackFormat.init(rawValue:))
+            onSubtitleConfiguration?(format, configuration["header"] as? Data ?? Data())
             synchronizer.setRate(0, time: CMTime(seconds: target, preferredTimescale: 60000))
             if usingWallClock {
                 wallClockOffset = target
             }
             bufferedUntil = target
+            audioBufferedUntil = target
             eof = false
             previewPending = true
             onTimeChanged?(currentTime)
@@ -281,9 +318,40 @@ public final class FFmpegDecoder: MediaDecoder {
         Task { [weak self] in try? await self?.reposition(seconds: time, audioTrack: index) }
     }
 
-    public func selectSubtitleTrack(_ index: Int?) { }
+    public func selectSubtitleTrack(_ index: Int?) {
+        guard index == nil || mediaInfo?.subtitleTracks.contains(where: { $0.index == index }) == true else { return }
+        guard selectedSubtitleIndex != index else { return }
+        selectedSubtitleIndex = index
+        subtitleSelectionGeneration += 1
+        let selection = subtitleSelectionGeneration
+        Task { [weak self] in
+            guard let self, self.subtitleSelectionGeneration == selection else { return }
+            // A bounded seek refills packets at the current position. Never scan
+            // to EOF or leave the pump cancelled while loading a whole track.
+            try? await self.reposition(seconds: self.currentTime.seconds, audioTrack: nil)
+        }
+    }
+
+    public private(set) var isVideoDecodingEnabled: Bool = true
+
+    public func setVideoDecodingEnabled(_ enabled: Bool) {
+        guard isVideoDecodingEnabled != enabled else { return }
+        isVideoDecodingEnabled = enabled
+        debugPrint("[FFmpegDecoder] setVideoDecodingEnabled → \(enabled)")
+        worker?.setVideoDecodingEnabled(enabled)
+        if !enabled {
+            videos.removeAll()
+        } else {
+            previewPending = true
+            if wantsToPlay {
+                displayLink?.start()
+            }
+        }
+    }
 
     public func close() {
+        subtitleSelectionGeneration += 1
+        selectedSubtitleIndex = nil
         generation += 1
         pump?.cancel()
         pump = nil
@@ -300,6 +368,7 @@ public final class FFmpegDecoder: MediaDecoder {
         videos.removeAll()
         mediaInfo = nil
         bufferedUntil = 0
+        audioBufferedUntil = 0
         eof = false
         wantsToPlay = false
         clockRunning = false
@@ -351,12 +420,41 @@ public final class FFmpegDecoder: MediaDecoder {
 
     private func shouldRead(generation request: Int) -> Bool? {
         guard generation == request else { return nil }
-        return !eof && videos.count < 12 && bufferedUntil < currentTime.seconds + 0.5
+        guard !eof else { return false }
+        let now = currentTime.seconds
+        let audioNeedsData = !usingWallClock && audioBufferedUntil < now + 1.0
+        let videoNeedsData = isVideoDecodingEnabled && videos.count < 12
+        return audioNeedsData || videoNeedsData
     }
 
     private func accept(_ frame: EDFFmpegFrame) {
+        if let subtitle = frame.subtitle {
+            guard let index = subtitle["trackIndex"] as? Int, index == selectedSubtitleIndex else { return }
+            let start = CMTime(seconds: frame.presentationTime, preferredTimescale: 60000)
+            let end = CMTime(seconds: frame.presentationTime + frame.duration, preferredTimescale: 60000)
+            for text in subtitle["texts"] as? [String] ?? [] {
+                onSubtitleEvent?(DecodedSubtitleEvent(text: text, start: start, end: end))
+            }
+            let rects = (subtitle["rects"] as? [[String: Any]] ?? []).compactMap { rect -> ImageSubtitleRect? in
+                guard let x = rect["x"] as? Int, let y = rect["y"] as? Int,
+                      let width = rect["width"] as? Int, let height = rect["height"] as? Int,
+                      let data = rect["data"] as? Data else { return nil }
+                return ImageSubtitleRect(x: x, y: y, width: width, height: height, data: data)
+            }
+            if !rects.isEmpty {
+                let size = CGSize(width: subtitle["width"] as? Int ?? 0, height: subtitle["height"] as? Int ?? 0)
+                onImageSubtitleCue?(ImageSubtitleCue(start: start, end: end, rects: rects,
+                    canvasSize: size.width > 0 && size.height > 0 ? size : mediaInfo?.naturalSize ?? .zero,
+                    trackIndex: index))
+            }
+            return
+        }
         bufferedUntil = max(bufferedUntil, frame.presentationTime + frame.duration)
-        if let sample = frame.audioSampleBuffer { audioRenderer?.enqueue(sample) }
+        if let sample = frame.audioSampleBuffer {
+            audioBufferedUntil = max(audioBufferedUntil, frame.presentationTime + frame.duration)
+            audioProcessor?.processSampleBuffer(sample)
+            audioRenderer?.enqueue(sample)
+        }
         if let pixel = frame.pixelBuffer {
             let video = DecodedVideoFrame(pixelBuffer: pixel,
                 presentationTime: CMTime(seconds: frame.presentationTime, preferredTimescale: 60000),
@@ -364,7 +462,7 @@ public final class FFmpegDecoder: MediaDecoder {
             if previewPending {
                 onVideoFrame?(video)
                 previewPending = false
-            } else {
+            } else if videos.count < 24 {
                 videos.append(video)
             }
         }

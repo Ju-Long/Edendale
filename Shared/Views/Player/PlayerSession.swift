@@ -78,6 +78,7 @@ final class PlayerSession {
     private var surfaceReady = false
     /// A presented item is holding its playback start for `surfaceDidAttach`.
     private var awaitingSurface = false
+    private var pictureInPictureRestoreCompletion: ((Bool) -> Void)?
 
     init(
         library: LibraryController,
@@ -94,6 +95,36 @@ final class PlayerSession {
     }
 
     var isPresented: Bool { item != nil }
+    private(set) var isHiddenForPictureInPicture = false
+    var isPlayerPresented: Bool { isPresented && !isHiddenForPictureInPicture }
+
+    func pictureInPictureDidStart() {
+        guard isPresented else { return }
+        isHiddenForPictureInPicture = true
+        chrome?.hideControls()
+        setIdleTimerDisabled(false)
+    }
+
+    func restoreFromPictureInPicture(completion: ((Bool) -> Void)? = nil) {
+        guard isPresented else { completion?(false); return }
+        pictureInPictureRestoreCompletion = completion
+        isHiddenForPictureInPicture = false
+        setIdleTimerDisabled(true)
+        if surfaceReady {
+            pictureInPictureRestoreCompletion?(true)
+            pictureInPictureRestoreCompletion = nil
+        }
+    }
+
+    func surfaceDidDetach() {
+        surfaceReady = false
+    }
+
+    func pictureInPictureDidStop() {
+        // Restore requests arrive before didStop. Closing PiP without restoring
+        // ends the retained playback session and releases its file access.
+        if isHiddenForPictureInPicture { end() }
+    }
 
     // MARK: - Presenting
 
@@ -161,6 +192,12 @@ final class PlayerSession {
     }
 
     func present(_ newItem: PlaybackItem) {
+        if isHiddenForPictureInPicture {
+            restoreFromPictureInPicture()
+            #if os(iOS)
+            player?.pipSource.stop()
+            #endif
+        }
         debugPrint("[PlayerSession.present] called — url=\(newItem.url?.lastPathComponent ?? "nil"), scope=\(newItem.scope == nil ? "nil" : "exists"), error=\(newItem.errorMessage ?? "none")")
 
         #if os(visionOS)
@@ -176,6 +213,14 @@ final class PlayerSession {
         let engine = self.player ?? PlaybackEngine()
         let isNewEngine = self.player == nil
         self.player = engine
+        #if os(iOS)
+        engine.onPictureInPictureStarted = { [weak self] in self?.pictureInPictureDidStart() }
+        engine.onPictureInPictureStopped = { [weak self] in self?.pictureInPictureDidStop() }
+        engine.pipSource.onRestoreUI = { [weak self] completion in
+            guard let self else { completion(false); return }
+            self.restoreFromPictureInPicture(completion: completion)
+        }
+        #endif
         debugPrint("[PlayerSession.present] engine \(isNewEngine ? "CREATED" : "REUSED"), state=\(engine.state)")
 
         let chrome = self.chrome ?? PlayerChromeModel(session: self, watchStore: self.watchStore)
@@ -229,6 +274,8 @@ final class PlayerSession {
     func surfaceDidAttach() {
         debugPrint("[PlayerSession.surfaceDidAttach] called — awaitingSurface=\(awaitingSurface)")
         surfaceReady = true
+        pictureInPictureRestoreCompletion?(true)
+        pictureInPictureRestoreCompletion = nil
         guard awaitingSurface else { return }
         awaitingSurface = false
         debugPrint("[PlayerSession.surfaceDidAttach] ▶️ proceeding to startPlayback")
@@ -276,9 +323,15 @@ final class PlayerSession {
                 debugPrint("[PlayerSession.startPlayback] ✅ engine.open succeeded — state=\(engine.state), duration=\(engine.duration?.playbackSeconds ?? -1)s")
 
                 videoAdjustment.apply(to: engine)
+                audioEnhancement.apply(to: engine)
 
                 #if !os(macOS)
-                audioSessionManager.activate(for: engine)
+                await audioSessionManager.activate(for: engine)
+                guard self.activePlaybackRequestID == generation else {
+                    debugPrint("[PlayerSession.startPlayback] ❌ generation mismatch after audio session activation")
+                    audioSessionManager.deactivate()
+                    return
+                }
                 #endif
                 nowPlayingBridge.attach(
                     to: engine,
@@ -308,6 +361,8 @@ final class PlayerSession {
     /// Ends the session: stops playback, releases the scoped file access,
     /// and dismisses the player on every platform (hosts observe `item`).
     func end() {
+        pictureInPictureRestoreCompletion?(false)
+        pictureInPictureRestoreCompletion = nil
         segmentSkipping.end()
         advanceRequestID = nil
         activePlaybackRequestID = UUID()
@@ -323,6 +378,7 @@ final class PlayerSession {
         stopAndRetirePlayer()
         chrome = nil
         item = nil
+        isHiddenForPictureInPicture = false
         surfaceReady = false
         awaitingSurface = false
         #if os(visionOS)
@@ -604,6 +660,7 @@ final class PlayerSession {
         audioSessionManager.deactivate()
         #endif
         videoAdjustment.detach()
+        audioEnhancement.detach()
         engine.onEnded = nil
         engine.onTimeChanged = nil
         engine.close()

@@ -57,9 +57,8 @@ final class PlayerChromeModel {
 
     #if os(iOS)
     /// Automatically enter Picture in Picture when the app is backgrounded
-    /// mid-playback. Defaults on. The system arms auto-PiP as long as the
-    /// player is on screen; the host reads this flag to cancel a window the
-    /// system opened on its own when the user has turned the preference off.
+    /// mid-playback. Defaults on. The host applies this to AVKit's inline
+    /// auto-start setting; the explicit PiP button remains available.
     var autoPiP: Bool = AppIdentifiers.defaults.object(forKey: DefaultsKey.autoPiP) as? Bool ?? true {
         didSet { AppIdentifiers.defaults.set(autoPiP, forKey: DefaultsKey.autoPiP) }
     }

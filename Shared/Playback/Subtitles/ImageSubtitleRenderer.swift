@@ -53,6 +53,11 @@ public final class ImageSubtitleRenderer: @unchecked Sendable {
         activeCueIndex = nil
     }
 
+    public func activeCues(at time: CMTime) -> [ImageSubtitleCue] {
+        guard time.isValid, time.isNumeric else { return [] }
+        return cues.filter { $0.contains(time: time) }
+    }
+
     /// Render subtitles at the specified playback time into an overlay texture.
     /// Returns `nil` if no image cues are active at this time.
     public func render(at time: CMTime) -> MTLTexture? {

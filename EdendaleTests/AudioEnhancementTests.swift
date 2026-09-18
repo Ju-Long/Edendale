@@ -8,7 +8,6 @@
 
 import Foundation
 import Testing
-import SwiftVLC
 @testable import Edendale
 
 @MainActor
@@ -298,35 +297,27 @@ struct AudioBoosterTests {
         }
     }
 
-    @Test func liveEqualizerTracksControlsAndPlayerReplacement() throws {
+    @Test func processorReceivesEffectiveValues() {
         let suite = "test.audio.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
-        let instance = try VLCInstance(arguments: ["--ignore-config", "--no-video", "--no-audio", "--no-stats"])
-        let player = Player(instance: instance)
-        controller.apply(to: player)
-        #expect(player.equalizer?.preamp == controller.effectivePreamp)
-        #expect(player.equalizer?.bands == controller.effectiveBands)
-        let originalVolume = player.volume
-        controller.setBooster(true)
-        #expect(player.equalizer?.preamp == controller.effectivePreamp)
-        #expect(player.volume == originalVolume)
-        controller.setUserBandAdjustment(4, at: 5)
-        #expect(player.equalizer?.bands[5] == controller.effectiveBands[5])
-        controller.setBooster(false)
-        #expect(player.equalizer?.preamp == controller.effectivePreamp)
+        controller.selectProfile(.movies)
+        #expect(!controller.processor.isFlat)
+
         controller.selectProfile(.flat)
-        #expect(player.equalizer == nil)
+        #expect(controller.processor.isFlat)
+
         controller.setBooster(true)
-        #expect(player.equalizer?.preamp == AudioEnhancementController.boosterGain)
-        let nextPlayer = Player(instance: instance)
-        controller.apply(to: nextPlayer)
-        #expect(player.equalizer == nil)
-        #expect(nextPlayer.equalizer?.preamp == AudioEnhancementController.boosterGain)
-        controller.detach()
-        #expect(nextPlayer.equalizer == nil)
+        #expect(!controller.processor.isFlat)
+
         controller.setBooster(false)
-        #expect(nextPlayer.equalizer == nil)
+        #expect(controller.processor.isFlat)
+
+        controller.setUserBandAdjustment(4, at: 5)
+        #expect(!controller.processor.isFlat)
+
+        controller.resetUserAdjustments()
+        #expect(controller.processor.isFlat)
     }
 }

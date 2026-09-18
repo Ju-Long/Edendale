@@ -21,6 +21,81 @@ import UIKit
 
 @Suite("Subtitle Engine Tests")
 struct SubtitleEngineTests {
+    @Test func assPacketFallbackRendersOnlyDialogueText() {
+        let renderer = TimedTextRenderer(device: device)
+        renderer.setFrameSize(CGSize(width: 320, height: 180))
+        let start = CMTime(seconds: 1, preferredTimescale: 600)
+        let end = CMTime(seconds: 3, preferredTimescale: 600)
+        renderer.addAssEvent(DecodedSubtitleEvent(
+            text: "0,0,Default,,0,0,0,,Hello, world!", start: start, end: end))
+        let actual = renderer.render(at: start)
+        let reference = TimedTextRenderer(device: device)
+        reference.setFrameSize(CGSize(width: 320, height: 180))
+        reference.addEvent(DecodedSubtitleEvent(text: "Hello, world!", start: start, end: end))
+        let expected = reference.render(at: start)
+        var actualPixels = [UInt8](repeating: 0, count: 320 * 180 * 4)
+        var expectedPixels = actualPixels
+        actual?.getBytes(&actualPixels, bytesPerRow: 320 * 4, from: MTLRegionMake2D(0, 0, 320, 180), mipmapLevel: 0)
+        expected?.getBytes(&expectedPixels, bytesPerRow: 320 * 4, from: MTLRegionMake2D(0, 0, 320, 180), mipmapLevel: 0)
+        #expect(actual != nil)
+        #expect(actualPixels == expectedPixels)
+    }
+
+    @Test func assPacketWithEmptyLayerRendersOnlyDialogueText() {
+        let renderer = TimedTextRenderer(device: device)
+        renderer.setFrameSize(CGSize(width: 320, height: 180))
+        let start = CMTime(seconds: 1, preferredTimescale: 600)
+        let end = CMTime(seconds: 3, preferredTimescale: 600)
+        // In Matroska / FFmpeg ASS streams, Layer is frequently empty (e.g. "45,,Default,,0,0,0,,")
+        renderer.addAssEvent(DecodedSubtitleEvent(
+            text: "45,,Default,,0,0,0,,Only the dialogue text", start: start, end: end))
+
+        let cues = renderer.activeCues(at: start)
+        #expect(cues.count == 1)
+        #expect(cues.first?.rawText == "Only the dialogue text")
+
+        let attr = renderer.buildAttributedString(from: cues.first!.rawText)
+        #expect(attr.string == "Only the dialogue text")
+
+        let actual = renderer.render(at: start)
+        let reference = TimedTextRenderer(device: device)
+        reference.setFrameSize(CGSize(width: 320, height: 180))
+        reference.addEvent(DecodedSubtitleEvent(text: "Only the dialogue text", start: start, end: end))
+        let expected = reference.render(at: start)
+
+        var actualPixels = [UInt8](repeating: 0, count: 320 * 180 * 4)
+        var expectedPixels = actualPixels
+        actual?.getBytes(&actualPixels, bytesPerRow: 320 * 4, from: MTLRegionMake2D(0, 0, 320, 180), mipmapLevel: 0)
+        expected?.getBytes(&expectedPixels, bytesPerRow: 320 * 4, from: MTLRegionMake2D(0, 0, 320, 180), mipmapLevel: 0)
+        #expect(actual != nil)
+        #expect(actualPixels == expectedPixels)
+    }
+
+    @Test func assPacketWithTagsAndHardSpaceExtractsCleanText() {
+        let renderer = TimedTextRenderer(device: device)
+        let cleaned = TimedTextRenderer.extractDialogueText(from: "45,,Default,,0,0,0,,{\\b1}Bold text{\\b0}\\hwith\\Nnewline")
+        #expect(cleaned == "{\\b1}Bold text{\\b0}\\hwith\\Nnewline")
+
+        let attr = renderer.buildAttributedString(from: cleaned)
+        #expect(attr.string == "Bold text with\nnewline")
+    }
+
+    @Test func subtitleEngineAutoDetectsAndStripsAssChunk() {
+        let engine = SubtitleEngine(device: device)
+        let start = CMTime(seconds: 1, preferredTimescale: 600)
+        let end = CMTime(seconds: 3, preferredTimescale: 600)
+        engine.selectFormat(.ass)
+        engine.addEvent(DecodedSubtitleEvent(
+            text: "45,,Default,,0,0,0,,Subtitle without metadata prefix",
+            start: start,
+            end: end
+        ))
+
+        let cues = engine.activeTextCues(at: start)
+        #expect(cues.count == 1)
+        #expect(cues.first?.rawText == "Subtitle without metadata prefix")
+    }
+
     private var device: MTLDevice {
         guard let dev = MTLCreateSystemDefaultDevice() else {
             fatalError("Metal device required for Subtitle Engine tests")
@@ -190,6 +265,24 @@ struct SubtitleEngineTests {
     // MARK: - AssRenderer Tests
 
     @Test func assRendererLifecycleAndEvents() {
+        guard AssRenderer.isAvailable else {
+            // libass is not linked in this target; test SubtitleEngine fallback for ASS
+            let engine = SubtitleEngine(device: device)
+            engine.setCanvasSize(CGSize(width: 640, height: 360))
+            engine.selectFormat(.ass)
+            let assHeader = """
+            [Events]
+            Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+            Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,Hello from ASS fallback!
+            """
+            engine.addAssScriptData(Data(assHeader.utf8))
+            let texture = engine.renderSubtitleTexture(at: CMTime(seconds: 2.0, preferredTimescale: 600))
+            #expect(texture != nil)
+            #expect(texture?.width == 640)
+            #expect(texture?.height == 360)
+            return
+        }
+
         let renderer = AssRenderer(device: device)
         renderer.setFrameSize(CGSize(width: 640, height: 360))
 

@@ -7,6 +7,52 @@ import Testing
 // media output. Native transport tests are separate from this request ordering.
 @MainActor
 struct PlayerSessionTransitionTests {
+    @Test func selectingAnotherFileDuringPictureInPicturePresentsTheNewPlayer() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        fixture.session.pictureInPictureDidStart()
+        fixture.session.surfaceDidDetach()
+        await fixture.session.play(fileURL: fixture.manualURL)
+        #expect(fixture.session.isPlayerPresented)
+        #expect(fixture.session.item?.url == fixture.manualURL)
+        fixture.session.pictureInPictureDidStop()
+        #expect(fixture.session.isPresented)
+    }
+
+    @Test func pictureInPictureHidesAndRestoresWithoutReleasingTheSession() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        let player = try #require(fixture.session.player)
+        let item = try #require(fixture.session.item)
+        fixture.session.pictureInPictureDidStart()
+        fixture.session.surfaceDidDetach()
+        #expect(fixture.session.isPresented)
+        #expect(!fixture.session.isPlayerPresented)
+        #expect(fixture.session.player === player)
+        #expect(fixture.session.item?.id == item.id)
+        var restored: Bool?
+        fixture.session.restoreFromPictureInPicture { restored = $0 }
+        #expect(fixture.session.isPlayerPresented)
+        #expect(restored == nil)
+        fixture.session.pictureInPictureDidStop()
+        #expect(fixture.session.player === player)
+        fixture.session.surfaceDidAttach()
+        #expect(restored == true)
+    }
+
+    @Test func closingPictureInPictureEndsItsHiddenSession() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        fixture.session.pictureInPictureDidStart()
+        fixture.session.pictureInPictureDidStop()
+        #expect(!fixture.session.isPresented)
+        #expect(!fixture.session.isHiddenForPictureInPicture)
+        #expect(fixture.session.player == nil)
+    }
+
     @Test func manualSelectionWinsOverQueuedAutomaticAdvance() async throws {
         let fixture = try Fixture()
         defer { fixture.cleanup() }

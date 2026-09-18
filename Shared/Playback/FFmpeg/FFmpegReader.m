@@ -108,6 +108,12 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
     }
     return self;
 }
+- (instancetype)initWithSubtitle:(NSDictionary *)subtitle time:(double)time duration:(double)duration {
+    if ((self = [self initWithPixelBuffer:NULL audio:NULL time:time duration:duration])) {
+        _subtitle = [subtitle copy];
+    }
+    return self;
+}
 - (void)dealloc {
     if (_pixelBuffer) CVPixelBufferRelease(_pixelBuffer);
     if (_audioSampleBuffer) CFRelease(_audioSampleBuffer);
@@ -121,6 +127,8 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
     EDSMBContext *_smbContext;
     AVCodecContext *_video;
     AVCodecContext *_audio;
+    AVCodecContext *_subtitle;
+    int _subtitleIndex;
     AVPacket *_packet;
     AVFrame *_frame;
     struct SwsContext *_scaler;
@@ -160,8 +168,9 @@ static int EDInterrupt(void *opaque) {
 - (instancetype)initWithHardwareDecoding:(BOOL)hardwareDecoding {
     if ((self = [super init])) {
         _hardwareDecoding = hardwareDecoding;
+        _videoDecodingEnabled = YES;
         _fileFD = -1;
-        _videoIndex = _audioIndex = -1;
+        _videoIndex = _audioIndex = _subtitleIndex = -1;
         _mediaInfo = @{};
         atomic_init(&_interrupted, false);
         atomic_init(&_deadline, 0);
@@ -191,6 +200,7 @@ static int EDInterrupt(void *opaque) {
 - (void)close {
     avcodec_free_context(&_video);
     avcodec_free_context(&_audio);
+    avcodec_free_context(&_subtitle);
     avformat_close_input(&_format);
     if (_customIO) {
         av_freep(&_customIO->buffer);
@@ -211,7 +221,7 @@ static int EDInterrupt(void *opaque) {
     }
     swr_free(&_resampler);
     av_channel_layout_uninit(&_inputLayout);
-    _videoIndex = _audioIndex = -1;
+    _videoIndex = _audioIndex = _subtitleIndex = -1;
     _mediaInfo = @{};
 }
 
@@ -248,6 +258,25 @@ static int EDInterrupt(void *opaque) {
         EDReaderError(error, @"Open media decoder", result);
     }
     return context;
+}
+
+- (BOOL)recreateVideoDecoder {
+    if (_videoIndex < 0 || !_format) return NO;
+    if (_video) {
+        avcodec_free_context(&_video);
+        _video = NULL;
+    }
+    NSError *err = nil;
+    _video = [self openCodec:_videoIndex hardware:_hardwareDecoding error:&err];
+    if (!_video && _hardwareDecoding) {
+        NSLog(@"[FFmpegReader] Hardware video decoder creation failed; falling back to software: %@", err);
+        _video = [self openCodec:_videoIndex hardware:NO error:&err];
+    }
+    if (_video) {
+        NSLog(@"[FFmpegReader] Recreated video decoder successfully (hardware=%d)", _video->hw_device_ctx != NULL);
+        return YES;
+    }
+    return NO;
 }
 
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error {
@@ -456,7 +485,7 @@ static int EDInterrupt(void *opaque) {
     _frame = av_frame_alloc();
     if (!_packet || !_frame) { [self close]; return EDReaderError(error, @"Allocate frame", AVERROR(ENOMEM)); }
 
-    NSMutableArray *videos = [NSMutableArray array], *audios = [NSMutableArray array];
+    NSMutableArray *videos = [NSMutableArray array], *audios = [NSMutableArray array], *subtitles = [NSMutableArray array];
     // Put the selected/default stream first. Track IDs remain FFmpeg stream IDs.
     for (unsigned int i = 0; i < _format->nb_streams; i++) {
         AVStream *stream = _format->streams[i];
@@ -477,12 +506,17 @@ static int EDInterrupt(void *opaque) {
             track[@"channels"] = @(p->ch_layout.nb_channels);
             track[@"sampleRate"] = @(p->sample_rate);
             if (i == _audioIndex) [audios insertObject:track atIndex:0]; else [audios addObject:track];
+        } else if (p->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+            BOOL isImage = (p->codec_id == AV_CODEC_ID_HDMV_PGS_SUBTITLE ||
+                            p->codec_id == AV_CODEC_ID_DVD_SUBTITLE);
+            track[@"isImageBased"] = @(isImage);
+            [subtitles addObject:track];
         }
     }
     double fps = _video ? av_q2d(av_guess_frame_rate(_format, _format->streams[_videoIndex], NULL)) : 0;
     _frameDuration = fps > 0 && isfinite(fps) ? 1.0 / fps : 1.0 / 30;
     double duration = _format->duration == AV_NOPTS_VALUE ? 0 : (double)_format->duration / AV_TIME_BASE;
-    _mediaInfo = @{@"duration": @(duration), @"video": videos, @"audio": audios,
+    _mediaInfo = @{@"duration": @(duration), @"video": videos, @"audio": audios, @"subtitle": subtitles,
         @"width": @(_video ? _video->width : 0), @"height": @(_video ? _video->height : 0),
         @"frameRate": @(isfinite(fps) ? fps : 0),
         @"hdr": @(_video && (_video->color_trc == AVCOL_TRC_SMPTE2084 || _video->color_trc == AVCOL_TRC_ARIB_STD_B67))};
@@ -528,8 +562,17 @@ static int EDInterrupt(void *opaque) {
     count = swr_convert(_resampler, output, count, (const uint8_t **)_frame->extended_data, _frame->nb_samples);
     if (count < 0) { EDReaderError(error, @"Decode audio samples", count); return nil; }
     AVStream *stream = _format->streams[_audioIndex];
-    double pts = _frame->best_effort_timestamp == AV_NOPTS_VALUE ? _audioNextTime :
-        _frame->best_effort_timestamp * av_q2d(stream->time_base) - _origin - (double)delay / _inputRate;
+    double pts;
+    if (_frame->best_effort_timestamp == AV_NOPTS_VALUE) {
+        pts = _audioNextTime;
+    } else {
+        double streamPts = _frame->best_effort_timestamp * av_q2d(stream->time_base) - _origin - (double)delay / _inputRate;
+        if (fabs(streamPts - _audioNextTime) < 0.05) {
+            pts = _audioNextTime;
+        } else {
+            pts = streamPts;
+        }
+    }
     _audioNextTime = pts + (double)count / 48000;
     int trim = (int)fmin(count, fmax(0, ceil((_seekFloor - pts) * 48000)));
     count -= trim;
@@ -559,13 +602,48 @@ static int EDInterrupt(void *opaque) {
 
 - (BOOL)decode:(AVCodecContext *)codec packet:(AVPacket *)packet into:(NSMutableArray *)outputs error:(NSError **)error {
     int result = avcodec_send_packet(codec, packet);
-    if (result < 0 && result != AVERROR_EOF) return EDReaderError(error, @"Submit media packet", result);
+    if (result < 0 && result != AVERROR_EOF) {
+        if (codec == _video) {
+            NSLog(@"[FFmpegReader] Video packet submit failed (err=%d). Attempting decoder recreation...", result);
+            if ([self recreateVideoDecoder]) {
+                result = avcodec_send_packet(_video, packet);
+            }
+            if (result < 0 && result != AVERROR_EOF && _hardwareDecoding) {
+                NSLog(@"[FFmpegReader] Hardware retry failed (err=%d). Falling back to software decoder...", result);
+                if (_video) {
+                    avcodec_free_context(&_video);
+                    _video = [self openCodec:_videoIndex hardware:NO error:nil];
+                    if (_video) {
+                        result = avcodec_send_packet(_video, packet);
+                    }
+                }
+            }
+            if (result < 0 && result != AVERROR_EOF) {
+                // Drop this unrecoverable video frame rather than failing the batch,
+                // which would terminate audio and abort the playback session.
+                NSLog(@"[FFmpegReader] Dropping unrecoverable video packet (err=%d)", result);
+                return YES;
+            }
+        } else {
+            return EDReaderError(error, @"Submit media packet", result);
+        }
+    }
     while ((result = avcodec_receive_frame(codec, _frame)) >= 0) {
         NSError *conversionError = nil;
         EDFFmpegFrame *output = codec == _video ? [self videoFrameWithError:&conversionError] : [self audioFrameWithError:&conversionError];
         av_frame_unref(_frame);
-        if (conversionError) { if (error) *error = conversionError; return NO; }
+        if (conversionError) {
+            if (codec == _video) {
+                NSLog(@"[FFmpegReader] Failed to convert video frame (%@); skipping frame", conversionError);
+                continue;
+            }
+            if (error) *error = conversionError;
+            return NO;
+        }
         if (output) [outputs addObject:output];
+    }
+    if (codec == _video) {
+        return YES;
     }
     return result == AVERROR(EAGAIN) || result == AVERROR_EOF || EDReaderError(error, @"Decode media frame", result);
 }
@@ -580,14 +658,23 @@ static int EDInterrupt(void *opaque) {
         int result = av_read_frame(_format, _packet);
         atomic_store(&_deadline, 0);
         if (result == AVERROR_EOF) {
-            if (_video && ![self decode:_video packet:NULL into:outputs error:error]) return nil;
+            if (_video && _videoDecodingEnabled && ![self decode:_video packet:NULL into:outputs error:error]) return nil;
             if (_audio && ![self decode:_audio packet:NULL into:outputs error:error]) return nil;
             _drained = YES;
             return outputs;
         }
         if (result < 0) { EDReaderError(error, @"Read media packet", result); return nil; }
+        if (_subtitle && _packet->stream_index == _subtitleIndex) {
+            [self decodeSubtitle:_packet into:outputs];
+            av_packet_unref(_packet);
+            continue;
+        }
         AVCodecContext *codec = _packet->stream_index == _videoIndex ? _video :
             (_packet->stream_index == _audioIndex ? _audio : NULL);
+        if (codec == _video && !_videoDecodingEnabled) {
+            av_packet_unref(_packet);
+            continue;
+        }
         BOOL success = !codec || [self decode:codec packet:_packet into:outputs error:error];
         av_packet_unref(_packet);
         if (!success) return nil;
@@ -605,6 +692,7 @@ static int EDInterrupt(void *opaque) {
     if (result < 0) return EDReaderError(error, @"Could not seek", result);
     if (_video) avcodec_flush_buffers(_video);
     if (_audio) avcodec_flush_buffers(_audio);
+    if (_subtitle) avcodec_flush_buffers(_subtitle);
     swr_free(&_resampler);
     av_packet_unref(_packet);
     av_frame_unref(_frame);
@@ -624,5 +712,79 @@ static int EDInterrupt(void *opaque) {
     _audioIndex = (int)index;
     swr_free(&_resampler);
     return YES;
+}
+
+- (NSDictionary<NSString *, id> *)selectSubtitleTrack:(NSInteger)index error:(NSError **)error {
+    if (index < 0) {
+        avcodec_free_context(&_subtitle);
+        _subtitleIndex = -1;
+        return @{};
+    }
+    if (!_format || index >= _format->nb_streams ||
+        _format->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE) {
+        EDReaderError(error, @"Invalid subtitle track", AVERROR(EINVAL));
+        return nil;
+    }
+    AVCodecContext *next = [self openCodec:(int)index hardware:NO error:error];
+    if (!next) return nil;
+    avcodec_free_context(&_subtitle);
+    _subtitle = next;
+    _subtitleIndex = (int)index;
+    enum AVCodecID codec = next->codec_id;
+    NSString *format = codec == AV_CODEC_ID_HDMV_PGS_SUBTITLE ? @"pgs" :
+        codec == AV_CODEC_ID_DVD_SUBTITLE ? @"vobsub" : @"ass";
+    NSData *header = next->subtitle_header_size > 0
+        ? [NSData dataWithBytes:next->subtitle_header length:next->subtitle_header_size] : [NSData data];
+    return @{@"format": format, @"header": header};
+}
+
+- (void)decodeSubtitle:(AVPacket *)packet into:(NSMutableArray *)outputs {
+    AVSubtitle subtitle = {0};
+    int gotSubtitle = 0;
+    int result = avcodec_decode_subtitle2(_subtitle, &subtitle, &gotSubtitle, packet);
+    if (result < 0 || !gotSubtitle) {
+        avsubtitle_free(&subtitle);
+        return;
+    }
+    AVStream *stream = _format->streams[_subtitleIndex];
+    double base = subtitle.pts != AV_NOPTS_VALUE ? (double)subtitle.pts / AV_TIME_BASE :
+        packet->pts != AV_NOPTS_VALUE ? packet->pts * av_q2d(stream->time_base) : _seekFloor + _origin;
+    double start = base - _origin + subtitle.start_display_time / 1000.0;
+    double duration = subtitle.end_display_time > subtitle.start_display_time && subtitle.end_display_time != UINT32_MAX
+        ? (subtitle.end_display_time - subtitle.start_display_time) / 1000.0
+        : packet->duration > 0 ? packet->duration * av_q2d(stream->time_base) : 4.0;
+    NSMutableArray *texts = [NSMutableArray array];
+    NSMutableArray *rects = [NSMutableArray array];
+    for (unsigned i = 0; i < subtitle.num_rects; i++) {
+        AVSubtitleRect *rect = subtitle.rects[i];
+        if (rect->ass || rect->text) {
+            NSString *text = [NSString stringWithUTF8String:rect->ass ?: rect->text];
+            if (text) [texts addObject:text];
+        } else if (rect->type == SUBTITLE_BITMAP && rect->data[0] && rect->data[1] &&
+                   rect->w > 0 && rect->h > 0 && rect->w <= 8192 && rect->h <= 8192) {
+            NSMutableData *rgba = [NSMutableData dataWithLength:(NSUInteger)rect->w * rect->h * 4];
+            uint8_t *pixels = rgba.mutableBytes;
+            const uint32_t *palette = (const uint32_t *)rect->data[1];
+            for (int y = 0; y < rect->h; y++) {
+                for (int x = 0; x < rect->w; x++) {
+                    unsigned index = rect->data[0][y * rect->linesize[0] + x];
+                    uint32_t color = index < rect->nb_colors ? palette[index] : 0;
+                    NSUInteger offset = ((NSUInteger)y * rect->w + x) * 4;
+                    pixels[offset] = (color >> 16) & 255;
+                    pixels[offset + 1] = (color >> 8) & 255;
+                    pixels[offset + 2] = color & 255;
+                    pixels[offset + 3] = (color >> 24) & 255;
+                }
+            }
+            [rects addObject:@{@"x": @(rect->x), @"y": @(rect->y), @"width": @(rect->w),
+                @"height": @(rect->h), @"data": rgba}];
+        }
+    }
+    if (start + duration >= _seekFloor) {
+        NSDictionary *cue = @{@"texts": texts, @"rects": rects, @"trackIndex": @(_subtitleIndex),
+            @"width": @(_subtitle->width), @"height": @(_subtitle->height)};
+        [outputs addObject:[[EDFFmpegFrame alloc] initWithSubtitle:cue time:start duration:duration]];
+    }
+    avsubtitle_free(&subtitle);
 }
 @end
