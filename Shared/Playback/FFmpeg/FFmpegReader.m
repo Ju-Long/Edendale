@@ -30,6 +30,72 @@ static int64_t ed_io_seek(void *opaque, int64_t offset, int whence) {
     return pos;
 }
 
+#pragma mark - Custom I/O for SMB network shares (libsmb2)
+
+struct smb2_context;
+struct smb2fh;
+
+struct smb2_stat_64 {
+    uint32_t smb2_type;
+    uint32_t smb2_nlink;
+    uint64_t smb2_ino;
+    uint64_t smb2_size;
+    uint64_t smb2_atime;
+    uint64_t smb2_atime_nsec;
+    uint64_t smb2_mtime;
+    uint64_t smb2_mtime_nsec;
+    uint64_t smb2_ctime;
+    uint64_t smb2_ctime_nsec;
+    uint64_t smb2_btime;
+    uint64_t smb2_btime_nsec;
+    uint32_t smb2_attributes;
+    uint32_t smb2_reparse_tag;
+};
+
+extern struct smb2_context *smb2_init_context(void);
+extern void smb2_destroy_context(struct smb2_context *smb2);
+extern void smb2_set_user(struct smb2_context *smb2, const char *user);
+extern void smb2_set_password(struct smb2_context *smb2, const char *password);
+extern void smb2_set_domain(struct smb2_context *smb2, const char *domain);
+extern void smb2_set_timeout(struct smb2_context *smb2, int seconds);
+extern int smb2_connect_share(struct smb2_context *smb2, const char *server, const char *share, const char *user);
+extern int smb2_disconnect_share(struct smb2_context *smb2);
+extern struct smb2fh *smb2_open(struct smb2_context *smb2, const char *path, int flags);
+extern int smb2_close(struct smb2_context *smb2, struct smb2fh *fh);
+extern int smb2_read(struct smb2_context *smb2, struct smb2fh *fh, uint8_t *buf, uint32_t count);
+extern int64_t smb2_lseek(struct smb2_context *smb2, struct smb2fh *fh, int64_t offset, int whence, uint64_t *current_offset);
+extern int smb2_fstat(struct smb2_context *smb2, struct smb2fh *fh, struct smb2_stat_64 *st);
+extern const char *smb2_get_error(struct smb2_context *smb2);
+
+typedef struct {
+    struct smb2_context *smb2;
+    struct smb2fh *fh;
+    int64_t fileSize;
+    _Atomic(bool) *interrupted;
+} EDSMBContext;
+
+static int ed_smb_read(void *opaque, uint8_t *buf, int buf_size) {
+    EDSMBContext *ctx = (EDSMBContext *)opaque;
+    if (!ctx || !ctx->smb2 || !ctx->fh) return AVERROR(EINVAL);
+    if (ctx->interrupted && atomic_load(ctx->interrupted)) return AVERROR_EXIT;
+    int n = smb2_read(ctx->smb2, ctx->fh, buf, (uint32_t)buf_size);
+    if (n == 0) return AVERROR_EOF;
+    if (n < 0) return AVERROR(EIO);
+    return n;
+}
+
+static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
+    EDSMBContext *ctx = (EDSMBContext *)opaque;
+    if (!ctx || !ctx->smb2 || !ctx->fh) return AVERROR(EINVAL);
+    if (ctx->interrupted && atomic_load(ctx->interrupted)) return AVERROR_EXIT;
+    if (whence == AVSEEK_SIZE) {
+        return ctx->fileSize >= 0 ? ctx->fileSize : AVERROR(ENOSYS);
+    }
+    int64_t res = smb2_lseek(ctx->smb2, ctx->fh, offset, whence, NULL);
+    if (res < 0) return AVERROR(EIO);
+    return res;
+}
+
 @implementation EDFFmpegFrame
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
                              audio:(CMSampleBufferRef)audio
@@ -52,6 +118,7 @@ static int64_t ed_io_seek(void *opaque, int64_t offset, int whence) {
     AVFormatContext *_format;
     AVIOContext *_customIO;
     int _fileFD;
+    EDSMBContext *_smbContext;
     AVCodecContext *_video;
     AVCodecContext *_audio;
     AVPacket *_packet;
@@ -105,6 +172,22 @@ static int EDInterrupt(void *opaque) {
 - (void)interrupt { atomic_store(&_interrupted, true); }
 - (BOOL)atEnd { return _drained; }
 
+- (void)cleanupSMBContext {
+    if (_smbContext) {
+        if (_smbContext->fh) {
+            smb2_close(_smbContext->smb2, _smbContext->fh);
+            _smbContext->fh = NULL;
+        }
+        if (_smbContext->smb2) {
+            smb2_disconnect_share(_smbContext->smb2);
+            smb2_destroy_context(_smbContext->smb2);
+            _smbContext->smb2 = NULL;
+        }
+        free(_smbContext);
+        _smbContext = NULL;
+    }
+}
+
 - (void)close {
     avcodec_free_context(&_video);
     avcodec_free_context(&_audio);
@@ -117,6 +200,7 @@ static int EDInterrupt(void *opaque) {
         close(_fileFD);
         _fileFD = -1;
     }
+    [self cleanupSMBContext];
     av_packet_free(&_packet);
     av_frame_free(&_frame);
     sws_freeContext(_scaler);
@@ -207,6 +291,141 @@ static int EDInterrupt(void *opaque) {
         }
         _format->pb = _customIO;
         _format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    } else if ([url.scheme.lowercaseString isEqualToString:@"smb"] || [url.scheme.lowercaseString isEqualToString:@"smb2"]) {
+        NSString *host = url.host;
+        if (!host || host.length == 0) {
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Invalid SMB URL: missing host", AVERROR(EINVAL));
+        }
+        NSNumber *port = url.port;
+        NSString *server = (port && port.intValue > 0) ? [NSString stringWithFormat:@"%@:%@", host, port] : host;
+
+        NSString *rawUser = url.user;
+        NSString *domain = nil;
+        NSString *user = rawUser;
+        if (user.length > 0) {
+            NSRange semi = [user rangeOfString:@";"];
+            if (semi.location != NSNotFound) {
+                domain = [user substringToIndex:semi.location];
+                user = [user substringFromIndex:semi.location + 1];
+            } else {
+                NSRange backslash = [user rangeOfString:@"\\"];
+                if (backslash.location != NSNotFound) {
+                    domain = [user substringToIndex:backslash.location];
+                    user = [user substringFromIndex:backslash.location + 1];
+                }
+            }
+        }
+        NSString *password = url.password;
+
+        NSArray *pathSegments = [url.path componentsSeparatedByString:@"/"];
+        NSMutableArray *cleanSegments = [NSMutableArray array];
+        for (NSString *seg in pathSegments) {
+            if (seg.length > 0) {
+                [cleanSegments addObject:seg];
+            }
+        }
+        if (cleanSegments.count < 2) {
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Invalid SMB URL: missing share or file path", AVERROR(EINVAL));
+        }
+        NSString *share = cleanSegments[0];
+        [cleanSegments removeObjectAtIndex:0];
+        NSString *filePath = [cleanSegments componentsJoinedByString:@"/"];
+
+        struct smb2_context *smb2 = smb2_init_context();
+        if (!smb2) {
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Allocate SMB context", AVERROR(ENOMEM));
+        }
+
+        smb2_set_timeout(smb2, 10);
+        if (domain.length > 0) smb2_set_domain(smb2, domain.UTF8String);
+        if (password.length > 0) smb2_set_password(smb2, password.UTF8String);
+        const char *userStr = user.length > 0 ? user.UTF8String : NULL;
+
+        int rc = smb2_connect_share(smb2, server.UTF8String, share.UTF8String, userStr);
+        if (rc < 0) {
+            const char *errStr = smb2_get_error(smb2);
+            NSString *msg = (errStr && strlen(errStr) > 0)
+                ? [NSString stringWithFormat:@"SMB connect failed: %s", errStr]
+                : @"SMB connect failed";
+            smb2_destroy_context(smb2);
+            atomic_store(&_deadline, 0);
+            [self close];
+            if (error) {
+                *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:rc userInfo:@{
+                    NSLocalizedDescriptionKey: msg
+                }];
+            }
+            return NO;
+        }
+
+        struct smb2fh *fh = smb2_open(smb2, filePath.UTF8String, O_RDONLY);
+        if (!fh) {
+            const char *errStr = smb2_get_error(smb2);
+            NSString *msg = (errStr && strlen(errStr) > 0)
+                ? [NSString stringWithFormat:@"SMB open failed: %s", errStr]
+                : @"SMB open failed";
+            smb2_disconnect_share(smb2);
+            smb2_destroy_context(smb2);
+            atomic_store(&_deadline, 0);
+            [self close];
+            if (error) {
+                *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:AVERROR(ENOENT) userInfo:@{
+                    NSLocalizedDescriptionKey: msg
+                }];
+            }
+            return NO;
+        }
+
+        int64_t fileSize = -1;
+        struct smb2_stat_64 st;
+        if (smb2_fstat(smb2, fh, &st) == 0) {
+            fileSize = (int64_t)st.smb2_size;
+        }
+
+        _smbContext = (EDSMBContext *)calloc(1, sizeof(EDSMBContext));
+        if (!_smbContext) {
+            smb2_close(smb2, fh);
+            smb2_disconnect_share(smb2);
+            smb2_destroy_context(smb2);
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Allocate SMB context memory", AVERROR(ENOMEM));
+        }
+        _smbContext->smb2 = smb2;
+        _smbContext->fh = fh;
+        _smbContext->fileSize = fileSize;
+        _smbContext->interrupted = &_interrupted;
+
+        static const int kSMBIOBufSize = 65536;
+        unsigned char *ioBuf = av_malloc(kSMBIOBufSize);
+        if (!ioBuf) {
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Allocate SMB I/O buffer", AVERROR(ENOMEM));
+        }
+        _customIO = avio_alloc_context(ioBuf, kSMBIOBufSize, 0,
+                                       _smbContext,
+                                       ed_smb_read, NULL, ed_smb_seek);
+        if (!_customIO) {
+            av_free(ioBuf);
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Allocate SMB I/O context", AVERROR(ENOMEM));
+        }
+        _format->pb = _customIO;
+        _format->flags |= AVFMT_FLAG_CUSTOM_IO;
+        location = filePath.lastPathComponent.UTF8String ?: "media";
+        if (atomic_load(&_interrupted)) {
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Playback cancelled", AVERROR_EXIT);
+        }
     } else {
         location = url.absoluteString.UTF8String;
     }

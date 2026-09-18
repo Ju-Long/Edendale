@@ -178,4 +178,45 @@ struct FFmpegDecoderTests {
         engine.pause()
         #expect(engine.state == .paused)
     }
+
+    @Test func openMalformedSMBURLFailsWithInvalidURLError() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        let urlNoPath = try #require(URL(string: "smb://127.0.0.1/share"))
+        do {
+            try reader.open(url: urlNoPath)
+            Issue.record("Expected open to fail on incomplete SMB URL")
+        } catch {
+            let nsError = error as NSError
+            #expect(nsError.domain == "Edendale.FFmpeg")
+            #expect(nsError.localizedDescription.contains("Invalid SMB URL"))
+        }
+
+        let urlNoHost = try #require(URL(string: "smb:///share/test.mkv"))
+        do {
+            try reader.open(url: urlNoHost)
+            Issue.record("Expected open to fail on missing host")
+        } catch {
+            let nsError = error as NSError
+            #expect(nsError.domain == "Edendale.FFmpeg")
+            #expect(nsError.localizedDescription.contains("missing host"))
+        }
+    }
+
+    @Test func openUnreachableSMBURLAttemptsSMBConnectionWithoutProtocolNotFoundError() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        let smbURL = try #require(URL(string: "smb://user:pass@127.0.0.1:1/share/movie.mkv"))
+        do {
+            try reader.open(url: smbURL)
+            Issue.record("Expected open to fail connecting to port 1")
+        } catch {
+            let nsError = error as NSError
+            #expect(nsError.domain == "Edendale.FFmpeg")
+            #expect(nsError.code != -1330794744)
+            #expect(!nsError.localizedDescription.contains("Protocol not found"))
+            #expect(nsError.localizedDescription.contains("SMB connect failed"))
+        }
+    }
 }
+
