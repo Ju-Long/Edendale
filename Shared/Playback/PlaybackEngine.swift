@@ -3,7 +3,7 @@
 //  Edendale
 //
 //  Observable playback bridge wrapping `MediaDecoder` for the player UI layer.
-//  Views bind to this instead of the raw VLC `Player`, providing transport
+//  Views bind to this instead of the decoder directly, providing transport
 //  state, track information, volume/mute, and a `FrameRingBuffer` for the
 //  Metal rendering surface.
 //
@@ -15,8 +15,7 @@ import Observation
 
 // MARK: - Playback state
 
-/// Transport state exposed to views. Maps from `DecoderState` to names the
-/// player chrome checks by identity comparison.
+/// Transport state exposed to views.
 enum PlaybackState: Equatable {
     case idle
     case stopped
@@ -29,7 +28,7 @@ enum PlaybackState: Equatable {
 
 // MARK: - Track type
 
-/// Unified track descriptor replacing SwiftVLC's `Track`.
+/// Unified track descriptor for video, audio, and subtitle tracks.
 struct PlaybackTrack: Identifiable, Equatable {
     let id: String
     let name: String
@@ -55,7 +54,7 @@ final class PlaybackEngine {
 
     private(set) var state: PlaybackState = .idle
 
-    /// The playback clock in `Duration` — same unit the VLC `Player` used.
+    /// The playback clock in `Duration`.
     private(set) var currentTime: Duration = .zero
     /// Total duration of the loaded media.
     private(set) var duration: Duration?
@@ -97,7 +96,7 @@ final class PlaybackEngine {
     private(set) var audioTracks: [PlaybackTrack] = []
     private(set) var subtitleTracks: [PlaybackTrack] = []
 
-    /// Settable audio track selection — mirrors SwiftVLC's pattern.
+    /// Settable audio track selection.
     var selectedAudioTrack: PlaybackTrack? {
         get { audioTracks.first(where: \.isSelected) }
         set {
@@ -262,16 +261,12 @@ final class PlaybackEngine {
         subtitleTracks = []
     }
 
-    // MARK: - External subtitles (stub — VLC addExternalTrack replacement)
+    // MARK: - External subtitles
 
-    /// Placeholder for loading an external subtitle file. With the new
-    /// pipeline, subtitle rendering goes through `SubtitleEngine`; this
-    /// method exists so the `OnlineSubtitlesModel` download flow compiles.
+    // TODO: Wire external subtitle loading through SubtitleEngine instead of
+    // appending a placeholder track. Currently downloads appear to succeed but
+    // the file is never parsed or rendered.
     func addExternalTrack(from url: URL, type: ExternalTrackType = .subtitle, select: Bool = true) throws {
-        // The AVFoundation path does not support adding external tracks to a
-        // live AVPlayerItem the way VLC does.  When FFmpeg or the subtitle
-        // engine is wired up, this will load the file through the appropriate
-        // decoder path.  For now, append a placeholder subtitle track.
         let index = subtitleTracks.count
         let track = PlaybackTrack(
             id: "ext-\(index)",
@@ -292,11 +287,7 @@ final class PlaybackEngine {
 
     enum ExternalTrackType { case subtitle, audio }
 
-    // MARK: - Video-track selection (settings panel workaround)
-
-    /// The settings panel uses `selectedAudioTrack = videoTrack` as a hack
-    /// to route video track selection through libVLC.  This provides a
-    /// cleaner path.
+    // MARK: - Video-track selection
     func selectVideoTrack(_ track: PlaybackTrack) {
         for i in videoTracks.indices { videoTracks[i].isSelected = false }
         if let idx = videoTracks.firstIndex(where: { $0.id == track.id }) {

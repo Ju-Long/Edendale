@@ -232,9 +232,7 @@ public final class FFmpegDecoder: MediaDecoder {
         let request = generation
         pump?.cancel()
         worker.interrupt()
-        if usingWallClock {
-            clockRunning = false
-        } else {
+        if !usingWallClock {
             synchronizer.rate = 0
         }
         clockRunning = false
@@ -247,7 +245,7 @@ public final class FFmpegDecoder: MediaDecoder {
         do {
             try await worker.seek(seconds: target, audioTrack: audioTrack)
             guard generation == request else { throw CancellationError() }
-            synchronizer.setRate(0, time: CMTime(seconds: target, preferredTimescale: 600))
+            synchronizer.setRate(0, time: CMTime(seconds: target, preferredTimescale: 60000))
             if usingWallClock {
                 wallClockOffset = target
             }
@@ -341,9 +339,7 @@ public final class FFmpegDecoder: MediaDecoder {
                 }
             } catch {
                 guard !Task.isCancelled, let self, self.generation == request else { return }
-                if self.usingWallClock {
-                    self.clockRunning = false
-                } else {
+                if !self.usingWallClock {
                     self.synchronizer?.rate = 0
                 }
                 self.clockRunning = false
@@ -396,7 +392,6 @@ public final class FFmpegDecoder: MediaDecoder {
         if eof && wantsToPlay && videos.isEmpty && time.seconds >= bufferedUntil - 0.005 {
             if usingWallClock {
                 wallClockOffset = bufferedUntil
-                clockRunning = false
             } else {
                 synchronizer?.setRate(0, time: CMTime(seconds: bufferedUntil, preferredTimescale: 60000))
             }

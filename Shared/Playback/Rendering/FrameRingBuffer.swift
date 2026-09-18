@@ -38,14 +38,6 @@ public final class FrameRingBuffer: @unchecked Sendable {
         }
     }
 
-    /// Returns the earliest frame with presentation timestamp strictly after `time`.
-    public func latestFrame(after time: CMTime) -> DecodedVideoFrame? {
-        lock.lock()
-        defer { lock.unlock() }
-
-        return frames.first(where: { $0.presentationTime > time })
-    }
-
     /// Returns the latest frame whose presentation timestamp is at or before `time`.
     /// Old frames earlier than this display candidate are pruned.
     public func latestFrame(atOrBefore time: CMTime) -> DecodedVideoFrame? {

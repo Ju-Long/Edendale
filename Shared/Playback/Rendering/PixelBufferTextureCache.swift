@@ -122,12 +122,6 @@ public final class PixelBufferTextureCache: @unchecked Sendable {
         }
     }
 
-    /// Legacy single-texture path. Works correctly for packed formats; YCbCr
-    /// buffers will return the luma plane only. Prefer `videoTexture(from:)`.
-    public func texture(from pixelBuffer: CVPixelBuffer) -> MTLTexture? {
-        videoTexture(from: pixelBuffer)?.lumaTexture
-    }
-
     // MARK: - YCbCr Conversion
 
     /// Converts a bi-planar YCbCr `VideoTexture` to a single BGRA texture via a
