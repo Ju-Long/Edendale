@@ -43,12 +43,12 @@ echo "Generated Secrets.xcconfig for Xcode Cloud build."
 # XCFramework reference. Keep secrets out of the dependency compiler environment.
 unset TMDB_READ_ACCESS_TOKEN TMDB_API_KEY WYZIE_API_KEY
 case "${CI_PRODUCT_PLATFORM:-}" in
-  iOS) FFMPEG_PLATFORM=ios ;;
-  macOS) FFMPEG_PLATFORM=macos ;;
-  tvOS) FFMPEG_PLATFORM=tvos ;;
-  visionOS) FFMPEG_PLATFORM=visionos ;;
+  iOS|ios) FFMPEG_PLATFORM=ios ;;
+  macOS|macos) FFMPEG_PLATFORM=macos ;;
+  tvOS|tvos) FFMPEG_PLATFORM=tvos ;;
+  visionOS|xrOS|visionos|xros) FFMPEG_PLATFORM=visionos ;;
   *)
-    echo "error: Unsupported or missing CI_PRODUCT_PLATFORM for FFmpeg." >&2
+    echo "error: Unsupported or missing CI_PRODUCT_PLATFORM for FFmpeg: '${CI_PRODUCT_PLATFORM:-}'." >&2
     exit 1
     ;;
 esac
