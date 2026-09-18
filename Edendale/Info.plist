@@ -35,10 +35,6 @@
 	<array>
 		<string>youtube</string>
 	</array>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Edendale connects to the media servers you link (such as SMB shares) to browse and play your own video files.</string>
 	<key>TMDBAPIKey</key>
 	<string>$(TMDB_API_KEY)</string>
 	<key>TMDBReadAccessToken</key>

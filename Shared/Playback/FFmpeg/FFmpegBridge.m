@@ -6,7 +6,12 @@
 //
 
 #import "FFmpegBridge.h"
-#import <FFmpeg/libavcodec/avcodec.h>
+#import <FFmpeg/FFmpeg.h>
+
+#ifndef EDENDALE_FFMPEG_ISOLATED
+#error Rebuild Vendor/FFmpeg/FFmpeg.xcframework with Vendor/FFmpeg/build-ffmpeg.sh to isolate FFmpeg from libVLC.
+#endif
+
 #import <FFmpeg/libavformat/avformat.h>
 #import <FFmpeg/libavutil/hwcontext.h>
 #import <FFmpeg/libavutil/hwcontext_videotoolbox.h>
@@ -48,27 +53,49 @@ CVPixelBufferRef _Nullable edendale_frame_get_pixel_buffer(struct AVFrame *frame
 
 CVPixelBufferRef _Nullable edendale_create_pixel_buffer_from_sw_frame(
     struct AVFrame *frame,
-    struct SwsContext * _Nullable * _Nonnull sws_ctx_ptr
+    struct SwsContext * _Nullable * _Nonnull sws_ctx_ptr,
+    CVPixelBufferPoolRef _Nullable * _Nonnull pool_ptr
 ) {
     if (!frame || frame->width <= 0 || frame->height <= 0) return NULL;
 
     int width = frame->width;
     int height = frame->height;
 
-    NSDictionary *pixelAttributes = @{
-        (id)kCVPixelBufferIOSurfacePropertiesKey: @{},
-        (id)kCVPixelBufferMetalCompatibilityKey: @YES
-    };
+    // Recreate pool when dimensions change
+    if (*pool_ptr) {
+        NSDictionary *attrs = (__bridge NSDictionary *)CVPixelBufferPoolGetPixelBufferAttributes(*pool_ptr);
+        int poolW = [attrs[(__bridge NSString *)kCVPixelBufferWidthKey] intValue];
+        int poolH = [attrs[(__bridge NSString *)kCVPixelBufferHeightKey] intValue];
+        if (poolW != width || poolH != height) {
+            CVPixelBufferPoolRelease(*pool_ptr);
+            *pool_ptr = NULL;
+        }
+    }
+
+    if (!*pool_ptr) {
+        NSDictionary *pixelAttributes = @{
+            (__bridge NSString *)kCVPixelBufferWidthKey: @(width),
+            (__bridge NSString *)kCVPixelBufferHeightKey: @(height),
+            (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+            (__bridge NSString *)kCVPixelBufferIOSurfacePropertiesKey: @{},
+            (__bridge NSString *)kCVPixelBufferMetalCompatibilityKey: @YES
+        };
+        NSDictionary *poolAttributes = @{
+            (__bridge NSString *)kCVPixelBufferPoolMinimumBufferCountKey: @3
+        };
+        CVReturn poolStatus = CVPixelBufferPoolCreate(
+            kCFAllocatorDefault,
+            (__bridge CFDictionaryRef)poolAttributes,
+            (__bridge CFDictionaryRef)pixelAttributes,
+            pool_ptr
+        );
+        if (poolStatus != kCVReturnSuccess || !*pool_ptr) {
+            return NULL;
+        }
+    }
 
     CVPixelBufferRef pixelBuffer = NULL;
-    CVReturn status = CVPixelBufferCreate(
-        kCFAllocatorDefault,
-        width,
-        height,
-        kCVPixelFormatType_32BGRA,
-        (__bridge CFDictionaryRef)pixelAttributes,
-        &pixelBuffer
-    );
+    CVReturn status = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, *pool_ptr, &pixelBuffer);
 
     if (status != kCVReturnSuccess || !pixelBuffer) {
         return NULL;
@@ -115,6 +142,14 @@ NSString *edendale_av_err2str(int errnum) {
     char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0};
     av_strerror(errnum, errbuf, sizeof(errbuf));
     return [NSString stringWithUTF8String:errbuf];
+}
+
+BOOL edendale_ffmpeg_versions_match(void) {
+    return AV_VERSION_MAJOR(avcodec_version()) == LIBAVCODEC_VERSION_MAJOR &&
+        AV_VERSION_MAJOR(avformat_version()) == LIBAVFORMAT_VERSION_MAJOR &&
+        AV_VERSION_MAJOR(avutil_version()) == LIBAVUTIL_VERSION_MAJOR &&
+        AV_VERSION_MAJOR(swresample_version()) == LIBSWRESAMPLE_VERSION_MAJOR &&
+        AV_VERSION_MAJOR(swscale_version()) == LIBSWSCALE_VERSION_MAJOR;
 }
 
 int edendale_averror_eof(void) {

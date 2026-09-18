@@ -28,6 +28,9 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     public let metalContext: MetalContext
     public let textureCache: PixelBufferTextureCache
 
+    /// The GPU enhancement pipeline (upscale, sharpen, denoise, color adjustments).
+    var enhancementPipeline: EnhancementPipeline?
+
     /// The frame intake ring buffer populated by media decoders.
     public var ringBuffer: FrameRingBuffer?
 
@@ -56,9 +59,13 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     /// Callback invoked when a frame is presented.
     public var onFramePresented: ((CMTime) -> Void)?
 
+    /// Fired once when the view has non-zero bounds and is ready for rendering.
+    public var onReady: ((EnhancedVideoView) -> Void)?
+
     // Internal animation state for test pattern
     private var testPatternPhase: Double = 0.0
     private var cachedTestTexture: MTLTexture?
+    private var hasReportedReady = false
 
     public init(
         frame: CGRect = .zero,
@@ -93,13 +100,41 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         self.layer?.isOpaque = true
         #else
         self.isOpaque = true
-        self.contentScaleFactor = 2.0
         #endif
 
         #if os(tvOS)
-        // Disable screen saver / idle dimming while video view is active
         UIApplication.shared.isIdleTimerDisabled = true
         #endif
+    }
+
+    // MARK: - Layout & Surface Ready
+
+    #if os(macOS)
+    public override func layout() {
+        super.layout()
+        reportReadyIfNeeded()
+    }
+    #else
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        reportReadyIfNeeded()
+    }
+
+    public override func didMoveToWindow() {
+        super.didMoveToWindow()
+        #if !os(visionOS)
+        if let window {
+            contentScaleFactor = window.screen.scale
+        }
+        #endif
+    }
+    #endif
+
+    private func reportReadyIfNeeded() {
+        guard !hasReportedReady, bounds.width > 0, bounds.height > 0 else { return }
+        hasReportedReady = true
+        debugPrint("[EnhancedVideoView] ✅ surface ready — bounds=\(bounds.size)")
+        onReady?(self)
     }
 
     #if os(tvOS)
@@ -138,16 +173,26 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         // Handled dynamically during draw
     }
 
+    private var drawCallCount = 0
     public func draw(in view: MTKView) {
+        guard bounds.width > 0, bounds.height > 0 else { return }
+
+        drawCallCount += 1
+        if drawCallCount <= 5 || drawCallCount % 300 == 0 {
+            debugPrint("[EnhancedVideoView.draw] frame #\(drawCallCount) — ringBuffer=\(ringBuffer == nil ? "nil" : "exists(\(ringBuffer!.count) frames)"), pixelBuffer=\(currentPixelBuffer == nil ? "nil" : "exists"), texture=\(currentTexture == nil ? "nil" : "exists"), testPattern=\(testPatternEnabled)")
+        }
+
         guard let drawable = currentDrawable,
               let renderPassDescriptor = currentRenderPassDescriptor,
               let commandBuffer = metalContext.commandQueue.makeCommandBuffer()
         else {
+            if drawCallCount <= 5 {
+                debugPrint("[EnhancedVideoView.draw] ❌ no drawable/renderPass/commandBuffer")
+            }
             return
         }
 
-        guard let texture = resolveTextureToRender() else {
-            // Nothing to render; clear the surface to black
+        guard let videoTexture = resolveVideoTexture() else {
             guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
                 return
             }
@@ -157,8 +202,26 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             return
         }
 
+        // Convert YCbCr to BGRA if needed (compute pass)
+        var renderTexture: MTLTexture
+        if videoTexture.isBiPlanarYCbCr {
+            guard let converted = textureCache.convertToBGRA(videoTexture, commandBuffer: commandBuffer) else {
+                return
+            }
+            renderTexture = converted
+        } else {
+            renderTexture = videoTexture.lumaTexture
+        }
+
+        // Enhancement pipeline: upscale, color adjustments, CAS sharpening, temporal denoise
+        if let pipeline = enhancementPipeline {
+            pipeline.displaySize = drawableSize
+            renderTexture = pipeline.process(source: renderTexture, commandBuffer: commandBuffer)
+        }
+
+        // Render to screen
         let containerSize = drawableSize
-        let textureSize = CGSize(width: texture.width, height: texture.height)
+        let textureSize = CGSize(width: renderTexture.width, height: renderTexture.height)
         let vertices = MetalContext.computeQuadVertices(
             containerSize: containerSize,
             contentSize: textureSize,
@@ -183,12 +246,11 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
         encoder.setRenderPipelineState(pipelineState)
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        encoder.setFragmentTexture(texture, index: 0)
+        encoder.setFragmentTexture(renderTexture, index: 0)
         encoder.setFragmentSamplerState(metalContext.samplerState, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
         encoder.endEncoding()
 
-        // Paced presentation
         #if os(macOS)
         let frameInterval = 1.0 / Double(max(targetFrameRate, 1.0))
         commandBuffer.present(drawable, afterMinimumDuration: frameInterval)
@@ -200,7 +262,7 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         onFramePresented?(currentDisplayTime)
     }
 
-    private func resolveTextureToRender() -> MTLTexture? {
+    private func resolveVideoTexture() -> VideoTexture? {
         if testPatternEnabled {
             testPatternPhase += 0.03
             if let pb = PixelBufferTextureCache.createGradientTestPixelBuffer(
@@ -208,24 +270,28 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
                 height: 1080,
                 phaseOffset: testPatternPhase
             ) {
-                return textureCache.texture(from: pb)
+                return textureCache.videoTexture(from: pb)
             }
-            return cachedTestTexture
+            if let cached = cachedTestTexture {
+                return VideoTexture(lumaTexture: cached, chromaTexture: nil, isVideoRange: false)
+            }
+            return nil
         }
 
-        // 1. Check direct pixel buffer
         if let currentPixelBuffer {
-            return textureCache.texture(from: currentPixelBuffer)
+            return textureCache.videoTexture(from: currentPixelBuffer)
         }
 
-        // 2. Check frame ring buffer from decoder
         if let ringBuffer {
             if let frame = ringBuffer.latestFrame(atOrBefore: currentDisplayTime) ?? ringBuffer.latestFrame() {
-                return textureCache.texture(from: frame.pixelBuffer)
+                return textureCache.videoTexture(from: frame.pixelBuffer)
             }
         }
 
-        // 3. Fallback to direct MTLTexture
-        return currentTexture
+        if let currentTexture {
+            return VideoTexture(lumaTexture: currentTexture, chromaTexture: nil, isVideoRange: false)
+        }
+
+        return nil
     }
 }

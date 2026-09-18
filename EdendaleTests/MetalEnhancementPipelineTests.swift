@@ -102,31 +102,71 @@ struct MetalEnhancementPipelineTests {
         #expect(lib.makeFunction(name: "applyColorAdjustments") != nil)
     }
 
-    @Test func spatialUpscalerEncodesAndExecutes() throws {
+    @Test(arguments: [
+        (MTLTextureUsage([.shaderRead, .shaderWrite, .renderTarget]), MTLStorageMode.private),
+        (MTLTextureUsage([.shaderRead, .shaderWrite]), MTLStorageMode.private),
+        (MTLTextureUsage([.shaderRead, .shaderWrite, .renderTarget]), MTLStorageMode.shared)
+    ])
+    func spatialUpscalerEncodesAndExecutes(usage: MTLTextureUsage, storageMode: MTLStorageMode) throws {
         guard let device = MTLCreateSystemDefaultDevice() else { return }
-        guard let commandQueue = device.makeCommandQueue() else { return }
+        let commandQueue = try #require(device.makeCommandQueue())
 
         let upscaler = SpatialUpscaler(device: device)
 
         let inDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: 320, height: 180, mipmapped: false)
         inDesc.usage = [.shaderRead, .shaderWrite]
-        guard let source = device.makeTexture(descriptor: inDesc) else { return }
+        let source = try #require(device.makeTexture(descriptor: inDesc))
 
         let outDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: 640, height: 360, mipmapped: false)
-        outDesc.usage = [.shaderRead, .shaderWrite]
-        guard let destination = device.makeTexture(descriptor: outDesc) else { return }
+        outDesc.usage = usage
+        outDesc.storageMode = storageMode
+        let destination = try #require(device.makeTexture(descriptor: outDesc))
 
-        // Fill source texture with checkerboard pattern
-        fillTestPattern(texture: source)
+        fillColor(texture: source, r: 160, g: 96, b: 48)
 
-        guard let cmd = commandQueue.makeCommandBuffer() else { return }
+        let cmd = try #require(commandQueue.makeCommandBuffer())
         upscaler.encode(source: source, destination: destination, commandBuffer: cmd)
+        let pixel = try readCenterPixel(from: destination, commandBuffer: cmd)
         cmd.commit()
         cmd.waitUntilCompleted()
 
         #expect(cmd.status == .completed)
         #expect(destination.width == 640)
         #expect(destination.height == 360)
+        let bytes = pixel.contents().bindMemory(to: UInt8.self, capacity: 4)
+        #expect(abs(Int(bytes[0]) - 48) <= 3)
+        #expect(abs(Int(bytes[1]) - 96) <= 3)
+        #expect(abs(Int(bytes[2]) - 160) <= 3)
+    }
+
+    @Test(arguments: [EnhancementPreset.balanced, .quality])
+    func pipelineUpscaleTexturesSupportRenderPasses(preset: EnhancementPreset) throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let commandQueue = try #require(device.makeCommandQueue())
+        let pipeline = try #require(EnhancementPipeline(device: device))
+        pipeline.preset = preset
+        pipeline.sharpness = 0
+        pipeline.denoiseStrength = 0
+
+        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: 64, height: 36, mipmapped: false)
+        desc.usage = .shaderRead
+        let source = try #require(device.makeTexture(descriptor: desc))
+        fillTestPattern(texture: source)
+
+        // Exercise initial allocation, cached reuse, and allocation after a resize.
+        for width in [128, 128, 256] {
+            pipeline.targetSizeOverride = CGSize(width: width, height: width * 9 / 16)
+            let cmd = try #require(commandQueue.makeCommandBuffer())
+            let output = pipeline.process(source: source, commandBuffer: cmd)
+            cmd.commit()
+            cmd.waitUntilCompleted()
+
+            #expect(cmd.status == .completed)
+            #expect(output.width == width)
+            #expect(output.height == width * 9 / 16)
+            #expect(output.usage.contains(.renderTarget))
+            #expect(output.storageMode == .private)
+        }
     }
 
     @Test func casSharpeningEdgeEnhancement() throws {
@@ -304,6 +344,24 @@ struct MetalEnhancementPipelineTests {
     }
 
     // MARK: - Pixel Helpers
+
+    private func readCenterPixel(from texture: MTLTexture, commandBuffer: MTLCommandBuffer) throws -> MTLBuffer {
+        let buffer = try #require(texture.device.makeBuffer(length: 256, options: .storageModeShared))
+        let blit = try #require(commandBuffer.makeBlitCommandEncoder())
+        blit.copy(
+            from: texture,
+            sourceSlice: 0,
+            sourceLevel: 0,
+            sourceOrigin: MTLOrigin(x: texture.width / 2, y: texture.height / 2, z: 0),
+            sourceSize: MTLSize(width: 1, height: 1, depth: 1),
+            to: buffer,
+            destinationOffset: 0,
+            destinationBytesPerRow: 256,
+            destinationBytesPerImage: 256
+        )
+        blit.endEncoding()
+        return buffer
+    }
 
     private func fillTestPattern(texture: MTLTexture) {
         let w = texture.width

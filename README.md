@@ -73,7 +73,15 @@ For a faster single-platform setup, use
 `bash Vendor/FFmpeg/build-ffmpeg.sh --platform ios` (also accepts `macos`,
 `tvos`, and `visionos`). This replaces the XCFramework with only that platform's
 device/simulator variants; rerun without `--platform` to restore all platforms.
-Use `--clean` when changing FFmpeg build options to rebuild cached slices.
+Build-option changes automatically invalidate cached slices. Use `--clean`
+to force a rebuild after changing FFmpeg source.
+
+The build isolates FFmpeg's symbols with Xcode's `ld` and `nmedit` tools so
+Edendale's decoder cannot bind to the different FFmpeg bundled in SwiftVLC.
+Older XCFrameworks must be regenerated with the command above; the first build
+also refreshes cached slices that lack `-fno-common` or PCM audio decoders.
+Both app targets keep using the static framework, with no additional runtime
+or package dependency.
 
 Run the native macOS build and tests:
 
@@ -96,6 +104,30 @@ Debug unit-test hosts use in-memory library, watchlist, and watch-progress
 stores with CloudKit disabled. Normal app launches and UI tests retain their
 usual persistence. The command above excludes UI tests; run the full signed
 test command when an interactive test environment is available.
+
+For GPU upscaling and rendering regression checks with Metal API validation:
+
+```sh
+TEST_RUNNER_MTL_DEBUG_LAYER=1 xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/MetalEnhancementPipelineTests \
+  -only-testing:EdendaleTests/EnhancedVideoRenderingTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Upscaling uses a private, render-target-capable output texture for MetalFX and
+falls back to Lanczos when caller-provided textures do not meet MetalFX's usage
+or storage requirements. These checks require a Metal-capable Mac.
+
+For FFmpeg startup, library compatibility, video dimensions, audio decoding,
+seeking, and track-switching regression checks, run:
+
+```sh
+bash Vendor/FFmpeg/test-symbol-isolation.sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
 
 Compile the tvOS app without signing:
 

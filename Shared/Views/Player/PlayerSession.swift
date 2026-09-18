@@ -161,6 +161,8 @@ final class PlayerSession {
     }
 
     func present(_ newItem: PlaybackItem) {
+        debugPrint("[PlayerSession.present] called — url=\(newItem.url?.lastPathComponent ?? "nil"), scope=\(newItem.scope == nil ? "nil" : "exists"), error=\(newItem.errorMessage ?? "none")")
+
         #if os(visionOS)
         if visionNativeItem != nil {
             saveVisionProgress(completed: visionReachedEnd)
@@ -172,7 +174,9 @@ final class PlayerSession {
         chrome?.saveProgressBeforeSwitch()
 
         let engine = self.player ?? PlaybackEngine()
+        let isNewEngine = self.player == nil
         self.player = engine
+        debugPrint("[PlayerSession.present] engine \(isNewEngine ? "CREATED" : "REUSED"), state=\(engine.state)")
 
         let chrome = self.chrome ?? PlayerChromeModel(session: self, watchStore: self.watchStore)
         self.chrome = chrome
@@ -187,12 +191,14 @@ final class PlayerSession {
 
         segmentSkipping.begin(itemID: newItem.id, media: newItem.segmentLookup)
 
-        guard newItem.url != nil else { return }
+        guard newItem.url != nil else {
+            debugPrint("[PlayerSession.present] ❌ url is nil — bailing out")
+            return
+        }
         setIdleTimerDisabled(true)
 
+        debugPrint("[PlayerSession.present] needsStop=\(needsStop), surfaceReady=\(surfaceReady)")
         if needsStop {
-            // Stop old media then start new media. Retain old scope until
-            // stop finishes.
             engine.stop()
             retainedPreviousScope = oldScope
             beginPlaybackOnReady()
@@ -206,9 +212,11 @@ final class PlayerSession {
     /// On platforms that require a drawable, waits for `surfaceDidAttach`.
     private func beginPlaybackOnReady() {
         #if os(iOS) || os(macOS) || os(visionOS)
+        debugPrint("[PlayerSession.beginPlaybackOnReady] surfaceReady=\(surfaceReady)")
         if surfaceReady {
             startPlayback()
         } else {
+            debugPrint("[PlayerSession.beginPlaybackOnReady] ⏳ waiting for surface attach...")
             awaitingSurface = true
         }
         #else
@@ -219,14 +227,20 @@ final class PlayerSession {
     /// Reported by the hosting scene's `EnhancedVideoPlayer` once its Metal
     /// surface is ready; starts any playback waiting on it.
     func surfaceDidAttach() {
+        debugPrint("[PlayerSession.surfaceDidAttach] called — awaitingSurface=\(awaitingSurface)")
         surfaceReady = true
         guard awaitingSurface else { return }
         awaitingSurface = false
+        debugPrint("[PlayerSession.surfaceDidAttach] ▶️ proceeding to startPlayback")
         startPlayback()
     }
 
     private func startPlayback() {
-        guard let engine = player, let chrome, let url = item?.url else { return }
+        guard let engine = player, let chrome, let url = item?.url else {
+            debugPrint("[PlayerSession.startPlayback] ❌ guard failed — player=\(player == nil ? "nil" : "exists"), chrome=\(self.chrome == nil ? "nil" : "exists"), url=\(item?.url?.lastPathComponent ?? "nil")")
+            return
+        }
+        debugPrint("[PlayerSession.startPlayback] ▶️ starting — url=\(url.lastPathComponent)")
         let generation = activePlaybackRequestID
 
         // Wire end-of-media and time callbacks
@@ -253,8 +267,13 @@ final class PlayerSession {
 
         Task {
             do {
+                debugPrint("[PlayerSession.startPlayback] opening url: \(url)")
                 try await engine.open(url: url)
-                guard self.activePlaybackRequestID == generation else { return }
+                guard self.activePlaybackRequestID == generation else {
+                    debugPrint("[PlayerSession.startPlayback] ❌ generation mismatch after open")
+                    return
+                }
+                debugPrint("[PlayerSession.startPlayback] ✅ engine.open succeeded — state=\(engine.state), duration=\(engine.duration?.playbackSeconds ?? -1)s")
 
                 videoAdjustment.apply(to: engine)
 
@@ -267,7 +286,9 @@ final class PlayerSession {
                     artworkURL: nil
                 )
 
+                debugPrint("[PlayerSession.startPlayback] calling engine.play()")
                 engine.play()
+                debugPrint("[PlayerSession.startPlayback] ✅ engine.play() returned — isPlaying=\(engine.isPlaying), state=\(engine.state)")
 
                 #if os(visionOS)
                 let resumePosition = decoderResumePositionOverride
@@ -277,6 +298,7 @@ final class PlayerSession {
                 chrome.playbackDidStart()
                 #endif
             } catch {
+                debugPrint("[PlayerSession.startPlayback] ❌ CAUGHT ERROR: \(error)")
                 guard self.activePlaybackRequestID == generation else { return }
                 self.item = PlaybackItem(failed: error.localizedDescription)
             }

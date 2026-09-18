@@ -4,6 +4,31 @@
 #import <FFmpeg/libavutil/pixdesc.h>
 #import <time.h>
 #import <stdatomic.h>
+#import <fcntl.h>
+#import <unistd.h>
+#import <sys/stat.h>
+
+#pragma mark - Custom I/O for local files
+
+static int ed_io_read(void *opaque, uint8_t *buf, int buf_size) {
+    int fd = (int)(intptr_t)opaque;
+    ssize_t n = read(fd, buf, buf_size);
+    if (n == 0) return AVERROR_EOF;
+    if (n < 0) return AVERROR(errno);
+    return (int)n;
+}
+
+static int64_t ed_io_seek(void *opaque, int64_t offset, int whence) {
+    int fd = (int)(intptr_t)opaque;
+    if (whence == AVSEEK_SIZE) {
+        struct stat st;
+        if (fstat(fd, &st) < 0) return AVERROR(errno);
+        return st.st_size;
+    }
+    off_t pos = lseek(fd, offset, whence);
+    if (pos < 0) return AVERROR(errno);
+    return pos;
+}
 
 @implementation EDFFmpegFrame
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
@@ -25,11 +50,14 @@
 
 @implementation EDFFmpegReader {
     AVFormatContext *_format;
+    AVIOContext *_customIO;
+    int _fileFD;
     AVCodecContext *_video;
     AVCodecContext *_audio;
     AVPacket *_packet;
     AVFrame *_frame;
     struct SwsContext *_scaler;
+    CVPixelBufferPoolRef _pixelBufferPool;
     SwrContext *_resampler;
     AVChannelLayout _inputLayout;
     int _inputRate;
@@ -65,6 +93,7 @@ static int EDInterrupt(void *opaque) {
 - (instancetype)initWithHardwareDecoding:(BOOL)hardwareDecoding {
     if ((self = [super init])) {
         _hardwareDecoding = hardwareDecoding;
+        _fileFD = -1;
         _videoIndex = _audioIndex = -1;
         _mediaInfo = @{};
         atomic_init(&_interrupted, false);
@@ -80,10 +109,22 @@ static int EDInterrupt(void *opaque) {
     avcodec_free_context(&_video);
     avcodec_free_context(&_audio);
     avformat_close_input(&_format);
+    if (_customIO) {
+        av_freep(&_customIO->buffer);
+        avio_context_free(&_customIO);
+    }
+    if (_fileFD >= 0) {
+        close(_fileFD);
+        _fileFD = -1;
+    }
     av_packet_free(&_packet);
     av_frame_free(&_frame);
     sws_freeContext(_scaler);
     _scaler = NULL;
+    if (_pixelBufferPool) {
+        CVPixelBufferPoolRelease(_pixelBufferPool);
+        _pixelBufferPool = NULL;
+    }
     swr_free(&_resampler);
     av_channel_layout_uninit(&_inputLayout);
     _videoIndex = _audioIndex = -1;
@@ -127,15 +168,49 @@ static int EDInterrupt(void *opaque) {
 
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error {
     [self close];
-    // Do not clear interruption here: close/cancellation may precede queued open.
     if (atomic_load(&_interrupted)) return EDReaderError(error, @"Playback cancelled", AVERROR_EXIT);
+    if (!edendale_ffmpeg_versions_match()) {
+        return EDReaderError(error, @"FFmpeg library versions do not match; rebuild the FFmpeg framework", AVERROR(EINVAL));
+    }
     static dispatch_once_t once;
     dispatch_once(&once, ^{ avformat_network_init(); });
     _format = avformat_alloc_context();
     if (!_format) return EDReaderError(error, @"Allocate media reader", AVERROR(ENOMEM));
     _format->interrupt_callback = (AVIOInterruptCB){ EDInterrupt, (__bridge void *)self };
     atomic_store(&_deadline, (int64_t)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000) + 20000000);
-    const char *location = url.isFileURL ? url.fileSystemRepresentation : url.absoluteString.UTF8String;
+
+    const char *location;
+    if (url.isFileURL) {
+        location = url.fileSystemRepresentation;
+        _fileFD = open(location, O_RDONLY);
+        if (_fileFD < 0) {
+            int err = errno;
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Could not open file", AVERROR(err));
+        }
+        static const int kIOBufSize = 32768;
+        unsigned char *ioBuf = av_malloc(kIOBufSize);
+        if (!ioBuf) {
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Allocate I/O buffer", AVERROR(ENOMEM));
+        }
+        _customIO = avio_alloc_context(ioBuf, kIOBufSize, 0,
+                                       (void *)(intptr_t)_fileFD,
+                                       ed_io_read, NULL, ed_io_seek);
+        if (!_customIO) {
+            av_free(ioBuf);
+            atomic_store(&_deadline, 0);
+            [self close];
+            return EDReaderError(error, @"Allocate I/O context", AVERROR(ENOMEM));
+        }
+        _format->pb = _customIO;
+        _format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    } else {
+        location = url.absoluteString.UTF8String;
+    }
+
     int result = avformat_open_input(&_format, location, NULL, NULL);
     if (result >= 0) result = avformat_find_stream_info(_format, NULL);
     atomic_store(&_deadline, 0);
@@ -203,7 +278,7 @@ static int EDInterrupt(void *opaque) {
     _videoNextTime = pts + duration;
     if (pts + 0.000001 < _seekFloor) return nil;
     CVPixelBufferRef pixel = edendale_frame_get_pixel_buffer(_frame);
-    if (!pixel) pixel = edendale_create_pixel_buffer_from_sw_frame(_frame, &_scaler);
+    if (!pixel) pixel = edendale_create_pixel_buffer_from_sw_frame(_frame, &_scaler, &_pixelBufferPool);
     if (!pixel) { EDReaderError(error, @"Convert video frame", AVERROR(EINVAL)); return nil; }
     EDFFmpegFrame *output = [[EDFFmpegFrame alloc] initWithPixelBuffer:pixel audio:NULL time:pts duration:duration];
     CVPixelBufferRelease(pixel);

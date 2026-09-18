@@ -158,25 +158,31 @@ final class PlaybackEngine {
     /// Routes the URL through `FormatRouter`, creates the appropriate decoder,
     /// opens the media, and populates track information.
     func open(url: URL) async throws {
+        debugPrint("[PlaybackEngine.open] called — url=\(url.lastPathComponent)")
         close()
         let request = openGeneration
         state = .opening
 
         let kind = await FormatRouter.route(url)
+        debugPrint("[PlaybackEngine.open] FormatRouter → \(kind)")
         try Task.checkCancellation()
         guard openGeneration == request else { throw CancellationError() }
         let newDecoder: any MediaDecoder
         switch kind {
         case .avFoundation:
+            debugPrint("[PlaybackEngine.open] creating AVFoundationDecoder")
             newDecoder = AVFoundationDecoder()
         case .ffmpeg:
+            debugPrint("[PlaybackEngine.open] creating FFmpegDecoder")
             newDecoder = FFmpegDecoder()
         }
 
         decoder = newDecoder
         wireCallbacks(newDecoder)
 
+        debugPrint("[PlaybackEngine.open] calling decoder.open(url:)...")
         let info = try await newDecoder.open(url: url)
+        debugPrint("[PlaybackEngine.open] ✅ decoder.open succeeded — duration=\(info.duration.seconds)s, videoTracks=\(info.videoTracks.count), audioTracks=\(info.audioTracks.count), naturalSize=\(info.naturalSize)")
         try Task.checkCancellation()
         guard openGeneration == request else { throw CancellationError() }
         populateTracks(from: info)
@@ -187,9 +193,11 @@ final class PlaybackEngine {
 
         applyAudioSettings()
         state = .buffering
+        debugPrint("[PlaybackEngine.open] ✅ done — state=\(state)")
     }
 
     func play() {
+        debugPrint("[PlaybackEngine.play] called — decoder=\(decoder == nil ? "nil" : String(describing: type(of: decoder!)))")
         decoder?.play()
         isPlaying = true
         state = .playing
@@ -335,6 +343,7 @@ final class PlaybackEngine {
     }
 
     private func handleDecoderState(_ decoderState: DecoderState) {
+        debugPrint("[PlaybackEngine] decoder state changed → \(decoderState)")
         switch decoderState {
         case .idle:
             state = .idle

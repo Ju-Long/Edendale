@@ -85,7 +85,16 @@ public final class FFmpegDecoder: MediaDecoder {
     public private(set) var state: DecoderState = .idle {
         didSet { if state != oldValue { onStateChanged?(state) } }
     }
-    public var currentTime: CMTime { synchronizer?.currentTime() ?? .zero }
+    public var currentTime: CMTime {
+        if usingWallClock {
+            guard clockRunning else {
+                return CMTime(seconds: wallClockOffset, preferredTimescale: 600)
+            }
+            let elapsed = CACurrentMediaTime() - wallClockStart
+            return CMTime(seconds: wallClockOffset + elapsed * Double(playbackRate), preferredTimescale: 600)
+        }
+        return synchronizer?.currentTime() ?? .zero
+    }
     public private(set) var mediaInfo: MediaInfo?
     public var onStateChanged: (@MainActor (DecoderState) -> Void)?
     public var onTimeChanged: (@MainActor (CMTime) -> Void)?
@@ -109,6 +118,11 @@ public final class FFmpegDecoder: MediaDecoder {
     private var previewPending = true
     private var playbackRate: Float = 1
 
+    // Wall-clock fallback for video-only files where the synchronizer has no renderer
+    private var usingWallClock = false
+    private var wallClockStart: CFTimeInterval = 0
+    private var wallClockOffset: Double = 0
+
     public init(hardwareDecoding: Bool = true) {
         self.hardwareDecoding = hardwareDecoding
     }
@@ -120,17 +134,20 @@ public final class FFmpegDecoder: MediaDecoder {
     }
 
     public func open(url: URL) async throws -> MediaInfo {
+        debugPrint("[FFmpegDecoder.open] called — url=\(url.lastPathComponent), hwDecoding=\(hardwareDecoding)")
         close()
         let request = generation
         state = .opening
         let worker = FFmpegWorker(hardwareDecoding: hardwareDecoding)
         self.worker = worker
         do {
+            debugPrint("[FFmpegDecoder.open] calling worker.open...")
             let info = try await withTaskCancellationHandler {
                 try await worker.open(url)
             } onCancel: {
                 worker.interrupt()
             }
+            debugPrint("[FFmpegDecoder.open] ✅ worker.open succeeded — duration=\(info.duration.seconds)s, video=\(info.videoTracks.count), audio=\(info.audioTracks.count)")
             try Task.checkCancellation()
             guard generation == request else { throw CancellationError() }
             let sync = AVSampleBufferRenderSynchronizer()
@@ -142,6 +159,11 @@ public final class FFmpegDecoder: MediaDecoder {
                 renderer.isMuted = isMuted
                 sync.addRenderer(renderer)
                 audioRenderer = renderer
+                usingWallClock = false
+                debugPrint("[FFmpegDecoder.open] audio renderer attached, wallClock=false")
+            } else {
+                usingWallClock = true
+                debugPrint("[FFmpegDecoder.open] no audio tracks, wallClock=true")
             }
             synchronizer = sync
             mediaInfo = info
@@ -149,9 +171,11 @@ public final class FFmpegDecoder: MediaDecoder {
                 Task { @MainActor [weak self] in self?.tick() }
             }
             state = .ready
+            debugPrint("[FFmpegDecoder.open] ✅ state=ready, starting pump")
             startPump(worker, generation: request)
             return info
         } catch {
+            debugPrint("[FFmpegDecoder.open] ❌ ERROR: \(error)")
             worker.close()
             if generation == request { state = .error(error) }
             throw error
@@ -159,8 +183,15 @@ public final class FFmpegDecoder: MediaDecoder {
     }
 
     public func play() {
-        guard worker != nil, mediaInfo != nil else { return }
-        if case .error = state { return }
+        debugPrint("[FFmpegDecoder.play] called — worker=\(worker == nil ? "nil" : "exists"), mediaInfo=\(mediaInfo == nil ? "nil" : "exists"), state=\(state)")
+        guard worker != nil, mediaInfo != nil else {
+            debugPrint("[FFmpegDecoder.play] ❌ guard failed — no worker or mediaInfo")
+            return
+        }
+        if case .error = state {
+            debugPrint("[FFmpegDecoder.play] ❌ in error state, not playing")
+            return
+        }
         if state == .ended {
             Task { [weak self] in
                 guard let self else { return }
@@ -172,11 +203,18 @@ public final class FFmpegDecoder: MediaDecoder {
         if state != .seeking { state = .playing }
         displayLink?.start()
         startClockIfReady()
+        debugPrint("[FFmpegDecoder.play] ✅ wantsToPlay=true, clockRunning=\(clockRunning)")
     }
 
     public func pause() {
         wantsToPlay = false
-        synchronizer?.rate = 0
+        if usingWallClock {
+            if clockRunning {
+                wallClockOffset = currentTime.seconds
+            }
+        } else {
+            synchronizer?.rate = 0
+        }
         clockRunning = false
         displayLink?.stop()
         if mediaInfo != nil && state != .seeking { state = .paused }
@@ -194,7 +232,11 @@ public final class FFmpegDecoder: MediaDecoder {
         let request = generation
         pump?.cancel()
         worker.interrupt()
-        synchronizer.rate = 0
+        if usingWallClock {
+            clockRunning = false
+        } else {
+            synchronizer.rate = 0
+        }
         clockRunning = false
         state = .seeking
         videos.removeAll()
@@ -206,6 +248,9 @@ public final class FFmpegDecoder: MediaDecoder {
             try await worker.seek(seconds: target, audioTrack: audioTrack)
             guard generation == request else { throw CancellationError() }
             synchronizer.setRate(0, time: CMTime(seconds: target, preferredTimescale: 600))
+            if usingWallClock {
+                wallClockOffset = target
+            }
             bufferedUntil = target
             eof = false
             previewPending = true
@@ -222,7 +267,14 @@ public final class FFmpegDecoder: MediaDecoder {
     public func setRate(_ rate: Float) {
         guard rate.isFinite, rate > 0 else { return }
         playbackRate = min(max(rate, 0.25), 4)
-        if clockRunning { synchronizer?.rate = playbackRate }
+        if clockRunning {
+            if usingWallClock {
+                wallClockOffset = currentTime.seconds
+                wallClockStart = CACurrentMediaTime()
+            } else {
+                synchronizer?.rate = playbackRate
+            }
+        }
     }
 
     public func selectAudioTrack(_ index: Int) {
@@ -231,8 +283,6 @@ public final class FFmpegDecoder: MediaDecoder {
         Task { [weak self] in try? await self?.reposition(seconds: time, audioTrack: index) }
     }
 
-    // Embedded subtitle decoding/rendering is independent of the A/V pipeline.
-    // Until connected, no nonfunctional embedded subtitle tracks are advertised.
     public func selectSubtitleTrack(_ index: Int?) { }
 
     public func close() {
@@ -243,7 +293,9 @@ public final class FFmpegDecoder: MediaDecoder {
         worker = nil
         displayLink?.stop()
         displayLink = nil
-        synchronizer?.rate = 0
+        if !usingWallClock {
+            synchronizer?.rate = 0
+        }
         audioRenderer?.flush()
         audioRenderer = nil
         synchronizer = nil
@@ -254,6 +306,10 @@ public final class FFmpegDecoder: MediaDecoder {
         wantsToPlay = false
         clockRunning = false
         previewPending = true
+        playbackRate = 1
+        usingWallClock = false
+        wallClockStart = 0
+        wallClockOffset = 0
         state = .idle
     }
 
@@ -261,7 +317,6 @@ public final class FFmpegDecoder: MediaDecoder {
         pump = Task { [weak self] in
             do {
                 while !Task.isCancelled {
-                    // Do not retain the decoder across the suspension points.
                     guard let shouldRead = self?.shouldRead(generation: request) else { return }
                     if !shouldRead {
                         try await Task.sleep(for: .milliseconds(20))
@@ -286,7 +341,11 @@ public final class FFmpegDecoder: MediaDecoder {
                 }
             } catch {
                 guard !Task.isCancelled, let self, self.generation == request else { return }
-                self.synchronizer?.rate = 0
+                if self.usingWallClock {
+                    self.clockRunning = false
+                } else {
+                    self.synchronizer?.rate = 0
+                }
                 self.clockRunning = false
                 self.displayLink?.stop()
                 self.state = .error(error)
@@ -318,7 +377,11 @@ public final class FFmpegDecoder: MediaDecoder {
     private func startClockIfReady() {
         guard wantsToPlay, state != .seeking, !clockRunning,
               bufferedUntil > currentTime.seconds else { return }
-        synchronizer?.rate = playbackRate
+        if usingWallClock {
+            wallClockStart = CACurrentMediaTime()
+        } else {
+            synchronizer?.rate = playbackRate
+        }
         clockRunning = true
     }
 
@@ -331,7 +394,12 @@ public final class FFmpegDecoder: MediaDecoder {
         if let latest { onVideoFrame?(latest) }
         onTimeChanged?(time)
         if eof && wantsToPlay && videos.isEmpty && time.seconds >= bufferedUntil - 0.005 {
-            synchronizer?.setRate(0, time: CMTime(seconds: bufferedUntil, preferredTimescale: 60000))
+            if usingWallClock {
+                wallClockOffset = bufferedUntil
+                clockRunning = false
+            } else {
+                synchronizer?.setRate(0, time: CMTime(seconds: bufferedUntil, preferredTimescale: 60000))
+            }
             clockRunning = false
             wantsToPlay = false
             displayLink?.stop()

@@ -65,6 +65,7 @@ COMMON_CONFIG=(
     --enable-hwaccel=hevc_videotoolbox
     --enable-hwaccel=vp9_videotoolbox
     --enable-decoder=h264,hevc,vp8,vp9,av1,mpeg2video,mpeg4,aac,mp3,flac,opus,vorbis,ac3,eac3,dca,truehd,ass,srt,subrip,webvtt,pgssub,dvdsub
+    '--enable-decoder=pcm_*'
     --enable-demuxer=matroska,avi,mpegts,flv,ogg,mov,mp3,wav,flac,ass,srt,concat
     --enable-parser=h264,hevc,vp8,vp9,av1,mpegvideo,mpeg4video,aac,mpegaudio,flac,opus,vorbis,ac3,dca
     --enable-protocol=file,http,https,tcp,udp,concat
@@ -85,18 +86,26 @@ build_slice() {
 
     local slice_dir="${BUILD_ROOT}/${platform_name}-${arch}"
     local prefix="${slice_dir}/install"
+    local cflags="-fembed-bitcode=off -fPIC -fno-common -arch ${arch} ${min_flag}"
+    local ldflags="-arch ${arch} ${min_flag}"
+    local signature
+    signature=$(printf '%s\n' "${FFMPEG_VERSION}" "${COMMON_CONFIG[@]}" \
+        "${cflags}" "${ldflags}" "${sdk_path}" "${disable_asm}" | shasum -a 256 | awk '{ print $1 }')
 
-    if [ -f "${prefix}/lib/libavcodec.a" ]; then
+    if [ -f "${prefix}/lib/libavcodec.a" ] && \
+       [ -f "${prefix}/.edendale-build-signature" ] && \
+       [ "$(cat "${prefix}/.edendale-build-signature")" = "${signature}" ]; then
         echo "==> Slice ${platform_name}-${arch} already built. Skipping."
         return 0
     fi
 
     echo "==> Building ${platform_name} (${arch})..."
+    # Changed compiler flags do not reliably invalidate old FFmpeg objects.
+    # Only reuse a completed slice built with the isolation prerequisites.
+    rm -rf "${slice_dir}"
     mkdir -p "${slice_dir}"
     cd "${slice_dir}"
 
-    local cflags="-fembed-bitcode=off -fPIC -arch ${arch} ${min_flag}"
-    local ldflags="-arch ${arch} ${min_flag}"
     local extra_args=()
 
     if [ "${disable_asm}" = "true" ]; then
@@ -135,6 +144,7 @@ build_slice() {
 
     make -j"${NCPU}"
     make install
+    printf '%s\n' "${signature}" > "${prefix}/.edendale-build-signature"
 }
 
 if [ "${CLEAN}" = true ]; then
@@ -187,7 +197,29 @@ create_framework() {
             "${prefix}/lib/libavutil.a" \
             "${prefix}/lib/libswresample.a" \
             "${prefix}/lib/libswscale.a"
-        merged_libs+=("${slice_lib}")
+        local arch="${slice##*-}"
+        local sdk platform min_version
+        case "${slice%-*}" in
+            macos) sdk=macosx; platform=macos; min_version=15.0 ;;
+            ios) sdk=iphoneos; platform=ios; min_version=18.0 ;;
+            ios-sim) sdk=iphonesimulator; platform=ios-simulator; min_version=18.0 ;;
+            tvos) sdk=appletvos; platform=tvos; min_version=18.0 ;;
+            tvos-sim) sdk=appletvsimulator; platform=tvos-simulator; min_version=18.0 ;;
+            xros) sdk=xros; platform=visionos; min_version=2.0 ;;
+            xrsimulator) sdk=xrsimulator; platform=visionos-simulator; min_version=2.0 ;;
+            *) echo "error: Unknown FFmpeg slice: ${slice}" >&2; exit 1 ;;
+        esac
+        local isolated_lib="${BUILD_ROOT}/${slice}/libEdendaleFFmpeg.a"
+        local namespace_header="${BUILD_ROOT}/${slice}/EdendaleFFmpegSymbols.h"
+        bash "${SCRIPT_DIR}/isolate-symbols.sh" "${slice_lib}" "${isolated_lib}" \
+            "${namespace_header}" "${arch}" "${platform}" "${min_version}" \
+            "$(xcrun --sdk "${sdk}" --show-sdk-version)"
+        if [ -f "${fmwk_dir}/Headers/EdendaleFFmpegSymbols.h" ]; then
+            cmp "${fmwk_dir}/Headers/EdendaleFFmpegSymbols.h" "${namespace_header}"
+        else
+            cp "${namespace_header}" "${fmwk_dir}/Headers/EdendaleFFmpegSymbols.h"
+        fi
+        merged_libs+=("${isolated_lib}")
     done
 
     # If multiple slices (e.g. arm64 + x86_64), lipo them into one universal library
@@ -206,6 +238,7 @@ create_framework() {
 #ifndef FFmpeg_h
 #define FFmpeg_h
 
+#include "EdendaleFFmpegSymbols.h"
 #include "libavcodec/avcodec.h"
 #include "libavcodec/videotoolbox.h"
 #include "libavformat/avformat.h"

@@ -177,7 +177,9 @@ final class EnhancementPipeline: @unchecked Sendable {
                 ref: &cachedUpscaledTexture,
                 width: outW,
                 height: outH,
-                format: source.pixelFormat
+                format: source.pixelFormat,
+                // MetalFX writes its output through a render pass.
+                usage: [.shaderRead, .shaderWrite, .renderTarget]
             )
             upscaler.encode(source: currentTexture, destination: upscaleDest, commandBuffer: commandBuffer)
             currentTexture = upscaleDest
@@ -343,12 +345,14 @@ final class EnhancementPipeline: @unchecked Sendable {
         ref: inout MTLTexture?,
         width: Int,
         height: Int,
-        format: MTLPixelFormat
+        format: MTLPixelFormat,
+        usage: MTLTextureUsage = [.shaderRead, .shaderWrite]
     ) -> MTLTexture {
         if let existing = ref,
            existing.width == width,
            existing.height == height,
-           existing.pixelFormat == format {
+           existing.pixelFormat == format,
+           existing.usage.contains(usage) {
             return existing
         }
 
@@ -358,7 +362,7 @@ final class EnhancementPipeline: @unchecked Sendable {
             height: height,
             mipmapped: false
         )
-        desc.usage = [.shaderRead, .shaderWrite]
+        desc.usage = usage
         desc.storageMode = .private
 
         let newTexture = device.makeTexture(descriptor: desc)!

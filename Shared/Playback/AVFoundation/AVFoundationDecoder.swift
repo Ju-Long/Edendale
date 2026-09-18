@@ -181,6 +181,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     // MARK: - MediaDecoder Protocol Methods
 
     public func open(url: URL) async throws -> MediaInfo {
+        debugPrint("[AVFoundationDecoder.open] called — url=\(url.lastPathComponent)")
         close()
         state = .opening
 
@@ -190,14 +191,18 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
         )
 
         let isPlayable = (try? await asset.load(.isPlayable)) ?? false
+        debugPrint("[AVFoundationDecoder.open] isPlayable=\(isPlayable)")
         guard isPlayable else {
+            debugPrint("[AVFoundationDecoder.open] ❌ asset not playable")
             let error = AVFoundationDecoderError.unplayableAsset
             state = .error(error)
             throw error
         }
 
         do {
+            debugPrint("[AVFoundationDecoder.open] extracting media info...")
             let info = try await extractMediaInfo(from: asset)
+            debugPrint("[AVFoundationDecoder.open] ✅ info: duration=\(info.duration.seconds)s, video=\(info.videoTracks.count), audio=\(info.audioTracks.count), size=\(info.naturalSize), fps=\(info.frameRate)")
             self.mediaInfo = info
 
             if info.frameRate > 0 {
@@ -226,8 +231,10 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
             self.legibleSelectionGroup = try? await asset.loadMediaSelectionGroup(for: .legible)
 
             state = .ready
+            debugPrint("[AVFoundationDecoder.open] ✅ state=ready")
             return info
         } catch {
+            debugPrint("[AVFoundationDecoder.open] ❌ ERROR: \(error)")
             let mappedError = (error as? AVFoundationDecoderError) ?? .playbackFailed(error)
             state = .error(mappedError)
             throw mappedError
@@ -235,11 +242,16 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     }
 
     public func play() {
-        guard let player else { return }
+        debugPrint("[AVFoundationDecoder.play] called — player=\(player == nil ? "nil" : "exists"), rate=\(currentPlaybackRate)")
+        guard let player else {
+            debugPrint("[AVFoundationDecoder.play] ❌ no player")
+            return
+        }
         let rate = currentPlaybackRate > 0 ? currentPlaybackRate : 1.0
         player.rate = rate
         state = .playing
         displayLinkDriver?.start()
+        debugPrint("[AVFoundationDecoder.play] ✅ playing at rate=\(rate)")
     }
 
     public func pause() {

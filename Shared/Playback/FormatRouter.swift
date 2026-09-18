@@ -35,8 +35,11 @@ public struct FormatRouter: Sendable {
     /// AVFoundation: MP4/MOV/M4V + H.264/HEVC/ProRes/AV1
     /// FFmpeg: everything else (MKV, AVI, TS, VP9, DTS audio, SMB, etc.)
     public static func route(_ url: URL) async -> DecoderKind {
+        debugPrint("[FormatRouter] routing url=\(url.lastPathComponent), scheme=\(url.scheme ?? "nil"), ext=\(url.pathExtension)")
+
         // 1. Network protocol check: SMB cannot be opened by AVFoundation.
         if isSMB(url: url) {
+            debugPrint("[FormatRouter] → ffmpeg (SMB)")
             return .ffmpeg
         }
 
@@ -44,16 +47,21 @@ public struct FormatRouter: Sendable {
 
         // 2. Fast container check: non-AVFoundation formats go straight to FFmpeg.
         if ffmpegImmediateExtensions.contains(fileExtension) {
+            debugPrint("[FormatRouter] → ffmpeg (extension '\(fileExtension)' in immediate set)")
             return .ffmpeg
         }
 
         // If it is not a known AVFoundation container and has an extension, fallback to FFmpeg.
         if !fileExtension.isEmpty && !avFoundationContainerExtensions.contains(fileExtension) {
+            debugPrint("[FormatRouter] → ffmpeg (unknown extension '\(fileExtension)')")
             return .ffmpeg
         }
 
         // 3. Deep probe with AVURLAsset for MP4 / MOV / M4V or extensionless media.
-        return await probeAsset(at: url)
+        debugPrint("[FormatRouter] deep-probing asset...")
+        let result = await probeAsset(at: url)
+        debugPrint("[FormatRouter] → \(result)")
+        return result
     }
 
     // MARK: - Internal Probing

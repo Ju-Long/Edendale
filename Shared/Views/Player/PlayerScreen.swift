@@ -38,8 +38,10 @@ struct PlayerScreen: View {
             if let player = session.player,
                let item = session.item, item.scope != nil,
                player.state != .error {
+                let _ = debugPrint("[PlayerScreen] ✅ showing playback — state=\(player.state), url=\(item.url?.lastPathComponent ?? "nil")")
                 playback(player: player, item: item)
             } else {
+                let _ = debugPrint("[PlayerScreen] ❌ showing failure — player=\(session.player == nil ? "nil" : "exists") state=\(session.player?.state ?? .idle), item=\(session.item == nil ? "nil" : "exists"), scope=\(session.item?.scope == nil ? "nil" : "exists"), error=\(session.item?.errorMessage ?? "none")")
                 failure
             }
         }
@@ -195,6 +197,7 @@ struct PlayerScreen: View {
             presentationTime: player.videoPresentationTime,
             aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
             isPaused: !player.isPlaying,
+            enhancementPipeline: player.enhancementPipeline,
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
     }

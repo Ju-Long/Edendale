@@ -143,6 +143,13 @@ final class SpatialUpscaler: @unchecked Sendable {
         }
 
         guard let scaler = spatialScaler else { return false }
+        // MetalFX requires its advertised usage flags and a private output texture.
+        // Incompatible caller-owned textures can still use the Lanczos compute pass.
+        guard source.usage.contains(scaler.colorTextureUsage),
+              destination.usage.contains(scaler.outputTextureUsage),
+              destination.storageMode == .private else {
+            return false
+        }
         scaler.colorTexture = source
         scaler.outputTexture = destination
         scaler.encode(commandBuffer: commandBuffer)

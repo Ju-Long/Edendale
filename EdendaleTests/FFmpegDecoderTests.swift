@@ -25,6 +25,8 @@ struct FFmpegDecoderTests {
         let reader = EDFFmpegReader(hardwareDecoding: false)
         defer { reader.close() }
         try reader.open(url: fixture())
+        #expect(reader.mediaInfo["width"] as? Int == 160)
+        #expect(reader.mediaInfo["height"] as? Int == 90)
         let audio = try #require(reader.mediaInfo["audio"] as? [[String: Any]])
         #expect(audio.count == 2)
         #expect(audio.first?["index"] as? Int == 1)
@@ -39,6 +41,7 @@ struct FFmpegDecoderTests {
                 if let pixel = frame.pixelBuffer {
                     frames += 1
                     #expect(CVPixelBufferGetWidth(pixel) == 160)
+                    #expect(CVPixelBufferGetHeight(pixel) == 90)
                     #expect(frame.presentationTime >= lastVideoTime)
                     lastVideoTime = frame.presentationTime
                 }
@@ -107,6 +110,7 @@ struct FFmpegDecoderTests {
         decoder.onVideoFrame = { times.append($0.presentationTime.seconds) }
         let info = try await decoder.open(url: fixture())
         #expect(info.videoTracks.first?.codec == "h264")
+        #expect(info.naturalSize == CGSize(width: 160, height: 90))
         #expect(info.audioTracks.count == 2)
         #expect(info.audioTracks.first?.index == 1)
         #expect(decoder.state == .ready)

@@ -27,14 +27,18 @@ int edendale_setup_videotoolbox(struct AVCodecContext * _Nonnull ctx);
 CVPixelBufferRef _Nullable edendale_frame_get_pixel_buffer(struct AVFrame * _Nonnull frame);
 
 /// Converts a software-decoded AVFrame (e.g. YUV420P, YUV420P10, etc.) into a CVPixelBuffer.
-/// Reuses or updates the SwsContext pointer passed in `sws_ctx_ptr`.
+/// Reuses or updates the SwsContext pointer and CVPixelBufferPool passed via their pointers.
 CVPixelBufferRef _Nullable edendale_create_pixel_buffer_from_sw_frame(
     struct AVFrame * _Nonnull frame,
-    struct SwsContext * _Nullable * _Nonnull sws_ctx_ptr
+    struct SwsContext * _Nullable * _Nonnull sws_ctx_ptr,
+    CVPixelBufferPoolRef _Nullable * _Nonnull pool_ptr
 );
 
 /// Returns an NSString description of an FFmpeg error number.
 NSString * _Nonnull edendale_av_err2str(int errnum);
+
+/// Checks the ABI versions before accessing FFmpeg's public C structures.
+BOOL edendale_ffmpeg_versions_match(void);
 
 /// Helper constants for FFmpeg error and seek flags
 int edendale_averror_eof(void);

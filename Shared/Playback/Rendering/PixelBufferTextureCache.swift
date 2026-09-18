@@ -10,12 +10,26 @@ import CoreVideo
 import Foundation
 import Metal
 
+/// Result of mapping a CVPixelBuffer to Metal textures.
+/// For packed formats (BGRA), only `lumaTexture` is populated.
+/// For bi-planar YCbCr (420v/420f/p010), both planes are mapped.
+public struct VideoTexture {
+    public let lumaTexture: MTLTexture
+    public let chromaTexture: MTLTexture?
+    public let isVideoRange: Bool
+
+    public var isBiPlanarYCbCr: Bool { chromaTexture != nil }
+}
+
 /// Converts `CVPixelBuffer` to `MTLTexture` zero-copy via IOSurface / CoreVideo Metal texture cache.
 /// Avoids CPU/GPU copy on Apple Silicon by mapping the pixel buffer's underlying memory directly.
 public final class PixelBufferTextureCache: @unchecked Sendable {
     public let device: MTLDevice
     private var textureCache: CVMetalTextureCache?
     private let cacheLock = NSLock()
+
+    private var ycbcrPipelineState: MTLComputePipelineState?
+    private var cachedBGRATexture: MTLTexture?
 
     public init(device: MTLDevice = MetalContext.shared?.device ?? MTLCreateSystemDefaultDevice()!) {
         self.device = device
@@ -38,61 +52,129 @@ public final class PixelBufferTextureCache: @unchecked Sendable {
         if result == kCVReturnSuccess {
             self.textureCache = cache
         }
+        setupYCbCrPipeline()
     }
 
-    /// Converts a CVPixelBuffer to an MTLTexture zero-copy.
-    /// Handles 32BGRA, 32RGBA, and planar formats.
-    public func texture(from pixelBuffer: CVPixelBuffer) -> MTLTexture? {
+    // MARK: - Texture Mapping
+
+    /// Maps a CVPixelBuffer to a `VideoTexture`, handling both packed (BGRA) and
+    /// bi-planar YCbCr formats including 10-bit P010.
+    public func videoTexture(from pixelBuffer: CVPixelBuffer) -> VideoTexture? {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
         guard let textureCache else { return nil }
 
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
         let pixelFormatType = CVPixelBufferGetPixelFormatType(pixelBuffer)
-
-        let metalFormat: MTLPixelFormat
-        let planeIndex: Int
 
         switch pixelFormatType {
         case kCVPixelFormatType_32BGRA:
-            metalFormat = .bgra8Unorm
-            planeIndex = 0
+            let w = CVPixelBufferGetWidth(pixelBuffer)
+            let h = CVPixelBufferGetHeight(pixelBuffer)
+            guard let tex = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                            format: .bgra8Unorm, width: w, height: h, planeIndex: 0)
+            else { return nil }
+            return VideoTexture(lumaTexture: tex, chromaTexture: nil, isVideoRange: false)
+
         case kCVPixelFormatType_32RGBA:
-            metalFormat = .rgba8Unorm
-            planeIndex = 0
-        case kCVPixelFormatType_32ARGB:
-            metalFormat = .bgra8Unorm
-            planeIndex = 0
+            let w = CVPixelBufferGetWidth(pixelBuffer)
+            let h = CVPixelBufferGetHeight(pixelBuffer)
+            guard let tex = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                            format: .rgba8Unorm, width: w, height: h, planeIndex: 0)
+            else { return nil }
+            return VideoTexture(lumaTexture: tex, chromaTexture: nil, isVideoRange: false)
+
         case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
              kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
-            // For bi-planar YUV, map the Y luminance plane as r8Unorm for grayscale fallback
-            metalFormat = .r8Unorm
-            planeIndex = 0
+            let lumaW = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
+            let lumaH = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
+            let chromaW = CVPixelBufferGetWidthOfPlane(pixelBuffer, 1)
+            let chromaH = CVPixelBufferGetHeightOfPlane(pixelBuffer, 1)
+            guard let luma = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                             format: .r8Unorm, width: lumaW, height: lumaH, planeIndex: 0),
+                  let chroma = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                               format: .rg8Unorm, width: chromaW, height: chromaH, planeIndex: 1)
+            else { return nil }
+            let isVideo = pixelFormatType == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            return VideoTexture(lumaTexture: luma, chromaTexture: chroma, isVideoRange: isVideo)
+
+        case kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange,
+             kCVPixelFormatType_420YpCbCr10BiPlanarFullRange:
+            let lumaW = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
+            let lumaH = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
+            let chromaW = CVPixelBufferGetWidthOfPlane(pixelBuffer, 1)
+            let chromaH = CVPixelBufferGetHeightOfPlane(pixelBuffer, 1)
+            guard let luma = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                             format: .r16Unorm, width: lumaW, height: lumaH, planeIndex: 0),
+                  let chroma = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                               format: .rg16Unorm, width: chromaW, height: chromaH, planeIndex: 1)
+            else { return nil }
+            let isVideo = pixelFormatType == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+            return VideoTexture(lumaTexture: luma, chromaTexture: chroma, isVideoRange: isVideo)
+
         default:
-            metalFormat = .bgra8Unorm
-            planeIndex = 0
+            let w = CVPixelBufferGetWidth(pixelBuffer)
+            let h = CVPixelBufferGetHeight(pixelBuffer)
+            guard let tex = createCVTexture(cache: textureCache, pixelBuffer: pixelBuffer,
+                                            format: .bgra8Unorm, width: w, height: h, planeIndex: 0)
+            else { return nil }
+            return VideoTexture(lumaTexture: tex, chromaTexture: nil, isVideoRange: false)
+        }
+    }
+
+    /// Legacy single-texture path. Works correctly for packed formats; YCbCr
+    /// buffers will return the luma plane only. Prefer `videoTexture(from:)`.
+    public func texture(from pixelBuffer: CVPixelBuffer) -> MTLTexture? {
+        videoTexture(from: pixelBuffer)?.lumaTexture
+    }
+
+    // MARK: - YCbCr Conversion
+
+    /// Converts a bi-planar YCbCr `VideoTexture` to a single BGRA texture via a
+    /// BT.709 compute shader. Returns the luma texture unchanged for packed formats.
+    public func convertToBGRA(_ videoTexture: VideoTexture, commandBuffer: MTLCommandBuffer) -> MTLTexture? {
+        guard videoTexture.isBiPlanarYCbCr,
+              let chromaTexture = videoTexture.chromaTexture,
+              let pipeline = ycbcrPipelineState
+        else {
+            return videoTexture.lumaTexture
         }
 
-        var cvTexture: CVMetalTexture?
-        let status = CVMetalTextureCacheCreateTextureFromImage(
-            kCFAllocatorDefault,
-            textureCache,
-            pixelBuffer,
-            nil,
-            metalFormat,
-            width,
-            height,
-            planeIndex,
-            &cvTexture
-        )
+        let width = videoTexture.lumaTexture.width
+        let height = videoTexture.lumaTexture.height
 
-        guard status == kCVReturnSuccess, let cvTexture else {
-            return nil
+        cacheLock.lock()
+        if cachedBGRATexture == nil
+            || cachedBGRATexture!.width != width
+            || cachedBGRATexture!.height != height {
+            let desc = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
+            desc.usage = [.shaderRead, .shaderWrite]
+            desc.storageMode = .private
+            cachedBGRATexture = device.makeTexture(descriptor: desc)
         }
+        let output = cachedBGRATexture
+        cacheLock.unlock()
 
-        return CVMetalTextureGetTexture(cvTexture)
+        guard let output,
+              let encoder = commandBuffer.makeComputeCommandEncoder()
+        else { return nil }
+
+        encoder.label = "YCbCr to BGRA"
+        encoder.setComputePipelineState(pipeline)
+        encoder.setTexture(videoTexture.lumaTexture, index: 0)
+        encoder.setTexture(chromaTexture, index: 1)
+        encoder.setTexture(output, index: 2)
+
+        var isVideoRange: UInt32 = videoTexture.isVideoRange ? 1 : 0
+        encoder.setBytes(&isVideoRange, length: MemoryLayout<UInt32>.size, index: 0)
+
+        let tgSize = MTLSize(width: 16, height: 16, depth: 1)
+        let tgCount = MTLSize(width: (width + 15) / 16, height: (height + 15) / 16, depth: 1)
+        encoder.dispatchThreadgroups(tgCount, threadsPerThreadgroup: tgSize)
+        encoder.endEncoding()
+
+        return output
     }
 
     /// Flushes the underlying texture cache to reclaim unused textures.
@@ -102,7 +184,68 @@ public final class PixelBufferTextureCache: @unchecked Sendable {
         if let textureCache {
             CVMetalTextureCacheFlush(textureCache, 0)
         }
+        cachedBGRATexture = nil
     }
+
+    // MARK: - Private
+
+    private func createCVTexture(
+        cache: CVMetalTextureCache,
+        pixelBuffer: CVPixelBuffer,
+        format: MTLPixelFormat,
+        width: Int,
+        height: Int,
+        planeIndex: Int
+    ) -> MTLTexture? {
+        var cvTexture: CVMetalTexture?
+        let status = CVMetalTextureCacheCreateTextureFromImage(
+            kCFAllocatorDefault, cache, pixelBuffer, nil,
+            format, width, height, planeIndex, &cvTexture)
+        guard status == kCVReturnSuccess, let cvTexture else { return nil }
+        return CVMetalTextureGetTexture(cvTexture)
+    }
+
+    private func setupYCbCrPipeline() {
+        guard let library = try? device.makeLibrary(source: Self.ycbcrShaderSource, options: nil),
+              let function = library.makeFunction(name: "ycbcrToBGRA")
+        else { return }
+        ycbcrPipelineState = try? device.makeComputePipelineState(function: function)
+    }
+
+    private static let ycbcrShaderSource = """
+    #include <metal_stdlib>
+    using namespace metal;
+
+    kernel void ycbcrToBGRA(
+        texture2d<float, access::read>  lumaTexture   [[texture(0)]],
+        texture2d<float, access::read>  chromaTexture  [[texture(1)]],
+        texture2d<float, access::write> outputTexture  [[texture(2)]],
+        constant uint &isVideoRange [[buffer(0)]],
+        uint2 gid [[thread_position_in_grid]])
+    {
+        if (gid.x >= outputTexture.get_width() || gid.y >= outputTexture.get_height()) return;
+
+        float y  = lumaTexture.read(gid).r;
+        float2 cbcr = chromaTexture.read(gid / 2).rg;
+        float cb, cr;
+
+        if (isVideoRange) {
+            y  = (y  - 16.0f/255.0f) * (255.0f/219.0f);
+            cb = (cbcr.r - 16.0f/255.0f) * (255.0f/224.0f) - 0.5f;
+            cr = (cbcr.g - 16.0f/255.0f) * (255.0f/224.0f) - 0.5f;
+        } else {
+            cb = cbcr.r - 0.5f;
+            cr = cbcr.g - 0.5f;
+        }
+
+        // BT.709
+        float r = y + 1.5748f * cr;
+        float g = y - 0.1873f * cb - 0.4681f * cr;
+        float b = y + 1.8556f * cb;
+
+        outputTexture.write(float4(clamp(float3(r, g, b), 0.0f, 1.0f), 1.0f), gid);
+    }
+    """
 
     // MARK: - Test Pattern Generators
 

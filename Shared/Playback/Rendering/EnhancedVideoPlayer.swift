@@ -20,9 +20,10 @@ public struct EnhancedVideoPlayer: View {
     public var aspectMode: VideoAspectMode
     public var isPaused: Bool
     public var testPatternEnabled: Bool
+    var enhancementPipeline: EnhancementPipeline?
     public var onSurfaceReady: ((EnhancedVideoView) -> Void)?
 
-    public init(
+    init(
         ringBuffer: FrameRingBuffer? = nil,
         presentationTime: CMTime = .zero,
         currentPixelBuffer: CVPixelBuffer? = nil,
@@ -30,6 +31,7 @@ public struct EnhancedVideoPlayer: View {
         aspectMode: VideoAspectMode = .fit,
         isPaused: Bool = false,
         testPatternEnabled: Bool = false,
+        enhancementPipeline: EnhancementPipeline? = nil,
         onSurfaceReady: ((EnhancedVideoView) -> Void)? = nil
     ) {
         self.ringBuffer = ringBuffer
@@ -39,6 +41,7 @@ public struct EnhancedVideoPlayer: View {
         self.aspectMode = aspectMode
         self.isPaused = isPaused
         self.testPatternEnabled = testPatternEnabled
+        self.enhancementPipeline = enhancementPipeline
         self.onSurfaceReady = onSurfaceReady
     }
 
@@ -51,6 +54,7 @@ public struct EnhancedVideoPlayer: View {
             aspectMode: aspectMode,
             isPaused: isPaused,
             testPatternEnabled: testPatternEnabled,
+            enhancementPipeline: enhancementPipeline,
             onSurfaceReady: onSurfaceReady
         )
     }
@@ -65,14 +69,13 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
     let aspectMode: VideoAspectMode
     let isPaused: Bool
     let testPatternEnabled: Bool
+    let enhancementPipeline: EnhancementPipeline?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
 
     func makeNSView(context: Context) -> EnhancedVideoView {
         let view = EnhancedVideoView()
+        view.onReady = onSurfaceReady
         apply(to: view)
-        DispatchQueue.main.async {
-            onSurfaceReady?(view)
-        }
         return view
     }
 
@@ -90,6 +93,7 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
         view.aspectMode = aspectMode
         view.isPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
+        view.enhancementPipeline = enhancementPipeline
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
         }
@@ -108,14 +112,13 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     let aspectMode: VideoAspectMode
     let isPaused: Bool
     let testPatternEnabled: Bool
+    let enhancementPipeline: EnhancementPipeline?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
 
     func makeUIView(context: Context) -> EnhancedVideoView {
         let view = EnhancedVideoView()
+        view.onReady = onSurfaceReady
         apply(to: view)
-        DispatchQueue.main.async {
-            onSurfaceReady?(view)
-        }
         return view
     }
 
@@ -133,6 +136,7 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
         view.aspectMode = aspectMode
         view.isPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
+        view.enhancementPipeline = enhancementPipeline
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
         }

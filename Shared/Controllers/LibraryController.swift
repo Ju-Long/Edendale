@@ -381,7 +381,9 @@ final class LibraryController {
                     persistItemBookmark(refreshed)
                     save()
                 }
-                return PlaybackScope(playURL: url, accessedURL: started ? url : nil)
+                if started || FileManager.default.isReadableFile(atPath: url.path) {
+                    return PlaybackScope(playURL: url, accessedURL: started ? url : nil)
+                }
             }
         }
 
@@ -399,7 +401,9 @@ final class LibraryController {
                     folder.bookmarkData = refreshed
                     save()
                 }
-                return PlaybackScope(playURL: fileURL, accessedURL: started ? folderURL : nil)
+                if started || FileManager.default.isReadableFile(atPath: filePath) {
+                    return PlaybackScope(playURL: fileURL, accessedURL: started ? folderURL : nil)
+                }
             }
         }
 
