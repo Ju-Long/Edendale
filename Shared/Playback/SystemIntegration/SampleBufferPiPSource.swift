@@ -106,16 +106,59 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         pipController?.invalidatePlaybackState()
     }
 
+    private var lastLoggedRate: Double = -1
     func synchronizePlaybackClock() {
         guard let timebase, let engine else { return }
-        CMTimebaseSetTime(timebase, time: CMTime(seconds: engine.currentTime.playbackSeconds, preferredTimescale: 60000))
-        CMTimebaseSetRate(timebase, rate: engine.isPlaying ? Double(engine.playbackRate) : 0)
+        let rate = engine.isPlaying ? Double(engine.playbackRate) : 0
+        let engineTime = engine.currentTime.playbackSeconds
+        let currentRate = CMTimebaseGetRate(timebase)
+        let rateChanged = rate != currentRate
+        let timebaseTime = CMTimebaseGetTime(timebase).seconds
+        let timeDrift = abs(timebaseTime - engineTime)
+
+        // Only reset the time anchor on discontinuities (seek, play/pause
+        // transition). Continuous resetting prevents the display layer's
+        // renderer from ever presenting a frame.
+        if rateChanged || timeDrift > 0.5 {
+            CMTimebaseSetTime(timebase, time: CMTime(seconds: engineTime, preferredTimescale: 60000))
+        }
+        if rateChanged {
+            CMTimebaseSetRate(timebase, rate: rate)
+        }
+        if rate != lastLoggedRate {
+            lastLoggedRate = rate
+            debugPrint("[PiPSource] synchronizePlaybackClock — rate=\(rate), time=\(engineTime), isPossible=\(pipController?.isPictureInPicturePossible as Any), renderer.status=\(displayLayer.sampleBufferRenderer.status.rawValue)")
+        }
     }
 
     /// Enqueue a processed frame into the sample buffer layer for PiP.
     /// Called from the engine's frame callback on the main actor.
+    private var enqueueCount = 0
+    private func layerWindowStatus() -> String {
+        var layer: CALayer? = displayLayer
+        var depth = 0
+        while let parent = layer?.superlayer {
+            depth += 1
+            layer = parent
+        }
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        let inWindow = displayLayer.superlayer?.delegate is UIView
+            ? (displayLayer.superlayer?.delegate as? UIView)?.window != nil
+            : false
+        return "depth=\(depth), inWindow=\(inWindow)"
+        #else
+        let inWindow = displayLayer.superlayer?.delegate is NSView
+            ? (displayLayer.superlayer?.delegate as? NSView)?.window != nil
+            : false
+        return "depth=\(depth), inWindow=\(inWindow)"
+        #endif
+    }
     func enqueue(pixelBuffer: CVPixelBuffer, presentationTime: CMTime, duration: CMTime) {
         guard let formatDesc = enqueueState.formatDescription(for: pixelBuffer) else { return }
+        enqueueCount += 1
+        if enqueueCount <= 3 || enqueueCount == 10 || enqueueCount == 60 {
+            debugPrint("[PiPSource] enqueue #\(enqueueCount) — renderer.status=\(displayLayer.sampleBufferRenderer.status.rawValue), isPossible=\(pipController?.isPictureInPicturePossible as Any), \(layerWindowStatus()), timebase.rate=\(timebase.map { CMTimebaseGetRate($0) } as Any)")
+        }
 
         var timingInfo = CMSampleTimingInfo(
             duration: duration,
@@ -146,6 +189,7 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
     // MARK: - PiP controls
 
     func start() {
+        debugPrint("[PiPSource] start() — isPossible=\(isPossible), isActive=\(isActive), renderer.status=\(displayLayer.sampleBufferRenderer.status.rawValue), layer.superlayer=\(displayLayer.superlayer == nil ? "nil" : "attached"), timebase.rate=\(timebase.map { CMTimebaseGetRate($0) } as Any)")
         invalidatePlaybackState()
         pipController?.startPictureInPicture()
     }
@@ -159,13 +203,17 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
     }
 
     var isPossible: Bool {
-        pipController?.isPictureInPicturePossible ?? false
+        let possible = pipController?.isPictureInPicturePossible ?? false
+        debugPrint("[PiPSource] isPossible queried — controller=\(pipController == nil ? "nil" : "exists"), system=\(pipController?.isPictureInPicturePossible as Any), result=\(possible)")
+        return possible
     }
 
     // MARK: - Setup
 
     private func setupPiPController() {
-        guard AVPictureInPictureController.isPictureInPictureSupported() else { return }
+        let supported = AVPictureInPictureController.isPictureInPictureSupported()
+        debugPrint("[PiPSource] setupPiPController — isPictureInPictureSupported=\(supported)")
+        guard supported else { return }
 
         let contentSource = AVPictureInPictureController.ContentSource(
             sampleBufferDisplayLayer: displayLayer,
@@ -175,8 +223,10 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         controller.delegate = self
         #if os(iOS)
         controller.canStartPictureInPictureAutomaticallyFromInline = automaticallyStartsFromInline
+        debugPrint("[PiPSource] setupPiPController — autoFromInline=\(automaticallyStartsFromInline)")
         #endif
         pipController = controller
+        debugPrint("[PiPSource] setupPiPController — controller created, isPictureInPicturePossible=\(controller.isPictureInPicturePossible)")
     }
 }
 

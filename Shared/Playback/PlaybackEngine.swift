@@ -102,14 +102,25 @@ final class PlaybackEngine {
         }
     }
 
-    // MARK: - Audio (applied to the underlying AVPlayer)
+    // MARK: - Audio
 
     var isMuted: Bool = false {
         didSet { applyAudioSettings() }
     }
     var volume: Float = 1.0 {
-        didSet { applyAudioSettings() }
+        didSet {
+            #if !os(macOS)
+            guard !isUpdatingFromSystemVolume else { return }
+            systemVolume.setLevel(volume)
+            #endif
+            applyAudioSettings()
+        }
     }
+
+    #if !os(macOS)
+    let systemVolume = SystemVolumeController()
+    private var isUpdatingFromSystemVolume = false
+    #endif
 
     // MARK: - Track arrays
 
@@ -206,10 +217,21 @@ final class PlaybackEngine {
 
     init() {
         self.enhancementPipeline = EnhancementPipeline()
+        #if !os(macOS)
+        volume = systemVolume.level
+        #endif
         #if os(iOS) || os(macOS)
         pipSource.attach(to: self)
         #endif
         setupLifecycleObservers()
+        #if !os(macOS)
+        systemVolume.onLevelChanged = { [weak self] newLevel in
+            guard let self else { return }
+            self.isUpdatingFromSystemVolume = true
+            self.volume = newLevel
+            self.isUpdatingFromSystemVolume = false
+        }
+        #endif
     }
 
     deinit {
@@ -270,12 +292,37 @@ final class PlaybackEngine {
     }
 
     private func handleAppBackgroundChanged(isBackgrounded: Bool) {
+        let wasBackgrounded = self.isAppBackgrounded
         self.isAppBackgrounded = isBackgrounded
         updateVideoDecodingState()
+
+        #if os(iOS)
+        // Returning to foreground after background without PiP: the hardware
+        // decoder's VideoToolbox session was invalidated by iOS. Seek to the
+        // current position so the decoder restarts from a keyframe.
+        if wasBackgrounded && !isBackgrounded && !pipSource.isActive {
+            if decoder is FFmpegDecoder {
+                let seconds = currentTime.playbackSeconds
+                Task { [weak self] in
+                    guard let self else { return }
+                    try? await self.decoder?.seek(
+                        to: CMTime(seconds: seconds, preferredTimescale: 600)
+                    )
+                }
+            }
+        }
+        #endif
     }
 
     private func updateVideoDecodingState() {
-        #if os(iOS) || os(macOS)
+        #if os(iOS)
+        let pipMayAutoStart = pipSource.automaticallyStartsFromInline
+            && pipSource.isPossible
+        let shouldDecodeVideo = !isAppBackgrounded
+            || pipSource.isActive
+            || pipMayAutoStart
+        debugPrint("[PlaybackEngine] updateVideoDecodingState — bg=\(isAppBackgrounded), pipActive=\(pipSource.isActive), autoStart=\(pipSource.automaticallyStartsFromInline), pipPossible=\(pipSource.isPossible), pipMayAuto=\(pipMayAutoStart) → shouldDecode=\(shouldDecodeVideo)")
+        #elseif os(macOS)
         let shouldDecodeVideo = !isAppBackgrounded || pipSource.isActive
         #else
         let shouldDecodeVideo = true
@@ -611,6 +658,7 @@ final class PlaybackEngine {
     // MARK: - Private — audio
 
     private func applyAudioSettings() {
+        #if os(macOS)
         if let avDecoder = decoder as? AVFoundationDecoder {
             avDecoder.avPlayer?.isMuted = isMuted
             avDecoder.avPlayer?.volume = volume
@@ -618,6 +666,15 @@ final class PlaybackEngine {
             ffmpeg.isMuted = isMuted
             ffmpeg.volume = volume
         }
+        #else
+        if let avDecoder = decoder as? AVFoundationDecoder {
+            avDecoder.avPlayer?.isMuted = isMuted
+            avDecoder.avPlayer?.volume = 1.0
+        } else if let ffmpeg = decoder as? FFmpegDecoder {
+            ffmpeg.isMuted = isMuted
+            ffmpeg.volume = 1.0
+        }
+        #endif
     }
 
     // MARK: - Private — tracks

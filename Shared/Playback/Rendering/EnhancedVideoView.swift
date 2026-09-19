@@ -137,6 +137,11 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     private var cachedTestTexture: MTLTexture?
     private var hasReportedReady = false
 
+    /// Consecutive draw calls where no video texture was available.
+    /// Used to avoid GPU resource churn (drawable acquisition, command buffer
+    /// allocation) when the ring buffer is empty after a seek or track switch.
+    private var consecutiveEmptyDraws = 0
+
     public init(
         frame: CGRect = .zero,
         metalContext: MetalContext = MetalContext.shared ?? MetalContext()!
@@ -312,6 +317,29 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             debugPrint("[EnhancedVideoView.draw] frame #\(drawCallCount) — ringBuffer=\(ringBuffer == nil ? "nil" : "exists(\(ringBuffer!.count) frames)"), pixelBuffer=\(currentPixelBuffer == nil ? "nil" : "exists"), texture=\(currentTexture == nil ? "nil" : "exists"), testPattern=\(testPatternEnabled)")
         }
 
+        // Resolve content BEFORE acquiring GPU resources (drawable, command
+        // buffer). Acquiring a drawable blocks when the pool is exhausted, and
+        // committing empty command buffers 60× / s creates backpressure that
+        // starves the rest of the app.
+        guard let videoTexture = resolveVideoTexture() else {
+            consecutiveEmptyDraws += 1
+            // Clear to black for the first few empty frames so the screen
+            // doesn't show a stale image during brief transitions (seek, track
+            // switch). After that, skip GPU work entirely.
+            if consecutiveEmptyDraws <= 3 {
+                guard let drawable = currentDrawable,
+                      let renderPassDescriptor = currentRenderPassDescriptor,
+                      let commandBuffer = metalContext.commandQueue.makeCommandBuffer(),
+                      let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
+                else { return }
+                encoder.endEncoding()
+                commandBuffer.present(drawable)
+                commandBuffer.commit()
+            }
+            return
+        }
+        consecutiveEmptyDraws = 0
+
         guard let drawable = currentDrawable,
               let renderPassDescriptor = currentRenderPassDescriptor,
               let commandBuffer = metalContext.commandQueue.makeCommandBuffer()
@@ -319,16 +347,6 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             if drawCallCount <= 5 {
                 debugPrint("[EnhancedVideoView.draw] ❌ no drawable/renderPass/commandBuffer")
             }
-            return
-        }
-
-        guard let videoTexture = resolveVideoTexture() else {
-            guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
-                return
-            }
-            encoder.endEncoding()
-            commandBuffer.present(drawable)
-            commandBuffer.commit()
             return
         }
 
