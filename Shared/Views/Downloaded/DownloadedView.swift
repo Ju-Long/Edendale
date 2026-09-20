@@ -201,55 +201,56 @@ struct DownloadedView: View {
 
     // MARK: - Continue watching
 
-    /// Everything half-watched or next-up that maps back to a local file,
-    /// newest first. Next-up episodes appear after a completed episode
-    /// when the show has a stored successor and no episode already in
-    /// progress — without writing progress for the unwatched episode.
     private var resumeItems: [ResumeItem] {
-        let inProgressItems: [ResumeItem] = watchStore.inProgress.compactMap { progress in
-            switch progress.mediaType {
-            case .movie:
-                return visibleMovies.first { $0.tmdbId == progress.tmdbId }
-                    .map { ResumeItem(progress: progress, payload: .movie($0)) }
-            case .episode:
-                return visibleShows.lazy.flatMap(\.episodes).first { $0.tmdbId == progress.tmdbId }
-                    .map { ResumeItem(progress: progress, payload: .episode($0)) }
+        var items: [ResumeItem] = []
+
+        for progress in watchStore.inProgress where progress.mediaType == .movie {
+            if let movie = visibleMovies.first(where: { $0.tmdbId == progress.tmdbId }) {
+                items.append(ResumeItem(progress: progress, payload: .movie(movie)))
             }
         }
 
-        let showsAlreadyInProgress = Set(inProgressItems.compactMap { item -> Int? in
-            if case .episode(let ep) = item.payload { return ep.show?.tmdbId }
-            return nil
-        })
+        var seen: Set<Int> = []
+        for show in visibleShows {
+            guard let showId = show.tmdbId, seen.insert(showId).inserted else { continue }
 
-        let nextUpItems: [ResumeItem] = PlayerLogic.nextUpEpisodes(
-            allProgress: watchStore.progressMap.values,
-            inProgressShowTmdbIds: showsAlreadyInProgress,
-            shows: visibleShows
-        ).map { next in
-            ResumeItem(
-                progress: WatchProgress(
-                    tmdbId: next.episode.tmdbId ?? 0,
-                    mediaType: .episode,
-                    position: 0,
-                    showTmdbId: next.episode.show?.tmdbId,
-                    seasonNumber: next.episode.seasonNumber,
-                    episodeNumber: next.episode.episodeNumber,
-                    lastWatchedAt: next.lastWatchedAt
-                ),
-                payload: .episode(next.episode),
-                isNextUp: true
-            )
+            guard let latest = watchStore.progressMap.values
+                .filter({ $0.mediaType == .episode && $0.showTmdbId == showId })
+                .max(by: { $0.lastWatchedAt < $1.lastWatchedAt })
+            else { continue }
+
+            if !latest.isCompleted, latest.position > 0,
+               let ep = show.episodes.first(where: { $0.tmdbId == latest.tmdbId }) {
+                items.append(ResumeItem(progress: latest, payload: .episode(ep)))
+            } else if latest.isCompleted,
+                      let season = latest.seasonNumber,
+                      let epNum = latest.episodeNumber,
+                      let next = show.episodes
+                          .filter({ ($0.seasonNumber, $0.episodeNumber) > (season, epNum) })
+                          .min(by: { ($0.seasonNumber, $0.episodeNumber) < ($1.seasonNumber, $1.episodeNumber) }) {
+                items.append(ResumeItem(
+                    progress: WatchProgress(
+                        tmdbId: next.tmdbId ?? 0,
+                        mediaType: .episode,
+                        position: 0,
+                        showTmdbId: showId,
+                        seasonNumber: next.seasonNumber,
+                        episodeNumber: next.episodeNumber,
+                        lastWatchedAt: latest.lastWatchedAt
+                    ),
+                    payload: .episode(next),
+                    isNextUp: true
+                ))
+            }
         }
 
-        let merged = (inProgressItems + nextUpItems)
-            .sorted {
-                if $0.progress.lastWatchedAt == $1.progress.lastWatchedAt {
-                    return $0.id < $1.id
-                }
-                return $0.progress.lastWatchedAt > $1.progress.lastWatchedAt
+        let sorted = items.sorted {
+            if $0.progress.lastWatchedAt == $1.progress.lastWatchedAt {
+                return $0.id < $1.id
             }
-        return Array(merged.prefix(12))
+            return $0.progress.lastWatchedAt > $1.progress.lastWatchedAt
+        }
+        return Array(sorted.prefix(12))
     }
 
     /// tmdbIds of movies already surfaced in Continue Watching, so the poster
