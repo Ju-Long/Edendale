@@ -53,7 +53,9 @@ final class PlayerChromeModel {
     /// Temporary rate while a press-and-hold speed gesture is active.
     private(set) var holdRate: Float?
 
-    var loopEnabled = false
+    var loopEnabled: Bool = AppIdentifiers.defaults.bool(forKey: DefaultsKey.loopEnabled) {
+        didSet { AppIdentifiers.defaults.set(loopEnabled, forKey: DefaultsKey.loopEnabled) }
+    }
 
     #if os(iOS)
     /// Automatically enter Picture in Picture when the app is backgrounded
@@ -69,10 +71,14 @@ final class PlayerChromeModel {
     /// `PlayerScreen`); libVLC's own display-fit override is a no-op on the
     /// drawable vout this app renders into, so we don't route it through the
     /// player's `aspectRatio`.
-    var aspectFill = false
+    var aspectFill: Bool = AppIdentifiers.defaults.bool(forKey: DefaultsKey.aspectFill) {
+        didSet { AppIdentifiers.defaults.set(aspectFill, forKey: DefaultsKey.aspectFill) }
+    }
 
     private enum DefaultsKey {
         static let autoPiP = "player.autoPiP"
+        static let loopEnabled = "player.loopEnabled"
+        static let aspectFill = "player.aspectFill"
     }
 
     // MARK: - Transient state
@@ -253,6 +259,10 @@ final class PlayerChromeModel {
             applyRate(baseRate)
         }
         showControls()
+    }
+
+    func restoreRate(_ rate: Float) {
+        baseRate = PlayerLogic.normalizedRate(rate)
     }
 
     /// Press-and-hold speed override (0.5× on the left, 1.5× on the right).
@@ -560,7 +570,7 @@ final class PlayerChromeModel {
         )
 
         if !completionSaved, let duration = player.duration {
-            if lastSavedTime == nil || abs(time.playbackSeconds - lastSavedTime!.playbackSeconds) > 5.0 {
+            if lastSavedTime == nil || abs(time.playbackSeconds - lastSavedTime!.playbackSeconds) > 10.0 {
                 lastSavedTime = time
                 saveProgress(time: time, duration: duration)
             }

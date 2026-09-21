@@ -17,20 +17,22 @@ final class AudioSessionManager {
 
         let session = AVAudioSession.sharedInstance()
         do {
-            #if os(tvOS)
-            try session.setCategory(
-                .playback,
-                mode: .moviePlayback,
-                options: [.allowAirPlay]
-            )
-            #else
-            try session.setCategory(
-                .playback,
-                mode: .moviePlayback,
-                policy: .longFormVideo,
-                options: [.allowAirPlay]
-            )
-            #endif
+            try await Task.detached {
+                #if os(tvOS)
+                try session.setCategory(
+                    .playback,
+                    mode: .moviePlayback,
+                    options: [.allowAirPlay]
+                )
+                #else
+                try session.setCategory(
+                    .playback,
+                    mode: .moviePlayback,
+                    policy: .longFormVideo,
+                    options: [.allowAirPlay]
+                )
+                #endif
+            }.value
             if #available(iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *) {
                 try await session.activate(options: [])
             } else {

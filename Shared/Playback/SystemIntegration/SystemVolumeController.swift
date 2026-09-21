@@ -35,6 +35,9 @@ final class SystemVolumeController {
     init() {
         level = AVAudioSession.sharedInstance().outputVolume
         observeOutputVolume()
+        #if os(iOS)
+        installSliderIfNeeded()
+        #endif
     }
 
     func setLevel(_ value: Float) {

@@ -280,6 +280,8 @@ struct PlayerControlsOverlay: View {
             }
             #endif
 
+            PlayerAudioRouteButton(onFocus: chipDidFocus)
+
             PlayerIconChip(
                 icon: .listTree,
                 label: String(localized: "Playlist"),
@@ -529,7 +531,7 @@ struct PlayerIconChip: View {
     var body: some View {
         Button(action: action) {
             Image(icon)
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .frame(width: 40, height: 40)
                 .glassBackground(in: Circle())
                 .overlay {

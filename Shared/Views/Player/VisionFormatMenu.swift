@@ -56,7 +56,7 @@ struct VisionFormatMenu: View {
         } label: {
             HStack(spacing: 10) {
                 Image(.eye)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .accessibilityHidden(true)
                 if showsTitle {
                     VStack(alignment: .leading, spacing: 2) {

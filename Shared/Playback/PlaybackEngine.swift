@@ -205,6 +205,7 @@ final class PlaybackEngine {
     var onEnded: (() -> Void)?
     /// Fired on every periodic time tick from the decoder.
     var onTimeChanged: ((Duration) -> Void)?
+    var onSystemVolumeChanged: ((Float) -> Void)?
     var onPictureInPictureStarted: (() -> Void)?
     var onPictureInPictureStopped: (() -> Void)?
 
@@ -230,6 +231,7 @@ final class PlaybackEngine {
             self.isUpdatingFromSystemVolume = true
             self.volume = newLevel
             self.isUpdatingFromSystemVolume = false
+            self.onSystemVolumeChanged?(newLevel)
         }
         #endif
     }
@@ -258,7 +260,7 @@ final class PlaybackEngine {
             self?.handleAppBackgroundChanged(isBackgrounded: false)
         }
         lifecycleObservers.append(contentsOf: [hideObs, unhideObs])
-        #elseif os(iOS)
+        #elseif os(iOS) || os(tvOS)
         let bgObs = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
@@ -296,12 +298,14 @@ final class PlaybackEngine {
         self.isAppBackgrounded = isBackgrounded
         updateVideoDecodingState()
 
-        #if os(iOS)
-        // Returning to foreground after background without PiP: the hardware
-        // decoder's VideoToolbox session was invalidated by iOS. Seek to the
-        // current position so the decoder restarts from a keyframe.
-        if wasBackgrounded && !isBackgrounded && !pipSource.isActive {
-            if decoder is FFmpegDecoder {
+        #if os(iOS) || os(tvOS)
+        if wasBackgrounded && !isBackgrounded {
+            #if os(iOS)
+            let pipActive = pipSource.isActive
+            #else
+            let pipActive = false
+            #endif
+            if !pipActive, decoder is FFmpegDecoder {
                 let seconds = currentTime.playbackSeconds
                 Task { [weak self] in
                     guard let self else { return }
@@ -324,6 +328,8 @@ final class PlaybackEngine {
         debugPrint("[PlaybackEngine] updateVideoDecodingState — bg=\(isAppBackgrounded), pipActive=\(pipSource.isActive), autoStart=\(pipSource.automaticallyStartsFromInline), pipPossible=\(pipSource.isPossible), pipMayAuto=\(pipMayAutoStart) → shouldDecode=\(shouldDecodeVideo)")
         #elseif os(macOS)
         let shouldDecodeVideo = !isAppBackgrounded || pipSource.isActive
+        #elseif os(tvOS)
+        let shouldDecodeVideo = !isAppBackgrounded
         #else
         let shouldDecodeVideo = true
         #endif

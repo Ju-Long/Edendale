@@ -45,6 +45,7 @@ final class PlayerSession {
     private let watchStore: WatchProgressStore
     private let audioEnhancement: AudioEnhancementController
     private let videoAdjustment: VideoAdjustmentController
+    private let preferencesStore = PlayerPreferencesStore()
     private let nowPlayingBridge = NowPlayingBridge()
     #if !os(macOS)
     private let audioSessionManager = AudioSessionManager()
@@ -207,8 +208,9 @@ final class PlayerSession {
         }
         #endif
 
-        // Save outgoing progress before changing item.
+        // Save outgoing progress and per-content preferences before changing item.
         chrome?.saveProgressBeforeSwitch()
+        saveContentPreferences()
 
         let engine = self.player ?? PlaybackEngine()
         let isNewEngine = self.player == nil
@@ -311,6 +313,11 @@ final class PlayerSession {
             chrome.playbackTimeChanged(time)
             self.nowPlayingBridge.updateElapsedTime()
         }
+        #if !os(macOS)
+        engine.onSystemVolumeChanged = { [weak self] level in
+            self?.chrome?.showHUD(.volume(level))
+        }
+        #endif
 
         Task {
             do {
@@ -321,6 +328,11 @@ final class PlayerSession {
                     return
                 }
                 debugPrint("[PlayerSession.startPlayback] ✅ engine.open succeeded — state=\(engine.state), duration=\(engine.duration?.playbackSeconds ?? -1)s")
+
+                if let currentItem = self.item,
+                   let prefs = self.preferencesStore.preferences(for: currentItem) {
+                    self.preferencesStore.apply(prefs, to: chrome, player: engine)
+                }
 
                 videoAdjustment.apply(to: engine)
                 audioEnhancement.apply(to: engine)
@@ -375,6 +387,7 @@ final class PlayerSession {
         #endif
 
         chrome?.sessionWillEnd()
+        saveContentPreferences()
         stopAndRetirePlayer()
         chrome = nil
         item = nil
@@ -663,6 +676,7 @@ final class PlayerSession {
         audioEnhancement.detach()
         engine.onEnded = nil
         engine.onTimeChanged = nil
+        engine.onSystemVolumeChanged = nil
         engine.close()
         self.player = nil
         retainedPreviousScope = nil
@@ -766,6 +780,11 @@ final class PlayerSession {
             try? await engine.open(url: url)
             guard self.activePlaybackRequestID == generation else { return }
 
+            if let currentItem = self.item,
+               let prefs = self.preferencesStore.preferences(for: currentItem) {
+                self.preferencesStore.apply(prefs, to: chrome!, player: engine)
+            }
+
             nowPlayingBridge.attach(
                 to: engine,
                 title: item?.displayTitle,
@@ -775,5 +794,11 @@ final class PlayerSession {
             engine.play()
             chrome?.playbackDidStart(resuming: false)
         }
+    }
+
+    private func saveContentPreferences() {
+        guard let item, let chrome, let player else { return }
+        let prefs = preferencesStore.snapshot(chrome: chrome, player: player)
+        preferencesStore.save(prefs, for: item)
     }
 }
