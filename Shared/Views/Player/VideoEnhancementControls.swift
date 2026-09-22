@@ -13,6 +13,7 @@ struct VideoEnhancementControls: View {
     @Bindable var pipeline: EnhancementPipeline
     var sourceSize: CGSize = .zero
     var sourceFrameRate: Float = 0
+    var interpolatorStats: FrameInterpolator.PerformanceStats?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -92,6 +93,12 @@ struct VideoEnhancementControls: View {
                             .foregroundStyle(Theme.textSecondary)
                         Text("\(outputRate) fps")
                             .foregroundStyle(Theme.gold)
+                        if let stats = interpolatorStats, stats.frameCount > 0 {
+                            Text("·")
+                                .foregroundStyle(Theme.textSecondary)
+                            Text(String(format: "%.1fms%@", stats.averageMs, stats.isHalfRes ? " ½" : ""))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
                     }
                     .font(Typography.bodySM)
                     .monospacedDigit()

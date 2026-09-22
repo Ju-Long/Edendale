@@ -371,7 +371,8 @@ struct PlayerSettingsPanel: View {
                 Text("Enhancement").labelCaps().accessibilityAddTraits(.isHeader)
                 VideoEnhancementControls(
                     pipeline: pipeline,
-                    sourceFrameRate: player.sourceFrameRate
+                    sourceFrameRate: player.sourceFrameRate,
+                    interpolatorStats: player.frameInterpolator?.stats
                 )
             }
             .accessibilityElement(children: .contain)

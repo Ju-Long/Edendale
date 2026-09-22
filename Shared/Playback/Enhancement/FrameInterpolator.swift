@@ -23,6 +23,8 @@ final class FrameInterpolator: @unchecked Sendable {
     private var densifyState: MTLComputePipelineState?
     private var interpolateState: MTLComputePipelineState?
     private var sceneCutState: MTLComputePipelineState?
+    private var downscaleState: MTLComputePipelineState?
+    private var mvUpscaleState: MTLComputePipelineState?
 
     // MARK: - Frame History
 
@@ -35,6 +37,11 @@ final class FrameInterpolator: @unchecked Sendable {
     private var refinedMotionTexture: MTLTexture?
     private var pixelMotionTexture: MTLTexture?
     private var interpolatedFrame: MTLTexture?
+
+    // Half-res ME textures (allocated only for 4K+ sources).
+    private var halfPrevTexture: MTLTexture?
+    private var halfCurrTexture: MTLTexture?
+    private var halfPixelMVTexture: MTLTexture?
 
     // Scene-cut detection buffers (CPU-readable).
     private var sceneCutSADBuffer: MTLBuffer?
@@ -52,6 +59,28 @@ final class FrameInterpolator: @unchecked Sendable {
     /// Average SAD above this threshold triggers scene-cut detection and skips
     /// interpolation for the frame pair.  Range [0, 1000] (SAD is ×1000 on GPU).
     var sceneCutThreshold: Float = 80.0
+
+    /// Sources wider than this run motion estimation at half resolution.
+    var halfResMEThreshold: Int = 1920
+
+    // MARK: - Performance Stats
+
+    struct PerformanceStats: Sendable {
+        var lastFrameMs: Double = 0
+        var averageMs: Double = 0
+        var frameCount: Int = 0
+        var isHalfRes: Bool = false
+    }
+
+    private var _stats = PerformanceStats()
+    private let statsLock = NSLock()
+    private static let statsWindow = 60
+
+    var stats: PerformanceStats {
+        statsLock.lock()
+        defer { statsLock.unlock() }
+        return _stats
+    }
 
     init?(device: MTLDevice, library: MTLLibrary? = nil) {
         self.device = device
@@ -71,6 +100,13 @@ final class FrameInterpolator: @unchecked Sendable {
             densifyState = try device.makeComputePipelineState(function: densifyFn)
             interpolateState = try device.makeComputePipelineState(function: interpFn)
             sceneCutState = try device.makeComputePipelineState(function: sceneFn)
+
+            if let dsFn = lib.makeFunction(name: "bilinearDownscale") {
+                downscaleState = try device.makeComputePipelineState(function: dsFn)
+            }
+            if let upFn = lib.makeFunction(name: "motionVectorUpscale") {
+                mvUpscaleState = try device.makeComputePipelineState(function: upFn)
+            }
         } catch {
             return nil
         }
@@ -93,6 +129,8 @@ final class FrameInterpolator: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         guard hasValidPrevious, let prev = previousFrame else { return nil }
         guard prev.width == current.width, prev.height == current.height else {
             resetInternal()
@@ -108,39 +146,70 @@ final class FrameInterpolator: @unchecked Sendable {
             return nil
         }
 
+        let useHalfRes = w > halfResMEThreshold && downscaleState != nil && mvUpscaleState != nil
+        let meW: Int, meH: Int
+        let mePrev: MTLTexture, meCurr: MTLTexture
+
+        if useHalfRes {
+            meW = w / 2
+            meH = h / 2
+            let halfPrev = getOrCreateTexture(ref: &halfPrevTexture, width: meW, height: meH, format: .bgra8Unorm)
+            let halfCurr = getOrCreateTexture(ref: &halfCurrTexture, width: meW, height: meH, format: .bgra8Unorm)
+            encodeDownscale(source: prev, output: halfPrev, commandBuffer: commandBuffer)
+            encodeDownscale(source: current, output: halfCurr, commandBuffer: commandBuffer)
+            mePrev = halfPrev
+            meCurr = halfCurr
+        } else {
+            meW = w
+            meH = h
+            mePrev = prev
+            meCurr = current
+        }
+
         // Pass 1: Coarse motion estimation.
-        let coarseMVW = (w + Int(coarseBlockSize) - 1) / Int(coarseBlockSize)
-        let coarseMVH = (h + Int(coarseBlockSize) - 1) / Int(coarseBlockSize)
+        let coarseMVW = (meW + Int(coarseBlockSize) - 1) / Int(coarseBlockSize)
+        let coarseMVH = (meH + Int(coarseBlockSize) - 1) / Int(coarseBlockSize)
         let coarseMV = getOrCreateTexture(
             ref: &coarseMotionTexture,
             width: coarseMVW, height: coarseMVH,
             format: .rg16Float
         )
-        encodeCoarseME(prev: prev, curr: current, output: coarseMV, commandBuffer: commandBuffer)
+        encodeCoarseME(prev: mePrev, curr: meCurr, output: coarseMV, commandBuffer: commandBuffer)
 
         // Pass 2: Refined motion estimation at sub-block level.
-        let refineMVW = (w + Int(refineBlockSize) - 1) / Int(refineBlockSize)
-        let refineMVH = (h + Int(refineBlockSize) - 1) / Int(refineBlockSize)
+        let refineMVW = (meW + Int(refineBlockSize) - 1) / Int(refineBlockSize)
+        let refineMVH = (meH + Int(refineBlockSize) - 1) / Int(refineBlockSize)
         let refinedMV = getOrCreateTexture(
             ref: &refinedMotionTexture,
             width: refineMVW, height: refineMVH,
             format: .rg16Float
         )
         encodeRefineME(
-            prev: prev, curr: current,
+            prev: mePrev, curr: meCurr,
             coarse: coarseMV, output: refinedMV,
             commandBuffer: commandBuffer
         )
 
-        // Pass 3: Densify to per-pixel motion vectors.
-        let pixelMV = getOrCreateTexture(
-            ref: &pixelMotionTexture,
-            width: w, height: h,
-            format: .rg16Float
-        )
-        encodeDensify(blockMV: refinedMV, output: pixelMV, commandBuffer: commandBuffer)
+        // Pass 3: Densify to per-pixel motion vectors (at ME resolution).
+        let halfMV: MTLTexture
+        if useHalfRes {
+            halfMV = getOrCreateTexture(ref: &halfPixelMVTexture, width: meW, height: meH, format: .rg16Float)
+        } else {
+            halfMV = getOrCreateTexture(ref: &pixelMotionTexture, width: w, height: h, format: .rg16Float)
+        }
+        encodeDensify(blockMV: refinedMV, output: halfMV, commandBuffer: commandBuffer)
 
-        // Pass 4: Bidirectional warp + blend.
+        // Pass 3b: Upscale MVs to full resolution when using half-res ME.
+        let pixelMV: MTLTexture
+        if useHalfRes {
+            let fullMV = getOrCreateTexture(ref: &pixelMotionTexture, width: w, height: h, format: .rg16Float)
+            encodeMVUpscale(halfMV: halfMV, fullMV: fullMV, commandBuffer: commandBuffer)
+            pixelMV = fullMV
+        } else {
+            pixelMV = halfMV
+        }
+
+        // Pass 4: Bidirectional warp + blend (always at full resolution).
         let output = getOrCreateTexture(
             ref: &interpolatedFrame,
             width: w, height: h,
@@ -151,6 +220,8 @@ final class FrameInterpolator: @unchecked Sendable {
             motion: pixelMV, output: output,
             commandBuffer: commandBuffer
         )
+
+        recordTiming(start: startTime, halfRes: useHalfRes, commandBuffer: commandBuffer)
 
         return output
     }
@@ -329,6 +400,56 @@ final class FrameInterpolator: @unchecked Sendable {
         let avgSAD = Float(totalSAD) / Float(count)
 
         return avgSAD > sceneCutThreshold
+    }
+
+    // MARK: - Half-res ME Encode Passes
+
+    private func encodeDownscale(
+        source: MTLTexture, output: MTLTexture,
+        commandBuffer: MTLCommandBuffer
+    ) {
+        guard let state = downscaleState,
+              let encoder = commandBuffer.makeComputeCommandEncoder() else { return }
+        encoder.label = "Bilinear Downscale"
+        encoder.setComputePipelineState(state)
+        encoder.setTexture(source, index: 0)
+        encoder.setTexture(output, index: 1)
+        dispatch2D(encoder: encoder, width: output.width, height: output.height)
+        encoder.endEncoding()
+    }
+
+    private func encodeMVUpscale(
+        halfMV: MTLTexture, fullMV: MTLTexture,
+        commandBuffer: MTLCommandBuffer
+    ) {
+        guard let state = mvUpscaleState,
+              let encoder = commandBuffer.makeComputeCommandEncoder() else { return }
+        encoder.label = "Motion Vector Upscale"
+        encoder.setComputePipelineState(state)
+        encoder.setTexture(halfMV, index: 0)
+        encoder.setTexture(fullMV, index: 1)
+        dispatch2D(encoder: encoder, width: fullMV.width, height: fullMV.height)
+        encoder.endEncoding()
+    }
+
+    // MARK: - Performance Timing
+
+    private func recordTiming(start: CFAbsoluteTime, halfRes: Bool, commandBuffer: MTLCommandBuffer) {
+        commandBuffer.addCompletedHandler { [weak self] cb in
+            guard let self else { return }
+            let gpuMs = (cb.gpuEndTime - cb.gpuStartTime) * 1000.0
+            let wallMs = (CFAbsoluteTimeGetCurrent() - start) * 1000.0
+            let ms = gpuMs > 0 ? gpuMs : wallMs
+
+            self.statsLock.lock()
+            let n = self._stats.frameCount
+            let alpha = n < Self.statsWindow ? 1.0 / Double(n + 1) : 2.0 / Double(Self.statsWindow + 1)
+            self._stats.averageMs = self._stats.averageMs * (1.0 - alpha) + ms * alpha
+            self._stats.lastFrameMs = ms
+            self._stats.frameCount = n + 1
+            self._stats.isHalfRes = halfRes
+            self.statsLock.unlock()
+        }
     }
 
     // MARK: - Helpers

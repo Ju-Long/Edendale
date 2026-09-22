@@ -411,6 +411,47 @@ enum MetalShaderSource {
         atomic_fetch_add_explicit(pixelCount, 1u, memory_order_relaxed);
     }
 
+    // Bilinear 2:1 downscale for half-res ME on 4K sources
+    kernel void bilinearDownscale(
+        texture2d<float, access::read>  src   [[texture(0)]],
+        texture2d<float, access::write> dst   [[texture(1)]],
+        uint2                           gid   [[thread_position_in_grid]])
+    {
+        uint outW = dst.get_width(); uint outH = dst.get_height();
+        if (gid.x >= outW || gid.y >= outH) return;
+        uint sx = gid.x*2; uint sy = gid.y*2;
+        uint srcW = src.get_width(); uint srcH = src.get_height();
+        float4 a = src.read(uint2(sx,sy));
+        float4 b = (sx+1<srcW) ? src.read(uint2(sx+1,sy)) : a;
+        float4 c = (sy+1<srcH) ? src.read(uint2(sx,sy+1)) : a;
+        float4 d = (sx+1<srcW && sy+1<srcH) ? src.read(uint2(sx+1,sy+1)) : a;
+        dst.write((a+b+c+d)*0.25f, gid);
+    }
+
+    // Upscale motion vector texture (bilinear, normalised MVs need no magnitude adjust)
+    kernel void motionVectorUpscale(
+        texture2d<float, access::read>  halfMV  [[texture(0)]],
+        texture2d<float, access::write> fullMV  [[texture(1)]],
+        uint2                           gid     [[thread_position_in_grid]])
+    {
+        uint outW = fullMV.get_width(); uint outH = fullMV.get_height();
+        if (gid.x >= outW || gid.y >= outH) return;
+        uint halfW = halfMV.get_width(); uint halfH = halfMV.get_height();
+        float hx = (float(gid.x)+0.5f)*float(halfW)/float(outW)-0.5f;
+        float hy = (float(gid.y)+0.5f)*float(halfH)/float(outH)-0.5f;
+        int x0 = int(floor(hx)); int y0 = int(floor(hy));
+        int x1 = x0+1; int y1 = y0+1;
+        float fx = hx-float(x0); float fy = hy-float(y0);
+        x0=clamp(x0,0,int(halfW)-1); x1=clamp(x1,0,int(halfW)-1);
+        y0=clamp(y0,0,int(halfH)-1); y1=clamp(y1,0,int(halfH)-1);
+        float2 v00=halfMV.read(uint2(x0,y0)).xy;
+        float2 v10=halfMV.read(uint2(x1,y0)).xy;
+        float2 v01=halfMV.read(uint2(x0,y1)).xy;
+        float2 v11=halfMV.read(uint2(x1,y1)).xy;
+        float2 mv = mix(mix(v00,v10,fx), mix(v01,v11,fx), fy);
+        fullMV.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
+    }
+
     // Frame Interpolation — bidirectional warp + blend
     inline float interpLuma(float3 c) {
         return dot(c, float3(0.2126f, 0.7152f, 0.0722f));

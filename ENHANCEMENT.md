@@ -990,11 +990,19 @@ within 16ms budget for 60fps output).
 | Bidirectional warp + blend      | ~1–2ms                    |
 | **Total interpolation**         | **~3–6ms**                |
 
-At 4K output, costs roughly 4× — may exceed budget. Options:
-  - Run motion estimation at half resolution and upscale vectors
-  - Skip refinement pass (coarse-only, lower quality)
-  - Limit interpolation to ≤ 1080p sources (upscale first, then interpolate
-    at post-upscale resolution is expensive — reverse the order for 4K)
+At 4K output, costs roughly 4× — may exceed budget.  **Implemented: half-res ME**
+(sources wider than `halfResMEThreshold` (default 1920) run ME at half
+resolution, then bilinear-upscale the motion vectors to full res).
+
+Additional 4K kernels:
+  - `bilinearDownscale` — 2:1 box filter for frame downsampling
+  - `motionVectorUpscale` — bilinear MV upscale (normalised space, no magnitude adjust)
+
+Performance stats (`FrameInterpolator.stats`):
+  - `lastFrameMs` / `averageMs` — exponential moving average over 60 frames
+  - `frameCount` — total interpolated frames
+  - `isHalfRes` — whether the current frame used the half-res ME path
+  - Measured via `commandBuffer.gpuEndTime - gpuStartTime` when available
 
 ### I.9 — Future: MetalFX Frame Interpolator Backend (Optional)
 
@@ -1025,5 +1033,5 @@ This is exploratory — the custom path (I.2) is the reliable default.
 | I.5  | PlaybackEngine wiring                    | [x]    |
 | I.6  | UI controls                              | [x]    |
 | I.7  | Tests                                    | [x]    |
-| I.8  | Performance profiling & budget           | [ ]    |
+| I.8  | Performance profiling & budget           | [x]    |
 | I.9  | MetalFX interpolator backend (optional)  | [ ]    |

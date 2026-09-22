@@ -195,6 +195,85 @@ struct FrameInterpolationTests {
         }
     }
 
+    // MARK: - Half-resolution ME kernels
+
+    @Test func shaderLibraryContainsHalfResKernels() {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let library = MetalShaderSource.library(for: device)
+        guard let lib = library else {
+            Issue.record("MetalShaderSource returned nil library")
+            return
+        }
+
+        #expect(lib.makeFunction(name: "bilinearDownscale") != nil)
+        #expect(lib.makeFunction(name: "motionVectorUpscale") != nil)
+    }
+
+    @Test func halfResPathActivatesFor4K() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let queue = try #require(device.makeCommandQueue())
+        let interpolator = try #require(FrameInterpolator(device: device))
+        interpolator.halfResMEThreshold = 1920
+
+        let desc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm, width: 3840, height: 2160, mipmapped: false
+        )
+        desc.usage = [.shaderRead, .shaderWrite]
+        let frame1 = try #require(device.makeTexture(descriptor: desc))
+        let frame2 = try #require(device.makeTexture(descriptor: desc))
+        fillColor(texture: frame1, r: 100, g: 100, b: 100)
+        fillColor(texture: frame2, r: 120, g: 120, b: 120)
+
+        let cmd1 = try #require(queue.makeCommandBuffer())
+        _ = interpolator.interpolate(current: frame1, commandBuffer: cmd1)
+        interpolator.commitFrame(frame1, commandBuffer: cmd1)
+        cmd1.commit()
+        cmd1.waitUntilCompleted()
+
+        let cmd2 = try #require(queue.makeCommandBuffer())
+        let result = interpolator.interpolate(current: frame2, commandBuffer: cmd2)
+        cmd2.commit()
+        cmd2.waitUntilCompleted()
+
+        #expect(result != nil, "Should produce 4K output with half-res ME")
+        if let result {
+            #expect(result.width == 3840)
+            #expect(result.height == 2160)
+        }
+        #expect(interpolator.stats.isHalfRes == true)
+    }
+
+    @Test func performanceStatsAccumulate() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let queue = try #require(device.makeCommandQueue())
+        let interpolator = try #require(FrameInterpolator(device: device))
+
+        let desc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm, width: 64, height: 64, mipmapped: false
+        )
+        desc.usage = [.shaderRead, .shaderWrite]
+        let frame1 = try #require(device.makeTexture(descriptor: desc))
+        let frame2 = try #require(device.makeTexture(descriptor: desc))
+        fillColor(texture: frame1, r: 100, g: 100, b: 100)
+        fillColor(texture: frame2, r: 120, g: 120, b: 120)
+
+        #expect(interpolator.stats.frameCount == 0)
+
+        let cmd1 = try #require(queue.makeCommandBuffer())
+        _ = interpolator.interpolate(current: frame1, commandBuffer: cmd1)
+        interpolator.commitFrame(frame1, commandBuffer: cmd1)
+        cmd1.commit()
+        cmd1.waitUntilCompleted()
+
+        let cmd2 = try #require(queue.makeCommandBuffer())
+        _ = interpolator.interpolate(current: frame2, commandBuffer: cmd2)
+        cmd2.commit()
+        cmd2.waitUntilCompleted()
+
+        #expect(interpolator.stats.frameCount >= 1)
+        #expect(interpolator.stats.averageMs > 0)
+    }
+
     // MARK: - Enhancement pipeline integration
 
     @Test func frameInterpolationToggleProperty() {
