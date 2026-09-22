@@ -372,7 +372,8 @@ struct PlayerSettingsPanel: View {
                 VideoEnhancementControls(
                     pipeline: pipeline,
                     sourceFrameRate: player.sourceFrameRate,
-                    interpolatorStats: player.frameInterpolator?.stats
+                    interpolatorStats: player.frameInterpolator?.stats,
+                    frameInterpolator: player.frameInterpolator
                 )
             }
             .accessibilityElement(children: .contain)

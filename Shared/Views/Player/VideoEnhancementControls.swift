@@ -14,6 +14,7 @@ struct VideoEnhancementControls: View {
     var sourceSize: CGSize = .zero
     var sourceFrameRate: Float = 0
     var interpolatorStats: FrameInterpolator.PerformanceStats?
+    var frameInterpolator: FrameInterpolator?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -102,6 +103,17 @@ struct VideoEnhancementControls: View {
                     }
                     .font(Typography.bodySM)
                     .monospacedDigit()
+
+                    if let interpolator = frameInterpolator, interpolator.isMetalFXAvailable {
+                        ArchiveToggle(isOn: Binding(
+                            get: { interpolator.backend == .metalFX },
+                            set: { interpolator.backend = $0 ? .metalFX : .custom }
+                        )) {
+                            Text("MetalFX Interpolator")
+                                .font(Typography.bodySM)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                    }
                 }
             }
         }

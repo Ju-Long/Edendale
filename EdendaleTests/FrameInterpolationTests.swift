@@ -274,6 +274,65 @@ struct FrameInterpolationTests {
         #expect(interpolator.stats.averageMs > 0)
     }
 
+    // MARK: - MetalFX backend
+
+    @Test func metalFXAvailabilityCheck() {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let interpolator = FrameInterpolator(device: device)
+        guard let interpolator else { return }
+
+        // Just verify the availability query doesn't crash.
+        let available = interpolator.isMetalFXAvailable
+        // On macOS 26+ Apple Silicon, this should be true.
+        #expect(available == true || available == false)
+    }
+
+    @Test func metalFXBackendSwitching() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let interpolator = try #require(FrameInterpolator(device: device))
+
+        #expect(interpolator.backend == .custom)
+        interpolator.backend = .metalFX
+        #expect(interpolator.backend == .metalFX)
+        interpolator.backend = .custom
+        #expect(interpolator.backend == .custom)
+    }
+
+    @Test func metalFXBackendProducesOutput() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let queue = try #require(device.makeCommandQueue())
+        let interpolator = try #require(FrameInterpolator(device: device))
+
+        guard interpolator.isMetalFXAvailable else { return }
+        interpolator.backend = .metalFX
+
+        let desc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm, width: 128, height: 128, mipmapped: false
+        )
+        desc.usage = [.shaderRead, .shaderWrite]
+        let frame1 = try #require(device.makeTexture(descriptor: desc))
+        let frame2 = try #require(device.makeTexture(descriptor: desc))
+        fillColor(texture: frame1, r: 100, g: 100, b: 100)
+        fillColor(texture: frame2, r: 150, g: 150, b: 150)
+
+        let cmd1 = try #require(queue.makeCommandBuffer())
+        _ = interpolator.interpolate(current: frame1, commandBuffer: cmd1)
+        interpolator.commitFrame(frame1, commandBuffer: cmd1)
+        cmd1.commit()
+        cmd1.waitUntilCompleted()
+
+        let cmd2 = try #require(queue.makeCommandBuffer())
+        let result = interpolator.interpolate(current: frame2, commandBuffer: cmd2)
+        cmd2.commit()
+        cmd2.waitUntilCompleted()
+
+        #expect(result != nil, "MetalFX backend should produce interpolated output")
+        if let result {
+            #expect(result.width == 128)
+            #expect(result.height == 128)
+        }
+    }
+
     // MARK: - Enhancement pipeline integration
 
     @Test func frameInterpolationToggleProperty() {

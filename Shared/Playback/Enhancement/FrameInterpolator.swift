@@ -14,7 +14,19 @@ import Metal
 /// present(enhanced)                 // then display the real frame
 /// ```
 final class FrameInterpolator: @unchecked Sendable {
+
+    enum InterpolationBackend: Sendable {
+        case custom
+        case metalFX
+    }
+
     let device: MTLDevice
+
+    /// Which backend to use for the final warp/blend pass.
+    /// `.metalFX` requires macOS 26+ / iOS 26+ and a supported GPU.
+    var backend: InterpolationBackend = .custom {
+        didSet { configureMetalFXBackend() }
+    }
 
     // MARK: - Pipeline States
 
@@ -25,6 +37,9 @@ final class FrameInterpolator: @unchecked Sendable {
     private var sceneCutState: MTLComputePipelineState?
     private var downscaleState: MTLComputePipelineState?
     private var mvUpscaleState: MTLComputePipelineState?
+
+    private var metalFXBackend: AnyObject?
+    private var metalFXResetNeeded: Bool = true
 
     // MARK: - Frame History
 
@@ -209,17 +224,26 @@ final class FrameInterpolator: @unchecked Sendable {
             pixelMV = halfMV
         }
 
-        // Pass 4: Bidirectional warp + blend (always at full resolution).
-        let output = getOrCreateTexture(
-            ref: &interpolatedFrame,
-            width: w, height: h,
-            format: current.pixelFormat
-        )
-        encodeInterpolation(
-            prev: prev, curr: current,
-            motion: pixelMV, output: output,
+        // Pass 4: Warp + blend (always at full resolution).
+        let output: MTLTexture
+        if let mfxResult = encodeMetalFXInterpolation(
+            prev: prev, curr: current, motion: pixelMV,
             commandBuffer: commandBuffer
-        )
+        ) {
+            output = mfxResult
+        } else {
+            let dest = getOrCreateTexture(
+                ref: &interpolatedFrame,
+                width: w, height: h,
+                format: current.pixelFormat
+            )
+            encodeInterpolation(
+                prev: prev, curr: current,
+                motion: pixelMV, output: dest,
+                commandBuffer: commandBuffer
+            )
+            output = dest
+        }
 
         recordTiming(start: startTime, halfRes: useHalfRes, commandBuffer: commandBuffer)
 
@@ -256,6 +280,29 @@ final class FrameInterpolator: @unchecked Sendable {
 
     private func resetInternal() {
         hasValidPrevious = false
+        metalFXResetNeeded = true
+    }
+
+    private func configureMetalFXBackend() {
+        lock.lock()
+        defer { lock.unlock() }
+        if backend == .metalFX {
+            if metalFXBackend == nil {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    metalFXBackend = MetalFXInterpolatorBackend(device: device)
+                }
+            }
+        } else {
+            metalFXBackend = nil
+        }
+        metalFXResetNeeded = true
+    }
+
+    var isMetalFXAvailable: Bool {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            return MetalFXInterpolatorBackend.isSupported(device: device)
+        }
+        return false
     }
 
     // MARK: - Encode Passes
@@ -342,6 +389,30 @@ final class FrameInterpolator: @unchecked Sendable {
 
         dispatch2D(encoder: encoder, width: output.width, height: output.height)
         encoder.endEncoding()
+    }
+
+    // MARK: - MetalFX Backend
+
+    /// Returns the MetalFX-interpolated output if the backend is `.metalFX` and available, else `nil`.
+    private func encodeMetalFXInterpolation(
+        prev: MTLTexture, curr: MTLTexture,
+        motion: MTLTexture,
+        commandBuffer: MTLCommandBuffer
+    ) -> MTLTexture? {
+        guard backend == .metalFX else { return nil }
+
+        if #available(macOS 26.0, iOS 26.0, *) {
+            guard let mfx = metalFXBackend as? MetalFXInterpolatorBackend else { return nil }
+            let needsReset = metalFXResetNeeded
+            metalFXResetNeeded = false
+            return mfx.interpolate(
+                prev: prev, current: curr, motion: motion,
+                frameRate: 24.0,
+                resetHistory: needsReset,
+                commandBuffer: commandBuffer
+            )
+        }
+        return nil
     }
 
     // MARK: - Scene-Cut Detection

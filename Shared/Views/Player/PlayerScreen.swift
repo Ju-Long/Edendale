@@ -24,6 +24,10 @@ struct PlayerScreen: View {
     @FocusState private var keyboardFocused: Bool
     #endif
 
+    #if os(iOS)
+    @State private var chassisTap = ChassisDoubleTapDetector()
+    #endif
+
     /// Dismisses the hosting scene (cover or window) and ends the session.
     let exit: () -> Void
 
@@ -63,6 +67,13 @@ struct PlayerScreen: View {
             pipSource?.automaticallyStartsFromInline = enabled
         }
         #endif
+        #if os(iOS)
+        .onAppear {
+            let s = session
+            chassisTap.onDoubleTap = { [weak s] in s?.chrome?.togglePlayPause() }
+            chassisTap.start()
+        }
+        #endif
         #if os(tvOS)
         // Focus lives on the actual controls (or the reveal catcher while
         // they're hidden); these commands bubble up from whichever control
@@ -74,6 +85,9 @@ struct PlayerScreen: View {
         #endif
         .onDisappear {
             session.surfaceDidDetach()
+            #if os(iOS)
+            chassisTap.stop()
+            #endif
             // The host closed underneath us (macOS red button or cover
             // dismissal), so release the player and its file access. On
             // visionOS, changing a packed-video override can swap the decoder

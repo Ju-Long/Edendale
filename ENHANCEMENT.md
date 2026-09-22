@@ -1004,21 +1004,22 @@ Performance stats (`FrameInterpolator.stats`):
   - `isHalfRes` — whether the current frame used the half-res ME path
   - Measured via `commandBuffer.gpuEndTime - gpuStartTime` when available
 
-### I.9 — Future: MetalFX Frame Interpolator Backend (Optional)
+### I.9 — MetalFX Frame Interpolator Backend
 
-- [ ] **Prototype `MTLFXFrameInterpolator` with estimated inputs**
+- [x] **Prototype `MTLFXFrameInterpolator` with estimated inputs**
 
-Once I.1–I.4 are working, experiment with feeding the GPU-estimated motion
-vectors into `MTLFXFrameInterpolator` (macOS 15+ / iOS 18+) instead of the
-custom warp shader:
+Implemented `MetalFXInterpolatorBackend` (macOS 26+ / iOS 26+) that feeds
+GPU-estimated motion vectors into Apple's `MTLFXFrameInterpolator`:
 
-  - Use `pixelMotionTexture` (RG16Float) as `motionTexture`
-  - Synthesize a flat depth texture (all pixels at `farPlane`)
-  - Set orthographic-like camera params (wide FOV, distant near/far)
-  - Compare quality vs the custom interpolation path
-  - If acceptable, offer as an optional backend behind a capability check
-
-This is exploratory — the custom path (I.2) is the reliable default.
+  - `FrameInterpolator.backend` switches between `.custom` (default) and `.metalFX`
+  - `FrameInterpolator.isMetalFXAvailable` checks device support at runtime
+  - Uses `pixelMotionTexture` (RG16Float) as `motionTexture`
+  - Flat depth texture (all pixels at far plane — no 3D depth for video)
+  - Camera params: 90° FOV, 0.1/1000 near/far, aspect from frame dimensions
+  - Motion vector scale: width × height (normalised MVs → pixel space)
+  - UI toggle: "MetalFX Interpolator" appears under Motion Smoothing when available
+  - 3 tests: availability check, backend switching, output verification
+  - The custom path (I.2) remains the reliable default for all Apple Silicon
 
 ---
 
@@ -1034,4 +1035,4 @@ This is exploratory — the custom path (I.2) is the reliable default.
 | I.6  | UI controls                              | [x]    |
 | I.7  | Tests                                    | [x]    |
 | I.8  | Performance profiling & budget           | [x]    |
-| I.9  | MetalFX interpolator backend (optional)  | [ ]    |
+| I.9  | MetalFX interpolator backend (optional)  | [x]    |
