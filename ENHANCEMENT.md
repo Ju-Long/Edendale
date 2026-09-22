@@ -690,3 +690,340 @@ controls.
 5. **F** — subtitles (can test independently)
 6. **G** — integration (needs all above)
 7. **H** — system features (needs G)
+8. **I** — frame generation (needs D, E)
+
+---
+
+## Section I — Frame Generation (Motion-Compensated Frame Interpolation)
+
+**Depends on:** D (rendering surface), E (enhancement pipeline)
+
+**Goal:** Double the display framerate by synthesizing intermediate frames
+between real decoded frames. A 24fps source displays at 48fps, 30fps at 60fps.
+Uses custom GPU optical flow — no game-engine motion vectors or depth required.
+
+**Approach:** Path B (custom GPU frame interpolation). MetalFX's
+`MTLFXFrameInterpolator` requires per-pixel motion vectors, depth buffers, and
+camera parameters that video playback cannot provide. Instead, we estimate
+motion between consecutive enhanced frames using a Metal compute shader and
+synthesize the intermediate frame via bidirectional warping + blending.
+
+```
+Frame N-1 (enhanced) ──┐
+                        ├─→ Motion Estimation ─→ Motion Vectors (RG16Float)
+Frame N   (enhanced) ──┘         │
+                                 ▼
+                        Frame Interpolation
+                        (warp N-1 forward 0.5×, warp N backward 0.5×,
+                         blend + hole-fill)
+                                 │
+                                 ▼
+                        Synthetic Frame N-0.5
+```
+
+Display timeline with interpolation enabled:
+```
+Without:  N-1 ──────── N ──────── N+1           (24 fps)
+With:     N-1 ── +0.5 ── N ── +0.5 ── N+1       (48 fps)
+```
+
+### I.1 — Motion Estimation Compute Shader
+
+- [x] **Create `Shared/Playback/Enhancement/MotionEstimation.metal`**
+
+Hierarchical block motion estimation on the GPU:
+
+```
+Pass 1 — Coarse (16×16 macroblocks):
+  → Downsample both frames to quarter resolution (bilinear)
+  → For each 16×16 block in frame N, search a ±16 pixel window in frame N-1
+  → Minimize sum of absolute luma differences (SAD)
+  → Output: coarse motion vector per block (RG16Float, quarter-res)
+
+Pass 2 — Refine (4×4 sub-blocks):
+  → For each 4×4 sub-block, refine the coarse vector with a ±4 pixel search
+  → Work at full resolution using the coarse vector as the search center
+  → Output: refined motion vector texture (RG16Float, 1/4 pixel density)
+
+Pass 3 — Per-pixel interpolation:
+  → Bilinear-interpolate the block-level motion vectors to per-pixel density
+  → Optional: median filter (3×3) to suppress outlier vectors
+```
+
+Kernel signatures:
+```metal
+kernel void motionEstimationCoarse(
+    texture2d<float, access::read>  prevFrame   [[texture(0)]],
+    texture2d<float, access::read>  currFrame   [[texture(1)]],
+    texture2d<float, access::write> motionOut   [[texture(2)]],
+    constant uint2                  &blockSize  [[buffer(0)]],
+    constant uint                   &searchRadius [[buffer(1)]],
+    uint2                           gid         [[thread_position_in_grid]]);
+
+kernel void motionEstimationRefine(
+    texture2d<float, access::read>  prevFrame   [[texture(0)]],
+    texture2d<float, access::read>  currFrame   [[texture(1)]],
+    texture2d<float, access::read>  coarseMV    [[texture(2)]],
+    texture2d<float, access::write> refinedMV   [[texture(3)]],
+    constant uint2                  &blockSize  [[buffer(0)]],
+    constant uint                   &searchRadius [[buffer(1)]],
+    uint2                           gid         [[thread_position_in_grid]]);
+
+kernel void motionVectorDensify(
+    texture2d<float, access::read>  blockMV     [[texture(0)]],
+    texture2d<float, access::write> pixelMV     [[texture(1)]],
+    constant uint2                  &blockSize  [[buffer(0)]],
+    uint2                           gid         [[thread_position_in_grid]]);
+```
+
+- [x] **Add motion estimation kernels to `MetalShaderSource.embeddedShaderSource`**
+
+Update the embedded fallback source string in `MetalShaderSource.swift` to
+include the new kernels. Verify `MetalShaderSource.library(for:)` resolves
+them from both compiled .metal files and the embedded fallback.
+
+### I.2 — Frame Warping + Synthesis Shader
+
+- [x] **Create `Shared/Playback/Enhancement/FrameInterpolation.metal`**
+
+Bidirectional warping with occlusion-aware blending:
+
+```
+Input:  frame N-1, frame N, per-pixel motion vectors
+Output: synthetic frame at t=0.5
+
+For each output pixel (x, y):
+  1. Forward warp:  sample frame N-1 at (x + mv.x * 0.5, y + mv.y * 0.5)
+  2. Backward warp: sample frame N   at (x - mv.x * 0.5, y - mv.y * 0.5)
+  3. Occlusion check:
+     → compute consistency: if |forward_pos - backward_pos| > threshold,
+       one direction is occluded — favor the non-occluded sample
+  4. Blend: weighted average of forward and backward warped samples
+     → equal weight (0.5/0.5) for non-occluded pixels
+     → full weight to the visible sample at occlusion boundaries
+  5. Hole-fill: for pixels where both warps land outside the frame,
+     bilinear sample from the nearest valid pixel in frame N
+```
+
+Kernel signature:
+```metal
+kernel void frameInterpolate(
+    texture2d<float, access::read>  prevFrame   [[texture(0)]],
+    texture2d<float, access::read>  currFrame   [[texture(1)]],
+    texture2d<float, access::read>  motionVec   [[texture(2)]],
+    texture2d<float, access::write> output      [[texture(3)]],
+    constant float                  &blendTime  [[buffer(0)]],
+    uint2                           gid         [[thread_position_in_grid]]);
+```
+
+`blendTime` is 0.5 for midpoint interpolation but can be parameterized for
+future multi-frame interpolation (e.g. 0.25 and 0.75 for 4× framerate).
+
+### I.3 — FrameInterpolator Swift Controller
+
+- [x] **Create `Shared/Playback/Enhancement/FrameInterpolator.swift`**
+
+```swift
+final class FrameInterpolator: @unchecked Sendable {
+    let device: MTLDevice
+
+    // Pipeline states
+    private var coarseMEState: MTLComputePipelineState?
+    private var refineMEState: MTLComputePipelineState?
+    private var densifyState: MTLComputePipelineState?
+    private var interpolateState: MTLComputePipelineState?
+
+    // Previous frame history
+    private var previousFrame: MTLTexture?
+    private var hasValidPrevious: Bool = false
+
+    // Intermediate textures (cached, recreated on dimension change)
+    private var coarseMotionTexture: MTLTexture?    // quarter-res RG16Float
+    private var refinedMotionTexture: MTLTexture?   // sub-block RG16Float
+    private var pixelMotionTexture: MTLTexture?     // full-res RG16Float
+    private var interpolatedFrame: MTLTexture?      // full-res output
+
+    private let lock = NSLock()
+
+    init?(device: MTLDevice, library: MTLLibrary?)
+
+    /// Generate an interpolated frame between the previous and current frame.
+    /// Returns nil on the first frame (no history) or if interpolation is
+    /// not possible. The caller presents this BEFORE the real current frame.
+    func interpolate(
+        current: MTLTexture,
+        commandBuffer: MTLCommandBuffer
+    ) -> MTLTexture?
+
+    /// Update history with the current frame AFTER it has been presented.
+    /// Must be called every real frame to keep history in sync.
+    func commitFrame(_ frame: MTLTexture, commandBuffer: MTLCommandBuffer)
+
+    /// Discard history (seek, track switch, media change, scene cut).
+    func reset()
+}
+```
+
+Scene-cut detection: if the SAD score from the coarse motion pass exceeds a
+threshold (e.g. > 40% of pixels have high error), skip interpolation for that
+frame pair — it's a hard cut, not motion.
+
+### I.4 — EnhancedVideoView Draw Loop Integration
+
+- [x] **Modify `EnhancedVideoView.swift` draw loop for frame interpolation**
+
+The draw loop currently runs at `targetFrameRate` (default 60fps) and
+presents one enhanced frame per callback. With interpolation, each source
+frame produces two display frames:
+
+```
+draw call 0 (interpolated):
+  → FrameInterpolator.interpolate(current: enhanced_N) → synthetic N-0.5
+  → present synthetic frame
+  → FrameInterpolator.commitFrame(enhanced_N)
+
+draw call 1 (real):
+  → dequeue next source frame from ring buffer
+  → run enhancement pipeline → enhanced_N
+  → present enhanced_N
+
+(repeat)
+```
+
+Changes to `EnhancedVideoView`:
+  - Add `var frameInterpolator: FrameInterpolator?` property
+  - Add `var interpolationEnabled: Bool` toggle
+  - Track `isInterpolatedFrame` flag, toggled each draw call
+  - On interpolated frames: skip ring buffer dequeue, use cached enhanced
+    texture as `current`, call `interpolate()`, present the result
+  - On real frames: dequeue, enhance, present, call `commitFrame()`
+  - Set `preferredFramesPerSecond` to 2× the source content framerate
+    (e.g. 48 for 24fps content, 60 for 30fps content)
+  - Frame pacing: macOS `present(afterMinimumDuration:)` already handles
+    this — set duration to `1.0 / (2.0 * sourceFrameRate)`
+
+- [x] **Handle edge cases in draw loop**
+  - First frame after seek/open: no previous frame → present real frame only
+  - Scene cut detected: skip interpolation, present real frame
+  - Ring buffer empty: don't interpolate stale frames
+  - Pause/resume: reset interpolator on resume to avoid stale history
+  - App backgrounding: pause interpolation, resume on foreground
+
+### I.5 — PlaybackEngine + EnhancementPipeline Wiring
+
+- [x] **Expose source framerate from decoders**
+
+Both `AVFoundationDecoder` and `FFmpegDecoder` already populate
+`MediaInfo.frameRate`. Ensure `PlaybackEngine` exposes this so
+`EnhancedVideoView` can compute the 2× target display rate.
+
+- [x] **Wire FrameInterpolator into PlaybackEngine**
+
+```swift
+// In PlaybackEngine.init():
+self.frameInterpolator = FrameInterpolator(
+    device: enhancementPipeline.device,
+    library: MetalShaderSource.library(for: enhancementPipeline.device)
+)
+
+// On seek / media switch:
+frameInterpolator?.reset()
+```
+
+- [x] **Add interpolation toggle to EnhancementPipeline**
+
+Add `var frameInterpolationEnabled: Bool = false` to `EnhancementPipeline`.
+When toggled off, the draw loop skips interpolation entirely and presents
+at the source framerate. The toggle should be independent of the existing
+preset system (interpolation can combine with any preset).
+
+### I.6 — UI Controls
+
+- [x] **Add frame interpolation toggle to `VideoEnhancementControls.swift`**
+
+Below the existing denoise slider, add:
+  - Toggle: "Motion Smoothing" (on/off)
+  - Info label: "24 fps → 48 fps" showing actual source and display rates
+  - Only visible when source framerate ≤ display refresh rate / 2
+
+- [x] **Gate interpolation to capable displays**
+
+Only offer the toggle when the display refresh rate is > source framerate.
+On ProMotion displays (120Hz), a 24fps source could go to 48fps or even
+96fps (4×). Start with 2× only.
+
+### I.7 — Tests
+
+- [x] **Create `EdendaleTests/FrameInterpolationTests.swift`**
+
+Test cases:
+  - Motion estimation produces non-zero vectors for a known horizontal pan
+    (shifted test texture)
+  - Motion estimation produces near-zero vectors for a static scene
+  - Scene-cut detection triggers on completely different frames
+  - Frame interpolation output differs from both input frames
+  - Interpolated frame for a horizontal shift is visually between the inputs
+    (sample center pixel, verify intermediate position)
+  - FrameInterpolator returns nil on first frame (no history)
+  - FrameInterpolator.reset() clears history correctly
+  - Performance budget: motion estimation + interpolation < 6ms at 1080p
+    on Apple Silicon
+
+- [ ] **Add interpolation draw-loop tests to `EnhancedVideoRenderingTests.swift`** (deferred — needs MainActor rendering context)
+
+  - Verify `EnhancedVideoView` alternates between interpolated and real frames
+  - Verify frame count doubles when interpolation is enabled
+  - Verify seek resets interpolation state
+
+### I.8 — Performance Budget
+
+Target: motion estimation + interpolation < 6ms total per interpolated frame
+at 1080p output on M1. Combined with the existing enhancement pipeline
+(< 5ms), total GPU time per display frame stays under 11ms (comfortable
+within 16ms budget for 60fps output).
+
+| Pass                            | Expected cost (M1, 1080p) |
+|---------------------------------|---------------------------|
+| Coarse motion estimation (16×16)| ~1–2ms                    |
+| Refined motion estimation (4×4) | ~1–2ms                    |
+| Motion vector densify           | ~0.3ms                    |
+| Bidirectional warp + blend      | ~1–2ms                    |
+| **Total interpolation**         | **~3–6ms**                |
+
+At 4K output, costs roughly 4× — may exceed budget. Options:
+  - Run motion estimation at half resolution and upscale vectors
+  - Skip refinement pass (coarse-only, lower quality)
+  - Limit interpolation to ≤ 1080p sources (upscale first, then interpolate
+    at post-upscale resolution is expensive — reverse the order for 4K)
+
+### I.9 — Future: MetalFX Frame Interpolator Backend (Optional)
+
+- [ ] **Prototype `MTLFXFrameInterpolator` with estimated inputs**
+
+Once I.1–I.4 are working, experiment with feeding the GPU-estimated motion
+vectors into `MTLFXFrameInterpolator` (macOS 15+ / iOS 18+) instead of the
+custom warp shader:
+
+  - Use `pixelMotionTexture` (RG16Float) as `motionTexture`
+  - Synthesize a flat depth texture (all pixels at `farPlane`)
+  - Set orthographic-like camera params (wide FOV, distant near/far)
+  - Compare quality vs the custom interpolation path
+  - If acceptable, offer as an optional backend behind a capability check
+
+This is exploratory — the custom path (I.2) is the reliable default.
+
+---
+
+### Section I — Tracking
+
+| Step | Description                              | Status |
+|------|------------------------------------------|--------|
+| I.1  | Motion estimation compute shader         | [x]    |
+| I.2  | Frame warping + synthesis shader         | [x]    |
+| I.3  | FrameInterpolator Swift controller       | [x]    |
+| I.4  | Draw loop integration                    | [x]    |
+| I.5  | PlaybackEngine wiring                    | [x]    |
+| I.6  | UI controls                              | [x]    |
+| I.7  | Tests                                    | [x]    |
+| I.8  | Performance profiling & budget           | [ ]    |
+| I.9  | MetalFX interpolator backend (optional)  | [ ]    |

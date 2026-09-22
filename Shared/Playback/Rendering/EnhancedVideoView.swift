@@ -98,6 +98,25 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     /// When true, renders a continuous 60fps procedural test pattern for testing without decoders.
     public var testPatternEnabled: Bool = false
 
+    /// Frame interpolator for motion-compensated frame generation.
+    var frameInterpolator: FrameInterpolator?
+
+    /// The source content framerate (e.g. 24, 30).  Used to compute the 2×
+    /// display rate when frame interpolation is active.
+    public var sourceFrameRate: Float = 0.0 {
+        didSet {
+            updateDisplayRate()
+        }
+    }
+
+    /// The last fully-enhanced texture, kept for the interpolator to reference
+    /// on the interpolated draw call.
+    private var lastEnhancedTexture: MTLTexture?
+
+    /// Alternates between `true` (present interpolated frame) and `false`
+    /// (present the real decoded frame) when interpolation is active.
+    private var isInterpolatedFrame: Bool = false
+
     /// Callback invoked when a frame is presented.
     public var onFramePresented: ((CMTime) -> Void)?
 
@@ -126,9 +145,25 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             self.isPaused = shouldPause
         }
         if shouldPause {
+            frameInterpolator?.reset()
+            isInterpolatedFrame = false
+            lastEnhancedTexture = nil
             if !isAppBackgrounded && bounds.width > 0 && bounds.height > 0 {
                 self.draw()
             }
+        }
+    }
+
+    private func updateDisplayRate() {
+        let interpolationActive = enhancementPipeline?.frameInterpolationEnabled == true
+            && sourceFrameRate > 0
+        if interpolationActive {
+            let displayRate = sourceFrameRate * 2.0
+            self.preferredFramesPerSecond = Int(displayRate)
+        } else {
+            self.preferredFramesPerSecond = Int(targetFrameRate)
+            isInterpolatedFrame = false
+            lastEnhancedTexture = nil
         }
     }
 
@@ -314,18 +349,54 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
         drawCallCount += 1
         if drawCallCount <= 5 || drawCallCount % 300 == 0 {
-            debugPrint("[EnhancedVideoView.draw] frame #\(drawCallCount) — ringBuffer=\(ringBuffer == nil ? "nil" : "exists(\(ringBuffer!.count) frames)"), pixelBuffer=\(currentPixelBuffer == nil ? "nil" : "exists"), texture=\(currentTexture == nil ? "nil" : "exists"), testPattern=\(testPatternEnabled)")
+            debugPrint("[EnhancedVideoView.draw] frame #\(drawCallCount) — ringBuffer=\(ringBuffer == nil ? "nil" : "exists(\(ringBuffer!.count) frames)"), pixelBuffer=\(currentPixelBuffer == nil ? "nil" : "exists"), texture=\(currentTexture == nil ? "nil" : "exists"), testPattern=\(testPatternEnabled), interpolated=\(isInterpolatedFrame)")
         }
 
-        // Resolve content BEFORE acquiring GPU resources (drawable, command
-        // buffer). Acquiring a drawable blocks when the pool is exhausted, and
-        // committing empty command buffers 60× / s creates backpressure that
-        // starves the rest of the app.
+        let interpolationActive = enhancementPipeline?.frameInterpolationEnabled == true
+            && frameInterpolator != nil
+
+        // --- Interpolated draw call: re-use the last enhanced frame --------
+        if interpolationActive && isInterpolatedFrame, let lastEnhanced = lastEnhancedTexture {
+            isInterpolatedFrame = false
+
+            guard let drawable = currentDrawable,
+                  let renderPassDescriptor = currentRenderPassDescriptor,
+                  let commandBuffer = metalContext.commandQueue.makeCommandBuffer()
+            else { return }
+
+            var renderTexture: MTLTexture
+            if let synthetic = frameInterpolator?.interpolate(current: lastEnhanced, commandBuffer: commandBuffer) {
+                renderTexture = synthetic
+            } else {
+                // Interpolation not possible (first frame, scene cut) — skip.
+                return
+            }
+
+            // Subtitle compositing on the interpolated frame.
+            if let subtitleEngine, subtitleEngine.isEnabled, subtitleEngine.activeFormat != nil {
+                subtitleEngine.setCanvasSize(CGSize(width: renderTexture.width, height: renderTexture.height))
+                if let subTexture = subtitleEngine.renderSubtitleTexture(at: currentDisplayTime),
+                   let outputTexture = ensureCompositingTexture(width: renderTexture.width, height: renderTexture.height) {
+                    subtitleEngine.compositor.composite(
+                        video: renderTexture,
+                        subtitle: subTexture,
+                        output: outputTexture,
+                        commandBuffer: commandBuffer
+                    )
+                    renderTexture = outputTexture
+                }
+            }
+
+            presentTexture(renderTexture, drawable: drawable, renderPassDescriptor: renderPassDescriptor, commandBuffer: commandBuffer, interpolated: true)
+            commandBuffer.commit()
+            return
+        }
+
+        // --- Real frame draw call -----------------------------------------
+
+        // Resolve content BEFORE acquiring GPU resources.
         guard let videoTexture = resolveVideoTexture() else {
             consecutiveEmptyDraws += 1
-            // Clear to black for the first few empty frames so the screen
-            // doesn't show a stale image during brief transitions (seek, track
-            // switch). After that, skip GPU work entirely.
             if consecutiveEmptyDraws <= 3 {
                 guard let drawable = currentDrawable,
                       let renderPassDescriptor = currentRenderPassDescriptor,
@@ -367,6 +438,13 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             renderTexture = pipeline.process(source: renderTexture, commandBuffer: commandBuffer)
         }
 
+        // Commit this enhanced frame to the interpolator's history.
+        if interpolationActive {
+            frameInterpolator?.commitFrame(renderTexture, commandBuffer: commandBuffer)
+            lastEnhancedTexture = renderTexture
+            isInterpolatedFrame = true
+        }
+
         // Subtitle compositing
         if let subtitleEngine, subtitleEngine.isEnabled, subtitleEngine.activeFormat != nil {
             subtitleEngine.setCanvasSize(CGSize(width: renderTexture.width, height: renderTexture.height))
@@ -382,9 +460,23 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             }
         }
 
-        // Render to screen
+        presentTexture(renderTexture, drawable: drawable, renderPassDescriptor: renderPassDescriptor, commandBuffer: commandBuffer, interpolated: false)
+        commandBuffer.commit()
+
+        onFramePresented?(currentDisplayTime)
+    }
+
+    /// Shared final render pass — blit the texture onto the drawable with
+    /// aspect-ratio geometry and frame pacing.
+    private func presentTexture(
+        _ texture: MTLTexture,
+        drawable: CAMetalDrawable,
+        renderPassDescriptor: MTLRenderPassDescriptor,
+        commandBuffer: MTLCommandBuffer,
+        interpolated: Bool
+    ) {
         let containerSize = drawableSize
-        let textureSize = CGSize(width: renderTexture.width, height: renderTexture.height)
+        let textureSize = CGSize(width: texture.width, height: texture.height)
         let vertices = MetalContext.computeQuadVertices(
             containerSize: containerSize,
             contentSize: textureSize,
@@ -395,34 +487,31 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
             bytes: vertices,
             length: MemoryLayout<MetalQuadVertex>.stride * vertices.count,
             options: .storageModeShared
-        ) else {
-            return
-        }
+        ) else { return }
 
-        guard let pipelineState = metalContext.renderPipelineState(for: colorPixelFormat) else {
-            return
-        }
-
-        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
-            return
-        }
+        guard let pipelineState = metalContext.renderPipelineState(for: colorPixelFormat) else { return }
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
 
         encoder.setRenderPipelineState(pipelineState)
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        encoder.setFragmentTexture(renderTexture, index: 0)
+        encoder.setFragmentTexture(texture, index: 0)
         encoder.setFragmentSamplerState(metalContext.samplerState, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
         encoder.endEncoding()
 
+        let interpolationActive = enhancementPipeline?.frameInterpolationEnabled == true
+        let effectiveRate: Double
+        if interpolationActive && sourceFrameRate > 0 {
+            effectiveRate = Double(sourceFrameRate * 2.0)
+        } else {
+            effectiveRate = Double(max(targetFrameRate, 1.0))
+        }
+
         #if os(macOS)
-        let frameInterval = 1.0 / Double(max(targetFrameRate, 1.0))
-        commandBuffer.present(drawable, afterMinimumDuration: frameInterval)
+        commandBuffer.present(drawable, afterMinimumDuration: 1.0 / effectiveRate)
         #else
         commandBuffer.present(drawable)
         #endif
-        commandBuffer.commit()
-
-        onFramePresented?(currentDisplayTime)
     }
 
     private func ensureCompositingTexture(width: Int, height: Int) -> MTLTexture? {

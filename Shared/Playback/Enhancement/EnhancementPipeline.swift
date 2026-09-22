@@ -67,6 +67,11 @@ final class EnhancementPipeline: @unchecked Sendable {
     /// Motion sensitivity threshold for temporal denoising. Default 0.08.
     var motionThreshold: Float = 0.08
 
+    /// When enabled, the draw loop synthesises intermediate frames via
+    /// motion-compensated interpolation, doubling the display framerate.
+    /// Independent of the enhancement preset — works with any preset.
+    var frameInterpolationEnabled: Bool = false
+
     /// Current display or viewport size. Used by the upscaler to target display resolution.
     var displaySize: CGSize = CGSize(width: 3840, height: 2160)
 

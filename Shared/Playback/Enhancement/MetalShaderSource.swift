@@ -249,6 +249,218 @@ enum MetalShaderSource {
 
         output.write(float4(clamp(rgb, 0.0f, 1.0f), pixel.a), gid);
     }
+
+    // -----------------------------------------------------------------------
+    // Motion Estimation — coarse (16×16), refined (4×4), densify, scene-cut
+    // -----------------------------------------------------------------------
+
+    inline float meL(float4 c) {
+        return dot(c.rgb, float3(0.2126f, 0.7152f, 0.0722f));
+    }
+
+    kernel void motionEstimationCoarse(
+        texture2d<float, access::read>  prevFrame     [[texture(0)]],
+        texture2d<float, access::read>  currFrame     [[texture(1)]],
+        texture2d<float, access::write> motionOut     [[texture(2)]],
+        constant uint                   &blockSize    [[buffer(0)]],
+        constant uint                   &searchRadius [[buffer(1)]],
+        uint2                           gid           [[thread_position_in_grid]])
+    {
+        uint mvW = motionOut.get_width();
+        uint mvH = motionOut.get_height();
+        if (gid.x >= mvW || gid.y >= mvH) return;
+        uint frameW = currFrame.get_width();
+        uint frameH = currFrame.get_height();
+        uint bx = gid.x * blockSize;
+        uint by = gid.y * blockSize;
+        float bestSAD = 1e30f;
+        int2 bestOff = int2(0, 0);
+        int sr = int(searchRadius);
+        for (int dy = -sr; dy <= sr; dy += 2) {
+            for (int dx = -sr; dx <= sr; dx += 2) {
+                float sad = 0.0f;
+                for (uint py = 0; py < blockSize; py += 2) {
+                    for (uint px = 0; px < blockSize; px += 2) {
+                        uint cx = bx + px; uint cy = by + py;
+                        if (cx >= frameW || cy >= frameH) continue;
+                        int px2 = clamp(int(cx)+dx, 0, int(frameW)-1);
+                        int py2 = clamp(int(cy)+dy, 0, int(frameH)-1);
+                        sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
+                    }
+                }
+                if (sad < bestSAD) { bestSAD = sad; bestOff = int2(dx, dy); }
+            }
+        }
+        int2 center = bestOff;
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                if (dx == 0 && dy == 0) continue;
+                int ox = center.x+dx; int oy = center.y+dy;
+                if (abs(ox) > sr || abs(oy) > sr) continue;
+                float sad = 0.0f;
+                for (uint py = 0; py < blockSize; py += 2) {
+                    for (uint px = 0; px < blockSize; px += 2) {
+                        uint cx = bx+px; uint cy = by+py;
+                        if (cx >= frameW || cy >= frameH) continue;
+                        int px2 = clamp(int(cx)+ox, 0, int(frameW)-1);
+                        int py2 = clamp(int(cy)+oy, 0, int(frameH)-1);
+                        sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
+                    }
+                }
+                if (sad < bestSAD) { bestSAD = sad; bestOff = int2(ox, oy); }
+            }
+        }
+        float2 mv = float2(float(bestOff.x)/float(frameW), float(bestOff.y)/float(frameH));
+        motionOut.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
+    }
+
+    kernel void motionEstimationRefine(
+        texture2d<float, access::read>  prevFrame     [[texture(0)]],
+        texture2d<float, access::read>  currFrame     [[texture(1)]],
+        texture2d<float, access::read>  coarseMV      [[texture(2)]],
+        texture2d<float, access::write> refinedMV     [[texture(3)]],
+        constant uint                   &blockSize    [[buffer(0)]],
+        constant uint                   &coarseBlock  [[buffer(1)]],
+        uint2                           gid           [[thread_position_in_grid]])
+    {
+        uint mvW = refinedMV.get_width();
+        uint mvH = refinedMV.get_height();
+        if (gid.x >= mvW || gid.y >= mvH) return;
+        uint frameW = currFrame.get_width();
+        uint frameH = currFrame.get_height();
+        uint bx = gid.x * blockSize;
+        uint by = gid.y * blockSize;
+        uint coarseX = min(bx / coarseBlock, coarseMV.get_width() - 1);
+        uint coarseY = min(by / coarseBlock, coarseMV.get_height() - 1);
+        float4 cmv = coarseMV.read(uint2(coarseX, coarseY));
+        int baseOX = int(round(cmv.x * float(frameW)));
+        int baseOY = int(round(cmv.y * float(frameH)));
+        float bestSAD = 1e30f;
+        int2 bestOff = int2(baseOX, baseOY);
+        for (int dy = -4; dy <= 4; ++dy) {
+            for (int dx = -4; dx <= 4; ++dx) {
+                int ox = baseOX+dx; int oy = baseOY+dy;
+                float sad = 0.0f;
+                for (uint py = 0; py < blockSize; ++py) {
+                    for (uint px = 0; px < blockSize; ++px) {
+                        uint cx = bx+px; uint cy = by+py;
+                        if (cx >= frameW || cy >= frameH) continue;
+                        int px2 = clamp(int(cx)+ox, 0, int(frameW)-1);
+                        int py2 = clamp(int(cy)+oy, 0, int(frameH)-1);
+                        sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
+                    }
+                }
+                if (sad < bestSAD) { bestSAD = sad; bestOff = int2(ox, oy); }
+            }
+        }
+        float2 mv = float2(float(bestOff.x)/float(frameW), float(bestOff.y)/float(frameH));
+        refinedMV.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
+    }
+
+    inline float2 medVec(float2 a, float2 b, float2 c) {
+        float mx = a.x+b.x+c.x - min(a.x,min(b.x,c.x)) - max(a.x,max(b.x,c.x));
+        float my = a.y+b.y+c.y - min(a.y,min(b.y,c.y)) - max(a.y,max(b.y,c.y));
+        return float2(mx, my);
+    }
+
+    kernel void motionVectorDensify(
+        texture2d<float, access::read>  blockMV       [[texture(0)]],
+        texture2d<float, access::write> pixelMV       [[texture(1)]],
+        constant uint                   &blockSize    [[buffer(0)]],
+        uint2                           gid           [[thread_position_in_grid]])
+    {
+        uint outW = pixelMV.get_width();
+        uint outH = pixelMV.get_height();
+        if (gid.x >= outW || gid.y >= outH) return;
+        uint mvW = blockMV.get_width();
+        uint mvH = blockMV.get_height();
+        float bxf = (float(gid.x)+0.5f)/float(blockSize) - 0.5f;
+        float byf = (float(gid.y)+0.5f)/float(blockSize) - 0.5f;
+        int bx0 = clamp(int(floor(bxf)), 0, int(mvW)-1);
+        int by0 = clamp(int(floor(byf)), 0, int(mvH)-1);
+        int bx1 = clamp(bx0+1, 0, int(mvW)-1);
+        int by1 = clamp(by0+1, 0, int(mvH)-1);
+        float fx = bxf - float(bx0);
+        float fy = byf - float(by0);
+        float2 v00 = blockMV.read(uint2(bx0,by0)).xy;
+        float2 v10 = blockMV.read(uint2(bx1,by0)).xy;
+        float2 v01 = blockMV.read(uint2(bx0,by1)).xy;
+        float2 v11 = blockMV.read(uint2(bx1,by1)).xy;
+        float2 mv = mix(mix(v00,v10,fx), mix(v01,v11,fx), fy);
+        float2 left  = blockMV.read(uint2(clamp(int(bxf),0,int(mvW)-1), clamp(int(byf+0.5f),0,int(mvH)-1))).xy;
+        float2 right = blockMV.read(uint2(clamp(int(bxf)+1,0,int(mvW)-1), clamp(int(byf+0.5f),0,int(mvH)-1))).xy;
+        mv = medVec(left, mv, right);
+        pixelMV.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
+    }
+
+    kernel void sceneCutScore(
+        texture2d<float, access::read>  prevFrame   [[texture(0)]],
+        texture2d<float, access::read>  currFrame   [[texture(1)]],
+        device atomic_uint              *totalSAD   [[buffer(0)]],
+        device atomic_uint              *pixelCount [[buffer(1)]],
+        uint2                           gid         [[thread_position_in_grid]])
+    {
+        uint w = currFrame.get_width();
+        uint h = currFrame.get_height();
+        uint x = gid.x * 4; uint y = gid.y * 4;
+        if (x >= w || y >= h) return;
+        float lc = meL(currFrame.read(uint2(x,y)));
+        float lp = meL(prevFrame.read(uint2(x,y)));
+        uint diff = uint(abs(lc - lp) * 1000.0f);
+        atomic_fetch_add_explicit(totalSAD, diff, memory_order_relaxed);
+        atomic_fetch_add_explicit(pixelCount, 1u, memory_order_relaxed);
+    }
+
+    // Frame Interpolation — bidirectional warp + blend
+    inline float interpLuma(float3 c) {
+        return dot(c, float3(0.2126f, 0.7152f, 0.0722f));
+    }
+
+    kernel void frameInterpolate(
+        texture2d<float, access::read>  prevFrame   [[texture(0)]],
+        texture2d<float, access::read>  currFrame   [[texture(1)]],
+        texture2d<float, access::read>  motionVec   [[texture(2)]],
+        texture2d<float, access::write> output      [[texture(3)]],
+        constant float                  &blendTime  [[buffer(0)]],
+        uint2                           gid         [[thread_position_in_grid]])
+    {
+        uint w = output.get_width();
+        uint h = output.get_height();
+        if (gid.x >= w || gid.y >= h) return;
+        float2 mv = motionVec.read(gid).xy;
+        float2 mvPx = float2(mv.x*float(w), mv.y*float(h));
+        float2 pos = float2(gid) + 0.5f;
+        float2 fwdPos = pos + mvPx * blendTime;
+        float2 bwdPos = pos - mvPx * (1.0f - blendTime);
+        bool fwdOk = (fwdPos.x >= 0 && fwdPos.x < float(w) && fwdPos.y >= 0 && fwdPos.y < float(h));
+        bool bwdOk = (bwdPos.x >= 0 && bwdPos.x < float(w) && bwdPos.y >= 0 && bwdPos.y < float(h));
+        // Bilinear helper (clamped).
+        auto bsamp = [&](texture2d<float, access::read> tex, float2 p) -> float4 {
+            p = clamp(p, float2(0.5f), float2(float(w)-0.5f, float(h)-0.5f));
+            int2 p0 = int2(floor(p-0.5f));
+            float2 f = p - 0.5f - float2(p0);
+            int2 c00 = clamp(p0, int2(0), int2(w-1,h-1));
+            int2 c10 = clamp(p0+int2(1,0), int2(0), int2(w-1,h-1));
+            int2 c01 = clamp(p0+int2(0,1), int2(0), int2(w-1,h-1));
+            int2 c11 = clamp(p0+int2(1,1), int2(0), int2(w-1,h-1));
+            return mix(mix(tex.read(uint2(c00)),tex.read(uint2(c10)),f.x),
+                       mix(tex.read(uint2(c01)),tex.read(uint2(c11)),f.x), f.y);
+        };
+        float4 fS = fwdOk ? bsamp(prevFrame, fwdPos) : float4(0);
+        float4 bS = bwdOk ? bsamp(currFrame, bwdPos) : float4(0);
+        float4 result;
+        if (fwdOk && bwdOk) {
+            float d = abs(interpLuma(fS.rgb) - interpLuma(bS.rgb));
+            if (d > 0.12f) {
+                result = (length(fwdPos-pos) < length(bwdPos-pos)) ? fS : bS;
+            } else {
+                result = fS*(1.0f-blendTime) + bS*blendTime;
+            }
+        } else if (fwdOk) { result = fS; }
+          else if (bwdOk) { result = bS; }
+          else { result = currFrame.read(gid); }
+        output.write(float4(clamp(result.rgb, 0.0f, 1.0f), 1.0f), gid);
+    }
     """
 }
 

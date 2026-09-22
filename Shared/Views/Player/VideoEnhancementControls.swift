@@ -12,12 +12,14 @@ import SwiftUI
 struct VideoEnhancementControls: View {
     @Bindable var pipeline: EnhancementPipeline
     var sourceSize: CGSize = .zero
+    var sourceFrameRate: Float = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             presetPicker
             sharpnessSlider
             denoiseSlider
+            motionSmoothingToggle
             showOriginalToggle
             if sourceSize.width > 0, sourceSize.height > 0 {
                 resolutionInfo
@@ -65,6 +67,37 @@ struct VideoEnhancementControls: View {
             step: 0.05
         )
         .disabled(pipeline.preset != .quality)
+    }
+
+    // MARK: - Motion Smoothing
+
+    @ViewBuilder
+    private var motionSmoothingToggle: some View {
+        let canInterpolate = sourceFrameRate > 0 && sourceFrameRate <= 30
+        if canInterpolate {
+            VStack(alignment: .leading, spacing: 8) {
+                ArchiveToggle(isOn: $pipeline.frameInterpolationEnabled) {
+                    Text("Motion Smoothing")
+                        .font(Typography.bodyLG)
+                        .foregroundStyle(Theme.textPrimary)
+                }
+
+                if pipeline.frameInterpolationEnabled {
+                    let outputRate = Int(sourceFrameRate * 2)
+                    HStack(spacing: 4) {
+                        Text("\(Int(sourceFrameRate)) fps")
+                            .foregroundStyle(Theme.textSecondary)
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Theme.textSecondary)
+                        Text("\(outputRate) fps")
+                            .foregroundStyle(Theme.gold)
+                    }
+                    .font(Typography.bodySM)
+                    .monospacedDigit()
+                }
+            }
+        }
     }
 
     // MARK: - Show original

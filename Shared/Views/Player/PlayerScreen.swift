@@ -196,7 +196,8 @@ struct PlayerScreen: View {
             aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
             isPaused: !player.isPlaying,
             enhancementPipeline: player.enhancementPipeline,
-            // Subtitles are drawn once, by the native overlay above this view.
+            frameInterpolator: player.frameInterpolator,
+            sourceFrameRate: player.sourceFrameRate,
             pipSource: player.pipSource,
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
@@ -207,6 +208,8 @@ struct PlayerScreen: View {
             aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
             isPaused: !player.isPlaying,
             enhancementPipeline: player.enhancementPipeline,
+            frameInterpolator: player.frameInterpolator,
+            sourceFrameRate: player.sourceFrameRate,
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
         #endif

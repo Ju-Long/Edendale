@@ -41,6 +41,7 @@ struct PlayerSettingsPanel: View {
                 playbackSection
                 aspectSection
                 pictureSection
+                enhancementSection
             }
             .padding(24)
         }
@@ -359,5 +360,22 @@ struct PlayerSettingsPanel: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Picture")
+    }
+
+    // MARK: - Enhancement
+
+    @ViewBuilder
+    private var enhancementSection: some View {
+        if let pipeline = player.enhancementPipeline {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Enhancement").labelCaps().accessibilityAddTraits(.isHeader)
+                VideoEnhancementControls(
+                    pipeline: pipeline,
+                    sourceFrameRate: player.sourceFrameRate
+                )
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Enhancement")
+        }
     }
 }

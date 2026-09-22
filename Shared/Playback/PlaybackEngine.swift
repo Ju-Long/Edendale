@@ -83,6 +83,9 @@ final class PlaybackEngine {
     private(set) var isSeekable: Bool = true
     private(set) var videoPresentationTime: CMTime = .invalid
 
+    /// The source content's native frame rate (e.g. 24, 30, 60).
+    var sourceFrameRate: Float { decoder?.mediaInfo?.frameRate ?? 0 }
+
     /// Normalised position (0 ... 1).  Settable — the setter seeks.
     var position: Double {
         get {
@@ -177,6 +180,7 @@ final class PlaybackEngine {
     private var openGeneration = 0
     let ringBuffer = FrameRingBuffer()
     let enhancementPipeline: EnhancementPipeline?
+    let frameInterpolator: FrameInterpolator?
     let subtitleEngine = SubtitleEngine()
     private var externalSubtitleData: [String: (format: SubtitleTrackFormat, content: String)] = [:]
 
@@ -217,7 +221,16 @@ final class PlaybackEngine {
     // MARK: - Init
 
     init() {
-        self.enhancementPipeline = EnhancementPipeline()
+        let pipeline = EnhancementPipeline()
+        self.enhancementPipeline = pipeline
+        if let device = pipeline?.device {
+            self.frameInterpolator = FrameInterpolator(
+                device: device,
+                library: MetalShaderSource.library(for: device)
+            )
+        } else {
+            self.frameInterpolator = nil
+        }
         #if !os(macOS)
         volume = systemVolume.level
         #endif
@@ -442,6 +455,7 @@ final class PlaybackEngine {
         ringBuffer.clear()
         videoPresentationTime = .invalid
         enhancementPipeline?.reset()
+        frameInterpolator?.reset()
         subtitleEngine.reset()
         subtitleEngine.selectFormat(nil)
         externalSubtitleData.removeAll()
@@ -610,6 +624,7 @@ final class PlaybackEngine {
                 self?.ringBuffer.clear()
                 self?.videoPresentationTime = .invalid
                 self?.enhancementPipeline?.reset()
+                self?.frameInterpolator?.reset()
                 #if os(iOS) || os(macOS)
                 self?.pipSource.displayLayer.sampleBufferRenderer.flush()
                 #endif

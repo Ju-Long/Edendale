@@ -21,6 +21,8 @@ public struct EnhancedVideoPlayer: View {
     public var isPaused: Bool
     public var testPatternEnabled: Bool
     var enhancementPipeline: EnhancementPipeline?
+    var frameInterpolator: FrameInterpolator?
+    var sourceFrameRate: Float
     var subtitleEngine: SubtitleEngine?
     var pipSource: SampleBufferPiPSource?
     public var onSurfaceReady: ((EnhancedVideoView) -> Void)?
@@ -34,6 +36,8 @@ public struct EnhancedVideoPlayer: View {
         isPaused: Bool = false,
         testPatternEnabled: Bool = false,
         enhancementPipeline: EnhancementPipeline? = nil,
+        frameInterpolator: FrameInterpolator? = nil,
+        sourceFrameRate: Float = 0,
         subtitleEngine: SubtitleEngine? = nil,
         pipSource: SampleBufferPiPSource? = nil,
         onSurfaceReady: ((EnhancedVideoView) -> Void)? = nil
@@ -46,6 +50,8 @@ public struct EnhancedVideoPlayer: View {
         self.isPaused = isPaused
         self.testPatternEnabled = testPatternEnabled
         self.enhancementPipeline = enhancementPipeline
+        self.frameInterpolator = frameInterpolator
+        self.sourceFrameRate = sourceFrameRate
         self.subtitleEngine = subtitleEngine
         self.pipSource = pipSource
         self.onSurfaceReady = onSurfaceReady
@@ -61,6 +67,8 @@ public struct EnhancedVideoPlayer: View {
             isPaused: isPaused,
             testPatternEnabled: testPatternEnabled,
             enhancementPipeline: enhancementPipeline,
+            frameInterpolator: frameInterpolator,
+            sourceFrameRate: sourceFrameRate,
             subtitleEngine: subtitleEngine,
             subtitleRevision: subtitleEngine?.revision ?? 0,
             pipSource: pipSource,
@@ -79,6 +87,8 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
     let isPaused: Bool
     let testPatternEnabled: Bool
     let enhancementPipeline: EnhancementPipeline?
+    let frameInterpolator: FrameInterpolator?
+    let sourceFrameRate: Float
     let subtitleEngine: SubtitleEngine?
     let subtitleRevision: UInt
     let pipSource: SampleBufferPiPSource?
@@ -109,6 +119,8 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
         view.isPlaybackPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
         view.enhancementPipeline = enhancementPipeline
+        view.frameInterpolator = frameInterpolator
+        view.sourceFrameRate = sourceFrameRate
         view.subtitleEngine = subtitleEngine
         let subtitleChanged = view.subtitleRevision != subtitleRevision
         view.subtitleRevision = subtitleRevision
@@ -132,6 +144,8 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     let isPaused: Bool
     let testPatternEnabled: Bool
     let enhancementPipeline: EnhancementPipeline?
+    let frameInterpolator: FrameInterpolator?
+    let sourceFrameRate: Float
     let subtitleEngine: SubtitleEngine?
     let subtitleRevision: UInt
     let pipSource: SampleBufferPiPSource?
@@ -162,6 +176,8 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
         view.isPlaybackPaused = isPaused
         view.testPatternEnabled = testPatternEnabled
         view.enhancementPipeline = enhancementPipeline
+        view.frameInterpolator = frameInterpolator
+        view.sourceFrameRate = sourceFrameRate
         view.subtitleEngine = subtitleEngine
         let subtitleChanged = view.subtitleRevision != subtitleRevision
         view.subtitleRevision = subtitleRevision
