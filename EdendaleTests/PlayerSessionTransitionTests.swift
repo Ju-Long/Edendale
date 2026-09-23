@@ -203,6 +203,9 @@ struct PlayerSessionTransitionTests {
         // Keep the model container and show alive throughout async preparation.
         let container: ModelContainer
         let show: TVShow
+        // Persisted player preferences such as Loop Video must not leak
+        // between tests or into the app group.
+        private let defaultsName = "PlayerSessionTransitionTests-\(UUID().uuidString)"
 
         init(nativeMedia: Bool = false, segmentSkipping: PlayerSegmentController? = nil) throws {
             directory = FileManager.default.temporaryDirectory
@@ -229,10 +232,13 @@ struct PlayerSessionTransitionTests {
             first.show = show
             second.show = show
             watchStore = WatchProgressStore()
+            let defaults = UserDefaults(suiteName: defaultsName)!
             session = PlayerSession(
                 library: LibraryController(modelContext: container.mainContext),
                 watchStore: watchStore,
-                segmentSkipping: segmentSkipping ?? PlayerSegmentController(lookup: { _ in [] })
+                segmentSkipping: segmentSkipping
+                    ?? PlayerSegmentController(defaults: defaults, lookup: { _ in [] }),
+                defaults: defaults
             )
         }
 
@@ -260,6 +266,7 @@ struct PlayerSessionTransitionTests {
 
         func cleanup() {
             session.end()
+            UserDefaults.standard.removePersistentDomain(forName: defaultsName)
             try? FileManager.default.removeItem(at: directory)
         }
     }

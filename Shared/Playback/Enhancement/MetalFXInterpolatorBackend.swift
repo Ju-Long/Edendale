@@ -118,7 +118,9 @@ final class MetalFXInterpolatorBackend: @unchecked Sendable {
         let outDesc = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: colorFormat, width: width, height: height, mipmapped: false
         )
-        outDesc.usage = MTLTextureUsage(rawValue: interp.outputTextureUsage.rawValue | MTLTextureUsage.shaderRead.rawValue)
+        // Extra bits are allowed: shaderWrite lets the scene-cut pass replace
+        // the output with the previous frame.
+        outDesc.usage = interp.outputTextureUsage.union([.shaderRead, .shaderWrite])
         outDesc.storageMode = .private
 
         guard let out = device.makeTexture(descriptor: outDesc) else { return false }

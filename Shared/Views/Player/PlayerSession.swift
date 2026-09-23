@@ -45,7 +45,9 @@ final class PlayerSession {
     private let watchStore: WatchProgressStore
     private let audioEnhancement: AudioEnhancementController
     private let videoAdjustment: VideoAdjustmentController
-    private let preferencesStore = PlayerPreferencesStore()
+    /// Backs persisted player preferences (loop, fill, per-content choices).
+    private let defaults: UserDefaults
+    private let preferencesStore: PlayerPreferencesStore
     private let nowPlayingBridge = NowPlayingBridge()
     #if !os(macOS)
     private let audioSessionManager = AudioSessionManager()
@@ -86,13 +88,17 @@ final class PlayerSession {
         watchStore: WatchProgressStore,
         audioEnhancement: AudioEnhancementController? = nil,
         videoAdjustment: VideoAdjustmentController? = nil,
-        segmentSkipping: PlayerSegmentController? = nil
+        segmentSkipping: PlayerSegmentController? = nil,
+        defaults: UserDefaults? = nil
     ) {
+        let defaults = defaults ?? AppIdentifiers.defaults
         self.library = library
         self.watchStore = watchStore
-        self.audioEnhancement = audioEnhancement ?? AudioEnhancementController()
-        self.videoAdjustment = videoAdjustment ?? VideoAdjustmentController()
-        self.segmentSkipping = segmentSkipping ?? PlayerSegmentController()
+        self.defaults = defaults
+        self.preferencesStore = PlayerPreferencesStore(defaults: defaults)
+        self.audioEnhancement = audioEnhancement ?? AudioEnhancementController(defaults: defaults)
+        self.videoAdjustment = videoAdjustment ?? VideoAdjustmentController(defaults: defaults)
+        self.segmentSkipping = segmentSkipping ?? PlayerSegmentController(defaults: defaults)
     }
 
     var isPresented: Bool { item != nil }
@@ -225,7 +231,11 @@ final class PlayerSession {
         #endif
         debugPrint("[PlayerSession.present] engine \(isNewEngine ? "CREATED" : "REUSED"), state=\(engine.state)")
 
-        let chrome = self.chrome ?? PlayerChromeModel(session: self, watchStore: self.watchStore)
+        let chrome = self.chrome ?? PlayerChromeModel(
+            session: self,
+            watchStore: self.watchStore,
+            defaults: defaults
+        )
         self.chrome = chrome
 
         let needsStop = engine.state != .idle && engine.state != .stopped

@@ -735,14 +735,21 @@ Hierarchical block motion estimation on the GPU:
 
 ```
 Pass 1 — Coarse (16×16 macroblocks):
-  → Downsample both frames to quarter resolution (bilinear)
+  → Planned: downsample both frames to quarter resolution (bilinear).
+    Not done yet: the search runs at ME resolution, so motion beyond
+    ±16 px per frame is not found.
   → For each 16×16 block in frame N, search a ±16 pixel window in frame N-1
-  → Minimize sum of absolute luma differences (SAD)
-  → Output: coarse motion vector per block (RG16Float, quarter-res)
+  → Minimize cost = mean absolute luma difference + a charge per pixel of
+    offset (`kMaxMotionCost` at the window edge), starting from zero motion,
+    so flat and noisy areas settle on zero instead of an arbitrary vector
+  → Count blocks whose best match still differs by more than
+    `sceneCutBlockError` (scene-cut input, see I.3)
+  → Output: coarse motion vector per block (RG16Float)
 
 Pass 2 — Refine (4×4 sub-blocks):
   → For each 4×4 sub-block, refine the coarse vector with a ±4 pixel search
-  → Work at full resolution using the coarse vector as the search center
+  → Work at full resolution using the coarse vector as the search center;
+    leave it only for a clearly better match (same per-pixel charge)
   → Output: refined motion vector texture (RG16Float, 1/4 pixel density)
 
 Pass 3 — Per-pixel interpolation:
@@ -753,20 +760,22 @@ Pass 3 — Per-pixel interpolation:
 Kernel signatures:
 ```metal
 kernel void motionEstimationCoarse(
-    texture2d<float, access::read>  prevFrame   [[texture(0)]],
-    texture2d<float, access::read>  currFrame   [[texture(1)]],
-    texture2d<float, access::write> motionOut   [[texture(2)]],
-    constant uint2                  &blockSize  [[buffer(0)]],
-    constant uint                   &searchRadius [[buffer(1)]],
-    uint2                           gid         [[thread_position_in_grid]]);
+    texture2d<float, access::read>  prevFrame        [[texture(0)]],
+    texture2d<float, access::read>  currFrame        [[texture(1)]],
+    texture2d<float, access::write> motionOut        [[texture(2)]],
+    constant uint                   &blockSize       [[buffer(0)]],
+    constant uint                   &searchRadius    [[buffer(1)]],
+    device atomic_uint              *unmatchedBlocks [[buffer(2)]],
+    constant float                  &unmatchedError  [[buffer(3)]],
+    uint2                           gid              [[thread_position_in_grid]]);
 
 kernel void motionEstimationRefine(
     texture2d<float, access::read>  prevFrame   [[texture(0)]],
     texture2d<float, access::read>  currFrame   [[texture(1)]],
     texture2d<float, access::read>  coarseMV    [[texture(2)]],
     texture2d<float, access::write> refinedMV   [[texture(3)]],
-    constant uint2                  &blockSize  [[buffer(0)]],
-    constant uint                   &searchRadius [[buffer(1)]],
+    constant uint                   &blockSize  [[buffer(0)]],
+    constant uint                   &coarseBlock [[buffer(1)]],
     uint2                           gid         [[thread_position_in_grid]]);
 
 kernel void motionVectorDensify(
@@ -864,9 +873,22 @@ final class FrameInterpolator: @unchecked Sendable {
 }
 ```
 
-Scene-cut detection: if the SAD score from the coarse motion pass exceeds a
-threshold (e.g. > 40% of pixels have high error), skip interpolation for that
-frame pair — it's a hard cut, not motion.
+Scene-cut detection uses the coarse pass's motion-compensated error, not
+the raw frame difference (a plain difference cannot tell a pan from a cut).
+A 16×16 block is unmatched when its best match still differs by more than
+`sceneCutBlockError` (0.06 mean luma); when at least `sceneCutBlockFraction`
+(30%) of blocks are unmatched, the pair is a cut. The decision stays on the
+GPU: the coarse pass counts unmatched blocks into a buffer cleared at the
+start of the same command buffer, and a final `holdPreviousOnSceneCut` pass
+replaces the synthetic frame with frame N-1, for both the custom and MetalFX
+backends. No CPU readback, so the decision applies to the current pair.
+
+Calibration (1920×1080 frames from macOS wallpapers, share of unmatched
+blocks at 0.06): sub-pixel pans up to 16 px, zoom, grain σ≤6 and fades up
+to 8%/frame ≤ 3%; pans of 24–40 px ≤ 6%; cuts between different images
+57–100%. The fraction is kept low because flat areas (letterbox bars, dark
+scenes) always match. Detailed content moving beyond the ±16 px search also
+trips it and is shown without a synthetic frame.
 
 ### I.4 — EnhancedVideoView Draw Loop Integration
 
@@ -912,7 +934,7 @@ Other `EnhancedVideoView` details:
 
 - [x] **Handle edge cases in draw loop**
   - First frame after seek/open: no previous frame → present real frame only
-  - Scene cut detected: skip interpolation, present real frame
+  - Scene cut detected: the synthetic slot repeats frame N-1 (GPU-side, I.3)
   - Ring buffer empty: drop any held frame, fall back to the regular path
   - Pause: reset interpolator; scrubbing while paused never interpolates
   - App backgrounding: pause interpolation, resume on foreground
@@ -976,6 +998,13 @@ Test cases:
   - FrameInterpolator.reset() clears history correctly
   - Performance budget: motion estimation + interpolation < 6ms at 1080p
     on Apple Silicon
+
+- [x] **Add scene-cut and flat-area tests to `FrameInterpolationTests.swift`**
+
+  - Unrelated frames: the synthetic frame repeats the previous frame
+  - Still frame with letterbox bars and a flat box: unchanged (flat areas
+    used to pick up a (−20, −20) px vector and smear neighbouring content)
+  - ~4% brightness fade: blended, not treated as a cut
 
 - [x] **Add draw-order tests to `FrameInterpolationTests.swift`**
 

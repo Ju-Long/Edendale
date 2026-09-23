@@ -132,6 +132,17 @@ struct PlayerTransportStateTests {
         #expect(fixture.session.chrome?.loopEnabled == true)
     }
 
+    @Test func loopSettingRestoredForNextSession() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        fixture.session.chrome?.loopEnabled = true
+        fixture.session.end()
+
+        await fixture.session.play(episode: fixture.first)
+        #expect(fixture.session.chrome?.loopEnabled == true)
+    }
+
     @Test func ratePreservedAcrossSwitch() async throws {
         let fixture = try Fixture()
         defer { fixture.cleanup() }
@@ -221,6 +232,9 @@ struct PlayerTransportStateTests {
         let watchStore: WatchProgressStore
         let container: ModelContainer
         let show: TVShow
+        // Persisted player preferences such as Loop Video must not leak
+        // between tests or into the app group.
+        private let defaultsName = "PlayerTransportStateTests-\(UUID().uuidString)"
 
         init() throws {
             directory = FileManager.default.temporaryDirectory
@@ -244,10 +258,12 @@ struct PlayerTransportStateTests {
             first.show = show
             second.show = show
             watchStore = WatchProgressStore()
+            let defaults = UserDefaults(suiteName: defaultsName)!
             session = PlayerSession(
                 library: LibraryController(modelContext: container.mainContext),
                 watchStore: watchStore,
-                segmentSkipping: PlayerSegmentController(lookup: { _ in [] })
+                segmentSkipping: PlayerSegmentController(defaults: defaults, lookup: { _ in [] }),
+                defaults: defaults
             )
         }
 
@@ -312,6 +328,7 @@ struct PlayerTransportStateTests {
 
         func cleanup() {
             session.end()
+            UserDefaults.standard.removePersistentDomain(forName: defaultsName)
             try? FileManager.default.removeItem(at: directory)
         }
     }

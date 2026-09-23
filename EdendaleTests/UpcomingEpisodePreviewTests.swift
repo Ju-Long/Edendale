@@ -228,6 +228,9 @@ struct UpcomingEpisodePreviewTests {
         let lastEpisodeItem: PlaybackItem
         private let container: ModelContainer
         private let directory: URL
+        // Persisted player preferences such as Loop Video must not leak
+        // between tests or into the app group.
+        private let defaultsName = "UpcomingEpisodePreviewTests-\(UUID().uuidString)"
 
         init(nativeMedia: Bool = false) throws {
             directory = FileManager.default.temporaryDirectory
@@ -269,10 +272,12 @@ struct UpcomingEpisodePreviewTests {
             shortSecond.show = shortShow
 
             watchStore = WatchProgressStore()
+            let defaults = UserDefaults(suiteName: defaultsName)!
             session = PlayerSession(
                 library: LibraryController(modelContext: container.mainContext),
                 watchStore: watchStore,
-                segmentSkipping: PlayerSegmentController(lookup: { _ in [] })
+                segmentSkipping: PlayerSegmentController(defaults: defaults, lookup: { _ in [] }),
+                defaults: defaults
             )
             firstItem = PlaybackItem(
                 scope: PlaybackScope(playURL: firstURL, accessedURL: nil),
@@ -307,6 +312,7 @@ struct UpcomingEpisodePreviewTests {
         }
 
         deinit {
+            UserDefaults.standard.removePersistentDomain(forName: defaultsName)
             try? FileManager.default.removeItem(at: directory)
         }
     }

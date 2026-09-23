@@ -53,16 +53,16 @@ final class PlayerChromeModel {
     /// Temporary rate while a press-and-hold speed gesture is active.
     private(set) var holdRate: Float?
 
-    var loopEnabled: Bool = AppIdentifiers.defaults.bool(forKey: DefaultsKey.loopEnabled) {
-        didSet { AppIdentifiers.defaults.set(loopEnabled, forKey: DefaultsKey.loopEnabled) }
+    var loopEnabled: Bool {
+        didSet { defaults.set(loopEnabled, forKey: DefaultsKey.loopEnabled) }
     }
 
     #if os(iOS)
     /// Automatically enter Picture in Picture when the app is backgrounded
     /// mid-playback. Defaults on. The host applies this to AVKit's inline
     /// auto-start setting; the explicit PiP button remains available.
-    var autoPiP: Bool = AppIdentifiers.defaults.object(forKey: DefaultsKey.autoPiP) as? Bool ?? true {
-        didSet { AppIdentifiers.defaults.set(autoPiP, forKey: DefaultsKey.autoPiP) }
+    var autoPiP: Bool {
+        didSet { defaults.set(autoPiP, forKey: DefaultsKey.autoPiP) }
     }
     #endif
 
@@ -71,8 +71,8 @@ final class PlayerChromeModel {
     /// `PlayerScreen`); libVLC's own display-fit override is a no-op on the
     /// drawable vout this app renders into, so we don't route it through the
     /// player's `aspectRatio`.
-    var aspectFill: Bool = AppIdentifiers.defaults.bool(forKey: DefaultsKey.aspectFill) {
-        didSet { AppIdentifiers.defaults.set(aspectFill, forKey: DefaultsKey.aspectFill) }
+    var aspectFill: Bool {
+        didSet { defaults.set(aspectFill, forKey: DefaultsKey.aspectFill) }
     }
 
     private enum DefaultsKey {
@@ -80,6 +80,9 @@ final class PlayerChromeModel {
         static let loopEnabled = "player.loopEnabled"
         static let aspectFill = "player.aspectFill"
     }
+
+    /// The session's preference store; the App Group outside of tests.
+    private let defaults: UserDefaults
 
     // MARK: - Transient state
 
@@ -142,9 +145,15 @@ final class PlayerChromeModel {
     /// reports a duration and becomes seekable. Cleared after it is applied.
     private var pendingResumePosition: Double?
 
-    init(session: PlayerSession, watchStore: WatchProgressStore) {
+    init(session: PlayerSession, watchStore: WatchProgressStore, defaults: UserDefaults) {
         self.session = session
         self.watchStore = watchStore
+        self.defaults = defaults
+        loopEnabled = defaults.bool(forKey: DefaultsKey.loopEnabled)
+        #if os(iOS)
+        autoPiP = defaults.object(forKey: DefaultsKey.autoPiP) as? Bool ?? true
+        #endif
+        aspectFill = defaults.bool(forKey: DefaultsKey.aspectFill)
     }
 
     private var player: PlaybackEngine? { session.player }

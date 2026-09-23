@@ -37,7 +37,7 @@ final class FrameInterpolator: @unchecked Sendable {
     private var refineMEState: MTLComputePipelineState?
     private var densifyState: MTLComputePipelineState?
     private var interpolateState: MTLComputePipelineState?
-    private var sceneCutState: MTLComputePipelineState?
+    private var sceneCutHoldState: MTLComputePipelineState?
     private var downscaleState: MTLComputePipelineState?
     private var mvUpscaleState: MTLComputePipelineState?
 
@@ -61,9 +61,10 @@ final class FrameInterpolator: @unchecked Sendable {
     private var halfCurrTexture: MTLTexture?
     private var halfPixelMVTexture: MTLTexture?
 
-    // Scene-cut detection buffers (CPU-readable).
-    private var sceneCutSADBuffer: MTLBuffer?
-    private var sceneCutCountBuffer: MTLBuffer?
+    // Coarse blocks without a good match, counted on the GPU for scene-cut
+    // detection.  Cleared and read inside each interpolation's command buffer,
+    // so the CPU never waits on it.
+    private var unmatchedBlockCounter: MTLBuffer?
 
     private let lock = NSLock()
 
@@ -74,9 +75,16 @@ final class FrameInterpolator: @unchecked Sendable {
     /// Coarse search radius (pixels).
     let coarseSearchRadius: UInt32 = 16
 
-    /// Average SAD above this threshold triggers scene-cut detection and skips
-    /// interpolation for the frame pair.  Range [0, 1000] (SAD is ×1000 on GPU).
-    var sceneCutThreshold: Float = 80.0
+    /// A 16×16 block is unmatched when even its best motion-compensated match
+    /// differs by more than this mean luma difference (0–1).  Pans, zooms,
+    /// grain and fades up to ~8% per frame stay below it.
+    var sceneCutBlockError: Float = 0.06
+
+    /// When at least this fraction of blocks is unmatched, the pair is treated
+    /// as a scene cut and the previous frame is shown instead of a blend.
+    /// Kept low because flat areas (letterbox bars, dark scenes) always match.
+    /// Detailed content moving beyond the search radius can also trip it.
+    var sceneCutBlockFraction: Float = 0.3
 
     /// Sources wider than this run motion estimation at half resolution.
     var halfResMEThreshold: Int = 1920
@@ -109,7 +117,7 @@ final class FrameInterpolator: @unchecked Sendable {
               let refineFn = lib.makeFunction(name: "motionEstimationRefine"),
               let densifyFn = lib.makeFunction(name: "motionVectorDensify"),
               let interpFn = lib.makeFunction(name: "frameInterpolate"),
-              let sceneFn = lib.makeFunction(name: "sceneCutScore")
+              let holdFn = lib.makeFunction(name: "holdPreviousOnSceneCut")
         else { return nil }
 
         do {
@@ -117,7 +125,7 @@ final class FrameInterpolator: @unchecked Sendable {
             refineMEState = try device.makeComputePipelineState(function: refineFn)
             densifyState = try device.makeComputePipelineState(function: densifyFn)
             interpolateState = try device.makeComputePipelineState(function: interpFn)
-            sceneCutState = try device.makeComputePipelineState(function: sceneFn)
+            sceneCutHoldState = try device.makeComputePipelineState(function: holdFn)
 
             if let dsFn = lib.makeFunction(name: "bilinearDownscale") {
                 downscaleState = try device.makeComputePipelineState(function: dsFn)
@@ -129,13 +137,16 @@ final class FrameInterpolator: @unchecked Sendable {
             return nil
         }
 
-        sceneCutSADBuffer = device.makeBuffer(length: MemoryLayout<UInt32>.size, options: .storageModeShared)
-        sceneCutCountBuffer = device.makeBuffer(length: MemoryLayout<UInt32>.size, options: .storageModeShared)
+        guard let counter = device.makeBuffer(length: MemoryLayout<UInt32>.size, options: .storageModePrivate) else {
+            return nil
+        }
+        unmatchedBlockCounter = counter
     }
 
     /// Generate an interpolated frame between the stored previous frame and
-    /// `current`.  Returns `nil` on the first frame (no history), after a
-    /// `reset()`, or when a scene cut is detected.
+    /// `current`.  Returns `nil` on the first frame (no history) or after a
+    /// `reset()`.  On a scene cut the result is a copy of the previous frame,
+    /// decided on the GPU (see `sceneCutBlockFraction`).
     ///
     /// The returned texture is valid until the next call to `interpolate` or
     /// `reset`.  The caller should present this *before* the real `current`
@@ -158,11 +169,12 @@ final class FrameInterpolator: @unchecked Sendable {
         let w = current.width
         let h = current.height
 
-        // Scene-cut detection (GPU compute, CPU readback).
-        if detectSceneCut(prev: prev, curr: current, commandBuffer: commandBuffer) {
-            resetInternal()
-            return nil
-        }
+        guard let unmatchedBlocks = unmatchedBlockCounter,
+              let clear = commandBuffer.makeBlitCommandEncoder()
+        else { return nil }
+        clear.label = "Frame Interpolator — Clear Scene-Cut Counter"
+        clear.fill(buffer: unmatchedBlocks, range: 0..<unmatchedBlocks.length, value: 0)
+        clear.endEncoding()
 
         let useHalfRes = w > halfResMEThreshold && downscaleState != nil && mvUpscaleState != nil
         let meW: Int, meH: Int
@@ -192,7 +204,11 @@ final class FrameInterpolator: @unchecked Sendable {
             width: coarseMVW, height: coarseMVH,
             format: .rg16Float
         )
-        encodeCoarseME(prev: mePrev, curr: meCurr, output: coarseMV, commandBuffer: commandBuffer)
+        encodeCoarseME(
+            prev: mePrev, curr: meCurr, output: coarseMV,
+            unmatchedBlocks: unmatchedBlocks,
+            commandBuffer: commandBuffer
+        )
 
         // Pass 2: Refined motion estimation at sub-block level.
         let refineMVW = (meW + Int(refineBlockSize) - 1) / Int(refineBlockSize)
@@ -247,6 +263,14 @@ final class FrameInterpolator: @unchecked Sendable {
             )
             output = dest
         }
+
+        // Pass 5: On a scene cut, replace the blend with the previous frame.
+        let cutBlockCount = UInt32(max(1, (sceneCutBlockFraction * Float(coarseMVW * coarseMVH)).rounded(.up)))
+        encodeSceneCutHold(
+            prev: prev, output: output,
+            unmatchedBlocks: unmatchedBlocks, cutBlockCount: cutBlockCount,
+            commandBuffer: commandBuffer
+        )
 
         recordTiming(start: startTime, halfRes: useHalfRes, commandBuffer: commandBuffer)
 
@@ -318,6 +342,7 @@ final class FrameInterpolator: @unchecked Sendable {
     private func encodeCoarseME(
         prev: MTLTexture, curr: MTLTexture,
         output: MTLTexture,
+        unmatchedBlocks: MTLBuffer,
         commandBuffer: MTLCommandBuffer
     ) {
         guard let state = coarseMEState,
@@ -330,8 +355,11 @@ final class FrameInterpolator: @unchecked Sendable {
 
         var bs = coarseBlockSize
         var sr = coarseSearchRadius
+        var unmatchedError = sceneCutBlockError
         encoder.setBytes(&bs, length: MemoryLayout<UInt32>.size, index: 0)
         encoder.setBytes(&sr, length: MemoryLayout<UInt32>.size, index: 1)
+        encoder.setBuffer(unmatchedBlocks, offset: 0, index: 2)
+        encoder.setBytes(&unmatchedError, length: MemoryLayout<Float>.size, index: 3)
 
         dispatch2D(encoder: encoder, width: output.width, height: output.height)
         encoder.endEncoding()
@@ -425,62 +453,30 @@ final class FrameInterpolator: @unchecked Sendable {
         return nil
     }
 
-    // MARK: - Scene-Cut Detection
+    // MARK: - Scene-Cut Handling
 
-    /// Synchronous scene-cut test.  Encodes a lightweight SAD reduction, waits
-    /// for the previous command buffer's readback (the buffers are shared-mode).
-    /// Returns `true` if the two frames are too different to interpolate.
-    private func detectSceneCut(
-        prev: MTLTexture, curr: MTLTexture,
+    /// Overwrites `output` with `prev` when the coarse pass counted at least
+    /// `cutBlockCount` unmatched blocks.  The decision stays on the GPU, in
+    /// order with the passes that produced the count, so it applies to this
+    /// frame pair without a CPU readback.
+    private func encodeSceneCutHold(
+        prev: MTLTexture, output: MTLTexture,
+        unmatchedBlocks: MTLBuffer, cutBlockCount: UInt32,
         commandBuffer: MTLCommandBuffer
-    ) -> Bool {
-        guard let state = sceneCutState,
-              let sadBuf = sceneCutSADBuffer,
-              let cntBuf = sceneCutCountBuffer
-        else { return false }
-
-        // Zero the accumulators.
-        sadBuf.contents().storeBytes(of: UInt32(0), as: UInt32.self)
-        cntBuf.contents().storeBytes(of: UInt32(0), as: UInt32.self)
-
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else { return false }
-        encoder.label = "Scene Cut Detection"
+    ) {
+        guard let state = sceneCutHoldState,
+              let encoder = commandBuffer.makeComputeCommandEncoder() else { return }
+        encoder.label = "Scene Cut Hold"
         encoder.setComputePipelineState(state)
         encoder.setTexture(prev, index: 0)
-        encoder.setTexture(curr, index: 1)
-        encoder.setBuffer(sadBuf, offset: 0, index: 0)
-        encoder.setBuffer(cntBuf, offset: 0, index: 1)
+        encoder.setTexture(output, index: 1)
+        encoder.setBuffer(unmatchedBlocks, offset: 0, index: 0)
 
-        // Dispatch at 1/4 pixel density (the shader samples every 4th pixel).
-        let sampleW = (curr.width + 3) / 4
-        let sampleH = (curr.height + 3) / 4
-        dispatch2D(encoder: encoder, width: sampleW, height: sampleH)
+        var count = cutBlockCount
+        encoder.setBytes(&count, length: MemoryLayout<UInt32>.size, index: 1)
+
+        dispatch2D(encoder: encoder, width: output.width, height: output.height)
         encoder.endEncoding()
-
-        // We need the result before deciding whether to proceed.  Commit a
-        // temporary command buffer synchronously for the scene-cut pass.
-        // This is a lightweight reduction — typically < 0.1ms.
-        guard let scCB = commandBuffer.device.makeCommandQueue()?.makeCommandBuffer() else { return false }
-
-        // Re-encode the scene cut on the temporary command buffer instead.
-        // Actually, the scene cut data was already encoded on `commandBuffer`
-        // which hasn't committed yet.  We need to use a blit or wait.
-        // Simplest: commit+waitUntilCompleted on a separate command buffer
-        // that copies the scene-cut pass.  But that's expensive.
-        //
-        // Better approach: use the previous frame pair's score.  The SAD
-        // buffers persist between calls; we read the *previous* result
-        // (one frame behind) which is good enough for scene-cut detection
-        // because scene cuts are instantaneous and one-frame lag is acceptable.
-
-        // Read the result from the PREVIOUS frame's dispatch (already completed).
-        let totalSAD = sadBuf.contents().load(as: UInt32.self)
-        let count = cntBuf.contents().load(as: UInt32.self)
-
-        guard count > 0 else { return false }
-        let avgSAD = Float(totalSAD) / Float(count)
-
-        return avgSAD > sceneCutThreshold
     }
 
     // MARK: - Half-res ME Encode Passes

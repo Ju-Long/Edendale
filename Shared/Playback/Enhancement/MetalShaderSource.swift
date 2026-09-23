@@ -251,20 +251,25 @@ enum MetalShaderSource {
     }
 
     // -----------------------------------------------------------------------
-    // Motion Estimation — coarse (16×16), refined (4×4), densify, scene-cut
+    // Motion Estimation — coarse (16×16), refined (4×4), densify
     // -----------------------------------------------------------------------
 
     inline float meL(float4 c) {
         return dot(c.rgb, float3(0.2126f, 0.7152f, 0.0722f));
     }
 
+    // Cost of a vector at the edge of its search window (see MotionEstimation.metal).
+    constant float kMaxMotionCost = 0.016f;
+
     kernel void motionEstimationCoarse(
-        texture2d<float, access::read>  prevFrame     [[texture(0)]],
-        texture2d<float, access::read>  currFrame     [[texture(1)]],
-        texture2d<float, access::write> motionOut     [[texture(2)]],
-        constant uint                   &blockSize    [[buffer(0)]],
-        constant uint                   &searchRadius [[buffer(1)]],
-        uint2                           gid           [[thread_position_in_grid]])
+        texture2d<float, access::read>  prevFrame        [[texture(0)]],
+        texture2d<float, access::read>  currFrame        [[texture(1)]],
+        texture2d<float, access::write> motionOut        [[texture(2)]],
+        constant uint                   &blockSize       [[buffer(0)]],
+        constant uint                   &searchRadius    [[buffer(1)]],
+        device atomic_uint              *unmatchedBlocks [[buffer(2)]],
+        constant float                  &unmatchedError  [[buffer(3)]],
+        uint2                           gid              [[thread_position_in_grid]])
     {
         uint mvW = motionOut.get_width();
         uint mvH = motionOut.get_height();
@@ -273,22 +278,31 @@ enum MetalShaderSource {
         uint frameH = currFrame.get_height();
         uint bx = gid.x * blockSize;
         uint by = gid.y * blockSize;
-        float bestSAD = 1e30f;
-        int2 bestOff = int2(0, 0);
         int sr = int(searchRadius);
+        float costPerPixel = kMaxMotionCost / float(2 * sr);
+        auto blockError = [&](int2 off) -> float {
+            float sad = 0.0f; float n = 0.0f;
+            for (uint py = 0; py < blockSize; py += 2) {
+                for (uint px = 0; px < blockSize; px += 2) {
+                    uint cx = bx + px; uint cy = by + py;
+                    if (cx >= frameW || cy >= frameH) continue;
+                    int px2 = clamp(int(cx)+off.x, 0, int(frameW)-1);
+                    int py2 = clamp(int(cy)+off.y, 0, int(frameH)-1);
+                    sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
+                    n += 1.0f;
+                }
+            }
+            return n > 0.0f ? sad / n : 0.0f;
+        };
+        int2 bestOff = int2(0, 0);
+        float bestError = blockError(bestOff);
+        float bestCost = bestError;
         for (int dy = -sr; dy <= sr; dy += 2) {
             for (int dx = -sr; dx <= sr; dx += 2) {
-                float sad = 0.0f;
-                for (uint py = 0; py < blockSize; py += 2) {
-                    for (uint px = 0; px < blockSize; px += 2) {
-                        uint cx = bx + px; uint cy = by + py;
-                        if (cx >= frameW || cy >= frameH) continue;
-                        int px2 = clamp(int(cx)+dx, 0, int(frameW)-1);
-                        int py2 = clamp(int(cy)+dy, 0, int(frameH)-1);
-                        sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
-                    }
-                }
-                if (sad < bestSAD) { bestSAD = sad; bestOff = int2(dx, dy); }
+                if (dx == 0 && dy == 0) continue;
+                float error = blockError(int2(dx, dy));
+                float cost = error + costPerPixel * float(abs(dx) + abs(dy));
+                if (cost < bestCost) { bestCost = cost; bestError = error; bestOff = int2(dx, dy); }
             }
         }
         int2 center = bestOff;
@@ -297,21 +311,16 @@ enum MetalShaderSource {
                 if (dx == 0 && dy == 0) continue;
                 int ox = center.x+dx; int oy = center.y+dy;
                 if (abs(ox) > sr || abs(oy) > sr) continue;
-                float sad = 0.0f;
-                for (uint py = 0; py < blockSize; py += 2) {
-                    for (uint px = 0; px < blockSize; px += 2) {
-                        uint cx = bx+px; uint cy = by+py;
-                        if (cx >= frameW || cy >= frameH) continue;
-                        int px2 = clamp(int(cx)+ox, 0, int(frameW)-1);
-                        int py2 = clamp(int(cy)+oy, 0, int(frameH)-1);
-                        sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
-                    }
-                }
-                if (sad < bestSAD) { bestSAD = sad; bestOff = int2(ox, oy); }
+                float error = blockError(int2(ox, oy));
+                float cost = error + costPerPixel * float(abs(ox) + abs(oy));
+                if (cost < bestCost) { bestCost = cost; bestError = error; bestOff = int2(ox, oy); }
             }
         }
+        if (bestError > unmatchedError) {
+            atomic_fetch_add_explicit(unmatchedBlocks, 1u, memory_order_relaxed);
+        }
         float2 mv = float2(float(bestOff.x)/float(frameW), float(bestOff.y)/float(frameH));
-        motionOut.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
+        motionOut.write(float4(mv.x, mv.y, bestError, 0.0f), gid);
     }
 
     kernel void motionEstimationRefine(
@@ -333,24 +342,31 @@ enum MetalShaderSource {
         uint coarseX = min(bx / coarseBlock, coarseMV.get_width() - 1);
         uint coarseY = min(by / coarseBlock, coarseMV.get_height() - 1);
         float4 cmv = coarseMV.read(uint2(coarseX, coarseY));
-        int baseOX = int(round(cmv.x * float(frameW)));
-        int baseOY = int(round(cmv.y * float(frameH)));
-        float bestSAD = 1e30f;
-        int2 bestOff = int2(baseOX, baseOY);
-        for (int dy = -4; dy <= 4; ++dy) {
-            for (int dx = -4; dx <= 4; ++dx) {
-                int ox = baseOX+dx; int oy = baseOY+dy;
-                float sad = 0.0f;
-                for (uint py = 0; py < blockSize; ++py) {
-                    for (uint px = 0; px < blockSize; ++px) {
-                        uint cx = bx+px; uint cy = by+py;
-                        if (cx >= frameW || cy >= frameH) continue;
-                        int px2 = clamp(int(cx)+ox, 0, int(frameW)-1);
-                        int py2 = clamp(int(cy)+oy, 0, int(frameH)-1);
-                        sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
-                    }
+        int2 base = int2(int(round(cmv.x * float(frameW))), int(round(cmv.y * float(frameH))));
+        auto blockError = [&](int2 off) -> float {
+            float sad = 0.0f; float n = 0.0f;
+            for (uint py = 0; py < blockSize; ++py) {
+                for (uint px = 0; px < blockSize; ++px) {
+                    uint cx = bx+px; uint cy = by+py;
+                    if (cx >= frameW || cy >= frameH) continue;
+                    int px2 = clamp(int(cx)+off.x, 0, int(frameW)-1);
+                    int py2 = clamp(int(cy)+off.y, 0, int(frameH)-1);
+                    sad += abs(meL(currFrame.read(uint2(cx,cy))) - meL(prevFrame.read(uint2(px2,py2))));
+                    n += 1.0f;
                 }
-                if (sad < bestSAD) { bestSAD = sad; bestOff = int2(ox, oy); }
+            }
+            return n > 0.0f ? sad / n : 0.0f;
+        };
+        int sr = 4;
+        float costPerPixel = kMaxMotionCost / float(2 * sr);
+        int2 bestOff = base;
+        float bestCost = blockError(base);
+        for (int dy = -sr; dy <= sr; ++dy) {
+            for (int dx = -sr; dx <= sr; ++dx) {
+                if (dx == 0 && dy == 0) continue;
+                int2 off = base + int2(dx, dy);
+                float cost = blockError(off) + costPerPixel * float(abs(dx) + abs(dy));
+                if (cost < bestCost) { bestCost = cost; bestOff = off; }
             }
         }
         float2 mv = float2(float(bestOff.x)/float(frameW), float(bestOff.y)/float(frameH));
@@ -391,24 +407,6 @@ enum MetalShaderSource {
         float2 right = blockMV.read(uint2(clamp(int(bxf)+1,0,int(mvW)-1), clamp(int(byf+0.5f),0,int(mvH)-1))).xy;
         mv = medVec(left, mv, right);
         pixelMV.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
-    }
-
-    kernel void sceneCutScore(
-        texture2d<float, access::read>  prevFrame   [[texture(0)]],
-        texture2d<float, access::read>  currFrame   [[texture(1)]],
-        device atomic_uint              *totalSAD   [[buffer(0)]],
-        device atomic_uint              *pixelCount [[buffer(1)]],
-        uint2                           gid         [[thread_position_in_grid]])
-    {
-        uint w = currFrame.get_width();
-        uint h = currFrame.get_height();
-        uint x = gid.x * 4; uint y = gid.y * 4;
-        if (x >= w || y >= h) return;
-        float lc = meL(currFrame.read(uint2(x,y)));
-        float lp = meL(prevFrame.read(uint2(x,y)));
-        uint diff = uint(abs(lc - lp) * 1000.0f);
-        atomic_fetch_add_explicit(totalSAD, diff, memory_order_relaxed);
-        atomic_fetch_add_explicit(pixelCount, 1u, memory_order_relaxed);
     }
 
     // Bilinear 2:1 downscale for half-res ME on 4K sources
@@ -501,6 +499,19 @@ enum MetalShaderSource {
           else if (bwdOk) { result = bS; }
           else { result = currFrame.read(gid); }
         output.write(float4(clamp(result.rgb, 0.0f, 1.0f), 1.0f), gid);
+    }
+
+    // Scene cut: show the previous frame instead of a blend (see FrameInterpolation.metal).
+    kernel void holdPreviousOnSceneCut(
+        texture2d<float, access::read>  prevFrame        [[texture(0)]],
+        texture2d<float, access::write> output           [[texture(1)]],
+        device const uint               *unmatchedBlocks [[buffer(0)]],
+        constant uint                   &cutBlockCount   [[buffer(1)]],
+        uint2                           gid              [[thread_position_in_grid]])
+    {
+        if (*unmatchedBlocks < cutBlockCount) return;
+        if (gid.x >= output.get_width() || gid.y >= output.get_height()) return;
+        output.write(float4(prevFrame.read(gid).rgb, 1.0f), gid);
     }
     """
 }

@@ -20,7 +20,7 @@ struct FrameInterpolationTests {
         #expect(lib.makeFunction(name: "motionEstimationRefine") != nil)
         #expect(lib.makeFunction(name: "motionVectorDensify") != nil)
         #expect(lib.makeFunction(name: "frameInterpolate") != nil)
-        #expect(lib.makeFunction(name: "sceneCutScore") != nil)
+        #expect(lib.makeFunction(name: "holdPreviousOnSceneCut") != nil)
     }
 
     // MARK: - FrameInterpolator creation
@@ -473,13 +473,77 @@ struct FrameInterpolationTests {
                 "Synthetic frame must not be a copy of the new frame")
     }
 
+    // MARK: - Scene cuts and flat areas
+
+    /// Interpolates `current` against `previous` in draw-loop order and
+    /// returns the synthetic frame as gray bytes.
+    private func synthesize(previous: [UInt8], current: [UInt8]) throws -> [UInt8] {
+        let device = try #require(MTLCreateSystemDefaultDevice())
+        let queue = try #require(device.makeCommandQueue())
+        let interpolator = try #require(FrameInterpolator(device: device))
+
+        let cmd1 = try #require(queue.makeCommandBuffer())
+        interpolator.commitFrame(try makeTexture(device: device, gray: previous), commandBuffer: cmd1)
+        cmd1.commit()
+        cmd1.waitUntilCompleted()
+
+        let cmd2 = try #require(queue.makeCommandBuffer())
+        let synthetic = try #require(interpolator.interpolate(
+            current: try makeTexture(device: device, gray: current), commandBuffer: cmd2
+        ))
+        let readback = try readGray(from: synthetic, commandBuffer: cmd2)
+        cmd2.commit()
+        cmd2.waitUntilCompleted()
+        return grayValues(readback, width: synthetic.width, height: synthetic.height)
+    }
+
+    @Test func sceneCutShowsPreviousFrame() throws {
+        guard MTLCreateSystemDefaultDevice() != nil else { return }
+        let previous = texturedFrame(shift: 0)
+        let unrelated = texturedFrame(shift: 0, seed: 7)
+
+        let output = try synthesize(previous: previous, current: unrelated)
+        #expect(meanAbsoluteError(output, previous, margin: 0) < 0.5,
+                "A cut should repeat the previous frame instead of blending two shots")
+    }
+
+    @Test func stillFrameKeepsFlatAreasInPlace() throws {
+        guard MTLCreateSystemDefaultDevice() != nil else { return }
+        // Letterbox bars and a flat box match at every offset; they must not
+        // pick up motion and drag neighbouring content into the synthetic frame.
+        let (w, h) = Self.texturedSize
+        var frame = texturedFrame(shift: 0)
+        for y in 0..<h where y < 20 || y >= h - 20 {
+            for x in 0..<w { frame[y * w + x] = 0 }
+        }
+        for y in 45..<75 {
+            for x in 60..<100 { frame[y * w + x] = 128 }
+        }
+
+        let output = try synthesize(previous: frame, current: frame)
+        let worst = zip(output, frame).map { abs(Int($0) - Int($1)) }.max() ?? 0
+        #expect(worst <= 2, "Largest change in a still frame was \(worst) levels")
+    }
+
+    @Test func fadeIsNotASceneCut() throws {
+        guard MTLCreateSystemDefaultDevice() != nil else { return }
+        let previous = texturedFrame(shift: 0)
+        let brighter = previous.map { UInt8(min(255, Int($0) + 10)) }
+        let halfway = previous.map { UInt8(min(255, Int($0) + 5)) }
+
+        let output = try synthesize(previous: previous, current: brighter)
+        #expect(meanAbsoluteError(output, halfway) < 1.5,
+                "A ~4% brightness change should blend, not hold the previous frame")
+    }
+
     // MARK: - Helpers
 
     private static let texturedSize = (width: 160, height: 120)
 
     /// Deterministic smooth noise moved right by `shift` pixels, as gray bytes.
     /// Block matching needs texture; flat fills match at every offset.
-    private func texturedFrame(shift: Int) -> [UInt8] {
+    /// Different `seed`s give unrelated images.
+    private func texturedFrame(shift: Int, seed: UInt32 = 1) -> [UInt8] {
         func lattice(_ x: Int, _ y: Int, _ seed: UInt32) -> Double {
             var v = UInt32(truncatingIfNeeded: x &* 73_856_093) ^ UInt32(truncatingIfNeeded: y &* 19_349_663) ^ seed
             v = (v ^ (v >> 13)) &* 1_274_126_177
@@ -499,7 +563,8 @@ struct FrameInterpolationTests {
         for y in 0..<h {
             for x in 0..<w {
                 let sx = Double(x - shift + 100)
-                let v = 0.65 * noise(sx, Double(y), cell: 12, seed: 1) + 0.35 * noise(sx, Double(y), cell: 4, seed: 2)
+                let v = 0.65 * noise(sx, Double(y), cell: 12, seed: seed)
+                    + 0.35 * noise(sx, Double(y), cell: 4, seed: seed &+ 1)
                 pixels[y * w + x] = UInt8(30 + v * 200)
             }
         }

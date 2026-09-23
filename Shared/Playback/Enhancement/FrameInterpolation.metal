@@ -102,3 +102,21 @@ kernel void frameInterpolate(
 
     output.write(float4(clamp(result.rgb, 0.0f, 1.0f), 1.0f), gid);
 }
+
+// ---------------------------------------------------------------------------
+// Scene cut: when the coarse motion pass left at least `cutBlockCount` blocks
+// without a match, the two frames show different shots.  Replace the blend
+// with the previous frame so the cut lands exactly on the next real frame.
+// Runs after either backend's warp; costs one buffer read when there is no cut.
+// ---------------------------------------------------------------------------
+kernel void holdPreviousOnSceneCut(
+    texture2d<float, access::read>  prevFrame       [[texture(0)]],
+    texture2d<float, access::write> output          [[texture(1)]],
+    device const uint               *unmatchedBlocks [[buffer(0)]],
+    constant uint                   &cutBlockCount  [[buffer(1)]],
+    uint2                           gid             [[thread_position_in_grid]])
+{
+    if (*unmatchedBlocks < cutBlockCount) return;
+    if (gid.x >= output.get_width() || gid.y >= output.get_height()) return;
+    output.write(float4(prevFrame.read(gid).rgb, 1.0f), gid);
+}

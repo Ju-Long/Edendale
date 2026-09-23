@@ -6,22 +6,35 @@ inline float luma(float4 c) {
     return dot(c.rgb, float3(0.2126f, 0.7152f, 0.0722f));
 }
 
+// Motion search prefers the smallest vector that explains a block: a
+// candidate at the edge of its search window must match this much better
+// (mean luma difference) than the starting vector.  Without it, flat or noisy
+// areas, where every offset matches about equally well, take whichever
+// candidate the loop tried first.
+constant float kMaxMotionCost = 0.016f;
+
 // ---------------------------------------------------------------------------
 // Pass 1 — Coarse block motion estimation (16×16 macroblocks).
 //
 // Each thread handles one macroblock.  For the block in `currFrame` at grid
 // position `gid`, search a window in `prevFrame` centred on the same position
-// and find the offset that minimises the sum-of-absolute-luma-differences (SAD).
-// The winning motion vector is written to `motionOut` (RG16Float, one texel
-// per macroblock).
+// for the offset with the lowest cost: mean absolute luma difference plus a
+// charge per pixel of offset.  The winning motion vector is written to
+// `motionOut` (RG16Float, one texel per macroblock).
+//
+// Blocks whose best match still differs by more than `unmatchedError` are
+// counted in `unmatchedBlocks`; when most blocks are unmatched the frame pair
+// is a scene cut (see holdPreviousOnSceneCut).
 // ---------------------------------------------------------------------------
 kernel void motionEstimationCoarse(
-    texture2d<float, access::read>  prevFrame     [[texture(0)]],
-    texture2d<float, access::read>  currFrame     [[texture(1)]],
-    texture2d<float, access::write> motionOut     [[texture(2)]],
-    constant uint                   &blockSize    [[buffer(0)]],
-    constant uint                   &searchRadius [[buffer(1)]],
-    uint2                           gid           [[thread_position_in_grid]])
+    texture2d<float, access::read>  prevFrame        [[texture(0)]],
+    texture2d<float, access::read>  currFrame        [[texture(1)]],
+    texture2d<float, access::write> motionOut        [[texture(2)]],
+    constant uint                   &blockSize       [[buffer(0)]],
+    constant uint                   &searchRadius    [[buffer(1)]],
+    device atomic_uint              *unmatchedBlocks [[buffer(2)]],
+    constant float                  &unmatchedError  [[buffer(3)]],
+    uint2                           gid              [[thread_position_in_grid]])
 {
     uint mvW = motionOut.get_width();
     uint mvH = motionOut.get_height();
@@ -33,38 +46,51 @@ kernel void motionEstimationCoarse(
     uint bx = gid.x * blockSize;
     uint by = gid.y * blockSize;
 
-    float bestSAD = 1e30f;
-    int2  bestOff = int2(0, 0);
-
     int sr = int(searchRadius);
+    float costPerPixel = kMaxMotionCost / float(2 * sr);
+
+    // Mean absolute luma difference against `prevFrame` at offset `off`,
+    // sampling every other pixel of the block.
+    auto blockError = [&](int2 off) -> float {
+        float sad = 0.0f;
+        float n = 0.0f;
+        for (uint py = 0; py < blockSize; py += 2) {
+            for (uint px = 0; px < blockSize; px += 2) {
+                uint cx = bx + px;
+                uint cy = by + py;
+                if (cx >= frameW || cy >= frameH) continue;
+
+                int px2 = clamp(int(cx) + off.x, 0, int(frameW) - 1);
+                int py2 = clamp(int(cy) + off.y, 0, int(frameH) - 1);
+
+                float lc = luma(currFrame.read(uint2(cx, cy)));
+                float lp = luma(prevFrame.read(uint2(px2, py2)));
+                sad += abs(lc - lp);
+                n += 1.0f;
+            }
+        }
+        return n > 0.0f ? sad / n : 0.0f;
+    };
+
+    // Start from zero motion; other candidates must beat it including their cost.
+    int2  bestOff = int2(0, 0);
+    float bestError = blockError(bestOff);
+    float bestCost = bestError;
 
     for (int dy = -sr; dy <= sr; dy += 2) {
         for (int dx = -sr; dx <= sr; dx += 2) {
-            float sad = 0.0f;
-            for (uint py = 0; py < blockSize; py += 2) {
-                for (uint px = 0; px < blockSize; px += 2) {
-                    uint cx = bx + px;
-                    uint cy = by + py;
-                    if (cx >= frameW || cy >= frameH) continue;
-
-                    int px2 = int(cx) + dx;
-                    int py2 = int(cy) + dy;
-                    px2 = clamp(px2, 0, int(frameW) - 1);
-                    py2 = clamp(py2, 0, int(frameH) - 1);
-
-                    float lc = luma(currFrame.read(uint2(cx, cy)));
-                    float lp = luma(prevFrame.read(uint2(px2, py2)));
-                    sad += abs(lc - lp);
-                }
-            }
-            if (sad < bestSAD) {
-                bestSAD = sad;
+            if (dx == 0 && dy == 0) continue;
+            float error = blockError(int2(dx, dy));
+            float cost = error + costPerPixel * float(abs(dx) + abs(dy));
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestError = error;
                 bestOff = int2(dx, dy);
             }
         }
     }
 
-    // Sub-pixel refinement: search ±1 around best integer offset
+    // Try the odd offsets the step-2 search skipped around the best one.
     int2 center = bestOff;
     for (int dy = -1; dy <= 1; ++dy) {
         for (int dx = -1; dx <= 1; ++dx) {
@@ -73,41 +99,34 @@ kernel void motionEstimationCoarse(
             int oy = center.y + dy;
             if (abs(ox) > sr || abs(oy) > sr) continue;
 
-            float sad = 0.0f;
-            for (uint py = 0; py < blockSize; py += 2) {
-                for (uint px = 0; px < blockSize; px += 2) {
-                    uint cx = bx + px;
-                    uint cy = by + py;
-                    if (cx >= frameW || cy >= frameH) continue;
-
-                    int px2 = clamp(int(cx) + ox, 0, int(frameW) - 1);
-                    int py2 = clamp(int(cy) + oy, 0, int(frameH) - 1);
-
-                    float lc = luma(currFrame.read(uint2(cx, cy)));
-                    float lp = luma(prevFrame.read(uint2(px2, py2)));
-                    sad += abs(lc - lp);
-                }
-            }
-            if (sad < bestSAD) {
-                bestSAD = sad;
+            float error = blockError(int2(ox, oy));
+            float cost = error + costPerPixel * float(abs(ox) + abs(oy));
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestError = error;
                 bestOff = int2(ox, oy);
             }
         }
     }
 
-    // Store motion vector (pixel displacement from curr → prev).
-    // Normalise to [-1, 1] range relative to frame dimensions for portability.
+    if (bestError > unmatchedError) {
+        atomic_fetch_add_explicit(unmatchedBlocks, 1u, memory_order_relaxed);
+    }
+
+    // Store motion vector (pixel displacement from curr → prev), normalised to
+    // [-1, 1] relative to frame dimensions for portability.  The best match's
+    // error rides along in z for diagnostics; the RG16 texture drops it.
     float2 mv = float2(float(bestOff.x) / float(frameW),
                         float(bestOff.y) / float(frameH));
-    motionOut.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
+    motionOut.write(float4(mv.x, mv.y, bestError, 0.0f), gid);
 }
 
 // ---------------------------------------------------------------------------
 // Pass 2 — Refine motion vectors at 4×4 sub-block granularity.
 //
 // Each thread handles one 4×4 sub-block.  It reads the coarse vector for the
-// enclosing macroblock and searches a ±4 pixel window around it to find a
-// more precise match.
+// enclosing macroblock and searches a ±4 pixel window around it, moving off
+// the coarse vector only for a clearly better match.
 // ---------------------------------------------------------------------------
 kernel void motionEstimationRefine(
     texture2d<float, access::read>  prevFrame     [[texture(0)]],
@@ -136,36 +155,43 @@ kernel void motionEstimationRefine(
     float4 cmv = coarseMV.read(uint2(coarseX, coarseY));
 
     // Convert normalised MV back to pixel offsets.
-    int baseOX = int(round(cmv.x * float(frameW)));
-    int baseOY = int(round(cmv.y * float(frameH)));
+    int2 base = int2(int(round(cmv.x * float(frameW))),
+                     int(round(cmv.y * float(frameH))));
 
-    float bestSAD = 1e30f;
-    int2  bestOff = int2(baseOX, baseOY);
+    auto blockError = [&](int2 off) -> float {
+        float sad = 0.0f;
+        float n = 0.0f;
+        for (uint py = 0; py < blockSize; ++py) {
+            for (uint px = 0; px < blockSize; ++px) {
+                uint cx = bx + px;
+                uint cy = by + py;
+                if (cx >= frameW || cy >= frameH) continue;
+
+                int px2 = clamp(int(cx) + off.x, 0, int(frameW) - 1);
+                int py2 = clamp(int(cy) + off.y, 0, int(frameH) - 1);
+
+                float lc = luma(currFrame.read(uint2(cx, cy)));
+                float lp = luma(prevFrame.read(uint2(px2, py2)));
+                sad += abs(lc - lp);
+                n += 1.0f;
+            }
+        }
+        return n > 0.0f ? sad / n : 0.0f;
+    };
 
     int sr = 4;
+    float costPerPixel = kMaxMotionCost / float(2 * sr);
+    int2  bestOff = base;
+    float bestCost = blockError(base);
+
     for (int dy = -sr; dy <= sr; ++dy) {
         for (int dx = -sr; dx <= sr; ++dx) {
-            int ox = baseOX + dx;
-            int oy = baseOY + dy;
-
-            float sad = 0.0f;
-            for (uint py = 0; py < blockSize; ++py) {
-                for (uint px = 0; px < blockSize; ++px) {
-                    uint cx = bx + px;
-                    uint cy = by + py;
-                    if (cx >= frameW || cy >= frameH) continue;
-
-                    int px2 = clamp(int(cx) + ox, 0, int(frameW) - 1);
-                    int py2 = clamp(int(cy) + oy, 0, int(frameH) - 1);
-
-                    float lc = luma(currFrame.read(uint2(cx, cy)));
-                    float lp = luma(prevFrame.read(uint2(px2, py2)));
-                    sad += abs(lc - lp);
-                }
-            }
-            if (sad < bestSAD) {
-                bestSAD = sad;
-                bestOff = int2(ox, oy);
+            if (dx == 0 && dy == 0) continue;
+            int2 off = base + int2(dx, dy);
+            float cost = blockError(off) + costPerPixel * float(abs(dx) + abs(dy));
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestOff = off;
             }
         }
     }
@@ -299,32 +325,4 @@ kernel void motionVectorUpscale(
 
     float2 mv = mix(mix(v00, v10, fx), mix(v01, v11, fx), fy);
     fullMV.write(float4(mv.x, mv.y, 0.0f, 0.0f), gid);
-}
-
-// ---------------------------------------------------------------------------
-// Scene-cut detection helper — computes average SAD across the entire frame
-// at coarse granularity.  The CPU reads back a single value to decide whether
-// to skip interpolation.
-// ---------------------------------------------------------------------------
-kernel void sceneCutScore(
-    texture2d<float, access::read>  prevFrame   [[texture(0)]],
-    texture2d<float, access::read>  currFrame   [[texture(1)]],
-    device atomic_uint              *totalSAD   [[buffer(0)]],
-    device atomic_uint              *pixelCount [[buffer(1)]],
-    uint2                           gid         [[thread_position_in_grid]])
-{
-    uint w = currFrame.get_width();
-    uint h = currFrame.get_height();
-
-    // Sample every 4th pixel for speed.
-    uint x = gid.x * 4;
-    uint y = gid.y * 4;
-    if (x >= w || y >= h) return;
-
-    float lc = luma(currFrame.read(uint2(x, y)));
-    float lp = luma(prevFrame.read(uint2(x, y)));
-    uint diff = uint(abs(lc - lp) * 1000.0f);
-
-    atomic_fetch_add_explicit(totalSAD, diff, memory_order_relaxed);
-    atomic_fetch_add_explicit(pixelCount, 1u, memory_order_relaxed);
 }
