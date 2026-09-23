@@ -75,7 +75,7 @@ struct VideoEnhancementControls: View {
 
     @ViewBuilder
     private var motionSmoothingToggle: some View {
-        let canInterpolate = sourceFrameRate > 0 && sourceFrameRate <= 30
+        let canInterpolate = sourceFrameRate > 0 && sourceFrameRate <= FrameInterpolator.maxSourceFrameRate
         if canInterpolate {
             VStack(alignment: .leading, spacing: 8) {
                 ArchiveToggle(isOn: $pipeline.frameInterpolationEnabled) {

@@ -1,4 +1,5 @@
 import Testing
+import CoreMedia
 import Foundation
 import Metal
 @testable import Edendale
@@ -392,7 +393,174 @@ struct FrameInterpolationTests {
         #expect(elapsed < 50.0, "Interpolation took \(elapsed)ms — expected under 50ms")
     }
 
+    // MARK: - Draw order
+
+    /// 23.976 fps timestamps.
+    private static let frameDuration = 1001.0 / 24000.0
+    private func frameTime(_ index: Int) -> CMTime {
+        CMTime(value: CMTimeValue(index) * 1001, timescale: 24000)
+    }
+
+    @MainActor
+    @Test func schedulerShowsSyntheticFrameBeforeRealFrame() {
+        var schedule = FrameInterpolationScheduler()
+        let d = Self.frameDuration
+
+        #expect(schedule.nextAction(for: frameTime(0), frameDuration: d) == .showNewFrame(synthesize: false))
+        #expect(schedule.nextAction(for: frameTime(0), frameDuration: d) == .keepCurrent)
+
+        #expect(schedule.nextAction(for: frameTime(1), frameDuration: d) == .showNewFrame(synthesize: true))
+        schedule.didHoldFrame()
+        // The held real frame goes out next, even if a newer frame is waiting.
+        #expect(schedule.nextAction(for: frameTime(2), frameDuration: d) == .showHeldFrame)
+        #expect(schedule.nextAction(for: frameTime(2), frameDuration: d) == .showNewFrame(synthesize: true))
+    }
+
+    @MainActor
+    @Test func schedulerDoesNotSynthesizeAcrossGaps() {
+        var schedule = FrameInterpolationScheduler()
+        let d = Self.frameDuration
+
+        _ = schedule.nextAction(for: frameTime(10), frameDuration: d)
+        // Frame 11 was dropped.
+        #expect(schedule.nextAction(for: frameTime(12), frameDuration: d) == .showNewFrame(synthesize: false))
+        // Seek backwards.
+        #expect(schedule.nextAction(for: frameTime(3), frameDuration: d) == .showNewFrame(synthesize: false))
+        // Neighbours again.
+        #expect(schedule.nextAction(for: frameTime(4), frameDuration: d) == .showNewFrame(synthesize: true))
+        #expect(schedule.nextAction(for: .invalid, frameDuration: d) == .keepCurrent)
+    }
+
+    @MainActor
+    @Test func schedulerResetDropsHeldFrameAndHistory() {
+        var schedule = FrameInterpolationScheduler()
+        let d = Self.frameDuration
+
+        _ = schedule.nextAction(for: frameTime(0), frameDuration: d)
+        _ = schedule.nextAction(for: frameTime(1), frameDuration: d)
+        schedule.didHoldFrame()
+        schedule.reset()
+
+        #expect(schedule.nextAction(for: frameTime(2), frameDuration: d) == .showNewFrame(synthesize: false))
+    }
+
+    @Test func interpolatingBeforeCommitLandsOnMidpoint() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let queue = try #require(device.makeCommandQueue())
+        let interpolator = try #require(FrameInterpolator(device: device))
+
+        let shift = 8
+        let previous = try makeTexture(device: device, gray: texturedFrame(shift: 0))
+        let current = try makeTexture(device: device, gray: texturedFrame(shift: shift))
+
+        let cmd1 = try #require(queue.makeCommandBuffer())
+        interpolator.commitFrame(previous, commandBuffer: cmd1)
+        cmd1.commit()
+        cmd1.waitUntilCompleted()
+
+        // Draw-loop order: interpolate N while history holds N-1, then commit N.
+        let cmd2 = try #require(queue.makeCommandBuffer())
+        let synthetic = try #require(interpolator.interpolate(current: current, commandBuffer: cmd2))
+        interpolator.commitFrame(current, commandBuffer: cmd2)
+        let readback = try readGray(from: synthetic, commandBuffer: cmd2)
+        cmd2.commit()
+        cmd2.waitUntilCompleted()
+
+        let output = grayValues(readback, width: synthetic.width, height: synthetic.height)
+        #expect(meanAbsoluteError(output, texturedFrame(shift: shift / 2)) < 2,
+                "Synthetic frame should match the pan's midpoint")
+        #expect(meanAbsoluteError(output, texturedFrame(shift: shift)) > 5,
+                "Synthetic frame must not be a copy of the new frame")
+    }
+
     // MARK: - Helpers
+
+    private static let texturedSize = (width: 160, height: 120)
+
+    /// Deterministic smooth noise moved right by `shift` pixels, as gray bytes.
+    /// Block matching needs texture; flat fills match at every offset.
+    private func texturedFrame(shift: Int) -> [UInt8] {
+        func lattice(_ x: Int, _ y: Int, _ seed: UInt32) -> Double {
+            var v = UInt32(truncatingIfNeeded: x &* 73_856_093) ^ UInt32(truncatingIfNeeded: y &* 19_349_663) ^ seed
+            v = (v ^ (v >> 13)) &* 1_274_126_177
+            return Double((v ^ (v >> 16)) & 0xFFFF) / 65_535.0
+        }
+        func noise(_ x: Double, _ y: Double, cell: Double, seed: UInt32) -> Double {
+            let fx = x / cell, fy = y / cell
+            let x0 = Int(fx.rounded(.down)), y0 = Int(fy.rounded(.down))
+            let tx = fx - Double(x0), ty = fy - Double(y0)
+            let top = lattice(x0, y0, seed) * (1 - tx) + lattice(x0 + 1, y0, seed) * tx
+            let bottom = lattice(x0, y0 + 1, seed) * (1 - tx) + lattice(x0 + 1, y0 + 1, seed) * tx
+            return top * (1 - ty) + bottom * ty
+        }
+
+        let (w, h) = Self.texturedSize
+        var pixels = [UInt8](repeating: 0, count: w * h)
+        for y in 0..<h {
+            for x in 0..<w {
+                let sx = Double(x - shift + 100)
+                let v = 0.65 * noise(sx, Double(y), cell: 12, seed: 1) + 0.35 * noise(sx, Double(y), cell: 4, seed: 2)
+                pixels[y * w + x] = UInt8(30 + v * 200)
+            }
+        }
+        return pixels
+    }
+
+    private func makeTexture(device: MTLDevice, gray: [UInt8]) throws -> MTLTexture {
+        let (w, h) = Self.texturedSize
+        let desc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm, width: w, height: h, mipmapped: false
+        )
+        desc.usage = [.shaderRead, .shaderWrite]
+        let texture = try #require(device.makeTexture(descriptor: desc))
+        var bytes = [UInt8](repeating: 255, count: w * h * 4)
+        for i in 0..<(w * h) {
+            bytes[i * 4 + 0] = gray[i]
+            bytes[i * 4 + 1] = gray[i]
+            bytes[i * 4 + 2] = gray[i]
+        }
+        texture.replace(
+            region: MTLRegionMake2D(0, 0, w, h),
+            mipmapLevel: 0, withBytes: bytes, bytesPerRow: w * 4
+        )
+        return texture
+    }
+
+    private func readGray(from texture: MTLTexture, commandBuffer: MTLCommandBuffer) throws -> MTLBuffer {
+        let bytesPerRow = texture.width * 4
+        let buffer = try #require(texture.device.makeBuffer(length: bytesPerRow * texture.height, options: .storageModeShared))
+        let blit = try #require(commandBuffer.makeBlitCommandEncoder())
+        blit.copy(
+            from: texture, sourceSlice: 0, sourceLevel: 0,
+            sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+            sourceSize: MTLSize(width: texture.width, height: texture.height, depth: 1),
+            to: buffer, destinationOffset: 0,
+            destinationBytesPerRow: bytesPerRow, destinationBytesPerImage: bytesPerRow * texture.height
+        )
+        blit.endEncoding()
+        return buffer
+    }
+
+    /// Green channel of a BGRA readback (the frames are gray).
+    private func grayValues(_ buffer: MTLBuffer, width: Int, height: Int) -> [UInt8] {
+        let bytes = buffer.contents().bindMemory(to: UInt8.self, capacity: width * height * 4)
+        return (0..<(width * height)).map { bytes[$0 * 4 + 1] }
+    }
+
+    /// Mean absolute difference over the interior; the pan uncovers new content
+    /// at the edges, so those pixels have no reference.
+    private func meanAbsoluteError(_ a: [UInt8], _ b: [UInt8], margin: Int = 24) -> Double {
+        let (w, h) = Self.texturedSize
+        var total = 0.0
+        var count = 0.0
+        for y in margin..<(h - margin) {
+            for x in margin..<(w - margin) {
+                total += abs(Double(a[y * w + x]) - Double(b[y * w + x]))
+                count += 1
+            }
+        }
+        return total / count
+    }
 
     private func fillColor(texture: MTLTexture, r: UInt8, g: UInt8, b: UInt8) {
         let w = texture.width

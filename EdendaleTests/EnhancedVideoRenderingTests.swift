@@ -282,6 +282,55 @@ struct EnhancedVideoRenderingTests {
     }
 
     @MainActor
+    @Test("Motion smoothing shows each real frame one refresh after its synthetic frame")
+    func motionSmoothingPresentsSyntheticFrameFirst() throws {
+        let view = EnhancedVideoView(frame: CGRect(x: 0, y: 0, width: 320, height: 180))
+        view.isPaused = true // draw manually, one refresh per call
+        let device = view.metalContext.device
+        let pipeline = try #require(EnhancementPipeline(device: device))
+        pipeline.preset = .off
+        pipeline.frameInterpolationEnabled = true
+        view.enhancementPipeline = pipeline
+        view.frameInterpolator = try #require(FrameInterpolator(device: device))
+        view.sourceFrameRate = 24
+        let ringBuffer = FrameRingBuffer()
+        view.ringBuffer = ringBuffer
+
+        // Real frames report their presentation time; synthetic frames don't.
+        var presented: [Int] = []
+        view.onFramePresented = { time in presented.append(Int((time.seconds * 24).rounded())) }
+
+        func deliver(_ index: Int) throws {
+            let pixelBuffer = try #require(
+                PixelBufferTextureCache.createTestPixelBuffer(width: 64, height: 64, red: UInt8(index * 40))
+            )
+            let time = CMTime(value: CMTimeValue(index), timescale: 24)
+            ringBuffer.push(DecodedVideoFrame(
+                pixelBuffer: pixelBuffer,
+                presentationTime: time,
+                duration: CMTime(value: 1, timescale: 24)
+            ))
+            view.currentDisplayTime = time
+        }
+
+        try deliver(0)
+        view.draw() // first frame: nothing to blend with, shown directly
+        #expect(presented == [0])
+        view.draw() // nothing new decoded
+        #expect(presented == [0])
+
+        try deliver(1)
+        view.draw() // the frame between 0 and 1 goes out first...
+        #expect(presented == [0])
+        view.draw() // ...then the held real frame
+        #expect(presented == [0, 1])
+
+        try deliver(3) // frame 2 was dropped: nothing to blend, shown directly
+        view.draw()
+        #expect(presented == [0, 1, 3])
+    }
+
+    @MainActor
     @Test("EnhancedVideoView manages PiP source layer attachment")
     func enhancedVideoViewPiPLayerAttachment() {
         let view = EnhancedVideoView(frame: CGRect(x: 0, y: 0, width: 640, height: 480))

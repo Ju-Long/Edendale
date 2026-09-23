@@ -5,13 +5,13 @@ import Metal
 /// warping.  Synthesises an intermediate frame between two consecutive enhanced
 /// video frames without requiring game-engine motion vectors or depth buffers.
 ///
-/// Typical usage in the draw loop:
+/// Typical usage in the draw loop, once a new frame has been enhanced:
 /// ```
 /// if let synthetic = interpolator.interpolate(current: enhanced, commandBuffer: cb) {
 ///     present(synthetic)            // display interpolated frame first
 /// }
 /// interpolator.commitFrame(enhanced, commandBuffer: cb)
-/// present(enhanced)                 // then display the real frame
+/// present(enhanced)                 // then the real frame, on the next refresh
 /// ```
 final class FrameInterpolator: @unchecked Sendable {
 
@@ -19,6 +19,9 @@ final class FrameInterpolator: @unchecked Sendable {
         case custom
         case metalFX
     }
+
+    /// Faster sources are shown as-is; doubling them exceeds common refresh rates.
+    static let maxSourceFrameRate: Float = 30
 
     let device: MTLDevice
 
@@ -251,8 +254,8 @@ final class FrameInterpolator: @unchecked Sendable {
     }
 
     /// Store `frame` as the previous frame for the next interpolation.
-    /// Must be called for every real (non-interpolated) frame after it has been
-    /// presented.
+    /// Call once for every real frame, after `interpolate(current:)` for that
+    /// same frame; committing first would interpolate the frame with itself.
     func commitFrame(_ frame: MTLTexture, commandBuffer: MTLCommandBuffer) {
         lock.lock()
         defer { lock.unlock() }
@@ -288,9 +291,12 @@ final class FrameInterpolator: @unchecked Sendable {
         defer { lock.unlock() }
         if backend == .metalFX {
             if metalFXBackend == nil {
+                // Matches the platform guard in MetalFXInterpolatorBackend.swift.
+                #if canImport(MetalFX) && (os(macOS) || os(iOS))
                 if #available(macOS 26.0, iOS 26.0, *) {
                     metalFXBackend = MetalFXInterpolatorBackend(device: device)
                 }
+                #endif
             }
         } else {
             metalFXBackend = nil
@@ -299,9 +305,11 @@ final class FrameInterpolator: @unchecked Sendable {
     }
 
     var isMetalFXAvailable: Bool {
+        #if canImport(MetalFX) && (os(macOS) || os(iOS))
         if #available(macOS 26.0, iOS 26.0, *) {
             return MetalFXInterpolatorBackend.isSupported(device: device)
         }
+        #endif
         return false
     }
 
@@ -401,6 +409,7 @@ final class FrameInterpolator: @unchecked Sendable {
     ) -> MTLTexture? {
         guard backend == .metalFX else { return nil }
 
+        #if canImport(MetalFX) && (os(macOS) || os(iOS))
         if #available(macOS 26.0, iOS 26.0, *) {
             guard let mfx = metalFXBackend as? MetalFXInterpolatorBackend else { return nil }
             let needsReset = metalFXResetNeeded
@@ -412,6 +421,7 @@ final class FrameInterpolator: @unchecked Sendable {
                 commandBuffer: commandBuffer
             )
         }
+        #endif
         return nil
     }
 

@@ -872,41 +872,49 @@ frame pair — it's a hard cut, not motion.
 
 - [x] **Modify `EnhancedVideoView.swift` draw loop for frame interpolation**
 
-The draw loop currently runs at `targetFrameRate` (default 60fps) and
-presents one enhanced frame per callback. With interpolation, each source
-frame produces two display frames:
+Decoded frames reach the renderer when they are due, with no lookahead, so
+the frame between N-1 and N can only be built once N has arrived. The
+synthetic frame has to reach the screen before N, so N is held back by one
+display refresh:
 
 ```
-draw call 0 (interpolated):
-  → FrameInterpolator.interpolate(current: enhanced_N) → synthetic N-0.5
-  → present synthetic frame
-  → FrameInterpolator.commitFrame(enhanced_N)
-
-draw call 1 (real):
-  → dequeue next source frame from ring buffer
+refresh k (new frame N arrived; history holds N-1):
   → run enhancement pipeline → enhanced_N
-  → present enhanced_N
+  → FrameInterpolator.interpolate(current: enhanced_N) → synthetic N-0.5
+  → FrameInterpolator.commitFrame(enhanced_N)      // after interpolate()
+  → present synthetic N-0.5, keep a copy of enhanced_N
 
-(repeat)
+refresh k+1:
+  → present the held enhanced_N
+
+refreshes with no new frame:
+  → present nothing; the last image stays on screen
 ```
 
-Changes to `EnhancedVideoView`:
-  - Add `var frameInterpolator: FrameInterpolator?` property
-  - Add `var interpolationEnabled: Bool` toggle
-  - Track `isInterpolatedFrame` flag, toggled each draw call
-  - On interpolated frames: skip ring buffer dequeue, use cached enhanced
-    texture as `current`, call `interpolate()`, present the result
-  - On real frames: dequeue, enhance, present, call `commitFrame()`
-  - Set `preferredFramesPerSecond` to 2× the source content framerate
+Calling `commitFrame()` before `interpolate()` blends a frame with itself,
+and presenting the synthetic frame after N steps backwards in time. Holding
+N delays video by one refresh (≈21 ms at 24 fps).
+
+`FrameInterpolationScheduler` makes the per-refresh decision from frame
+timestamps rather than an alternating flag:
+  - New frame that directly follows the previous one → synthetic frame
+    first, then N on the next refresh
+  - First frame, seek, dropped frame or stall (gap ≥ 1.5 frame durations)
+    → present N directly
+  - Paused (scrubbing), direct/test sources, sources above 30 fps
+    → regular draw path, no interpolation
+
+Other `EnhancedVideoView` details:
+  - `preferredFramesPerSecond` is 2× the source content framerate
     (e.g. 48 for 24fps content, 60 for 30fps content)
-  - Frame pacing: macOS `present(afterMinimumDuration:)` already handles
-    this — set duration to `1.0 / (2.0 * sourceFrameRate)`
+  - Frame pacing: macOS uses `present(afterMinimumDuration:)` with
+    `1.0 / (2.0 * sourceFrameRate)`
 
 - [x] **Handle edge cases in draw loop**
   - First frame after seek/open: no previous frame → present real frame only
   - Scene cut detected: skip interpolation, present real frame
-  - Ring buffer empty: don't interpolate stale frames
-  - Pause/resume: reset interpolator on resume to avoid stale history
+  - Ring buffer empty: drop any held frame, fall back to the regular path
+  - Pause: reset interpolator; scrubbing while paused never interpolates
   - App backgrounding: pause interpolation, resume on foreground
 
 ### I.5 — PlaybackEngine + EnhancementPipeline Wiring
@@ -969,9 +977,17 @@ Test cases:
   - Performance budget: motion estimation + interpolation < 6ms at 1080p
     on Apple Silicon
 
+- [x] **Add draw-order tests to `FrameInterpolationTests.swift`**
+
+  - `FrameInterpolationScheduler`: synthetic frame before the real one, the
+    held frame on the next refresh, no synthesis across seeks, dropped
+    frames, or resets
+  - GPU: `interpolate()` before `commitFrame()` lands on the true midpoint
+    of a pan
+
 - [ ] **Add interpolation draw-loop tests to `EnhancedVideoRenderingTests.swift`** (deferred — needs MainActor rendering context)
 
-  - Verify `EnhancedVideoView` alternates between interpolated and real frames
+  - Verify `EnhancedVideoView` presents a synthetic frame before each real frame
   - Verify frame count doubles when interpolation is enabled
   - Verify seek resets interpolation state
 

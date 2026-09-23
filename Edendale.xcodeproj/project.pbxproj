@@ -10,6 +10,7 @@
 		270D2C633004C7B200741225 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270D2C623004C7B200741225 /* WidgetKit.framework */; };
 		270D2C653004C7B200741225 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270D2C643004C7B200741225 /* SwiftUI.framework */; };
 		270D2C723004C7B300741225 /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 270D2C603004C7B200741225 /* WidgetsExtension.appex */; platformFilters = (ios, macos, xros, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2787ABC730616EC90010308A /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2787ABC630616EC20010308A /* Secrets.xcconfig */; };
 		27BC63E72FBDBEA8005EAD5C /* SwiftVLC in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63E62FBDBEA8005EAD5C /* SwiftVLC */; };
 		27BC63ED2FBDBF1E005EAD5C /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63EC2FBDBF1E005EAD5C /* Kingfisher */; };
 		27BC63F02FBDBF68005EAD5C /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63EF2FBDBF68005EAD5C /* Drops */; };
@@ -63,6 +64,7 @@
 		270D2C603004C7B200741225 /* WidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		270D2C623004C7B200741225 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		270D2C643004C7B200741225 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
+		2787ABC630616EC20010308A /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		27BC63B62FBDBE64005EAD5C /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27BC63C72FBDBE65005EAD5C /* EdendaleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -222,6 +224,7 @@
 			isa = PBXGroup;
 			children = (
 				27CF16C0000000000000C0F1 /* Secrets.xcconfig */,
+				2787ABC630616EC20010308A /* Secrets.xcconfig */,
 				27CF16C1000000000000A551 /* Shared Assets.xcassets */,
 			);
 			name = "Recovered References";
@@ -458,6 +461,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2787ABC730616EC90010308A /* Secrets.xcconfig in Resources */,
 				27CF16C2000000000000A551 /* Shared Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

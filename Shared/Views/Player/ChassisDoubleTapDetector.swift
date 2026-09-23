@@ -7,8 +7,9 @@
 //  aluminum body.
 //
 
-// CoreMotion's CMMotionManager is unavailable on macOS in SDK 27+.
-// Disabled until an alternative accelerometer API is available.
+// Parked: CMMotionManager has never been available on macOS, so this needs a
+// different accelerometer source before it can run on a Mac. It compiles on
+// iOS only to keep type-checking and is not wired into the player.
 #if os(iOS)
 import CoreMotion
 import Foundation

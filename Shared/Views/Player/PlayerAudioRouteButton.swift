@@ -25,9 +25,9 @@ struct PlayerAudioRouteButton: View {
     }
 }
 
-// MARK: - iOS / tvOS / visionOS
+// MARK: - iOS / tvOS
 
-#if os(iOS) || os(tvOS) || os(visionOS)
+#if os(iOS) || os(tvOS)
 private struct RoutePicker: UIViewRepresentable {
     var onFocus: (() -> Void)?
 
@@ -62,6 +62,49 @@ private struct RoutePicker: UIViewRepresentable {
             Task { @MainActor [weak self] in
                 self?.onFocus?()
             }
+        }
+    }
+}
+
+// MARK: - visionOS
+
+#elseif os(visionOS)
+private struct RoutePicker: View {
+    var onFocus: (() -> Void)?
+
+    @State private var currentRoute = AVAudioSession.sharedInstance().currentRoute
+
+    var body: some View {
+        Button {
+            onFocus?()
+        } label: {
+            Image(systemName: outputIcon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 20)
+                .foregroundStyle(Theme.textPrimary)
+        }
+        .buttonStyle(.plain)
+        .onReceive(
+            NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
+        ) { _ in
+            currentRoute = AVAudioSession.sharedInstance().currentRoute
+        }
+    }
+
+    private var outputIcon: String {
+        guard let output = currentRoute.outputs.first else {
+            return "speaker.wave.2"
+        }
+        switch output.portType {
+        case .bluetoothA2DP, .bluetoothLE, .bluetoothHFP:
+            return "wave.3.right"
+        case .headphones:
+            return "headphones"
+        case .airPlay:
+            return "airplayaudio"
+        default:
+            return "speaker.wave.2"
         }
     }
 }

@@ -1,5 +1,9 @@
 import Foundation
 import Metal
+
+// MetalFX is missing from the simulator SDKs, and its frame interpolator needs
+// tvOS 26 (the TV target deploys to 18) and is unavailable on visionOS.
+#if canImport(MetalFX) && (os(macOS) || os(iOS))
 import MetalFX
 
 /// Optional backend that uses Apple's `MTLFXFrameInterpolator` (macOS 26+ / iOS 26+)
@@ -151,3 +155,4 @@ final class MetalFXInterpolatorBackend: @unchecked Sendable {
         return tex
     }
 }
+#endif
