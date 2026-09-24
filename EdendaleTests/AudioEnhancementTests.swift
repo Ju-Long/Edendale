@@ -16,7 +16,9 @@ struct AudioEnhancementProfileTests {
     // MARK: - Profile defaults
 
     @Test func defaultProfileIsMovies() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         #expect(controller.selectedProfile == .movies)
     }
@@ -69,15 +71,18 @@ struct AudioEnhancementProfileTests {
     // MARK: - Persistence
 
     @Test func selectedProfilePersistsToDefaults() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         controller.selectProfile(.dialogue)
         #expect(defaults.string(forKey: "audio.enhancementProfile") == "dialogue")
     }
 
     @Test func persistedProfileIsRestoredOnInit() {
-        let suiteName = "test.audio.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set("nightMode", forKey: "audio.enhancementProfile")
 
         let controller = AudioEnhancementController(defaults: defaults)
@@ -85,7 +90,9 @@ struct AudioEnhancementProfileTests {
     }
 
     @Test func invalidPersistedProfileFallsBackToMovies() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set("nonexistent", forKey: "audio.enhancementProfile")
 
         let controller = AudioEnhancementController(defaults: defaults)
@@ -93,8 +100,9 @@ struct AudioEnhancementProfileTests {
     }
 
     @Test func userAdjustmentsPersistAndRestore() {
-        let suiteName = "test.audio.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
 
         let controller = AudioEnhancementController(defaults: defaults)
         controller.setUserPreampAdjustment(5)
@@ -108,7 +116,9 @@ struct AudioEnhancementProfileTests {
     }
 
     @Test func changingProfileResetsUserAdjustments() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         controller.setUserPreampAdjustment(5)
         controller.setUserBandAdjustment(3, at: 0)
@@ -121,7 +131,9 @@ struct AudioEnhancementProfileTests {
     // MARK: - Effective computation
 
     @Test func effectiveValuesAddProfileAndUserAdjustment() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         controller.selectProfile(.movies)
 
@@ -134,7 +146,9 @@ struct AudioEnhancementProfileTests {
     }
 
     @Test func effectiveValuesClampAtBoundaries() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         controller.selectProfile(.movies)
 
@@ -146,7 +160,9 @@ struct AudioEnhancementProfileTests {
     }
 
     @Test func isFlatDetectsNoEnhancement() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
 
         controller.selectProfile(.flat)
@@ -160,7 +176,9 @@ struct AudioEnhancementProfileTests {
     }
 
     @Test func hasUserAdjustmentsTracksNonZero() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
 
         #expect(!controller.hasUserAdjustments)
@@ -178,7 +196,9 @@ struct AudioEnhancementProfileTests {
     // MARK: - Out-of-bounds band index
 
     @Test func settingBandAtInvalidIndexIsNoOp() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         let before = controller.userBandAdjustments
         controller.setUserBandAdjustment(5, at: -1)
@@ -189,7 +209,9 @@ struct AudioEnhancementProfileTests {
     // MARK: - Reset
 
     @Test func resetUserAdjustmentsClearsAllAndPersists() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let controller = AudioEnhancementController(defaults: defaults)
         controller.setUserPreampAdjustment(10)
         controller.setUserBandAdjustment(7, at: 3)
@@ -206,7 +228,9 @@ struct AudioEnhancementProfileTests {
     // MARK: - Stored bands count mismatch
 
     @Test func storedBandsWithWrongCountAreIgnored() {
-        let defaults = UserDefaults(suiteName: "test.audio.\(UUID().uuidString)")!
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set([Float](repeating: 5, count: 5), forKey: "audio.enhancementBands")
 
         let controller = AudioEnhancementController(defaults: defaults)
