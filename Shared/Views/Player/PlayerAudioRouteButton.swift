@@ -14,11 +14,17 @@ import UIKit
 #endif
 
 struct PlayerAudioRouteButton: View {
+    var diameter: CGFloat = 40
     var onFocus: (() -> Void)?
 
     var body: some View {
         RoutePicker(onFocus: onFocus)
-            .frame(width: 40, height: 40)
+            #if os(tvOS)
+            // The plain-style glyph fills over half the picker's frame (~50 pt
+            // at 88 pt); scale it to the other toolbar chips' glyph size.
+            .scaleEffect(0.75)
+            #endif
+            .frame(width: diameter, height: diameter)
             .glassBackground(in: Circle())
             .contentShape(Circle())
             .accessibilityLabel("Audio Output")
@@ -39,6 +45,11 @@ private struct RoutePicker: UIViewRepresentable {
         let picker = AVRoutePickerView()
         picker.delegate = context.coordinator
         picker.prioritizesVideoDevices = false
+        #if os(tvOS)
+        // The system style adds a fixed 80 pt blurred platter; drop it so
+        // the chip's glass sets the size, like the other toolbar chips.
+        picker.routePickerButtonStyle = .plain
+        #endif
         picker.tintColor = UIColor(Theme.textPrimary)
         picker.activeTintColor = UIColor(Theme.gold)
         picker.backgroundColor = .clear

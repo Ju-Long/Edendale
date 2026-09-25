@@ -113,6 +113,19 @@ struct FFmpegDecoderTests {
         #expect(CMTimebaseGetRate(timebase) == 1.5)
         #expect(abs(CMTimebaseGetTime(timebase).seconds - engine.currentTime.playbackSeconds) < 0.1)
     }
+
+    @Test func reopeningMediaKeepsTheLayersPictureInPictureController() async throws {
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        // AVKit keeps an unretained pointer from the display layer to its first
+        // controller, so replacing the controller made later calls read freed memory.
+        let controller = try #require(engine.pipSource.pipController)
+        try await engine.open(url: fixture())
+        try await engine.open(url: fixture("decoder-mpeg4-dts"))
+        engine.close()
+        #expect(engine.pipSource.pipController === controller)
+    }
     #endif
 
     private func fixture(_ name: String = "decoder-h264-aac") throws -> URL {

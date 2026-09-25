@@ -53,10 +53,14 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
     let displayLayer = AVSampleBufferDisplayLayer()
     private(set) var pipController: AVPictureInPictureController?
     private(set) var isActive: Bool = false
+    /// Mirrors the controller's key-value-observed `isPictureInPicturePossible`
+    /// so views update when PiP becomes available or unavailable.
+    private(set) var isPossible: Bool = false
 
     private weak var engine: PlaybackEngine?
     private let enqueueState = PiPEnqueueState()
     private var timebase: CMTimebase?
+    @ObservationIgnored private var possibleObservation: NSKeyValueObservation?
     #if os(iOS)
     var automaticallyStartsFromInline = true {
         didSet { pipController?.canStartPictureInPictureAutomaticallyFromInline = automaticallyStartsFromInline }
@@ -85,19 +89,22 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
 
     func attach(to engine: PlaybackEngine) {
         self.engine = engine
-        setupPiPController()
+        // AVKit caches the layer's playback controller as an unretained
+        // associated object, so the layer must keep its first PiP controller.
+        // A replacement controller would read the freed one (EXC_BAD_ACCESS).
+        if pipController == nil { setupPiPController() }
         invalidatePlaybackState()
     }
 
-    func detach() {
+    /// Stops PiP and clears queued frames between media items. Keeps the
+    /// controller, which must live as long as `displayLayer`.
+    func reset() {
         pipController?.stopPictureInPicture()
-        pipController?.delegate = nil
-        pipController = nil
-        engine = nil
         displayLayer.sampleBufferRenderer.flush()
         enqueueState.reset()
         isActive = false
         if let timebase { CMTimebaseSetRate(timebase, rate: 0) }
+        invalidatePlaybackState()
     }
 
     /// AVKit caches these delegate values; refresh after transport/duration changes.
@@ -202,12 +209,6 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         if isActive { stop() } else { start() }
     }
 
-    var isPossible: Bool {
-        let possible = pipController?.isPictureInPicturePossible ?? false
-        debugPrint("[PiPSource] isPossible queried — controller=\(pipController == nil ? "nil" : "exists"), system=\(pipController?.isPictureInPicturePossible as Any), result=\(possible)")
-        return possible
-    }
-
     // MARK: - Setup
 
     private func setupPiPController() {
@@ -226,6 +227,17 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         debugPrint("[PiPSource] setupPiPController — autoFromInline=\(automaticallyStartsFromInline)")
         #endif
         pipController = controller
+        possibleObservation = controller.observe(
+            \.isPictureInPicturePossible, options: [.initial, .new]
+        ) { [weak self] observedController, _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.pipController === observedController else { return }
+                let possible = observedController.isPictureInPicturePossible
+                guard possible != self.isPossible else { return }
+                self.isPossible = possible
+                debugPrint("[PiPSource] isPossible changed — \(possible)")
+            }
+        }
         debugPrint("[PiPSource] setupPiPController — controller created, isPictureInPicturePossible=\(controller.isPictureInPicturePossible)")
     }
 }
@@ -370,7 +382,7 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
     var onRestoreUI: ((@escaping (Bool) -> Void) -> Void)?
 
     func attach(to engine: PlaybackEngine) {}
-    func detach() {}
+    func reset() {}
     func enqueue(pixelBuffer: CVPixelBuffer, presentationTime: CMTime, duration: CMTime) {}
     func start() {}
     func stop() {}

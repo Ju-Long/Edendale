@@ -21,7 +21,12 @@ enum AppIdentifiers {
 
     /// UserDefaults scoped to the app group so the app and its extensions share one store.
     /// Use this instead of `UserDefaults.standard` for anything that must be group-visible.
-    static let defaults = UserDefaults(suiteName: appGroup)!
+    static let defaults: UserDefaults = {
+        #if DEBUG
+        if Persistence.isRunningUnitTests { return unitTestHostDefaults() }
+        #endif
+        return UserDefaults(suiteName: appGroup)!
+    }()
 
     /// Keychain service namespace for the app's secure items (e.g. the TMDB user
     /// access token). A stable literal, deliberately equal to the bundle identifier,
@@ -30,4 +35,23 @@ enum AppIdentifiers {
 
     /// The universal domain for web links (HTTPS routing).
     static let linkHost = "edendale.babasama.com"
+
+    #if DEBUG
+    /// Stands in for `appGroup` in hosted unit tests. The unsigned macOS test host is
+    /// unsandboxed, so the App Group suite is the machine-wide plist that the Debug
+    /// app and widgets use. One suite per process keeps concurrent runs apart; it is
+    /// emptied at launch because PIDs are reused, and again at exit.
+    nonisolated static var unitTestHostSuiteName: String {
+        "EdendaleUnitTestHost-\(ProcessInfo.processInfo.processIdentifier)"
+    }
+
+    private nonisolated static func unitTestHostDefaults() -> UserDefaults {
+        let defaults = UserDefaults(suiteName: unitTestHostSuiteName)!
+        defaults.removePersistentDomain(forName: unitTestHostSuiteName)
+        atexit {
+            UserDefaults.standard.removePersistentDomain(forName: AppIdentifiers.unitTestHostSuiteName)
+        }
+        return defaults
+    }
+    #endif
 }

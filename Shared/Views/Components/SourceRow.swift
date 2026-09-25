@@ -30,11 +30,17 @@ struct SourceRow: View {
                 .accessibilityLabel("Remove")
         } label: {
             content
+                .padding(.horizontal, SettingsMetrics.highlightBleed)
+                .padding(.vertical, verticalInset)
         }
         // Full-width data row: a quiet surface fill + gold border on focus,
         // not the button style's solid-gold flood (which would swallow the
         // name/path) and not tvOS's default white platter (illegible content).
         .archiveRowStyle()
+        // On the Settings page the fill reaches past the text into the card
+        // margin while the text lines up with the rows around it. The
+        // grouped List insets rows itself, so there the bleed is zero.
+        .padding(-SettingsMetrics.highlightBleed)
         .modify { view in
             #if !os(tvOS)
             view
@@ -89,13 +95,22 @@ struct SourceRow: View {
             
             Spacer()
         }
-        .padding(.vertical, 12)
         // Icon, name, kind, count, and path are one source. Rescan and
         // Remove reach VoiceOver as custom actions through the swipe
         // actions and context menu already attached to this element.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(folder.name)
         .accessibilityValue("\(subtitle), \(folder.folderPath)")
+    }
+
+    /// The grouped List spaces sources 12 points apart. On the Settings page
+    /// the card's row padding does that, leaving only the highlight's reach.
+    private var verticalInset: CGFloat {
+        #if os(macOS) || os(tvOS)
+        SettingsMetrics.highlightBleed
+        #else
+        12
+        #endif
     }
 
     /// Kind badge and item count, e.g. "SMB · 12 items".

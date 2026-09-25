@@ -16,7 +16,7 @@ struct WyzieSubtitlesSection: View {
     private let redeemURL = URL(string: "https://store.wyzie.io/redeem")!
 
     var body: some View {
-        Section {
+        SettingsSection(String(localized: "Subtitles")) {
             if keys.hasUserKey {
                 LabeledContent("API Key", value: String(localized: "Key saved"))
                 Text("Your Wyzie key is stored in your keychain and shared with your other devices through iCloud.")
@@ -55,8 +55,6 @@ struct WyzieSubtitlesSection: View {
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.gold)
             }
-        } header: {
-            Text("Subtitles").labelCaps()
         }
     }
 }

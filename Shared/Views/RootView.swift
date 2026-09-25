@@ -2,10 +2,11 @@
 //  RootView.swift
 //  Edendale
 //
-//  Adaptive shell: sidebar on iPadOS/macOS (Settings pinned at the
-//  bottom), tab bar on iPhone (Settings in each page's toolbar),
-//  ornament tabs on visionOS (Settings as its own tab). Search uses
-//  the OS 26 search tab role.
+//  Adaptive shell: sidebar on iPadOS (Settings pinned at the bottom),
+//  tab bar on iPhone (Settings in each page's toolbar) — both present
+//  Settings as a sheet. The macOS and tvOS sidebars and the visionOS
+//  ornament give Settings its own tab. Search uses the OS 26 search
+//  tab role.
 //
 
 import SwiftUI
@@ -35,7 +36,9 @@ struct RootView: View {
     /// Routes cast taps in a detail page over to the Search tab.
     @State private var searchCoordinator = SearchCoordinator()
     @State private var selectedTab: RootTab = .movies
+    #if os(iOS)
     @State private var showSettings = false
+    #endif
     @State private var externalDetail: RoutedMediaDetail?
 
     var body: some View {
@@ -54,7 +57,7 @@ struct RootView: View {
                 DownloadedView()
             }
 
-            #if os(visionOS) || os(tvOS)
+            #if os(macOS) || os(tvOS) || os(visionOS)
             Tab("Settings", image: "gear-complex", value: RootTab.settings) {
                 SettingsView()
             }
@@ -65,7 +68,7 @@ struct RootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
-        #if os(iOS) || os(macOS)
+        #if os(iOS)
         .tabViewSidebarBottomBar {
             Button {
                 showSettings = true
@@ -74,10 +77,10 @@ struct RootView: View {
             }
             .archiveButtonStyle(.ghost)
         }
-        #endif
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+        #endif
         .environment(moviesModel)
         .environment(searchCoordinator)
         .sheet(item: $externalDetail) { destination in

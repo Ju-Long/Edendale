@@ -2,6 +2,7 @@
 #import "FFmpegBridge.h"
 #import <FFmpeg/FFmpeg.h>
 #import <FFmpeg/libavutil/pixdesc.h>
+#import <VideoToolbox/VideoToolbox.h>
 #import <time.h>
 #import <stdatomic.h>
 #import <fcntl.h>
@@ -148,6 +149,11 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
     double _frameDuration;
     atomic_bool _interrupted;
     atomic_int_fast64_t _deadline;
+    // libavcodec's av1 decoder only drives hwaccels and FFmpeg 7.1 has no
+    // VideoToolbox one, so AV1 packets go to VideoToolbox directly.
+    CMVideoFormatDescriptionRef _av1Format;
+    VTDecompressionSessionRef _av1Session;
+    BOOL _av1NeedsKeyframe;
 }
 
 static BOOL EDReaderError(NSError **error, NSString *operation, int code) {
@@ -157,6 +163,26 @@ static BOOL EDReaderError(NSError **error, NSString *operation, int code) {
         }];
     }
     return NO;
+}
+
+static BOOL EDVideoToolboxError(NSError **error, NSString *operation, OSStatus status) {
+    if (error) {
+        *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:status userInfo:@{
+            NSLocalizedDescriptionKey: [NSString stringWithFormat:@"%@ (VideoToolbox error %d)", operation, (int)status]
+        }];
+    }
+    return NO;
+}
+
+/// Matroska, WebM, and MP4 store the av1C record (marker bit, version 1) as
+/// extradata; VideoToolbox needs it to configure the decoder.
+static BOOL EDHasAV1Configuration(const AVCodecParameters *parameters) {
+    return parameters->extradata_size >= 4 && parameters->extradata[0] == 0x81;
+}
+
+static int EDAV1BitDepth(const AVCodecParameters *parameters) {
+    if (!EDHasAV1Configuration(parameters) || !(parameters->extradata[2] & 0x40)) return 8;
+    return (parameters->extradata[2] & 0x20) ? 12 : 10;
 }
 
 static int EDInterrupt(void *opaque) {
@@ -201,6 +227,11 @@ static int EDInterrupt(void *opaque) {
     avcodec_free_context(&_video);
     avcodec_free_context(&_audio);
     avcodec_free_context(&_subtitle);
+    [self invalidateAV1Session];
+    if (_av1Format) {
+        CFRelease(_av1Format);
+        _av1Format = NULL;
+    }
     avformat_close_input(&_format);
     if (_customIO) {
         av_freep(&_customIO->buffer);
@@ -262,6 +293,10 @@ static int EDInterrupt(void *opaque) {
 
 - (BOOL)recreateVideoDecoder {
     if (_videoIndex < 0 || !_format) return NO;
+    if (_av1Format) {
+        [self invalidateAV1Session];
+        return [self openAV1SessionWithError:nil];
+    }
     if (_video) {
         avcodec_free_context(&_video);
         _video = NULL;
@@ -277,6 +312,93 @@ static int EDInterrupt(void *opaque) {
         return YES;
     }
     return NO;
+}
+
+#pragma mark - AV1 (VideoToolbox)
+
+/// VideoToolbox decodes AV1 only in hardware (M3, A17 Pro, or later; never in
+/// simulators). `hardwareDecoding` is not consulted: AV1 has no other path.
+- (BOOL)openAV1SessionWithError:(NSError **)error {
+    AVCodecParameters *parameters = _format->streams[_videoIndex]->codecpar;
+    BOOL fullRange = parameters->color_range == AVCOL_RANGE_JPEG;
+    if (!_av1Format) {
+        if (!EDHasAV1Configuration(parameters)) {
+            return EDReaderError(error, @"AV1 video has no decoder configuration", AVERROR_INVALIDDATA);
+        }
+        NSData *configuration = [NSData dataWithBytes:parameters->extradata length:(NSUInteger)parameters->extradata_size];
+        NSDictionary *extensions = @{
+            (__bridge NSString *)kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms: @{@"av1C": configuration},
+            (__bridge NSString *)kCMFormatDescriptionExtension_FullRangeVideo: @(fullRange)
+        };
+        OSStatus status = CMVideoFormatDescriptionCreate(kCFAllocatorDefault, kCMVideoCodecType_AV1,
+            parameters->width, parameters->height, (__bridge CFDictionaryRef)extensions, &_av1Format);
+        if (status != noErr) return EDVideoToolboxError(error, @"Describe AV1 video", status);
+    }
+    OSType pixelFormat = EDAV1BitDepth(parameters) > 8
+        ? (fullRange ? kCVPixelFormatType_420YpCbCr10BiPlanarFullRange : kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange)
+        : (fullRange ? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange : kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
+    NSDictionary *attributes = @{
+        (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey: @(pixelFormat),
+        (__bridge NSString *)kCVPixelBufferIOSurfacePropertiesKey: @{},
+        (__bridge NSString *)kCVPixelBufferMetalCompatibilityKey: @YES
+    };
+    OSStatus status = VTDecompressionSessionCreate(kCFAllocatorDefault, _av1Format, NULL,
+        (__bridge CFDictionaryRef)attributes, NULL, &_av1Session);
+    if (status != noErr) {
+        _av1Session = NULL;
+        return EDVideoToolboxError(error, @"This device cannot decode AV1 video", status);
+    }
+    _av1NeedsKeyframe = YES;
+    return YES;
+}
+
+- (void)invalidateAV1Session {
+    if (!_av1Session) return;
+    VTDecompressionSessionInvalidate(_av1Session);
+    CFRelease(_av1Session);
+    _av1Session = NULL;
+}
+
+/// Decodes one temporal unit. With both decode flags clear, VideoToolbox calls
+/// the handler before returning. Undecodable units are dropped, never fatal.
+- (void)decodeAV1Packet:(AVPacket *)packet into:(NSMutableArray *)outputs {
+    // A seek or a new session leaves no reference frames.
+    if (_av1NeedsKeyframe && !(packet->flags & AV_PKT_FLAG_KEY)) return;
+    if (!_av1Session && ![self openAV1SessionWithError:nil]) return;
+    AVStream *stream = _format->streams[_videoIndex];
+    double pts = packet->pts == AV_NOPTS_VALUE ? _videoNextTime :
+        packet->pts * av_q2d(stream->time_base) - _origin;
+    double duration = packet->duration > 0 ? packet->duration * av_q2d(stream->time_base) : _frameDuration;
+    _videoNextTime = pts + duration;
+
+    size_t size = (size_t)packet->size;
+    CMBlockBufferRef block = NULL;
+    CMSampleBufferRef sample = NULL;
+    OSStatus status = CMBlockBufferCreateWithMemoryBlock(kCFAllocatorDefault, NULL, size, kCFAllocatorDefault,
+        NULL, 0, size, kCMBlockBufferAssureMemoryNowFlag, &block);
+    if (status == noErr) status = CMBlockBufferReplaceDataBytes(packet->data, block, 0, size);
+    CMSampleTimingInfo timing = { CMTimeMakeWithSeconds(duration, 90000), CMTimeMakeWithSeconds(pts, 90000), kCMTimeInvalid };
+    if (status == noErr) status = CMSampleBufferCreateReady(kCFAllocatorDefault, block, _av1Format, 1, 1, &timing, 1, &size, &sample);
+    if (block) CFRelease(block);
+    if (status != noErr) return;
+
+    __block CVPixelBufferRef decoded = NULL;
+    status = VTDecompressionSessionDecodeFrameWithOutputHandler(_av1Session, sample, 0, NULL,
+        ^(OSStatus result, VTDecodeInfoFlags flags, CVImageBufferRef image, CMTime time, CMTime length) {
+            if (result == noErr && image && !(flags & kVTDecodeInfo_FrameDropped)) decoded = CVPixelBufferRetain(image);
+        });
+    CFRelease(sample);
+    if (status == kVTInvalidSessionErr) {
+        // iOS invalidates hardware sessions in the background.
+        [self invalidateAV1Session];
+        _av1NeedsKeyframe = YES;
+    }
+    if (!decoded) return;
+    _av1NeedsKeyframe = NO;
+    if (pts + 0.000001 >= _seekFloor) {
+        [outputs addObject:[[EDFFmpegFrame alloc] initWithPixelBuffer:decoded audio:NULL time:pts duration:duration]];
+    }
+    CVPixelBufferRelease(decoded);
 }
 
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error {
@@ -469,7 +591,10 @@ static int EDInterrupt(void *opaque) {
     _drained = NO;
     _videoIndex = av_find_best_stream(_format, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     _audioIndex = av_find_best_stream(_format, AVMEDIA_TYPE_AUDIO, -1, _videoIndex, NULL, 0);
-    if (_videoIndex >= 0) {
+    AVCodecParameters *videoParameters = _videoIndex >= 0 ? _format->streams[_videoIndex]->codecpar : NULL;
+    if (videoParameters && videoParameters->codec_id == AV_CODEC_ID_AV1) {
+        if (![self openAV1SessionWithError:error]) { [self close]; return NO; }
+    } else if (videoParameters) {
         _video = [self openCodec:_videoIndex hardware:_hardwareDecoding error:error];
         if (!_video) { [self close]; return NO; }
     }
@@ -477,7 +602,7 @@ static int EDInterrupt(void *opaque) {
         _audio = [self openCodec:_audioIndex hardware:NO error:error];
         if (!_audio) { [self close]; return NO; }
     }
-    if (!_video && !_audio) {
+    if (!videoParameters && !_audio) {
         [self close];
         return EDReaderError(error, @"No playable audio or video stream", AVERROR_STREAM_NOT_FOUND);
     }
@@ -499,8 +624,10 @@ static int EDInterrupt(void *opaque) {
             const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(p->format);
             track[@"width"] = @(p->width);
             track[@"height"] = @(p->height);
-            track[@"bitDepth"] = @(pixel ? pixel->comp[0].depth : 8);
-            track[@"hardware"] = @(i == _videoIndex && _video->hw_device_ctx != NULL);
+            track[@"bitDepth"] = @(p->codec_id == AV_CODEC_ID_AV1 ? EDAV1BitDepth(p) : pixel ? pixel->comp[0].depth : 8);
+            BOOL hardware = _av1Session ? VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1) :
+                _video && _video->hw_device_ctx != NULL;
+            track[@"hardware"] = @(i == _videoIndex && hardware);
             if (i == _videoIndex) [videos insertObject:track atIndex:0]; else [videos addObject:track];
         } else if (p->codec_type == AVMEDIA_TYPE_AUDIO && avcodec_find_decoder(p->codec_id)) {
             track[@"channels"] = @(p->ch_layout.nb_channels);
@@ -513,13 +640,16 @@ static int EDInterrupt(void *opaque) {
             [subtitles addObject:track];
         }
     }
-    double fps = _video ? av_q2d(av_guess_frame_rate(_format, _format->streams[_videoIndex], NULL)) : 0;
+    double fps = videoParameters ? av_q2d(av_guess_frame_rate(_format, _format->streams[_videoIndex], NULL)) : 0;
     _frameDuration = fps > 0 && isfinite(fps) ? 1.0 / fps : 1.0 / 30;
     double duration = _format->duration == AV_NOPTS_VALUE ? 0 : (double)_format->duration / AV_TIME_BASE;
+    enum AVColorTransferCharacteristic transfer = _video ? _video->color_trc :
+        videoParameters ? videoParameters->color_trc : AVCOL_TRC_UNSPECIFIED;
     _mediaInfo = @{@"duration": @(duration), @"video": videos, @"audio": audios, @"subtitle": subtitles,
-        @"width": @(_video ? _video->width : 0), @"height": @(_video ? _video->height : 0),
+        @"width": @(_video ? _video->width : videoParameters ? videoParameters->width : 0),
+        @"height": @(_video ? _video->height : videoParameters ? videoParameters->height : 0),
         @"frameRate": @(isfinite(fps) ? fps : 0),
-        @"hdr": @(_video && (_video->color_trc == AVCOL_TRC_SMPTE2084 || _video->color_trc == AVCOL_TRC_ARIB_STD_B67))};
+        @"hdr": @(transfer == AVCOL_TRC_SMPTE2084 || transfer == AVCOL_TRC_ARIB_STD_B67)};
     return YES;
 }
 
@@ -669,6 +799,11 @@ static int EDInterrupt(void *opaque) {
             av_packet_unref(_packet);
             continue;
         }
+        if (_av1Format && _packet->stream_index == _videoIndex) {
+            if (_videoDecodingEnabled) [self decodeAV1Packet:_packet into:outputs];
+            av_packet_unref(_packet);
+            continue;
+        }
         AVCodecContext *codec = _packet->stream_index == _videoIndex ? _video :
             (_packet->stream_index == _audioIndex ? _audio : NULL);
         if (codec == _video && !_videoDecodingEnabled) {
@@ -693,6 +828,7 @@ static int EDInterrupt(void *opaque) {
     if (_video) avcodec_flush_buffers(_video);
     if (_audio) avcodec_flush_buffers(_audio);
     if (_subtitle) avcodec_flush_buffers(_subtitle);
+    _av1NeedsKeyframe = YES;
     swr_free(&_resampler);
     av_packet_unref(_packet);
     av_frame_unref(_frame);

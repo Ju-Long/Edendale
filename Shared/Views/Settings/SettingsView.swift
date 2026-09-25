@@ -2,15 +2,19 @@
 //  SettingsView.swift
 //  Edendale
 //
-//  Placeholder settings surface. Reached from the sidebar bottom bar
-//  (iPad/macOS), a toolbar item (iPhone), or its own tab (visionOS).
+//  The settings surface. macOS, tvOS, and visionOS give it its own tab;
+//  macOS and tvOS draw it as a full archive page, visionOS as a grouped
+//  list. iPad reaches it from the sidebar bottom bar and iPhone from a
+//  toolbar item, both as a sheet (see RootView).
 //
 
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
+    #if os(iOS)
     @Environment(\.dismiss) private var dismiss
+    #endif
     @Environment(\.scenePhase) private var scenePhase
     @Environment(LibraryController.self) private var library
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
@@ -22,81 +26,8 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    LabeledContent("Version", value: appVersion)
-                    LabeledContent("Watch Progress", value: String(localized: "Synced via your iCloud"))
-                } header: {
-                    Text("About").labelCaps()
-                }
-
-                Section {
-                    Toggle(
-                        "Young Audience Friendly",
-                        isOn: Binding(
-                            get: { youngAudienceFilter.isEnabled },
-                            set: { youngAudienceFilter.isEnabled = $0 }
-                        )
-                    )
-
-                    Text("Only show movies and series rated PG or PG-13, including equivalent TV labels.")
-                        .font(Typography.bodySM)
-                        .foregroundStyle(Theme.textSecondary)
-                } header: {
-                    Text("Audience").labelCaps()
-                }
-                
-                #if os(macOS)
-                Section {
-                    Toggle("Launch at Login", isOn: launchAtLogin)
-                        .disabled(!loginItem.isAvailable)
-
-                    Text(loginItem.statusMessage)
-                        .font(Typography.bodySM)
-                        .foregroundStyle(Theme.textSecondary)
-
-                    if loginItem.requiresApproval {
-                        Button("Open Login Items Settings") {
-                            loginItem.openSystemSettings()
-                        }
-                    }
-
-                    if let message = loginItem.errorMessage {
-                        Text(message)
-                            .font(Typography.bodySM)
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                } header: {
-                    Text("Startup").labelCaps()
-                }
-                #endif
-
-                AudioEnhancementSection()
-
-                SegmentSkippingSection()
-
-                SourcesSection(
-                    showImporter: $showImporter,
-                    showLinkSource: $showLinkSource
-                )
-
-                TMDBAccountSection()
-
-//                WyzieSubtitlesSection()
-
-                Section {
-                    Text("This product uses the TMDB API but is not endorsed or certified by TMDB.")
-                        .font(Typography.bodySM)
-                        .foregroundStyle(Theme.textSecondary)
-//                    Text("Online subtitles are provided by Wyzie Subs.")
-//                        .font(Typography.bodySM)
-//                        .foregroundStyle(Theme.textSecondary)
-                } header: {
-                    Text("Attribution").labelCaps()
-                }
-            }
-            #if !os(tvOS)
-            .scrollContentBackground(.hidden)
+            content
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("", image: .xmark) { dismiss() }
@@ -107,7 +38,11 @@ struct SettingsView: View {
             }
             #endif
             .background(Theme.background)
+            // tvOS renders a navigation title over a scrolling page as a giant
+            // mid-screen overlay; its sidebar already names the tab.
+            #if !os(tvOS)
             .navigationTitle("Settings")
+            #endif
             // Sheet on every platform — see DownloadedView; tvOS presents it
             // full screen and the Menu button walks back out of it.
             .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
@@ -127,7 +62,6 @@ struct SettingsView: View {
             #endif
         }
         #if os(macOS)
-        .frame(minWidth: 480, minHeight: 420)
         .onAppear { loginItem.refresh() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -135,6 +69,92 @@ struct SettingsView: View {
             }
         }
         #endif
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        #if os(macOS) || os(tvOS)
+        SettingsPage { sections }
+        #else
+        List { sections }
+            .scrollContentBackground(.hidden)
+        #endif
+    }
+
+    @ViewBuilder
+    private var sections: some View {
+        SettingsSection(String(localized: "About")) {
+            SettingsRow(String(localized: "Version"), value: appVersion)
+            SettingsRow(
+                String(localized: "Watch Progress"),
+                value: String(localized: "Synced via your iCloud")
+            )
+            #if os(macOS) || os(tvOS)
+            // Kept at the top of the page: tvOS scrolls by focus, so text
+            // below the last control might never come into view.
+            attribution
+            #endif
+        }
+
+        SettingsSection(String(localized: "Audience")) {
+            SettingsToggleRow(
+                String(localized: "Young Audience Friendly"),
+                detail: String(localized: "Only show movies and series rated PG or PG-13, including equivalent TV labels."),
+                isOn: Binding(
+                    get: { youngAudienceFilter.isEnabled },
+                    set: { youngAudienceFilter.isEnabled = $0 }
+                )
+            )
+        }
+
+        #if os(macOS)
+        SettingsSection(String(localized: "Startup")) {
+            SettingsToggleRow(
+                String(localized: "Launch at Login"),
+                detail: loginItem.statusMessage,
+                isOn: launchAtLogin
+            )
+            .disabled(!loginItem.isAvailable)
+
+            if loginItem.requiresApproval {
+                SettingsActions {
+                    Button("Open Login Items Settings") {
+                        loginItem.openSystemSettings()
+                    }
+                    .archiveButtonStyle(.secondary)
+                }
+            }
+
+            if let message = loginItem.errorMessage {
+                SettingsNote(message)
+            }
+        }
+        #endif
+
+        AudioEnhancementSection()
+
+        SegmentSkippingSection()
+
+        SourcesSection(
+            showImporter: $showImporter,
+            showLinkSource: $showLinkSource
+        )
+
+        TMDBAccountSection()
+
+//        WyzieSubtitlesSection()
+
+        #if !os(macOS) && !os(tvOS)
+        SettingsSection(String(localized: "Attribution")) {
+            attribution
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private var attribution: some View {
+        SettingsNote(String(localized: "This product uses the TMDB API but is not endorsed or certified by TMDB."))
+//        SettingsNote(String(localized: "Online subtitles are provided by Wyzie Subs."))
     }
 
     #if os(macOS)
@@ -153,8 +173,9 @@ struct SettingsView: View {
 
 // MARK: - iPhone toolbar entry point
 
-/// On iPhone the settings entry lives in the navigation bar; iPad/macOS use
-/// the sidebar bottom bar and visionOS has a dedicated tab (see RootView).
+/// On iPhone the settings entry lives in the navigation bar; iPad uses the
+/// sidebar bottom bar, and macOS, tvOS, and visionOS have a dedicated tab
+/// (see RootView).
 struct SettingsToolbarModifier: ViewModifier {
     @State private var showSettings = false
 

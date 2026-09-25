@@ -21,11 +21,9 @@ struct SourcesSection: View {
     @Binding var showLinkSource: Bool
 
     var body: some View {
-        Section {
+        SettingsSection(String(localized: "Sources")) {
             if folders.isEmpty {
-                Text("No sources linked")
-                    .font(Typography.bodySM)
-                    .foregroundStyle(Theme.textSecondary)
+                SettingsNote(String(localized: "No sources linked"))
             } else {
                 ForEach(folders) { folder in
                     SourceRow(
@@ -35,32 +33,31 @@ struct SourcesSection: View {
                         onRemove: { library.removeFolder(folder) }
                     )
                 }
-                
             }
 
-            // tvOS has no user-browsable local folders; network shares are
-            // the only way in there.
-            #if !os(tvOS)
-            Button {
-                showImporter = true
-            } label: {
-                // A bare Label, never a hand-built HStack with its own
-                // foreground: the focus flood recolors the whole label to
-                // OnGold, and a label-level color would defeat it (the gold
-                // caps would vanish into the gold fill). See ArchiveButtonStyle.
-                Label("Add Local Folder…", image: .folderCirclePlus)
-            }
-            .archiveButtonStyle(.ghost)
-            #endif
+            SettingsActions {
+                // tvOS has no user-browsable local folders; network shares
+                // are the only way in there.
+                #if !os(tvOS)
+                Button {
+                    showImporter = true
+                } label: {
+                    // A bare Label, never a hand-built HStack with its own
+                    // foreground: the focus flood recolors the whole label to
+                    // OnGold, and a label-level color would defeat it (the gold
+                    // caps would vanish into the gold fill). See ArchiveButtonStyle.
+                    Label("Add Local Folder…", image: .folderCirclePlus)
+                }
+                .archiveButtonStyle(.ghost)
+                #endif
 
-            Button {
-                showLinkSource = true
-            } label: {
-                Label("Link Network Source…", image: .link)
+                Button {
+                    showLinkSource = true
+                } label: {
+                    Label("Link Network Source…", image: .link)
+                }
+                .archiveButtonStyle(.ghost)
             }
-            .archiveButtonStyle(.ghost)
-        } header: {
-            Text("Sources").labelCaps()
         }
     }
 }

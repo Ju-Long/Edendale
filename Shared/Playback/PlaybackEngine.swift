@@ -460,8 +460,7 @@ final class PlaybackEngine {
         subtitleEngine.selectFormat(nil)
         externalSubtitleData.removeAll()
         #if os(iOS) || os(macOS)
-        pipSource.detach()
-        pipSource.attach(to: self)
+        pipSource.reset()
         #endif
         state = .idle
         isPlaying = false

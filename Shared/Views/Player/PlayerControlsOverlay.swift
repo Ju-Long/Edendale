@@ -258,15 +258,20 @@ struct PlayerControlsOverlay: View {
     private var trailingTools: some View {
         HStack(spacing: 12) {
             #if os(iOS) || os(macOS)
-            PlayerIconChip(
-                icon: .pictureInPicture,
-                label: String(localized: "Picture in Picture"),
-                isActive: pipSource?.isActive == true,
-                onFocus: chipDidFocus
-            ) {
-                pipSource?.toggle()
+            // Hidden while the system can't offer PiP; an active session
+            // keeps its chip so it can still be ended from here.
+            if let pipSource, pipSource.isPossible || pipSource.isActive {
+                PlayerIconChip(
+                    icon: .pictureInPicture,
+                    label: String(localized: "Picture in Picture"),
+                    isActive: pipSource.isActive,
+                    diameter: toolbarChipDiameter,
+                    glyphSize: toolbarGlyphSize,
+                    onFocus: chipDidFocus
+                ) {
+                    pipSource.toggle()
+                }
             }
-            .disabled(pipSource?.isPossible != true)
             #endif
 
             #if os(iOS)
@@ -274,18 +279,22 @@ struct PlayerControlsOverlay: View {
                 icon: chrome.isOrientationLocked ? .mobileRotateLock : .mobileRotateUnlock,
                 label: String(localized: "Rotation Lock"),
                 isActive: chrome.isOrientationLocked,
+                diameter: toolbarChipDiameter,
+                glyphSize: toolbarGlyphSize,
                 onFocus: chipDidFocus
             ) {
                 chrome.toggleOrientationLock()
             }
             #endif
 
-            PlayerAudioRouteButton(onFocus: chipDidFocus)
+            PlayerAudioRouteButton(diameter: toolbarChipDiameter, onFocus: chipDidFocus)
 
             PlayerIconChip(
                 icon: .listTree,
                 label: String(localized: "Playlist"),
                 isActive: chrome.activePanel == .playlist,
+                diameter: toolbarChipDiameter,
+                glyphSize: toolbarGlyphSize,
                 onFocus: chipDidFocus
             ) {
                 chrome.openPanel(.playlist)
@@ -298,6 +307,8 @@ struct PlayerControlsOverlay: View {
                 icon: .sidebarRight,
                 label: String(localized: "Adjustments"),
                 isActive: chrome.activePanel == .settings,
+                diameter: toolbarChipDiameter,
+                glyphSize: toolbarGlyphSize,
                 onFocus: chipDidFocus
             ) {
                 chrome.openPanel(.settings)
@@ -306,6 +317,24 @@ struct PlayerControlsOverlay: View {
             .focused($focusedControl, equals: .tool(.settings))
             #endif
         }
+    }
+
+    /// tvOS top-bar chips match the center play button: an 88 pt glass
+    /// circle around a 34 pt glyph. Elsewhere they stay compact.
+    private var toolbarChipDiameter: CGFloat {
+        #if os(tvOS)
+        88
+        #else
+        40
+        #endif
+    }
+
+    private var toolbarGlyphSize: CGFloat {
+        #if os(tvOS)
+        34
+        #else
+        22
+        #endif
     }
 
     // MARK: - Center
@@ -525,14 +554,16 @@ struct PlayerIconChip: View {
     /// is its only visible label, so a chip without one is silent.
     let label: String
     var isActive = false
+    var diameter: CGFloat = 40
+    var glyphSize: CGFloat = 22
     var onFocus: (() -> Void)? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(icon)
-                .font(.system(size: 22, weight: .bold))
-                .frame(width: 40, height: 40)
+                .font(.system(size: glyphSize, weight: .bold))
+                .frame(width: diameter, height: diameter)
                 .glassBackground(in: Circle())
                 .overlay {
                     if isActive {

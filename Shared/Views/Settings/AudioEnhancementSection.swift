@@ -5,6 +5,8 @@
 //  Settings section for selecting and adjusting audio enhancement
 //  profiles. Each profile applies a tuned 10-band equalizer curve;
 //  the user can further adjust individual bands and the preamp.
+//  The Settings page (macOS/tvOS) offers the profiles as chips; the
+//  grouped list (iOS/visionOS) keeps a menu picker.
 //
 //  visionOS native AVKit playback does not route through VLC, so
 //  equalizer profiles have no effect when the system player is active.
@@ -19,17 +21,17 @@ struct AudioEnhancementSection: View {
     @State private var isExpanded = false
 
     var body: some View {
-        Section {
+        SettingsSection(String(localized: "Audio Enhancement")) {
             profilePicker
             if isExpanded {
-                preampControl
-                bandControls
-                if controller.hasUserAdjustments {
-                    resetButton
+                SettingsRowGroup {
+                    preampControl
+                    bandControls
+                    if controller.hasUserAdjustments {
+                        resetButton
+                    }
                 }
             }
-        } header: {
-            Text("Audio Enhancement").labelCaps()
         } footer: {
             #if os(visionOS)
             Text("Audio enhancement is unavailable during spatial and multiview playback in the system player.")
@@ -39,11 +41,43 @@ struct AudioEnhancementSection: View {
         }
     }
 
+    // MARK: - Profile
+
+    @ViewBuilder
     private var profilePicker: some View {
+        #if os(macOS) || os(tvOS)
+        VStack(alignment: .leading, spacing: 14) {
+            #if os(macOS)
+            HStack {
+                profileTitle
+                Spacer()
+                equalizerButton
+            }
+            #else
+            profileTitle
+            #endif
+
+            FlowLayout(spacing: 10, lineSpacing: 10) {
+                ForEach(AudioEnhancementProfile.allCases) { profile in
+                    FilterChip(
+                        title: profile.displayName,
+                        isSelected: controller.selectedProfile == profile,
+                        size: profileChipSize
+                    ) {
+                        controller.selectProfile(profile)
+                    }
+                }
+                #if os(tvOS)
+                // Beside the chips, so left/right reaches it from any of them.
+                equalizerButton
+                #endif
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Profile")
+        }
+        #else
         HStack {
-            Text("Profile")
-                .font(Typography.bodyLG)
-                .foregroundStyle(Theme.textPrimary)
+            profileTitle
             Spacer()
             Picker("Profile", selection: Binding(
                 get: { controller.selectedProfile },
@@ -54,31 +88,54 @@ struct AudioEnhancementSection: View {
                 }
             }
             .labelsHidden()
-            #if os(tvOS)
-            .pickerStyle(.automatic)
-            #else
             .pickerStyle(.menu)
-            #endif
             .tint(Theme.gold)
 
-            Button {
-                if reduceMotion {
-                    isExpanded.toggle()
-                } else {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isExpanded.toggle()
-                    }
-                }
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .foregroundStyle(isExpanded ? Theme.gold : Theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded
-                ? String(localized: "Hide equalizer")
-                : String(localized: "Show equalizer")
-            )
+            equalizerButton
         }
+        #endif
+    }
+
+    private var profileChipSize: FilterChip.Size {
+        #if os(tvOS)
+        .large
+        #else
+        .regular
+        #endif
+    }
+
+    private var profileTitle: some View {
+        Text("Profile")
+            .font(SettingsMetrics.titleFont)
+            .foregroundStyle(Theme.textPrimary)
+    }
+
+    private var equalizerButton: some View {
+        Button {
+            if reduceMotion {
+                isExpanded.toggle()
+            } else {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            }
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                #if !os(macOS) && !os(tvOS)
+                .foregroundStyle(isExpanded ? Theme.gold : Theme.textSecondary)
+                #endif
+        }
+        #if os(macOS) || os(tvOS)
+        // Gold while the equalizer is open. The style owns the color so its
+        // focused state can recolor the glyph.
+        .archiveButtonStyle(.ghost, active: isExpanded)
+        #else
+        .buttonStyle(.plain)
+        #endif
+        .accessibilityLabel(isExpanded
+            ? String(localized: "Hide equalizer")
+            : String(localized: "Show equalizer")
+        )
     }
 
     // MARK: - Preamp
@@ -86,7 +143,7 @@ struct AudioEnhancementSection: View {
     private var preampControl: some View {
         #if os(tvOS)
         stepperRow(
-            label: "Preamp",
+            label: String(localized: "Preamp"),
             effectiveValue: controller.effectivePreamp,
             onDecrement: {
                 controller.setUserPreampAdjustment(controller.userPreampAdjustment - 1)
@@ -125,7 +182,23 @@ struct AudioEnhancementSection: View {
 
     // MARK: - Bands
 
+    @ViewBuilder
     private var bandControls: some View {
+        #if os(macOS)
+        // Two columns keep all ten bands in view on the page.
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 32), GridItem(.flexible())],
+            alignment: .leading,
+            spacing: 18
+        ) {
+            bandRows
+        }
+        #else
+        bandRows
+        #endif
+    }
+
+    private var bandRows: some View {
         ForEach(0..<AudioEnhancementProfile.bandCount, id: \.self) { index in
             #if os(tvOS)
             stepperRow(
@@ -183,23 +256,22 @@ struct AudioEnhancementSection: View {
         onDecrement: @escaping () -> Void,
         onIncrement: @escaping () -> Void
     ) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             Text(label)
-                .font(Typography.bodySM)
+                .font(SettingsMetrics.detailFont)
                 .foregroundStyle(Theme.textSecondary)
-                .frame(width: 52, alignment: .leading)
             Spacer()
+            // Archive chrome: the system focus platter turns white under
+            // parchment glyphs and hides them.
             Button("−") { onDecrement() }
-                .font(Typography.bodyLG)
-                .foregroundStyle(Theme.textPrimary)
+                .archiveButtonStyle(.secondary)
             Text(decibelLabel(effectiveValue))
-                .font(Typography.bodySM)
+                .font(SettingsMetrics.detailFont)
                 .monospacedDigit()
                 .foregroundStyle(Theme.gold)
-                .frame(minWidth: 60)
+                .frame(minWidth: 100)
             Button("+") { onIncrement() }
-                .font(Typography.bodyLG)
-                .foregroundStyle(Theme.textPrimary)
+                .archiveButtonStyle(.secondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
@@ -217,6 +289,12 @@ struct AudioEnhancementSection: View {
     // MARK: - Reset
 
     private var resetButton: some View {
+        #if os(macOS) || os(tvOS)
+        Button("Reset Adjustments") {
+            controller.resetUserAdjustments()
+        }
+        .archiveButtonStyle(.ghost)
+        #else
         Button {
             controller.resetUserAdjustments()
         } label: {
@@ -224,6 +302,7 @@ struct AudioEnhancementSection: View {
                 .font(Typography.bodyLG)
                 .foregroundStyle(Theme.gold)
         }
+        #endif
     }
 
     // MARK: - Formatting

@@ -11,13 +11,18 @@
 import SwiftUI
 
 struct FilterChip: View {
+    /// Regular chips fill filter bars; large ones sit among the tvOS
+    /// Settings rows, whose type is sized for across the room.
+    enum Size { case regular, large }
+
     let title: String
     let isSelected: Bool
+    var size: Size = .regular
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            ChipLabel(title: title, isSelected: isSelected)
+            ChipLabel(title: title, isSelected: isSelected, size: size)
         }
         // tvOS: even `.plain` paints the system's white focus platter behind
         // the chip, so a bare custom style renders the label alone and leaves
@@ -51,16 +56,17 @@ struct ChipButtonStyle: ButtonStyle {
 private struct ChipLabel: View {
     let title: String
     let isSelected: Bool
+    let size: FilterChip.Size
     #if os(tvOS)
     @Environment(\.isFocused) private var isFocused
     #endif
 
     var body: some View {
         Text(title)
-            .font(Typography.text(13, weight: .semibold))
+            .font(Typography.text(size == .large ? 22 : 13, weight: .semibold))
             .foregroundStyle(foreground)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
+            .padding(.horizontal, size == .large ? 24 : 14)
+            .padding(.vertical, size == .large ? 12 : 7)
             .background(background, in: Capsule())
             .overlay {
                 Capsule().strokeBorder(border, lineWidth: 1)

@@ -170,7 +170,7 @@ struct PlayerScreen: View {
     // the native controls. It stays reachable when a remote reveals controls.
     private var upNextControlsInset: CGFloat {
         #if os(tvOS)
-        140
+        180
         #else
         88
         #endif

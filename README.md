@@ -101,9 +101,13 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 ```
 
 Debug unit-test hosts use in-memory library, watchlist, and watch-progress
-stores with CloudKit disabled. Normal app launches and UI tests retain their
-usual persistence. The command above excludes UI tests; run the full signed
-test command when an interactive test environment is available.
+stores with CloudKit disabled. In place of the `group.com.BaBaSaMa.Edendale`
+App Group preferences, which an unsigned macOS host would share with the Debug
+app and widgets, they use a per-process `EdendaleUnitTestHost-<pid>` suite that
+is emptied at launch and exit (an empty plist may remain in
+`~/Library/Preferences`). Normal app launches and UI tests retain their usual
+persistence. The command above excludes UI tests; run the full signed test
+command when an interactive test environment is available.
 
 For GPU upscaling and rendering regression checks with Metal API validation:
 
@@ -118,6 +122,12 @@ TEST_RUNNER_MTL_DEBUG_LAYER=1 xcodebuild test -project Edendale.xcodeproj -schem
 Upscaling uses a private, render-target-capable output texture for MetalFX and
 falls back to Lanczos when caller-provided textures do not meet MetalFX's usage
 or storage requirements. These checks require a Metal-capable Mac.
+
+FFmpeg 7.1's AV1 decoder only drives hardware accelerators, and it has no
+VideoToolbox one, so `EDFFmpegReader` demuxes AV1 with FFmpeg and decodes it in
+its own VideoToolbox session. That decoder is hardware-only (Apple M3, A17 Pro,
+or later). Other devices and all simulators report that they cannot decode AV1
+video instead of playing its audio alone.
 
 For FFmpeg startup, library compatibility, video dimensions, audio decoding,
 seeking, and track-switching regression checks, run:
@@ -157,6 +167,11 @@ playback and file access. Restore returns to the same session; closing PiP ends
 the hidden session. PiP transport controls refresh from the playback state and
 use the media clock. The automatic PiP preference does not disable the manual
 PiP button.
+
+Each playback engine keeps one `AVPictureInPictureController` for its PiP
+display layer. AVKit holds an unretained reference from the layer to its first
+controller, so switching media stops PiP and flushes the layer instead of
+replacing the controller.
 
 Embedded FFmpeg subtitles decode alongside audio/video. Changing tracks uses a
 bounded seek at the current position instead of scanning the entire file, and
