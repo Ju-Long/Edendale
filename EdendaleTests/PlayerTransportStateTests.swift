@@ -143,6 +143,34 @@ struct PlayerTransportStateTests {
         #expect(fixture.session.chrome?.loopEnabled == true)
     }
 
+    @Test func speedChangesRetimeWithoutSeeking() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.second)
+        fixture.session.surfaceDidAttach()
+        try await fixture.waitForPlaying()
+        let player = try #require(fixture.session.player)
+        let chrome = try #require(fixture.session.chrome)
+        let decoder = try #require(player.decoder)
+        // A seek throws the decoded media away and blanks the video until the
+        // decoder has refilled from the previous keyframe.
+        var seeks = 0
+        let reportState = decoder.onStateChanged
+        decoder.onStateChanged = { state in
+            if state == .seeking { seeks += 1 }
+            reportState?(state)
+        }
+
+        chrome.setBaseRate(2.0)
+        chrome.beginHoldRate(0.5)
+        chrome.endHoldRate()
+        try await Task.sleep(for: .milliseconds(200))
+
+        #expect(seeks == 0)
+        #expect(player.playbackRate == 2.0)
+        #expect(player.isPlaying)
+    }
+
     @Test func ratePreservedAcrossSwitch() async throws {
         let fixture = try Fixture()
         defer { fixture.cleanup() }

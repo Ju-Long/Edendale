@@ -49,12 +49,10 @@ enum PlayerLogic {
 
     // MARK: - tvOS press-and-hold speed
 
-    /// Playback rates the tvOS touch-surface hold engages: resting a thumb
-    /// on the left half slows to `holdSlowRate`, the right half speeds to
-    /// `holdFastRate`. The rate reverts the moment the thumb lifts.
-    static let holdSlowRate: Float = 0.5
-    static let holdFastRate: Float = 2.0
-
+    /// Resting a thumb on the left or right half of the Siri Remote's touch
+    /// surface engages that side's hold speed (see PlayerControlPreferences).
+    /// The speed reverts the moment the thumb lifts.
+    ///
     /// Horizontal touch magnitude (0…1 from the remote's center) that arms a
     /// hold, and the lower magnitude at which an armed hold lets go. The gap
     /// is hysteresis, so a thumb hovering near the edge doesn't chatter the
@@ -62,16 +60,15 @@ enum PlayerLogic {
     static let holdArmMagnitude: Float = 0.55
     static let holdReleaseMagnitude: Float = 0.30
 
-    /// The hold-speed rate a touch at (`x`, `y`) implies, or nil when the
-    /// touch isn't a clear horizontal press — too centered, or vertical
-    /// enough to be an up/down move instead. `active` is true once a hold is
-    /// engaged, widening the tolerance so small drift doesn't drop it; a
-    /// fresh press must clear the higher arm threshold. `x` runs −1 (left)
-    /// … +1 (right).
-    static func holdRate(x: Float, y: Float, active: Bool) -> Float? {
+    /// The side a touch at (`x`, `y`) holds, or nil when the touch isn't a
+    /// clear horizontal press — too centered, or vertical enough to be an
+    /// up/down move instead. `active` is true once a hold is engaged,
+    /// widening the tolerance so small drift doesn't drop it; a fresh press
+    /// must clear the higher arm threshold. `x` runs −1 (left) … +1 (right).
+    static func holdSide(x: Float, y: Float, active: Bool) -> HoldSide? {
         let threshold = active ? holdReleaseMagnitude : holdArmMagnitude
         guard abs(x) >= threshold, abs(x) > abs(y) else { return nil }
-        return x >= 0 ? holdFastRate : holdSlowRate
+        return x >= 0 ? .right : .left
     }
 
     /// Display string for a rate, e.g. "1.05×".

@@ -778,6 +778,14 @@ static int EDInterrupt(void *opaque) {
     return result == AVERROR(EAGAIN) || result == AVERROR_EOF || EDReaderError(error, @"Decode media frame", result);
 }
 
+/// Whether the frame in a video packet falls before the seek target, where
+/// `videoFrameWithError:` would drop it.
+- (BOOL)packetPrecedesSeekFloor:(const AVPacket *)packet {
+    if (packet->pts == AV_NOPTS_VALUE) return NO;
+    double pts = packet->pts * av_q2d(_format->streams[packet->stream_index]->time_base) - _origin;
+    return pts + 0.000001 < _seekFloor;
+}
+
 - (NSArray<EDFFmpegFrame *> *)readBatchWithError:(NSError **)error {
     if (!_format || _drained) return @[];
     NSMutableArray *outputs = [NSMutableArray array];
@@ -809,6 +817,13 @@ static int EDInterrupt(void *opaque) {
         if (codec == _video && !_videoDecodingEnabled) {
             av_packet_unref(_packet);
             continue;
+        }
+        if (codec && codec == _video) {
+            // Frames before a seek target only rebuild the references of the
+            // frames after it and are then dropped, so skip the ones no other
+            // frame refers to (as mpv's precise seeks do). Hardware decoding
+            // runs one frame at a time, so this shortens the post-seek freeze.
+            _video->skip_frame = [self packetPrecedesSeekFloor:_packet] ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
         }
         BOOL success = !codec || [self decode:codec packet:_packet into:outputs error:error];
         av_packet_unref(_packet);

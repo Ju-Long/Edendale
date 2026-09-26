@@ -5,10 +5,10 @@
 //  Reads the Siri Remote's touch surface through the Game Controller
 //  framework so a resting press-and-hold can drive playback speed — the
 //  tvOS counterpart to the iOS hold-speed gesture. Quick swipes still fall
-//  through to the focus engine's move commands (the ±10 s seeks in the
-//  reveal catcher and timeline); only a thumb held to one side past a short
-//  dwell engages slow (left) or fast (right) playback, reverting the instant
-//  it lifts.
+//  through to the focus engine's move commands (the skips in the reveal
+//  catcher and timeline); only a thumb held to one side past a short dwell
+//  engages that side's hold speed (0.5× left and 2× right unless changed in
+//  Settings), reverting the instant it lifts.
 //
 
 #if os(tvOS)
@@ -28,8 +28,8 @@ final class TVRemoteInput {
     private static let dwell: Duration = .milliseconds(300)
 
     private var dwellTask: Task<Void, Never>?
-    /// Rate of the hold currently in effect, nil while idle.
-    private var engagedRate: Float?
+    /// Side of the hold currently in effect, nil while idle.
+    private var engagedSide: HoldSide?
     /// Most recent touch position, retained so the dwell timer can confirm
     /// the thumb is still down when the surface reports no further changes.
     private var latestX: Float = 0
@@ -94,11 +94,11 @@ final class TVRemoteInput {
             return
         }
 
-        if engagedRate != nil {
-            if let rate = PlayerLogic.holdRate(x: x, y: y, active: true) {
-                if rate != engagedRate {
-                    engagedRate = rate
-                    chrome.beginHoldRate(rate)
+        if engagedSide != nil {
+            if let side = PlayerLogic.holdSide(x: x, y: y, active: true) {
+                if side != engagedSide {
+                    engagedSide = side
+                    chrome.beginHold(on: side)
                 }
             } else {
                 release()
@@ -106,7 +106,7 @@ final class TVRemoteInput {
             return
         }
 
-        if PlayerLogic.holdRate(x: x, y: y, active: false) != nil {
+        if PlayerLogic.holdSide(x: x, y: y, active: false) != nil {
             armDwell()
         } else {
             dwellTask?.cancel()
@@ -125,18 +125,18 @@ final class TVRemoteInput {
     }
 
     private func engageIfStillHeld() {
-        guard engagedRate == nil, chrome.activePanel == nil,
-              let rate = PlayerLogic.holdRate(x: latestX, y: latestY, active: false)
+        guard engagedSide == nil, chrome.activePanel == nil,
+              let side = PlayerLogic.holdSide(x: latestX, y: latestY, active: false)
         else { return }
-        engagedRate = rate
-        chrome.beginHoldRate(rate)
+        engagedSide = side
+        chrome.beginHold(on: side)
     }
 
     private func release() {
         dwellTask?.cancel()
         dwellTask = nil
-        guard engagedRate != nil else { return }
-        engagedRate = nil
+        guard engagedSide != nil else { return }
+        engagedSide = nil
         chrome.endHoldRate()
     }
 }

@@ -620,7 +620,9 @@ final class PlaybackEngine {
                 self.subtitleEngine.addImageCue(cue)
             }
             ffmpeg.onDiscontinuity = { [weak self] in
-                self?.ringBuffer.clear()
+                // Keep the current picture up until the first frame from the
+                // new position arrives; a cleared buffer is drawn as black.
+                self?.ringBuffer.flush()
                 self?.videoPresentationTime = .invalid
                 self?.enhancementPipeline?.reset()
                 self?.frameInterpolator?.reset()

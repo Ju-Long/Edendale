@@ -512,9 +512,9 @@ struct PlayerControlsOverlay: View {
         .onMoveCommand { direction in
             switch direction {
             case .left:
-                chrome.remoteSeek(bySeconds: -10)
+                chrome.remoteSkip(.backward)
             case .right:
-                chrome.remoteSeek(bySeconds: 10)
+                chrome.remoteSkip(.forward)
             case .down:
                 if visibleSegment != nil {
                     segmentFocused = true

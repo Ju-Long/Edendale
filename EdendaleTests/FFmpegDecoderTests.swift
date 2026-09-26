@@ -221,6 +221,69 @@ struct FFmpegDecoderTests {
         #expect(try !reader.readBatch().isEmpty)
     }
 
+    @Test func seekingDecodesTheSameFramesAsPlayingThrough() throws {
+        // A seek decodes from the previous keyframe but skips the frames
+        // before the target that nothing references. Every frame from the
+        // target on must match an uninterrupted decode exactly.
+        let target = 1.5
+        func frames(seeking: Bool) throws -> [(time: Double, pixels: Data)] {
+            let reader = EDFFmpegReader(hardwareDecoding: false)
+            defer { reader.close() }
+            try reader.open(url: fixture())
+            if seeking { try reader.seek(seconds: target) }
+            var frames: [(time: Double, pixels: Data)] = []
+            while !reader.atEnd {
+                for frame in try reader.readBatch() {
+                    guard let pixel = frame.pixelBuffer, frame.presentationTime >= target - 0.00001 else { continue }
+                    frames.append((frame.presentationTime, pixelData(pixel)))
+                }
+            }
+            return frames
+        }
+        let continuous = try frames(seeking: false)
+        let seeked = try frames(seeking: true)
+        #expect(continuous.count == 18)
+        #expect(seeked.map(\.time) == continuous.map(\.time))
+        #expect(seeked.map(\.pixels) == continuous.map(\.pixels))
+    }
+
+    @Test func seekKeepsThePictureUpUntilTheTargetFrameArrives() async throws {
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        try await engine.open(url: fixture())
+        let decoder = try #require(engine.decoder as? FFmpegDecoder)
+        engine.play()
+        try await wait { !engine.ringBuffer.isEmpty && engine.currentTime.playbackSeconds > 0.3 }
+        // The renderer draws black whenever the buffer has no frame for it.
+        var shownDuringSeek: DecodedVideoFrame?
+        let discontinuity = decoder.onDiscontinuity
+        decoder.onDiscontinuity = {
+            discontinuity?()
+            shownDuringSeek = engine.ringBuffer.latestFrame()
+        }
+        engine.seek(to: .seconds(2))
+        try await wait { engine.videoPresentationTime.seconds >= 2 }
+        let held = try #require(shownDuringSeek)
+        #expect(held.presentationTime.seconds < 1)
+        #expect((engine.ringBuffer.latestFrame()?.presentationTime.seconds ?? 0) >= 2)
+    }
+
+    private func pixelData(_ pixel: CVPixelBuffer) -> Data {
+        // Software-decoded frames are 32BGRA; compare only the visible bytes.
+        #expect(CVPixelBufferGetPixelFormatType(pixel) == kCVPixelFormatType_32BGRA)
+        CVPixelBufferLockBaseAddress(pixel, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixel, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(pixel) else { return Data() }
+        let rowBytes = CVPixelBufferGetWidth(pixel) * 4
+        var data = Data()
+        for row in 0..<CVPixelBufferGetHeight(pixel) {
+            data.append(base.advanced(by: row * CVPixelBufferGetBytesPerRow(pixel))
+                .assumingMemoryBound(to: UInt8.self), count: rowBytes)
+        }
+        return data
+    }
+
     @Test func lifecycleDeliversFramesPausesSeeksAndEnds() async throws {
         let decoder = FFmpegDecoder()
         decoder.isMuted = true

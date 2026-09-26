@@ -49,24 +49,25 @@ struct PlayerLogicTests {
 
     // MARK: - tvOS press-and-hold speed
 
-    @Test func holdRateArmsFromTheRestingSide() {
+    @Test func holdSideArmsFromTheRestingSide() {
         // A fresh press must clear the higher arm threshold before it counts.
-        #expect(PlayerLogic.holdRate(x: 0.4, y: 0, active: false) == nil)
-        #expect(PlayerLogic.holdRate(x: 0.6, y: 0, active: false) == PlayerLogic.holdFastRate)
-        #expect(PlayerLogic.holdRate(x: -0.6, y: 0, active: false) == PlayerLogic.holdSlowRate)
+        #expect(PlayerLogic.holdSide(x: 0.4, y: 0, active: false) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.6, y: 0, active: false) == .right)
+        #expect(PlayerLogic.holdSide(x: -0.6, y: 0, active: false) == .left)
     }
 
-    @Test func holdRateHoldsThroughDriftOnceActive() {
+    @Test func holdSideHoldsThroughDriftOnceActive() {
         // Hysteresis: an engaged hold survives down to the release threshold…
-        #expect(PlayerLogic.holdRate(x: 0.4, y: 0, active: true) == PlayerLogic.holdFastRate)
+        #expect(PlayerLogic.holdSide(x: 0.4, y: 0, active: true) == .right)
+        #expect(PlayerLogic.holdSide(x: -0.4, y: 0, active: true) == .left)
         // …then lets go once the thumb slides back toward center.
-        #expect(PlayerLogic.holdRate(x: 0.2, y: 0, active: true) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.2, y: 0, active: true) == nil)
     }
 
-    @Test func holdRateIgnoresVerticalDominantTouches() {
+    @Test func holdSideIgnoresVerticalDominantTouches() {
         // An up/down move (vertical-dominant) is never a speed hold.
-        #expect(PlayerLogic.holdRate(x: 0.6, y: 0.7, active: false) == nil)
-        #expect(PlayerLogic.holdRate(x: 0.6, y: 0.7, active: true) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.6, y: 0.7, active: false) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.6, y: 0.7, active: true) == nil)
     }
 
     // MARK: - Timestamps

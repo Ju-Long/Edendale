@@ -13,6 +13,8 @@ import Foundation
 public final class FrameRingBuffer: @unchecked Sendable {
     public let capacity: Int
     private var frames: [DecodedVideoFrame] = []
+    /// The picture `flush()` keeps on screen until the next frame is pushed.
+    private var heldFrame: DecodedVideoFrame?
     private let lock = NSLock()
 
     public init(capacity: Int = 3) {
@@ -24,6 +26,8 @@ public final class FrameRingBuffer: @unchecked Sendable {
     public func push(_ frame: DecodedVideoFrame) {
         lock.lock()
         defer { lock.unlock() }
+
+        heldFrame = nil
 
         // Insert maintaining PTS order
         if let index = frames.firstIndex(where: { $0.presentationTime > frame.presentationTime }) {
@@ -45,7 +49,7 @@ public final class FrameRingBuffer: @unchecked Sendable {
         defer { lock.unlock() }
 
         guard let targetIndex = frames.lastIndex(where: { $0.presentationTime <= time }) else {
-            return frames.first
+            return frames.first ?? heldFrame
         }
 
         let frame = frames[targetIndex]
@@ -61,24 +65,39 @@ public final class FrameRingBuffer: @unchecked Sendable {
     public func latestFrame() -> DecodedVideoFrame? {
         lock.lock()
         defer { lock.unlock() }
-        return frames.last
+        return frames.last ?? heldFrame
     }
 
-    /// Clears all frames from the buffer (e.g. on seek, track switch, or media change).
+    /// Drops the queued frames at a discontinuity in the same media (seek or
+    /// track switch) but keeps the picture on screen until the next push, so
+    /// the video holds still instead of going black while the decoder
+    /// refills from the new position.
+    public func flush() {
+        lock.lock()
+        defer { lock.unlock() }
+        // Readers prune every frame older than the one they return, so the
+        // first queued frame is the one on screen.
+        heldFrame = frames.first ?? heldFrame
+        frames.removeAll(keepingCapacity: true)
+    }
+
+    /// Clears all frames from the buffer, including a held picture (e.g. on
+    /// media change).
     public func clear() {
         lock.lock()
         defer { lock.unlock() }
         frames.removeAll(keepingCapacity: true)
+        heldFrame = nil
     }
 
-    /// Current number of frames in the buffer.
+    /// Current number of queued frames; a held picture is not counted.
     public var count: Int {
         lock.lock()
         defer { lock.unlock() }
         return frames.count
     }
 
-    /// Whether the buffer is currently empty.
+    /// Whether no frames are queued; a held picture is not counted.
     public var isEmpty: Bool {
         lock.lock()
         defer { lock.unlock() }

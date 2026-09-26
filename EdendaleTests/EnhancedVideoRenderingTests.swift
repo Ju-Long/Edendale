@@ -83,6 +83,44 @@ struct EnhancedVideoRenderingTests {
         #expect(buffer.count == 0)
     }
 
+    @Test("FrameRingBuffer flush keeps the displayed frame until the next push")
+    func ringBufferFlushHoldsDisplayedFrame() throws {
+        let buffer = FrameRingBuffer(capacity: 3)
+        let pb = try #require(PixelBufferTextureCache.createTestPixelBuffer(width: 64, height: 64))
+        func frame(_ milliseconds: Int) -> DecodedVideoFrame {
+            DecodedVideoFrame(
+                pixelBuffer: pb,
+                presentationTime: CMTime(value: CMTimeValue(milliseconds), timescale: 1000),
+                duration: CMTime(value: 40, timescale: 1000)
+            )
+        }
+        buffer.push(frame(1000))
+        buffer.push(frame(1040))
+        buffer.push(frame(1080))
+        // The renderer shows 1040, with 1080 queued behind it.
+        #expect(buffer.latestFrame(atOrBefore: CMTime(value: 1050, timescale: 1000))?.presentationTime.value == 1040)
+
+        // A seek drops the queue but not the picture on screen.
+        buffer.flush()
+        #expect(buffer.isEmpty)
+        #expect(buffer.latestFrame(atOrBefore: .invalid)?.presentationTime.value == 1040)
+        #expect(buffer.latestFrame()?.presentationTime.value == 1040)
+        buffer.flush()
+        #expect(buffer.latestFrame()?.presentationTime.value == 1040)
+
+        // The first frame from the new position replaces it, even an earlier one.
+        buffer.push(frame(500))
+        #expect(buffer.count == 1)
+        #expect(buffer.latestFrame()?.presentationTime.value == 500)
+        #expect(buffer.latestFrame(atOrBefore: CMTime(value: 2000, timescale: 1000))?.presentationTime.value == 500)
+
+        // A media change clears everything.
+        buffer.flush()
+        buffer.clear()
+        #expect(buffer.latestFrame() == nil)
+        #expect(buffer.latestFrame(atOrBefore: .invalid) == nil)
+    }
+
     @Test("FrameRingBuffer is thread-safe under concurrent pushes and reads")
     func ringBufferThreadSafety() async {
         let buffer = FrameRingBuffer(capacity: 4)
@@ -328,6 +366,35 @@ struct EnhancedVideoRenderingTests {
         try deliver(3) // frame 2 was dropped: nothing to blend, shown directly
         view.draw()
         #expect(presented == [0, 1, 3])
+    }
+
+    @MainActor
+    @Test("EnhancedVideoView keeps drawing the current picture through a seek")
+    func videoViewDrawsHeldFrameAcrossFlush() throws {
+        let view = EnhancedVideoView(frame: CGRect(x: 0, y: 0, width: 320, height: 180))
+        view.isPaused = true // draw manually, one refresh per call
+        let ringBuffer = FrameRingBuffer()
+        view.ringBuffer = ringBuffer
+        var presented: [CMTime] = []
+        view.onFramePresented = { presented.append($0) }
+
+        let pixelBuffer = try #require(PixelBufferTextureCache.createTestPixelBuffer(width: 64, height: 64))
+        let time = CMTime(value: 10, timescale: 1)
+        ringBuffer.push(DecodedVideoFrame(pixelBuffer: pixelBuffer, presentationTime: time, duration: CMTime(value: 1, timescale: 24)))
+        view.currentDisplayTime = time
+        view.draw()
+        #expect(presented == [time])
+
+        // The engine flushes on a seek and publishes an invalid time until the
+        // target frame arrives; an empty buffer would be drawn as black.
+        ringBuffer.flush()
+        view.currentDisplayTime = .invalid
+        view.draw()
+        #expect(presented == [time, time])
+
+        ringBuffer.clear()
+        view.draw()
+        #expect(presented == [time, time])
     }
 
     @MainActor

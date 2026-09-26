@@ -40,6 +40,8 @@ final class PlayerSession {
     private(set) var chrome: PlayerChromeModel?
 
     let segmentSkipping: PlayerSegmentController
+    /// Skip lengths and press-and-hold speeds (Settings ▸ App Controls).
+    let controls: PlayerControlPreferences
 
     private let library: LibraryController
     private let watchStore: WatchProgressStore
@@ -89,6 +91,7 @@ final class PlayerSession {
         audioEnhancement: AudioEnhancementController? = nil,
         videoAdjustment: VideoAdjustmentController? = nil,
         segmentSkipping: PlayerSegmentController? = nil,
+        controls: PlayerControlPreferences? = nil,
         defaults: UserDefaults? = nil
     ) {
         let defaults = defaults ?? AppIdentifiers.defaults
@@ -99,6 +102,21 @@ final class PlayerSession {
         self.audioEnhancement = audioEnhancement ?? AudioEnhancementController(defaults: defaults)
         self.videoAdjustment = videoAdjustment ?? VideoAdjustmentController(defaults: defaults)
         self.segmentSkipping = segmentSkipping ?? PlayerSegmentController(defaults: defaults)
+        self.controls = controls ?? PlayerControlPreferences(defaults: defaults)
+
+        // The Lock Screen and Control Center label their skip buttons with
+        // the chosen lengths, including after a change made mid-playback.
+        offerSkipIntervalsToSystem()
+        self.controls.onSkipIntervalsChange = { [weak self] in
+            self?.offerSkipIntervalsToSystem()
+        }
+    }
+
+    private func offerSkipIntervalsToSystem() {
+        nowPlayingBridge.setSkipIntervals(
+            backward: controls.skipBackwardInterval.seconds,
+            forward: controls.skipForwardInterval.seconds
+        )
     }
 
     var isPresented: Bool { item != nil }

@@ -10,6 +10,17 @@ final class NowPlayingBridge {
     private var registeredCommands = false
     private var title: String?
     private var artworkURL: URL?
+    /// Seconds the skip commands offer; see `setSkipIntervals`.
+    private var skipIntervals = (backward: 10, forward: 10)
+
+    /// Offers the viewer's skip lengths to the Lock Screen, Control Center,
+    /// and headphone controls: immediately while attached, otherwise when
+    /// the next playback registers its commands.
+    func setSkipIntervals(backward: Int, forward: Int) {
+        skipIntervals = (backward, forward)
+        guard registeredCommands else { return }
+        applySkipIntervals()
+    }
 
     func attach(to engine: PlaybackEngine, title: String?, artworkURL: URL?) {
         self.engine = engine
@@ -92,7 +103,6 @@ final class NowPlayingBridge {
         }
 
         center.skipForwardCommand.isEnabled = true
-        center.skipForwardCommand.preferredIntervals = [10]
         center.skipForwardCommand.addTarget { [weak self] event in
             guard let self,
                   let cmd = event as? MPSkipIntervalCommandEvent
@@ -105,7 +115,6 @@ final class NowPlayingBridge {
         }
 
         center.skipBackwardCommand.isEnabled = true
-        center.skipBackwardCommand.preferredIntervals = [10]
         center.skipBackwardCommand.addTarget { [weak self] event in
             guard let self,
                   let cmd = event as? MPSkipIntervalCommandEvent
@@ -130,6 +139,13 @@ final class NowPlayingBridge {
         }
 
         registeredCommands = true
+        applySkipIntervals()
+    }
+
+    private func applySkipIntervals() {
+        let center = MPRemoteCommandCenter.shared()
+        center.skipBackwardCommand.preferredIntervals = [NSNumber(value: skipIntervals.backward)]
+        center.skipForwardCommand.preferredIntervals = [NSNumber(value: skipIntervals.forward)]
     }
 
     private func unregisterRemoteCommands() {

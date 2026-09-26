@@ -5,11 +5,13 @@
 //  Touch-first hidden controls (iOS/iPadOS, and visionOS where they make
 //  sense; tvOS has none of these):
 //    - single tap            show/hide the controls
-//    - double tap L / R      seek −10s / +10s
+//    - double tap L / R      skip back / forward (10s unless changed)
 //    - double tap center     play/pause
 //    - vertical swipe L / R  brightness (iOS only) / player volume
-//    - press-and-hold L / R  0.5× / 1.5× until released
+//    - press-and-hold L / R  0.5× / 2× (unless changed) until released
 //    - press-and-hold + horizontal drag   scrub the timeline
+//
+//  Skip lengths and hold speeds come from Settings ▸ App Controls.
 //
 
 #if os(iOS) || os(visionOS)
@@ -67,8 +69,12 @@ struct PlayerGestureLayer: View {
                 Button(player.isPlaying ? String(localized: "Pause") : String(localized: "Play")) {
                     chrome.togglePlayPause()
                 }
-                Button(String(localized: "Back 10 seconds")) { chrome.seek(bySeconds: -10) }
-                Button(String(localized: "Forward 10 seconds")) { chrome.seek(bySeconds: 10) }
+                Button(String(localized: "Back \(chrome.controls.skipBackwardInterval.seconds) seconds")) {
+                    chrome.skip(.backward)
+                }
+                Button(String(localized: "Forward \(chrome.controls.skipForwardInterval.seconds) seconds")) {
+                    chrome.skip(.forward)
+                }
             }
         }
     }
@@ -85,9 +91,9 @@ struct PlayerGestureLayer: View {
             .contentShape(Rectangle())
             .onTapGesture(count: 2) {
                 switch zone {
-                case .left: chrome.seek(bySeconds: -10)
+                case .left: chrome.skip(.backward)
                 case .center: chrome.togglePlayPause()
-                case .right: chrome.seek(bySeconds: 10)
+                case .right: chrome.skip(.forward)
                 }
             }
             .onTapGesture {
@@ -138,8 +144,9 @@ struct PlayerGestureLayer: View {
             }
     }
 
-    /// After 0.4s of stillness a touch becomes a press-and-hold: slow-mo on
-    /// the left half, speed-up on the right.
+    /// After 0.4s of stillness a touch becomes a press-and-hold at the held
+    /// half's speed: slow-mo on the left and speed-up on the right, unless
+    /// the viewer changed them.
     private func scheduleHold(startLocation: CGPoint, width: CGFloat) {
         holdTask?.cancel()
         holdTask = Task {
@@ -151,7 +158,7 @@ struct PlayerGestureLayer: View {
             #if os(iOS)
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             #endif
-            chrome.beginHoldRate(startLocation.x < width / 2 ? 0.5 : 1.5)
+            chrome.beginHold(on: startLocation.x < width / 2 ? .left : .right)
         }
     }
 

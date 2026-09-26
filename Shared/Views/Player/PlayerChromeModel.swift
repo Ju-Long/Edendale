@@ -246,6 +246,14 @@ final class PlayerChromeModel {
         showHUD(.seek(by: seconds))
     }
 
+    /// Skip lengths and hold speeds from Settings ▸ App Controls.
+    var controls: PlayerControlPreferences { session.controls }
+
+    /// Skips back or forward by the viewer's chosen length.
+    func skip(_ direction: SkipDirection) {
+        seek(bySeconds: controls.skipOffset(for: direction))
+    }
+
     /// Commits a timeline position (0...1).
     func seek(toPosition position: Double) {
         player?.position = min(max(position, 0), 1)
@@ -292,7 +300,13 @@ final class PlayerChromeModel {
         baseRate = PlayerLogic.normalizedRate(rate)
     }
 
-    /// Press-and-hold speed override (0.5× on the left, 1.5× on the right).
+    /// Press-and-hold on one side of the video: that side's speed from
+    /// Settings ▸ App Controls (0.5× left and 2× right by default).
+    func beginHold(on side: HoldSide) {
+        beginHoldRate(controls.holdRate(for: side))
+    }
+
+    /// Temporary speed override until `endHoldRate()`.
     func beginHoldRate(_ rate: Float) {
         holdRate = rate
         applyRate(rate)
@@ -306,17 +320,12 @@ final class PlayerChromeModel {
         dismissHUD()
     }
 
-    /// Sets the decoder rate and flushes the decode buffer so the new speed
-    /// takes effect immediately rather than playing through stale frames
-    /// decoded at the old rate. The flush is a same-position seek, which
-    /// forces re-decode from the current point at the new clock.
+    /// Both decoders present already-decoded frames against the media clock,
+    /// so a new rate takes effect immediately without a seek. A seek would
+    /// throw the buffered video away and re-decode from the previous
+    /// keyframe, blanking the picture on every speed change.
     private func applyRate(_ rate: Float) {
-        guard let player else { return }
-        player.setRate(rate)
-        let pos = player.position
-        if pos > 0, pos < 1 {
-            player.position = pos
-        }
+        player?.setRate(rate)
     }
 
     // MARK: - HUD
@@ -342,6 +351,12 @@ final class PlayerChromeModel {
     // MARK: - tvOS remote timeline
 
     #if os(tvOS)
+    /// A remote left/right skip by the viewer's chosen length, gathered
+    /// into the same preview as `remoteSeek(bySeconds:)`.
+    func remoteSkip(_ direction: SkipDirection) {
+        remoteSeek(bySeconds: controls.skipOffset(for: direction))
+    }
+
     /// Accumulates repeated left/right input into one preview. The final
     /// position is committed after a short pause in remote input.
     func remoteSeek(bySeconds seconds: Int) {

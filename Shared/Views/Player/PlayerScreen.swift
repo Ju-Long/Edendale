@@ -256,9 +256,9 @@ struct PlayerScreen: View {
 
         switch press.key {
         case .leftArrow where !commandPressed:
-            chrome.seek(bySeconds: -10)
+            chrome.skip(.backward)
         case .rightArrow where !commandPressed:
-            chrome.seek(bySeconds: 10)
+            chrome.skip(.forward)
         case .upArrow:
             if commandPressed {
                 let current = videoAdjustment.values[.brightness]
