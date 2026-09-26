@@ -28,10 +28,17 @@ struct TMDBSeasonBrowser: View {
     @State private var loadingSeason: Int?
     @State private var errorMessage: String?
 
+    #if os(macOS)
+    /// The selected season's shelf, mirrored into the Episodes heading's
+    /// rule — a scroll indicator and scrubber for pointer users.
+    @State private var shelfPosition = ScrollPosition()
+    @State private var shelfMetrics = ShelfScrollMetrics()
+    #endif
+
     var body: some View {
         if !seasons.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
-                SectionHeader(title: String(localized: "Episodes"))
+                SectionHeader(title: String(localized: "Episodes"), scrubber: shelfScrubber)
 
                 seasonPicker
 
@@ -47,7 +54,23 @@ struct TMDBSeasonBrowser: View {
             .onAppear {
                 if selectedSeason == nil { selectedSeason = seasons.first?.seasonNumber }
             }
+            #if os(macOS)
+            // Each season's shelf starts at its first episode.
+            .onChange(of: selectedSeason) { shelfPosition.scrollTo(edge: .leading) }
+            #endif
         }
+    }
+
+    /// Only a loaded, non-empty season has a shelf to scrub.
+    private var shelfScrubber: SectionScrubber? {
+        #if os(macOS)
+        guard let season = selectedSeason, episodesBySeason[season]?.isEmpty == false else {
+            return nil
+        }
+        return shelfMetrics.scrubber(scrolling: $shelfPosition)
+        #else
+        return nil
+        #endif
     }
 
     // MARK: - Season picker
@@ -92,6 +115,14 @@ struct TMDBSeasonBrowser: View {
                     }
                     .padding(.vertical, 14)
                 }
+                #if os(macOS)
+                .scrollPosition($shelfPosition)
+                .onScrollGeometryChange(for: ShelfScrollMetrics.self) { geometry in
+                    ShelfScrollMetrics(geometry)
+                } action: { _, new in
+                    shelfMetrics = new
+                }
+                #endif
                 .scrollClipDisabled()
             }
         } else if loadingSeason == season {

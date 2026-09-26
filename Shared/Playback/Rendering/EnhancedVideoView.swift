@@ -67,10 +67,11 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     }
 
     private func updatePiPLayer() {
-        guard let displayLayer = pipSource?.displayLayer else { return }
+        guard let pipSource else { return }
+        let displayLayer = pipSource.displayLayer
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        displayLayer.frame = bounds
+        pipSource.layoutDisplayLayer(in: bounds)
         #if os(iOS) || os(macOS)
         if let sbLayer = displayLayer as? AVSampleBufferDisplayLayer {
             sbLayer.videoGravity = (aspectMode == .fill) ? .resizeAspectFill : .resizeAspect

@@ -25,11 +25,14 @@ final class AudioSessionManager {
                     options: [.allowAirPlay]
                 )
                 #else
+                // Long-form policies reject every category option, and
+                // playback already allows AirPlay. A rejected category leaves
+                // the session inactive, which makes PiP impossible.
                 try session.setCategory(
                     .playback,
                     mode: .moviePlayback,
                     policy: .longFormVideo,
-                    options: [.allowAirPlay]
+                    options: []
                 )
                 #endif
             }.value
@@ -46,7 +49,8 @@ final class AudioSessionManager {
             }
             isActivated = true
         } catch {
-            // Non-fatal — playback still works, just no background audio
+            // Non-fatal — playback still works, but without background audio or PiP
+            debugPrint("[AudioSessionManager] activation failed — \(error)")
         }
 
         guard self.engine === engine else { return }

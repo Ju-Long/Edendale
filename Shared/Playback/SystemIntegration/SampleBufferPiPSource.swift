@@ -3,6 +3,9 @@ import AVKit
 import CoreMedia
 import CoreVideo
 import Observation
+#if os(macOS)
+import AppKit
+#endif
 
 #if os(iOS) || os(macOS)
 
@@ -66,6 +69,11 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         didSet { pipController?.canStartPictureInPictureAutomaticallyFromInline = automaticallyStartsFromInline }
     }
     #endif
+    #if os(macOS)
+    /// Content size of AVKit's PiP panel while it is open.
+    @ObservationIgnored private var panelContentSize: CGSize?
+    @ObservationIgnored private var panelResizeObserver: NSObjectProtocol?
+    #endif
 
     var onWillStart: (() -> Void)?
     var onDidStart: (() -> Void)?
@@ -106,6 +114,66 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
         if let timebase { CMTimebaseSetRate(timebase, rate: 0) }
         invalidatePlaybackState()
     }
+
+    /// Sizes the display layer to cover `hostBounds`, its superlayer's bounds.
+    func layoutDisplayLayer(in hostBounds: CGRect) {
+        #if os(macOS)
+        // AVKit lays out the PiP panel's video from this layer's bounds and
+        // never fits it to the panel, so a player larger than the panel shows
+        // only the video's bottom-left corner there. While PiP is open, the
+        // layer takes the panel's size and is scaled back up over the player.
+        if let size = panelContentSize, size.width > 0, size.height > 0,
+           hostBounds.width > 0, hostBounds.height > 0 {
+            displayLayer.bounds = CGRect(origin: .zero, size: size)
+            displayLayer.position = CGPoint(x: hostBounds.midX, y: hostBounds.midY)
+            displayLayer.transform = CATransform3DMakeScale(
+                hostBounds.width / size.width, hostBounds.height / size.height, 1
+            )
+            return
+        }
+        displayLayer.transform = CATransform3DIdentity
+        #endif
+        displayLayer.frame = hostBounds
+    }
+
+    #if os(macOS)
+    /// Follows AVKit's PiP panel, which it opens in this process.
+    private func trackPictureInPicturePanel() {
+        guard panelResizeObserver == nil,
+              let panel = NSApp.windows.first(where: { $0.isVisible && $0.className.hasPrefix("PIP") })
+        else { return }
+        panelResizeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResizeNotification, object: panel, queue: .main
+        ) { [weak self, weak panel] _ in
+            MainActor.assumeIsolated {
+                self?.setPanelContentSize(panel?.contentView?.bounds.size)
+            }
+        }
+        setPanelContentSize(panel.contentView?.bounds.size)
+    }
+
+    private func stopTrackingPictureInPicturePanel() {
+        if let panelResizeObserver {
+            NotificationCenter.default.removeObserver(panelResizeObserver)
+        }
+        panelResizeObserver = nil
+        setPanelContentSize(nil)
+    }
+
+    /// Lays the display layer out for the PiP panel's content size, or for
+    /// the player alone when `size` is nil.
+    func setPanelContentSize(_ size: CGSize?) {
+        guard size != panelContentSize else { return }
+        panelContentSize = size
+        guard let host = displayLayer.superlayer else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        layoutDisplayLayer(in: host.bounds)
+        // Also lays out the video container AVKit moved into the panel.
+        displayLayer.setNeedsLayout()
+        CATransaction.commit()
+    }
+    #endif
 
     /// AVKit caches these delegate values; refresh after transport/duration changes.
     func invalidatePlaybackState() {
@@ -251,6 +319,9 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         Task { @MainActor [weak self] in
             guard let self, self.pipController === pictureInPictureController else { return }
             self.isActive = true
+            #if os(macOS)
+            self.trackPictureInPicturePanel()
+            #endif
             self.onWillStart?()
         }
     }
@@ -260,6 +331,9 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
     ) {
         Task { @MainActor [weak self] in
             guard let self, self.pipController === pictureInPictureController else { return }
+            #if os(macOS)
+            self.trackPictureInPicturePanel()
+            #endif
             self.invalidatePlaybackState()
             self.onDidStart?()
         }
@@ -280,6 +354,9 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         Task { @MainActor [weak self] in
             guard let self, self.pipController === pictureInPictureController else { return }
             self.isActive = false
+            #if os(macOS)
+            self.stopTrackingPictureInPicturePanel()
+            #endif
             self.onDidStop?()
         }
     }
@@ -291,6 +368,9 @@ extension SampleBufferPiPSource: AVPictureInPictureControllerDelegate {
         Task { @MainActor [weak self] in
             guard let self, self.pipController === pictureInPictureController else { return }
             self.isActive = false
+            #if os(macOS)
+            self.stopTrackingPictureInPicturePanel()
+            #endif
             self.onDidStop?()
         }
     }
@@ -383,6 +463,7 @@ final class SampleBufferPiPSource: NSObject, @unchecked Sendable {
 
     func attach(to engine: PlaybackEngine) {}
     func reset() {}
+    func layoutDisplayLayer(in hostBounds: CGRect) { displayLayer.frame = hostBounds }
     func enqueue(pixelBuffer: CVPixelBuffer, presentationTime: CMTime, duration: CMTime) {}
     func start() {}
     func stop() {}

@@ -173,6 +173,11 @@ display layer. AVKit holds an unretained reference from the layer to its first
 controller, so switching media stops PiP and flushes the layer instead of
 replacing the controller.
 
+On macOS, AVKit lays out the PiP panel's video from the display layer's bounds
+and never fits it to the panel. While PiP is open, the layer takes the panel's
+size (following resizes) and is scaled back over the player, so the panel
+shows the whole frame instead of its bottom-left corner.
+
 Embedded FFmpeg subtitles decode alongside audio/video. Changing tracks uses a
 bounded seek at the current position instead of scanning the entire file, and
 preserves the playing/paused state. ASS fallback rendering strips packet fields
@@ -274,10 +279,12 @@ button appears at the bottom trailing edge, independently of hidden playback
 controls. Press the button to skip; playback never skips automatically. On
 keyboard platforms, **S** activates the visible prompt. On tvOS, **Down** from
 the hidden-controls surface focuses the prompt when one is available. Prompts
-hide while scrubbing or using a side panel. Bounded credits seek only to that
-range's end, preserving gaps for additional scenes. A terminal credits skip
-marks the item complete and advances to the next stored episode, ends playback
-if none exists, or restarts the file when Loop Video is enabled.
+hide while scrubbing or while a side panel covers the video; the macOS panels
+dock beside the video instead, so prompts stay available there. Bounded
+credits seek only to that range's end, preserving gaps for additional scenes.
+A terminal credits skip marks the item complete and advances to the next
+stored episode, ends playback if none exists, or restarts the file when Loop
+Video is enabled.
 
 The native Swift client calls `GET https://api.theintrodb.org/v3/media` directly
 from the device after the player reports a finite duration. Movies use their
@@ -308,6 +315,61 @@ The macOS unit command above includes API decoding, identity matching, request
 deduplication, failures, stale responses, preference migration, and real VLC
 skip/progress/loop regression tests. Android and Windows need independent
 native implementations of the same behavior; the static Web branch is unaffected.
+
+### macOS navigation, shortcuts, and player panels
+
+The macOS library window uses a split view instead of the adaptive tab view.
+Its sidebar lists Movies & Shows, Watchlist, Downloaded, Search, and then
+Settings. Watchlist and Downloaded are pages of their own and also disclose
+their sections as child rows, so one section opens without scrolling the
+whole page:
+
+- **Watchlist:** Movies and TV Shows.
+- **Downloaded:** Continue Watching, Movies, and TV Shows. The Continue
+  Watching page lists every resumable title in a grid (the shelf keeps its
+  12-item cap). The Movies page lists every movie, including those also in
+  Continue Watching.
+
+A child row appears only while its section has titles for the current
+audience setting. If the open section empties, the sidebar returns to the
+parent page. Choosing a row always opens that page at its root, and the
+search query survives visits to other pages.
+
+Menu bar commands:
+
+| Command | Shortcut | Available |
+|---|---|---|
+| View ▸ Hide/Show Sidebar | ⌘B | Library window |
+| File ▸ Add Media Folder… | ⌘N | Downloaded pages |
+| File ▸ Link Network Source… | ⌥⌘N | Downloaded pages |
+| File ▸ Rescan Library | ⌘R | Downloaded pages with linked sources |
+
+These replace File ▸ New Window; clicking the Dock icon reopens a closed
+library window. Rescanning uses the same duplicate-safe sweep that runs when
+the Downloaded page appears and shows a status row while it runs.
+
+The Link Source sheet opens with the server address focused. Tab and
+Shift-Tab move between the address, username, and password fields. Return
+connects once all three are filled and otherwise moves to the first empty
+field; a guest connection (no username or password) is still one click on
+Connect.
+
+In the Now Playing window, the playlist and Player Adjustments panels dock as
+a trailing sidebar: the video narrows beside the panel instead of being
+covered. Clicking the video leaves the panel open. Its close control, the
+toolbar control that opened it, or Escape close it; Escape then leaves the
+player. With a panel docked, playback controls still auto-hide and the Up
+Next card and skip prompts remain available. Other platforms keep the
+overlaid panel.
+
+On macOS, each season's episode shelf in a show's detail page has a heading
+rule that works as the shelf's scroll indicator and scrubber, like the shelf
+headings on Movies & Shows. The TMDB episode browser for shows that are not
+in the library uses the Episodes heading the same way. Drag the gold thumb or
+click the rule to move through the season.
+
+These are macOS presentation changes; other platform branches require no rule
+change.
 
 ### Xcode Cloud
 

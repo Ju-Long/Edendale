@@ -4,8 +4,9 @@
 //
 //  Auto-hiding chrome over the video: back + title + tools on top, big
 //  play/pause in the center, timeline along the bottom, side panels on the
-//  trailing edge. Taps on empty overlay space hide the controls; on tvOS an
-//  invisible focus catcher brings them back.
+//  trailing edge (docked beside the video on macOS; see PlayerScreen).
+//  Taps on empty overlay space hide the controls; on tvOS an invisible
+//  focus catcher brings them back.
 //
 
 import SwiftUI
@@ -70,7 +71,10 @@ struct PlayerControlsOverlay: View {
             #endif
 
             segmentPrompt
+            // macOS docks the panels beside the video (see PlayerScreen).
+            #if !os(macOS)
             panelHost
+            #endif
         }
         .animation(.easeInOut(duration: 0.2), value: chrome.controlsVisible)
         .animation(.easeInOut(duration: 0.25), value: chrome.activePanel)
@@ -105,7 +109,7 @@ struct PlayerControlsOverlay: View {
     }
 
     private var visibleSegment: PlaybackSegment? {
-        guard chrome.activePanel == nil, !chrome.isScrubbing else { return nil }
+        guard !chrome.panelCoversVideo, !chrome.isScrubbing else { return nil }
         return session.segmentSkipping.activeSegment
     }
 
@@ -396,6 +400,7 @@ struct PlayerControlsOverlay: View {
 
     // MARK: - Side panels
 
+    #if !os(macOS)
     @ViewBuilder
     private var panelHost: some View {
         GeometryReader { proxy in
@@ -421,7 +426,7 @@ struct PlayerControlsOverlay: View {
                 // the move transition slides each panel in/out along the
                 // trailing edge, animated by the overlay's `activePanel` block.
                 if let panel = chrome.activePanel {
-                    panelContent(panel)
+                    PlayerPanelContent(panel: panel, chrome: chrome, player: player, item: item)
                         .padding(.vertical, proxy.safeAreaInsets.top)
                         .padding(.trailing, proxy.safeAreaInsets.trailing)
                         .frame(width: panelWidth + proxy.safeAreaInsets.trailing)
@@ -446,16 +451,6 @@ struct PlayerControlsOverlay: View {
         }
     }
 
-    @ViewBuilder
-    private func panelContent(_ panel: PlayerChromeModel.SidePanel) -> some View {
-        switch panel {
-        case .settings:
-            PlayerSettingsPanel(chrome: chrome, player: player, item: item)
-        case .playlist:
-            PlayerPlaylistPanel(chrome: chrome, item: item)
-        }
-    }
-
     private var panelWidth: CGFloat {
         #if os(tvOS)
         520
@@ -463,6 +458,7 @@ struct PlayerControlsOverlay: View {
         340
         #endif
     }
+    #endif
 
     #if os(tvOS)
     /// Invisible focus target hugging an open panel's leading edge: moving
@@ -544,6 +540,26 @@ private struct RevealCatcherButtonStyle: ButtonStyle {
     }
 }
 #endif
+
+// MARK: - Panel content
+
+/// The playlist or adjustments panel, wherever it is hosted: layered over
+/// the video by the controls overlay, or docked beside it on macOS.
+struct PlayerPanelContent: View {
+    let panel: PlayerChromeModel.SidePanel
+    let chrome: PlayerChromeModel
+    let player: PlaybackEngine
+    let item: PlaybackItem
+
+    var body: some View {
+        switch panel {
+        case .settings:
+            PlayerSettingsPanel(chrome: chrome, player: player, item: item)
+        case .playlist:
+            PlayerPlaylistPanel(chrome: chrome, item: item)
+        }
+    }
+}
 
 // MARK: - Chips
 

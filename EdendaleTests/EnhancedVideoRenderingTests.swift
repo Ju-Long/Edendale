@@ -352,4 +352,27 @@ struct EnhancedVideoRenderingTests {
         view.pipSource = nil
         #expect(pip.displayLayer.superlayer == nil)
     }
+
+    #if os(macOS)
+    @MainActor
+    @Test("PiP display layer takes the panel's size while still covering the player")
+    func pictureInPicturePanelSizesDisplayLayer() {
+        let view = EnhancedVideoView(frame: CGRect(x: 0, y: 0, width: 960, height: 540))
+        let pip = SampleBufferPiPSource()
+        view.pipSource = pip
+
+        // AVKit lays out the panel's video from these bounds.
+        pip.setPanelContentSize(CGSize(width: 640, height: 360))
+        #expect(pip.displayLayer.bounds.size == CGSize(width: 640, height: 360))
+        #expect(pip.displayLayer.frame == view.bounds)
+
+        view.aspectMode = .fill
+        #expect(pip.displayLayer.bounds.size == CGSize(width: 640, height: 360))
+
+        pip.setPanelContentSize(nil)
+        #expect(CATransform3DIsIdentity(pip.displayLayer.transform))
+        #expect(pip.displayLayer.frame == view.bounds)
+        view.pipSource = nil
+    }
+    #endif
 }

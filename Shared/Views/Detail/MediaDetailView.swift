@@ -622,29 +622,14 @@ struct MediaDetailView: View {
         VStack(alignment: .leading, spacing: 18) {
             SectionHeader(title: String(localized: "Episodes"))
             ForEach(show.availableSeasons, id: \.self) { season in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Season \(season)")
-                        .font(Typography.titleLG)
-                        .foregroundStyle(Theme.textPrimary)
-                        .padding(.vertical, 12)
-                        .accessibilityAddTraits(.isHeader)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: episodeSpacing) {
-                            ForEach(show.episodes(for: season)) { episode in
-                                episodeCard(episode, show: show)
-                            }
-                        }
-                        .padding(.horizontal, edgeMargin)
-                        .padding(.vertical, 14)
-                    }
-                    // Full-bleed shelf inside the padded page column so the
-                    // hover/focus glow isn't clipped at the margins.
-                    .scrollClipDisabled()
-                    .padding(.horizontal, -edgeMargin)
+                SeasonEpisodeShelf(
+                    season: season,
+                    episodes: show.episodes(for: season),
+                    edgeMargin: edgeMargin,
+                    spacing: episodeSpacing
+                ) { episode in
+                    episodeCard(episode, show: show)
                 }
-                // Each season heading and its shelf are one group.
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel("Season \(season)")
             }
         }
         .accessibilityElement(children: .contain)
@@ -925,5 +910,73 @@ struct MediaDetailView: View {
         #else
         20
         #endif
+    }
+}
+
+// MARK: - Season shelf
+
+/// One season's episode shelf. On macOS the season heading carries a rule
+/// that doubles as the shelf's scroll indicator and scrubber (the control
+/// MediaShelf headings use), so episodes past the window edge are visible
+/// and reachable without a horizontal scroll gesture.
+private struct SeasonEpisodeShelf<Card: View>: View {
+    let season: Int
+    let episodes: [Episode]
+    let edgeMargin: CGFloat
+    let spacing: CGFloat
+    @ViewBuilder let card: (Episode) -> Card
+
+    #if os(macOS)
+    @State private var scrollPosition = ScrollPosition()
+    @State private var metrics = ShelfScrollMetrics()
+    #endif
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            heading
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: spacing) {
+                    ForEach(episodes) { episode in
+                        card(episode)
+                    }
+                }
+                .padding(.horizontal, edgeMargin)
+                .padding(.vertical, 14)
+            }
+            #if os(macOS)
+            .scrollPosition($scrollPosition)
+            .onScrollGeometryChange(for: ShelfScrollMetrics.self) { geometry in
+                ShelfScrollMetrics(geometry)
+            } action: { _, new in
+                metrics = new
+            }
+            #endif
+            // Full-bleed shelf inside the padded page column so the
+            // hover/focus glow isn't clipped at the margins.
+            .scrollClipDisabled()
+            .padding(.horizontal, -edgeMargin)
+        }
+        // Each season heading and its shelf are one group.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Season \(season)")
+    }
+
+    private var heading: some View {
+        HStack(spacing: 16) {
+            Text("Season \(season)")
+                .font(Typography.titleLG)
+                .foregroundStyle(Theme.textPrimary)
+                #if os(macOS)
+                .fixedSize()
+                #endif
+                .accessibilityAddTraits(.isHeader)
+            #if os(macOS)
+            SectionRule(
+                scrubber: metrics.scrubber(scrolling: $scrollPosition),
+                label: String(localized: "Season \(season)")
+            )
+            #endif
+        }
+        .padding(.vertical, 12)
     }
 }

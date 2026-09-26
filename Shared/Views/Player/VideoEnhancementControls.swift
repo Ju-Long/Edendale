@@ -42,7 +42,14 @@ struct VideoEnhancementControls: View {
                     Text(preset.displayName).tag(preset)
                 }
             }
+            #if os(macOS)
+            // A macOS segmented control can't shrink below its labels, and
+            // four presets side by side are wider than the docked
+            // adjustments column.
+            .pickerStyle(.menu)
+            #else
             .pickerStyle(.segmented)
+            #endif
             .labelsHidden()
         }
     }

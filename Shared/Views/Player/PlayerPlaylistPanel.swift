@@ -55,7 +55,13 @@ struct PlayerPlaylistPanel: View {
                 }
                 .padding(24)
             }
+            // Docked as a sidebar on macOS, a long episode list keeps its
+            // scroller so pointer users can see and drag through it.
+            #if os(macOS)
+            .scrollIndicators(.automatic)
+            #else
             .scrollIndicators(.hidden)
+            #endif
             .onAppear {
                 if let id = currentRowID {
                     proxy.scrollTo(id, anchor: .center)

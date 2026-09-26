@@ -36,8 +36,25 @@ final class PlayerChromeModel {
     /// Whether the controls overlay is shown.
     private(set) var controlsVisible = true
 
-    /// Open side panel, if any. Auto-hide pauses while a panel is open.
+    /// Open side panel, if any. Auto-hide pauses while a panel covers video.
     var activePanel: SidePanel?
+
+    /// macOS docks side panels beside the video as a trailing sidebar;
+    /// every other platform layers them over it.
+    static let docksSidePanels: Bool = {
+        #if os(macOS)
+        true
+        #else
+        false
+        #endif
+    }()
+
+    /// An open panel is layered over the video, so the chrome stays up and
+    /// the Up Next card and skip prompts step aside. A docked panel leaves
+    /// the video uncovered.
+    var panelCoversVideo: Bool {
+        activePanel != nil && !Self.docksSidePanels
+    }
 
     /// Seconds of inactivity before the controls hide.
     static let autoHideDelay: Duration = .seconds(5)
@@ -186,9 +203,10 @@ final class PlayerChromeModel {
         controlsVisible = false
     }
 
-    /// Auto-hide only makes sense while actively playing with nothing open.
+    /// Auto-hide only makes sense while actively playing with nothing
+    /// covering the video.
     private var canAutoHide: Bool {
-        activePanel == nil
+        !panelCoversVideo
             && !isScrubbing
             && (player?.isPlaying ?? false)
     }

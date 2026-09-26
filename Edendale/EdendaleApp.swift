@@ -64,6 +64,9 @@ struct EdendaleApp: App {
                 .environment(\.ratingProviders, [TMDBRatingsProvider()])
         }
         .modelContainer(Persistence.sharedModelContainer)
+        #if os(macOS)
+        .commands { EdendaleCommands() }
+        #endif
 
         // macOS uses a dedicated player window. iOS, iPadOS, visionOS, and
         // tvOS present the player over ContentView instead (see ContentView).

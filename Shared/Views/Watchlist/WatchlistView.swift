@@ -3,11 +3,51 @@
 //  Edendale
 //
 //  Movies and shows saved for later, grouped into adaptive poster grids.
+//  The macOS sidebar also opens each group as a page of its own.
 //
 
 import SwiftUI
 
+/// One group of the Watchlist page shown on its own — the Watchlist row's
+/// children in the macOS sidebar. A `nil` section is the whole page.
+enum WatchlistSection: Hashable, CaseIterable {
+    case movies, shows
+
+    var title: String {
+        switch self {
+        case .movies: String(localized: "Movies")
+        case .shows: String(localized: "TV Shows")
+        }
+    }
+
+    /// Symbol asset for the section's sidebar row.
+    var icon: String {
+        switch self {
+        case .movies: "film"
+        case .shows: "tv"
+        }
+    }
+
+    var mediaType: TMDBMediaType {
+        switch self {
+        case .movies: .movie
+        case .shows: .tv
+        }
+    }
+
+    /// The sections holding at least one of `items`, in sidebar order.
+    static func available(in items: [WatchlistItem]) -> [WatchlistSection] {
+        allCases.filter { section in
+            items.contains { $0.mediaType == section.mediaType }
+        }
+    }
+}
+
 struct WatchlistView: View {
+    /// Shows only this group (a macOS sidebar child row); `nil` shows the
+    /// whole watchlist.
+    var section: WatchlistSection? = nil
+
     @Environment(WatchlistStore.self) private var watchlistStore
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     #if !os(macOS)
@@ -45,8 +85,12 @@ struct WatchlistView: View {
                     if movies.isEmpty && shows.isEmpty && !watchlistItems.isEmpty {
                         audienceFilterState
                     }
-                    moviesSection
-                    showsSection
+                    if section != .shows {
+                        moviesSection
+                    }
+                    if section != .movies {
+                        showsSection
+                    }
                 }
                 .padding(.vertical, 24)
                 .padding(.bottom, 40)
@@ -54,7 +98,11 @@ struct WatchlistView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background)
             #if !os(tvOS)
-            .navigationTitle("Watchlist")
+            .navigationTitle(section?.title ?? String(localized: "Watchlist"))
+            #endif
+            #if os(macOS)
+            // "Movies" alone could be the Downloaded page's; name the parent.
+            .navigationSubtitle(section == nil ? "" : String(localized: "Watchlist"))
             #endif
             .navigationDestination(for: MediaRef.self) { ref in
                 MediaDetailView(source: .tmdb(ref))

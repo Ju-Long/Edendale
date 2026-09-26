@@ -5,7 +5,7 @@
 //  The full-screen playback surface: video underneath, gesture layer on
 //  touch platforms, platform-specific input, and transient HUD feedback.
 //  Hosted full screen on iOS/visionOS/tvOS and in the "Now Playing" window
-//  on macOS.
+//  on macOS, where the side panels dock beside the video.
 //
 
 import CoreMedia
@@ -93,6 +93,27 @@ struct PlayerScreen: View {
 
     @ViewBuilder
     private func playback(player: PlaybackEngine, item: PlaybackItem) -> some View {
+        #if os(macOS)
+        // The playlist and adjustments panels dock as a trailing sidebar:
+        // the video narrows beside an open panel instead of sitting under it.
+        HStack(spacing: 0) {
+            playbackLayers(player: player, item: item)
+            if let chrome = session.chrome, let panel = chrome.activePanel {
+                PlayerDockedPanel(panel: panel, chrome: chrome, player: player, item: item)
+                    .transition(.move(edge: .trailing))
+            }
+        }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.25),
+            value: session.chrome?.activePanel
+        )
+        #else
+        playbackLayers(player: player, item: item)
+        #endif
+    }
+
+    @ViewBuilder
+    private func playbackLayers(player: PlaybackEngine, item: PlaybackItem) -> some View {
         ZStack {
             videoSurface(player: player)
                 .ignoresSafeArea()
@@ -141,7 +162,7 @@ struct PlayerScreen: View {
                 #endif
 
                 if let upcoming = chrome.upcomingEpisode,
-                   chrome.activePanel == nil, !chrome.isScrubbing {
+                   !chrome.panelCoversVideo, !chrome.isScrubbing {
                     VStack {
                         HStack {
                             Spacer()
@@ -262,6 +283,12 @@ struct PlayerScreen: View {
             chrome.toggleMute()
         case .space:
             chrome.togglePlayPause()
+        #if os(macOS)
+        // A docked panel stays open through clicks on the video, so Escape
+        // closes it before it closes the player.
+        case .escape where chrome.activePanel != nil:
+            chrome.closePanel()
+        #endif
         case .escape:
             exit()
         default:
@@ -294,6 +321,40 @@ struct PlayerScreen: View {
     }
     #endif
 }
+
+// MARK: - Docked panel (macOS)
+
+#if os(macOS)
+/// The playlist or adjustments panel as a trailing sidebar of the player
+/// window: an opaque dim column with a hairline edge, beside the video
+/// rather than over it. Clicks on the video leave it open; its close chip,
+/// the toolbar chip that opened it, or Escape close it.
+private struct PlayerDockedPanel: View {
+    let panel: PlayerChromeModel.SidePanel
+    let chrome: PlayerChromeModel
+    let player: PlaybackEngine
+    let item: PlaybackItem
+
+    var body: some View {
+        PlayerPanelContent(panel: panel, chrome: chrome, player: player, item: item)
+            .frame(width: 340)
+            .frame(maxHeight: .infinity)
+            // Nothing in the panel may draw over the video beside it.
+            .clipped()
+            .background { Theme.surfaceLow.ignoresSafeArea() }
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(width: 1)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
+            }
+            // A sibling of the video, not a modal layer: the transport
+            // controls stay in the reading order beside it.
+            .accessibilityElement(children: .contain)
+    }
+}
+#endif
 
 // MARK: - Exit button
 

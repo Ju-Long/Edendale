@@ -44,8 +44,20 @@ struct PlayerSettingsPanel: View {
                 enhancementSection
             }
             .padding(24)
+            #if os(macOS)
+            // Held to the docked column's width and pinned to its leading
+            // edge: an oversized control can't widen the stack and shift it
+            // out past both sides of the column.
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            #endif
         }
+        // Docked as a sidebar on macOS, the long list keeps its scroller so
+        // pointer users can see and drag through what's below.
+        #if os(macOS)
+        .scrollIndicators(.automatic)
+        #else
         .scrollIndicators(.hidden)
+        #endif
         .onChange(of: item.id) {
             onlineSubtitles.reset()
         }
