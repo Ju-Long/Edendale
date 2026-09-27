@@ -135,6 +135,8 @@ struct SettingsView: View {
 
         SegmentSkippingSection()
 
+        AppControlsSection()
+
         SourcesSection(
             showImporter: $showImporter,
             showLinkSource: $showLinkSource

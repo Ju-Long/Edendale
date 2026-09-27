@@ -54,21 +54,27 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
     struct Batch: @unchecked Sendable {
         let frames: [EDFFmpegFrame]
         let atEnd: Bool
+        let blockedOnVideo: Bool
     }
 
-    func read() async throws -> Batch {
+    func read(decodingVideo: Bool) async throws -> Batch {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                do { continuation.resume(returning: Batch(frames: try self.reader.readBatch(), atEnd: self.reader.atEnd)) }
-                catch { continuation.resume(throwing: error) }
+                do {
+                    let frames = try self.reader.readBatch(decodingVideo: decodingVideo)
+                    continuation.resume(returning: Batch(frames: frames, atEnd: self.reader.atEnd,
+                        blockedOnVideo: self.reader.blockedOnVideo))
+                } catch { continuation.resume(throwing: error) }
             }
         }
     }
 
-    func seek(seconds: Double, audioTrack: Int?, subtitleTrack: Int?) async throws -> [String: Any] {
+    func seek(seconds: Double, audioTrack: Int?, subtitleTrack: Int?,
+              resetVideoDecoder: Bool) async throws -> [String: Any] {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
+                    if resetVideoDecoder { _ = self.reader.recreateVideoDecoder() }
                     if let audioTrack { try self.reader.selectAudioTrack(audioTrack) }
                     let configuration = try self.reader.selectSubtitleTrack(subtitleTrack ?? -1)
                     try self.reader.seek(seconds: seconds)
@@ -135,7 +141,14 @@ public final class FFmpegDecoder: MediaDecoder {
     private var pump: Task<Void, Never>?
     private var generation = 0
     private var videos: [DecodedVideoFrame] = []
+    /// Decoded audio the renderer has no room for yet. The demuxer can deliver
+    /// audio a second or more ahead of the video it is interleaved with, so the
+    /// pump parks it here and keeps decoding instead of waiting for the renderer.
+    private var pendingAudio: [CMSampleBuffer] = []
+    /// The reader holds undecoded video it cannot read past until video decodes.
+    private var readerBlockedOnVideo = false
     private var bufferedUntil = 0.0
+    /// End of the decoded audio, including `pendingAudio`.
     private var audioBufferedUntil = 0.0
     private var eof = false
     private var wantsToPlay = false
@@ -147,6 +160,10 @@ public final class FFmpegDecoder: MediaDecoder {
     private var usingWallClock = false
     private var wallClockStart: CFTimeInterval = 0
     private var wallClockOffset: Double = 0
+
+    /// Decoded audio never runs further ahead of the clock than this (about
+    /// 0.4 MB/s of 48 kHz stereo PCM); reading pauses there instead.
+    private static let maxAudioAhead = 4.0
 
     public init(hardwareDecoding: Bool = true) {
         self.hardwareDecoding = hardwareDecoding
@@ -260,7 +277,18 @@ public final class FFmpegDecoder: MediaDecoder {
         try await reposition(seconds: time.seconds, audioTrack: nil)
     }
 
-    private func reposition(seconds: Double, audioTrack: Int?) async throws {
+    /// Refills video at the current position with a new decoder. iOS
+    /// invalidates hardware decoder sessions while the app is in the
+    /// background, so the old decoder fails the first frames after it returns.
+    public func reloadVideo() {
+        guard mediaInfo?.videoTracks.isEmpty == false else { return }
+        let time = currentTime.seconds
+        Task { [weak self] in
+            try? await self?.reposition(seconds: time, audioTrack: nil, resetVideoDecoder: true)
+        }
+    }
+
+    private func reposition(seconds: Double, audioTrack: Int?, resetVideoDecoder: Bool = false) async throws {
         guard let worker, let synchronizer else { return }
         generation += 1
         let request = generation
@@ -272,12 +300,15 @@ public final class FFmpegDecoder: MediaDecoder {
         clockRunning = false
         state = .seeking
         videos.removeAll()
+        pendingAudio.removeAll()
+        readerBlockedOnVideo = false
         audioRenderer?.flush()
         onDiscontinuity?()
         var target = max(seconds, 0)
         if let duration = mediaInfo?.duration.seconds, duration.isFinite { target = min(target, duration) }
         do {
-            let configuration = try await worker.seek(seconds: target, audioTrack: audioTrack, subtitleTrack: selectedSubtitleIndex)
+            let configuration = try await worker.seek(seconds: target, audioTrack: audioTrack,
+                subtitleTrack: selectedSubtitleIndex, resetVideoDecoder: resetVideoDecoder)
             guard generation == request else { throw CancellationError() }
             let format = (configuration["format"] as? String).flatMap(SubtitleTrackFormat.init(rawValue:))
             onSubtitleConfiguration?(format, configuration["header"] as? Data ?? Data())
@@ -341,6 +372,8 @@ public final class FFmpegDecoder: MediaDecoder {
         worker?.setVideoDecodingEnabled(enabled)
         if !enabled {
             videos.removeAll()
+            // The reader drops held video once decoding is off.
+            readerBlockedOnVideo = false
         } else {
             previewPending = true
             if wantsToPlay {
@@ -366,6 +399,8 @@ public final class FFmpegDecoder: MediaDecoder {
         audioRenderer = nil
         synchronizer = nil
         videos.removeAll()
+        pendingAudio.removeAll()
+        readerBlockedOnVideo = false
         mediaInfo = nil
         bufferedUntil = 0
         audioBufferedUntil = 0
@@ -384,24 +419,28 @@ public final class FFmpegDecoder: MediaDecoder {
         pump = Task { [weak self] in
             do {
                 while !Task.isCancelled {
+                    self?.feedAudioRenderer()
                     guard let shouldRead = self?.shouldRead(generation: request) else { return }
                     if !shouldRead {
+                        // Reading may pause before a video frame decodes; the
+                        // clock then starts without one (see startClockIfReady).
+                        self?.startClockIfReady()
                         try await Task.sleep(for: .milliseconds(20))
                         continue
                     }
-                    let batch = try await worker.read()
+                    // Video decodes only when the queue needs frames. A read for
+                    // audio alone leaves the video packets it passes undecoded.
+                    guard let decodeVideo = self?.videoNeedsData else { return }
+                    let batch = try await worker.read(decodingVideo: decodeVideo)
                     guard !Task.isCancelled, self?.generation == request else { return }
+                    self?.readerBlockedOnVideo = batch.blockedOnVideo
                     for frame in batch.frames {
-                        while frame.audioSampleBuffer != nil && self?.audioRenderer?.isReadyForMoreMediaData == false {
-                            try await Task.sleep(for: .milliseconds(10))
-                            guard self?.generation == request else { return }
-                        }
-                        guard !Task.isCancelled, self?.generation == request else { return }
+                        guard self?.generation == request else { return }
                         self?.accept(frame)
                     }
+                    if batch.atEnd { self?.eof = true }
                     self?.startClockIfReady()
                     if batch.atEnd {
-                        self?.eof = true
                         self?.tick()
                         return
                     }
@@ -421,11 +460,16 @@ public final class FFmpegDecoder: MediaDecoder {
     private func shouldRead(generation request: Int) -> Bool? {
         guard generation == request else { return nil }
         guard !eof else { return false }
-        let now = currentTime.seconds
-        let audioNeedsData = !usingWallClock && audioBufferedUntil < now + 1.0
-        let videoNeedsData = isVideoDecodingEnabled && videos.count < 12
+        if readerBlockedOnVideo && !videoNeedsData { return false }
+        let audioAhead = audioBufferedUntil - currentTime.seconds
+        if !usingWallClock && audioAhead >= Self.maxAudioAhead { return false }
+        // Audio asks for more only while the renderer has room; video reads on
+        // past it, parking the audio decoded on the way in `pendingAudio`.
+        let audioNeedsData = !usingWallClock && pendingAudio.isEmpty && audioAhead < 1.0
         return audioNeedsData || videoNeedsData
     }
+
+    private var videoNeedsData: Bool { isVideoDecodingEnabled && videos.count < 12 }
 
     private func accept(_ frame: EDFFmpegFrame) {
         if let subtitle = frame.subtitle {
@@ -452,8 +496,8 @@ public final class FFmpegDecoder: MediaDecoder {
         bufferedUntil = max(bufferedUntil, frame.presentationTime + frame.duration)
         if let sample = frame.audioSampleBuffer {
             audioBufferedUntil = max(audioBufferedUntil, frame.presentationTime + frame.duration)
-            audioProcessor?.processSampleBuffer(sample)
-            audioRenderer?.enqueue(sample)
+            pendingAudio.append(sample)
+            feedAudioRenderer()
         }
         if let pixel = frame.pixelBuffer {
             let video = DecodedVideoFrame(pixelBuffer: pixel,
@@ -462,15 +506,39 @@ public final class FFmpegDecoder: MediaDecoder {
             if previewPending {
                 onVideoFrame?(video)
                 previewPending = false
-            } else if videos.count < 24 {
+            } else {
                 videos.append(video)
             }
         }
     }
 
+    /// Hands pending audio to the renderer while it has room. The pump and the
+    /// display link poll this, because during playback the renderer's
+    /// requestMediaDataWhenReady callback fires only after it has run dry.
+    private func feedAudioRenderer() {
+        guard let renderer = audioRenderer else {
+            pendingAudio.removeAll()
+            return
+        }
+        var fed = 0
+        while fed < pendingAudio.count && renderer.isReadyForMoreMediaData {
+            // Equalize at hand-off, so settings changes are heard no later than before.
+            audioProcessor?.processSampleBuffer(pendingAudio[fed])
+            renderer.enqueue(pendingAudio[fed])
+            fed += 1
+        }
+        pendingAudio.removeFirst(fed)
+    }
+
     private func startClockIfReady() {
         guard wantsToPlay, state != .seeking, !clockRunning,
               bufferedUntil > currentTime.seconds else { return }
+        // Start picture and sound together: wait for the first video frame at
+        // this position, unless reading has stopped before it could decode.
+        if previewPending && isVideoDecodingEnabled && !eof && mediaInfo?.videoTracks.isEmpty == false
+            && (usingWallClock || audioBufferedUntil - currentTime.seconds < Self.maxAudioAhead) {
+            return
+        }
         if usingWallClock {
             wallClockStart = CACurrentMediaTime()
         } else {
@@ -480,6 +548,7 @@ public final class FFmpegDecoder: MediaDecoder {
     }
 
     private func tick() {
+        feedAudioRenderer()
         let time = currentTime
         var latest: DecodedVideoFrame?
         while let first = videos.first, first.presentationTime <= time {

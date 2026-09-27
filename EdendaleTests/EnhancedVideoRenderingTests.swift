@@ -14,6 +14,11 @@ import CoreVideo
 import Metal
 import MetalKit
 import Testing
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 @testable import Edendale
 
 @Suite("Enhanced Video Rendering Surface Tests")
@@ -317,6 +322,40 @@ struct EnhancedVideoRenderingTests {
         view.isPlaybackPaused = false
         #expect(!view.isPlaybackPaused)
         #expect(!view.isPaused)
+    }
+
+    @MainActor
+    @Test("A paused view redraws once, after the SwiftUI updates that asked")
+    func pausedRedrawsWaitForALaterTurnAndCoalesce() async throws {
+        final class CountingView: EnhancedVideoView {
+            var draws = 0
+            override func draw() { draws += 1 }
+        }
+        let view = CountingView(frame: CGRect(x: 0, y: 0, width: 320, height: 180))
+        view.isPlaybackPaused = true
+        #if os(macOS)
+        let window = NSWindow(contentRect: view.frame, styleMask: .borderless, backing: .buffered, defer: true)
+        window.contentView = view
+        #else
+        let window = UIWindow(frame: view.frame)
+        window.addSubview(view)
+        #endif
+
+        // Each SwiftUI update while paused sets the same state and asks for a
+        // redraw. Drawing inside those updates froze the app after it came
+        // back from the background.
+        for _ in 0..<3 {
+            view.isPlaybackPaused = true
+            view.setNeedsPausedRedraw()
+        }
+        #expect(view.draws == 0)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(view.draws == 1)
+
+        view.isPlaybackPaused = true
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(view.draws == 1)
+        withExtendedLifetime(window) {}
     }
 
     @MainActor

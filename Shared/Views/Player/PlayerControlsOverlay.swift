@@ -48,11 +48,10 @@ struct PlayerControlsOverlay: View {
     var body: some View {
         ZStack {
             #if os(macOS)
-            // Clicks on empty space toggle the chrome (touch platforms do
-            // this in the gesture layer).
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { chrome.toggleControls() }
+            // Clicks on empty space toggle the chrome, and holding either
+            // half engages its hold speed (touch platforms do both in the
+            // gesture layer).
+            PlayerPointerSurface(chrome: chrome)
             #endif
 
             if chrome.controlsVisible {

@@ -269,6 +269,211 @@ struct FFmpegDecoderTests {
         #expect((engine.ringBuffer.latestFrame()?.presentationTime.seconds ?? 0) >= 2)
     }
 
+    @Test func heldVideoKeepsAudioFlowingWithoutLosingFrames() throws {
+        // Reads for audio alone leave video packets waiting undecoded while
+        // the audio behind them is read; then every frame decodes, in order.
+        func videoTimes(_ reader: EDFFmpegReader) throws -> [Double] {
+            var times: [Double] = []
+            while !reader.atEnd {
+                times += try reader.readBatch(decodingVideo: true).filter { $0.pixelBuffer != nil }.map(\.presentationTime)
+            }
+            return times
+        }
+        let plain = EDFFmpegReader(hardwareDecoding: false)
+        defer { plain.close() }
+        try plain.open(url: fixture())
+        let expected = try videoTimes(plain)
+        #expect(expected.count == 36)
+
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        try reader.open(url: fixture())
+        var audio = 0
+        for _ in 0..<1000 where !reader.blockedOnVideo {
+            let batch = try reader.readBatch(decodingVideo: false)
+            #expect(batch.allSatisfy { $0.pixelBuffer == nil })
+            audio += batch.filter { $0.audioSampleBuffer != nil }.count
+        }
+        // The demuxer has ended, but the held video still has to decode.
+        #expect(reader.blockedOnVideo)
+        #expect(audio > 100)
+        #expect(!reader.atEnd)
+        #expect(try reader.readBatch(decodingVideo: false).isEmpty)
+        #expect(try videoTimes(reader) == expected)
+
+        // A seek discards held packets.
+        try reader.seek(seconds: 0)
+        for _ in 0..<20 { _ = try reader.readBatch(decodingVideo: false) }
+        try reader.seek(seconds: 1.5)
+        #expect(try videoTimes(reader) == expected.filter { $0 >= 1.5 - 0.00001 })
+    }
+
+    @Test func videoBehindItsAudioInTheFileStillReachesTheRenderer() async throws {
+        let url = try await audioLeadingClip()
+        defer { try? FileManager.default.removeItem(at: url) }
+        // AVAssetWriter's interleave, read by FFmpeg's mov demuxer, puts each
+        // video frame about a second behind the audio it plays with. The pump
+        // used to wait on the full audio renderer with that video unread.
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        try reader.open(url: url)
+        var audioRead = 0.0
+        var firstVideo: EDFFmpegFrame?
+        for _ in 0..<500 where firstVideo == nil {
+            let batch = try reader.readBatch()
+            audioRead = max(audioRead, batch.filter { $0.audioSampleBuffer != nil }.map(\.presentationTime).max() ?? 0)
+            firstVideo = batch.first { $0.pixelBuffer != nil }
+        }
+        try #require(audioRead - (firstVideo?.presentationTime ?? .infinity) > 0.5)
+
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        try await engine.open(url: url)
+        let decoder = try #require(engine.decoder as? FFmpegDecoder)
+        let frames = 24..<84 // 1 s to 3.5 s
+        var shown = Set<Int>()
+        var lateness: [Double] = []
+        let present = decoder.onVideoFrame
+        decoder.onVideoFrame = { frame in
+            let index = Int((frame.presentationTime.seconds * 24).rounded())
+            if frames.contains(index) {
+                shown.insert(index)
+                lateness.append(decoder.currentTime.seconds - frame.presentationTime.seconds)
+            }
+            present?(frame)
+        }
+        engine.play()
+        try await wait { engine.currentTime.playbackSeconds >= 3.5 }
+        // Before, a third to two thirds of these frames reached the renderer,
+        // on average 0.1–0.2 s late.
+        #expect(shown.count >= frames.count * 9 / 10)
+        #expect(lateness.reduce(0, +) / Double(max(lateness.count, 1)) < 0.1)
+    }
+
+    @Test func seeksShowTheTargetFrameBeforeTheClockMovesOn() async throws {
+        let url = try await audioLeadingClip()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let engine = PlaybackEngine()
+        engine.isMuted = true
+        defer { engine.close() }
+        try await engine.open(url: url)
+        let decoder = try #require(engine.decoder as? FFmpegDecoder)
+        var target = 0.0
+        var clockAtTargetFrame: Double?
+        let present = decoder.onVideoFrame
+        decoder.onVideoFrame = { frame in
+            if clockAtTargetFrame == nil, frame.presentationTime.seconds >= target - 0.001 {
+                clockAtTargetFrame = decoder.currentTime.seconds
+            }
+            present?(frame)
+        }
+        // Paused, the audio renderer fills while the clock stands still. The
+        // target frame, a second further into the file, still has to decode.
+        target = 4.3
+        try await decoder.seek(to: CMTime(seconds: target, preferredTimescale: 600))
+        try await wait { clockAtTargetFrame != nil }
+
+        // Playing, the clock waits for the target frame (mid-GOP, so it takes
+        // a while), and picture and sound resume together.
+        engine.play()
+        target = 6.3
+        clockAtTargetFrame = nil
+        try await decoder.seek(to: CMTime(seconds: target, preferredTimescale: 600))
+        try await wait { clockAtTargetFrame != nil }
+        #expect((clockAtTargetFrame ?? .infinity) < target + 0.001)
+        try await wait { engine.currentTime.playbackSeconds > target + 0.2 }
+    }
+
+    /// Eight seconds of 640×360 24 fps H.264 (B-frames, one 10 s GOP unless
+    /// `keyFrameInterval` frames are shorter) and AAC from AVAssetWriter, named
+    /// .mkv so FormatRouter picks FFmpeg.
+    private func audioLeadingClip(keyFrameInterval: Int = 240) async throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+        let mp4 = directory.appendingPathComponent("audio-leading-\(UUID().uuidString).mp4")
+        defer { try? FileManager.default.removeItem(at: mp4) }
+        let writer = try AVAssetWriter(outputURL: mp4, fileType: .mp4)
+        let video = AVAssetWriterInput(mediaType: .video, outputSettings: [
+            AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 640, AVVideoHeightKey: 360,
+            AVVideoCompressionPropertiesKey: [AVVideoAllowFrameReorderingKey: true,
+                                              AVVideoMaxKeyFrameIntervalKey: keyFrameInterval],
+        ])
+        let pixels = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: video, sourcePixelBufferAttributes: [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey as String: 640, kCVPixelBufferHeightKey as String: 360,
+        ])
+        let audio = AVAssetWriterInput(mediaType: .audio, outputSettings: [
+            AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 48_000, AVNumberOfChannelsKey: 2,
+        ])
+        writer.add(video)
+        writer.add(audio)
+        try #require(writer.startWriting())
+        writer.startSession(atSourceTime: .zero)
+        var description = AudioStreamBasicDescription(mSampleRate: 48_000, mFormatID: kAudioFormatLinearPCM,
+            mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked, mBytesPerPacket: 8,
+            mFramesPerPacket: 1, mBytesPerFrame: 8, mChannelsPerFrame: 2, mBitsPerChannel: 32, mReserved: 0)
+        var format: CMAudioFormatDescription?
+        CMAudioFormatDescriptionCreate(allocator: nil, asbd: &description, layoutSize: 0, layout: nil,
+            magicCookieSize: 0, magicCookie: nil, extensions: nil, formatDescriptionOut: &format)
+        let pcm = try #require(format)
+
+        final class Progress: @unchecked Sendable { var frame = 0, packet = 0 }
+        let progress = Progress()
+        let finished = DispatchGroup()
+        finished.enter()
+        video.requestMediaDataWhenReady(on: DispatchQueue(label: "clip.video")) {
+            while video.isReadyForMoreMediaData {
+                guard progress.frame < 8 * 24, let pool = pixels.pixelBufferPool else {
+                    video.markAsFinished()
+                    finished.leave()
+                    return
+                }
+                var buffer: CVPixelBuffer?
+                CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer)
+                guard let buffer else { continue }
+                CVPixelBufferLockBaseAddress(buffer, [])
+                let base = CVPixelBufferGetBaseAddress(buffer)!
+                for row in 0..<360 {
+                    var color = 0xFF20_4000 | UInt32((row + progress.frame * 4) % 256)
+                    memset_pattern4(base + row * CVPixelBufferGetBytesPerRow(buffer), &color, 640 * 4)
+                }
+                CVPixelBufferUnlockBaseAddress(buffer, [])
+                pixels.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(progress.frame), timescale: 24))
+                progress.frame += 1
+            }
+        }
+        finished.enter()
+        audio.requestMediaDataWhenReady(on: DispatchQueue(label: "clip.audio")) {
+            while audio.isReadyForMoreMediaData {
+                guard progress.packet < 8 * 48_000 / 1024 else {
+                    audio.markAsFinished()
+                    finished.leave()
+                    return
+                }
+                var block: CMBlockBuffer?
+                CMBlockBufferCreateWithMemoryBlock(allocator: nil, memoryBlock: nil, blockLength: 8192,
+                    blockAllocator: nil, customBlockSource: nil, offsetToData: 0, dataLength: 8192,
+                    flags: kCMBlockBufferAssureMemoryNowFlag, blockBufferOut: &block)
+                CMBlockBufferFillDataBytes(with: 0, blockBuffer: block!, offsetIntoDestination: 0, dataLength: 8192)
+                var sample: CMSampleBuffer?
+                CMAudioSampleBufferCreateReadyWithPacketDescriptions(allocator: nil, dataBuffer: block!,
+                    formatDescription: pcm, sampleCount: 1024,
+                    presentationTimeStamp: CMTime(value: CMTimeValue(progress.packet * 1024), timescale: 48_000),
+                    packetDescriptions: nil, sampleBufferOut: &sample)
+                audio.append(sample!)
+                progress.packet += 1
+            }
+        }
+        await withCheckedContinuation { continuation in
+            finished.notify(queue: .global()) { continuation.resume() }
+        }
+        await writer.finishWriting()
+        #expect(writer.status == .completed)
+        let clip = directory.appendingPathComponent("audio-leading-\(UUID().uuidString).mkv")
+        try FileManager.default.moveItem(at: mp4, to: clip)
+        return clip
+    }
+
     private func pixelData(_ pixel: CVPixelBuffer) -> Data {
         // Software-decoded frames are 32BGRA; compare only the visible bytes.
         #expect(CVPixelBufferGetPixelFormatType(pixel) == kCVPixelFormatType_32BGRA)
@@ -431,6 +636,92 @@ struct FFmpegDecoderTests {
             resumedVideoCount += batch.filter { $0.pixelBuffer != nil }.count
         }
         #expect(resumedVideoCount > 0, "Video frames should resume decoding when videoDecodingEnabled is true")
+    }
+
+    @Test(arguments: [false, true])
+    func replacedVideoDecoderResumesAtTheNextKeyframe(hardware: Bool) async throws {
+        // A decoder replaced mid-GOP, as after iOS drops a hardware session,
+        // has no reference frames. It must wait for the next keyframe (one a
+        // second here), then decode what an uninterrupted pass does, still on
+        // the same decoder type.
+        let url = try await audioLeadingClip(keyFrameInterval: 24)
+        defer { try? FileManager.default.removeItem(at: url) }
+        func frames(replacingAfter replaceTime: Double?) throws -> [(time: Double, pixels: Data, format: OSType)] {
+            let reader = EDFFmpegReader(hardwareDecoding: hardware)
+            defer { reader.close() }
+            try reader.open(url: url)
+            var frames: [(time: Double, pixels: Data, format: OSType)] = []
+            var replaced = replaceTime == nil
+            while !reader.atEnd {
+                let batch = try reader.readBatch()
+                if replaced {
+                    for frame in batch {
+                        guard let pixel = frame.pixelBuffer else { continue }
+                        frames.append((frame.presentationTime, planeData(pixel), CVPixelBufferGetPixelFormatType(pixel)))
+                    }
+                } else if let replaceTime,
+                          batch.contains(where: { $0.pixelBuffer != nil && $0.presentationTime >= replaceTime }) {
+                    #expect(reader.recreateVideoDecoder())
+                    replaced = true
+                }
+            }
+            return frames
+        }
+        let continuous = try frames(replacingAfter: nil)
+        let replaced = try frames(replacingAfter: 1.4)
+        let first = try #require(replaced.first)
+        #expect(first.time > 1.4 && first.time < 2.001)
+        let resumed = continuous.filter { $0.time > first.time - 0.00001 }
+        #expect(replaced.map(\.time) == resumed.map(\.time))
+        #expect(replaced.map(\.format) == resumed.map(\.format))
+        #expect(replaced.map(\.pixels) == resumed.map(\.pixels))
+    }
+
+    @Test func reloadingVideoShowsThePausedFrameAgain() async throws {
+        // Back from the background, the engine reloads video: a new decoder
+        // shows the paused picture again, and playback goes on from there.
+        let url = try await audioLeadingClip(keyFrameInterval: 24)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let decoder = FFmpegDecoder()
+        decoder.isMuted = true
+        defer { decoder.close() }
+        var times: [Double] = []
+        decoder.onVideoFrame = { times.append($0.presentationTime.seconds) }
+        _ = try await decoder.open(url: url)
+        decoder.play()
+        try await wait { decoder.currentTime.seconds > 1.3 }
+        decoder.pause()
+        let paused = decoder.currentTime.seconds
+        times.removeAll()
+        decoder.reloadVideo()
+        try await wait { !times.isEmpty }
+        #expect(decoder.state == .paused)
+        let shown = try #require(times.first)
+        #expect(shown > paused - 0.0001 && shown < paused + 1.0 / 24 + 0.0001)
+        decoder.play()
+        try await wait { decoder.currentTime.seconds > paused + 0.5 && times.count > 5 }
+    }
+
+    /// The visible bytes of every plane, for 32BGRA and 8-bit bi-planar frames.
+    private func planeData(_ pixel: CVPixelBuffer) -> Data {
+        CVPixelBufferLockBaseAddress(pixel, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixel, .readOnly) }
+        let planar = CVPixelBufferIsPlanar(pixel)
+        var data = Data()
+        for plane in 0..<(planar ? CVPixelBufferGetPlaneCount(pixel) : 1) {
+            guard let base = planar ? CVPixelBufferGetBaseAddressOfPlane(pixel, plane)
+                                    : CVPixelBufferGetBaseAddress(pixel) else { continue }
+            let width = planar ? CVPixelBufferGetWidthOfPlane(pixel, plane) : CVPixelBufferGetWidth(pixel)
+            let height = planar ? CVPixelBufferGetHeightOfPlane(pixel, plane) : CVPixelBufferGetHeight(pixel)
+            let stride = planar ? CVPixelBufferGetBytesPerRowOfPlane(pixel, plane) : CVPixelBufferGetBytesPerRow(pixel)
+            // Luma is one byte per sample; chroma interleaves Cb and Cr.
+            let bytesPerSample = planar ? (plane == 0 ? 1 : 2) : 4
+            for row in 0..<height {
+                data.append(base.advanced(by: row * stride).assumingMemoryBound(to: UInt8.self),
+                            count: width * bytesPerSample)
+            }
+        }
+        return data
     }
 
     @Test func decoderSetVideoDecodingEnabledControlsVideoPumping() async throws {

@@ -90,6 +90,7 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
     let frameInterpolator: FrameInterpolator?
     let sourceFrameRate: Float
     let subtitleEngine: SubtitleEngine?
+    /// Changes with the subtitle overlay, so SwiftUI updates a paused view.
     let subtitleRevision: UInt
     let pipSource: SampleBufferPiPSource?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
@@ -113,7 +114,6 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
 
     private func apply(to view: EnhancedVideoView) {
         view.ringBuffer = ringBuffer
-        let timeChanged = view.currentDisplayTime != presentationTime
         view.currentDisplayTime = presentationTime
         view.aspectMode = aspectMode
         view.isPlaybackPaused = isPaused
@@ -122,8 +122,6 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
         view.frameInterpolator = frameInterpolator
         view.sourceFrameRate = sourceFrameRate
         view.subtitleEngine = subtitleEngine
-        let subtitleChanged = view.subtitleRevision != subtitleRevision
-        view.subtitleRevision = subtitleRevision
         view.pipSource = pipSource
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
@@ -131,7 +129,9 @@ private struct EnhancedVideoPlayerRepresentable: NSViewRepresentable {
         if let currentTexture {
             view.currentTexture = currentTexture
         }
-        if isPaused && (timeChanged || subtitleChanged) { view.draw() }
+        // The display link is off while paused, so a new frame, subtitle or
+        // setting shows only through a redraw.
+        if isPaused { view.setNeedsPausedRedraw() }
     }
 }
 #else
@@ -147,6 +147,7 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     let frameInterpolator: FrameInterpolator?
     let sourceFrameRate: Float
     let subtitleEngine: SubtitleEngine?
+    /// Changes with the subtitle overlay, so SwiftUI updates a paused view.
     let subtitleRevision: UInt
     let pipSource: SampleBufferPiPSource?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
@@ -170,7 +171,6 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
 
     private func apply(to view: EnhancedVideoView) {
         view.ringBuffer = ringBuffer
-        let timeChanged = view.currentDisplayTime != presentationTime
         view.currentDisplayTime = presentationTime
         view.aspectMode = aspectMode
         view.isPlaybackPaused = isPaused
@@ -179,8 +179,6 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
         view.frameInterpolator = frameInterpolator
         view.sourceFrameRate = sourceFrameRate
         view.subtitleEngine = subtitleEngine
-        let subtitleChanged = view.subtitleRevision != subtitleRevision
-        view.subtitleRevision = subtitleRevision
         view.pipSource = pipSource
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
@@ -188,7 +186,9 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
         if let currentTexture {
             view.currentTexture = currentTexture
         }
-        if isPaused && (timeChanged || subtitleChanged) { view.draw() }
+        // The display link is off while paused, so a new frame, subtitle or
+        // setting shows only through a redraw.
+        if isPaused { view.setNeedsPausedRedraw() }
     }
 }
 #endif

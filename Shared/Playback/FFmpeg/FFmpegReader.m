@@ -121,6 +121,21 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
 }
 @end
 
+/// A demuxed video packet waiting, still compressed, for room to decode it.
+@interface EDHeldPacket : NSObject {
+@public
+    AVPacket *_packet;
+}
+@end
+
+@implementation EDHeldPacket
+- (void)dealloc { av_packet_free(&_packet); }
+@end
+
+/// Compressed video held while the player reads on for audio alone. Holding
+/// stops here: about 2.5 s of 100 Mbit/s video, far more at typical bit rates.
+static const size_t EDHeldVideoLimit = 32 << 20;
+
 @implementation EDFFmpegReader {
     AVFormatContext *_format;
     AVIOContext *_customIO;
@@ -142,6 +157,11 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
     int _audioIndex;
     BOOL _hardwareDecoding;
     BOOL _drained;
+    BOOL _demuxEnded;
+    // Video packets read while the player needed only audio, in demux order,
+    // so the audio interleaved behind them could be decoded first.
+    NSMutableArray<EDHeldPacket *> *_heldVideo;
+    size_t _heldVideoBytes;
     double _origin;
     double _seekFloor;
     double _videoNextTime;
@@ -154,6 +174,11 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
     CMVideoFormatDescriptionRef _av1Format;
     VTDecompressionSessionRef _av1Session;
     BOOL _av1NeedsKeyframe;
+    // A replaced video decoder has no reference frames, so packets wait for
+    // the next keyframe.
+    BOOL _videoNeedsKeyframe;
+    // Decoder replacements since the last decoded video frame.
+    int _videoRecoveries;
 }
 
 static BOOL EDReaderError(NSError **error, NSString *operation, int code) {
@@ -198,6 +223,7 @@ static int EDInterrupt(void *opaque) {
         _fileFD = -1;
         _videoIndex = _audioIndex = _subtitleIndex = -1;
         _mediaInfo = @{};
+        _heldVideo = [NSMutableArray array];
         atomic_init(&_interrupted, false);
         atomic_init(&_deadline, 0);
     }
@@ -224,6 +250,9 @@ static int EDInterrupt(void *opaque) {
 }
 
 - (void)close {
+    [self discardHeldVideo];
+    _videoNeedsKeyframe = NO;
+    _videoRecoveries = 0;
     avcodec_free_context(&_video);
     avcodec_free_context(&_audio);
     avcodec_free_context(&_subtitle);
@@ -297,16 +326,19 @@ static int EDInterrupt(void *opaque) {
         [self invalidateAV1Session];
         return [self openAV1SessionWithError:nil];
     }
-    if (_video) {
-        avcodec_free_context(&_video);
-        _video = NULL;
-    }
+    _videoRecoveries = 0;
+    return [self replaceVideoDecoderUsingHardware:_hardwareDecoding];
+}
+
+- (BOOL)replaceVideoDecoderUsingHardware:(BOOL)hardware {
+    avcodec_free_context(&_video);
     NSError *err = nil;
-    _video = [self openCodec:_videoIndex hardware:_hardwareDecoding error:&err];
-    if (!_video && _hardwareDecoding) {
+    _video = [self openCodec:_videoIndex hardware:hardware error:&err];
+    if (!_video && hardware) {
         NSLog(@"[FFmpegReader] Hardware video decoder creation failed; falling back to software: %@", err);
         _video = [self openCodec:_videoIndex hardware:NO error:&err];
     }
+    _videoNeedsKeyframe = YES;
     if (_video) {
         NSLog(@"[FFmpegReader] Recreated video decoder successfully (hardware=%d)", _video->hw_device_ctx != NULL);
         return YES;
@@ -588,7 +620,7 @@ static int EDInterrupt(void *opaque) {
 
     _origin = _format->start_time == AV_NOPTS_VALUE ? 0 : (double)_format->start_time / AV_TIME_BASE;
     _seekFloor = _videoNextTime = _audioNextTime = 0;
-    _drained = NO;
+    _drained = _demuxEnded = NO;
     _videoIndex = av_find_best_stream(_format, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     _audioIndex = av_find_best_stream(_format, AVMEDIA_TYPE_AUDIO, -1, _videoIndex, NULL, 0);
     AVCodecParameters *videoParameters = _videoIndex >= 0 ? _format->streams[_videoIndex]->codecpar : NULL;
@@ -730,40 +762,48 @@ static int EDInterrupt(void *opaque) {
     return result;
 }
 
+/// Replaces a hardware video decoder after `packet` failed, most often a
+/// VideoToolbox session that iOS invalidated in the background. Returns the
+/// decoder that took the packet, or NULL when it was dropped. The replacement
+/// starts at a keyframe; if it fails again before decoding a frame, the
+/// hardware can't decode this stream and a software decoder takes over.
+- (AVCodecContext *)recoverVideoDecoderAfterError:(int)result packet:(AVPacket *)packet {
+    if (!_video->hw_device_ctx) {
+        // Software decoders skip damaged data; a new one would not help.
+        NSLog(@"[FFmpegReader] Dropping undecodable video packet (err=%d)", result);
+        return NULL;
+    }
+    BOOL hardware = _videoRecoveries == 0;
+    _videoRecoveries += 1;
+    NSLog(@"[FFmpegReader] Video decoding failed (err=%d); replacing the decoder (hardware=%d)", result, hardware);
+    if (![self replaceVideoDecoderUsingHardware:hardware]) return NULL;
+    if (!packet || !(packet->flags & AV_PKT_FLAG_KEY)) return NULL;
+    _videoNeedsKeyframe = NO;
+    result = avcodec_send_packet(_video, packet);
+    if (result < 0 && result != AVERROR_EOF) {
+        NSLog(@"[FFmpegReader] Dropping video packet the new decoder rejected (err=%d)", result);
+        return NULL;
+    }
+    return _video;
+}
+
 - (BOOL)decode:(AVCodecContext *)codec packet:(AVPacket *)packet into:(NSMutableArray *)outputs error:(NSError **)error {
+    BOOL isVideo = codec == _video;
     int result = avcodec_send_packet(codec, packet);
     if (result < 0 && result != AVERROR_EOF) {
-        if (codec == _video) {
-            NSLog(@"[FFmpegReader] Video packet submit failed (err=%d). Attempting decoder recreation...", result);
-            if ([self recreateVideoDecoder]) {
-                result = avcodec_send_packet(_video, packet);
-            }
-            if (result < 0 && result != AVERROR_EOF && _hardwareDecoding) {
-                NSLog(@"[FFmpegReader] Hardware retry failed (err=%d). Falling back to software decoder...", result);
-                if (_video) {
-                    avcodec_free_context(&_video);
-                    _video = [self openCodec:_videoIndex hardware:NO error:nil];
-                    if (_video) {
-                        result = avcodec_send_packet(_video, packet);
-                    }
-                }
-            }
-            if (result < 0 && result != AVERROR_EOF) {
-                // Drop this unrecoverable video frame rather than failing the batch,
-                // which would terminate audio and abort the playback session.
-                NSLog(@"[FFmpegReader] Dropping unrecoverable video packet (err=%d)", result);
-                return YES;
-            }
-        } else {
-            return EDReaderError(error, @"Submit media packet", result);
-        }
+        if (!isVideo) return EDReaderError(error, @"Submit media packet", result);
+        // A video packet never fails the batch, which would stop the audio and
+        // end playback. Recovery frees the decoder `codec` points to.
+        codec = [self recoverVideoDecoderAfterError:result packet:packet];
+        if (!codec) return YES;
     }
     while ((result = avcodec_receive_frame(codec, _frame)) >= 0) {
+        if (isVideo) _videoRecoveries = 0;
         NSError *conversionError = nil;
-        EDFFmpegFrame *output = codec == _video ? [self videoFrameWithError:&conversionError] : [self audioFrameWithError:&conversionError];
+        EDFFmpegFrame *output = isVideo ? [self videoFrameWithError:&conversionError] : [self audioFrameWithError:&conversionError];
         av_frame_unref(_frame);
         if (conversionError) {
-            if (codec == _video) {
+            if (isVideo) {
                 NSLog(@"[FFmpegReader] Failed to convert video frame (%@); skipping frame", conversionError);
                 continue;
             }
@@ -772,7 +812,7 @@ static int EDInterrupt(void *opaque) {
         }
         if (output) [outputs addObject:output];
     }
-    if (codec == _video) {
+    if (isVideo) {
         return YES;
     }
     return result == AVERROR(EAGAIN) || result == AVERROR_EOF || EDReaderError(error, @"Decode media frame", result);
@@ -786,20 +826,83 @@ static int EDInterrupt(void *opaque) {
     return pts + 0.000001 < _seekFloor;
 }
 
+/// Decodes one video packet, read just now or held back earlier.
+- (BOOL)decodeVideoPacket:(AVPacket *)packet into:(NSMutableArray *)outputs error:(NSError **)error {
+    if (_av1Format) {
+        [self decodeAV1Packet:packet into:outputs];
+        return YES;
+    }
+    if (!_video) return YES;
+    if (_videoNeedsKeyframe) {
+        if (!(packet->flags & AV_PKT_FLAG_KEY)) return YES;
+        _videoNeedsKeyframe = NO;
+    }
+    // Frames before a seek target only rebuild the references of the
+    // frames after it and are then dropped, so skip the ones no other
+    // frame refers to (as mpv's precise seeks do). Hardware decoding
+    // runs one frame at a time, so this shortens the post-seek freeze.
+    _video->skip_frame = [self packetPrecedesSeekFloor:packet] ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
+    return [self decode:_video packet:packet into:outputs error:error];
+}
+
+- (void)holdVideoPacket:(AVPacket *)packet {
+    EDHeldPacket *held = [EDHeldPacket new];
+    held->_packet = av_packet_alloc();
+    if (!held->_packet) return;
+    av_packet_move_ref(held->_packet, packet);
+    _heldVideoBytes += (size_t)held->_packet->size;
+    [_heldVideo addObject:held];
+}
+
+- (void)discardHeldVideo {
+    [_heldVideo removeAllObjects];
+    _heldVideoBytes = 0;
+}
+
 - (NSArray<EDFFmpegFrame *> *)readBatchWithError:(NSError **)error {
+    return [self readBatchDecodingVideo:YES error:error];
+}
+
+- (NSArray<EDFFmpegFrame *> *)readBatchDecodingVideo:(BOOL)decodeVideo error:(NSError **)error {
+    _blockedOnVideo = NO;
     if (!_format || _drained) return @[];
+    if (!_videoDecodingEnabled) [self discardHeldVideo];
     NSMutableArray *outputs = [NSMutableArray array];
     // Yield regularly even when skipping subtitle/attachment packets.
     for (int i = 0; i < 64 && outputs.count == 0; i++) {
         if (atomic_load(&_interrupted)) { EDReaderError(error, @"Playback interrupted", AVERROR_EXIT); return nil; }
+        if (_heldVideo.count > 0) {
+            if (decodeVideo) {
+                EDHeldPacket *held = _heldVideo.firstObject;
+                [_heldVideo removeObjectAtIndex:0];
+                _heldVideoBytes -= (size_t)held->_packet->size;
+                if (![self decodeVideoPacket:held->_packet into:outputs error:error]) return nil;
+                continue;
+            }
+            if (_demuxEnded || _heldVideoBytes >= EDHeldVideoLimit) {
+                _blockedOnVideo = YES;
+                return outputs;
+            }
+        }
+        if (_demuxEnded) {
+            // Draining an already drained decoder is harmless and returns nothing.
+            if (_audio && ![self decode:_audio packet:NULL into:outputs error:error]) return nil;
+            if (_video && _videoDecodingEnabled) {
+                if (!decodeVideo) {
+                    _blockedOnVideo = YES;
+                    return outputs;
+                }
+                if (![self decode:_video packet:NULL into:outputs error:error]) return nil;
+            }
+            _drained = YES;
+            return outputs;
+        }
         atomic_store(&_deadline, (int64_t)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000) + 20000000);
         int result = av_read_frame(_format, _packet);
         atomic_store(&_deadline, 0);
         if (result == AVERROR_EOF) {
-            if (_video && _videoDecodingEnabled && ![self decode:_video packet:NULL into:outputs error:error]) return nil;
-            if (_audio && ![self decode:_audio packet:NULL into:outputs error:error]) return nil;
-            _drained = YES;
-            return outputs;
+            _demuxEnded = YES;
+            continue;
         }
         if (result < 0) { EDReaderError(error, @"Read media packet", result); return nil; }
         if (_subtitle && _packet->stream_index == _subtitleIndex) {
@@ -807,25 +910,16 @@ static int EDInterrupt(void *opaque) {
             av_packet_unref(_packet);
             continue;
         }
-        if (_av1Format && _packet->stream_index == _videoIndex) {
-            if (_videoDecodingEnabled) [self decodeAV1Packet:_packet into:outputs];
-            av_packet_unref(_packet);
-            continue;
+        BOOL success = YES;
+        if (_packet->stream_index == _videoIndex) {
+            if (_videoDecodingEnabled && decodeVideo) {
+                success = [self decodeVideoPacket:_packet into:outputs error:error];
+            } else if (_videoDecodingEnabled) {
+                [self holdVideoPacket:_packet];
+            }
+        } else if (_audio && _packet->stream_index == _audioIndex) {
+            success = [self decode:_audio packet:_packet into:outputs error:error];
         }
-        AVCodecContext *codec = _packet->stream_index == _videoIndex ? _video :
-            (_packet->stream_index == _audioIndex ? _audio : NULL);
-        if (codec == _video && !_videoDecodingEnabled) {
-            av_packet_unref(_packet);
-            continue;
-        }
-        if (codec && codec == _video) {
-            // Frames before a seek target only rebuild the references of the
-            // frames after it and are then dropped, so skip the ones no other
-            // frame refers to (as mpv's precise seeks do). Hardware decoding
-            // runs one frame at a time, so this shortens the post-seek freeze.
-            _video->skip_frame = [self packetPrecedesSeekFloor:_packet] ? AVDISCARD_NONREF : AVDISCARD_DEFAULT;
-        }
-        BOOL success = !codec || [self decode:codec packet:_packet into:outputs error:error];
         av_packet_unref(_packet);
         if (!success) return nil;
     }
@@ -847,8 +941,9 @@ static int EDInterrupt(void *opaque) {
     swr_free(&_resampler);
     av_packet_unref(_packet);
     av_frame_unref(_frame);
+    [self discardHeldVideo];
     _seekFloor = _videoNextTime = _audioNextTime = fmax(0, seconds);
-    _drained = NO;
+    _drained = _demuxEnded = NO;
     return YES;
 }
 

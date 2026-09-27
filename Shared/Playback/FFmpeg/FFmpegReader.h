@@ -21,10 +21,20 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSDictionary<NSString *, id> *mediaInfo;
 @property (nonatomic, readonly) BOOL atEnd;
 @property (nonatomic, assign) BOOL videoDecodingEnabled;
+/// Replaces the video decoder, for example after iOS invalidated its hardware
+/// session in the background. The new decoder starts at the next keyframe.
 - (BOOL)recreateVideoDecoder;
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error NS_SWIFT_NAME(open(url:));
 /// Returns an empty batch at EOF, after draining both codecs; nil indicates error.
 - (nullable NSArray<EDFFmpegFrame *> *)readBatchWithError:(NSError **)error;
+/// With `decodeVideo` NO, video packets are held back undecoded, so the audio
+/// the demuxer interleaves behind them can still be read. Held packets decode
+/// first, in order, once video is decoded again.
+- (nullable NSArray<EDFFmpegFrame *> *)readBatchDecodingVideo:(BOOL)decodeVideo error:(NSError **)error
+    NS_SWIFT_NAME(readBatch(decodingVideo:));
+/// Whether the last read stopped at held video, which must be decoded before
+/// reading can continue.
+@property (nonatomic, readonly) BOOL blockedOnVideo;
 - (BOOL)seekToSeconds:(double)seconds error:(NSError **)error NS_SWIFT_NAME(seek(seconds:));
 - (BOOL)selectAudioTrack:(NSInteger)index error:(NSError **)error;
 /// Select a subtitle decoder (-1 disables). Returns format/header configuration.

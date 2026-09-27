@@ -318,14 +318,10 @@ final class PlaybackEngine {
             #else
             let pipActive = false
             #endif
-            if !pipActive, decoder is FFmpegDecoder {
-                let seconds = currentTime.playbackSeconds
-                Task { [weak self] in
-                    guard let self else { return }
-                    try? await self.decoder?.seek(
-                        to: CMTime(seconds: seconds, preferredTimescale: 600)
-                    )
-                }
+            // Only Picture in Picture keeps a hardware decoder session alive
+            // in the background.
+            if !pipActive, let ffmpeg = decoder as? FFmpegDecoder {
+                ffmpeg.reloadVideo()
             }
         }
         #endif

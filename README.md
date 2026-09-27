@@ -266,6 +266,57 @@ unknown durations, and the final stored episode do not show it. The native
 visionOS system-player route uses the same preview rule. Artwork has a
 readable fallback, focus is visible, and transitions honor Reduce Motion.
 
+### Speed changes and seeking
+
+Changing the playback speed, from Player Adjustments or by holding a side of
+the video or the Siri Remote's touch surface, only retimes the media clock.
+Decoded frames stay queued, so the picture never blanks. A seek or track
+switch keeps the current picture on screen until the first frame at the new
+position has decoded; only a media change clears the video surface. FFmpeg
+seeks decode from the previous keyframe but skip the frames before the target
+that no other frame references, shortening the post-seek freeze with hardware
+decoding. Frames from the target on are unchanged.
+
+FFmpeg playback restarts the clock only once that first frame is on screen, so
+picture and sound resume together; a seek while paused shows it as well.
+FFmpeg decoding never waits for the audio renderer. Decoded audio that the
+renderer cannot take yet is queued, up to 4 s ahead of playback, so video keeps
+decoding when a file stores its audio a second or more ahead of the video.
+Video decodes only while fewer than 12 frames are queued, and reads for audio
+alone hold video packets undecoded (up to 32 MB), so 60 fps files and files
+that store video ahead of audio, such as broadcast TS, no longer drop frames.
+
+Run the seek and speed regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/EnhancedVideoRenderingTests \
+  -only-testing:EdendaleTests/PlayerTransportStateTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Keep the Mac's display awake while they run: the macOS display link drives
+FFmpeg playback time, so tests that wait for the clock stall while the display
+sleeps. These are Apple playback fixes; other platform branches require no rule
+change.
+
+### Returning from the background
+
+iOS invalidates hardware decoder sessions while an app is in the background
+without Picture in Picture. On return, FFmpeg playback refills video at the
+current position with a new decoder. A decoder that fails mid-stream is
+replaced once and resumes at the next keyframe; if the replacement fails again
+before decoding a frame, software decoding takes over.
+
+The video surface never draws from inside a SwiftUI update. While paused, it
+redraws once on a later main-queue turn, and on iOS and tvOS drawing resumes
+only when the app is active again. A draw inside an update, after a return
+from the background, used to block the main thread waiting for a Metal
+drawable and froze the app. The regressions above cover both; on a device,
+pause an HEVC `.mkv`, leave the app for ten seconds, return, and tap Play.
+
 ### Intro, recap, and credits prompts
 
 Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
@@ -315,6 +366,38 @@ The macOS unit command above includes API decoding, identity matching, request
 deduplication, failures, stale responses, preference migration, and real VLC
 skip/progress/loop regression tests. Android and Windows need independent
 native implementations of the same behavior; the static Web branch is unaffected.
+
+### App controls
+
+**Settings → App Controls** sets how far a skip jumps and how fast playback
+runs while a side of the video is held. **Skip Back** and **Skip Forward**
+each offer 10, 15, or 30 seconds (default 10) in a segmented control drawn
+with the matching arrow-rotate glyphs; VoiceOver reads each segment's length.
+The lengths apply to double-taps on either side of the video, the Left and
+Right Arrow keys, Siri Remote swipes and the tvOS timeline, the VoiceOver skip
+actions, and the Lock Screen and Control Center skip buttons, which relabel as
+soon as a length changes. Picture in Picture keeps the system's skip length.
+
+**Hold Left Side** and **Hold Right Side** set the press-and-hold speeds from
+0.25× to 3.00× in quarter steps (defaults 0.5× and 2×) with a stepper, or − and
++ buttons on tvOS. Touch and hold on iOS and iPadOS, pinch and hold on
+visionOS, click and hold in the macOS player, or rest a thumb on either side
+of the Siri Remote's touch surface; the speed reverts on release. A short
+macOS click still shows or hides the controls, and a drag does neither. The
+preferences are stored on the device and are not synced.
+
+Run the preference and hold-rule tests:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/PlayerControlPreferencesTests \
+  -only-testing:EdendaleTests/PlayerLogicTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Android and Windows need independent native implementations of these
+settings; the static Web branch is unaffected.
 
 ### macOS navigation, shortcuts, and player panels
 

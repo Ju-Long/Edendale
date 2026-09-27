@@ -350,7 +350,10 @@ struct SettingsActions<Content: View>: View {
             content
         }
         #else
+        // The List lays out a Label as a list-row label, and inside the
+        // archive button chrome only its icon survives, so keep both parts.
         content
+            .labelStyle(.titleAndIcon)
         #endif
     }
 }

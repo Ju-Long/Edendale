@@ -34,7 +34,6 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
     /// External subtitle engine for compositing text/image subtitle overlays.
     var subtitleEngine: SubtitleEngine?
-    var subtitleRevision: UInt = 0
     private var compositingTexture: MTLTexture?
 
     /// The frame intake ring buffer populated by media decoders.
@@ -44,7 +43,7 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     public var aspectMode: VideoAspectMode = .fit {
         didSet {
             #if os(iOS) || os(macOS)
-            updatePiPLayer()
+            if aspectMode != oldValue { updatePiPLayer() }
             #endif
         }
     }
@@ -128,14 +127,15 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     /// Whether playback is paused from the player/view perspective.
     public var isPlaybackPaused: Bool = false {
         didSet {
-            updatePauseState()
+            if isPlaybackPaused != oldValue { updatePauseState() }
         }
     }
 
-    /// Whether the application is in the background or hidden.
+    /// Whether the application is in the background or hidden. On UIKit
+    /// platforms this stays set until the app is active again.
     public private(set) var isAppBackgrounded: Bool = false {
         didSet {
-            updatePauseState()
+            if isAppBackgrounded != oldValue { updatePauseState() }
         }
     }
 
@@ -149,9 +149,27 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         if shouldPause {
             frameInterpolator?.reset()
             interpolationSchedule.reset()
-            if !isAppBackgrounded && bounds.width > 0 && bounds.height > 0 {
-                self.draw()
-            }
+            setNeedsPausedRedraw()
+        }
+    }
+
+    private var pausedRedrawPending = false
+
+    /// Draws the current frame once, on a later main-queue turn, while the
+    /// display link is paused. Several requests in one turn draw once.
+    ///
+    /// Never draw synchronously from a SwiftUI update: it runs inside a Core
+    /// Animation commit, and after the app returned from the background such
+    /// a draw blocked the main thread in `nextDrawable`, freezing the app.
+    func setNeedsPausedRedraw() {
+        guard isPaused, !pausedRedrawPending else { return }
+        pausedRedrawPending = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.pausedRedrawPending = false
+            guard self.isPaused, !self.isAppBackgrounded, self.window != nil,
+                  self.bounds.width > 0, self.bounds.height > 0 else { return }
+            self.draw()
         }
     }
 
@@ -249,14 +267,17 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         ) { [weak self] _ in
             self?.handleAppBackground()
         }
-        let fgObs = NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
+        // Drawing resumes once the app is active, not at willEnterForeground:
+        // the drawable wait that froze the app (see `setNeedsPausedRedraw`)
+        // began on the way back from the background.
+        let activeObs = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             self?.handleAppForeground()
         }
-        lifecycleObservers.append(contentsOf: [bgObs, fgObs])
+        lifecycleObservers.append(contentsOf: [bgObs, activeObs])
         #endif
     }
 
