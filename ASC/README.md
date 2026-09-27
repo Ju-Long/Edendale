@@ -12,7 +12,6 @@ tvOS, and visionOS (all version **26.0**). Managed with the
 ```
 ASC/
 ├── config.json          # app id, per-platform version ids, limits, planned locales
-├── AuthKey_*.p8         # ASC API key — git-ignored, never commit
 ├── iOS/       <locale>.json
 ├── macOS/     <locale>.json
 ├── tvOS/      <locale>.json
@@ -54,8 +53,10 @@ node -e 'const fs=require("fs"),L={name:30,subtitle:30,promotionalText:170,keywo
 ## Auth
 
 The `asc` CLI is already authenticated on this machine (keychain profile, shared
-across the developer account). Verify with `asc doctor`. The `AuthKey_*.p8` here
-is a git-ignored convenience copy for CI / other machines.
+across the developer account). Verify with `asc doctor`. Keep the ASC API key
+(`AuthKey_*.p8`) with the other local credentials in the git-ignored `.secret/`
+folder at the repository root — a convenience copy for CI / other machines;
+never commit it.
 
 ## Deploy
 

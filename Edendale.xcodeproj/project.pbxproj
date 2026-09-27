@@ -66,7 +66,7 @@
 		27BC63B62FBDBE64005EAD5C /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27BC63C72FBDBE65005EAD5C /* EdendaleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		27CF16C0000000000000C0F1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = Shared/Secrets.xcconfig; sourceTree = "<group>"; };
+		27CF16C0000000000000C0F1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = .secret/Secrets.xcconfig; sourceTree = "<group>"; };
 		27CF16C1000000000000A551 /* Shared Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Shared Assets.xcassets"; path = Shared/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		27ED01A100000000000000A1 /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = SOURCE_ROOT; };
@@ -586,7 +586,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.1;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -632,7 +632,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.1;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -698,7 +698,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.1;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -767,7 +767,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.1;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1027,7 +1027,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 26.1;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = Edendale;
 				REGISTER_APP_GROUPS = YES;
@@ -1066,7 +1066,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 26.1;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = Edendale;
 				REGISTER_APP_GROUPS = YES;

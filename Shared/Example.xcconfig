@@ -2,12 +2,13 @@
 //
 // Quick start (from the repo root):
 //   1. Sign up for free TMDB API access: https://www.themoviedb.org/settings/api
-//   2. Copy this file to Shared/Secrets.xcconfig and enter the credentials below.
+//   2. Copy this file to .secret/Secrets.xcconfig and enter the credentials below:
+//        mkdir -p .secret && cp Shared/Example.xcconfig .secret/Secrets.xcconfig
 //   3. Build & run — no runtime API-key entry is needed.
 //
 // How it flows: Secrets.xcconfig -> Info.plist (TMDBReadAccessToken = $(TMDB_READ_ACCESS_TOKEN))
 // -> read at runtime and sent as an Authorization: Bearer header (see TMDBService).
-// Secrets.xcconfig is gitignored and must never be committed.
+// .secret/ is gitignored and its contents must never be committed.
 TMDB_READ_ACCESS_TOKEN =
 
 // Legacy fallback: the short v3 "API Key", sent as an api_key URL query parameter.
@@ -16,6 +17,6 @@ TMDB_API_KEY =
 
 // Optional: enables explicit online subtitle searches through Wyzie Subs.
 // Claim a free key at https://store.wyzie.io/redeem, then copy this file to
-// Shared/Secrets.xcconfig and enter it below. Without a key, online subtitle
+// .secret/Secrets.xcconfig and enter it below. Without a key, online subtitle
 // search shows a setup state while the rest of Edendale continues to work.
 WYZIE_API_KEY =

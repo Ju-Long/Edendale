@@ -51,11 +51,18 @@ through the platform branch's issue and pull-request workflow.
 The `apple` branch contains the native multiplatform Xcode project for
 iOS, iPadOS, macOS, tvOS, and visionOS. It requires Xcode 26.5 or newer.
 
-Before a local build, copy `Shared/Example.xcconfig` to
-`Shared/Secrets.xcconfig` and add the TMDB read access token. The generated
-file is gitignored. `WYZIE_API_KEY` is optional and enables online subtitle
-search; claim a free key at https://store.wyzie.io/redeem, or enter it later in
-Settings.
+Local credentials live in the gitignored `.secret/` folder at the repository
+root, including the App Store Connect `AuthKey_*.p8` used by `ASC/`. Before a
+local build, copy `Shared/Example.xcconfig` to `.secret/Secrets.xcconfig` and
+add the TMDB read access token:
+
+```sh
+mkdir -p .secret
+cp Shared/Example.xcconfig .secret/Secrets.xcconfig
+```
+
+`WYZIE_API_KEY` is optional and enables online subtitle search; claim a free
+key at https://store.wyzie.io/redeem, or enter it later in Settings.
 
 Build the local FFmpeg XCFramework (requires Xcode and downloads FFmpeg 7.1.1
 source), then resolve dependencies and inspect the shared schemes:
@@ -460,7 +467,7 @@ Xcode Cloud automatically runs the executable
 `ci_scripts/ci_post_clone.sh`. Configure `TMDB_READ_ACCESS_TOKEN` as a secret
 workflow environment variable; `TMDB_API_KEY` is an optional legacy fallback.
 `WYZIE_API_KEY` is also an optional secret workflow variable. The script
-generates the gitignored `Shared/Secrets.xcconfig` in Xcode Cloud's temporary
+generates the gitignored `.secret/Secrets.xcconfig` in Xcode Cloud's temporary
 checkout without printing credential values.
 
 The same post-clone script downloads and compiles FFmpeg for

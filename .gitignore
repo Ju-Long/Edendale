@@ -16,11 +16,14 @@ DerivedData/
 __pycache__/
 *.py[cod]
 
-# Local secrets — contain the real TMDB token/key, never commit
-Secrets.xcconfig
-/secrets.json
+# Local credentials live in .secret/ — Secrets.xcconfig (TMDB/Wyzie keys) and the
+# App Store Connect AuthKey_*.p8. Never commit anything from it.
+/.secret/
 
-/Shared/Secrets.xcconfig.tmp.*
+# Safety net for stray credential copies outside .secret/
+Secrets.xcconfig
+Secrets.xcconfig.tmp.*
+/secrets.json
 /secrets.json.tmp.*
 
 # Apple release credentials and signing material

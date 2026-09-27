@@ -3408,120 +3408,120 @@
     "Actions" : {
 
     },
-    "Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows." : {
+    "Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Füge einen TMDB API-Schlüssel zu Shared/Secrets.xcconfig hinzu, um nach Filmen und Serien zu suchen."
+            "value" : "Füge einen TMDB API-Schlüssel zu .secret/Secrets.xcconfig hinzu, um nach Filmen und Serien zu suchen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows."
+            "value" : "Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows."
+            "value" : "Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows."
+            "value" : "Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows."
+            "value" : "Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows."
+            "value" : "Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añade una clave de API de TMDB a Shared/Secrets.xcconfig para explorar películas y series."
+            "value" : "Añade una clave de API de TMDB a .secret/Secrets.xcconfig para explorar películas y series."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrega una clave de API de TMDB a Shared/Secrets.xcconfig para explorar películas y series."
+            "value" : "Agrega una clave de API de TMDB a .secret/Secrets.xcconfig para explorar películas y series."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajoutez une clé d'API TMDB à Shared/Secrets.xcconfig pour parcourir les films et séries."
+            "value" : "Ajoutez une clé d'API TMDB à .secret/Secrets.xcconfig pour parcourir les films et séries."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi una chiave API di TMDB in Shared/Secrets.xcconfig per sfogliare film e programmi TV."
+            "value" : "Aggiungi una chiave API di TMDB in .secret/Secrets.xcconfig per sfogliare film e programmi TV."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "映画や番組をブラウズするには、Shared/Secrets.xcconfigにTMDB APIキーを追加してください。"
+            "value" : "映画や番組をブラウズするには、.secret/Secrets.xcconfigにTMDB APIキーを追加してください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "영화와 TV 프로그램을 탐색하려면 Shared/Secrets.xcconfig에 TMDB API 키를 추가하십시오."
+            "value" : "영화와 TV 프로그램을 탐색하려면 .secret/Secrets.xcconfig에 TMDB API 키를 추가하십시오."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voeg een TMDB API-sleutel toe aan Shared/Secrets.xcconfig om door films en series te bladeren."
+            "value" : "Voeg een TMDB API-sleutel toe aan .secret/Secrets.xcconfig om door films en series te bladeren."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicione uma chave de API do TMDB em Shared/Secrets.xcconfig para explorar filmes e séries."
+            "value" : "Adicione uma chave de API do TMDB em .secret/Secrets.xcconfig para explorar filmes e séries."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicione uma chave de API TMDB a Shared/Secrets.xcconfig para explorar filmes e séries."
+            "value" : "Adicione uma chave de API TMDB a .secret/Secrets.xcconfig para explorar filmes e séries."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавьте ключ API TMDB в Shared/Secrets.xcconfig для просмотра фильмов и сериалов."
+            "value" : "Добавьте ключ API TMDB в .secret/Secrets.xcconfig для просмотра фильмов и сериалов."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lägg till en TMDB API-nyckel i Shared/Secrets.xcconfig för att bläddra bland filmer och serier."
+            "value" : "Lägg till en TMDB API-nyckel i .secret/Secrets.xcconfig för att bläddra bland filmer och serier."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Shared/Secrets.xcconfig 中添加 TMDB API 密钥以浏览影视。"
+            "value" : "在 .secret/Secrets.xcconfig 中添加 TMDB API 密钥以浏览影视。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Shared/Secrets.xcconfig 中加入 TMDB API 金鑰，即可瀏覽電影和節目。"
+            "value" : "在 .secret/Secrets.xcconfig 中加入 TMDB API 金鑰，即可瀏覽電影和節目。"
           }
         }
       }
