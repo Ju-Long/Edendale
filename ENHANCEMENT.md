@@ -691,6 +691,7 @@ controls.
 6. **G** — integration (needs all above)
 7. **H** — system features (needs G)
 8. **I** — frame generation (needs D, E)
+9. **J** — storage providers (needs B, G; see J.12)
 
 ---
 
@@ -1081,3 +1082,614 @@ GPU-estimated motion vectors into Apple's `MTLFXFrameInterpolator`:
 | I.7  | Tests                                    | [x]    |
 | I.8  | Performance profiling & budget           | [x]    |
 | I.9  | MetalFX interpolator backend (optional)  | [x]    |
+
+---
+
+## Section J — Storage Providers
+
+**Depends on:** B (FFmpeg reader), G (session integration). Independent of the
+rendering work in C–F and I.
+
+**Goal:** Let a library source live in Google Drive, OneDrive, Dropbox,
+WebDAV, S3-compatible storage, NFS, or SFTP, alongside local folders and SMB
+shares, on every Apple platform including Apple TV. Imports keep the existing
+contract: list the source, classify file names locally, persist, then enrich
+from TMDB in the background. No Edendale server or account is involved.
+
+```
+Link Source ─→ connector (sign-in or login) ─→ list / enumerate ─→ LibraryController
+                                                (credential-free URLs in SwiftData)
+
+Play ─→ FormatRouter ─→ FFmpegDecoder ─→ EDFFmpegReader custom I/O
+                                          ├─ SMB / NFS / SFTP: libsmb2 / libnfs / libssh2
+                                          └─ HTTP providers: RemoteByteSource (URLSession)
+                                                 └─ token or login from the Keychain
+```
+
+### J.1 — Current state
+
+Checked against this branch with SwiftVLC 0.8.0 and FFmpeg 7.1.1.
+
+What already exists:
+- `MediaConnector` (`Shared/Controllers/Connectors/MediaConnector.swift`):
+  `validate()` and `list(directory:)`, returning credential-free URLs.
+  `SMBConnector` is the only conformer.
+- Browsing goes through libvlc (`VLCNetworkBrowser`), which is
+  scheme-agnostic. `smb://` playback routes to FFmpeg (`FormatRouter.isSMB`)
+  and reads through libsmb2 custom I/O in `FFmpegReader.m`.
+- The bundled `libvlc.a` also exports the libnfs and libssh2 APIs on iOS,
+  tvOS, visionOS, and macOS (for example `nfs_pread`, `nfs_opendir`,
+  `libssh2_sftp_readdir_ex`, `libssh2_hostkey_hash`), and ships NFS, SFTP,
+  and FTP access modules plus Bonjour and UPnP discovery.
+- Watch progress is keyed by TMDB ID and `MediaParser` reads only the file
+  name, so new sources need no sync or classification changes.
+- TMDB sign-in already pairs `ASWebAuthenticationSession` with a QR code for
+  approving on another device, and stores its token with `KeychainStore`,
+  which writes synchronizable items.
+
+Gaps:
+1. SMB is hard-wired. `MediaSourceKind` has only `local` and `smb`;
+   `LibraryController.connector(for:)` switches on it; `BrowseLocation` and
+   `NetworkFolderPickerView` take an `SMBConnector`; `AddNetworkSourceView`
+   creates one directly.
+2. Credentials are a username and password per host, injected into the URL
+   (`LibraryController.remoteScope`). There is no account with refreshable
+   tokens.
+3. No authenticated HTTP playback. Other URLs fall through to FFmpeg's
+   built-in `http(s)` (`location = url.absoluteString` in `openURL:`), which
+   sends no auth header, can't refresh one mid-stream, and doesn't verify TLS
+   certificates by default (`tls_verify` defaults to 0 in
+   `libavformat/tls.h`). Nothing plays `http(s)` URLs today.
+4. `rescanAllFolders()` runs every time the Downloaded page appears and lists
+   folders one at a time. For a cloud source that is API traffic on every
+   visit.
+5. Remote items store a duration of 0, and `PlayerLogic.siblingVideoFiles`
+   only lists local folders.
+6. The Remove Source dialog says the server's saved login is forgotten
+   (`SourceRow.removeMessage`), but `removeFolder` never calls
+   `NetworkCredentialStore.remove`.
+7. Apple TV never receives iCloud Keychain items. Apple's
+   `kSecAttrSynchronizable` documentation: "Items that you store on tvOS never
+   leave the device where you create them, and items that you store on other
+   devices don't synchronize to tvOS devices." Synced SMB logins and the TMDB
+   session don't reach Apple TV today either.
+
+### J.2 — Providers
+
+| Provider | Sign-in | Listing | Playback | Apple TV | Outside approval | Size |
+|---|---|---|---|---|---|---|
+| Provider apps' folders in Files/Finder | None (system picker) | Existing local import | Existing; the provider usually downloads the whole file first | No | None | Test and document |
+| Google Drive | OAuth + PKCE, `drive.readonly` | Drive v3 `files.list` per folder | `alt=media` with Bearer and `Range`; no pre-authorized links | iPhone handoff (J.7) | Restricted-scope verification | L |
+| OneDrive (personal, work/school) | OAuth + PKCE, `Files.Read offline_access` | Graph `children`, `delta` | Pre-authenticated `downloadUrl` with `Range` | Device code or handoff | Entra app registration | M |
+| Dropbox | OAuth + PKCE, offline token | `list_folder` (recursive, cursor) | `get_temporary_link` (4 hours) | Handoff | Production approval | M |
+| WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, `rclone serve webdav`) | Basic/Digest | `PROPFIND`, depth 1 | `Range` GET | Typed or handoff | None | M |
+| NFS | None (AUTH_SYS) | libvlc (works today) or libnfs | libnfs custom I/O | Yes | Export needs `insecure` | S |
+| SFTP | Password (keys later) | libssh2 | libssh2 custom I/O | Typed or handoff | None | S–M |
+| S3-compatible (AWS, B2, R2, Wasabi, MinIO) | Access key and secret | `ListObjectsV2` | SigV4 pre-signed GET | Typed or handoff | None | M |
+| UPnP/DLNA (later) | None | libvlc UPnP discovery | Plain HTTP from the server | Yes | iOS multicast entitlement | M |
+
+Not planned: Box (its token exchange needs a client secret, which an
+open-source client can't keep), MEGA (client-side encryption), and FTP
+(plaintext passwords). Plex, Jellyfin, and Emby APIs are a separate
+media-server feature because they bring their own metadata.
+
+`rclone serve webdav` can front Google Drive and many other services, so
+WebDAV also gives power users a path that needs no provider approval.
+
+### J.3 — Canonical source URLs
+
+Stored `filePath` and `folderPath` values stay credential-free URLs. Every
+item URL ends with the real file name, so `MediaParser` and the extension
+filter work unchanged. A stable provider ID sits before it, so renames and
+Drive's duplicate names don't collide.
+
+| Kind (`MediaSourceKind` raw value) | Item URL |
+|---|---|
+| `smb` (existing) | `smb://host/share/path/Name.ext` |
+| `nfs` | `nfs://host/export/path/Name.ext` |
+| `sftp` | `sftp://host[:port]/path/Name.ext` |
+| `webdav` | `davs://host[:port]/path/Name.ext` (`dav://` for plain HTTP) |
+| `s3` | `s3://<account>/<bucket>/<key path>/Name.ext` |
+| `gdrive` | `gdrive://<account>/<fileId>/Name.ext` |
+| `onedrive` | `onedrive://<account>/<driveId>/<itemId>/Name.ext` |
+| `dropbox` | `dropbox://<account>/<fileId>/Name.ext` (the percent-encoded `id:…`) |
+
+- `<account>` is the first 32 hex digits of the SHA-256 of `kind:subject`:
+  Google's `sub`, the Microsoft user `id`, Dropbox's `account_id`, or for S3
+  the endpoint, bucket, and access key ID. It is hostname-safe, identical on
+  every device, and doesn't expose an email address. As with SMB hosts today,
+  the URL host is the key used to look up the credential.
+- Folder URLs have the same shape with the folder ID. `VideoFolder` gains a
+  readable `displayPath` (for example `Google Drive › My Drive › Movies`) for
+  `SourceRow` and the Downloaded list.
+- Raw values are persisted; never rename a case.
+
+**Acceptance:** build/parse round trips for every kind; a parsed item URL
+yields the account key, the provider ID, and the file name `MediaParser`
+expects.
+
+### J.4 — Connector layer
+
+**Modify:** `MediaConnector.swift`, `SMBConnector.swift`,
+`NetworkFolderPickerView.swift`, `AddNetworkSourceView.swift`,
+`LibraryController.swift`, `VideoFolder.swift`
+
+**Create:** `Shared/Controllers/Connectors/ConnectorFactory.swift`, one
+connector file per provider
+
+```swift
+enum MediaSourceKind: String, CaseIterable, Identifiable, Sendable {
+    case local, smb                                     // existing
+    case nfs, sftp, webdav, s3
+    case googleDrive = "gdrive", oneDrive = "onedrive", dropbox
+}
+
+struct ConnectorEntry: Identifiable, Hashable, Sendable {
+    let name: String
+    let url: URL
+    let isDirectory: Bool
+    var size: Int64? = nil
+    var duration: TimeInterval? = nil   // Drive videoMediaMetadata, Graph video facet
+    var modified: Date? = nil
+}
+
+protocol MediaConnector: Sendable {
+    var kind: MediaSourceKind { get }
+    var root: URL { get }
+    /// Username or account email shown with the source; never a secret.
+    var accountLabel: String? { get }
+    func validate() async throws
+    func list(directory: URL) async throws -> [ConnectorEntry]
+    /// Every video under `folder`. The default walks `list(directory:)`
+    /// breadth-first (today's `collectRemoteVideoURLs`, same 2,000-folder cap);
+    /// Dropbox and OneDrive override it with their recursive listings.
+    func enumerateVideos(under folder: URL) async throws -> [ConnectorEntry]
+}
+```
+
+- `credential` leaves the protocol. Only the password-based connectors (SMB,
+  SFTP, WebDAV, S3) carry one.
+- `ConnectorFactory` rebuilds a connector from a `VideoFolder` or an item URL,
+  replacing the switch in `LibraryController.connector(for:)`. It returns
+  `nil` when the account or login is missing, so the source can show "Sign in
+  again".
+- `BrowseLocation` holds a hashable `AnyMediaConnector` box (kind and root),
+  so `NetworkFolderPickerView` browses any connector.
+- `AddNetworkSourceView` becomes "Link Source": a provider list, then the
+  existing server form (with fields per protocol) or a sign-in step (J.6,
+  J.7), then the shared folder picker. Google Drive's picker root shows My
+  Drive, Shared with me, and Shared drives.
+- `VideoFolder` gains optional attributes, a lightweight migration like
+  `sourceKindRaw`: `displayPath`, `accountKey`, `lastScannedAt`, and
+  `changeCursor`.
+
+**Acceptance:** SMB linking, browsing, rescans, and playback behave as
+before. `ConnectorTests` cover the factory, the default enumeration, and the
+hashable browse location.
+
+### J.5 — Streaming: `RemoteByteSource` and FFmpeg custom I/O
+
+**Create:** `Shared/Playback/Remote/RemoteByteSource.swift`,
+`Shared/Playback/Remote/RemoteContentResolver.swift`
+
+**Modify:** `FFmpegReader.h`, `FFmpegReader.m`, `FFmpegDecoder.swift`,
+`FormatRouter.swift`
+
+Every HTTP-based provider streams through one `URLSession` byte source that
+FFmpeg reads with custom I/O, the way SMB reads through libsmb2 today.
+
+```objc
+/// Random-access bytes for FFmpeg custom I/O. Reads run on the reader's
+/// worker queue and may block; -cancel is thread-safe and fails blocked reads.
+@protocol EDByteSource <NSObject>
+@property (nonatomic, readonly) int64_t length;               // -1 if unknown
+- (NSInteger)readAtOffset:(int64_t)offset
+                     into:(uint8_t *)buffer
+                   length:(NSInteger)length;                  // 0 = EOF, < 0 = error
+- (void)cancel;
+@end
+
+// EDFFmpegReader
+- (BOOL)openByteSource:(id<EDByteSource>)source name:(NSString *)name
+                 error:(NSError **)error NS_SWIFT_NAME(open(byteSource:name:));
+```
+
+```swift
+protocol RemoteContentResolver: Sendable {
+    /// A request for the file's bytes: Bearer-authorized (Drive), or a
+    /// short-lived pre-authorized link (OneDrive, Dropbox, S3). `refresh`
+    /// forces a new token or link after a 401, 403, or 410.
+    func contentRequest(refresh: Bool) async throws -> URLRequest
+}
+```
+
+`RemoteByteSource`:
+- Reads 4 MiB `Range` chunks, prefetches the next chunk while reads are
+  sequential, and keeps up to 8 chunks (32 MiB), so the MKV cues or MP4
+  `moov` at the end of a file stay cached through the open.
+- Uses an ephemeral `URLSession` (no disk cache or cookies), which brings
+  system certificate validation, HTTP/2, and the system proxy.
+- Takes `length` from the listing's `size`, otherwise from the first
+  `Content-Range`.
+- Never logs pre-authorized URLs, tokens, or request headers.
+
+| Response | Action |
+|---|---|
+| `206` | Serve the range |
+| `200` at offset 0 | Accept: the server ignored `Range` (Microsoft Graph documents this) |
+| `200` at any other offset | Retry once, then fail the read |
+| `401` | Refresh the token once (single-flight), then retry |
+| `403` rate limit, `429`, `5xx` | Back off (0.5 s, 1 s, 2 s, with jitter), then fail |
+| `403` expired signed link, `410` (Dropbox) | Resolve a new link once, then retry |
+| `404` | Fail with "This file is no longer in <provider>" |
+
+Wiring:
+- `FormatRouter` sends every remote scheme (`smb`, `nfs`, `sftp`, `dav`,
+  `davs`, `s3`, `gdrive`, `onedrive`, `dropbox`) to FFmpeg, as it does for
+  SMB.
+- `FFmpegDecoder.open(url:)` gets the item's resolver from `ConnectorFactory`,
+  builds the byte source before dispatching to its worker queue, and cancels
+  it from `interrupt` and `close`.
+- The reader's read/seek callbacks mirror `ed_smb_read`/`ed_smb_seek`, honor
+  `_interrupted`, and answer `AVSEEK_SIZE` from `length`.
+- NFS and SFTP get `EDNFSContext`/`EDSFTPContext` custom I/O next to the SMB
+  context, using the libnfs and libssh2 symbols libvlc already exports.
+- The generic branch in `openURL:` rejects remote schemes instead of handing
+  them to FFmpeg's unverified `https`, so no token or signed link can reach it.
+- visionOS: `VisionMediaInspector` can't open custom schemes, so remote items
+  keep using the FFmpeg path until the AVFoundation resource loader (J.12,
+  step 7) lands.
+
+**Acceptance:** with a `URLProtocol` stub that serves the existing fixtures
+with `Range` support, FFmpeg opens, plays, seeks, and switches tracks through
+`RemoteByteSource` and reports the same media info as the file path.
+Token-refresh, expired-link, ignored-`Range`, and cancellation cases pass.
+Open and seek latency are measured with the playback probe at 50 ms and
+150 ms of simulated round-trip time.
+
+### J.6 — Accounts and sign-in
+
+**Create:** `Shared/Controllers/Accounts/OAuthClient.swift`,
+`CloudAccountStore.swift`, `CloudTokenProvider.swift`,
+`Shared/Views/Settings/AccountsSection.swift`
+
+- **No SDKs.** `OAuthClient` implements the authorization-code flow with PKCE
+  (S256, CryptoKit) through `ASWebAuthenticationSession`, which captures the
+  redirect itself, plus the device authorization grant (RFC 8628) for Apple TV
+  where a provider allows it. This follows `KeychainStore`'s dependency-free
+  approach; GoogleSignIn, MSAL, and SwiftyDropbox aren't needed.
+- **Registrations:**
+  - Google: one OAuth client of type iOS for `com.BaBaSaMa.Edendale` (Google
+    uses the iOS type for iOS and macOS apps). Redirect
+    `com.googleusercontent.apps.<id>:/oauth2redirect`; scopes `openid email
+    https://www.googleapis.com/auth/drive.readonly`.
+  - Microsoft: an Entra app for personal and work/school accounts, as a
+    public client with a custom-scheme redirect. Enable public client flows
+    for the device code flow. Scopes `Files.Read offline_access User.Read`.
+  - Dropbox: a scoped app with Full Dropbox access. Scopes
+    `files.metadata.read files.content.read account_info.read`; request
+    `token_access_type=offline` for a refresh token.
+  - Client IDs and app keys aren't secrets for PKCE clients, but they still
+    go through `.secret/Secrets.xcconfig` into Info.plist like
+    `TMDB_READ_ACCESS_TOKEN`, with entries in `Shared/Example.xcconfig` and
+    `ci_scripts/ci_post_clone.sh`. No client secret ships anywhere.
+- **Storage:** `CloudAccountStore` keeps one Keychain item per account
+  (`cloud-account-<kind>-<accountKey>`: provider, subject, display email,
+  refresh token, granted scopes). Access tokens live only in memory.
+  `CloudTokenProvider` is an actor that runs at most one refresh per account
+  and hands the result to every waiter.
+- **Sync:** `KeychainStore` writes synchronizable items, so:
+  - One sign-in covers iPhone, iPad, Mac, and Vision Pro.
+  - Apple TV never receives it (J.1, gap 7); it gets accounts through J.7.
+  - Deleting a synchronizable item deletes every synced copy, so removing a
+    source never deletes an account. Sign-out is explicit in Settings →
+    Accounts, says it applies to the user's synced devices, and can also
+    revoke Edendale's access at the provider, which ends access on any Apple
+    TV sharing that grant too.
+- **Settings → Accounts** lists each linked account (provider, email, sources
+  using it) with Sign Out. A source whose account is gone shows "Sign in
+  again".
+
+**Acceptance:** PKCE matches the RFC 7636 Appendix B test vector; concurrent
+token requests trigger one refresh; device-code polling handles
+`authorization_pending`, `slow_down`, a declined request, and
+`expired_token`; no token appears in SwiftData, stored URLs, or logs.
+
+### J.7 — Apple TV sign-in
+
+Google sign-in does work on Apple TV. YouTube shows a code or QR code that the
+user approves on a phone or computer (`yt.be/activate`). That screen is
+Google's device authorization flow, and Google limits the scopes it can grant
+to sign-in basics (`openid`, `email`, `profile`), YouTube (`youtube`,
+`youtube.readonly`), and, for Drive, only `drive.file` and `drive.appdata`.
+`drive.file` covers only files Edendale created or the user opened with
+Edendale, so it can't browse an existing movie folder, and `drive.readonly` is
+not available on that screen. A web page finishing the sign-in on the TV's
+behalf would need an Edendale server, which AGENTS.md rules out.
+
+So Apple TV signs in the way users already approve YouTube, on their phone,
+but the full Google sign-in runs in Edendale on the iPhone or iPad, which
+then hands the account to the TV over an encrypted local connection
+(DeviceDiscoveryUI):
+
+1. On Apple TV, **Link Source → Google Drive → Continue on iPhone or iPad**
+   opens `DevicePicker`. It lists iPhones and iPads on the same network that
+   are signed in to the Apple TV user's iCloud account, or a family member's,
+   and have Edendale installed.
+2. Choosing one opens `NWConnection(to: endpoint, using: .applicationService)`,
+   which the system encrypts, and sends a request naming the provider and the
+   TV.
+3. The iPhone app, which starts an `NWListener(using: .applicationService)` at
+   launch, asks for confirmation ("Link Google Drive on Living Room?"). It
+   offers an account already linked on the phone, or runs the normal
+   `ASWebAuthenticationSession` sign-in with `drive.readonly`.
+4. The phone sends a versioned handoff message (provider, account key, display
+   email, refresh token, scopes) and closes the connection.
+5. The TV refreshes an access token to validate it, stores the account in its
+   own Keychain (tvOS never syncs it), and continues to the folder picker.
+
+Setup:
+- The tvOS and iOS targets already share the bundle ID `com.BaBaSaMa.Edendale`,
+  which DeviceDiscoveryUI requires (universal purchase).
+- `Edendale/Info-tvOS.plist`: `NSApplicationServices` → `Browses` → one entry
+  with `NSApplicationServiceIdentifier` (for example
+  `Edendale-AccountHandoff`), `NSApplicationServiceUsageDescription`, and
+  `NSApplicationServicePlatformSupport` (`iOS`, `iPadOS`).
+- `Edendale/Info.plist`: `NSApplicationServices` → `Advertises` → the same
+  identifier.
+- The picker lists no devices in Simulator; test on hardware.
+- Still to check on hardware: what the iPhone shows when Edendale is in the
+  background. If the listener can't bring the app forward, post a local
+  notification that opens the confirmation screen.
+
+The same handoff can carry any source to the TV: Dropbox (which has no device
+flow), and SMB, SFTP, WebDAV, or S3 logins that are tedious to type with the
+Siri Remote.
+
+| Provider | Apple TV sign-in |
+|---|---|
+| Google Drive | Handoff |
+| Dropbox | Handoff |
+| OneDrive | Device code on the TV (QR code for the `verification_uri`, plus the code: Microsoft doesn't support `verification_uri_complete`), or handoff |
+| SMB, NFS, SFTP, WebDAV, S3 | Typed on the TV, or handoff |
+
+**Acceptance:** handoff messages encode and decode, and unknown versions are
+rejected; the TV rejects a handoff whose token fails to refresh; on hardware,
+linking Drive on Apple TV from an iPhone works with Edendale in the
+foreground and in the background.
+
+### J.8 — Library integration
+
+**Modify:** `LibraryController.swift`, `DownloadedView.swift`,
+`SourceRow.swift`, `PlayerLogic.swift`
+
+- Import and rescan call `enumerateVideos(under:)`. `ScannedFile.duration`
+  takes `ConnectorEntry.duration`, so Drive and OneDrive items show their
+  runtime instead of `--:--`.
+- `rescanAllFolders()` skips a remote source scanned in the last 15 minutes
+  (`lastScannedAt`) unless the user asks (⌘R or Rescan). Change cursors come
+  next, stored in `changeCursor`: Dropbox `list_folder/continue`, OneDrive
+  `delta`, Drive `changes.list`.
+- An offline or signed-out source shows its state in `SourceRow` instead of
+  setting `errorMessage` on every visit.
+- Later: `PlayerLogic.siblingVideoFiles` lists a remote item's folder through
+  its connector.
+- The removal mismatch (J.1, gap 6): with synced logins, deleting one when a
+  source is removed would sign the user's other devices out of that server.
+  Recommended: make the Remove dialog accurate now, and manage saved logins
+  in Settings → Accounts.
+- Classification order is unchanged: list, parse file names locally, persist,
+  then enrich in the background.
+
+### J.9 — Provider notes
+
+**Google Drive**
+- List a folder with `GET /drive/v3/files`:
+  `q='<folderId>' in parents and trashed = false`,
+  `fields=nextPageToken,files(id,name,mimeType,size,modifiedTime,videoMediaMetadata(durationMillis),shortcutDetails)`,
+  `pageSize=1000`, `supportsAllDrives=true`,
+  `includeItemsFromAllDrives=true`. Roots: `root` (My Drive), a
+  `sharedWithMe` query, and `GET /drive/v3/drives` (shared drives).
+- Follow shortcuts (`application/vnd.google-apps.shortcut`) to their targets,
+  skip other `application/vnd.google-apps.*` types (Docs, Sheets), and filter
+  videos by extension rather than MIME type.
+- Stream with `GET /drive/v3/files/<id>?alt=media`, `Authorization: Bearer`,
+  and `Range`. A file Google flags as abusive fails with a clear message;
+  never send `acknowledgeAbuse` without the user's consent.
+- Back off on `403` `userRateLimitExceeded` or `rateLimitExceeded`, and on
+  `429`.
+- `durationMillis` can be missing until Drive finishes processing a video.
+- Verification, because `drive.readonly` is a Restricted scope:
+  - Requires verified ownership of edendale.babasama.com (Search Console), a
+    public homepage, a privacy policy that discloses how Edendale accesses and
+    uses Google user data, an unlisted YouTube demo video of the sign-in and
+    scope use, and the scopes declared in the Cloud Console. The homepage and
+    policy belong on the `web` branch.
+  - No third-party security assessment is needed while Google data never
+    passes through a server Edendale operates. Keep it that way.
+  - Until verified, a user cap and a warning screen apply. While the consent
+    screen is in Testing, refresh tokens expire after 7 days.
+  - Google allows 100 refresh tokens per Google Account per client ID; the
+    Apple TV handoff reuses the phone's token rather than minting another.
+  - Start verification as soon as the Drive build can record the demo video;
+    it is the long pole.
+
+**OneDrive** (Microsoft Graph)
+- List with `GET /me/drive/items/{id}/children`,
+  `$select=id,name,size,folder,file,video,lastModifiedDateTime`, following
+  `@odata.nextLink`. `delta` gives the whole tree plus change tracking; verify
+  folder-level `delta` for work/school accounts.
+- Stream from `GET /me/drive/items/{id}?select=id,@microsoft.graph.downloadUrl`.
+  That URL needs no `Authorization` header, "might expire within minutes",
+  and takes `Range` itself (not `/content`); it may ignore `Range` and return
+  `200`.
+- `Files.Read` is the least-privileged delegated permission for personal and
+  work/school accounts; the `/common` tenant covers both.
+- Device code: tenants `/common`, `/consumers`, or `/organizations`; the user
+  has 15 minutes; personal accounts sign in again on the approving device.
+
+**Dropbox**
+- `POST /2/files/list_folder` with `recursive: true`, then
+  `list_folder/continue`; keep the cursor for rescans (`list_folder/longpoll`
+  can wait for changes).
+- `POST /2/files/get_temporary_link` with the file's `id:`. The link lasts 4
+  hours, then returns `410 Gone`; resolve a new one.
+- New apps start in development status with up to 500 linked users. Once 50
+  users link, the app has two weeks to apply for production status, or new
+  links freeze.
+
+**WebDAV**
+- `PROPFIND` with `Depth: 1`, asking for `resourcetype`, `getcontentlength`,
+  `getlastmodified`, and `displayname`; parse the `multistatus` with
+  `XMLParser` and decode each `href` (absolute or relative, percent-encoded).
+  Most servers disable `Depth: infinity`, so enumeration is breadth-first.
+- Basic and Digest through `URLSession` authentication challenges, with the
+  login in `NetworkCredentialStore` (keyed by host). Nextcloud and ownCloud
+  use `/remote.php/dav/files/<user>/`.
+- Self-signed certificates and plain HTTP on the LAN are open decisions
+  (J.11).
+
+**NFS**
+- Browse through the existing libvlc browser (`nfs://`), or
+  `nfs_opendir`/`nfs_readdir`.
+- Play through libnfs custom I/O: `nfs_mount`, `nfs_open`, `nfs_pread`,
+  `nfs_lseek`, `nfs_fstat64`, `nfs_set_timeout`.
+- iOS can't bind privileged ports, so the export needs the `insecure` option;
+  say so in the connection error.
+
+**SFTP**
+- List and read through libssh2 directly (`libssh2_sftp_readdir_ex`,
+  `libssh2_sftp_open_ex`, `libssh2_sftp_read`, `libssh2_sftp_seek64`) rather
+  than libvlc's `sftp` module, so Edendale owns host-key checking.
+- Trust on first use: show the server's SHA-256 host-key fingerprint
+  (`libssh2_hostkey_hash`) when linking, pin it in the Keychain, and refuse a
+  changed key until the user approves it again.
+- Password login first; key-based login later.
+
+**S3-compatible**
+- SigV4 signing with CryptoKit; `ListObjectsV2` with `prefix`, `delimiter=/`,
+  and `continuation-token`.
+- Stream through pre-signed GET URLs, re-signing after a `403` for expiry.
+  The endpoint, region, bucket, and path-style addressing (MinIO) are stored
+  with the source; the access key ID and secret fit `NetworkCredential`.
+
+### J.10 — Privacy, secrets, and design
+
+- No Edendale server or account: sign-in, listing, and streaming run between
+  the device and the provider. These are the "user-controlled sync/storage
+  services" AGENTS.md allows; README lists each provider and what it receives
+  (the user's sign-in, folder listings, and file byte ranges).
+- Tokens and passwords live only in the Keychain. Stored URLs, `displayPath`,
+  logs, and error messages never contain them.
+- No client secrets anywhere (Box is excluded for that reason). Client IDs
+  follow the TMDB token's `.secret/Secrets.xcconfig` path.
+- File-name classification stays local and precedes TMDB enrichment; listing
+  a source is that source's own read, as with SMB.
+- The library index stays on the device. Accounts are credentials and sync
+  like SMB logins, except to Apple TV.
+- The `web` branch stays static. It gains privacy-policy text for these
+  providers (Google verification requires it), never an OAuth relay or token
+  endpoint.
+- Icons follow DESIGN.md: the app's own glyph family with provider names in
+  text. If a provider logo is used, follow that provider's brand rules.
+- Info.plist additions: `NSApplicationServices` (J.7), and
+  `NSBonjourServices` if "servers nearby" discovery is added (`_smb._tcp`,
+  `_nfs._tcp`, `_sftp-ssh._tcp`, `_webdav._tcp`, `_webdavs._tcp`).
+
+### J.11 — Open decisions
+
+1. **Account sync.** Recommended: keep `KeychainStore`'s synchronizable items
+   (one sign-in for iPhone, iPad, Mac, and Vision Pro; Apple TV through the
+   handoff). The alternative is device-only accounts, a stricter reading of
+   AGENTS.md rule 6.
+2. **Google verification.** Commit to it (no paid assessment while
+   client-only), or accept the unverified user cap.
+3. **Order.** Google Drive first (J.12), or the quicker NFS, SFTP, and WebDAV
+   sources first.
+4. **Home-server TLS.** Allow self-signed certificates with per-host pinning
+   and plain HTTP on the LAN (ATS `NSAllowsLocalNetworking`), or require
+   valid HTTPS.
+5. **SMB login removal.** Correct the Remove dialog (recommended), or delete
+   the synced login when the last source for that host is removed.
+
+### J.12 — Build order
+
+1. J.4 connector layer, plus J.8's rescan throttling and removal fix. No new
+   provider yet.
+2. J.5 `RemoteByteSource` and FFmpeg byte-source I/O, against a local stub.
+3. J.6 accounts and OAuth, then Google Drive in Testing mode. Start Google
+   verification.
+4. J.7 Apple TV handoff, bringing Drive to tvOS.
+5. OneDrive (device code on tvOS), then Dropbox.
+6. NFS and SFTP custom I/O, WebDAV, and S3; optionally Bonjour "servers
+   nearby".
+7. Later: an `AVAssetResourceLoaderDelegate` over `RemoteByteSource`
+   (AVFoundation and visionOS spatial playback from remote sources), remote
+   siblings, change cursors, and UPnP.
+
+Parity (AGENTS.md rule 7): Android and Windows need their own native
+implementations, the `web` branch needs the privacy-policy text, and
+`main`'s README should list the supported storage services. No code is
+shared.
+
+### J.13 — Tests
+
+- `ConnectorTests`: canonical URL round trips, account keys, the factory, the
+  default enumeration, and the hashable browse location.
+- `RemoteByteSourceTests` (new): a `URLProtocol` stub serving fixtures with
+  `Range` support covers chunking, prefetch, cached backward seeks, `401` →
+  one refresh, `410` → a new link, an ignored `Range`, backoff, and
+  cancellation.
+- `FFmpegDecoderTests`: open, seek, and switch tracks on the subtitle fixture
+  through `RemoteByteSource`.
+- `OAuthTests` (new): the PKCE vector, authorization URL parameters, token and
+  device-code responses, and single-flight refresh.
+- `CloudListingTests` (new): recorded Drive, Graph, Dropbox, WebDAV, and S3
+  responses covering pagination, shortcuts, folders, and filtering. No real
+  credentials in tests or CI.
+- `AccountHandoffTests` (new): message encoding and version rejection.
+- Hardware only: the Apple TV handoff and real-account playback on each
+  provider. README records the manual steps.
+
+### Section J — Tracking
+
+| Step | Description                                  | Status |
+|------|----------------------------------------------|--------|
+| J.3  | Canonical source URLs                        | [ ]    |
+| J.4  | Connector layer                              | [ ]    |
+| J.5  | `RemoteByteSource` + FFmpeg custom I/O       | [ ]    |
+| J.6  | Accounts, OAuth, Settings → Accounts         | [ ]    |
+| J.7  | Apple TV sign-in (DeviceDiscoveryUI handoff) | [ ]    |
+| J.8  | Library integration                          | [ ]    |
+| J.9  | Google Drive                                 | [ ]    |
+| J.9  | OneDrive                                     | [ ]    |
+| J.9  | Dropbox                                      | [ ]    |
+| J.9  | NFS, SFTP                                    | [ ]    |
+| J.9  | WebDAV, S3-compatible                        | [ ]    |
+| J.13 | Tests                                        | [ ]    |
+| —    | Google restricted-scope verification         | [ ]    |
+| —    | Files/Finder provider-folder check           | [ ]    |
+
+References, checked 2026-09-27. Provider rules change, so re-check them when
+registering:
+- Google device flow scopes:
+  https://developers.google.com/identity/protocols/oauth2/limited-input-device
+- Drive scope classes:
+  https://developers.google.com/workspace/drive/api/guides/api-specific-auth
+- Restricted-scope verification:
+  https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification
+- Refresh-token expiry and limits:
+  https://developers.google.com/identity/protocols/oauth2
+- Google OAuth client type for iOS and macOS:
+  https://developers.google.com/identity/sign-in/ios/start-integrating
+- YouTube TV sign-in: https://support.google.com/youtube/answer/3015415
+- `kSecAttrSynchronizable` (no tvOS sync):
+  https://developer.apple.com/documentation/security/ksecattrsynchronizable
+- DeviceDiscoveryUI:
+  https://developer.apple.com/documentation/devicediscoveryui/connecting-a-tvos-app-to-other-devices-over-the-local-network
+- Microsoft device code flow:
+  https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code
+- Graph download URLs and ranges:
+  https://learn.microsoft.com/en-us/graph/api/driveitem-get-content
+- Dropbox development status:
+  https://www.dropbox.com/developers/reference/developer-guide
