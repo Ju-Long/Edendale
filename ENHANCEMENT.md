@@ -1101,7 +1101,7 @@ Link Source ─→ connector (sign-in or login) ─→ list / enumerate ─→ L
                                                 (credential-free URLs in SwiftData)
 
 Play ─→ FormatRouter ─→ FFmpegDecoder ─→ EDFFmpegReader custom I/O
-                                          ├─ SMB / NFS / SFTP: libsmb2 / libnfs / libssh2
+                                          ├─ SMB / NFS / SFTP: libsmb2 / libnfs / SwiftNIO SSH
                                           └─ HTTP providers: RemoteByteSource (URLSession)
                                                  └─ token or login from the Keychain
 ```
@@ -1120,7 +1120,10 @@ What already exists:
 - The bundled `libvlc.a` also exports the libnfs and libssh2 APIs on iOS,
   tvOS, visionOS, and macOS (for example `nfs_pread`, `nfs_opendir`,
   `libssh2_sftp_readdir_ex`, `libssh2_hostkey_hash`), and ships NFS, SFTP,
-  and FTP access modules plus Bonjour and UPnP discovery.
+  and FTP access modules plus Bonjour and UPnP discovery. Its libssh2
+  (1.11.0 on libgcrypt) offers only finite-field Diffie-Hellman key exchange
+  and `ssh-rsa`/`ssh-dss` host keys, which current OpenSSH servers refuse, so
+  SFTP uses SwiftNIO SSH instead (J.9).
 - Watch progress is keyed by TMDB ID and `MediaParser` reads only the file
   name, so new sources need no sync or classification changes.
 - TMDB sign-in already pairs `ASWebAuthenticationSession` with a QR code for
@@ -1164,7 +1167,7 @@ Gaps:
 | Dropbox | OAuth + PKCE, offline token | `list_folder` (recursive, cursor) | `get_temporary_link` (4 hours) | Handoff | Production approval | M |
 | WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, `rclone serve webdav`) | Basic/Digest | `PROPFIND`, depth 1 | `Range` GET | Typed or handoff | None | M |
 | NFS | None (AUTH_SYS) | libvlc (works today) or libnfs | libnfs custom I/O | Yes | Export needs `insecure` | S |
-| SFTP | Password (keys later) | libssh2 | libssh2 custom I/O | Typed or handoff | None | S–M |
+| SFTP | Password (keys later) | SwiftNIO SSH | SwiftNIO SSH custom I/O | Typed or handoff | None | S–M |
 | S3-compatible (AWS, B2, R2, Wasabi, MinIO) | Access key and secret | `ListObjectsV2` | SigV4 pre-signed GET | Typed or handoff | None | M |
 | UPnP/DLNA (later) | None | libvlc UPnP discovery | Plain HTTP from the server | Yes | iOS multicast entitlement | M |
 
@@ -1332,8 +1335,8 @@ Wiring:
   it from `interrupt` and `close`.
 - The reader's read/seek callbacks mirror `ed_smb_read`/`ed_smb_seek`, honor
   `_interrupted`, and answer `AVSEEK_SIZE` from `length`.
-- NFS and SFTP get `EDNFSContext`/`EDSFTPContext` custom I/O next to the SMB
-  context, using the libnfs and libssh2 symbols libvlc already exports.
+- NFS and SFTP read through `RemoteFileByteSource`: NFS with the libnfs
+  symbols libvlc already exports, SFTP with SwiftNIO SSH (`SFTPConnection`).
 - The generic branch in `openURL:` rejects remote schemes instead of handing
   them to FFmpeg's unverified `https`, so no token or signed link can reach it.
 - visionOS: `VisionMediaInspector` can't open custom schemes, so remote items
@@ -1558,12 +1561,19 @@ foreground and in the background.
   say so in the connection error.
 
 **SFTP**
-- List and read through libssh2 directly (`libssh2_sftp_readdir_ex`,
-  `libssh2_sftp_open_ex`, `libssh2_sftp_read`, `libssh2_sftp_seek64`) rather
-  than libvlc's `sftp` module, so Edendale owns host-key checking.
-- Trust on first use: show the server's SHA-256 host-key fingerprint
-  (`libssh2_hostkey_hash`) when linking, pin it in the Keychain, and refuse a
-  changed key until the user approves it again.
+- SSH comes from Apple's SwiftNIO SSH (`swift-nio-ssh`, a Swift package):
+  curve25519 and ECDH key exchange, Ed25519 and ECDSA host keys, and AES-GCM,
+  which is what current OpenSSH servers offer. libvlc's libssh2 can't
+  negotiate with them (J.1). SwiftNIO SSH has no RSA host keys and no
+  keyboard-interactive login, so a server that offers only those gets a
+  clear error.
+- A small SFTP version 3 client on top (`SFTPProtocol`, `SFTPConnection`)
+  lists folders, resolves symbolic links, and reads files with pipelined
+  32 KiB requests. Edendale owns host-key checking rather than libvlc's `sftp`
+  module.
+- Trust on first use: show the server's SHA-256 host-key fingerprint and key
+  type when linking, pin it in the Keychain, and refuse a changed key until
+  the user approves it again.
 - Password login first; key-based login later.
 
 **S3-compatible**
@@ -1648,6 +1658,9 @@ shared.
   responses covering pagination, shortcuts, folders, and filtering. No real
   credentials in tests or CI.
 - `AccountHandoffTests` (new): message encoding and version rejection.
+- `SFTPProtocolTests` (new): SFTP requests byte for byte, replies with every
+  attribute layout, framing across partial reads, and host-key fingerprints
+  that match `ssh-keygen -l`.
 - Hardware only: the Apple TV handoff and real-account playback on each
   provider. README records the manual steps.
 

@@ -38,7 +38,7 @@ struct EdendaleCommands: Commands {
                 .keyboardShortcut("n")
                 .disabled(library == nil)
 
-            Button("Link Network Source…") { library?.linkSource() }
+            Button("Link Source…") { library?.linkSource() }
                 .keyboardShortcut("n", modifiers: [.command, .option])
                 .disabled(library == nil)
 

@@ -97,6 +97,54 @@ static int64_t ed_smb_seek(void *opaque, int64_t offset, int whence) {
     return res;
 }
 
+#pragma mark - Custom I/O for byte sources (HTTP providers, NFS, SFTP)
+
+typedef struct {
+    // Unretained: the reader's `_byteSource` ivar owns the source for as
+    // long as this context exists.
+    void *source;
+    int64_t position;
+    _Atomic(bool) *interrupted;
+} EDByteSourceContext;
+
+static int ed_source_read(void *opaque, uint8_t *buf, int buf_size) {
+    EDByteSourceContext *ctx = (EDByteSourceContext *)opaque;
+    if (!ctx || !ctx->source) return AVERROR(EINVAL);
+    _Atomic(bool) *interrupted = ctx->interrupted;
+    if (atomic_load(interrupted)) return AVERROR_EXIT;
+    id<EDByteSource> source = (__bridge id<EDByteSource>)ctx->source;
+    NSInteger count = [source readAtOffset:ctx->position into:buf length:buf_size shouldAbort:^BOOL {
+        return atomic_load(interrupted);
+    }];
+    if (count > 0) {
+        ctx->position += count;
+        return (int)count;
+    }
+    if (count == 0) return AVERROR_EOF;
+    return atomic_load(interrupted) ? AVERROR_EXIT : AVERROR(EIO);
+}
+
+static int64_t ed_source_seek(void *opaque, int64_t offset, int whence) {
+    EDByteSourceContext *ctx = (EDByteSourceContext *)opaque;
+    if (!ctx || !ctx->source) return AVERROR(EINVAL);
+    int64_t length = ((__bridge id<EDByteSource>)ctx->source).length;
+    int64_t target;
+    switch (whence & ~AVSEEK_FORCE) {
+        case AVSEEK_SIZE: return length >= 0 ? length : AVERROR(ENOSYS);
+        case SEEK_SET: target = offset; break;
+        case SEEK_CUR: target = ctx->position + offset; break;
+        case SEEK_END:
+            if (length < 0) return AVERROR(ENOSYS);
+            target = length + offset;
+            break;
+        default: return AVERROR(EINVAL);
+    }
+    if (target < 0) return AVERROR(EINVAL);
+    // Seeking only moves the position; the source fetches on the next read.
+    ctx->position = target;
+    return target;
+}
+
 @implementation EDFFmpegFrame
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
                              audio:(CMSampleBufferRef)audio
@@ -141,6 +189,8 @@ static const size_t EDHeldVideoLimit = 32 << 20;
     AVIOContext *_customIO;
     int _fileFD;
     EDSMBContext *_smbContext;
+    id<EDByteSource> _byteSource;
+    EDByteSourceContext *_byteSourceContext;
     AVCodecContext *_video;
     AVCodecContext *_audio;
     AVCodecContext *_subtitle;
@@ -185,6 +235,19 @@ static BOOL EDReaderError(NSError **error, NSString *operation, int code) {
     if (error) {
         *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:code userInfo:@{
             NSLocalizedDescriptionKey: [NSString stringWithFormat:@"%@: %@", operation, edendale_av_err2str(code)]
+        }];
+    }
+    return NO;
+}
+
+/// Like EDReaderError, but prefers the byte source's own explanation (for
+/// example "Sign in to Google Drive again") over FFmpeg's generic I/O error.
+static BOOL EDSourceError(NSError **error, id<EDByteSource> source, NSString *operation, int code) {
+    NSString *reason = code == AVERROR_EXIT ? nil : source.failureReason;
+    if (reason.length == 0) return EDReaderError(error, operation, code);
+    if (error) {
+        *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:code userInfo:@{
+            NSLocalizedDescriptionKey: reason
         }];
     }
     return NO;
@@ -271,6 +334,10 @@ static int EDInterrupt(void *opaque) {
         _fileFD = -1;
     }
     [self cleanupSMBContext];
+    [_byteSource cancel];
+    _byteSource = nil;
+    free(_byteSourceContext);
+    _byteSourceContext = NULL;
     av_packet_free(&_packet);
     av_frame_free(&_frame);
     sws_freeContext(_scaler);
@@ -433,7 +500,9 @@ static int EDInterrupt(void *opaque) {
     CVPixelBufferRelease(decoded);
 }
 
-- (BOOL)openURL:(NSURL *)url error:(NSError **)error {
+/// Closes any open media and allocates a fresh format context with the
+/// interrupt callback and the open deadline armed.
+- (BOOL)prepareToOpenWithError:(NSError **)error {
     [self close];
     if (atomic_load(&_interrupted)) return EDReaderError(error, @"Playback cancelled", AVERROR_EXIT);
     if (!edendale_ffmpeg_versions_match()) {
@@ -445,6 +514,48 @@ static int EDInterrupt(void *opaque) {
     if (!_format) return EDReaderError(error, @"Allocate media reader", AVERROR(ENOMEM));
     _format->interrupt_callback = (AVIOInterruptCB){ EDInterrupt, (__bridge void *)self };
     atomic_store(&_deadline, (int64_t)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000) + 20000000);
+    return YES;
+}
+
+- (BOOL)openByteSource:(id<EDByteSource>)source name:(NSString *)name error:(NSError **)error {
+    if (![self prepareToOpenWithError:error]) {
+        [source cancel];
+        return NO;
+    }
+    _byteSource = source;
+    _byteSourceContext = (EDByteSourceContext *)calloc(1, sizeof(EDByteSourceContext));
+    if (!_byteSourceContext) {
+        atomic_store(&_deadline, 0);
+        [self close];
+        return EDReaderError(error, @"Allocate I/O context", AVERROR(ENOMEM));
+    }
+    _byteSourceContext->source = (__bridge void *)source;
+    _byteSourceContext->interrupted = &_interrupted;
+
+    // Matches the SMB buffer: FFmpeg asks the source for up to 64 KiB at a
+    // time, which RemoteByteSource serves from its 4 MiB chunks.
+    static const int kSourceIOBufSize = 65536;
+    unsigned char *ioBuf = av_malloc(kSourceIOBufSize);
+    if (!ioBuf) {
+        atomic_store(&_deadline, 0);
+        [self close];
+        return EDReaderError(error, @"Allocate I/O buffer", AVERROR(ENOMEM));
+    }
+    _customIO = avio_alloc_context(ioBuf, kSourceIOBufSize, 0, _byteSourceContext,
+                                   ed_source_read, NULL, ed_source_seek);
+    if (!_customIO) {
+        av_free(ioBuf);
+        atomic_store(&_deadline, 0);
+        [self close];
+        return EDReaderError(error, @"Allocate I/O context", AVERROR(ENOMEM));
+    }
+    _format->pb = _customIO;
+    _format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    return [self finishOpeningAt:(name.length > 0 ? name.UTF8String : "media") error:error];
+}
+
+- (BOOL)openURL:(NSURL *)url error:(NSError **)error {
+    if (![self prepareToOpenWithError:error]) return NO;
 
     const char *location;
     if (url.isFileURL) {
@@ -610,13 +721,31 @@ static int EDInterrupt(void *opaque) {
             return EDReaderError(error, @"Playback cancelled", AVERROR_EXIT);
         }
     } else {
-        location = url.absoluteString.UTF8String;
+        // Remote schemes stream through -openByteSource:. Handing any other
+        // URL to FFmpeg's own protocols would send it, and whatever it
+        // carries, over connections that don't verify certificates.
+        atomic_store(&_deadline, 0);
+        [self close];
+        if (error) {
+            *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:AVERROR_PROTOCOL_NOT_FOUND userInfo:@{
+                NSLocalizedDescriptionKey: @"Edendale can't open this kind of location."
+            }];
+        }
+        return NO;
     }
+    return [self finishOpeningAt:location error:error];
+}
 
+/// Probes the media behind the prepared I/O and sets up its decoders.
+- (BOOL)finishOpeningAt:(const char *)location error:(NSError **)error {
     int result = avformat_open_input(&_format, location, NULL, NULL);
     if (result >= 0) result = avformat_find_stream_info(_format, NULL);
     atomic_store(&_deadline, 0);
-    if (result < 0) { [self close]; return EDReaderError(error, @"Could not open media", result); }
+    if (result < 0) {
+        id<EDByteSource> source = _byteSource;
+        [self close];
+        return EDSourceError(error, source, @"Could not open media", result);
+    }
 
     _origin = _format->start_time == AV_NOPTS_VALUE ? 0 : (double)_format->start_time / AV_TIME_BASE;
     _seekFloor = _videoNextTime = _audioNextTime = 0;
@@ -900,11 +1029,17 @@ static int EDInterrupt(void *opaque) {
         atomic_store(&_deadline, (int64_t)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000) + 20000000);
         int result = av_read_frame(_format, _packet);
         atomic_store(&_deadline, 0);
+        // Demuxers can report a failed network read as the end of the file;
+        // the I/O context still holds the real error.
+        if (result == AVERROR_EOF && _byteSource && _format->pb && _format->pb->error < 0 &&
+            _format->pb->error != AVERROR_EOF && !atomic_load(&_interrupted)) {
+            result = _format->pb->error;
+        }
         if (result == AVERROR_EOF) {
             _demuxEnded = YES;
             continue;
         }
-        if (result < 0) { EDReaderError(error, @"Read media packet", result); return nil; }
+        if (result < 0) { EDSourceError(error, _byteSource, @"Read media packet", result); return nil; }
         if (_subtitle && _packet->stream_index == _subtitleIndex) {
             [self decodeSubtitle:_packet into:outputs];
             av_packet_unref(_packet);
@@ -933,7 +1068,9 @@ static int EDInterrupt(void *opaque) {
     int64_t timestamp = (int64_t)((fmax(0, seconds) + _origin) * AV_TIME_BASE);
     int result = avformat_seek_file(_format, -1, INT64_MIN, timestamp, timestamp, AVSEEK_FLAG_BACKWARD);
     atomic_store(&_deadline, 0);
-    if (result < 0) return EDReaderError(error, @"Could not seek", result);
+    if (result < 0) return EDSourceError(error, _byteSource, @"Could not seek", result);
+    // A read the seek interrupted left its error behind; reads resume now.
+    if (_byteSource && _format->pb) _format->pb->error = 0;
     if (_video) avcodec_flush_buffers(_video);
     if (_audio) avcodec_flush_buffers(_audio);
     if (_subtitle) avcodec_flush_buffers(_subtitle);

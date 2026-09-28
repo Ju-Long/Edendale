@@ -15,6 +15,11 @@ struct EdendaleApp: App {
     @State private var watchlistStore: WatchlistStore
     @State private var userMediaStore: UserMediaStore
     @State private var tmdbAccount = TMDBAccountStore()
+    @State private var cloudAccounts = CloudAccountStore()
+    #if os(iOS)
+    /// Listens for Apple TVs asking for an account (AccountHandoff).
+    @State private var accountHandoff = AccountHandoffCenter()
+    #endif
     @State private var wyzieKeys = WyzieKeyStore()
     @State private var youngAudienceFilter = YoungAudienceFilter()
     @State private var audioEnhancement = AudioEnhancementController()
@@ -45,6 +50,15 @@ struct EdendaleApp: App {
         _audioEnhancement = State(initialValue: audioEnhancement)
         _videoAdjustment = State(initialValue: videoAdjustment)
         _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment))
+        #if os(iOS)
+        // DeviceDiscoveryUI connects only to a listener that is already
+        // running, so start it as early as possible.
+        if !Persistence.isRunningUnitTests {
+            let handoff = AccountHandoffCenter()
+            handoff.start()
+            _accountHandoff = State(initialValue: handoff)
+        }
+        #endif
     }
 
     var body: some Scene {
@@ -55,6 +69,10 @@ struct EdendaleApp: App {
                 .environment(watchlistStore)
                 .environment(userMediaStore)
                 .environment(tmdbAccount)
+                .environment(cloudAccounts)
+                #if os(iOS)
+                .environment(accountHandoff)
+                #endif
                 .environment(wyzieKeys)
                 .environment(youngAudienceFilter)
                 .environment(audioEnhancement)

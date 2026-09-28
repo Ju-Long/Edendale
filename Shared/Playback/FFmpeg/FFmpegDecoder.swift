@@ -17,38 +17,56 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
             queue.async {
                 do {
                     try self.reader.open(url: url)
-                    let values = self.reader.mediaInfo
-                    let videos = (values["video"] as? [[String: Any]] ?? []).map { track in
-                        VideoTrackInfo(index: track["index"] as? Int ?? 0,
-                            codec: track["codec"] as? String ?? "unknown",
-                            size: CGSize(width: track["width"] as? Double ?? 0, height: track["height"] as? Double ?? 0),
-                            bitDepth: track["bitDepth"] as? Int ?? 8,
-                            isHardwareDecodable: track["hardware"] as? Bool ?? false)
-                    }
-                    let audio = (values["audio"] as? [[String: Any]] ?? []).map { track in
-                        AudioTrackInfo(index: track["index"] as? Int ?? 0,
-                            codec: track["codec"] as? String ?? "unknown",
-                            channelCount: track["channels"] as? Int ?? 0,
-                            sampleRate: track["sampleRate"] as? Int ?? 0,
-                            language: track["language"] as? String, title: track["title"] as? String)
-                    }
-                    let subs = (values["subtitle"] as? [[String: Any]] ?? []).map { track in
-                        SubtitleTrackInfo(
-                            index: track["index"] as? Int ?? 0,
-                            codec: track["codec"] as? String ?? "unknown",
-                            language: track["language"] as? String,
-                            title: track["title"] as? String,
-                            isImageBased: track["isImageBased"] as? Bool ?? false)
-                    }
-                    let seconds = values["duration"] as? Double ?? 0
-                    continuation.resume(returning: MediaInfo(
-                        duration: seconds > 0 ? CMTime(seconds: seconds, preferredTimescale: 600) : .indefinite,
-                        videoTracks: videos, audioTracks: audio, subtitleTracks: subs,
-                        naturalSize: CGSize(width: values["width"] as? Double ?? 0, height: values["height"] as? Double ?? 0),
-                        frameRate: values["frameRate"] as? Float ?? 0, isHDR: values["hdr"] as? Bool ?? false))
+                    continuation.resume(returning: self.readMediaInfo())
                 } catch { continuation.resume(throwing: error) }
             }
         }
+    }
+
+    /// Opens media streamed through `source` (a remote provider, NFS, or
+    /// SFTP). Closing the reader cancels the source.
+    func open(byteSource source: any ByteSource, name: String) async throws -> MediaInfo {
+        nonisolated(unsafe) let source = source
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    try self.reader.open(byteSource: source, name: name)
+                    continuation.resume(returning: self.readMediaInfo())
+                } catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+
+    private func readMediaInfo() -> MediaInfo {
+        let values = reader.mediaInfo
+        let videos = (values["video"] as? [[String: Any]] ?? []).map { track in
+            VideoTrackInfo(index: track["index"] as? Int ?? 0,
+                codec: track["codec"] as? String ?? "unknown",
+                size: CGSize(width: track["width"] as? Double ?? 0, height: track["height"] as? Double ?? 0),
+                bitDepth: track["bitDepth"] as? Int ?? 8,
+                isHardwareDecodable: track["hardware"] as? Bool ?? false)
+        }
+        let audio = (values["audio"] as? [[String: Any]] ?? []).map { track in
+            AudioTrackInfo(index: track["index"] as? Int ?? 0,
+                codec: track["codec"] as? String ?? "unknown",
+                channelCount: track["channels"] as? Int ?? 0,
+                sampleRate: track["sampleRate"] as? Int ?? 0,
+                language: track["language"] as? String, title: track["title"] as? String)
+        }
+        let subs = (values["subtitle"] as? [[String: Any]] ?? []).map { track in
+            SubtitleTrackInfo(
+                index: track["index"] as? Int ?? 0,
+                codec: track["codec"] as? String ?? "unknown",
+                language: track["language"] as? String,
+                title: track["title"] as? String,
+                isImageBased: track["isImageBased"] as? Bool ?? false)
+        }
+        let seconds = values["duration"] as? Double ?? 0
+        return MediaInfo(
+            duration: seconds > 0 ? CMTime(seconds: seconds, preferredTimescale: 600) : .indefinite,
+            videoTracks: videos, audioTracks: audio, subtitleTracks: subs,
+            naturalSize: CGSize(width: values["width"] as? Double ?? 0, height: values["height"] as? Double ?? 0),
+            frameRate: values["frameRate"] as? Float ?? 0, isHDR: values["hdr"] as? Bool ?? false)
     }
 
     struct Batch: @unchecked Sendable {
@@ -186,9 +204,19 @@ public final class FFmpegDecoder: MediaDecoder {
         }
         self.worker = worker
         do {
+            // Remote items stream through a byte source built from the
+            // item's credential-free URL and its Keychain login or account;
+            // no token or signed link ever reaches FFmpeg's own protocols.
+            let byteSource = ConnectorFactory.streamsThroughByteSource(url)
+                ? try ConnectorFactory.byteSource(for: url)
+                : nil
             debugPrint("[FFmpegDecoder.open] calling worker.open...")
             let info = try await withTaskCancellationHandler {
-                try await worker.open(url)
+                if let byteSource {
+                    try await worker.open(byteSource: byteSource, name: url.lastPathComponent)
+                } else {
+                    try await worker.open(url)
+                }
             } onCancel: {
                 worker.interrupt()
             }

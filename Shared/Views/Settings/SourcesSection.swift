@@ -54,7 +54,7 @@ struct SourcesSection: View {
                 Button {
                     showLinkSource = true
                 } label: {
-                    Label("Link Network Source…", image: .link)
+                    Label("Link Source…", image: .link)
                 }
                 .archiveButtonStyle(.ghost)
             }

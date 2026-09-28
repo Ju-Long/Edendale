@@ -142,6 +142,8 @@ struct SettingsView: View {
             showLinkSource: $showLinkSource
         )
 
+        AccountsSection()
+
         TMDBAccountSection()
 
 //        WyzieSubtitlesSection()

@@ -7,8 +7,9 @@
 #
 # In Xcode Cloud, .secret/ doesn't exist (it's gitignored), so we regenerate
 # .secret/Secrets.xcconfig from environment variables configured on the
-# workflow. Mark TMDB_READ_ACCESS_TOKEN (and optionally TMDB_API_KEY and
-# WYZIE_API_KEY) as *Secret* env vars in the Xcode Cloud workflow so they're
+# workflow. Mark TMDB_READ_ACCESS_TOKEN (and optionally TMDB_API_KEY,
+# WYZIE_API_KEY, GOOGLE_DRIVE_CLIENT_ID, ONEDRIVE_CLIENT_ID, and
+# DROPBOX_APP_KEY) as *Secret* env vars in the Xcode Cloud workflow so they're
 # encrypted and masked in build logs.
 #
 # Never echo the token values here — that would leak them into the build log.
@@ -37,13 +38,17 @@ mkdir -p "$SECRETS_DIRECTORY"
   printf 'TMDB_READ_ACCESS_TOKEN = %s\n' "${TMDB_READ_ACCESS_TOKEN:-}"
   printf 'TMDB_API_KEY = %s\n' "${TMDB_API_KEY:-}"
   printf 'WYZIE_API_KEY = %s\n' "${WYZIE_API_KEY:-}"
+  printf 'GOOGLE_DRIVE_CLIENT_ID = %s\n' "${GOOGLE_DRIVE_CLIENT_ID:-}"
+  printf 'ONEDRIVE_CLIENT_ID = %s\n' "${ONEDRIVE_CLIENT_ID:-}"
+  printf 'DROPBOX_APP_KEY = %s\n' "${DROPBOX_APP_KEY:-}"
 } > "$SECRETS_FILE"
 
 echo "Generated .secret/Secrets.xcconfig for Xcode Cloud build."
 
 # FFmpeg is generated, not committed. Prepare it before Xcode resolves the local
 # XCFramework reference. Keep secrets out of the dependency compiler environment.
-unset TMDB_READ_ACCESS_TOKEN TMDB_API_KEY WYZIE_API_KEY
+unset TMDB_READ_ACCESS_TOKEN TMDB_API_KEY WYZIE_API_KEY \
+  GOOGLE_DRIVE_CLIENT_ID ONEDRIVE_CLIENT_ID DROPBOX_APP_KEY
 case "${CI_PRODUCT_PLATFORM:-}" in
   iOS|ios) FFMPEG_PLATFORM=ios ;;
   macOS|macos) FFMPEG_PLATFORM=macos ;;

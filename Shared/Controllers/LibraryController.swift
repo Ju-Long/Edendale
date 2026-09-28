@@ -25,6 +25,28 @@ final class LibraryController {
     var isEnriching  = false
     var errorMessage: String?
 
+    /// Why a linked source couldn't be scanned, by `VideoFolder.id`. Shown on
+    /// the source's row (SourceRow) instead of as a library-wide error on
+    /// every visit; cleared by the next successful scan.
+    var sourceStates: [UUID: SourceState] = [:]
+
+    enum SourceState: Equatable {
+        /// Unreachable right now: offline, server down, rate-limited.
+        case offline(String)
+        /// Its account or login is gone or refused: sign in again.
+        case needsSignIn(String)
+
+        var message: String {
+            switch self {
+            case .offline(let message), .needsSignIn(let message): message
+            }
+        }
+    }
+
+    /// Remote sources scanned more recently than this are skipped by the
+    /// automatic sweep on every library visit; ⌘R and Rescan still scan.
+    nonisolated static let automaticRescanInterval: TimeInterval = 15 * 60
+
     /// Guards the on-appear sweep so overlapping view appearances (rapid tab
     /// switches, push/pop) don't scan the same source concurrently and
     /// double-add files. Not observed — it only gates work, never drives UI.
@@ -76,35 +98,47 @@ final class LibraryController {
 
     // MARK: - Network sources
 
-    /// Links a network source folder picked in the browse UI: indexes every
-    /// video beneath it, then enriches in the background. The credential is
-    /// already in the Keychain (saved by the add-source flow); connector
-    /// listings and persisted paths stay credential-free.
+    /// Links a remote source folder picked in the browse UI: lists every
+    /// video beneath it, classifies the file names locally, persists, then
+    /// enriches in the background. Any login is already in the Keychain
+    /// (saved by the Link Source flow); listings and persisted paths stay
+    /// credential-free.
+    ///
+    /// - Parameter displayPath: The readable location shown with the
+    ///   source, e.g. "Google Drive › My Drive › Movies".
     func importRemoteFolder(
         connector: any MediaConnector,
         folderURL: URL,
-        displayName: String
+        displayName: String,
+        displayPath: String? = nil
     ) async {
         isImporting = true
         errorMessage = nil
         defer { isImporting = false }
 
-        let videoURLs: [URL]
+        let entries: [ConnectorEntry]
         do {
-            videoURLs = try await collectRemoteVideoURLs(connector: connector, root: folderURL)
+            entries = try await connector.enumerateVideos(under: folderURL)
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
             return
         }
 
-        let scanned = await descriptors(for: videoURLs)
+        let scanned = await descriptors(for: entries)
 
         let folder = VideoFolder(
             name: displayName,
             folderPath: folderURL.absoluteString,
             sourceKind: connector.kind,
-            username: connector.credential?.username
+            username: connector.accountLabel
         )
+        folder.displayPath = displayPath
+        if connector.kind.isCloudAccount || connector.kind == .s3 {
+            folder.accountKey = folderURL.host(percentEncoded: false)
+        }
+        folder.lastScannedAt = Date()
         modelContext.insert(folder)
 
         for file in scanned {
@@ -116,49 +150,12 @@ final class LibraryController {
         Task { await enrichFolder(folder) }
     }
 
-    /// Rebuilds the connector for a stored network source (credential from
-    /// the Keychain); `nil` for local folders or unresolvable sources.
+    /// Rebuilds the connector for a stored network source (login or account
+    /// from the Keychain); `nil` for local folders, or when the source's
+    /// login or account is gone.
     private func connector(for folder: VideoFolder) -> (any MediaConnector)? {
         guard let url = folder.remoteURL else { return nil }
-        switch folder.sourceKind {
-        case .local: return nil
-        case .smb: return SMBConnector(sourceURL: url)
-        }
-    }
-
-    /// Walks the source tree breadth-first and returns every video file URL.
-    /// A failure on the root directory throws (the source is unreachable);
-    /// failures below it skip just that branch.
-    private func collectRemoteVideoURLs(
-        connector: any MediaConnector,
-        root: URL
-    ) async throws -> [URL] {
-        // Caps runaway trees (symlink cycles have no local guard here).
-        let maxDirectories = 2000
-
-        var videos: [URL] = []
-        var queue: [URL] = [root]
-        var listed = 0
-
-        while !queue.isEmpty, listed < maxDirectories {
-            let directory = queue.removeFirst()
-            let entries: [ConnectorEntry]
-            if listed == 0 {
-                entries = try await connector.list(directory: directory)
-            } else {
-                entries = (try? await connector.list(directory: directory)) ?? []
-            }
-            listed += 1
-
-            for entry in entries where !entry.name.hasPrefix(".") {
-                if entry.isDirectory {
-                    queue.append(entry.url)
-                } else if isVideoFile(entry.url) {
-                    videos.append(entry.url)
-                }
-            }
-        }
-        return videos
+        return ConnectorFactory.connector(forSource: url, kind: folder.sourceKind)
     }
 
     // MARK: - Rescan
@@ -168,15 +165,28 @@ final class LibraryController {
     /// the app (new downloads, files dropped on a network share) show up without
     /// a manual rescan. Re-entrancy is guarded, so it's safe to call on every
     /// appearance; each folder's own scan skips already-known paths.
-    func rescanAllFolders() async {
+    ///
+    /// Listing a remote source is network traffic, and metered API calls for
+    /// cloud providers, so the automatic sweep skips a remote source scanned
+    /// in the last 15 minutes. `force` (⌘R, Rescan Library) scans every one.
+    func rescanAllFolders(force: Bool = false, now: Date = Date()) async {
         guard !isRescanning else { return }
         isRescanning = true
         defer { isRescanning = false }
 
         let folders = (try? modelContext.fetch(FetchDescriptor<VideoFolder>())) ?? []
-        for folder in folders {
+        for folder in folders where force || Self.needsAutomaticRescan(folder, now: now) {
             await rescanFolder(folder)
         }
+    }
+
+    /// Local folders always; remote sources once their last scan is older
+    /// than `automaticRescanInterval`.
+    static func needsAutomaticRescan(_ folder: VideoFolder, now: Date) -> Bool {
+        guard folder.isRemote, folder.sourceKind.throttlesAutomaticRescans,
+              let lastScannedAt = folder.lastScannedAt
+        else { return true }
+        return now.timeIntervalSince(lastScannedAt) >= automaticRescanInterval
     }
 
     /// Re-scans a folder and adds any newly discovered files.
@@ -205,26 +215,43 @@ final class LibraryController {
         Task { await enrichFolder(folder) }
     }
 
-    /// Re-walks a network source and adds newly discovered files.
+    /// Re-walks a network source and adds newly discovered files. A failure
+    /// is recorded on the source (see `sourceStates`) rather than reported
+    /// as a library-wide error.
     private func rescanRemoteFolder(_ folder: VideoFolder) async {
-        guard let rootURL = folder.remoteURL,
-              let connector = connector(for: folder) else { return }
+        guard let rootURL = folder.remoteURL else { return }
+        guard let connector = connector(for: folder) else {
+            sourceStates[folder.id] = .needsSignIn(
+                ConnectorError.signInRequired(provider: folder.sourceKind.displayName).localizedDescription
+            )
+            return
+        }
 
         let knownPaths: Set<String> = Set(folder.movies.map(\.filePath))
             .union(folder.tvShows.flatMap(\.episodes).map(\.filePath))
 
-        let videoURLs: [URL]
+        let entries: [ConnectorEntry]
         do {
-            videoURLs = try await collectRemoteVideoURLs(connector: connector, root: rootURL)
+            entries = try await connector.enumerateVideos(under: rootURL)
+        } catch is CancellationError {
+            return
+        } catch let error as ConnectorError where error.needsUserAction {
+            sourceStates[folder.id] = .needsSignIn(error.localizedDescription)
+            return
         } catch {
-            errorMessage = error.localizedDescription
+            sourceStates[folder.id] = .offline(error.localizedDescription)
+            return
+        }
+        sourceStates[folder.id] = nil
+        folder.lastScannedAt = Date()
+
+        let newEntries = entries.filter { !knownPaths.contains($0.url.absoluteString) }
+        guard !newEntries.isEmpty else {
+            save()
             return
         }
 
-        let newURLs = videoURLs.filter { !knownPaths.contains($0.absoluteString) }
-        guard !newURLs.isEmpty else { return }
-
-        let scanned = await descriptors(for: newURLs)
+        let scanned = await descriptors(for: newEntries)
         for file in scanned {
             insert(file, into: folder)
         }
@@ -305,16 +332,20 @@ final class LibraryController {
         }
     }
 
-    /// Playback scope for a network item: the stored credential-free URL
-    /// with the host's Keychain credential injected. The authenticated URL
-    /// exists only in memory for the session; nothing scoped to release.
+    /// Playback scope for a network item. SMB gets the host's Keychain login
+    /// injected into an in-memory URL for libsmb2; every other kind plays its
+    /// stored credential-free URL, and FFmpegDecoder fetches the login or
+    /// account through ConnectorFactory. Nothing scoped to release.
     private func remoteScope(filePath: String) -> PlaybackScope? {
         guard filePath.contains("://"),
               let url = URL(string: filePath),
-              let host = url.host()
+              let kind = MediaSourceKind(url: url), kind.isRemote
         else { return nil }
 
-        let credential = NetworkCredentialStore.credential(host: host)
+        guard kind == .smb, let host = url.host() else {
+            return PlaybackScope(playURL: url, accessedURL: nil)
+        }
+        let credential = NetworkCredentialStore.credential(kind: .smb, host: host)
         let playURL = VLCNetworkBrowser.authenticatedURL(url, credential: credential) ?? url
         return PlaybackScope(playURL: playURL, accessedURL: nil)
     }
@@ -328,7 +359,8 @@ final class LibraryController {
         let folders = (try? modelContext.fetch(FetchDescriptor<VideoFolder>())) ?? []
         var repaired = false
 
-        for folder in folders where folder.isRemote {
+        // Only SMB sources predate full-URL paths.
+        for folder in folders where folder.sourceKind == .smb {
             guard let root = folder.remoteURL,
                   var components = URLComponents(url: root, resolvingAgainstBaseURL: false)
             else { continue }
@@ -417,7 +449,11 @@ final class LibraryController {
 
     // MARK: - Removal
 
+    /// Removes a source and its items. A saved login or linked account is
+    /// kept: deleting a synchronizable Keychain item would also sign the
+    /// user's other devices out. Settings → Accounts forgets them.
     func removeFolder(_ folder: VideoFolder) {
+        sourceStates[folder.id] = nil
         modelContext.delete(folder)
         save()
     }
@@ -466,12 +502,14 @@ final class LibraryController {
         return results
     }
 
-    /// Builds descriptors for an already-listed set of URLs (network sources,
-    /// whose tree is fetched asynchronously by the connector). No duration probe
-    /// — a remote read per file would cost one round trip each. Runs off the
-    /// main actor so filename parsing doesn't jam the UI on a large source.
-    @concurrent nonisolated private func descriptors(for urls: [URL]) async -> [ScannedFile] {
-        urls.map { descriptor(for: $0) }
+    /// Builds descriptors for an already-listed set of entries (network
+    /// sources, whose tree is fetched asynchronously by the connector). No
+    /// duration probe — a remote read per file would cost one round trip
+    /// each — but a duration the provider listed (Google Drive, OneDrive) is
+    /// kept, so those items show their runtime instead of `--:--`. Runs off
+    /// the main actor so filename parsing doesn't jam the UI on a large source.
+    @concurrent nonisolated private func descriptors(for entries: [ConnectorEntry]) async -> [ScannedFile] {
+        entries.map { descriptor(for: $0.url, duration: $0.duration ?? 0) }
     }
 
     /// Resolves one file URL into a `ScannedFile`: filename parse, stored path,
@@ -638,6 +676,18 @@ final class LibraryController {
 
     nonisolated private func isVideoFile(_ url: URL) -> Bool {
         Self.supportedExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    // MARK: - Sources
+
+    /// How many linked sources reach `host` through `kind`'s login, or
+    /// through the cloud account with that key (Settings → Accounts).
+    func sourceCount(kind: MediaSourceKind, host: String) -> Int {
+        let folders = (try? modelContext.fetch(FetchDescriptor<VideoFolder>())) ?? []
+        return folders.filter { folder in
+            folder.sourceKind == kind
+                && folder.remoteURL?.host(percentEncoded: false)?.lowercased() == host.lowercased()
+        }.count
     }
 
     /// What `filePath` persists: a plain filesystem path for local files, the

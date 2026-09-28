@@ -63,6 +63,19 @@ enum VisionMediaInspector {
     }
 
     static func inspect(url: URL) async throws -> VisionMediaInspection {
+        // AVFoundation can't open SMB, NFS, SFTP, or the provider URLs of
+        // cloud sources; they play through FFmpeg until an AVAssetResource-
+        // LoaderDelegate over RemoteByteSource exists (ENHANCEMENT.md J.12).
+        if FormatRouter.isRemote(url: url) {
+            return VisionMediaInspection(
+                isPlayable: false,
+                isStereoVideo: false,
+                isStereoMultiviewVideo: false,
+                isSpatialVideo: false,
+                usesNonRectilinearProjection: false,
+                isAppleImmersiveVideo: false
+            )
+        }
         let asset = VisionMediaAssetFactory.make(url: url)
         let isPlayable = try await asset.load(.isPlayable)
         let assistant = AVAssetPlaybackAssistant(asset: asset)

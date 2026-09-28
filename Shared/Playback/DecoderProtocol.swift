@@ -9,7 +9,7 @@ import AVFoundation
 import CoreMedia
 import CoreVideo
 
-public struct MediaInfo: Sendable {
+nonisolated public struct MediaInfo: Sendable {
     public let duration: CMTime
     public let videoTracks: [VideoTrackInfo]
     public let audioTracks: [AudioTrackInfo]
@@ -37,7 +37,7 @@ public struct MediaInfo: Sendable {
     }
 }
 
-public struct VideoTrackInfo: Sendable, Identifiable {
+nonisolated public struct VideoTrackInfo: Sendable, Identifiable {
     public var id: Int { index }
     public let index: Int
     public let codec: String          // "h264", "hevc", "vp9", "av1" …
@@ -54,7 +54,7 @@ public struct VideoTrackInfo: Sendable, Identifiable {
     }
 }
 
-public struct AudioTrackInfo: Sendable, Identifiable {
+nonisolated public struct AudioTrackInfo: Sendable, Identifiable {
     public var id: Int { index }
     public let index: Int
     public let codec: String
@@ -73,7 +73,7 @@ public struct AudioTrackInfo: Sendable, Identifiable {
     }
 }
 
-public struct SubtitleTrackInfo: Sendable, Identifiable {
+nonisolated public struct SubtitleTrackInfo: Sendable, Identifiable {
     public var id: Int { index }
     public let index: Int
     public let codec: String          // "ass", "srt", "webvtt", "pgs", "dvdsub"

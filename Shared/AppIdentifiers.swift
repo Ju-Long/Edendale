@@ -31,7 +31,7 @@ enum AppIdentifiers {
     /// Keychain service namespace for the app's secure items (e.g. the TMDB user
     /// access token). A stable literal, deliberately equal to the bundle identifier,
     /// so every platform target reads and writes the same synchronized items.
-    static let keychainService = "com.BaBaSaMa.Edendale"
+    nonisolated static let keychainService = "com.BaBaSaMa.Edendale"
 
     /// The universal domain for web links (HTTPS routing).
     static let linkHost = "edendale.babasama.com"

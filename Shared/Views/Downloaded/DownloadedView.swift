@@ -146,7 +146,7 @@ struct DownloadedView: View {
                         Button {
                             showLinkSource = true
                         } label: {
-                            Label("Link Network Source…", image: .link)
+                            Label("Link Source…", image: .link)
                         }
                         .archiveButtonStyle(.ghost)
                     #else
@@ -181,7 +181,7 @@ struct DownloadedView: View {
         }
         #endif
         #if os(macOS)
-        // File ▸ Add Media Folder… (⌘N), Link Network Source… (⌥⌘N), and
+        // File ▸ Add Media Folder… (⌘N), Link Source… (⌥⌘N), and
         // Rescan Library (⌘R) act on whichever Downloaded page is showing.
         .focusedSceneValue(\.libraryCommands, libraryCommands)
         #endif
@@ -199,10 +199,12 @@ struct DownloadedView: View {
         )
     }
 
+    /// ⌘R scans every source, including remote ones the automatic sweep
+    /// skipped because they were scanned recently.
     private func rescanLibrary() {
         isRescanning = true
         Task {
-            await library.rescanAllFolders()
+            await library.rescanAllFolders(force: true)
             isRescanning = false
         }
     }
@@ -739,6 +741,7 @@ private extension View {
 // MARK: - Rows
 
 private struct FolderRow: View {
+    @Environment(LibraryController.self) private var library
     let folder: VideoFolder
 
     var body: some View {
@@ -755,6 +758,12 @@ private struct FolderRow: View {
                 Text(subtitle)
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
+                if let state = library.sourceStates[folder.id] {
+                    Text(state.message)
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.gold)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer()
         }
@@ -763,7 +772,9 @@ private struct FolderRow: View {
         // custom actions from the context menu attached by the caller.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(folder.name)
-        .accessibilityValue(subtitle)
+        .accessibilityValue(
+            [subtitle, library.sourceStates[folder.id]?.message].compactMap(\.self).joined(separator: ", ")
+        )
     }
 
     private var subtitle: String {
@@ -771,10 +782,18 @@ private struct FolderRow: View {
             ? String(localized: "1 item")
             : String(localized: "\(folder.totalItemCount) items")]
         if folder.isRemote {
-            let host = folder.remoteURL?.host()
-            parts.append([folder.sourceKind.displayName, host].compactMap(\.self).joined(separator: " · "))
+            parts.append([folder.sourceKind.displayName, accountOrHost].compactMap(\.self).joined(separator: " · "))
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// The server, or for accounts and buckets the account, never the
+    /// account-key hash their URLs use as a host.
+    private var accountOrHost: String? {
+        switch folder.sourceKind {
+        case .googleDrive, .oneDrive, .dropbox, .s3: folder.username
+        default: folder.remoteURL?.host()
+        }
     }
 }
 
@@ -828,7 +847,7 @@ private struct EmptyLibraryState: View {
     /// only way in there.
     private var bodyMessage: String {
         #if os(tvOS)
-        String(localized: "Local folders aren’t reachable on Apple TV. Link a network share (SMB) to build your library.")
+        String(localized: "Local folders aren’t reachable on Apple TV. Link a network share or cloud storage to build your library.")
         #else
         String(localized: "Connect your local film collection to begin your cinematic journey.")
         #endif
@@ -839,7 +858,7 @@ private struct EmptyLibraryState: View {
         VStack(spacing: 16) {
             #if os(tvOS)
             Button(action: linkAction) {
-                Label("Link Network Source", image: .link)
+                Label("Link Source", image: .link)
             }
             .archiveButtonStyle(.primary)
             #else
@@ -849,7 +868,7 @@ private struct EmptyLibraryState: View {
             .archiveButtonStyle(.primary)
 
             Button(action: linkAction) {
-                Label("Link Network Source", image: .link)
+                Label("Link Source", image: .link)
             }
             .archiveButtonStyle(.secondary)
             #endif

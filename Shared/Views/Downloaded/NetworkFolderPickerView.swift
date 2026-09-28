@@ -2,11 +2,12 @@
 //  NetworkFolderPickerView.swift
 //  Edendale
 //
-//  One level of a network share: subfolders navigate deeper (the view
+//  One level of a remote source: subfolders navigate deeper (the view
 //  recurses via BrowseLocation pushes), video files preview what an index
-//  would pick up, and "Index This Folder" hands the current directory back
-//  to the add-source flow. At the connector root the entries are the
-//  server's shares.
+//  would pick up, and "Select" hands the current folder back to the Link
+//  Source flow. At an SMB server's root the entries are its shares, at an
+//  NFS server's its exports, and at a Google Drive account's My Drive,
+//  Shared with me, and Shared drives.
 //
 
 import SwiftUI
@@ -14,39 +15,57 @@ import SwiftUI
 /// A spot in a connector's tree — the navigation value the picker pushes
 /// for each subfolder.
 struct BrowseLocation: Hashable {
-    let connector: SMBConnector
+    let connector: AnyMediaConnector
     let url: URL
     let name: String
+    /// Folder names from the source's top down to this one, for the
+    /// readable location a linked source shows ("Google Drive › My Drive").
+    let trail: [String]
+
+    init(connector: any MediaConnector, url: URL, name: String, trail: [String]? = nil) {
+        self.connector = AnyMediaConnector(connector)
+        self.url = url
+        self.name = name
+        self.trail = trail ?? [name]
+    }
+
+    /// The location of a subfolder listed here.
+    func child(_ entry: ConnectorEntry) -> BrowseLocation {
+        BrowseLocation(connector: connector.base, url: entry.url, name: entry.name, trail: trail + [entry.name])
+    }
+
+    var displayPath: String {
+        trail.joined(separator: " › ")
+    }
 }
 
 struct NetworkFolderPickerView: View {
     let location: BrowseLocation
-    /// Called with the picked folder, its connector, and a display name.
-    let onIndex: (URL, SMBConnector, String) -> Void
+    /// Called with the folder the user picked.
+    let onIndex: (BrowseLocation) -> Void
 
     @State private var entries: [ConnectorEntry]?
     @State private var errorMessage: String?
 
     private var folders: [ConnectorEntry] { (entries ?? []).filter(\.isDirectory) }
-    private var videos: [ConnectorEntry] {
-        (entries ?? []).filter {
-            !$0.isDirectory && LibraryController.supportedExtensions.contains($0.url.pathExtension.lowercased())
-        }
-    }
+    private var videos: [ConnectorEntry] { (entries ?? []).filter(\.isVideo) }
+    private var canIndex: Bool { location.connector.base.canIndex(location.url) }
 
     var body: some View {
         List {
-            Section {
-                Button {
-                    onIndex(location.url, location.connector, location.name)
-                } label: {
-                    Label("Select \(location.name)", image: .folderOpen)
+            if canIndex {
+                Section {
+                    Button {
+                        onIndex(location)
+                    } label: {
+                        Label("Select \(location.name)", image: .folderOpen)
+                    }
+                    .disabled(entries == nil && errorMessage == nil)
+                } footer: {
+                    Text("Adds every video in this folder and its subfolders to your library.")
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.textSecondary)
                 }
-                .disabled(entries == nil && errorMessage == nil)
-            } footer: {
-                Text("Adds every video in this folder and its subfolders to your library.")
-                    .font(Typography.bodySM)
-                    .foregroundStyle(Theme.textSecondary)
             }
 
             if let errorMessage {
@@ -68,14 +87,20 @@ struct NetworkFolderPickerView: View {
                 if !folders.isEmpty {
                     Section {
                         ForEach(folders) { folder in
-                            NavigationLink(value: BrowseLocation(
-                                connector: location.connector,
-                                url: folder.url,
-                                name: folder.name
-                            )) {
+                            NavigationLink(value: location.child(folder)) {
                                 Text(folder.name)
                                     .foregroundStyle(Theme.textPrimary)
+                                    #if os(tvOS)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(SettingsMetrics.highlightBleed)
+                                    #endif
                             }
+                            #if os(tvOS)
+                            // Keeps the light name legible when focused, where
+                            // the system's white platter would wash it out.
+                            .archiveRowStyle()
+                            .padding(-SettingsMetrics.highlightBleed)
+                            #endif
                         }
                     } header: {
                         Label("Folders", image: .folderTree).labelCaps()
@@ -118,7 +143,7 @@ struct NetworkFolderPickerView: View {
         entries = nil
         errorMessage = nil
         do {
-            entries = try await location.connector.list(directory: location.url)
+            entries = try await location.connector.base.list(directory: location.url)
         } catch is CancellationError {
         } catch {
             errorMessage = error.localizedDescription

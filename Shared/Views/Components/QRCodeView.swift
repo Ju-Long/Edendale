@@ -13,11 +13,13 @@ import SwiftUI
 
 struct QRCodeView: View {
     let url: URL
+    private let label: String
 
     private let image: CGImage?
 
-    init(url: URL) {
+    init(url: URL, accessibilityLabel: String = String(localized: "TMDB account approval QR code")) {
         self.url = url
+        self.label = accessibilityLabel
         image = Self.makeImage(from: url.absoluteString)
     }
 
@@ -39,7 +41,7 @@ struct QRCodeView: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("TMDB account approval QR code")
+        .accessibilityLabel(label)
         .accessibilityValue(url.absoluteString)
     }
 

@@ -37,9 +37,11 @@ public struct FormatRouter: Sendable {
     public static func route(_ url: URL) async -> DecoderKind {
         debugPrint("[FormatRouter] routing url=\(url.lastPathComponent), scheme=\(url.scheme ?? "nil"), ext=\(url.pathExtension)")
 
-        // 1. Network protocol check: SMB cannot be opened by AVFoundation.
-        if isSMB(url: url) {
-            debugPrint("[FormatRouter] → ffmpeg (SMB)")
+        // 1. Network sources: AVFoundation can't open SMB, NFS, SFTP, or the
+        //    credential-free provider URLs, which FFmpeg reads through
+        //    libsmb2 or a byte source.
+        if isRemote(url: url) {
+            debugPrint("[FormatRouter] → ffmpeg (remote \(url.scheme ?? "?"))")
             return .ffmpeg
         }
 
@@ -69,6 +71,12 @@ public struct FormatRouter: Sendable {
     public static func isSMB(url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
         return scheme == "smb" || scheme == "smb2"
+    }
+
+    /// Any library source other than a local file: `smb`, `nfs`, `sftp`,
+    /// `dav`, `davs`, `s3`, `gdrive`, `onedrive`, `dropbox`.
+    public static func isRemote(url: URL) -> Bool {
+        MediaSourceKind(url: url)?.isRemote ?? false
     }
 
     private static func probeAsset(at url: URL) async -> DecoderKind {
