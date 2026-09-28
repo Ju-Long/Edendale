@@ -55,3 +55,5 @@ Web/dist/
 /pnpm-lock.yaml
 /yarn.lock
 /.vs
+/Vendor
+/.secret
