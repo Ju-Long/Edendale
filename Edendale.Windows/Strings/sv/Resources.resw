@@ -1250,4 +1250,16 @@
   <data name="Library_PercentWatched" xml:space="preserve">
     <value>{0} % sett</value>
   </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>Spelas nu</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
 </root>

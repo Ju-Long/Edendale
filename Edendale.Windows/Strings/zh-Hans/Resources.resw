@@ -1250,4 +1250,16 @@
   <data name="Library_PercentWatched" xml:space="preserve">
     <value>已观看 {0}%</value>
   </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>正在播放</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} 分钟</value>
+  </data>
 </root>

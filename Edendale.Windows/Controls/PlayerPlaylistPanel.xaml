@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Width="360"
     Background="{StaticResource EdendaleSurfaceLowBrush}">
 
     <Grid>
@@ -17,12 +16,12 @@
 
         <Grid Padding="24" BorderBrush="{StaticResource EdendaleHairlineBorderBrush}" BorderThickness="0,0,0,1">
             <TextBlock x:Name="HeaderText" Style="{StaticResource HeadlineMDTextStyle}" FontSize="20" Foreground="{StaticResource EdendaleTextPrimaryBrush}" d:Text="EPISODES" VerticalAlignment="Center"/>
-            <Button Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="CloseButton_Click" Padding="10">
+            <Button x:Uid="PlaylistCloseButton" Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="CloseButton_Click" Padding="10" ToolTipService.ToolTip="Close" AutomationProperties.Name="Close">
                 <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sidebar-right.svg" Width="14" Height="14" />
             </Button>
         </Grid>
 
-        <ScrollViewer Grid.Row="1" Padding="24">
+        <ScrollViewer Grid.Row="1" Padding="16,20">
             <StackPanel x:Name="ItemsPanel" Spacing="20"/>
         </ScrollViewer>
     </Grid>
