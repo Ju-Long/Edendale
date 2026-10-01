@@ -406,23 +406,23 @@ holds; the tests pass; the device checks are recorded.
   doesn't change.
 
 **Checklist:**
-- [ ] **B.2.1** Persist Loop and Fit/Fill; `PlayerChromeState` reads them at
+- [x] **B.2.1** Persist Loop and Fit/Fill; `PlayerChromeState` reads them at
   start.
-- [ ] **B.2.2** A pure model, JSON codec, content-key function, and matching
+- [x] **B.2.2** A pure model, JSON codec, content-key function, and matching
   functions over plain data (for example
   `TrackCandidate(id, language, label, width, height)`), independent of Media3
   types.
-- [ ] **B.2.3** A Media3 adapter: build the candidates from `Tracks`, apply them
+- [x] **B.2.3** A Media3 adapter: build the candidates from `Tracks`, apply them
   with `TrackSelectionOverride` / `setTrackTypeDisabled`, and apply the speed
   with `chrome.setRate`.
-- [ ] **B.2.4** The `ext-` prefix for sideloaded subtitle ids.
+- [x] **B.2.4** The `ext-` prefix for sideloaded subtitle ids.
 
 **Tests (JVM):**
-- [ ] **B.2.T1** Content keys for a movie and an episode (show key); missing ids
+- [x] **B.2.T1** Content keys for a movie and an episode (show key); missing ids
   store nothing.
-- [ ] **B.2.T2** JSON round trip; unknown fields are ignored; corrupt JSON
+- [x] **B.2.T2** JSON round trip; unknown fields are ignored; corrupt JSON
   yields no preferences.
-- [ ] **B.2.T3** Matching: language beats name; the name is used when the
+- [x] **B.2.T3** Matching: language beats name; the name is used when the
   language is missing or absent from the file; `ext-` tracks are never chosen
   or saved; the video track is restored only with more than one track and an
   exact W×H match; Off is restored.
@@ -1792,6 +1792,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | B.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run (no emulator/device connected in CI environment) | Skip lengths (10/15/30) and hold rates (0.25-3.00x) wired to gestures, controls, PiP, TV D2 keys, and Settings |
 | 2026-10-01 | C.4 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures, 110 tests) | not run (no emulator/device connected in CI environment) | Removed timed auto-skip constants, methods, latches, toggles, obsolete strings across all locales, and cleaned up legacy keys |
 | 2026-10-01 | C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 123 tests) | not run (no emulator/device connected in CI environment) | Implemented TheIntroDB pure introdb package, transport in AndroidEdendaleCore, PlayerSegmentController, UI prompt, S key, TV D3 focus, Playback panel toggle, Settings section with links, and README docs |
+| 2026-10-01 | B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 149 tests) | not run (no emulator/device connected in CI environment) | Persisted loop/aspectFill globally, added ContentPlayerPreferences model/rules/codec/store, Media3 track adapter, ext- prefix on sideloaded subtitles, and per-title memory save/restore |
 
 ---
 
@@ -1806,7 +1807,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.4 | Strings and translations | Complete | 6f93abb |
 | A.5 | Test conventions | Complete | 4310f03 |
 | B.1 | App Controls | Complete | 9b2fbd5 |
-| B.2 | Persisted state and per-title memory | Not started | |
+| B.2 | Persisted state and per-title memory | Complete | cfac514 |
 | B.3 | Track pickers and panel order | Not started | |
 | B.4 | Subtitle appearance and placement | Not started | |
 | B.5 | Playlist panel redesign | Not started | |

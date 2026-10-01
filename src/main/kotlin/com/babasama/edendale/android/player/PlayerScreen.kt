@@ -136,6 +136,7 @@ internal fun PlayerScreen(
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
     onSkip: () -> Unit,
+    onTrackSelected: () -> Unit = {},
     onClose: () -> Unit,
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
@@ -357,6 +358,7 @@ internal fun PlayerScreen(
                 onSelectEntry = onSelectEntry,
                 onSearchOnlineSubtitles = onSearchOnlineSubtitles,
                 onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
+                onTrackSelected = onTrackSelected,
             )
 
             PlayerHudView(chrome)
@@ -1089,6 +1091,7 @@ private fun BoxScope.PlayerPanels(
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
+    onTrackSelected: () -> Unit = {},
 ) {
     // Tap anywhere outside the panel to dismiss it. Never a focus target —
     // a full-screen focusable would trap the D-pad.
@@ -1143,6 +1146,7 @@ private fun BoxScope.PlayerPanels(
             onAutoPipChanged = onAutoPipChanged,
             onSearchOnlineSubtitles = onSearchOnlineSubtitles,
             onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
+            onTrackSelected = onTrackSelected,
         )
     }
 }
@@ -1304,6 +1308,7 @@ private fun SettingsPanel(
     onAutoPipChanged: () -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
+    onTrackSelected: () -> Unit = {},
 ) {
     PanelSurface(panelWidth, panelFocus, onDismiss = { chrome.closePanel() }) {
         Column(
@@ -1320,7 +1325,7 @@ private fun SettingsPanel(
             )
 
             SpeedSection(player, chrome, isTelevision)
-            SubtitleSection(player, chrome, tracks)
+            SubtitleSection(player, chrome, tracks, onTrackSelected)
             OnlineSubtitlesSection(
                 state = onlineSubtitles,
                 chrome = chrome,
@@ -1397,7 +1402,12 @@ private fun SpeedChip(label: String, isTelevision: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks: Tracks) {
+private fun SubtitleSection(
+    player: ExoPlayer,
+    chrome: PlayerChromeState,
+    tracks: Tracks,
+    onTrackSelected: () -> Unit = {},
+) {
     val options = remember(tracks) { textTrackOptions(tracks) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         PanelLabel(stringResource(R.string.player_subtitles))
@@ -1421,6 +1431,7 @@ private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks
                     onClick = {
                         selectTextTrack(player, null)
                         chrome.noteInteraction()
+                        onTrackSelected()
                     },
                 )
                 options.forEachIndexed { index, option ->
@@ -1435,6 +1446,7 @@ private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks
                         onClick = {
                             selectTextTrack(player, option)
                             chrome.noteInteraction()
+                            onTrackSelected()
                         },
                     )
                 }
@@ -2013,58 +2025,7 @@ private fun BoxScope.PlayerGestureLayer(
     )
 }
 
-// ------------------------------------------------------------------
-// Track selection
-// ------------------------------------------------------------------
 
-internal data class PlayerTrackOption(
-    val group: TrackGroup,
-    val trackIndex: Int,
-    val id: String?,
-    val label: String?,
-    val language: String?,
-    val isSelected: Boolean,
-)
-
-/** Selectable subtitle tracks in the current media, in declaration order. */
-internal fun textTrackOptions(tracks: Tracks): List<PlayerTrackOption> =
-    tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT }.flatMap { group ->
-        (0 until group.length).mapNotNull { index ->
-            if (!group.isTrackSupported(index)) return@mapNotNull null
-            val format = group.getTrackFormat(index)
-            PlayerTrackOption(
-                group = group.mediaTrackGroup,
-                trackIndex = index,
-                id = format.id,
-                label = format.label,
-                language = format.language,
-                isSelected = group.isTrackSelected(index),
-            )
-        }
-    }
-
-/**
- * Applies a subtitle choice. Off must both disable the text type and clear
- * any override — a stale override would otherwise resurface on the next
- * selection; picking a track must re-enable the type or a previous Off
- * silently suppresses the override.
- */
-internal fun selectTextTrack(player: Player, option: PlayerTrackOption?) {
-    player.trackSelectionParameters = player.trackSelectionParameters
-        .buildUpon()
-        .apply {
-            if (option == null) {
-                clearOverridesOfType(C.TRACK_TYPE_TEXT)
-                setPreferredTextLanguage(null)
-                setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-            } else {
-                setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                setOverrideForType(TrackSelectionOverride(option.group, option.trackIndex))
-                option.language?.let { setPreferredTextLanguage(it) }
-            }
-        }
-        .build()
-}
 
 @Composable
 private fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {

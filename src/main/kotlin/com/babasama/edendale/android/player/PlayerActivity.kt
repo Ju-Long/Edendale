@@ -90,6 +90,12 @@ class PlayerActivity : ComponentActivity() {
 
     private var isTelevision = false
     private lateinit var chrome: PlayerChromeState
+    private lateinit var contentPreferencesStore: ContentPlayerPreferencesStore
+    private var currentTmdbId: Int? = null
+    private var currentIsEpisode: Boolean = false
+    private var currentShowTmdbId: Int? = null
+    private var hasRestoredContentPreferences = false
+    private var isRestoringContentPreferences = false
     private lateinit var onlineSubtitles: OnlineSubtitlesState
     private lateinit var wyzieKeyStore: WyzieKeyStore
     private lateinit var wyzieService: WyzieSubtitleService
@@ -179,7 +185,12 @@ class PlayerActivity : ComponentActivity() {
 
         isTelevision = isTelevisionDevice()
         val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
+        val contentPreferences = getSharedPreferences(ContentPlayerPreferencesRules.PREFS_NAME, MODE_PRIVATE)
+        contentPreferencesStore = SharedPreferencesContentStore(contentPreferences)
         chrome = PlayerChromeState(playerPreferences)
+        chrome.onSpeedChanged = {
+            saveContentPreferences()
+        }
         prefsSubscription = chrome.preferences.addChangeListener {
             updatePipParams()
         }
@@ -206,6 +217,10 @@ class PlayerActivity : ComponentActivity() {
         val showTmdbId = intent.getIntExtra(EXTRA_SHOW_TMDB_ID, -1).takeIf { it > 0 }
         val season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 }
         val episode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
+        currentTmdbId = tmdbId
+        currentIsEpisode = isEpisode
+        currentShowTmdbId = showTmdbId
+        hasRestoredContentPreferences = false
         wyzieLookupState.value = subtitleLookup(
             tmdbId = tmdbId,
             isEpisode = isEpisode,
@@ -257,6 +272,7 @@ class PlayerActivity : ComponentActivity() {
             .setHandleAudioBecomingNoisy(true)
             .build()
         player = exoPlayer
+        exoPlayer.repeatMode = if (chrome.loopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) applyPendingResume()
@@ -275,6 +291,10 @@ class PlayerActivity : ComponentActivity() {
 
             override fun onTracksChanged(tracks: Tracks) {
                 tracksState.value = tracks
+                if (!hasRestoredContentPreferences) {
+                    hasRestoredContentPreferences = true
+                    restoreContentPreferences(exoPlayer, tracks)
+                }
                 selectPendingOnlineSubtitle(exoPlayer, tracks)
             }
         })
@@ -307,6 +327,7 @@ class PlayerActivity : ComponentActivity() {
                     onSearchOnlineSubtitles = ::searchOnlineSubtitles,
                     onDownloadOnlineSubtitle = ::downloadOnlineSubtitle,
                     onSkip = { performSkip() },
+                    onTrackSelected = { saveContentPreferences() },
                     onClose = { finish() },
                 )
             }
@@ -377,6 +398,11 @@ class PlayerActivity : ComponentActivity() {
      */
     internal fun switchTo(entry: PlaylistEntry) {
         val exoPlayer = player ?: return
+        saveContentPreferences()
+        currentTmdbId = entry.tmdbId?.takeIf { it > 0 }
+        currentIsEpisode = entry.isEpisode
+        currentShowTmdbId = entry.showTmdbId?.takeIf { it > 0 }
+        hasRestoredContentPreferences = false
         writeProgress()
         searchJob?.cancel()
         downloadJob?.cancel()
@@ -512,7 +538,7 @@ class PlayerActivity : ComponentActivity() {
             .setMimeType(subtitleMimeType(subtitle.format))
             .setLanguage(subtitle.language)
             .setLabel(label)
-            .setId(subtitle.id)
+            .setId("ext-${subtitle.id}")
             .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
             .build()
         val attachments = attachedSubtitles.getOrPut(playingUri) { mutableListOf() }
@@ -540,7 +566,8 @@ class PlayerActivity : ComponentActivity() {
     private fun selectPendingOnlineSubtitle(exoPlayer: ExoPlayer, tracks: Tracks) {
         val pending = pendingSubtitleSelection ?: return
         val options = textTrackOptions(tracks)
-        val option = options.firstOrNull { it.id == pending.subtitle.id }
+        val targetId = pending.configuration.id ?: "ext-${pending.subtitle.id}"
+        val option = options.firstOrNull { it.id == targetId }
             ?: options.firstOrNull { it.label == pending.label }
             ?: options.firstOrNull { it.language == pending.subtitle.language }
             ?: return
@@ -612,6 +639,7 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onStop() {
         cancelMediaKeyHold()
+        saveContentPreferences()
         writeProgress()
         player?.playWhenReady = false
         super.onStop()
@@ -628,6 +656,48 @@ class PlayerActivity : ComponentActivity() {
         player?.release()
         player = null
         super.onDestroy()
+    }
+
+    // ------------------------------------------------------------------
+    // Per-content preferences
+    // ------------------------------------------------------------------
+
+    private fun restoreContentPreferences(exoPlayer: ExoPlayer, tracks: Tracks) {
+        val key = ContentPlayerPreferencesRules.contentKey(
+            tmdbId = currentTmdbId,
+            isEpisode = currentIsEpisode,
+            showTmdbId = currentShowTmdbId,
+        ) ?: return
+        val prefs = contentPreferencesStore.get(key) ?: return
+        isRestoringContentPreferences = true
+        try {
+            applyContentPreferences(
+                preferences = prefs,
+                player = exoPlayer,
+                chrome = chrome,
+                tracks = tracks,
+            )
+        } finally {
+            isRestoringContentPreferences = false
+        }
+    }
+
+    private fun saveContentPreferences() {
+        if (isRestoringContentPreferences) return
+        val key = ContentPlayerPreferencesRules.contentKey(
+            tmdbId = currentTmdbId,
+            isEpisode = currentIsEpisode,
+            showTmdbId = currentShowTmdbId,
+        ) ?: return
+        val exoPlayer = player ?: return
+        val existing = contentPreferencesStore.get(key)
+        val prefs = snapshotPreferences(
+            baseRate = chrome.baseRate,
+            tracks = exoPlayer.currentTracks,
+            trackSelectionParameters = exoPlayer.trackSelectionParameters,
+            existing = existing,
+        )
+        contentPreferencesStore.save(key, prefs)
     }
 
     // ------------------------------------------------------------------

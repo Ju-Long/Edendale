@@ -115,10 +115,16 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     var holdRate by mutableStateOf<Float?>(null)
         private set
 
-    var loopEnabled by mutableStateOf(false)
+    var loopEnabled by mutableStateOf(preferences.loopEnabled)
         private set
 
-    var aspectFill by mutableStateOf(false)
+    private var _aspectFill = mutableStateOf(preferences.aspectFill)
+    var aspectFill: Boolean
+        get() = _aspectFill.value
+        set(value) {
+            _aspectFill.value = value
+            preferences.aspectFill = value
+        }
 
     var segmentPromptsEnabled by mutableStateOf(preferences.segmentPromptsEnabled)
         private set
@@ -126,6 +132,8 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     init {
         preferences.addChangeListener {
             segmentPromptsEnabled = preferences.segmentPromptsEnabled
+            loopEnabled = preferences.loopEnabled
+            _aspectFill.value = preferences.aspectFill
         }
     }
 
@@ -136,13 +144,16 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     }
 
     /** Enter Picture in Picture on its own when the user leaves mid-play. */
-    var autoPip by mutableStateOf(prefs.getBoolean(KEY_AUTO_PIP, true))
+    var autoPip by mutableStateOf(preferences.autoPip)
         private set
+
+    var onSpeedChanged: (() -> Unit)? = null
 
     fun setRate(player: Player, rate: Float) {
         baseRate = PlayerLogic.normalizedRate(rate)
         if (holdRate == null) player.setPlaybackSpeed(baseRate)
         noteInteraction()
+        onSpeedChanged?.invoke()
     }
 
     /** Press-and-hold speed override; reverts in [endHoldRate]. */
@@ -161,12 +172,13 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
 
     fun setLoop(player: Player, enabled: Boolean) {
         loopEnabled = enabled
+        preferences.loopEnabled = enabled
         player.repeatMode = if (enabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     }
 
     fun setAutoPipEnabled(enabled: Boolean) {
         autoPip = enabled
-        prefs.edit().putBoolean(KEY_AUTO_PIP, enabled).apply()
+        preferences.autoPip = enabled
     }
 
     // ------------------------------------------------------------------
