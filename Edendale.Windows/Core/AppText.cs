@@ -120,6 +120,21 @@ internal static class AppText
         ["Connector_SftpUnavailable"] = "{0} doesn’t offer SFTP for this account.",
         ["Connector_BucketInAnotherRegion"] = "This bucket is in the {0} region. Change the region and connect again.",
         ["Connector_BucketInAnotherRegionUnknown"] = "This bucket is in a different region. Check the region and connect again.",
+        ["Connector_NfsMountFailed"] = "Couldn’t open the NFS export on {0}. Windows connects from an unprivileged port, so the export needs the “insecure” option.",
+
+        ["Remote_Unreachable"] = "Couldn’t reach {0}. Check your connection and try again.",
+        ["Remote_ReadFailed"] = "Couldn’t read this file from {0}.",
+        ["Remote_CouldNotConnect"] = "Couldn’t connect to {0}.",
+        ["Remote_ConnectionLost"] = "Lost the connection to {0}: {1}",
+        ["Remote_ConnectionLostPlain"] = "Lost the connection to {0}.",
+
+        ["OAuth_Cancelled"] = "Sign-in was cancelled.",
+        ["OAuth_Unverified"] = "The sign-in response couldn’t be verified. Try again.",
+        ["OAuth_Denied"] = "Access to {0} wasn’t allowed.",
+        ["OAuth_InvalidGrant"] = "Your {0} sign-in has expired or was revoked. Sign in again.",
+        ["OAuth_Server"] = "{0} couldn’t complete sign-in ({1}).",
+        ["OAuth_ServerDetail"] = "{0} couldn’t complete sign-in ({1}): {2}",
+        ["OAuth_Malformed"] = "{0} sent a response Edendale couldn’t read.",
     };
 
     /// <summary>The localized string for <paramref name="key"/>, or the English default.</summary>

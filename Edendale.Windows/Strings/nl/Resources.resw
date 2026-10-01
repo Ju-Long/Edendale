@@ -1415,4 +1415,145 @@ IS STIL</value>
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Logins worden versleuteld voor je Windows-account en blijven op deze pc. Als je een bron verwijdert, blijft de login bewaard.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Kon de NFS-export op {0} niet openen. Windows maakt verbinding vanaf een niet-geprivilegieerde poort, dus de export heeft de optie ‘insecure’ nodig.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Kies een map</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Deze map toevoegen</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>OMHOOG</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video in deze map</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} video’s in deze map</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Deze server vertrouwen?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} gaf deze hostsleutel ({1}). Edendale heeft nog nooit verbinding met deze server gemaakt.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Hostsleutel gewijzigd</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>De hostsleutel die {0} gaf ({1}) komt niet overeen met de sleutel die Edendale eerder vertrouwde. Dat gebeurt na een herinstallatie van de server, maar het kan ook betekenen dat iemand de verbinding onderschept. Vertrouw de nieuwe sleutel alleen als je de wijziging verwachtte.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Vergelijk de vingerafdruk eerst met die van de server zelf, bijvoorbeeld met ssh-keygen -lf op het hostsleutelbestand.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Vertrouwen</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Nieuwe sleutel vertrouwen</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Soort bron</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows-bestandsdeling)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Eindpunt</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Regio</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Toegangssleutel-ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Geheime toegangssleutel</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Ander account…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Voer de server, eventueel een poort en de startmap in. Edendale logt in met een wachtwoord en toont de hostsleutel van de server voordat het die vertrouwt.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Voer het WebDAV-adres in, zoals een Nextcloud-bestanden-URL of rclone serve webdav, waarmee je ook Google Drive bereikt. Gewoon HTTP werkt alleen in je lokale netwerk.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Werkt met AWS, Backblaze B2, Cloudflare R2, Wasabi en MinIO. Een alleen-lezen sleutel is genoeg; die wordt op deze pc versleuteld.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Voer de server en export in, bijvoorbeeld nas.local/export/video. De export moet verbindingen vanaf niet-geprivilegieerde poorten toestaan (de optie ‘insecure’).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Je browser opent om bij Microsoft in te loggen. Edendale vraagt alleen om je bestanden te lezen en houdt dit account gescheiden van de OneDrive-map waarnaar het je kijkgeschiedenis kopieert.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Je browser opent om bij Dropbox in te loggen. Edendale vraagt alleen om je bestanden en accountnaam te lezen.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Inloggen</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Opnieuw inloggen</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Ingelogd</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Je kunt dit tabblad sluiten en teruggaan naar Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Voer de gebruikersnaam voor deze server in.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Rond het inloggen bij {0} af in je browser.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Kon de bron niet koppelen: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Inloggen is geannuleerd.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Het inlogantwoord kon niet worden gecontroleerd. Probeer het opnieuw.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Toegang tot {0} is niet toegestaan.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Je aanmelding bij {0} is verlopen of ingetrokken. Log opnieuw in.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} kon het inloggen niet voltooien ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} kon het inloggen niet voltooien ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} stuurde een antwoord dat Edendale niet kon lezen.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>{0} is niet bereikbaar. Controleer je verbinding en probeer het opnieuw.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Kon dit bestand niet lezen van {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Kon geen verbinding maken met {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Verbinding met {0} verbroken: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Verbinding met {0} verbroken.</value>
+  </data>
 </root>

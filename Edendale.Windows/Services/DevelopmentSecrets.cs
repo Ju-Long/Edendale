@@ -14,6 +14,8 @@ internal static class DevelopmentSecrets
         "TMDB_READ_ACCESS_TOKEN",
         "TMDB_API_KEY",
         "WYZIE_API_KEY",
+        "ONEDRIVE_CLIENT_ID",
+        "DROPBOX_APP_KEY",
     ];
 
     public static void ApplyToEnvironment()

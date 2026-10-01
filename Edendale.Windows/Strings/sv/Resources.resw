@@ -1415,4 +1415,145 @@
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Inloggningar krypteras för ditt Windows-konto och stannar på den här datorn. Om du tar bort en källa sparas dess inloggning.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Det gick inte att öppna NFS-exporten på {0}. Windows ansluter från en oprivilegierad port, så exporten behöver alternativet ”insecure”.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Välj en mapp</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Lägg till den här mappen</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>UPP</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video i den här mappen</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} videor i den här mappen</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Lita på den här servern?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} visade den här värdnyckeln ({1}). Edendale har inte anslutit till servern tidigare.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Värdnyckeln har ändrats</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>Värdnyckeln som {0} visade ({1}) stämmer inte med den Edendale litade på tidigare. Det händer när en server installeras om, men det kan också betyda att någon avlyssnar anslutningen. Lita bara på den nya nyckeln om du väntade dig ändringen.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Jämför fingeravtrycket med serverns eget innan du litar på det, till exempel med ssh-keygen -lf på värdnyckelfilen.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Lita på</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Lita på den nya nyckeln</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Typ av källa</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows-fildelning)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Slutpunkt</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Åtkomstnyckel-id</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Hemlig åtkomstnyckel</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Ett annat konto …</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Ange servern, en valfri port och mappen att börja i. Edendale loggar in med ett lösenord och visar serverns värdnyckel innan den litar på den.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Ange WebDAV-adressen, till exempel en Nextcloud-fil-URL eller rclone serve webdav, som också når Google Drive. Vanlig HTTP fungerar bara i ditt lokala nätverk.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Fungerar med AWS, Backblaze B2, Cloudflare R2, Wasabi och MinIO. En skrivskyddad nyckel räcker; den krypteras på den här datorn.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Ange server och export, till exempel nas.local/export/video. Exporten måste tillåta anslutningar från oprivilegierade portar (alternativet ”insecure”).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Webbläsaren öppnas så att du kan logga in hos Microsoft. Edendale ber bara om att läsa dina filer och håller kontot åtskilt från OneDrive-mappen som visningshistoriken kopieras till.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Webbläsaren öppnas så att du kan logga in hos Dropbox. Edendale ber bara om att läsa dina filer och ditt kontonamn.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Logga in</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Logga in igen</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Inloggad</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Du kan stänga fliken och gå tillbaka till Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Ange användarnamnet för den här servern.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Slutför inloggningen hos {0} i webbläsaren.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Det gick inte att länka källan: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Inloggningen avbröts.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Inloggningssvaret kunde inte verifieras. Försök igen.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Åtkomst till {0} tilläts inte.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Din inloggning hos {0} har upphört eller återkallats. Logga in igen.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} kunde inte slutföra inloggningen ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} kunde inte slutföra inloggningen ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} skickade ett svar som Edendale inte kunde läsa.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Det gick inte att nå {0}. Kontrollera anslutningen och försök igen.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Det gick inte att läsa filen från {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Det gick inte att ansluta till {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Anslutningen till {0} bröts: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Anslutningen till {0} bröts.</value>
+  </data>
 </root>

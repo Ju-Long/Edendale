@@ -1415,4 +1415,145 @@
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>登录信息会针对你的 Windows 账户加密，并仅保存在这台电脑上。移除来源不会删除其登录信息。</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>无法打开 {0} 上的 NFS 导出。Windows 从非特权端口连接，因此该导出需要 “insecure” 选项。</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>选择文件夹</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>添加此文件夹</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>上一级</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>此文件夹中有 {0} 个视频</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>此文件夹中有 {0} 个视频</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>信任此服务器?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} 提供了此主机密钥（{1}）。Edendale 之前从未连接过此服务器。</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>主机密钥已更改</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>{0} 提供的主机密钥（{1}）与 Edendale 之前信任的不一致。重装服务器后会出现这种情况，但也可能意味着有人正在拦截连接。只有在你预料到此变化时才信任新密钥。</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>信任之前，请将指纹与服务器自身的指纹比对，例如对其主机密钥文件运行 ssh-keygen -lf。</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>信任</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>信任新密钥</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>来源类型</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB（Windows 文件共享）</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>终端节点</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>区域</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>存储桶</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>访问密钥 ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>秘密访问密钥</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>账户</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>其他账户…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>输入服务器、可选端口和起始文件夹。Edendale 使用密码登录，并会在信任前显示服务器的主机密钥。</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>输入 WebDAV 地址，例如 Nextcloud 文件 URL，或也能访问 Google 云端硬盘的 rclone serve webdav。未加密的 HTTP 仅在本地网络中可用。</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>适用于 AWS、Backblaze B2、Cloudflare R2、Wasabi 和 MinIO。只读密钥即可；密钥在这台电脑上加密保存。</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>输入服务器和导出路径，例如 nas.local/export/video。该导出必须允许来自非特权端口的连接（“insecure” 选项）。</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>浏览器将打开以登录 Microsoft。Edendale 只请求读取你的文件，并将此账户与其复制观看记录的 OneDrive 文件夹分开管理。</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>浏览器将打开以登录 Dropbox。Edendale 只请求读取你的文件和账户名称。</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>重新登录</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>已登录</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>你可以关闭此标签页并返回 Edendale。</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>请输入此服务器的用户名。</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>请在浏览器中完成 {0} 的登录。</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>无法链接来源：{0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>登录已取消。</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>无法验证登录响应。请重试。</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>未允许访问 {0}。</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>你的 {0} 登录已过期或被撤销。请重新登录。</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} 无法完成登录（{1}）。</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} 无法完成登录（{1}）：{2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} 发送了 Edendale 无法读取的响应。</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>无法连接到 {0}。请检查网络连接后重试。</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>无法从 {0} 读取此文件。</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>无法连接到 {0}。</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>与 {0} 的连接已断开：{1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>与 {0} 的连接已断开。</value>
+  </data>
 </root>

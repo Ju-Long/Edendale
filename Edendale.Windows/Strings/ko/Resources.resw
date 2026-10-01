@@ -1415,4 +1415,145 @@
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>로그인 정보는 Windows 계정용으로 암호화되어 이 PC에만 저장됩니다. 소스를 제거해도 로그인 정보는 유지됩니다.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>{0}의 NFS 내보내기를 열 수 없습니다. Windows는 비특권 포트에서 연결하므로 내보내기에 “insecure” 옵션이 필요합니다.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>폴더 선택</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>이 폴더 추가</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>위로</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>이 폴더의 동영상 {0}개</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>이 폴더의 동영상 {0}개</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>이 서버를 신뢰하시겠습니까?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0}에서 이 호스트 키({1})를 제시했습니다. Edendale은 이 서버에 연결한 적이 없습니다.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>호스트 키가 변경됨</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>{0}에서 제시한 호스트 키({1})가 Edendale이 이전에 신뢰한 키와 일치하지 않습니다. 서버를 다시 설치하면 이렇게 될 수 있지만, 누군가 연결을 가로채고 있다는 뜻일 수도 있습니다. 변경을 예상한 경우에만 새 키를 신뢰하세요.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>신뢰하기 전에 서버의 지문과 비교하세요. 예를 들어 호스트 키 파일에 ssh-keygen -lf를 실행합니다.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>신뢰</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>새 키 신뢰</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>소스 유형</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB(Windows 파일 공유)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>엔드포인트</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>리전</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>버킷</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>액세스 키 ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>비밀 액세스 키</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>계정</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>다른 계정…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>서버, 선택적 포트, 시작 폴더를 입력하세요. Edendale은 암호로 로그인하며, 신뢰하기 전에 서버의 호스트 키를 보여 줍니다.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Nextcloud 파일 URL이나 Google 드라이브에도 연결할 수 있는 rclone serve webdav 같은 WebDAV 주소를 입력하세요. 일반 HTTP는 로컬 네트워크에서만 작동합니다.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO에서 작동합니다. 읽기 전용 키면 충분하며, 키는 이 PC에서 암호화됩니다.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>서버와 내보내기를 입력하세요(예: nas.local/export/video). 내보내기는 비특권 포트의 연결을 허용해야 합니다(“insecure” 옵션).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>브라우저가 열리고 Microsoft에 로그인합니다. Edendale은 파일 읽기 권한만 요청하며, 이 계정은 시청 기록을 복사하는 OneDrive 폴더와 별도로 관리합니다.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>브라우저가 열리고 Dropbox에 로그인합니다. Edendale은 파일과 계정 이름 읽기 권한만 요청합니다.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>로그인</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>다시 로그인</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>로그인됨</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>이 탭을 닫고 Edendale로 돌아가세요.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>이 서버의 사용자 이름을 입력하세요.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>브라우저에서 {0} 로그인을 완료하세요.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>소스를 연결할 수 없습니다: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>로그인이 취소되었습니다.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>로그인 응답을 확인할 수 없습니다. 다시 시도하세요.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>{0}에 대한 접근이 허용되지 않았습니다.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>{0} 로그인이 만료되었거나 취소되었습니다. 다시 로그인하세요.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0}에서 로그인을 완료할 수 없습니다({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0}에서 로그인을 완료할 수 없습니다({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0}에서 Edendale이 읽을 수 없는 응답을 보냈습니다.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>{0}에 연결할 수 없습니다. 연결을 확인하고 다시 시도하세요.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>{0}에서 이 파일을 읽을 수 없습니다.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>{0}에 연결할 수 없습니다.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>{0}와(과)의 연결이 끊겼습니다: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>{0}와(과)의 연결이 끊겼습니다.</value>
+  </data>
 </root>

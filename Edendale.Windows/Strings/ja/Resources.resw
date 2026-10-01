@@ -1415,4 +1415,145 @@
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>ログイン情報は Windows アカウント用に暗号化され、この PC に保存されます。ソースを削除してもログイン情報は残ります。</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>{0} の NFS エクスポートを開けませんでした。Windows は非特権ポートから接続するため、エクスポートに “insecure” オプションが必要です。</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>フォルダを選択</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>このフォルダを追加</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>上へ</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>このフォルダの動画: {0} 本</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>このフォルダの動画: {0} 本</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>このサーバーを信頼しますか?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} がこのホストキー ({1}) を提示しました。Edendale はこのサーバーに接続したことがありません。</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>ホストキーが変更されました</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>{0} が提示したホストキー ({1}) は、Edendale が以前に信頼したものと一致しません。サーバーを再インストールした場合に起こりますが、誰かが接続を傍受している可能性もあります。変更を予期していた場合にのみ新しいキーを信頼してください。</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>信頼する前に、サーバー側のフィンガープリントと比較してください。たとえばホストキーファイルに ssh-keygen -lf を実行します。</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>信頼</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>新しいキーを信頼</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>ソースの種類</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows ファイル共有)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>エンドポイント</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>リージョン</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>バケット</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>アクセスキー ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>シークレットアクセスキー</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>別のアカウント…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>サーバー、任意のポート、開始フォルダを入力してください。Edendale はパスワードでサインインし、信頼する前にサーバーのホストキーを表示します。</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>WebDAV のアドレスを入力してください。Nextcloud のファイル URL や、Google ドライブにも接続できる rclone serve webdav などです。暗号化なしの HTTP はローカルネットワークでのみ使えます。</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>AWS、Backblaze B2、Cloudflare R2、Wasabi、MinIO で使えます。読み取り専用キーで十分です。キーはこの PC 上で暗号化されます。</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>サーバーとエクスポートを入力してください (例: nas.local/export/video)。エクスポートは非特権ポートからの接続を許可する必要があります (“insecure” オプション)。</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>ブラウザが開き、Microsoft にサインインします。Edendale はファイルの読み取りのみを求め、このアカウントは視聴履歴をコピーする OneDrive フォルダとは別に扱います。</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>ブラウザが開き、Dropbox にサインインします。Edendale はファイルとアカウント名の読み取りのみを求めます。</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>サインイン</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>もう一度サインイン</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>サインインしました</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>このタブを閉じて Edendale に戻ってください。</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>このサーバーのユーザー名を入力してください。</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>ブラウザで {0} へのサインインを完了してください。</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>ソースをリンクできませんでした: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>サインインはキャンセルされました。</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>サインインの応答を確認できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>{0} へのアクセスは許可されませんでした。</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>{0} のサインインは期限切れか取り消されました。もう一度サインインしてください。</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} はサインインを完了できませんでした ({1})。</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} はサインインを完了できませんでした ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} から Edendale が読み取れない応答が返されました。</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>{0} に接続できませんでした。接続を確認してもう一度お試しください。</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>{0} からこのファイルを読み取れませんでした。</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>{0} に接続できませんでした。</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>{0} との接続が切れました: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>{0} との接続が切れました。</value>
+  </data>
 </root>

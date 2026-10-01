@@ -28,6 +28,8 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <!-- Required by the linked SubtitleService (legacy subtitle code pages). -->
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <!-- Required by the linked SftpConnector. -->
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
   </ItemGroup>
 
   <!-- Source under test, linked rather than referenced. -->
@@ -40,6 +42,15 @@
     <Compile Include="..\Edendale.Windows\Services\PlayerContext.cs" Link="App\Services\PlayerContext.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSettingsStore.cs" Link="App\Services\PlayerSettingsStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\SecretStores.cs" Link="App\Services\SecretStores.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\BufferedByteSource.cs" Link="App\Services\Remote\BufferedByteSource.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\CloudConnectors.cs" Link="App\Services\Remote\CloudConnectors.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\ConnectorFactory.cs" Link="App\Services\Remote\ConnectorFactory.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\OAuth.cs" Link="App\Services\Remote\OAuth.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\ProviderHttp.cs" Link="App\Services\Remote\ProviderHttp.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\RemoteByteSource.cs" Link="App\Services\Remote\RemoteByteSource.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\S3Connector.cs" Link="App\Services\Remote\S3Connector.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\SftpConnector.cs" Link="App\Services\Remote\SftpConnector.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\WebDavConnector.cs" Link="App\Services\Remote\WebDavConnector.cs" />
     <Compile Include="..\Edendale.Windows\Services\SegmentPrompts.cs" Link="App\Services\SegmentPrompts.cs" />
     <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\SubtitleService.cs" Link="App\Services\SubtitleService.cs" />
@@ -50,6 +61,7 @@
     <Compile Include="..\Edendale.Windows\Services\YoungAudienceFilter.cs" Link="App\Services\YoungAudienceFilter.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
     <Compile Include="..\Edendale.Windows\Core\AudioEnhancement.cs" Link="App\Core\AudioEnhancement.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SshFingerprint.cs" Link="App\Core\SshFingerprint.cs" />
     <Compile Include="..\Edendale.Windows\Core\LibrarySections.cs" Link="App\Core\LibrarySections.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaConnectors.cs" Link="App\Core\MediaConnectors.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlaybackSources.cs" Link="App\Core\PlaybackSources.cs" />

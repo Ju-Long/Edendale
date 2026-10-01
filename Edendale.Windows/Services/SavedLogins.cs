@@ -34,7 +34,7 @@ public static class SavedLogins
                 AppServices.SmbCredentials.Remove(login.Key);
                 break;
             case MediaSourceKind.GoogleDrive or MediaSourceKind.OneDrive or MediaSourceKind.Dropbox:
-                AppServices.CloudAccounts.Remove(login.Kind, login.Key);
+                _ = Remote.CloudSignIn.SignOutAsync(login.Kind, login.Key);
                 break;
             default:
                 AppServices.ServerLogins.Remove(login.Kind, login.Key);

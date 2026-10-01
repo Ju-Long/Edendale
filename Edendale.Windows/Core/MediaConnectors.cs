@@ -11,6 +11,9 @@ public sealed record ConnectorEntry(string Name, string Url, bool IsDirectory)
 
     public DateTimeOffset? Modified { get; init; }
 
+    /// <summary>Seconds, when the provider reports it (the Graph video facet).</summary>
+    public double? Duration { get; init; }
+
     /// <summary>A file with one of the video extensions the library imports.</summary>
     public bool IsVideo => !IsDirectory && VideoFiles.IsVideoName(Name);
 
@@ -190,6 +193,8 @@ public enum ConnectorFailure
     PasswordLoginUnavailable,
     SftpUnavailable,
     BucketInAnotherRegion,
+    /// <summary>LibVLC couldn't mount or read the NFS export.</summary>
+    NfsMountFailed,
 }
 
 /// <summary>
@@ -245,6 +250,7 @@ public sealed class ConnectorException : Exception
         ConnectorFailure.SecureConnectionFailed => AppText.Format("Connector_SecureConnectionFailed", subject),
         ConnectorFailure.PasswordLoginUnavailable => AppText.Format("Connector_PasswordLoginUnavailable", subject),
         ConnectorFailure.SftpUnavailable => AppText.Format("Connector_SftpUnavailable", subject),
+        ConnectorFailure.NfsMountFailed => AppText.Format("Connector_NfsMountFailed", subject),
         ConnectorFailure.BucketInAnotherRegion => subject is null
             ? AppText.Get("Connector_BucketInAnotherRegionUnknown")
             : AppText.Format("Connector_BucketInAnotherRegion", subject),

@@ -1415,4 +1415,145 @@ IST STUMM</value>
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Anmeldungen werden für dein Windows-Konto verschlüsselt und bleiben auf diesem PC. Beim Entfernen einer Quelle bleibt ihre Anmeldung erhalten.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Die NFS-Freigabe auf {0} konnte nicht geöffnet werden. Windows verbindet sich über einen nicht privilegierten Port, daher braucht die Freigabe die Option „insecure“.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Ordner auswählen</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Diesen Ordner hinzufügen</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>NACH OBEN</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} Video in diesem Ordner</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} Videos in diesem Ordner</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Diesem Server vertrauen?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} hat diesen Hostschlüssel ({1}) vorgelegt. Edendale war noch nie mit diesem Server verbunden.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Hostschlüssel geändert</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>Der Hostschlüssel, den {0} vorgelegt hat ({1}), stimmt nicht mit dem überein, dem Edendale bisher vertraut hat. Das passiert nach einer Neuinstallation des Servers, kann aber auch bedeuten, dass jemand die Verbindung abfängt. Vertraue dem neuen Schlüssel nur, wenn du die Änderung erwartet hast.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Vergleiche den Fingerabdruck vorher mit dem des Servers, zum Beispiel mit ssh-keygen -lf auf seiner Hostschlüsseldatei.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Vertrauen</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Neuem Schlüssel vertrauen</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Quellentyp</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows-Dateifreigabe)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Endpunkt</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Zugriffsschlüssel-ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Geheimer Zugriffsschlüssel</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Anderes Konto …</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Gib den Server, optional einen Port und den Startordner ein. Edendale meldet sich mit einem Passwort an und zeigt den Hostschlüssel des Servers, bevor es ihm vertraut.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Gib die WebDAV-Adresse ein, etwa eine Nextcloud-Datei-URL oder rclone serve webdav, womit sich auch Google Drive erreichen lässt. Einfaches HTTP funktioniert nur im lokalen Netzwerk.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Funktioniert mit AWS, Backblaze B2, Cloudflare R2, Wasabi und MinIO. Ein Nur-Lese-Schlüssel genügt; er wird auf diesem PC verschlüsselt.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Gib Server und Freigabe ein, zum Beispiel nas.local/export/video. Die Freigabe muss Verbindungen von nicht privilegierten Ports erlauben (Option „insecure“).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Dein Browser öffnet die Microsoft-Anmeldung. Edendale fragt nur nach Lesezugriff auf deine Dateien und hält dieses Konto getrennt vom OneDrive-Ordner, in den es deinen Wiedergabeverlauf kopiert.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Dein Browser öffnet die Dropbox-Anmeldung. Edendale fragt nur nach Lesezugriff auf deine Dateien und deinen Kontonamen.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Erneut anmelden</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Angemeldet</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Du kannst diesen Tab schließen und zu Edendale zurückkehren.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Gib den Benutzernamen für diesen Server ein.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Schließe die Anmeldung bei {0} in deinem Browser ab.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Die Quelle konnte nicht verknüpft werden: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Die Anmeldung wurde abgebrochen.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Die Anmeldeantwort konnte nicht überprüft werden. Versuche es erneut.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Der Zugriff auf {0} wurde nicht erlaubt.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Deine Anmeldung bei {0} ist abgelaufen oder wurde widerrufen. Melde dich erneut an.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} konnte die Anmeldung nicht abschließen ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} konnte die Anmeldung nicht abschließen ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} hat eine Antwort gesendet, die Edendale nicht lesen konnte.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>{0} ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Diese Datei konnte nicht von {0} gelesen werden.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Verbindung mit {0} nicht möglich.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Verbindung zu {0} verloren: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Verbindung zu {0} verloren.</value>
+  </data>
 </root>

@@ -59,6 +59,12 @@ public sealed partial class MainWindow
     private PlayerPane _openPane;
     private VideoSourceInfo _sourceInfo = VideoSourceInfo.Unknown;
     private MediaTransport? _transport;
+
+    /// <summary>
+    /// The custom input of a remote item (DIFF.md §3.12): cancelled before
+    /// the player stops, since LibVLC waits for a blocked read.
+    /// </summary>
+    private Services.Remote.ByteSourceMediaInput? _mediaInput;
     private readonly global::Windows.UI.ViewManagement.UISettings _uiSettings = new();
 
     private void InitializePlayer()
@@ -188,9 +194,12 @@ public sealed partial class MainWindow
             if (!Current()) return;
 
             // E.3: Motion Smoothing depends on the frame rate, so only then is
-            // the file parsed (briefly) before it plays.
+            // the file parsed (briefly) before it plays. Remote items aren't
+            // parsed ahead: that would cost a second connection, so their
+            // frame rate stays unknown and Motion Smoothing waits for it.
             var settings = AppServices.VideoEnhancement;
-            if (settings.MotionSmoothing && !settings.IsShowingOriginal && capabilities.MotionSmoothing && _sourceInfo.FrameRate is null)
+            var isRemoteInput = Services.Remote.ConnectorFactory.NeedsCustomInput(request.FilePath);
+            if (!isRemoteInput && settings.MotionSmoothing && !settings.IsShowingOriginal && capabilities.MotionSmoothing && _sourceInfo.FrameRate is null)
             {
                 EnsureEngine(PlayerEffects.EngineArguments(BuildEnhancement(capabilities, _sourceInfo), _uiSettings.TextScaleFactor));
                 using var probe = new Media(_libVlc!, new Uri(request.FilePath));
@@ -213,11 +222,24 @@ public sealed partial class MainWindow
             _context?.ResetExternalTracks();
             _reattachPending = _context?.ExternalSubtitleUris.Count > 0;
 
-            using var media = new Media(_libVlc!, new Uri(request.FilePath));
-            if (!player.Play(media))
+            Media media;
+            try
             {
-                FailPlayback();
+                media = CreateMedia(request);
+            }
+            catch (ConnectorException failure)
+            {
+                // A source that needs sign-in, say: its own message, not "unsupported".
+                FailPlayback(failure.Message);
                 return;
+            }
+            using (media)
+            {
+                if (!player.Play(media))
+                {
+                    FailPlayback();
+                    return;
+                }
             }
 
             _progressTimer = DispatcherQueue.CreateTimer();
@@ -255,10 +277,29 @@ public sealed partial class MainWindow
         player.Vout -= MediaPlayer_Vout;
     }
 
-    private void FailPlayback()
+    /// <summary>
+    /// The media for a request. HTTP and SFTP items play through a custom
+    /// input, so their tokens and signed links never reach LibVLC's own
+    /// network access; NFS goes to LibVLC's NFS module (X.5); local files and
+    /// UNC paths are opened directly.
+    /// </summary>
+    private Media CreateMedia(PlaybackRequest request)
     {
+        if (Services.Remote.ConnectorFactory.NeedsCustomInput(request.FilePath))
+        {
+            var source = Services.Remote.ConnectorFactory.ByteSourceFor(request.FilePath, AppServices.Connectors);
+            _mediaInput = new Services.Remote.ByteSourceMediaInput(source);
+            return new Media(_libVlc!, _mediaInput);
+        }
+        return new Media(_libVlc!, new Uri(request.FilePath));
+    }
+
+    private void FailPlayback(string? message = null)
+    {
+        // A remote read says why it failed ("This file is no longer in OneDrive").
+        message ??= _mediaInput?.Source.FailureReason ?? Loc.Get("Activation_UnsupportedFile");
         ClosePlayer();
-        ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
+        ShowActivationMessage(message);
     }
 
     // ------------------------------------------------------------------
@@ -989,8 +1030,13 @@ public sealed partial class MainWindow
         AdjustmentsPanel.Bind(null, _context);
         PlayerElement.MediaPlayer = null;
         Detach(player);
+        // Fail a read LibVLC is blocked in first, or Stop waits for it.
+        var input = _mediaInput;
+        _mediaInput = null;
+        input?.Source.Cancel();
         player.Stop();
         player.Dispose();
+        input?.Dispose();
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)

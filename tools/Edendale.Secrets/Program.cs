@@ -26,7 +26,8 @@ internal static class Program
         string Pattern,
         string Guidance,
         bool Required,
-        string Source);
+        string Source,
+        string? UnsetEffect = null);
 
     private static readonly SecretDefinition[] Definitions =
     [
@@ -53,7 +54,28 @@ internal static class Program
             Pattern: @"\A[A-Za-z0-9._-]+\z",
             Guidance: "The Wyzie key is letters, digits, dots, dashes, and underscores.",
             Required: false,
-            Source: "https://store.wyzie.io/redeem"),
+            Source: "https://store.wyzie.io/redeem",
+            UnsetEffect: "online subtitles disabled"),
+        // Public-client IDs for OneDrive and Dropbox sources (PKCE, no client
+        // secret). Leaving one empty hides that provider in the build.
+        new(
+            Name: "ONEDRIVE_CLIENT_ID",
+            Flag: "--onedrive-client-id",
+            Label: "OneDrive client ID (Microsoft Entra public client)",
+            Pattern: @"\A[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\z",
+            Guidance: "The application (client) ID is a GUID. Register a public client with the redirect URI http://localhost and the Files.Read and User.Read permissions.",
+            Required: false,
+            Source: "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
+            UnsetEffect: "OneDrive sources hidden"),
+        new(
+            Name: "DROPBOX_APP_KEY",
+            Flag: "--dropbox-app-key",
+            Label: "Dropbox app key",
+            Pattern: @"\A[a-z0-9]{10,32}\z",
+            Guidance: "The app key is lowercase letters and digits. Use a scoped app with the redirect URI http://127.0.0.1:49735/ and the files.metadata.read, files.content.read, and account_info.read scopes.",
+            Required: false,
+            Source: "https://www.dropbox.com/developers/apps",
+            UnsetEffect: "Dropbox sources hidden"),
     ];
 
     private static int Main(string[] arguments)
@@ -309,7 +331,7 @@ internal static class Program
             var value = values.GetValueOrDefault(definition.Name, "");
             var state = value.Length > 0
                 ? $"set ({value.Length} characters)"
-                : definition.Required ? "not set" : "not set (online subtitles disabled)";
+                : definition.UnsetEffect is { } effect ? $"not set ({effect})" : "not set";
             Console.WriteLine($"  {definition.Name,-24} {state}");
         }
     }

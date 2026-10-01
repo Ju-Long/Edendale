@@ -1415,4 +1415,145 @@ ESTÁ EN SILENCIO</value>
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Los inicios de sesión se cifran para tu cuenta de Windows y se quedan en esta PC. Eliminar una fuente conserva su inicio de sesión.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>No se pudo abrir la exportación NFS de {0}. Windows se conecta desde un puerto sin privilegios, así que la exportación necesita la opción “insecure”.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Elegir una carpeta</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Agregar esta carpeta</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>ARRIBA</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video en esta carpeta</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} videos en esta carpeta</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>¿Confiar en este servidor?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} presentó esta clave de host ({1}). Edendale no se había conectado antes a este servidor.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>La clave de host cambió</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>La clave de host que presentó {0} ({1}) no coincide con la que Edendale aceptó antes. Ocurre al reinstalar un servidor, pero también puede significar que alguien está interceptando la conexión. Confía en la nueva clave solo si esperabas el cambio.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Antes de confiar, compara la huella con la del propio servidor, por ejemplo ejecutando ssh-keygen -lf sobre su archivo de clave de host.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Confiar</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Confiar en la nueva clave</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Tipo de fuente</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (uso compartido de archivos de Windows)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Punto de conexión</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Región</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>ID de clave de acceso</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Clave de acceso secreta</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Cuenta</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Otra cuenta…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Ingresa el servidor, un puerto opcional y la carpeta de inicio. Edendale inicia sesión con una contraseña y muestra la clave de host del servidor antes de confiar en ella.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Ingresa la dirección WebDAV, como la URL de archivos de Nextcloud o rclone serve webdav, que también permite acceder a Google Drive. HTTP sin cifrar solo funciona en tu red local.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Funciona con AWS, Backblaze B2, Cloudflare R2, Wasabi y MinIO. Basta con una clave de solo lectura; se cifra en esta PC.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Ingresa el servidor y la exportación, por ejemplo nas.local/export/video. La exportación debe permitir conexiones desde puertos sin privilegios (la opción “insecure”).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Tu navegador se abrirá para iniciar sesión en Microsoft. Edendale solo pide leer tus archivos y mantiene esta cuenta separada de la carpeta de OneDrive en la que copia tu historial de reproducción.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Tu navegador se abrirá para iniciar sesión en Dropbox. Edendale solo pide leer tus archivos y el nombre de tu cuenta.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Iniciar sesión</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Volver a iniciar sesión</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Sesión iniciada</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Puedes cerrar esta pestaña y volver a Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Ingresa el nombre de usuario de este servidor.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Termina de iniciar sesión en {0} en tu navegador.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>No se pudo vincular la fuente: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Se canceló el inicio de sesión.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>No se pudo verificar la respuesta de inicio de sesión. Vuelve a intentarlo.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>No se permitió el acceso a {0}.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Tu inicio de sesión en {0} expiró o se revocó. Vuelve a iniciar sesión.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} no pudo completar el inicio de sesión ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} no pudo completar el inicio de sesión ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} envió una respuesta que Edendale no pudo leer.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>No se puede acceder a {0}. Verifica la conexión y vuelve a intentarlo.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>No se pudo leer este archivo de {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>No se pudo conectar con {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Se perdió la conexión con {0}: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Se perdió la conexión con {0}.</value>
+  </data>
 </root>

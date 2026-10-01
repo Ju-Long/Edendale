@@ -31,6 +31,9 @@ are reproduced exactly as they appear in each font binary's name table.
 | QRCoder | 1.8.0 | Copyright © 2013-2025 Raffael Herrmann. Copyright © 2024-2025 Shane Krueger. All rights reserved. | MIT |
 | System.Security.Cryptography.ProtectedData | 8.0.0 | © Microsoft Corporation. All rights reserved. | MIT |
 | System.Text.Encoding.CodePages | 8.0.0 | © Microsoft Corporation. All rights reserved. | MIT |
+| SSH.NET | 2026.0.0 | Copyright © Renci 2010-2026 | MIT |
+| BouncyCastle.Cryptography (an SSH.NET dependency) | 2.7.0 | Copyright © Legion of the Bouncy Castle Inc. 2000-2026 | MIT |
+| Microsoft.Extensions.Logging.Abstractions (an SSH.NET dependency) | 8.0.3 | © Microsoft Corporation. All rights reserved. | MIT |
 
 The Windows App SDK is redistributed under proprietary Microsoft terms rather
 than an open-source license, because `WindowsAppSDKSelfContained` bundles its
@@ -51,8 +54,10 @@ shared-library files independently of Edendale.
 
 ## MIT License
 
-Applies to SharpDX, QRCoder, System.Security.Cryptography.ProtectedData, and
-System.Text.Encoding.CodePages, with the copyright holders named above.
+Applies to SharpDX, QRCoder, System.Security.Cryptography.ProtectedData,
+System.Text.Encoding.CodePages, SSH.NET, BouncyCastle.Cryptography, and
+Microsoft.Extensions.Logging.Abstractions, with the copyright holders named
+above.
 
 ```
 Permission is hereby granted, free of charge, to any person obtaining a copy

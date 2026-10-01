@@ -71,6 +71,10 @@
     <!-- Legacy code pages for subtitle files, which are rarely UTF-8. -->
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
+    <!-- SFTP sources (DIFF.md §3.12): curve25519/ECDH key exchange,
+         Ed25519/ECDSA host keys, and AES-GCM. MIT, as is its BouncyCastle
+         dependency. -->
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
     <!-- Native VLC engine and LGPL codec plug-ins for x86, x64, and ARM64. -->
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
   </ItemGroup>

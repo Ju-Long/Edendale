@@ -1415,4 +1415,145 @@
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Le credenziali sono crittografate per il tuo account Windows e restano su questo PC. Rimuovere una sorgente non elimina le sue credenziali.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Impossibile aprire l’esportazione NFS su {0}. Windows si connette da una porta non privilegiata, quindi l’esportazione richiede l’opzione “insecure”.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Scegli una cartella</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Aggiungi questa cartella</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>SU</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video in questa cartella</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} video in questa cartella</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Considerare attendibile questo server?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} ha presentato questa chiave host ({1}). Edendale non si è mai connesso a questo server.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Chiave host cambiata</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>La chiave host presentata da {0} ({1}) non corrisponde a quella approvata in precedenza da Edendale. Succede dopo la reinstallazione di un server, ma può anche significare che qualcuno sta intercettando la connessione. Approva la nuova chiave solo se ti aspettavi il cambiamento.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Prima di approvarla, confronta l’impronta con quella del server, ad esempio eseguendo ssh-keygen -lf sul suo file di chiave host.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Considera attendibile</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Approva la nuova chiave</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Tipo di sorgente</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (condivisione file di Windows)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Regione</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>ID chiave di accesso</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Chiave di accesso segreta</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Un altro account…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Inserisci il server, una porta facoltativa e la cartella di partenza. Edendale accede con una password e mostra la chiave host del server prima di considerarla attendibile.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Inserisci l’indirizzo WebDAV, ad esempio l’URL dei file di Nextcloud o rclone serve webdav, che permette di raggiungere anche Google Drive. L’HTTP semplice funziona solo sulla rete locale.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Funziona con AWS, Backblaze B2, Cloudflare R2, Wasabi e MinIO. Basta una chiave di sola lettura; viene crittografata su questo PC.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Inserisci server ed esportazione, ad esempio nas.local/export/video. L’esportazione deve consentire connessioni da porte non privilegiate (opzione “insecure”).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Il browser si apre per accedere a Microsoft. Edendale chiede solo di leggere i tuoi file e tiene questo account separato dalla cartella di OneDrive in cui copia la cronologia di visione.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Il browser si apre per accedere a Dropbox. Edendale chiede solo di leggere i tuoi file e il nome dell’account.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Accedi</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Accedi di nuovo</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Accesso eseguito</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Puoi chiudere questa scheda e tornare a Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Inserisci il nome utente per questo server.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Completa l’accesso a {0} nel browser.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Impossibile collegare la sorgente: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>L’accesso è stato annullato.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Impossibile verificare la risposta di accesso. Riprova.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>L’accesso a {0} non è stato consentito.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>L’accesso a {0} è scaduto o è stato revocato. Accedi di nuovo.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} non è riuscito a completare l’accesso ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} non è riuscito a completare l’accesso ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} ha inviato una risposta che Edendale non è riuscito a leggere.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Impossibile raggiungere {0}. Controlla la connessione e riprova.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Impossibile leggere questo file da {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Impossibile connettersi a {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Connessione a {0} persa: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Connessione a {0} persa.</value>
+  </data>
 </root>

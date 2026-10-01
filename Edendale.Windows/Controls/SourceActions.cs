@@ -37,17 +37,9 @@ internal static class SourceActions
     public static bool NeedsSignIn(LibraryFolder folder) =>
         AppServices.Library.StateFor(folder)?.Kind == SourceStateKind.NeedsSignIn;
 
-    /// <summary>Signs in to the source again, then rescans it.</summary>
-    public static async Task SignInAsync(XamlRoot root, LibraryFolder folder)
-    {
-        if (folder.SourceKind == MediaSourceKind.Smb)
-        {
-            // Linking the same path again rescans the existing source.
-            await LinkSourceDialog.ShowAsync(root, folder.Path);
-            return;
-        }
-        await AppServices.Library.RescanFolderAsync(folder);
-    }
+    /// <summary>Signs in to the source again (or approves its new host key), then rescans it.</summary>
+    public static Task SignInAsync(XamlRoot root, LibraryFolder folder) =>
+        LinkSourceDialog.SignInAgainAsync(root, folder);
 
     /// <summary>
     /// Unlinking always confirms first. The copy says the two things the

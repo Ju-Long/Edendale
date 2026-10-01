@@ -1415,4 +1415,145 @@ IS SILENT</value>
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Logins are encrypted for your Windows account and stay on this PC. Removing a source keeps its login.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Couldn’t open the NFS export on {0}. Windows connects from an unprivileged port, so the export needs the “insecure” option.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Choose a Folder</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Add This Folder</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>UP</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video in this folder</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} videos in this folder</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Trust This Server?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} presented this host key ({1}). Edendale hasn’t connected to this server before.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Host Key Changed</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>The host key {0} presented ({1}) doesn’t match the one Edendale trusted before. That happens after a server is reinstalled, but it can also mean someone is intercepting the connection. Trust the new key only if you expected the change.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Before trusting it, compare the fingerprint with the server’s own, for example by running ssh-keygen -lf on its host key file.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Trust</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Trust New Key</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Source type</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows file sharing)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Access key ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Secret access key</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Another account…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Enter the server, an optional port, and the folder to start in. Edendale signs in with a password and shows the server’s host key before trusting it.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Enter the WebDAV address, such as a Nextcloud files URL or rclone serve webdav, which can also reach Google Drive. Plain HTTP works only on your local network.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Works with AWS, Backblaze B2, Cloudflare R2, Wasabi, and MinIO. A read-only key is enough; it is encrypted on this PC.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Enter the server and export, for example nas.local/export/video. The export must allow connections from unprivileged ports (the “insecure” option).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Your browser opens to sign in to Microsoft. Edendale asks only to read your files, and keeps this account separate from the OneDrive folder it copies your watch history to.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Your browser opens to sign in to Dropbox. Edendale asks only to read your files and account name.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Sign In Again</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Signed in</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>You can close this tab and return to Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Enter the username for this server.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Finish signing in to {0} in your browser.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Couldn’t link the source: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Sign-in was cancelled.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>The sign-in response couldn’t be verified. Try again.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Access to {0} wasn’t allowed.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Your {0} sign-in has expired or was revoked. Sign in again.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} couldn’t complete sign-in ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} couldn’t complete sign-in ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} sent a response Edendale couldn’t read.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Couldn’t reach {0}. Check your connection and try again.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Couldn’t read this file from {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Couldn’t connect to {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Lost the connection to {0}: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Lost the connection to {0}.</value>
+  </data>
 </root>

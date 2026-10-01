@@ -1415,4 +1415,145 @@
   <data name="SettingsAccountsNote.Text" xml:space="preserve">
     <value>Данные для входа шифруются для вашей учётной записи Windows и остаются на этом ПК. При удалении источника они сохраняются.</value>
   </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Не удалось открыть NFS-экспорт на {0}. Windows подключается с непривилегированного порта, поэтому для экспорта нужен параметр «insecure».</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Выбор папки</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Добавить эту папку</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>ВВЕРХ</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>Видео в этой папке: {0}</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>Видео в этой папке: {0}</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Доверять этому серверу?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} предъявил этот ключ хоста ({1}). Edendale ещё не подключался к этому серверу.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Ключ хоста изменился</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>Ключ хоста, предъявленный {0} ({1}), не совпадает с ключом, которому Edendale доверял раньше. Так бывает после переустановки сервера, но это может означать и перехват соединения. Доверяйте новому ключу, только если ожидали это изменение.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Перед этим сравните отпечаток с отпечатком на самом сервере, например выполнив ssh-keygen -lf для файла ключа хоста.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Доверять</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Доверять новому ключу</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Тип источника</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (общий доступ к файлам Windows)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Конечная точка</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Регион</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Бакет</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Идентификатор ключа доступа</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Секретный ключ доступа</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Учётная запись</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Другая учётная запись…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Введите сервер, порт (необязательно) и начальную папку. Edendale входит по паролю и показывает ключ хоста сервера, прежде чем доверять ему.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Введите адрес WebDAV, например URL файлов Nextcloud или rclone serve webdav, через который можно открыть и Google Диск. Обычный HTTP работает только в локальной сети.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Работает с AWS, Backblaze B2, Cloudflare R2, Wasabi и MinIO. Достаточно ключа только для чтения; он шифруется на этом ПК.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Введите сервер и экспорт, например nas.local/export/video. Экспорт должен разрешать подключения с непривилегированных портов (параметр «insecure»).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Откроется браузер для входа в Microsoft. Edendale запрашивает только чтение файлов и держит эту учётную запись отдельно от папки OneDrive, в которую копирует историю просмотра.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Откроется браузер для входа в Dropbox. Edendale запрашивает только чтение файлов и имени учётной записи.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Повторный вход</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Вход выполнен</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Можно закрыть эту вкладку и вернуться в Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Введите имя пользователя для этого сервера.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Завершите вход в {0} в браузере.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Не удалось привязать источник: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Вход отменён.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Не удалось проверить ответ на вход. Повторите попытку.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Доступ к {0} не разрешён.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Срок входа в {0} истёк, или доступ отозван. Войдите снова.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} не удалось завершить вход ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} не удалось завершить вход ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} прислал ответ, который Edendale не смог прочитать.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Не удаётся подключиться к {0}. Проверьте соединение и повторите попытку.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Не удалось прочитать этот файл из {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Не удалось подключиться к {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Соединение с {0} потеряно: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Соединение с {0} потеряно.</value>
+  </data>
 </root>

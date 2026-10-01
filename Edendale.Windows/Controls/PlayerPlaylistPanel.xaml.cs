@@ -118,15 +118,35 @@ public sealed partial class PlayerPlaylistPanel : UserControl
         }
     }
 
-    private void PopulateFolder(PlaybackRequest current)
+    /// <summary>
+    /// The videos beside the current file. A remote item's folder isn't
+    /// listed again over the network: its siblings come from the library.
+    /// </summary>
+    private static List<string> FolderFiles(string path)
     {
-        var folder = Path.GetDirectoryName(current.FilePath);
-        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return;
-
-        var files = Directory.EnumerateFiles(folder)
+        if (Core.SourceUrl.IsUrl(path))
+        {
+            var parent = Core.SourceUrl.Parent(path);
+            var library = AppServices.Library;
+            return library.Movies.Select(movie => movie.FilePath)
+                .Concat(library.Shows.SelectMany(show => show.Episodes).Select(episode => episode.FilePath))
+                .Where(file => Core.SourceUrl.Parent(file) == parent)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(Core.SourceUrl.FileName, Core.NaturalStringComparer.Instance)
+                .ToList();
+        }
+        var folder = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return [];
+        return Directory.EnumerateFiles(folder)
             .Where(LibraryService.IsSupportedVideoFile)
             .OrderBy(f => f)
             .ToList();
+    }
+
+    private void PopulateFolder(PlaybackRequest current)
+    {
+        var files = FolderFiles(current.FilePath);
+        if (files.Count == 0) return;
 
         var stack = new StackPanel { Spacing = 6 };
         foreach (var file in files)
@@ -148,7 +168,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
             }
 
             stack.Children.Add(CreateRow(
-                title: movie?.Title ?? Path.GetFileName(file),
+                title: movie?.Title ?? Core.SourceUrl.FileName(file),
                 detail: detail,
                 artwork: movie?.BackdropUrl ?? movie?.PosterUrl,
                 showArtwork: movie is not null,
@@ -159,7 +179,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
                     PlayRequested?.Invoke(this, new PlaybackRequest
                     {
                         FilePath = file,
-                        Title = Path.GetFileName(file),
+                        Title = Core.SourceUrl.FileName(file),
                         Subtitle = null,
                         TmdbId = null,
                         MediaType = "movie",

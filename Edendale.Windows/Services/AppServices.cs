@@ -13,7 +13,22 @@ public static class AppServices
 
     /// <summary>Pinned SSH host keys for SFTP sources.</summary>
     public static HostKeyStore HostKeys { get; } = new(AppPaths.HostKeysFile);
-    public static LibraryService Library { get; } = new(SmbCredentials);
+
+    /// <summary>In-memory access tokens for linked cloud accounts, refreshed single-flight.</summary>
+    public static Remote.CloudTokenProvider CloudTokens { get; } = new(CloudAccounts);
+
+    /// <summary>What connectors and remote playback rebuild themselves from.</summary>
+    public static Remote.ConnectorEnvironment Connectors { get; } = new(ServerLogins, CloudAccounts, CloudTokens, HostKeys);
+    public static LibraryService Library { get; } = CreateLibrary();
+
+    private static LibraryService CreateLibrary()
+    {
+        Remote.ConnectorFactory.NfsConnectors = Remote.NfsConnector.FromSource;
+        return new LibraryService(SmbCredentials)
+        {
+            ConnectorFor = folder => Remote.ConnectorFactory.ForSource(folder.Path, folder.SourceKind, Connectors),
+        };
+    }
     public static WatchProgressStore WatchProgress { get; } = new();
     public static UserMediaStore UserMedia { get; } = new();
     public static PlayerSession Player { get; } = new();
