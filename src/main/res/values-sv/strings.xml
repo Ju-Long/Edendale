@@ -279,4 +279,16 @@
         <item quantity="one">%1$d träff till.</item>
         <item quantity="other">%1$d träffar till.</item>
     </plurals>
+    <string name="settings_section_app_controls">Appkontroller</string>
+    <string name="settings_app_controls_skip_backward">Hoppa bakåt</string>
+    <string name="settings_app_controls_skip_forward">Hoppa framåt</string>
+    <string name="settings_app_controls_skip_note">Tryck två gånger på vänster eller höger sida av videon för att hoppa bakåt eller framåt.</string>
+    <string name="settings_app_controls_hold_left">Håll vänster sida</string>
+    <string name="settings_app_controls_hold_right">Håll höger sida</string>
+    <string name="settings_app_controls_hold_note">Håll ned vänster eller höger sida av videon för att spela i den hastigheten tills du släpper.</string>
+    <string name="settings_seconds_format">%d sekunder</string>
+    <string name="player_back_15">Bakåt 15 sekunder</string>
+    <string name="player_back_30">Bakåt 30 sekunder</string>
+    <string name="player_forward_15">Framåt 15 sekunder</string>
+    <string name="player_forward_30">Framåt 30 sekunder</string>
 </resources>

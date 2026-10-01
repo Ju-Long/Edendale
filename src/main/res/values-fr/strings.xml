@@ -279,4 +279,16 @@
         <item quantity="one">%1$d correspondance supplémentaire.</item>
         <item quantity="other">%1$d correspondances supplémentaires.</item>
     </plurals>
+    <string name="settings_section_app_controls">Commandes de l\'application</string>
+    <string name="settings_app_controls_skip_backward">Reculer</string>
+    <string name="settings_app_controls_skip_forward">Avancer</string>
+    <string name="settings_app_controls_skip_note">Touchez deux fois le côté gauche ou droit de la vidéo pour reculer ou avancer.</string>
+    <string name="settings_app_controls_hold_left">Maintenir le côté gauche</string>
+    <string name="settings_app_controls_hold_right">Maintenir le côté droit</string>
+    <string name="settings_app_controls_hold_note">Maintenez le doigt sur le côté gauche ou droit de la vidéo pour lire à cette vitesse jusqu\'à ce que vous relâchiez.</string>
+    <string name="settings_seconds_format">%d secondes</string>
+    <string name="player_back_15">Reculer de 15 secondes</string>
+    <string name="player_back_30">Reculer de 30 secondes</string>
+    <string name="player_forward_15">Avancer de 15 secondes</string>
+    <string name="player_forward_30">Avancer de 30 secondes</string>
 </resources>

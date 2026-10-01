@@ -13,6 +13,8 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Rational
@@ -114,6 +116,12 @@ class PlayerActivity : ComponentActivity() {
     private val attachedSubtitles = mutableMapOf<String, MutableList<AttachedSubtitle>>()
     private var pendingSubtitleSelection: AttachedSubtitle? = null
 
+    private var prefsSubscription: AutoCloseable? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var mediaKeyHoldRunnable: Runnable? = null
+    private var mediaKeyHoldActive = false
+    private var activeHoldKeyCode: Int? = null
+
     /** Absent on handhelds where the OEM dropped PiP; present on TV from API 34. */
     private val supportsPip: Boolean by lazy {
         packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
@@ -128,10 +136,10 @@ class PlayerActivity : ComponentActivity() {
                 PIP_CONTROL_PLAY -> exoPlayer.play()
                 PIP_CONTROL_PAUSE -> exoPlayer.pause()
                 PIP_CONTROL_REWIND ->
-                    exoPlayer.seekTo((exoPlayer.currentPosition - 10_000).coerceAtLeast(0))
+                    exoPlayer.seekTo((exoPlayer.currentPosition - chrome.skipBackwardInterval.millis).coerceAtLeast(0))
                 PIP_CONTROL_FORWARD -> {
                     val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 }
-                    val target = exoPlayer.currentPosition + 10_000
+                    val target = exoPlayer.currentPosition + chrome.skipForwardInterval.millis
                     exoPlayer.seekTo(duration?.let { target.coerceAtMost(it) } ?: target)
                 }
             }
@@ -163,6 +171,9 @@ class PlayerActivity : ComponentActivity() {
         isTelevision = isTelevisionDevice()
         val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
         chrome = PlayerChromeState(playerPreferences)
+        prefsSubscription = chrome.preferences.addChangeListener {
+            updatePipParams()
+        }
         onlineSubtitles = OnlineSubtitlesState(playerPreferences)
         wyzieKeyStore = WyzieKeyStore(this)
         wyzieService = AndroidEdendaleCore.wyzieService()
@@ -604,12 +615,14 @@ class PlayerActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        cancelMediaKeyHold()
         writeProgress()
         player?.playWhenReady = false
         super.onStop()
     }
 
     override fun onDestroy() {
+        prefsSubscription?.close()
         writeProgress()
         searchJob?.cancel()
         downloadJob?.cancel()
@@ -703,10 +716,23 @@ class PlayerActivity : ComponentActivity() {
             pipAction(R.drawable.ic_play, getString(R.string.action_play), PIP_CONTROL_PLAY)
         }
         if (maxNumPictureInPictureActions < 3) return listOf(playPause)
+
+        val backInterval = chrome.skipBackwardInterval
+        val forwardInterval = chrome.skipForwardInterval
+        val (backIcon, backString) = when (backInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_left_10, R.string.player_back_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_left_15, R.string.player_back_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_left_30, R.string.player_back_30)
+        }
+        val (forwardIcon, forwardString) = when (forwardInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_right_10, R.string.player_forward_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_right_15, R.string.player_forward_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_right_30, R.string.player_forward_30)
+        }
         return listOf(
-            pipAction(R.drawable.ic_arrow_rotate_left_10, getString(R.string.player_back_10), PIP_CONTROL_REWIND),
+            pipAction(backIcon, getString(backString), PIP_CONTROL_REWIND),
             playPause,
-            pipAction(R.drawable.ic_arrow_rotate_right_10, getString(R.string.player_forward_10), PIP_CONTROL_FORWARD),
+            pipAction(forwardIcon, getString(forwardString), PIP_CONTROL_FORWARD),
         )
     }
 
@@ -757,11 +783,20 @@ class PlayerActivity : ComponentActivity() {
 
         val exoPlayer = player
         if (exoPlayer != null && event.keyCode in TRANSPORT_KEYS) {
-            // Consume both halves so no orphan ACTION_UP reaches a child.
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                handleTransportKey(exoPlayer, event.keyCode)
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+                KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                    handleFastForwardRewindKey(exoPlayer, event)
+                    return true
+                }
+                else -> {
+                    // Consume both halves so no orphan ACTION_UP reaches a child.
+                    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                        handleTransportKey(exoPlayer, event.keyCode)
+                    }
+                    return true
+                }
             }
-            return true
         }
 
         if (event.keyCode == KeyEvent.KEYCODE_BACK || event.keyCode == KeyEvent.KEYCODE_MENU) {
@@ -790,6 +825,60 @@ class PlayerActivity : ComponentActivity() {
         }
     }
 
+    private fun handleFastForwardRewindKey(exoPlayer: ExoPlayer, event: KeyEvent) {
+        val isForward = event.keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+        when (event.action) {
+            KeyEvent.ACTION_DOWN -> {
+                if (event.repeatCount == 0) {
+                    cancelMediaKeyHold()
+                    mediaKeyHoldActive = false
+                    activeHoldKeyCode = event.keyCode
+                    val runnable = Runnable {
+                        mediaKeyHoldActive = true
+                        val rate = if (isForward) chrome.holdRightRate else chrome.holdLeftRate
+                        chrome.beginHoldRate(exoPlayer, rate)
+                    }
+                    mediaKeyHoldRunnable = runnable
+                    mainHandler.postDelayed(runnable, 400L)
+                }
+                // Key repeats while the key is held must not also seek.
+            }
+            KeyEvent.ACTION_UP -> {
+                val runnable = mediaKeyHoldRunnable
+                if (runnable != null) {
+                    mainHandler.removeCallbacks(runnable)
+                    mediaKeyHoldRunnable = null
+                }
+                if (mediaKeyHoldActive) {
+                    mediaKeyHoldActive = false
+                    activeHoldKeyCode = null
+                    chrome.endHoldRate(exoPlayer)
+                } else if (!event.isCanceled && activeHoldKeyCode == event.keyCode) {
+                    activeHoldKeyCode = null
+                    if (isForward) {
+                        seekBy(exoPlayer, chrome, chrome.skipForwardInterval.millis)
+                    } else {
+                        seekBy(exoPlayer, chrome, -chrome.skipBackwardInterval.millis)
+                    }
+                } else {
+                    activeHoldKeyCode = null
+                }
+            }
+        }
+    }
+
+    private fun cancelMediaKeyHold() {
+        mediaKeyHoldRunnable?.let { mainHandler.removeCallbacks(it) }
+        mediaKeyHoldRunnable = null
+        if (mediaKeyHoldActive) {
+            mediaKeyHoldActive = false
+            activeHoldKeyCode = null
+            player?.let { chrome.endHoldRate(it) }
+        } else {
+            activeHoldKeyCode = null
+        }
+    }
+
     private fun handleTransportKey(exoPlayer: ExoPlayer, keyCode: Int) {
         when (keyCode) {
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
@@ -807,9 +896,9 @@ class PlayerActivity : ComponentActivity() {
                 chrome.showControls()
             }
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD ->
-                seekBy(exoPlayer, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+                seekBy(exoPlayer, chrome, chrome.skipForwardInterval.millis)
             KeyEvent.KEYCODE_MEDIA_REWIND ->
-                seekBy(exoPlayer, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+                seekBy(exoPlayer, chrome, -chrome.skipBackwardInterval.millis)
             KeyEvent.KEYCODE_MEDIA_NEXT -> switchToNeighbor(+1)
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> switchToNeighbor(-1)
             KeyEvent.KEYCODE_MEDIA_STOP -> finish()

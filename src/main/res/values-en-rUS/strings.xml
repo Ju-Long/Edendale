@@ -4,4 +4,16 @@
 <resources>
     <string name="settings_backup_note">Watch progress, favorites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
     <string name="tmdb_account_intro">Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB.</string>
+    <string name="settings_section_app_controls">App Controls</string>
+    <string name="settings_app_controls_skip_backward">Skip Back</string>
+    <string name="settings_app_controls_skip_forward">Skip Forward</string>
+    <string name="settings_app_controls_skip_note">Double-tap the left or right side of the video to skip back or forward.</string>
+    <string name="settings_app_controls_hold_left">Hold Left Side</string>
+    <string name="settings_app_controls_hold_right">Hold Right Side</string>
+    <string name="settings_app_controls_hold_note">Touch and hold the left or right side of the video to play at that speed until you let go.</string>
+    <string name="settings_seconds_format">%d seconds</string>
+    <string name="player_back_15">Back 15 seconds</string>
+    <string name="player_back_30">Back 30 seconds</string>
+    <string name="player_forward_15">Forward 15 seconds</string>
+    <string name="player_forward_30">Forward 30 seconds</string>
 </resources>

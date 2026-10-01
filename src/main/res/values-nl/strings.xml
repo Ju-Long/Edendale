@@ -279,4 +279,16 @@
         <item quantity="one">Nog %1$d overeenkomst.</item>
         <item quantity="other">Nog %1$d overeenkomsten.</item>
     </plurals>
+    <string name="settings_section_app_controls">App-bediening</string>
+    <string name="settings_app_controls_skip_backward">Terugspoelen</string>
+    <string name="settings_app_controls_skip_forward">Vooruitspoelen</string>
+    <string name="settings_app_controls_skip_note">Dubbeltik op de linker- of rechterkant van de video om terug of vooruit te springen.</string>
+    <string name="settings_app_controls_hold_left">Linkerkant vasthouden</string>
+    <string name="settings_app_controls_hold_right">Rechterkant vasthouden</string>
+    <string name="settings_app_controls_hold_note">Houd de linker- of rechterkant van de video ingedrukt om met die snelheid af te spelen tot je loslaat.</string>
+    <string name="settings_seconds_format">%d seconden</string>
+    <string name="player_back_15">15 seconden terug</string>
+    <string name="player_back_30">30 seconden terug</string>
+    <string name="player_forward_15">15 seconden vooruit</string>
+    <string name="player_forward_30">30 seconden vooruit</string>
 </resources>

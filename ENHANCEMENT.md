@@ -337,32 +337,32 @@ All new device-local player settings go through one small layer.
   without restarting playback. They stay on the device and are never synced.
 
 **Checklist:**
-- [ ] **B.1.1** Pure `SkipInterval` enum (10/15/30), `normalizedHoldRate`,
+- [x] **B.1.1** Pure `SkipInterval` enum (10/15/30), `normalizedHoldRate`,
   parsing, and defaults (A.3).
-- [ ] **B.1.2** Replace `PlayerLogic.HOLD_SLOW_RATE`, `HOLD_FAST_RATE`, and
+- [x] **B.1.2** Replace `PlayerLogic.HOLD_SLOW_RATE`, `HOLD_FAST_RATE`, and
   `holdRate(...)` with a side function (left or right half) plus the stored
   rates. Replace every use of `SEEK_STEP_MILLIS` with the stored lengths, and
   update KDoc that mentions 0.5×, 1.5×, or 10 s.
-- [ ] **B.1.3** Wire the lengths into the `PlayerGestureLayer` double-tap, the ±
+- [x] **B.1.3** Wire the lengths into the `PlayerGestureLayer` double-tap, the ±
   controls in `PlayerControlsOverlay`, the `RevealCatcher` D-pad seeks
   (`remoteSeek`), `handleTransportKey`, and `pipActions` (icon and label for
   each length).
-- [ ] **B.1.4** TV (D2): fast-forward or rewind held for 400 ms or more calls
+- [x] **B.1.4** TV (D2): fast-forward or rewind held for 400 ms or more calls
   `beginHoldRate` with the right or left rate until key up; a shorter press
   skips. Key repeats while the key is held must not also seek.
-- [ ] **B.1.5** The Settings → App Controls section (position per K), with the
+- [x] **B.1.5** The Settings → App Controls section (position per K), with the
   two segmented skip controls and two −/value/+ hold steppers. The value is
   shown like `0.50×` via `PlayerLogic.rateLabel`. It works with the D-pad on TV.
-- [ ] **B.1.6** `PlayerActivity` listens for preference changes and refreshes
+- [x] **B.1.6** `PlayerActivity` listens for preference changes and refreshes
   the PiP params (and the MediaSession, once C.6 lands).
 
 **Tests (JVM):**
-- [ ] **B.1.T1** `PlayerControlPreferencesTest`: defaults; 10/15/30 round trip;
+- [x] **B.1.T1** `PlayerControlPreferencesTest`: defaults; 10/15/30 round trip;
   unknown integers (0, 20, −10) read as 10; hold snapping (0.3 → 0.25,
   0.4 → 0.5, 2.6 → 2.5); clamping (0.1 → 0.25, 5 → 3.0); NaN and ±∞ → 0.25;
   missing keys → 0.5 / 2.0. Port the remaining cases from
   `PlayerControlPreferencesTests`.
-- [ ] **B.1.T2** `PlayerLogicTest`: the hold side for the left half, the right
+- [x] **B.1.T2** `PlayerLogicTest`: the hold side for the left half, the right
   half, and the exact midpoint (keep the old boundary: `x < width / 2` is left).
 
 **On device:**
@@ -1789,6 +1789,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | A.3 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run | Implemented PlayerPreferences and PlayerControlPreferencesTest |
 | 2026-10-01 | A.4 | — | not run | Established string prefixes and 18-locale translation convention |
 | 2026-10-01 | A.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass | not run | Configured androidTest source set, runner, dependencies, and generate.sh |
+| 2026-10-01 | B.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run (no emulator/device connected in CI environment) | Skip lengths (10/15/30) and hold rates (0.25-3.00x) wired to gestures, controls, PiP, TV D2 keys, and Settings |
 
 ---
 
@@ -1801,8 +1802,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.2 | Media3 1.9.0 | Complete | f975bc1 |
 | A.3 | Player preference store | Complete | 27f16f7 |
 | A.4 | Strings and translations | Complete | 6f93abb |
-| A.5 | Test conventions | Complete | |
-| B.1 | App Controls | Not started | |
+| A.5 | Test conventions | Complete | 4310f03 |
+| B.1 | App Controls | Complete | |
 | B.2 | Persisted state and per-title memory | Not started | |
 | B.3 | Track pickers and panel order | Not started | |
 | B.4 | Subtitle appearance and placement | Not started | |

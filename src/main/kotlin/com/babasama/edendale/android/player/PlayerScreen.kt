@@ -378,11 +378,11 @@ private fun BoxScope.RevealCatcher(
                 val act = repeat == 0 || repeat % 4 == 0
                 when (event.key) {
                     Key.DirectionLeft -> {
-                        if (act) chrome.remoteSeek(player, -PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) chrome.remoteSeek(player, -chrome.skipBackwardInterval.millis)
                         true
                     }
                     Key.DirectionRight -> {
-                        if (act) chrome.remoteSeek(player, PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) chrome.remoteSeek(player, chrome.skipForwardInterval.millis)
                         true
                     }
                     Key.DirectionDown -> {
@@ -517,6 +517,17 @@ private fun PlayerControlsOverlay(
             )
         }
 
+        val (backIcon, backString) = when (chrome.skipBackwardInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_left_10, R.string.player_back_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_left_15, R.string.player_back_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_left_30, R.string.player_back_30)
+        }
+        val (forwardIcon, forwardString) = when (chrome.skipForwardInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_right_10, R.string.player_forward_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_right_15, R.string.player_forward_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_right_30, R.string.player_forward_30)
+        }
+
         Row(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -531,7 +542,7 @@ private fun PlayerControlsOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ArchiveIconButton(
-                onClick = { seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS) },
+                onClick = { seekBy(player, chrome, -chrome.skipBackwardInterval.millis) },
                 modifier = Modifier
                     .size(56.dp)
                     .focusProperties { canFocus = controlsFocusable }
@@ -539,8 +550,8 @@ private fun PlayerControlsOverlay(
                 isTelevision = isTelevision,
             ) { focused ->
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_rotate_left_10),
-                    contentDescription = stringResource(R.string.player_back_10),
+                    painter = painterResource(id = backIcon),
+                    contentDescription = stringResource(backString),
                     modifier = Modifier.size(34.dp),
                     tint = if (focused) EdendaleColors.OnGold
                     else MaterialTheme.colorScheme.onBackground,
@@ -582,7 +593,7 @@ private fun PlayerControlsOverlay(
                 }
             }
             ArchiveIconButton(
-                onClick = { seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS) },
+                onClick = { seekBy(player, chrome, chrome.skipForwardInterval.millis) },
                 modifier = Modifier
                     .size(56.dp)
                     .focusProperties { canFocus = controlsFocusable }
@@ -590,8 +601,8 @@ private fun PlayerControlsOverlay(
                 isTelevision = isTelevision,
             ) { focused ->
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_rotate_right_10),
-                    contentDescription = stringResource(R.string.player_forward_10),
+                    painter = painterResource(id = forwardIcon),
+                    contentDescription = stringResource(forwardString),
                     modifier = Modifier.size(34.dp),
                     tint = if (focused) EdendaleColors.OnGold
                     else MaterialTheme.colorScheme.onBackground,
@@ -712,12 +723,12 @@ private fun TimelineBar(
                 val act = repeat == 0 || repeat % 4 == 0
                 when (event.key) {
                     Key.DirectionLeft -> {
-                        if (act) seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) seekBy(player, chrome, -chrome.skipBackwardInterval.millis)
                         chrome.showControls()
                         true
                     }
                     Key.DirectionRight -> {
-                        if (act) seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) seekBy(player, chrome, chrome.skipForwardInterval.millis)
                         chrome.showControls()
                         true
                     }
@@ -1747,12 +1758,12 @@ private fun BoxScope.PlayerGestureLayer(
                     onTap = { chrome.toggleControls() },
                     onDoubleTap = { offset ->
                         when ((offset.x / size.width * 3).toInt().coerceIn(0, 2)) {
-                            0 -> seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+                            0 -> seekBy(player, chrome, -chrome.skipBackwardInterval.millis)
                             1 -> {
                                 if (player.isPlaying) player.pause() else player.play()
                                 chrome.showControls()
                             }
-                            else -> seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+                            else -> seekBy(player, chrome, chrome.skipForwardInterval.millis)
                         }
                     },
                 )
@@ -1786,7 +1797,12 @@ private fun BoxScope.PlayerGestureLayer(
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 chrome.beginHoldRate(
                                     player,
-                                    PlayerLogic.holdRate(down.position.x, size.width.toFloat()),
+                                    PlayerLogic.holdRate(
+                                        touchX = down.position.x,
+                                        width = size.width.toFloat(),
+                                        leftRate = chrome.holdLeftRate,
+                                        rightRate = chrome.holdRightRate,
+                                    ),
                                 )
                                 GestureMode.HOLD_SPEED
                             } else {

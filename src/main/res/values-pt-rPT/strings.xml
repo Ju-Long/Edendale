@@ -279,4 +279,16 @@
         <item quantity="one">Mais %1$d correspondência.</item>
         <item quantity="other">Mais %1$d correspondências.</item>
     </plurals>
+    <string name="settings_section_app_controls">Controlos da aplicação</string>
+    <string name="settings_app_controls_skip_backward">Recuar</string>
+    <string name="settings_app_controls_skip_forward">Avançar</string>
+    <string name="settings_app_controls_skip_note">Dê dois toques no lado esquerdo ou direito do vídeo para recuar ou avançar.</string>
+    <string name="settings_app_controls_hold_left">Manter lado esquerdo</string>
+    <string name="settings_app_controls_hold_right">Manter lado direito</string>
+    <string name="settings_app_controls_hold_note">Toque e mantenha premido o lado esquerdo ou direito do vídeo para reproduzir a essa velocidade até soltar.</string>
+    <string name="settings_seconds_format">%d segundos</string>
+    <string name="player_back_15">Recuar 15 segundos</string>
+    <string name="player_back_30">Recuar 30 segundos</string>
+    <string name="player_forward_15">Avançar 15 segundos</string>
+    <string name="player_forward_30">Avançar 30 segundos</string>
 </resources>

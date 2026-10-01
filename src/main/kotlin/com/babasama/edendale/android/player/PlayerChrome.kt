@@ -36,6 +36,13 @@ internal sealed interface PlayerHud {
  */
 internal class PlayerChromeState(private val prefs: SharedPreferences) {
 
+    val preferences: PlayerPreferences = PlayerPreferences(prefs)
+
+    val skipBackwardInterval: SkipInterval get() = preferences.skipBackwardInterval
+    val skipForwardInterval: SkipInterval get() = preferences.skipForwardInterval
+    val holdLeftRate: Float get() = preferences.holdLeftRate
+    val holdRightRate: Float get() = preferences.holdRightRate
+
     // ------------------------------------------------------------------
     // Visibility
     // ------------------------------------------------------------------
@@ -268,7 +275,7 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     }
 }
 
-/** Relative seek with HUD feedback — the ±10 s buttons, D-pad, and media keys. */
+/** Relative seek with HUD feedback — the ±buttons, D-pad, and media keys. */
 internal fun seekBy(player: Player, chrome: PlayerChromeState, offsetMillis: Long) {
     val duration = player.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: 0L
     player.seekTo(PlayerLogic.seekTargetMillis(player.currentPosition, offsetMillis, duration))

@@ -275,4 +275,16 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">%1$d개가 더 일치합니다.</item>
     </plurals>
+    <string name="settings_section_app_controls">앱 제어</string>
+    <string name="settings_app_controls_skip_backward">뒤로 건너뛰기</string>
+    <string name="settings_app_controls_skip_forward">앞으로 건너뛰기</string>
+    <string name="settings_app_controls_skip_note">비디오의 왼쪽이나 오른쪽을 두 번 탭하여 뒤로 또는 앞으로 건너뜁니다.</string>
+    <string name="settings_app_controls_hold_left">왼쪽 길게 누르기</string>
+    <string name="settings_app_controls_hold_right">오른쪽 길게 누르기</string>
+    <string name="settings_app_controls_hold_note">비디오의 왼쪽이나 오른쪽을 길게 누르면 손을 뗄 때까지 해당 속도로 재생됩니다.</string>
+    <string name="settings_seconds_format">%d초</string>
+    <string name="player_back_15">15초 뒤로</string>
+    <string name="player_back_30">30초 뒤로</string>
+    <string name="player_forward_15">15초 앞으로</string>
+    <string name="player_forward_30">30초 앞으로</string>
 </resources>

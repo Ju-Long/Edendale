@@ -279,4 +279,16 @@
         <item quantity="one">%1$d altra corrispondenza.</item>
         <item quantity="other">%1$d altre corrispondenze.</item>
     </plurals>
+    <string name="settings_section_app_controls">Controlli dell\'app</string>
+    <string name="settings_app_controls_skip_backward">Salta indietro</string>
+    <string name="settings_app_controls_skip_forward">Salta avanti</string>
+    <string name="settings_app_controls_skip_note">Tocca due volte il lato sinistro o destro del video per saltare indietro o avanti.</string>
+    <string name="settings_app_controls_hold_left">Tieni premuto lato sinistro</string>
+    <string name="settings_app_controls_hold_right">Tieni premuto lato destro</string>
+    <string name="settings_app_controls_hold_note">Tieni premuto il lato sinistro o destro del video per riprodurre a quella velocità finché non rilasci.</string>
+    <string name="settings_seconds_format">%d secondi</string>
+    <string name="player_back_15">Indietro di 15 secondi</string>
+    <string name="player_back_30">Indietro di 30 secondi</string>
+    <string name="player_forward_15">Avanti di 15 secondi</string>
+    <string name="player_forward_30">Avanti di 30 secondi</string>
 </resources>

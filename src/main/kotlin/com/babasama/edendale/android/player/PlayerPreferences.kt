@@ -12,6 +12,8 @@ enum class SkipInterval(val seconds: Int) {
     FIFTEEN(15),
     THIRTY(30);
 
+    val millis: Long get() = seconds * 1000L
+
     companion object {
         val DEFAULT = TEN
 

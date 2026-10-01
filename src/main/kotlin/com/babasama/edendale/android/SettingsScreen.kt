@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,6 +59,11 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SmbClient
 import com.babasama.edendale.android.data.WyzieKeyStore
+import com.babasama.edendale.android.player.PlayerLogic
+import com.babasama.edendale.android.player.PlayerPreferences
+import com.babasama.edendale.android.player.PlayerPreferencesRules
+import com.babasama.edendale.android.player.SkipDirection
+import com.babasama.edendale.android.player.SkipInterval
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -219,6 +226,12 @@ fun SettingsScreen(
                     InfoRow(stringResource(R.string.settings_android_tv_note))
                 }
             }
+        }
+
+        item {
+            AppControlsSettingsSection(
+                isTelevision = isTelevision,
+            )
         }
 
         item {
@@ -929,6 +942,227 @@ private fun RemoveSourceDialog(
             )
         },
     )
+}
+
+@Composable
+private fun AppControlsSettingsSection(
+    isTelevision: Boolean,
+) {
+    val context = LocalContext.current
+    val playerPreferences = remember(context) { PlayerPreferences.from(context) }
+    var skipBackward by remember { mutableStateOf(playerPreferences.skipBackwardInterval) }
+    var skipForward by remember { mutableStateOf(playerPreferences.skipForwardInterval) }
+    var holdLeft by remember { mutableStateOf(playerPreferences.holdLeftRate) }
+    var holdRight by remember { mutableStateOf(playerPreferences.holdRightRate) }
+
+    SettingsSection(
+        header = stringResource(R.string.settings_section_app_controls),
+        isTelevision = isTelevision,
+        focusableContent = false,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_skip_backward),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            SkipSegmentGroup(
+                direction = SkipDirection.BACKWARD,
+                selected = skipBackward,
+                isTelevision = isTelevision,
+                onSelect = {
+                    skipBackward = it
+                    playerPreferences.skipBackwardInterval = it
+                },
+            )
+        }
+
+        SettingsRowDivider()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_skip_forward),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            SkipSegmentGroup(
+                direction = SkipDirection.FORWARD,
+                selected = skipForward,
+                isTelevision = isTelevision,
+                onSelect = {
+                    skipForward = it
+                    playerPreferences.skipForwardInterval = it
+                },
+            )
+        }
+
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_app_controls_skip_note))
+        SettingsRowDivider()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_hold_left),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            HoldSpeedStepper(
+                rate = holdLeft,
+                isTelevision = isTelevision,
+                onRateChange = {
+                    val normalized = PlayerPreferencesRules.normalizeHoldRate(it)
+                    holdLeft = normalized
+                    playerPreferences.holdLeftRate = normalized
+                },
+            )
+        }
+
+        SettingsRowDivider()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_hold_right),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            HoldSpeedStepper(
+                rate = holdRight,
+                isTelevision = isTelevision,
+                onRateChange = {
+                    val normalized = PlayerPreferencesRules.normalizeHoldRate(it)
+                    holdRight = normalized
+                    playerPreferences.holdRightRate = normalized
+                },
+            )
+        }
+
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_app_controls_hold_note))
+    }
+}
+
+@Composable
+private fun SkipSegmentGroup(
+    direction: SkipDirection,
+    selected: SkipInterval,
+    isTelevision: Boolean,
+    onSelect: (SkipInterval) -> Unit,
+) {
+    Surface(
+        shape = CircleShape,
+        color = EdendaleColors.Surface,
+    ) {
+        Row(
+            modifier = Modifier.padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SkipInterval.entries.forEach { interval ->
+                val isSelected = interval == selected
+                val iconRes = when (direction) {
+                    SkipDirection.BACKWARD -> when (interval) {
+                        SkipInterval.TEN -> R.drawable.ic_arrow_rotate_left_10
+                        SkipInterval.FIFTEEN -> R.drawable.ic_arrow_rotate_left_15
+                        SkipInterval.THIRTY -> R.drawable.ic_arrow_rotate_left_30
+                    }
+                    SkipDirection.FORWARD -> when (interval) {
+                        SkipInterval.TEN -> R.drawable.ic_arrow_rotate_right_10
+                        SkipInterval.FIFTEEN -> R.drawable.ic_arrow_rotate_right_15
+                        SkipInterval.THIRTY -> R.drawable.ic_arrow_rotate_right_30
+                    }
+                }
+                Surface(
+                    onClick = { onSelect(interval) },
+                    modifier = Modifier
+                        .size(width = 48.dp, height = 36.dp)
+                        .tvFocusLift(isTelevision, CircleShape),
+                    shape = CircleShape,
+                    color = if (isSelected) EdendaleColors.Gold else Color.Transparent,
+                    contentColor = if (isSelected) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = stringResource(R.string.settings_seconds_format, interval.seconds),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HoldSpeedStepper(
+    rate: Float,
+    isTelevision: Boolean,
+    onRateChange: (Float) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        ArchiveIconButton(
+            onClick = { onRateChange(rate - PlayerPreferencesRules.HOLD_RATE_STEP) },
+            modifier = Modifier.size(40.dp),
+            enabled = rate > PlayerPreferencesRules.HOLD_RATE_MIN,
+            isTelevision = isTelevision,
+        ) { focused ->
+            Text(
+                text = "−",
+                style = MaterialTheme.typography.titleLarge,
+                color = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Text(
+            text = PlayerLogic.rateLabel(rate),
+            modifier = Modifier.widthIn(min = 64.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = EdendaleColors.Gold,
+            textAlign = TextAlign.Center,
+        )
+        ArchiveIconButton(
+            onClick = { onRateChange(rate + PlayerPreferencesRules.HOLD_RATE_STEP) },
+            modifier = Modifier.size(40.dp),
+            enabled = rate < PlayerPreferencesRules.HOLD_RATE_MAX,
+            isTelevision = isTelevision,
+        ) { focused ->
+            Text(
+                text = "+",
+                style = MaterialTheme.typography.titleLarge,
+                color = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
 }
 
 private const val WYZIE_REDEEM_URL = "https://store.wyzie.io/redeem"

@@ -59,11 +59,15 @@ class PlayerLogicTest {
     // ------------------------------------------------------------------
 
     @Test
-    fun holdRateComesFromTheHalfThePressStartedIn() {
-        assertEquals(PlayerLogic.HOLD_SLOW_RATE, PlayerLogic.holdRate(touchX = 10f, width = 100f))
-        assertEquals(PlayerLogic.HOLD_FAST_RATE, PlayerLogic.holdRate(touchX = 90f, width = 100f))
-        // Dead centre counts as the fast half rather than falling through.
-        assertEquals(PlayerLogic.HOLD_FAST_RATE, PlayerLogic.holdRate(touchX = 50f, width = 100f))
+    fun holdSideForLeftRightAndMidpoint() {
+        assertEquals(HoldSide.LEFT, PlayerLogic.holdSide(touchX = 10f, width = 100f))
+        assertEquals(HoldSide.RIGHT, PlayerLogic.holdSide(touchX = 90f, width = 100f))
+        // Exact midpoint counts as the right half.
+        assertEquals(HoldSide.RIGHT, PlayerLogic.holdSide(touchX = 50f, width = 100f))
+
+        assertEquals(0.5f, PlayerLogic.holdRate(touchX = 10f, width = 100f, leftRate = 0.5f, rightRate = 2.0f))
+        assertEquals(2.0f, PlayerLogic.holdRate(touchX = 90f, width = 100f, leftRate = 0.5f, rightRate = 2.0f))
+        assertEquals(2.0f, PlayerLogic.holdRate(touchX = 50f, width = 100f, leftRate = 0.5f, rightRate = 2.0f))
     }
 
     // ------------------------------------------------------------------

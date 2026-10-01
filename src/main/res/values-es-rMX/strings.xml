@@ -279,4 +279,16 @@
         <item quantity="one">%1$d coincidencia más.</item>
         <item quantity="other">%1$d coincidencias más.</item>
     </plurals>
+    <string name="settings_section_app_controls">Controles de la app</string>
+    <string name="settings_app_controls_skip_backward">Retroceder</string>
+    <string name="settings_app_controls_skip_forward">Avanzar</string>
+    <string name="settings_app_controls_skip_note">Toca dos veces el lado izquierdo o derecho del vídeo para retroceder o avanzar.</string>
+    <string name="settings_app_controls_hold_left">Mantener lado izquierdo</string>
+    <string name="settings_app_controls_hold_right">Mantener lado derecho</string>
+    <string name="settings_app_controls_hold_note">Mantén pulsado el lado izquierdo o derecho del vídeo para reproducir a esa velocidad hasta que sueltes.</string>
+    <string name="settings_seconds_format">%d segundos</string>
+    <string name="player_back_15">Retroceder 15 segundos</string>
+    <string name="player_back_30">Retroceder 30 segundos</string>
+    <string name="player_forward_15">Avanzar 15 segundos</string>
+    <string name="player_forward_30">Avanzar 30 segundos</string>
 </resources>

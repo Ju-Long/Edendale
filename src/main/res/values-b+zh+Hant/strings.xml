@@ -275,4 +275,16 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">還有 %1$d 個配對項目。</item>
     </plurals>
+    <string name="settings_section_app_controls">應用程式控制</string>
+    <string name="settings_app_controls_skip_backward">倒退</string>
+    <string name="settings_app_controls_skip_forward">快轉</string>
+    <string name="settings_app_controls_skip_note">點兩下影片左側或右側以倒退或快轉。</string>
+    <string name="settings_app_controls_hold_left">按住左側</string>
+    <string name="settings_app_controls_hold_right">按住右側</string>
+    <string name="settings_app_controls_hold_note">按住影片左側或右側以該速度播放，放開即可恢復。</string>
+    <string name="settings_seconds_format">%d 秒</string>
+    <string name="player_back_15">倒退 15 秒</string>
+    <string name="player_back_30">倒退 30 秒</string>
+    <string name="player_forward_15">快轉 15 秒</string>
+    <string name="player_forward_30">快轉 30 秒</string>
 </resources>

@@ -105,18 +105,25 @@ object PlayerLogic {
     // ------------------------------------------------------------------
 
     /**
-     * Rates a touch press-and-hold engages: the left half of the surface
-     * slows down, the right half speeds up, reverting the moment the finger
-     * lifts. These match the iOS gesture rather than tvOS's touch-surface
-     * hold — an Android TV remote has no absolute touch position, so the
-     * D-pad drives accumulated seeking instead (see [seekTargetMillis]).
+     * Determines which side of the surface a touch press-and-hold started in.
+     * The left half engages the left hold rate, and the right half (including
+     * the exact midpoint) engages the right hold rate.
      */
-    const val HOLD_SLOW_RATE: Float = 0.5f
-    const val HOLD_FAST_RATE: Float = 1.5f
+    fun holdSide(touchX: Float, width: Float): HoldSide =
+        if (touchX < width / 2f) HoldSide.LEFT else HoldSide.RIGHT
 
-    /** Which hold rate a press starting at [touchX] on a [width]-wide surface implies. */
-    fun holdRate(touchX: Float, width: Float): Float =
-        if (touchX < width / 2f) HOLD_SLOW_RATE else HOLD_FAST_RATE
+    /**
+     * Which hold rate a press starting at [touchX] on a [width]-wide surface implies.
+     */
+    fun holdRate(
+        touchX: Float,
+        width: Float,
+        leftRate: Float = PlayerPreferencesRules.DEFAULT_HOLD_LEFT_RATE,
+        rightRate: Float = PlayerPreferencesRules.DEFAULT_HOLD_RIGHT_RATE,
+    ): Float = when (holdSide(touchX, width)) {
+        HoldSide.LEFT -> leftRate
+        HoldSide.RIGHT -> rightRate
+    }
 
     // ------------------------------------------------------------------
     // Time formatting
@@ -194,9 +201,6 @@ object PlayerLogic {
     // ------------------------------------------------------------------
     // Seeking
     // ------------------------------------------------------------------
-
-    /** Step for the ±buttons, the D-pad, and the media transport keys. */
-    const val SEEK_STEP_MILLIS: Long = 10_000
 
     /**
      * A relative seek clamped to the timeline. An unknown duration clamps at

@@ -287,4 +287,16 @@
         <item quantity="many">Ещё %1$d совпадений.</item>
         <item quantity="other">Ещё %1$d совпадения.</item>
     </plurals>
+    <string name="settings_section_app_controls">Управление приложением</string>
+    <string name="settings_app_controls_skip_backward">Перемотка назад</string>
+    <string name="settings_app_controls_skip_forward">Перемотка вперед</string>
+    <string name="settings_app_controls_skip_note">Дважды коснитесь левой или правой части видео для перемотки назад или вперед.</string>
+    <string name="settings_app_controls_hold_left">Удерживать левую сторону</string>
+    <string name="settings_app_controls_hold_right">Удерживать правую сторону</string>
+    <string name="settings_app_controls_hold_note">Нажмите и удерживайте левую или правую часть видео для воспроизведения с этой скоростью.</string>
+    <string name="settings_seconds_format">%d сек.</string>
+    <string name="player_back_15">Назад на 15 секунд</string>
+    <string name="player_back_30">Назад на 30 секунд</string>
+    <string name="player_forward_15">Вперед на 15 секунд</string>
+    <string name="player_forward_30">Вперед на 30 секунд</string>
 </resources>
