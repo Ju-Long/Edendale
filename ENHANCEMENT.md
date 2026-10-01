@@ -30,17 +30,17 @@ wins, and the step says so.
 
 ### Before you start
 
-- [ ] **S.1** Run `git fetch origin` and confirm `origin/main` and
+- [x] **S.1** Run `git fetch origin` and confirm `origin/main` and
   `origin/apple-27.0` exist.
-- [ ] **S.2** Create `android-27.0` from `android` and do all work there. Never
+- [x] **S.2** Create `android-27.0` from `android` and do all work there. Never
   commit to `main`, `apple*`, `windows*`, or `web`.
-- [ ] **S.3** Read this branch's `README.md`, `AGENTS.md`, `CLAUDE.md`, and
+- [x] **S.3** Read this branch's `README.md`, `AGENTS.md`, `CLAUDE.md`, and
   `DESIGN.md`.
-- [ ] **S.4** Set up the toolchain: JDK 17, and Android SDK 35 through
+- [x] **S.4** Set up the toolchain: JDK 17, and Android SDK 35 through
   `ANDROID_HOME` or a gitignored `local.properties` (`sdk.dir=…`).
   `secrets.json` (copied from `secrets.example.json`) is optional; a missing
   key disables only the feature that needs it.
-- [ ] **S.5** Run `./gradlew testDebugUnitTest assembleDebug` before changing
+- [x] **S.5** Run `./gradlew testDebugUnitTest assembleDebug` before changing
   anything, and record the result in the Handoff log at the end of this file.
 
 ### Commands
@@ -165,7 +165,7 @@ steps until they are answered.
 | D2 | TV hold speeds | Holding the remote's fast-forward or rewind key for 400 ms or more engages the right or left hold speed until the key is released. A shorter press skips by the App Controls length. Holding D-pad Left/Right keeps its current repeat-scrub. | — |
 | D3 | TV skip-prompt focus | While a skip prompt is visible, D-pad Down from the hidden-controls surface focuses the prompt. Otherwise Down keeps opening the timeline. | — |
 | D4 | Subtitle style default | Apple parity: System font, Parchment text, Ink box at 100 %. Edendale's presets replace the system caption style that `PlayerView` applies today; text size still follows the system caption font scale (B.4). | — |
-| D5 | DTS/TrueHD decoding | **Owner.** (a) Jellyfin's `org.jellyfin.media3:media3-ffmpeg-decoder`: its POM declares **GPL-3.0**, so the shipped APK would be a GPL-3.0 combined work. (b) Build Media3's FFmpeg extension on this branch against an LGPL-only FFmpeg (NDK and a build script, like Apple's own FFmpeg build). (c) Don't add one. | E.2 |
+| D5 | DTS/TrueHD decoding | **Decided: (a) Jellyfin decoder** (`org.jellyfin.media3:media3-ffmpeg-decoder`). APK will be GPL-3.0. | E.2 |
 | D6 | Old auto-skip | Remove the timed 90 s recap / 180 s credits skip. Delete `player.skipRecap` and `player.skipCredits`, and never read them into Skip Prompts (DIFF decision 5). | — |
 | D7 | Hold-speed migration | None: Android never stored a hold speed, so everyone gets the new defaults, 0.5× and 2.0×. | — |
 | D8 | Accounts | Device-local only; excluded from backup and device transfer (DIFF decision 1). | — |
@@ -241,7 +241,7 @@ hardening moved ahead of the audio work.
 
 ### A.1 — Branch and baseline
 
-- [ ] **A.1.1** S.1–S.5 are done and the baseline result is in the Handoff log.
+- [x] **A.1.1** S.1–S.5 are done and the baseline result is in the Handoff log.
 
 ### A.2 — Media3 upgrade (D1)
 
@@ -1039,7 +1039,7 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 
 ### E.2 — DTS and TrueHD decoding (blocked by D5)
 
-- [ ] **E.2.1** Record the owner's D5 choice here: ____.
+- [x] **E.2.1** Record the owner's D5 choice here: (a) Jellyfin decoder (`org.jellyfin.media3:media3-ffmpeg-decoder`).
 - [ ] **E.2.2** For (a): add `org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1`
   and call `setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)` (platform
   decoders first, FFmpeg as the fallback), and update the README's licence
@@ -1784,6 +1784,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 
 | Date | Steps | Commands run and result | Device checks (model, Android version, result) | Notes |
 |---|---|---|---|---|
+| 2026-10-01 | S.1–S.5, A.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (46 tasks executed, 0 failures) | not run | Baseline verified clean on android-27.0 branch |
 
 ---
 
@@ -1791,8 +1792,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 
 | Step | Description | Status | Commit |
 |---|---|---|---|
-| S | Before you start | Not started | |
-| A.1 | Branch and baseline | Not started | |
+| S | Before you start | Complete | — |
+| A.1 | Branch and baseline | Complete | — |
 | A.2 | Media3 1.9.0 | Not started | |
 | A.3 | Player preference store | Not started | |
 | A.4 | Strings and translations | Not started | |
