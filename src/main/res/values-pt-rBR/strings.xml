@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">Nenhuma faixa de legenda neste arquivo.</string>
     <string name="player_track_number">Faixa %1$d</string>
     <string name="player_playback">Reprodução</string>
+    <string name="player_skip_intro">Pular introdução</string>
+    <string name="player_skip_recap">Pular resumo</string>
+    <string name="player_skip_credits">Pular créditos</string>
+    <string name="player_skip_prompts">Avisos para pular</string>
+    <string name="player_skip_prompts_detail">Buscar marcadores de introdução, resumo e créditos no TheIntroDB</string>
+    <string name="settings_skip_prompts_note">Quando ativado, o TheIntroDB recebe o ID do TMDB do título, números de episódios, duração do vídeo e seu endereço IP. Pular sempre requer pressionar um botão.</string>
+    <string name="settings_theintrodb_link">Marcadores por TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Política de Privacidade do TheIntroDB</string>
     <string name="player_loop">Repetir Vídeo</string>
     <string name="player_loop_detail">Reiniciar a reprodução ao terminar</string>
     <string name="player_auto_pip">Picture in Picture automático</string>

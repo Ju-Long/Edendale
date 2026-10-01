@@ -50,6 +50,10 @@ import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.isTelevisionDevice
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
+import com.babasama.edendale.introdb.IntroDbMedia
+import com.babasama.edendale.introdb.PlaybackSegment
+import com.babasama.edendale.introdb.PlayerSegmentController
+import com.babasama.edendale.introdb.SkipAction
 import com.babasama.edendale.wyzie.WyzieException
 import com.babasama.edendale.wyzie.WyzieSubtitle
 import com.babasama.edendale.wyzie.WyzieSubtitleQuery
@@ -101,6 +105,15 @@ class PlayerActivity : ComponentActivity() {
     private val tracksState = mutableStateOf(Tracks.EMPTY)
     private val wyzieConfiguredState = mutableStateOf(false)
     private val wyzieLookupState = mutableStateOf<WyzieLookup?>(null)
+    private val activeSegmentState = mutableStateOf<PlaybackSegment?>(null)
+
+    private val segmentController by lazy {
+        PlayerSegmentController(
+            preferences = chrome.preferences,
+            onActiveSegmentChanged = { activeSegmentState.value = it },
+            lookup = { request -> AndroidEdendaleCore.introDbService().segments(request) },
+        )
+    }
 
     private data class AttachedSubtitle(
         val subtitle: WyzieSubtitle,
@@ -200,6 +213,10 @@ class PlayerActivity : ComponentActivity() {
             season = season,
             episode = episode,
         )
+        segmentController.begin(
+            itemId = uri.toString(),
+            media = introDbMedia(tmdbId, isEpisode, showTmdbId, season, episode),
+        )
         if (tmdbId != null) {
             progressKey = ProgressKey(
                 tmdbId = tmdbId,
@@ -281,6 +298,7 @@ class PlayerActivity : ComponentActivity() {
                     onlineSubtitles = onlineSubtitles,
                     wyzieConfigured = wyzieConfiguredState,
                     wyzieLookup = wyzieLookupState,
+                    activeSegment = activeSegmentState,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
@@ -288,6 +306,7 @@ class PlayerActivity : ComponentActivity() {
                     onSelectEntry = ::switchTo,
                     onSearchOnlineSubtitles = ::searchOnlineSubtitles,
                     onDownloadOnlineSubtitle = ::downloadOnlineSubtitle,
+                    onSkip = { performSkip() },
                     onClose = { finish() },
                 )
             }
@@ -383,6 +402,16 @@ class PlayerActivity : ComponentActivity() {
             showTmdbId = entry.showTmdbId,
             season = entry.season,
             episode = entry.episode,
+        )
+        segmentController.begin(
+            itemId = entry.uri,
+            media = introDbMedia(
+                tmdbId = entry.tmdbId,
+                isEpisode = entry.isEpisode,
+                showTmdbId = entry.showTmdbId,
+                season = entry.season,
+                episode = entry.episode,
+            ),
         )
         titleState.value = entry.title
         subtitleState.value = entry.detail
@@ -533,8 +562,14 @@ class PlayerActivity : ComponentActivity() {
     /**
      * Driven by the UI's position ticker.
      */
-    @Suppress("UNUSED_PARAMETER")
     internal fun onPlaybackTick(positionMillis: Long, durationMillis: Long) {
+        val exoPlayer = player ?: return
+        segmentController.update(
+            positionMillis = positionMillis,
+            durationMillis = durationMillis.takeIf { it > 0 },
+            isSeekable = exoPlayer.isCurrentMediaItemSeekable,
+        )
+        activeSegmentState.value = segmentController.activeSegment
     }
 
     // ------------------------------------------------------------------
@@ -584,6 +619,7 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         prefsSubscription?.close()
+        segmentController.end()
         writeProgress()
         searchJob?.cancel()
         downloadJob?.cancel()
@@ -742,6 +778,15 @@ class PlayerActivity : ComponentActivity() {
 
         if (!::chrome.isInitialized) return super.dispatchKeyEvent(event)
 
+        if (event.keyCode == KeyEvent.KEYCODE_S) {
+            if (activeSegmentState.value != null) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    performSkip()
+                }
+                return true
+            }
+        }
+
         val exoPlayer = player
         if (exoPlayer != null && event.keyCode in TRANSPORT_KEYS) {
             when (event.keyCode) {
@@ -898,6 +943,49 @@ class PlayerActivity : ComponentActivity() {
                 ),
             )
         }
+    }
+
+    internal fun performSkip(): Boolean {
+        val exoPlayer = player ?: return false
+        val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 }
+        val action = segmentController.consumeSkip(
+            positionMillis = exoPlayer.currentPosition,
+            durationMillis = duration,
+            isSeekable = exoPlayer.isCurrentMediaItemSeekable,
+        ) ?: return false
+
+        when (action) {
+            is SkipAction.Seek -> {
+                exoPlayer.seekTo(action.positionMillis)
+                chrome.showControls()
+            }
+            is SkipAction.Finish -> {
+                writeProgress(completed = true)
+                if (chrome.loopEnabled) {
+                    exoPlayer.seekTo(0)
+                    exoPlayer.play()
+                } else {
+                    finish()
+                }
+            }
+        }
+        return true
+    }
+
+    private fun introDbMedia(
+        tmdbId: Int?,
+        isEpisode: Boolean,
+        showTmdbId: Int?,
+        season: Int?,
+        episode: Int?,
+    ): IntroDbMedia? = if (isEpisode) {
+        val showId = showTmdbId?.takeIf { it in 1..10_000_000 } ?: return null
+        val s = season?.takeIf { it > 0 } ?: return null
+        val e = episode?.takeIf { it > 0 } ?: return null
+        IntroDbMedia.create(tmdbId = showId, season = s, episode = e)
+    } else {
+        val movieId = tmdbId?.takeIf { it in 1..10_000_000 } ?: return null
+        IntroDbMedia.create(tmdbId = movieId)
     }
 
     private fun displayName(uri: Uri): String? = runCatching {

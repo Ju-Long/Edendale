@@ -120,6 +120,21 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
 
     var aspectFill by mutableStateOf(false)
 
+    var segmentPromptsEnabled by mutableStateOf(preferences.segmentPromptsEnabled)
+        private set
+
+    init {
+        preferences.addChangeListener {
+            segmentPromptsEnabled = preferences.segmentPromptsEnabled
+        }
+    }
+
+    fun setSegmentPrompts(enabled: Boolean) {
+        segmentPromptsEnabled = enabled
+        preferences.segmentPromptsEnabled = enabled
+        noteInteraction()
+    }
+
     /** Enter Picture in Picture on its own when the user leaves mid-play. */
     var autoPip by mutableStateOf(prefs.getBoolean(KEY_AUTO_PIP, true))
         private set

@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">Keine Untertitel in dieser Datei.</string>
     <string name="player_track_number">Spur %1$d</string>
     <string name="player_playback">Wiedergabe</string>
+    <string name="player_skip_intro">Intro überspringen</string>
+    <string name="player_skip_recap">Rückblick überspringen</string>
+    <string name="player_skip_credits">Abspann überspringen</string>
+    <string name="player_skip_prompts">Hinweise zum Überspringen</string>
+    <string name="player_skip_prompts_detail">Intro-, Rückblick- und Abspann-Zeitstempel bei TheIntroDB abfragen</string>
+    <string name="settings_skip_prompts_note">Wenn aktiviert, empfängt TheIntroDB die TMDB-ID des Titels, Episodennummern, die Videodauer und deine IP-Adresse. Das Überspringen erfordert immer einen Tastendruck.</string>
+    <string name="settings_theintrodb_link">Zeitstempel von TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB-Datenschutzrichtlinie</string>
     <string name="player_loop">Video in Endlosschleife</string>
     <string name="player_loop_detail">Wiedergabe nach Ende neu starten</string>
     <string name="player_auto_pip">Automatisches Bild-in-Bild</string>

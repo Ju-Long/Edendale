@@ -15,4 +15,12 @@
     <string name="player_back_30">Back 30 seconds</string>
     <string name="player_forward_15">Forward 15 seconds</string>
     <string name="player_forward_30">Forward 30 seconds</string>
+    <string name="player_skip_intro">Skip Intro</string>
+    <string name="player_skip_recap">Skip Recap</string>
+    <string name="player_skip_credits">Skip Credits</string>
+    <string name="player_skip_prompts">Skip Prompts</string>
+    <string name="player_skip_prompts_detail">Look up intro, recap, and credits timestamps with TheIntroDB</string>
+    <string name="settings_skip_prompts_note">When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.</string>
+    <string name="settings_theintrodb_link">Timestamps by TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB Privacy Policy</string>
 </resources>

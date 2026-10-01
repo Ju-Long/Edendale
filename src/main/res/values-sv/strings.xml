@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">Inga undertextspår i den här filen.</string>
     <string name="player_track_number">Spår %1$d</string>
     <string name="player_playback">Uppspelning</string>
+    <string name="player_skip_intro">Hoppa över intro</string>
+    <string name="player_skip_recap">Hoppa över sammanfattning</string>
+    <string name="player_skip_credits">Hoppa över eftertexter</string>
+    <string name="player_skip_prompts">Hoppa över-uppmaningar</string>
+    <string name="player_skip_prompts_detail">Slå upp tidsstämplar för intro, sammanfattning och eftertexter med TheIntroDB</string>
+    <string name="settings_skip_prompts_note">När detta är aktiverat tar TheIntroDB emot filmens eller seriens TMDB-ID, avsnittsnummer, videons längd och din IP-adress. Hoppa över kräver alltid en knapptryckning.</string>
+    <string name="settings_theintrodb_link">Tidsstämplar från TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Integritetspolicy för TheIntroDB</string>
     <string name="player_loop">Upprepa video</string>
     <string name="player_loop_detail">Starta om uppspelningen när den slutar</string>
     <string name="player_auto_pip">Automatisk bild-i-bild</string>

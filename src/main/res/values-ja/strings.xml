@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">このファイルには字幕トラックがありません。</string>
     <string name="player_track_number">トラック%1$d</string>
     <string name="player_playback">再生</string>
+    <string name="player_skip_intro">イントロをスキップ</string>
+    <string name="player_skip_recap">これまでのあらすじをスキップ</string>
+    <string name="player_skip_credits">クレジットをスキップ</string>
+    <string name="player_skip_prompts">スキップの通知</string>
+    <string name="player_skip_prompts_detail">TheIntroDB でイントロ、あらすじ、クレジットのタイムスタンプを検索</string>
+    <string name="settings_skip_prompts_note">有効にすると、TheIntroDB はタイトルの TMDB ID、エピソード番号、動画の長さ、および IP アドレスを受信します。スキップには常にボタンを押す必要があります。</string>
+    <string name="settings_theintrodb_link">タイムスタンプ提供: TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB プライバシーポリシー</string>
     <string name="player_loop">ビデオをループ</string>
     <string name="player_loop_detail">再生終了後に最初から再生</string>
     <string name="player_auto_pip">自動ピクチャ・イン・ピクチャ</string>

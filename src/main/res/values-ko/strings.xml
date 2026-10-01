@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">이 파일에는 자막 트랙이 없습니다.</string>
     <string name="player_track_number">트랙 %1$d</string>
     <string name="player_playback">재생</string>
+    <string name="player_skip_intro">오프닝 건너뛰기</string>
+    <string name="player_skip_recap">요약 건너뛰기</string>
+    <string name="player_skip_credits">크레딧 건너뛰기</string>
+    <string name="player_skip_prompts">건너뛰기 안내</string>
+    <string name="player_skip_prompts_detail">TheIntroDB에서 인트로, 요약 및 크레딧 타임스탬프 조회</string>
+    <string name="settings_skip_prompts_note">활성화하면 TheIntroDB가 타이틀의 TMDB ID, 에피소드 번호, 비디오 재생 시간 및 IP 주소를 수신합니다. 건너뛰기에는 항상 버튼을 눌러야 합니다.</string>
+    <string name="settings_theintrodb_link">타임스탬프 제공: TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB 개인정보 처리방침</string>
     <string name="player_loop">비디오 반복 재생</string>
     <string name="player_loop_detail">종료 시 재생 다시 시작</string>
     <string name="player_auto_pip">자동 화면 속 화면</string>

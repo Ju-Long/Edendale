@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">此檔案中沒有字幕軌。</string>
     <string name="player_track_number">軌道 %1$d</string>
     <string name="player_playback">播放</string>
+    <string name="player_skip_intro">略過片頭</string>
+    <string name="player_skip_recap">略過前情提要</string>
+    <string name="player_skip_credits">略過片尾</string>
+    <string name="player_skip_prompts">略過提示</string>
+    <string name="player_skip_prompts_detail">透過 TheIntroDB 查詢片頭、前情提要與片尾時間戳記</string>
+    <string name="settings_skip_prompts_note">啟用後，TheIntroDB 會接收節目的 TMDB ID、集數編號、影片長度與您的 IP 位址。略過一律需要手動按下按鈕。</string>
+    <string name="settings_theintrodb_link">時間戳記由 TheIntroDB 提供</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB 隱私權政策</string>
     <string name="player_loop">循環播放影片</string>
     <string name="player_loop_detail">結束時重新開始播放</string>
     <string name="player_auto_pip">自動子母畫面</string>

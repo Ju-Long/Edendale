@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">No hay pistas de subtítulos en este archivo.</string>
     <string name="player_track_number">Pista %1$d</string>
     <string name="player_playback">Reproducción</string>
+    <string name="player_skip_intro">Omitir intro</string>
+    <string name="player_skip_recap">Omitir resumen</string>
+    <string name="player_skip_credits">Omitir créditos</string>
+    <string name="player_skip_prompts">Avisos para omitir</string>
+    <string name="player_skip_prompts_detail">Consultar marcas de tiempo de intro, resumen y créditos en TheIntroDB</string>
+    <string name="settings_skip_prompts_note">Al activarse, TheIntroDB recibe el ID de TMDB del título, números de episodio, duración del vídeo y tu dirección IP. Omitir siempre requiere pulsar un botón.</string>
+    <string name="settings_theintrodb_link">Marcas de tiempo de TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Política de privacidad de TheIntroDB</string>
     <string name="player_loop">Reproducir vídeo en bucle</string>
     <string name="player_loop_detail">Reiniciar la reproducción al terminar</string>
     <string name="player_auto_pip">Imagen dentro de imagen automática</string>

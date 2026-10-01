@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">此文件中没有字幕轨道。</string>
     <string name="player_track_number">轨道 %1$d</string>
     <string name="player_playback">播放</string>
+    <string name="player_skip_intro">跳过片头</string>
+    <string name="player_skip_recap">跳过前情提要</string>
+    <string name="player_skip_credits">跳过片尾</string>
+    <string name="player_skip_prompts">跳过提示</string>
+    <string name="player_skip_prompts_detail">通过 TheIntroDB 查询片头、前情提要及片尾时间戳</string>
+    <string name="settings_skip_prompts_note">启用后，TheIntroDB 会接收剧目的 TMDB ID、剧集编号、视频时长及您的 IP 地址。跳过始终需要手动点击按钮。</string>
+    <string name="settings_theintrodb_link">时间戳由 TheIntroDB 提供</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB 隐私政策</string>
     <string name="player_loop">循环播放视频</string>
     <string name="player_loop_detail">结束后重新开始播放</string>
     <string name="player_auto_pip">自动画中画</string>

@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">Nessuna traccia di sottotitoli in questo file.</string>
     <string name="player_track_number">Traccia %1$d</string>
     <string name="player_playback">Riproduzione</string>
+    <string name="player_skip_intro">Salta introduzione</string>
+    <string name="player_skip_recap">Salta riassunto</string>
+    <string name="player_skip_credits">Salta i titoli di coda</string>
+    <string name="player_skip_prompts">Pulsanti di salto</string>
+    <string name="player_skip_prompts_detail">Cerca i timestamp di intro, riassunto e titoli di coda con TheIntroDB</string>
+    <string name="settings_skip_prompts_note">Se abilitato, TheIntroDB riceve l\'ID TMDB del titolo, i numeri degli episodi, la durata del video e il tuo indirizzo IP. Il salto richiede sempre la pressione di un pulsante.</string>
+    <string name="settings_theintrodb_link">Timestamp di TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Informativa sulla privacy di TheIntroDB</string>
     <string name="player_loop">Riproduci video a ciclo continuo</string>
     <string name="player_loop_detail">Riavvia la riproduzione al termine</string>
     <string name="player_auto_pip">Picture in Picture automatico</string>

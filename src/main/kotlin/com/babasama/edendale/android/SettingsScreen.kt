@@ -229,6 +229,12 @@ fun SettingsScreen(
         }
 
         item {
+            SkipPromptsSettingsSection(
+                isTelevision = isTelevision,
+            )
+        }
+
+        item {
             AppControlsSettingsSection(
                 isTelevision = isTelevision,
             )
@@ -942,6 +948,93 @@ private fun RemoveSourceDialog(
             )
         },
     )
+}
+
+@Composable
+private fun SkipPromptsSettingsSection(
+    isTelevision: Boolean,
+) {
+    val context = LocalContext.current
+    val playerPreferences = remember(context) { PlayerPreferences.from(context) }
+    var isEnabled by remember { mutableStateOf(playerPreferences.segmentPromptsEnabled) }
+
+    SettingsSection(
+        header = stringResource(R.string.player_playback),
+        isTelevision = isTelevision,
+        focusableContent = false,
+        actions = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ArchiveButton(
+                    label = stringResource(R.string.settings_theintrodb_link),
+                    kind = ArchiveButtonKind.Secondary,
+                    isTelevision = isTelevision,
+                    onClick = {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://theintrodb.org")))
+                        }
+                    },
+                )
+                ArchiveButton(
+                    label = stringResource(R.string.settings_theintrodb_privacy_link),
+                    kind = ArchiveButtonKind.Secondary,
+                    isTelevision = isTelevision,
+                    onClick = {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://theintrodb.org/docs/privacy")))
+                        }
+                    },
+                )
+            }
+        },
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val focused by interactionSource.collectIsFocusedAsState()
+        Surface(
+            onClick = {
+                val next = !isEnabled
+                isEnabled = next
+                playerPreferences.segmentPromptsEnabled = next
+            },
+            modifier = Modifier.fillMaxWidth(),
+            color = if (focused) EdendaleColors.Gold else Color.Transparent,
+            contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            interactionSource = interactionSource,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.player_skip_prompts),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.player_skip_prompts_detail),
+                        style = BodyCopyStyle(),
+                        color = if (focused) EdendaleColors.OnGold
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Switch(checked = isEnabled, onCheckedChange = null)
+            }
+        }
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_skip_prompts_note))
+    }
 }
 
 @Composable

@@ -86,6 +86,42 @@ way.
 Online subtitle search, like trailer playback, starts only after an explicit
 user action; opening the player or its settings panel never sends a search.
 
+### Intro, recap, and credits prompts
+
+Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
+Playback → Skip Prompts**, to use community timestamps from
+[TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The legacy
+90-second recap and final-three-minutes credits auto-skips have been removed;
+their saved preferences do not enable the new network feature.
+
+During a known segment, a **Skip Intro**, **Skip Recap**, or **Skip Credits**
+button appears at the bottom trailing edge, independently of hidden playback
+controls. Press the button to skip; playback never skips automatically. On
+keyboard platforms, **S** activates the visible prompt. On Android TV, **Down**
+from the hidden-controls surface focuses the prompt when one is available.
+Prompts hide while scrubbing or while a side panel covers the video. Bounded
+credits seek only to that range's end, preserving gaps for additional scenes.
+A terminal credits skip marks the item complete and advances to the next
+stored episode, ends playback if none exists, or restarts the file when Loop
+Video is enabled.
+
+The native Kotlin client calls `GET https://api.theintrodb.org/v3/media` directly
+from the device after the player reports a finite duration. Movies use their
+TMDB ID; episodes use the **show's** TMDB ID plus TMDB season/episode numbers.
+Requests include the video duration in milliseconds to help match release
+versions. No account, API key, filename, video upload, library scan, or server
+proxy is involved. The provider receives the media identifiers, runtime, and
+the device's public IP address. See its
+[privacy policy](https://theintrodb.org/docs/privacy) and
+[usage terms](https://theintrodb.org/docs/terms).
+
+Only a small in-memory cache exists during the playback session (at most 12
+items); timestamps are not saved to the library, disk, watch progress, or
+backup. Closing playback or disabling prompts clears the cache. Missing data,
+network errors, invalid ranges, and rate limits leave normal playback
+available without a prompt. Playback and initial import never wait for this
+service.
+
 Run the hermetic JVM tests and build the debug APK:
 
 ```sh

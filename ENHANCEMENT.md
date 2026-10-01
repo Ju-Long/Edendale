@@ -740,27 +740,27 @@ Don't build a workaround without asking the owner.
   your IP address. Skipping always requires a button press."
 
 **Checklist:**
-- [ ] **C.5.1** A `com.babasama.edendale.introdb` package with request
+- [x] **C.5.1** A `com.babasama.edendale.introdb` package with request
   validation, a transport interface, the decoder, and the cooldown, all pure.
-- [ ] **C.5.2** `AndroidIntroDbTransport` in `AndroidEdendaleCore.kt`
+- [x] **C.5.2** `AndroidIntroDbTransport` in `AndroidEdendaleCore.kt`
   (`HttpURLConnection`, an 8 s overall timeout, no cache, and response headers
   exposed for 429).
-- [ ] **C.5.3** A pure segment controller: the active segment, suppression, the
+- [x] **C.5.3** A pure segment controller: the active segment, suppression, the
   result of a skip (`Seek(endMs)` or `Finish`), the cache, and enable/disable.
-- [ ] **C.5.4** The prompt UI in `PlayerScreen`, the S key, and TV focus (D3).
-- [ ] **C.5.5** The Settings → Skip Prompts section and the Playback toggle in
+- [x] **C.5.4** The prompt UI in `PlayerScreen`, the S key, and TV focus (D3).
+- [x] **C.5.5** The Settings → Skip Prompts section and the Playback toggle in
   the player panel.
-- [ ] **C.5.6** README: TheIntroDB as an opt-in network service, and what it
+- [x] **C.5.6** README: TheIntroDB as an opt-in network service, and what it
   receives.
 
 **Tests (JVM):**
-- [ ] **C.5.T1** Port all `IntroDBTests` cases: the URL and parameters for a
+- [x] **C.5.T1** Port all `IntroDBTests` cases: the URL and parameters for a
   movie and an episode; every skip-the-lookup bound (id 0 and 10,000,001,
   season 0, episode 0, duration 0 s, 21,600 s accepted, 21,601 s rejected);
   404; the 429 cooldown with each header and the 60 s floor; a mismatched
   identity rejected; the decoding rules; overlap rejection; deduplication;
   sorting.
-- [ ] **C.5.T2** Controller: suppression until the range is left; the skip
+- [x] **C.5.T2** Controller: suppression until the range is left; the skip
   result for bounded and `reachesEnd` segments; the 12-entry cap; clearing on
   disable; the transport is never called while the setting is off.
 
@@ -1791,6 +1791,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | A.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass | not run | Configured androidTest source set, runner, dependencies, and generate.sh |
 | 2026-10-01 | B.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run (no emulator/device connected in CI environment) | Skip lengths (10/15/30) and hold rates (0.25-3.00x) wired to gestures, controls, PiP, TV D2 keys, and Settings |
 | 2026-10-01 | C.4 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures, 110 tests) | not run (no emulator/device connected in CI environment) | Removed timed auto-skip constants, methods, latches, toggles, obsolete strings across all locales, and cleaned up legacy keys |
+| 2026-10-01 | C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 123 tests) | not run (no emulator/device connected in CI environment) | Implemented TheIntroDB pure introdb package, transport in AndroidEdendaleCore, PlayerSegmentController, UI prompt, S key, TV D3 focus, Playback panel toggle, Settings section with links, and README docs |
 
 ---
 
@@ -1813,8 +1814,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.1 | Episode progression rules | Not started | |
 | C.2 | Auto-advance and Up Next | Not started | |
 | C.3 | Continue Watching next-up | Not started | |
-| C.4 | Remove timed auto-skip | Complete | |
-| C.5 | TheIntroDB skip prompts | Not started | |
+| C.4 | Remove timed auto-skip | Complete | 4a13b2f |
+| C.5 | TheIntroDB skip prompts | Complete | fa12d69 |
 | C.6 | MediaSession and system surfaces | Not started | |
 | D.1 | Buffered SMB reads | Not started | |
 | D.2 | Source records (Room v3) | Not started | |

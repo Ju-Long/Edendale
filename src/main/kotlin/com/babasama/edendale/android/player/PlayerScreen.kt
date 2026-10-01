@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -79,11 +82,14 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.focusable
+import com.babasama.edendale.introdb.PlaybackSegment
+import com.babasama.edendale.introdb.SegmentKind
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
@@ -121,6 +127,7 @@ internal fun PlayerScreen(
     onlineSubtitles: OnlineSubtitlesState,
     wyzieConfigured: State<Boolean>,
     wyzieLookup: State<WyzieLookup?>,
+    activeSegment: State<PlaybackSegment?>,
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
@@ -128,6 +135,7 @@ internal fun PlayerScreen(
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
+    onSkip: () -> Unit,
     onClose: () -> Unit,
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
@@ -249,10 +257,23 @@ internal fun PlayerScreen(
             PlayerGestureLayer(player, chrome, activity)
         }
 
+        val promptFocus = remember { FocusRequester() }
+        val visibleSegment = if (
+            !chrome.isScrubbing &&
+            chrome.activePanel == null &&
+            !inPipMode.value
+        ) {
+            activeSegment.value
+        } else {
+            null
+        }
+
         if (isTelevision) {
             RevealCatcher(
                 active = isTelevision && !controlsActive && !inPipMode.value,
                 focusRequester = catcherFocus,
+                promptFocusRequester = promptFocus,
+                hasVisiblePrompt = visibleSegment != null,
                 chrome = chrome,
                 player = player,
             )
@@ -299,6 +320,23 @@ internal fun PlayerScreen(
                 timelineFocus = timelineFocus,
                 onEnterPip = onEnterPip,
                 onClose = onClose,
+            )
+        }
+
+        visibleSegment?.let { segment ->
+            SkipPromptButton(
+                segment = segment,
+                isTelevision = isTelevision,
+                controlsVisible = controlsActive,
+                focusRequester = promptFocus,
+                onSkip = onSkip,
+                onExitFocus = {
+                    if (isTelevision && !chrome.controlsVisible) {
+                        catcherFocus.requestFocus()
+                    } else {
+                        chrome.showControls()
+                    }
+                },
             )
         }
 
@@ -364,6 +402,8 @@ private fun DisposableListener(
 private fun BoxScope.RevealCatcher(
     active: Boolean,
     focusRequester: FocusRequester,
+    promptFocusRequester: FocusRequester?,
+    hasVisiblePrompt: Boolean,
     chrome: PlayerChromeState,
     player: ExoPlayer,
 ) {
@@ -386,7 +426,11 @@ private fun BoxScope.RevealCatcher(
                         true
                     }
                     Key.DirectionDown -> {
-                        chrome.showTimeline()
+                        if (hasVisiblePrompt && promptFocusRequester != null) {
+                            promptFocusRequester.requestFocus()
+                        } else {
+                            chrome.showTimeline()
+                        }
                         true
                     }
                     Key.DirectionUp, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
@@ -400,6 +444,71 @@ private fun BoxScope.RevealCatcher(
             .focusProperties { canFocus = active }
             .focusable(),
     )
+}
+
+@Composable
+private fun BoxScope.SkipPromptButton(
+    segment: PlaybackSegment,
+    isTelevision: Boolean,
+    controlsVisible: Boolean,
+    focusRequester: FocusRequester,
+    onSkip: () -> Unit,
+    onExitFocus: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val highlighted = isFocused || isHovered
+
+    val label = when (segment.kind) {
+        SegmentKind.INTRO -> stringResource(R.string.player_skip_intro)
+        SegmentKind.RECAP -> stringResource(R.string.player_skip_recap)
+        SegmentKind.CREDITS -> stringResource(R.string.player_skip_credits)
+    }
+
+    val bottomPadding = if (isTelevision) {
+        if (controlsVisible) 112.dp else 48.dp
+    } else {
+        if (controlsVisible) 96.dp else 24.dp
+    }
+    val endPadding = if (isTelevision) 48.dp else 24.dp
+
+    Surface(
+        onClick = onSkip,
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = endPadding, bottom = bottomPadding)
+            .focusRequester(focusRequester)
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    when (event.key) {
+                        Key.DirectionUp -> {
+                            onExitFocus()
+                            true
+                        }
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                            onSkip()
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            },
+        shape = RoundedCornerShape(12.dp),
+        color = EdendaleColors.Surface,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (highlighted) EdendaleColors.Gold else EdendaleColors.Outline,
+        ),
+        interactionSource = interactionSource,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = if (highlighted) EdendaleColors.Gold else EdendaleColors.TextPrimary,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+        )
+    }
 }
 
 // ------------------------------------------------------------------
@@ -1554,6 +1663,17 @@ private fun PlaybackSection(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         PanelLabel(stringResource(R.string.player_playback))
         Spacer(Modifier.height(8.dp))
+        ToggleRow(
+            title = stringResource(R.string.player_skip_prompts),
+            detail = stringResource(R.string.player_skip_prompts_detail),
+            checked = chrome.segmentPromptsEnabled,
+        ) { chrome.setSegmentPrompts(it) }
+        Text(
+            text = stringResource(R.string.settings_skip_prompts_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+        )
         ToggleRow(
             title = stringResource(R.string.player_loop),
             detail = stringResource(R.string.player_loop_detail),

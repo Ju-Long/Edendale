@@ -204,6 +204,14 @@
     <string name="player_subtitles_none">Geen ondertitelsporen in dit bestand.</string>
     <string name="player_track_number">Track %1$d</string>
     <string name="player_playback">Afspelen</string>
+    <string name="player_skip_intro">Sla intro over</string>
+    <string name="player_skip_recap">Sla samenvatting over</string>
+    <string name="player_skip_credits">Sla aftiteling over</string>
+    <string name="player_skip_prompts">Overslaanknoppen</string>
+    <string name="player_skip_prompts_detail">Tijdstempels voor intro, samenvatting en aftiteling opzoeken met TheIntroDB</string>
+    <string name="settings_skip_prompts_note">Wanneer ingeschakeld, ontvangt TheIntroDB het TMDB-ID van de titel, afleveringsnummers, videoduur en je IP-adres. Overslaan vereist altijd een druk op de knop.</string>
+    <string name="settings_theintrodb_link">Tijdstempels door TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB-privacybeleid</string>
     <string name="player_loop">Herhaal video</string>
     <string name="player_loop_detail">Start de weergave opnieuw wanneer deze eindigt</string>
     <string name="player_auto_pip">Automatisch beeld in beeld</string>
