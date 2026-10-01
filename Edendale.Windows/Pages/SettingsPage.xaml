@@ -11,7 +11,10 @@
         SwiftUI Form: an UPPERCASE label-caps header in TextSecondary sitting
         ABOVE each grouped row container, hairline separators between rows,
         values right-aligned and quieter than their labels. Section order is
-        Apple's and is fixed — Attribution is always last.
+        Apple's and is fixed (DIFF.md §3.19): About, Audience, Startup, Audio
+        Enhancement, Subtitles, Skip Prompts, App Controls, Sources, Accounts,
+        TMDB Account, then the Windows-only Your Archive and Attribution, which
+        is always last.
     -->
     <ScrollViewer>
         <StackPanel Padding="48,28,48,64" Spacing="28" MaxWidth="760" HorizontalAlignment="Left">
@@ -150,6 +153,13 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+
+            <!-- 27.0 player sections, in Apple's order (DIFF.md §3.19):
+                 Audio Enhancement, Subtitles, Skip Prompts, App Controls. -->
+            <controls:AudioEnhancementSettings />
+            <controls:SubtitleAppearanceSettings />
+            <controls:SkipPromptsSettings />
+            <controls:AppControlsSettings />
 
             <!-- SOURCES — SourcesSection.swift + SourceRow.swift -->
             <StackPanel>

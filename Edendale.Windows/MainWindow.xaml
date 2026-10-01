@@ -62,35 +62,78 @@
 
         <!-- Full-window, black-first LibVLC player (DESIGN.md). Edendale's
              XAML chrome remains above VLC's Direct3D swap chain. In Picture in
-             Picture the whole window becomes a compact overlay. -->
+             Picture the whole window becomes a compact overlay; full screen
+             swaps the presenter. The playlist and Player Adjustments dock as
+             a trailing inline pane that narrows the video instead of
+             covering it (DIFF.md §3.15). -->
         <Grid
             x:Name="PlayerOverlay"
             Grid.RowSpan="2"
             Background="Black"
             Visibility="Collapsed"
-            KeyDown="PlayerOverlay_KeyDown"
-            DoubleTapped="PlayerOverlay_DoubleTapped">
-            <vlc:VideoView
-                x:Name="PlayerElement"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                Initialized="PlayerElement_Initialized"
-                SizeChanged="PlayerElement_SizeChanged" />
+            KeyDown="PlayerOverlay_KeyDown">
+            <SplitView
+                x:Name="PlayerSplit"
+                DisplayMode="Inline"
+                PanePlacement="Right"
+                OpenPaneLength="380"
+                IsPaneOpen="False"
+                PaneBackground="{StaticResource EdendaleSurfaceLowBrush}">
+                <SplitView.Pane>
+                    <Grid x:Name="PlayerPaneHost" BorderBrush="{StaticResource EdendaleHairlineBorderBrush}" BorderThickness="1,0,0,0">
+                        <controls:PlayerPlaylistPanel
+                            x:Name="PlaylistPanel"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Visibility="Collapsed"
+                            CloseRequested="PlayerPanel_CloseRequested"
+                            PlayRequested="PlaylistPanel_PlayRequested" />
+                        <controls:PlayerAdjustmentsPanel
+                            x:Name="AdjustmentsPanel"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Visibility="Collapsed"
+                            CloseRequested="PlayerPanel_CloseRequested"
+                            AspectFillChanged="AdjustmentsPanel_AspectFillChanged"
+                            RateChangeRequested="AdjustmentsPanel_RateChangeRequested"
+                            EngineReopenRequested="AdjustmentsPanel_EngineReopenRequested" />
+                    </Grid>
+                </SplitView.Pane>
 
-            <controls:PlayerControlsOverlay
-                x:Name="ControlsOverlay"
-                CloseRequested="ClosePlayer_Click"
-                PlaylistRequested="ControlsOverlay_PlaylistRequested"
-                AspectFillChanged="ControlsOverlay_AspectFillChanged"
-                PictureInPictureRequested="ControlsOverlay_PictureInPictureRequested" />
+                <Grid x:Name="VideoHost" Background="Black">
+                    <vlc:VideoView
+                        x:Name="PlayerElement"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Initialized="PlayerElement_Initialized"
+                        SizeChanged="PlayerElement_SizeChanged" />
 
-            <controls:PlayerPlaylistPanel
-                x:Name="PlaylistPanel"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Stretch"
-                Visibility="Collapsed"
-                CloseRequested="PlaylistPanel_CloseRequested"
-                PlayRequested="PlaylistPanel_PlayRequested" />
+                    <!-- F.3: a brief state while LibVLC reopens at the same
+                         position, instead of a bare black frame. -->
+                    <Grid x:Name="ApplyingLayer" Background="Black" Visibility="Collapsed" IsHitTestVisible="False">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                            <ProgressRing IsActive="True" Width="28" Height="28" Foreground="{StaticResource EdendaleGoldBrush}" />
+                            <TextBlock
+                                x:Uid="PlayerApplyingText"
+                                Text="Applying…"
+                                Style="{StaticResource BodySMTextStyle}"
+                                HorizontalAlignment="Center"
+                                AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+                    </Grid>
+
+                    <controls:PlayerControlsOverlay
+                        x:Name="ControlsOverlay"
+                        CloseRequested="ClosePlayer_Click"
+                        PlaylistRequested="ControlsOverlay_PlaylistRequested"
+                        AdjustmentsRequested="ControlsOverlay_AdjustmentsRequested"
+                        PictureInPictureRequested="ControlsOverlay_PictureInPictureRequested"
+                        FullScreenRequested="ControlsOverlay_FullScreenRequested"
+                        PlayNextRequested="ControlsOverlay_PlayNextRequested"
+                        BaseRateChanged="ControlsOverlay_BaseRateChanged"
+                        EndReachedBySkip="ControlsOverlay_EndReachedBySkip" />
+                </Grid>
+            </SplitView>
         </Grid>
 
         <!-- Feedback for rejected external links / unsupported files. Sits

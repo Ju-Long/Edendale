@@ -178,6 +178,25 @@ public sealed class EpisodeProgressionTests
     }
 
     [TestMethod]
+    public void PreviousEpisodeMirrorsNextWithoutReturningToSpecials()
+    {
+        var show = Show();
+        var s0e1 = Episode(0, 1, show, title: "OVA");
+        var s0e2 = Episode(0, 2, show, title: "OVA 2");
+        var s1e1 = Episode(1, 1, show);
+        Episode(1, 1, show, title: "S1E1 alt");
+        var s1e2 = Episode(1, 2, show);
+        var s2e1 = Episode(2, 1, show);
+
+        Assert.AreEqual(s1e2.Id, EpisodeProgression.PreviousEpisode(s2e1, show)?.Id);
+        Assert.AreEqual(1, EpisodeProgression.PreviousEpisode(s1e2, show)?.Episode);
+        Assert.IsNull(EpisodeProgression.PreviousEpisode(s1e1, show), "a main season never steps back into specials");
+        Assert.AreEqual(s0e1.Id, EpisodeProgression.PreviousEpisode(s0e2, show)?.Id);
+        Assert.IsNull(EpisodeProgression.PreviousEpisode(s0e1, show));
+        Assert.IsNull(EpisodeProgression.PreviousEpisode(new LibraryEpisode { Season = 1, Episode = 1 }, show));
+    }
+
+    [TestMethod]
     public void CreditsStartIsNotANaturalEnd()
     {
         Assert.IsTrue(PlayerLogic.IsNaturalEnd(TimeSpan.FromSeconds(2350), TimeSpan.FromSeconds(2400)));

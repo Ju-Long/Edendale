@@ -1,0 +1,147 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.PlayerAdjustmentsPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource EdendaleSurfaceLowBrush}">
+
+    <!--
+        Player Adjustments (PlayerSettingsPanel.swift, Windows edition). Section
+        order from DIFF.md §3.9: Video Track, Audio Track, Picture, Enhancement,
+        then playback. Docked beside the video, so changes are seen live.
+    -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Padding="24" BorderBrush="{StaticResource EdendaleHairlineBorderBrush}" BorderThickness="0,0,0,1">
+            <TextBlock x:Uid="AdjustmentsHeader" Text="ADJUSTMENTS" Style="{StaticResource HeadlineMDTextStyle}" FontSize="20" VerticalAlignment="Center"/>
+            <Button
+                x:Uid="AdjustmentsCloseButton"
+                Style="{StaticResource ArchiveGhostButtonStyle}"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Click="CloseButton_Click"
+                Padding="10"
+                ToolTipService.ToolTip="Close"
+                AutomationProperties.Name="Close">
+                <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/xmark.svg" Width="14" Height="14" />
+            </Button>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Padding="24,20,24,32" Spacing="28">
+
+                <!-- VIDEO TRACK: only when the file has more than one -->
+                <StackPanel x:Name="VideoTrackSection" Spacing="10" Visibility="Collapsed">
+                    <TextBlock x:Uid="AdjustmentsVideoTrackHeader" Text="VIDEO TRACK" Style="{StaticResource LabelCapsTextStyle}"/>
+                    <ComboBox x:Uid="AdjustmentsVideoTrackBox" x:Name="VideoTrackBox" HorizontalAlignment="Stretch" SelectionChanged="VideoTrackBox_SelectionChanged" AutomationProperties.Name="Video track"/>
+                </StackPanel>
+
+                <!-- AUDIO TRACK: only when the file has more than one -->
+                <StackPanel x:Name="AudioTrackSection" Spacing="10" Visibility="Collapsed">
+                    <TextBlock x:Uid="AdjustmentsAudioTrackHeader" Text="AUDIO TRACK" Style="{StaticResource LabelCapsTextStyle}"/>
+                    <ComboBox x:Uid="AdjustmentsAudioTrackBox" x:Name="AudioTrackBox" HorizontalAlignment="Stretch" SelectionChanged="AudioTrackBox_SelectionChanged" AutomationProperties.Name="Audio track"/>
+                </StackPanel>
+
+                <!-- PICTURE (3.7): rows are built in code from VideoAdjustments -->
+                <StackPanel Spacing="10">
+                    <TextBlock x:Uid="AdjustmentsPictureHeader" Text="PICTURE" Style="{StaticResource LabelCapsTextStyle}"/>
+                    <StackPanel x:Name="PictureRows" Spacing="6"/>
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch
+                            x:Uid="AdjustmentsPictureOriginalToggle"
+                            x:Name="PictureOriginalToggle"
+                            Header="Show Original"
+                            OnContent=""
+                            OffContent=""
+                            Toggled="PictureOriginalToggle_Toggled"/>
+                        <Button
+                            x:Uid="AdjustmentsPictureResetButton"
+                            Grid.Column="1"
+                            VerticalAlignment="Bottom"
+                            Style="{StaticResource ArchiveGhostButtonStyle}"
+                            Content="RESET"
+                            Click="PictureReset_Click"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- ENHANCEMENT (E.4): Option A, LibVLC's own upscalers and AMD filters -->
+                <StackPanel x:Name="EnhancementSection" Spacing="10">
+                    <TextBlock x:Uid="AdjustmentsEnhancementHeader" Text="ENHANCEMENT" Style="{StaticResource LabelCapsTextStyle}"/>
+                    <ComboBox
+                        x:Uid="AdjustmentsPresetBox"
+                        x:Name="PresetBox"
+                        HorizontalAlignment="Stretch"
+                        Header="Preset"
+                        SelectionChanged="PresetBox_SelectionChanged"/>
+                    <TextBlock x:Name="ResolutionLabel" Style="{StaticResource BodySMTextStyle}" Visibility="Collapsed"/>
+                    <ToggleSwitch
+                        x:Uid="AdjustmentsMotionSmoothingToggle"
+                        x:Name="MotionSmoothingToggle"
+                        Header="Motion Smoothing"
+                        OnContent=""
+                        OffContent=""
+                        Visibility="Collapsed"
+                        Toggled="MotionSmoothingToggle_Toggled"/>
+                    <TextBlock x:Name="FrameRateLabel" Style="{StaticResource BodySMTextStyle}" Visibility="Collapsed"/>
+                    <ToggleSwitch
+                        x:Uid="AdjustmentsEnhancementOriginalToggle"
+                        x:Name="EnhancementOriginalToggle"
+                        Header="Show Original"
+                        OnContent=""
+                        OffContent=""
+                        Toggled="EnhancementOriginalToggle_Toggled"/>
+                    <TextBlock x:Name="EnhancementNote" Style="{StaticResource BodySMTextStyle}" Visibility="Collapsed"/>
+                </StackPanel>
+
+                <!-- PLAYBACK -->
+                <StackPanel Spacing="10">
+                    <TextBlock x:Uid="AdjustmentsPlaybackHeader" Text="PLAYBACK" Style="{StaticResource LabelCapsTextStyle}"/>
+
+                    <!-- Speed on DIFF.md's grid: 0.25–3.00× in 0.05 steps -->
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="AdjustmentsSpeedLabel" Text="Speed" Style="{StaticResource BodyLGTextStyle}" VerticalAlignment="Center"/>
+                        <Button x:Uid="AdjustmentsSpeedDownButton" x:Name="SpeedDownButton" Grid.Column="1" Style="{StaticResource ArchiveSecondaryButtonStyle}" Content="−" MinWidth="40" Click="SpeedDown_Click" AutomationProperties.Name="Slower"/>
+                        <Button x:Name="SpeedValueButton" Grid.Column="2" Style="{StaticResource ArchiveGhostButtonStyle}" MinWidth="72" Click="SpeedReset_Click"/>
+                        <Button x:Uid="AdjustmentsSpeedUpButton" x:Name="SpeedUpButton" Grid.Column="3" Style="{StaticResource ArchiveSecondaryButtonStyle}" Content="+" MinWidth="40" Click="SpeedUp_Click" AutomationProperties.Name="Faster"/>
+                    </Grid>
+
+                    <ToggleSwitch x:Uid="AdjustmentsSkipPromptsToggle" x:Name="SkipPromptsToggle" Header="Skip Prompts" OnContent="" OffContent="" Toggled="SkipPromptsToggle_Toggled"/>
+                    <TextBlock x:Uid="AdjustmentsSkipPromptsNote" Text="Uses TheIntroDB. Skipping always needs a press." Style="{StaticResource BodySMTextStyle}"/>
+                    <ToggleSwitch x:Uid="AdjustmentsBoosterToggle" x:Name="BoosterToggle" Header="Audio Booster" OnContent="" OffContent="" Toggled="BoosterToggle_Toggled"/>
+                    <ToggleSwitch x:Uid="AdjustmentsSurroundToggle" x:Name="SurroundToggle" Header="Headphone Surround" OnContent="" OffContent="" Toggled="SurroundToggle_Toggled"/>
+                    <ToggleSwitch x:Uid="AdjustmentsLoopToggle" x:Name="LoopToggle" Header="Loop" OnContent="" OffContent="" Toggled="LoopToggle_Toggled"/>
+                    <ToggleSwitch x:Uid="AdjustmentsFillToggle" x:Name="FillToggle" Header="Fill Window" OnContent="" OffContent="" Toggled="FillToggle_Toggled"/>
+                </StackPanel>
+
+                <!-- SYNC (X.6): per-file offsets, never remembered -->
+                <StackPanel Spacing="10">
+                    <TextBlock x:Uid="AdjustmentsSyncHeader" Text="SYNC" Style="{StaticResource LabelCapsTextStyle}"/>
+                    <StackPanel x:Name="SyncRows" Spacing="6"/>
+                </StackPanel>
+
+                <!-- CHAPTERS (X.7): only when the file has chapters -->
+                <StackPanel x:Name="ChaptersSection" Spacing="10" Visibility="Collapsed">
+                    <TextBlock x:Uid="AdjustmentsChaptersHeader" Text="CHAPTERS" Style="{StaticResource LabelCapsTextStyle}"/>
+                    <StackPanel x:Name="ChapterRows" Spacing="4"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

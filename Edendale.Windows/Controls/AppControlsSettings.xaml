@@ -1,0 +1,77 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.AppControlsSettings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- APP CONTROLS (AppControlsSection.swift): skip lengths and hold speeds.
+         Device-local; the player reads them at every gesture. -->
+    <StackPanel>
+        <TextBlock x:Uid="SettingsAppControlsHeader" Text="APP CONTROLS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+        <Border Style="{StaticResource SettingsGroupBorderStyle}">
+            <StackPanel>
+                <StackPanel Padding="20,16" Spacing="10">
+                    <TextBlock x:Uid="SettingsSkipBackLabel" Text="Skip Back" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <StackPanel x:Name="SkipBackChips" Orientation="Horizontal" Spacing="8" />
+                </StackPanel>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <StackPanel Padding="20,16" Spacing="10">
+                    <TextBlock x:Uid="SettingsSkipForwardLabel" Text="Skip Forward" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <StackPanel x:Name="SkipForwardChips" Orientation="Horizontal" Spacing="8" />
+                </StackPanel>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <Grid Style="{StaticResource SettingsRowGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="SettingsHoldLeftLabel" Text="Hold Left Side" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <NumberBox
+                        x:Uid="SettingsHoldLeftBox"
+                        x:Name="HoldLeftBox"
+                        Grid.Column="1"
+                        MinWidth="150"
+                        Minimum="0.25"
+                        Maximum="3"
+                        SmallChange="0.25"
+                        LargeChange="0.5"
+                        SpinButtonPlacementMode="Inline"
+                        AutomationProperties.Name="Hold left side speed"
+                        ValueChanged="HoldLeftBox_ValueChanged" />
+                </Grid>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <Grid Style="{StaticResource SettingsRowGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="SettingsHoldRightLabel" Text="Hold Right Side" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <NumberBox
+                        x:Uid="SettingsHoldRightBox"
+                        x:Name="HoldRightBox"
+                        Grid.Column="1"
+                        MinWidth="150"
+                        Minimum="0.25"
+                        Maximum="3"
+                        SmallChange="0.25"
+                        LargeChange="0.5"
+                        SpinButtonPlacementMode="Inline"
+                        AutomationProperties.Name="Hold right side speed"
+                        ValueChanged="HoldRightBox_ValueChanged" />
+                </Grid>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <TextBlock
+                    x:Uid="SettingsAppControlsDescription"
+                    Text="Skips apply to the arrow keys, the skip buttons, double taps, and media keys. Hold either half of the video to play at that side's speed until you let go."
+                    Style="{StaticResource SettingsBodyRowTextStyle}" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

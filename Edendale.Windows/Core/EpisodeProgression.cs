@@ -44,6 +44,29 @@ public static class EpisodeProgression
     }
 
     /// <summary>
+    /// The stored episode just before <paramref name="current"/>, for the
+    /// Previous media key: the mirror of <see cref="NextEpisode"/>. Main
+    /// seasons never step back into season 0 specials; duplicates of the
+    /// current episode are skipped.
+    /// </summary>
+    public static LibraryEpisode? PreviousEpisode(LibraryEpisode current, LibraryShow show)
+    {
+        if (!show.Episodes.Any(episode => episode.Id == current.Id)) return null;
+
+        LibraryEpisode? best = null;
+        foreach (var candidate in show.Episodes)
+        {
+            if (!After(current.Season, current.Episode, candidate.Season, candidate.Episode)) continue;
+            if (current.Season > 0 && candidate.Season == 0) continue;
+            if (best is null || After(candidate.Season, candidate.Episode, best.Season, best.Episode))
+            {
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>
     /// The episode the Up Next card offers, or null when it should be hidden:
     /// only in the last 30 s of an episode with a stored successor, never with
     /// Loop on, for movies, or when the duration is unknown. Recomputed on

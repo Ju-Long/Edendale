@@ -13,6 +13,9 @@ public sealed class PlayerPreferences
     public const string AspectFillKey = "player.aspectFill";
     public const string SegmentPromptsEnabledKey = "player.segmentPromptsEnabled";
 
+    /// <summary>Windows-only (X.3); no Apple counterpart.</summary>
+    public const string HeadphoneSurroundKey = "audio.headphoneSurround";
+
     private readonly PlayerSettingsStore _store;
 
     public PlayerPreferences(PlayerSettingsStore store)
@@ -42,6 +45,17 @@ public sealed class PlayerPreferences
     {
         get => _store.GetBool(SegmentPromptsEnabledKey, fallback: false);
         set => _store.SetBool(SegmentPromptsEnabledKey, value);
+    }
+
+    /// <summary>
+    /// X.3: render 5.1 and 7.1 audio binaurally for headphones with LibVLC's
+    /// spatial-audio renderer. Off by default; Windows Sonic is the system
+    /// alternative.
+    /// </summary>
+    public bool HeadphoneSurround
+    {
+        get => _store.GetBool(HeadphoneSurroundKey, fallback: false);
+        set => _store.SetBool(HeadphoneSurroundKey, value);
     }
 
     /// <summary>The remembered speed and tracks for one title, or null.</summary>

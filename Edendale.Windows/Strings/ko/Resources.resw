@@ -305,23 +305,8 @@
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>검색에 표시</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>10초 뒤로 건너뛰기</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>10초 앞으로 건너뛰기</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>맞춤</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>반복</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>자막 및 오디오</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>화면 속 화면</value>
+    <value>자막</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>오늘의 트렌드</value>
@@ -383,35 +368,14 @@
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>화면 속 화면</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>반복 중지</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>반복</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>채우기</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>맞춤</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>사용 가능한 트랙 없음</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>오디오</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>오디오</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>자막</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>끔</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>자막</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>이 파일에는 포함되어 있지 않습니다</value>
@@ -892,5 +856,398 @@
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>이 콘텐츠는 PG 또는 PG-13으로 확인되지 않았습니다.</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>플레이어 조정</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>플레이어 조정</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>재생 목록</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>재생 목록</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>오디오 출력</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>오디오 출력</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>자막</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>타임라인</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>볼륨</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>적용 중…</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>재생</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>일시 정지</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>음소거</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>음소거 해제</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>전체 화면</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>전체 화면 종료</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>{0}초 뒤로</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>{0}초 앞으로</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>시스템 기본값</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>볼륨 {0}%</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>음소거됨</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>음소거 해제됨</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>밝기 {0}%</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>{0}초 뒤로</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>{0}초 앞으로</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>다음 에피소드</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>다음 에피소드: {0}, {1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>인트로 건너뛰기</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>지난 이야기 건너뛰기</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>크레딧 건너뛰기</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>이 부분을 건너뛰고 계속 재생합니다. S 키를 누르세요.</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>조정</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>비디오 트랙</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>비디오 트랙</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>오디오 트랙</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>오디오 트랙</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>화면</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>원본 보기</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>재설정</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>화질 향상</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>사전 설정</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>모션 스무딩</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>원본 보기</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>재생</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>속도</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>느리게</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>빠르게</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>속도 {0}, 보통으로 재설정</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>건너뛰기 제안</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>TheIntroDB를 사용합니다. 건너뛰려면 항상 직접 눌러야 합니다.</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>오디오 부스터</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>헤드폰 서라운드</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>반복 재생</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>창 채우기</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>동기화</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>오디오 지연</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>자막 지연</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}: 앞당기기</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}: 늦추기</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>챕터</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>챕터 {0}</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>모노</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>스테레오</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0}채널</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>트랙 {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>밝기</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>대비</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>감마</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>채도</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>색조</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>끔</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>균형</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>고품질</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>화질 향상에는 하드웨어 그래픽 어댑터가 필요하므로 화면이 그대로 재생됩니다.</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>초고해상도를 사용하려면 Edendale이 전용 그래픽 카드에서 실행되어야 합니다. Windows 설정 › 시스템 › 디스플레이 › 그래픽에서 Edendale을 고성능으로 설정하세요.</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>앱 제어</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>뒤로 건너뛰기</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>앞으로 건너뛰기</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>왼쪽 길게 누르기</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>오른쪽 길게 누르기</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>왼쪽 길게 누르기 속도</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>오른쪽 길게 누르기 속도</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>건너뛰기는 화살표 키, 건너뛰기 버튼, 두 번 탭, 미디어 키에 적용됩니다. 영상의 한쪽을 길게 누르면 손을 뗄 때까지 그쪽 속도로 재생됩니다.</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>뒤로 건너뛰기, {0}초</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>앞으로 건너뛰기, {0}초</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>건너뛰기 제안</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>인트로, 지난 이야기, 크레딧 건너뛰기 제안</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>건너뛰기 제안</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>사용하면 TheIntroDB가 작품의 TMDB ID, 에피소드 번호, 영상 길이, IP 주소를 받습니다. 건너뛰려면 항상 버튼을 눌러야 합니다.</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>오디오 향상</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>프로필</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>이퀄라이저 재설정</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>모든 파일에 적용됩니다. 야간 모드는 대사와 효과음의 균형을 맞출 뿐 압축하지 않습니다. 플레이어의 오디오 부스터는 10dB를 더합니다.</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>프리앰프</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0}Hz</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>이퀄라이저 표시</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>이퀄라이저 숨기기</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>플랫</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>영화</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>음악</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>대사</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>야간 모드</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>자막</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>자막이 이렇게 표시됩니다.</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>자막 미리보기</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>글꼴</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>텍스트 색상</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>배경 상자 색상</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>배경 상자 불투명도</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>배경 상자 불투명도</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>자막 스타일 재설정</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>다음에 여는 파일부터 텍스트 자막에 적용되며 Windows 텍스트 크기를 따릅니다. 그림 기반 자막(Blu-ray, DVD)은 원래 모양을 유지합니다.</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>시스템</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>세리프</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>고정폭</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>양피지</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>흰색</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>노란색</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>청록색</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>초록색</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>검은색</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>잉크</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>차콜</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>네이비</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>비디오 플레이어</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>다음 에피소드 · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>{0}% 시청함</value>
   </data>
 </root>

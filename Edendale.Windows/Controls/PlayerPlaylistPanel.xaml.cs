@@ -20,6 +20,14 @@ public sealed partial class PlayerPlaylistPanel : UserControl
         this.InitializeComponent();
     }
 
+    /// <summary>Moves keyboard focus to the current file's row when the panel opens.</summary>
+    public void FocusCurrent()
+    {
+        if (_currentRow is not null) _currentRow.Focus(FocusState.Programmatic);
+    }
+
+    private Button? _currentRow;
+
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         CloseRequested?.Invoke(this, new RoutedEventArgs());
@@ -28,6 +36,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
     public void Load(PlaybackRequest request)
     {
         ItemsPanel.Children.Clear();
+        _currentRow = null;
 
         bool isEpisode = request.MediaType == "episode" || request.EpisodeNumber.HasValue;
 
@@ -186,6 +195,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
 
         button.Content = hStack;
         button.Click += (s, e) => action();
+        if (isCurrent) _currentRow = button;
         return button;
     }
 }

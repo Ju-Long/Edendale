@@ -51,14 +51,38 @@ public sealed class PlayerContext
     /// <summary>Skip-prompt ranges; empty until (and unless) the lookup answers.</summary>
     public IReadOnlyList<MediaSegment> Segments { get; set; } = [];
 
-    /// <summary>Subtitle track ids that came from AddSlave (downloads and side files).</summary>
-    public HashSet<int> ExternalSubtitleIds { get; } = [];
-
-    /// <summary>The attached subtitle files, so a reopen can attach them again.</summary>
+    /// <summary>The attached subtitle files in attach order, so a reopen or loop can attach them again.</summary>
     public List<string> ExternalSubtitleUris { get; } = [];
 
-    /// <summary>AddSlave calls whose new track hasn't been reported yet.</summary>
-    public int PendingExternalSubtitles { get; set; }
+    /// <summary>LibVLC track id → file, for subtitles that came from AddSlave (downloads and side files).</summary>
+    public Dictionary<int, string> ExternalSubtitleTracks { get; } = [];
+
+    /// <summary>Attached files whose track LibVLC hasn't reported yet, oldest first.</summary>
+    public Queue<string> PendingExternalSubtitles { get; } = new();
+
+    public bool IsExternalSubtitle(int trackId) => ExternalSubtitleTracks.ContainsKey(trackId);
+
+    /// <summary>Records an AddSlave call; its track arrives later through ESAdded.</summary>
+    public void ExternalSubtitleAttaching(string uri)
+    {
+        if (!ExternalSubtitleUris.Contains(uri)) ExternalSubtitleUris.Add(uri);
+        PendingExternalSubtitles.Enqueue(uri);
+    }
+
+    /// <summary>A new subtitle track appeared; true when it is an attached file's.</summary>
+    public bool SubtitleTrackAdded(int trackId)
+    {
+        if (PendingExternalSubtitles.Count == 0) return false;
+        ExternalSubtitleTracks[trackId] = PendingExternalSubtitles.Dequeue();
+        return true;
+    }
+
+    /// <summary>A new LibVLC input starts: track ids are reassigned, the files are kept.</summary>
+    public void ResetExternalTracks()
+    {
+        ExternalSubtitleTracks.Clear();
+        PendingExternalSubtitles.Clear();
+    }
 
     /// <summary>Resolves the library records behind <paramref name="request"/>.</summary>
     public static PlayerContext Resolve(PlaybackRequest request, IEnumerable<LibraryShow> shows)
@@ -77,6 +101,12 @@ public sealed class PlayerContext
     /// <summary>The stored successor, for auto-advance and the Up Next card.</summary>
     public LibraryEpisode? NextEpisode =>
         Show is not null && Episode is not null ? EpisodeProgression.NextEpisode(Episode, Show) : null;
+
+    /// <summary>The stored predecessor, for the Previous media key.</summary>
+    public PlaybackRequest? PreviousRequest =>
+        Show is not null && Episode is not null && EpisodeProgression.PreviousEpisode(Episode, Show) is { } previous
+            ? PlayerSession.RequestFor(Show, previous)
+            : null;
 
     /// <summary>The play request for the stored successor, or null.</summary>
     public PlaybackRequest? NextRequest =>

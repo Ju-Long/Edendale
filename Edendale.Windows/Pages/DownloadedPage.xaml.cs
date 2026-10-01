@@ -22,6 +22,9 @@ public sealed class ResumeEntry
     public LibraryMovie? Movie { get; init; }
     public LibraryShow? Show { get; init; }
     public LibraryEpisode? Episode { get; init; }
+
+    /// <summary>Orders resumable titles and next-up suggestions together.</summary>
+    public long LastWatchedEpochMillis { get; init; }
 }
 
 /// <summary>
@@ -55,7 +58,7 @@ public sealed partial class DownloadedPage : Page
     }
 
     /// <summary>An unmatched local file (no TMDB id) is hidden while the filter is on.</summary>
-    private static bool AudienceAllows(int? tmdbId, string mediaType)
+    internal static bool AudienceAllows(int? tmdbId, string mediaType)
     {
         var filter = AppServices.YoungAudience;
         if (!filter.IsEnabled) return true;
@@ -129,42 +132,7 @@ public sealed partial class DownloadedPage : Page
         // Continue Watching: newest first, joined to local files (Apple parity).
         // The audience filter hides blocked titles here and in every grid below.
         var movies = library.Movies.Where(m => AudienceAllows(m.TmdbId, "movie")).ToList();
-        var resumeEntries = new List<ResumeEntry>();
-        foreach (var progress in AppServices.WatchProgress.InProgress)
-        {
-            if (resumeEntries.Count >= 12) break;
-            if (progress.MediaType == "movie")
-            {
-                var movie = movies.FirstOrDefault(m => m.TmdbId == progress.TmdbId);
-                if (movie is null) continue;
-                resumeEntries.Add(new ResumeEntry
-                {
-                    Title = movie.Title,
-                    Subtitle = $"{(int)(progress.Position * 100)}% watched",
-                    ImageUrl = movie.BackdropUrl ?? movie.PosterUrl,
-                    Progress = progress.Position,
-                    PlaceholderAsset = "ms-appx:///Assets/Icons/film.svg",
-                    Movie = movie,
-                });
-            }
-            else
-            {
-                var episode = library.EpisodeByTmdbId(progress.TmdbId);
-                if (episode is null) continue;
-                var show = library.ShowForEpisode(episode);
-                if (show is null || !AudienceAllows(show.TmdbId, "tv")) continue;
-                resumeEntries.Add(new ResumeEntry
-                {
-                    Title = show.Name,
-                    Subtitle = $"{episode.EpisodeCode} · {episode.DisplayTitle}",
-                    ImageUrl = episode.StillUrl ?? show.BackdropUrl,
-                    Progress = progress.Position,
-                    PlaceholderAsset = "ms-appx:///Assets/Icons/tv.svg",
-                    Show = show,
-                    Episode = episode,
-                });
-            }
-        }
+        var resumeEntries = ContinueWatchingEntries(library, movies, limit: 12);
         ContinueSection.Visibility = resumeEntries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ResumeRepeater.ItemsSource = resumeEntries;
 
@@ -188,6 +156,77 @@ public sealed partial class DownloadedPage : Page
         // Resolve certifications for anything not yet decided; the filter's
         // Changed event re-runs this and the blocked titles drop out.
         _ = VerifyAudienceAsync();
+    }
+
+    /// <summary>
+    /// Half-watched titles plus, for each show with nothing in progress, the
+    /// stored episode after the furthest completed one (DIFF.md §3.4). The
+    /// suggestion works after the watched file was deleted, merges duplicate
+    /// show records into one card, and never writes progress.
+    /// </summary>
+    internal static List<ResumeEntry> ContinueWatchingEntries(LibraryService library, IReadOnlyList<LibraryMovie> movies, int? limit)
+    {
+        var entries = new List<ResumeEntry>();
+        var inProgress = AppServices.WatchProgress.InProgress;
+        foreach (var progress in inProgress)
+        {
+            if (progress.MediaType == "movie")
+            {
+                var movie = movies.FirstOrDefault(m => m.TmdbId == progress.TmdbId);
+                if (movie is null) continue;
+                entries.Add(new ResumeEntry
+                {
+                    Title = movie.Title,
+                    Subtitle = Loc.Format("Library_PercentWatched", (int)(progress.Position * 100)),
+                    ImageUrl = movie.BackdropUrl ?? movie.PosterUrl,
+                    Progress = progress.Position,
+                    PlaceholderAsset = "ms-appx:///Assets/Icons/film.svg",
+                    Movie = movie,
+                    LastWatchedEpochMillis = progress.LastWatchedEpochMillis,
+                });
+            }
+            else
+            {
+                var episode = library.EpisodeByTmdbId(progress.TmdbId);
+                if (episode is null) continue;
+                var show = library.ShowForEpisode(episode);
+                if (show is null || !AudienceAllows(show.TmdbId, "tv")) continue;
+                entries.Add(new ResumeEntry
+                {
+                    Title = show.Name,
+                    Subtitle = $"{episode.EpisodeCode} · {episode.DisplayTitle}",
+                    ImageUrl = episode.StillUrl ?? show.BackdropUrl,
+                    Progress = progress.Position,
+                    PlaceholderAsset = "ms-appx:///Assets/Icons/tv.svg",
+                    Show = show,
+                    Episode = episode,
+                    LastWatchedEpochMillis = progress.LastWatchedEpochMillis,
+                });
+            }
+        }
+
+        var inProgressShows = inProgress
+            .Where(progress => progress.MediaType == "episode" && progress.ShowTmdbId is not null)
+            .Select(progress => progress.ShowTmdbId!.Value)
+            .ToHashSet();
+        foreach (var nextUp in Core.EpisodeProgression.NextUpEpisodes(AppServices.WatchProgress.All, inProgressShows, library.Shows))
+        {
+            if (!AudienceAllows(nextUp.Show.TmdbId, "tv")) continue;
+            entries.Add(new ResumeEntry
+            {
+                Title = nextUp.Show.Name,
+                Subtitle = Loc.Format("Library_UpNext", $"{nextUp.Episode.EpisodeCode} · {nextUp.Episode.DisplayTitle}"),
+                ImageUrl = nextUp.Episode.StillUrl ?? nextUp.Show.BackdropUrl,
+                Progress = 0,
+                PlaceholderAsset = "ms-appx:///Assets/Icons/tv.svg",
+                Show = nextUp.Show,
+                Episode = nextUp.Episode,
+                LastWatchedEpochMillis = nextUp.LastWatchedEpochMillis,
+            });
+        }
+
+        var ordered = entries.OrderByDescending(entry => entry.LastWatchedEpochMillis);
+        return limit is int count ? [.. ordered.Take(count)] : [.. ordered];
     }
 
     private void BuildSources(LibraryService library)

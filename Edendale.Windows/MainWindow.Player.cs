@@ -1,0 +1,1004 @@
+using Edendale.Windows.Core;
+using Edendale.Windows.Services;
+using LibVLCSharp.Platforms.Windows;
+using LibVLCSharp.Shared;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI.Core;
+using VirtualKey = Windows.System.VirtualKey;
+
+namespace Edendale.Windows;
+
+/// <summary>
+/// The full-window LibVLC player: engine lifetime (and reopening at the same
+/// position when an instance option changes), progress and completion,
+/// auto-advance, per-title memory, the docked panes, full screen and Picture
+/// in Picture, keyboard, and the system media controls.
+/// </summary>
+public sealed partial class MainWindow
+{
+    private enum PlayerPane
+    {
+        None,
+        Playlist,
+        Adjustments,
+    }
+
+    /// <summary>What a reopen at the same position restores (F.3).</summary>
+    private sealed record ReopenState(
+        long TimeMilliseconds,
+        double BaseRate,
+        bool WasPlaying,
+        PlayerTrack? Audio,
+        PlayerTrack? Subtitle,
+        bool SubtitlesOff,
+        PlayerTrack? Video,
+        string? SelectedExternalSubtitle);
+
+    private LibVLC? _libVlc;
+    private string[] _swapChainOptions = [];
+    private IReadOnlyList<string>? _engineArguments;
+    private MediaPlayer? _mediaPlayer;
+    private PlaybackRequest? _currentPlayback;
+    private PlayerContext? _context;
+    private DispatcherQueueTimer? _progressTimer;
+    private readonly PlaybackTransitions _transitions = new();
+    private bool _resumePending;
+    private bool _titleMemoryPending;
+    private ReopenState? _reopenState;
+    private string? _reattachSelected;
+    private bool _reattachPending;
+    private bool _reopening;
+    private bool _isCompactOverlay;
+    private bool _isFullScreen;
+    private PlayerPane _openPane;
+    private VideoSourceInfo _sourceInfo = VideoSourceInfo.Unknown;
+    private MediaTransport? _transport;
+    private readonly global::Windows.UI.ViewManagement.UISettings _uiSettings = new();
+
+    private void InitializePlayer()
+    {
+        AppWindow.Changed += AppWindow_Changed;
+        AppServices.PlayerSettings.Changed += (_, key) => DispatcherQueue.TryEnqueue(() => PlayerSetting_Changed(key));
+        _ = GpuProbe.CapabilitiesAsync();
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        _transport = MediaTransport.TryCreate(hwnd, DispatcherQueue, MediaTransport_Command);
+    }
+
+    /// <summary>Live settings reach the running player at once; nothing restarts.</summary>
+    private void PlayerSetting_Changed(string key)
+    {
+        if (_mediaPlayer is not { } player) return;
+        if (AudioEnhancement.Owns(key))
+        {
+            PlayerEffects.ApplyEqualizer(player, AppServices.AudioEnhancement);
+        }
+        else if (key == VideoAdjustments.StorageKey)
+        {
+            PlayerEffects.ApplyAdjustments(player, AppServices.VideoAdjustments.EffectiveValues);
+        }
+        else if (key == PlayerPreferences.AspectFillKey)
+        {
+            ApplyAspectMode();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Opening and the engine
+    // ------------------------------------------------------------------
+
+    private void OpenPlayer(PlaybackRequest request)
+    {
+        LeaveCurrentItem();
+        DisposePlayer();
+
+        _transitions.Present();
+        _currentPlayback = request;
+        _context = PlayerContext.Resolve(request, AppServices.Library.Shows);
+        _resumePending = true;
+        _titleMemoryPending = true;
+        _reopenState = null;
+        _reattachPending = false;
+        _sourceInfo = VideoSourceInfo.Unknown;
+        AppServices.VideoEnhancement.IsShowingOriginal = false;
+        AppServices.VideoAdjustments.IsShowingOriginal = false;
+        AppServices.SegmentPrompts.Begin(IntroDbMedia.For(request));
+
+        PlayerOverlay.Visibility = Visibility.Visible;
+        ApplyingLayer.Visibility = Visibility.Collapsed;
+        ControlsOverlay.SetMediaPlayer(null, request.Title.ToUpperInvariant(), request.Subtitle, request, _context);
+        AdjustmentsPanel.Bind(null, _context);
+        if (_openPane == PlayerPane.Playlist) PlaylistPanel.Load(request);
+        if (_openPane == PlayerPane.None) ControlsOverlay.Focus(FocusState.Programmatic);
+        _transport?.SetItem(request, _context);
+
+        // The WinUI VideoView creates its Direct3D swap chain only once it is
+        // visible, so the first request waits for Initialized.
+        if (_swapChainOptions.Length > 0) _ = StartPlaybackAsync(request);
+    }
+
+    private void PlayerElement_Initialized(object sender, InitializedEventArgs e)
+    {
+        var changed = _swapChainOptions.Length > 0 && !_swapChainOptions.SequenceEqual(e.SwapChainOptions);
+        _swapChainOptions = e.SwapChainOptions;
+        if (changed)
+        {
+            // A new swap chain invalidates the engine bound to the old one.
+            _engineArguments = null;
+            if (_mediaPlayer is not null)
+            {
+                _ = ReopenAtSamePositionAsync();
+                return;
+            }
+        }
+        if (_currentPlayback is not null && _mediaPlayer is null) _ = StartPlaybackAsync(_currentPlayback);
+    }
+
+    /// <summary>
+    /// Builds or reuses the LibVLC instance for <paramref name="arguments"/>.
+    /// Subtitle appearance and video enhancement are instance arguments in
+    /// LibVLC 3 (the video output reads them when it opens, from the media
+    /// player's parent), so a change needs a new instance. The old one is
+    /// released only after the new one exists, keeping the plugins loaded.
+    /// </summary>
+    private void EnsureEngine(IReadOnlyList<string> arguments)
+    {
+        if (_libVlc is not null && _engineArguments is not null && _engineArguments.SequenceEqual(arguments)) return;
+
+        var created = new LibVLC([.. _swapChainOptions, .. arguments]);
+        var previous = _libVlc;
+        _libVlc = created;
+        _engineArguments = arguments;
+        previous?.Dispose();
+    }
+
+    private VideoEnhancementResult BuildEnhancement(GpuCapabilities capabilities, VideoSourceInfo source)
+    {
+        var settings = AppServices.VideoEnhancement;
+        var scale = PlayerElement.XamlRoot?.RasterizationScale ?? 1;
+        return VideoEnhancementOptions.Build(
+            settings.EffectivePreset,
+            settings.MotionSmoothing && !settings.IsShowingOriginal,
+            onBattery: false,
+            capabilities,
+            source,
+            (int)Math.Round(PlayerElement.ActualWidth * scale),
+            (int)Math.Round(PlayerElement.ActualHeight * scale),
+#if DEBUG
+            frameRateIndicator: true);
+#else
+            frameRateIndicator: false);
+#endif
+    }
+
+    private async Task StartPlaybackAsync(PlaybackRequest request)
+    {
+        var generation = _transitions.Generation;
+        bool Current() => ReferenceEquals(request, _currentPlayback) && generation == _transitions.Generation && _mediaPlayer is null;
+
+        try
+        {
+            var capabilities = await GpuProbe.CapabilitiesAsync();
+            if (!Current()) return;
+
+            // E.3: Motion Smoothing depends on the frame rate, so only then is
+            // the file parsed (briefly) before it plays.
+            var settings = AppServices.VideoEnhancement;
+            if (settings.MotionSmoothing && !settings.IsShowingOriginal && capabilities.MotionSmoothing && _sourceInfo.FrameRate is null)
+            {
+                EnsureEngine(PlayerEffects.EngineArguments(BuildEnhancement(capabilities, _sourceInfo), _uiSettings.TextScaleFactor));
+                using var probe = new Media(_libVlc!, new Uri(request.FilePath));
+                await probe.Parse(MediaParseOptions.ParseLocal, timeout: 2000);
+                if (!Current()) return;
+                _sourceInfo = PlayerEffects.SourceInfo(probe);
+            }
+
+            var enhancement = BuildEnhancement(capabilities, _sourceInfo);
+            EnsureEngine(PlayerEffects.EngineArguments(enhancement, _uiSettings.TextScaleFactor));
+            AdjustmentsPanel.ShowEnhancement(enhancement, capabilities);
+
+            var player = new MediaPlayer(_libVlc!);
+            Attach(player);
+            _mediaPlayer = player;
+            PlayerElement.MediaPlayer = player;
+            ControlsOverlay.SetMediaPlayer(player, request.Title.ToUpperInvariant(), request.Subtitle, request, _context);
+            AdjustmentsPanel.Bind(player, _context);
+            PlayerEffects.ApplyEqualizer(player, AppServices.AudioEnhancement);
+            _context?.ResetExternalTracks();
+            _reattachPending = _context?.ExternalSubtitleUris.Count > 0;
+
+            using var media = new Media(_libVlc!, new Uri(request.FilePath));
+            if (!player.Play(media))
+            {
+                FailPlayback();
+                return;
+            }
+
+            _progressTimer = DispatcherQueue.CreateTimer();
+            _progressTimer.Interval = TimeSpan.FromSeconds(5);
+            _progressTimer.Tick += (_, _) => ProgressTick();
+            _progressTimer.Start();
+        }
+        catch (VLCException)
+        {
+            FailPlayback();
+        }
+    }
+
+    private void Attach(MediaPlayer player)
+    {
+        player.Playing += MediaPlayer_Playing;
+        player.Paused += MediaPlayer_Paused;
+        player.Stopped += MediaPlayer_Paused;
+        player.LengthChanged += MediaPlayer_LengthChanged;
+        player.EndReached += MediaPlayer_EndReached;
+        player.EncounteredError += MediaPlayer_EncounteredError;
+        player.ESAdded += MediaPlayer_ESAdded;
+        player.Vout += MediaPlayer_Vout;
+    }
+
+    private void Detach(MediaPlayer player)
+    {
+        player.Playing -= MediaPlayer_Playing;
+        player.Paused -= MediaPlayer_Paused;
+        player.Stopped -= MediaPlayer_Paused;
+        player.LengthChanged -= MediaPlayer_LengthChanged;
+        player.EndReached -= MediaPlayer_EndReached;
+        player.EncounteredError -= MediaPlayer_EncounteredError;
+        player.ESAdded -= MediaPlayer_ESAdded;
+        player.Vout -= MediaPlayer_Vout;
+    }
+
+    private void FailPlayback()
+    {
+        ClosePlayer();
+        ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
+    }
+
+    // ------------------------------------------------------------------
+    // F.3: reopen at the same position
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Rebuilds the engine with the current instance options, keeping the
+    /// time, rate, pause state, tracks, and attached subtitles. The stopped
+    /// player never writes progress (the ReferenceEquals guards below).
+    /// </summary>
+    private async Task ReopenAtSamePositionAsync()
+    {
+        if (_reopening || _mediaPlayer is not { } player || _currentPlayback is not { } request) return;
+        _reopening = true;
+        try
+        {
+            var (video, audio, subtitles) = PlayerEffects.Tracks(player, _context);
+            var subtitle = subtitles.FirstOrDefault(track => track.Id == player.Spu);
+            _reopenState = new ReopenState(
+                TimeMilliseconds: Math.Max(0, player.Time),
+                BaseRate: ControlsOverlay.BaseRate,
+                WasPlaying: player.IsPlaying,
+                Audio: audio.FirstOrDefault(track => track.Id == player.AudioTrack),
+                Subtitle: subtitle,
+                SubtitlesOff: player.Spu < 0,
+                Video: video.Count > 1 ? video.FirstOrDefault(track => track.Id == player.VideoTrack) : null,
+                SelectedExternalSubtitle: subtitle is { IsExternal: true } && _context is { } context
+                    && context.ExternalSubtitleTracks.TryGetValue(subtitle.Id, out var uri) ? uri : null);
+            _resumePending = false;
+            _titleMemoryPending = false;
+
+            ApplyingLayer.Visibility = Visibility.Visible;
+            WriteProgress();
+            DisposePlayer();
+            await StartPlaybackAsync(request);
+        }
+        finally
+        {
+            _reopening = false;
+        }
+    }
+
+    /// <summary>
+    /// A panel option LibVLC reads at video-output time changed. When the
+    /// resulting arguments are the ones the engine already runs with (High
+    /// Quality without a denoiser, say), only the labels update.
+    /// </summary>
+    private void AdjustmentsPanel_EngineReopenRequested(object? sender, EventArgs e)
+    {
+        var capabilities = GpuProbe.Current;
+        var enhancement = BuildEnhancement(capabilities, _sourceInfo);
+        var arguments = PlayerEffects.EngineArguments(enhancement, _uiSettings.TextScaleFactor);
+        if (_engineArguments is not null && _engineArguments.SequenceEqual(arguments))
+        {
+            AdjustmentsPanel.ShowEnhancement(enhancement, capabilities);
+            return;
+        }
+        _ = ReopenAtSamePositionAsync();
+    }
+
+    private void AdjustmentsPanel_RateChangeRequested(object? sender, double rate) => ControlsOverlay.SetBaseRate(rate);
+
+    private void ControlsOverlay_BaseRateChanged(object? sender, double rate) => AdjustmentsPanel.ShowRate(rate);
+
+    private void RestoreReopenState(MediaPlayer player, ReopenState state)
+    {
+        if (state.TimeMilliseconds > 0 && player.Length <= 0) return; // wait for LengthChanged
+        _reopenState = null;
+
+        if (state.TimeMilliseconds > 0) player.Time = Math.Min(state.TimeMilliseconds, player.Length);
+        ControlsOverlay.SetBaseRate(state.BaseRate);
+        ReattachExternalSubtitles(player, state.SelectedExternalSubtitle);
+
+        var (video, audio, subtitles) = PlayerEffects.Tracks(player, _context);
+        if (state.Audio is { } wantedAudio
+            && (audio.FirstOrDefault(track => track.Id == wantedAudio.Id && track.Language == wantedAudio.Language)
+                ?? TitlePlaybackMemory.BestAudioMatch(Remembered(wantedAudio), audio)) is { } audioMatch)
+        {
+            player.SetAudioTrack(audioMatch.Id);
+        }
+        if (state.SubtitlesOff)
+        {
+            player.SetSpu(-1);
+        }
+        else if (state.Subtitle is { IsExternal: false } wantedSubtitle
+            && (subtitles.FirstOrDefault(track => track.Id == wantedSubtitle.Id && !track.IsExternal)
+                ?? TitlePlaybackMemory.BestSubtitleMatch(Remembered(wantedSubtitle), subtitles)) is { } subtitleMatch)
+        {
+            player.SetSpu(subtitleMatch.Id);
+        }
+        if (state.Video is { } wantedVideo
+            && video.FirstOrDefault(track => track.Width == wantedVideo.Width && track.Height == wantedVideo.Height) is { } videoMatch)
+        {
+            player.SetVideoTrack(videoMatch.Id);
+        }
+        if (!state.WasPlaying) player.SetPause(true);
+
+        ApplyingLayer.Visibility = Visibility.Collapsed;
+
+        static ContentPlayerPreferences Remembered(PlayerTrack track) => new()
+        {
+            AudioTrackLanguage = track.Language,
+            AudioTrackName = track.Name,
+            SubtitleEnabled = true,
+            SubtitleTrackLanguage = track.Language,
+            SubtitleTrackName = track.Name,
+        };
+    }
+
+    /// <summary>
+    /// Downloaded and side-loaded subtitles belong to one LibVLC input, so a
+    /// new input (a reopen or a loop) attaches them again once the file's own
+    /// tracks exist, keeping them out of the per-title memory.
+    /// </summary>
+    private void ReattachExternalSubtitles(MediaPlayer player, string? selected)
+    {
+        if (!_reattachPending || _context is not { } context) return;
+        _reattachPending = false;
+        foreach (var uri in context.ExternalSubtitleUris.ToList())
+        {
+            context.ExternalSubtitleAttaching(uri);
+            player.AddSlave(MediaSlaveType.Subtitle, uri, select: uri == selected);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Player events
+    // ------------------------------------------------------------------
+
+    private void MediaPlayer_Playing(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            DisplayAwake.Hold(true);
+            _transport?.SetPlaying(true);
+
+            if (_reopenState is { } state)
+            {
+                RestoreReopenState(player, state);
+            }
+            else
+            {
+                ReattachExternalSubtitles(player, _reattachSelected);
+                _reattachSelected = null;
+                ResumeIfNeeded(player);
+                RestoreTitleMemory(player);
+            }
+
+            ApplyAspectMode();
+            PlayerEffects.ApplyAdjustments(player, AppServices.VideoAdjustments.EffectiveValues);
+            RefreshSourceInfo(player);
+            AdjustmentsPanel.RefreshTracks();
+        });
+    }
+
+    private void MediaPlayer_Paused(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            DisplayAwake.Hold(false);
+            _transport?.SetPlaying(false);
+        });
+    }
+
+    private void MediaPlayer_LengthChanged(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            if (_reopenState is { } state) RestoreReopenState(player, state);
+            else ResumeIfNeeded(player);
+        });
+    }
+
+    private void MediaPlayer_ESAdded(object? sender, MediaPlayerESAddedEventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        var type = e.Type;
+        var id = e.Id;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            if (type == TrackType.Text) _context?.SubtitleTrackAdded(id);
+            if (_reopenState is null) RestoreTitleMemory(player);
+            AdjustmentsPanel.RefreshTracks();
+        });
+    }
+
+    /// <summary>LibVLC's adjust filter can only be switched on once a video output exists.</summary>
+    private void MediaPlayer_Vout(object? sender, MediaPlayerVoutEventArgs e)
+    {
+        if (sender is not MediaPlayer player || e.Count <= 0) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            PlayerEffects.ApplyAdjustments(player, AppServices.VideoAdjustments.EffectiveValues);
+            ApplyAspectMode();
+            RefreshSourceInfo(player);
+        });
+    }
+
+    private void MediaPlayer_EndReached(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (ReferenceEquals(player, _mediaPlayer)) HandleNaturalEnd(creditsSkip: false);
+        });
+    }
+
+    private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
+    {
+        if (sender is not MediaPlayer player) return;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (ReferenceEquals(player, _mediaPlayer)) FailPlayback();
+        });
+    }
+
+    /// <summary>E.2/E.4 labels need the source's size and frame rate, known once it plays.</summary>
+    private void RefreshSourceInfo(MediaPlayer player)
+    {
+        using var media = player.Media;
+        var info = PlayerEffects.SourceInfo(media);
+        if (info.Width <= 0) return;
+        _sourceInfo = info;
+        AdjustmentsPanel.ShowEnhancement(BuildEnhancement(GpuProbe.Current, info), GpuProbe.Current);
+    }
+
+    // ------------------------------------------------------------------
+    // Resume, per-title memory, progress, completion
+    // ------------------------------------------------------------------
+
+    /// <summary>Resume from the stored position when half-watched (Apple parity).</summary>
+    private void ResumeIfNeeded(MediaPlayer player)
+    {
+        if (!_resumePending) return;
+        if (_currentPlayback?.TmdbId is not int tmdbId)
+        {
+            _resumePending = false;
+            return;
+        }
+        var progress = AppServices.WatchProgress.Get(tmdbId, _currentPlayback.MediaType);
+        if (progress is null || progress.IsCompleted || progress.Position <= 0.005)
+        {
+            _resumePending = false;
+            return;
+        }
+
+        if (player.Length > 0)
+        {
+            player.Time = (long)(player.Length * progress.Position);
+            _resumePending = false;
+        }
+    }
+
+    /// <summary>3.3: the title's remembered speed and tracks, once LibVLC reports the tracks.</summary>
+    private void RestoreTitleMemory(MediaPlayer player)
+    {
+        if (!_titleMemoryPending) return;
+        var preferences = AppServices.PlayerPreferences.ContentPreferences(_context?.ContentKey);
+        if (preferences is null)
+        {
+            _titleMemoryPending = false;
+            return;
+        }
+
+        var (video, audio, subtitles) = PlayerEffects.Tracks(player, _context);
+        if (video.Count == 0 && audio.Count == 0) return; // tracks not reported yet
+        _titleMemoryPending = false;
+
+        if (preferences.Speed is double speed) ControlsOverlay.SetBaseRate(speed);
+        if (TitlePlaybackMemory.BestAudioMatch(preferences, audio) is { } audioMatch && audioMatch.Id != player.AudioTrack)
+        {
+            player.SetAudioTrack(audioMatch.Id);
+        }
+        if (preferences.SubtitleEnabled == false)
+        {
+            player.SetSpu(-1);
+        }
+        else if (preferences.SubtitleEnabled == true
+            && TitlePlaybackMemory.BestSubtitleMatch(preferences, subtitles) is { } subtitleMatch)
+        {
+            player.SetSpu(subtitleMatch.Id);
+        }
+        if (TitlePlaybackMemory.VideoMatch(preferences, video) is { } videoMatch && videoMatch.Id != player.VideoTrack)
+        {
+            player.SetVideoTrack(videoMatch.Id);
+        }
+    }
+
+    /// <summary>Remembers the speed and tracks for the title on screen.</summary>
+    private void SaveTitleMemory()
+    {
+        if (_mediaPlayer is not { } player || _titleMemoryPending || _context?.ContentKey is not { } key) return;
+        var (video, audio, subtitles) = PlayerEffects.Tracks(player, _context);
+        if (video.Count == 0 && audio.Count == 0) return;
+        AppServices.PlayerPreferences.SaveContentPreferences(key, TitlePlaybackMemory.Snapshot(
+            ControlsOverlay.BaseRate,
+            audio.FirstOrDefault(track => track.Id == player.AudioTrack),
+            subtitles.FirstOrDefault(track => track.Id == player.Spu),
+            hasSubtitleTracks: subtitles.Any(track => !track.IsExternal),
+            video.Count > 1 ? video.FirstOrDefault(track => track.Id == player.VideoTrack) : null));
+    }
+
+    private void ProgressTick()
+    {
+        WriteProgress();
+        if (_mediaPlayer is { } player) _transport?.UpdateTimeline(player.Time, player.Length);
+    }
+
+    private void WriteProgress()
+    {
+        if (!_transitions.ShouldWriteProgress) return;
+        if (_mediaPlayer is null || _currentPlayback?.TmdbId is not int tmdbId) return;
+        var durationMilliseconds = _mediaPlayer.Length;
+        if (durationMilliseconds <= 0) return;
+        var positionMilliseconds = Math.Max(0, _mediaPlayer.Time);
+
+        AppServices.WatchProgress.Update(
+            tmdbId,
+            _currentPlayback.MediaType,
+            (double)positionMilliseconds / durationMilliseconds,
+            positionMilliseconds / 1000.0,
+            _currentPlayback.ShowTmdbId,
+            _currentPlayback.SeasonNumber,
+            _currentPlayback.EpisodeNumber);
+    }
+
+    private void CompleteCurrent()
+    {
+        if (_currentPlayback?.TmdbId is int tmdbId)
+        {
+            AppServices.WatchProgress.MarkCompleted(tmdbId, _currentPlayback.MediaType);
+        }
+        _transitions.MarkCurrentCompleted();
+    }
+
+    /// <summary>
+    /// 3.4: at the natural end (or a terminal credits skip) the item is
+    /// complete, then the next stored episode plays, Loop restarts the file,
+    /// or the player closes. A newer manual request cancels the queued advance.
+    /// </summary>
+    private void HandleNaturalEnd(bool creditsSkip)
+    {
+        if (_mediaPlayer is not { } player || _currentPlayback is null) return;
+        var loop = AppServices.PlayerPreferences.LoopEnabled;
+        if (loop && !creditsSkip)
+        {
+            // Loop restarts instead of finishing.
+            RestartFromBeginning(player);
+            return;
+        }
+
+        CompleteCurrent();
+        var ticket = _transitions.RequestAdvance();
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!_transitions.Claim(ticket)) return;
+            if (loop && _mediaPlayer is { } current)
+            {
+                _transitions.Present();
+                RestartFromBeginning(current);
+            }
+            else if (_context?.NextRequest is { } next)
+            {
+                OpenPlayer(next);
+            }
+            else
+            {
+                ClosePlayer();
+            }
+        });
+    }
+
+    private void RestartFromBeginning(MediaPlayer player)
+    {
+        _reattachSelected = player.Spu >= 0 && _context is { } context
+            && context.ExternalSubtitleTracks.TryGetValue(player.Spu, out var selected) ? selected : null;
+        _reattachPending = _context?.ExternalSubtitleUris.Count > 0;
+        _context?.ResetExternalTracks();
+        player.Stop();
+        player.Play();
+    }
+
+    // ------------------------------------------------------------------
+    // Overlay requests
+    // ------------------------------------------------------------------
+
+    private void ClosePlayer_Click(object sender, RoutedEventArgs e) => ClosePlayer();
+
+    private void ControlsOverlay_PlaylistRequested(object sender, RoutedEventArgs e) => TogglePane(PlayerPane.Playlist);
+
+    private void ControlsOverlay_AdjustmentsRequested(object sender, RoutedEventArgs e) => TogglePane(PlayerPane.Adjustments);
+
+    private void ControlsOverlay_FullScreenRequested(object sender, RoutedEventArgs e)
+    {
+        // A double click in the floating window brings back the full window.
+        if (_isCompactOverlay) SetCompactOverlay(false);
+        else SetFullScreen(!_isFullScreen);
+    }
+
+    private void ControlsOverlay_PlayNextRequested(object sender, PlaybackRequest e) => OpenPlayer(e);
+
+    /// <summary>A credits skip that reaches the end finishes the item like the natural end.</summary>
+    private void ControlsOverlay_EndReachedBySkip(object sender, RoutedEventArgs e) => HandleNaturalEnd(creditsSkip: true);
+
+    private void AdjustmentsPanel_AspectFillChanged(object? sender, bool fill) => ApplyAspectMode();
+
+    private void PlayerPanel_CloseRequested(object sender, RoutedEventArgs e) => ClosePane();
+
+    private void PlaylistPanel_PlayRequested(object sender, PlaybackRequest e) => OpenPlayer(e);
+
+    // ------------------------------------------------------------------
+    // Docked panes (3.15)
+    // ------------------------------------------------------------------
+
+    private void TogglePane(PlayerPane pane)
+    {
+        if (_openPane == pane)
+        {
+            ClosePane();
+            return;
+        }
+        if (_isCompactOverlay || _currentPlayback is null) return;
+
+        if (pane == PlayerPane.Playlist) PlaylistPanel.Load(_currentPlayback);
+        PlaylistPanel.Visibility = pane == PlayerPane.Playlist ? Visibility.Visible : Visibility.Collapsed;
+        AdjustmentsPanel.Visibility = pane == PlayerPane.Adjustments ? Visibility.Visible : Visibility.Collapsed;
+        _openPane = pane;
+        PlayerSplit.IsPaneOpen = true;
+        if (pane == PlayerPane.Playlist) PlaylistPanel.FocusCurrent();
+        else AdjustmentsPanel.FocusFirst();
+    }
+
+    private void ClosePane()
+    {
+        if (_openPane == PlayerPane.None) return;
+        _openPane = PlayerPane.None;
+        PlayerSplit.IsPaneOpen = false;
+        PlaylistPanel.Visibility = Visibility.Collapsed;
+        AdjustmentsPanel.Visibility = Visibility.Collapsed;
+        ControlsOverlay.Focus(FocusState.Programmatic);
+    }
+
+    // ------------------------------------------------------------------
+    // Fit / Fill
+    // ------------------------------------------------------------------
+
+    private void PlayerElement_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (AppServices.PlayerPreferences.AspectFill) ApplyAspectMode();
+    }
+
+    /// <summary>Fit letterboxes the frame; fill crops it to the window.</summary>
+    private void ApplyAspectMode()
+    {
+        if (_mediaPlayer is null) return;
+
+        if (!AppServices.PlayerPreferences.AspectFill)
+        {
+            _mediaPlayer.CropGeometry = null;
+            _mediaPlayer.Scale = 0;
+            return;
+        }
+
+        var width = Math.Max(1, (int)Math.Round(PlayerElement.ActualWidth));
+        var height = Math.Max(1, (int)Math.Round(PlayerElement.ActualHeight));
+        var divisor = GreatestCommonDivisor(width, height);
+        _mediaPlayer.CropGeometry = $"{width / divisor}:{height / divisor}";
+    }
+
+    private static int GreatestCommonDivisor(int left, int right)
+    {
+        while (right != 0)
+        {
+            (left, right) = (right, left % right);
+        }
+        return left;
+    }
+
+    // ------------------------------------------------------------------
+    // Window presenters: full screen (W.1) and Picture in Picture
+    // ------------------------------------------------------------------
+
+    private void ControlsOverlay_PictureInPictureRequested(object sender, RoutedEventArgs e)
+        => SetCompactOverlay(!_isCompactOverlay);
+
+    /// <summary>
+    /// Windows' Picture in Picture: the shell window switches to the
+    /// compact-overlay presenter, a small always-on-top window showing just
+    /// the player. The docked pane closes, having no room.
+    /// </summary>
+    private void SetCompactOverlay(bool compact)
+    {
+        if (compact == _isCompactOverlay) return;
+        if (compact && PlayerOverlay.Visibility != Visibility.Visible) return;
+
+        try
+        {
+            if (compact)
+            {
+                ClosePane();
+                var presenter = CompactOverlayPresenter.Create();
+                presenter.InitialSize = CompactOverlaySize.Medium;
+                AppWindow.SetPresenter(presenter);
+            }
+            else
+            {
+                AppWindow.SetPresenter(AppWindowPresenterKind.Default);
+            }
+        }
+        catch (Exception)
+        {
+            // The compact-overlay presenter needs Windows 10 1903 or newer;
+            // on anything older the player just stays full window.
+            ShowActivationMessage(Loc.Get("Player_PipUnavailable"));
+            return;
+        }
+
+        _isCompactOverlay = compact;
+        _isFullScreen = false;
+        ControlsOverlay.SetPictureInPictureActive(compact);
+        ControlsOverlay.SetFullScreenActive(false);
+        ControlsOverlay.Focus(FocusState.Programmatic);
+    }
+
+    /// <summary>F, F11, the toolbar button, or a mouse double click.</summary>
+    private void SetFullScreen(bool fullScreen)
+    {
+        if (fullScreen == _isFullScreen) return;
+        if (fullScreen && PlayerOverlay.Visibility != Visibility.Visible) return;
+        if (fullScreen && _isCompactOverlay) SetCompactOverlay(false);
+
+        try
+        {
+            AppWindow.SetPresenter(fullScreen ? AppWindowPresenterKind.FullScreen : AppWindowPresenterKind.Default);
+        }
+        catch (Exception)
+        {
+            return;
+        }
+        _isFullScreen = fullScreen;
+        ControlsOverlay.SetFullScreenActive(fullScreen);
+    }
+
+    /// <summary>Keeps the flags right when Windows changes the presenter itself.</summary>
+    private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (!args.DidPresenterChange) return;
+        var kind = sender.Presenter.Kind;
+        _isFullScreen = kind == AppWindowPresenterKind.FullScreen;
+        _isCompactOverlay = kind == AppWindowPresenterKind.CompactOverlay;
+        ControlsOverlay.SetFullScreenActive(_isFullScreen);
+        ControlsOverlay.SetPictureInPictureActive(_isCompactOverlay);
+    }
+
+    // ------------------------------------------------------------------
+    // Keyboard
+    // ------------------------------------------------------------------
+
+    private static bool IsDown(VirtualKey key) =>
+        InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
+
+    private bool IsInPane(object? source)
+    {
+        for (var element = source as DependencyObject; element is not null; element = VisualTreeHelper.GetParent(element))
+        {
+            if (ReferenceEquals(element, PlayerPaneHost)) return true;
+            if (ReferenceEquals(element, PlayerOverlay)) return false;
+        }
+        return false;
+    }
+
+    private void PlayerOverlay_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Escape)
+        {
+            // Esc peels back one layer at a time: a transient panel, the
+            // docked pane, full screen or the floating window, then the player.
+            if (!ControlsOverlay.DismissTransient())
+            {
+                if (_openPane != PlayerPane.None) ClosePane();
+                else if (_isFullScreen) SetFullScreen(false);
+                else if (_isCompactOverlay) SetCompactOverlay(false);
+                else ClosePlayer();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // Keys typed into the docked pane belong to its controls, and Space
+        // on a focused button or switch presses that control.
+        if (IsInPane(e.OriginalSource)) return;
+        if (e.Key == VirtualKey.Space && e.OriginalSource is Microsoft.UI.Xaml.Controls.Primitives.ButtonBase or ToggleSwitch) return;
+
+        var control = IsDown(VirtualKey.Control);
+        switch (e.Key)
+        {
+            case VirtualKey.Space:
+                ControlsOverlay.TogglePlayPause();
+                break;
+            case VirtualKey.Left when !control:
+                ControlsOverlay.Skip(SkipDirection.Backward);
+                break;
+            case VirtualKey.Right when !control:
+                ControlsOverlay.Skip(SkipDirection.Forward);
+                break;
+            case VirtualKey.Up when control:
+                ChangeBrightness(1);
+                break;
+            case VirtualKey.Down when control:
+                ChangeBrightness(-1);
+                break;
+            case VirtualKey.Up:
+                ControlsOverlay.ChangeVolume(1);
+                break;
+            case VirtualKey.Down:
+                ControlsOverlay.ChangeVolume(-1);
+                break;
+            case VirtualKey.M when !control:
+                ControlsOverlay.ToggleMute();
+                break;
+            case VirtualKey.F when !control:
+            case VirtualKey.F11:
+                SetFullScreen(!_isFullScreen);
+                break;
+            case VirtualKey.S when !control:
+                ControlsOverlay.ActivateSkipPrompt();
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
+    }
+
+    /// <summary>Ctrl+↑/↓, like ⌘↑/↓ on macOS: one brightness step, shown in the HUD.</summary>
+    private void ChangeBrightness(int steps)
+    {
+        if (_mediaPlayer is null) return;
+        var value = AppServices.VideoAdjustments.Step(VideoAdjustment.Brightness, steps);
+        ControlsOverlay.ShowBrightness(value);
+        AdjustmentsPanel.RefreshPicture();
+    }
+
+    // ------------------------------------------------------------------
+    // System media controls (3.18)
+    // ------------------------------------------------------------------
+
+    private void MediaTransport_Command(MediaTransportCommand command)
+    {
+        if (_mediaPlayer is not { } player) return;
+        switch (command)
+        {
+            case MediaTransportCommand.Play:
+                if (!player.IsPlaying) ControlsOverlay.TogglePlayPause();
+                break;
+            case MediaTransportCommand.Pause:
+                if (player.IsPlaying) ControlsOverlay.TogglePlayPause();
+                break;
+            case MediaTransportCommand.Rewind:
+                ControlsOverlay.Skip(SkipDirection.Backward);
+                break;
+            case MediaTransportCommand.FastForward:
+                ControlsOverlay.Skip(SkipDirection.Forward);
+                break;
+            case MediaTransportCommand.Next when _context?.NextRequest is { } next:
+                OpenPlayer(next);
+                break;
+            case MediaTransportCommand.Previous when _context?.PreviousRequest is { } previous:
+                OpenPlayer(previous);
+                break;
+            case MediaTransportCommand.Stop:
+                ClosePlayer();
+                break;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Closing
+    // ------------------------------------------------------------------
+
+    /// <summary>The outgoing item keeps its speed, tracks, and position.</summary>
+    private void LeaveCurrentItem()
+    {
+        if (_mediaPlayer is null) return;
+        SaveTitleMemory();
+        WriteProgress();
+    }
+
+    private void ClosePlayer()
+    {
+        LeaveCurrentItem();
+        _transitions.End();
+        DisposePlayer();
+        _currentPlayback = null;
+        _context = null;
+        _resumePending = false;
+        _titleMemoryPending = false;
+        _reopenState = null;
+        AppServices.SegmentPrompts.End();
+        ClosePane();
+        SetFullScreen(false);
+        SetCompactOverlay(false);
+        PlayerOverlay.Visibility = Visibility.Collapsed;
+        ApplyingLayer.Visibility = Visibility.Collapsed;
+        ControlsOverlay.SetMediaPlayer(null, "", "", null, null);
+        AdjustmentsPanel.Bind(null, null);
+        DisplayAwake.Hold(false);
+        _transport?.Clear();
+    }
+
+    /// <summary>Stops and releases the media player (and with it the video output and swap chain).</summary>
+    private void DisposePlayer()
+    {
+        _progressTimer?.Stop();
+        _progressTimer = null;
+        if (_mediaPlayer is not { } player) return;
+
+        _mediaPlayer = null;
+        ControlsOverlay.SetMediaPlayer(null, "", "", _currentPlayback, _context);
+        AdjustmentsPanel.Bind(null, _context);
+        PlayerElement.MediaPlayer = null;
+        Detach(player);
+        player.Stop();
+        player.Dispose();
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        LeaveCurrentItem();
+        DisposePlayer();
+        DisplayAwake.Hold(false);
+        _libVlc?.Dispose();
+        _libVlc = null;
+    }
+}

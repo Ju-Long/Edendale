@@ -28,6 +28,25 @@ public static class AppServices
     /// <summary>Loop, Fit/Fill, skip prompts, and the per-title track memory.</summary>
     public static Core.PlayerPreferences PlayerPreferences { get; } = new(PlayerSettings);
 
+    /// <summary>Settings → Audio Enhancement and the booster.</summary>
+    public static Core.AudioEnhancement AudioEnhancement { get; } = new(PlayerSettings);
+
+    /// <summary>Player Adjustments → Picture.</summary>
+    public static Core.VideoAdjustments VideoAdjustments { get; } = new(PlayerSettings);
+
+    /// <summary>Settings → Subtitles.</summary>
+    public static Core.SubtitleAppearance SubtitleAppearance { get; } = new(PlayerSettings);
+
+    /// <summary>Player Adjustments → Enhancement (Option A).</summary>
+    public static Core.VideoEnhancementSettings VideoEnhancement { get; } = new(PlayerSettings);
+
+    /// <summary>TheIntroDB, reached only while skip prompts are switched on.</summary>
+    public static IntroDbClient IntroDb { get; } = new();
+
+    /// <summary>The skip-prompt state for the item on screen.</summary>
+    public static SegmentPrompts SegmentPrompts { get; } =
+        new(PlayerSettings, (request, cancellation) => IntroDb.SegmentsAsync(request, cancellation));
+
     private static bool _accountConnected;
 
     /// <summary>Launch-time side effects: OneDrive merge + TMDB account sync.</summary>
