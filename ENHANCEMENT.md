@@ -598,11 +598,11 @@ Don't build a workaround without asking the owner.
   get a candidate.
 
 **Checklist:**
-- [ ] **C.1.1** A pure `EpisodeProgression` object over plain data (season,
+- [x] **C.1.1** A pure `EpisodeProgression` object over plain data (season,
   episode, id or URI), with no Room types.
 
 **Tests (JVM):**
-- [ ] **C.1.T1** Port every case from `EpisodeProgressionTests` and
+- [x] **C.1.T1** Port every case from `EpisodeProgressionTests` and
   `UpcomingEpisodePreviewTests`: crossing seasons, duplicates, specials into
   season 1, no fallback to season 0, the last episode, an episode not in the
   show, Loop on, an unknown duration, and the 30 s boundary.
@@ -1793,6 +1793,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | C.4 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures, 110 tests) | not run (no emulator/device connected in CI environment) | Removed timed auto-skip constants, methods, latches, toggles, obsolete strings across all locales, and cleaned up legacy keys |
 | 2026-10-01 | C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 123 tests) | not run (no emulator/device connected in CI environment) | Implemented TheIntroDB pure introdb package, transport in AndroidEdendaleCore, PlayerSegmentController, UI prompt, S key, TV D3 focus, Playback panel toggle, Settings section with links, and README docs |
 | 2026-10-01 | B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 149 tests) | not run (no emulator/device connected in CI environment) | Persisted loop/aspectFill globally, added ContentPlayerPreferences model/rules/codec/store, Media3 track adapter, ext- prefix on sideloaded subtitles, and per-title memory save/restore |
+| 2026-10-01 | C.1 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 173 tests) | not run (no emulator/device connected in CI environment) | Pure EpisodeProgression rules (nextEpisode, upcomingEpisode, highestCompletedPerShow, nextUpEpisodes) and 24 JVM tests |
 
 ---
 
@@ -1807,16 +1808,16 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.4 | Strings and translations | Complete | 6f93abb |
 | A.5 | Test conventions | Complete | 4310f03 |
 | B.1 | App Controls | Complete | 9b2fbd5 |
-| B.2 | Persisted state and per-title memory | Complete | cfac514 |
+| B.2 | Persisted state and per-title memory | Complete | 15db4ef |
 | B.3 | Track pickers and panel order | Not started | |
 | B.4 | Subtitle appearance and placement | Not started | |
 | B.5 | Playlist panel redesign | Not started | |
 | B.6 | Speed and seek checks | Not started | |
-| C.1 | Episode progression rules | Not started | |
+| C.1 | Episode progression rules | Complete | b91eb45 |
 | C.2 | Auto-advance and Up Next | Not started | |
 | C.3 | Continue Watching next-up | Not started | |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
-| C.5 | TheIntroDB skip prompts | Complete | fa12d69 |
+| C.5 | TheIntroDB skip prompts | Complete | 4c2be70 |
 | C.6 | MediaSession and system surfaces | Not started | |
 | D.1 | Buffered SMB reads | Not started | |
 | D.2 | Source records (Room v3) | Not started | |
