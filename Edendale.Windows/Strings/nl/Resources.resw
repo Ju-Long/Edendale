@@ -164,7 +164,7 @@
     <value>Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>De enige netwerkverzoeken van Edendale zijn naar TMDB voor illustraties en metagegevens, plus door de gebruiker gestarte trailers via de privacyvriendelijke YouTube-insluiting. Nooit enige vorm van analytics.</value>
+    <value>Edendale maakt verbinding met TMDB voor artwork en metadata, met de bronnen die je koppelt om je bestanden te tonen en af te spelen, met Wyzie Subs als je ondertitels zoekt, met TheIntroDB alleen zolang overslaan voorstellen aanstaat, en met de privacyvriendelijke YouTube-embed als je een trailer afspeelt. Nooit analytics.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>HET ARCHIEF LADEN</value>
@@ -552,7 +552,7 @@ IS STIL</value>
     <value>Ontworpen voor privacy</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Je bibliotheekindex en kijkvoortgang blijven op dit apparaat. De enige netwerkverzoeken die Edendale doet, zijn naar TMDB voor illustraties en metagegevens — er wordt verder niets verzonden.</value>
+    <value>Je bibliotheekindex en kijkvoortgang blijven op dit apparaat. Edendale neemt contact op met TMDB voor artwork en metadata, en verder alleen met wat jij kiest: de bronnen die je koppelt, ondertitelzoekopdrachten, overslaan voorstellen als dat aanstaat en trailers die je afspeelt. Verder wordt niets verstuurd.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Kies een dag en vervolgens een tweede dag om het bereik te sluiten.</value>

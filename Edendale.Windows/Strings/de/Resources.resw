@@ -164,7 +164,7 @@
     <value>Dieses Produkt verwendet die TMDB-API, wird jedoch nicht von TMDB befürwortet oder zertifiziert.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendales einzige Netzwerkaufrufe gehen an TMDB für Bildmaterial und Metadaten, plus benutzerinitiierte Trailer-Wiedergabe über die datenschutzkonforme YouTube-Einbettung. Niemals Analysedaten.</value>
+    <value>Edendale verbindet sich mit TMDB für Artwork und Metadaten, mit den verknüpften Quellen zum Auflisten und Abspielen deiner Dateien, mit Wyzie Subs, wenn du Untertitel suchst, mit TheIntroDB nur, solange Überspringen anbieten aktiv ist, und mit der datenschutzfreundlichen YouTube-Einbettung, wenn du einen Trailer abspielst. Niemals Analysen.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>ARCHIV WIRD GELADEN</value>
@@ -552,7 +552,7 @@ IST STUMM</value>
     <value>Von Grund auf privat</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Dein Bibliotheksindex und Wiedergabefortschritt bleiben auf diesem Gerät. Die einzigen Netzwerkaufrufe, die Edendale durchführt, gehen an TMDB für Bildmaterial und Metadaten — es wird sonst nichts an irgendeinen Ort gesendet.</value>
+    <value>Dein Bibliotheksindex und dein Wiedergabefortschritt bleiben auf diesem Gerät. Edendale kontaktiert TMDB für Artwork und Metadaten und sonst nur, was du auswählst: die verknüpften Quellen, Untertitelsuchen, Überspringen anbieten, wenn es aktiv ist, und Trailer, die du abspielst. Sonst wird nichts gesendet.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Wähle einen Tag, dann einen zweiten Tag, um den Zeitraum einzugrenzen.</value>

@@ -172,6 +172,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         else
         {
             _progressTimer.Stop();
+            RefreshChapterMarks();
         }
     }
 
@@ -607,6 +608,54 @@ public sealed partial class PlayerControlsOverlay : UserControl
     {
         if (_mediaPlayer == null) return;
         TotalTimeText.Text = PlayerLogic.Timestamp(Math.Max(0, _mediaPlayer.Length) / 1000.0);
+        RefreshChapterMarks();
+    }
+
+    // ------------------------------------------------------------------
+    // Chapter marks (X.7)
+    // ------------------------------------------------------------------
+
+    /// <summary>Half the slider thumb's width: its centre travels from here to the far end less this.</summary>
+    private const double TimelineThumbInset = 9;
+    private const double ChapterMarkHeight = 6;
+    private IReadOnlyList<double> _chapterMarks = [];
+
+    /// <summary>Reads the file's chapters again; called once its duration or tracks are known.</summary>
+    public void RefreshChapterMarks()
+    {
+        IReadOnlyList<double> marks = [];
+        if (_mediaPlayer is { } player)
+        {
+            try
+            {
+                marks = PlayerLogic.ChapterMarks(player.FullChapterDescriptions().Select(chapter => chapter.TimeOffset), player.Length);
+            }
+            catch (VLCException)
+            {
+                // A file without chapters draws no marks.
+            }
+        }
+        if (marks.SequenceEqual(_chapterMarks)) return;
+        _chapterMarks = marks;
+        DrawChapterMarks();
+    }
+
+    private void ChapterMarksCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChapterMarks();
+
+    /// <summary>Each chapter start cuts a narrow ink gap into the track.</summary>
+    private void DrawChapterMarks()
+    {
+        ChapterMarksCanvas.Children.Clear();
+        var track = ChapterMarksCanvas.ActualWidth - 2 * TimelineThumbInset;
+        if (track <= 0) return;
+        var brush = (Brush)Application.Current.Resources["EdendaleBackgroundBrush"];
+        foreach (var mark in _chapterMarks)
+        {
+            var tick = new Microsoft.UI.Xaml.Shapes.Rectangle { Width = 2, Height = ChapterMarkHeight, Fill = brush };
+            Canvas.SetLeft(tick, TimelineThumbInset + mark * track - 1);
+            Canvas.SetTop(tick, (ChapterMarksCanvas.ActualHeight - ChapterMarkHeight) / 2);
+            ChapterMarksCanvas.Children.Add(tick);
+        }
     }
 
     private void UpdateProgress()

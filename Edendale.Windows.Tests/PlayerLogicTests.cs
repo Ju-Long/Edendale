@@ -152,4 +152,25 @@ public sealed class PlayerLogicTests
         // Unknown duration: only the lower bound applies.
         Assert.AreEqual(45_000, PlayerLogic.SkipTarget(30_000, 15, 0));
     }
+
+    [TestMethod]
+    public void ChapterMarksSkipTheOpeningChapterAndTheEnd()
+    {
+        var marks = PlayerLogic.ChapterMarks([0, 25_000, 75_000, 100_000, 120_000], 100_000);
+        CollectionAssert.AreEqual(new[] { 0.25, 0.75 }, marks.ToArray());
+    }
+
+    [TestMethod]
+    public void ChapterMarksAreOrderedAndDistinct()
+    {
+        var marks = PlayerLogic.ChapterMarks([50_000, 10_000, 50_000], 100_000);
+        CollectionAssert.AreEqual(new[] { 0.1, 0.5 }, marks.ToArray());
+    }
+
+    [TestMethod]
+    public void ChapterMarksNeedAKnownDuration()
+    {
+        Assert.AreEqual(0, PlayerLogic.ChapterMarks([10_000], 0).Count);
+        Assert.AreEqual(0, PlayerLogic.ChapterMarks([10_000], -1).Count);
+    }
 }

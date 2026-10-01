@@ -99,7 +99,11 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="CurrentTimeText" Grid.Column="0" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="0,0,16,0" MinWidth="45" TextAlignment="Right" />
-                    <Slider x:Uid="PlayerTimeline" x:Name="TimelineSlider" Grid.Column="1" VerticalAlignment="Center" ValueChanged="TimelineSlider_ValueChanged" AutomationProperties.Name="Timeline"/>
+                    <Grid Grid.Column="1" VerticalAlignment="Center">
+                        <Slider x:Uid="PlayerTimeline" x:Name="TimelineSlider" VerticalAlignment="Center" ValueChanged="TimelineSlider_ValueChanged" AutomationProperties.Name="Timeline"/>
+                        <!-- X.7: chapter marks over the track. They ignore input, so the slider keeps every press. -->
+                        <Canvas x:Name="ChapterMarksCanvas" IsHitTestVisible="False" SizeChanged="ChapterMarksCanvas_SizeChanged" />
+                    </Grid>
                     <TextBlock x:Name="TotalTimeText" Grid.Column="2" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="45" />
                 </Grid>
 

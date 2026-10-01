@@ -477,6 +477,7 @@ public sealed partial class MainWindow
             PlayerEffects.ApplyAdjustments(player, AppServices.VideoAdjustments.EffectiveValues);
             RefreshSourceInfo(player);
             AdjustmentsPanel.RefreshTracks();
+            ControlsOverlay.RefreshChapterMarks();
         });
     }
 
@@ -514,6 +515,7 @@ public sealed partial class MainWindow
             if (type == TrackType.Text) _context?.SubtitleTrackAdded(id);
             if (_reopenState is null) RestoreTitleMemory(player);
             AdjustmentsPanel.RefreshTracks();
+            ControlsOverlay.RefreshChapterMarks();
         });
     }
 

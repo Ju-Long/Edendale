@@ -164,7 +164,7 @@
     <value>이 제품은 TMDB API를 사용하지만 TMDB의 보증이나 인증을 받지 않았습니다.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale의 유일한 네트워크 호출은 아트워크 및 메타데이터를 위한 TMDB와 개인 정보 보호가 강화된 YouTube 임베드를 통해 사용자가 시작한 예고편 재생뿐입니다. 분석 데이터는 절대 수집하지 않습니다.</value>
+    <value>Edendale은 아트워크와 메타데이터를 위해 TMDB에, 파일 목록과 재생을 위해 연결한 소스에, 자막을 검색할 때 Wyzie Subs에, 건너뛰기 제안이 켜져 있을 때만 TheIntroDB에, 예고편을 재생할 때 YouTube의 개인정보 보호 강화 임베드에 연결합니다. 분석은 절대 없습니다.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>아카이브 로드 중</value>
@@ -552,7 +552,7 @@
     <value>개인정보 보호 중심 설계</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>라이브러리 인덱스 및 시청 진행률은 이 디바이스에 유지됩니다. Edendale이 호출하는 네트워크는 아트워크 및 메타데이터를 위한 TMDB뿐입니다 — 그 외에는 아무것도 다른 곳으로 전송되지 않습니다.</value>
+    <value>라이브러리 색인과 시청 진행 상황은 이 기기에 남습니다. Edendale은 아트워크와 메타데이터를 위해 TMDB에 연결하며, 그 밖에는 사용자가 선택한 것(연결한 소스, 자막 검색, 켜져 있을 때의 건너뛰기 제안, 재생한 예고편)에만 연결합니다. 그 외에는 아무것도 전송되지 않습니다.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>하루를 선택한 다음 범위를 닫을 두 번째 날짜를 선택하세요.</value>

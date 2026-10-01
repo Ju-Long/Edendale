@@ -164,7 +164,7 @@
     <value>Questo prodotto utilizza l'API di TMDB ma non è approvato o certificato da TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Le uniche chiamate di rete di Edendale sono a TMDB per locandine e metadati, oltre alla riproduzione dei trailer avviata dall'utente tramite l'incorporamento YouTube con privacy migliorata. Nessuna analisi, mai.</value>
+    <value>Edendale si collega a TMDB per immagini e metadati, alle sorgenti che colleghi per elencare e riprodurre i tuoi file, a Wyzie Subs quando cerchi sottotitoli, a TheIntroDB solo mentre gli inviti a saltare sono attivi e all’incorporamento YouTube con privacy avanzata quando riproduci un trailer. Mai analisi.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>CARICAMENTO DELL'ARCHIVIO</value>
@@ -552,7 +552,7 @@
     <value>Privacy integrata</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>L'indice della tua libreria e l'avanzamento della visione rimangono su questo dispositivo. Le uniche chiamate di rete che Edendale effettua sono a TMDB per locandine e metadati — nient'altro viene inviato da nessuna parte.</value>
+    <value>L’indice della libreria e i progressi di visione restano su questo dispositivo. Edendale contatta TMDB per immagini e metadati e, per il resto, solo ciò che scegli tu: le sorgenti che colleghi, le ricerche di sottotitoli, gli inviti a saltare quando sono attivi e i trailer che riproduci. Nient’altro viene inviato.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Scegli un giorno, poi un secondo giorno per chiudere l'intervallo.</value>

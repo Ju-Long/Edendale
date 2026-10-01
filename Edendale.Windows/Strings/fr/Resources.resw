@@ -164,7 +164,7 @@
     <value>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Les seuls appels réseau d'Edendale sont vers TMDB pour les illustrations et les métadonnées, plus la lecture des bandes-annonces initiée par l'utilisateur via l'intégration YouTube respectueuse de la vie privée. Aucune analyse, jamais.</value>
+    <value>Edendale contacte TMDB pour les illustrations et les métadonnées, les sources que vous liez pour lister et lire vos fichiers, Wyzie Subs quand vous cherchez des sous-titres, TheIntroDB uniquement quand les propositions de saut sont activées, et l’intégration YouTube à confidentialité renforcée quand vous lisez une bande-annonce. Jamais d’analyses.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>CHARGEMENT DE L'ARCHIVE</value>
@@ -552,7 +552,7 @@ EST SILENCIEUSE</value>
     <value>Confidentialité intégrée</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>L'index de votre bibliothèque et votre progression de lecture restent sur cet appareil. Les seuls appels réseau qu'Edendale effectue sont vers TMDB pour les illustrations et les métadonnées — rien d'autre n'est envoyé nulle part.</value>
+    <value>L’index de votre bibliothèque et votre progression restent sur cet appareil. Edendale contacte TMDB pour les illustrations et les métadonnées, et sinon uniquement ce que vous choisissez : les sources que vous liez, les recherches de sous-titres, les propositions de saut quand elles sont activées et les bandes-annonces que vous lisez. Rien d’autre n’est envoyé.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Choisissez un jour, puis un deuxième jour pour fermer la plage.</value>

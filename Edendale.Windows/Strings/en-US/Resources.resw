@@ -164,7 +164,7 @@
     <value>This product uses the TMDB API but is not endorsed or certified by TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale's only network calls are to TMDB for artwork and metadata, plus user-initiated trailer playback through the privacy-enhanced YouTube embed. No analytics, ever.</value>
+    <value>Edendale reaches TMDB for artwork and metadata, the sources you link to list and play your files, Wyzie Subs when you search for subtitles, TheIntroDB only while skip prompts are on, and YouTube’s privacy-enhanced embed when you play a trailer. No analytics, ever.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>LOADING THE ARCHIVE</value>
@@ -552,7 +552,7 @@ IS SILENT</value>
     <value>Private by Design</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Your library index and watch progress stay on this device. The only network calls Edendale makes are to TMDB for artwork and metadata — nothing else is sent anywhere.</value>
+    <value>Your library index and watch progress stay on this device. Edendale contacts TMDB for artwork and metadata, and otherwise only what you choose: the sources you link, subtitle searches, skip prompts when they’re on, and trailers you play. Nothing else is sent anywhere.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Pick a day, then a second day to close the range.</value>

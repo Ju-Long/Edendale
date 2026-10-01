@@ -156,6 +156,23 @@ public static class PlayerLogic
         return Math.Max(0, target);
     }
 
+    /// <summary>
+    /// X.7: where chapter marks sit on the timeline, as fractions of the
+    /// duration in ascending order. The opening chapter (at 0) and anything
+    /// at or past the end draw no mark, and a duplicate start draws one.
+    /// An unknown duration draws none.
+    /// </summary>
+    public static IReadOnlyList<double> ChapterMarks(IEnumerable<long> chapterStartsMilliseconds, long durationMilliseconds)
+    {
+        if (durationMilliseconds <= 0) return [];
+        return chapterStartsMilliseconds
+            .Where(start => start > 0 && start < durationMilliseconds)
+            .Distinct()
+            .Order()
+            .Select(start => (double)start / durationMilliseconds)
+            .ToList();
+    }
+
     // ------------------------------------------------------------------
     // Time formatting
     // ------------------------------------------------------------------

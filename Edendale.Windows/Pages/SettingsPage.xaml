@@ -437,7 +437,7 @@
 
                         <TextBlock
                             x:Uid="SettingsNetworkNote"
-                            Text="Edendale's only network calls are to TMDB for artwork and metadata, plus user-initiated trailer playback through the privacy-enhanced YouTube embed. No analytics, ever."
+                            Text="Edendale reaches TMDB for artwork and metadata, the sources you link to list and play your files, Wyzie Subs when you search for subtitles, TheIntroDB only while skip prompts are on, and YouTube’s privacy-enhanced embed when you play a trailer. No analytics, ever."
                             Style="{StaticResource SettingsBodyRowTextStyle}" />
                     </StackPanel>
                 </Border>

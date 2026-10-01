@@ -164,7 +164,7 @@
     <value>本產品使用 TMDB API，但未經 TMDB 認可或認證。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale 唯一的網路呼叫，是向 TMDB 取得圖本與中繼資料，以及使用者透過隱私權強化的 YouTube 內嵌播放器播放預告片。絕無任何分析追蹤。</value>
+    <value>Edendale 會連線到 TMDB 取得圖片和中繼資料、連線到你連結的來源以列出和播放檔案、在你搜尋字幕時連線到 Wyzie Subs、僅在略過提示開啟時連線到 TheIntroDB，並在你播放預告片時使用 YouTube 隱私強化嵌入。絕無分析統計。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>正在載入典藏</value>
@@ -552,7 +552,7 @@
     <value>隱私保護源於設計</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>您的媒體櫃索引與觀看進度會保留在此裝置上。Edendale 唯一的網路呼叫，是向 TMDB 取得圖本與中繼資料 — 絕不會將其他任何資料傳送到任何地方。</value>
+    <value>你的媒體櫃索引和觀看進度會保留在此裝置上。Edendale 會連線到 TMDB 取得圖片和中繼資料，除此之外只連線到你選擇的內容：你連結的來源、字幕搜尋、開啟時的略過提示以及你播放的預告片。不會傳送到其他任何地方。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>挑選一天，接著挑選第二天以關閉範圍。</value>

@@ -164,7 +164,7 @@
     <value>この製品はTMDB APIを使用していますが、TMDBによる承認や認定は受けていません。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale のネットワーク通信は、アートワークとメタデータのための TMDB への呼び出しと、プライバシーが強化された YouTube 埋め込みを通じたユーザー主導の予告編再生のみです。分析は一切行われません。</value>
+    <value>Edendale が接続するのは、アートワークとメタデータのための TMDB、ファイルの一覧と再生のためにリンクしたソース、字幕を検索するときの Wyzie Subs、スキップの提案がオンのときだけの TheIntroDB、そして予告編を再生するときの YouTube のプライバシー強化埋め込みです。分析は一切ありません。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>アーカイブを読み込み中</value>
@@ -552,7 +552,7 @@
     <value>プライバシーを重視した設計</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>ライブラリのインデックスと視聴状況はこのデバイスに保持されます。Edendale のネットワーク通信は、アートワークとメタデータのための TMDB への呼び出しのみです — 他のデータがどこかに送信されることはありません。</value>
+    <value>ライブラリのインデックスと視聴の進捗はこのデバイスに残ります。Edendale が接続するのはアートワークとメタデータのための TMDB と、あなたが選んだもの (リンクしたソース、字幕検索、オンのときのスキップの提案、再生した予告編) だけです。それ以外は何も送信されません。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>1日目を選択し、次に2日目を選択して範囲を指定します。</value>

@@ -164,7 +164,7 @@
     <value>Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendales enda nätverksanrop är till TMDB för omslag och metadata, plus användarinitierad traileruppspelning via den integritetsförbättrade inbäddningen av YouTube. Inga analyser, någonsin.</value>
+    <value>Edendale ansluter till TMDB för bilder och metadata, till källorna du länkar för att lista och spela upp dina filer, till Wyzie Subs när du söker undertexter, till TheIntroDB bara medan hoppa över-förslag är på och till YouTubes integritetsförbättrade inbäddning när du spelar en trailer. Aldrig analys.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>LÄSER IN ARKIVET</value>
@@ -552,7 +552,7 @@
     <value>Designad för integritet</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Ditt biblioteksindex och visningsförlopp stannar på den här enheten. De enda nätverksanrop Edendale gör är till TMDB för omslag och metadata — inget annat skickas någonstans.</value>
+    <value>Ditt biblioteksindex och ditt visningsförlopp stannar på den här enheten. Edendale kontaktar TMDB för bilder och metadata, och i övrigt bara det du väljer: källorna du länkar, undertextsökningar, hoppa över-förslag när de är på och trailers du spelar upp. Inget annat skickas någonstans.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Välj en dag, och sedan en andra dag för att stänga intervallet.</value>
