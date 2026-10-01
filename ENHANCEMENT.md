@@ -261,7 +261,7 @@ recorded.
 
 All new device-local player settings go through one small layer.
 
-- [ ] **A.3.1** Create `player/PlayerPreferences.kt` (or a `prefs` subpackage)
+- [x] **A.3.1** Create `player/PlayerPreferences.kt` (or a `prefs` subpackage)
   with:
   - pure parse and normalize functions for each setting (no Android imports),
     tested on the JVM;
@@ -270,7 +270,7 @@ All new device-local player settings go through one small layer.
     (Settings) and `PlayerActivity`;
   - change notification (`OnSharedPreferenceChangeListener`) so an open player,
     including one in PiP, picks up changes made in Settings.
-- [ ] **A.3.2** Key names match Apple's exactly (each step lists them). Missing,
+- [x] **A.3.2** Key names match Apple's exactly (each step lists them). Missing,
   unparseable, or unknown values fall back to the default; out-of-range values
   are normalized on read and never throw.
 
@@ -1786,6 +1786,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 |---|---|---|---|---|
 | 2026-10-01 | S.1–S.5, A.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (46 tasks executed, 0 failures) | not run | Baseline verified clean on android-27.0 branch |
 | 2026-10-01 | A.2 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run | Upgraded Media3 from 1.7.1 to 1.9.0 across all media3 dependencies |
+| 2026-10-01 | A.3 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run | Implemented PlayerPreferences and PlayerControlPreferencesTest |
 
 ---
 
@@ -1795,8 +1796,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 |---|---|---|---|
 | S | Before you start | Complete | — |
 | A.1 | Branch and baseline | Complete | b0c04f0 |
-| A.2 | Media3 1.9.0 | Complete | |
-| A.3 | Player preference store | Not started | |
+| A.2 | Media3 1.9.0 | Complete | f975bc1 |
+| A.3 | Player preference store | Complete | |
 | A.4 | Strings and translations | Not started | |
 | A.5 | Test conventions | Not started | |
 | B.1 | App Controls | Not started | |
