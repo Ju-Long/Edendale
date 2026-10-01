@@ -515,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Удалить источник</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” удален из вашей библиотеки, а сохраненный логин для {1} забыт, если только другой источник все еще не использует этот сервер. На сервере ничего не удаляется.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” удален из вашей библиотеки. На вашем диске ничего не удаляется.</value>
   </data>
@@ -539,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Не удалось получить доступ к сетевому пути: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Ошибка сетевого источника</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Не удалось подключиться к {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Сбой подключения</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows не удалось запустить коннектор сетевых ресурсов.</value>
@@ -1261,5 +1252,167 @@
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} мин</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Локальная папка</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-совместимое хранилище</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Недоступно</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Гость</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Похоже, адрес сервера указан неверно. Введите имя хоста, например nas.local, или IP-адрес.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Не удаётся подключиться к {0}. Убедитесь, что сервер включён и находится в той же сети, а имя и данные для входа указаны верно.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Не удалось прочитать папку {0}. Возможно, нужны другие данные для входа или права доступа.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Войдите в {0} ещё раз, чтобы открыть этот источник.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} не настроен в этой сборке Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} запретил доступ к этому объекту.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Этого файла больше нет в {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} сейчас ограничивает число запросов. Повторите попытку через минуту.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} вернул ошибку (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Для серверов за пределами локальной сети используйте HTTPS. Обычный HTTP работает только с локальными адресами, например nas.local или 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} не предоставил действительный HTTPS-сертификат. Edendale подключается только к серверам с доверенным сертификатом.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} не поддерживает перемотку в этом файле.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>SSH-ключ хоста {0} изменился. Edendale не будет подключаться, пока вы не одобрите новый ключ, привязав сервер заново.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>SSH-ключ хоста {0} ещё не одобрен.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} не принял имя пользователя и пароль.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Не удалось установить защищённое соединение с {0}. Его SSH-сервер предлагает только устаревшее шифрование, которое Edendale не поддерживает.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} не принимает вход по паролю. Разрешите аутентификацию по паролю в настройках SSH, чтобы привязать его.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} не предоставляет SFTP для этой учётной записи.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Этот бакет находится в регионе {0}. Измените регион и подключитесь снова.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Этот бакет находится в другом регионе. Проверьте регион и подключитесь снова.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>ЗАБЫТЬ</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>ВЫЙТИ</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Забыть данные для входа</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale забудет данные для входа в {0}. На сервере и в учётной записи ничего не удаляется.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale забудет данные для входа в {0}. Источники, которые их используют ({1}), попросят войти снова. На сервере и в учётной записи ничего не удаляется.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} источник</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>источников: {0}</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Подключиться</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Подключиться как гость</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Позиция прокрутки: {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>«{0}» удалён из вашей библиотеки. Сохранённые данные для входа остаются в разделе «Настройки» → «Учётные записи». На сервере ничего не удаляется.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Нет связи: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Нужен вход: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>ВОЙТИ</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>ВОЙТИ</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Воспроизвести из</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Воспроизвести из</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Воспроизвести из</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Продолжить просмотр</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Фильмы</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Сериалы</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Фильмы</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Сериалы</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>УЧЁТНЫЕ ЗАПИСИ</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Нет сохранённых данных для входа</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Данные для входа шифруются для вашей учётной записи Windows и остаются на этом ПК. При удалении источника они сохраняются.</value>
   </data>
 </root>

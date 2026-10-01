@@ -94,6 +94,32 @@ internal static class AppText
         ["Enhancement_PresetOff"] = "Off",
         ["Enhancement_PresetBalanced"] = "Balanced",
         ["Enhancement_PresetHighQuality"] = "High Quality",
+
+        ["SourceKind_Local"] = "Local Folder",
+        ["SourceKind_S3"] = "S3-Compatible Storage",
+        ["Source_Unavailable"] = "Unavailable",
+        ["Account_Guest"] = "Guest",
+
+        ["Connector_InvalidAddress"] = "That server address doesn’t look right. Enter a hostname like nas.local or an IP address.",
+        ["Connector_Unreachable"] = "Can’t reach {0}. Check that the server is on, on the same network, and that the name or login is correct.",
+        ["Connector_ListingFailed"] = "Couldn’t read the folder {0}. It may need a different login or permissions.",
+        ["Connector_SignInRequired"] = "Sign in to {0} again to reach this source.",
+        ["Connector_NotConfigured"] = "{0} isn’t set up in this build of Edendale.",
+        ["Connector_AccessDenied"] = "{0} denied access to this item.",
+        ["Connector_NotFound"] = "This file is no longer in {0}.",
+        ["Connector_RateLimited"] = "{0} is limiting requests right now. Try again in a minute.",
+        ["Connector_ServerError"] = "{0} returned an error (HTTP {1}).",
+        ["Connector_InsecureConnection"] = "Use HTTPS for servers outside your local network. Plain HTTP works only for local addresses such as nas.local or 192.168.1.10.",
+        ["Connector_CertificateInvalid"] = "{0} didn’t present a valid HTTPS certificate. Edendale connects only to servers with a trusted certificate.",
+        ["Connector_RangeUnsupported"] = "{0} doesn’t support seeking in this file.",
+        ["Connector_HostKeyMismatch"] = "The SSH host key for {0} has changed. Edendale won’t connect until you approve the new key by linking the server again.",
+        ["Connector_HostKeyUnverified"] = "The SSH host key for {0} hasn’t been approved yet.",
+        ["Connector_AuthenticationFailed"] = "{0} didn’t accept the username and password.",
+        ["Connector_SecureConnectionFailed"] = "Couldn’t set up a secure connection with {0}. Its SSH server offers only older encryption, which Edendale doesn’t support.",
+        ["Connector_PasswordLoginUnavailable"] = "{0} doesn’t accept password logins. Allow password authentication in its SSH settings to link it.",
+        ["Connector_SftpUnavailable"] = "{0} doesn’t offer SFTP for this account.",
+        ["Connector_BucketInAnotherRegion"] = "This bucket is in the {0} region. Change the region and connect again.",
+        ["Connector_BucketInAnotherRegionUnknown"] = "This bucket is in a different region. Check the region and connect again.",
     };
 
     /// <summary>The localized string for <paramref name="key"/>, or the English default.</summary>

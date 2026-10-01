@@ -515,9 +515,6 @@ ESTÁ EN SILENCIO</value>
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Quitar origen</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” se quita de la biblioteca y el inicio de sesión guardado para {1} se olvida, a menos que otro origen siga usando ese servidor. No se elimina nada en el servidor.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” se quita de la biblioteca. No se elimina nada en tu disco.</value>
   </data>
@@ -539,14 +536,8 @@ ESTÁ EN SILENCIO</value>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>No se pudo acceder a la ruta de red: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Error de origen de red</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>No se pudo conectar a {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Error de conexión</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows no pudo iniciar el conector de recursos compartidos de red.</value>
@@ -1261,5 +1252,167 @@ ESTÁ EN SILENCIO</value>
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Carpeta local</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>Almacenamiento compatible con S3</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>No disponible</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Invitado</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Esa dirección de servidor no parece correcta. Introduce un nombre de host como nas.local o una dirección IP.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>No se puede acceder a {0}. Comprueba que el servidor esté encendido y en la misma red, y que el nombre o el inicio de sesión sean correctos.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>No se pudo leer la carpeta {0}. Puede que necesite otro inicio de sesión o permisos.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Vuelve a iniciar sesión en {0} para acceder a esta fuente.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} no está configurado en esta versión de Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} ha denegado el acceso a este elemento.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Este archivo ya no está en {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} está limitando las solicitudes ahora mismo. Vuelve a intentarlo dentro de un minuto.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} ha devuelto un error (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Usa HTTPS para servidores fuera de tu red local. HTTP sin cifrar solo funciona con direcciones locales como nas.local o 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} no ha presentado un certificado HTTPS válido. Edendale solo se conecta a servidores con un certificado de confianza.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} no permite saltar a otra posición en este archivo.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>La clave de host SSH de {0} ha cambiado. Edendale no se conectará hasta que apruebes la nueva clave vinculando de nuevo el servidor.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>La clave de host SSH de {0} aún no se ha aprobado.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} no ha aceptado el nombre de usuario y la contraseña.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>No se pudo establecer una conexión segura con {0}. Su servidor SSH solo ofrece cifrado antiguo, que Edendale no admite.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} no acepta inicios de sesión con contraseña. Permite la autenticación por contraseña en su configuración SSH para vincularlo.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} no ofrece SFTP para esta cuenta.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Este bucket está en la región {0}. Cambia la región y vuelve a conectarte.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Este bucket está en otra región. Comprueba la región y vuelve a conectarte.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>OLVIDAR</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>CERRAR SESIÓN</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Olvidar inicio de sesión</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Cerrar sesión</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale olvidará el inicio de sesión de {0}. No se elimina nada del servidor ni de la cuenta.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale olvidará el inicio de sesión de {0}. Las fuentes que lo usan ({1}) te pedirán que vuelvas a iniciar sesión. No se elimina nada del servidor ni de la cuenta.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} fuente</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} fuentes</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Dirección</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Nombre de usuario</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Contraseña</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Conectar</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Conectar como invitado</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Posición de desplazamiento de {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” se quita de la biblioteca. Su inicio de sesión guardado se conserva en Configuración → Cuentas. No se elimina nada del servidor.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Sin conexión: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Requiere iniciar sesión: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>INICIAR SESIÓN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>INICIAR SESIÓN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Reproducir desde</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Reproducir desde</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reproducir desde</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Seguir viendo</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Películas</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Series de TV</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Películas</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Series de TV</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>CUENTAS</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>No hay inicios de sesión guardados</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Los inicios de sesión se cifran para tu cuenta de Windows y se quedan en este PC. Quitar una fuente conserva su inicio de sesión.</value>
   </data>
 </root>

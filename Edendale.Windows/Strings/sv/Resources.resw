@@ -515,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Ta bort källa</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” tas bort från ditt bibliotek och den sparade inloggningen för {1} glöms bort, om inte en annan källa fortfarande använder den servern. Inget på servern raderas.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” tas bort från ditt bibliotek. Inget på din disk raderas.</value>
   </data>
@@ -539,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Kunde inte komma åt nätverkssökvägen: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Fel med nätverkskälla</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Kunde inte ansluta till {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Anslutning misslyckades</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows kunde inte starta anslutningen för nätverksdelning.</value>
@@ -1261,5 +1252,167 @@
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Lokal mapp</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-kompatibel lagring</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Inte tillgänglig</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Gäst</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Serveradressen verkar inte stämma. Ange ett värdnamn som nas.local eller en IP-adress.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Det går inte att nå {0}. Kontrollera att servern är på, i samma nätverk och att namnet eller inloggningen stämmer.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Det gick inte att läsa mappen {0}. Den kan kräva en annan inloggning eller behörighet.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Logga in på {0} igen för att nå den här källan.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} är inte konfigurerat i den här versionen av Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} nekade åtkomst till objektet.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Filen finns inte längre i {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} begränsar förfrågningar just nu. Försök igen om en minut.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} returnerade ett fel (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Använd HTTPS för servrar utanför ditt lokala nätverk. Vanlig HTTP fungerar bara för lokala adresser som nas.local eller 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} visade inget giltigt HTTPS-certifikat. Edendale ansluter bara till servrar med ett betrott certifikat.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} stöder inte spolning i den här filen.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>SSH-värdnyckeln för {0} har ändrats. Edendale ansluter inte förrän du godkänner den nya nyckeln genom att länka servern igen.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>SSH-värdnyckeln för {0} har inte godkänts ännu.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} godtog inte användarnamnet och lösenordet.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Det gick inte att upprätta en säker anslutning till {0}. SSH-servern erbjuder bara äldre kryptering, som Edendale inte stöder.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} godtar inte inloggning med lösenord. Tillåt lösenordsautentisering i SSH-inställningarna för att länka den.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} erbjuder inte SFTP för det här kontot.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Den här bucketen finns i regionen {0}. Ändra region och anslut igen.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Den här bucketen finns i en annan region. Kontrollera regionen och anslut igen.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>GLÖM</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>LOGGA UT</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Glöm inloggning</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Logga ut</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale glömmer inloggningen för {0}. Inget på servern eller i kontot raderas.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale glömmer inloggningen för {0}. Källorna som använder den ({1}) ber dig logga in igen. Inget på servern eller i kontot raderas.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} källa</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} källor</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Adress</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Användarnamn</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Lösenord</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Anslut</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Anslut som gäst</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Rullningsposition för {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>”{0}” tas bort från ditt bibliotek. Den sparade inloggningen finns kvar under Inställningar → Konton. Inget på servern raderas.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Inloggning krävs: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>LOGGA IN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>LOGGA IN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Spela upp från</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Spela upp från</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Spela upp från</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Fortsätt titta</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Filmer</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>TV-serier</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Filmer</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>TV-serier</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>KONTON</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Inga sparade inloggningar</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Inloggningar krypteras för ditt Windows-konto och stannar på den här datorn. Om du tar bort en källa sparas dess inloggning.</value>
   </data>
 </root>

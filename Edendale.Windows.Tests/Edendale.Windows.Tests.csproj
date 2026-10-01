@@ -39,6 +39,7 @@
     <Compile Include="..\Edendale.Windows\Services\PlayerSession.cs" Link="App\Services\PlayerSession.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerContext.cs" Link="App\Services\PlayerContext.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSettingsStore.cs" Link="App\Services\PlayerSettingsStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SecretStores.cs" Link="App\Services\SecretStores.cs" />
     <Compile Include="..\Edendale.Windows\Services\SegmentPrompts.cs" Link="App\Services\SegmentPrompts.cs" />
     <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\SubtitleService.cs" Link="App\Services\SubtitleService.cs" />
@@ -49,6 +50,11 @@
     <Compile Include="..\Edendale.Windows\Services\YoungAudienceFilter.cs" Link="App\Services\YoungAudienceFilter.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
     <Compile Include="..\Edendale.Windows\Core\AudioEnhancement.cs" Link="App\Core\AudioEnhancement.cs" />
+    <Compile Include="..\Edendale.Windows\Core\LibrarySections.cs" Link="App\Core\LibrarySections.cs" />
+    <Compile Include="..\Edendale.Windows\Core\MediaConnectors.cs" Link="App\Core\MediaConnectors.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlaybackSources.cs" Link="App\Core\PlaybackSources.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SourceUrls.cs" Link="App\Core\SourceUrls.cs" />
+    <Compile Include="..\Edendale.Windows\Core\VideoFiles.cs" Link="App\Core\VideoFiles.cs" />
     <Compile Include="..\Edendale.Windows\Core\EpisodeProgression.cs" Link="App\Core\EpisodeProgression.cs" />
     <Compile Include="..\Edendale.Windows\Core\GpuCapabilities.cs" Link="App\Core\GpuCapabilities.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />

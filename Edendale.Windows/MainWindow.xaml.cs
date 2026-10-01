@@ -1,7 +1,11 @@
+using Edendale.Windows.Core;
 using Edendale.Windows.Pages;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using VirtualKey = Windows.System.VirtualKey;
+using VirtualKeyModifiers = Windows.System.VirtualKeyModifiers;
 
 namespace Edendale.Windows;
 
@@ -34,10 +38,20 @@ public sealed partial class MainWindow : Window
         AppServices.Player.PlaybackRequested += (_, request) =>
             DispatcherQueue.TryEnqueue(() => OpenPlayer(request));
 
-        // The Watchlist tab appears only when a visible item is saved.
+        // The Watchlist tab appears only when a visible item is saved, and
+        // each section row only while its section has titles.
         AppServices.Watchlist.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchlistTab);
-        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchlistTab);
+        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(() =>
+        {
+            UpdateWatchlistTab();
+            UpdateDownloadedSections();
+        });
+        AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateDownloadedSections);
+        AppServices.WatchProgress.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateDownloadedSections);
         UpdateWatchlistTab();
+        UpdateDownloadedSections();
+
+        AddShortcuts();
     }
 
     // ------------------------------------------------------------------
@@ -53,16 +67,59 @@ public sealed partial class MainWindow : Window
             await filter.VerifyAsync(items.Select(item => item.Ref));
         }
 
-        var hasVisible = items.Any(item => filter.Allows(item.Ref));
+        var visible = items.Where(item => filter.Allows(item.Ref)).ToList();
+        var hasVisible = visible.Count > 0;
         WatchlistNavItem.Visibility = hasVisible ? Visibility.Visible : Visibility.Collapsed;
+        _watchlistSections = LibrarySections.AvailableWatchlist(visible.Select(item => item.MediaType));
+        WatchlistMoviesNavItem.Visibility = Shown(_watchlistSections.Contains(WatchlistSection.Movies));
+        WatchlistShowsNavItem.Visibility = Shown(_watchlistSections.Contains(WatchlistSection.Shows));
 
         // The audience filter can empty the watchlist while it is open; fall
         // back to Movies & Shows so the reader is never stranded on a dead tab.
-        if (!hasVisible && (Nav.SelectedItem as NavigationViewItem)?.Tag as string == "watchlist")
+        if (!hasVisible && SelectedSidebarItem?.Tab == "watchlist")
         {
             SelectSidebar("movies");
             NavigateRoot(typeof(MoviesShowsPage));
+            return;
         }
+        ResolveSelectedSection();
+    }
+
+    // ------------------------------------------------------------------
+    // Section rows (DIFF.md §3.15)
+    // ------------------------------------------------------------------
+
+    private IReadOnlyList<WatchlistSection> _watchlistSections = [];
+    private IReadOnlyList<DownloadedSection> _downloadedSections = [];
+
+    private static Visibility Shown(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Downloaded's rows: Continue Watching, Movies, and TV Shows, for the current audience.</summary>
+    private void UpdateDownloadedSections()
+    {
+        var library = AppServices.Library;
+        var movies = library.Movies.Where(movie => DownloadedPage.AudienceAllows(movie.TmdbId, "movie")).ToList();
+        var shows = library.Shows.Count(show => DownloadedPage.AudienceAllows(show.TmdbId, "tv"));
+        var hasResume = DownloadedPage.ContinueWatchingEntries(library, movies, limit: 1).Count > 0;
+        _downloadedSections = LibrarySections.AvailableDownloaded(hasResume, movies.Count, shows);
+
+        DownloadedContinueNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.ContinueWatching));
+        DownloadedMoviesNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Movies));
+        DownloadedShowsNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Shows));
+        ResolveSelectedSection();
+    }
+
+    private SidebarItem? SelectedSidebarItem =>
+        (Nav.SelectedItem as NavigationViewItem)?.Tag is string tag ? SidebarItem.Parse(tag) : null;
+
+    /// <summary>If the open section emptied, the sidebar returns to its parent page.</summary>
+    private void ResolveSelectedSection()
+    {
+        if (SelectedSidebarItem is not { Section: not null } selected) return;
+        var resolved = selected.Resolved(_watchlistSections, _downloadedSections);
+        if (resolved == selected) return;
+        SelectSidebar(resolved.NavTag);
+        NavigateTo(resolved);
     }
 
     // ------------------------------------------------------------------
@@ -79,23 +136,93 @@ public sealed partial class MainWindow : Window
             NavigateRoot(typeof(SettingsPage));
             return;
         }
-        switch ((args.SelectedItem as NavigationViewItem)?.Tag as string)
+        if ((args.SelectedItem as NavigationViewItem)?.Tag is string tag) NavigateTo(SidebarItem.Parse(tag));
+    }
+
+    /// <summary>
+    /// Choosing the row that is already selected raises no SelectionChanged,
+    /// so a detail page on top of it returns to the page's root here.
+    /// </summary>
+    private void Nav_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+    {
+        if (args.IsSettingsInvoked || args.InvokedItemContainer?.Tag is not string tag) return;
+        if (SelectedSidebarItem?.NavTag == tag) NavigateTo(SidebarItem.Parse(tag));
+    }
+
+    /// <summary>Choosing a row opens that page at its root.</summary>
+    private void NavigateTo(SidebarItem item)
+    {
+        switch (item.Tab)
         {
             case "movies": NavigateRoot(typeof(MoviesShowsPage)); break;
-            case "watchlist": NavigateRoot(typeof(WatchlistPage)); break;
-            case "downloaded": NavigateRoot(typeof(DownloadedPage)); break;
+            case "watchlist": NavigateRoot(typeof(WatchlistPage), item.WatchlistSection); break;
+            case "downloaded": NavigateRoot(typeof(DownloadedPage), item.DownloadedSection); break;
             case "search": NavigateRoot(typeof(SearchPage)); break;
         }
     }
 
-    private void NavigateRoot(Type pageType)
+    private object? _rootParameter;
+
+    private void NavigateRoot(Type pageType, object? parameter = null)
     {
-        if (RootFrame.CurrentSourcePageType != pageType)
+        // A detail page on top, or another section of the same page, both
+        // navigate; re-choosing the page already shown does nothing.
+        if (RootFrame.CurrentSourcePageType != pageType || !Equals(_rootParameter, parameter))
         {
-            RootFrame.Navigate(pageType);
+            _rootParameter = parameter;
+            RootFrame.Navigate(pageType, parameter);
             // Tab switches start fresh; only detail pushes stack up.
             RootFrame.BackStack.Clear();
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Shortcuts (DIFF.md §3.15)
+    // ------------------------------------------------------------------
+
+    private void AddShortcuts()
+    {
+        Nav.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
+        AddShortcut(VirtualKey.B, VirtualKeyModifiers.Control, ToggleSidebar);
+        AddShortcut(VirtualKey.N, VirtualKeyModifiers.Control, () => WithDownloadedPage(page => page.AddFolderAsync()));
+        AddShortcut(VirtualKey.N, VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu, () => WithDownloadedPage(page => page.LinkSourceAsync()));
+        AddShortcut(VirtualKey.R, VirtualKeyModifiers.Control, Rescan);
+        AddShortcut(VirtualKey.F5, VirtualKeyModifiers.None, Rescan);
+    }
+
+    private void AddShortcut(VirtualKey key, VirtualKeyModifiers modifiers, Func<bool> action)
+    {
+        var accelerator = new KeyboardAccelerator { Key = key, Modifiers = modifiers };
+        accelerator.Invoked += (_, args) =>
+        {
+            // The player keeps its own keys; library shortcuts wait until it closes.
+            if (PlayerOverlay.Visibility == Visibility.Visible) return;
+            args.Handled = action();
+        };
+        Nav.KeyboardAccelerators.Add(accelerator);
+    }
+
+    /// <summary>Ctrl+B: the sidebar folds to its icons and back.</summary>
+    private bool ToggleSidebar()
+    {
+        Nav.IsPaneOpen = !Nav.IsPaneOpen;
+        return true;
+    }
+
+    /// <summary>Ctrl+N and Ctrl+Alt+N act on the Downloaded pages only.</summary>
+    private bool WithDownloadedPage(Func<DownloadedPage, Task> action)
+    {
+        if (RootFrame.Content is not DownloadedPage page) return false;
+        _ = action(page);
+        return true;
+    }
+
+    /// <summary>Ctrl+R or F5 rescans every source, ignoring the 15-minute throttle, once one is linked.</summary>
+    private bool Rescan()
+    {
+        if (AppServices.Library.Folders.Count == 0) return false;
+        _ = AppServices.Library.RescanAllFoldersAsync(force: true);
+        return true;
     }
 
     /// <summary>
@@ -196,6 +323,7 @@ public sealed partial class MainWindow : Window
     {
         _suppressNavSelection = true;
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>()
+            .SelectMany(item => item.MenuItems.OfType<NavigationViewItem>().Prepend(item))
             .FirstOrDefault(item => item.Tag as string == tag);
         _suppressNavSelection = false;
     }

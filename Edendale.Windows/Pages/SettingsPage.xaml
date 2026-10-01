@@ -203,14 +203,29 @@
                                                     TextWrapping="NoWrap"
                                                     TextTrimming="CharacterEllipsis" />
                                                 <!-- Credential-free by the model's contract: a local
-                                                     path or a UNC share, never a userinfo URL. -->
+                                                     path, a UNC share, or a readable provider path,
+                                                     never a userinfo URL. -->
                                                 <TextBlock
                                                     Text="{Binding Path}"
                                                     Style="{StaticResource BodySMTextStyle}"
                                                     TextWrapping="NoWrap"
                                                     TextTrimming="CharacterEllipsis" />
+                                                <!-- The last scan's failure, cleared by the next good scan. -->
+                                                <TextBlock
+                                                    Text="{Binding StateText}"
+                                                    Visibility="{Binding StateVisibility}"
+                                                    Style="{StaticResource BodySMTextStyle}"
+                                                    Foreground="{StaticResource EdendaleGoldBrush}"
+                                                    TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                <Button
+                                                    Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    Click="SignInFolder_Click"
+                                                    Tag="{Binding Folder}"
+                                                    Visibility="{Binding SignInVisibility}">
+                                                    <TextBlock x:Uid="SourceSignInLabel" Text="SIGN IN" />
+                                                </Button>
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
                                                     Click="RescanFolder_Click"
@@ -260,6 +275,10 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+
+            <!-- ACCOUNTS (DIFF.md §3.12): saved logins with the sources using
+                 each. Removing a source never removes its login; this does. -->
+            <controls:AccountsSettings />
 
             <!-- TMDB ACCOUNT — TMDBAccountSection.swift. The four phases are
                  expressed through per-button Visibility in UpdateAccountUi(). -->

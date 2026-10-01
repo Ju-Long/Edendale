@@ -14,6 +14,9 @@ namespace Edendale.Windows.Pages;
 /// </summary>
 public sealed partial class WatchlistPage : Page
 {
+    /// <summary>The sidebar section this visit shows, or null for the whole page (DIFF.md §3.15).</summary>
+    private Core.WatchlistSection? _section;
+
     public WatchlistPage()
     {
         InitializeComponent();
@@ -24,6 +27,8 @@ public sealed partial class WatchlistPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        _section = e.Parameter is Core.WatchlistSection section ? section : null;
+        if (e.NavigationMode != NavigationMode.Back) ContentScroll.ChangeView(null, 0, null, disableAnimation: true);
         Render();
         _ = VerifyAsync();
     }
@@ -51,8 +56,12 @@ public sealed partial class WatchlistPage : Page
         var items = AppServices.Watchlist.Items;
         var visible = items.Where(item => filter.Allows(item.Ref)).ToList();
 
-        var movies = visible.Where(item => item.MediaType == "movie").ToList();
-        var shows = visible.Where(item => item.MediaType == "tv").ToList();
+        var movies = _section is null or Core.WatchlistSection.Movies
+            ? visible.Where(item => item.MediaType == "movie").ToList()
+            : [];
+        var shows = _section is null or Core.WatchlistSection.Shows
+            ? visible.Where(item => item.MediaType == "tv").ToList()
+            : [];
 
         MoviesSection.Visibility = movies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         MoviesRepeater.ItemsSource = movies;

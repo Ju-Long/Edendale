@@ -515,9 +515,6 @@ IS SILENT</value>
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Remove Source</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” is removed from your library and the saved login for {1} is forgotten, unless another source still uses that server. Nothing on the server is deleted.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” is removed from your library. Nothing on your disk is deleted.</value>
   </data>
@@ -539,14 +536,8 @@ IS SILENT</value>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Could not access the network path: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Network Source Error</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Could not connect to {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Connection Failed</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows could not start the network-share connector.</value>
@@ -1261,5 +1252,167 @@ IS SILENT</value>
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Local Folder</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-Compatible Storage</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Guest</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>That server address doesn’t look right. Enter a hostname like nas.local or an IP address.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Can’t reach {0}. Check that the server is on, on the same network, and that the name or login is correct.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Couldn’t read the folder {0}. It may need a different login or permissions.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Sign in to {0} again to reach this source.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} isn’t set up in this build of Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} denied access to this item.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>This file is no longer in {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} is limiting requests right now. Try again in a minute.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} returned an error (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Use HTTPS for servers outside your local network. Plain HTTP works only for local addresses such as nas.local or 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} didn’t present a valid HTTPS certificate. Edendale connects only to servers with a trusted certificate.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} doesn’t support seeking in this file.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>The SSH host key for {0} has changed. Edendale won’t connect until you approve the new key by linking the server again.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>The SSH host key for {0} hasn’t been approved yet.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} didn’t accept the username and password.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Couldn’t set up a secure connection with {0}. Its SSH server offers only older encryption, which Edendale doesn’t support.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} doesn’t accept password logins. Allow password authentication in its SSH settings to link it.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} doesn’t offer SFTP for this account.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>This bucket is in the {0} region. Change the region and connect again.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>This bucket is in a different region. Check the region and connect again.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>FORGET</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>SIGN OUT</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Forget Login</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Sign Out</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale forgets the login for {0}. Nothing on the server or in the account is deleted.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale forgets the login for {0}. The sources that use it ({1}) will ask you to sign in again. Nothing on the server or in the account is deleted.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} source</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} sources</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Connect as Guest</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>{0} scroll position</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” is removed from your library. Its saved login stays in Settings → Accounts. Nothing on the server is deleted.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Needs sign-in: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>SIGN IN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>SIGN IN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Play From</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Play From</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play From</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Continue Watching</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Movies</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>TV Shows</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Movies</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>TV Shows</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>ACCOUNTS</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>No saved logins</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Logins are encrypted for your Windows account and stay on this PC. Removing a source keeps its login.</value>
   </data>
 </root>

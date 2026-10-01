@@ -43,6 +43,19 @@ public static class AppPaths
     /// <summary>DPAPI-protected SMB credentials; never leaves this device.</summary>
     public static string SmbCredentialsFile => Path.Combine(DataDirectory, "smb-credentials.bin");
 
+    /// <summary>DPAPI-protected SFTP, WebDAV, and S3 logins; never leaves this device (D11).</summary>
+    public static string ServerLoginsFile => Path.Combine(DataDirectory, "server-logins.bin");
+
+    /// <summary>
+    /// DPAPI-protected OneDrive and Dropbox accounts (refresh tokens only;
+    /// access tokens stay in memory). Never leaves this device (D11), and kept
+    /// apart from the OneDrive watch-state replica (D12).
+    /// </summary>
+    public static string CloudAccountsFile => Path.Combine(DataDirectory, "cloud-accounts.bin");
+
+    /// <summary>Pinned SSH host keys (trust on first use). Public keys, device-local.</summary>
+    public static string HostKeysFile => Path.Combine(DataDirectory, "ssh-host-keys.json");
+
     /// <summary>
     /// Downloaded subtitle files, kept so re-selecting one costs nothing
     /// against the daily quota. Device-local, like the library itself, and

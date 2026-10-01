@@ -4,6 +4,15 @@ namespace Edendale.Windows.Services;
 public static class AppServices
 {
     public static SmbCredentialsStore SmbCredentials { get; } = new();
+
+    /// <summary>SFTP, WebDAV, and S3 logins (DPAPI, device-local).</summary>
+    public static ServerLoginStore ServerLogins { get; } = new(AppPaths.ServerLoginsFile, DpapiProtector.CurrentUser);
+
+    /// <summary>OneDrive and Dropbox accounts (DPAPI refresh tokens, device-local).</summary>
+    public static CloudAccountVault CloudAccounts { get; } = new(AppPaths.CloudAccountsFile, DpapiProtector.CurrentUser);
+
+    /// <summary>Pinned SSH host keys for SFTP sources.</summary>
+    public static HostKeyStore HostKeys { get; } = new(AppPaths.HostKeysFile);
     public static LibraryService Library { get; } = new(SmbCredentials);
     public static WatchProgressStore WatchProgress { get; } = new();
     public static UserMediaStore UserMedia { get; } = new();

@@ -515,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>移除来源</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” 将从你的媒体库中移除，并且针对 {1} 保存的登录信息也将被清除，除非有其他来源仍在使用该服务器。服务器上的任何内容都不会被删除。</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” 将从你的媒体库中移除。磁盘上的任何内容都不会被删除。</value>
   </data>
@@ -539,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>无法访问网络路径：{0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>网络来源错误</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>无法连接到 {0}：{1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>连接失败</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows 无法启动网络共享连接器。</value>
@@ -1261,5 +1252,167 @@
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} 分钟</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>本地文件夹</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3 兼容存储</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>不可用</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>访客</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>该服务器地址似乎不正确。请输入 nas.local 这样的主机名或 IP 地址。</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>无法连接到 {0}。请检查服务器是否已开启、是否在同一网络中，以及名称或登录信息是否正确。</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>无法读取文件夹 {0}。可能需要其他登录信息或权限。</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>请重新登录 {0} 以访问此来源。</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>此 Edendale 版本未设置 {0}。</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} 拒绝访问此项目。</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>此文件已不在 {0} 中。</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} 目前正在限制请求。请一分钟后重试。</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} 返回了错误 (HTTP {1})。</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>本地网络以外的服务器请使用 HTTPS。未加密的 HTTP 仅适用于 nas.local 或 192.168.1.10 这样的本地地址。</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} 未提供有效的 HTTPS 证书。Edendale 只连接拥有受信任证书的服务器。</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} 不支持在此文件中跳转。</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>{0} 的 SSH 主机密钥已更改。在你重新链接服务器并批准新密钥之前，Edendale 不会连接。</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>{0} 的 SSH 主机密钥尚未获批准。</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} 未接受该用户名和密码。</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>无法与 {0} 建立安全连接。其 SSH 服务器仅提供 Edendale 不支持的旧式加密。</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} 不接受密码登录。请在其 SSH 设置中允许密码认证后再链接。</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} 未为此账户提供 SFTP。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>此存储桶位于 {0} 区域。请更改区域后重新连接。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>此存储桶位于其他区域。请检查区域后重新连接。</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>忘记</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>退出登录</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>忘记登录信息</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>退出登录</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale 将忘记 {0} 的登录信息。服务器或账户中的任何内容都不会被删除。</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale 将忘记 {0} 的登录信息。使用它的来源（{1}）将要求你重新登录。服务器或账户中的任何内容都不会被删除。</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} 个来源</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} 个来源</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>地址</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>用户名</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>密码</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>连接</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>以访客身份连接</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>{0}滚动位置</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” 将从你的媒体库中移除。已保存的登录信息仍保留在“设置”→“账户”中。服务器上的任何内容都不会被删除。</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>离线：{0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>需要登录：{0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>播放来源</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>播放来源</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>播放来源</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>继续观看</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>电影</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>电视节目</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>电影</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>电视节目</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>账户</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>没有已保存的登录信息</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>登录信息会针对你的 Windows 账户加密，并仅保存在这台电脑上。移除来源不会删除其登录信息。</value>
   </data>
 </root>

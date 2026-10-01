@@ -55,6 +55,44 @@ public sealed class SmbCredentialsStore
         return parts.Length >= 2 ? $@"\\{parts[0]}\{parts[1]}" : null;
     }
 
+    /// <summary>
+    /// The UNC path for what the Link Source address field holds: a UNC path
+    /// as typed, or an <c>smb://host/share/path</c> URL converted to one.
+    /// Null unless it names at least a server and a share.
+    /// </summary>
+    public static string? NormalizeUncPath(string input)
+    {
+        var text = input.Trim();
+        if (text.StartsWith("smb://", StringComparison.OrdinalIgnoreCase))
+        {
+            text = @"\\" + Uri.UnescapeDataString(text[6..]).Replace('/', '\\');
+        }
+        else if (text.StartsWith("//", StringComparison.Ordinal))
+        {
+            text = text.Replace('/', '\\');
+        }
+        if (!text.StartsWith(@"\\", StringComparison.Ordinal)) return null;
+        var parts = text.TrimStart('\\').Split('\\', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2 || parts[0].Contains('@')) return null;
+        return @"\\" + string.Join('\\', parts);
+    }
+
+    /// <summary>Every saved login, for Settings → Accounts. Passwords stay inside the store.</summary>
+    public IReadOnlyList<(string Host, string Username)> Logins
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _byHost.Values
+                    .OrderBy(record => record.Host, StringComparer.OrdinalIgnoreCase)
+                    .Select(record => (record.Host, record.Username))];
+            }
+        }
+    }
+
+    public event EventHandler? Changed;
+
     public SmbCredentials? Get(string host)
     {
         lock (_gate) return _byHost.GetValueOrDefault(host);
@@ -64,12 +102,14 @@ public sealed class SmbCredentialsStore
     {
         lock (_gate) _byHost[host] = new SmbCredentials(host, username, password);
         Persist();
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public void Remove(string host)
     {
         lock (_gate) _byHost.Remove(host);
         Persist();
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     private void Persist()

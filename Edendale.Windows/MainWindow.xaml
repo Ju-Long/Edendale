@@ -46,15 +46,29 @@
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="True"
             IsTitleBarAutoPaddingEnabled="False"
-            SelectionChanged="Nav_SelectionChanged">
+            SelectionChanged="Nav_SelectionChanged"
+            ItemInvoked="Nav_ItemInvoked">
             <NavigationView.MenuItems>
                 <!-- Icons are Font Awesome SVGs; PathIcon geometry is
                      assigned in code (SvgIcon.CreateIcon). -->
                 <NavigationViewItem x:Uid="MoviesNavItem" x:Name="MoviesNavItem" Content="Movies &amp; Shows" Tag="movies" IsSelected="True" />
                 <!-- Only surfaced once the watchlist has a visible item
                      (RootView.hasWatchlistItems parity). -->
-                <NavigationViewItem x:Uid="WatchlistNavItem" x:Name="WatchlistNavItem" Content="Watchlist" Tag="watchlist" Visibility="Collapsed" />
-                <NavigationViewItem x:Uid="DownloadedNavItem" x:Name="DownloadedNavItem" Content="Downloaded" Tag="downloaded" />
+                <NavigationViewItem x:Uid="WatchlistNavItem" x:Name="WatchlistNavItem" Content="Watchlist" Tag="watchlist" Visibility="Collapsed" IsExpanded="True">
+                    <!-- Section rows (DIFF.md §3.15): each shows only while
+                         its section has titles for the current audience. -->
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem x:Uid="WatchlistMoviesNavItem" x:Name="WatchlistMoviesNavItem" Content="Movies" Tag="watchlist:movies" Visibility="Collapsed" />
+                        <NavigationViewItem x:Uid="WatchlistShowsNavItem" x:Name="WatchlistShowsNavItem" Content="TV Shows" Tag="watchlist:shows" Visibility="Collapsed" />
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="DownloadedNavItem" x:Name="DownloadedNavItem" Content="Downloaded" Tag="downloaded" IsExpanded="True">
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem x:Uid="DownloadedContinueNavItem" x:Name="DownloadedContinueNavItem" Content="Continue Watching" Tag="downloaded:continue" Visibility="Collapsed" />
+                        <NavigationViewItem x:Uid="DownloadedMoviesNavItem" x:Name="DownloadedMoviesNavItem" Content="Movies" Tag="downloaded:movies" Visibility="Collapsed" />
+                        <NavigationViewItem x:Uid="DownloadedShowsNavItem" x:Name="DownloadedShowsNavItem" Content="TV Shows" Tag="downloaded:shows" Visibility="Collapsed" />
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
                 <NavigationViewItem x:Uid="SearchNavItem" x:Name="SearchNavItem" Content="Search" Tag="search" />
             </NavigationView.MenuItems>
             <Frame x:Name="RootFrame" Background="{StaticResource EdendaleBackgroundBrush}" />

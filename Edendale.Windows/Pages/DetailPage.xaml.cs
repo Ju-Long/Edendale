@@ -30,6 +30,9 @@ public sealed partial class DetailPage : Page
     private LibraryMovie? _localMovie;
     private LibraryShow? _localShow;
 
+    /// <summary>Every imported copy of the page's movie, in Play From order (DIFF.md §3.11).</summary>
+    private IReadOnlyList<LibraryMovie> _movieCopies = [];
+
     private bool _suppressRatingEvent;
 
     /// <summary>TMDB episode lists already fetched, keyed by season number.</summary>
@@ -51,6 +54,15 @@ public sealed partial class DetailPage : Page
             DispatcherQueue.TryEnqueue(UpdateUserMediaActions);
         AppServices.Watchlist.Changed += (_, _) =>
             DispatcherQueue.TryEnqueue(UpdateUserMediaActions);
+        // A scan can add a copy or mark a source offline, which changes the
+        // copy Play picks and the Play From rows.
+        AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_localMovie is null && _localShow is null) return;
+            ResolveCopies();
+            UpdateActions();
+            RenderEpisodes();
+        });
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -124,6 +136,43 @@ public sealed partial class DetailPage : Page
             if (reference.MediaType == "movie") _localMovie ??= library.MovieByTmdbId(reference.Id);
             else _localShow ??= library.ShowByTmdbId(reference.Id);
         }
+        ResolveCopies();
+    }
+
+    /// <summary>The page's own movie file first, then its other copies (local first, then by source).</summary>
+    private void ResolveCopies()
+    {
+        var library = AppServices.Library;
+        if (_localMovie is not { } movie)
+        {
+            _movieCopies = [];
+            return;
+        }
+        var others = movie.TmdbId is int tmdbId
+            ? library.MoviesByTmdbId(tmdbId).Where(copy => copy.Id != movie.Id)
+            : [];
+        _movieCopies = PlaybackSources.Order(movie, others, copy => library.FolderById(copy.FolderId));
+    }
+
+    /// <summary>
+    /// Play From rows: the source's name, then "Kind · filename" (with
+    /// "· Unavailable" while the source is offline or needs sign-in) as the
+    /// row's trailing text, which screen readers hear as part of the name.
+    /// </summary>
+    private static MenuFlyoutItem PlayFromItem(Guid folderId, string filePath, Action play)
+    {
+        var library = AppServices.Library;
+        var folder = library.FolderById(folderId);
+        var name = folder?.Name ?? PlaybackSources.FileName(filePath);
+        var detail = PlaybackSources.Detail(folder, filePath, library.IsUnavailable(folderId));
+        var item = new MenuFlyoutItem
+        {
+            Text = name,
+            KeyboardAcceleratorTextOverride = detail,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, $"{name}, {detail}");
+        item.Click += (_, _) => play();
+        return item;
     }
 
     private MediaRef? ResolvedRef
@@ -410,6 +459,15 @@ public sealed partial class DetailPage : Page
     {
         // Shows play per-episode below; only a local movie file is playable here.
         PlayButton.Visibility = _localMovie is null ? Visibility.Collapsed : Visibility.Visible;
+        PlayFromButton.Visibility = _movieCopies.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        PlayFromMenu.Items.Clear();
+        if (_movieCopies.Count > 1)
+        {
+            foreach (var copy in _movieCopies)
+            {
+                PlayFromMenu.Items.Add(PlayFromItem(copy.FolderId, copy.FilePath, () => AppServices.Player.Play(copy)));
+            }
+        }
         if (_localMovie?.TmdbId is int tmdbId
             && AppServices.WatchProgress.Get(tmdbId, "movie") is { IsCompleted: false, Position: > 0.005 })
         {
@@ -578,9 +636,12 @@ public sealed partial class DetailPage : Page
         AppServices.UserMedia.SetRating(reference.Id, reference.MediaType, rating, title, posterPath);
     }
 
+    /// <summary>Plays the first copy whose source is reachable (DIFF.md §3.11).</summary>
     private void Play_Click(object sender, RoutedEventArgs e)
     {
-        if (_localMovie is { } movie) AppServices.Player.Play(movie);
+        var library = AppServices.Library;
+        var copy = PlaybackSources.Preferred(_movieCopies, movie => library.IsUnavailable(movie.FolderId)) ?? _localMovie;
+        if (copy is not null) AppServices.Player.Play(copy);
     }
 
     private void ToggleWatched_Click(object sender, RoutedEventArgs e)
@@ -600,6 +661,11 @@ public sealed partial class DetailPage : Page
     // Episodes (local shows)
     // ------------------------------------------------------------------
 
+    /// <summary>
+    /// Season shelves merge every imported copy of the show into one list
+    /// keyed by (season, episode), in airing order (DIFF.md §3.11). Each
+    /// heading's rule is the shelf's scroll indicator and scrubber (§3.15).
+    /// </summary>
     private void RenderEpisodes()
     {
         if (_localShow is not { } show || show.Episodes.Count == 0)
@@ -610,33 +676,43 @@ public sealed partial class DetailPage : Page
         EpisodesSection.Visibility = Visibility.Visible;
         SeasonsList.Children.Clear();
 
-        foreach (var season in show.AvailableSeasons)
-        {
-            SeasonsList.Children.Add(new TextBlock
-            {
-                Text = Loc.Format("Season_Number", season),
-                Style = (Style)Application.Current.Resources["TitleLGTextStyle"],
-                Margin = new Thickness(0, 12, 0, 0),
-            });
+        var library = AppServices.Library;
+        var others = show.TmdbId is int tmdbId ? library.ShowsByTmdbId(tmdbId) : [];
+        var slots = PlaybackSources.EpisodeSlots(show, others, library.FolderById);
 
+        foreach (var season in slots.GroupBy(slot => slot.Season))
+        {
             var shelf = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 20 };
-            foreach (var episode in show.EpisodesFor(season))
+            foreach (var slot in season)
             {
-                shelf.Children.Add(EpisodeCard(show, episode));
+                shelf.Children.Add(EpisodeCard(show, slot));
             }
-            SeasonsList.Children.Add(new ScrollViewer
+            var scroller = new ScrollViewer
             {
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
                 HorizontalScrollMode = ScrollMode.Enabled,
                 VerticalScrollMode = ScrollMode.Disabled,
                 Content = shelf,
                 Padding = new Thickness(0, 0, 0, 14),
+            };
+            SeasonsList.Children.Add(new ShelfHeading
+            {
+                Title = Loc.Format("Season_Number", season.Key),
+                Shelf = scroller,
+                Margin = new Thickness(0, 12, 0, 0),
             });
+            SeasonsList.Children.Add(scroller);
         }
     }
 
-    private Button EpisodeCard(LibraryShow show, LibraryEpisode episode)
+    private Button EpisodeCard(LibraryShow pageShow, PlaybackSources.EpisodeSlot slot)
     {
+        var library = AppServices.Library;
+        // Title, artwork, and watch state come from an identified copy when
+        // the page's own file hasn't been matched yet.
+        var episode = slot.Copies.FirstOrDefault(copy => copy.TmdbId is not null) ?? slot.Primary;
+        var show = library.ShowForEpisode(episode) ?? pageShow;
+
         double progress = 0;
         var watched = false;
         if (episode.TmdbId is int tmdbId)
@@ -646,12 +722,15 @@ public sealed partial class DetailPage : Page
             if (record is { IsCompleted: false }) progress = record.Position;
         }
 
+        var subtitle = episode.RuntimeMinutes is int minutes && minutes > 0
+            ? $"{episode.EpisodeCode} · {minutes} min"
+            : episode.EpisodeCode;
+        if (slot.Copies.Count > 1) subtitle += " · " + Loc.Plural("Plural_SourceOne", "Plural_SourceOther", slot.Copies.Count);
+
         var card = new LandscapeCard
         {
             Title = episode.DisplayTitle,
-            Subtitle = episode.RuntimeMinutes is int minutes && minutes > 0
-                ? $"{episode.EpisodeCode} · {minutes} min"
-                : episode.EpisodeCode,
+            Subtitle = subtitle,
             ImageUrl = episode.StillUrl ?? show.BackdropUrl,
             CardWidth = 300,
             Progress = progress,
@@ -664,11 +743,16 @@ public sealed partial class DetailPage : Page
             Style = (Style)Application.Current.Resources["CardButtonStyle"],
             Content = card,
         };
-        button.Click += (_, _) => AppServices.Player.Play(show, episode);
+        void PlayCopy(LibraryEpisode copy) => AppServices.Player.Play(library.ShowForEpisode(copy) ?? show, copy);
+        button.Click += (_, _) =>
+        {
+            var copy = PlaybackSources.Preferred(slot.Copies, item => library.IsUnavailable(item.FolderId)) ?? episode;
+            PlayCopy(copy);
+        };
 
+        var flyout = new MenuFlyout();
         if (episode.TmdbId is int menuTmdbId)
         {
-            var flyout = new MenuFlyout();
             var toggle = new MenuFlyoutItem
             {
                 Text = Loc.Get(watched ? "Detail_MarkUnwatchedTooltip" : "Detail_MarkWatchedTooltip"),
@@ -685,8 +769,18 @@ public sealed partial class DetailPage : Page
                 }
             };
             flyout.Items.Add(toggle);
-            button.ContextFlyout = flyout;
         }
+        if (slot.Copies.Count > 1)
+        {
+            // The Play From section: one row per copy, the page's own first.
+            if (flyout.Items.Count > 0) flyout.Items.Add(new MenuFlyoutSeparator());
+            flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Detail_PlayFrom"), IsEnabled = false });
+            foreach (var copy in slot.Copies)
+            {
+                flyout.Items.Add(PlayFromItem(copy.FolderId, copy.FilePath, () => PlayCopy(copy)));
+            }
+        }
+        if (flyout.Items.Count > 0) button.ContextFlyout = flyout;
         return button;
     }
 

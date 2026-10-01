@@ -10,17 +10,9 @@ namespace Edendale.Windows.Services;
 public sealed class LibraryService
 {
     /// <summary>One list for import scans and the Open With registration (ActivationService).</summary>
-    public static readonly string[] SupportedVideoExtensions =
-    [
-        ".mkv", ".mp4", ".m4v", ".mov", ".avi", ".wmv", ".webm",
-        ".ts", ".m2ts", ".mpg", ".mpeg", ".flv", ".3gp",
-    ];
+    public static readonly string[] SupportedVideoExtensions = VideoFiles.SupportedExtensions;
 
-    private static readonly HashSet<string> VideoExtensions =
-        new(SupportedVideoExtensions, StringComparer.OrdinalIgnoreCase);
-
-    public static bool IsSupportedVideoFile(string path) =>
-        VideoExtensions.Contains(Path.GetExtension(path));
+    public static bool IsSupportedVideoFile(string path) => VideoFiles.IsVideoName(path);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -32,6 +24,22 @@ public sealed class LibraryService
     private readonly object _gate = new();
     private readonly SmbCredentialsStore _smbCredentials;
     private LibraryData _data = new();
+
+    /// <summary>
+    /// Why a source couldn't be scanned, by folder id. Shown on the source's
+    /// row instead of as a library-wide error, and cleared by the next
+    /// successful scan. Kept in memory: a relaunch scans again anyway.
+    /// </summary>
+    private readonly Dictionary<Guid, SourceState> _sourceStates = [];
+
+    /// <summary>Guards the automatic sweep so overlapping visits don't scan a source twice.</summary>
+    private int _rescanning;
+
+    /// <summary>
+    /// Rebuilds the connector for a stored remote source from its saved login
+    /// or account; null when the login is gone. Set by AppServices.
+    /// </summary>
+    public Func<LibraryFolder, IMediaConnector?>? ConnectorFor { get; set; }
 
     public event EventHandler? Changed;
 
@@ -57,6 +65,49 @@ public sealed class LibraryService
     }
 
     public IReadOnlyList<LibraryFolder> Folders { get { lock (_gate) return [.. _data.Folders]; } }
+
+    /// <summary>The recorded failure of a source's last scan, or null when it scanned cleanly.</summary>
+    public SourceState? StateFor(LibraryFolder folder)
+    {
+        lock (_gate) return _sourceStates.GetValueOrDefault(folder.Id);
+    }
+
+    /// <summary>The source a library file belongs to.</summary>
+    public LibraryFolder? FolderById(Guid id)
+    {
+        lock (_gate) return _data.Folders.FirstOrDefault(folder => folder.Id == id);
+    }
+
+    /// <summary>
+    /// Whether the source holding a file is known to be offline or waiting
+    /// for sign-in, so Play prefers another copy (DIFF.md §3.11).
+    /// </summary>
+    public bool IsUnavailable(Guid folderId)
+    {
+        lock (_gate) return _sourceStates.ContainsKey(folderId);
+    }
+
+    /// <summary>Every copy of a movie: the library keeps one record per file.</summary>
+    public IReadOnlyList<LibraryMovie> MoviesByTmdbId(int tmdbId)
+    {
+        lock (_gate) return [.. _data.Movies.Where(m => m.TmdbId == tmdbId)];
+    }
+
+    /// <summary>Every show record with this TMDB id (one per name the files used).</summary>
+    public IReadOnlyList<LibraryShow> ShowsByTmdbId(int tmdbId)
+    {
+        lock (_gate) return [.. _data.Shows.Where(s => s.TmdbId == tmdbId)];
+    }
+
+    /// <summary>How many sources a saved login serves (Settings → Accounts).</summary>
+    public int SourceCount(MediaSourceKind kind, string credentialKey)
+    {
+        lock (_gate)
+        {
+            return _data.Folders.Count(folder => folder.SourceKind == kind
+                && string.Equals(folder.AccountKey ?? SourceUrl.CredentialHost(folder.Path), credentialKey, StringComparison.OrdinalIgnoreCase));
+        }
+    }
 
     public IReadOnlyList<LibraryMovie> Movies
     {
@@ -118,7 +169,12 @@ public sealed class LibraryService
                 string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase));
             if (existing is null)
             {
-                folder = new LibraryFolder { Path = path, Name = Path.GetFileName(path) is { Length: > 0 } name ? name : path };
+                folder = new LibraryFolder
+                {
+                    Path = path,
+                    Name = Path.GetFileName(path) is { Length: > 0 } name ? name : path,
+                    Kind = MediaSourceKinds.FromPath(path).RawValue(),
+                };
                 _data.Folders.Add(folder);
             }
             else
@@ -129,27 +185,81 @@ public sealed class LibraryService
         await ScanFolderAsync(folder);
     }
 
-    public Task RescanFolderAsync(LibraryFolder folder) => ScanFolderAsync(folder);
-
-    public async Task RescanAllFoldersAsync()
+    /// <summary>
+    /// Links a remote folder picked in the browse flow: lists every video
+    /// beneath it, classifies the file names locally, persists, then enriches
+    /// in the background. The login is already saved by the Link Source flow;
+    /// listings and stored paths stay credential-free.
+    /// </summary>
+    public async Task ImportRemoteFolderAsync(IMediaConnector connector, string folderUrl, string displayName, string? displayPath)
     {
-        foreach (var folder in Folders) await ScanFolderAsync(folder);
+        LibraryFolder folder;
+        lock (_gate)
+        {
+            var existing = _data.Folders.FirstOrDefault(f => string.Equals(f.Path, folderUrl, StringComparison.Ordinal));
+            if (existing is null)
+            {
+                folder = new LibraryFolder
+                {
+                    Path = folderUrl,
+                    Name = displayName,
+                    Kind = connector.Kind.RawValue(),
+                    Username = connector.AccountLabel,
+                    DisplayPath = displayPath,
+                    AccountKey = connector.Kind.IsCloudAccount() || connector.Kind == MediaSourceKind.S3
+                        ? SourceUrl.CredentialHost(folderUrl)
+                        : null,
+                };
+                _data.Folders.Add(folder);
+            }
+            else
+            {
+                folder = existing;
+            }
+        }
+        await ScanFolderAsync(folder, connector);
     }
 
+    public Task RescanFolderAsync(LibraryFolder folder) => ScanFolderAsync(folder);
+
+    /// <summary>
+    /// Re-scans every linked source so files added outside the app show up.
+    /// Runs on each library visit; re-entrancy is guarded. The automatic
+    /// sweep skips remote sources scanned in the last 15 minutes, and
+    /// <paramref name="force"/> (Ctrl+R, F5) scans every one.
+    /// </summary>
+    public async Task RescanAllFoldersAsync(bool force = false)
+    {
+        if (Interlocked.Exchange(ref _rescanning, 1) == 1) return;
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            foreach (var folder in Folders)
+            {
+                if (force || folder.NeedsAutomaticRescan(now)) await ScanFolderAsync(folder);
+            }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _rescanning, 0);
+        }
+    }
+
+    /// <summary>
+    /// Unlinks a source and its files from the library. Its saved login or
+    /// account stays (Settings → Accounts removes those), so linking the
+    /// server again later needs no sign-in.
+    /// </summary>
     public void RemoveFolder(LibraryFolder folder)
     {
-        bool hostStillUsed;
-        var host = SmbCredentialsStore.HostFromUncPath(folder.Path);
         lock (_gate)
         {
             _data.Folders.RemoveAll(f => f.Id == folder.Id);
             _data.Movies.RemoveAll(m => m.FolderId == folder.Id);
             foreach (var show in _data.Shows) show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
             _data.Shows.RemoveAll(s => s.Episodes.Count == 0);
-            hostStillUsed = host is not null && _data.Folders.Any(f =>
-                string.Equals(SmbCredentialsStore.HostFromUncPath(f.Path), host, StringComparison.OrdinalIgnoreCase));
+            _sourceStates.Remove(folder.Id);
         }
-        if (host is not null && !hostStillUsed) _smbCredentials.Remove(host);
         Save();
     }
 
@@ -165,15 +275,30 @@ public sealed class LibraryService
         Save();
     }
 
-    private async Task ScanFolderAsync(LibraryFolder folder)
+    private async Task ScanFolderAsync(LibraryFolder folder, IMediaConnector? connector = null)
     {
         IsImporting = true;
         ErrorMessage = null;
         Changed?.Invoke(this, EventArgs.Empty);
         try
         {
-            var imported = await Task.Run(() => Scan(folder));
-            if (imported) Save();
+            var outcome = folder.SourceKind is MediaSourceKind.Local or MediaSourceKind.Smb
+                ? await Task.Run(() => Scan(folder))
+                : await ScanRemoteAsync(folder, connector);
+            lock (_gate)
+            {
+                if (outcome.Failure is { } failure)
+                {
+                    _sourceStates[folder.Id] = failure;
+                }
+                else
+                {
+                    _sourceStates.Remove(folder.Id);
+                    folder.LastScannedAt = DateTimeOffset.UtcNow;
+                }
+            }
+            // A clean scan always saves, so LastScannedAt survives a relaunch.
+            if (outcome.Changed || outcome.Failure is null) Save();
         }
         catch (Exception failure)
         {
@@ -188,20 +313,30 @@ public sealed class LibraryService
         _ = EnrichAsync();
     }
 
+    private readonly record struct ScanOutcome(bool Changed, SourceState? Failure);
+
     /// <summary>Classify-before-network: only the local filename parser runs here.</summary>
-    private bool Scan(LibraryFolder folder)
+    private ScanOutcome Scan(LibraryFolder folder)
     {
         // A network folder may need its SMB session re-established (with the
         // stored username/password) before it is visible again.
-        if (folder.Path.StartsWith(@"\\", StringComparison.Ordinal))
+        var reconnect = SmbReconnect.NoLogin;
+        if (folder.SourceKind == MediaSourceKind.Smb)
         {
-            NetworkShare.TryConnect(folder.Path, _smbCredentials);
+            reconnect = NetworkShare.TryConnect(folder.Path, _smbCredentials);
         }
 
         if (!Directory.Exists(folder.Path))
         {
-            ErrorMessage = Loc.Format("Library_FolderNotFound", folder.Path);
-            return false;
+            if (reconnect == SmbReconnect.LoginRefused)
+            {
+                var host = SmbCredentialsStore.HostFromUncPath(folder.Path) ?? folder.Path;
+                return new ScanOutcome(false, SourceState.NeedsSignIn(
+                    new ConnectorException(ConnectorFailure.AuthenticationFailed, host).Message));
+            }
+            return new ScanOutcome(false, SourceState.Offline(folder.SourceKind == MediaSourceKind.Smb
+                ? new ConnectorException(ConnectorFailure.Unreachable, SmbCredentialsStore.HostFromUncPath(folder.Path) ?? folder.Path).Message
+                : Loc.Format("Library_FolderNotFound", folder.Path)));
         }
 
         // Walk the tree by hand (EnumerateVideoFiles) so one unreadable
@@ -228,40 +363,90 @@ public sealed class LibraryService
                     .Concat(_data.Shows.SelectMany(s => s.Episodes).Select(e => e.FilePath)),
                 StringComparer.OrdinalIgnoreCase);
 
-            foreach (var file in files)
+            changed |= AddFiles(folder, files, knownPaths);
+        }
+        return new ScanOutcome(changed, null);
+    }
+
+    /// <summary>
+    /// Re-walks a remote source and adds files that appeared since the last
+    /// scan. A failure is recorded on the source rather than reported as a
+    /// library-wide error. Records stay when a file seems to be gone: the
+    /// walk stops at 2,000 folders, so absence isn't proof of deletion.
+    /// </summary>
+    private async Task<ScanOutcome> ScanRemoteAsync(LibraryFolder folder, IMediaConnector? connector)
+    {
+        connector ??= ConnectorFor?.Invoke(folder);
+        if (connector is null)
+        {
+            return new ScanOutcome(false, SourceState.NeedsSignIn(
+                new ConnectorException(ConnectorFailure.SignInRequired, folder.SourceKind.DisplayName()).Message));
+        }
+
+        IReadOnlyList<ConnectorEntry> entries;
+        try
+        {
+            entries = await connector.EnumerateVideosAsync(folder.Path, CancellationToken.None);
+        }
+        catch (ConnectorException failure) when (failure.NeedsUserAction)
+        {
+            return new ScanOutcome(false, SourceState.NeedsSignIn(failure.Message));
+        }
+        catch (Exception failure)
+        {
+            return new ScanOutcome(false, SourceState.Offline(failure.Message));
+        }
+
+        lock (_gate)
+        {
+            var knownPaths = new HashSet<string>(
+                _data.Movies.Select(m => m.FilePath)
+                    .Concat(_data.Shows.SelectMany(s => s.Episodes).Select(e => e.FilePath)),
+                StringComparer.Ordinal);
+            return new ScanOutcome(AddFiles(folder, entries.Select(entry => entry.Url), knownPaths), null);
+        }
+    }
+
+    /// <summary>
+    /// Adds files not yet in the library, classified by the local filename
+    /// parser only (no network). Call with <see cref="_gate"/> held.
+    /// </summary>
+    private bool AddFiles(LibraryFolder folder, IEnumerable<string> files, HashSet<string> knownPaths)
+    {
+        var changed = false;
+        foreach (var file in files)
+        {
+            if (!knownPaths.Add(file)) continue;
+            var parsed = WindowsCore.ParseMediaFile(SourceUrl.FileName(file));
+            if (parsed.IsEpisode)
             {
-                if (knownPaths.Contains(file)) continue;
-                var parsed = WindowsCore.ParseMediaFile(Path.GetFileName(file));
-                if (parsed.IsEpisode)
+                var showName = parsed.ShowName ?? Path.GetFileNameWithoutExtension(SourceUrl.FileName(file));
+                var show = _data.Shows.FirstOrDefault(s =>
+                    string.Equals(s.Name, showName, StringComparison.OrdinalIgnoreCase));
+                if (show is null)
                 {
-                    var showName = parsed.ShowName ?? Path.GetFileNameWithoutExtension(file);
-                    var show = _data.Shows.FirstOrDefault(s =>
-                        string.Equals(s.Name, showName, StringComparison.OrdinalIgnoreCase));
-                    if (show is null)
-                    {
-                        show = new LibraryShow { Name = showName };
-                        _data.Shows.Add(show);
-                    }
-                    show.Episodes.Add(new LibraryEpisode
-                    {
-                        FolderId = folder.Id,
-                        FilePath = file,
-                        Season = parsed.Season ?? 1,
-                        Episode = parsed.Episode ?? 1,
-                    });
+                    show = new LibraryShow { Name = showName };
+                    _data.Shows.Add(show);
                 }
-                else
+                show.Episodes.Add(new LibraryEpisode
                 {
-                    _data.Movies.Add(new LibraryMovie
-                    {
-                        FolderId = folder.Id,
-                        FilePath = file,
-                        Title = parsed.Title ?? Path.GetFileNameWithoutExtension(file),
-                        Year = parsed.Year,
-                    });
-                }
-                changed = true;
+                    FolderId = folder.Id,
+                    FilePath = file,
+                    Season = parsed.Season ?? 1,
+                    Episode = parsed.Episode ?? 1,
+                });
             }
+            else
+            {
+                _data.Movies.Add(new LibraryMovie
+                {
+                    FolderId = folder.Id,
+                    FilePath = file,
+                    Title = parsed.Title ?? Path.GetFileNameWithoutExtension(SourceUrl.FileName(file)),
+                    Year = parsed.Year,
+                });
+            }
+            changed = true;
         }
         return changed;
     }
@@ -294,7 +479,7 @@ public sealed class LibraryService
             {
                 foreach (var file in Directory.GetFiles(directory, "*", options))
                 {
-                    if (VideoExtensions.Contains(Path.GetExtension(file))) videos.Add(file);
+                    if (VideoFiles.IsVideoName(file)) videos.Add(file);
                 }
                 foreach (var subdirectory in Directory.GetDirectories(directory, "*", options))
                 {

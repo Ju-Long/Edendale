@@ -515,9 +515,6 @@ IS STIL</value>
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Bron verwijderen</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” wordt uit je bibliotheek verwijderd en de opgeslagen aanmeldingsgegevens voor {1} worden vergeten, tenzij een andere bron deze server nog gebruikt. Er wordt niets van de server verwijderd.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” wordt uit je bibliotheek verwijderd. Er wordt niets van je schijf verwijderd.</value>
   </data>
@@ -539,14 +536,8 @@ IS STIL</value>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Kan geen toegang krijgen tot het netwerkpad: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Netwerkbronfout</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Kan geen verbinding maken met {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Verbinding mislukt</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows kon de verbinding met de netwerkshare niet starten.</value>
@@ -1261,5 +1252,167 @@ IS STIL</value>
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Lokale map</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-compatibele opslag</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Niet beschikbaar</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Gast</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Dat serveradres lijkt niet te kloppen. Voer een hostnaam zoals nas.local of een IP-adres in.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>{0} is niet bereikbaar. Controleer of de server aanstaat en in hetzelfde netwerk zit, en of de naam of login klopt.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>De map {0} kon niet worden gelezen. Mogelijk is een andere login of toestemming nodig.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Log opnieuw in bij {0} om deze bron te bereiken.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} is niet ingesteld in deze build van Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} heeft de toegang tot dit item geweigerd.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Dit bestand staat niet meer in {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} beperkt op dit moment het aantal verzoeken. Probeer het over een minuut opnieuw.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} gaf een fout terug (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Gebruik HTTPS voor servers buiten je lokale netwerk. Gewoon HTTP werkt alleen voor lokale adressen zoals nas.local of 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} gaf geen geldig HTTPS-certificaat. Edendale maakt alleen verbinding met servers met een vertrouwd certificaat.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} ondersteunt geen spoelen in dit bestand.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>De SSH-hostsleutel van {0} is gewijzigd. Edendale maakt pas weer verbinding als je de nieuwe sleutel goedkeurt door de server opnieuw te koppelen.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>De SSH-hostsleutel van {0} is nog niet goedgekeurd.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} accepteerde de gebruikersnaam en het wachtwoord niet.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Kon geen beveiligde verbinding met {0} opzetten. De SSH-server biedt alleen oudere versleuteling, die Edendale niet ondersteunt.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} accepteert geen inloggen met wachtwoord. Sta wachtwoordverificatie toe in de SSH-instellingen om de server te koppelen.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} biedt geen SFTP voor dit account.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Deze bucket staat in de regio {0}. Wijzig de regio en maak opnieuw verbinding.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Deze bucket staat in een andere regio. Controleer de regio en maak opnieuw verbinding.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>VERGETEN</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>AFMELDEN</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Login vergeten</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Afmelden</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale vergeet de login voor {0}. Er wordt niets van de server of het account verwijderd.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale vergeet de login voor {0}. De bronnen die hem gebruiken ({1}) vragen je opnieuw in te loggen. Er wordt niets van de server of het account verwijderd.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} bron</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} bronnen</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Gebruikersnaam</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Wachtwoord</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Verbinden</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Verbinden als gast</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Scrollpositie van {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” wordt uit je bibliotheek verwijderd. De bewaarde login blijft staan onder Instellingen → Accounts. Er wordt niets van de server verwijderd.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Inloggen vereist: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>INLOGGEN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>INLOGGEN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Afspelen vanaf</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Afspelen vanaf</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Afspelen vanaf</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Verder kijken</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Films</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Tv-series</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Films</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Tv-series</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>ACCOUNTS</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Geen bewaarde logins</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Logins worden versleuteld voor je Windows-account en blijven op deze pc. Als je een bron verwijdert, blijft de login bewaard.</value>
   </data>
 </root>

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Edendale.Windows.Models;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -35,6 +36,9 @@ public sealed class ResumeEntry
 public sealed partial class DownloadedPage : Page
 {
     private bool _rescannedThisVisit;
+
+    /// <summary>The sidebar section this visit shows, or null for the whole page (DIFF.md §3.15).</summary>
+    private Core.DownloadedSection? _section;
 
     public DownloadedPage()
     {
@@ -74,6 +78,9 @@ public sealed partial class DownloadedPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        _section = e.Parameter is Core.DownloadedSection section ? section : null;
+        // A new section starts at the top; Back keeps the reader's place.
+        if (e.NavigationMode != NavigationMode.Back) LibraryScroll.ChangeView(null, 0, null, disableAnimation: true);
         RefreshAll();
         if (!_rescannedThisVisit)
         {
@@ -132,6 +139,31 @@ public sealed partial class DownloadedPage : Page
         // Continue Watching: newest first, joined to local files (Apple parity).
         // The audience filter hides blocked titles here and in every grid below.
         var movies = library.Movies.Where(m => AudienceAllows(m.TmdbId, "movie")).ToList();
+        var shows = library.Shows.Where(s => AudienceAllows(s.TmdbId, "tv")).ToList();
+
+        if (_section is { } section)
+        {
+            // A section page: only that section. Continue Watching lists
+            // every resumable title, and Movies includes the movies that are
+            // also in Continue Watching.
+            ContinueSection.Visibility = Visibility.Collapsed;
+            SourcesSection.Visibility = Visibility.Collapsed;
+            var everyResume = section == Core.DownloadedSection.ContinueWatching
+                ? ContinueWatchingEntries(library, movies, limit: null)
+                : [];
+            ContinueGridSection.Visibility = everyResume.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            ResumeGridRepeater.ItemsSource = everyResume;
+            var sectionMovies = section == Core.DownloadedSection.Movies ? movies : [];
+            MoviesSection.Visibility = sectionMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            MoviesRepeater.ItemsSource = sectionMovies;
+            var sectionShows = section == Core.DownloadedSection.Shows ? shows : [];
+            ShowsSection.Visibility = sectionShows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            ShowsRepeater.ItemsSource = sectionShows;
+            _ = VerifyAudienceAsync();
+            return;
+        }
+
+        ContinueGridSection.Visibility = Visibility.Collapsed;
         var resumeEntries = ContinueWatchingEntries(library, movies, limit: 12);
         ContinueSection.Visibility = resumeEntries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ResumeRepeater.ItemsSource = resumeEntries;
@@ -147,7 +179,6 @@ public sealed partial class DownloadedPage : Page
         MoviesSection.Visibility = gridMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         MoviesRepeater.ItemsSource = gridMovies;
 
-        var shows = library.Shows.Where(s => AudienceAllows(s.TmdbId, "tv")).ToList();
         ShowsSection.Visibility = shows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ShowsRepeater.ItemsSource = shows;
 
@@ -234,6 +265,7 @@ public sealed partial class DownloadedPage : Page
         var folders = library.Folders;
         SourcesSection.Visibility = folders.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         SourcesList.Children.Clear();
+        var resources = Application.Current.Resources;
 
         foreach (var folder in folders)
         {
@@ -242,13 +274,12 @@ public sealed partial class DownloadedPage : Page
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var icon = new Controls.SvgIcon
             {
-                UriSource = new Uri("ms-appx:///Assets/Icons/folder.svg"),
+                UriSource = new Uri(Controls.SourceActions.IconUri(folder)),
                 Width = 18, Height = 18,
-                Foreground = (Brush)Application.Current.Resources["EdendaleTextSecondaryBrush"],
+                Foreground = (Brush)resources["EdendaleTextSecondaryBrush"],
                 VerticalAlignment = VerticalAlignment.Center,
             };
             Grid.SetColumn(icon, 0);
@@ -258,47 +289,72 @@ public sealed partial class DownloadedPage : Page
             text.Children.Add(new TextBlock
             {
                 Text = folder.Name,
-                FontFamily = (FontFamily)Application.Current.Resources["TextFontFamily"],
+                FontFamily = (FontFamily)resources["TextFontFamily"],
                 FontSize = 15,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = (Brush)Application.Current.Resources["EdendaleTextPrimaryBrush"],
+                Foreground = (Brush)resources["EdendaleTextPrimaryBrush"],
+                TextTrimming = TextTrimming.CharacterEllipsis,
             });
             text.Children.Add(new TextBlock
             {
-                Text = Loc.Plural("Plural_ItemOne", "Plural_ItemOther", count),
-                Style = (Style)Application.Current.Resources["BodySMTextStyle"],
+                Text = Controls.SourceActions.Subtitle(folder, count),
+                Style = (Style)resources["BodySMTextStyle"],
+                TextTrimming = TextTrimming.CharacterEllipsis,
             });
+            // The last scan's failure stays on its own row, not library-wide.
+            if (Controls.SourceActions.StateText(folder) is { } state)
+            {
+                text.Children.Add(new TextBlock
+                {
+                    Text = state,
+                    Style = (Style)resources["BodySMTextStyle"],
+                    Foreground = (Brush)resources["EdendaleGoldBrush"],
+                    TextWrapping = TextWrapping.Wrap,
+                });
+            }
             Grid.SetColumn(text, 1);
             row.Children.Add(text);
 
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+            if (Controls.SourceActions.NeedsSignIn(folder))
+            {
+                var signIn = new Button
+                {
+                    Style = (Style)resources["ArchiveGhostButtonStyle"],
+                    Content = Loc.Get("Source_SignIn"),
+                };
+                signIn.Click += async (_, _) => await Controls.SourceActions.SignInAsync(XamlRoot, folder);
+                actions.Children.Add(signIn);
+            }
+
             var rescan = new Button
             {
-                Style = (Style)Application.Current.Resources["ArchiveGhostButtonStyle"],
+                Style = (Style)resources["ArchiveGhostButtonStyle"],
                 Content = new Controls.SvgIcon { UriSource = new Uri("ms-appx:///Assets/Icons/arrow-rotate-right.svg"), Width = 14, Height = 14 },
-                VerticalAlignment = VerticalAlignment.Center,
             };
             ToolTipService.SetToolTip(rescan, Loc.Get("Source_Rescan"));
+            AutomationProperties.SetName(rescan, $"{Loc.Get("Source_Rescan")}, {folder.Name}");
             rescan.Click += async (_, _) => await AppServices.Library.RescanFolderAsync(folder);
-            Grid.SetColumn(rescan, 2);
-            row.Children.Add(rescan);
+            actions.Children.Add(rescan);
 
             var remove = new Button
             {
-                Style = (Style)Application.Current.Resources["ArchiveGhostButtonStyle"],
+                Style = (Style)resources["ArchiveGhostButtonStyle"],
                 Content = new Controls.SvgIcon { UriSource = new Uri("ms-appx:///Assets/Icons/trash-can.svg"), Width = 14, Height = 14 },
-                VerticalAlignment = VerticalAlignment.Center,
             };
             ToolTipService.SetToolTip(remove, Loc.Get("Source_Remove"));
-            remove.Click += (_, _) => AppServices.Library.RemoveFolder(folder);
-            Grid.SetColumn(remove, 3);
-            row.Children.Add(remove);
+            AutomationProperties.SetName(remove, $"{Loc.Get("Source_Remove")}, {folder.Name}");
+            remove.Click += async (_, _) => await Controls.SourceActions.RemoveAsync(XamlRoot, folder);
+            actions.Children.Add(remove);
+            Grid.SetColumn(actions, 2);
+            row.Children.Add(actions);
 
             var container = new StackPanel();
             container.Children.Add(row);
             container.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
             {
                 Height = 1,
-                Fill = (Brush)Application.Current.Resources["EdendaleHairlineBorderBrush"],
+                Fill = (Brush)resources["EdendaleHairlineBorderBrush"],
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             });
             SourcesList.Children.Add(container);
@@ -309,90 +365,15 @@ public sealed partial class DownloadedPage : Page
     // Actions
     // ------------------------------------------------------------------
 
-    private async void AddFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var picker = new global::Windows.Storage.Pickers.FolderPicker();
-        picker.FileTypeFilter.Add("*");
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-        var folder = await picker.PickSingleFolderAsync();
-        if (folder is null) return;
-        await AppServices.Library.ImportFolderAsync(folder.Path);
-    }
+    /// <summary>Ctrl+N and the Add Local Folder buttons.</summary>
+    public Task AddFolderAsync() => Controls.SourceActions.AddLocalFolderAsync();
 
-    private async void AddNetworkSource_Click(object sender, RoutedEventArgs e)
-    {
-        var pathBox = new TextBox { PlaceholderText = @"\\SMB-SERVER\Share\Movies" };
-        var usernameBox = new TextBox { PlaceholderText = Loc.Get("Smb_UsernameOptional") };
-        var passwordBox = new PasswordBox { PlaceholderText = Loc.Get("Smb_Password") };
+    /// <summary>Ctrl+Alt+N and the Add Network Source buttons.</summary>
+    public Task LinkSourceAsync() => Controls.LinkSourceDialog.ShowAsync(XamlRoot);
 
-        var dialog = new ContentDialog
-        {
-            Title = Loc.Get("Smb_AddNetworkSource"),
-            Content = new StackPanel
-            {
-                Spacing = 12,
-                MinWidth = 400,
-                Children =
-                {
-                    new TextBlock { Text = Loc.Get("Smb_UncPrompt") },
-                    pathBox,
-                    new TextBlock
-                    {
-                        Text = Loc.Get("Smb_CredentialNote"),
-                        Style = (Style)Application.Current.Resources["BodySMTextStyle"],
-                    },
-                    usernameBox,
-                    passwordBox,
-                }
-            },
-            PrimaryButtonText = Loc.Get("Common_Add"),
-            CloseButtonText = Loc.Get("Common_Cancel"),
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = XamlRoot,
-        };
+    private async void AddFolder_Click(object sender, RoutedEventArgs e) => await AddFolderAsync();
 
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
-
-        var path = pathBox.Text.Trim();
-        if (string.IsNullOrEmpty(path)) return;
-        var username = usernameBox.Text.Trim();
-        var password = passwordBox.Password;
-
-        string? failure = null;
-        try
-        {
-            // Authenticate the SMB session first so the reachability check
-            // below runs as the entered user, not the guest fallback.
-            var share = SmbCredentialsStore.ShareFromUncPath(path);
-            if (share is not null && username.Length > 0)
-            {
-                await Task.Run(() => NetworkShare.Connect(share, username, password));
-                var host = SmbCredentialsStore.HostFromUncPath(path)!;
-                AppServices.SmbCredentials.Save(host, username, password);
-            }
-
-            if (await Task.Run(() => Directory.Exists(path)))
-            {
-                await AppServices.Library.ImportFolderAsync(path);
-                return;
-            }
-            failure = Loc.Format("Smb_CouldNotAccess", path);
-        }
-        catch (Exception connectFailure)
-        {
-            failure = connectFailure.Message;
-        }
-
-        var errorDialog = new ContentDialog
-        {
-            Title = Loc.Get("Smb_ErrorTitle"),
-            Content = failure,
-            CloseButtonText = Loc.Get("Common_OK"),
-            XamlRoot = XamlRoot,
-        };
-        await errorDialog.ShowAsync();
-    }
+    private async void AddNetworkSource_Click(object sender, RoutedEventArgs e) => await LinkSourceAsync();
 
     private async void LearnSyncing_Click(object sender, RoutedEventArgs e)
     {

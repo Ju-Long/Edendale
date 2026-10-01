@@ -515,9 +515,6 @@ IST STUMM</value>
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Quelle entfernen</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” wird aus deiner Bibliothek entfernt und die gespeicherte Anmeldung für {1} wird gelöscht, es sei denn, eine andere Quelle nutzt diesen Server noch. Auf dem Server wird nichts gelöscht.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” wird aus deiner Bibliothek entfernt. Auf deinem Datenträger wird nichts gelöscht.</value>
   </data>
@@ -539,14 +536,8 @@ IST STUMM</value>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Auf den Netzwerkpfad konnte nicht zugegriffen werden: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Netzwerkquellen-Fehler</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Konnte nicht mit {0} verbinden: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Verbindung fehlgeschlagen</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows konnte den Netzwerkfreigabe-Connector nicht starten.</value>
@@ -1261,5 +1252,167 @@ IST STUMM</value>
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} Min.</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Lokaler Ordner</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-kompatibler Speicher</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Nicht verfügbar</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Gast</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Diese Serveradresse scheint nicht zu stimmen. Gib einen Hostnamen wie nas.local oder eine IP-Adresse ein.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>{0} ist nicht erreichbar. Prüfe, ob der Server eingeschaltet und im selben Netzwerk ist und ob Name und Anmeldung stimmen.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Der Ordner {0} konnte nicht gelesen werden. Möglicherweise ist eine andere Anmeldung oder Berechtigung nötig.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Melde dich erneut bei {0} an, um diese Quelle zu erreichen.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} ist in diesem Build von Edendale nicht eingerichtet.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} hat den Zugriff auf dieses Objekt verweigert.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Diese Datei befindet sich nicht mehr in {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} begrenzt gerade die Anfragen. Versuche es in einer Minute erneut.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} hat einen Fehler gemeldet (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Verwende HTTPS für Server außerhalb deines lokalen Netzwerks. Einfaches HTTP funktioniert nur für lokale Adressen wie nas.local oder 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} hat kein gültiges HTTPS-Zertifikat vorgelegt. Edendale verbindet sich nur mit Servern mit vertrauenswürdigem Zertifikat.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} unterstützt das Springen in dieser Datei nicht.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>Der SSH-Hostschlüssel von {0} hat sich geändert. Edendale verbindet sich erst wieder, wenn du den neuen Schlüssel bestätigst, indem du den Server erneut verknüpfst.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>Der SSH-Hostschlüssel von {0} wurde noch nicht bestätigt.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} hat Benutzername und Passwort nicht akzeptiert.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Es konnte keine sichere Verbindung mit {0} hergestellt werden. Der SSH-Server bietet nur ältere Verschlüsselung an, die Edendale nicht unterstützt.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} akzeptiert keine Anmeldung per Passwort. Erlaube die Passwortauthentifizierung in den SSH-Einstellungen, um den Server zu verknüpfen.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} bietet für dieses Konto kein SFTP an.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Dieser Bucket liegt in der Region {0}. Ändere die Region und verbinde dich erneut.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Dieser Bucket liegt in einer anderen Region. Prüfe die Region und verbinde dich erneut.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>VERGESSEN</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>ABMELDEN</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Anmeldung vergessen</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale vergisst die Anmeldung für {0}. Auf dem Server oder im Konto wird nichts gelöscht.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale vergisst die Anmeldung für {0}. Die Quellen, die sie verwenden ({1}), fragen dann erneut nach einer Anmeldung. Auf dem Server oder im Konto wird nichts gelöscht.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} Quelle</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} Quellen</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Verbinden</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Als Gast verbinden</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Scrollposition für {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>„{0}“ wird aus deiner Bibliothek entfernt. Die gespeicherte Anmeldung bleibt unter Einstellungen → Konten erhalten. Auf dem Server wird nichts gelöscht.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Anmeldung nötig: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>ANMELDEN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>ANMELDEN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Abspielen von</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Abspielen von</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Abspielen von</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Weiter ansehen</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Filme</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>TV-Serien</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Filme</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>TV-Serien</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>KONTEN</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Keine gespeicherten Anmeldungen</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Anmeldungen werden für dein Windows-Konto verschlüsselt und bleiben auf diesem PC. Beim Entfernen einer Quelle bleibt ihre Anmeldung erhalten.</value>
   </data>
 </root>

@@ -515,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Rimuovi sorgente</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” viene rimosso dalla tua libreria e l'accesso salvato per {1} viene dimenticato, a meno che un'altra sorgente non utilizzi ancora quel server. Niente sul server viene eliminato.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” viene rimosso dalla tua libreria. Nessun elemento sul tuo disco viene eliminato.</value>
   </data>
@@ -539,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Impossibile accedere al percorso di rete: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Errore della sorgente di rete</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Impossibile connettersi a {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Connessione non riuscita</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows non è riuscito ad avviare il connettore di condivisione di rete.</value>
@@ -1261,5 +1252,167 @@
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Cartella locale</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>Archiviazione compatibile S3</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Non disponibile</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Ospite</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>L’indirizzo del server non sembra corretto. Inserisci un nome host come nas.local o un indirizzo IP.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Impossibile raggiungere {0}. Verifica che il server sia acceso e sulla stessa rete e che nome o credenziali siano corretti.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Impossibile leggere la cartella {0}. Potrebbero servire credenziali o autorizzazioni diverse.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Accedi di nuovo a {0} per raggiungere questa sorgente.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} non è configurato in questa build di Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} ha negato l’accesso a questo elemento.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Questo file non è più in {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} sta limitando le richieste. Riprova tra un minuto.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} ha restituito un errore (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Usa HTTPS per i server fuori dalla tua rete locale. L’HTTP semplice funziona solo con indirizzi locali come nas.local o 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} non ha presentato un certificato HTTPS valido. Edendale si connette solo a server con un certificato attendibile.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} non consente di spostarsi in questo file.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>La chiave host SSH di {0} è cambiata. Edendale non si connetterà finché non approvi la nuova chiave collegando di nuovo il server.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>La chiave host SSH di {0} non è ancora stata approvata.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} non ha accettato nome utente e password.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Impossibile stabilire una connessione sicura con {0}. Il suo server SSH offre solo crittografia datata, non supportata da Edendale.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} non accetta accessi con password. Consenti l’autenticazione con password nelle impostazioni SSH per collegarlo.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} non offre SFTP per questo account.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Questo bucket si trova nella regione {0}. Cambia la regione e connettiti di nuovo.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Questo bucket si trova in un’altra regione. Controlla la regione e connettiti di nuovo.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>DIMENTICA</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>ESCI</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Dimentica credenziali</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Esci</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale dimentica le credenziali di {0}. Nulla viene eliminato dal server o dall’account.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale dimentica le credenziali di {0}. Le sorgenti che le usano ({1}) ti chiederanno di accedere di nuovo. Nulla viene eliminato dal server o dall’account.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} sorgente</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} sorgenti</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Indirizzo</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Nome utente</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Connetti</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Connetti come ospite</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Posizione di scorrimento di {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” viene rimosso dalla tua libreria. Le credenziali salvate restano in Impostazioni → Account. Nulla viene eliminato dal server.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Accesso richiesto: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>ACCEDI</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>ACCEDI</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Riproduci da</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Riproduci da</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Riproduci da</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Continua a guardare</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Film</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Programmi TV</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Film</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Programmi TV</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>ACCOUNT</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Nessuna credenziale salvata</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Le credenziali sono crittografate per il tuo account Windows e restano su questo PC. Rimuovere una sorgente non elimina le sue credenziali.</value>
   </data>
 </root>

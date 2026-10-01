@@ -515,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>移除來源</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}”將從您的媒體櫃中移除，且會忘記 {1} 的儲存登入資訊，除非有其他來源仍在使用該伺服器。伺服器上的任何內容都不會被刪除。</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}”將從您的媒體櫃中移除。磁碟上的任何內容都不會被刪除。</value>
   </data>
@@ -539,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>無法存取網路路徑：{0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>網路來源錯誤</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>無法連線至 {0}：{1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>連線失敗</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows 無法啟動網路共用連接器。</value>
@@ -1261,5 +1252,167 @@
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0} 分鐘</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>本機資料夾</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3 相容儲存空間</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>無法使用</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>訪客</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>此伺服器位址似乎不正確。請輸入 nas.local 這類主機名稱或 IP 位址。</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>無法連線到 {0}。請確認伺服器已開啟、位於同一網路，且名稱或登入資訊正確。</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>無法讀取資料夾 {0}。可能需要其他登入資訊或權限。</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>請重新登入 {0} 以存取此來源。</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>此 Edendale 版本未設定 {0}。</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} 拒絕存取此項目。</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>此檔案已不在 {0} 中。</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} 目前正在限制要求。請一分鐘後再試。</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} 傳回錯誤 (HTTP {1})。</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>區域網路以外的伺服器請使用 HTTPS。未加密的 HTTP 僅適用於 nas.local 或 192.168.1.10 這類本機位址。</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} 未提供有效的 HTTPS 憑證。Edendale 只會連線到具有受信任憑證的伺服器。</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} 不支援在此檔案中跳轉。</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>{0} 的 SSH 主機金鑰已變更。在你重新連結伺服器並核准新金鑰之前，Edendale 不會連線。</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>{0} 的 SSH 主機金鑰尚未核准。</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} 未接受此使用者名稱和密碼。</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>無法與 {0} 建立安全連線。其 SSH 伺服器僅提供 Edendale 不支援的舊式加密。</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} 不接受密碼登入。請在其 SSH 設定中允許密碼驗證後再連結。</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} 未為此帳號提供 SFTP。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>此儲存貯體位於 {0} 區域。請變更區域後重新連線。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>此儲存貯體位於其他區域。請檢查區域後重新連線。</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>忘記</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>登出</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>忘記登入資訊</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>登出</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale 將忘記 {0} 的登入資訊。伺服器或帳號中的任何內容都不會被刪除。</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale 將忘記 {0} 的登入資訊。使用它的來源（{1}）將要求你重新登入。伺服器或帳號中的任何內容都不會被刪除。</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} 個來源</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} 個來源</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>位址</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>使用者名稱</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>密碼</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>連線</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>以訪客身分連線</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>{0}捲動位置</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}”將從您的媒體櫃中移除。已儲存的登入資訊仍保留在「設定」→「帳號」中。伺服器上的任何內容都不會被刪除。</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>離線：{0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>需要登入：{0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>登入</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>登入</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>播放來源</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>播放來源</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>播放來源</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>繼續觀看</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>電影</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>電視節目</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>電影</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>電視節目</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>帳號</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>沒有已儲存的登入資訊</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>登入資訊會針對你的 Windows 帳號加密，並只保存在這台電腦上。移除來源不會刪除其登入資訊。</value>
   </data>
 </root>

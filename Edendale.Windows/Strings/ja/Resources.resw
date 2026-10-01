@@ -515,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>ソースを削除</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>別のソースが引き続きそのサーバーを使用していない限り、“{0}” はライブラリから削除され、{1} の保存されたログインは忘れられます。サーバー上のデータは削除されません。</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” はライブラリから削除されます。ディスク上のデータは削除されません。</value>
   </data>
@@ -539,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>ネットワーク パスにアクセスできませんでした: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>ネットワーク ソース エラー</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>{0} に接続できませんでした: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>接続に失敗しました</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows はネットワーク共有コネクターを開始できませんでした。</value>
@@ -1261,5 +1252,167 @@
   </data>
   <data name="Playlist_Runtime" xml:space="preserve">
     <value>{0}分</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>ローカルフォルダ</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3 互換ストレージ</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>利用不可</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>ゲスト</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>サーバーのアドレスが正しくないようです。nas.local のようなホスト名か IP アドレスを入力してください。</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>{0} に接続できません。サーバーの電源が入っていて同じネットワーク上にあるか、名前やログイン情報が正しいかを確認してください。</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>フォルダ {0} を読み取れませんでした。別のログインや権限が必要な可能性があります。</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>このソースにアクセスするには、{0} にもう一度サインインしてください。</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>この Edendale のビルドでは {0} が設定されていません。</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} がこの項目へのアクセスを拒否しました。</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>このファイルは {0} にもうありません。</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} は現在リクエストを制限しています。1 分後にもう一度お試しください。</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} がエラーを返しました (HTTP {1})。</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>ローカルネットワーク外のサーバーには HTTPS を使用してください。暗号化なしの HTTP は nas.local や 192.168.1.10 のようなローカルアドレスでのみ使えます。</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} から有効な HTTPS 証明書が提示されませんでした。Edendale は信頼された証明書を持つサーバーにのみ接続します。</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} はこのファイル内のシークに対応していません。</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>{0} の SSH ホストキーが変更されました。サーバーをもう一度リンクして新しいキーを承認するまで、Edendale は接続しません。</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>{0} の SSH ホストキーはまだ承認されていません。</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} でユーザー名とパスワードが受け付けられませんでした。</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>{0} との安全な接続を確立できませんでした。この SSH サーバーは Edendale が対応していない古い暗号方式しか提供していません。</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} はパスワードでのログインを受け付けていません。リンクするには SSH 設定でパスワード認証を許可してください。</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} はこのアカウントで SFTP を提供していません。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>このバケットは {0} リージョンにあります。リージョンを変更してもう一度接続してください。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>このバケットは別のリージョンにあります。リージョンを確認してもう一度接続してください。</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>サインアウト</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>ログイン情報を削除</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>サインアウト</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale は {0} のログイン情報を削除します。サーバーやアカウント上のデータは削除されません。</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale は {0} のログイン情報を削除します。これを使っているソース ({1}) は再度サインインを求めます。サーバーやアカウント上のデータは削除されません。</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} 件のソース</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} 件のソース</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>アドレス</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>ユーザー名</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>パスワード</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>接続</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>ゲストとして接続</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>{0} のスクロール位置</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” はライブラリから削除されます。保存したログイン情報は「設定」→「アカウント」に残ります。サーバー上のデータは削除されません。</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>オフライン: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>サインインが必要: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>サインイン</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>サインイン</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>再生元</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>再生元</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>再生元</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>視聴を続ける</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>テレビ番組</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>テレビ番組</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>保存されたログイン情報はありません</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>ログイン情報は Windows アカウント用に暗号化され、この PC に保存されます。ソースを削除してもログイン情報は残ります。</value>
   </data>
 </root>
