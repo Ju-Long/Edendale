@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">此檔案中沒有字幕軌。</string>
     <string name="player_track_number">軌道 %1$d</string>
     <string name="player_playback">播放</string>
-    <string name="player_skip_recap">略過前情提要</string>
-    <string name="player_skip_recap_detail">跳過前 90 秒</string>
-    <string name="player_skip_credits">略過片尾</string>
-    <string name="player_skip_credits_detail">在最後 3 分鐘結束播放</string>
     <string name="player_loop">循環播放影片</string>
     <string name="player_loop_detail">結束時重新開始播放</string>
     <string name="player_auto_pip">自動子母畫面</string>

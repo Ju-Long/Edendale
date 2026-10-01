@@ -120,12 +120,6 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
 
     var aspectFill by mutableStateOf(false)
 
-    var skipRecap by mutableStateOf(prefs.getBoolean(KEY_SKIP_RECAP, false))
-        private set
-
-    var skipCredits by mutableStateOf(prefs.getBoolean(KEY_SKIP_CREDITS, false))
-        private set
-
     /** Enter Picture in Picture on its own when the user leaves mid-play. */
     var autoPip by mutableStateOf(prefs.getBoolean(KEY_AUTO_PIP, true))
         private set
@@ -153,16 +147,6 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     fun setLoop(player: Player, enabled: Boolean) {
         loopEnabled = enabled
         player.repeatMode = if (enabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
-    }
-
-    fun setSkipRecapEnabled(enabled: Boolean) {
-        skipRecap = enabled
-        prefs.edit().putBoolean(KEY_SKIP_RECAP, enabled).apply()
-    }
-
-    fun setSkipCreditsEnabled(enabled: Boolean) {
-        skipCredits = enabled
-        prefs.edit().putBoolean(KEY_SKIP_CREDITS, enabled).apply()
     }
 
     fun setAutoPipEnabled(enabled: Boolean) {
@@ -269,8 +253,6 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     }
 
     private companion object {
-        const val KEY_SKIP_RECAP = "player.skipRecap"
-        const val KEY_SKIP_CREDITS = "player.skipCredits"
         const val KEY_AUTO_PIP = "player.autoPiP"
     }
 }

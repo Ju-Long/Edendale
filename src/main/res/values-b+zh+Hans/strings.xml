@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">此文件中没有字幕轨道。</string>
     <string name="player_track_number">轨道 %1$d</string>
     <string name="player_playback">播放</string>
-    <string name="player_skip_recap">跳过前情提要</string>
-    <string name="player_skip_recap_detail">跳过前 90 秒</string>
-    <string name="player_skip_credits">跳过片尾</string>
-    <string name="player_skip_credits_detail">在最后 3 分钟结束播放</string>
     <string name="player_loop">循环播放视频</string>
     <string name="player_loop_detail">结束后重新开始播放</string>
     <string name="player_auto_pip">自动画中画</string>

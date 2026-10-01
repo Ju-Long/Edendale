@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">このファイルには字幕トラックがありません。</string>
     <string name="player_track_number">トラック%1$d</string>
     <string name="player_playback">再生</string>
-    <string name="player_skip_recap">これまでのあらすじをスキップ</string>
-    <string name="player_skip_recap_detail">最初の90秒をスキップ</string>
-    <string name="player_skip_credits">クレジットをスキップ</string>
-    <string name="player_skip_credits_detail">残り3分で再生を終了</string>
     <string name="player_loop">ビデオをループ</string>
     <string name="player_loop_detail">再生終了後に最初から再生</string>
     <string name="player_auto_pip">自動ピクチャ・イン・ピクチャ</string>

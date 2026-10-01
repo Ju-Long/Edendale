@@ -671,7 +671,7 @@ Don't build a workaround without asking the owner.
 
 ### C.4 — Remove the timed auto-skip (D6)
 
-- [ ] **C.4.1** Delete `RECAP_LENGTH_MILLIS`, `CREDITS_LENGTH_MILLIS`,
+- [x] **C.4.1** Delete `RECAP_LENGTH_MILLIS`, `CREDITS_LENGTH_MILLIS`,
   `MINIMUM_SKIPPABLE_MILLIS`, `recapSkipTargetMillis`, and `creditsStartMillis`
   from `PlayerLogic`; the `recapPending` / `creditsHandled` logic and the skip
   parts of `onPlaybackTick` from `PlayerActivity`; `skipRecap` and
@@ -679,13 +679,13 @@ Don't build a workaround without asking the owner.
   section; the strings `player_skip_recap`, `player_skip_recap_detail`,
   `player_skip_credits`, and `player_skip_credits_detail` from every locale;
   and their tests.
-- [ ] **C.4.2** On the first launch after the upgrade, remove the stored keys
+- [x] **C.4.2** On the first launch after the upgrade, remove the stored keys
   `player.skipRecap` and `player.skipCredits`. Skip Prompts never reads them.
-- [ ] **C.4.3** Update the KDoc on `isNaturalEnd`, which explains its 95 % arm
+- [x] **C.4.3** Update the KDoc on `isNaturalEnd`, which explains its 95 % arm
   through skip-credits.
 
 **Tests (JVM):**
-- [ ] **C.4.T1** With `player.skipRecap = true` and `player.skipCredits = true`
+- [x] **C.4.T1** With `player.skipRecap = true` and `player.skipCredits = true`
   stored, Skip Prompts still reads as off.
 
 ### C.5 — Skip prompts via TheIntroDB (DIFF §3.5)
@@ -1790,6 +1790,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | A.4 | — | not run | Established string prefixes and 18-locale translation convention |
 | 2026-10-01 | A.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass | not run | Configured androidTest source set, runner, dependencies, and generate.sh |
 | 2026-10-01 | B.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run (no emulator/device connected in CI environment) | Skip lengths (10/15/30) and hold rates (0.25-3.00x) wired to gestures, controls, PiP, TV D2 keys, and Settings |
+| 2026-10-01 | C.4 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures, 110 tests) | not run (no emulator/device connected in CI environment) | Removed timed auto-skip constants, methods, latches, toggles, obsolete strings across all locales, and cleaned up legacy keys |
 
 ---
 
@@ -1803,7 +1804,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.3 | Player preference store | Complete | 27f16f7 |
 | A.4 | Strings and translations | Complete | 6f93abb |
 | A.5 | Test conventions | Complete | 4310f03 |
-| B.1 | App Controls | Complete | |
+| B.1 | App Controls | Complete | 9b2fbd5 |
 | B.2 | Persisted state and per-title memory | Not started | |
 | B.3 | Track pickers and panel order | Not started | |
 | B.4 | Subtitle appearance and placement | Not started | |
@@ -1812,7 +1813,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.1 | Episode progression rules | Not started | |
 | C.2 | Auto-advance and Up Next | Not started | |
 | C.3 | Continue Watching next-up | Not started | |
-| C.4 | Remove timed auto-skip | Not started | |
+| C.4 | Remove timed auto-skip | Complete | |
 | C.5 | TheIntroDB skip prompts | Not started | |
 | C.6 | MediaSession and system surfaces | Not started | |
 | D.1 | Buffered SMB reads | Not started | |

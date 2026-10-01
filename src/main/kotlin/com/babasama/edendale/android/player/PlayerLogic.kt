@@ -27,7 +27,7 @@ internal fun subtitleLookup(
 }
 
 /**
- * Pure playback rules — speed stepping, time formatting, auto-skip windows,
+ * Pure playback rules — speed stepping, time formatting,
  * relative-seek clamping and hold-drag scrub math. Deliberately free of
  * Android and Media3 imports so the hermetic JVM suite can exercise it
  * directly, mirroring Apple's `PlayerLogic`.
@@ -148,36 +148,6 @@ object PlayerLogic {
         (if (millis < 0) "−" else "+") + timestamp(abs(millis))
 
     // ------------------------------------------------------------------
-    // Auto-skip windows
-    // ------------------------------------------------------------------
-
-    /** How far "skip recap" jumps from the start of an episode. */
-    const val RECAP_LENGTH_MILLIS: Long = 90_000
-
-    /** How close to the end "skip credits" takes effect. */
-    const val CREDITS_LENGTH_MILLIS: Long = 180_000
-
-    /**
-     * Media shorter than this never auto-skips — the windows would eat most
-     * of the runtime.
-     */
-    const val MINIMUM_SKIPPABLE_MILLIS: Long = 600_000
-
-    /**
-     * Where playback should jump when skip-recap applies at start, or null
-     * when the media is too short (or its duration isn't known yet).
-     */
-    fun recapSkipTargetMillis(durationMillis: Long): Long? =
-        if (durationMillis < MINIMUM_SKIPPABLE_MILLIS) null else RECAP_LENGTH_MILLIS
-
-    /**
-     * The position after which skip-credits should end playback, or null
-     * when the media is too short to have a credits window.
-     */
-    fun creditsStartMillis(durationMillis: Long): Long? =
-        if (durationMillis < MINIMUM_SKIPPABLE_MILLIS) null else durationMillis - CREDITS_LENGTH_MILLIS
-
-    // ------------------------------------------------------------------
     // End of media
     // ------------------------------------------------------------------
 
@@ -186,11 +156,10 @@ object PlayerLogic {
 
     /**
      * Whether a stop at [positionMillis] counts as reaching the end rather
-     * than a user-initiated stop. The 95% arm lets a skip-credits stop count
-     * as finished — that preference ends playback a full
-     * [CREDITS_LENGTH_MILLIS] before the tail, well outside a tight tail
-     * window. The two-second arm still catches short clips, where 95% sits
-     * further in than two seconds and a genuine finish would miss it.
+     * than a user-initiated stop. The 95% threshold marks titles stopped near
+     * the end or during end credits as completed. The two-second tolerance
+     * catches short clips, where 95% sits further in than two seconds and a
+     * genuine finish would otherwise miss the completion threshold.
      */
     fun isNaturalEnd(positionMillis: Long, durationMillis: Long): Boolean {
         if (durationMillis <= 0) return false

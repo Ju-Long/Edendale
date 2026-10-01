@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">이 파일에는 자막 트랙이 없습니다.</string>
     <string name="player_track_number">트랙 %1$d</string>
     <string name="player_playback">재생</string>
-    <string name="player_skip_recap">요약 건너뛰기</string>
-    <string name="player_skip_recap_detail">처음 90초 건너뛰기</string>
-    <string name="player_skip_credits">크레딧 건너뛰기</string>
-    <string name="player_skip_credits_detail">마지막 3분에 재생 종료</string>
     <string name="player_loop">비디오 반복 재생</string>
     <string name="player_loop_detail">종료 시 재생 다시 시작</string>
     <string name="player_auto_pip">자동 화면 속 화면</string>

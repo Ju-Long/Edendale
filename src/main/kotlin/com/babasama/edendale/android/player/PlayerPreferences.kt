@@ -68,6 +68,10 @@ object PlayerPreferencesRules {
     // Skip Prompts (C.5)
     const val KEY_SEGMENT_PROMPTS_ENABLED = "player.segmentPromptsEnabled"
 
+    // Deprecated keys removed in C.4 (D6)
+    const val KEY_SKIP_RECAP = "player.skipRecap"
+    const val KEY_SKIP_CREDITS = "player.skipCredits"
+
     // Subtitles (B.4)
     const val KEY_SUBTITLES_FONT = "subtitles.font"
     const val KEY_SUBTITLES_TEXT_COLOR = "subtitles.textColor"
@@ -265,6 +269,13 @@ class PlayerPreferences(
     private val store: PlayerPreferencesStore
 ) {
     constructor(prefs: SharedPreferences) : this(SharedPreferencesPlayerStore(prefs))
+
+    init {
+        // C.4.2: On the first launch after the upgrade, remove obsolete timed auto-skip keys.
+        // Skip Prompts (segmentPromptsEnabled) never reads or depends on them.
+        store.remove(PlayerPreferencesRules.KEY_SKIP_RECAP)
+        store.remove(PlayerPreferencesRules.KEY_SKIP_CREDITS)
+    }
 
     companion object {
         fun from(context: Context): PlayerPreferences {

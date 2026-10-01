@@ -147,4 +147,21 @@ class PlayerControlPreferencesTest {
         controls.setHoldRate(1.25f, HoldSide.LEFT)
         assertEquals(3, changes)
     }
+
+    @Test
+    fun legacyAutoSkipKeysAreRemovedAndSkipPromptsRemainsOff() {
+        val store = InMemoryPlayerPreferencesStore()
+        store.putBoolean("player.skipRecap", true)
+        store.putBoolean("player.skipCredits", true)
+
+        val prefs = PlayerPreferences(store)
+
+        // C.4.T1: With player.skipRecap = true and player.skipCredits = true stored,
+        // Skip Prompts still reads as off.
+        assertFalse(prefs.segmentPromptsEnabled)
+
+        // C.4.2: Stored keys player.skipRecap and player.skipCredits are removed.
+        assertFalse(store.contains("player.skipRecap"))
+        assertFalse(store.contains("player.skipCredits"))
+    }
 }

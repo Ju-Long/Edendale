@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">В этом файле нет дорожек субтитров.</string>
     <string name="player_track_number">Дорожка %1$d</string>
     <string name="player_playback">Воспроизведение</string>
-    <string name="player_skip_recap">Пропустить краткое содержание</string>
-    <string name="player_skip_recap_detail">Пропускать первые 90 секунд</string>
-    <string name="player_skip_credits">Пропустить титры</string>
-    <string name="player_skip_credits_detail">Завершать воспроизведение за 3 минуты до конца</string>
     <string name="player_loop">Зациклить видео</string>
     <string name="player_loop_detail">Перезапускать воспроизведение по окончании</string>
     <string name="player_auto_pip">Автоматический режим «Картинка в картинке»</string>

@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">No hay pistas de subtítulos en este archivo.</string>
     <string name="player_track_number">Pista %1$d</string>
     <string name="player_playback">Reproducción</string>
-    <string name="player_skip_recap">Omitir resumen</string>
-    <string name="player_skip_recap_detail">Saltar los primeros 90 segundos</string>
-    <string name="player_skip_credits">Omitir créditos</string>
-    <string name="player_skip_credits_detail">Finalizar la reproducción cuando queden 3 minutos</string>
     <string name="player_loop">Reproducir vídeo en bucle</string>
     <string name="player_loop_detail">Reiniciar la reproducción al terminar</string>
     <string name="player_auto_pip">Imagen dentro de imagen automática</string>

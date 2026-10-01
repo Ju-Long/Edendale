@@ -1555,16 +1555,6 @@ private fun PlaybackSection(
         PanelLabel(stringResource(R.string.player_playback))
         Spacer(Modifier.height(8.dp))
         ToggleRow(
-            title = stringResource(R.string.player_skip_recap),
-            detail = stringResource(R.string.player_skip_recap_detail),
-            checked = chrome.skipRecap,
-        ) { chrome.setSkipRecapEnabled(it) }
-        ToggleRow(
-            title = stringResource(R.string.player_skip_credits),
-            detail = stringResource(R.string.player_skip_credits_detail),
-            checked = chrome.skipCredits,
-        ) { chrome.setSkipCreditsEnabled(it) }
-        ToggleRow(
             title = stringResource(R.string.player_loop),
             detail = stringResource(R.string.player_loop_detail),
             checked = chrome.loopEnabled,

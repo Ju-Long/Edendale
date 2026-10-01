@@ -84,10 +84,6 @@ class PlayerActivity : ComponentActivity() {
     private var resumeApplied = false
     private var completedWritten = false
 
-    /** One-shot auto-skip latches, reset on every item switch. */
-    private var recapPending = false
-    private var creditsHandled = false
-
     private var isTelevision = false
     private lateinit var chrome: PlayerChromeState
     private lateinit var onlineSubtitles: OnlineSubtitlesState
@@ -219,7 +215,6 @@ class PlayerActivity : ComponentActivity() {
         }
         val app = application as EdendaleApplication
         dataStore = LocalDataStore(app.database)
-        recapPending = chrome.skipRecap
 
         // One factory for the whole session, resolved per request: the item
         // playing can change mid-session via the playlist panel, so the
@@ -324,15 +319,7 @@ class PlayerActivity : ComponentActivity() {
         val duration = exoPlayer.duration
         if (duration != C.TIME_UNSET && duration > 0) {
             resumeApplied = true
-            // A resume replaces the recap skip; resuming straight into the
-            // credits window must not trip auto-skip and bounce right out.
-            recapPending = false
             val target = (duration * fraction).toLong()
-            if (chrome.skipCredits) {
-                PlayerLogic.creditsStartMillis(duration)?.let { creditsStart ->
-                    if (target >= creditsStart) creditsHandled = true
-                }
-            }
             exoPlayer.seekTo(target)
         }
     }
@@ -381,8 +368,6 @@ class PlayerActivity : ComponentActivity() {
         resumeFraction = null
         resumeApplied = false
         completedWritten = false
-        recapPending = chrome.skipRecap
-        creditsHandled = false
         progressKey = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
             ProgressKey(
                 tmdbId = tmdbId,
@@ -542,38 +527,14 @@ class PlayerActivity : ComponentActivity() {
         .build()
 
     // ------------------------------------------------------------------
-    // Auto-skip
+    // Playback position tick
     // ------------------------------------------------------------------
 
     /**
-     * Driven by the UI's position ticker. Applies the skip-recap jump once
-     * the duration is known and ends (or loops) playback at the credits.
+     * Driven by the UI's position ticker.
      */
+    @Suppress("UNUSED_PARAMETER")
     internal fun onPlaybackTick(positionMillis: Long, durationMillis: Long) {
-        val exoPlayer = player ?: return
-        if (durationMillis <= 0) return
-        // Never skip ahead of a resume seek that hasn't landed yet.
-        if (resumeFraction != null && !resumeApplied) return
-
-        if (recapPending) {
-            recapPending = false
-            val target = PlayerLogic.recapSkipTargetMillis(durationMillis)
-            if (target != null && positionMillis < target) exoPlayer.seekTo(target)
-        }
-
-        if (chrome.skipCredits && !creditsHandled) {
-            val creditsStart = PlayerLogic.creditsStartMillis(durationMillis) ?: return
-            if (positionMillis >= creditsStart) {
-                creditsHandled = true
-                if (chrome.loopEnabled) {
-                    // Credits are over as far as the viewer cares — restart.
-                    exoPlayer.seekTo(0)
-                } else {
-                    writeProgress(completed = true)
-                    finish()
-                }
-            }
-        }
     }
 
     // ------------------------------------------------------------------

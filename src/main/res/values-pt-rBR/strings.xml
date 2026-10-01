@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">Nenhuma faixa de legenda neste arquivo.</string>
     <string name="player_track_number">Faixa %1$d</string>
     <string name="player_playback">Reprodução</string>
-    <string name="player_skip_recap">Pular resumo</string>
-    <string name="player_skip_recap_detail">Pular os primeiros 90 segundos</string>
-    <string name="player_skip_credits">Pular créditos</string>
-    <string name="player_skip_credits_detail">Encerrar a reprodução quando restarem 3 minutos</string>
     <string name="player_loop">Repetir Vídeo</string>
     <string name="player_loop_detail">Reiniciar a reprodução ao terminar</string>
     <string name="player_auto_pip">Picture in Picture automático</string>

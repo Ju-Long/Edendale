@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">Inga undertextspår i den här filen.</string>
     <string name="player_track_number">Spår %1$d</string>
     <string name="player_playback">Uppspelning</string>
-    <string name="player_skip_recap">Hoppa över sammanfattning</string>
-    <string name="player_skip_recap_detail">Hoppa över de första 90 sekunderna</string>
-    <string name="player_skip_credits">Hoppa över eftertexter</string>
-    <string name="player_skip_credits_detail">Avsluta uppspelning de sista 3 minuterna</string>
     <string name="player_loop">Upprepa video</string>
     <string name="player_loop_detail">Starta om uppspelningen när den slutar</string>
     <string name="player_auto_pip">Automatisk bild-i-bild</string>

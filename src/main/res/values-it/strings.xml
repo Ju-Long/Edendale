@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">Nessuna traccia di sottotitoli in questo file.</string>
     <string name="player_track_number">Traccia %1$d</string>
     <string name="player_playback">Riproduzione</string>
-    <string name="player_skip_recap">Salta riassunto</string>
-    <string name="player_skip_recap_detail">Salta i primi 90 secondi</string>
-    <string name="player_skip_credits">Salta i titoli di coda</string>
-    <string name="player_skip_credits_detail">Termina la riproduzione quando mancano 3 minuti</string>
     <string name="player_loop">Riproduci video a ciclo continuo</string>
     <string name="player_loop_detail">Riavvia la riproduzione al termine</string>
     <string name="player_auto_pip">Picture in Picture automatico</string>

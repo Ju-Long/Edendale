@@ -204,10 +204,6 @@
     <string name="player_subtitles_none">Keine Untertitel in dieser Datei.</string>
     <string name="player_track_number">Spur %1$d</string>
     <string name="player_playback">Wiedergabe</string>
-    <string name="player_skip_recap">Rückblick überspringen</string>
-    <string name="player_skip_recap_detail">Erste 90 Sekunden überspringen</string>
-    <string name="player_skip_credits">Abspann überspringen</string>
-    <string name="player_skip_credits_detail">Wiedergabe in den letzten 3 Minuten beenden</string>
     <string name="player_loop">Video in Endlosschleife</string>
     <string name="player_loop_detail">Wiedergabe nach Ende neu starten</string>
     <string name="player_auto_pip">Automatisches Bild-in-Bild</string>

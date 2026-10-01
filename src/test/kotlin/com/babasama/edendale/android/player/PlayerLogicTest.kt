@@ -93,25 +93,6 @@ class PlayerLogicTest {
     }
 
     // ------------------------------------------------------------------
-    // Auto-skip windows
-    // ------------------------------------------------------------------
-
-    @Test
-    fun recapSkipOnlyAppliesToLongEnoughMedia() {
-        assertEquals(90_000, PlayerLogic.recapSkipTargetMillis(2_700_000))
-        assertNull(PlayerLogic.recapSkipTargetMillis(300_000))
-        // An unknown duration reads as zero and must not skip.
-        assertNull(PlayerLogic.recapSkipTargetMillis(0))
-    }
-
-    @Test
-    fun creditsWindowStartsBeforeTheEnd() {
-        assertEquals(3_420_000, PlayerLogic.creditsStartMillis(3_600_000))
-        assertNull(PlayerLogic.creditsStartMillis(300_000))
-        assertNull(PlayerLogic.creditsStartMillis(0))
-    }
-
-    // ------------------------------------------------------------------
     // Natural end
     // ------------------------------------------------------------------
 
@@ -126,21 +107,9 @@ class PlayerLogicTest {
     }
 
     @Test
-    fun naturalEndTreatsCreditsSkipAsFinished() {
-        // Skip-credits ends playback CREDITS_LENGTH before the tail — far
-        // more than two seconds. For a feature-length runtime that cutoff
-        // still sits past 95%, so the stop completes instead of lingering in
-        // Continue Watching.
-        val feature = 7_200_000L
-        val creditsStart = PlayerLogic.creditsStartMillis(feature)!!
-        assertTrue(PlayerLogic.isNaturalEnd(creditsStart, feature))
-    }
-
-    @Test
     fun naturalEndKeepsTwoSecondArmForShortClips() {
-        // Below MINIMUM_SKIPPABLE the credits window never applies, so
-        // completion rides the two-second arm. At 30 s the arms diverge: the
-        // 2 s cutoff is 28 s while 95% is 28.5 s.
+        // For short clips, completion rides the two-second arm. At 30 s the
+        // arms diverge: the 2 s cutoff is 28 s while 95% is 28.5 s.
         val clip = 30_000L
         assertTrue(PlayerLogic.isNaturalEnd(28_200, clip))   // within 2 s, below 95%
         assertFalse(PlayerLogic.isNaturalEnd(27_000, clip))  // short of both arms
