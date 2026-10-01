@@ -60,6 +60,40 @@ internal static class AppText
         ["Credit_Unknown"] = "Unknown",
         ["Credit_DirectedBy"] = "Directed by {0}",
         ["Credit_CreatedBy"] = "Created by {0}",
+
+        ["Track_Mono"] = "Mono",
+        ["Track_Stereo"] = "Stereo",
+        ["Track_Channels"] = "{0}ch",
+        ["Track_Numbered"] = "Track {0}",
+
+        ["Audio_ProfileFlat"] = "Flat",
+        ["Audio_ProfileMovies"] = "Movies",
+        ["Audio_ProfileMusic"] = "Music",
+        ["Audio_ProfileDialogue"] = "Dialogue",
+        ["Audio_ProfileNightMode"] = "Night Mode",
+
+        ["Picture_Brightness"] = "Brightness",
+        ["Picture_Contrast"] = "Contrast",
+        ["Picture_Gamma"] = "Gamma",
+        ["Picture_Saturation"] = "Saturation",
+        ["Picture_Hue"] = "Hue",
+
+        ["SubtitleFont_System"] = "System",
+        ["SubtitleFont_Serif"] = "Serif",
+        ["SubtitleFont_Monospaced"] = "Monospaced",
+        ["SubtitleColor_Parchment"] = "Parchment",
+        ["SubtitleColor_White"] = "White",
+        ["SubtitleColor_Yellow"] = "Yellow",
+        ["SubtitleColor_Cyan"] = "Cyan",
+        ["SubtitleColor_Green"] = "Green",
+        ["SubtitleColor_Black"] = "Black",
+        ["SubtitleColor_Ink"] = "Ink",
+        ["SubtitleColor_Charcoal"] = "Charcoal",
+        ["SubtitleColor_Navy"] = "Navy",
+
+        ["Enhancement_PresetOff"] = "Off",
+        ["Enhancement_PresetBalanced"] = "Balanced",
+        ["Enhancement_PresetHighQuality"] = "High Quality",
     };
 
     /// <summary>The localized string for <paramref name="key"/>, or the English default.</summary>

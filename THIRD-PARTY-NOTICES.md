@@ -25,7 +25,7 @@ are reproduced exactly as they appear in each font binary's name table.
 | Component | Version | Copyright | License |
 |---|---|---|---|
 | LibVLCSharp.WinUI | 3.10.1 | Copyright © VideoLAN and LibVLCSharp contributors | LGPL-2.1-or-later |
-| VideoLAN LibVLC for Windows | 3.0.23.1 | Copyright © VideoLAN and VLC authors | LGPL-2.1-or-later |
+| VideoLAN LibVLC for Windows | 3.0.24 | Copyright © VideoLAN and VLC authors | LGPL-2.1-or-later |
 | SharpDX (core, Direct3D11, DXGI) | 4.2.0 | Copyright © 2010-2016 Alexandre Mutel | MIT |
 | Microsoft Windows App SDK | 1.7.250909003 | © Microsoft Corporation. All rights reserved. | Microsoft Software License Terms (Windows App SDK) |
 | QRCoder | 1.8.0 | Copyright © 2013-2025 Raffael Herrmann. Copyright © 2024-2025 Shane Krueger. All rights reserved. | MIT |

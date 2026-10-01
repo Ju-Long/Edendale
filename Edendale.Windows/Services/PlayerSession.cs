@@ -32,7 +32,10 @@ public sealed class PlayerSession
         MediaType = "movie",
     });
 
-    public void Play(LibraryShow show, LibraryEpisode episode) => PlaybackRequested?.Invoke(this, new PlaybackRequest
+    public void Play(LibraryShow show, LibraryEpisode episode) => PlaybackRequested?.Invoke(this, RequestFor(show, episode));
+
+    /// <summary>The request for one stored episode; also what auto-advance and Up Next present.</summary>
+    public static PlaybackRequest RequestFor(LibraryShow show, LibraryEpisode episode) => new()
     {
         FilePath = episode.FilePath,
         Title = show.Name,
@@ -42,7 +45,7 @@ public sealed class PlayerSession
         ShowTmdbId = show.TmdbId,
         SeasonNumber = episode.Season,
         EpisodeNumber = episode.Episode,
-    });
+    };
 
     /// <summary>
     /// Open With / command-line playback: straight to the player, never

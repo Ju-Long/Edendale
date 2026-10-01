@@ -30,6 +30,13 @@ public static class AppPaths
     /// <summary>The Young Audience preference; device-local, never replicated.</summary>
     public static string AudiencePreferenceFile => Path.Combine(DataDirectory, "audience.json");
 
+    /// <summary>
+    /// Player, audio, picture, and subtitle preferences plus the per-title
+    /// track memory. Device-local like the audience preference and outside
+    /// the OneDrive replica (Apple keeps the same keys out of iCloud).
+    /// </summary>
+    public static string PlayerSettingsFile => Path.Combine(DataDirectory, "player-settings.json");
+
     /// <summary>DPAPI-protected TMDB session; never leaves this device.</summary>
     public static string TmdbSessionFile => Path.Combine(DataDirectory, "tmdb-session.bin");
 

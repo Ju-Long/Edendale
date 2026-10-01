@@ -19,6 +19,15 @@ public static class AppServices
 
     public static SubtitleService Subtitles { get; } = new();
 
+    /// <summary>Device-local player preferences (player-settings.json), never replicated.</summary>
+    public static PlayerSettingsStore PlayerSettings { get; } = new();
+
+    /// <summary>Settings → App Controls: skip lengths and hold speeds.</summary>
+    public static Core.PlayerControlPreferences Controls { get; } = new(PlayerSettings);
+
+    /// <summary>Loop, Fit/Fill, skip prompts, and the per-title track memory.</summary>
+    public static Core.PlayerPreferences PlayerPreferences { get; } = new(PlayerSettings);
+
     private static bool _accountConnected;
 
     /// <summary>Launch-time side effects: OneDrive merge + TMDB account sync.</summary>

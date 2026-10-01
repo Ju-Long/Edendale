@@ -34,8 +34,12 @@
   <ItemGroup>
     <Compile Include="..\Edendale.Windows\Services\AppPaths.cs" Link="App\Services\AppPaths.cs" />
     <Compile Include="..\Edendale.Windows\Services\AppRoute.cs" Link="App\Services\AppRoute.cs" />
+    <Compile Include="..\Edendale.Windows\Services\IntroDbClient.cs" Link="App\Services\IntroDbClient.cs" />
     <Compile Include="..\Edendale.Windows\Services\LibraryModels.cs" Link="App\Services\LibraryModels.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSession.cs" Link="App\Services\PlayerSession.cs" />
+    <Compile Include="..\Edendale.Windows\Services\PlayerContext.cs" Link="App\Services\PlayerContext.cs" />
+    <Compile Include="..\Edendale.Windows\Services\PlayerSettingsStore.cs" Link="App\Services\PlayerSettingsStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SegmentPrompts.cs" Link="App\Services\SegmentPrompts.cs" />
     <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\SubtitleService.cs" Link="App\Services\SubtitleService.cs" />
     <Compile Include="..\Edendale.Windows\Services\WyzieClient.cs" Link="App\Services\WyzieClient.cs" />
@@ -44,7 +48,18 @@
     <Compile Include="..\Edendale.Windows\Services\WatchlistStore.cs" Link="App\Services\WatchlistStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\YoungAudienceFilter.cs" Link="App\Services\YoungAudienceFilter.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
+    <Compile Include="..\Edendale.Windows\Core\AudioEnhancement.cs" Link="App\Core\AudioEnhancement.cs" />
+    <Compile Include="..\Edendale.Windows\Core\EpisodeProgression.cs" Link="App\Core\EpisodeProgression.cs" />
+    <Compile Include="..\Edendale.Windows\Core\GpuCapabilities.cs" Link="App\Core\GpuCapabilities.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlaybackTransitions.cs" Link="App\Core\PlaybackTransitions.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerControlPreferences.cs" Link="App\Core\PlayerControlPreferences.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerLogic.cs" Link="App\Core\PlayerLogic.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerPreferences.cs" Link="App\Core\PlayerPreferences.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerTracks.cs" Link="App\Core\PlayerTracks.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SubtitleAppearance.cs" Link="App\Core\SubtitleAppearance.cs" />
+    <Compile Include="..\Edendale.Windows\Core\VideoAdjustments.cs" Link="App\Core\VideoAdjustments.cs" />
+    <Compile Include="..\Edendale.Windows\Core\VideoEnhancementOptions.cs" Link="App\Core\VideoEnhancementOptions.cs" />
     <Compile Include="..\Edendale.Windows\Core\ReleaseCalendar.cs" Link="App\Core\ReleaseCalendar.cs" />
     <Compile Include="..\Edendale.Windows\Core\SearchQuery.cs" Link="App\Core\SearchQuery.cs" />
     <Compile Include="..\Edendale.Windows\Core\SubtitleMatching.cs" Link="App\Core\SubtitleMatching.cs" />
