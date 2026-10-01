@@ -1556,4 +1556,16 @@
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>Соединение с {0} потеряно.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Предыдущая серия</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Воспроизвести</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Пауза</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Следующая серия</value>
+  </data>
 </root>

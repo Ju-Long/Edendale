@@ -110,6 +110,10 @@
     </Content>
     <!-- MSIX tile, app list, and splash imagery, generated from icon.ico. -->
     <Content Include="Assets\*.png" />
+    <!-- X.2: taskbar thumbnail buttons need ICO files (HICONs), not SVG. -->
+    <Content Include="Assets\Taskbar\*.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Icons\*.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

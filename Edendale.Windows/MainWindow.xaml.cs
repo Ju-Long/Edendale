@@ -1,6 +1,7 @@
 using Edendale.Windows.Core;
 using Edendale.Windows.Pages;
 using Edendale.Windows.Services;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -107,6 +108,36 @@ public sealed partial class MainWindow : Window
         DownloadedMoviesNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Movies));
         DownloadedShowsNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Shows));
         ResolveSelectedSection();
+        ScheduleJumpListUpdate();
+    }
+
+    private DispatcherQueueTimer? _jumpListTimer;
+
+    /// <summary>X.2: the jump list follows Continue Watching, saved at most every few seconds.</summary>
+    private void ScheduleJumpListUpdate()
+    {
+        if (_jumpListTimer is null)
+        {
+            _jumpListTimer = DispatcherQueue.CreateTimer();
+            _jumpListTimer.Interval = TimeSpan.FromSeconds(3);
+            _jumpListTimer.IsRepeating = false;
+            _jumpListTimer.Tick += (_, _) =>
+            {
+                var library = AppServices.Library;
+                var movies = library.Movies.Where(movie => DownloadedPage.AudienceAllows(movie.TmdbId, "movie")).ToList();
+                var entries = DownloadedPage.ContinueWatchingEntries(library, movies, ContinueWatchingJumpList.Limit)
+                    .Select(entry => entry.Movie is { } movie
+                        ? new ContinueWatchingJumpList.Entry(entry.Title, entry.Subtitle, $"{AppRoute.Scheme}://play/local-movie/{movie.Id}")
+                        : entry.Episode is { } episode
+                            ? new ContinueWatchingJumpList.Entry(entry.Title, entry.Subtitle, $"{AppRoute.Scheme}://play/local-episode/{episode.Id}")
+                            : null)
+                    .OfType<ContinueWatchingJumpList.Entry>()
+                    .ToList();
+                _ = ContinueWatchingJumpList.UpdateAsync(entries);
+            };
+        }
+        _jumpListTimer.Stop();
+        _jumpListTimer.Start();
     }
 
     private SidebarItem? SelectedSidebarItem =>

@@ -1556,4 +1556,16 @@ EST SILENCIEUSE</value>
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>Connexion à {0} perdue.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Épisode précédent</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Lire</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Épisode suivant</value>
+  </data>
 </root>

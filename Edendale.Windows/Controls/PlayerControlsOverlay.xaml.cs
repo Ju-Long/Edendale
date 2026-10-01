@@ -258,6 +258,22 @@ public sealed partial class PlayerControlsOverlay : UserControl
             SkipIcon(direction, seconds));
     }
 
+    /// <summary>X.1: the D-pad's fine seek, shown as the new time.</summary>
+    public void SeekBy(int seconds)
+    {
+        if (_mediaPlayer == null) return;
+        var target = PlayerLogic.SkipTarget(_mediaPlayer.Time, seconds, _mediaPlayer.Length);
+        _mediaPlayer.Time = target;
+        ShowHud(PlayerLogic.Timestamp(target / 1000.0), null);
+    }
+
+    /// <summary>X.1: a trigger held past its threshold plays at that side's hold speed.</summary>
+    public void SetControllerHold(HoldSide? side)
+    {
+        if (side is { } held) BeginHold(held);
+        else EndHold();
+    }
+
     private void SkipBack_Click(object sender, RoutedEventArgs e) => Skip(SkipDirection.Backward);
     private void SkipForward_Click(object sender, RoutedEventArgs e) => Skip(SkipDirection.Forward);
 

@@ -1556,4 +1556,16 @@
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>{0}와(과)의 연결이 끊겼습니다.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>이전 에피소드</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>재생</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>일시 정지</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>다음 에피소드</value>
+  </data>
 </root>

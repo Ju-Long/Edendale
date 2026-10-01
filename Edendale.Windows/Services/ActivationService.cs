@@ -54,8 +54,16 @@ public static class ActivationService
 
             // `Edendale.exe C:\some\video.mkv` — a plain launch whose
             // command line names an existing file.
+            // A jump-list entry (X.2) launches with its edendale:// route as the arguments.
             case ExtendedActivationKind.Launch when args.Data is ILaunchActivatedEventArgs launch:
-                var fileArgument = Tokenize(launch.Arguments)
+                var tokens = Tokenize(launch.Arguments).ToList();
+                var route = tokens.FirstOrDefault(token => token.StartsWith(AppRoute.Scheme + "://", StringComparison.OrdinalIgnoreCase));
+                if (route is not null && Uri.TryCreate(route, UriKind.Absolute, out var routeUri))
+                {
+                    HandleUri(routeUri);
+                    break;
+                }
+                var fileArgument = tokens
                     .Where(token => !token.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     .FirstOrDefault(File.Exists);
                 if (fileArgument is not null) OpenFiles([fileArgument]);

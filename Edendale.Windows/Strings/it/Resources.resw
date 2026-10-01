@@ -1556,4 +1556,16 @@
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>Connessione a {0} persa.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Episodio precedente</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Riproduci</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pausa</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Episodio successivo</value>
+  </data>
 </root>

@@ -67,14 +67,33 @@ public sealed partial class MainWindow
     private Services.Remote.ByteSourceMediaInput? _mediaInput;
     private readonly global::Windows.UI.ViewManagement.UISettings _uiSettings = new();
 
+    private GamepadInput? _gamepad;
+    private TaskbarButtons? _taskbarButtons;
+
+    /// <summary>X.2: the taskbar thumbnail's buttons follow the player.</summary>
+    private void UpdateTaskbarButtons(bool playing) =>
+        _taskbarButtons?.Update(
+            visible: PlayerOverlay.Visibility == Visibility.Visible,
+            playing,
+            hasPrevious: _context?.PreviousRequest is not null,
+            hasNext: _context?.NextRequest is not null);
+
     private void InitializePlayer()
     {
         AppWindow.Changed += AppWindow_Changed;
+        _gamepad = new GamepadInput(DispatcherQueue, Gamepad_Action);
+        Activated += (_, args) => _gamepad.SetWindowActive(args.WindowActivationState != WindowActivationState.Deactivated);
         AppServices.PlayerSettings.Changed += (_, key) => DispatcherQueue.TryEnqueue(() => PlayerSetting_Changed(key));
         _ = GpuProbe.CapabilitiesAsync();
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _transport = MediaTransport.TryCreate(hwnd, DispatcherQueue, MediaTransport_Command);
+        _taskbarButtons = TaskbarButtons.TryCreate(hwnd, command => MediaTransport_Command(command switch
+        {
+            TaskbarCommand.Previous => MediaTransportCommand.Previous,
+            TaskbarCommand.Next => MediaTransportCommand.Next,
+            _ => _mediaPlayer?.IsPlaying == true ? MediaTransportCommand.Pause : MediaTransportCommand.Play,
+        }));
     }
 
     /// <summary>Live settings reach the running player at once; nothing restarts.</summary>
@@ -118,11 +137,13 @@ public sealed partial class MainWindow
 
         PlayerOverlay.Visibility = Visibility.Visible;
         ApplyingLayer.Visibility = Visibility.Collapsed;
+        _gamepad?.SetRunning(true);
         ControlsOverlay.SetMediaPlayer(null, request.Title.ToUpperInvariant(), request.Subtitle, request, _context);
         AdjustmentsPanel.Bind(null, _context);
         if (_openPane == PlayerPane.Playlist) PlaylistPanel.Load(request);
         if (_openPane == PlayerPane.None) ControlsOverlay.Focus(FocusState.Programmatic);
         _transport?.SetItem(request, _context);
+        UpdateTaskbarButtons(playing: false);
 
         // The WinUI VideoView creates its Direct3D swap chain only once it is
         // visible, so the first request waits for Initialized.
@@ -438,6 +459,7 @@ public sealed partial class MainWindow
             if (!ReferenceEquals(player, _mediaPlayer)) return;
             DisplayAwake.Hold(true);
             _transport?.SetPlaying(true);
+            UpdateTaskbarButtons(playing: true);
 
             if (_reopenState is { } state)
             {
@@ -466,6 +488,7 @@ public sealed partial class MainWindow
             if (!ReferenceEquals(player, _mediaPlayer)) return;
             DisplayAwake.Hold(false);
             _transport?.SetPlaying(false);
+            UpdateTaskbarButtons(playing: false);
         });
     }
 
@@ -531,8 +554,11 @@ public sealed partial class MainWindow
         using var media = player.Media;
         var info = PlayerEffects.SourceInfo(media);
         if (info.Width <= 0) return;
+        var frameRateChanged = info.FrameRate != _sourceInfo.FrameRate;
         _sourceInfo = info;
         AdjustmentsPanel.ShowEnhancement(BuildEnhancement(GpuProbe.Current, info), GpuProbe.Current);
+        // The frame rate is known only now when the file wasn't parsed ahead.
+        if (frameRateChanged && _isFullScreen) MatchDisplayRate();
     }
 
     // ------------------------------------------------------------------
@@ -850,6 +876,23 @@ public sealed partial class MainWindow
         }
         _isFullScreen = fullScreen;
         ControlsOverlay.SetFullScreenActive(fullScreen);
+        MatchDisplayRate();
+    }
+
+    /// <summary>
+    /// X.4: full screen moves the display to a whole multiple of the frame
+    /// rate when the monitor offers one; leaving full screen restores it.
+    /// </summary>
+    private void MatchDisplayRate()
+    {
+        if (_isFullScreen && PlayerOverlay.Visibility == Visibility.Visible)
+        {
+            DisplayRefreshRate.Match(WinRT.Interop.WindowNative.GetWindowHandle(this), _sourceInfo.FrameRate);
+        }
+        else
+        {
+            DisplayRefreshRate.Restore();
+        }
     }
 
     /// <summary>Keeps the flags right when Windows changes the presenter itself.</summary>
@@ -861,6 +904,7 @@ public sealed partial class MainWindow
         _isCompactOverlay = kind == AppWindowPresenterKind.CompactOverlay;
         ControlsOverlay.SetFullScreenActive(_isFullScreen);
         ControlsOverlay.SetPictureInPictureActive(_isCompactOverlay);
+        if (!_isFullScreen) DisplayRefreshRate.Restore();
     }
 
     // ------------------------------------------------------------------
@@ -880,19 +924,46 @@ public sealed partial class MainWindow
         return false;
     }
 
+    /// <summary>
+    /// Esc (and a controller's B) peels back one layer at a time: a transient
+    /// panel, the docked pane, full screen or the floating window, then the player.
+    /// </summary>
+    private void BackOutOneLayer()
+    {
+        if (ControlsOverlay.DismissTransient()) return;
+        if (_openPane != PlayerPane.None) ClosePane();
+        else if (_isFullScreen) SetFullScreen(false);
+        else if (_isCompactOverlay) SetCompactOverlay(false);
+        else ClosePlayer();
+    }
+
+    /// <summary>X.1: what the controller asked for (GamepadInterpreter).</summary>
+    private void Gamepad_Action(PadAction action)
+    {
+        if (PlayerOverlay.Visibility != Visibility.Visible) return;
+        switch (action)
+        {
+            case PadAction.PlayPause: ControlsOverlay.TogglePlayPause(); break;
+            case PadAction.Back: BackOutOneLayer(); break;
+            case PadAction.SkipBackward: ControlsOverlay.Skip(SkipDirection.Backward); break;
+            case PadAction.SkipForward: ControlsOverlay.Skip(SkipDirection.Forward); break;
+            case PadAction.SeekBackward: ControlsOverlay.SeekBy(-GamepadInterpreter.SeekSeconds); break;
+            case PadAction.SeekForward: ControlsOverlay.SeekBy(GamepadInterpreter.SeekSeconds); break;
+            case PadAction.VolumeUp: ControlsOverlay.ChangeVolume(1); break;
+            case PadAction.VolumeDown: ControlsOverlay.ChangeVolume(-1); break;
+            case PadAction.ToggleFullScreen: SetFullScreen(!_isFullScreen); break;
+            case PadAction.Adjustments: TogglePane(PlayerPane.Adjustments); break;
+            case PadAction.HoldLeftStart: ControlsOverlay.SetControllerHold(HoldSide.Left); break;
+            case PadAction.HoldRightStart: ControlsOverlay.SetControllerHold(HoldSide.Right); break;
+            case PadAction.HoldEnd: ControlsOverlay.SetControllerHold(null); break;
+        }
+    }
+
     private void PlayerOverlay_KeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key == VirtualKey.Escape)
         {
-            // Esc peels back one layer at a time: a transient panel, the
-            // docked pane, full screen or the floating window, then the player.
-            if (!ControlsOverlay.DismissTransient())
-            {
-                if (_openPane != PlayerPane.None) ClosePane();
-                else if (_isFullScreen) SetFullScreen(false);
-                else if (_isCompactOverlay) SetCompactOverlay(false);
-                else ClosePlayer();
-            }
+            BackOutOneLayer();
             e.Handled = true;
             return;
         }
@@ -1011,6 +1082,8 @@ public sealed partial class MainWindow
         SetFullScreen(false);
         SetCompactOverlay(false);
         PlayerOverlay.Visibility = Visibility.Collapsed;
+        _gamepad?.SetRunning(false);
+        UpdateTaskbarButtons(playing: false);
         ApplyingLayer.Visibility = Visibility.Collapsed;
         ControlsOverlay.SetMediaPlayer(null, "", "", null, null);
         AdjustmentsPanel.Bind(null, null);
@@ -1043,6 +1116,7 @@ public sealed partial class MainWindow
     {
         LeaveCurrentItem();
         DisposePlayer();
+        DisplayRefreshRate.Restore();
         DisplayAwake.Hold(false);
         _libVlc?.Dispose();
         _libVlc = null;

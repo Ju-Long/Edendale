@@ -1556,4 +1556,16 @@ IST STUMM</value>
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>Verbindung zu {0} verloren.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Vorherige Folge</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Abspielen</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Nächste Folge</value>
+  </data>
 </root>

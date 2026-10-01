@@ -1556,4 +1556,16 @@ IS STIL</value>
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>Verbinding met {0} verbroken.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Vorige aflevering</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Afspelen</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pauzeren</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Volgende aflevering</value>
+  </data>
 </root>

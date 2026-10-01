@@ -1556,4 +1556,16 @@
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>Anslutningen till {0} bröts.</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Föregående avsnitt</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Spela upp</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pausa</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Nästa avsnitt</value>
+  </data>
 </root>

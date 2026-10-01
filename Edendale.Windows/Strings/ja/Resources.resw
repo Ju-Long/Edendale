@@ -1556,4 +1556,16 @@
   <data name="Remote_ConnectionLostPlain" xml:space="preserve">
     <value>{0} との接続が切れました。</value>
   </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>前のエピソード</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>一時停止</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>次のエピソード</value>
+  </data>
 </root>
