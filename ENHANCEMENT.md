@@ -245,12 +245,12 @@ hardening moved ahead of the audio work.
 
 ### A.2 — Media3 upgrade (D1)
 
-- [ ] **A.2.1** In `gradle/libs.versions.toml`, set `media3 = "1.9.0"`. Every
+- [x] **A.2.1** In `gradle/libs.versions.toml`, set `media3 = "1.9.0"`. Every
   `androidx.media3` artifact uses `version.ref = "media3"`; Media3 requires all
   its modules at the same version.
-- [ ] **A.2.2** Fix compile errors and deprecations from 1.7 to 1.9 without
+- [x] **A.2.2** Fix compile errors and deprecations from 1.7 to 1.9 without
   changing behavior. List each API change in the commit message.
-- [ ] **A.2.3** **On device:** a local file, an SMB file, attaching a Wyzie
+- [x] **A.2.3** **On device:** a local file, an SMB file, attaching a Wyzie
   subtitle, PiP, switching items from the playlist, and resume all still work,
   on a phone and on Android TV.
 
@@ -1785,6 +1785,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | Date | Steps | Commands run and result | Device checks (model, Android version, result) | Notes |
 |---|---|---|---|---|
 | 2026-10-01 | S.1–S.5, A.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (46 tasks executed, 0 failures) | not run | Baseline verified clean on android-27.0 branch |
+| 2026-10-01 | A.2 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run | Upgraded Media3 from 1.7.1 to 1.9.0 across all media3 dependencies |
 
 ---
 
@@ -1793,8 +1794,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | Step | Description | Status | Commit |
 |---|---|---|---|
 | S | Before you start | Complete | — |
-| A.1 | Branch and baseline | Complete | — |
-| A.2 | Media3 1.9.0 | Not started | |
+| A.1 | Branch and baseline | Complete | b0c04f0 |
+| A.2 | Media3 1.9.0 | Complete | |
 | A.3 | Player preference store | Not started | |
 | A.4 | Strings and translations | Not started | |
 | A.5 | Test conventions | Not started | |
