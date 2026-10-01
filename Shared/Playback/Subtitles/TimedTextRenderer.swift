@@ -284,10 +284,11 @@ public final class TimedTextRenderer: @unchecked Sendable {
         from rawText: String,
         fontSize: CGFloat? = nil,
         textColor: PlatformColor = .white,
-        outlineColor: PlatformColor = .black
+        outlineColor: PlatformColor = .black,
+        fontStyle: SubtitleFontStyle = .system
     ) -> NSAttributedString {
         let baseFontSize = fontSize ?? max(18.0, CGFloat(frameHeight) * fontSizeRatio)
-        let baseFont = makeFont(size: baseFontSize, bold: false, italic: false)
+        let baseFont = makeFont(size: baseFontSize, bold: false, italic: false, style: fontStyle)
 
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
@@ -310,7 +311,7 @@ public final class TimedTextRenderer: @unchecked Sendable {
         for node in parsedNodes {
             var attributes = baseAttributes
 
-            let font = makeFont(size: baseFontSize, bold: node.isBold, italic: node.isItalic)
+            let font = makeFont(size: baseFontSize, bold: node.isBold, italic: node.isItalic, style: fontStyle)
             attributes[.font] = font
 
             if let color = node.color {
@@ -466,25 +467,81 @@ public final class TimedTextRenderer: @unchecked Sendable {
         #endif
     }
 
-    private func makeFont(size: CGFloat, bold: Bool, italic: Bool) -> PlatformFont {
+    private func makeFont(
+        size: CGFloat,
+        bold: Bool,
+        italic: Bool,
+        style: SubtitleFontStyle = .system
+    ) -> PlatformFont {
         #if canImport(AppKit) && !targetEnvironment(macCatalyst)
         var font = NSFont.systemFont(ofSize: size, weight: bold ? .bold : .medium)
+        if let design = Self.systemDesign(for: style),
+           let descriptor = font.fontDescriptor.withDesign(design),
+           let designed = NSFont(descriptor: descriptor, size: size) {
+            font = designed
+        }
         if italic {
-            font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
+            let converted = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
+            if converted.fontDescriptor.symbolicTraits.contains(.italic) {
+                font = converted
+            } else if let slanted = NSFont(
+                descriptor: font.fontDescriptor.withMatrix(Self.obliqueMatrix),
+                size: size
+            ) {
+                // Families such as SF Rounded ship no italic face.
+                font = slanted
+            }
         }
         return font
         #else
         var descriptor = UIFont.systemFont(ofSize: size, weight: bold ? .bold : .medium).fontDescriptor
+        if let design = Self.systemDesign(for: style),
+           let designed = descriptor.withDesign(design) {
+            descriptor = designed
+        }
         var traits: UIFontDescriptor.SymbolicTraits = []
         if bold { traits.insert(.traitBold) }
         if italic { traits.insert(.traitItalic) }
 
         if let newDescriptor = descriptor.withSymbolicTraits(traits) {
-            return UIFont(descriptor: newDescriptor, size: size)
+            descriptor = newDescriptor
         }
-        return UIFont.systemFont(ofSize: size)
+        let font = UIFont(descriptor: descriptor, size: size)
+        // Families such as SF Rounded ship no italic face, and the request
+        // above resolves upright: slant the glyphs instead.
+        if italic, !font.fontDescriptor.symbolicTraits.contains(.traitItalic) {
+            return UIFont(descriptor: font.fontDescriptor.withMatrix(Self.obliqueMatrix), size: size)
+        }
+        return font
         #endif
     }
+
+    /// A synthetic italic for families without an italic face.
+    #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+    private static let obliqueMatrix = AffineTransform(m11: 1, m12: 0, m21: 0.2, m22: 1, tX: 0, tY: 0)
+    #else
+    private static let obliqueMatrix = CGAffineTransform(a: 1, b: 0, c: 0.2, d: 1, tx: 0, ty: 0)
+    #endif
+
+    #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+    private static func systemDesign(for style: SubtitleFontStyle) -> NSFontDescriptor.SystemDesign? {
+        switch style {
+        case .system: nil
+        case .rounded: .rounded
+        case .serif: .serif
+        case .monospaced: .monospaced
+        }
+    }
+    #else
+    private static func systemDesign(for style: SubtitleFontStyle) -> UIFontDescriptor.SystemDesign? {
+        switch style {
+        case .system: nil
+        case .rounded: .rounded
+        case .serif: .serif
+        case .monospaced: .monospaced
+        }
+    }
+    #endif
 
     // MARK: - SRT / WebVTT Parser
 

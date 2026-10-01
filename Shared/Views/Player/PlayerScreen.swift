@@ -120,6 +120,7 @@ struct PlayerScreen: View {
 
             PlayerSubtitleOverlay(
                 engine: player.subtitleEngine,
+                appearance: session.subtitleAppearance,
                 time: CMTime(seconds: player.currentTime.playbackSeconds, preferredTimescale: 60000),
                 videoSize: player.decoder?.mediaInfo?.naturalSize ?? .zero,
                 aspectFill: session.chrome?.aspectFill == true,

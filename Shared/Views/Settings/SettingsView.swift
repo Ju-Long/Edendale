@@ -133,6 +133,8 @@ struct SettingsView: View {
 
         AudioEnhancementSection()
 
+        SubtitleAppearanceSection()
+
         SegmentSkippingSection()
 
         AppControlsSection()

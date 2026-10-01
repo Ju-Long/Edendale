@@ -2,12 +2,11 @@
 //  RemoteFileByteSource.swift
 //  Edendale
 //
-//  EDByteSource over a blocking file connection: NFS (libnfs, see
-//  EDRemoteFiles) or SFTP (SFTPConnection). The connection opens on the
-//  first read, which FFmpeg makes on its worker queue, so mounting or the
-//  SSH handshake never runs on the main thread. Reads fetch at least 1 MiB
-//  at a time and serve FFmpeg's 64 KiB requests from that, cutting round
-//  trips sixteenfold.
+//  NFS (libnfs, see EDRemoteFiles) and SFTP (SFTPConnection) files read
+//  through BufferedByteSource, which fetches 1 MiB chunks ahead of FFmpeg on
+//  its own thread and reconnects after a drop. The connection opens on the
+//  first fetch, so mounting or the SSH handshake never runs on the main
+//  thread.
 //
 
 import Foundation
@@ -86,138 +85,74 @@ nonisolated enum RemoteFileFailure: Int {
     }
 }
 
-nonisolated final class RemoteFileByteSource: NSObject, ByteSource, @unchecked Sendable {
-    private static let readAhead = 1 << 20
-
+/// A BlockingFileConnection as BufferedByteSource's file, with failures
+/// turned into what the user reads.
+nonisolated final class RemoteFileAdapter: NSObject, BufferedFile {
+    private let connection: BlockingFileConnection
     private let kind: MediaSourceKind
     private let host: String
-    private let open: @Sendable () throws -> BlockingFileConnection
 
-    private let lock = NSLock()
-    private var connection: BlockingFileConnection?
-    private var isCancelled = false
-    private var reason: String?
-    private var buffer = Data()
-    private var bufferOffset: Int64 = 0
-
-    /// - Parameter open: Connects and opens the file; runs on FFmpeg's
-    ///   worker queue at the first read.
-    init(kind: MediaSourceKind, host: String, open: @escaping @Sendable () throws -> BlockingFileConnection) {
+    init(connection: BlockingFileConnection, kind: MediaSourceKind, host: String) {
+        self.connection = connection
         self.kind = kind
         self.host = host
-        self.open = open
-        super.init()
     }
 
-    var length: Int64 {
-        lock.withLock { connection?.fileSize ?? -1 }
-    }
+    var size: Int64 { connection.fileSize }
 
-    var failureReason: String? {
-        lock.withLock { reason }
-    }
-
-    func read(
-        atOffset offset: Int64,
-        into destination: UnsafeMutablePointer<UInt8>,
-        length requested: Int,
-        shouldAbort: () -> Bool
-    ) -> Int {
-        guard requested > 0, offset >= 0 else { return 0 }
-        guard let connection = openedConnection(), !shouldAbort() else { return -1 }
-
-        let size = connection.fileSize
-        if size >= 0, offset >= size { return 0 }
-
-        // Serve from the read-ahead buffer when it covers the offset.
-        let buffered = lock.withLock { () -> Int? in
-            let start = offset - bufferOffset
-            guard start >= 0, start < Int64(buffer.count) else { return nil }
-            let count = min(requested, buffer.count - Int(start))
-            buffer.withUnsafeBytes { raw in
-                destination.update(
-                    from: raw.baseAddress!.assumingMemoryBound(to: UInt8.self) + Int(start),
-                    count: count
-                )
-            }
-            return count
-        }
-        if let buffered { return buffered }
-
-        var fetchLength = max(requested, Self.readAhead)
-        if size >= 0 { fetchLength = Int(min(Int64(fetchLength), size - offset)) }
-        var chunk = Data(count: fetchLength)
+    func read(atOffset offset: Int64, into buffer: UnsafeMutablePointer<UInt8>, length: Int, error: NSErrorPointer) -> Int {
         do {
-            let count = try chunk.withUnsafeMutableBytes { raw in
-                try connection.readBytes(
-                    at: offset,
-                    into: raw.baseAddress!.assumingMemoryBound(to: UInt8.self),
-                    length: fetchLength
-                )
-            }
-            chunk.count = count
-        } catch {
-            fail(error)
+            return try connection.readBytes(at: offset, into: buffer, length: length)
+        } catch let failure {
+            error?.pointee = Self.describe(failure, kind: kind, host: host)
             return -1
         }
-        guard !chunk.isEmpty else { return 0 }
-        let count = min(requested, chunk.count)
-        chunk.withUnsafeBytes { raw in
-            destination.update(from: raw.baseAddress!.assumingMemoryBound(to: UInt8.self), count: count)
-        }
-        lock.withLock {
-            buffer = chunk
-            bufferOffset = offset
-        }
-        return count
     }
 
-    func cancel() {
-        let connection = lock.withLock { () -> BlockingFileConnection? in
-            isCancelled = true
-            buffer = Data()
-            return self.connection
-        }
-        connection?.abortTransfer()
+    /// Neither protocol has a no-op request in these wrappers; one byte
+    /// costs the same round trip.
+    func keepAlive() -> Bool {
+        var byte: UInt8 = 0
+        return (try? connection.readBytes(at: 0, into: &byte, length: 1)) != nil
     }
 
-    // MARK: - Private
-
-    private func openedConnection() -> BlockingFileConnection? {
-        let state = lock.withLock { (isCancelled, connection) }
-        if state.0 { return nil }
-        if let connection = state.1 { return connection }
-        do {
-            let opened = try open()
-            let cancelled = lock.withLock { () -> Bool in
-                if !isCancelled { connection = opened }
-                return isCancelled
-            }
-            if cancelled {
-                opened.abortTransfer()
-                return nil
-            }
-            return opened
-        } catch {
-            fail(error)
-            return nil
-        }
+    func abort() {
+        connection.abortTransfer()
     }
 
-    private func fail(_ error: Error) {
-        let message: String?
-        if error is CancellationError {
-            // Cancelled on purpose; there's nothing to explain.
-            message = nil
-        } else if let failure = RemoteFileFailure(error) {
+    /// An NSError whose description is the message the player shows.
+    static func describe(_ error: Error, kind: MediaSourceKind, host: String) -> NSError {
+        let message: String
+        if let failure = RemoteFileFailure(error) {
             let detail = (error as NSError).userInfo[NSDebugDescriptionErrorKey] as? String
             let mapped = failure.connectorError(kind: kind, host: host, detail: detail)
-            message = mapped is CancellationError ? nil : mapped.localizedDescription
-        } else if let error = error as? LocalizedError {
-            message = error.errorDescription
+            message = (mapped as? LocalizedError)?.errorDescription ?? mapped.localizedDescription
+        } else if let error = error as? LocalizedError, let description = error.errorDescription {
+            message = description
         } else {
             message = String(localized: "Couldn't read this file from \(host).")
         }
-        lock.withLock { reason = message }
+        return NSError(domain: EDRemoteFileErrorDomain, code: (error as NSError).code,
+                       userInfo: [NSLocalizedDescriptionKey: message])
+    }
+}
+
+nonisolated extension BufferedByteSource {
+    /// A buffered, reconnecting source over the connections `open` makes;
+    /// `open` runs on the source's worker thread at the first read and at
+    /// each reconnect.
+    static func remoteFile(
+        kind: MediaSourceKind,
+        host: String,
+        open: @escaping @Sendable () throws -> BlockingFileConnection
+    ) -> BufferedByteSource {
+        BufferedByteSource(host: host) { error in
+            do {
+                return RemoteFileAdapter(connection: try open(), kind: kind, host: host)
+            } catch let failure {
+                error?.pointee = RemoteFileAdapter.describe(failure, kind: kind, host: host)
+                return nil
+            }
+        }
     }
 }

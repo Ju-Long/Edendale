@@ -130,7 +130,7 @@ struct PlayerSubtitleOverlayTests {
         let engine = SubtitleEngine()
         engine.selectFormat(.ass)
         engine.addEvent(DecodedSubtitleEvent(text: "0,0,Default,,0,0,0,,A subtitle above the video.\\N{\\i1}Embedded and downloaded captions.{\\i0}", start: time(1), end: time(3)))
-        let overlay = PlayerSubtitleOverlay(engine: engine, time: time(2),
+        let overlay = PlayerSubtitleOverlay(engine: engine, appearance: defaultAppearance, time: time(2),
                                            videoSize: CGSize(width: 1920, height: 1080))
         let renderer = ImageRenderer(content: overlay
             .background(LinearGradient(colors: [Theme.surfaceHigh, Theme.outlineBright], startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -143,8 +143,14 @@ struct PlayerSubtitleOverlayTests {
         print("Subtitle overlay preview: \(url.path)")
     }
 
+    /// The default look, read from an empty suite so the viewer's own
+    /// Settings choices never leak into these renders.
+    private var defaultAppearance: SubtitleAppearance {
+        SubtitleAppearance(defaults: UserDefaults(suiteName: "PlayerSubtitleOverlayTests.appearance")!)
+    }
+
     private func render(_ engine: SubtitleEngine, at seconds: Double) throws -> CGImage {
-        let view = PlayerSubtitleOverlay(engine: engine, time: time(seconds), videoSize: CGSize(width: 320, height: 180))
+        let view = PlayerSubtitleOverlay(engine: engine, appearance: defaultAppearance, time: time(seconds), videoSize: CGSize(width: 320, height: 180))
             .frame(width: 640, height: 360)
             // The player always has a video/backdrop beneath the overlay. An
             // empty transparent ImageRenderer surface has no pixels to paint.

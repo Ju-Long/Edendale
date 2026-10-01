@@ -42,6 +42,8 @@ final class PlayerSession {
     let segmentSkipping: PlayerSegmentController
     /// Skip lengths and press-and-hold speeds (Settings ▸ App Controls).
     let controls: PlayerControlPreferences
+    /// Text subtitle font, colours, and box (Settings ▸ Subtitles).
+    let subtitleAppearance: SubtitleAppearance
 
     private let library: LibraryController
     private let watchStore: WatchProgressStore
@@ -92,6 +94,7 @@ final class PlayerSession {
         videoAdjustment: VideoAdjustmentController? = nil,
         segmentSkipping: PlayerSegmentController? = nil,
         controls: PlayerControlPreferences? = nil,
+        subtitleAppearance: SubtitleAppearance? = nil,
         defaults: UserDefaults? = nil
     ) {
         let defaults = defaults ?? AppIdentifiers.defaults
@@ -103,6 +106,7 @@ final class PlayerSession {
         self.videoAdjustment = videoAdjustment ?? VideoAdjustmentController(defaults: defaults)
         self.segmentSkipping = segmentSkipping ?? PlayerSegmentController(defaults: defaults)
         self.controls = controls ?? PlayerControlPreferences(defaults: defaults)
+        self.subtitleAppearance = subtitleAppearance ?? SubtitleAppearance(defaults: defaults)
 
         // The Lock Screen and Control Center label their skip buttons with
         // the chosen lengths, including after a change made mid-playback.

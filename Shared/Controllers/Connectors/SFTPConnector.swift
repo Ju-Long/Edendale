@@ -178,13 +178,13 @@ nonisolated struct SFTPConnector: MediaConnector, Hashable {
     }
 
     /// Reads a file over its own connection, opened at the first read.
-    static func byteSource(for itemURL: URL, store: any SecretStore = KeychainStore.shared) -> RemoteFileByteSource? {
+    static func byteSource(for itemURL: URL, store: any SecretStore = KeychainStore.shared) -> BufferedByteSource? {
         guard MediaSourceKind(url: itemURL) == .sftp, let host = itemURL.host() else { return nil }
         let port = itemURL.port ?? defaultPort
         let path = path(of: itemURL)
         let credential = NetworkCredentialStore.credential(kind: .sftp, host: host, store: store)
         let pinned = HostKeyStore.pinnedFingerprint(host: host, port: port, store: store)
-        return RemoteFileByteSource(kind: .sftp, host: host) {
+        return BufferedByteSource.remoteFile(kind: .sftp, host: host) {
             guard let credential else { throw ConnectorError.signInRequired(provider: host) }
             let connection = try connect(host: host, port: port, credential: credential, pinned: pinned)
             let size: Int64

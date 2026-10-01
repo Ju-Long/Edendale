@@ -1333,10 +1333,12 @@ Wiring:
 - `FFmpegDecoder.open(url:)` gets the item's resolver from `ConnectorFactory`,
   builds the byte source before dispatching to its worker queue, and cancels
   it from `interrupt` and `close`.
-- The reader's read/seek callbacks mirror `ed_smb_read`/`ed_smb_seek`, honor
-  `_interrupted`, and answer `AVSEEK_SIZE` from `length`.
-- NFS and SFTP read through `RemoteFileByteSource`: NFS with the libnfs
-  symbols libvlc already exports, SFTP with SwiftNIO SSH (`SFTPConnection`).
+- The reader's read/seek callbacks honor `_interrupted` and answer
+  `AVSEEK_SIZE` from `length`.
+- SMB, NFS, and SFTP read through `BufferedByteSource` (1 MiB chunks, 48 MiB
+  read-ahead on a worker thread, reconnect with backoff, idle keep-alive):
+  SMB and NFS with the libsmb2/libnfs symbols libvlc already exports, SFTP
+  with SwiftNIO SSH (`SFTPConnection`).
 - The generic branch in `openURL:` rejects remote schemes instead of handing
   them to FFmpeg's unverified `https`, so no token or signed link can reach it.
 - visionOS: `VisionMediaInspector` can't open custom schemes, so remote items

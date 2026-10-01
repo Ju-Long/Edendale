@@ -241,8 +241,8 @@ struct ConnectorFactoryTests {
 
     @Test func buildsByteSourcesForEveryStreamedKind() throws {
         let (environment, secrets) = environment()
-        #expect(try ConnectorFactory.byteSource(for: URL(string: "nfs://nas/export/Heat.mkv")!, environment: environment) is RemoteFileByteSource)
-        #expect(try ConnectorFactory.byteSource(for: URL(string: "sftp://nas/home/Heat.mkv")!, environment: environment) is RemoteFileByteSource)
+        #expect(try ConnectorFactory.byteSource(for: URL(string: "nfs://nas/export/Heat.mkv")!, environment: environment) is BufferedByteSource)
+        #expect(try ConnectorFactory.byteSource(for: URL(string: "sftp://nas/home/Heat.mkv")!, environment: environment) is BufferedByteSource)
         #expect(try ConnectorFactory.byteSource(for: URL(string: "davs://nas/dav/Heat.mkv")!, environment: environment) is RemoteByteSource)
         #expect(throws: ConnectorError.signInRequired(provider: "S3-Compatible Storage")) {
             try ConnectorFactory.byteSource(for: URL(string: "s3://acct/films/Heat.mkv")!, environment: environment)

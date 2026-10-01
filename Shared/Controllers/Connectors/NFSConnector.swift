@@ -50,10 +50,10 @@ nonisolated struct NFSConnector: MediaConnector, Hashable {
     }
 
     /// Reads a file with libnfs; the connection opens on the first read.
-    static func byteSource(for itemURL: URL) -> RemoteFileByteSource? {
+    static func byteSource(for itemURL: URL) -> BufferedByteSource? {
         guard MediaSourceKind(url: itemURL) == .nfs, let host = itemURL.host() else { return nil }
         let path = "/" + SourceURL.pathSegments(of: itemURL).joined(separator: "/")
-        return RemoteFileByteSource(kind: .nfs, host: host) {
+        return BufferedByteSource.remoteFile(kind: .nfs, host: host) {
             try NFSConnection(host: host, filePath: path, timeoutMilliseconds: 15_000)
         }
     }

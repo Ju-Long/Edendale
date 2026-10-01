@@ -31,26 +31,39 @@ struct VideoEnhancementControls: View {
 
     // MARK: - Preset
 
+    @ViewBuilder
     private var presetPicker: some View {
+        #if os(tvOS)
         VStack(alignment: .leading, spacing: 8) {
-            Text("Enhancement")
-                .font(Typography.bodyLG)
+            Text("Preset")
                 .foregroundStyle(Theme.textPrimary)
-
-            Picker("Enhancement Preset", selection: $pipeline.preset) {
-                ForEach(EnhancementPreset.allCases) { preset in
-                    Text(preset.displayName).tag(preset)
-                }
+            Picker("Preset", selection: $pipeline.preset) {
+                presetOptions
             }
-            #if os(macOS)
-            // A macOS segmented control can't shrink below its labels, and
-            // four presets side by side are wider than the docked
-            // adjustments column.
             .pickerStyle(.menu)
-            #else
-            .pickerStyle(.segmented)
-            #endif
             .labelsHidden()
+        }
+        #else
+        // A menu keeps every preset name whole; four segments truncate
+        // in the narrow player panel on smaller iPhones and on the
+        // docked macOS adjustments column.
+        HStack {
+            Text("Preset")
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Picker("Preset", selection: $pipeline.preset) {
+                presetOptions
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .tint(Theme.gold)
+        }
+        #endif
+    }
+
+    private var presetOptions: some View {
+        ForEach(EnhancementPreset.allCases) { preset in
+            Text(preset.displayName).tag(preset)
         }
     }
 

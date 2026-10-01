@@ -5,6 +5,7 @@ import SwiftUI
 /// layer). Both embedded tracks and downloaded files feed the same cue engine.
 struct PlayerSubtitleOverlay: View {
     let engine: SubtitleEngine
+    let appearance: SubtitleAppearance
     let time: CMTime
     let videoSize: CGSize
     var aspectFill = false
@@ -30,19 +31,13 @@ struct PlayerSubtitleOverlay: View {
                         Spacer(minLength: 0)
                         VStack(spacing: 4) {
                             ForEach(Array(textCues.enumerated()), id: \.offset) { entry in
-                                let text = engine.timedTextRenderer.buildAttributedString(
-                                    from: entry.element.rawText,
-                                    fontSize: fontSize,
-                                    textColor: PlatformColor(Theme.textPrimary),
-                                    outlineColor: PlatformColor(Theme.background)
+                                SubtitleTextCueView(
+                                    rawText: entry.element.rawText,
+                                    renderer: engine.timedTextRenderer,
+                                    appearance: appearance,
+                                    fontSize: fontSize
                                 )
-                                Text(AttributedString(text))
-                                    .multilineTextAlignment(.center)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Theme.background, in: RoundedRectangle(cornerRadius: Theme.Radius.soft))
-                                    .accessibilityIdentifier("player.subtitle.text")
+                                .accessibilityIdentifier("player.subtitle.text")
                             }
                         }
                         .padding(.horizontal, max(16, visibleRect.width * 0.05))
@@ -88,6 +83,34 @@ struct PlayerSubtitleOverlay: View {
         return CGRect(x: (container.width - size.width) / 2,
                       y: (container.height - size.height) / 2,
                       width: size.width, height: size.height)
+    }
+}
+
+/// One text cue in the viewer's chosen subtitle appearance. The Settings
+/// preview draws its sample through this same view.
+struct SubtitleTextCueView: View {
+    let rawText: String
+    let renderer: TimedTextRenderer
+    let appearance: SubtitleAppearance
+    let fontSize: CGFloat
+
+    var body: some View {
+        let text = renderer.buildAttributedString(
+            from: rawText,
+            fontSize: fontSize,
+            textColor: PlatformColor(appearance.textColor.color),
+            outlineColor: PlatformColor(appearance.textColor.outlineColor),
+            fontStyle: appearance.font
+        )
+        Text(AttributedString(text))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                appearance.backgroundColor.color.opacity(appearance.backgroundOpacity),
+                in: RoundedRectangle(cornerRadius: Theme.Radius.soft)
+            )
     }
 }
 
