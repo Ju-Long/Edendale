@@ -276,7 +276,7 @@ All new device-local player settings go through one small layer.
 
 ### A.4 — Strings and translations
 
-- [ ] **A.4.1** Each step adds its strings to `values/strings.xml` and all 18
+- [x] **A.4.1** Each step adds its strings to `values/strings.xml` and all 18
   locales in the same commit, with the name prefixes `settings_`, `player_`,
   `sources_`, `accounts_`, `audio_`, and `video_`. Removed strings disappear
   from every locale.
@@ -1787,6 +1787,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | S.1–S.5, A.1 | `./gradlew testDebugUnitTest assembleDebug`: pass (46 tasks executed, 0 failures) | not run | Baseline verified clean on android-27.0 branch |
 | 2026-10-01 | A.2 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run | Upgraded Media3 from 1.7.1 to 1.9.0 across all media3 dependencies |
 | 2026-10-01 | A.3 | `./gradlew testDebugUnitTest assembleDebug`: pass (0 failures) | not run | Implemented PlayerPreferences and PlayerControlPreferencesTest |
+| 2026-10-01 | A.4 | — | not run | Established string prefixes and 18-locale translation convention |
 
 ---
 
@@ -1797,8 +1798,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | S | Before you start | Complete | — |
 | A.1 | Branch and baseline | Complete | b0c04f0 |
 | A.2 | Media3 1.9.0 | Complete | f975bc1 |
-| A.3 | Player preference store | Complete | |
-| A.4 | Strings and translations | Not started | |
+| A.3 | Player preference store | Complete | 27f16f7 |
+| A.4 | Strings and translations | Complete | |
 | A.5 | Test conventions | Not started | |
 | B.1 | App Controls | Not started | |
 | B.2 | Persisted state and per-title memory | Not started | |
