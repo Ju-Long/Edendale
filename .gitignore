@@ -47,3 +47,5 @@ node_modules/
 Web/.astro/
 Web/dist/
 /.vs
+/.secret
+/Vendor
