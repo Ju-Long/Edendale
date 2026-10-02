@@ -1568,4 +1568,43 @@
   <data name="Taskbar_Next" xml:space="preserve">
     <value>次のエピソード</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>保存された字幕</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>すべて削除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>1か月使われなければ削除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存された字幕を1か月使われなければ削除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>ダウンロードした字幕はこのデバイスに残り、同じタイトルをもう一度再生すると戻ってきます。スイッチがオンの間は、1か月オンにしなかった字幕が削除されます。</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>字幕 {0} 件 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>字幕 {0} 件 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>保存された字幕を削除</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>このデバイスに保存されたすべての字幕が削除されます。オンライン検索からもう一度ダウンロードできます。</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>保存済み</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

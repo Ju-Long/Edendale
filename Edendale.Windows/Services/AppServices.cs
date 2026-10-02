@@ -64,6 +64,9 @@ public static class AppServices
     /// <summary>Player Adjustments → Enhancement (Option A).</summary>
     public static Core.VideoEnhancementSettings VideoEnhancement { get; } = new(PlayerSettings);
 
+    /// <summary>Downloaded subtitles kept per title, removed after a month unused.</summary>
+    public static SavedSubtitleStore SavedSubtitles { get; } = new(settings: PlayerSettings);
+
     /// <summary>TheIntroDB, reached only while skip prompts are switched on.</summary>
     public static IntroDbClient IntroDb { get; } = new();
 
@@ -89,5 +92,8 @@ public static class AppServices
             _accountConnected = connected;
         };
         _ = Watchlist.SyncFromTMDBAsync();
+
+        // Subtitles unused for a month go; nothing is playing yet.
+        SavedSubtitles.PruneInBackground();
     }
 }

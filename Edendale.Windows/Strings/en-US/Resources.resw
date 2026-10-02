@@ -1568,4 +1568,43 @@ IS SILENT</value>
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Next Episode</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Saved Subtitles</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>REMOVE ALL</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Remove After a Month Unused</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Remove saved subtitles after a month unused</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Subtitles you download stay on this device and come back when you play the same title again. While the switch is on, one you haven’t turned on for a month is removed.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} subtitle · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} subtitles · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Remove Saved Subtitles</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Every subtitle saved on this device is deleted. You can download them again from the online search.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

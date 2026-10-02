@@ -1568,4 +1568,43 @@ ESTÁ SILENCIOSA</value>
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Próximo episódio</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Legendas salvas</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>REMOVER TODAS</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Remover após um mês sem uso</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Remover legendas salvas após um mês sem uso</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>As legendas que você baixa ficam neste dispositivo e voltam quando você reproduz o mesmo título de novo. Enquanto a opção estiver ativada, uma legenda que você não ativou por um mês é removida.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Nenhuma</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} legenda · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} legendas · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Remover legendas salvas</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Todas as legendas salvas neste dispositivo são apagadas. Você pode baixá-las de novo pela busca online.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Salva</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

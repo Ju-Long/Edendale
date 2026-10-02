@@ -1568,4 +1568,43 @@ IST STUMM</value>
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Nächste Folge</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Gespeicherte Untertitel</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>ALLE ENTFERNEN</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Nach einem Monat ohne Nutzung entfernen</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Gespeicherte Untertitel nach einem Monat ohne Nutzung entfernen</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Heruntergeladene Untertitel bleiben auf diesem Gerät und sind wieder da, wenn du denselben Titel erneut abspielst. Solange der Schalter an ist, wird ein Untertitel entfernt, den du einen Monat lang nicht eingeschaltet hast.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} Untertitel · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} Untertitel · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Gespeicherte Untertitel entfernen</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Alle auf diesem Gerät gespeicherten Untertitel werden gelöscht. Du kannst sie über die Online-Suche erneut herunterladen.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Gespeichert</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

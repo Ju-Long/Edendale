@@ -1568,4 +1568,43 @@
   <data name="Taskbar_Next" xml:space="preserve">
     <value>下一集</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>已儲存的字幕</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>全部移除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>一個月未使用後移除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>已儲存的字幕一個月未使用後移除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>你下載的字幕會保留在此裝置上，再次播放同一作品時會重新出現。開關開啟時，一個月未開啟過的字幕會被移除。</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>無</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} 個字幕 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} 個字幕 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>移除已儲存的字幕</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>此裝置上儲存的所有字幕都會被刪除。你可以透過線上搜尋重新下載。</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>已儲存</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

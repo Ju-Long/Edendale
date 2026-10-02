@@ -93,5 +93,62 @@
                     Style="{StaticResource SettingsBodyRowTextStyle}" />
             </StackPanel>
         </Border>
+
+        <!-- Saved subtitles (Windows-only): online downloads kept per title on
+             this device, and removed after a month unused while the switch
+             is on. -->
+        <Border Style="{StaticResource SettingsGroupBorderStyle}" Margin="0,12,0,0">
+            <StackPanel>
+                <Grid Style="{StaticResource SettingsRowGridStyle}" ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="SettingsSavedSubtitlesLabel" Text="Saved Subtitles" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <TextBlock x:Name="SavedSummary" Grid.Column="1" Style="{StaticResource SettingsRowValueTextStyle}" VerticalAlignment="Center" />
+                    <Button
+                        x:Uid="SettingsSavedSubtitlesRemoveButton"
+                        x:Name="RemoveSavedButton"
+                        Grid.Column="2"
+                        Style="{StaticResource ArchiveGhostButtonStyle}"
+                        Content="REMOVE ALL"
+                        Click="RemoveSaved_Click" />
+                </Grid>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <Grid Style="{StaticResource SettingsRowGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        x:Uid="SettingsSavedSubtitlesAutoRemoveLabel"
+                        Text="Remove After a Month Unused"
+                        Style="{StaticResource SettingsRowLabelTextStyle}"
+                        Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <ToggleSwitch
+                        x:Uid="SettingsSavedSubtitlesAutoRemoveToggle"
+                        x:Name="RemoveUnusedToggle"
+                        Grid.Column="1"
+                        OnContent=""
+                        OffContent=""
+                        MinWidth="0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="Remove saved subtitles after a month unused"
+                        Toggled="RemoveUnusedToggle_Toggled" />
+                </Grid>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <TextBlock
+                    x:Uid="SettingsSavedSubtitlesDescription"
+                    Text="Subtitles you download stay on this device and come back when you play the same title again. While the switch is on, one you haven’t turned on for a month is removed."
+                    Style="{StaticResource SettingsBodyRowTextStyle}" />
+            </StackPanel>
+        </Border>
     </StackPanel>
 </UserControl>

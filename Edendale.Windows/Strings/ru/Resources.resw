@@ -1568,4 +1568,43 @@
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Следующая серия</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Сохранённые субтитры</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>УДАЛИТЬ ВСЕ</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Удалять через месяц без использования</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Удалять сохранённые субтитры через месяц без использования</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Скачанные субтитры остаются на этом устройстве и снова появляются, когда вы опять воспроизводите тот же фильм или серию. Пока переключатель включён, субтитры, которые вы не включали месяц, удаляются.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>Субтитры: {0} · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>Субтитры: {0} · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Удалить сохранённые субтитры</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Все субтитры, сохранённые на этом устройстве, будут удалены. Их можно снова скачать через поиск в сети.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Сохранено</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} КБ</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} МБ</value>
+  </data>
 </root>

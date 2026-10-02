@@ -69,6 +69,25 @@ public sealed class PlayerContext
         PendingExternalSubtitles.Enqueue(uri);
     }
 
+    /// <summary>
+    /// A saved subtitle (SavedSubtitleStore) to attach once the input opens,
+    /// with the other attached files.
+    /// </summary>
+    public void AddSavedSubtitle(string uri)
+    {
+        if (!ExternalSubtitleUris.Contains(uri)) ExternalSubtitleUris.Add(uri);
+    }
+
+    /// <summary>The LibVLC track an attached file became, or null until it appears.</summary>
+    public int? TrackFor(string uri)
+    {
+        foreach (var (trackId, file) in ExternalSubtitleTracks)
+        {
+            if (file == uri) return trackId;
+        }
+        return null;
+    }
+
     /// <summary>A new subtitle track appeared; true when it is an attached file's.</summary>
     public bool SubtitleTrackAdded(int trackId)
     {

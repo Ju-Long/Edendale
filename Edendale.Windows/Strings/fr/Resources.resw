@@ -1568,4 +1568,43 @@ EST SILENCIEUSE</value>
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Épisode suivant</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Sous-titres enregistrés</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>TOUT SUPPRIMER</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Supprimer après un mois sans utilisation</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Supprimer les sous-titres enregistrés après un mois sans utilisation</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Les sous-titres que vous téléchargez restent sur cet appareil et reviennent quand vous relisez le même titre. Tant que l’option est activée, un sous-titre que vous n’avez pas activé depuis un mois est supprimé.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Aucun</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} sous-titre · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} sous-titres · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Supprimer les sous-titres enregistrés</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Tous les sous-titres enregistrés sur cet appareil sont supprimés. Vous pouvez les télécharger à nouveau depuis la recherche en ligne.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Enregistré</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} Ko</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} Mo</value>
+  </data>
 </root>

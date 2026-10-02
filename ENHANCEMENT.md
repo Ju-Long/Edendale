@@ -120,6 +120,7 @@ doesn't list)
 - [ ] [X.5 NFS through LibVLC](#x5-nfs-through-libvlc) (P3)
 - [x] [X.6 Audio and subtitle delay](#x6-audio-and-subtitle-delay) (P3)
 - [x] [X.7 Chapters](#x7-chapters) (P3)
+- [x] [X.8 Saved subtitles](#x8-saved-subtitles) (P3)
 
 Suggested order: F.1 → F.2 → W.1–W.3 → 3.1 → F.3 → F.4 → 3.3 → 3.4 → 3.5 →
 3.6 → 3.7 → E.1–E.6 → 3.8 → 3.9 and 3.10 → F.5 → 3.15 → 3.11 → 3.18 →
@@ -148,13 +149,14 @@ still open needs Windows hardware or a change on another branch.
 **Changes on other branches** (AGENTS.md hard constraint 7)
 
 - `main` DIFF.md: the Windows differences from D1–D3 and D5–D10, and the
-  Windows-only extras X.1–X.7.
+  Windows-only extras X.1–X.8.
 - `main` README: the Windows provider list (3.12).
 - `main` DESIGN.md: the `PlaylistActiveBackground` and `PlaylistActiveText`
   rows (3.10).
 - `web`: the privacy text for linked storage providers (DIFF.md J.12).
-- `apple-27.0`: X.1–X.7 are new behavior. Apple can adopt them or record them
-  as Windows-only.
+- `apple-27.0`: X.1–X.8 are new behavior. Apple can adopt them or record them
+  as Windows-only. X.8 matters most: Apple also caches downloads by file
+  without tying them to a title.
 
 ## Decisions
 
@@ -966,6 +968,38 @@ name the other affected branches before shipping any of these.
 - [x] Chapter marks on the timeline and a chapter list
   (`FullChapterDescriptions`).
 
+### X.8 Saved subtitles
+
+Requested after the 27.0 tracker started. Online downloads were already cached
+by file, but nothing tied them to a title, so a replay needed a new search.
+
+- [x] `Core/SavedSubtitles.cs`: title keys (`movie:<tmdbId>`, or
+  `episode:<showTmdbId>:<season>:<episode>` so every copy of an episode shares
+  its subtitles), the 30-day expiry counted from the last use, safe file
+  names, and the index rules: one selected subtitle per title, shared files
+  kept until no title refers to them, and orphaned files removed once their
+  last write is a month old.
+- [x] `Services/SavedSubtitleStore.cs` keeps `saved-subtitles.json` next to the
+  other device-local files. It writes through a temporary file and skips
+  damaged entries. A delete Windows refuses (the file is open) is retried at
+  the next prune.
+- [x] A download from the online search is recorded for the title playing and
+  counts as a use.
+- [x] Opening a title attaches its saved subtitles with no network request,
+  and turns on the one that was on when the title was last left. Choosing a
+  saved one from the menu or the search turns on the attached track instead
+  of adding it again.
+- [x] A subtitle counts as used whenever it's on during playback. Leaving the
+  title with another track or none on clears the selection but not the
+  dates.
+- [x] Subtitles unused for 30 days are deleted at launch and when the player
+  closes, never while attached. Settings → Subtitles has the switch (on by
+  default), the count and size, and Remove All behind a confirmation.
+- [x] The subtitle menu labels saved tracks "English · Saved", and the online
+  search marks results already saved.
+- [x] Tests: `SavedSubtitlesTests` (keys, expiry, selection, pruning, orphans,
+  damaged indexes, Remove All, and stable cache names).
+
 ## Not planned
 
 Option A was chosen over these for 27.0. Revisit them if its limits matter.
@@ -1013,3 +1047,4 @@ From DIFF.md §5. Tick a line when its cases are ported to
 - [x] `BufferedByteSourceTests` (3.13)
 - [x] Windows only: `GpuCapabilitiesTests` and `VideoEnhancementOptionsTests`
   (E.1, E.2)
+- [x] Windows only: `SavedSubtitlesTests` (X.8)

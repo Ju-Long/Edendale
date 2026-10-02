@@ -269,6 +269,11 @@ The player follows DIFF.md §3.1–3.11 and §3.18 natively:
   preamp and ten bands, and subtitle font, size, color, background, and
   outline presets. Rounded is not offered on Windows, which ships no rounded
   family.
+- **Saved subtitles:** a subtitle downloaded from the online search is kept
+  for that movie or episode. Playing the title again, from any copy, attaches
+  it without a search, and the one that was on last time is on again. One not
+  turned on for 30 days is deleted; Settings → Subtitles can switch that off
+  or remove them all.
 - **Play From:** a title imported from several sources plays the first
   reachable copy; the detail page lists every copy.
 - **Windows integration:** the media flyout, media keys, and headset buttons;
@@ -349,6 +354,11 @@ Source form (DIFF.md §3.12):
 Library, watch-progress, user-media, and player-settings JSON live under
 `%LOCALAPPDATA%\Edendale`. When the user has configured OneDrive, watch and
 user-media state can replicate through their OneDrive folder.
+
+Subtitles downloaded from Wyzie Subs are kept in
+`%LOCALAPPDATA%\Edendale\Subtitles`, indexed by title in
+`saved-subtitles.json`, and never replicate. Each is deleted after 30 days
+without being turned on, unless that's switched off in Settings → Subtitles.
 
 Every login stays on this device (D11). The TMDB session, SMB, SFTP, WebDAV,
 and S3 logins, and OneDrive and Dropbox refresh tokens are protected with DPAPI

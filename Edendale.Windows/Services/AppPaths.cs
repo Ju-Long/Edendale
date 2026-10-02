@@ -57,9 +57,17 @@ public static class AppPaths
     public static string HostKeysFile => Path.Combine(DataDirectory, "ssh-host-keys.json");
 
     /// <summary>
+    /// Which downloaded subtitle belongs to which title, and when each was
+    /// last used (SavedSubtitleStore). Device-local and outside the replica,
+    /// like the files it describes.
+    /// </summary>
+    public static string SavedSubtitlesFile => Path.Combine(DataDirectory, "saved-subtitles.json");
+
+    /// <summary>
     /// Downloaded subtitle files, kept so re-selecting one costs nothing
-    /// against the daily quota. Device-local, like the library itself, and
-    /// deliberately outside the cloud replica.
+    /// against the daily quota and the title plays with it again next time.
+    /// Device-local, like the library itself, and deliberately outside the
+    /// cloud replica. Files unused for 30 days are removed.
     /// </summary>
     public static string SubtitleCacheDirectory
     {

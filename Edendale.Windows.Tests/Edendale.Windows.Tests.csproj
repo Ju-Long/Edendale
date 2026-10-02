@@ -41,6 +41,7 @@
     <Compile Include="..\Edendale.Windows\Services\PlayerSession.cs" Link="App\Services\PlayerSession.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerContext.cs" Link="App\Services\PlayerContext.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSettingsStore.cs" Link="App\Services\PlayerSettingsStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SavedSubtitleStore.cs" Link="App\Services\SavedSubtitleStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\SecretStores.cs" Link="App\Services\SecretStores.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\BufferedByteSource.cs" Link="App\Services\Remote\BufferedByteSource.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\CloudConnectors.cs" Link="App\Services\Remote\CloudConnectors.cs" />
@@ -77,6 +78,7 @@
     <Compile Include="..\Edendale.Windows\Core\PlayerLogic.cs" Link="App\Core\PlayerLogic.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerPreferences.cs" Link="App\Core\PlayerPreferences.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerTracks.cs" Link="App\Core\PlayerTracks.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SavedSubtitles.cs" Link="App\Core\SavedSubtitles.cs" />
     <Compile Include="..\Edendale.Windows\Core\SubtitleAppearance.cs" Link="App\Core\SubtitleAppearance.cs" />
     <Compile Include="..\Edendale.Windows\Core\VideoAdjustments.cs" Link="App\Core\VideoAdjustments.cs" />
     <Compile Include="..\Edendale.Windows\Core\VideoEnhancementOptions.cs" Link="App\Core\VideoEnhancementOptions.cs" />

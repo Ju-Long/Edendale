@@ -8,7 +8,10 @@ using Microsoft.UI.Xaml.Shapes;
 
 namespace Edendale.Windows.Controls;
 
-/// <summary>Settings → Subtitles (DIFF.md §3.8), with a live preview.</summary>
+/// <summary>
+/// Settings → Subtitles (DIFF.md §3.8), with a live preview, and the saved
+/// subtitles kept on this device (Windows-only).
+/// </summary>
 public sealed partial class SubtitleAppearanceSettings : UserControl
 {
     private readonly ChipGroup<SubtitleFontStyle> _fonts;
@@ -54,6 +57,15 @@ public sealed partial class SubtitleAppearanceSettings : UserControl
             });
 
         Refresh();
+
+        // Saved subtitles change behind the page (a download, the 30-day
+        // prune), so the row listens while it is on screen.
+        Loaded += (_, _) =>
+        {
+            AppServices.SavedSubtitles.Changed += SavedSubtitles_Changed;
+            RefreshSaved();
+        };
+        Unloaded += (_, _) => AppServices.SavedSubtitles.Changed -= SavedSubtitles_Changed;
     }
 
     /// <summary>A chip label with a small disc of the preset color.</summary>
@@ -113,5 +125,58 @@ public sealed partial class SubtitleAppearanceSettings : UserControl
     {
         AppServices.SubtitleAppearance.Reset();
         Refresh();
+    }
+
+    // ------------------------------------------------------------------
+    // Saved subtitles
+    // ------------------------------------------------------------------
+
+    private void SavedSubtitles_Changed(object? sender, EventArgs e) => DispatcherQueue.TryEnqueue(RefreshSaved);
+
+    /// <summary>"3 subtitles · 120 KB", the switch, and Remove All only when there is something to remove.</summary>
+    private void RefreshSaved()
+    {
+        var store = AppServices.SavedSubtitles;
+        var (count, bytes) = store.Summary();
+        SavedSummary.Text = count == 0
+            ? Loc.Get("SavedSubtitles_None")
+            : Loc.Format(
+                count == 1 ? "SavedSubtitles_SummaryOne" : "SavedSubtitles_SummaryOther",
+                count,
+                SavedSubtitleRules.FormatSize(bytes, Loc.Get("Size_Kilobytes"), Loc.Get("Size_Megabytes"), CultureInfo.CurrentUICulture));
+        RemoveSavedButton.IsEnabled = count > 0;
+
+        _updating = true;
+        try
+        {
+            RemoveUnusedToggle.IsOn = store.RemoveUnusedEnabled;
+        }
+        finally
+        {
+            _updating = false;
+        }
+    }
+
+    private void RemoveUnusedToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_updating) return;
+        AppServices.SavedSubtitles.RemoveUnusedEnabled = RemoveUnusedToggle.IsOn;
+    }
+
+    /// <summary>Deleting confirms first, with the safe button as the default.</summary>
+    private async void RemoveSaved_Click(object sender, RoutedEventArgs e)
+    {
+        var confirm = new ContentDialog
+        {
+            Title = Loc.Get("SavedSubtitles_RemoveTitle"),
+            Content = new TextBlock { Text = Loc.Get("SavedSubtitles_RemoveMessage"), TextWrapping = TextWrapping.Wrap },
+            PrimaryButtonText = Loc.Get("Common_Remove"),
+            CloseButtonText = Loc.Get("Common_Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+        };
+        if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
+        await Task.Run(AppServices.SavedSubtitles.RemoveAll);
+        RefreshSaved();
     }
 }

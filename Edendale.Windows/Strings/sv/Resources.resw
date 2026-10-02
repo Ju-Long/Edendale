@@ -1568,4 +1568,43 @@
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Nästa avsnitt</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Sparade undertexter</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>TA BORT ALLA</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Ta bort efter en månad utan användning</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ta bort sparade undertexter efter en månad utan användning</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Undertexter du hämtar stannar på den här enheten och kommer tillbaka när du spelar samma titel igen. Medan reglaget är på tas en undertext som du inte har slagit på på en månad bort.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Inga</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} undertext · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} undertexter · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Ta bort sparade undertexter</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Alla undertexter som sparats på den här enheten raderas. Du kan hämta dem igen via sökningen online.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Sparad</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} kB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

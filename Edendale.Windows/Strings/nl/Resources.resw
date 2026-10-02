@@ -1568,4 +1568,43 @@ IS STIL</value>
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Volgende aflevering</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Bewaarde ondertitels</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>ALLES VERWIJDEREN</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Verwijderen na een maand ongebruikt</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bewaarde ondertitels verwijderen na een maand ongebruikt</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Ondertitels die je downloadt blijven op dit apparaat en komen terug als je dezelfde titel opnieuw afspeelt. Zolang de schakelaar aanstaat, wordt een ondertitel die je een maand niet hebt aangezet verwijderd.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Geen</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} ondertitel · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} ondertitels · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Bewaarde ondertitels verwijderen</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Alle ondertitels die op dit apparaat zijn bewaard, worden verwijderd. Je kunt ze opnieuw downloaden via online zoeken.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Bewaard</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} kB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

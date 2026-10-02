@@ -518,16 +518,29 @@ public sealed partial class PlayerControlsOverlay : UserControl
         off.Click += (_, _) => player.SetSpu(-1);
         flyout.Items.Add(off);
 
+        var saved = SavedSubtitlesOn(subtitleTracks);
         for (var index = 0; index < subtitleTracks.Count; index++)
         {
             var track = subtitleTracks[index];
             var trackId = track.Id;
+            var savedSubtitle = saved.GetValueOrDefault(trackId);
             var entry = new ToggleMenuFlyoutItem
             {
-                Text = TrackLabels.BaseLabel(track, index),
+                Text = savedSubtitle is null
+                    ? TrackLabels.BaseLabel(track, index)
+                    : SavedSubtitleRules.Label(savedSubtitle, Loc.Get("Subtitles_Saved"),
+                        includeRelease: saved.Values.Count(other => other.Language == savedSubtitle.Language) > 1),
                 IsChecked = player.Spu == trackId,
             };
-            entry.Click += (_, _) => player.SetSpu(trackId);
+            entry.Click += (_, _) =>
+            {
+                player.SetSpu(trackId);
+                // Turning a saved subtitle on uses it: its 30 days start again.
+                if (_context is { } context && context.ExternalSubtitleTracks.TryGetValue(trackId, out var uri))
+                {
+                    AppServices.SavedSubtitles.MarkUsed(context.Request, uri);
+                }
+            };
             flyout.Items.Add(entry);
         }
 
@@ -538,6 +551,19 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         AddOnlineSearchItem(flyout);
         flyout.ShowAt(SubtitlesButton);
+    }
+
+    /// <summary>Track id → saved subtitle, for the attached tracks that are saved downloads.</summary>
+    private Dictionary<int, SavedSubtitle> SavedSubtitlesOn(IReadOnlyList<PlayerTrack> tracks)
+    {
+        var saved = new Dictionary<int, SavedSubtitle>();
+        if (_context is not { } context) return saved;
+        foreach (var track in tracks)
+        {
+            if (!track.IsExternal || !context.ExternalSubtitleTracks.TryGetValue(track.Id, out var uri)) continue;
+            if (AppServices.SavedSubtitles.Find(context.Request, uri) is { } subtitle) saved[track.Id] = subtitle;
+        }
+        return saved;
     }
 
     /// <summary>
@@ -857,9 +883,11 @@ public sealed partial class PlayerControlsOverlay : UserControl
     /// The detail line: the language as the provider labels it, then the
     /// qualities worth choosing between, then where it came from.
     /// </summary>
-    private static string DescribeCandidate(SubtitleCandidate candidate)
+    private string DescribeCandidate(SubtitleCandidate candidate)
     {
         var parts = new List<string> { candidate.LanguageLabel };
+        // Already on this device for this title: choosing it needs no download.
+        if (AppServices.SavedSubtitles.IsSaved(_playback, candidate.Id)) parts.Add(Loc.Get("Subtitles_Saved"));
         if (candidate.IsHearingImpaired) parts.Add(Loc.Get("Subtitles_HearingImpaired"));
         if (candidate.IsAiTranslated) parts.Add(Loc.Get("Subtitles_AutoTranslated"));
         if (!string.IsNullOrWhiteSpace(candidate.Origin)) parts.Add(candidate.Origin);
@@ -888,7 +916,18 @@ public sealed partial class PlayerControlsOverlay : UserControl
                 return;
             }
 
-            var attached = AttachSubtitle(player, downloaded);
+            // A file attached already (saved for this title, or chosen
+            // earlier) is turned on rather than added a second time.
+            var uri = new Uri(downloaded.FilePath).AbsoluteUri;
+            bool attached;
+            if (_context?.TrackFor(uri) is int existing)
+            {
+                attached = player.SetSpu(existing);
+            }
+            else
+            {
+                attached = AttachSubtitle(player, downloaded);
+            }
             if (work.IsCancellationRequested) return;
 
             if (!attached)
@@ -897,6 +936,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
                 return;
             }
 
+            // Kept for this title, so its next playback has it without a search.
+            if (_playback is not null) AppServices.SavedSubtitles.Record(_playback, downloaded);
             CloseSubtitleBrowser();
         }
         catch (OperationCanceledException)

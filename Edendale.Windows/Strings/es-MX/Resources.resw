@@ -1568,4 +1568,43 @@ ESTÁ EN SILENCIO</value>
   <data name="Taskbar_Next" xml:space="preserve">
     <value>Episodio siguiente</value>
   </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Subtítulos guardados</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>ELIMINAR TODOS</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Eliminar después de un mes sin usar</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Eliminar los subtítulos guardados después de un mes sin usar</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Los subtítulos que descargas se quedan en este dispositivo y vuelven cuando reproduces el mismo título otra vez. Mientras el interruptor esté activado, se elimina el que no hayas activado en un mes.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Ninguno</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} subtítulo · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} subtítulos · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Eliminar subtítulos guardados</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Se borran todos los subtítulos guardados en este dispositivo. Puedes volver a descargarlos desde la búsqueda en línea.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Guardado</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
 </root>

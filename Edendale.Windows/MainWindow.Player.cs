@@ -130,7 +130,17 @@ public sealed partial class MainWindow
         _titleMemoryPending = true;
         _reopenState = null;
         _reattachPending = false;
+        _reattachSelected = null;
         _sourceInfo = VideoSourceInfo.Unknown;
+
+        // Subtitles downloaded for this title before come back without a
+        // network request, and the one that was on last time is on again.
+        foreach (var saved in AppServices.SavedSubtitles.ForTitle(request))
+        {
+            _context.AddSavedSubtitle(saved.FileUri);
+            if (saved.Subtitle.Selected) _reattachSelected ??= saved.FileUri;
+        }
+
         AppServices.VideoEnhancement.IsShowingOriginal = false;
         AppServices.VideoAdjustments.IsShowingOriginal = false;
         AppServices.SegmentPrompts.Begin(IntroDbMedia.For(request));
@@ -444,6 +454,33 @@ public sealed partial class MainWindow
         {
             context.ExternalSubtitleAttaching(uri);
             player.AddSlave(MediaSlaveType.Subtitle, uri, select: uri == selected);
+        }
+        // A saved subtitle turned back on is in use again.
+        if (selected is not null) AppServices.SavedSubtitles.MarkUsed(context.Request, selected);
+    }
+
+    /// <summary>
+    /// Saved subtitles, as the title is left: the one on is used (its 30
+    /// days start again) and comes back on next time. With another track or
+    /// none on, none comes back on. Nothing is decided before the saved files
+    /// are attached and the file has opened.
+    /// </summary>
+    private void SaveSubtitleUse()
+    {
+        if (_mediaPlayer is not { } player || _context is not { } context) return;
+        if (_reattachPending || context.PendingExternalSubtitles.Count > 0) return;
+        var (video, audio, _) = PlayerEffects.Tracks(player, context);
+        if (video.Count == 0 && audio.Count == 0) return;
+
+        if (player.Spu >= 0
+            && context.ExternalSubtitleTracks.TryGetValue(player.Spu, out var uri)
+            && AppServices.SavedSubtitles.Find(context.Request, uri) is not null)
+        {
+            AppServices.SavedSubtitles.MarkUsed(context.Request, uri);
+        }
+        else
+        {
+            AppServices.SavedSubtitles.ClearSelection(context.Request);
         }
     }
 
@@ -1066,6 +1103,7 @@ public sealed partial class MainWindow
     {
         if (_mediaPlayer is null) return;
         SaveTitleMemory();
+        SaveSubtitleUse();
         WriteProgress();
     }
 
@@ -1091,6 +1129,9 @@ public sealed partial class MainWindow
         AdjustmentsPanel.Bind(null, null);
         DisplayAwake.Hold(false);
         _transport?.Clear();
+
+        // The player has let go of its subtitle files, so expired ones can go.
+        AppServices.SavedSubtitles.PruneInBackground();
     }
 
     /// <summary>Stops and releases the media player (and with it the video output and swap chain).</summary>
