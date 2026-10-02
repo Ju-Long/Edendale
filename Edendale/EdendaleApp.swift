@@ -49,7 +49,15 @@ struct EdendaleApp: App {
         let videoAdjustment = VideoAdjustmentController()
         _audioEnhancement = State(initialValue: audioEnhancement)
         _videoAdjustment = State(initialValue: videoAdjustment)
-        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment))
+        let subtitleCache = SubtitleCacheStore(
+            modelContext: Persistence.subtitleCacheModelContainer.mainContext
+        )
+        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment, subtitleCache: subtitleCache))
+        // Downloaded subtitles unused for more than a month go at launch,
+        // on a later main-actor turn. The unit-test host keeps its files.
+        if !Persistence.isRunningUnitTests {
+            Task { @MainActor in subtitleCache.prune() }
+        }
         #if os(iOS)
         // DeviceDiscoveryUI connects only to a listener that is already
         // running, so start it as early as possible.

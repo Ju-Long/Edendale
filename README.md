@@ -238,6 +238,44 @@ and downloaded-file payloads without contacting the subtitle provider. A PNG
 preview of the actual overlay is written to the test host's temporary directory;
 its path is printed in the test log.
 
+### Downloaded subtitles
+
+A subtitle downloaded from **Player Adjustments → Online Subtitles** is kept
+on the device in `Caches/Subtitles`, and a local SwiftData store
+(`SubtitleCache`, never synced) records which video it belongs to, its file
+name inside that folder (the app container's path changes across updates),
+and when it was last used. When the same video plays again, its kept
+subtitles are added to the subtitle list without a search or a download; the
+one used last is selected unless the title's saved choice is an embedded
+track or Off. Picking a result the device already holds, for this video or
+another, reuses the file instead of downloading it again.
+
+A video is identified by its TMDB match (movie, or show plus season and
+episode) and its file name, ignoring case and Unicode form. The server
+address, port, scheme, and folder are not part of it, so one file reached
+through several endpoints of the same device (a LAN IP and a Tailscale IP, a
+host name and an address) shares its subtitles, as does a local copy.
+Another release of the same title, whose timing may differ, keeps its own.
+
+At each launch, subtitles neither downloaded nor reattached for more than a
+month are deleted, as are records whose file the system purged and files no
+record refers to (including downloads saved before records were kept). Run
+the cache regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/SubtitleCacheTests \
+  -only-testing:EdendaleTests/WyzieSubtitleTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Settings → Subtitles sets the text subtitle font, colours, and background
+opacity. On tvOS the opacity's − and + buttons sit beneath its name at the
+leading edge, like the chip rows above it. Android and Windows need
+independent native implementations of the subtitle cache; the static Web
+branch is unaffected.
+
 The playlist opens at the current file and highlights current or focused rows
 with larger text on a white background. Identified episodes and the current
 identified movie include landscape artwork and stacked title/playtime details;
@@ -323,6 +361,20 @@ only when the app is active again. A draw inside an update, after a return
 from the background, used to block the main thread waiting for a Metal
 drawable and froze the app. The regressions above cover both; on a device,
 pause an HEVC `.mkv`, leave the app for ten seconds, return, and tap Play.
+
+SMB playback reads through a buffered connection that reconnects after a
+drop, which a lock or a VPN such as Tailscale changing networks causes. The
+libsmb2 inside libVLC 4 (6.1) frees a failed `smb2_close` request's callback
+data while the request is still queued, then frees it again when the
+connection is destroyed. That heap corruption crashed the app on return from
+the Lock Screen or background. `EDSMBFile` therefore never calls
+`smb2_close` (logging off closes the file on the server), destroys a
+connection that has failed without another round trip, and reads into
+buffers it frees only after the connection is gone, since a failed request
+can still point at them. Its idle keep-alive queries the file: libsmb2 6.1's
+`smb2_echo` always fails, which dropped every paused connection after 20
+seconds. On a device, pause an SMB video, lock for a few minutes (or switch
+between Wi-Fi and Tailscale), unlock, and play.
 
 ### Intro, recap, and credits prompts
 

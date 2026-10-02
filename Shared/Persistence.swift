@@ -66,6 +66,39 @@ struct Persistence {
         }
     }()
 
+    // MARK: - SwiftData (downloaded subtitles kept on this device)
+
+    /// Which downloaded subtitle files belong to which videos. Device-local
+    /// like the library; the files themselves live in Caches (see
+    /// `SubtitleCacheStore`). A store that can't open falls back to memory:
+    /// losing the cache only means downloading a subtitle again.
+    static var subtitleCacheModelContainer: ModelContainer = {
+        let schema = Schema([CachedSubtitle.self])
+        let config = ModelConfiguration(
+            "SubtitleCache",
+            schema: schema,
+            isStoredInMemoryOnly: isRunningUnitTests,
+            cloudKitDatabase: .none
+        )
+        let fallback = ModelConfiguration(
+            "SubtitleCache",
+            schema: schema,
+            isStoredInMemoryOnly: true,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            print("[Persistence] Subtitle cache store unavailable, keeping it in memory: \(error)")
+        }
+        do {
+            return try ModelContainer(for: schema, configurations: [fallback])
+        } catch {
+            fatalError("Could not create SubtitleCache ModelContainer: \(error)")
+        }
+    }()
+
     // MARK: - CoreData + CloudKit (iCloud-synced watch progress)
 
     static var cloudPersistentContainer: NSPersistentCloudKitContainer = {

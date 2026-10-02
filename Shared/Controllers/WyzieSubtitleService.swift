@@ -4,7 +4,8 @@
 //
 //  Online subtitle search through sub.wyzie.io. A synchronized user key takes
 //  precedence over the optional build-time key, searches happen only after an
-//  explicit user action, and validated downloads are stored only in Caches.
+//  explicit user action, and validated downloads are stored only in Caches
+//  (see SubtitleCacheStore).
 //
 
 import Foundation
@@ -164,7 +165,9 @@ struct WyzieSubtitleService {
         return try Self.decodeSearchResponse(data, statusCode: statusCode)
     }
 
-    func download(_ subtitle: WyzieSubtitle) async throws -> URL {
+    /// Downloads and validates one subtitle file. SubtitleCacheStore keeps
+    /// it for the video it was chosen for.
+    func fetch(_ subtitle: WyzieSubtitle) async throws -> Data {
         guard let remoteURL = URL(string: subtitle.url),
               ["http", "https"].contains(remoteURL.scheme?.lowercased() ?? "")
         else {
@@ -178,21 +181,7 @@ struct WyzieSubtitleService {
         }
         guard !data.isEmpty else { throw WyzieError.emptyFile }
         guard data.count <= Self.maximumDownloadSize else { throw WyzieError.fileTooLarge }
-
-        guard let caches = FileManager.default.urls(
-            for: .cachesDirectory,
-            in: .userDomainMask
-        ).first else {
-            throw WyzieError.badURL
-        }
-        let directory = caches.appendingPathComponent("Subtitles", isDirectory: true)
-        try FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true
-        )
-        let localURL = directory.appendingPathComponent(Self.cacheFileName(for: subtitle))
-        try data.write(to: localURL, options: .atomic)
-        return localURL
+        return data
     }
 
     static func queryItems(for query: WyzieSubtitleQuery, key: String) -> [URLQueryItem] {

@@ -470,7 +470,14 @@ final class PlaybackEngine {
 
     // MARK: - External subtitles
 
-    func addExternalTrack(from url: URL, type: ExternalTrackType = .subtitle, select: Bool = true) throws {
+    /// Adds a subtitle file as a track, listed under `name` (by default the
+    /// file's name).
+    func addExternalTrack(
+        from url: URL,
+        type: ExternalTrackType = .subtitle,
+        name: String? = nil,
+        select: Bool = true
+    ) throws {
         guard type == .subtitle else { return }
 
         let ext = url.pathExtension.lowercased()
@@ -497,7 +504,7 @@ final class PlaybackEngine {
 
         let track = PlaybackTrack(
             id: trackID,
-            name: url.deletingPathExtension().lastPathComponent,
+            name: name ?? url.deletingPathExtension().lastPathComponent,
             language: nil,
             isSelected: false,
             width: nil,
