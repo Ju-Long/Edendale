@@ -647,6 +647,20 @@ Don't build a workaround without asking the owner.
 - [ ] **C.2.D1** Let an episode end: the next one starts and the first shows as
   completed. In PiP, the next episode plays inside the PiP window.
 
+**Review notes (2026-10-02, on the uncommitted C.2 work):**
+- [ ] **C.2.R1** Store the card's label in natural case and apply
+  `.uppercase()` in the view (A.4). `player_up_next` is in capitals today
+  ("UP NEXT", "ALS NÄCHSTES", and so on).
+- [ ] **C.2.R2** `player_up_next_hint` is in all 19 string files but nothing
+  uses it. Use it, for example as the card's click label, or remove it
+  everywhere.
+- [ ] **C.2.R3** D-pad Up on the hidden-controls surface now focuses the Up
+  Next card instead of revealing the controls; D3 only redirects Down, for the
+  skip prompt. Keep Up revealing the controls, or record the change and its
+  reason in the Deviations log.
+- The card needs no focus handling of its own when it disappears: since
+  83699b9, `PlayerScreen` seeds focus again whenever the focused node leaves.
+
 ### C.3 — Continue Watching next-up (DIFF §3.4)
 
 **Rules:**
@@ -1799,6 +1813,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 149 tests) | not run (no emulator/device connected in CI environment) | Persisted loop/aspectFill globally, added ContentPlayerPreferences model/rules/codec/store, Media3 track adapter, ext- prefix on sideloaded subtitles, and per-title memory save/restore |
 | 2026-10-01 | C.1 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 173 tests) | not run (no emulator/device connected in CI environment) | Pure EpisodeProgression rules (nextEpisode, upcomingEpisode, highestCompletedPerShow, nextUpEpisodes) and 24 JVM tests |
 | 2026-10-02 | Review of A.1–C.1; fixes to C.5 and B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest` on a clean checkout of 9b57892: pass (183 tests, 0 failures). `./gradlew lintDebug`: fails with 311 errors; 308 predate this branch, and 3 are new (`UnsafeOptInUsageError` in `ContentPlayerPreferences.kt`, from B.2). | not run (no device or emulator on the review Mac) | C.5 (451d7f5): one process-wide `IntroDbService`, so a 429 cooldown holds across items and player sessions. B.2 (9b57892): Media3 1.9.0 first reports empty tracks when an item replaces another, which used up the restore, so remembered tracks never carried across a switch; the restore now waits for the first non-empty report. Unticked A.2.3 (its device check wasn't run) and A.5.4 (no CI job was added). A.2.2 needed no source changes: a clean build shows no Media3 deprecation warnings. Corrected C.1's commit to 1f01315. D5 confirmed by the owner, so E.2 is no longer blocked. |
+| 2026-10-02 | Accessibility and focus fixes to B.1 and C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest` on a clean checkout of 83699b9: pass (185 tests, 0 failures); with the uncommitted C.2 work on top: pass (194 tests). `./gradlew lintDebug`: 311 errors, none new. | not run (no device or emulator on the review Mac) | B.1 (8ac41f9): the skip segments are a radio group that reports the chosen length; each hold-speed − and + names its row ("Hold Left Side, slower"; 2 new strings in every locale); the speed is a polite live region; the player's ± glyphs follow App Controls changes while it's open. C.5 (83699b9): on TV, focus is seeded again when the focused node disappears, such as a skip prompt whose segment ended. TalkBack and TV focus still need device checks. Review notes for the C.2 work are under C.2. |
 
 ---
 
@@ -1812,7 +1827,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.3 | Player preference store | Complete | 27f16f7 |
 | A.4 | Strings and translations | Complete | 6f93abb |
 | A.5 | Test conventions | Complete | 4310f03 |
-| B.1 | App Controls | Complete | 9b2fbd5 |
+| B.1 | App Controls | Complete | 9b2fbd5, 8ac41f9 |
 | B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
 | B.3 | Track pickers and panel order | Not started | |
 | B.4 | Subtitle appearance and placement | Not started | |
@@ -1822,7 +1837,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.2 | Auto-advance and Up Next | Not started | |
 | C.3 | Continue Watching next-up | Not started | |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
-| C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5 |
+| C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
 | C.6 | MediaSession and system surfaces | Not started | |
 | D.1 | Buffered SMB reads | Not started | |
 | D.2 | Source records (Room v3) | Not started | |
