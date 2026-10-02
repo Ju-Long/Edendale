@@ -215,9 +215,12 @@ internal fun PlayerScreen(
     // Focus never lands anywhere on its own: seed it wherever the remote
     // should act. Both flips run after the frame that (un)mounted the
     // target subtree, so the nodes are attached; runCatching covers the
-    // teardown race when the activity is finishing.
+    // teardown race when the activity is finishing. A focused node that
+    // leaves by itself, like a skip prompt whose segment ended, takes the
+    // focus with it, so losing focus seeds it again too.
+    var hasFocusInside by remember { mutableStateOf(false) }
     if (isTelevision) {
-        LaunchedEffect(controlsActive, chrome.activePanel) {
+        val seedFocus = {
             runCatching {
                 when {
                     !controlsActive -> catcherFocus.requestFocus()
@@ -226,12 +229,15 @@ internal fun PlayerScreen(
                 }
             }
         }
+        LaunchedEffect(controlsActive, chrome.activePanel) { seedFocus() }
+        LaunchedEffect(hasFocusInside) { if (!hasFocusInside) seedFocus() }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .onFocusChanged { hasFocusInside = it.hasFocus },
     ) {
         AndroidView(
             factory = { viewContext ->
