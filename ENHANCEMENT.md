@@ -165,7 +165,7 @@ steps until they are answered.
 | D2 | TV hold speeds | Holding the remote's fast-forward or rewind key for 400 ms or more engages the right or left hold speed until the key is released. A shorter press skips by the App Controls length. Holding D-pad Left/Right keeps its current repeat-scrub. | — |
 | D3 | TV skip-prompt focus | While a skip prompt is visible, D-pad Down from the hidden-controls surface focuses the prompt. Otherwise Down keeps opening the timeline. | — |
 | D4 | Subtitle style default | Apple parity: System font, Parchment text, Ink box at 100 %. Edendale's presets replace the system caption style that `PlayerView` applies today; text size still follows the system caption font scale (B.4). | — |
-| D5 | DTS/TrueHD decoding | **Decided: (a) Jellyfin decoder** (`org.jellyfin.media3:media3-ffmpeg-decoder`). APK will be GPL-3.0. | E.2 |
+| D5 | DTS/TrueHD decoding | **Decided by the owner: (a) Jellyfin decoder** (`org.jellyfin.media3:media3-ffmpeg-decoder`), confirmed 2026-10-02. The APK will be GPL-3.0. | — |
 | D6 | Old auto-skip | Remove the timed 90 s recap / 180 s credits skip. Delete `player.skipRecap` and `player.skipCredits`, and never read them into Skip Prompts (DIFF decision 5). | — |
 | D7 | Hold-speed migration | None: Android never stored a hold speed, so everyone gets the new defaults, 0.5× and 2.0×. | — |
 | D8 | Accounts | Device-local only; excluded from backup and device transfer (DIFF decision 1). | — |
@@ -250,7 +250,7 @@ hardening moved ahead of the audio work.
   its modules at the same version.
 - [x] **A.2.2** Fix compile errors and deprecations from 1.7 to 1.9 without
   changing behavior. List each API change in the commit message.
-- [x] **A.2.3** **On device:** a local file, an SMB file, attaching a Wyzie
+- [ ] **A.2.3** **On device:** a local file, an SMB file, attaching a Wyzie
   subtitle, PiP, switching items from the playlist, and resume all still work,
   on a phone and on Android TV.
 
@@ -295,7 +295,7 @@ All new device-local player settings go through one small layer.
   `androidx.test:runner` (plus `androidx.room:room-testing` for D.2), and
   `testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"`.
   Instrumented tests never need network access or credentials.
-- [x] **A.5.4** Optional: a separate CI job that runs instrumented tests on an
+- [ ] **A.5.4** Optional: a separate CI job that runs instrumented tests on an
   emulator, triggered only for this branch and using no secrets (AGENTS.md hard
   constraint 2). The existing `build-and-test` job keeps running exactly what
   it runs today.
@@ -1041,9 +1041,9 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 - [ ] **E.1.D1** Switching profile mid-play is glitch-free; the booster is
   audibly louder; HDMI passthrough to a receiver is unaffected.
 
-### E.2 — DTS and TrueHD decoding (blocked by D5)
+### E.2 — DTS and TrueHD decoding (D5)
 
-- [x] **E.2.1** Record the owner's D5 choice here: (a) Jellyfin decoder (`org.jellyfin.media3:media3-ffmpeg-decoder`).
+- [x] **E.2.1** Record the owner's D5 choice here: (a) Jellyfin decoder (`org.jellyfin.media3:media3-ffmpeg-decoder`), confirmed by the owner on 2026-10-02.
 - [ ] **E.2.2** For (a): add `org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1`
   and call `setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)` (platform
   decoders first, FFmpeg as the fallback), and update the README's licence
@@ -1798,6 +1798,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 123 tests) | not run (no emulator/device connected in CI environment) | Implemented TheIntroDB pure introdb package, transport in AndroidEdendaleCore, PlayerSegmentController, UI prompt, S key, TV D3 focus, Playback panel toggle, Settings section with links, and README docs |
 | 2026-10-01 | B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 149 tests) | not run (no emulator/device connected in CI environment) | Persisted loop/aspectFill globally, added ContentPlayerPreferences model/rules/codec/store, Media3 track adapter, ext- prefix on sideloaded subtitles, and per-title memory save/restore |
 | 2026-10-01 | C.1 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 173 tests) | not run (no emulator/device connected in CI environment) | Pure EpisodeProgression rules (nextEpisode, upcomingEpisode, highestCompletedPerShow, nextUpEpisodes) and 24 JVM tests |
+| 2026-10-02 | Review of A.1–C.1; fixes to C.5 and B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest` on a clean checkout of 9b57892: pass (183 tests, 0 failures). `./gradlew lintDebug`: fails with 311 errors; 308 predate this branch, and 3 are new (`UnsafeOptInUsageError` in `ContentPlayerPreferences.kt`, from B.2). | not run (no device or emulator on the review Mac) | C.5 (451d7f5): one process-wide `IntroDbService`, so a 429 cooldown holds across items and player sessions. B.2 (9b57892): Media3 1.9.0 first reports empty tracks when an item replaces another, which used up the restore, so remembered tracks never carried across a switch; the restore now waits for the first non-empty report. Unticked A.2.3 (its device check wasn't run) and A.5.4 (no CI job was added). A.2.2 needed no source changes: a clean build shows no Media3 deprecation warnings. Corrected C.1's commit to 1f01315. D5 confirmed by the owner, so E.2 is no longer blocked. |
 
 ---
 
@@ -1812,16 +1813,16 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.4 | Strings and translations | Complete | 6f93abb |
 | A.5 | Test conventions | Complete | 4310f03 |
 | B.1 | App Controls | Complete | 9b2fbd5 |
-| B.2 | Persisted state and per-title memory | Complete | 15db4ef |
+| B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
 | B.3 | Track pickers and panel order | Not started | |
 | B.4 | Subtitle appearance and placement | Not started | |
 | B.5 | Playlist panel redesign | Not started | |
 | B.6 | Speed and seek checks | Not started | |
-| C.1 | Episode progression rules | Complete | b91eb45 |
+| C.1 | Episode progression rules | Complete | 1f01315 |
 | C.2 | Auto-advance and Up Next | Not started | |
 | C.3 | Continue Watching next-up | Not started | |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
-| C.5 | TheIntroDB skip prompts | Complete | 4c2be70 |
+| C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5 |
 | C.6 | MediaSession and system surfaces | Not started | |
 | D.1 | Buffered SMB reads | Not started | |
 | D.2 | Source records (Room v3) | Not started | |
@@ -1829,7 +1830,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.4 | Keep logins; Accounts | Not started | |
 | D.5 | Play From | Not started | |
 | E.1 | EQ profiles and booster | Not started | |
-| E.2 | DTS and TrueHD (D5) | Blocked | |
+| E.2 | DTS and TrueHD (D5) | Not started | |
 | F.1 | Effects plumbing | Not started | |
 | F.2 | Picture adjustments | Not started | |
 | F.3 | Upscaler | Not started | |
