@@ -1607,4 +1607,16 @@
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>フレーム生成</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>このグラフィックスカードではこのファイルのフレーム生成を開始できなかったため、通常どおり再生します。</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>動画のフレームレートがわかると開始します。</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>30 fps 以下、4K までの動画で使えます。</value>
+  </data>
 </root>

@@ -1607,4 +1607,16 @@
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} МБ</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Генерация кадров</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Не удалось запустить генерацию кадров для этого файла на этой видеокарте, поэтому он воспроизводится обычным способом.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Включится, как только станет известна частота кадров видео.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Работает с видео до 30 кадров/с и разрешением до 4K.</value>
+  </data>
 </root>

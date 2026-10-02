@@ -314,6 +314,23 @@ Player Adjustments → Enhancement uses only what the bundled LibVLC 3 ships
 - HDR video stays tone-mapped to SDR, because LibVLCSharp's video surface is
   8-bit.
 
+**Frame Generation** (Player Adjustments → Enhancement, off by default) is
+Edendale's own, on NVIDIA and Intel GPUs. It doubles 30 fps and slower video
+by motion-compensated interpolation, and upscales to the window's physical
+pixels with Lanczos-3. NVIDIA runs it as CUDA kernels through the driver
+(`nvcuda.dll`, no CUDA runtime ships), and Intel runs the same algorithm as
+Direct3D 11 compute shaders. While it's on:
+
+- Edendale draws LibVLC's frames on its own swap chain, about half a frame
+  late, and delays the audio to match.
+- Scene cuts hold the previous frame, and poorly matched areas blend the two
+  frames instead of warping them.
+- 10-bit and HDR sources, speeds above 1.5×, and any GPU failure fall back to
+  normal playback. AMD keeps Motion Smoothing.
+- After changing `FrameGeneration.cu`, rebuild the PTX with
+  `python3 tools/build-frame-generation-ptx.py` (NVRTC from
+  `pip install nvidia-cuda-nvrtc-cu12`) and commit it.
+
 ### Storage providers
 
 Settings → Sources and the Downloaded page link these, through one Link

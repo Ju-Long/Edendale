@@ -122,6 +122,17 @@
                         Initialized="PlayerElement_Initialized"
                         SizeChanged="PlayerElement_SizeChanged" />
 
+                    <!-- ENHANCEMENT.md G: with frame generation on, Edendale draws
+                         LibVLC's frames here itself instead of in the VideoView. -->
+                    <SwapChainPanel
+                        x:Name="FrameGenerationPanel"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        IsHitTestVisible="False"
+                        Visibility="Collapsed"
+                        SizeChanged="FrameGenerationPanel_SizeChanged"
+                        CompositionScaleChanged="FrameGenerationPanel_CompositionScaleChanged" />
+
                     <!-- F.3: a brief state while LibVLC reopens at the same
                          position, instead of a bare black frame. -->
                     <Grid x:Name="ApplyingLayer" Background="Black" Visibility="Collapsed" IsHitTestVisible="False">

@@ -1607,4 +1607,16 @@ IS STIL</value>
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Framegeneratie</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Framegeneratie kon voor dit bestand niet starten op deze videokaart, dus het speelt op de gewone manier af.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Start zodra de framerate van de video bekend is.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
+  </data>
 </root>

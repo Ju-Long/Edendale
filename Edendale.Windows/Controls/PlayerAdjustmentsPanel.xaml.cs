@@ -313,6 +313,57 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
         EngineReopenRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    // ------------------------------------------------------------------
+    // Frame generation (ENHANCEMENT.md G)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// The toggle shows on NVIDIA and Intel GPUs. The line under it names
+    /// the rates and the engine while it runs, or why it can't for this file.
+    /// </summary>
+    public void ShowFrameGeneration(FrameGenerationBackend backend, string? status)
+    {
+        _updating = true;
+        try
+        {
+            var available = backend != FrameGenerationBackend.None;
+            FrameGenerationToggle.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
+            FrameGenerationToggle.IsOn = AppServices.VideoEnhancement.FrameGeneration;
+            FrameGenerationLabel.Text = status ?? "";
+            FrameGenerationLabel.Visibility = available && FrameGenerationToggle.IsOn && !string.IsNullOrEmpty(status)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+        finally
+        {
+            _updating = false;
+        }
+    }
+
+    private void FrameGenerationToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_updating) return;
+        AppServices.VideoEnhancement.FrameGeneration = FrameGenerationToggle.IsOn;
+        EngineReopenRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Frame generation shows video half a frame late, so audio waits as long
+    /// on top of the reader's own audio delay.
+    /// </summary>
+    public int AudioCompensationMilliseconds
+    {
+        get => _audioCompensationMilliseconds;
+        set
+        {
+            if (_audioCompensationMilliseconds == value) return;
+            _audioCompensationMilliseconds = value;
+            ApplySyncOffsets();
+        }
+    }
+
+    private int _audioCompensationMilliseconds;
+
     /// <summary>Show Original (decision D2) reopens the player unenhanced, about a second's pause.</summary>
     private void EnhancementOriginalToggle_Toggled(object sender, RoutedEventArgs e)
     {
@@ -457,7 +508,7 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
         if (_subtitleDelayValue is not null) _subtitleDelayValue.Text = DelayLabel(_subtitleDelayMilliseconds);
         if (_player is not { } player) return;
         // LibVLC takes microseconds.
-        player.SetAudioDelay(_audioDelayMilliseconds * 1000L);
+        player.SetAudioDelay((_audioDelayMilliseconds + _audioCompensationMilliseconds) * 1000L);
         player.SetSpuDelay(_subtitleDelayMilliseconds * 1000L);
     }
 

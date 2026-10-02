@@ -1607,4 +1607,16 @@
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Bildrutegenerering</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Bildrutegenerering kunde inte starta för den här filen på det här grafikkortet, så den spelas upp som vanligt.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Startar när videons bildfrekvens är känd.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Fungerar med video på högst 30 bilder/s, upp till 4K.</value>
+  </data>
 </root>

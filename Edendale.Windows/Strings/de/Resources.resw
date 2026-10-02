@@ -1607,4 +1607,16 @@ IST STUMM</value>
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Frame-Generierung</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Frame-Generierung konnte für diese Datei auf dieser Grafikkarte nicht starten, daher wird sie normal abgespielt.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Startet, sobald die Bildrate des Videos bekannt ist.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Funktioniert bei Videos mit höchstens 30 fps bis 4K.</value>
+  </data>
 </root>

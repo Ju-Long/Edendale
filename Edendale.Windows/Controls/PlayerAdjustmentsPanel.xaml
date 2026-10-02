@@ -94,6 +94,17 @@
                         Visibility="Collapsed"
                         Toggled="MotionSmoothingToggle_Toggled"/>
                     <TextBlock x:Name="FrameRateLabel" Style="{StaticResource BodySMTextStyle}" Visibility="Collapsed"/>
+                    <!-- Option B (ENHANCEMENT.md G): Edendale's own frame generation and
+                         upscaling, CUDA on NVIDIA and Direct3D compute on Intel. -->
+                    <ToggleSwitch
+                        x:Uid="AdjustmentsFrameGenerationToggle"
+                        x:Name="FrameGenerationToggle"
+                        Header="Frame Generation"
+                        OnContent=""
+                        OffContent=""
+                        Visibility="Collapsed"
+                        Toggled="FrameGenerationToggle_Toggled"/>
+                    <TextBlock x:Name="FrameGenerationLabel" Style="{StaticResource BodySMTextStyle}" TextWrapping="Wrap" Visibility="Collapsed"/>
                     <ToggleSwitch
                         x:Uid="AdjustmentsEnhancementOriginalToggle"
                         x:Name="EnhancementOriginalToggle"

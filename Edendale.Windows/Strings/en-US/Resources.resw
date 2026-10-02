@@ -1607,4 +1607,16 @@ IS SILENT</value>
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Frame Generation</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Frame Generation couldn’t start for this file on this graphics card, so it plays the usual way.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Starts once the video’s frame rate is known.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Works on video at 30 fps or less, up to 4K.</value>
+  </data>
 </root>

@@ -1607,4 +1607,16 @@ ESTÁ SILENCIOSA</value>
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Geração de quadros</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Não foi possível iniciar a geração de quadros para este arquivo nesta placa de vídeo, então ele é reproduzido normalmente.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Começa assim que a taxa de quadros do vídeo for conhecida.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Funciona com vídeos de até 30 fps e até 4K.</value>
+  </data>
 </root>

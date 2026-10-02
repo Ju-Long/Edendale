@@ -1607,4 +1607,16 @@
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>帧生成</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>无法在此显卡上为此文件启动帧生成，因此按常规方式播放。</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>获知视频帧率后开始。</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>适用于 30 fps 及以下、最高 4K 的视频。</value>
+  </data>
 </root>

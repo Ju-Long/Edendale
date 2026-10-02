@@ -126,4 +126,15 @@
   <ItemGroup Condition="Exists('..\secrets.json')">
     <EmbeddedResource Include="..\secrets.json" LogicalName="Edendale.LocalSecrets" />
   </ItemGroup>
+
+  <!-- Frame generation (ENHANCEMENT.md G): the NVIDIA kernels as PTX, which
+       the driver compiles for the installed GPU, and the Intel compute
+       shaders, compiled at run time by Windows' d3dcompiler_47.dll.
+       FrameGeneration.cu is the source of the PTX
+       (tools/build-frame-generation-ptx.py) and is not built here. -->
+  <ItemGroup>
+    <EmbeddedResource Include="FrameGeneration\FrameGeneration.ptx" LogicalName="Edendale.FrameGeneration.ptx" />
+    <EmbeddedResource Include="FrameGeneration\FrameGeneration.hlsl" LogicalName="Edendale.FrameGeneration.hlsl" />
+    <None Include="FrameGeneration\FrameGeneration.cu" />
+  </ItemGroup>
 </Project>

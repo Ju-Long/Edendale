@@ -1607,4 +1607,16 @@
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0}MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>프레임 생성</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>이 그래픽 카드에서 이 파일의 프레임 생성을 시작할 수 없어 일반적인 방식으로 재생합니다.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>동영상의 프레임 속도를 알게 되면 시작됩니다.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>30fps 이하, 최대 4K 동영상에서 작동합니다.</value>
+  </data>
 </root>

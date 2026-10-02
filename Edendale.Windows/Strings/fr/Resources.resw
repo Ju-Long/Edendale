@@ -1607,4 +1607,16 @@ EST SILENCIEUSE</value>
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} Mo</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Génération d’images</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>La génération d’images n’a pas pu démarrer pour ce fichier sur cette carte graphique ; il est lu normalement.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Démarre dès que la fréquence d’images de la vidéo est connue.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Fonctionne avec les vidéos à 30 i/s ou moins, jusqu’en 4K.</value>
+  </data>
 </root>

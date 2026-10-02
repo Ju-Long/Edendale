@@ -11,8 +11,11 @@ Windows, plus Windows gaps found while comparing the branches.
   Apple test files named below live in `EdendaleTests/` on that branch.
 - **Video enhancement uses Option A:** only what LibVLC 3 already ships
   (GPU super resolution, the graphics driver's video processor, and AMD's
-  frame-rate doubler and denoiser). No custom swapchain or shader pipeline;
-  see [Not planned](#not-planned).
+  frame-rate doubler and denoiser).
+- **Option B adds frame generation and upscaling** on NVIDIA (CUDA) and Intel
+  (Direct3D compute), opt-in, with Edendale's own swap chain; see
+  [Frame generation and upscaling](#frame-generation-and-upscaling-option-b).
+  It was requested after the tracker started.
 - **Last reviewed:** 2026-10-01, against apple-27.0 `4f8383a`. The branch
   now bundles LibVLC 3.0.24 (F.1).
 
@@ -122,6 +125,16 @@ doesn't list)
 - [x] [X.7 Chapters](#x7-chapters) (P3)
 - [x] [X.8 Saved subtitles](#x8-saved-subtitles) (P3)
 
+**Frame generation and upscaling, Option B** (new behavior; requested after
+the tracker started)
+
+- [x] [G.1 Algorithm and rules](#g1-algorithm-and-rules) (P3)
+- [x] [G.2 NVIDIA: CUDA](#g2-nvidia-cuda) (P3)
+- [x] [G.3 Intel: Direct3D compute](#g3-intel-direct3d-compute) (P3)
+- [x] [G.4 Presenter](#g4-presenter) (P3)
+- [x] [G.5 Controls](#g5-controls) (P3)
+- [ ] [G.6 Hardware checks](#g6-hardware-checks) (P3)
+
 Suggested order: F.1 → F.2 → W.1–W.3 → 3.1 → F.3 → F.4 → 3.3 → 3.4 → 3.5 →
 3.6 → 3.7 → E.1–E.6 → 3.8 → 3.9 and 3.10 → F.5 → 3.15 → 3.11 → 3.18 →
 3.12 and 3.13.
@@ -143,13 +156,14 @@ still open needs Windows hardware or a change on another branch.
 - W.3: the 5-minute screen timeout check.
 - X.3: Headphone Surround compared with Windows Sonic.
 - X.5: NFS against a real export.
+- G.6: frame generation and upscaling on NVIDIA and Intel hardware.
 - Live sign-ins to OneDrive and Dropbox, and SFTP, WebDAV, and S3 against
   real servers. The tests use stub handlers only.
 
 **Changes on other branches** (AGENTS.md hard constraint 7)
 
 - `main` DIFF.md: the Windows differences from D1–D3 and D5–D10, and the
-  Windows-only extras X.1–X.8.
+  Windows-only extras X.1–X.8 and G.
 - `main` README: the Windows provider list (3.12).
 - `main` DESIGN.md: the `PlaylistActiveBackground` and `PlaylistActiveText`
   rows (3.10).
@@ -1000,16 +1014,115 @@ by file, but nothing tied them to a title, so a replay needed a new search.
 - [x] Tests: `SavedSubtitlesTests` (keys, expiry, selection, pruning, orphans,
   damaged indexes, Remove All, and stable cache names).
 
+## Frame generation and upscaling (Option B)
+
+Requested after Option A shipped: generate the in-between frames and upscale
+on NVIDIA with CUDA, and on Intel with something else. Intel uses Direct3D 11
+compute shaders, which every Intel GPU that runs Windows 10 or 11 supports.
+Both run the same algorithm, written once as a C# reference that the tests
+pin. AMD keeps Option A's Motion Smoothing (`amf_frc`). The feature is opt-in
+and off by default.
+
+Why not NVIDIA's Optical Flow FRUC library or Intel VPL's AI interpolation:
+both need SDK binaries Edendale can't build or ship from this branch, and
+VPL's interpolation is experimental and limited to the newest Intel GPUs.
+Edendale's own kernels need only nvcuda.dll (part of the NVIDIA driver) or
+d3dcompiler_47.dll (part of Windows).
+
+### G.1 Algorithm and rules
+
+- [x] `Core/FrameGeneration.cs`:
+  - the backend: CUDA for NVIDIA, Direct3D for Intel, nothing for AMD,
+    Qualcomm, and the software adapter;
+  - eligibility: a known rate of 30 fps or less, up to 3840 × 2160, 8-bit
+    sources only (LibVLC converts 10-bit and HDR to NV12 without tone
+    mapping, so those play the normal way);
+  - the clock: each real frame is shown half an interval after LibVLC hands
+    it over, and the generated frame between it and the previous one at
+    once. A gap (pause, seek, stall) or a frame that comes early is shown
+    without generating one, and nothing is generated above 1.5× speed;
+  - fit and fill rectangles with the source's pixel aspect ratio.
+- [x] The reference algorithm (`FrameInterpolation`): symmetric block
+  matching around the midpoint on 16 × 16 blocks (a coarse search of ±32 px
+  in 4 px steps, then ±4 px in 2 px steps), a 3 × 3 vector median,
+  motion-compensated blending that falls back to a plain blend where blocks
+  match poorly, the earlier frame held on a scene cut, and Lanczos-3
+  upscaling clamped to the nearest 2 × 2 pixels so edges don't ring.
+- [x] Tests: `FrameGenerationTests` (a translated texture's vectors, the
+  halfway frame against the true one, scene cuts, the median, the fallback
+  weights, scaling, the clock, geometry, and the backend table).
+
+### G.2 NVIDIA: CUDA
+
+- [x] `FrameGeneration/FrameGeneration.cu`: seven kernels (NV12 to RGBA,
+  coarse and refined motion search, median, mean cost, synthesis, scaling)
+  that follow the reference step for step.
+- [x] `tools/build-frame-generation-ptx.py` compiles them with NVRTC to PTX
+  for compute_52 (GeForce 900 series and newer) with `.version 7.0`, so
+  drivers from R450 load it. The PTX is committed and embedded; ptxas
+  assembles it for sm_52 and sm_86.
+- [x] `Services/FrameGeneration/CudaDriver.cs` and `CudaFrameGenerator.cs`
+  use the driver API only: a context on the CUDA device behind the
+  presenter's DXGI adapter, `cuModuleLoadData` for the PTX, and
+  `cuGraphicsD3D11RegisterResource` to write the result straight into a
+  Direct3D texture. No CUDA runtime ships.
+
+### G.3 Intel: Direct3D compute
+
+- [x] `FrameGeneration/FrameGeneration.hlsl`: the same seven steps as cs_5_0
+  compute shaders. Every entry point compiles with DXC (cs_6_0, warnings as
+  errors) as a syntax check.
+- [x] `ComputeShaderFrameGenerator.cs` compiles them at run time with
+  `D3DCompile` from d3dcompiler_47.dll and binds the registers the HLSL
+  names, never one resource for reading and writing at once.
+
+### G.4 Presenter
+
+- [x] `FrameGenerationPresenter.cs` takes LibVLC's frames through
+  `SetVideoFormatCallbacks` and `SetVideoCallbacks` as NV12 in a pool of
+  buffers, and draws them on its own thread into a composition swap chain on
+  a `SwapChainPanel` (set the way LibVLCSharp.WinUI sets its own), in
+  physical pixels with the DPI scale undone.
+- [x] Audio is delayed by the half frame video runs behind, on top of the
+  reader's own audio delay (X.6). Subtitles are drawn into the frames by
+  LibVLC, so they stay in step.
+- [x] Fit and Fill, resizing, and pausing redraw the current frame. Full
+  screen matches the display to a multiple of the doubled rate (X.4).
+- [x] Any GPU failure, or a 10-bit source, reopens at the same position the
+  normal way and says so under the toggle. A remote file starts frame
+  generation once its rate is known.
+
+### G.5 Controls
+
+- [x] Player Adjustments → Enhancement → Frame Generation on NVIDIA and Intel
+  GPUs, stored as `video.frameGeneration` (device-local, like D5). The line
+  under it reads "24 fps → 48 fps · CUDA" or says why it isn't running.
+- [x] README "Video enhancement" describes it.
+
+### G.6 Hardware checks
+
+Not run yet: no GPU was available.
+
+- [ ] NVIDIA RTX and GTX: 24 fps 1080p in a 4K window doubles smoothly,
+  audio stays in sync, and GPU load is reasonable.
+- [ ] Intel Xe or Arc, and Intel UHD: the same at 1080p; check the cost of
+  the motion search on integrated graphics.
+- [ ] Scene cuts, fast pans, subtitles, pause, seek, speed changes, resize,
+  DPI changes, Fit and Fill, and Picture in Picture.
+- [ ] A 10-bit HEVC or HDR10 file falls back to normal playback.
+- [ ] A driver without CUDA (or a CUDA failure) falls back cleanly.
+
 ## Not planned
 
 Option A was chosen over these for 27.0. Revisit them if its limits matter.
+Option B (G) has since added frame generation and upscaling on its own swap
+chain for NVIDIA and Intel; what follows is still not planned.
 
-- **Own swapchain:** needed for HDR output and NVIDIA's SDR-to-HDR.
-  LibVLCSharp's `VideoView` creates an 8-bit swapchain and VLC keeps that
-  format, so HDR video is tone-mapped to SDR.
-- **Shader pipeline after LibVLC:** CAS sharpening, temporal denoise, FSR 1
-  upscaling, and a port of Apple's Motion Smoothing for every GPU. Embedded
-  subtitles would be interpolated along with the picture.
+- **HDR output:** needed for HDR video and NVIDIA's SDR-to-HDR. Both video
+  outputs are 8-bit, so HDR video is tone-mapped to SDR (Option A) or plays
+  without frame generation (Option B).
+- **More shader stages:** CAS sharpening, temporal denoise, and FSR 1 on top
+  of Option B's Lanczos upscaler.
 - **Custom LibVLC filter plugin:** runs where `amf_frc` does, but builds
   against VLC-internal headers and must be rebuilt for every LibVLC update.
 - **Engine change:** LibVLC 4 (unreleased), or FFmpeg with Edendale's own
@@ -1048,3 +1161,4 @@ From DIFF.md §5. Tick a line when its cases are ported to
 - [x] Windows only: `GpuCapabilitiesTests` and `VideoEnhancementOptionsTests`
   (E.1, E.2)
 - [x] Windows only: `SavedSubtitlesTests` (X.8)
+- [x] Windows only: `FrameGenerationTests` (G.1)

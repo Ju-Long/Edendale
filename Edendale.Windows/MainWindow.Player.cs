@@ -55,6 +55,12 @@ public sealed partial class MainWindow
     private bool _reattachPending;
     private bool _reopening;
     private bool _isCompactOverlay;
+
+    /// <summary>Option B's own video output while frame generation runs (ENHANCEMENT.md G); null otherwise.</summary>
+    private Services.FrameGeneration.FrameGenerationPresenter? _frameGeneration;
+
+    /// <summary>Frame generation failed (or can't serve this source) during this presentation.</summary>
+    private bool _frameGenerationRefused;
     private bool _isFullScreen;
     private PlayerPane _openPane;
     private VideoSourceInfo _sourceInfo = VideoSourceInfo.Unknown;
@@ -131,6 +137,7 @@ public sealed partial class MainWindow
         _reopenState = null;
         _reattachPending = false;
         _reattachSelected = null;
+        _frameGenerationRefused = false;
         _sourceInfo = VideoSourceInfo.Unknown;
 
         // Subtitles downloaded for this title before come back without a
@@ -230,7 +237,8 @@ public sealed partial class MainWindow
             // frame rate stays unknown and Motion Smoothing waits for it.
             var settings = AppServices.VideoEnhancement;
             var isRemoteInput = Services.Remote.ConnectorFactory.NeedsCustomInput(request.FilePath);
-            if (!isRemoteInput && settings.MotionSmoothing && !settings.IsShowingOriginal && capabilities.MotionSmoothing && _sourceInfo.FrameRate is null)
+            var wantsFrameRate = (settings.MotionSmoothing && capabilities.MotionSmoothing) || WantsFrameGeneration(capabilities);
+            if (!isRemoteInput && wantsFrameRate && !settings.IsShowingOriginal && _sourceInfo.FrameRate is null)
             {
                 EnsureEngine(PlayerEffects.EngineArguments(BuildEnhancement(capabilities, _sourceInfo), _uiSettings.TextScaleFactor));
                 using var probe = new Media(_libVlc!, new Uri(request.FilePath));
@@ -246,7 +254,7 @@ public sealed partial class MainWindow
             var player = new MediaPlayer(_libVlc!);
             Attach(player);
             _mediaPlayer = player;
-            PlayerElement.MediaPlayer = player;
+            if (!StartFrameGeneration(player, capabilities)) PlayerElement.MediaPlayer = player;
             ControlsOverlay.SetMediaPlayer(player, request.Title.ToUpperInvariant(), request.Subtitle, request, _context);
             AdjustmentsPanel.Bind(player, _context);
             PlayerEffects.ApplyEqualizer(player, AppServices.AudioEnhancement);
@@ -384,9 +392,12 @@ public sealed partial class MainWindow
         var capabilities = GpuProbe.Current;
         var enhancement = BuildEnhancement(capabilities, _sourceInfo);
         var arguments = PlayerEffects.EngineArguments(enhancement, _uiSettings.TextScaleFactor);
-        if (_engineArguments is not null && _engineArguments.SequenceEqual(arguments))
+        var frameGenerationChanged = (_frameGeneration is not null)
+            != (WantsFrameGeneration(capabilities) && FrameGenerationRules.IsEligible(_sourceInfo));
+        if (_engineArguments is not null && _engineArguments.SequenceEqual(arguments) && !frameGenerationChanged)
         {
             AdjustmentsPanel.ShowEnhancement(enhancement, capabilities);
+            AdjustmentsPanel.ShowFrameGeneration(FrameGenerationRules.BackendFor(capabilities), FrameGenerationStatus(capabilities));
             return;
         }
         _ = ReopenAtSamePositionAsync();
@@ -596,8 +607,15 @@ public sealed partial class MainWindow
         var frameRateChanged = info.FrameRate != _sourceInfo.FrameRate;
         _sourceInfo = info;
         AdjustmentsPanel.ShowEnhancement(BuildEnhancement(GpuProbe.Current, info), GpuProbe.Current);
+        AdjustmentsPanel.ShowFrameGeneration(FrameGenerationRules.BackendFor(GpuProbe.Current), FrameGenerationStatus(GpuProbe.Current));
         // The frame rate is known only now when the file wasn't parsed ahead.
         if (frameRateChanged && _isFullScreen) MatchDisplayRate();
+        // A remote file's rate arrives with playback; frame generation starts then.
+        if (frameRateChanged && _frameGeneration is null && !_reopening
+            && WantsFrameGeneration(GpuProbe.Current) && FrameGenerationRules.IsEligible(info))
+        {
+            _ = ReopenAtSamePositionAsync();
+        }
     }
 
     // ------------------------------------------------------------------
@@ -829,6 +847,11 @@ public sealed partial class MainWindow
     private void ApplyAspectMode()
     {
         if (_mediaPlayer is null) return;
+        if (_frameGeneration is { } presenter)
+        {
+            presenter.Fill = AppServices.PlayerPreferences.AspectFill;
+            return;
+        }
 
         if (!AppServices.PlayerPreferences.AspectFill)
         {
@@ -926,7 +949,9 @@ public sealed partial class MainWindow
     {
         if (_isFullScreen && PlayerOverlay.Visibility == Visibility.Visible)
         {
-            DisplayRefreshRate.Match(WinRT.Interop.WindowNative.GetWindowHandle(this), _sourceInfo.FrameRate);
+            // Doubled frames want a multiple of the doubled rate.
+            var rate = _frameGeneration is not null ? _sourceInfo.FrameRate * 2 : _sourceInfo.FrameRate;
+            DisplayRefreshRate.Match(WinRT.Interop.WindowNative.GetWindowHandle(this), rate);
         }
         else
         {
@@ -1153,7 +1178,95 @@ public sealed partial class MainWindow
         player.Stop();
         player.Dispose();
         input?.Dispose();
+        StopFrameGeneration();
     }
+
+    // ------------------------------------------------------------------
+    // Frame generation and upscaling (ENHANCEMENT.md G)
+    // ------------------------------------------------------------------
+
+    /// <summary>Switched on, offered by this GPU, and not refused for this presentation or by Show Original.</summary>
+    private bool WantsFrameGeneration(GpuCapabilities capabilities) =>
+        AppServices.VideoEnhancement.FrameGeneration
+        && !AppServices.VideoEnhancement.IsShowingOriginal
+        && !_frameGenerationRefused
+        && FrameGenerationRules.BackendFor(capabilities) != FrameGenerationBackend.None;
+
+    /// <summary>
+    /// Routes the player's frames to Edendale's generator when frame
+    /// generation applies to this source; false leaves LibVLC drawing into
+    /// the VideoView as usual.
+    /// </summary>
+    private bool StartFrameGeneration(MediaPlayer player, GpuCapabilities capabilities)
+    {
+        var backend = FrameGenerationRules.BackendFor(capabilities);
+        if (!WantsFrameGeneration(capabilities) || !FrameGenerationRules.IsEligible(_sourceInfo))
+        {
+            AdjustmentsPanel.AudioCompensationMilliseconds = 0;
+            AdjustmentsPanel.ShowFrameGeneration(backend, FrameGenerationStatus(capabilities));
+            return false;
+        }
+
+        Services.FrameGeneration.FrameGenerationPresenter? presenter = null;
+        try
+        {
+            FrameGenerationPanel.Visibility = Visibility.Visible;
+            presenter = new Services.FrameGeneration.FrameGenerationPresenter(
+                FrameGenerationPanel, backend, _sourceInfo.FrameRate!.Value, 1, 1, AppServices.PlayerPreferences.AspectFill);
+            presenter.Failed += FrameGeneration_Failed;
+            presenter.Start(player);
+        }
+        catch (Exception error) when (error is SharpDX.SharpDXException or System.Runtime.InteropServices.COMException
+            or DllNotFoundException or InvalidOperationException)
+        {
+            presenter?.Dispose();
+            FrameGenerationPanel.Visibility = Visibility.Collapsed;
+            _frameGenerationRefused = true;
+            AdjustmentsPanel.ShowFrameGeneration(backend, FrameGenerationStatus(capabilities));
+            return false;
+        }
+
+        _frameGeneration = presenter;
+        AdjustmentsPanel.AudioCompensationMilliseconds = presenter.DelayMilliseconds;
+        AdjustmentsPanel.ShowFrameGeneration(backend, FrameGenerationStatus(capabilities));
+        return true;
+    }
+
+    private void StopFrameGeneration()
+    {
+        if (_frameGeneration is not { } presenter) return;
+        _frameGeneration = null;
+        presenter.Failed -= FrameGeneration_Failed;
+        presenter.Dispose();
+        FrameGenerationPanel.Visibility = Visibility.Collapsed;
+        AdjustmentsPanel.AudioCompensationMilliseconds = 0;
+    }
+
+    /// <summary>The GPU path stopped (or the source is HDR): reopen at the same position the normal way.</summary>
+    private void FrameGeneration_Failed(string reason)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_frameGeneration is null || _frameGenerationRefused) return;
+            _frameGenerationRefused = true;
+            _ = ReopenAtSamePositionAsync();
+        });
+    }
+
+    /// <summary>The line under the toggle: the rates and engine, or why it isn't running.</summary>
+    private string? FrameGenerationStatus(GpuCapabilities capabilities)
+    {
+        var backend = FrameGenerationRules.BackendFor(capabilities);
+        if (backend == FrameGenerationBackend.None || !AppServices.VideoEnhancement.FrameGeneration) return null;
+        if (_frameGenerationRefused) return Loc.Get("FrameGeneration_Unavailable");
+        if (_sourceInfo.FrameRate is null) return Loc.Get("FrameGeneration_WaitingForRate");
+        if (!FrameGenerationRules.IsEligible(_sourceInfo)) return Loc.Get("FrameGeneration_NotThisFile");
+        return FrameGenerationRules.Label(_sourceInfo, backend);
+    }
+
+    private void FrameGenerationPanel_SizeChanged(object sender, SizeChangedEventArgs e) => _frameGeneration?.Resize();
+
+    private void FrameGenerationPanel_CompositionScaleChanged(SwapChainPanel sender, object args) => _frameGeneration?.Resize();
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {

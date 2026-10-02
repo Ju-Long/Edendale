@@ -1607,4 +1607,16 @@ ESTÁ EN SILENCIO</value>
   <data name="Size_Megabytes" xml:space="preserve">
     <value>{0} MB</value>
   </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Generación de fotogramas</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>La generación de fotogramas no pudo iniciarse para este archivo en esta tarjeta gráfica, así que se reproduce de la forma habitual.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Empieza cuando se conoce la velocidad de fotogramas del vídeo.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Funciona con vídeo de 30 fps o menos, hasta 4K.</value>
+  </data>
 </root>

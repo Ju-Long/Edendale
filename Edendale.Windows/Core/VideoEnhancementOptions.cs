@@ -184,6 +184,16 @@ public sealed class VideoEnhancementSettings
         set => _store.SetBool(VideoEnhancementOptions.MotionSmoothingKey, value);
     }
 
+    /// <summary>
+    /// Frame generation and upscaling on NVIDIA (CUDA) and Intel (Direct3D
+    /// compute), ENHANCEMENT.md G. Off by default; device-local like the preset.
+    /// </summary>
+    public bool FrameGeneration
+    {
+        get => _store.GetBool(FrameGenerationRules.EnabledKey, fallback: false);
+        set => _store.SetBool(FrameGenerationRules.EnabledKey, value);
+    }
+
     /// <summary>Show Original (decision D2): plays unenhanced for the moment, not stored.</summary>
     public bool IsShowingOriginal { get; set; }
 

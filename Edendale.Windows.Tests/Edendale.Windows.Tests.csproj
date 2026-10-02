@@ -72,6 +72,7 @@
     <Compile Include="..\Edendale.Windows\Core\VideoFiles.cs" Link="App\Core\VideoFiles.cs" />
     <Compile Include="..\Edendale.Windows\Core\EpisodeProgression.cs" Link="App\Core\EpisodeProgression.cs" />
     <Compile Include="..\Edendale.Windows\Core\GpuCapabilities.cs" Link="App\Core\GpuCapabilities.cs" />
+    <Compile Include="..\Edendale.Windows\Core\FrameGeneration.cs" Link="App\Core\FrameGeneration.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlaybackTransitions.cs" Link="App\Core\PlaybackTransitions.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerControlPreferences.cs" Link="App\Core\PlayerControlPreferences.cs" />
