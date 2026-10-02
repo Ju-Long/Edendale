@@ -289,9 +289,12 @@ class PlayerActivity : ComponentActivity() {
 
             override fun onVideoSizeChanged(videoSize: VideoSize) = updatePipParams()
 
+            // A new item first reports empty tracks, before it's prepared.
+            // Restoring against those would match nothing and use up the
+            // item's only restore, so wait for the report that lists them.
             override fun onTracksChanged(tracks: Tracks) {
                 tracksState.value = tracks
-                if (!hasRestoredContentPreferences) {
+                if (!hasRestoredContentPreferences && !tracks.isEmpty) {
                     hasRestoredContentPreferences = true
                     restoreContentPreferences(exoPlayer, tracks)
                 }

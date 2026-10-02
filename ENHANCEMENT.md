@@ -391,7 +391,9 @@ holds; the tests pass; the device checks are recorded.
     `videoTrackHeight` (Apple's `ContentPlayerPreferences`).
   - Store these in a separate SharedPreferences file, `"player_content"`, so
     the main `"player"` file stays small.
-- Restore once per item, after its first `onTracksChanged`:
+- Restore once per item, on the first `onTracksChanged` that lists the item's
+  tracks (Media3 reports empty tracks first whenever a new item replaces the
+  playing one):
   - Audio and subtitle tracks match by **language first, then track name**.
   - Only embedded subtitle tracks are remembered or restored. Sideloaded Wyzie
     tracks never are: give their `SubtitleConfiguration` ids an `ext-` prefix
