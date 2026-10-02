@@ -34,12 +34,18 @@ internal sealed interface PlayerHud {
  * HUD fade, remote-seek commit) live in `PlayerScreen`'s LaunchedEffects,
  * which react to this state, so the class itself stays coroutine-free.
  */
-internal class PlayerChromeState(private val prefs: SharedPreferences) {
+internal class PlayerChromeState(val preferences: PlayerPreferences) {
 
-    val preferences: PlayerPreferences = PlayerPreferences(prefs)
+    constructor(prefs: SharedPreferences) : this(PlayerPreferences(prefs))
 
-    val skipBackwardInterval: SkipInterval get() = preferences.skipBackwardInterval
-    val skipForwardInterval: SkipInterval get() = preferences.skipForwardInterval
+    /**
+     * App Controls skip lengths, held as state so the ± glyphs and their
+     * labels redraw when Settings changes them while the player is open.
+     */
+    var skipBackwardInterval by mutableStateOf(preferences.skipBackwardInterval)
+        private set
+    var skipForwardInterval by mutableStateOf(preferences.skipForwardInterval)
+        private set
     val holdLeftRate: Float get() = preferences.holdLeftRate
     val holdRightRate: Float get() = preferences.holdRightRate
 
@@ -131,6 +137,8 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
 
     init {
         preferences.addChangeListener {
+            skipBackwardInterval = preferences.skipBackwardInterval
+            skipForwardInterval = preferences.skipForwardInterval
             segmentPromptsEnabled = preferences.segmentPromptsEnabled
             loopEnabled = preferences.loopEnabled
             _aspectFill.value = preferences.aspectFill

@@ -298,6 +298,8 @@
     <string name="settings_app_controls_hold_left">Удерживать левую сторону</string>
     <string name="settings_app_controls_hold_right">Удерживать правую сторону</string>
     <string name="settings_app_controls_hold_note">Нажмите и удерживайте левую или правую часть видео для воспроизведения с этой скоростью.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, медленнее</string>
+    <string name="settings_app_controls_hold_faster">%1$s, быстрее</string>
     <string name="settings_seconds_format">%d сек.</string>
     <string name="player_back_15">Назад на 15 секунд</string>
     <string name="player_back_30">Назад на 30 секунд</string>

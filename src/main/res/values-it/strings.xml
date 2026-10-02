@@ -290,6 +290,8 @@
     <string name="settings_app_controls_hold_left">Tieni premuto lato sinistro</string>
     <string name="settings_app_controls_hold_right">Tieni premuto lato destro</string>
     <string name="settings_app_controls_hold_note">Tieni premuto il lato sinistro o destro del video per riprodurre a quella velocità finché non rilasci.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, più lento</string>
+    <string name="settings_app_controls_hold_faster">%1$s, più veloce</string>
     <string name="settings_seconds_format">%d secondi</string>
     <string name="player_back_15">Indietro di 15 secondi</string>
     <string name="player_back_30">Indietro di 30 secondi</string>

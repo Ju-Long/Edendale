@@ -290,6 +290,8 @@
     <string name="settings_app_controls_hold_left">Maintenir le côté gauche</string>
     <string name="settings_app_controls_hold_right">Maintenir le côté droit</string>
     <string name="settings_app_controls_hold_note">Maintenez le doigt sur le côté gauche ou droit de la vidéo pour lire à cette vitesse jusqu\'à ce que vous relâchiez.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, plus lent</string>
+    <string name="settings_app_controls_hold_faster">%1$s, plus rapide</string>
     <string name="settings_seconds_format">%d secondes</string>
     <string name="player_back_15">Reculer de 15 secondes</string>
     <string name="player_back_30">Reculer de 30 secondes</string>

@@ -11,6 +11,8 @@
     <string name="settings_app_controls_hold_left">Hold Left Side</string>
     <string name="settings_app_controls_hold_right">Hold Right Side</string>
     <string name="settings_app_controls_hold_note">Touch and hold the left or right side of the video to play at that speed until you let go.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, slower</string>
+    <string name="settings_app_controls_hold_faster">%1$s, faster</string>
     <string name="settings_seconds_format">%d seconds</string>
     <string name="player_back_15">Back 15 seconds</string>
     <string name="player_back_30">Back 30 seconds</string>

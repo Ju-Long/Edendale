@@ -290,6 +290,8 @@
     <string name="settings_app_controls_hold_left">Linkerkant vasthouden</string>
     <string name="settings_app_controls_hold_right">Rechterkant vasthouden</string>
     <string name="settings_app_controls_hold_note">Houd de linker- of rechterkant van de video ingedrukt om met die snelheid af te spelen tot je loslaat.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, langzamer</string>
+    <string name="settings_app_controls_hold_faster">%1$s, sneller</string>
     <string name="settings_seconds_format">%d seconden</string>
     <string name="player_back_15">15 seconden terug</string>
     <string name="player_back_30">30 seconden terug</string>

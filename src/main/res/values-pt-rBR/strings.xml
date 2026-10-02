@@ -290,6 +290,8 @@
     <string name="settings_app_controls_hold_left">Segurar lado esquerdo</string>
     <string name="settings_app_controls_hold_right">Segurar lado direito</string>
     <string name="settings_app_controls_hold_note">Toque e segure o lado esquerdo ou direito do vídeo para reproduzir nessa velocidade até soltar.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, mais lento</string>
+    <string name="settings_app_controls_hold_faster">%1$s, mais rápido</string>
     <string name="settings_seconds_format">%d segundos</string>
     <string name="player_back_15">Voltar 15 segundos</string>
     <string name="player_back_30">Voltar 30 segundos</string>

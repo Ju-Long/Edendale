@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -48,6 +49,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
@@ -1121,6 +1129,7 @@ private fun AppControlsSettingsSection(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             HoldSpeedStepper(
+                title = stringResource(R.string.settings_app_controls_hold_left),
                 rate = holdLeft,
                 isTelevision = isTelevision,
                 onRateChange = {
@@ -1147,6 +1156,7 @@ private fun AppControlsSettingsSection(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             HoldSpeedStepper(
+                title = stringResource(R.string.settings_app_controls_hold_right),
                 rate = holdRight,
                 isTelevision = isTelevision,
                 onRateChange = {
@@ -1174,7 +1184,9 @@ private fun SkipSegmentGroup(
         color = EdendaleColors.Surface,
     ) {
         Row(
-            modifier = Modifier.padding(3.dp),
+            modifier = Modifier
+                .padding(3.dp)
+                .selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1196,7 +1208,13 @@ private fun SkipSegmentGroup(
                     onClick = { onSelect(interval) },
                     modifier = Modifier
                         .size(width = 48.dp, height = 36.dp)
-                        .tvFocusLift(isTelevision, CircleShape),
+                        .tvFocusLift(isTelevision, CircleShape)
+                        // Radio semantics, so TalkBack says which length is chosen.
+                        .semantics {
+                            role = Role.RadioButton
+                            // `this.`: the group's `selected` parameter shadows the property.
+                            this.selected = isSelected
+                        },
                     shape = CircleShape,
                     color = if (isSelected) EdendaleColors.Gold else Color.Transparent,
                     contentColor = if (isSelected) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
@@ -1216,17 +1234,24 @@ private fun SkipSegmentGroup(
 
 @Composable
 private fun HoldSpeedStepper(
+    title: String,
     rate: Float,
     isTelevision: Boolean,
     onRateChange: (Float) -> Unit,
 ) {
+    // The glyphs alone read as "minus" and "plus"; name the row so the
+    // two steppers can be told apart when the remote moves between them.
+    val slower = stringResource(R.string.settings_app_controls_hold_slower, title)
+    val faster = stringResource(R.string.settings_app_controls_hold_faster, title)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ArchiveIconButton(
             onClick = { onRateChange(rate - PlayerPreferencesRules.HOLD_RATE_STEP) },
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier
+                .size(40.dp)
+                .semantics { contentDescription = slower },
             enabled = rate > PlayerPreferencesRules.HOLD_RATE_MIN,
             isTelevision = isTelevision,
         ) { focused ->
@@ -1238,14 +1263,19 @@ private fun HoldSpeedStepper(
         }
         Text(
             text = PlayerLogic.rateLabel(rate),
-            modifier = Modifier.widthIn(min = 64.dp),
+            // Speaks the new speed after each − or + press.
+            modifier = Modifier
+                .widthIn(min = 64.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
             style = MaterialTheme.typography.bodyLarge,
             color = EdendaleColors.Gold,
             textAlign = TextAlign.Center,
         )
         ArchiveIconButton(
             onClick = { onRateChange(rate + PlayerPreferencesRules.HOLD_RATE_STEP) },
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier
+                .size(40.dp)
+                .semantics { contentDescription = faster },
             enabled = rate < PlayerPreferencesRules.HOLD_RATE_MAX,
             isTelevision = isTelevision,
         ) { focused ->
