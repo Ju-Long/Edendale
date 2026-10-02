@@ -11,6 +11,7 @@
 
 import Foundation
 import CoreMedia
+import SwiftData
 #if canImport(UIKit)
 import UIKit
 #endif
