@@ -502,7 +502,12 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
         return value;
     }
 
-    private void ApplySyncOffsets()
+    /// <summary>
+    /// Sends the audio and subtitle delays, plus frame generation's audio
+    /// compensation, to the player. LibVLC 3 ignores them until its input
+    /// exists, so the shell calls this again once playback starts.
+    /// </summary>
+    public void ApplySyncOffsets()
     {
         if (_audioDelayValue is not null) _audioDelayValue.Text = DelayLabel(_audioDelayMilliseconds);
         if (_subtitleDelayValue is not null) _subtitleDelayValue.Text = DelayLabel(_subtitleDelayMilliseconds);

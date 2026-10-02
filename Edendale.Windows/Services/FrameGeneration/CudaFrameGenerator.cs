@@ -1,8 +1,8 @@
 // NVIDIA frame generation and upscaling (ENHANCEMENT.md G.2): Edendale's
 // CUDA kernels (FrameGeneration/FrameGeneration.cu, shipped as PTX) run on
 // the GPU behind the presenter's Direct3D device, and the result is copied
-// straight into a Direct3D texture registered with CUDA. Nothing crosses
-// back to the CPU.
+// straight into a Direct3D texture registered with CUDA. Only the motion
+// field comes back to the CPU, for the scene-cut test.
 
 using Edendale.Windows.Core;
 using SharpDX.Direct3D11;
@@ -21,6 +21,7 @@ internal sealed class CudaFrameGenerator : IFrameGenerator
     private readonly nint _synthesize;
     private readonly nint _scale;
     private readonly Dictionary<nint, nint> _targets = [];
+    private readonly SceneCutDetector _sceneCuts = new();
 
     private int _width;
     private int _height;
@@ -41,6 +42,10 @@ internal sealed class CudaFrameGenerator : IFrameGenerator
     private ulong _middle;
     private ulong _output;
     private long _outputBytes;
+
+    // The smoothed field read back, and one cost per block (the scene-cut test).
+    private float[] _field = [];
+    private float[] _costs = [];
 
     /// <summary>Creates the CUDA context on the GPU behind <paramref name="device"/>. Call on the presenter thread.</summary>
     public CudaFrameGenerator(Device device)
@@ -77,6 +82,7 @@ internal sealed class CudaFrameGenerator : IFrameGenerator
     {
         CudaDriver.MakeCurrent(_context);
         if (width != _width || height != _height || pitch != _pitch) Allocate(width, height, pitch);
+        _sceneCuts.Advance();
 
         var next = _hasCurrent ? 1 - _current : _current;
         CudaDriver.CopyToDevice(_frames[next], frame, (long)pitch * height * 3 / 2);
@@ -109,10 +115,19 @@ internal sealed class CudaFrameGenerator : IFrameGenerator
                 KernelArgument.Pointer(_refined), KernelArgument.Pointer(_smoothed), _blocksX, _blocksY);
             CudaDriver.Launch(_fieldStats, (1, 1), (256, 1),
                 KernelArgument.Pointer(_smoothed), _blocksX * _blocksY, KernelArgument.Pointer(_meanCost));
-            CudaDriver.Launch(_synthesize, Grid(_width, _height), (8, 8),
-                KernelArgument.Pointer(_colors[previous]), KernelArgument.Pointer(_colors[_current]), _width, _height,
-                KernelArgument.Pointer(_smoothed), _blocksX, _blocksY, KernelArgument.Pointer(_meanCost), KernelArgument.Pointer(_middle));
-            source = _middle;
+            CudaDriver.CopyToHost(_field, _smoothed);
+            if (_sceneCuts.IsCut(FieldReadback.Statistics(_field, _costs)))
+            {
+                // A scene cut: the earlier frame again, rather than two shots blended.
+                source = _colors[previous];
+            }
+            else
+            {
+                CudaDriver.Launch(_synthesize, Grid(_width, _height), (8, 8),
+                    KernelArgument.Pointer(_colors[previous]), KernelArgument.Pointer(_colors[_current]), _width, _height,
+                    KernelArgument.Pointer(_smoothed), _blocksX, _blocksY, KernelArgument.Pointer(_meanCost), KernelArgument.Pointer(_middle));
+                source = _middle;
+            }
         }
 
         var bytes = (long)outputWidth * outputHeight * 4;
@@ -182,6 +197,9 @@ internal sealed class CudaFrameGenerator : IFrameGenerator
         _smoothed = CudaDriver.Allocate(blocks);
         _meanCost = CudaDriver.Allocate(4);
         _middle = CudaDriver.Allocate((long)width * height * 4);
+        _field = new float[_blocksX * _blocksY * 4];
+        _costs = new float[_blocksX * _blocksY];
+        _sceneCuts.Reset();
         _hasCurrent = false;
         _hasPrevious = false;
         _current = 0;

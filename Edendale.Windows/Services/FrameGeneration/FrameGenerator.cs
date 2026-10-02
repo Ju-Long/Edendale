@@ -29,13 +29,32 @@ internal interface IFrameGenerator : IDisposable
     /// <summary>
     /// Writes into <paramref name="target"/> (R8G8B8A8, <paramref name="outputWidth"/> ×
     /// <paramref name="outputHeight"/>): the frame halfway between the previous and
-    /// current frames when <paramref name="generated"/>, otherwise the current frame,
-    /// scaled into <paramref name="rect"/> with black around it.
+    /// current frames when <paramref name="generated"/> (the previous frame again
+    /// if the pair straddles a scene cut), otherwise the current frame, scaled
+    /// into <paramref name="rect"/> with black around it.
     /// </summary>
     void Render(bool generated, Texture2D target, int outputWidth, int outputHeight, OutputRect rect);
 
     /// <summary>The presenter is about to release <paramref name="target"/> (a resize).</summary>
     void Forget(Texture2D target);
+}
+
+/// <summary>
+/// Scene cuts are decided on the CPU, by <see cref="SceneCutDetector"/>, from
+/// the smoothed motion field the GPU computed (16 bytes a block: about 130 KB
+/// at 1080p), so the rule and its history live in one tested place.
+/// </summary>
+internal static class FieldReadback
+{
+    /// <summary>
+    /// The statistics of a field read back as one float4 per block (x, y,
+    /// cost, unused); <paramref name="costs"/> is scratch, one per block.
+    /// </summary>
+    public static FieldStatistics Statistics(float[] field, float[] costs)
+    {
+        for (var block = 0; block < costs.Length; block++) costs[block] = field[block * 4 + 2];
+        return FrameInterpolation.Statistics(costs);
+    }
 }
 
 internal static class FrameGenerationAssets

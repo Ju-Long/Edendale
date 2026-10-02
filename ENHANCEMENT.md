@@ -146,6 +146,13 @@ still open needs Windows hardware or a change on another branch.
 
 **Checks on Windows**
 
+- Until 2026-10-02 the player's LibVLC event handlers never ran:
+  LibVLCSharp passes its event manager as the sender, not the MediaPlayer,
+  and every handler returned on that check. Resume, per-title memory,
+  reattached subtitles, Up Next and the end of a file, reopening at the
+  same position, error handling, and the Playing and Vout updates now run
+  for the first time and need checking in the app. Reopening at the same
+  position and frame generation's audio compensation were checked in G.6.
 - F.1: playback in the x64, ARM64, and x86 builds.
 - 3.2: the seek and speed checks.
 - 3.7: the two-hour soak test.
@@ -1036,7 +1043,9 @@ d3dcompiler_47.dll (part of Windows).
     Qualcomm, and the software adapter;
   - eligibility: a known rate of 30 fps or less, up to 3840 × 2160, 8-bit
     sources only (LibVLC converts 10-bit and HDR to NV12 without tone
-    mapping, so those play the normal way);
+    mapping, so those play the normal way). Hardware decoders hand 10-bit
+    video over as `DX10` (Direct3D 11) or `DXA0` (DXVA2) surfaces, which
+    count as 10-bit;
   - the clock: each real frame is shown half an interval after LibVLC hands
     it over, and the generated frame between it and the previous one at
     once. A gap (pause, seek, stall) or a frame that comes early is shown
@@ -1046,11 +1055,21 @@ d3dcompiler_47.dll (part of Windows).
   matching around the midpoint on 16 × 16 blocks (a coarse search of ±32 px
   in 4 px steps, then ±4 px in 2 px steps), a 3 × 3 vector median,
   motion-compensated blending that falls back to a plain blend where blocks
-  match poorly, the earlier frame held on a scene cut, and Lanczos-3
-  upscaling clamped to the nearest 2 × 2 pixels so edges don't ring.
+  match poorly, and Lanczos-3 upscaling clamped to the nearest 2 × 2 pixels
+  so edges don't ring.
+- [x] Scene cuts (`SceneCutDetector`, decided on the CPU from the smoothed
+  field each generator reads back, about 130 KB at 1080p): the earlier
+  frame is held when more than half the blocks match worse than 0.025 (MVTools'
+  scene-change defaults) and the mean cost jumps at least 1.5× from the pair
+  before, or when the mean cost passes 0.08 whatever came before. The jump
+  keeps steadily hard shots (grain, water, foliage) from counting as cuts. A
+  pair that wasn't compared (after a gap, a seek, or fast playback) leaves
+  nothing to compare with. The kernels keep their 0.18 mean-cost hold
+  (`SCENE_CUT_COST`) only as a backstop, so the PTX is unchanged.
 - [x] Tests: `FrameGenerationTests` (a translated texture's vectors, the
-  halfway frame against the true one, scene cuts, the median, the fallback
-  weights, scaling, the clock, geometry, and the backend table).
+  halfway frame against the true one, a cut between lookalike shots, a
+  steadily grainy shot, gaps, the median, the fallback weights, scaling, the
+  clock, geometry, and the backend table).
 
 ### G.2 NVIDIA: CUDA
 
@@ -1083,9 +1102,14 @@ d3dcompiler_47.dll (part of Windows).
   buffers, and draws them on its own thread into a composition swap chain on
   a `SwapChainPanel` (set the way LibVLCSharp.WinUI sets its own), in
   physical pixels with the DPI scale undone.
+- [x] LibVLC offers the decoder's coded size, padding included (1920 × 1088
+  for most 1080p H.264), so the presenter asks for the track's visible size
+  (`FrameGenerationRules.PictureSize`) and places it with the track's pixel
+  aspect ratio.
 - [x] Audio is delayed by the half frame video runs behind, on top of the
-  reader's own audio delay (X.6). Subtitles are drawn into the frames by
-  LibVLC, so they stay in step.
+  reader's own audio delay (X.6). LibVLC 3 ignores a delay set before its
+  input exists, so both are applied again once playback starts. Subtitles
+  are drawn into the frames by LibVLC, so they stay in step.
 - [x] Fit and Fill, resizing, and pausing redraw the current frame. Full
   screen matches the display to a multiple of the doubled rate (X.4).
 - [x] Any GPU failure, or a 10-bit source, reopens at the same position the
@@ -1101,7 +1125,33 @@ d3dcompiler_47.dll (part of Windows).
 
 ### G.6 Hardware checks
 
-Not run yet: no GPU was available.
+Run on 2026-10-02 on an AMD Radeon RX 6700 XT, with the Direct3D path
+switched on for AMD by a temporary local patch (not committed), using a
+synthetic 1080p 24 fps H.264 clip with a known pan, a moving disc, and hard
+cuts:
+
+- Doubling works: 24 frames in and 48 out per second, none dropped, about
+  1.9 ms of GPU time per generated frame (motion search, synthesis, and
+  Lanczos to about 1700 × 1000) and 1 ms average presentation lateness.
+- The generated frame sits halfway along the motion (0.52 of the measured
+  shift), clearly sharper than a plain blend; only a thin edge shows where
+  the disc moves against the background.
+- LibVLC offered the padded 1920 × 1088 and the presenter asked for
+  1920 × 1080. Pause, Fill while paused, 1.6× (nothing generated), seeking,
+  resizing, and switching on mid-playback all behaved.
+- Scene cuts: the first run found the cut frames warped from both shots,
+  because a hard cut between the clip's two scenes gave a mean match cost
+  of about 0.037 against the old 0.18 threshold. With `SceneCutDetector`
+  (G.1), a play-through held exactly the clip's three cuts (frames 240, 480,
+  and 720: mean cost 0.037, 81–84% of blocks matching poorly) and nothing
+  else in about 700 pairs (the rest at most 0.007 and 13%). Each held frame
+  was identical to the frame before the cut. Still to check on real footage:
+  cuts between dark shots, heavy grain, and fast action.
+- In this mode LibVLC fell back from Direct3D 11 and DXVA2 decoding to
+  software (I420) on this machine. Worth checking on NVIDIA and Intel, and
+  for 4K HEVC.
+
+Still to run on NVIDIA and Intel:
 
 - [ ] NVIDIA RTX and GTX: 24 fps 1080p in a 4K window doubles smoothly,
   audio stays in sync, and GPU load is reasonable.

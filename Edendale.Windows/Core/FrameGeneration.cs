@@ -18,6 +18,9 @@ public enum FrameGenerationBackend
 /// <summary>One motion block's vector (in source pixels, from the earlier frame to the later one) and its match cost.</summary>
 public readonly record struct MotionVector(float X, float Y, float Cost);
 
+/// <summary>What the scene-cut test reads from a motion field: its mean match cost and the share of blocks matching poorly.</summary>
+public readonly record struct FieldStatistics(float MeanCost, float PoorShare);
+
 /// <summary>When the generated frame and the real one go on screen.</summary>
 public readonly record struct FrameGenerationPlan(bool Interpolate, double GeneratedAt, double RealAt);
 
@@ -59,8 +62,32 @@ public static class FrameGenerationRules
     /// <summary>…and above this one the plain blend of both frames replaces it.</summary>
     public const float UntrustedCost = 0.10f;
 
-    /// <summary>A frame whose blocks match this badly on average is a scene cut: the earlier frame is held.</summary>
+    /// <summary>
+    /// The kernels' own backstop (<c>SCENE_CUT_COST</c>): a pair whose blocks
+    /// match this badly on average is never blended, and the earlier frame is
+    /// held. <see cref="SceneCutDetector"/> decides cuts long before this.
+    /// </summary>
     public const float SceneCutCost = 0.18f;
+
+    /// <summary>
+    /// For the scene-cut test, a block matching worse than this matches
+    /// poorly: about 6 levels of 8-bit luma per pixel, MVTools' scene-change
+    /// default (400 per 8 × 8 block).
+    /// </summary>
+    public const float PoorMatchCost = 0.025f;
+
+    /// <summary>A cut makes more than this share of the blocks match poorly at once, as in MVTools…</summary>
+    public const float CutPoorShare = 0.5f;
+
+    /// <summary>
+    /// …and the mean cost jump at least this much from the pair before. Grain,
+    /// water, and foliage match poorly too, but evenly from one pair to the
+    /// next, so they aren't cuts.
+    /// </summary>
+    public const float CutJump = 1.5f;
+
+    /// <summary>Matching this badly on average is a cut whatever came before (two cuts in a row, or a pan beyond the search).</summary>
+    public const float CertainCutCost = 0.08f;
 
     /// <summary>Doubling is for 30 fps and slower sources, like Motion Smoothing.</summary>
     public const double MaximumFrameRate = 30.5;
@@ -94,19 +121,24 @@ public static class FrameGenerationRules
 
     /// <summary>
     /// LibVLC's four-character chromas with more than 8 bits per sample
-    /// (10-bit, 12-bit, and 16-bit YUV, and packed 10-bit formats). Frame
-    /// generation takes 8-bit NV12, and LibVLC converts higher depths to it
-    /// without tone mapping, so HDR would look washed out: those sources play
-    /// the normal way instead.
+    /// (10-bit, 12-bit, and 16-bit YUV and RGB, packed 10-bit formats, and
+    /// the 10-bit Direct3D 11 and DXVA2 surfaces a hardware decoder hands
+    /// over, which is how HDR10 usually arrives). Frame generation takes
+    /// 8-bit NV12, and LibVLC converts higher depths to it without tone
+    /// mapping, so HDR would look washed out: those sources play the normal
+    /// way instead.
     /// </summary>
     private static readonly HashSet<string> HighBitDepthChromas = new(StringComparer.Ordinal)
     {
+        "DX10", "DXA0",
         "P010", "P016", "P210", "P216", "P410", "P416",
         "I0AL", "I0AB", "I2AL", "I2AB", "I4AL", "I4AB",
         "I09L", "I09B", "I29L", "I29B", "I49L", "I49B",
         "I0CL", "I0CB", "I2CL", "I2CB", "I4CL", "I4CB",
         "I0FL", "I0FB", "I2FL", "I2FB", "I4FL", "I4FB",
-        "v210", "XV30", "Y210", "Y216", "Y410", "Y416", "RGBA64", "GBAL", "GBAB",
+        "YA0L", "YA0B", "YA2L", "YA2B",
+        "v210", "XV30", "Y210", "Y216", "Y410", "Y416",
+        "RGA0", "RGA4", "GB9L", "GB9B", "GBAL", "GBAB", "GBFL", "GBFB",
     };
 
     /// <summary>Whether LibVLC's source chroma carries more than 8 bits per sample.</summary>
@@ -122,6 +154,18 @@ public static class FrameGenerationRules
         return string.Format(culture ?? CultureInfo.CurrentCulture, "{0:0.###} fps → {1:0.###} fps · {2}", rate, rate * 2, engine);
     }
 
+    /// <summary>
+    /// Whether a pair straddles a scene cut, so the earlier frame is held
+    /// rather than two shots blended. <paramref name="previousMeanCost"/> is
+    /// the mean cost of the pair just before, or null when there isn't one
+    /// (the first pair, or after a gap); then the share of poor matches
+    /// decides alone.
+    /// </summary>
+    public static bool IsSceneCut(FieldStatistics statistics, float? previousMeanCost) =>
+        statistics.MeanCost > CertainCutCost
+        || (statistics.PoorShare > CutPoorShare
+            && (previousMeanCost is not float previous || statistics.MeanCost > CutJump * previous));
+
     /// <summary>Motion blocks across a dimension (the last one may be partial).</summary>
     public static int Blocks(int pixels) => (pixels + BlockSize - 1) / BlockSize;
 
@@ -133,6 +177,29 @@ public static class FrameGenerationRules
 
     /// <summary>BT.709 for HD and larger, BT.601 below 720 lines (what decoders assume when a file doesn't say).</summary>
     public static int ColorMatrix(int height) => height >= 720 ? 709 : 601;
+
+    /// <summary>Codecs pad the coded size by less than this (H.264 rounds 1080 lines up to 1088; DXVA aligns HEVC to 128).</summary>
+    public const int MaximumCodecPadding = 128;
+
+    /// <summary>
+    /// The picture size to ask LibVLC's memory output for. LibVLC offers the
+    /// decoder's coded size, padding included (1920 × 1088 for most 1080p
+    /// H.264), and fills whatever size is asked for from the visible picture,
+    /// so asking for the visible size keeps the padding off the screen. A
+    /// rotated source is offered upright with its sides swapped
+    /// (<c>Swapped</c>, which turns its pixel aspect ratio too). A visible
+    /// size that doesn't fit the offer (another track's, say) keeps the offer.
+    /// </summary>
+    public static (int Width, int Height, bool Swapped) PictureSize(
+        int offeredWidth, int offeredHeight, int visibleWidth, int visibleHeight)
+    {
+        static bool Pads(int offered, int visible) =>
+            visible > 0 && offered >= visible && offered - visible < MaximumCodecPadding;
+
+        if (Pads(offeredWidth, visibleWidth) && Pads(offeredHeight, visibleHeight)) return (visibleWidth, visibleHeight, false);
+        if (Pads(offeredWidth, visibleHeight) && Pads(offeredHeight, visibleWidth)) return (visibleHeight, visibleWidth, true);
+        return (offeredWidth, offeredHeight, false);
+    }
 
     /// <summary>
     /// Where the picture goes in an output of <paramref name="outputWidth"/> ×
@@ -222,11 +289,48 @@ public sealed class FrameGenerationClock
 }
 
 /// <summary>
+/// Decides scene cuts pair by pair (ENHANCEMENT.md G.1). The GPU finds the
+/// motion, and the generator reads the smoothed field back and asks this
+/// whether the pair straddles a cut, comparing it with the pair just before.
+/// A frame whose pair wasn't compared (after a gap, a seek, or fast
+/// playback) leaves nothing to compare the next pair with.
+/// </summary>
+public sealed class SceneCutDetector
+{
+    private float? _previousMeanCost;
+    private bool _compared;
+
+    /// <summary>A new frame arrived: the next pair is it and the frame before.</summary>
+    public void Advance()
+    {
+        if (!_compared) _previousMeanCost = null;
+        _compared = false;
+    }
+
+    /// <summary>Whether the current pair is a cut. Its mean cost is kept for the next pair.</summary>
+    public bool IsCut(FieldStatistics statistics)
+    {
+        var cut = FrameGenerationRules.IsSceneCut(statistics, _previousMeanCost);
+        _previousMeanCost = statistics.MeanCost;
+        _compared = true;
+        return cut;
+    }
+
+    /// <summary>A new stream or size: nothing to compare with.</summary>
+    public void Reset()
+    {
+        _previousMeanCost = null;
+        _compared = false;
+    }
+}
+
+/// <summary>
 /// The CPU reference for the GPU kernels: symmetric block matching around
 /// the midpoint, a 3×3 median over the vectors, motion-compensated blending
-/// that falls back to a plain blend where the match is poor, a held frame on
-/// a scene cut, and a Lanczos-3 upscaler with anti-ringing. Planes are
-/// row-major floats from 0 to 1.
+/// that falls back to a plain blend where the match is poor, and a Lanczos-3
+/// upscaler with anti-ringing. Scene cuts are decided before synthesis, by
+/// <see cref="SceneCutDetector"/> from <see cref="Statistics(IReadOnlyList{MotionVector})"/>.
+/// Planes are row-major floats from 0 to 1.
 /// </summary>
 public static class FrameInterpolation
 {
@@ -356,8 +460,22 @@ public static class FrameInterpolation
     public static float MeanCost(IReadOnlyList<MotionVector> field) =>
         field.Count == 0 ? 0 : field.Average(vector => vector.Cost);
 
-    public static bool IsSceneCut(IReadOnlyList<MotionVector> field) =>
-        MeanCost(field) > FrameGenerationRules.SceneCutCost;
+    /// <summary>The scene-cut statistics of a field, from each block's cost.</summary>
+    public static FieldStatistics Statistics(ReadOnlySpan<float> costs)
+    {
+        if (costs.IsEmpty) return new FieldStatistics(0, 0);
+        double sum = 0;
+        var poor = 0;
+        foreach (var cost in costs)
+        {
+            sum += cost;
+            if (cost > FrameGenerationRules.PoorMatchCost) poor++;
+        }
+        return new FieldStatistics((float)(sum / costs.Length), (float)poor / costs.Length);
+    }
+
+    public static FieldStatistics Statistics(IReadOnlyList<MotionVector> field) =>
+        Statistics(field.Select(vector => vector.Cost).ToArray());
 
     /// <summary>The vector field at a pixel, interpolated between the four nearest block centres.</summary>
     public static MotionVector VectorAt(IReadOnlyList<MotionVector> field, int blocksX, int blocksY, int x, int y)
@@ -386,7 +504,8 @@ public static class FrameInterpolation
     public static float[] Synthesize(ReadOnlySpan<float> a, ReadOnlySpan<float> b, int width, int height, IReadOnlyList<MotionVector> field)
     {
         var output = new float[width * height];
-        if (IsSceneCut(field))
+        // The kernels' backstop: nothing matches, so the earlier frame is held.
+        if (MeanCost(field) > FrameGenerationRules.SceneCutCost)
         {
             a.CopyTo(output);
             return output;

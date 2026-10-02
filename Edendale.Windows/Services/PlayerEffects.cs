@@ -103,7 +103,7 @@ internal static class PlayerEffects
             [.. player.SpuDescription.Where(track => track.Id >= 0).Select(track => Join(track, TrackType.Text))]);
     }
 
-    /// <summary>The video track's size and frame rate, once LibVLC knows them.</summary>
+    /// <summary>The video track's visible size, frame rate, and pixel aspect ratio, once LibVLC knows them.</summary>
     public static VideoSourceInfo SourceInfo(Media? media)
     {
         if (media is null) return VideoSourceInfo.Unknown;
@@ -114,7 +114,9 @@ internal static class PlayerEffects
             double? rate = video.FrameRateDen > 0 && video.FrameRateNum > 0
                 ? (double)video.FrameRateNum / video.FrameRateDen
                 : null;
-            return new VideoSourceInfo((int)video.Width, (int)video.Height, rate);
+            var square = video.SarNum == 0 || video.SarDen == 0;
+            return new VideoSourceInfo((int)video.Width, (int)video.Height, rate,
+                square ? 1 : video.SarNum, square ? 1 : video.SarDen);
         }
         return VideoSourceInfo.Unknown;
     }

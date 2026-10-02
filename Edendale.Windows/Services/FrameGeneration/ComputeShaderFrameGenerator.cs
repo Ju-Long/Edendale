@@ -48,6 +48,7 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
     private readonly Buffer _parameters;
     private readonly Dictionary<nint, UnorderedAccessView> _targets = [];
     private readonly List<IDisposable> _sized = [];
+    private readonly SceneCutDetector _sceneCuts = new();
 
     private int _width;
     private int _height;
@@ -69,6 +70,12 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
     private (ShaderResourceView Read, UnorderedAccessView Write) _refined;
     private (ShaderResourceView Read, UnorderedAccessView Write) _smoothed;
     private (ShaderResourceView Read, UnorderedAccessView Write) _meanCost;
+
+    // The smoothed field, its CPU-readable copy, and room to read it into (the scene-cut test).
+    private Buffer? _smoothedBuffer;
+    private Buffer? _fieldReadback;
+    private float[] _field = [];
+    private float[] _costs = [];
 
     /// <summary>Compiles the shaders for <paramref name="device"/>. Call on the presenter thread.</summary>
     public ComputeShaderFrameGenerator(Device device)
@@ -95,6 +102,7 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
     public void Submit(nint frame, int pitch, int width, int height)
     {
         if (width != _width || height != _height) Allocate(width, height);
+        _sceneCuts.Advance();
 
         var next = _hasCurrent ? 1 - _current : _current;
         _context.UpdateSubresource(new SharpDX.DataBox(frame, pitch, 0), _luma[next]!, 0);
@@ -135,10 +143,18 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
                 read: [null, null, _refined.Read], write: [_smoothed.Write]);
             Run(_fieldStats, 1, 1,
                 read: [null, null, _smoothed.Read], write: [null, _meanCost.Write]);
-            Run(_synthesize, Groups(_width), Groups(_height),
-                read: [null, null, _smoothed.Read, _colorViews[previous], _colorViews[_current], _meanCost.Read],
-                write: [null, null, _middleWrite]);
-            source = _middleView;
+            if (_sceneCuts.IsCut(ReadFieldStatistics()))
+            {
+                // A scene cut: the earlier frame again, rather than two shots blended.
+                source = _colorViews[previous];
+            }
+            else
+            {
+                Run(_synthesize, Groups(_width), Groups(_height),
+                    read: [null, null, _smoothed.Read, _colorViews[previous], _colorViews[_current], _meanCost.Read],
+                    write: [null, null, _middleWrite]);
+                source = _middleView;
+            }
         }
 
         SetParameters(new Parameters
@@ -181,6 +197,22 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
             _targets[target.NativePointer] = view;
         }
         return view;
+    }
+
+    /// <summary>Reads the smoothed field back for the scene-cut test (<see cref="FieldReadback"/>).</summary>
+    private FieldStatistics ReadFieldStatistics()
+    {
+        _context.CopyResource(_smoothedBuffer!, _fieldReadback!);
+        var box = _context.MapSubresource(_fieldReadback!, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None);
+        try
+        {
+            Marshal.Copy(box.DataPointer, _field, 0, _field.Length);
+        }
+        finally
+        {
+            _context.UnmapSubresource(_fieldReadback, 0);
+        }
+        return FieldReadback.Statistics(_field, _costs);
     }
 
     private static int Groups(int items) => (items + 7) / 8;
@@ -243,9 +275,9 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
             return resource;
         }
 
-        (ShaderResourceView, UnorderedAccessView) Structured(int elements, int stride)
+        (ShaderResourceView, UnorderedAccessView) Structured(int elements, int stride, out Buffer buffer)
         {
-            var buffer = Keep(new Buffer(_device, new BufferDescription
+            buffer = Keep(new Buffer(_device, new BufferDescription
             {
                 SizeInBytes = elements * stride,
                 Usage = ResourceUsage.Default,
@@ -272,10 +304,22 @@ internal sealed class ComputeShaderFrameGenerator : IFrameGenerator
         _middleWrite = Keep(new UnorderedAccessView(_device, middle));
 
         var blocks = _blocksX * _blocksY;
-        _coarse = Structured(blocks, 16);
-        _refined = Structured(blocks, 16);
-        _smoothed = Structured(blocks, 16);
-        _meanCost = Structured(1, 4);
+        _coarse = Structured(blocks, 16, out _);
+        _refined = Structured(blocks, 16, out _);
+        _smoothed = Structured(blocks, 16, out var smoothed);
+        _smoothedBuffer = smoothed;
+        _meanCost = Structured(1, 4, out _);
+        _fieldReadback = Keep(new Buffer(_device, new BufferDescription
+        {
+            SizeInBytes = blocks * 16,
+            Usage = ResourceUsage.Staging,
+            BindFlags = BindFlags.None,
+            CpuAccessFlags = CpuAccessFlags.Read,
+            OptionFlags = ResourceOptionFlags.None,
+        }));
+        _field = new float[blocks * 4];
+        _costs = new float[blocks];
+        _sceneCuts.Reset();
 
         _hasCurrent = false;
         _hasPrevious = false;

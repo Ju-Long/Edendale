@@ -39,6 +39,8 @@ internal sealed class FrameGenerationPresenter : IDisposable
     private readonly SwapChainPanel _panel;
     private readonly FrameGenerationBackend _backend;
     private readonly double _nominalInterval;
+    private readonly int _sourceWidth;
+    private readonly int _sourceHeight;
     private readonly uint _sarNum;
     private readonly uint _sarDen;
     private readonly FramePool _pool = new();
@@ -58,6 +60,9 @@ internal sealed class FrameGenerationPresenter : IDisposable
     private MediaPlayer? _player;
     private volatile bool _stopping;
     private volatile bool _failed;
+
+    /// <summary>LibVLC turned a rotated source upright, so its pixel aspect ratio turns too.</summary>
+    private volatile bool _swapped;
     private bool _fill;
     private (int Width, int Height, float ScaleX, float ScaleY) _size;
     private bool _sizeChanged;
@@ -66,14 +71,16 @@ internal sealed class FrameGenerationPresenter : IDisposable
     /// <summary>Raised once, on any thread, when the GPU path can't continue; the message is for diagnostics only.</summary>
     public event Action<string>? Failed;
 
-    /// <param name="frameRate">The source's frame rate (frame generation needs one).</param>
-    public FrameGenerationPresenter(SwapChainPanel panel, FrameGenerationBackend backend, double frameRate, uint sarNum, uint sarDen, bool fill)
+    /// <param name="source">The source's visible size, pixel aspect ratio, and frame rate (frame generation needs one).</param>
+    public FrameGenerationPresenter(SwapChainPanel panel, FrameGenerationBackend backend, VideoSourceInfo source, bool fill)
     {
         _panel = panel;
         _backend = backend;
-        _nominalInterval = 1 / frameRate;
-        _sarNum = sarNum;
-        _sarDen = sarDen;
+        _nominalInterval = 1 / (source.FrameRate ?? 24);
+        _sourceWidth = source.Width;
+        _sourceHeight = source.Height;
+        _sarNum = source.SarNum;
+        _sarDen = source.SarDen;
         _fill = fill;
         _formatCallback = SetupFormat;
         _cleanupCallback = Cleanup;
@@ -206,8 +213,11 @@ internal sealed class FrameGenerationPresenter : IDisposable
         if (FrameGenerationRules.IsHighBitDepth(source)) Fail("high bit depth source " + source);
 
         Marshal.Copy("NV12"u8.ToArray(), 0, chroma, 4);
-        var frameWidth = (int)((width + 1) & ~1u);
-        var frameHeight = (int)((height + 1) & ~1u);
+        // LibVLC offers the coded size, padding rows included; ask for the visible picture.
+        var picture = FrameGenerationRules.PictureSize((int)width, (int)height, _sourceWidth, _sourceHeight);
+        _swapped = picture.Swapped;
+        var frameWidth = (picture.Width + 1) & ~1;
+        var frameHeight = (picture.Height + 1) & ~1;
         width = (uint)frameWidth;
         height = (uint)frameHeight;
         var pitch = (frameWidth + 63) & ~63;
@@ -294,8 +304,9 @@ internal sealed class FrameGenerationPresenter : IDisposable
                     redraw = true;
                 }
 
+                var (sarNum, sarDen) = _swapped ? (_sarDen, _sarNum) : (_sarNum, _sarDen);
                 var rect = new Func<OutputRect>(() => FrameGenerationRules.DestinationRect(
-                    _pool.Width, _pool.Height, _sarNum, _sarDen, outputWidth, outputHeight, fill));
+                    _pool.Width, _pool.Height, sarNum, sarDen, outputWidth, outputHeight, fill));
 
                 if (_pool.TryTake(out var index, out var arrival))
                 {
@@ -476,7 +487,11 @@ internal sealed class FrameGenerationPresenter : IDisposable
             }
         }
 
-        /// <summary>LibVLC is done with a picture; one never displayed (dropped) is free again.</summary>
+        /// <summary>
+        /// LibVLC 3 has copied a picture in. It unlocks before the picture is
+        /// due, and Display then queues the slot again on the same thread,
+        /// before any other picture is locked.
+        /// </summary>
         public void Unlock(int id)
         {
             lock (_gate)

@@ -57,6 +57,7 @@ internal static class CudaDriver
     [DllImport(Library, EntryPoint = "cuMemFree_v2")] private static extern int cuMemFree(ulong pointer);
     [DllImport(Library, EntryPoint = "cuMemcpyHtoD_v2")] private static extern int cuMemcpyHtoD(ulong destination, nint source, nuint bytes);
     [DllImport(Library, EntryPoint = "cuMemcpyDtoD_v2")] private static extern int cuMemcpyDtoD(ulong destination, ulong source, nuint bytes);
+    [DllImport(Library, EntryPoint = "cuMemcpyDtoH_v2")] private static extern int cuMemcpyDtoH([Out] float[] destination, ulong source, nuint bytes);
     [DllImport(Library, EntryPoint = "cuMemcpy2D_v2")] private static extern int cuMemcpy2D(ref Memcpy2D copy);
     [DllImport(Library)]
     private static extern int cuLaunchKernel(
@@ -112,7 +113,8 @@ internal static class CudaDriver
     /// <summary>Loads PTX text; the driver JIT-compiles it for the installed GPU.</summary>
     public static nint LoadModule(string ptx)
     {
-        var image = System.Text.Encoding.ASCII.GetBytes(ptx + "\0");
+        // A Windows checkout can turn the PTX's line endings into CRLF; the driver gets NVRTC's LF.
+        var image = System.Text.Encoding.ASCII.GetBytes(ptx.ReplaceLineEndings("\n") + "\0");
         Check(cuModuleLoadData(out var module, image), nameof(cuModuleLoadData));
         return module;
     }
@@ -141,6 +143,10 @@ internal static class CudaDriver
 
     public static void CopyDeviceToDevice(ulong destination, ulong source, long bytes) =>
         Check(cuMemcpyDtoD(destination, source, (nuint)bytes), nameof(cuMemcpyDtoD));
+
+    /// <summary>Fills <paramref name="destination"/> from device memory; waits for the work before it.</summary>
+    public static void CopyToHost(float[] destination, ulong source) =>
+        Check(cuMemcpyDtoH(destination, source, (nuint)((long)destination.Length * sizeof(float))), nameof(cuMemcpyDtoH));
 
     /// <summary>Copies a pitched device image into a CUDA array (a mapped Direct3D texture).</summary>
     public static void CopyDeviceToArray(ulong source, long pitch, nint array, long widthInBytes, long height)

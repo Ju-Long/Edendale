@@ -292,28 +292,49 @@ public sealed partial class MainWindow
         }
     }
 
+    /// <summary>Removes the handlers <see cref="Attach"/> gave the current player.</summary>
+    private Action? _detachPlayer;
+
+    /// <summary>
+    /// LibVLCSharp raises MediaPlayer events with its internal event manager
+    /// as the sender, not the player, so each handler is bound to the player
+    /// it was attached to. That keeps a late event from a player stopped for a
+    /// reopen apart from the new player's.
+    /// </summary>
     private void Attach(MediaPlayer player)
     {
-        player.Playing += MediaPlayer_Playing;
-        player.Paused += MediaPlayer_Paused;
-        player.Stopped += MediaPlayer_Paused;
-        player.LengthChanged += MediaPlayer_LengthChanged;
-        player.EndReached += MediaPlayer_EndReached;
-        player.EncounteredError += MediaPlayer_EncounteredError;
-        player.ESAdded += MediaPlayer_ESAdded;
-        player.Vout += MediaPlayer_Vout;
+        EventHandler<EventArgs> playing = (_, _) => MediaPlayer_Playing(player);
+        EventHandler<EventArgs> paused = (_, _) => MediaPlayer_Paused(player);
+        EventHandler<MediaPlayerLengthChangedEventArgs> lengthChanged = (_, _) => MediaPlayer_LengthChanged(player);
+        EventHandler<EventArgs> endReached = (_, _) => MediaPlayer_EndReached(player);
+        EventHandler<EventArgs> encounteredError = (_, _) => MediaPlayer_EncounteredError(player);
+        EventHandler<MediaPlayerESAddedEventArgs> esAdded = (_, e) => MediaPlayer_ESAdded(player, e);
+        EventHandler<MediaPlayerVoutEventArgs> vout = (_, e) => MediaPlayer_Vout(player, e);
+        player.Playing += playing;
+        player.Paused += paused;
+        player.Stopped += paused;
+        player.LengthChanged += lengthChanged;
+        player.EndReached += endReached;
+        player.EncounteredError += encounteredError;
+        player.ESAdded += esAdded;
+        player.Vout += vout;
+        _detachPlayer = () =>
+        {
+            player.Playing -= playing;
+            player.Paused -= paused;
+            player.Stopped -= paused;
+            player.LengthChanged -= lengthChanged;
+            player.EndReached -= endReached;
+            player.EncounteredError -= encounteredError;
+            player.ESAdded -= esAdded;
+            player.Vout -= vout;
+        };
     }
 
-    private void Detach(MediaPlayer player)
+    private void Detach()
     {
-        player.Playing -= MediaPlayer_Playing;
-        player.Paused -= MediaPlayer_Paused;
-        player.Stopped -= MediaPlayer_Paused;
-        player.LengthChanged -= MediaPlayer_LengthChanged;
-        player.EndReached -= MediaPlayer_EndReached;
-        player.EncounteredError -= MediaPlayer_EncounteredError;
-        player.ESAdded -= MediaPlayer_ESAdded;
-        player.Vout -= MediaPlayer_Vout;
+        _detachPlayer?.Invoke();
+        _detachPlayer = null;
     }
 
     /// <summary>
@@ -499,9 +520,8 @@ public sealed partial class MainWindow
     // Player events
     // ------------------------------------------------------------------
 
-    private void MediaPlayer_Playing(object? sender, EventArgs e)
+    private void MediaPlayer_Playing(MediaPlayer player)
     {
-        if (sender is not MediaPlayer player) return;
         DispatcherQueue.TryEnqueue(() =>
         {
             if (!ReferenceEquals(player, _mediaPlayer)) return;
@@ -523,15 +543,16 @@ public sealed partial class MainWindow
 
             ApplyAspectMode();
             PlayerEffects.ApplyAdjustments(player, AppServices.VideoAdjustments.EffectiveValues);
+            // LibVLC 3 drops delays set before its input exists, as Bind's are.
+            AdjustmentsPanel.ApplySyncOffsets();
             RefreshSourceInfo(player);
             AdjustmentsPanel.RefreshTracks();
             ControlsOverlay.RefreshChapterMarks();
         });
     }
 
-    private void MediaPlayer_Paused(object? sender, EventArgs e)
+    private void MediaPlayer_Paused(MediaPlayer player)
     {
-        if (sender is not MediaPlayer player) return;
         DispatcherQueue.TryEnqueue(() =>
         {
             if (!ReferenceEquals(player, _mediaPlayer)) return;
@@ -541,9 +562,8 @@ public sealed partial class MainWindow
         });
     }
 
-    private void MediaPlayer_LengthChanged(object? sender, EventArgs e)
+    private void MediaPlayer_LengthChanged(MediaPlayer player)
     {
-        if (sender is not MediaPlayer player) return;
         DispatcherQueue.TryEnqueue(() =>
         {
             if (!ReferenceEquals(player, _mediaPlayer)) return;
@@ -552,9 +572,8 @@ public sealed partial class MainWindow
         });
     }
 
-    private void MediaPlayer_ESAdded(object? sender, MediaPlayerESAddedEventArgs e)
+    private void MediaPlayer_ESAdded(MediaPlayer player, MediaPlayerESAddedEventArgs e)
     {
-        if (sender is not MediaPlayer player) return;
         var type = e.Type;
         var id = e.Id;
         DispatcherQueue.TryEnqueue(() =>
@@ -568,9 +587,9 @@ public sealed partial class MainWindow
     }
 
     /// <summary>LibVLC's adjust filter can only be switched on once a video output exists.</summary>
-    private void MediaPlayer_Vout(object? sender, MediaPlayerVoutEventArgs e)
+    private void MediaPlayer_Vout(MediaPlayer player, MediaPlayerVoutEventArgs e)
     {
-        if (sender is not MediaPlayer player || e.Count <= 0) return;
+        if (e.Count <= 0) return;
         DispatcherQueue.TryEnqueue(() =>
         {
             if (!ReferenceEquals(player, _mediaPlayer)) return;
@@ -580,18 +599,16 @@ public sealed partial class MainWindow
         });
     }
 
-    private void MediaPlayer_EndReached(object? sender, EventArgs e)
+    private void MediaPlayer_EndReached(MediaPlayer player)
     {
-        if (sender is not MediaPlayer player) return;
         DispatcherQueue.TryEnqueue(() =>
         {
             if (ReferenceEquals(player, _mediaPlayer)) HandleNaturalEnd(creditsSkip: false);
         });
     }
 
-    private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
+    private void MediaPlayer_EncounteredError(MediaPlayer player)
     {
-        if (sender is not MediaPlayer player) return;
         DispatcherQueue.TryEnqueue(() =>
         {
             if (ReferenceEquals(player, _mediaPlayer)) FailPlayback();
@@ -1170,7 +1187,7 @@ public sealed partial class MainWindow
         ControlsOverlay.SetMediaPlayer(null, "", "", _currentPlayback, _context);
         AdjustmentsPanel.Bind(null, _context);
         PlayerElement.MediaPlayer = null;
-        Detach(player);
+        Detach();
         // Fail a read LibVLC is blocked in first, or Stop waits for it.
         var input = _mediaInput;
         _mediaInput = null;
@@ -1212,7 +1229,7 @@ public sealed partial class MainWindow
         {
             FrameGenerationPanel.Visibility = Visibility.Visible;
             presenter = new Services.FrameGeneration.FrameGenerationPresenter(
-                FrameGenerationPanel, backend, _sourceInfo.FrameRate!.Value, 1, 1, AppServices.PlayerPreferences.AspectFill);
+                FrameGenerationPanel, backend, _sourceInfo, AppServices.PlayerPreferences.AspectFill);
             presenter.Failed += FrameGeneration_Failed;
             presenter.Start(player);
         }

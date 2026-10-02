@@ -47,6 +47,51 @@ public sealed class FrameGenerationTests
         return plane;
     }
 
+    /// <summary>
+    /// A smooth, fairly low-contrast shot like real footage (and the test
+    /// clip), in limited-range luma as the GPU reads it. Two seeds look alike
+    /// but are different shots: the cut a mean-cost threshold alone missed.
+    /// </summary>
+    private static float[] Scene(int width, int height, int seed, int shiftX = 0, int shiftY = 0)
+    {
+        static float Lattice(int x, int y, int seed)
+        {
+            var hash = (uint)(x * 374761393 + y * 668265263 + seed * 1442695041);
+            hash = (hash ^ (hash >> 13)) * 1274126177;
+            return ((hash ^ (hash >> 16)) & 0xFFFF) / 65535f;
+        }
+
+        static float Noise(float x, float y, int seed)
+        {
+            var ix = (int)MathF.Floor(x);
+            var iy = (int)MathF.Floor(y);
+            var tx = x - ix;
+            var ty = y - iy;
+            tx = tx * tx * (3 - 2 * tx);
+            ty = ty * ty * (3 - 2 * ty);
+            var top = Lattice(ix, iy, seed) + (Lattice(ix + 1, iy, seed) - Lattice(ix, iy, seed)) * tx;
+            var bottom = Lattice(ix, iy + 1, seed) + (Lattice(ix + 1, iy + 1, seed) - Lattice(ix, iy + 1, seed)) * tx;
+            return top + (bottom - top) * ty;
+        }
+
+        var plane = new float[width * height];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                float u = x - shiftX, v = y - shiftY;
+                var luma = 0.15f + 0.6f * Noise(u / 41, v / 41, seed) + 0.2f * Noise(u / 13, v / 13, seed + 1) + 0.1f * Noise(u / 4, v / 4, seed + 2);
+                plane[y * width + x] = (16 + 219 * Math.Clamp(luma, 0, 1)) / 255;
+            }
+        }
+        return plane;
+    }
+
+    /// <summary>The statistics the generators read back for a pair: motion search, median, then the field's costs.</summary>
+    private static FieldStatistics Statistics(float[] a, float[] b, int width, int height) =>
+        FrameInterpolation.Statistics(FrameInterpolation.Smooth(FrameInterpolation.EstimateMotion(a, b, width, height),
+            FrameGenerationRules.Blocks(width), FrameGenerationRules.Blocks(height)));
+
     // ------------------------------------------------------------------
     // Rules
     // ------------------------------------------------------------------
@@ -87,14 +132,31 @@ public sealed class FrameGenerationTests
     [TestMethod]
     public void HigherBitDepthsPlayTheNormalWay()
     {
-        foreach (var chroma in new[] { "P010", "I0AL", "I0AB", "P016", "v210", "I4AL\0" })
+        // DX10 and DXA0 are hardware-decoded 10-bit (D3D11 and DXVA2), how HDR10 usually arrives.
+        foreach (var chroma in new[] { "P010", "I0AL", "I0AB", "P016", "v210", "I4AL\0", "DX10", "DXA0", "RGA4", "GBFL" })
         {
             Assert.IsTrue(FrameGenerationRules.IsHighBitDepth(chroma), chroma);
         }
-        foreach (var chroma in new[] { "NV12", "I420", "YV12", "J420", "RV32", "", null })
+        foreach (var chroma in new[] { "NV12", "I420", "YV12", "J420", "RV32", "DX11", "DXA9", "", null })
         {
             Assert.IsFalse(FrameGenerationRules.IsHighBitDepth(chroma), chroma ?? "null");
         }
+    }
+
+    [TestMethod]
+    public void TheVisiblePictureIsAskedForWithoutCodecPadding()
+    {
+        // 1080p H.264 is coded 1088 lines high (1090 in software), and a DXVA HEVC surface aligns to 128.
+        Assert.AreEqual((1920, 1080, false), FrameGenerationRules.PictureSize(1920, 1088, 1920, 1080));
+        Assert.AreEqual((1920, 1080, false), FrameGenerationRules.PictureSize(1920, 1090, 1920, 1080));
+        Assert.AreEqual((1920, 1080, false), FrameGenerationRules.PictureSize(1920, 1152, 1920, 1080));
+        Assert.AreEqual((1280, 720, false), FrameGenerationRules.PictureSize(1280, 720, 1280, 720));
+        // A phone video turned upright.
+        Assert.AreEqual((1080, 1920, true), FrameGenerationRules.PictureSize(1088, 1920, 1920, 1080));
+        // An unknown size, or one that doesn't fit the offer, keeps the offer.
+        Assert.AreEqual((1920, 1088, false), FrameGenerationRules.PictureSize(1920, 1088, 0, 0));
+        Assert.AreEqual((1920, 1088, false), FrameGenerationRules.PictureSize(1920, 1088, 1280, 720));
+        Assert.AreEqual((1280, 720, false), FrameGenerationRules.PictureSize(1280, 720, 1920, 1080));
     }
 
     [TestMethod]
@@ -252,7 +314,108 @@ public sealed class FrameGenerationTests
     }
 
     [TestMethod]
-    public void ASceneCutHoldsTheEarlierFrame()
+    public void ACutBetweenLookalikeShotsIsACut()
+    {
+        const int width = 320, height = 192;
+        var panA = Statistics(Scene(width, height, 1), Scene(width, height, 1, -8, -2), width, height);
+        var cut = Statistics(Scene(width, height, 1, -8, -2), Scene(width, height, 7), width, height);
+        var panB = Statistics(Scene(width, height, 7), Scene(width, height, 7, 6, 0), width, height);
+
+        // The block search still finds passable matches across the cut, so
+        // the mean cost alone stays far below the kernels' backstop.
+        Assert.IsTrue(cut.MeanCost < FrameGenerationRules.SceneCutCost, $"mean {cut.MeanCost}");
+
+        var cuts = new SceneCutDetector();
+        cuts.Advance();
+        bool Next(FieldStatistics pair)
+        {
+            cuts.Advance();
+            return cuts.IsCut(pair);
+        }
+        Assert.IsFalse(Next(panA), $"a steady pan: {panA}");
+        Assert.IsTrue(Next(cut), $"the cut: {cut}");
+        Assert.IsFalse(Next(panB), $"the new shot pans on: {panB}");
+    }
+
+    [TestMethod]
+    public void ASteadilyGrainyShotIsNotACut()
+    {
+        const int width = 320, height = 192;
+        var random = new Random(5);
+        float[] Grainy(int shiftX)
+        {
+            var plane = Scene(width, height, 3, shiftX);
+            for (var i = 0; i < plane.Length; i++) plane[i] = Math.Clamp(plane[i] + (float)(random.NextDouble() - 0.5) * 0.12f, 0, 1);
+            return plane;
+        }
+        var frames = Enumerable.Range(0, 5).Select(index => Grainy(-4 * index)).ToArray();
+        var pairs = Enumerable.Range(0, 4).Select(index => Statistics(frames[index], frames[index + 1], width, height)).ToArray();
+        Assert.IsTrue(pairs.All(pair => pair.PoorShare > FrameGenerationRules.CutPoorShare), "grain makes most blocks match poorly");
+
+        var cuts = new SceneCutDetector();
+        cuts.Advance();
+        cuts.Advance();
+        cuts.IsCut(pairs[0]); // the first pair has nothing to compare with
+        foreach (var pair in pairs.Skip(1))
+        {
+            cuts.Advance();
+            Assert.IsFalse(cuts.IsCut(pair), $"{pair}");
+        }
+    }
+
+    [TestMethod]
+    public void MatchingThisBadlyIsACutWhateverCameBefore()
+    {
+        const int width = 128, height = 96;
+        var a = Frame(width, height, 0, 0);
+        var hopeless = Statistics(a, [.. a.Select(value => 1 - value)], width, height);
+        Assert.IsTrue(hopeless.MeanCost > FrameGenerationRules.CertainCutCost, $"{hopeless}");
+        Assert.IsTrue(FrameGenerationRules.IsSceneCut(hopeless, previousMeanCost: hopeless.MeanCost), "even after an equally hopeless pair");
+    }
+
+    [TestMethod]
+    public void ACutNeedsMostBlocksPoorAndAJump()
+    {
+        var cut = new FieldStatistics(0.037f, 0.8f);
+        Assert.IsTrue(FrameGenerationRules.IsSceneCut(cut, previousMeanCost: 0.002f));
+        Assert.IsFalse(FrameGenerationRules.IsSceneCut(cut, previousMeanCost: 0.03f), "no jump: a steadily hard shot");
+        Assert.IsFalse(FrameGenerationRules.IsSceneCut(new FieldStatistics(0.037f, 0.4f), previousMeanCost: 0.002f), "most blocks still match");
+        Assert.IsTrue(FrameGenerationRules.IsSceneCut(cut, previousMeanCost: null), "nothing to compare with");
+        Assert.IsTrue(FrameGenerationRules.IsSceneCut(new FieldStatistics(0.09f, 0.3f), previousMeanCost: 0.09f), "matching fails almost everywhere");
+    }
+
+    [TestMethod]
+    public void AGapLeavesNothingToCompareWith()
+    {
+        var grainy = new FieldStatistics(0.035f, 0.9f);
+        var cuts = new SceneCutDetector();
+        cuts.Advance();
+        cuts.Advance();
+        cuts.IsCut(grainy);
+        cuts.Advance();
+        Assert.IsFalse(cuts.IsCut(grainy), "compared with the pair before");
+
+        cuts.Advance(); // a frame whose pair isn't compared: a seek, or fast playback
+        cuts.Advance();
+        Assert.IsTrue(cuts.IsCut(grainy), "nothing to compare with, so the poor share decides");
+
+        cuts.Reset();
+        cuts.Advance();
+        cuts.Advance();
+        Assert.IsTrue(cuts.IsCut(grainy), "a new stream starts over");
+    }
+
+    [TestMethod]
+    public void StatisticsCountPoorMatches()
+    {
+        var statistics = FrameInterpolation.Statistics([0.01f, 0.02f, 0.03f, 0.10f]);
+        Assert.AreEqual(0.04f, statistics.MeanCost, 1e-6);
+        Assert.AreEqual(0.5f, statistics.PoorShare, 1e-6);
+        Assert.AreEqual(new FieldStatistics(0, 0), FrameInterpolation.Statistics(ReadOnlySpan<float>.Empty));
+    }
+
+    [TestMethod]
+    public void NothingMatchingIsNeverBlended()
     {
         const int width = 64, height = 64;
         var a = new float[width * height];
@@ -260,8 +423,8 @@ public sealed class FrameGenerationTests
         var b = new float[width * height];
         Array.Fill(b, 0.95f);
         var field = FrameInterpolation.EstimateMotion(a, b, width, height);
-        Assert.IsTrue(FrameInterpolation.IsSceneCut(field));
-        CollectionAssert.AreEqual(a, FrameInterpolation.Synthesize(a, b, width, height, field));
+        Assert.IsTrue(FrameInterpolation.MeanCost(field) > FrameGenerationRules.SceneCutCost);
+        CollectionAssert.AreEqual(a, FrameInterpolation.Synthesize(a, b, width, height, field), "the kernels' backstop holds the earlier frame");
     }
 
     [TestMethod]

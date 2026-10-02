@@ -16,8 +16,12 @@ public enum VideoEnhancementPreset
     HighQuality,
 }
 
-/// <summary>What the player knows about the source before (or after) opening it.</summary>
-public readonly record struct VideoSourceInfo(int Width, int Height, double? FrameRate)
+/// <summary>
+/// What the player knows about the source before (or after) opening it: the
+/// visible size, the frame rate, and the pixel aspect ratio (1:1 unless the
+/// file says otherwise).
+/// </summary>
+public readonly record struct VideoSourceInfo(int Width, int Height, double? FrameRate, uint SarNum = 1, uint SarDen = 1)
 {
     public static VideoSourceInfo Unknown => new(0, 0, null);
 }
