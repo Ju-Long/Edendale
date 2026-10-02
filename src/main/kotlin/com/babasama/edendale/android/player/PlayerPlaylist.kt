@@ -21,6 +21,8 @@ internal data class PlaylistEntry(
     val showTmdbId: Int?,
     val season: Int?,
     val episode: Int?,
+    val stillPath: String? = null,
+    val backdropPath: String? = null,
 )
 
 internal data class PlayerPlaylist(
@@ -66,8 +68,10 @@ internal suspend fun loadPlayerPlaylist(
         else -> emptyList()
     }
     if (episodes.isNotEmpty()) {
-        val showTmdbId = showTmdbIdExtra
-            ?: playingEpisode?.let { dao.showByKey(it.showKey)?.tmdbId }
+        val show = playingEpisode?.let { dao.showByKey(it.showKey) }
+            ?: showTmdbIdExtra?.let { dao.showByTmdbId(it) }
+        val backdropPath = show?.backdropPath
+        val showTmdbId = showTmdbIdExtra ?: show?.tmdbId
         return PlayerPlaylist(
             isEpisodeList = true,
             entries = episodes.map { episode ->
@@ -80,6 +84,8 @@ internal suspend fun loadPlayerPlaylist(
                     showTmdbId = showTmdbId,
                     season = episode.season,
                     episode = episode.episode,
+                    stillPath = episode.stillPath,
+                    backdropPath = backdropPath,
                 )
             },
         )

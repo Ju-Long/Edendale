@@ -293,4 +293,7 @@
     <string name="player_back_30">30秒戻る</string>
     <string name="player_forward_15">15秒進む</string>
     <string name="player_forward_30">30秒進む</string>
+    <string name="player_up_next">次を再生</string>
+    <string name="player_up_next_description">次を再生: %1$s %2$s</string>
+    <string name="player_up_next_hint">次のエピソードを今すぐ再生</string>
 </resources>

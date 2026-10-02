@@ -112,6 +112,9 @@ class PlayerActivity : ComponentActivity() {
     private val wyzieConfiguredState = mutableStateOf(false)
     private val wyzieLookupState = mutableStateOf<WyzieLookup?>(null)
     private val activeSegmentState = mutableStateOf<PlaybackSegment?>(null)
+    private val upcomingEpisodeState = mutableStateOf<PlaylistEntry?>(null)
+
+    private val transitions = PlaybackTransitions()
 
     private val segmentController by lazy {
         PlayerSegmentController(
@@ -277,8 +280,7 @@ class PlayerActivity : ComponentActivity() {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) applyPendingResume()
                 if (playbackState == Player.STATE_ENDED) {
-                    writeProgress(completed = true)
-                    finish()
+                    handlePlaybackEnded()
                 }
             }
 
@@ -304,6 +306,7 @@ class PlayerActivity : ComponentActivity() {
 
         refreshWyzieConfigured()
 
+        transitions.present()
         lifecycleScopedStart(exoPlayer, uri)
         loadPlaylist(uri.toString(), showTmdbId)
 
@@ -322,6 +325,7 @@ class PlayerActivity : ComponentActivity() {
                     wyzieConfigured = wyzieConfiguredState,
                     wyzieLookup = wyzieLookupState,
                     activeSegment = activeSegmentState,
+                    upcomingEpisode = upcomingEpisodeState,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
@@ -407,6 +411,7 @@ class PlayerActivity : ComponentActivity() {
         currentShowTmdbId = entry.showTmdbId?.takeIf { it > 0 }
         hasRestoredContentPreferences = false
         writeProgress()
+        transitions.present()
         searchJob?.cancel()
         downloadJob?.cancel()
         searchJob = null
@@ -416,6 +421,7 @@ class PlayerActivity : ComponentActivity() {
         resumeFraction = null
         resumeApplied = false
         completedWritten = false
+        upcomingEpisodeState.value = null
         progressKey = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
             ProgressKey(
                 tmdbId = tmdbId,
@@ -600,6 +606,55 @@ class PlayerActivity : ComponentActivity() {
             isSeekable = exoPlayer.isCurrentMediaItemSeekable,
         )
         activeSegmentState.value = segmentController.activeSegment
+        updateUpcomingEpisode(positionMillis, durationMillis)
+    }
+
+    private fun updateUpcomingEpisode(positionMillis: Long, durationMillis: Long) {
+        if (!currentIsEpisode || chrome.loopEnabled || durationMillis <= 0) {
+            if (upcomingEpisodeState.value != null) upcomingEpisodeState.value = null
+            return
+        }
+        val playlist = playlistState.value
+        if (playlist == null || !playlist.isEpisodeList) {
+            if (upcomingEpisodeState.value != null) upcomingEpisodeState.value = null
+            return
+        }
+        val currentUri = currentUriState.value
+        val entries = playlist.entries
+        val currentEntry = entries.firstOrNull { it.uri == currentUri }
+        if (currentEntry == null || currentEntry.season == null || currentEntry.episode == null) {
+            if (upcomingEpisodeState.value != null) upcomingEpisodeState.value = null
+            return
+        }
+        val currentCandidate = EpisodeCandidate(
+            id = currentEntry.uri,
+            season = currentEntry.season,
+            episode = currentEntry.episode,
+            title = currentEntry.title,
+        )
+        val candidates = entries.mapNotNull { entry ->
+            if (entry.season != null && entry.episode != null) {
+                EpisodeCandidate(
+                    id = entry.uri,
+                    season = entry.season,
+                    episode = entry.episode,
+                    title = entry.title,
+                )
+            } else null
+        }
+        val nextCandidate = EpisodeProgression.upcomingEpisode(
+            timeMillis = positionMillis,
+            durationMillis = durationMillis,
+            loopEnabled = chrome.loopEnabled,
+            current = currentCandidate,
+            episodes = candidates,
+        )
+        val nextEntry = nextCandidate?.let { next ->
+            entries.firstOrNull { it.uri == next.id }
+        }
+        if (upcomingEpisodeState.value != nextEntry) {
+            upcomingEpisodeState.value = nextEntry
+        }
     }
 
     // ------------------------------------------------------------------
@@ -651,6 +706,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onDestroy() {
         prefsSubscription?.close()
         segmentController.end()
+        transitions.end()
         writeProgress()
         searchJob?.cancel()
         downloadJob?.cancel()
@@ -992,6 +1048,7 @@ class PlayerActivity : ComponentActivity() {
     }
 
     internal fun writeProgress(completed: Boolean = false) {
+        if (!completed && !transitions.shouldWriteProgress) return
         val key = progressKey ?: return
         val store = dataStore ?: return
         val exoPlayer = player ?: return
@@ -1000,7 +1057,10 @@ class PlayerActivity : ComponentActivity() {
         val fraction = position.toDouble() / duration
         val isCompleted = completed || fraction >= PlayerLogic.COMPLETE_FRACTION
         if (completedWritten && !isCompleted) return
-        completedWritten = isCompleted
+        if (isCompleted) {
+            completedWritten = true
+            transitions.markCurrentCompleted()
+        }
         writeScope.launch {
             store.updateWatchProgress(
                 WatchProgress(
@@ -1033,16 +1093,62 @@ class PlayerActivity : ComponentActivity() {
                 chrome.showControls()
             }
             is SkipAction.Finish -> {
-                writeProgress(completed = true)
-                if (chrome.loopEnabled) {
-                    exoPlayer.seekTo(0)
-                    exoPlayer.play()
-                } else {
-                    finish()
-                }
+                handlePlaybackEnded()
             }
         }
         return true
+    }
+
+    private fun handlePlaybackEnded() {
+        val exoPlayer = player ?: return
+        writeProgress(completed = true)
+        val entries = playlistState.value?.entries.orEmpty()
+        val currentUri = currentUriState.value
+        val currentEntry = entries.firstOrNull { it.uri == currentUri }
+        val currentCandidate = currentEntry?.let { entry ->
+            if (entry.season != null && entry.episode != null) {
+                EpisodeCandidate(
+                    id = entry.uri,
+                    season = entry.season,
+                    episode = entry.episode,
+                    title = entry.title,
+                )
+            } else null
+        }
+        val episodeCandidates = entries.mapNotNull { entry ->
+            if (entry.season != null && entry.episode != null) {
+                EpisodeCandidate(
+                    id = entry.uri,
+                    season = entry.season,
+                    episode = entry.episode,
+                    title = entry.title,
+                )
+            } else null
+        }
+        val action = transitions.onNaturalEnd(
+            loopEnabled = chrome.loopEnabled,
+            currentEpisode = currentCandidate,
+            episodes = episodeCandidates,
+        )
+        when (action) {
+            is NaturalEndAction.LoopRestart -> {
+                exoPlayer.seekTo(0)
+                exoPlayer.play()
+            }
+            is NaturalEndAction.Advance -> {
+                if (transitions.claim(action.ticket)) {
+                    val nextEntry = entries.firstOrNull { it.uri == action.nextEpisode.id }
+                    if (nextEntry != null) {
+                        switchTo(nextEntry)
+                    } else {
+                        finish()
+                    }
+                }
+            }
+            is NaturalEndAction.Finish -> {
+                finish()
+            }
+        }
     }
 
     private fun introDbMedia(

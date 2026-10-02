@@ -293,4 +293,7 @@
     <string name="player_back_30">后退 30 秒</string>
     <string name="player_forward_15">快进 15 秒</string>
     <string name="player_forward_30">快进 30 秒</string>
+    <string name="player_up_next">接下来播放</string>
+    <string name="player_up_next_description">接下来播放：%1$s %2$s</string>
+    <string name="player_up_next_hint">立即播放下一集</string>
 </resources>

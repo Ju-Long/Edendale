@@ -297,4 +297,7 @@
     <string name="player_back_30">Voltar 30 segundos</string>
     <string name="player_forward_15">Avançar 15 segundos</string>
     <string name="player_forward_30">Avançar 30 segundos</string>
+    <string name="player_up_next">A SEGUIR</string>
+    <string name="player_up_next_description">A seguir: %1$s %2$s</string>
+    <string name="player_up_next_hint">Reproduzir o próximo episódio agora</string>
 </resources>

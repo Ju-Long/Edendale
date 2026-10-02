@@ -293,4 +293,7 @@
     <string name="player_back_30">30초 뒤로</string>
     <string name="player_forward_15">15초 앞으로</string>
     <string name="player_forward_30">30초 앞으로</string>
+    <string name="player_up_next">다음 재생</string>
+    <string name="player_up_next_description">다음 재생: %1$s %2$s</string>
+    <string name="player_up_next_hint">다음 에피소드 지금 재생</string>
 </resources>

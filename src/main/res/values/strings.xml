@@ -354,4 +354,7 @@
     <string name="player_back_30">Back 30 seconds</string>
     <string name="player_forward_15">Forward 15 seconds</string>
     <string name="player_forward_30">Forward 30 seconds</string>
+    <string name="player_up_next">UP NEXT</string>
+    <string name="player_up_next_description">Up Next: %1$s %2$s</string>
+    <string name="player_up_next_hint">Play the next episode now</string>
 </resources>

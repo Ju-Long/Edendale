@@ -1,6 +1,7 @@
 package com.babasama.edendale.android.player
 
 import android.os.SystemClock
+import android.provider.Settings
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -8,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,6 +77,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -82,12 +85,18 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.focusable
+import coil.compose.AsyncImage
+import com.babasama.edendale.domain.TmdbImageSize
+import com.babasama.edendale.domain.tmdbImageUrl
 import com.babasama.edendale.introdb.PlaybackSegment
 import com.babasama.edendale.introdb.SegmentKind
 import androidx.media3.common.C
@@ -128,6 +137,7 @@ internal fun PlayerScreen(
     wyzieConfigured: State<Boolean>,
     wyzieLookup: State<WyzieLookup?>,
     activeSegment: State<PlaybackSegment?>,
+    upcomingEpisode: State<PlaylistEntry?>,
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
@@ -153,6 +163,7 @@ internal fun PlayerScreen(
     val centerFocus = remember { FocusRequester() }
     val timelineFocus = remember { FocusRequester() }
     val panelFocus = remember { FocusRequester() }
+    val upNextFocus = remember { FocusRequester() }
 
     val controlsActive = chrome.controlsVisible && !inPipMode.value
 
@@ -275,12 +286,24 @@ internal fun PlayerScreen(
             null
         }
 
+        val visibleUpNext = if (
+            !chrome.isScrubbing &&
+            chrome.activePanel == null &&
+            !inPipMode.value
+        ) {
+            upcomingEpisode.value
+        } else {
+            null
+        }
+
         if (isTelevision) {
             RevealCatcher(
                 active = isTelevision && !controlsActive && !inPipMode.value,
                 focusRequester = catcherFocus,
                 promptFocusRequester = promptFocus,
                 hasVisiblePrompt = visibleSegment != null,
+                upNextFocusRequester = upNextFocus,
+                hasVisibleUpNext = visibleUpNext != null,
                 chrome = chrome,
                 player = player,
             )
@@ -345,6 +368,62 @@ internal fun PlayerScreen(
                     }
                 },
             )
+        }
+
+        val context = LocalContext.current
+        val reduceMotion = remember {
+            try {
+                Settings.Global.getFloat(
+                    context.contentResolver,
+                    Settings.Global.ANIMATOR_DURATION_SCALE,
+                    1.0f,
+                ) == 0f
+            } catch (_: Exception) {
+                false
+            }
+        }
+        val upNextEnterTransition = remember(reduceMotion) {
+            if (reduceMotion) {
+                fadeIn()
+            } else {
+                slideInHorizontally(initialOffsetX = { it }) + fadeIn()
+            }
+        }
+        val upNextExitTransition = remember(reduceMotion) {
+            if (reduceMotion) {
+                fadeOut()
+            } else {
+                slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+            }
+        }
+
+        var lastUpNextEntry by remember { mutableStateOf<PlaylistEntry?>(null) }
+        if (visibleUpNext != null) {
+            lastUpNextEntry = visibleUpNext
+        }
+
+        AnimatedVisibility(
+            visible = visibleUpNext != null,
+            modifier = Modifier.align(Alignment.TopEnd),
+            enter = upNextEnterTransition,
+            exit = upNextExitTransition,
+        ) {
+            lastUpNextEntry?.let { entry ->
+                UpNextCard(
+                    entry = entry,
+                    isTelevision = isTelevision,
+                    controlsVisible = controlsActive,
+                    focusRequester = upNextFocus,
+                    onPlayNext = { onSelectEntry(entry) },
+                    onExitFocus = {
+                        if (isTelevision && !chrome.controlsVisible) {
+                            catcherFocus.requestFocus()
+                        } else {
+                            chrome.showControls()
+                        }
+                    },
+                )
+            }
         }
 
         if (!inPipMode.value) {
@@ -412,6 +491,8 @@ private fun BoxScope.RevealCatcher(
     focusRequester: FocusRequester,
     promptFocusRequester: FocusRequester?,
     hasVisiblePrompt: Boolean,
+    upNextFocusRequester: FocusRequester?,
+    hasVisibleUpNext: Boolean,
     chrome: PlayerChromeState,
     player: ExoPlayer,
 ) {
@@ -441,7 +522,15 @@ private fun BoxScope.RevealCatcher(
                         }
                         true
                     }
-                    Key.DirectionUp, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                    Key.DirectionUp -> {
+                        if (hasVisibleUpNext && upNextFocusRequester != null) {
+                            upNextFocusRequester.requestFocus()
+                        } else {
+                            chrome.showControls()
+                        }
+                        true
+                    }
+                    Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
                         chrome.showControls()
                         true
                     }
@@ -516,6 +605,132 @@ private fun BoxScope.SkipPromptButton(
             color = if (highlighted) EdendaleColors.Gold else EdendaleColors.TextPrimary,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
         )
+    }
+}
+
+@Composable
+private fun BoxScope.UpNextCard(
+    entry: PlaylistEntry,
+    isTelevision: Boolean,
+    controlsVisible: Boolean,
+    focusRequester: FocusRequester,
+    onPlayNext: () -> Unit,
+    onExitFocus: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val highlighted = isFocused || isHovered
+
+    val topPadding = if (isTelevision) {
+        if (controlsVisible) 88.dp else 48.dp
+    } else {
+        if (controlsVisible) 80.dp else 24.dp
+    }
+    val endPadding = if (isTelevision) 48.dp else 24.dp
+
+    val episodeCode = entry.detail ?: entry.season?.let { s ->
+        entry.episode?.let { e -> "S%02dE%02d".format(s, e) }
+    } ?: ""
+
+    val imagePath = entry.stillPath ?: entry.backdropPath
+    val imageUrl = remember(imagePath) { tmdbImageUrl(imagePath, TmdbImageSize.BACKDROP) }
+    val description = stringResource(R.string.player_up_next_description, episodeCode, entry.title)
+
+    Surface(
+        onClick = onPlayNext,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(end = endPadding, top = topPadding)
+            .widthIn(max = 280.dp)
+            .focusRequester(focusRequester)
+            .tvFocusLift(isTelevision, RoundedCornerShape(12.dp))
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    when (event.key) {
+                        Key.DirectionDown -> {
+                            onExitFocus()
+                            true
+                        }
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                            onPlayNext()
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            }
+            .semantics {
+                contentDescription = description
+            },
+        shape = RoundedCornerShape(12.dp),
+        color = EdendaleColors.Surface,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (highlighted) EdendaleColors.Gold else EdendaleColors.Outline,
+        ),
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Artwork (80 x 45, 16:9 ratio)
+            Box(
+                modifier = Modifier
+                    .size(width = 80.dp, height = 45.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(EdendaleColors.SurfaceHigh)
+                    .border(1.dp, EdendaleColors.Outline, RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_clapperboard),
+                    contentDescription = null,
+                    tint = EdendaleColors.TextSecondary,
+                    modifier = Modifier.size(18.dp),
+                )
+                if (imageUrl != null) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+
+            // Details
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.player_up_next),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                    ),
+                    color = EdendaleColors.Gold,
+                )
+                if (episodeCode.isNotEmpty()) {
+                    Text(
+                        text = episodeCode,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = EdendaleColors.TextSecondary,
+                        maxLines = 1,
+                    )
+                }
+                Text(
+                    text = entry.title,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    color = EdendaleColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 

@@ -297,4 +297,7 @@
     <string name="player_back_30">Indietro di 30 secondi</string>
     <string name="player_forward_15">Avanti di 15 secondi</string>
     <string name="player_forward_30">Avanti di 30 secondi</string>
+    <string name="player_up_next">SUCCESSIVO</string>
+    <string name="player_up_next_description">Successivo: %1$s %2$s</string>
+    <string name="player_up_next_hint">Riproduci ora il prossimo episodio</string>
 </resources>

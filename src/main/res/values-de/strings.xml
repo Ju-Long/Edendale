@@ -297,4 +297,7 @@
     <string name="player_back_30">30 Sekunden zurück</string>
     <string name="player_forward_15">15 Sekunden vor</string>
     <string name="player_forward_30">30 Sekunden vor</string>
+    <string name="player_up_next">ALS NÄCHSTES</string>
+    <string name="player_up_next_description">Als Nächstes: %1$s %2$s</string>
+    <string name="player_up_next_hint">Nächste Episode jetzt abspielen</string>
 </resources>
