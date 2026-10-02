@@ -52,7 +52,16 @@ object AndroidEdendaleCore {
 
     fun wyzieService(): WyzieSubtitleService = WyzieSubtitleService(AndroidWyzieTransport())
 
-    fun introDbService(): IntroDbService = IntroDbService(AndroidIntroDbTransport())
+    /**
+     * One TheIntroDB service for the whole process, like Apple's
+     * `IntroDBService.shared`: its 429 cooldown is provider-wide, so it must
+     * outlive any single lookup, item, or player session.
+     */
+    private val sharedIntroDbService: IntroDbService by lazy {
+        IntroDbService(AndroidIntroDbTransport())
+    }
+
+    fun introDbService(): IntroDbService = sharedIntroDbService
 
     fun hasTmdbCredentials(): Boolean = EdendaleCore.hasTmdbCredentials()
 }

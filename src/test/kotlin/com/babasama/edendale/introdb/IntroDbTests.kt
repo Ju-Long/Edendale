@@ -1,5 +1,6 @@
 package com.babasama.edendale.introdb
 
+import com.babasama.edendale.AndroidEdendaleCore
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -7,6 +8,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class IntroDbTests {
@@ -188,5 +190,12 @@ class IntroDbTests {
             floorService.segments(request)
         }
         assertEquals(2, floorCallCount)
+    }
+
+    @Test
+    fun everyLookupSharesOneServiceSoTheCooldownHolds() {
+        // A service per lookup would forget a 429 cooldown, and the next item
+        // or player session would ask TheIntroDB again straight away.
+        assertSame(AndroidEdendaleCore.introDbService(), AndroidEdendaleCore.introDbService())
     }
 }

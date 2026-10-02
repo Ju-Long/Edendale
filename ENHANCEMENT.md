@@ -706,7 +706,9 @@ Don't build a workaround without asking the owner.
     shows.
   - 429 starts a provider-wide cooldown: the largest of `Retry-After`,
     `X-RateLimit-Reset`, and `X-UsageLimit-Reset` (seconds), with a minimum of
-    60 s. No request is sent until it ends.
+    60 s. No request is sent until it ends. One `IntroDbService` serves the
+    whole app (Apple's `IntroDBService.shared`), so the cooldown holds across
+    items and player sessions.
   - Reject a body whose `tmdb_id`, `type` (`movie` or `tv`), `season`, or
     `episode` doesn't match the request.
 - **Decoding** (`intro`, `recap`, and `credits` arrays of
