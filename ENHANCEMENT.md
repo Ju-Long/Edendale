@@ -1789,6 +1789,17 @@ When a phase is reported done, the reviewer checks:
 Record research results and decision notes here: G.1, F.1.6, F.3.4, H.4.1,
 H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 
+- **PiP on phones is wider than the screen (found 2026-10-02, pre-existing).**
+  `PlayerActivity`'s `<layout android:minWidth="400dp" android:minHeight="240dp">`,
+  in the manifest since the 0.26 import (0c08c8b), is also the minimum PiP size,
+  so a 16:9 PiP window is at least 427×240 dp. On a 411 dp-wide Pixel 7 emulator
+  it opened at 1120×630 px, partly off screen. Twice, expanding it after opening
+  the main screen left the player without input focus: taps did nothing and a
+  key press ended in an ANR ("Application does not have a focused window"). A
+  build without the two attributes opened PiP at 598×336 px and expanded
+  normally. Suggested fix: drop `minWidth` and `minHeight` and keep the default
+  size for freeform windows.
+
 ---
 
 ## Deviations log
@@ -1814,6 +1825,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-01 | C.1 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (0 failures, 173 tests) | not run (no emulator/device connected in CI environment) | Pure EpisodeProgression rules (nextEpisode, upcomingEpisode, highestCompletedPerShow, nextUpEpisodes) and 24 JVM tests |
 | 2026-10-02 | Review of A.1–C.1; fixes to C.5 and B.2 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest` on a clean checkout of 9b57892: pass (183 tests, 0 failures). `./gradlew lintDebug`: fails with 311 errors; 308 predate this branch, and 3 are new (`UnsafeOptInUsageError` in `ContentPlayerPreferences.kt`, from B.2). | not run (no device or emulator on the review Mac) | C.5 (451d7f5): one process-wide `IntroDbService`, so a 429 cooldown holds across items and player sessions. B.2 (9b57892): Media3 1.9.0 first reports empty tracks when an item replaces another, which used up the restore, so remembered tracks never carried across a switch; the restore now waits for the first non-empty report. Unticked A.2.3 (its device check wasn't run) and A.5.4 (no CI job was added). A.2.2 needed no source changes: a clean build shows no Media3 deprecation warnings. Corrected C.1's commit to 1f01315. D5 confirmed by the owner, so E.2 is no longer blocked. |
 | 2026-10-02 | Accessibility and focus fixes to B.1 and C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest` on a clean checkout of 83699b9: pass (185 tests, 0 failures); with the uncommitted C.2 work on top: pass (194 tests). `./gradlew lintDebug`: 311 errors, none new. | not run (no device or emulator on the review Mac) | B.1 (8ac41f9): the skip segments are a radio group that reports the chosen length; each hold-speed − and + names its row ("Hold Left Side, slower"; 2 new strings in every locale); the speed is a polite live region; the player's ± glyphs follow App Controls changes while it's open. C.5 (83699b9): on TV, focus is seeded again when the focused node disappears, such as a skip prompt whose segment ended. TalkBack and TV focus still need device checks. Review notes for the C.2 work are under C.2. |
+| 2026-10-02 | Emulator test run (Claude): A.5, B.1, B.2, C.2, C.5 | Built fd6c2e9 (debug) and installed it; instrumented smoke test (`am instrument`): pass. | Android emulator, Pixel 7 profile, Android 15 (API 35, Google APIs, arm64), local test files only. B.1: App Controls exposes the chosen skip length as checked and labels the steppers; changing Skip Back to 30 s while the video was in PiP relabeled the PiP action, and the PiP actions, on-screen buttons, and short media-key presses all skipped by the set lengths; a long ⏩ press didn't skip; holding the right side showed 2.00× and reverted. B.2: a French subtitle chosen in S01E01 carried to S01E02 after a playlist switch and was saved as `player.content.show.<id>`; Loop survived reopening the player. C.2: S01E01 → S01E02 → S01E03 advanced on their own, the Up Next card named the next episode and was absent on the last, and the player closed after it. C.5: Skip Prompts is off by default. | Not run: double-tap, TV (B.1.D2, D3, the C.5 TV focus fix), audio track memory (no picker until B.3), Fill, completion state and resume (no TMDB ids without a token), SMB, Wyzie, C.5.D1. A diagnostic log showed Media3 reporting empty tracks first after a playlist switch, with the B.2 restore now running on the next report. Correction to the review row above: the old restore bug did not stop a language choice from carrying over within a session, because the player keeps the preferred language (the pre-fix build 451d7f5 also showed French); it affected choices the player doesn't carry, such as a video track chosen by size or titles with different saved choices. PiP size issue: see Findings. |
 
 ---
 
