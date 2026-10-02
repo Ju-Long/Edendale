@@ -7,7 +7,7 @@
 //  frame that draws a sample cue exactly as the player will. The Settings
 //  page (macOS/tvOS) offers the choices as chips; the grouped list
 //  (iOS/visionOS) keeps menu pickers. tvOS has no slider, so opacity steps
-//  with − and + buttons there.
+//  with − and + buttons there, beneath its name like the chip rows.
 //
 
 import SwiftUI
@@ -120,7 +120,12 @@ struct SubtitleAppearanceSection: View {
     @ViewBuilder
     private var opacityRow: some View {
         #if os(tvOS)
-        SettingsRow(opacityTitle) {
+        // Laid out like the choices above: the name, then the control
+        // beneath it at the leading edge.
+        VStack(alignment: .leading, spacing: 14) {
+            Text(opacityTitle)
+                .font(SettingsMetrics.titleFont)
+                .foregroundStyle(Theme.textPrimary)
             HStack(spacing: 16) {
                 // Archive chrome: the system focus platter turns white under
                 // parchment glyphs and hides them.

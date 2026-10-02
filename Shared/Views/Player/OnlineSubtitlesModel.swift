@@ -5,7 +5,8 @@
 //  State for explicit Wyzie searches and per-result downloads. Although VLC
 //  accepts remote track URLs, a validated local cache file is deterministic
 //  inside the sandbox, survives a flaky CDN, and is checked before VLC parses
-//  it.
+//  it. SubtitleCacheStore keeps it for the video, so the next playback
+//  reattaches it, and a subtitle it already holds isn't downloaded again.
 //
 
 import Foundation
@@ -109,7 +110,14 @@ final class OnlineSubtitlesModel {
         }
     }
 
-    func download(_ subtitle: WyzieSubtitle, into player: PlaybackEngine) async {
+    /// Applies `subtitle` to the playing video, from the cache when this
+    /// device already has the file, and remembers it for `videoKey`.
+    func download(
+        _ subtitle: WyzieSubtitle,
+        videoKey: String?,
+        cache: SubtitleCacheStore,
+        into player: PlaybackEngine
+    ) async {
         guard downloadingID == nil, !downloadedIDs.contains(subtitle.id) else { return }
         downloadingID = subtitle.id
         if !results.isEmpty {
@@ -118,8 +126,22 @@ final class OnlineSubtitlesModel {
         defer { downloadingID = nil }
 
         do {
-            let localURL = try await WyzieSubtitleService.shared.download(subtitle)
-            try player.addExternalTrack(from: localURL, type: .subtitle, select: true)
+            let localURL: URL
+            if let cached = cache.existingFile(for: subtitle) {
+                localURL = cached
+            } else {
+                let data = try await WyzieSubtitleService.shared.fetch(subtitle)
+                localURL = try cache.save(data, for: subtitle)
+            }
+            try player.addExternalTrack(
+                from: localURL,
+                type: .subtitle,
+                name: SubtitleCacheStore.displayName(for: subtitle),
+                select: true
+            )
+            if let videoKey {
+                cache.remember(subtitle, videoKey: videoKey)
+            }
             downloadedIDs.insert(subtitle.id)
         } catch {
             phase = .failed(error.localizedDescription)

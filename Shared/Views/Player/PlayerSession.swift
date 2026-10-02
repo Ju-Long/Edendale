@@ -44,6 +44,11 @@ final class PlayerSession {
     let controls: PlayerControlPreferences
     /// Text subtitle font, colours, and box (Settings ▸ Subtitles).
     let subtitleAppearance: SubtitleAppearance
+    /// Downloaded online subtitles, reattached when their video plays again.
+    let subtitleCache: SubtitleCacheStore
+    /// Provider IDs of the cached subtitles reattached to the current item,
+    /// which the online search lists as already added.
+    private(set) var reattachedSubtitleIDs: Set<String> = []
 
     private let library: LibraryController
     private let watchStore: WatchProgressStore
@@ -95,6 +100,7 @@ final class PlayerSession {
         segmentSkipping: PlayerSegmentController? = nil,
         controls: PlayerControlPreferences? = nil,
         subtitleAppearance: SubtitleAppearance? = nil,
+        subtitleCache: SubtitleCacheStore? = nil,
         defaults: UserDefaults? = nil
     ) {
         let defaults = defaults ?? AppIdentifiers.defaults
@@ -107,6 +113,9 @@ final class PlayerSession {
         self.segmentSkipping = segmentSkipping ?? PlayerSegmentController(defaults: defaults)
         self.controls = controls ?? PlayerControlPreferences(defaults: defaults)
         self.subtitleAppearance = subtitleAppearance ?? SubtitleAppearance(defaults: defaults)
+        self.subtitleCache = subtitleCache ?? SubtitleCacheStore(
+            modelContext: Persistence.subtitleCacheModelContainer.mainContext
+        )
 
         // The Lock Screen and Control Center label their skip buttons with
         // the chosen lengths, including after a change made mid-playback.
@@ -267,6 +276,7 @@ final class PlayerSession {
         // render a fully-formed session. Retain old scope alongside.
         let oldScope = item?.scope
         item = newItem
+        reattachedSubtitleIDs = []
 
         segmentSkipping.begin(itemID: newItem.id, media: newItem.segmentLookup)
 
@@ -361,10 +371,11 @@ final class PlayerSession {
                 }
                 debugPrint("[PlayerSession.startPlayback] ✅ engine.open succeeded — state=\(engine.state), duration=\(engine.duration?.playbackSeconds ?? -1)s")
 
-                if let currentItem = self.item,
-                   let prefs = self.preferencesStore.preferences(for: currentItem) {
+                let prefs = self.item.flatMap { self.preferencesStore.preferences(for: $0) }
+                if let prefs {
                     self.preferencesStore.apply(prefs, to: chrome, player: engine)
                 }
+                self.reattachCachedSubtitles(to: engine, preferences: prefs)
 
                 videoAdjustment.apply(to: engine)
                 audioEnhancement.apply(to: engine)
@@ -423,6 +434,7 @@ final class PlayerSession {
         stopAndRetirePlayer()
         chrome = nil
         item = nil
+        reattachedSubtitleIDs = []
         isHiddenForPictureInPicture = false
         surfaceReady = false
         awaitingSurface = false
@@ -812,10 +824,11 @@ final class PlayerSession {
             try? await engine.open(url: url)
             guard self.activePlaybackRequestID == generation else { return }
 
-            if let currentItem = self.item,
-               let prefs = self.preferencesStore.preferences(for: currentItem) {
-                self.preferencesStore.apply(prefs, to: chrome!, player: engine)
+            let prefs = self.item.flatMap { self.preferencesStore.preferences(for: $0) }
+            if let prefs, let chrome = self.chrome {
+                self.preferencesStore.apply(prefs, to: chrome, player: engine)
             }
+            self.reattachCachedSubtitles(to: engine, preferences: prefs)
 
             nowPlayingBridge.attach(
                 to: engine,
@@ -826,6 +839,38 @@ final class PlayerSession {
             engine.play()
             chrome?.playbackDidStart(resuming: false)
         }
+    }
+
+    /// Adds the subtitles downloaded earlier for this video, and selects the
+    /// one used last unless this title's saved choice is an embedded track
+    /// or no subtitles. (A downloaded track isn't saved as the choice, so
+    /// replaying with one leaves the choice unset.)
+    private func reattachCachedSubtitles(
+        to engine: PlaybackEngine,
+        preferences: ContentPlayerPreferences?
+    ) {
+        reattachedSubtitleIDs = []
+        guard let videoKey = item?.subtitleVideoKey else { return }
+        let cached = subtitleCache.subtitles(for: videoKey)
+        guard !cached.isEmpty else { return }
+
+        let selectsDownloaded = preferences?.subtitleEnabled == nil
+        var attached: [CachedSubtitle] = []
+        for subtitle in cached {
+            do {
+                try engine.addExternalTrack(
+                    from: subtitleCache.fileURL(for: subtitle),
+                    type: .subtitle,
+                    name: subtitle.displayName,
+                    select: selectsDownloaded && attached.isEmpty
+                )
+                attached.append(subtitle)
+            } catch {
+                debugPrint("[PlayerSession] Skipping unreadable cached subtitle: \(error)")
+            }
+        }
+        reattachedSubtitleIDs = Set(attached.map(\.subtitleID))
+        subtitleCache.markUsed(attached)
     }
 
     private func saveContentPreferences() {
