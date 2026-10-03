@@ -93,4 +93,21 @@
         <item quantity="one">%1$d source</item>
         <item quantity="other">%1$d sources</item>
     </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Audio Enhancement</string>
+    <string name="audio_profile">Profile</string>
+    <string name="audio_profile_flat">Flat</string>
+    <string name="audio_profile_movies">Movies</string>
+    <string name="audio_profile_music">Music</string>
+    <string name="audio_profile_dialogue">Dialogue</string>
+    <string name="audio_profile_night_mode">Night Mode</string>
+    <string name="audio_preamp">Preamp</string>
+    <string name="audio_reset_adjustments">Reset Adjustments</string>
+    <string name="audio_booster">Audio Booster</string>
+    <string name="audio_booster_detail">Increase audio gain for quiet recordings</string>
+    <string name="audio_show_equalizer">Show equalizer</string>
+    <string name="audio_hide_equalizer">Hide equalizer</string>
+    <string name="audio_passthrough_note">The equalizer and booster apply to audio Edendale decodes. Surround sound passed through untouched to a receiver or TV plays without them.</string>
+    <string name="audio_step_lower">%1$s, lower</string>
+    <string name="audio_step_higher">%1$s, higher</string>
 </resources>

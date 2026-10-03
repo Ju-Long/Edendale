@@ -358,4 +358,21 @@
         <item quantity="one">%1$d個のソース</item>
         <item quantity="other">%1$d個のソース</item>
     </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">オーディオ補正</string>
+    <string name="audio_profile">プロファイル</string>
+    <string name="audio_profile_flat">フラット</string>
+    <string name="audio_profile_movies">映画</string>
+    <string name="audio_profile_music">音楽</string>
+    <string name="audio_profile_dialogue">ダイアログ</string>
+    <string name="audio_profile_night_mode">ナイトモード</string>
+    <string name="audio_preamp">プリアンプ</string>
+    <string name="audio_reset_adjustments">調整をリセット</string>
+    <string name="audio_booster">オーディオブースター</string>
+    <string name="audio_booster_detail">静かな録音の音量を上げます</string>
+    <string name="audio_show_equalizer">イコライザを表示</string>
+    <string name="audio_hide_equalizer">イコライザを隠す</string>
+    <string name="audio_passthrough_note">イコライザとブースターは、Edendaleがデコードするオーディオに適用されます。レシーバーやテレビにそのままパススルーされるサラウンド音声には適用されません。</string>
+    <string name="audio_step_lower">%1$s、下げる</string>
+    <string name="audio_step_higher">%1$s、上げる</string>
 </resources>

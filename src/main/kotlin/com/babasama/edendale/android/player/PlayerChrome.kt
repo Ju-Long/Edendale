@@ -142,6 +142,16 @@ internal class PlayerChromeState(val preferences: PlayerPreferences) {
     var subtitleAppearance by mutableStateOf(preferences.subtitleAppearance)
         private set
 
+    /** Audio Enhancement's booster, which the panel's Playback section toggles (E.1). */
+    var audioBoosterEnabled by mutableStateOf(preferences.audioBoosterEnabled)
+        private set
+
+    fun setAudioBooster(enabled: Boolean) {
+        audioBoosterEnabled = enabled
+        preferences.audioBoosterEnabled = enabled
+        noteInteraction()
+    }
+
     /**
      * The top edge of the visible transport row, in the player's root
      * coordinates, or null while it's hidden. Cues stay above it.
@@ -156,6 +166,7 @@ internal class PlayerChromeState(val preferences: PlayerPreferences) {
             loopEnabled = preferences.loopEnabled
             _aspectFill.value = preferences.aspectFill
             subtitleAppearance = preferences.subtitleAppearance
+            audioBoosterEnabled = preferences.audioBoosterEnabled
         }
     }
 

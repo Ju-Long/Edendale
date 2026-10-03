@@ -374,4 +374,21 @@
         <item quantity="many">%1$d источников</item>
         <item quantity="other">%1$d источника</item>
     </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Улучшение звука</string>
+    <string name="audio_profile">Профиль</string>
+    <string name="audio_profile_flat">Ровный</string>
+    <string name="audio_profile_movies">Фильмы</string>
+    <string name="audio_profile_music">Музыка</string>
+    <string name="audio_profile_dialogue">Диалоги</string>
+    <string name="audio_profile_night_mode">Ночной режим</string>
+    <string name="audio_preamp">Предусилитель</string>
+    <string name="audio_reset_adjustments">Сбросить коррекцию</string>
+    <string name="audio_booster">Усилитель звука</string>
+    <string name="audio_booster_detail">Увеличить громкость тихих записей</string>
+    <string name="audio_show_equalizer">Показать эквалайзер</string>
+    <string name="audio_hide_equalizer">Скрыть эквалайзер</string>
+    <string name="audio_passthrough_note">Эквалайзер и усилитель применяются к звуку, который декодирует Edendale. Объемный звук, передаваемый без изменений на ресивер или телевизор, воспроизводится без них.</string>
+    <string name="audio_step_lower">%1$s, ниже</string>
+    <string name="audio_step_higher">%1$s, выше</string>
 </resources>

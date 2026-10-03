@@ -84,6 +84,9 @@ class PlayerActivity : ComponentActivity() {
 
     private var player: ExoPlayer? = null
     private var mediaSession: PlayerMediaSession? = null
+
+    /** Audio Enhancement's equalizer and booster, in every audio sink this player builds (E.1). */
+    private val equalizer = EqAudioProcessor()
     private var dataStore: LocalDataStore? = null
     private var progressKey: ProgressKey? = null
     private var resumeFraction: Double? = null
@@ -197,9 +200,12 @@ class PlayerActivity : ComponentActivity() {
         chrome.onSpeedChanged = {
             saveContentPreferences()
         }
+        equalizer.update(chrome.preferences.audioEnhancement)
         prefsSubscription = chrome.preferences.addChangeListener {
             updatePipParams()
             refreshMediaSession()
+            // Settings and the panel's booster apply live, from the next buffer.
+            equalizer.update(chrome.preferences.audioEnhancement)
         }
         onlineSubtitles = OnlineSubtitlesState(playerPreferences)
         wyzieKeyStore = WyzieKeyStore(this)
@@ -263,7 +269,7 @@ class PlayerActivity : ComponentActivity() {
             DataSource.Factory { DefaultDataSource(this, SmbDataSource(this)) },
         )
 
-        val exoPlayer = ExoPlayer.Builder(this)
+        val exoPlayer = ExoPlayer.Builder(this, EdendaleRenderersFactory(this, equalizer))
             .setMediaSourceFactory(mediaSourceFactory)
             .setAudioAttributes(
                 AudioAttributes.Builder()

@@ -1043,20 +1043,20 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   "Increase audio gain for quiet recordings".
 
 **Checklist:**
-- [ ] **E.1.1** Pure profile model, clamping, persistence parsing, coefficient
+- [x] **E.1.1** Pure profile model, clamping, persistence parsing, coefficient
   function, and a pure DSP core (`process(FloatArray, channels)`).
-- [ ] **E.1.2** `EqAudioProcessor` and the renderers-factory wiring in
+- [x] **E.1.2** `EqAudioProcessor` and the renderers-factory wiring in
   `PlayerActivity`.
-- [ ] **E.1.3** The Settings section and the panel toggle.
+- [x] **E.1.3** The Settings section and the panel toggle.
 
 **Tests (JVM):**
-- [ ] **E.1.T1** Port `AudioEnhancementTests`: the profile table, the Movies
+- [x] **E.1.T1** Port `AudioEnhancementTests`: the profile table, the Movies
   default, clamping, the booster's +10 dB with clamping, reset on profile
   change, unknown raw values, and a wrong band count.
-- [ ] **E.1.T2** Coefficients for (1 kHz, +6 dB, 48 kHz) and (60 Hz, −5 dB,
+- [x] **E.1.T2** Coefficients for (1 kHz, +6 dB, 48 kHz) and (60 Hz, −5 dB,
   44.1 kHz) match the formula; bands pass through at or above Nyquist (the 12,
   14, and 16 kHz bands at 22.05 kHz) and when |gain| < 0.01 dB.
-- [ ] **E.1.T3** DSP: a sine at a band's center frequency gains that band's
+- [x] **E.1.T3** DSP: a sine at a band's center frequency gains that band's
   boost within ±0.5 dB; flat settings are bit-exact; 16-bit output clamps at
   full scale.
 
@@ -1869,7 +1869,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.3 | Rescan throttle and per-source status | Complete | |
 | D.4 | Keep logins; Accounts | Complete | |
 | D.5 | Play From | Complete | |
-| E.1 | EQ profiles and booster | Not started | |
+| E.1 | EQ profiles and booster | Complete | |
 | E.2 | DTS and TrueHD (D5) | Not started | |
 | F.1 | Effects plumbing | Not started | |
 | F.2 | Picture adjustments | Not started | |

@@ -362,4 +362,21 @@
         <item quantity="one">%1$d sorgenti</item>
         <item quantity="other">%1$d sorgenti</item>
     </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Miglioramento audio</string>
+    <string name="audio_profile">Profilo</string>
+    <string name="audio_profile_flat">Neutro</string>
+    <string name="audio_profile_movies">Film</string>
+    <string name="audio_profile_music">Musica</string>
+    <string name="audio_profile_dialogue">Dialoghi</string>
+    <string name="audio_profile_night_mode">Modalità notte</string>
+    <string name="audio_preamp">Preamplificatore</string>
+    <string name="audio_reset_adjustments">Ripristina regolazioni</string>
+    <string name="audio_booster">Amplificatore audio</string>
+    <string name="audio_booster_detail">Aumenta il guadagno audio per le registrazioni a basso volume</string>
+    <string name="audio_show_equalizer">Mostra equalizzatore</string>
+    <string name="audio_hide_equalizer">Nascondi equalizzatore</string>
+    <string name="audio_passthrough_note">L’equalizzatore e il booster si applicano all’audio decodificato da Edendale. L’audio surround inviato così com’è a un ricevitore o a un televisore viene riprodotto senza di essi.</string>
+    <string name="audio_step_lower">%1$s, abbassa</string>
+    <string name="audio_step_higher">%1$s, alza</string>
 </resources>

@@ -1953,6 +1953,11 @@ private fun PlaybackSection(
             detail = stringResource(R.string.player_loop_detail),
             checked = chrome.loopEnabled,
         ) { chrome.setLoop(player, it) }
+        ToggleRow(
+            title = stringResource(R.string.audio_booster),
+            detail = stringResource(R.string.audio_booster_detail),
+            checked = chrome.audioBoosterEnabled,
+        ) { chrome.setAudioBooster(it) }
         if (supportsPip) {
             ToggleRow(
                 title = stringResource(R.string.player_auto_pip),

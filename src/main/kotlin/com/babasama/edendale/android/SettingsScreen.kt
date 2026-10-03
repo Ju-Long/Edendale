@@ -237,6 +237,10 @@ fun SettingsScreen(
         }
 
         item {
+            AudioEnhancementSettingsSection(isTelevision = isTelevision)
+        }
+
+        item {
             WyzieKeySettingsSection(
                 status = wyzieKeyStatus,
                 keyInput = wyzieKeyInput,

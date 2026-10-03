@@ -132,6 +132,18 @@ after 0.25, 0.5, 1, 2, 4, and 8 seconds before playback gives up with a
 message naming the server, and a paused connection gets a keep-alive every
 20 seconds. Nothing is written to disk.
 
+### Audio Enhancement
+
+**Settings → Audio Enhancement** applies a 10-band equalizer (60 Hz to 16 kHz)
+through a Media3 audio processor: choose Flat, Movies (the default), Music,
+Dialogue, or Night Mode, then fine-tune the preamp and each band; changing the
+profile resets the adjustments. **Audio Booster** (also in Player Adjustments →
+Playback) adds 10 dB of gain through the equalizer for quiet recordings.
+Settings are device-local, apply live, and carry across files. Flat settings
+pass audio through unchanged. The equalizer applies only to audio Edendale
+decodes: surround sound passed through untouched to a receiver or TV plays
+without it.
+
 ### Subtitle appearance
 
 **Settings → Subtitles** sets how text subtitles look: the font (System,

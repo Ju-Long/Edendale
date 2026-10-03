@@ -362,4 +362,21 @@
         <item quantity="one">%1$d bronnen</item>
         <item quantity="other">%1$d bronnen</item>
     </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Audioverbetering</string>
+    <string name="audio_profile">Profiel</string>
+    <string name="audio_profile_flat">Neutraal</string>
+    <string name="audio_profile_movies">Films</string>
+    <string name="audio_profile_music">Muziek</string>
+    <string name="audio_profile_dialogue">Dialoog</string>
+    <string name="audio_profile_night_mode">Nachtmodus</string>
+    <string name="audio_preamp">Voorversterker</string>
+    <string name="audio_reset_adjustments">Stel aanpassingen opnieuw in</string>
+    <string name="audio_booster">Audioversterker</string>
+    <string name="audio_booster_detail">Verhoog het audioniveau voor zachte opnamen</string>
+    <string name="audio_show_equalizer">Toon equalizer</string>
+    <string name="audio_hide_equalizer">Verberg equalizer</string>
+    <string name="audio_passthrough_note">De equalizer en booster werken op audio die Edendale zelf decodeert. Surroundgeluid dat ongewijzigd naar een receiver of tv wordt doorgegeven, speelt zonder.</string>
+    <string name="audio_step_lower">%1$s, lager</string>
+    <string name="audio_step_higher">%1$s, hoger</string>
 </resources>

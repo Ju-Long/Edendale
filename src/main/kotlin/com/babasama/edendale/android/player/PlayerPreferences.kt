@@ -157,6 +157,17 @@ object PlayerPreferencesRules {
         return raw.coerceIn(AUDIO_PREAMP_MIN, AUDIO_PREAMP_MAX)
     }
 
+    /** A JSON array of numbers, or null when [raw] isn't one. */
+    fun parseFloatArray(raw: String?): List<Float>? {
+        val text = raw?.trim() ?: return null
+        if (!text.startsWith("[") || !text.endsWith("]")) return null
+        val body = text.substring(1, text.length - 1).trim()
+        if (body.isEmpty()) return emptyList()
+        return body.split(',').map { it.trim().toFloatOrNull() ?: return null }
+    }
+
+    fun encodeFloatArray(values: List<Float>): String = values.joinToString(",", "[", "]")
+
     fun normalizeAudioBands(raw: List<Float>?): List<Float> {
         if (raw == null || raw.size != 10) return List(10) { 0f }
         return raw.map { band ->
@@ -302,7 +313,11 @@ class PlayerPreferences(
             PlayerPreferencesRules.KEY_SUBTITLES_FONT,
             PlayerPreferencesRules.KEY_SUBTITLES_TEXT_COLOR,
             PlayerPreferencesRules.KEY_SUBTITLES_BACKGROUND_COLOR,
-            PlayerPreferencesRules.KEY_SUBTITLES_BACKGROUND_OPACITY -> {
+            PlayerPreferencesRules.KEY_SUBTITLES_BACKGROUND_OPACITY,
+            PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_PROFILE,
+            PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_PREAMP,
+            PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_BANDS,
+            PlayerPreferencesRules.KEY_AUDIO_BOOSTER_ENABLED -> {
                 listeners.toList().forEach { it() }
             }
         }
@@ -474,4 +489,33 @@ class PlayerPreferences(
     var audioBoosterEnabled: Boolean
         get() = store.getBoolean(PlayerPreferencesRules.KEY_AUDIO_BOOSTER_ENABLED, false)
         set(value) = store.putBoolean(PlayerPreferencesRules.KEY_AUDIO_BOOSTER_ENABLED, value)
+
+    /** The user's band adjustments, stored as a JSON array of ten floats; anything else reads as zeros. */
+    var audioEnhancementBands: List<Float>
+        get() = PlayerPreferencesRules.normalizeAudioBands(
+            PlayerPreferencesRules.parseFloatArray(store.getString(PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_BANDS, null)),
+        )
+        set(value) = store.putString(
+            PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_BANDS,
+            PlayerPreferencesRules.encodeFloatArray(PlayerPreferencesRules.normalizeAudioBands(value)),
+        )
+
+    /** Audio Enhancement as one typed value (E.1); setting it stores all four keys. */
+    var audioEnhancement: AudioEnhancementSettings
+        get() = AudioEnhancementSettings.fromStored(
+            profileRaw = store.getString(PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_PROFILE, null),
+            preamp = if (store.contains(PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_PREAMP)) {
+                store.getFloat(PlayerPreferencesRules.KEY_AUDIO_ENHANCEMENT_PREAMP, 0f)
+            } else {
+                null
+            },
+            bands = audioEnhancementBands,
+            booster = audioBoosterEnabled,
+        )
+        set(value) {
+            audioEnhancementProfile = value.profile.raw
+            audioEnhancementPreamp = value.userPreamp
+            audioEnhancementBands = value.userBands
+            audioBoosterEnabled = value.boosterEnabled
+        }
 }
