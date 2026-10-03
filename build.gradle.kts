@@ -124,6 +124,7 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
     implementation(libs.mediarouter)
+    implementation(libs.jellyfin.media3.ffmpeg.decoder)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)

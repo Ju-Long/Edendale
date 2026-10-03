@@ -206,6 +206,22 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
 
+### DTS and TrueHD
+
+Media3 plays DTS, DTS-HD, and Dolby TrueHD through the device's own decoders
+when it has them, or sends them undecoded to a receiver or TV that accepts
+them. Everywhere else, Jellyfin's build of Media3's FFmpeg audio decoder
+(`org.jellyfin.media3:media3-ffmpeg-decoder`, one native library per ABI)
+decodes them, and the result goes through Audio Enhancement like any other
+decoded audio.
+
+### Licence
+
+That FFmpeg decoder is licensed under the GNU General Public License v3.0, so
+the Android app built from this branch, as a whole, is distributed under the
+GPL-3.0. Its source is this branch plus the libraries it names; the decoder's
+own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
+
 ### Languages
 
 Every user-facing string lives in `src/main/res/values/strings.xml`, with

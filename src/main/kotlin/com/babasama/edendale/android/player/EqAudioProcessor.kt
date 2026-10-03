@@ -32,6 +32,11 @@ class EqAudioProcessor : BaseAudioProcessor() {
     private var dsp: EqualizerDsp? = null
     private var scratch = FloatArray(0)
 
+    /** Frames that passed through, equalized or not; tests read it to see decoded audio arrive. */
+    @Volatile
+    internal var framesSeen = 0L
+        private set
+
     /** New settings; they apply from the next buffer, without reconfiguring the sink. */
     fun update(settings: AudioEnhancementSettings) {
         this.settings = settings
@@ -59,6 +64,7 @@ class EqAudioProcessor : BaseAudioProcessor() {
     override fun queueInput(inputBuffer: ByteBuffer) {
         val remaining = inputBuffer.remaining()
         if (remaining == 0) return
+        framesSeen += remaining / inputAudioFormat.bytesPerFrame
         val equalizer = dsp ?: EqualizerDsp(inputAudioFormat.channelCount, inputAudioFormat.sampleRate).also { dsp = it }
         val current = settings
         if (current != appliedSettings) {
@@ -99,9 +105,20 @@ class EqAudioProcessor : BaseAudioProcessor() {
     }
 }
 
-/** Installs [eq] in every audio sink the player builds (E.1.2). */
+/**
+ * The player's renderers: Media3's defaults, with [eq] in every audio sink
+ * (E.1.2), and FFmpeg's audio decoder after the platform's (E.2, D5): DTS,
+ * DTS-HD, and TrueHD play on devices without those decoders, while a receiver
+ * that takes the stream undecoded still gets it, and the equalizer applies to
+ * what FFmpeg decodes.
+ */
 @OptIn(UnstableApi::class)
 class EdendaleRenderersFactory(context: Context, private val eq: EqAudioProcessor) : DefaultRenderersFactory(context) {
+
+    init {
+        setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)
+    }
+
     override fun buildAudioSink(
         context: Context,
         enableFloatOutput: Boolean,

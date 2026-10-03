@@ -1067,13 +1067,13 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 ### E.2 — DTS and TrueHD decoding (D5)
 
 - [x] **E.2.1** Record the owner's D5 choice here: (a) Jellyfin decoder (`org.jellyfin.media3:media3-ffmpeg-decoder`), confirmed by the owner on 2026-10-02.
-- [ ] **E.2.2** For (a): add `org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1`
+- [x] **E.2.2** For (a): add `org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1`
   and call `setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)` (platform
   decoders first, FFmpeg as the fallback), and update the README's licence
   section for a GPL-3.0 APK. For (b): an NDK build of Media3's FFmpeg extension
   with an LGPL-only FFmpeg configured for just the needed audio decoders, a
   checked-in build script, and CI that builds it without secrets.
-- [ ] **E.2.3** Generated fixtures (A.5.6) with a DTS track and with a TrueHD
+- [x] **E.2.3** Generated fixtures (A.5.6) with a DTS track and with a TrueHD
   track play with sound on a phone that has neither decoder, and the EQ applies
   to their decoded audio.
 
@@ -1870,7 +1870,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.4 | Keep logins; Accounts | Complete | |
 | D.5 | Play From | Complete | |
 | E.1 | EQ profiles and booster | Complete | |
-| E.2 | DTS and TrueHD (D5) | Not started | |
+| E.2 | DTS and TrueHD (D5) | Complete | |
 | F.1 | Effects plumbing | Not started | |
 | F.2 | Picture adjustments | Not started | |
 | F.3 | Upscaler | Not started | |
