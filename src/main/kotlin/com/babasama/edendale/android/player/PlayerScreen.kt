@@ -142,6 +142,7 @@ internal fun PlayerScreen(
     wyzieLookup: State<WyzieLookup?>,
     activeSegment: State<PlaybackSegment?>,
     upcomingEpisode: State<PlaylistEntry?>,
+    playbackFailure: State<PlaybackFailure?>,
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
@@ -427,6 +428,15 @@ internal fun PlayerScreen(
                         }
                     },
                 )
+            }
+        }
+
+        // Over everything but the panels: the picture is gone, and only Close
+        // (or Back) is left to do.
+        playbackFailure.value?.let { failure ->
+            // A Surface, so taps can't reach the hidden controls underneath.
+            Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
+                PlaybackErrorView(failure = failure, isTelevision = isTelevision, onClose = onClose)
             }
         }
 

@@ -332,4 +332,10 @@
     <string name="player_audio_mono">單聲道</string>
     <string name="player_audio_stereo">立體聲</string>
     <string name="player_audio_channels">%d 聲道</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">無法播放</string>
+    <string name="player_error_could_not_open">無法開啟此作品。</string>
+    <string name="player_error_connection_lost">與 %1$s 的連線已中斷。</string>
+    <string name="player_error_connection_lost_detail">與 %1$s 的連線已中斷：%2$s</string>
+    <string name="player_error_could_not_connect">無法連線至 %1$s。</string>
 </resources>

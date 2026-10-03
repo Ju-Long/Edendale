@@ -332,4 +332,10 @@
     <string name="player_audio_mono">モノラル</string>
     <string name="player_audio_stereo">ステレオ</string>
     <string name="player_audio_channels">%dch</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">再生できません</string>
+    <string name="player_error_could_not_open">このタイトルは開けませんでした。</string>
+    <string name="player_error_connection_lost">%1$sとの接続が切断されました。</string>
+    <string name="player_error_connection_lost_detail">%1$sとの接続が切断されました: %2$s</string>
+    <string name="player_error_could_not_connect">%1$sに接続できませんでした。</string>
 </resources>

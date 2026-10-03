@@ -860,16 +860,16 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   open.
 
 **Checklist:**
-- [ ] **D.1.1** A pure `BufferedByteSource` over an interface (`open`,
+- [x] **D.1.1** A pure `BufferedByteSource` over an interface (`open`,
   `read(position, buffer, offset, length)`, `length`, `keepAlive`, `close`),
   with an injectable clock and sleeper so tests run in virtual time.
-- [ ] **D.1.2** A jcifs-ng implementation of the interface over
+- [x] **D.1.2** A jcifs-ng implementation of the interface over
   `SmbRandomAccessFile` (keep-alive is a cheap metadata call).
-- [ ] **D.1.3** `SmbDataSource` serves reads from the buffered source; remove
+- [x] **D.1.3** `SmbDataSource` serves reads from the buffered source; remove
   the 512 KiB `readAhead` path.
 
 **Tests (JVM):**
-- [ ] **D.1.T1** Port `BufferedByteSourceTests`: sequential reads fill
+- [x] **D.1.T1** Port `BufferedByteSourceTests`: sequential reads fill
   read-ahead up to the limit; a seek gets its chunk first; reconnect after a
   failure follows the delay sequence; the read fails after the last retry;
   keep-alive after 20 s idle; cancellation unblocks a waiting read; the cache
@@ -1864,7 +1864,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
 | C.6 | MediaSession and system surfaces | Complete | |
-| D.1 | Buffered SMB reads | Not started | |
+| D.1 | Buffered SMB reads | Complete | |
 | D.2 | Source records (Room v3) | Not started | |
 | D.3 | Rescan throttle and per-source status | Not started | |
 | D.4 | Keep logins; Accounts | Not started | |

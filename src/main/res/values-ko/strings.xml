@@ -332,4 +332,10 @@
     <string name="player_audio_mono">모노</string>
     <string name="player_audio_stereo">스테레오</string>
     <string name="player_audio_channels">%d채널</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">재생할 수 없음</string>
+    <string name="player_error_could_not_open">이 제목을 열 수 없습니다.</string>
+    <string name="player_error_connection_lost">%1$s과(와)의 연결이 끊어졌습니다.</string>
+    <string name="player_error_connection_lost_detail">%1$s과(와)의 연결이 끊어졌습니다: %2$s</string>
+    <string name="player_error_could_not_connect">%1$s에 연결할 수 없습니다.</string>
 </resources>

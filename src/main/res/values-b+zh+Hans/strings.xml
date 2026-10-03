@@ -332,4 +332,10 @@
     <string name="player_audio_mono">单声道</string>
     <string name="player_audio_stereo">立体声</string>
     <string name="player_audio_channels">%d 声道</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">无法播放</string>
+    <string name="player_error_could_not_open">无法打开此影视作品。</string>
+    <string name="player_error_connection_lost">与 %1$s 的连接已中断。</string>
+    <string name="player_error_connection_lost_detail">与 %1$s 的连接已中断：%2$s</string>
+    <string name="player_error_could_not_connect">无法连接到 %1$s。</string>
 </resources>

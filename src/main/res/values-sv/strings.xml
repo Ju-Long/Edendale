@@ -336,4 +336,10 @@
     <string name="player_audio_mono">Mono</string>
     <string name="player_audio_stereo">Stereo</string>
     <string name="player_audio_channels">%d kan.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Kunde inte spela upp</string>
+    <string name="player_error_could_not_open">Den här titeln kunde inte öppnas.</string>
+    <string name="player_error_connection_lost">Anslutningen till %1$s bröts.</string>
+    <string name="player_error_connection_lost_detail">Anslutningen till %1$s bröts: %2$s</string>
+    <string name="player_error_could_not_connect">Det gick inte att ansluta till %1$s.</string>
 </resources>

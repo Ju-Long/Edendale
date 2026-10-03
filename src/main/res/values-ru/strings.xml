@@ -344,4 +344,10 @@
     <string name="player_audio_mono">Моно</string>
     <string name="player_audio_stereo">Стерео</string>
     <string name="player_audio_channels">%d кан.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Не удалось воспроизвести</string>
+    <string name="player_error_could_not_open">Не удалось открыть этот материал.</string>
+    <string name="player_error_connection_lost">Соединение с %1$s потеряно.</string>
+    <string name="player_error_connection_lost_detail">Соединение с %1$s потеряно: %2$s</string>
+    <string name="player_error_could_not_connect">Не удалось подключиться к %1$s.</string>
 </resources>

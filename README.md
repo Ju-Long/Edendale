@@ -122,6 +122,16 @@ network errors, invalid ranges, and rate limits leave normal playback
 available without a prompt. Playback and initial import never wait for this
 service.
 
+### Network shares
+
+SMB shares stream through a buffered reader: a worker thread fetches 1 MiB
+chunks and keeps up to 48 MiB ahead of playback within a 64 MiB memory cache
+(16 MiB within 24 MiB on low-memory devices), so a slow link such as a phone
+hotspot or a VPN doesn't stall playback. A dropped connection is reopened
+after 0.25, 0.5, 1, 2, 4, and 8 seconds before playback gives up with a
+message naming the server, and a paused connection gets a keep-alive every
+20 seconds. Nothing is written to disk.
+
 ### Subtitle appearance
 
 **Settings → Subtitles** sets how text subtitles look: the font (System,

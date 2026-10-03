@@ -64,4 +64,10 @@
     <string name="player_audio_mono">Mono</string>
     <string name="player_audio_stereo">Stereo</string>
     <string name="player_audio_channels">%d ch</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Unable to Play</string>
+    <string name="player_error_could_not_open">This title could not be opened.</string>
+    <string name="player_error_connection_lost">Lost the connection to %1$s.</string>
+    <string name="player_error_connection_lost_detail">Lost the connection to %1$s: %2$s</string>
+    <string name="player_error_could_not_connect">Couldn\'t connect to %1$s.</string>
 </resources>

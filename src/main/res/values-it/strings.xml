@@ -336,4 +336,10 @@
     <string name="player_audio_mono">Mono</string>
     <string name="player_audio_stereo">Stereo</string>
     <string name="player_audio_channels">%d can.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Impossibile riprodurre</string>
+    <string name="player_error_could_not_open">Impossibile aprire questo titolo.</string>
+    <string name="player_error_connection_lost">Connessione a %1$s persa.</string>
+    <string name="player_error_connection_lost_detail">Connessione a %1$s persa: %2$s</string>
+    <string name="player_error_could_not_connect">Impossibile connettersi a %1$s.</string>
 </resources>

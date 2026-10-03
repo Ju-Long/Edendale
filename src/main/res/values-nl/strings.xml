@@ -336,4 +336,10 @@
     <string name="player_audio_mono">Mono</string>
     <string name="player_audio_stereo">Stereo</string>
     <string name="player_audio_channels">%d kan.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Kan niet afspelen</string>
+    <string name="player_error_could_not_open">Deze titel kon niet worden geopend.</string>
+    <string name="player_error_connection_lost">Verbinding met %1$s verbroken.</string>
+    <string name="player_error_connection_lost_detail">Verbinding met %1$s verbroken: %2$s</string>
+    <string name="player_error_could_not_connect">Kan geen verbinding maken met %1$s.</string>
 </resources>

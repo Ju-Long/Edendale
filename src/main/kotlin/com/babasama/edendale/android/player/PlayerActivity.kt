@@ -32,6 +32,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
@@ -114,6 +115,7 @@ class PlayerActivity : ComponentActivity() {
     private val wyzieLookupState = mutableStateOf<WyzieLookup?>(null)
     private val activeSegmentState = mutableStateOf<PlaybackSegment?>(null)
     private val upcomingEpisodeState = mutableStateOf<PlaylistEntry?>(null)
+    private val playbackFailureState = mutableStateOf<PlaybackFailure?>(null)
 
     private val transitions = PlaybackTransitions()
 
@@ -291,6 +293,10 @@ class PlayerActivity : ComponentActivity() {
             // whenever what they describe changes.
             override fun onIsPlayingChanged(isPlaying: Boolean) = updatePipParams()
 
+            override fun onPlayerError(error: PlaybackException) {
+                playbackFailureState.value = PlaybackFailure.of(error)
+            }
+
             override fun onVideoSizeChanged(videoSize: VideoSize) = updatePipParams()
 
             // A new item first reports empty tracks, before it's prepared.
@@ -336,6 +342,7 @@ class PlayerActivity : ComponentActivity() {
                     wyzieLookup = wyzieLookupState,
                     activeSegment = activeSegmentState,
                     upcomingEpisode = upcomingEpisodeState,
+                    playbackFailure = playbackFailureState,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
@@ -361,6 +368,7 @@ class PlayerActivity : ComponentActivity() {
                 ?.takeIf { it in 0.02..0.94 }
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
+                playbackFailureState.value = null
                 exoPlayer.setMediaItem(mediaItem(uri))
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
