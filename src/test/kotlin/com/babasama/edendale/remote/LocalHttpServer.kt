@@ -16,7 +16,13 @@ import java.util.concurrent.Executors
  */
 class LocalHttpServer(private val handler: (Request) -> Response) : Closeable {
 
-    class Request(val method: String, val path: String, val query: String?, headers: Map<String, String>) {
+    class Request(
+        val method: String,
+        val path: String,
+        val query: String?,
+        headers: Map<String, String>,
+        val body: ByteArray = ByteArray(0),
+    ) {
         val headers: Map<String, String> = headers.mapKeys { it.key.lowercase() }
 
         fun header(name: String): String? = headers[name.lowercase()]
@@ -48,7 +54,17 @@ class LocalHttpServer(private val handler: (Request) -> Response) : Closeable {
         val (method, target) = requestLine.split(' ').let { it[0] to it.getOrElse(1) { "/" } }
         val headers = generateSequence { reader.readLine()?.takeIf { it.isNotEmpty() } }
             .associate { it.substringBefore(':').trim() to it.substringAfter(':').trim() }
-        val request = Request(method, target.substringBefore('?'), target.substringAfter('?', "").ifEmpty { null }, headers)
+        val length = headers.entries.firstOrNull { it.key.equals("Content-Length", ignoreCase = true) }?.value?.toIntOrNull() ?: 0
+        // ISO-8859-1 maps each byte to one char, so the body reads back byte for byte.
+        val body = CharArray(length).also { chars ->
+            var read = 0
+            while (read < length) {
+                val count = reader.read(chars, read, length - read)
+                if (count < 0) break
+                read += count
+            }
+        }.concatToString().toByteArray(Charsets.ISO_8859_1)
+        val request = Request(method, target.substringBefore('?'), target.substringAfter('?', "").ifEmpty { null }, headers, body)
         requests += request
         val response = runCatching { handler(request) }.getOrElse { Response(500) }
         val head = buildString {
@@ -71,6 +87,7 @@ class LocalHttpServer(private val handler: (Request) -> Response) : Closeable {
     private fun reason(status: Int) = when (status) {
         200 -> "OK"
         206 -> "Partial Content"
+        207 -> "Multi-Status"
         401 -> "Unauthorized"
         403 -> "Forbidden"
         404 -> "Not Found"

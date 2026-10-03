@@ -7,7 +7,11 @@ import androidx.media3.datasource.BaseDataSource
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
+import com.babasama.edendale.android.data.ServerLoginStore
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.WebDavContentResolver
+import com.babasama.edendale.remote.HttpAuthSession
+import com.babasama.edendale.remote.OkHttpRemoteHttp
 import com.babasama.edendale.remote.RemoteByteSource
 import com.babasama.edendale.remote.RemoteFailure
 import com.babasama.edendale.remote.RemoteSourceException
@@ -21,8 +25,15 @@ import java.io.IOException
  */
 internal object RemotePlayback {
     fun byteSource(context: Context, url: String, kind: MediaSourceKind): RemoteByteSource? = when (kind) {
+        // WebDAV works as a guest too, so a missing login isn't a reason to stop (H.3).
+        MediaSourceKind.WEBDAV -> RemoteByteSource(
+            WebDavContentResolver(url, HttpAuthSession(ServerLoginStore(context).forUrl(kind, url)), http),
+            http,
+        )
         else -> null
     }
+
+    private val http by lazy { OkHttpRemoteHttp() }
 }
 
 /**

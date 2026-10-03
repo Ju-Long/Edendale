@@ -423,5 +423,12 @@
     <string name="player_error_abusive_file">Google Drive marcó este archivo como potencialmente dañino, así que no se puede transmitir.</string>
     <string name="player_error_untrusted_certificate">El certificado de %1$s no es de confianza, así que Edendale no transmitirá desde él.</string>
     <string name="source_kind_s3">Almacenamiento compatible con S3</string>
-    <string name="source_kind_local">Carpeta local</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Carpetas compartidas en una Mac, una PC o un NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr o rclone.</string>
+    <string name="connector_unreachable">No se puede acceder a %1$s. Revisa que el servidor esté encendido, en la misma red y que el nombre o las credenciales sean correctos.</string>
+    <string name="connector_authentication_failed">%1$s no aceptó el nombre de usuario y la contraseña.</string>
+    <string name="connector_listing_failed">No se pudo leer la carpeta %1$s. Es posible que necesite otras credenciales o permisos.</string>
+    <string name="connector_invalid_address">Esa dirección de servidor no parece correcta. Ingresa un nombre de host como nas.local o una dirección IP.</string>
+    <string name="connector_insecure_connection">Ingresa una dirección https://. Todavía no se admite HTTP sin cifrar.</string>
 </resources>

@@ -437,5 +437,12 @@
     <string name="player_error_abusive_file">Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</string>
     <string name="player_error_untrusted_certificate">Сертификат %1$s не является доверенным, поэтому Edendale не будет транслировать с этого сервера.</string>
     <string name="source_kind_s3">S3-совместимое хранилище</string>
-    <string name="source_kind_local">Локальная папка</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Общие папки на Mac, ПК или NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr или rclone.</string>
+    <string name="connector_unreachable">Не удается подключиться к %1$s. Убедитесь, что сервер включен, находится в той же сети, а его имя и учетные данные верны.</string>
+    <string name="connector_authentication_failed">%1$s: имя пользователя и пароль не приняты.</string>
+    <string name="connector_listing_failed">Не удалось прочитать папку %1$s. Возможно, требуются другие учетные данные или права доступа.</string>
+    <string name="connector_invalid_address">Неверный адрес сервера. Введите имя хоста (например, nas.local) или IP-адрес.</string>
+    <string name="connector_insecure_connection">Введите адрес https://. Незашифрованный HTTP пока не поддерживается.</string>
 </resources>

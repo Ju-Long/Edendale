@@ -1,11 +1,16 @@
 package com.babasama.edendale.android
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SmbClient
+import com.babasama.edendale.android.data.SourceScanRules
+import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.SourceStatus
+import com.babasama.edendale.connectors.SourceUrl
 
 /**
  * Why a source's last scan failed, for its row in Settings → Sources and in
@@ -15,23 +20,24 @@ import com.babasama.edendale.connectors.SourceStatus
 @Composable
 internal fun sourceStatusMessage(folder: LibraryFolderEntity): String? {
     val status = SourceStatus.fromRaw(folder.status) ?: return null
-    val name = SmbClient.hostOf(folder.treeUri) ?: folder.displayName
+    val name = SmbClient.hostOf(folder.treeUri)
+        ?: SourceUrl.credentialHost(folder.treeUri)?.takeIf { SourceScanRules.kindOf(folder)?.isRemote == true }
+        ?: folder.displayName
     return when (status) {
         SourceStatus.OFFLINE -> stringResource(R.string.sources_status_offline, name)
         SourceStatus.NEEDS_SIGN_IN -> stringResource(R.string.sources_status_needs_sign_in, name)
     }
 }
 
-/** A source kind's name: provider names stay as their owners write them; S3 and local folders are translated. */
-@Composable
-internal fun sourceKindName(kind: MediaSourceKind): String = when (kind) {
-    MediaSourceKind.LOCAL -> stringResource(R.string.source_kind_local)
-    MediaSourceKind.SMB -> "SMB"
-    MediaSourceKind.NFS -> "NFS"
-    MediaSourceKind.SFTP -> "SFTP"
-    MediaSourceKind.WEBDAV -> "WebDAV"
-    MediaSourceKind.S3 -> stringResource(R.string.source_kind_s3)
-    MediaSourceKind.GOOGLE_DRIVE -> "Google Drive"
-    MediaSourceKind.ONE_DRIVE -> "OneDrive"
-    MediaSourceKind.DROPBOX -> "Dropbox"
-}
+/** What the viewer reads when linking or listing a server fails (H.3); null for an error that isn't a connector's. */
+internal fun connectorFailureMessage(context: Context, error: Throwable): String? =
+    when (val failure = (error as? ConnectorException)?.failure) {
+        null -> null
+        ConnectorFailure.InvalidAddress -> context.getString(R.string.connector_invalid_address)
+        ConnectorFailure.InsecureConnection -> context.getString(R.string.connector_insecure_connection)
+        is ConnectorFailure.Unreachable -> context.getString(R.string.connector_unreachable, failure.host)
+        is ConnectorFailure.AuthenticationFailed -> context.getString(R.string.connector_authentication_failed, failure.host)
+        is ConnectorFailure.ListingFailed -> context.getString(R.string.connector_listing_failed, failure.path)
+        is ConnectorFailure.SignInRequired ->
+            context.getString(R.string.sources_status_needs_sign_in, sourceKindLabel(context, failure.kind))
+    }

@@ -415,5 +415,12 @@
     <string name="player_error_abusive_file">Google 드라이브에서 이 파일을 잠재적으로 유해한 파일로 표시했으므로 스트리밍할 수 없습니다.</string>
     <string name="player_error_untrusted_certificate">%1$s의 인증서를 신뢰할 수 없으므로 Edendale은 해당 서버에서 스트리밍하지 않습니다.</string>
     <string name="source_kind_s3">S3 호환 저장 공간</string>
-    <string name="source_kind_local">로컬 폴더</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac, PC 또는 NAS의 공유 폴더.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr 또는 rclone.</string>
+    <string name="connector_unreachable">%1$s에 연결할 수 없습니다. 서버가 켜져 있고 같은 네트워크에 있는지, 이름이나 자격 증명이 올바른지 확인하십시오.</string>
+    <string name="connector_authentication_failed">%1$s에서 사용자 이름과 암호를 허용하지 않았습니다.</string>
+    <string name="connector_listing_failed">%1$s 폴더를 읽을 수 없습니다. 다른 자격 증명이나 권한이 필요할 수 있습니다.</string>
+    <string name="connector_invalid_address">서버 주소가 올바르지 않은 것 같습니다. nas.local과 같은 호스트 이름이나 IP 주소를 입력하십시오.</string>
+    <string name="connector_insecure_connection">https:// 주소를 입력하세요. 암호화되지 않은 HTTP는 아직 지원되지 않습니다.</string>
 </resources>

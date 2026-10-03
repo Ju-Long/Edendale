@@ -4,6 +4,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import com.babasama.edendale.android.data.LibraryDao
 import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.connectors.MediaSourceKind
 
 /**
  * One row of the player's playlist side panel: the show's episodes when the
@@ -73,7 +74,8 @@ internal fun List<PlaylistItem>.indexOfEntry(uri: String): Int =
  * is opaque, in which case callers fall back to grouping by source root.
  */
 internal fun playlistParentKey(uri: String): String? = when {
-    uri.startsWith("smb://") ->
+    // Server URLs are path-shaped (smb, nfs, sftp, WebDAV).
+    MediaSourceKind.forSourceUri(uri)?.let { it.isRemote && !it.isCloudAccount && it != MediaSourceKind.S3 } == true ->
         uri.trimEnd('/').substringBeforeLast('/', "").ifBlank { null }
     uri.startsWith("content://") -> runCatching {
         DocumentsContract.getDocumentId(Uri.parse(uri))

@@ -30,7 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SavedSmbLogin
+import com.babasama.edendale.android.data.SavedServerLogin
+import com.babasama.edendale.android.data.ServerLoginStore
 import com.babasama.edendale.android.data.SmbCredentialsStore
+import com.babasama.edendale.android.data.serverLoginUsage
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.android.data.smbLoginUsage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,15 +53,31 @@ internal fun AccountsSettingsSection(
 ) {
     val context = LocalContext.current
     val store = remember(context) { SmbCredentialsStore(context) }
+    val serverStore = remember(context) { ServerLoginStore(context) }
     val scope = rememberCoroutineScope()
-    var logins by remember { mutableStateOf<List<SavedSmbLogin>?>(null) }
+    var smbLogins by remember { mutableStateOf<List<SavedSmbLogin>?>(null) }
+    var serverLogins by remember { mutableStateOf<List<SavedServerLogin>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
-    var pendingForget by remember { mutableStateOf<SavedSmbLogin?>(null) }
+    var pendingForget by remember { mutableStateOf<SavedLoginRow?>(null) }
 
     LaunchedEffect(store, reload) {
-        logins = withContext(Dispatchers.IO) { runCatching { store.savedLogins() }.getOrDefault(emptyList()) }
+        smbLogins = withContext(Dispatchers.IO) { runCatching { store.savedLogins() }.getOrDefault(emptyList()) }
+        serverLogins = withContext(Dispatchers.IO) { runCatching { serverStore.all() }.getOrDefault(emptyList()) }
     }
-    val usage = remember(logins, folders) { smbLoginUsage(logins.orEmpty(), folders.map { it.treeUri }) }
+    // SMB logins first, then other servers' (H.3) by kind and host.
+    val logins = remember(smbLogins, serverLogins, folders) {
+        val smb = smbLogins ?: return@remember null
+        val servers = serverLogins ?: return@remember null
+        val smbUsage = smbLoginUsage(smb, folders.map { it.treeUri })
+        val serverUsage = serverLoginUsage(servers, folders)
+        smb.map { login ->
+            SavedLoginRow(MediaSourceKind.SMB, login.user, login.host, smbUsage[login] ?: 0) { store.removeCredentials(login.host) }
+        } + servers.map { login ->
+            SavedLoginRow(login.kind, login.user, login.address, serverUsage[login] ?: 0) {
+                withContext(Dispatchers.IO) { serverStore.remove(login.kind, login.host, login.port) }
+            }
+        }
+    }
 
     SettingsSection(
         header = stringResource(R.string.settings_section_accounts),
@@ -75,7 +95,6 @@ internal fun AccountsSettingsSection(
                 if (index > 0) SettingsRowDivider()
                 LoginRow(
                     login = login,
-                    sourceCount = usage[login] ?: 0,
                     isTelevision = isTelevision,
                     onForget = { pendingForget = login },
                 )
@@ -101,7 +120,7 @@ internal fun AccountsSettingsSection(
             },
             text = {
                 Text(
-                    text = stringResource(R.string.accounts_forget_message, login.host),
+                    text = stringResource(R.string.accounts_forget_message, login.address),
                     style = BodyCopyStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -121,7 +140,7 @@ internal fun AccountsSettingsSection(
                     onClick = {
                         pendingForget = null
                         scope.launch {
-                            runCatching { store.removeCredentials(login.host) }
+                            runCatching { login.forget() }
                             reload++
                         }
                     },
@@ -131,13 +150,23 @@ internal fun AccountsSettingsSection(
     }
 }
 
+/** One saved server login: SMB, or another server kind (H.3). The password never leaves its store. */
+private class SavedLoginRow(
+    val kind: MediaSourceKind,
+    val user: String,
+    /** The host, with its port when one was typed. */
+    val address: String,
+    val sourceCount: Int,
+    val forget: suspend () -> Unit,
+)
+
 @Composable
 private fun LoginRow(
-    login: SavedSmbLogin,
-    sourceCount: Int,
+    login: SavedLoginRow,
     isTelevision: Boolean,
     onForget: () -> Unit,
 ) {
+    val sourceCount = login.sourceCount
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -152,7 +181,7 @@ private fun LoginRow(
             verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
             Text(
-                text = "${login.user} @ ${login.host}",
+                text = "${login.user} @ ${login.address}",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
@@ -161,7 +190,7 @@ private fun LoginRow(
             Text(
                 text = stringResource(
                     R.string.metadata_separator,
-                    stringResource(R.string.source_kind_smb),
+                    sourceKindLabel(login.kind),
                     if (sourceCount == 0) {
                         stringResource(R.string.accounts_no_sources)
                     } else {

@@ -9,9 +9,15 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.copySource
+import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.VideoFiles
+import com.babasama.edendale.connectors.WebDav
+import com.babasama.edendale.connectors.WebDavConnector
+import com.babasama.edendale.remote.OkHttpRemoteHttp
+import com.babasama.edendale.remote.ServerLogin
 import com.babasama.edendale.domain.MediaParser
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.ParsedMedia
@@ -57,6 +63,8 @@ class LibraryRepository(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val enrichmentLock = Mutex()
     private val smbCredentialsStore = SmbCredentialsStore(context)
+    private val serverLogins = ServerLoginStore(context)
+    private val http = OkHttpRemoteHttp()
 
     private val _activity = MutableStateFlow(LibraryActivity())
     val activity: StateFlow<LibraryActivity> = _activity.asStateFlow()
@@ -144,6 +152,36 @@ class LibraryRepository(
         }
     }
 
+    /**
+     * The folders under a WebDAV [folderUrl] (`davs://…/`), for the Link
+     * Source browser (H.3). The login is the one being typed, not yet saved.
+     */
+    suspend fun listWebDavFolders(folderUrl: String, user: String, pass: String): Result<List<ConnectorEntry>> =
+        runCatching {
+            WebDavConnector(folderUrl, ServerLogin(user, pass), http).list(folderUrl).filter { it.isDirectory }
+        }
+
+    /** Links a WebDAV folder (H.3): saves the login under its host and port, then scans. */
+    fun importWebDavFolder(folderUrl: String, user: String, pass: String) {
+        val host = SourceUrl.credentialHost(folderUrl) ?: return
+        val port = SourceUrl.port(folderUrl)
+        scope.launch {
+            serverLogins.save(MediaSourceKind.WEBDAV, host, port, ServerLogin(user.trim(), pass))
+            val segments = SourceUrl.pathSegments(folderUrl)
+            val address = if (port != null) "$host:$port" else host
+            val folder = LibraryFolderEntity(
+                treeUri = WebDav.directoryUrl(folderUrl),
+                displayName = segments.lastOrNull() ?: address,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.WEBDAV.raw,
+                displayPath = (listOf(address) + segments).joinToString(" › "),
+                accountKey = address,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
+    }
+
     fun importFiles(uris: List<Uri>) {
         if (uris.isEmpty()) return
         uris.forEach { uri ->
@@ -192,7 +230,7 @@ class LibraryRepository(
     fun removeFolder(treeUri: String) {
         scope.launch {
             dao.removeFolderTree(treeUri)
-            if (SmbClient.hostOf(treeUri) == null) {
+            if (treeUri.startsWith("content://")) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
                         Uri.parse(treeUri),
@@ -350,6 +388,11 @@ class LibraryRepository(
                 root = folder.treeUri,
                 credentials = smbCredentialsStore.getCredentials(Uri.parse(folder.treeUri).host.orEmpty()),
                 strings = strings,
+            )
+            MediaSourceKind.WEBDAV -> WebDavConnector(
+                root = folder.treeUri,
+                login = serverLogins.forUrl(MediaSourceKind.WEBDAV, folder.treeUri),
+                http = http,
             )
             else -> null
         }

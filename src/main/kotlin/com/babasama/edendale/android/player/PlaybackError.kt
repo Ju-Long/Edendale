@@ -25,7 +25,7 @@ import com.babasama.edendale.android.ArchiveButton
 import com.babasama.edendale.android.ArchiveButtonKind
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.R
-import com.babasama.edendale.android.sourceKindName
+import com.babasama.edendale.android.sourceKindLabel
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.remote.RemoteConnectionLostException
 import com.babasama.edendale.remote.RemoteFailure
@@ -77,7 +77,7 @@ internal fun playbackFailureMessage(failure: PlaybackFailure): String = when (fa
 /** Apple's provider messages, named for the provider and never carrying a URL. */
 @Composable
 internal fun providerFailureMessage(kind: MediaSourceKind, failure: RemoteFailure): String {
-    val provider = sourceKindName(kind)
+    val provider = sourceKindLabel(kind)
     return when (failure) {
         RemoteFailure.SignInRequired -> stringResource(R.string.sources_status_needs_sign_in, provider)
         RemoteFailure.AccessDenied -> stringResource(R.string.player_error_access_denied, provider)

@@ -16,10 +16,17 @@ import kotlin.random.Random
  * One HTTP GET a byte source or a listing makes (H.2). The URL and headers
  * may carry a token or a signed link, so they never reach a log or a message.
  */
-class RemoteRequest(val url: String, val headers: Map<String, String> = emptyMap()) {
-    fun with(name: String, value: String) = RemoteRequest(url, headers + (name to value))
+class RemoteRequest(
+    val url: String,
+    val headers: Map<String, String> = emptyMap(),
+    val method: String = "GET",
+    /** A request body, such as a WebDAV `PROPFIND`'s, with its content type. */
+    val body: ByteArray? = null,
+    val contentType: String? = null,
+) {
+    fun with(name: String, value: String) = RemoteRequest(url, headers + (name to value), method, body, contentType)
 
-    override fun toString() = "RemoteRequest(<redacted>)"
+    override fun toString() = "RemoteRequest($method <redacted>)"
 }
 
 class RemoteResponse(val status: Int, headers: Map<String, String>, val body: ByteArray) {

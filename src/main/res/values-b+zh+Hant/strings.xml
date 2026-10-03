@@ -415,5 +415,12 @@
     <string name="player_error_abusive_file">Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</string>
     <string name="player_error_untrusted_certificate">%1$s 的憑證不受信任，因此 Edendale 不會從其串流播放。</string>
     <string name="source_kind_s3">S3 相容儲存空間</string>
-    <string name="source_kind_local">本機檔案夾</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac、PC 或 NAS 上的共享檔案夾。</string>
+    <string name="link_source_webdav_description">Nextcloud、ownCloud、Synology、QNAP、pCloud、Koofr 或 rclone。</string>
+    <string name="connector_unreachable">無法連線至 %1$s。請檢查伺服器是否已開機、位於相同的網路，且名稱或憑證正確無誤。</string>
+    <string name="connector_authentication_failed">%1$s 不接受該使用者名稱和密碼。</string>
+    <string name="connector_listing_failed">無法讀取檔案夾 %1$s。可能需要不同的憑證或權限。</string>
+    <string name="connector_invalid_address">該伺服器位址似乎不正確。請輸入如 nas.local 的主機名稱或 IP 位址。</string>
+    <string name="connector_insecure_connection">請輸入 https:// 位址。尚不支援未加密的 HTTP。</string>
 </resources>

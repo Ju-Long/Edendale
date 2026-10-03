@@ -75,6 +75,8 @@ import com.babasama.edendale.android.player.SkipInterval
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.babasama.edendale.connectors.SourceUrl
+import com.babasama.edendale.android.data.SourceScanRules
 
 @Composable
 fun SettingsScreen(
@@ -100,13 +102,10 @@ fun SettingsScreen(
     }
 
     if (showSmbDialog) {
-        SmbImportDialog(
+        LinkSourceDialog(
             isTelevision = isTelevision,
             onDismiss = { showSmbDialog = false },
-            onImport = { host, user, pass ->
-                library.importSmbFolder(host, user, pass)
-                showSmbDialog = false
-            },
+            onLinked = { showSmbDialog = false },
         )
     }
 
@@ -861,10 +860,9 @@ private fun SourceRow(
     onRescan: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val isRemote = SmbClient.hostOf(folder.treeUri) != null
-    val kindLabel = stringResource(
-        if (isRemote) R.string.source_kind_smb else R.string.source_kind_local_folder,
-    )
+    val kind = SourceScanRules.kindOf(folder)
+    val isRemote = kind?.isRemote == true
+    val kindLabel = sourceKindLabel(kind)
     val statusMessage = if (isScanning) null else sourceStatusMessage(folder)
     val detail = if (isScanning) {
         stringResource(R.string.scanning)
@@ -944,6 +942,7 @@ private fun RemoveSourceDialog(
     onConfirm: () -> Unit,
 ) {
     val host = SmbClient.hostOf(folder.treeUri)
+        ?: SourceUrl.credentialHost(folder.treeUri).takeIf { SourceScanRules.kindOf(folder)?.isRemote == true }
     val message = if (host != null) {
         stringResource(R.string.remove_source_message_smb, folder.displayName, host)
     } else {

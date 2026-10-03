@@ -421,5 +421,12 @@
     <string name="player_error_abusive_file">Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</string>
     <string name="player_error_untrusted_certificate">Het certificaat van %1$s wordt niet vertrouwd, dus Edendale streamt er niet vanaf.</string>
     <string name="source_kind_s3">S3-compatibele opslag</string>
-    <string name="source_kind_local">Lokale map</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Gedeelde mappen op een Mac, pc of NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr of rclone.</string>
+    <string name="connector_unreachable">Kan %1$s niet bereiken. Controleer of de server aanstaat, in hetzelfde netwerk zit en of de naam of inloggegevens kloppen.</string>
+    <string name="connector_authentication_failed">%1$s heeft de gebruikersnaam en het wachtwoord niet geaccepteerd.</string>
+    <string name="connector_listing_failed">Kon de map %1$s niet lezen. Mogelijk zijn er andere inloggegevens of bevoegdheden nodig.</string>
+    <string name="connector_invalid_address">Dat serveradres ziet er niet goed uit. Voer een hostnaam in zoals nas.local of een IP-adres.</string>
+    <string name="connector_insecure_connection">Voer een https://-adres in. Onversleutelde HTTP wordt nog niet ondersteund.</string>
 </resources>

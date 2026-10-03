@@ -421,5 +421,12 @@
     <string name="player_error_abusive_file">Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</string>
     <string name="player_error_untrusted_certificate">Certifikatet för %1$s är inte betrott, så Edendale strömmar inte från det.</string>
     <string name="source_kind_s3">S3-kompatibel lagring</string>
-    <string name="source_kind_local">Lokal mapp</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Delade mappar på en Mac, PC eller NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr eller rclone.</string>
+    <string name="connector_unreachable">Kan inte nå %1$s. Kontrollera att servern är på, i samma nätverk, och att namnet eller inloggningsuppgifterna stämmer.</string>
+    <string name="connector_authentication_failed">%1$s godkände inte användarnamnet och lösenordet.</string>
+    <string name="connector_listing_failed">Kunde inte läsa mappen %1$s. Den kan kräva andra inloggningsuppgifter eller behörigheter.</string>
+    <string name="connector_invalid_address">Serveradressen ser inte rätt ut. Ange ett värdnamn som nas.local eller en IP-adress.</string>
+    <string name="connector_insecure_connection">Ange en https://-adress. Okrypterad HTTP stöds inte ännu.</string>
 </resources>

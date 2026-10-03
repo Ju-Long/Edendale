@@ -148,6 +148,17 @@ after 0.25, 0.5, 1, 2, 4, and 8 seconds before playback gives up with a
 message naming the server, and a paused connection gets a keep-alive every
 20 seconds. Nothing is written to disk.
 
+### WebDAV servers
+
+**Add Network Source → WebDAV** links a folder on a WebDAV server: Nextcloud
+or ownCloud (`https://host/remote.php/dav/files/<user>/`), Synology, QNAP,
+pCloud, Koofr, or `rclone serve webdav`. The address must be `https://` with a
+certificate the device trusts; plain HTTP isn't supported yet. The server
+receives the login (Basic or Digest, sent only after it asks), folder
+listings (`PROPFIND`), and the byte ranges of what plays. The login is stored
+encrypted on the device, excluded from backup and device transfer, and listed
+in Settings → Accounts.
+
 ### Sources and accounts
 
 Each visit to Downloaded rescans local folders; a remote source is rescanned

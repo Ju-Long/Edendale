@@ -1,5 +1,6 @@
 package com.babasama.edendale.android
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -23,15 +25,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.connectors.MediaSourceKind
 
-/** A source kind's label: translated for local folders, the provider's own name otherwise. */
+/** A source kind's label: translated for local folders and S3, the provider's own name otherwise. */
 @Composable
-internal fun sourceKindLabel(kind: MediaSourceKind?): String = when (kind) {
-    null, MediaSourceKind.LOCAL -> stringResource(R.string.source_kind_local_folder)
-    MediaSourceKind.SMB -> stringResource(R.string.source_kind_smb)
+internal fun sourceKindLabel(kind: MediaSourceKind?): String = sourceKindLabel(LocalContext.current, kind)
+
+internal fun sourceKindLabel(context: Context, kind: MediaSourceKind?): String = when (kind) {
+    null, MediaSourceKind.LOCAL -> context.getString(R.string.source_kind_local_folder)
+    MediaSourceKind.SMB -> context.getString(R.string.source_kind_smb)
     MediaSourceKind.NFS -> "NFS"
     MediaSourceKind.SFTP -> "SFTP"
     MediaSourceKind.WEBDAV -> "WebDAV"
-    MediaSourceKind.S3 -> "S3"
+    MediaSourceKind.S3 -> context.getString(R.string.source_kind_s3)
     MediaSourceKind.GOOGLE_DRIVE -> "Google Drive"
     MediaSourceKind.ONE_DRIVE -> "OneDrive"
     MediaSourceKind.DROPBOX -> "Dropbox"

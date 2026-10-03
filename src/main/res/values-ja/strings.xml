@@ -415,5 +415,12 @@
     <string name="player_error_abusive_file">Googleドライブによってこのファイルは有害な可能性があると判断されたため、ストリーミングできません。</string>
     <string name="player_error_untrusted_certificate">%1$sの証明書は信頼されていないため、Edendaleはそこからストリーミングしません。</string>
     <string name="source_kind_s3">S3互換ストレージ</string>
-    <string name="source_kind_local">ローカルフォルダ</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac、PC、またはNAS上の共有フォルダ。</string>
+    <string name="link_source_webdav_description">Nextcloud、ownCloud、Synology、QNAP、pCloud、Koofr、またはrclone。</string>
+    <string name="connector_unreachable">%1$sにアクセスできません。サーバーが起動し、同じネットワーク上にあり、名前または認証情報が正しいことを確認してください。</string>
+    <string name="connector_authentication_failed">%1$sでユーザー名とパスワードが受け入れられませんでした。</string>
+    <string name="connector_listing_failed">フォルダ%1$sを読み込めませんでした。異なる認証情報またはアクセス権が必要な可能性があります。</string>
+    <string name="connector_invalid_address">サーバーアドレスが正しくないようです。nas.localのようなホスト名またはIPアドレスを入力してください。</string>
+    <string name="connector_insecure_connection">https:// のアドレスを入力してください。暗号化されていない HTTP にはまだ対応していません。</string>
 </resources>

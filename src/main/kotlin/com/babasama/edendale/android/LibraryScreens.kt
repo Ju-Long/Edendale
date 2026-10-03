@@ -54,6 +54,7 @@ import com.babasama.edendale.android.player.PlayerActivity
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.android.data.SourceScanRules
 
 /**
  * One linked source: local folder or network share, its item count, and the
@@ -68,7 +69,7 @@ fun SourceRow(
     onRescan: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val isNetwork = folder.treeUri.startsWith("smb://")
+    val isNetwork = SourceScanRules.kindOf(folder)?.isRemote == true
     val statusMessage = sourceStatusMessage(folder)
     Surface(
         modifier = Modifier

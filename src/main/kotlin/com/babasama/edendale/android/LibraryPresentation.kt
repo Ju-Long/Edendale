@@ -81,7 +81,8 @@ internal fun mediaSubtitle(
  * closest readable thing without resolving the provider.
  */
 internal fun sourceDisplayPath(treeUri: String): String {
-    if (treeUri.startsWith("smb://")) return treeUri
+    // Remote source URLs are credential-free and readable as they are.
+    if (MediaSourceKind.forSourceUri(treeUri)?.isRemote == true) return treeUri
     val decoded = java.net.URLDecoder.decode(treeUri, "UTF-8")
     return decoded.substringAfterLast("/tree/", decoded)
 }

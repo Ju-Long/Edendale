@@ -243,13 +243,10 @@ private fun DownloadedScreenContent(
     val addFolder: () -> Unit = { folderPicker.launch(null) }
     val linkSource: () -> Unit = { showSmbDialog = true }
     if (showSmbDialog) {
-        SmbImportDialog(
+        LinkSourceDialog(
             isTelevision = isTelevision,
             onDismiss = { showSmbDialog = false },
-            onImport = { host, user, pass ->
-                library.importSmbFolder(host, user, pass)
-                showSmbDialog = false
-            },
+            onLinked = { showSmbDialog = false },
         )
     }
 

@@ -1457,13 +1457,13 @@ Jellyfin, and Emby would be a separate feature.
 - `PROPFIND` with `Depth: 1` (OkHttp), using Basic or Digest authentication.
   Decode relative and absolute `href`s, with percent-decoding. Suggest
   `/remote.php/dav/files/<user>/` for Nextcloud and ownCloud.
-- [ ] **H.3.1** The connector and the listing parser.
-- [ ] **H.3.2** The server form (address, user, password), with the login saved
+- [x] **H.3.1** The connector and the listing parser.
+- [x] **H.3.2** The server form (address, user, password), with the login saved
   in an encrypted store keyed by host and port and excluded from backup.
 - [ ] **H.3.3** The valid-HTTPS path, end to end.
 - [ ] **H.3.4** (D10) Self-signed certificates with fingerprint pinning, and LAN
   `dav://`, once the owner decides.
-- [ ] **H.3.T1** (JVM) Recorded `PROPFIND` responses from Nextcloud, Synology,
+- [x] **H.3.T1** (JVM) Recorded `PROPFIND` responses from Nextcloud, Synology,
   and Apache `mod_dav`: folders versus files, `href`s, sizes, dates, and
   percent-encoded names.
 
@@ -1899,6 +1899,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.1 | `enumerateVideos` returns the videos with a `complete` flag rather than a bare list. | Android's scanner deletes rows for missing files only after a full listing; Apple's walk silently skips unreadable branches. | 0b43a91 |
 | H.1.2 | SMB item URLs keep jcifs's spelling (`SmbFile.url`) instead of `SourceUrl.server`'s percent-encoding. Moving SMB onto the walk also skips dot-files (macOS `._` files), caps the walk at 2,000 folders, and records a share whose top folder can't be listed as failed (D.3) instead of a partial scan. | Every SMB row already stored uses jcifs's spelling, so a rescan must produce the same strings or it would re-import the whole share. The other three follow the shared walk. | 0b43a91 |
 | H.2 | The byte source asks the resolver once and reuses the request for every chunk until a 401 or an expired link; the first load to see one refreshes and the others take the result. H.2.T1 runs against a small `ServerSocket` HTTP server in `src/test`. | A pre-authorized link (OneDrive) shouldn't be resolved per chunk, and the single flight has to hold within one source as well as per account. The JDK's `com.sun.net.httpserver` isn't on the Android unit-test compile classpath, and the socket server needs no new dependency. | 91cbc0e |
+| H.3 | Add Network Source gained an SMB / WebDAV choice (an early slice of H.11's Link Source), and the form links through the library itself. WebDAV logins live in a new encrypted `ServerLoginStore` (kind, host, port); SMB keeps its own store and key names. A `dav://` address is refused with its own message until D10. | The server form already existed for SMB; H.11 adds the cloud providers to the same chooser. Moving SMB logins would sign every existing source out. | H3-COMMIT |
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |

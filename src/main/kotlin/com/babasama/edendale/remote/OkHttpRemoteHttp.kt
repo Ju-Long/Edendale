@@ -3,7 +3,9 @@ package com.babasama.edendale.remote
 import okhttp3.Call
 import okhttp3.CookieJar
 import okhttp3.OkHttpClient
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
 /**
@@ -14,7 +16,8 @@ import java.util.concurrent.TimeUnit
 class OkHttpRemoteHttp(private val client: OkHttpClient = sharedClient) : RemoteHttp {
 
     override fun newCall(request: RemoteRequest, bodyLimit: Int): RemoteCall {
-        val builder = Request.Builder().url(request.url).get()
+        val body = request.body?.toRequestBody(request.contentType?.toMediaTypeOrNull())
+        val builder = Request.Builder().url(request.url).method(request.method, body)
         request.headers.forEach { (name, value) -> builder.header(name, value) }
         val call = client.newCall(builder.build())
         return object : RemoteCall {
@@ -35,7 +38,8 @@ class OkHttpRemoteHttp(private val client: OkHttpClient = sharedClient) : Remote
             }
             out.toByteArray()
         } ?: ByteArray(0)
-        val headers = response.headers.names().associateWith { response.header(it).orEmpty() }
+        // Repeated headers (several WWW-Authenticate challenges) join as one list.
+        val headers = response.headers.names().associateWith { response.headers(it).joinToString(", ") }
         RemoteResponse(response.code, headers, body)
     }
 

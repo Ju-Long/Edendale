@@ -1,7 +1,10 @@
 package com.babasama.edendale.android.data
 
+import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.SourceStatus
+import com.babasama.edendale.remote.RemoteFailure
+import com.babasama.edendale.remote.RemoteSourceException
 import jcifs.smb.NtStatus
 import jcifs.smb.SmbAuthException
 import jcifs.smb.SmbException
@@ -47,8 +50,9 @@ internal object SourceScanRules {
 
     /**
      * `needsSignIn` when the server refused the login (jcifs's
-     * [SmbAuthException], or an authentication NT status anywhere in the
-     * cause chain); `offline` for everything else — unreachable hosts,
+     * [SmbAuthException], an authentication NT status, or a connector's
+     * refused login or missing account anywhere in the cause chain);
+     * `offline` for everything else — unreachable hosts,
      * timeouts, missing shares, an unmounted folder.
      */
     fun classifyFailure(error: Throwable): SourceStatus {
@@ -56,6 +60,8 @@ internal object SourceScanRules {
         val seen = HashSet<Throwable>()
         while (cause != null && seen.add(cause)) {
             if (cause is SmbAuthException) return SourceStatus.NEEDS_SIGN_IN
+            if (cause is ConnectorException && cause.failure.needsUserAction) return SourceStatus.NEEDS_SIGN_IN
+            if (cause is RemoteSourceException && cause.failure == RemoteFailure.SignInRequired) return SourceStatus.NEEDS_SIGN_IN
             if (cause is SmbException && cause.ntStatus in authenticationStatuses) return SourceStatus.NEEDS_SIGN_IN
             cause = cause.cause
         }

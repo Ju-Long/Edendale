@@ -415,5 +415,12 @@
     <string name="player_error_abusive_file">Google 云端硬盘已将此文件标记为可能有害，因此无法流式播放。</string>
     <string name="player_error_untrusted_certificate">%1$s 的证书不受信任，因此 Edendale 不会从其流式播放。</string>
     <string name="source_kind_s3">S3 兼容存储</string>
-    <string name="source_kind_local">本地文件夹</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac、PC 或 NAS 上的共享文件夹。</string>
+    <string name="link_source_webdav_description">Nextcloud、ownCloud、Synology、QNAP、pCloud、Koofr 或 rclone。</string>
+    <string name="connector_unreachable">无法连接到 %1$s。请检查服务器是否已开启、是否在同一网络中，以及名称或凭据是否正确。</string>
+    <string name="connector_authentication_failed">%1$s 未接受该用户名和密码。</string>
+    <string name="connector_listing_failed">无法读取文件夹 %1$s。可能需要不同的凭据或权限。</string>
+    <string name="connector_invalid_address">服务器地址格式不正确。请输入类似 nas.local 的主机名或 IP 地址。</string>
+    <string name="connector_insecure_connection">请输入 https:// 地址。暂不支持未加密的 HTTP。</string>
 </resources>

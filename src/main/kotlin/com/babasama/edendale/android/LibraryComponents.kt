@@ -49,6 +49,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.connectors.ConnectorEntry
+import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.WebDav
 
 /** The one repository instance the whole app shares. */
 @Composable
@@ -60,31 +63,35 @@ fun rememberLibrary(): LibraryRepository {
 }
 
 /**
- * Add-source flow for SMB: sign in to the server, then walk its shares and
- * folders and import the one you actually want. Importing the whole server
- * dragged in every share on it, so the browse step is where the choice is made.
- *
- * [onImport] receives a full `smb://host/share/folder/` URL, which
- * `LibraryRepository.importSmbFolder` normalises like any other typed address.
+ * Link Source for servers (H.3): pick SMB or WebDAV, sign in, then walk the
+ * server's folders and import the one you actually want. Importing a whole
+ * server dragged in every share on it, so the browse step is where the
+ * choice is made. Linking imports through the library and then calls
+ * [onLinked].
  */
 @Composable
-fun SmbImportDialog(
+fun LinkSourceDialog(
     onDismiss: () -> Unit,
-    onImport: (String, String, String) -> Unit,
+    onLinked: () -> Unit,
     isTelevision: Boolean = false,
 ) {
     val library = rememberLibrary()
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val unreachableMessage = stringResource(R.string.error_server_unreachable)
 
+    var kind by remember { mutableStateOf(MediaSourceKind.SMB) }
     var host by remember { mutableStateOf("") }
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
 
     var browsing by remember { mutableStateOf(false) }
-    // Path segments below the server, so the dialog can walk back up.
+    // SMB: path segments below the server, so the dialog can walk back up.
     var path by remember { mutableStateOf(emptyList<String>()) }
     var folders by remember { mutableStateOf(emptyList<String>()) }
+    // WebDAV: the folder URLs from the typed root down.
+    var davTrail by remember { mutableStateOf(emptyList<String>()) }
+    var davFolders by remember { mutableStateOf(emptyList<ConnectorEntry>()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -107,9 +114,22 @@ fun SmbImportDialog(
                 }
                 .onFailure {
                     error = it.message ?: unreachableMessage
-                    // A failure at the root leaves the credentials on screen to fix.
-                    if (!browsing) browsing = false
                 }
+            loading = false
+        }
+    }
+
+    fun openDav(trail: List<String>) {
+        loading = true
+        error = null
+        scope.launch {
+            library.listWebDavFolders(trail.last(), user, pass)
+                .onSuccess {
+                    davFolders = it
+                    davTrail = trail
+                    browsing = true
+                }
+                .onFailure { error = connectorFailureMessage(context, it) ?: unreachableMessage }
             loading = false
         }
     }
@@ -122,8 +142,18 @@ fun SmbImportDialog(
     val hostFocus = remember { FocusRequester() }
     fun connect() {
         when {
-            server.isBlank() -> hostFocus.requestFocus()
-            !loading -> open(typedPath)
+            loading -> Unit
+            host.isBlank() -> hostFocus.requestFocus()
+            kind == MediaSourceKind.SMB -> open(typedPath)
+            else -> {
+                val root = WebDav.canonicalRoot(host)
+                when {
+                    root == null -> error = context.getString(R.string.connector_invalid_address)
+                    // Plain HTTP waits for D10.
+                    root.startsWith("dav://") -> error = context.getString(R.string.connector_insecure_connection)
+                    else -> openDav(listOf(root))
+                }
+            }
         }
     }
     val formKeys = Modifier.onPreviewKeyEvent { event ->
@@ -144,6 +174,7 @@ fun SmbImportDialog(
         LaunchedEffect(Unit) { hostFocus.requestFocus() }
     }
 
+    val isDav = kind == MediaSourceKind.WEBDAV
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (browsing) R.string.smb_choose_folder else R.string.add_network_source)) },
@@ -151,7 +182,7 @@ fun SmbImportDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (browsing) {
                     Text(
-                        text = urlFor(path),
+                        text = if (isDav) WebDav.httpUrl(davTrail.last()).orEmpty() else urlFor(path),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -169,24 +200,36 @@ fun SmbImportDialog(
                             modifier = Modifier.heightIn(max = 260.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            if (path.isNotEmpty()) {
+                            val canGoUp = if (isDav) davTrail.size > 1 else path.isNotEmpty()
+                            if (canGoUp) {
                                 item("up") {
                                     SmbFolderRow(
                                         label = stringResource(R.string.smb_parent_folder),
                                         iconRes = R.drawable.ic_chevron_left,
-                                        onClick = { open(path.dropLast(1)) },
+                                        onClick = { if (isDav) openDav(davTrail.dropLast(1)) else open(path.dropLast(1)) },
                                     )
                                 }
                             }
-                            items(folders.size, key = { folders[it] }) { index ->
-                                val name = folders[index]
-                                SmbFolderRow(
-                                    label = name,
-                                    iconRes = R.drawable.ic_folder_closed,
-                                    onClick = { open(path + name) },
-                                )
+                            if (isDav) {
+                                items(davFolders.size, key = { davFolders[it].url }) { index ->
+                                    val folder = davFolders[index]
+                                    SmbFolderRow(
+                                        label = folder.name,
+                                        iconRes = R.drawable.ic_folder_closed,
+                                        onClick = { openDav(davTrail + folder.url) },
+                                    )
+                                }
+                            } else {
+                                items(folders.size, key = { folders[it] }) { index ->
+                                    val name = folders[index]
+                                    SmbFolderRow(
+                                        label = name,
+                                        iconRes = R.drawable.ic_folder_closed,
+                                        onClick = { open(path + name) },
+                                    )
+                                }
                             }
-                            if (folders.isEmpty()) {
+                            if ((isDav && davFolders.isEmpty()) || (!isDav && folders.isEmpty())) {
                                 item("empty") {
                                     Text(
                                         text = stringResource(R.string.smb_no_folders),
@@ -199,6 +242,25 @@ fun SmbImportDialog(
                         }
                     }
                 } else {
+                    // The protocol: SMB shares, or a WebDAV server (H.3).
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV).forEach { option ->
+                            ArchiveFilterChip(
+                                selected = kind == option,
+                                onClick = {
+                                    kind = option
+                                    error = null
+                                },
+                                label = { Text(sourceKindLabel(option)) },
+                                isTelevision = isTelevision,
+                            )
+                        }
+                    }
+                    Text(
+                        text = stringResource(if (isDav) R.string.link_source_webdav_description else R.string.link_source_smb_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     // The attempt in flight captured these three values, so
                     // editing them mid-connect would leave the form describing
                     // something other than what is being tried. They unlock
@@ -210,7 +272,9 @@ fun SmbImportDialog(
                         modifier = Modifier.focusRequester(hostFocus).then(formKeys),
                         enabled = !loading,
                         label = { Text(stringResource(R.string.smb_host_label)) },
-                        placeholder = { Text(stringResource(R.string.smb_host_placeholder)) },
+                        placeholder = {
+                            Text(if (isDav) WEBDAV_ADDRESS_EXAMPLE else stringResource(R.string.smb_host_placeholder))
+                        },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next)
                     )
@@ -248,8 +312,16 @@ fun SmbImportDialog(
             if (browsing) {
                 ArchiveButton(
                     label = stringResource(R.string.smb_import_this_folder),
-                    onClick = { onImport(urlFor(path), user, pass) },
-                    enabled = !loading && path.isNotEmpty(),
+                    onClick = {
+                        if (isDav) {
+                            library.importWebDavFolder(davTrail.last(), user, pass)
+                        } else {
+                            library.importSmbFolder(urlFor(path), user, pass)
+                        }
+                        onLinked()
+                    },
+                    // An SMB server's top level lists shares, which are the smallest thing to import.
+                    enabled = !loading && (isDav || path.isNotEmpty()),
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )
@@ -258,8 +330,8 @@ fun SmbImportDialog(
                     label = stringResource(
                         if (loading) R.string.action_connecting else R.string.action_connect,
                     ),
-                    onClick = { open(typedPath) },
-                    enabled = server.isNotBlank() && !loading,
+                    onClick = ::connect,
+                    enabled = host.isNotBlank() && !loading,
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )
@@ -283,6 +355,9 @@ fun SmbImportDialog(
         }
     )
 }
+
+/** An address shape for Nextcloud and ownCloud; other servers have their own paths. */
+private const val WEBDAV_ADDRESS_EXAMPLE = "https://cloud.example.com/remote.php/dav/files/me/"
 
 /** One tappable folder in the SMB browser; a Surface so the D-pad can focus it. */
 @Composable
