@@ -50,8 +50,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryRepository
 import com.babasama.edendale.connectors.ConnectorEntry
+import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.S3
+import com.babasama.edendale.connectors.S3Configuration
+import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.WebDav
+import com.babasama.edendale.remote.ServerLogin
 
 /** The one repository instance the whole app shares. */
 @Composable
@@ -89,9 +95,13 @@ fun LinkSourceDialog(
     // SMB: path segments below the server, so the dialog can walk back up.
     var path by remember { mutableStateOf(emptyList<String>()) }
     var folders by remember { mutableStateOf(emptyList<String>()) }
-    // WebDAV: the folder URLs from the typed root down.
+    // WebDAV and S3: the folder URLs from the root down.
     var davTrail by remember { mutableStateOf(emptyList<String>()) }
     var davFolders by remember { mutableStateOf(emptyList<ConnectorEntry>()) }
+    // S3: the bucket's region and name (H.5); the address, user, and password
+    // fields hold the endpoint and the key pair.
+    var region by remember { mutableStateOf("") }
+    var bucket by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -119,14 +129,37 @@ fun LinkSourceDialog(
         }
     }
 
+    fun s3Configuration(): S3Configuration? {
+        val typedEndpoint = host.trim().trimEnd('/')
+        if (typedEndpoint.isEmpty() || bucket.isBlank()) return null
+        val endpoint = if ("://" in typedEndpoint) typedEndpoint else "https://$typedEndpoint"
+        return S3Configuration(
+            endpoint = endpoint,
+            region = region.trim().ifEmpty { "us-east-1" },
+            bucket = bucket.trim(),
+            usesPathStyle = S3.defaultUsesPathStyle(endpoint, bucket.trim()),
+        )
+    }
+
     fun openDav(trail: List<String>) {
         loading = true
         error = null
         scope.launch {
-            library.listWebDavFolders(trail.last(), user, pass)
-                .onSuccess {
-                    davFolders = it
-                    davTrail = trail
+            val listing = if (kind == MediaSourceKind.S3) {
+                val configuration = s3Configuration()
+                if (configuration == null) {
+                    Result.failure(ConnectorException(ConnectorFailure.InvalidAddress))
+                } else {
+                    library.listS3Folders(configuration, ServerLogin(user.trim(), pass), trail.lastOrNull())
+                        .map { (folder, entries) -> (if (trail.isEmpty()) listOf(folder) else trail) to entries }
+                }
+            } else {
+                library.listWebDavFolders(trail.last(), user, pass).map { trail to it }
+            }
+            listing
+                .onSuccess { (newTrail, entries) ->
+                    davFolders = entries
+                    davTrail = newTrail
                     browsing = true
                 }
                 .onFailure { error = connectorFailureMessage(context, it) ?: unreachableMessage }
@@ -140,11 +173,25 @@ fun LinkSourceDialog(
     // User and password stay optional, so a guest connection is one tap.
     val focusManager = LocalFocusManager.current
     val hostFocus = remember { FocusRequester() }
+    val bucketFocus = remember { FocusRequester() }
+    val userFocus = remember { FocusRequester() }
+    val passFocus = remember { FocusRequester() }
     fun connect() {
+        val isS3 = kind == MediaSourceKind.S3
         when {
             loading -> Unit
             host.isBlank() -> hostFocus.requestFocus()
+            // S3 needs the bucket and the whole key pair; the servers take guests.
+            isS3 && bucket.isBlank() -> bucketFocus.requestFocus()
+            isS3 && user.isBlank() -> userFocus.requestFocus()
+            isS3 && pass.isEmpty() -> passFocus.requestFocus()
             kind == MediaSourceKind.SMB -> open(typedPath)
+            isS3 -> if (host.trim().startsWith("http://", ignoreCase = true)) {
+                // Plain HTTP waits for D10.
+                error = context.getString(R.string.connector_insecure_connection)
+            } else {
+                openDav(emptyList())
+            }
             else -> {
                 val root = WebDav.canonicalRoot(host)
                 when {
@@ -174,7 +221,8 @@ fun LinkSourceDialog(
         LaunchedEffect(Unit) { hostFocus.requestFocus() }
     }
 
-    val isDav = kind == MediaSourceKind.WEBDAV
+    // WebDAV and S3 browse through their connectors' URLs.
+    val isDav = kind != MediaSourceKind.SMB
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (browsing) R.string.smb_choose_folder else R.string.add_network_source)) },
@@ -182,7 +230,14 @@ fun LinkSourceDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (browsing) {
                     Text(
-                        text = if (isDav) WebDav.httpUrl(davTrail.last()).orEmpty() else urlFor(path),
+                        text = when (kind) {
+                            MediaSourceKind.S3 -> SourceUrl.parseS3(davTrail.last())
+                                ?.let { listOf(it.bucket) + it.key.split('/').filter(String::isNotEmpty) }
+                                ?.joinToString(" › ")
+                                .orEmpty()
+                            MediaSourceKind.WEBDAV -> WebDav.httpUrl(davTrail.last()).orEmpty()
+                            else -> urlFor(path)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -244,20 +299,27 @@ fun LinkSourceDialog(
                 } else {
                     // The protocol: SMB shares, or a WebDAV server (H.3).
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV).forEach { option ->
+                        listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV, MediaSourceKind.S3).forEach { option ->
                             ArchiveFilterChip(
                                 selected = kind == option,
                                 onClick = {
                                     kind = option
                                     error = null
                                 },
-                                label = { Text(sourceKindLabel(option)) },
+                                // "S3" fits the chip; the description below names the services.
+                                label = { Text(if (option == MediaSourceKind.S3) "S3" else sourceKindLabel(option)) },
                                 isTelevision = isTelevision,
                             )
                         }
                     }
                     Text(
-                        text = stringResource(if (isDav) R.string.link_source_webdav_description else R.string.link_source_smb_description),
+                        text = stringResource(
+                            when (kind) {
+                                MediaSourceKind.WEBDAV -> R.string.link_source_webdav_description
+                                MediaSourceKind.S3 -> R.string.link_source_s3_description
+                                else -> R.string.link_source_smb_description
+                            },
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -271,28 +333,61 @@ fun LinkSourceDialog(
                         onValueChange = { host = it },
                         modifier = Modifier.focusRequester(hostFocus).then(formKeys),
                         enabled = !loading,
-                        label = { Text(stringResource(R.string.smb_host_label)) },
+                        label = {
+                            Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_endpoint_label else R.string.smb_host_label))
+                        },
                         placeholder = {
-                            Text(if (isDav) WEBDAV_ADDRESS_EXAMPLE else stringResource(R.string.smb_host_placeholder))
+                            Text(
+                                when (kind) {
+                                    MediaSourceKind.WEBDAV -> WEBDAV_ADDRESS_EXAMPLE
+                                    MediaSourceKind.S3 -> S3_ENDPOINT_EXAMPLE
+                                    else -> stringResource(R.string.smb_host_placeholder)
+                                },
+                            )
                         },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next)
                     )
+                    if (kind == MediaSourceKind.S3) {
+                        OutlinedTextField(
+                            value = region,
+                            onValueChange = { region = it },
+                            modifier = formKeys,
+                            enabled = !loading,
+                            label = { Text(stringResource(R.string.s3_region_label)) },
+                            placeholder = { Text("us-east-1") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
+                        )
+                        OutlinedTextField(
+                            value = bucket,
+                            onValueChange = { bucket = it },
+                            modifier = Modifier.focusRequester(bucketFocus).then(formKeys),
+                            enabled = !loading,
+                            label = { Text(stringResource(R.string.s3_bucket_label)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
+                        )
+                    }
                     OutlinedTextField(
                         value = user,
                         onValueChange = { user = it },
-                        modifier = formKeys,
+                        modifier = Modifier.focusRequester(userFocus).then(formKeys),
                         enabled = !loading,
-                        label = { Text(stringResource(R.string.smb_username_label)) },
+                        label = {
+                            Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_access_key_label else R.string.smb_username_label))
+                        },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     )
                     OutlinedTextField(
                         value = pass,
                         onValueChange = { pass = it },
-                        modifier = formKeys,
+                        modifier = Modifier.focusRequester(passFocus).then(formKeys),
                         enabled = !loading,
-                        label = { Text(stringResource(R.string.smb_password_label)) },
+                        label = {
+                            Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_secret_key_label else R.string.smb_password_label))
+                        },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
@@ -313,10 +408,12 @@ fun LinkSourceDialog(
                 ArchiveButton(
                     label = stringResource(R.string.smb_import_this_folder),
                     onClick = {
-                        if (isDav) {
-                            library.importWebDavFolder(davTrail.last(), user, pass)
-                        } else {
-                            library.importSmbFolder(urlFor(path), user, pass)
+                        when (kind) {
+                            MediaSourceKind.WEBDAV -> library.importWebDavFolder(davTrail.last(), user, pass)
+                            MediaSourceKind.S3 -> s3Configuration()?.let { configuration ->
+                                library.importS3Folder(configuration, ServerLogin(user.trim(), pass), davTrail.last())
+                            }
+                            else -> library.importSmbFolder(urlFor(path), user, pass)
                         }
                         onLinked()
                     },
@@ -358,6 +455,9 @@ fun LinkSourceDialog(
 
 /** An address shape for Nextcloud and ownCloud; other servers have their own paths. */
 private const val WEBDAV_ADDRESS_EXAMPLE = "https://cloud.example.com/remote.php/dav/files/me/"
+
+/** AWS's endpoint shape; R2, B2, Wasabi, and MinIO have their own. */
+private const val S3_ENDPOINT_EXAMPLE = "https://s3.us-east-1.amazonaws.com"
 
 /** One tappable folder in the SMB browser; a Surface so the D-pad can focus it. */
 @Composable

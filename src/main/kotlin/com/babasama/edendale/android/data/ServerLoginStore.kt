@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.S3Configuration
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.remote.ServerLogin
 import kotlinx.serialization.json.Json
@@ -57,6 +58,34 @@ class ServerLoginStore(context: Context) {
         editor.commit()
     }
 
+    /**
+     * An S3 bucket's key pair and location (H.5), stored under its account
+     * key, which is also its item URLs' host.
+     */
+    fun getS3(account: String): Pair<ServerLogin, S3Configuration>? {
+        val stored = preferences.getString(key(MediaSourceKind.S3, account, null), null) ?: return null
+        val login = decode(stored) ?: return null
+        val configuration = decodeS3(stored) ?: return null
+        return login to configuration
+    }
+
+    fun saveS3(account: String, login: ServerLogin, configuration: S3Configuration) {
+        val stored = buildJsonObject {
+            put("user", JsonPrimitive(login.user))
+            put("password", JsonPrimitive(login.password))
+            put(
+                "s3",
+                buildJsonObject {
+                    put("endpoint", JsonPrimitive(configuration.endpoint))
+                    put("region", JsonPrimitive(configuration.region))
+                    put("bucket", JsonPrimitive(configuration.bucket))
+                    put("pathStyle", JsonPrimitive(configuration.usesPathStyle))
+                },
+            )
+        }
+        preferences.edit().putString(key(MediaSourceKind.S3, account, null), stored.toString()).commit()
+    }
+
     fun remove(kind: MediaSourceKind, host: String, port: Int?) {
         preferences.edit().remove(key(kind, host, port)).commit()
     }
@@ -66,9 +95,22 @@ class ServerLoginStore(context: Context) {
         val parts = key.split(SEPARATOR)
         if (parts.size != 3) return@mapNotNull null
         val kind = MediaSourceKind.fromRaw(parts[0]) ?: return@mapNotNull null
-        val stored = (value as? String)?.let(::decode) ?: return@mapNotNull null
-        SavedServerLogin(kind, parts[1], parts[2].toIntOrNull(), stored.user)
+        val text = value as? String ?: return@mapNotNull null
+        val stored = decode(text) ?: return@mapNotNull null
+        // An S3 login reads as its bucket and endpoint; the access key ID stays out of view.
+        val detail = decodeS3(text)?.let { "${it.bucket} @ ${it.endpoint.substringAfter("://").substringBefore('/')}" }
+        SavedServerLogin(kind, parts[1], parts[2].toIntOrNull(), stored.user, detail)
     }.sortedWith(compareBy({ it.kind.raw }, { it.host }))
+
+    private fun decodeS3(stored: String): S3Configuration? = runCatching {
+        val fields = Json.parseToJsonElement(stored).jsonObject["s3"]?.jsonObject ?: return null
+        S3Configuration(
+            endpoint = fields.getValue("endpoint").jsonPrimitive.content,
+            region = fields.getValue("region").jsonPrimitive.content,
+            bucket = fields.getValue("bucket").jsonPrimitive.content,
+            usesPathStyle = fields.getValue("pathStyle").jsonPrimitive.content.toBoolean(),
+        )
+    }.getOrNull()
 
     private fun decode(stored: String): ServerLogin? = runCatching {
         val fields = Json.parseToJsonElement(stored).jsonObject
@@ -86,7 +128,15 @@ class ServerLoginStore(context: Context) {
 }
 
 /** One saved server login; the password never leaves the store. */
-data class SavedServerLogin(val kind: MediaSourceKind, val host: String, val port: Int?, val user: String) {
+data class SavedServerLogin(
+    val kind: MediaSourceKind,
+    /** The server host, or the account key for S3. */
+    val host: String,
+    val port: Int?,
+    val user: String,
+    /** S3 only: `bucket @ endpoint host`. */
+    val detail: String? = null,
+) {
     /** `host` or `host:port`, as the viewer typed it. */
     val address: String get() = if (port != null) "$host:$port" else host
 }

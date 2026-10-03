@@ -10,8 +10,12 @@ import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.copySource
 import com.babasama.edendale.connectors.ConnectorEntry
+import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.S3Configuration
+import com.babasama.edendale.connectors.S3Connector
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.VideoFiles
 import com.babasama.edendale.connectors.WebDav
@@ -176,6 +180,33 @@ class LibraryRepository(
                 kind = MediaSourceKind.WEBDAV.raw,
                 displayPath = (listOf(address) + segments).joinToString(" › "),
                 accountKey = address,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
+    }
+
+    /** The folders under an S3 [prefixUrl] (`s3://<account>/<bucket>/<prefix>/`), for the Link Source browser (H.5). */
+    suspend fun listS3Folders(configuration: S3Configuration, login: ServerLogin, prefixUrl: String?): Result<Pair<String, List<ConnectorEntry>>> =
+        runCatching {
+            val connector = S3Connector(configuration, login, http)
+            val folder = prefixUrl ?: connector.root
+            folder to connector.list(folder).filter { it.isDirectory }
+        }
+
+    /** Links an S3 bucket or prefix (H.5): saves the key pair and location under the account key, then scans. */
+    fun importS3Folder(configuration: S3Configuration, login: ServerLogin, folderUrl: String) {
+        val item = SourceUrl.parseS3(folderUrl) ?: return
+        scope.launch {
+            serverLogins.saveS3(item.account, login, configuration)
+            val segments = item.key.split('/').filter { it.isNotEmpty() }
+            val folder = LibraryFolderEntity(
+                treeUri = folderUrl,
+                displayName = segments.lastOrNull() ?: configuration.bucket,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.S3.raw,
+                displayPath = (listOf(configuration.bucket) + segments).joinToString(" › "),
+                accountKey = item.account,
             )
             dao.upsertFolder(folder)
             scan(folder)
@@ -389,6 +420,11 @@ class LibraryRepository(
                 credentials = smbCredentialsStore.getCredentials(Uri.parse(folder.treeUri).host.orEmpty()),
                 strings = strings,
             )
+            MediaSourceKind.S3 -> SourceUrl.credentialHost(folder.treeUri)
+                ?.let(serverLogins::getS3)
+                ?.let { (login, configuration) -> S3Connector(configuration, login, http) }
+                // No key pair: the scan records that the source needs signing in again.
+                ?: throw ConnectorException(ConnectorFailure.SignInRequired(MediaSourceKind.S3))
             MediaSourceKind.WEBDAV -> WebDavConnector(
                 root = folder.treeUri,
                 login = serverLogins.forUrl(MediaSourceKind.WEBDAV, folder.treeUri),

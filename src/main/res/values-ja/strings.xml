@@ -423,4 +423,13 @@
     <string name="connector_listing_failed">フォルダ%1$sを読み込めませんでした。異なる認証情報またはアクセス権が必要な可能性があります。</string>
     <string name="connector_invalid_address">サーバーアドレスが正しくないようです。nas.localのようなホスト名またはIPアドレスを入力してください。</string>
     <string name="connector_insecure_connection">https:// のアドレスを入力してください。暗号化されていない HTTP にはまだ対応していません。</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">このバケットは%1$sリージョンにあります。リージョンを変更して、もう一度接続してください。</string>
+    <string name="connector_bucket_other_region">このバケットは別のリージョンにあります。リージョンを確認して、もう一度接続してください。</string>
+    <string name="link_source_s3_description">AWS、Backblaze B2、Cloudflare R2、Wasabi、またはMinIO。</string>
+    <string name="s3_endpoint_label">エンドポイント</string>
+    <string name="s3_region_label">リージョン</string>
+    <string name="s3_bucket_label">バケット</string>
+    <string name="s3_access_key_label">アクセスキーID</string>
+    <string name="s3_secret_key_label">シークレットアクセスキー</string>
 </resources>

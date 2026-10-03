@@ -159,6 +159,17 @@ listings (`PROPFIND`), and the byte ranges of what plays. The login is stored
 encrypted on the device, excluded from backup and device transfer, and listed
 in Settings → Accounts.
 
+### S3-compatible storage
+
+**Add Network Source → S3** links a bucket or a folder in it on AWS, Backblaze
+B2, Cloudflare R2, Wasabi, or MinIO: the endpoint (`https://`), the region
+(`us-east-1` if left empty; `auto` for R2), the bucket, and an access key ID
+and secret access key. Edendale signs its requests itself (AWS Signature
+Version 4) and sends the service listings (`ListObjectsV2`) and pre-signed
+byte-range requests for what plays. The key pair and the bucket's location are
+stored encrypted on the device, excluded from backup and device transfer, and
+listed in Settings → Accounts. Use a key that can only read that bucket.
+
 ### Sources and accounts
 
 Each visit to Downloaded rescans local folders; a remote source is rescanned

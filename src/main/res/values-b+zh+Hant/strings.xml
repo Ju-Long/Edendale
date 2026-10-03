@@ -423,4 +423,13 @@
     <string name="connector_listing_failed">無法讀取檔案夾 %1$s。可能需要不同的憑證或權限。</string>
     <string name="connector_invalid_address">該伺服器位址似乎不正確。請輸入如 nas.local 的主機名稱或 IP 位址。</string>
     <string name="connector_insecure_connection">請輸入 https:// 位址。尚不支援未加密的 HTTP。</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">此儲存貯體位於 %1$s 區域。請更改區域並重新連線。</string>
+    <string name="connector_bucket_other_region">此儲存貯體位於其他區域。請檢查區域並重新連線。</string>
+    <string name="link_source_s3_description">AWS、Backblaze B2、Cloudflare R2、Wasabi 或 MinIO。</string>
+    <string name="s3_endpoint_label">端點</string>
+    <string name="s3_region_label">區域</string>
+    <string name="s3_bucket_label">儲存貯體</string>
+    <string name="s3_access_key_label">存取金鑰 ID</string>
+    <string name="s3_secret_key_label">私密存取金鑰</string>
 </resources>

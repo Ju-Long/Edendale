@@ -38,6 +38,11 @@ internal fun connectorFailureMessage(context: Context, error: Throwable): String
         is ConnectorFailure.Unreachable -> context.getString(R.string.connector_unreachable, failure.host)
         is ConnectorFailure.AuthenticationFailed -> context.getString(R.string.connector_authentication_failed, failure.host)
         is ConnectorFailure.ListingFailed -> context.getString(R.string.connector_listing_failed, failure.path)
+        is ConnectorFailure.BucketInAnotherRegion -> failure.region
+            ?.let { context.getString(R.string.connector_bucket_region, it) }
+            ?: context.getString(R.string.connector_bucket_other_region)
+        is ConnectorFailure.ServerError ->
+            context.getString(R.string.player_error_server, sourceKindLabel(context, failure.kind), failure.status)
         is ConnectorFailure.SignInRequired ->
             context.getString(R.string.sources_status_needs_sign_in, sourceKindLabel(context, failure.kind))
     }

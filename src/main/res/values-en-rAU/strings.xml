@@ -159,4 +159,13 @@
     <string name="connector_listing_failed">Couldn\'t read the folder %1$s. It may need different credentials or permissions.</string>
     <string name="connector_invalid_address">That server address doesn\'t look right. Enter a hostname like nas.local or an IP address.</string>
     <string name="connector_insecure_connection">Enter an https:// address. Plain HTTP isn\'t supported yet.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">This bucket is in the %1$s region. Change the region and connect again.</string>
+    <string name="connector_bucket_other_region">This bucket is in a different region. Check the region and connect again.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi, or MinIO.</string>
+    <string name="s3_endpoint_label">Endpoint</string>
+    <string name="s3_region_label">Region</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Access Key ID</string>
+    <string name="s3_secret_key_label">Secret Access Key</string>
 </resources>

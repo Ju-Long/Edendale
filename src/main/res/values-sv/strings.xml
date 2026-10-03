@@ -429,4 +429,13 @@
     <string name="connector_listing_failed">Kunde inte läsa mappen %1$s. Den kan kräva andra inloggningsuppgifter eller behörigheter.</string>
     <string name="connector_invalid_address">Serveradressen ser inte rätt ut. Ange ett värdnamn som nas.local eller en IP-adress.</string>
     <string name="connector_insecure_connection">Ange en https://-adress. Okrypterad HTTP stöds inte ännu.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Den här bucketen finns i regionen %1$s. Ändra regionen och anslut igen.</string>
+    <string name="connector_bucket_other_region">Den här bucketen finns i en annan region. Kontrollera regionen och anslut igen.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi eller MinIO.</string>
+    <string name="s3_endpoint_label">Slutpunkt</string>
+    <string name="s3_region_label">Region</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Åtkomstnyckel-ID</string>
+    <string name="s3_secret_key_label">Hemlig åtkomstnyckel</string>
 </resources>

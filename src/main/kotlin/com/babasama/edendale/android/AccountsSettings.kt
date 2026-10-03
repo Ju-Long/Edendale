@@ -73,7 +73,7 @@ internal fun AccountsSettingsSection(
         smb.map { login ->
             SavedLoginRow(MediaSourceKind.SMB, login.user, login.host, smbUsage[login] ?: 0) { store.removeCredentials(login.host) }
         } + servers.map { login ->
-            SavedLoginRow(login.kind, login.user, login.address, serverUsage[login] ?: 0) {
+            SavedLoginRow(login.kind, login.user, login.address, serverUsage[login] ?: 0, login.detail) {
                 withContext(Dispatchers.IO) { serverStore.remove(login.kind, login.host, login.port) }
             }
         }
@@ -120,7 +120,7 @@ internal fun AccountsSettingsSection(
             },
             text = {
                 Text(
-                    text = stringResource(R.string.accounts_forget_message, login.address),
+                    text = stringResource(R.string.accounts_forget_message, login.detail ?: login.address),
                     style = BodyCopyStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -157,8 +157,12 @@ private class SavedLoginRow(
     /** The host, with its port when one was typed. */
     val address: String,
     val sourceCount: Int,
+    /** Replaces `user @ address` where that would show a key rather than a name (S3). */
+    val detail: String? = null,
     val forget: suspend () -> Unit,
-)
+) {
+    val title: String get() = detail ?: "$user @ $address"
+}
 
 @Composable
 private fun LoginRow(
@@ -181,7 +185,7 @@ private fun LoginRow(
             verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
             Text(
-                text = "${login.user} @ ${login.address}",
+                text = login.title,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),

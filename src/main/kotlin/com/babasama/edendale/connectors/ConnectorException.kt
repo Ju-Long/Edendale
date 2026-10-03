@@ -17,6 +17,11 @@ sealed interface ConnectorFailure {
     /** Plain HTTP isn't accepted (D10 decides the home-server rules). */
     data object InsecureConnection : ConnectorFailure
 
+    /** An S3 bucket answered from another region than the one entered (H.5). */
+    data class BucketInAnotherRegion(val region: String?) : ConnectorFailure
+
+    data class ServerError(val kind: MediaSourceKind, val status: Int) : ConnectorFailure
+
     /** The source needs the viewer to sign in or approve something again, rather than being unreachable. */
     val needsUserAction: Boolean get() = this is AuthenticationFailed || this is SignInRequired
 }

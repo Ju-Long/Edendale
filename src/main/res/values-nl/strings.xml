@@ -429,4 +429,13 @@
     <string name="connector_listing_failed">Kon de map %1$s niet lezen. Mogelijk zijn er andere inloggegevens of bevoegdheden nodig.</string>
     <string name="connector_invalid_address">Dat serveradres ziet er niet goed uit. Voer een hostnaam in zoals nas.local of een IP-adres.</string>
     <string name="connector_insecure_connection">Voer een https://-adres in. Onversleutelde HTTP wordt nog niet ondersteund.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Deze bucket staat in de regio %1$s. Wijzig de regio en maak opnieuw verbinding.</string>
+    <string name="connector_bucket_other_region">Deze bucket staat in een andere regio. Controleer de regio en maak opnieuw verbinding.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi of MinIO.</string>
+    <string name="s3_endpoint_label">Endpoint</string>
+    <string name="s3_region_label">Regio</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Toegangssleutel-ID</string>
+    <string name="s3_secret_key_label">Geheime toegangssleutel</string>
 </resources>

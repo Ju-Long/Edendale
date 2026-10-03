@@ -429,4 +429,13 @@
     <string name="connector_listing_failed">Der Ordner %1$s konnte nicht gelesen werden. Möglicherweise sind andere Anmeldedaten oder Berechtigungen erforderlich.</string>
     <string name="connector_invalid_address">Diese Serveradresse sieht nicht richtig aus. Gib einen Hostnamen wie nas.local oder eine IP-Adresse ein.</string>
     <string name="connector_insecure_connection">Gib eine https://-Adresse ein. Unverschlüsseltes HTTP wird noch nicht unterstützt.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Dieser Bucket befindet sich in der Region %1$s. Ändere die Region und verbinde dich erneut.</string>
+    <string name="connector_bucket_other_region">Dieser Bucket befindet sich in einer anderen Region. Überprüfe die Region und verbinde dich erneut.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi oder MinIO.</string>
+    <string name="s3_endpoint_label">Endpunkt</string>
+    <string name="s3_region_label">Region</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Zugriffsschlüssel-ID</string>
+    <string name="s3_secret_key_label">Geheimer Zugriffsschlüssel</string>
 </resources>

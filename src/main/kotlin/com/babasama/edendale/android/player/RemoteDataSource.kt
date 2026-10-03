@@ -9,6 +9,8 @@ import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
 import com.babasama.edendale.android.data.ServerLoginStore
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.S3ContentResolver
+import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.WebDavContentResolver
 import com.babasama.edendale.remote.HttpAuthSession
 import com.babasama.edendale.remote.OkHttpRemoteHttp
@@ -30,6 +32,12 @@ internal object RemotePlayback {
             WebDavContentResolver(url, HttpAuthSession(ServerLoginStore(context).forUrl(kind, url)), http),
             http,
         )
+        MediaSourceKind.S3 -> {
+            val item = SourceUrl.parseS3(url)
+            item?.let { ServerLoginStore(context).getS3(it.account) }?.let { (login, configuration) ->
+                RemoteByteSource(S3ContentResolver(configuration, login, item.key), http)
+            }
+        }
         else -> null
     }
 

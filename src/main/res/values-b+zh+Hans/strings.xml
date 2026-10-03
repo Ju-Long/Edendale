@@ -423,4 +423,13 @@
     <string name="connector_listing_failed">无法读取文件夹 %1$s。可能需要不同的凭据或权限。</string>
     <string name="connector_invalid_address">服务器地址格式不正确。请输入类似 nas.local 的主机名或 IP 地址。</string>
     <string name="connector_insecure_connection">请输入 https:// 地址。暂不支持未加密的 HTTP。</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">此存储桶位于 %1$s 区域。请更改区域并重新连接。</string>
+    <string name="connector_bucket_other_region">此存储桶位于其他区域。请检查区域并重新连接。</string>
+    <string name="link_source_s3_description">AWS、Backblaze B2、Cloudflare R2、Wasabi 或 MinIO。</string>
+    <string name="s3_endpoint_label">端点</string>
+    <string name="s3_region_label">区域</string>
+    <string name="s3_bucket_label">存储桶</string>
+    <string name="s3_access_key_label">访问密钥 ID</string>
+    <string name="s3_secret_key_label">秘密访问密钥</string>
 </resources>

@@ -431,4 +431,13 @@
     <string name="connector_listing_failed">Não foi possível ler a pasta %1$s. Ela pode precisar de credenciais ou permissões diferentes.</string>
     <string name="connector_invalid_address">Esse endereço de servidor não parece correto. Insira um nome de host como nas.local ou um endereço IP.</string>
     <string name="connector_insecure_connection">Digite um endereço https://. HTTP sem criptografia ainda não é compatível.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Este bucket está na região %1$s. Altere a região e conecte novamente.</string>
+    <string name="connector_bucket_other_region">Este bucket está em outra região. Verifique a região e conecte novamente.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi ou MinIO.</string>
+    <string name="s3_endpoint_label">Endpoint</string>
+    <string name="s3_region_label">Região</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">ID da Chave de Acesso</string>
+    <string name="s3_secret_key_label">Chave de Acesso Secreta</string>
 </resources>

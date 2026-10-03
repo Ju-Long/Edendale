@@ -423,4 +423,13 @@
     <string name="connector_listing_failed">%1$s 폴더를 읽을 수 없습니다. 다른 자격 증명이나 권한이 필요할 수 있습니다.</string>
     <string name="connector_invalid_address">서버 주소가 올바르지 않은 것 같습니다. nas.local과 같은 호스트 이름이나 IP 주소를 입력하십시오.</string>
     <string name="connector_insecure_connection">https:// 주소를 입력하세요. 암호화되지 않은 HTTP는 아직 지원되지 않습니다.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">이 버킷은 %1$s 지역에 있습니다. 지역을 변경하고 다시 연결하십시오.</string>
+    <string name="connector_bucket_other_region">이 버킷은 다른 지역에 있습니다. 지역을 확인하고 다시 연결하십시오.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi 또는 MinIO.</string>
+    <string name="s3_endpoint_label">엔드포인트</string>
+    <string name="s3_region_label">지역</string>
+    <string name="s3_bucket_label">버킷</string>
+    <string name="s3_access_key_label">액세스 키 ID</string>
+    <string name="s3_secret_key_label">비밀 액세스 키</string>
 </resources>

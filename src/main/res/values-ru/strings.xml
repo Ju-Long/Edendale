@@ -445,4 +445,13 @@
     <string name="connector_listing_failed">Не удалось прочитать папку %1$s. Возможно, требуются другие учетные данные или права доступа.</string>
     <string name="connector_invalid_address">Неверный адрес сервера. Введите имя хоста (например, nas.local) или IP-адрес.</string>
     <string name="connector_insecure_connection">Введите адрес https://. Незашифрованный HTTP пока не поддерживается.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Этот бакет находится в регионе %1$s. Измените регион и подключитесь снова.</string>
+    <string name="connector_bucket_other_region">Этот бакет находится в другом регионе. Проверьте регион и подключитесь снова.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi или MinIO.</string>
+    <string name="s3_endpoint_label">Конечная точка</string>
+    <string name="s3_region_label">Регион</string>
+    <string name="s3_bucket_label">Бакет</string>
+    <string name="s3_access_key_label">ID ключа доступа</string>
+    <string name="s3_secret_key_label">Секретный ключ доступа</string>
 </resources>

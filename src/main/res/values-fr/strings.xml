@@ -431,4 +431,13 @@
     <string name="connector_listing_failed">Impossible de lire le dossier %1$s. D\'autres identifiants ou autorisations peuvent être nécessaires.</string>
     <string name="connector_invalid_address">Cette adresse de serveur semble incorrecte. Saisissez un nom d\'hôte comme nas.local ou une adresse IP.</string>
     <string name="connector_insecure_connection">Saisissez une adresse https://. Le HTTP non chiffré n’est pas encore pris en charge.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Ce compartiment se trouve dans la région %1$s. Changez la région et reconnectez-vous.</string>
+    <string name="connector_bucket_other_region">Ce compartiment se trouve dans une autre région. Vérifiez la région et reconnectez-vous.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi ou MinIO.</string>
+    <string name="s3_endpoint_label">Point de terminaison</string>
+    <string name="s3_region_label">Région</string>
+    <string name="s3_bucket_label">Compartiment</string>
+    <string name="s3_access_key_label">ID de clé d’accès</string>
+    <string name="s3_secret_key_label">Clé d’accès secrète</string>
 </resources>
