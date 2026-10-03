@@ -33,11 +33,16 @@ struct AudioEnhancementSection: View {
                 }
             }
         } footer: {
-            #if os(visionOS)
-            Text("Audio enhancement is unavailable during spatial and multiview playback in the system player.")
-                .font(Typography.bodySM)
-                .foregroundStyle(Theme.textSecondary)
-            #endif
+            VStack(alignment: .leading, spacing: 8) {
+                Text("E-AC-3 surround tracks play through the system’s decoder without enhancement, keeping their full surround and spatial audio.")
+                    .font(Typography.bodySM)
+                    .foregroundStyle(Theme.textSecondary)
+                #if os(visionOS)
+                Text("Audio enhancement is unavailable during spatial and multiview playback in the system player.")
+                    .font(Typography.bodySM)
+                    .foregroundStyle(Theme.textSecondary)
+                #endif
+            }
         }
     }
 

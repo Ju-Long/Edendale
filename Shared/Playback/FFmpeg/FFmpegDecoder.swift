@@ -8,8 +8,9 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
     private let queue = DispatchQueue(label: "Edendale.FFmpeg", qos: .userInitiated)
     private let reader: EDFFmpegReader
 
-    init(hardwareDecoding: Bool) {
+    init(hardwareDecoding: Bool, passesThroughEAC3: Bool) {
         reader = EDFFmpegReader(hardwareDecoding: hardwareDecoding)
+        reader.passesThroughEAC3 = passesThroughEAC3
     }
 
     func open(_ url: URL) async throws -> MediaInfo {
@@ -122,6 +123,9 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
 /// Demuxes and decodes using FFmpeg, renders PCM with AVFoundation, and presents
 /// video to Metal against the same audio-backed media clock. Read-ahead is bounded
 /// so a long movie is streamed, never decoded or converted in its entirety.
+/// E-AC-3 reaches the renderer undecoded where the system has a decoder for it,
+/// keeping its surround channels and object audio; audio enhancement doesn't
+/// apply to it.
 @MainActor
 public final class FFmpegDecoder: MediaDecoder {
     public private(set) var state: DecoderState = .idle {
@@ -149,12 +153,19 @@ public final class FFmpegDecoder: MediaDecoder {
     private var subtitleSelectionGeneration = 0
     public var volume: Float = 1 { didSet { audioRenderer?.volume = min(max(volume, 0), 1) } }
     public var isMuted = false { didSet { audioRenderer?.isMuted = isMuted } }
-    var audioProcessor: AudioEQProcessor?
+    var audioProcessor: AudioEQProcessor? {
+        didSet { if audioProcessor !== oldValue { equalizedFormat = nil } }
+    }
+    /// The PCM format `audioProcessor` is set up for.
+    private var equalizedFormat: (sampleRate: Double, channels: Int)?
 
     private let hardwareDecoding: Bool
+    private let passesThroughEAC3: Bool
     private var worker: FFmpegWorker?
     private var synchronizer: AVSampleBufferRenderSynchronizer?
     private var audioRenderer: AVSampleBufferAudioRenderer?
+    private var rendererObservers: [NSObjectProtocol] = []
+    private var lastAudioRefill: CFTimeInterval = 0
     private var displayLink: DisplayLinkDriver?
     private var pump: Task<Void, Never>?
     private var generation = 0
@@ -179,18 +190,20 @@ public final class FFmpegDecoder: MediaDecoder {
     private var wallClockStart: CFTimeInterval = 0
     private var wallClockOffset: Double = 0
 
-    /// Decoded audio never runs further ahead of the clock than this (about
-    /// 0.4 MB/s of 48 kHz stereo PCM); reading pauses there instead.
+    /// Decoded audio never runs further ahead of the clock than this (0.4 MB/s
+    /// of 48 kHz stereo PCM, 1.5 MB/s at 7.1); reading pauses there instead.
     private static let maxAudioAhead = 4.0
 
-    public init(hardwareDecoding: Bool = true) {
+    public init(hardwareDecoding: Bool = true, passesThroughEAC3: Bool = true) {
         self.hardwareDecoding = hardwareDecoding
+        self.passesThroughEAC3 = passesThroughEAC3
     }
 
     deinit {
         pump?.cancel()
         worker?.close()
         displayLink?.stop()
+        rendererObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
     public func open(url: URL) async throws -> MediaInfo {
@@ -198,7 +211,7 @@ public final class FFmpegDecoder: MediaDecoder {
         close()
         let request = generation
         state = .opening
-        let worker = FFmpegWorker(hardwareDecoding: hardwareDecoding)
+        let worker = FFmpegWorker(hardwareDecoding: hardwareDecoding, passesThroughEAC3: passesThroughEAC3)
         if !isVideoDecodingEnabled {
             worker.setVideoDecodingEnabled(false)
         }
@@ -233,12 +246,7 @@ public final class FFmpegDecoder: MediaDecoder {
                 sync.addRenderer(renderer)
                 audioRenderer = renderer
                 usingWallClock = false
-                if let firstAudio = info.audioTracks.first {
-                    audioProcessor?.configure(
-                        sampleRate: Double(firstAudio.sampleRate),
-                        channelCount: firstAudio.channelCount
-                    )
-                }
+                observeOutputChanges(of: renderer)
                 debugPrint("[FFmpegDecoder.open] audio renderer attached, wallClock=false")
             } else {
                 usingWallClock = true
@@ -423,6 +431,9 @@ public final class FFmpegDecoder: MediaDecoder {
         if !usingWallClock {
             synchronizer?.rate = 0
         }
+        rendererObservers.forEach(NotificationCenter.default.removeObserver)
+        rendererObservers.removeAll()
+        lastAudioRefill = 0
         audioRenderer?.flush()
         audioRenderer = nil
         synchronizer = nil
@@ -551,11 +562,60 @@ public final class FFmpegDecoder: MediaDecoder {
         var fed = 0
         while fed < pendingAudio.count && renderer.isReadyForMoreMediaData {
             // Equalize at hand-off, so settings changes are heard no later than before.
-            audioProcessor?.processSampleBuffer(pendingAudio[fed])
+            equalize(pendingAudio[fed])
             renderer.enqueue(pendingAudio[fed])
             fed += 1
         }
         pendingAudio.removeFirst(fed)
+    }
+
+    private func equalize(_ sample: CMSampleBuffer) {
+        // Passed-through E-AC-3 reaches the renderer still encoded.
+        guard let processor = audioProcessor,
+              let format = CMSampleBufferGetFormatDescription(sample),
+              let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee,
+              asbd.mFormatID == kAudioFormatLinearPCM else { return }
+        let channels = Int(asbd.mChannelsPerFrame)
+        if equalizedFormat?.sampleRate != asbd.mSampleRate || equalizedFormat?.channels != channels {
+            processor.configure(sampleRate: asbd.mSampleRate, channelCount: channels)
+            equalizedFormat = (asbd.mSampleRate, channels)
+        }
+        processor.processSampleBuffer(sample)
+    }
+
+    /// The renderer drops its queued audio when playback moves to another
+    /// output, and reports when the output hardware changes format, for
+    /// example when a receiver switches on. Refilling from the playhead
+    /// configures the new output for the audio's channels.
+    private func observeOutputChanges(of renderer: AVSampleBufferAudioRenderer) {
+        let names: [Notification.Name] = [.AVSampleBufferAudioRendererWasFlushedAutomatically,
+                                          .AVSampleBufferAudioRendererOutputConfigurationDidChange]
+        rendererObservers = names.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: renderer, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refillAudio() }
+            }
+        }
+    }
+
+    private func refillAudio() {
+        switch state {
+        case .ready, .playing, .paused:
+            // One refill answers a burst of notifications.
+            let now = CACurrentMediaTime()
+            guard now - lastAudioRefill > 1 else { return }
+            lastAudioRefill = now
+            let time = currentTime.seconds
+            let request = generation
+            debugPrint("[FFmpegDecoder] audio output changed; refilling from \(time)s")
+            Task { [weak self] in
+                // A seek that started meanwhile refills at its own target.
+                guard let self, self.generation == request else { return }
+                try? await self.reposition(seconds: time, audioTrack: nil)
+            }
+        default:
+            // A seek refills anyway; nothing plays before opening or after the end.
+            break
+        }
     }
 
     private func startClockIfReady() {

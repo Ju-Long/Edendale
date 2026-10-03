@@ -222,6 +222,9 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
     private var isExplicitlyPaused: Bool = false
     private var audibleSelectionGroup: AVMediaSelectionGroup?
     private var legibleSelectionGroup: AVMediaSelectionGroup?
+    /// The equalizer tap works on decoded audio, which would cost E-AC-3 its
+    /// object audio, so an E-AC-3 first track plays untapped.
+    private var firstAudioTrackIsEAC3 = false
 
     var audioProcessor: AudioEQProcessor?
 
@@ -410,6 +413,7 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
         currentVideoFormatDescription = nil
         audibleSelectionGroup = nil
         legibleSelectionGroup = nil
+        firstAudioTrackIsEAC3 = false
         isExplicitlyPaused = false
 
         if state != .idle {
@@ -568,6 +572,10 @@ public final class AVFoundationDecoder: NSObject, MediaDecoder {
         }
 
         // Audio track inspection
+        if let firstAudio = rawAudioTracks.first,
+           let format = (try? await firstAudio.load(.formatDescriptions))?.first {
+            firstAudioTrackIsEAC3 = CMFormatDescriptionGetMediaSubType(format) == kAudioFormatEnhancedAC3
+        }
         let audibleGroup = try? await asset.loadMediaSelectionGroup(for: .audible)
         var audioTracks: [AudioTrackInfo] = []
 
@@ -861,8 +869,9 @@ extension AVFoundationDecoder: AVPlayerItemLegibleOutputPushDelegate {
 
 extension AVFoundationDecoder {
 
+    /// Taps the first audio track, the one the equalizer applies to.
     func installAudioTap() {
-        guard let item = playerItem, let processor = audioProcessor else {
+        guard let item = playerItem, let processor = audioProcessor, !firstAudioTrackIsEAC3 else {
             playerItem?.audioMix = nil
             return
         }

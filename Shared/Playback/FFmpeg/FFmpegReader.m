@@ -3,6 +3,7 @@
 #import "EDSMBFile.h"
 #import <FFmpeg/FFmpeg.h>
 #import <FFmpeg/libavutil/pixdesc.h>
+#import <AudioToolbox/AudioToolbox.h>
 #import <VideoToolbox/VideoToolbox.h>
 #import <time.h>
 #import <stdatomic.h>
@@ -119,6 +120,128 @@ static int64_t ed_source_seek(void *opaque, int64_t offset, int whence) {
 /// stops here: about 2.5 s of 100 Mbit/s video, far more at typical bit rates.
 static const size_t EDHeldVideoLimit = 32 << 20;
 
+/// How the selected audio track reaches the renderer.
+typedef NS_ENUM(NSInteger, EDAudioRoute) {
+    /// FFmpeg decodes it to PCM.
+    EDAudioRouteDecode,
+    /// E-AC-3 that passes through once its first packet describes it.
+    EDAudioRoutePending,
+    /// E-AC-3 handed to the system decoder still compressed.
+    EDAudioRoutePassthrough,
+};
+
+/// Whether the system can decode E-AC-3; simulators may not.
+static BOOL EDSystemDecodesEAC3(void) {
+    static BOOL available;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        UInt32 size = 0;
+        if (AudioFormatGetPropertyInfo(kAudioFormatProperty_DecodeFormatIDs, 0, NULL, &size) != noErr) return;
+        UInt32 *formats = malloc(size);
+        if (formats && AudioFormatGetProperty(kAudioFormatProperty_DecodeFormatIDs, 0, NULL, &size, formats) == noErr) {
+            for (UInt32 i = 0; i < size / sizeof(UInt32); i++) {
+                if (formats[i] == kAudioFormatEnhancedAC3) available = YES;
+            }
+        }
+        free(formats);
+    });
+    return available;
+}
+
+/// Whether `packet` holds exactly one six-block (1536-sample) E-AC-3 access
+/// unit: an independent substream 0 syncframe, then any dependent or other
+/// substream frames that belong with it.
+static BOOL EDIsEAC3AccessUnit(const AVPacket *packet) {
+    static const int blocks[4] = {1, 2, 3, 6};
+    int offset = 0;
+    while (offset < packet->size) {
+        const uint8_t *frame = packet->data + offset;
+        if (packet->size - offset < 6 || frame[0] != 0x0B || frame[1] != 0x77) return NO;
+        int bsid = frame[5] >> 3;
+        int type = frame[2] >> 6;
+        int substream = (frame[2] >> 3) & 7;
+        int size = ((((frame[2] & 7) << 8) | frame[3]) + 1) * 2;
+        // AC-3 frames (bsid 10 and below) encode their size differently.
+        if (bsid <= 10 || bsid > 16 || type == 3 || size > packet->size - offset) return NO;
+        BOOL independent = type != 1 && substream == 0;
+        if (independent != (offset == 0)) return NO;
+        // fscod 3 (reduced sample rates) always carries six blocks.
+        if (independent && (frame[4] >> 6) != 3 && blocks[(frame[4] >> 4) & 3] != 6) return NO;
+        offset += size;
+    }
+    return offset > 0;
+}
+
+typedef struct {
+    const uint8_t *bytes;
+    SInt64 length;
+} EDMemoryFile;
+
+static OSStatus EDMemoryFileRead(void *client, SInt64 position, UInt32 count, void *buffer, UInt32 *actual) {
+    const EDMemoryFile *file = client;
+    SInt64 available = position < file->length ? file->length - position : 0;
+    *actual = (UInt32)MIN((SInt64)count, available);
+    if (*actual > 0) memcpy(buffer, file->bytes + position, *actual);
+    return noErr;
+}
+
+static SInt64 EDMemoryFileSize(void *client) { return ((const EDMemoryFile *)client)->length; }
+
+/// Describes E-AC-3 exactly as the system's own E-AC-3 file parser does, from
+/// one access unit. Its dec3 configuration names the substreams and flags
+/// object audio (JOC); without it the renderer would play only the channel bed.
+static CMAudioFormatDescriptionRef EDCreateEAC3Format(const AVPacket *packet) {
+    EDMemoryFile file = { packet->data, packet->size };
+    AudioFileID audioFile = NULL;
+    if (AudioFileOpenWithCallbacks(&file, EDMemoryFileRead, NULL, EDMemoryFileSize, NULL, 0, &audioFile) != noErr) {
+        return NULL;
+    }
+    AudioStreamBasicDescription asbd = {0};
+    UInt32 size = sizeof(asbd);
+    UInt32 cookieSize = 0, layoutSize = 0;
+    void *cookie = NULL;
+    AudioChannelLayout *layout = NULL;
+    OSStatus status = AudioFileGetProperty(audioFile, kAudioFilePropertyDataFormat, &size, &asbd);
+    if (status == noErr) status = AudioFileGetPropertyInfo(audioFile, kAudioFilePropertyMagicCookieData, &cookieSize, NULL);
+    if (status == noErr && cookieSize > 0 && (cookie = malloc(cookieSize))) {
+        status = AudioFileGetProperty(audioFile, kAudioFilePropertyMagicCookieData, &cookieSize, cookie);
+    }
+    if (status == noErr && AudioFileGetPropertyInfo(audioFile, kAudioFilePropertyChannelLayout, &layoutSize, NULL) == noErr &&
+        layoutSize >= sizeof(AudioChannelLayout) && (layout = malloc(layoutSize)) &&
+        AudioFileGetProperty(audioFile, kAudioFilePropertyChannelLayout, &layoutSize, layout) != noErr) {
+        free(layout);
+        layout = NULL;
+    }
+    AudioFileClose(audioFile);
+    CMAudioFormatDescriptionRef format = NULL;
+    if (status == noErr && cookie && asbd.mFormatID == kAudioFormatEnhancedAC3 && asbd.mFramesPerPacket == 1536) {
+        CMAudioFormatDescriptionCreate(kCFAllocatorDefault, &asbd, layout ? layoutSize : 0, layout,
+            cookieSize, cookie, NULL, &format);
+    }
+    free(cookie);
+    free(layout);
+    return format;
+}
+
+/// Decoded audio keeps up to 7.1 channels. The resampler moves the source's
+/// channels into stereo, 5.1, or 7.1 in FFmpeg's native order, the smallest
+/// with as many channels, and the Core Audio layout names that same order, so
+/// the renderer can place, downmix, or spatialize every channel.
+static void EDPCMLayout(int channels, AVChannelLayout *layout, AudioChannelLayoutTag *tag) {
+    if (channels <= 2) {
+        *layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
+        *tag = kAudioChannelLayoutTag_Stereo;
+    } else if (channels <= 6) {
+        // FL FR FC LFE SL SR. Back surrounds of 5.1 move to the sides.
+        *layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_5POINT1;
+        *tag = kAudioChannelLayoutTag_MPEG_5_1_A; // L R C LFE Ls Rs
+    } else {
+        // FL FR FC LFE BL BR SL SR.
+        *layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_7POINT1;
+        *tag = kAudioChannelLayoutTag_WAVE_7_1; // L R C LFE Rls Rrs Ls Rs
+    }
+}
+
 @implementation EDFFmpegReader {
     AVFormatContext *_format;
     AVIOContext *_customIO;
@@ -137,6 +260,13 @@ static const size_t EDHeldVideoLimit = 32 << 20;
     AVChannelLayout _inputLayout;
     int _inputRate;
     enum AVSampleFormat _inputFormat;
+    // Interleaved float PCM in the resampler's output layout.
+    CMAudioFormatDescriptionRef _pcmFormat;
+    EDAudioRoute _audioRoute;
+    CMAudioFormatDescriptionRef _passthroughFormat;
+    // Whether audio has had a timestamp since opening or seeking; later ones
+    // continue its sample clock.
+    BOOL _audioTimeAnchored;
     int _videoIndex;
     int _audioIndex;
     BOOL _hardwareDecoding;
@@ -265,6 +395,15 @@ static int EDInterrupt(void *opaque) {
     }
     swr_free(&_resampler);
     av_channel_layout_uninit(&_inputLayout);
+    if (_pcmFormat) {
+        CFRelease(_pcmFormat);
+        _pcmFormat = NULL;
+    }
+    if (_passthroughFormat) {
+        CFRelease(_passthroughFormat);
+        _passthroughFormat = NULL;
+    }
+    _audioRoute = EDAudioRouteDecode;
     _videoIndex = _audioIndex = _subtitleIndex = -1;
     _mediaInfo = @{};
 }
@@ -540,6 +679,7 @@ static int EDInterrupt(void *opaque) {
 
     _origin = _format->start_time == AV_NOPTS_VALUE ? 0 : (double)_format->start_time / AV_TIME_BASE;
     _seekFloor = _videoNextTime = _audioNextTime = 0;
+    _audioTimeAnchored = NO;
     _drained = _demuxEnded = NO;
     _videoIndex = av_find_best_stream(_format, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     _audioIndex = av_find_best_stream(_format, AVMEDIA_TYPE_AUDIO, -1, _videoIndex, NULL, 0);
@@ -553,6 +693,7 @@ static int EDInterrupt(void *opaque) {
     if (_audioIndex >= 0) {
         _audio = [self openCodec:_audioIndex hardware:NO error:error];
         if (!_audio) { [self close]; return NO; }
+        [self chooseAudioRoute];
     }
     if (!videoParameters && !_audio) {
         [self close];
@@ -620,6 +761,18 @@ static int EDInterrupt(void *opaque) {
     return output;
 }
 
+/// The presentation time for audio the stream stamps `streamTime` (NAN when
+/// it has none). Containers round timestamps, Matroska to the millisecond,
+/// which would leave a gap or overlap at every buffer boundary, so audio
+/// continues its sample clock unless the stream really jumps. The first
+/// timestamp after opening or seeking is taken as it is.
+- (double)audioTimeForStreamTime:(double)streamTime {
+    double time = streamTime;
+    if (isnan(time) || (_audioTimeAnchored && fabs(time - _audioNextTime) < 0.05)) time = _audioNextTime;
+    _audioTimeAnchored = YES;
+    return time;
+}
+
 - (EDFFmpegFrame *)audioFrameWithError:(NSError **)error {
     if (_frame->sample_rate <= 0 || _frame->ch_layout.nb_channels <= 0) {
         EDReaderError(error, @"Invalid audio format", AVERROR(EINVAL)); return nil;
@@ -631,55 +784,101 @@ static int EDInterrupt(void *opaque) {
         av_channel_layout_copy(&_inputLayout, &_frame->ch_layout);
         _inputRate = _frame->sample_rate;
         _inputFormat = _frame->format;
-        AVChannelLayout stereo = AV_CHANNEL_LAYOUT_STEREO;
-        int result = swr_alloc_set_opts2(&_resampler, &stereo, AV_SAMPLE_FMT_FLT, 48000,
+        AVChannelLayout output;
+        AudioChannelLayout layout = {0};
+        EDPCMLayout(_inputLayout.nb_channels, &output, &layout.mChannelLayoutTag);
+        int result = swr_alloc_set_opts2(&_resampler, &output, AV_SAMPLE_FMT_FLT, 48000,
             &_inputLayout, _inputFormat, _inputRate, 0, NULL);
         if (result >= 0) result = swr_init(_resampler);
-        if (result < 0) { EDReaderError(error, @"Convert audio format", result); return nil; }
+        if (result < 0) {
+            swr_free(&_resampler);
+            EDReaderError(error, @"Convert audio format", result); return nil;
+        }
+        UInt32 channels = (UInt32)output.nb_channels;
+        AudioStreamBasicDescription asbd = { .mSampleRate = 48000, .mFormatID = kAudioFormatLinearPCM,
+            .mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
+            .mBytesPerPacket = 4 * channels, .mFramesPerPacket = 1, .mBytesPerFrame = 4 * channels,
+            .mChannelsPerFrame = channels, .mBitsPerChannel = 32 };
+        if (_pcmFormat) CFRelease(_pcmFormat);
+        _pcmFormat = NULL;
+        OSStatus status = CMAudioFormatDescriptionCreate(NULL, &asbd, sizeof(layout), &layout, 0, NULL, NULL, &_pcmFormat);
+        if (status) {
+            swr_free(&_resampler);
+            EDReaderError(error, @"Describe audio format", status); return nil;
+        }
     }
+    size_t frameBytes = CMAudioFormatDescriptionGetStreamBasicDescription(_pcmFormat)->mBytesPerFrame;
     int64_t delay = swr_get_delay(_resampler, _inputRate);
     int count = (int)av_rescale_rnd(delay + _frame->nb_samples, 48000, _inputRate, AV_ROUND_UP);
-    NSMutableData *pcm = [NSMutableData dataWithLength:(NSUInteger)count * 2 * sizeof(float)];
+    NSMutableData *pcm = [NSMutableData dataWithLength:(NSUInteger)count * frameBytes];
     uint8_t *output[] = { pcm.mutableBytes };
     count = swr_convert(_resampler, output, count, (const uint8_t **)_frame->extended_data, _frame->nb_samples);
     if (count < 0) { EDReaderError(error, @"Decode audio samples", count); return nil; }
     AVStream *stream = _format->streams[_audioIndex];
-    double pts;
-    if (_frame->best_effort_timestamp == AV_NOPTS_VALUE) {
-        pts = _audioNextTime;
-    } else {
-        double streamPts = _frame->best_effort_timestamp * av_q2d(stream->time_base) - _origin - (double)delay / _inputRate;
-        if (fabs(streamPts - _audioNextTime) < 0.05) {
-            pts = _audioNextTime;
-        } else {
-            pts = streamPts;
-        }
-    }
+    double pts = [self audioTimeForStreamTime:_frame->best_effort_timestamp == AV_NOPTS_VALUE ? NAN :
+        _frame->best_effort_timestamp * av_q2d(stream->time_base) - _origin - (double)delay / _inputRate];
     _audioNextTime = pts + (double)count / 48000;
     int trim = (int)fmin(count, fmax(0, ceil((_seekFloor - pts) * 48000)));
     count -= trim;
     if (count == 0) return nil;
     pts += (double)trim / 48000;
-    size_t size = (size_t)count * 2 * sizeof(float);
+    size_t size = (size_t)count * frameBytes;
     CMBlockBufferRef block = NULL;
-    CMAudioFormatDescriptionRef description = NULL;
     CMSampleBufferRef sample = NULL;
-    AudioStreamBasicDescription asbd = { .mSampleRate = 48000, .mFormatID = kAudioFormatLinearPCM,
-        .mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
-        .mBytesPerPacket = 8, .mFramesPerPacket = 1, .mBytesPerFrame = 8, .mChannelsPerFrame = 2, .mBitsPerChannel = 32 };
     OSStatus status = CMBlockBufferCreateWithMemoryBlock(NULL, NULL, size, kCFAllocatorDefault, NULL, 0, size, 0, &block);
-    if (!status) status = CMBlockBufferReplaceDataBytes((const uint8_t *)pcm.bytes + trim * 8, block, 0, size);
-    if (!status) status = CMAudioFormatDescriptionCreate(NULL, &asbd, 0, NULL, 0, NULL, NULL, &description);
+    if (!status) status = CMBlockBufferReplaceDataBytes((const uint8_t *)pcm.bytes + trim * frameBytes, block, 0, size);
     CMSampleTimingInfo timing = { CMTimeMake(1, 48000), CMTimeMakeWithSeconds(pts, 48000), kCMTimeInvalid };
-    size_t sampleSize = 8;
-    if (!status) status = CMSampleBufferCreateReady(NULL, block, description, count, 1, &timing, 1, &sampleSize, &sample);
+    if (!status) status = CMSampleBufferCreateReady(NULL, block, _pcmFormat, count, 1, &timing, 1, &frameBytes, &sample);
     EDFFmpegFrame *result = nil;
     if (!status) result = [[EDFFmpegFrame alloc] initWithPixelBuffer:NULL audio:sample time:pts duration:(double)count / 48000];
     else EDReaderError(error, @"Create audio sample buffer", status);
     if (sample) CFRelease(sample);
-    if (description) CFRelease(description);
     if (block) CFRelease(block);
     return result;
+}
+
+/// Hands an E-AC-3 packet to the renderer undecoded. Returns NO when the track
+/// turns out unable to pass through; FFmpeg then decodes it from this packet on.
+- (BOOL)passThroughPacket:(AVPacket *)packet into:(NSMutableArray *)outputs {
+    BOOL accessUnit = EDIsEAC3AccessUnit(packet);
+    if (_audioRoute == EDAudioRoutePending) {
+        int rate = _format->streams[_audioIndex]->codecpar->sample_rate;
+        _passthroughFormat = accessUnit ? EDCreateEAC3Format(packet) : NULL;
+        if (!_passthroughFormat ||
+            (rate > 0 && CMAudioFormatDescriptionGetStreamBasicDescription(_passthroughFormat)->mSampleRate != rate)) {
+            NSLog(@"[FFmpegReader] This E-AC-3 track can't pass through to the system decoder; decoding it instead");
+            if (_passthroughFormat) CFRelease(_passthroughFormat);
+            _passthroughFormat = NULL;
+            _audioRoute = EDAudioRouteDecode;
+            return NO;
+        }
+        _audioRoute = EDAudioRoutePassthrough;
+    }
+    // A packet of any other length would play at the wrong time; the system
+    // decoder picks up again at the next one.
+    if (!accessUnit) return YES;
+    const AudioStreamBasicDescription *asbd = CMAudioFormatDescriptionGetStreamBasicDescription(_passthroughFormat);
+    double duration = asbd->mFramesPerPacket / asbd->mSampleRate;
+    double pts = [self audioTimeForStreamTime:packet->pts == AV_NOPTS_VALUE ? NAN :
+        packet->pts * av_q2d(_format->streams[_audioIndex]->time_base) - _origin];
+    _audioNextTime = pts + duration;
+    // Compressed audio can't start partway into a unit, so after a seek the
+    // sound resumes with the first unit at or after the target, at most 32 ms on.
+    if (pts + 0.000001 < _seekFloor) return YES;
+    size_t size = (size_t)packet->size;
+    CMBlockBufferRef block = NULL;
+    CMSampleBufferRef sample = NULL;
+    AudioStreamPacketDescription description = { 0, 0, (UInt32)size };
+    OSStatus status = CMBlockBufferCreateWithMemoryBlock(kCFAllocatorDefault, NULL, size, kCFAllocatorDefault,
+        NULL, 0, size, kCMBlockBufferAssureMemoryNowFlag, &block);
+    if (status == noErr) status = CMBlockBufferReplaceDataBytes(packet->data, block, 0, size);
+    if (status == noErr) status = CMAudioSampleBufferCreateReadyWithPacketDescriptions(kCFAllocatorDefault, block,
+        _passthroughFormat, 1, CMTimeMakeWithSeconds(pts, (int32_t)asbd->mSampleRate), &description, &sample);
+    if (block) CFRelease(block);
+    if (status != noErr) return YES;
+    [outputs addObject:[[EDFFmpegFrame alloc] initWithPixelBuffer:NULL audio:sample time:pts duration:duration]];
+    CFRelease(sample);
+    return YES;
 }
 
 /// Replaces a hardware video decoder after `packet` failed, most often a
@@ -844,7 +1043,9 @@ static int EDInterrupt(void *opaque) {
                 [self holdVideoPacket:_packet];
             }
         } else if (_audio && _packet->stream_index == _audioIndex) {
-            success = [self decode:_audio packet:_packet into:outputs error:error];
+            if (_audioRoute == EDAudioRouteDecode || ![self passThroughPacket:_packet into:outputs]) {
+                success = [self decode:_audio packet:_packet into:outputs error:error];
+            }
         }
         av_packet_unref(_packet);
         if (!success) return nil;
@@ -871,6 +1072,7 @@ static int EDInterrupt(void *opaque) {
     av_frame_unref(_frame);
     [self discardHeldVideo];
     _seekFloor = _videoNextTime = _audioNextTime = fmax(0, seconds);
+    _audioTimeAnchored = NO;
     _drained = _demuxEnded = NO;
     return YES;
 }
@@ -885,7 +1087,18 @@ static int EDInterrupt(void *opaque) {
     _audio = next;
     _audioIndex = (int)index;
     swr_free(&_resampler);
+    [self chooseAudioRoute];
     return YES;
+}
+
+/// Picks how the selected audio track reaches the renderer.
+- (void)chooseAudioRoute {
+    if (_passthroughFormat) {
+        CFRelease(_passthroughFormat);
+        _passthroughFormat = NULL;
+    }
+    BOOL eac3 = _format->streams[_audioIndex]->codecpar->codec_id == AV_CODEC_ID_EAC3;
+    _audioRoute = eac3 && _passesThroughEAC3 && EDSystemDecodesEAC3() ? EDAudioRoutePending : EDAudioRouteDecode;
 }
 
 - (NSDictionary<NSString *, id> *)selectSubtitleTrack:(NSInteger)index error:(NSError **)error {

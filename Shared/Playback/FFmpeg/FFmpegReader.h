@@ -44,6 +44,11 @@ NS_SWIFT_NAME(ByteSource)
 @property (nonatomic, readonly) NSDictionary<NSString *, id> *mediaInfo;
 @property (nonatomic, readonly) BOOL atEnd;
 @property (nonatomic, assign) BOOL videoDecodingEnabled;
+/// Hands E-AC-3 audio to the system's decoder undecoded, on devices that have
+/// one, so its surround channels and object audio reach the renderer intact.
+/// Read when an audio track opens or is selected. Off by default. Other audio
+/// decodes to interleaved float PCM in stereo, 5.1, or 7.1.
+@property (nonatomic, assign) BOOL passesThroughEAC3;
 /// Replaces the video decoder, for example after iOS invalidated its hardware
 /// session in the background. The new decoder starts at the next keyframe.
 - (BOOL)recreateVideoDecoder;

@@ -737,4 +737,331 @@ struct FFmpegDecoderTests {
         decoder.setVideoDecodingEnabled(true)
         #expect(decoder.isVideoDecodingEnabled)
     }
+
+    // MARK: - Surround audio
+
+    /// A source layout, as a WAVE channel mask (which orders channels the way
+    /// FFmpeg does), and the amplitude each Core Audio speaker should receive
+    /// when source channel i carries a 440 Hz tone at 0.1 + 0.05 × i.
+    nonisolated struct SurroundCase: Sendable, CustomTestStringConvertible {
+        let testDescription: String
+        let mask: UInt32
+        let tag: AudioChannelLayoutTag
+        let amplitudes: [AudioChannelLabel: Float]
+    }
+
+    nonisolated static let surroundCases: [SurroundCase] = [
+        SurroundCase(testDescription: "mono", mask: 0x4, tag: kAudioChannelLayoutTag_Stereo,
+            amplitudes: [kAudioChannelLabel_Left: 0.1 * Float(0.5).squareRoot(), kAudioChannelLabel_Right: 0.1 * Float(0.5).squareRoot()]),
+        SurroundCase(testDescription: "stereo", mask: 0x3, tag: kAudioChannelLayoutTag_Stereo,
+            amplitudes: [kAudioChannelLabel_Left: 0.1, kAudioChannelLabel_Right: 0.15]),
+        SurroundCase(testDescription: "quad", mask: 0x33, tag: kAudioChannelLayoutTag_MPEG_5_1_A,
+            amplitudes: [kAudioChannelLabel_Left: 0.1, kAudioChannelLabel_Right: 0.15, kAudioChannelLabel_Center: 0,
+                         kAudioChannelLabel_LFEScreen: 0, kAudioChannelLabel_LeftSurround: 0.2,
+                         kAudioChannelLabel_RightSurround: 0.25]),
+        SurroundCase(testDescription: "5.1(side)", mask: 0x60F, tag: kAudioChannelLayoutTag_MPEG_5_1_A,
+            amplitudes: [kAudioChannelLabel_Left: 0.1, kAudioChannelLabel_Right: 0.15, kAudioChannelLabel_Center: 0.2,
+                         kAudioChannelLabel_LFEScreen: 0.25, kAudioChannelLabel_LeftSurround: 0.3,
+                         kAudioChannelLabel_RightSurround: 0.35]),
+        SurroundCase(testDescription: "5.1(back)", mask: 0x3F, tag: kAudioChannelLayoutTag_MPEG_5_1_A,
+            amplitudes: [kAudioChannelLabel_Left: 0.1, kAudioChannelLabel_Right: 0.15, kAudioChannelLabel_Center: 0.2,
+                         kAudioChannelLabel_LFEScreen: 0.25, kAudioChannelLabel_LeftSurround: 0.3,
+                         kAudioChannelLabel_RightSurround: 0.35]),
+        // The back center splits between the rear pair.
+        SurroundCase(testDescription: "6.1", mask: 0x70F, tag: kAudioChannelLayoutTag_WAVE_7_1,
+            amplitudes: [kAudioChannelLabel_Left: 0.1, kAudioChannelLabel_Right: 0.15, kAudioChannelLabel_Center: 0.2,
+                         kAudioChannelLabel_LFEScreen: 0.25, kAudioChannelLabel_RearSurroundLeft: 0.3 * Float(0.5).squareRoot(),
+                         kAudioChannelLabel_RearSurroundRight: 0.3 * Float(0.5).squareRoot(),
+                         kAudioChannelLabel_LeftSurround: 0.35, kAudioChannelLabel_RightSurround: 0.4]),
+        SurroundCase(testDescription: "7.1", mask: 0x63F, tag: kAudioChannelLayoutTag_WAVE_7_1,
+            amplitudes: [kAudioChannelLabel_Left: 0.1, kAudioChannelLabel_Right: 0.15, kAudioChannelLabel_Center: 0.2,
+                         kAudioChannelLabel_LFEScreen: 0.25, kAudioChannelLabel_RearSurroundLeft: 0.3,
+                         kAudioChannelLabel_RearSurroundRight: 0.35, kAudioChannelLabel_LeftSurround: 0.4,
+                         kAudioChannelLabel_RightSurround: 0.45]),
+    ]
+
+    @Test(arguments: FFmpegDecoderTests.surroundCases)
+    func decodedAudioKeepsEveryChannelWhereItBelongs(_ surround: SurroundCase) throws {
+        // The renderer places each channel by the layout the buffer names, so
+        // every source channel must arrive under its own speaker's label.
+        let url = try surroundWAV(mask: surround.mask)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        try reader.open(url: url)
+        var buffers: [CMSampleBuffer] = []
+        while !reader.atEnd { buffers += try reader.readBatch().compactMap(\.audioSampleBuffer) }
+        let format = try #require(buffers.first.flatMap(CMSampleBufferGetFormatDescription))
+        var layoutSize = 0
+        let layout = try #require(CMAudioFormatDescriptionGetChannelLayout(format, sizeOut: &layoutSize))
+        #expect(layout.pointee.mChannelLayoutTag == surround.tag)
+        let speakers = try channelLabels(of: surround.tag)
+        let samples = try interleavedSamples(buffers)
+        #expect(samples.count == 24_000 * speakers.count)
+        for (channel, speaker) in speakers.enumerated() {
+            let expected = try #require(surround.amplitudes[speaker], "No level for speaker \(speaker)")
+            let energy = stride(from: channel, to: samples.count, by: speakers.count).reduce(0.0) {
+                $0 + Double(samples[$1] * samples[$1])
+            }
+            // A sine's amplitude is √2 × its RMS; 0.5 s holds whole cycles.
+            let amplitude = Float((2 * energy / Double(samples.count / speakers.count)).squareRoot())
+            #expect(abs(amplitude - expected) < 0.002, "Speaker \(speaker) played \(amplitude), expected \(expected)")
+        }
+    }
+
+    @Test func eac3DecodesToSurroundWhenItDoesNotPassThrough() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        defer { reader.close() }
+        try reader.open(url: fixture("decoder-eac3"))
+        var buffers: [CMSampleBuffer] = []
+        while !reader.atEnd { buffers += try reader.readBatch().compactMap(\.audioSampleBuffer) }
+        let format = try #require(buffers.first.flatMap(CMSampleBufferGetFormatDescription))
+        #expect(CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee.mFormatID == kAudioFormatLinearPCM)
+        let speakers = try channelLabels(of: kAudioChannelLayoutTag_MPEG_5_1_A)
+        let samples = try interleavedSamples(buffers)
+        // The fixture plays 300, 400, 500, 60, 700, and 800 Hz on FL FR FC LFE SL SR.
+        let tones: [AudioChannelLabel: Double] = [
+            kAudioChannelLabel_Left: 300, kAudioChannelLabel_Right: 400, kAudioChannelLabel_Center: 500,
+            kAudioChannelLabel_LFEScreen: 60, kAudioChannelLabel_LeftSurround: 700, kAudioChannelLabel_RightSurround: 800,
+        ]
+        for (channel, speaker) in speakers.enumerated() {
+            let channelSamples = stride(from: channel, to: samples.count, by: 6).map { samples[$0] }
+            // Half cycles, counted with hysteresis so coding noise near zero
+            // doesn't add crossings. The tones peak at 0.125.
+            var crossings = 0
+            var positive: Bool?
+            for sample in channelSamples where abs(sample) > 0.03 {
+                if let positive, positive != (sample > 0) { crossings += 1 }
+                positive = sample > 0
+            }
+            let frequency = Double(crossings) / 2 / (Double(channelSamples.count) / 48_000)
+            let expected = try #require(tones[speaker])
+            #expect(abs(frequency - expected) < expected * 0.05, "Speaker \(speaker) played \(frequency) Hz")
+        }
+    }
+
+    nonisolated static let systemDecodesEAC3: Bool = {
+        var size: UInt32 = 0
+        guard AudioFormatGetPropertyInfo(kAudioFormatProperty_DecodeFormatIDs, 0, nil, &size) == noErr else { return false }
+        var formats = [AudioFormatID](repeating: 0, count: Int(size) / MemoryLayout<AudioFormatID>.size)
+        guard AudioFormatGetProperty(kAudioFormatProperty_DecodeFormatIDs, 0, nil, &size, &formats) == noErr else { return false }
+        return formats.contains(kAudioFormatEnhancedAC3)
+    }()
+
+    @Test(.enabled(if: FFmpegDecoderTests.systemDecodesEAC3))
+    func eac3ReachesTheRendererUndecodedWithTheSystemParsersConfiguration() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        reader.passesThroughEAC3 = true
+        defer { reader.close() }
+        try reader.open(url: fixture("decoder-eac3"))
+        var units: [CMSampleBuffer] = []
+        while !reader.atEnd { units += try reader.readBatch().compactMap(\.audioSampleBuffer) }
+        #expect(units.count > 55)
+        for (index, unit) in units.enumerated() {
+            let format = try #require(CMSampleBufferGetFormatDescription(unit))
+            let asbd = try #require(CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee)
+            #expect(asbd.mFormatID == kAudioFormatEnhancedAC3)
+            #expect(asbd.mFramesPerPacket == 1536 && asbd.mChannelsPerFrame == 6 && asbd.mSampleRate == 48_000)
+            #expect(CMSampleBufferGetNumSamples(unit) == 1)
+            // Each unit starts exactly where the one before it ends.
+            #expect(CMSampleBufferGetPresentationTimeStamp(unit) == CMTime(value: CMTimeValue(index * 1536), timescale: 48_000))
+        }
+        // The dec3 box names the substreams and, when present, object audio.
+        let format = try #require(units.first.flatMap(CMSampleBufferGetFormatDescription))
+        var cookieSize = 0
+        let cookie = try #require(CMAudioFormatDescriptionGetMagicCookie(format, sizeOut: &cookieSize))
+        #expect(Data(bytes: cookie, count: cookieSize).range(of: Data("dec3".utf8)) != nil)
+    }
+
+    @Test(.enabled(if: FFmpegDecoderTests.systemDecodesEAC3), arguments: [(1.01, 1.024), (1.03, 1.056)])
+    func passthroughResumesAtTheFirstWholeUnitAfterASeek(target: Double, resumesAt: Double) throws {
+        // These seeks land at a unit 6–14 ms from the target. Its own time
+        // stands; a unit that starts before the target is left out.
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        reader.passesThroughEAC3 = true
+        defer { reader.close() }
+        try reader.open(url: fixture("decoder-eac3"))
+        _ = try reader.readBatch()
+        try reader.seek(seconds: target)
+        var units: [CMSampleBuffer] = []
+        while !reader.atEnd { units += try reader.readBatch().compactMap(\.audioSampleBuffer) }
+        let first = try #require(units.first)
+        #expect(abs(CMSampleBufferGetPresentationTimeStamp(first).seconds - resumesAt) < 0.000_01)
+    }
+
+    @Test(arguments: [1.01, 1.03])
+    func decodedAudioAfterASeekMatchesPlayingThrough(target: Double) throws {
+        // The first frame after these seeks starts 6–14 ms from the target.
+        // Audio must carry the samples of the times it is stamped with.
+        func samples(seekingTo target: Double?) throws -> (start: Double, values: [Float]) {
+            let reader = EDFFmpegReader(hardwareDecoding: false)
+            defer { reader.close() }
+            try reader.open(url: fixture("decoder-eac3"))
+            if let target {
+                _ = try reader.readBatch()
+                try reader.seek(seconds: target)
+            }
+            var buffers: [CMSampleBuffer] = []
+            while !reader.atEnd { buffers += try reader.readBatch().compactMap(\.audioSampleBuffer) }
+            let start = try #require(buffers.first).presentationTimeStamp.seconds
+            return (start, try interleavedSamples(buffers))
+        }
+        let continuous = try samples(seekingTo: nil)
+        let seeked = try samples(seekingTo: target)
+        #expect(seeked.start >= target - 0.000_01 && seeked.start < target + 0.032)
+        // From 1.06 s on, past the decoder's warm-up after the seek. FFmpeg
+        // dithers empty mantissas from a sequence that a seek doesn't reset,
+        // so samples differ by up to about 1e-4; one sample of misplacement
+        // would differ by about 1e-2.
+        let compareFrom = 1.06, frames = 9_600
+        func slice(_ audio: (start: Double, values: [Float])) -> ArraySlice<Float> {
+            let offset = Int(((compareFrom - audio.start) * 48_000).rounded()) * 6
+            return audio.values[offset..<(offset + frames * 6)]
+        }
+        #expect(zip(slice(seeked), slice(continuous)).allSatisfy { abs($0 - $1) < 0.001 })
+    }
+
+    @Test(.enabled(if: FFmpegDecoderTests.systemDecodesEAC3))
+    func switchingTracksDecodesOtherAudioAndPassesEAC3ThroughAgain() throws {
+        let reader = EDFFmpegReader(hardwareDecoding: false)
+        reader.passesThroughEAC3 = true
+        defer { reader.close() }
+        try reader.open(url: fixture("decoder-eac3"))
+        func formatOfNextAudio() throws -> AudioStreamBasicDescription? {
+            for _ in 0..<100 {
+                if let audio = try reader.readBatch().compactMap(\.audioSampleBuffer).first {
+                    return CMSampleBufferGetFormatDescription(audio)
+                        .flatMap(CMAudioFormatDescriptionGetStreamBasicDescription)?.pointee
+                }
+            }
+            return nil
+        }
+        #expect(try formatOfNextAudio()?.mFormatID == kAudioFormatEnhancedAC3)
+        try reader.selectAudioTrack(1)
+        try reader.seek(seconds: 0.5)
+        let ac3 = try #require(try formatOfNextAudio())
+        #expect(ac3.mFormatID == kAudioFormatLinearPCM && ac3.mChannelsPerFrame == 2)
+        try reader.selectAudioTrack(0)
+        try reader.seek(seconds: 0.5)
+        #expect(try formatOfNextAudio()?.mFormatID == kAudioFormatEnhancedAC3)
+    }
+
+    @Test(.enabled(if: FFmpegDecoderTests.systemDecodesEAC3))
+    func passedThroughAudioPlaysOnTheRendererWithoutTheEqualizer() async throws {
+        let decoder = FFmpegDecoder()
+        decoder.isMuted = true
+        let equalizer = AudioEQProcessor()
+        equalizer.update(preamp: -4, bands: [6, 3, 0, 0, 0, 2, 3, 0, 0, 0])
+        decoder.audioProcessor = equalizer
+        defer { decoder.close() }
+        _ = try await decoder.open(url: fixture("decoder-eac3"))
+        decoder.play()
+        try await wait { decoder.currentTime.seconds > 0.5 }
+        let renderer = try #require(Mirror(reflecting: decoder).descendant("audioRenderer") as? AVSampleBufferAudioRenderer)
+        #expect(renderer.status == .rendering)
+        #expect(renderer.error == nil)
+        // The equalizer never sees encoded audio.
+        #expect(Mirror(reflecting: decoder).descendant("equalizedFormat") as? (sampleRate: Double, channels: Int) == nil)
+        try await wait { decoder.state == .ended }
+    }
+
+    @Test func outputChangesRefillAudioOnceFromThePlayhead() async throws {
+        let decoder = FFmpegDecoder()
+        decoder.isMuted = true
+        defer { decoder.close() }
+        var discontinuities = 0
+        decoder.onDiscontinuity = { discontinuities += 1 }
+        _ = try await decoder.open(url: fixture())
+        decoder.play()
+        try await wait { decoder.currentTime.seconds > 0.5 }
+        let renderer = try #require(Mirror(reflecting: decoder).descendant("audioRenderer") as? AVSampleBufferAudioRenderer)
+        let playhead = decoder.currentTime.seconds
+        // A route change can flush the renderer and change its output format at once.
+        NotificationCenter.default.post(name: .AVSampleBufferAudioRendererWasFlushedAutomatically, object: renderer)
+        NotificationCenter.default.post(name: .AVSampleBufferAudioRendererOutputConfigurationDidChange, object: renderer)
+        try await wait { discontinuities == 1 && decoder.state == .playing }
+        #expect(decoder.currentTime.seconds >= playhead - 0.05)
+        try await wait { decoder.currentTime.seconds > playhead + 0.5 }
+        #expect(discontinuities == 1)
+    }
+
+    @Test func equalizerFollowsTheDecodedChannels() async throws {
+        let decoder = FFmpegDecoder(passesThroughEAC3: false)
+        decoder.isMuted = true
+        let equalizer = AudioEQProcessor()
+        equalizer.update(preamp: -4, bands: [6, 3, 0, 0, 0, 2, 3, 0, 0, 0])
+        decoder.audioProcessor = equalizer
+        defer { decoder.close() }
+        _ = try await decoder.open(url: fixture("decoder-eac3"))
+        decoder.play()
+        try await wait { decoder.currentTime.seconds > 0.3 }
+        let format = Mirror(reflecting: decoder).descendant("equalizedFormat") as? (sampleRate: Double, channels: Int)
+        #expect(format?.sampleRate == 48_000)
+        #expect(format?.channels == 6)
+    }
+
+    /// Half a second of 48 kHz 16-bit WAVE_FORMAT_EXTENSIBLE audio whose
+    /// channel i carries 440 Hz at amplitude 0.1 + 0.05 × i.
+    private func surroundWAV(mask: UInt32) throws -> URL {
+        let channels = mask.nonzeroBitCount, frames = 24_000
+        var data = Data()
+        func append<T: FixedWidthInteger>(_ value: T) { withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) } }
+        data.append(contentsOf: Array("RIFF".utf8))
+        append(UInt32(4 + 8 + 40 + 8 + frames * channels * 2))
+        data.append(contentsOf: Array("WAVEfmt ".utf8))
+        append(UInt32(40))
+        append(UInt16(0xFFFE))
+        append(UInt16(channels))
+        append(UInt32(48_000))
+        append(UInt32(48_000 * channels * 2))
+        append(UInt16(channels * 2))
+        append(UInt16(16))
+        append(UInt16(22))
+        append(UInt16(16))
+        append(mask)
+        // KSDATAFORMAT_SUBTYPE_PCM
+        data.append(contentsOf: [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+                                 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71])
+        data.append(contentsOf: Array("data".utf8))
+        append(UInt32(frames * channels * 2))
+        for frame in 0..<frames {
+            let phase = sin(2 * Double.pi * 440 * Double(frame) / 48_000)
+            for channel in 0..<channels {
+                append(Int16((0.1 + 0.05 * Double(channel)) * phase * 32_767))
+            }
+        }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("surround-\(UUID().uuidString).wav")
+        try data.write(to: url)
+        return url
+    }
+
+    /// The speaker of each channel, in order, for a Core Audio layout tag.
+    private func channelLabels(of tag: AudioChannelLayoutTag) throws -> [AudioChannelLabel] {
+        var tag = tag
+        var size: UInt32 = 0
+        let tagSize = UInt32(MemoryLayout<AudioChannelLayoutTag>.size)
+        try #require(AudioFormatGetPropertyInfo(kAudioFormatProperty_ChannelLayoutForTag, tagSize, &tag, &size) == noErr)
+        let layout = UnsafeMutableRawPointer.allocate(byteCount: Int(size), alignment: MemoryLayout<AudioChannelLayout>.alignment)
+        defer { layout.deallocate() }
+        try #require(AudioFormatGetProperty(kAudioFormatProperty_ChannelLayoutForTag, tagSize, &tag, &size, layout) == noErr)
+        let count = Int(layout.assumingMemoryBound(to: AudioChannelLayout.self).pointee.mNumberChannelDescriptions)
+        let offset = try #require(MemoryLayout<AudioChannelLayout>.offset(of: \.mChannelDescriptions))
+        let descriptions = (layout + offset).assumingMemoryBound(to: AudioChannelDescription.self)
+        return (0..<count).map { descriptions[$0].mChannelLabel }
+    }
+
+    /// The interleaved float samples of consecutive PCM buffers.
+    private func interleavedSamples(_ buffers: [CMSampleBuffer]) throws -> [Float] {
+        var samples: [Float] = []
+        for buffer in buffers {
+            let block = try #require(CMSampleBufferGetDataBuffer(buffer))
+            var values = [Float](repeating: 0, count: CMBlockBufferGetDataLength(block) / 4)
+            let result = values.withUnsafeMutableBytes {
+                CMBlockBufferCopyDataBytes(block, atOffset: 0, dataLength: $0.count, destination: $0.baseAddress!)
+            }
+            try #require(result == kCMBlockBufferNoErr)
+            samples += values
+        }
+        return samples
+    }
 }

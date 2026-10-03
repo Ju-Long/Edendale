@@ -35,6 +35,9 @@ final class AudioSessionManager {
                     options: []
                 )
                 #endif
+                // Surround audio reaches the renderer with all its channels,
+                // so the system may spatialize it or send it to a receiver.
+                try? session.setSupportsMultichannelContent(true)
             }.value
             if #available(iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *) {
                 try await session.activate(options: [])

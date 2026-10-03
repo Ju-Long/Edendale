@@ -290,8 +290,10 @@ Audio Booster, off by default, that adds 10 dB of preamp gain within the
 equalizer's bounds and restores the unboosted setting when disabled. Profiles
 and booster changes apply during playback and carry over between files.
 Night Mode changes the frequency balance; it does not compress dynamic range.
-These controls do not affect visionOS spatial/multiview playback in the system
-player. tvOS uses remote-operated increment/decrement controls for adjustments.
+These controls do not affect E-AC-3 audio (see
+[Surround and spatial audio](#surround-and-spatial-audio)) or visionOS
+spatial/multiview playback in the system player. tvOS uses remote-operated
+increment/decrement controls for adjustments.
 
 Episodes automatically advance to the next stored episode in season/episode
 order, including the next season and stored specials, without replaying an
@@ -310,6 +312,63 @@ reachable when controls are visible. Movies, files without episode context,
 unknown durations, and the final stored episode do not show it. The native
 visionOS system-player route uses the same preview rule. Artwork has a
 readable fallback, focus is visible, and transitions honor Reduce Motion.
+
+### Surround and spatial audio
+
+FFmpeg playback keeps a track's channels. Decoded audio reaches the renderer
+as stereo, 5.1, or 7.1 PCM, the smallest with as many channels as the source,
+labelled with the matching Core Audio channel layout, so the system downmixes
+it for the current output, sends it to an HDMI receiver, or spatializes it on
+supported headphones. The back surrounds of 5.1 play as its surround pair,
+6.1's back center splits between the rear pair, and layouts beyond 7.1 fold
+into 7.1. Mono and stereo play as before.
+
+E-AC-3 reaches the renderer undecoded on devices with a system E-AC-3 decoder,
+object audio (JOC) included. Each track is described with the `dec3`
+configuration that the system's own E-AC-3 parser derives from its first
+packet, which flags object audio the way an MP4 or HLS stream would. A track
+that can't be described this way, or a device without the decoder, decodes in
+FFmpeg to surround PCM instead, without the object audio; a packet that isn't
+one six-block access unit is skipped. After a seek, passed-through sound resumes with the first whole unit
+at or after the target, at most 32 ms after the picture. AC-3, DTS, TrueHD,
+and other codecs still decode in FFmpeg.
+
+Audio enhancement doesn't apply to E-AC-3: equalizing needs decoded audio,
+which would drop the object audio. FFmpeg playback passes it through
+untouched, and AVFoundation playback installs no equalizer tap when the file's
+first audio track is E-AC-3. Settings → Audio Enhancement says so. Enhancement
+of decoded surround covers every channel.
+
+When the renderer drops its queued audio because the output changed, or the
+output hardware changes format (for example, a receiver switching on), FFmpeg
+playback refills audio from the playhead so the new output is configured for
+the track's channels. On iOS, tvOS, and visionOS the audio session declares
+multichannel content support.
+
+The first audio timestamp after opening or seeking is taken as the stream
+gives it, and later ones continue the sample clock. Earlier, a first frame
+that started within 50 ms of a seek target was moved onto the target and
+played that much early or late against the picture.
+
+Run the audio regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/AVFoundationDecoderTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+`EdendaleTests/Fixtures/decoder-eac3.mkv` is synthetic: 5.1 E-AC-3 with a
+different tone on each channel, plus a stereo AC-3 track. Regenerate it with
+`bash EdendaleTests/Fixtures/generate-eac3-fixture.sh`, which needs an ffmpeg
+CLI with the eac3 and ac3 encoders. Passthrough tests run only where the
+system can decode E-AC-3. Whether object audio reaches the listener depends on
+the device and route (a receiver, or headphones with spatial audio), so check
+it on hardware. Keeping E-AC-3 out of audio enhancement is a product rule:
+Android and Windows need their own native implementations if they adopt it;
+the static Web branch is unaffected.
 
 ### Speed changes and seeking
 
