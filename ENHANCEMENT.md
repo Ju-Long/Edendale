@@ -897,13 +897,13 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   argument `room.schemaLocation` set to `$projectDir/schemas` (also add that
   folder to the `androidTest` assets). Build at version 2 and commit the
   version 2 schema JSON.
-- [ ] **D.2.2** Add the columns, set `version = 3`, add `MIGRATION_2_3`, and
+- [x] **D.2.2** Add the columns, set `version = 3`, add `MIGRATION_2_3`, and
   register it next to `MIGRATION_1_2` in `EdendaleApplication`. Commit the
   version 3 schema JSON.
 
 **Tests:**
-- [ ] **D.2.T1** (JVM) The `kind` backfill function.
-- [ ] **D.2.T2** (instrumented) `MigrationTestHelper` from 2 to 3 keeps every
+- [x] **D.2.T1** (JVM) The `kind` backfill function.
+- [x] **D.2.T2** (instrumented) `MigrationTestHelper` from 2 to 3 keeps every
   row and fills in `kind`.
 
 ### D.3 — Rescan throttle and per-source status
@@ -1865,7 +1865,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
 | C.6 | MediaSession and system surfaces | Complete | |
 | D.1 | Buffered SMB reads | Complete | |
-| D.2 | Source records (Room v3) | Not started | |
+| D.2 | Source records (Room v3) | Complete | |
 | D.3 | Rescan throttle and per-source status | Not started | |
 | D.4 | Keep logins; Accounts | Not started | |
 | D.5 | Play From | Not started | |

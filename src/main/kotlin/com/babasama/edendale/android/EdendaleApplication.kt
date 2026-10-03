@@ -19,7 +19,7 @@ class EdendaleApplication : Application() {
             EdendaleDatabase::class.java,
             "edendale.db"
         )
-            .addMigrations(EdendaleDatabase.MIGRATION_1_2)
+            .addMigrations(EdendaleDatabase.MIGRATION_1_2, EdendaleDatabase.MIGRATION_2_3)
             .build()
         libraryRepository = LibraryRepository(this, database)
     }

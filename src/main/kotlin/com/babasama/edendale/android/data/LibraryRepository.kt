@@ -7,6 +7,7 @@ import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
 import jcifs.smb.SmbFile
 import com.babasama.edendale.AndroidEdendaleCore
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.MediaParser
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.ParsedMedia
@@ -87,6 +88,7 @@ class LibraryRepository(
                 treeUri = treeUri.toString(),
                 displayName = document.name ?: strings.defaultFolderName,
                 addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.LOCAL.raw,
             )
             dao.upsertFolder(folder)
             scan(folder)
@@ -114,6 +116,9 @@ class LibraryRepository(
                 treeUri = url,
                 displayName = share.ifBlank { host },
                 addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.SMB.raw,
+                displayPath = url,
+                accountKey = host,
             )
             dao.upsertFolder(folder)
             scan(folder)
