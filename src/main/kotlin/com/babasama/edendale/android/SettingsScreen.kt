@@ -703,7 +703,7 @@ private fun TmdbAccountSettingsSection(
 
 /** One D-pad focus stop wrapping a group of read-only rows. */
 @Composable
-private fun FocusableRows(
+internal fun FocusableRows(
     isTelevision: Boolean,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -716,7 +716,7 @@ private fun FocusableRows(
 }
 
 @Composable
-private fun AccountProgressRow(label: String) {
+internal fun AccountProgressRow(label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -730,7 +730,7 @@ private fun AccountProgressRow(label: String) {
 }
 
 @Composable
-private fun SettingsActionRow(content: @Composable RowScope.() -> Unit) {
+internal fun SettingsActionRow(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -749,7 +749,7 @@ private fun SettingsActionRow(content: @Composable RowScope.() -> Unit) {
  * focus and stay clickable.
  */
 @Composable
-private fun SettingsSection(
+internal fun SettingsSection(
     header: String,
     isTelevision: Boolean = false,
     // Sections whose rows carry their own buttons focus each row instead, so the
@@ -788,7 +788,7 @@ private fun SettingsSection(
 
 /** Hairline between sibling rows, inset to the row's text leading edge. */
 @Composable
-private fun SettingsRowDivider() {
+internal fun SettingsRowDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = 20.dp),
         thickness = 1.dp,
@@ -797,7 +797,7 @@ private fun SettingsRowDivider() {
 }
 
 @Composable
-private fun LabeledRow(label: String, value: String) {
+internal fun LabeledRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -822,7 +822,7 @@ private fun LabeledRow(label: String, value: String) {
 }
 
 @Composable
-private fun InfoRow(text: String) {
+internal fun InfoRow(text: String) {
     Text(
         text = text,
         modifier = Modifier
@@ -1173,7 +1173,7 @@ private fun AppControlsSettingsSection(
 }
 
 @Composable
-private fun SkipSegmentGroup(
+internal fun SkipSegmentGroup(
     direction: SkipDirection,
     selected: SkipInterval,
     isTelevision: Boolean,
@@ -1233,7 +1233,7 @@ private fun SkipSegmentGroup(
 }
 
 @Composable
-private fun HoldSpeedStepper(
+internal fun HoldSpeedStepper(
     title: String,
     rate: Float,
     isTelevision: Boolean,
@@ -1291,18 +1291,18 @@ private fun HoldSpeedStepper(
 private const val WYZIE_REDEEM_URL = "https://store.wyzie.io/redeem"
 
 @Composable
-private fun LabelCapsStyle() = MaterialTheme.typography.labelLarge.copy(
+internal fun LabelCapsStyle() = MaterialTheme.typography.labelLarge.copy(
     fontSize = 12.sp,
     lineHeight = 16.sp,
 )
 
 @Composable
-private fun BodyCopyStyle() = MaterialTheme.typography.bodyMedium.copy(
+internal fun BodyCopyStyle() = MaterialTheme.typography.bodyMedium.copy(
     fontSize = 14.sp,
     lineHeight = 20.sp,
 )
 
-private fun String.middleTruncated(budget: Int = 56): String {
+internal fun String.middleTruncated(budget: Int = 56): String {
     if (length <= budget) return this
     val head = (budget - 1) / 2
     val tail = budget - 1 - head

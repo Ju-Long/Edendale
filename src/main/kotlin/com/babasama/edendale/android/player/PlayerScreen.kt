@@ -996,7 +996,7 @@ private fun PlayerControlsOverlay(
 
 /** Circular icon button used across the player chrome. */
 @Composable
-private fun PlayerChip(
+internal fun PlayerChip(
     iconRes: Int,
     contentDescription: String?,
     isTelevision: Boolean,
@@ -1384,7 +1384,7 @@ private fun BoxScope.PlayerPanels(
 }
 
 @Composable
-private fun PanelSurface(
+internal fun PanelSurface(
     panelWidth: androidx.compose.ui.unit.Dp,
     panelFocus: FocusRequester,
     onDismiss: () -> Unit,
@@ -1428,7 +1428,7 @@ private fun PanelSurface(
 }
 
 @Composable
-private fun PanelHeader(title: String, isTelevision: Boolean, onClose: () -> Unit) {
+internal fun PanelHeader(title: String, isTelevision: Boolean, onClose: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -1450,7 +1450,7 @@ private fun PanelHeader(title: String, isTelevision: Boolean, onClose: () -> Uni
 }
 
 @Composable
-private fun PanelLabel(text: String) {
+internal fun PanelLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelLarge,
@@ -1464,7 +1464,7 @@ private fun PanelLabel(text: String) {
  * distort a block spanning the panel.
  */
 @Composable
-private fun PanelRow(
+internal fun PanelRow(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1617,7 +1617,7 @@ private fun SpeedSection(player: ExoPlayer, chrome: PlayerChromeState, isTelevis
 }
 
 @Composable
-private fun SpeedChip(label: String, isTelevision: Boolean, onClick: () -> Unit) {
+internal fun SpeedChip(label: String, isTelevision: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = Modifier
@@ -1688,7 +1688,7 @@ private fun SubtitleSection(
 }
 
 @Composable
-private fun SelectedCheck() {
+internal fun SelectedCheck() {
     Icon(
         painter = painterResource(id = R.drawable.ic_check),
         contentDescription = null,
@@ -1867,7 +1867,7 @@ private fun OnlineSubtitleResults(
 }
 
 @Composable
-private fun SecondaryPanelCopy(text: String) {
+internal fun SecondaryPanelCopy(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodySmall,
@@ -1875,7 +1875,7 @@ private fun SecondaryPanelCopy(text: String) {
     )
 }
 
-private fun localizedLanguageName(code: String): String =
+internal fun localizedLanguageName(code: String): String =
     Locale.forLanguageTag(code).displayLanguage
         .replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
@@ -1937,7 +1937,7 @@ private fun PlaybackSection(
 }
 
 @Composable
-private fun ToggleRow(
+internal fun ToggleRow(
     title: String,
     detail: String,
     checked: Boolean,
@@ -1975,7 +1975,7 @@ private fun AspectSection(chrome: PlayerChromeState, isTelevision: Boolean) {
 }
 
 @Composable
-private fun SegmentChip(
+internal fun SegmentChip(
     label: String,
     selected: Boolean,
     isTelevision: Boolean,
@@ -2262,7 +2262,7 @@ private fun BoxScope.PlayerGestureLayer(
 
 
 @Composable
-private fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {
+internal fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {
     option.label?.takeIf { it.isNotBlank() }?.let { return it }
     val language = option.language
         ?.takeIf { it.isNotBlank() && it != "und" }
