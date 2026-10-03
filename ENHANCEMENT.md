@@ -1848,11 +1848,11 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.1 | Added a playback error view (Apple's "Unable to Play" with the cause and Close). | The player had no error display, so the host-named "connection lost" message D.1 asks for would never have reached the viewer. | bdcc646 |
 | D.3 | A local folder's failed scan is recorded as `offline`. | The plan defines the statuses for remote hosts; a revoked grant or an unmounted card is closest to "unreachable", and "sign in" means nothing for a local folder. | 0acda8b |
 | D.5 | Android has no local movie detail page, so the movie Play From menu sits beside Play on the Movies & Shows hero; poster taps in Downloaded and Search play the preferred copy. | That's where Android starts a local movie. | 94970b0 |
-| F.1–F.7 | One commit for the section instead of one per step. | The passes run in one GL program and share the holder, controller, and shaders; split commits wouldn't build alone. | (F commit) |
-| F.1.1 | Once the pipeline is installed, it stays for the rest of that player session even if everything is turned Off (the passes then draw a plain copy); the next session starts on the direct path again. | Media3 creates the effects sink when the video renderer is first enabled and doesn't remove it. | (F commit) |
-| F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | (F commit) |
-| F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | (F commit) |
-| F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | (F commit) |
+| F.1–F.7 | One commit for the section instead of one per step. | The passes run in one GL program and share the holder, controller, and shaders; split commits wouldn't build alone. | bba68d8 |
+| F.1.1 | Once the pipeline is installed, it stays for the rest of that player session even if everything is turned Off (the passes then draw a plain copy); the next session starts on the direct path again. | Media3 creates the effects sink when the video renderer is first enabled and doesn't remove it. | bba68d8 |
+| F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | bba68d8 |
+| F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | bba68d8 |
+| F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | bba68d8 |
 
 ---
 
@@ -1874,6 +1874,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-02 | Accessibility and focus fixes to B.1 and C.5 | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest` on a clean checkout of 83699b9: pass (185 tests, 0 failures); with the uncommitted C.2 work on top: pass (194 tests). `./gradlew lintDebug`: 311 errors, none new. | not run (no device or emulator on the review Mac) | B.1 (8ac41f9): the skip segments are a radio group that reports the chosen length; each hold-speed − and + names its row ("Hold Left Side, slower"; 2 new strings in every locale); the speed is a polite live region; the player's ± glyphs follow App Controls changes while it's open. C.5 (83699b9): on TV, focus is seeded again when the focused node disappears, such as a skip prompt whose segment ended. TalkBack and TV focus still need device checks. Review notes for the C.2 work are under C.2. |
 | 2026-10-02 | Emulator test run (Claude): A.5, B.1, B.2, C.2, C.5 | Built fd6c2e9 (debug) and installed it; instrumented smoke test (`am instrument`): pass. | Android emulator, Pixel 7 profile, Android 15 (API 35, Google APIs, arm64), local test files only. B.1: App Controls exposes the chosen skip length as checked and labels the steppers; changing Skip Back to 30 s while the video was in PiP relabeled the PiP action, and the PiP actions, on-screen buttons, and short media-key presses all skipped by the set lengths; a long ⏩ press didn't skip; holding the right side showed 2.00× and reverted. B.2: a French subtitle chosen in S01E01 carried to S01E02 after a playlist switch and was saved as `player.content.show.<id>`; Loop survived reopening the player. C.2: S01E01 → S01E02 → S01E03 advanced on their own, the Up Next card named the next episode and was absent on the last, and the player closed after it. C.5: Skip Prompts is off by default. | Not run: double-tap, TV (B.1.D2, D3, the C.5 TV focus fix), audio track memory (no picker until B.3), Fill, completion state and resume (no TMDB ids without a token), SMB, Wyzie, C.5.D1. A diagnostic log showed Media3 reporting empty tracks first after a playlist switch, with the B.2 restore now running on the next report. Correction to the review row above: the old restore bug did not stop a language choice from carrying over within a session, because the player keeps the preferred language (the pre-fix build 451d7f5 also showed French); it affected choices the player doesn't carry, such as a video track chosen by size or titles with different saved choices. PiP size issue: see Findings. |
 | 2026-10-03 | C.2 review fixes (R1–R3), B.1 KDoc, phone PiP size | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (194 tests, 0 failures). | Android emulator, Pixel 7 profile, Android 15 (API 35): instrumented smoke test (`am instrument`) pass; PiP from Home opened at 598×336 px (was 1120×630 px) and expanded back to a focused player. Not run: the C.2 TV focus path (no TV image). | 7cbb292 resolves C.2.R1–R3 (natural-case label, `player_up_next_hint` as the TalkBack click label, D-pad Up reveals the controls again; on TV, Down from the top row reaches the card). 1e4a1ec updates two comments B.1.2 missed. 51f2cca drops the player's `minWidth`/`minHeight` (Findings). ff97b39 makes the player panel and Settings helpers internal so later sections can live in their own files. C.2.D1 stays open (completion state and advancing inside PiP). |
+| 2026-10-03 to 2026-10-04 | Review of the CLI's C.2/PiP commits; A.5.4 picked up; C.3, C.6, B.4, B.3, B.5, D.1–D.5, E.1, E.2, F.1–F.7 implemented (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at every commit; 309 JVM tests, 0 failures, at bba68d8. Instrumented suite (`am instrument -e package com.babasama.edendale`, 19 tests): all pass at bba68d8. | Android emulator, Pixel 7 profile, Android 15 (API 35, Google APIs, arm64), headless (no display checks were run, at the owner's request): subtitle parsing (SRT CRLF and UTF-16 BOM, WebVTT, ASS), the Room 2 → 3 migration, the EQ processor's formats, bit-exact flat audio, live updates, and clamping, DTS 5.1 and TrueHD 5.1 decoded by FFmpeg through the EQ, every enhancement pass with pixel readback, the effects pipeline through ExoPlayer (installed before prepare, installed mid-play with re-prepare, REDRAW while paused), the capability benchmark (1.24 ms). | Not run: every display, touch, TalkBack, TV, Bluetooth, SMB-over-hotspot, HDMI passthrough, and real-GPU check (B.1.D1/D2, B.2.D1, B.3.D1, B.4.D1, B.5.D1, B.6, C.2.D1, C.5.D1, C.6.D1/D2, D.1.D1, E.1.D1, F.1.5/F.1.6, F.3.4, F.7.D1, F.8). The CLI's commits 7cbb292, 1e4a1ec, 51f2cca, ff97b39, e8835f1, and its A.5.4 CI job (cherry-picked as 1c9c58d; all four pinned action SHAs exist) were reviewed and look right. Steps since then are split with the CLI session (edendale-12), which works in its own worktrees: it reviews C.3–E.2 and takes H.2, the pure H layers, J.1–J.4, J.6, and the research notes. |
 
 ---
 
@@ -1886,33 +1887,33 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.2 | Media3 1.9.0 | Complete | f975bc1 |
 | A.3 | Player preference store | Complete | 27f16f7 |
 | A.4 | Strings and translations | Complete | 6f93abb |
-| A.5 | Test conventions | Complete | 4310f03 |
+| A.5 | Test conventions | Complete | 4310f03, 1c9c58d |
 | B.1 | App Controls | Complete | 9b2fbd5, 8ac41f9 |
 | B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
-| B.3 | Track pickers and panel order | Complete | |
-| B.4 | Subtitle appearance and placement | Complete | |
-| B.5 | Playlist panel redesign | Complete | |
-| B.6 | Speed and seek checks | Not started | |
+| B.3 | Track pickers and panel order | Complete | 9820139 |
+| B.4 | Subtitle appearance and placement | Complete | 7b1c028 |
+| B.5 | Playlist panel redesign | Complete | 0987890 |
+| B.6 | Speed and seek checks | Code checked; device checks not run | — |
 | C.1 | Episode progression rules | Complete | 1f01315 |
 | C.2 | Auto-advance and Up Next | Complete | fd6c2e9, 7cbb292 |
-| C.3 | Continue Watching next-up | Complete | |
+| C.3 | Continue Watching next-up | Complete | a2a3d46 |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
-| C.6 | MediaSession and system surfaces | Complete | |
-| D.1 | Buffered SMB reads | Complete | |
-| D.2 | Source records (Room v3) | Complete | |
-| D.3 | Rescan throttle and per-source status | Complete | |
-| D.4 | Keep logins; Accounts | Complete | |
-| D.5 | Play From | Complete | |
-| E.1 | EQ profiles and booster | Complete | |
-| E.2 | DTS and TrueHD (D5) | Complete | |
-| F.1 | Effects plumbing | Complete (F.1.5, F.1.6 need devices) | |
-| F.2 | Picture adjustments | Complete | |
-| F.3 | Upscaler | Complete (F.3.4 needs a mid-range phone) | |
-| F.4 | Sharpening | Complete | |
-| F.5 | Temporal denoise | Complete | |
-| F.6 | Budget and capability | Complete | |
-| F.7 | Enhancement UI | Complete (F.7.D1 not run) | |
+| C.6 | MediaSession and system surfaces | Complete (C.6.D1, C.6.D2 not run) | 4f8ff82 |
+| D.1 | Buffered SMB reads | Complete (D.1.D1 not run) | bdcc646 |
+| D.2 | Source records (Room v3) | Complete | 752fdbf, e5a1539 |
+| D.3 | Rescan throttle and per-source status | Complete | 0acda8b |
+| D.4 | Keep logins; Accounts | Complete | 6510b37 |
+| D.5 | Play From | Complete | 94970b0 |
+| E.1 | EQ profiles and booster | Complete (E.1.D1 not run) | 20c1f63 |
+| E.2 | DTS and TrueHD (D5) | Complete | c58c5fb |
+| F.1 | Effects plumbing | Complete (F.1.5, F.1.6 need devices) | bba68d8 |
+| F.2 | Picture adjustments | Complete | bba68d8 |
+| F.3 | Upscaler | Complete (F.3.4 needs a mid-range phone) | bba68d8 |
+| F.4 | Sharpening | Complete | bba68d8 |
+| F.5 | Temporal denoise | Complete | bba68d8 |
+| F.6 | Budget and capability | Complete | bba68d8 |
+| F.7 | Enhancement UI | Complete (F.7.D1 not run) | bba68d8 |
 | F.8 | Enhancement acceptance | Not run (needs devices) | |
 | G.1 | Frame generation feasibility | Not started | |
 | G.2 | Motion estimation | Blocked (G.1) | |
