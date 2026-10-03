@@ -387,4 +387,10 @@
     <string name="settings_subtitles_opacity_lower">Decrease background opacity</string>
     <string name="settings_subtitles_opacity_higher">Increase background opacity</string>
     <string name="settings_nunito_attribution">The Rounded subtitle font is Nunito by The Nunito Project Authors, under the SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Video Track</string>
+    <string name="player_audio_track">Audio Track</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d ch</string>
 </resources>

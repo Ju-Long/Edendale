@@ -458,16 +458,16 @@ holds; the tests pass; the device checks are recorded.
   commit `4f8383a`: four segments truncate in narrow panels).
 
 **Checklist:**
-- [ ] **B.3.1** Pure label builders (channel label, language-suffix rule,
+- [x] **B.3.1** Pure label builders (channel label, language-suffix rule,
   resolution), tested on the JVM.
-- [ ] **B.3.2** `videoTrackOptions` and `audioTrackOptions` built from
+- [x] **B.3.2** `videoTrackOptions` and `audioTrackOptions` built from
   `Tracks.groups` (`C.TRACK_TYPE_VIDEO` / `C.TRACK_TYPE_AUDIO`), selected with
   `TrackSelectionOverride`, and remembered per B.2.
-- [ ] **B.3.3** Reorder the panel; sections from later steps slot into place as
+- [x] **B.3.3** Reorder the panel; sections from later steps slot into place as
   they land.
 
 **Tests (JVM):**
-- [ ] **B.3.T1** Labels for: "English — Stereo"; a "Commentary" track in
+- [x] **B.3.T1** Labels for: "English — Stereo"; a "Commentary" track in
   English with 6 channels → "Commentary (English) — 5.1"; a name that already
   contains the language ("English Commentary") gets no suffix; 1, 3, and 8
   channels → Mono, "3 ch", 7.1.
@@ -1854,7 +1854,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.5 | Test conventions | Complete | 4310f03 |
 | B.1 | App Controls | Complete | 9b2fbd5, 8ac41f9 |
 | B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
-| B.3 | Track pickers and panel order | Not started | |
+| B.3 | Track pickers and panel order | Complete | |
 | B.4 | Subtitle appearance and placement | Complete | |
 | B.5 | Playlist panel redesign | Not started | |
 | B.6 | Speed and seek checks | Not started | |

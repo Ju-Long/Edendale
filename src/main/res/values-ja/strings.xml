@@ -326,4 +326,10 @@
     <string name="settings_subtitles_opacity_lower">背景の不透明度を下げる</string>
     <string name="settings_subtitles_opacity_higher">背景の不透明度を上げる</string>
     <string name="settings_nunito_attribution">字幕のラウンドフォントは The Nunito Project Authors による Nunito（SIL Open Font License 1.1）です。</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">ビデオトラック</string>
+    <string name="player_audio_track">オーディオトラック</string>
+    <string name="player_audio_mono">モノラル</string>
+    <string name="player_audio_stereo">ステレオ</string>
+    <string name="player_audio_channels">%dch</string>
 </resources>

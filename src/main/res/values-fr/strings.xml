@@ -330,4 +330,10 @@
     <string name="settings_subtitles_opacity_lower">Réduire l’opacité de l’arrière-plan</string>
     <string name="settings_subtitles_opacity_higher">Augmenter l’opacité de l’arrière-plan</string>
     <string name="settings_nunito_attribution">La police arrondie des sous-titres est Nunito, de The Nunito Project Authors, sous licence SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Piste vidéo</string>
+    <string name="player_audio_track">Piste audio</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stéréo</string>
+    <string name="player_audio_channels">%d can.</string>
 </resources>

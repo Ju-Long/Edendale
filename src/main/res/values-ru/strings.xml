@@ -338,4 +338,10 @@
     <string name="settings_subtitles_opacity_lower">Уменьшить непрозрачность фона</string>
     <string name="settings_subtitles_opacity_higher">Увеличить непрозрачность фона</string>
     <string name="settings_nunito_attribution">Скруглённый шрифт субтитров — Nunito от The Nunito Project Authors, по лицензии SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Видеодорожка</string>
+    <string name="player_audio_track">Звуковая дорожка</string>
+    <string name="player_audio_mono">Моно</string>
+    <string name="player_audio_stereo">Стерео</string>
+    <string name="player_audio_channels">%d кан.</string>
 </resources>

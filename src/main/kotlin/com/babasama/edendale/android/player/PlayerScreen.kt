@@ -1566,7 +1566,10 @@ private fun SettingsPanel(
                 onClose = { chrome.closePanel() },
             )
 
+            // Apple's PlayerSettingsPanel order (B.3).
             SpeedSection(player, chrome, isTelevision)
+            VideoTrackSection(player, chrome, tracks, onTrackSelected)
+            AudioTrackSection(player, chrome, tracks, onTrackSelected)
             SubtitleSection(player, chrome, tracks, onTrackSelected)
             OnlineSubtitlesSection(
                 state = onlineSubtitles,

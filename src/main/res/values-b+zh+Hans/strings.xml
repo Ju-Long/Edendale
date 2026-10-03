@@ -326,4 +326,10 @@
     <string name="settings_subtitles_opacity_lower">降低背景不透明度</string>
     <string name="settings_subtitles_opacity_higher">提高背景不透明度</string>
     <string name="settings_nunito_attribution">圆体字幕字体为 The Nunito Project Authors 的 Nunito，采用 SIL Open Font License 1.1 授权。</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">视频轨道</string>
+    <string name="player_audio_track">音轨</string>
+    <string name="player_audio_mono">单声道</string>
+    <string name="player_audio_stereo">立体声</string>
+    <string name="player_audio_channels">%d 声道</string>
 </resources>

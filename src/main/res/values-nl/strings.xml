@@ -330,4 +330,10 @@
     <string name="settings_subtitles_opacity_lower">Dekking van achtergrond verlagen</string>
     <string name="settings_subtitles_opacity_higher">Dekking van achtergrond verhogen</string>
     <string name="settings_nunito_attribution">Het afgeronde ondertitellettertype is Nunito van The Nunito Project Authors, onder de SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Videotrack</string>
+    <string name="player_audio_track">Audiotrack</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d kan.</string>
 </resources>

@@ -330,4 +330,10 @@
     <string name="settings_subtitles_opacity_lower">Hintergrunddeckkraft verringern</string>
     <string name="settings_subtitles_opacity_higher">Hintergrunddeckkraft erhöhen</string>
     <string name="settings_nunito_attribution">Die abgerundete Untertitelschrift ist Nunito von The Nunito Project Authors, lizenziert unter der SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Videospur</string>
+    <string name="player_audio_track">Audiospur</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d Kan.</string>
 </resources>

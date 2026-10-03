@@ -330,4 +330,10 @@
     <string name="settings_subtitles_opacity_lower">Minska bakgrundens opacitet</string>
     <string name="settings_subtitles_opacity_higher">Öka bakgrundens opacitet</string>
     <string name="settings_nunito_attribution">Det rundade undertexttypsnittet är Nunito av The Nunito Project Authors, licensierat under SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Videospår</string>
+    <string name="player_audio_track">Ljudspår</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d kan.</string>
 </resources>
