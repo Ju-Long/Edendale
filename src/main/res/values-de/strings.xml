@@ -228,13 +228,11 @@
     <string name="default_folder_name">Ordner</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" ist keine Freigabeadresse. Versuche 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: ein Teil dieser Quelle konnte nicht gelesen werden, daher wurde nichts aus der Bibliothek entfernt.</string>
     <string name="error_permission_revoked">der Zugriff auf diesen Ordner wurde widerrufen — füge ihn erneut hinzu</string>
     <string name="error_folder_unopenable">der Ordner konnte nicht geöffnet werden</string>
     <string name="error_share_unreachable">die Freigabe ist nicht erreichbar oder die Anmeldedaten wurden abgelehnt</string>
     <string name="error_address_is_file">diese Adresse ist eine Datei, keine Freigabe</string>
-    <string name="error_scan_failed">der Scan ist fehlgeschlagen</string>
     <plurals name="item_count">
         <item quantity="one">%1$d Eintrag</item>
         <item quantity="other">%1$d Einträge</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Verbindung zu %1$s verloren.</string>
     <string name="player_error_connection_lost_detail">Verbindung zu %1$s verloren: %2$s</string>
     <string name="player_error_could_not_connect">Keine Verbindung zu %1$s möglich.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">%1$s ist nicht erreichbar. Überprüfe deine Verbindung und versuche es erneut.</string>
+    <string name="sources_status_needs_sign_in">Melde dich erneut bei %1$s an, um diese Quelle zu erreichen.</string>
 </resources>

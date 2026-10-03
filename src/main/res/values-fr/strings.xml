@@ -228,13 +228,11 @@
     <string name="default_folder_name">Dossier</string>
     <string name="default_video_name">Vidéo</string>
     <string name="error_not_share_address">\"%1$s\" n\'est pas une adresse de partage. Essayez 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: une partie de cette source n\'a pas pu être lue, donc rien n\'a été supprimé de la bibliothèque.</string>
     <string name="error_permission_revoked">l\'accès à ce dossier a été révoqué — ajoutez-le à nouveau</string>
     <string name="error_folder_unopenable">le dossier n\'a pas pu être ouvert</string>
     <string name="error_share_unreachable">le partage est inaccessible ou les identifiants ont été rejetés</string>
     <string name="error_address_is_file">cette adresse est un fichier, pas un partage</string>
-    <string name="error_scan_failed">l\'analyse a échoué</string>
     <plurals name="item_count">
         <item quantity="one">%1$d élément</item>
         <item quantity="other">%1$d éléments</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Connexion à %1$s perdue.</string>
     <string name="player_error_connection_lost_detail">Connexion à %1$s perdue : %2$s</string>
     <string name="player_error_could_not_connect">Impossible de se connecter à %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Impossible de joindre %1$s. Vérifiez votre connexion et réessayez.</string>
+    <string name="sources_status_needs_sign_in">Reconnectez-vous à %1$s pour accéder à cette source.</string>
 </resources>

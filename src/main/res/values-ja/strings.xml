@@ -228,13 +228,11 @@
     <string name="default_folder_name">フォルダ</string>
     <string name="default_video_name">ビデオ</string>
     <string name="error_not_share_address">\"%1$s\" は共有アドレスではありません。192.168.1.10/media をお試しください。</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: このソースの一部を読み込めなかったため、ライブラリからは何も削除されませんでした。</string>
     <string name="error_permission_revoked">このフォルダへのアクセスが取り消されました — もう一度追加してください</string>
     <string name="error_folder_unopenable">フォルダを開けませんでした</string>
     <string name="error_share_unreachable">共有に到達できないか、認証情報が拒否されました</string>
     <string name="error_address_is_file">そのアドレスはファイルであり、共有ではありません</string>
-    <string name="error_scan_failed">スキャンに失敗しました</string>
     <plurals name="item_count">
         <item quantity="other">%1$dアイテム</item>
     </plurals>
@@ -338,4 +336,7 @@
     <string name="player_error_connection_lost">%1$sとの接続が切断されました。</string>
     <string name="player_error_connection_lost_detail">%1$sとの接続が切断されました: %2$s</string>
     <string name="player_error_could_not_connect">%1$sに接続できませんでした。</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">%1$sにアクセスできませんでした。接続を確認して、もう一度お試しください。</string>
+    <string name="sources_status_needs_sign_in">このソースにアクセスするには、%1$sにもう一度サインインしてください。</string>
 </resources>

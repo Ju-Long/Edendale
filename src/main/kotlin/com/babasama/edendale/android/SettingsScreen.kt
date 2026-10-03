@@ -852,6 +852,7 @@ private fun SourceRow(
     val kindLabel = stringResource(
         if (isRemote) R.string.source_kind_smb else R.string.source_kind_local_folder,
     )
+    val statusMessage = if (isScanning) null else sourceStatusMessage(folder)
     val detail = if (isScanning) {
         stringResource(R.string.scanning)
     } else {
@@ -900,10 +901,14 @@ private fun SourceRow(
                 style = BodyCopyStyle(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            statusMessage?.let {
+                Text(text = it, style = BodyCopyStyle(), color = EdendaleColors.Gold)
+            }
         }
         Spacer(Modifier.width(16.dp))
         ArchiveButton(
-            label = stringResource(R.string.action_rescan),
+            // A failed source's rescan is its retry.
+            label = stringResource(if (statusMessage != null) R.string.action_try_again else R.string.action_rescan),
             iconRes = R.drawable.ic_arrow_rotate_right,
             isTelevision = isTelevision,
             onClick = onRescan,

@@ -228,13 +228,11 @@
     <string name="default_folder_name">資料夾</string>
     <string name="default_video_name">影片</string>
     <string name="error_not_share_address">\"%1$s\" 不是共用位址。請嘗試 192.168.1.10/media。</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: 無法讀取此來源的部分內容，因此沒有任何內容從媒體庫中移除。</string>
     <string name="error_permission_revoked">已撤銷此資料夾的存取權限 — 請重新加入</string>
     <string name="error_folder_unopenable">無法開啟此資料夾</string>
     <string name="error_share_unreachable">無法連線至共用空間或憑證被拒絕</string>
     <string name="error_address_is_file">該位址是檔案，不是共用空間</string>
-    <string name="error_scan_failed">掃描失敗</string>
     <plurals name="item_count">
         <item quantity="other">%1$d 個項目</item>
     </plurals>
@@ -338,4 +336,7 @@
     <string name="player_error_connection_lost">與 %1$s 的連線已中斷。</string>
     <string name="player_error_connection_lost_detail">與 %1$s 的連線已中斷：%2$s</string>
     <string name="player_error_could_not_connect">無法連線至 %1$s。</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">無法連線至 %1$s。請檢查你的網路連線，然後再試一次。</string>
+    <string name="sources_status_needs_sign_in">重新登入 %1$s 以存取此來源。</string>
 </resources>

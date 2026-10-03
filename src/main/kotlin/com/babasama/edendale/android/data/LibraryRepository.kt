@@ -167,9 +167,16 @@ class LibraryRepository(
         }
     }
 
-    fun rescanAll() {
+    /**
+     * The sweep on each Downloaded visit skips remote sources scanned in the
+     * last 15 minutes (D.3); [force] (a manual Rescan) scans every source.
+     */
+    fun rescanAll(force: Boolean = false) {
         scope.launch {
-            dao.folders().forEach { scan(it) }
+            val now = System.currentTimeMillis()
+            dao.folders()
+                .filter { force || SourceScanRules.shouldAutoRescan(it, now) }
+                .forEach { scan(it) }
         }
     }
 
@@ -283,16 +290,15 @@ class LibraryRepository(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Throwable) {
-            // Reaching the screen matters more than the stack trace: this used
-            // to escape into scope.launch, where nothing reported it.
-            _activity.value = _activity.value.copy(
-                errorMessage = strings.sourceError(folder.displayName, error.readableMessage()),
-            )
+            // Recorded on the source's own row (D.3), not as a library-wide
+            // error on every visit; the next successful scan clears it.
+            dao.markFolderFailed(folder.treeUri, SourceScanRules.classifyFailure(error).raw)
             null
         } finally {
             _activity.value = _activity.value.copy(scanningFolder = null)
         }
         if (listing == null) return
+        dao.markFolderScanned(folder.treeUri, System.currentTimeMillis())
 
         if (listing.complete) {
             // Drop records whose file disappeared since the last scan.
@@ -521,10 +527,6 @@ class LibraryRepository(
     }
 
     // MARK: - Helpers
-
-    /** jcifs messages read well enough to show; the class name is the fallback. */
-    private fun Throwable.readableMessage(): String =
-        message?.takeIf { it.isNotBlank() } ?: this::class.simpleName ?: strings.scanFailed
 
     private fun displayName(uri: Uri): String? = context.contentResolver.query(
         uri,

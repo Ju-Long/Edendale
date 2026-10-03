@@ -228,13 +228,11 @@
     <string name="default_folder_name">Pasta</string>
     <string name="default_video_name">Vídeo</string>
     <string name="error_not_share_address">\"%1$s\" não é um endereço de partilha. Tente 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: não foi possível ler parte desta fonte, por isso, nada foi removido da biblioteca.</string>
     <string name="error_permission_revoked">o acesso a esta pasta foi revogado — adicione-a novamente</string>
     <string name="error_folder_unopenable">não foi possível abrir a pasta</string>
     <string name="error_share_unreachable">a partilha está inacessível ou as credenciais foram rejeitadas</string>
     <string name="error_address_is_file">esse endereço é um ficheiro, não uma partilha</string>
-    <string name="error_scan_failed">a análise falhou</string>
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d itens</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Ligação a %1$s perdida.</string>
     <string name="player_error_connection_lost_detail">Ligação a %1$s perdida: %2$s</string>
     <string name="player_error_could_not_connect">Não foi possível ligar a %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Não foi possível aceder a %1$s. Verifique a ligação e tente novamente.</string>
+    <string name="sources_status_needs_sign_in">Inicie sessão em %1$s novamente para aceder a esta fonte.</string>
 </resources>

@@ -228,13 +228,11 @@
     <string name="default_folder_name">폴더</string>
     <string name="default_video_name">비디오</string>
     <string name="error_not_share_address">\"%1$s\"은(는) 공유 주소가 아닙니다. 192.168.1.10/media로 시도해 보세요.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: 이 소스의 일부를 읽을 수 없어 라이브러리에서 삭제된 항목이 없습니다.</string>
     <string name="error_permission_revoked">이 폴더에 대한 접근 권한이 취소되었습니다 — 다시 추가하세요</string>
     <string name="error_folder_unopenable">폴더를 열 수 없습니다</string>
     <string name="error_share_unreachable">공유에 접근할 수 없거나 자격 증명이 거부되었습니다</string>
     <string name="error_address_is_file">해당 주소는 공유가 아닌 파일입니다</string>
-    <string name="error_scan_failed">스캔에 실패했습니다</string>
     <plurals name="item_count">
         <item quantity="other">항목 %1$d개</item>
     </plurals>
@@ -338,4 +336,7 @@
     <string name="player_error_connection_lost">%1$s과(와)의 연결이 끊어졌습니다.</string>
     <string name="player_error_connection_lost_detail">%1$s과(와)의 연결이 끊어졌습니다: %2$s</string>
     <string name="player_error_could_not_connect">%1$s에 연결할 수 없습니다.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">%1$s에 연결할 수 없습니다. 연결 상태를 확인한 후 다시 시도하십시오.</string>
+    <string name="sources_status_needs_sign_in">이 소스에 접근하려면 %1$s에 다시 로그인하십시오.</string>
 </resources>

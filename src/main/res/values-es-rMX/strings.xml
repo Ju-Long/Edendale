@@ -228,13 +228,11 @@
     <string name="default_folder_name">Carpeta</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" no es una dirección de recurso compartido. Intenta con 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: una parte de esta fuente no se pudo leer, por lo que no se eliminó nada de la biblioteca.</string>
     <string name="error_permission_revoked">se revocó el acceso a esta carpeta — agrégala de nuevo</string>
     <string name="error_folder_unopenable">la carpeta no se pudo abrir</string>
     <string name="error_share_unreachable">el recurso compartido es inaccesible o se rechazaron las credenciales</string>
     <string name="error_address_is_file">esa dirección es un archivo, no un recurso compartido</string>
-    <string name="error_scan_failed">el escaneo falló</string>
     <plurals name="item_count">
         <item quantity="one">%1$d elemento</item>
         <item quantity="other">%1$d elementos</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Se perdió la conexión con %1$s.</string>
     <string name="player_error_connection_lost_detail">Se perdió la conexión con %1$s: %2$s</string>
     <string name="player_error_could_not_connect">No se pudo conectar con %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">No se pudo acceder a %1$s. Revisa tu conexión y vuelve a intentarlo.</string>
+    <string name="sources_status_needs_sign_in">Vuelve a iniciar sesión en %1$s para acceder a este origen.</string>
 </resources>

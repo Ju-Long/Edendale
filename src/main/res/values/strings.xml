@@ -269,13 +269,11 @@
     <string name="default_folder_name">Folder</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" is not a share address. Try 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: part of this source could not be read, so nothing was removed from the library.</string>
     <string name="error_permission_revoked">access to this folder was revoked — add it again</string>
     <string name="error_folder_unopenable">the folder could not be opened</string>
     <string name="error_share_unreachable">the share is unreachable or the credentials were rejected</string>
     <string name="error_address_is_file">that address is a file, not a share</string>
-    <string name="error_scan_failed">the scan failed</string>
 
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>
@@ -399,4 +397,7 @@
     <string name="player_error_connection_lost">Lost the connection to %1$s.</string>
     <string name="player_error_connection_lost_detail">Lost the connection to %1$s: %2$s</string>
     <string name="player_error_could_not_connect">Couldn\'t connect to %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Couldn\'t reach %1$s. Check your connection and try again.</string>
+    <string name="sources_status_needs_sign_in">Sign in to %1$s again to reach this source.</string>
 </resources>

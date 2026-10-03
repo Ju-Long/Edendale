@@ -228,13 +228,11 @@
     <string name="default_folder_name">Cartella</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" non è un indirizzo di condivisione. Prova 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: parte di questa sorgente non può essere letta, quindi nulla è stato rimosso dalla libreria.</string>
     <string name="error_permission_revoked">l\'accesso a questa cartella è stato revocato — aggiungila di nuovo</string>
     <string name="error_folder_unopenable">impossibile aprire la cartella</string>
     <string name="error_share_unreachable">la condivisione è irraggiungibile o le credenziali sono state rifiutate</string>
     <string name="error_address_is_file">quell\'indirizzo è un file, non una condivisione</string>
-    <string name="error_scan_failed">la scansione non è riuscita</string>
     <plurals name="item_count">
         <item quantity="one">%1$d elemento</item>
         <item quantity="other">%1$d elementi</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Connessione a %1$s persa.</string>
     <string name="player_error_connection_lost_detail">Connessione a %1$s persa: %2$s</string>
     <string name="player_error_could_not_connect">Impossibile connettersi a %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Impossibile raggiungere %1$s. Controlla la connessione e riprova.</string>
+    <string name="sources_status_needs_sign_in">Accedi di nuovo a %1$s per raggiungere questa sorgente.</string>
 </resources>

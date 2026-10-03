@@ -919,14 +919,14 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 - `lastScannedAt` is set after every successful scan.
 
 **Checklist:**
-- [ ] **D.3.1** Pure throttle and error-classification functions.
-- [ ] **D.3.2** `LibraryRepository.scan` records `status` and `lastScannedAt`;
+- [x] **D.3.1** Pure throttle and error-classification functions.
+- [x] **D.3.2** `LibraryRepository.scan` records `status` and `lastScannedAt`;
   `rescanAll` applies the throttle; a manual rescan bypasses it (add a Rescan
   action for each source if none exists).
-- [ ] **D.3.3** Source rows show the status with a retry action.
+- [x] **D.3.3** Source rows show the status with a retry action.
 
 **Tests (JVM):**
-- [ ] **D.3.T1** The throttle at 14:59, 15:00, and 15:01 since the last scan;
+- [x] **D.3.T1** The throttle at 14:59, 15:00, and 15:01 since the last scan;
   local sources are never throttled; jcifs authentication errors classify as
   `needsSignIn` and I/O errors as `offline`.
 
@@ -1866,7 +1866,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.6 | MediaSession and system surfaces | Complete | |
 | D.1 | Buffered SMB reads | Complete | |
 | D.2 | Source records (Room v3) | Complete | |
-| D.3 | Rescan throttle and per-source status | Not started | |
+| D.3 | Rescan throttle and per-source status | Complete | |
 | D.4 | Keep logins; Accounts | Not started | |
 | D.5 | Play From | Not started | |
 | E.1 | EQ profiles and booster | Not started | |

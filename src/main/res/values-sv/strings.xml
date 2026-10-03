@@ -228,13 +228,11 @@
     <string name="default_folder_name">Mapp</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" är inte en resursadress. Prova 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: en del av denna källa kunde inte läsas, så ingenting togs bort från biblioteket.</string>
     <string name="error_permission_revoked">åtkomsten till denna mapp drogs in — lägg till den igen</string>
     <string name="error_folder_unopenable">mappen kunde inte öppnas</string>
     <string name="error_share_unreachable">resursen är onåbar eller så avvisades uppgifterna</string>
     <string name="error_address_is_file">den adressen är en fil, inte en resurs</string>
-    <string name="error_scan_failed">skanningen misslyckades</string>
     <plurals name="item_count">
         <item quantity="one">%1$d objekt</item>
         <item quantity="other">%1$d objekt</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Anslutningen till %1$s bröts.</string>
     <string name="player_error_connection_lost_detail">Anslutningen till %1$s bröts: %2$s</string>
     <string name="player_error_could_not_connect">Det gick inte att ansluta till %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Det gick inte att nå %1$s. Kontrollera anslutningen och försök igen.</string>
+    <string name="sources_status_needs_sign_in">Logga in på %1$s igen för att nå den här källan.</string>
 </resources>

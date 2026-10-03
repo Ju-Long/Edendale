@@ -58,6 +58,7 @@ fun SourceRow(
     onRemove: () -> Unit,
 ) {
     val isNetwork = folder.treeUri.startsWith("smb://")
+    val statusMessage = sourceStatusMessage(folder)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -108,11 +109,19 @@ fun SourceRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
+                statusMessage?.let {
+                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = EdendaleColors.Gold)
+                }
             }
             ArchiveIconButton(onClick = onRescan, isTelevision = isTelevision) { _ ->
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_rotate_right),
-                    contentDescription = stringResource(R.string.rescan_folder, folder.displayName),
+                    // A failed source's rescan is its retry.
+                    contentDescription = if (statusMessage != null) {
+                        stringResource(R.string.action_try_again)
+                    } else {
+                        stringResource(R.string.rescan_folder, folder.displayName)
+                    },
                 )
             }
             ArchiveIconButton(onClick = onRemove, isTelevision = isTelevision) { _ ->

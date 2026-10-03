@@ -228,13 +228,11 @@
     <string name="default_folder_name">文件夹</string>
     <string name="default_video_name">视频</string>
     <string name="error_not_share_address">\"%1$s\" 不是共享地址。请尝试 192.168.1.10/media。</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: 无法读取此源的部分内容，因此未从媒体库中移除任何内容。</string>
     <string name="error_permission_revoked">此文件夹的访问权限已被撤销 — 请重新添加</string>
     <string name="error_folder_unopenable">无法打开文件夹</string>
     <string name="error_share_unreachable">无法访问共享，或凭据被拒绝</string>
     <string name="error_address_is_file">该地址是文件，而非共享</string>
-    <string name="error_scan_failed">扫描失败</string>
     <plurals name="item_count">
         <item quantity="other">%1$d 项</item>
     </plurals>
@@ -338,4 +336,7 @@
     <string name="player_error_connection_lost">与 %1$s 的连接已中断。</string>
     <string name="player_error_connection_lost_detail">与 %1$s 的连接已中断：%2$s</string>
     <string name="player_error_could_not_connect">无法连接到 %1$s。</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">无法连接 %1$s。请检查你的网络连接，然后重试。</string>
+    <string name="sources_status_needs_sign_in">重新登录 %1$s 以访问此来源。</string>
 </resources>

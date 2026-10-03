@@ -62,13 +62,9 @@ class AppStrings(private val context: Context) {
     val folderUnopenable: String get() = context.getString(R.string.error_folder_unopenable)
     val shareUnreachable: String get() = context.getString(R.string.error_share_unreachable)
     val addressIsFile: String get() = context.getString(R.string.error_address_is_file)
-    val scanFailed: String get() = context.getString(R.string.error_scan_failed)
 
     fun notShareAddress(input: String): String =
         context.getString(R.string.error_not_share_address, input)
-
-    fun sourceError(displayName: String, reason: String): String =
-        context.getString(R.string.error_source_scan, displayName, reason)
 
     fun sourcePartialError(displayName: String): String =
         context.getString(R.string.error_source_partial, displayName)

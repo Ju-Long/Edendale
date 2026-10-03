@@ -228,13 +228,11 @@
     <string name="default_folder_name">Папка</string>
     <string name="default_video_name">Видео</string>
     <string name="error_not_share_address">\"%1$s\" не является адресом сетевой папки. Попробуйте 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: часть этого источника не удалось прочитать, поэтому ничего не было удалено из библиотеки.</string>
     <string name="error_permission_revoked">доступ к этой папке был отозван — добавьте ее снова</string>
     <string name="error_folder_unopenable">папку не удалось открыть</string>
     <string name="error_share_unreachable">сетевая папка недоступна или учетные данные были отклонены</string>
     <string name="error_address_is_file">этот адрес является файлом, а не сетевой папкой</string>
-    <string name="error_scan_failed">сбой сканирования</string>
     <plurals name="item_count">
         <item quantity="one">%1$d элемент</item>
         <item quantity="few">%1$d элемента</item>
@@ -350,4 +348,7 @@
     <string name="player_error_connection_lost">Соединение с %1$s потеряно.</string>
     <string name="player_error_connection_lost_detail">Соединение с %1$s потеряно: %2$s</string>
     <string name="player_error_could_not_connect">Не удалось подключиться к %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Не удалось связаться с %1$s. Проверьте подключение и повторите попытку.</string>
+    <string name="sources_status_needs_sign_in">Войдите в %1$s снова, чтобы получить доступ к этому источнику.</string>
 </resources>

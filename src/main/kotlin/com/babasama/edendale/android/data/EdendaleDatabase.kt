@@ -309,6 +309,14 @@ interface LibraryDao {
     @Query("DELETE FROM library_folder WHERE treeUri = :treeUri")
     suspend fun deleteFolder(treeUri: String)
 
+    /** A scan finished: clears a failure status and records when (D.3). */
+    @Query("UPDATE library_folder SET status = NULL, lastScannedAt = :scannedAt WHERE treeUri = :treeUri")
+    suspend fun markFolderScanned(treeUri: String, scannedAt: Long)
+
+    /** A scan failed: records why on the source, keeping its last good scan time (D.3). */
+    @Query("UPDATE library_folder SET status = :status WHERE treeUri = :treeUri")
+    suspend fun markFolderFailed(treeUri: String, status: String)
+
     @Query("DELETE FROM library_movie WHERE folderUri = :treeUri")
     suspend fun deleteMoviesInFolder(treeUri: String)
 

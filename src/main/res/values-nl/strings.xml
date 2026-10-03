@@ -228,13 +228,11 @@
     <string name="default_folder_name">Map</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" is geen share-adres. Probeer 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: een deel van deze bron kon niet worden gelezen, dus er is niets uit de bibliotheek verwijderd.</string>
     <string name="error_permission_revoked">toegang tot deze map is ingetrokken — voeg deze opnieuw toe</string>
     <string name="error_folder_unopenable">de map kon niet worden geopend</string>
     <string name="error_share_unreachable">de share is onbereikbaar of de inloggegevens zijn geweigerd</string>
     <string name="error_address_is_file">dat adres is een bestand, geen share</string>
-    <string name="error_scan_failed">de scan is mislukt</string>
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
@@ -342,4 +340,7 @@
     <string name="player_error_connection_lost">Verbinding met %1$s verbroken.</string>
     <string name="player_error_connection_lost_detail">Verbinding met %1$s verbroken: %2$s</string>
     <string name="player_error_could_not_connect">Kan geen verbinding maken met %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Kan %1$s niet bereiken. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="sources_status_needs_sign_in">Log opnieuw in bij %1$s om deze bron te bereiken.</string>
 </resources>
