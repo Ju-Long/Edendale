@@ -632,14 +632,14 @@ Don't build a workaround without asking the owner.
     a visible focus state, and uses a fade under reduced motion.
 
 **Checklist:**
-- [ ] **C.2.1** Replace `finish()` on `STATE_ENDED` with the advance logic,
+- [x] **C.2.1** Replace `finish()` on `STATE_ENDED` with the advance logic,
   reusing `switchTo`.
-- [ ] **C.2.2** A pure transition coordinator (generation counter, pending
+- [x] **C.2.2** A pure transition coordinator (generation counter, pending
   advance, manual override), tested on the JVM.
-- [ ] **C.2.3** An `UpNextCard` composable, wired into `PlayerScreen`.
+- [x] **C.2.3** An `UpNextCard` composable, wired into `PlayerScreen`.
 
 **Tests:**
-- [ ] **C.2.T1** (JVM) Port the `PlayerSessionTransitionTests` cases: a natural
+- [x] **C.2.T1** (JVM) Port the `PlayerSessionTransitionTests` cases: a natural
   end advances; a manual request during the advance wins; the last episode
   finishes; Loop on restarts instead; completion is written before the switch.
 
@@ -648,18 +648,24 @@ Don't build a workaround without asking the owner.
   completed. In PiP, the next episode plays inside the PiP window.
 
 **Review notes (2026-10-02, on the uncommitted C.2 work):**
-- [ ] **C.2.R1** Store the card's label in natural case and apply
+- [x] **C.2.R1** Store the card's label in natural case and apply
   `.uppercase()` in the view (A.4). `player_up_next` is in capitals today
   ("UP NEXT", "ALS NÄCHSTES", and so on).
-- [ ] **C.2.R2** `player_up_next_hint` is in all 19 string files but nothing
+- [x] **C.2.R2** `player_up_next_hint` is in all 19 string files but nothing
   uses it. Use it, for example as the card's click label, or remove it
   everywhere.
-- [ ] **C.2.R3** D-pad Up on the hidden-controls surface now focuses the Up
+- [x] **C.2.R3** D-pad Up on the hidden-controls surface now focuses the Up
   Next card instead of revealing the controls; D3 only redirects Down, for the
   skip prompt. Keep Up revealing the controls, or record the change and its
   reason in the Deviations log.
 - The card needs no focus handling of its own when it disappears: since
   83699b9, `PlayerScreen` seeds focus again whenever the focused node leaves.
+- Resolved 2026-10-03: the label is stored as "Up Next" (and so on) and
+  upper-cased in the card; `player_up_next_hint` is the card's TalkBack click
+  label (Apple's accessibility hint); D-pad Up on the hidden-controls surface
+  reveals the controls again. On TV the card is reached from the revealed
+  controls: Down from the top row focuses it while it shows, and Down from
+  the card returns to the transport row. No Deviations entry is needed.
 
 ### C.3 — Continue Watching next-up (DIFF §3.4)
 

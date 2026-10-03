@@ -305,7 +305,7 @@
     <string name="player_back_30">Назад на 30 секунд</string>
     <string name="player_forward_15">Вперед на 15 секунд</string>
     <string name="player_forward_30">Вперед на 30 секунд</string>
-    <string name="player_up_next">ДАЛЕЕ</string>
+    <string name="player_up_next">Далее</string>
     <string name="player_up_next_description">Далее: %1$s %2$s</string>
     <string name="player_up_next_hint">Воспроизвести следующую серию сейчас</string>
 </resources>

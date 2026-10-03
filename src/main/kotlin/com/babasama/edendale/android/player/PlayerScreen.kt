@@ -86,6 +86,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -302,8 +303,6 @@ internal fun PlayerScreen(
                 focusRequester = catcherFocus,
                 promptFocusRequester = promptFocus,
                 hasVisiblePrompt = visibleSegment != null,
-                upNextFocusRequester = upNextFocus,
-                hasVisibleUpNext = visibleUpNext != null,
                 chrome = chrome,
                 player = player,
             )
@@ -348,6 +347,7 @@ internal fun PlayerScreen(
                 topFocus = topFocus,
                 centerFocus = centerFocus,
                 timelineFocus = timelineFocus,
+                upNextFocus = upNextFocus.takeIf { visibleUpNext != null },
                 onEnterPip = onEnterPip,
                 onClose = onClose,
             )
@@ -415,11 +415,18 @@ internal fun PlayerScreen(
                     controlsVisible = controlsActive,
                     focusRequester = upNextFocus,
                     onPlayNext = { onSelectEntry(entry) },
+                    onFocus = { chrome.showControls() },
                     onExitFocus = {
-                        if (isTelevision && !chrome.controlsVisible) {
-                            catcherFocus.requestFocus()
-                        } else {
-                            chrome.showControls()
+                        // The card takes focus only from the visible controls
+                        // (down from the top row), so down hands it back to
+                        // the transport row it sits above.
+                        when {
+                            controlsActive -> {
+                                chrome.showControls()
+                                runCatching { centerFocus.requestFocus() }
+                            }
+                            isTelevision -> catcherFocus.requestFocus()
+                            else -> chrome.showControls()
                         }
                     },
                 )
@@ -482,8 +489,9 @@ private fun DisposableListener(
  * hidden — the reason the D-pad works at all with nothing on screen. It
  * handles every direction itself instead of relying on focus search (a
  * full-screen focus target is a dead end for directional search): left and
- * right accumulate a seek preview, down peeks the timeline, and up or
- * select reveal the controls.
+ * right accumulate a seek preview, down peeks the timeline (or focuses a
+ * visible skip prompt, D3), and up or select reveal the controls. The Up
+ * Next card is reached from the revealed controls, not from here.
  */
 @Composable
 private fun BoxScope.RevealCatcher(
@@ -491,8 +499,6 @@ private fun BoxScope.RevealCatcher(
     focusRequester: FocusRequester,
     promptFocusRequester: FocusRequester?,
     hasVisiblePrompt: Boolean,
-    upNextFocusRequester: FocusRequester?,
-    hasVisibleUpNext: Boolean,
     chrome: PlayerChromeState,
     player: ExoPlayer,
 ) {
@@ -522,15 +528,7 @@ private fun BoxScope.RevealCatcher(
                         }
                         true
                     }
-                    Key.DirectionUp -> {
-                        if (hasVisibleUpNext && upNextFocusRequester != null) {
-                            upNextFocusRequester.requestFocus()
-                        } else {
-                            chrome.showControls()
-                        }
-                        true
-                    }
-                    Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                    Key.DirectionUp, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
                         chrome.showControls()
                         true
                     }
@@ -615,6 +613,7 @@ private fun BoxScope.UpNextCard(
     controlsVisible: Boolean,
     focusRequester: FocusRequester,
     onPlayNext: () -> Unit,
+    onFocus: () -> Unit,
     onExitFocus: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -636,6 +635,8 @@ private fun BoxScope.UpNextCard(
     val imagePath = entry.stillPath ?: entry.backdropPath
     val imageUrl = remember(imagePath) { tmdbImageUrl(imagePath, TmdbImageSize.BACKDROP) }
     val description = stringResource(R.string.player_up_next_description, episodeCode, entry.title)
+    // Apple's accessibility hint; TalkBack reads it as the double-tap action.
+    val clickLabel = stringResource(R.string.player_up_next_hint)
 
     Surface(
         onClick = onPlayNext,
@@ -644,6 +645,7 @@ private fun BoxScope.UpNextCard(
             .padding(end = endPadding, top = topPadding)
             .widthIn(max = 280.dp)
             .focusRequester(focusRequester)
+            .onFocusChanged { if (it.isFocused) onFocus() }
             .tvFocusLift(isTelevision, RoundedCornerShape(12.dp))
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
@@ -662,6 +664,12 @@ private fun BoxScope.UpNextCard(
             }
             .semantics {
                 contentDescription = description
+                // Outermost semantics win, so this labels the Surface's own
+                // click action rather than adding a second one.
+                onClick(label = clickLabel) {
+                    onPlayNext()
+                    true
+                }
             },
         shape = RoundedCornerShape(12.dp),
         color = EdendaleColors.Surface,
@@ -707,7 +715,7 @@ private fun BoxScope.UpNextCard(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.player_up_next),
+                    text = stringResource(R.string.player_up_next).uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
@@ -753,6 +761,8 @@ private fun PlayerControlsOverlay(
     topFocus: FocusRequester,
     centerFocus: FocusRequester,
     timelineFocus: FocusRequester,
+    /** Set while the Up Next card shows; it sits just below the top row. */
+    upNextFocus: FocusRequester?,
     onEnterPip: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
@@ -786,7 +796,7 @@ private fun PlayerControlsOverlay(
                 .fillMaxWidth()
                 .padding(horizontal = edgeMargin, vertical = 16.dp)
                 .focusGroup()
-                .focusProperties { if (isTelevision) down = centerFocus },
+                .focusProperties { if (isTelevision) down = upNextFocus ?: centerFocus },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

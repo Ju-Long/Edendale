@@ -297,7 +297,7 @@
     <string name="player_back_30">Bakåt 30 sekunder</string>
     <string name="player_forward_15">Framåt 15 sekunder</string>
     <string name="player_forward_30">Framåt 30 sekunder</string>
-    <string name="player_up_next">NÄSTA</string>
+    <string name="player_up_next">Nästa</string>
     <string name="player_up_next_description">Nästa: %1$s %2$s</string>
     <string name="player_up_next_hint">Spela nästa avsnitt nu</string>
 </resources>

@@ -26,7 +26,7 @@
     <string name="settings_skip_prompts_note">When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.</string>
     <string name="settings_theintrodb_link">Timestamps by TheIntroDB</string>
     <string name="settings_theintrodb_privacy_link">TheIntroDB Privacy Policy</string>
-    <string name="player_up_next">UP NEXT</string>
+    <string name="player_up_next">Up Next</string>
     <string name="player_up_next_description">Up Next: %1$s %2$s</string>
     <string name="player_up_next_hint">Play the next episode now</string>
 </resources>

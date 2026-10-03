@@ -297,7 +297,7 @@
     <string name="player_back_30">30 seconden terug</string>
     <string name="player_forward_15">15 seconden vooruit</string>
     <string name="player_forward_30">30 seconden vooruit</string>
-    <string name="player_up_next">VOLGENDE</string>
+    <string name="player_up_next">Volgende</string>
     <string name="player_up_next_description">Volgende: %1$s %2$s</string>
     <string name="player_up_next_hint">Speel de volgende aflevering nu af</string>
 </resources>
