@@ -8,6 +8,7 @@
 //  plays at while held, set with a stepper. On tvOS both are archive
 //  chrome: there is no system stepper, so speeds step with − and + buttons,
 //  and the system segmented control's white focus platter hides the glyphs.
+//  The section closes with the player guide, which shows every control.
 //
 
 import SwiftUI
@@ -19,6 +20,7 @@ import AppKit
 
 struct AppControlsSection: View {
     @Environment(PlayerSession.self) private var session
+    @State private var showGuide = false
 
     private var controls: PlayerControlPreferences { session.controls }
 
@@ -34,8 +36,45 @@ struct AppControlsSection: View {
             #if !os(macOS) && !os(tvOS)
             SettingsNote(holdNote)
             #endif
+            guideRow
         }
     }
+
+    // MARK: - Player guide
+
+    @ViewBuilder
+    private var guideRow: some View {
+        #if os(macOS) || os(tvOS)
+        SettingsRow(String(localized: "Player Guide"), detail: guideDetail) {
+            Button("Show") { showGuide = true }
+                .archiveButtonStyle(.secondary)
+                .accessibilityLabel("Show Player Guide")
+                .sheet(isPresented: $showGuide) { guide }
+        }
+        #else
+        Button("Show Player Guide") { showGuide = true }
+            .sheet(isPresented: $showGuide) { guide }
+        #endif
+    }
+
+    private var guide: some View {
+        PlayerGuideView(controls: controls, finishTitle: String(localized: "Done")) {
+            showGuide = false
+        }
+        #if os(macOS)
+        .frame(minWidth: 760, idealWidth: 880, minHeight: 540, idealHeight: 600)
+        #endif
+    }
+
+    #if os(macOS) || os(tvOS)
+    private var guideDetail: String {
+        #if os(macOS)
+        String(localized: "See how the pointer and keyboard control playback.")
+        #else
+        String(localized: "See how the Siri Remote controls playback.")
+        #endif
+    }
+    #endif
 
     // MARK: - Skip lengths
 

@@ -3,7 +3,8 @@
 //  Edendale
 //
 //  The ellipsis sidebar: playback speed in 0.05× steps, video/audio/subtitle
-//  track selection, skip prompts, loop, and fit/fill aspect control.
+//  track selection, skip prompts, loop, and fit/fill aspect control. Its
+//  header also reopens the player guide.
 //
 
 import SwiftUI
@@ -82,6 +83,12 @@ struct PlayerSettingsPanel: View {
                 .foregroundStyle(Theme.textPrimary)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
+            PlayerIconChip(
+                icon: .circleInfo,
+                label: String(localized: "Player Guide")
+            ) {
+                chrome.presentGuide()
+            }
             PlayerIconChip(
                 icon: .sidebarRight,
                 label: String(localized: "Close Adjustments"),

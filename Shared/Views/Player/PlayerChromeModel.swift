@@ -230,6 +230,57 @@ final class PlayerChromeModel {
         showControls()
     }
 
+    // MARK: - Player guide
+
+    /// Whether the player guide covers the video. Playback waits while it
+    /// is up and carries on when it closes.
+    private(set) var guideVisible = false
+    /// The guide opened by itself, ahead of this device's first playback.
+    private(set) var guideIsFirstRun = false
+    /// Playback the guide paused, or kept from starting.
+    private var guideHeldPlayback = false
+
+    /// Opens the guide if the viewer has never closed it on this device.
+    func presentGuideIfFirstRun() {
+        guard !guideVisible, PlayerGuide.isUnseen(in: defaults) else { return }
+        guideIsFirstRun = true
+        presentGuide()
+    }
+
+    /// Covers the video with the guide, pausing playback until it closes.
+    func presentGuide() {
+        activePanel = nil
+        endHoldRate()
+        dismissHUD()
+        hideTask?.cancel()
+        if let player, player.isPlaying {
+            player.pause()
+            guideHeldPlayback = true
+        }
+        guideVisible = true
+    }
+
+    /// Playback that was about to start waits for the guide instead; the
+    /// session calls this in place of starting the engine.
+    func holdPlaybackForGuide() {
+        guideHeldPlayback = true
+    }
+
+    /// Closes the guide, remembers that the viewer has seen it, and resumes
+    /// whatever playback it held.
+    func dismissGuide() {
+        guard guideVisible else { return }
+        guideVisible = false
+        guideIsFirstRun = false
+        PlayerGuide.markSeen(in: defaults)
+        if guideHeldPlayback, let player {
+            player.play()
+            player.setRate(holdRate ?? baseRate)
+        }
+        guideHeldPlayback = false
+        showControls()
+    }
+
     // MARK: - Transport
 
     func togglePlayPause() {

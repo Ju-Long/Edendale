@@ -30,7 +30,6 @@ struct VideoEnhancementControls: View {
     }
 
     // MARK: - Preset
-
     @ViewBuilder
     private var presetPicker: some View {
         #if os(tvOS)

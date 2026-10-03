@@ -41,11 +41,11 @@ public enum AVFoundationDecoderError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .unplayableAsset:
-            return "The media asset is not playable by AVFoundation."
+            return String(localized: "The media asset is not playable by AVFoundation.")
         case .trackLoadingFailed(let reason):
-            return "Failed to load media tracks: \(reason)"
+            return String(localized: "Failed to load media tracks: \(reason)")
         case .playbackFailed(let error):
-            return error?.localizedDescription ?? "Playback failed."
+            return error?.localizedDescription ?? String(localized: "Playback failed.")
         }
     }
 }

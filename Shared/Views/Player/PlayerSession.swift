@@ -395,9 +395,15 @@ final class PlayerSession {
                     artworkURL: nil
                 )
 
-                debugPrint("[PlayerSession.startPlayback] calling engine.play()")
-                engine.play()
-                debugPrint("[PlayerSession.startPlayback] ✅ engine.play() returned — isPlaying=\(engine.isPlaying), state=\(engine.state)")
+                if chrome.guideVisible {
+                    // The first-run guide covers the video; it starts
+                    // playback when the viewer closes it.
+                    chrome.holdPlaybackForGuide()
+                } else {
+                    debugPrint("[PlayerSession.startPlayback] calling engine.play()")
+                    engine.play()
+                    debugPrint("[PlayerSession.startPlayback] ✅ engine.play() returned — isPlaying=\(engine.isPlaying), state=\(engine.state)")
+                }
 
                 #if os(visionOS)
                 let resumePosition = decoderResumePositionOverride

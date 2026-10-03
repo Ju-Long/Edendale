@@ -109,6 +109,30 @@ struct EdendaleApp: App {
         }
         .defaultSize(width: 1280, height: 720)
         .windowStyle(.hiddenTitleBar)
+
+        // Edendale ▸ Settings… (⌘,) opens this window; the library sidebar
+        // has no Settings row. A Settings window can't be resized, so it
+        // opens tall enough for several sections and scrolls the rest.
+        Settings {
+            SettingsView()
+                .frame(width: 760, height: 680)
+                .tint(Theme.gold)
+                .preferredColorScheme(.dark)
+                .environment(library)
+                .environment(watchStore)
+                .environment(watchlistStore)
+                .environment(userMediaStore)
+                .environment(tmdbAccount)
+                .environment(cloudAccounts)
+                .environment(wyzieKeys)
+                .environment(youngAudienceFilter)
+                .environment(audioEnhancement)
+                .environment(videoAdjustment)
+                .environment(playerSession)
+                .environment(appRouter)
+                .environment(\.ratingProviders, [TMDBRatingsProvider()])
+        }
+        .modelContainer(Persistence.sharedModelContainer)
         #endif
     }
 }

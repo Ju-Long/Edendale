@@ -2,21 +2,24 @@
 //  RootView.swift
 //  Edendale
 //
-//  Adaptive shell: sidebar on iPadOS (Settings pinned at the bottom),
-//  tab bar on iPhone (Settings in each page's toolbar) — both present
-//  Settings as a sheet. The tvOS sidebar and the visionOS ornament give
-//  Settings its own tab. Search uses the OS 26 search tab role.
+//  Adaptive shell: sidebar on iPadOS, tab bar on iPhone — both reach
+//  Settings from each page's toolbar as a sheet. The tvOS sidebar and the
+//  visionOS ornament give Settings its own tab. Search uses the OS 26
+//  search tab role.
 //
 //  macOS uses a split view instead (see RootSidebar): its sidebar also
-//  lists the Watchlist and Downloaded sections, ⌘B hides it, and Settings
-//  sits below Search.
+//  lists the Watchlist and Downloaded sections, and ⌘B hides it. Settings
+//  is the app menu's Settings window (see EdendaleApp).
 //
 
 import SwiftUI
 import SwiftData
 
 enum RootTab: Hashable {
-    case movies, watchlist, downloaded, settings, search
+    case movies, watchlist, downloaded, search
+    #if os(tvOS) || os(visionOS)
+    case settings
+    #endif
 }
 
 struct RootView: View {
@@ -46,9 +49,6 @@ struct RootView: View {
     @State private var searchModel = SearchModel()
     #else
     @State private var selectedTab: RootTab = .movies
-    #endif
-    #if os(iOS)
-    @State private var showSettings = false
     #endif
     @State private var externalDetail: RoutedMediaDetail?
 
@@ -176,19 +176,6 @@ struct RootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
-        #if os(iOS)
-        .tabViewSidebarBottomBar {
-            Button {
-                showSettings = true
-            } label: {
-                Label("Settings", image: "gear-complex")
-            }
-            .archiveButtonStyle(.ghost)
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-        }
-        #endif
         #endif
     }
 
@@ -208,8 +195,6 @@ struct RootView: View {
                 .id(sidebarItem)
         case .search:
             SearchView(model: searchModel)
-        case .settings:
-            SettingsView()
         }
     }
 

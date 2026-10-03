@@ -2,10 +2,10 @@
 //  SettingsView.swift
 //  Edendale
 //
-//  The settings surface. macOS, tvOS, and visionOS give it its own tab;
-//  macOS and tvOS draw it as a full archive page, visionOS as a grouped
-//  list. iPad reaches it from the sidebar bottom bar and iPhone from a
-//  toolbar item, both as a sheet (see RootView).
+//  The settings surface. tvOS and visionOS give it its own tab, and macOS
+//  its own window from the app menu (Edendale ▸ Settings…, ⌘,); macOS and
+//  tvOS draw it as a full archive page, visionOS as a grouped list. iPhone
+//  and iPad reach it from a toolbar item as a sheet.
 //
 
 import SwiftUI
@@ -177,11 +177,11 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - iPhone toolbar entry point
+// MARK: - iOS toolbar entry point
 
-/// On iPhone the settings entry lives in the navigation bar; iPad uses the
-/// sidebar bottom bar, and macOS, tvOS, and visionOS have a dedicated tab
-/// (see RootView).
+/// On iPhone and iPad the settings entry lives in the navigation bar; tvOS
+/// and visionOS have a dedicated tab (see RootView), and macOS a Settings
+/// window (see EdendaleApp).
 struct SettingsToolbarModifier: ViewModifier {
     @State private var showSettings = false
 
@@ -189,18 +189,16 @@ struct SettingsToolbarModifier: ViewModifier {
         #if os(iOS)
         content
             .toolbar {
-                if UIDevice.current.userInterfaceIdiom == .phone {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            showSettings = true
-                        } label: {
-                            Image(.gearComplex)
-                        }
-                        .accessibilityLabel("Settings")
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(.gearComplex)
                     }
+                    .accessibilityLabel("Settings")
                 }
             }
-            .sheet(isPresented: $showSettings) { SettingsView() }
+            .sheet(isPresented: $showSettings) { SettingsView().presentationSizing(.page) }
         #else
         content
         #endif

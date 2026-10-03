@@ -517,13 +517,49 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 Android and Windows need independent native implementations of these
 settings; the static Web branch is unaffected.
 
+### Player guide
+
+The first time a video opens on a device, a player guide covers it and
+playback waits until the guide closes; a guide opened mid-playback pauses and
+resumes the video the same way. Each page pairs a looping illustration with
+one control, chosen for the platform's input: tap, double-tap, swipe, hold, and
+hold-and-slide on iOS and iPadOS (keys too while a keyboard is attached); the
+same with look-and-tap and pinch gestures on visionOS; click, click-and-hold,
+and the key commands on macOS; and clickpad, swipe, resting thumb, Play/Pause,
+and Back on tvOS. The last page explains the toolbar chips. The pages quote the
+current **App Controls** skip lengths and hold speeds.
+
+The illustrations are SwiftUI drawings rather than recorded GIFs, so they
+follow those settings, the archive palette, and every localization. Under
+Reduce Motion each holds a single frame. Swipe, the arrow keys, or the Back and
+Next buttons turn pages. Escape, the close chip, or tvOS Back close the guide.
+Reopen it with the info chip in **Player Adjustments** or the player guide
+entry at the end of **Settings → App Controls**. Closing the guide stores
+`player.guideSeenVersion` in the device's preferences; raise
+`PlayerGuide.version` to show a revised guide once more.
+
+Run the guide tests:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/PlayerGuideTests \
+  -only-testing:EdendaleTests/PlayerTransportStateTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Android and Windows need their own native guides for their own controls; the
+static Web branch is unaffected.
+
 ### macOS navigation, shortcuts, and player panels
 
 The macOS library window uses a split view instead of the adaptive tab view.
-Its sidebar lists Movies & Shows, Watchlist, Downloaded, Search, and then
-Settings. Watchlist and Downloaded are pages of their own and also disclose
-their sections as child rows, so one section opens without scrolling the
-whole page:
+Its sidebar lists Movies & Shows, Watchlist, Downloaded, and Search; Settings
+opens in its own window from **Edendale ▸ Settings…** (⌘,) instead of a
+sidebar row. (iPhone and iPad open Settings as a sheet from the gear button in
+each page's toolbar.) Watchlist and Downloaded are pages of their own and also
+disclose their sections as child rows, so one section opens without scrolling
+the whole page:
 
 - **Watchlist:** Movies and TV Shows.
 - **Downloaded:** Continue Watching, Movies, and TV Shows. The Continue
@@ -540,14 +576,15 @@ Menu bar commands:
 
 | Command | Shortcut | Available |
 |---|---|---|
+| Edendale ▸ Settings… | ⌘, | Always |
 | View ▸ Hide/Show Sidebar | ⌘B | Library window |
 | File ▸ Add Media Folder… | ⌘N | Downloaded pages |
 | File ▸ Link Network Source… | ⌥⌘N | Downloaded pages |
 | File ▸ Rescan Library | ⌘R | Downloaded pages with linked sources |
 
-These replace File ▸ New Window; clicking the Dock icon reopens a closed
-library window. Rescanning uses the same duplicate-safe sweep that runs when
-the Downloaded page appears and shows a status row while it runs.
+The File commands replace File ▸ New Window; clicking the Dock icon reopens a
+closed library window. Rescanning uses the same duplicate-safe sweep that runs
+when the Downloaded page appears and shows a status row while it runs.
 
 The Link Source sheet opens with the server address focused. Tab and
 Shift-Tab move between the address, username, and password fields. Return

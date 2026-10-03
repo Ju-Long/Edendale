@@ -41,7 +41,21 @@ struct PlayerScreen: View {
 //                let _ = debugPrint("[PlayerScreen] ❌ showing failure — player=\(session.player == nil ? "nil" : "exists") state=\(session.player?.state ?? .idle), item=\(session.item == nil ? "nil" : "exists"), scope=\(session.item?.scope == nil ? "nil" : "exists"), error=\(session.item?.errorMessage ?? "none")")
                 failure
             }
+
+            // Over the failure state too, should the file fail to open
+            // while the first-run guide is up.
+            if let chrome = session.chrome, chrome.guideVisible {
+                PlayerGuideView(
+                    controls: session.controls,
+                    finishTitle: chrome.guideIsFirstRun
+                        ? String(localized: "Start Watching")
+                        : String(localized: "Done"),
+                    onFinish: chrome.dismissGuide
+                )
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: session.chrome?.guideVisible)
         .preferredColorScheme(.dark)
         #if !os(tvOS)
         .focusable()
@@ -53,6 +67,10 @@ struct PlayerScreen: View {
             action: handleKeyPress
         )
         .onAppear { keyboardFocused = true }
+        // The guide takes the keys while it is up; hand them back after.
+        .onChange(of: session.chrome?.guideVisible ?? false) { _, visible in
+            if !visible { keyboardFocused = true }
+        }
         #endif
         #if os(iOS)
         .statusBarHidden(!(session.chrome?.controlsVisible ?? true))
@@ -68,6 +86,8 @@ struct PlayerScreen: View {
         // they're hidden); these commands bubble up from whichever control
         // is focused, so the screen never has to own focus itself.
         .onPlayPauseCommand {
+            // Playback waits for the guide to close.
+            guard session.chrome?.guideVisible != true else { return }
             session.chrome?.togglePlayPause()
         }
         .onExitCommand { handleExitCommand() }
@@ -129,13 +149,14 @@ struct PlayerScreen: View {
             .ignoresSafeArea()
 
             #if os(iOS) || os(visionOS)
-            if let chrome = session.chrome {
+            if let chrome = session.chrome, !chrome.guideVisible {
                 PlayerGestureLayer(chrome: chrome, player: player)
                     .ignoresSafeArea()
             }
             #endif
 
-            if let chrome = session.chrome {
+            // The guide stands in for every control while it is up.
+            if let chrome = session.chrome, !chrome.guideVisible {
                 #if os(iOS) || os(macOS)
                 PlayerControlsOverlay(
                     chrome: chrome,
@@ -183,6 +204,8 @@ struct PlayerScreen: View {
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: session.chrome?.upcomingEpisode?.id)
+        // The guide waits for the viewer's first playback on this device.
+        .onAppear { session.chrome?.presentGuideIfFirstRun() }
         #if os(tvOS)
         .animation(.easeInOut(duration: 0.2), value: session.chrome?.timelineVisible)
         #endif
@@ -252,7 +275,7 @@ struct PlayerScreen: View {
 
     #if !os(tvOS)
     private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
-        guard let chrome = session.chrome else { return .ignored }
+        guard let chrome = session.chrome, !chrome.guideVisible else { return .ignored }
         let commandPressed = press.modifiers.contains(.command)
 
         switch press.key {
@@ -302,11 +325,15 @@ struct PlayerScreen: View {
     // MARK: - tvOS remote
 
     #if os(tvOS)
-    /// Menu peels back one layer at a time: panel, scrub/timeline/HUD,
-    /// controls, then finally the player itself.
+    /// Menu peels back one layer at a time: the guide or a panel,
+    /// scrub/timeline/HUD, controls, then finally the player itself.
     private func handleExitCommand() {
         guard let chrome = session.chrome else {
             exit()
+            return
+        }
+        if chrome.guideVisible {
+            chrome.dismissGuide()
             return
         }
         if chrome.activePanel != nil {

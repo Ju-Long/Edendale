@@ -277,11 +277,11 @@ static NSTimeInterval EDNow(void) {
         NSString *detail = error.localizedDescription;
         if (!_everOpened) {
             _fatal = YES;
-            _failure = detail.length > 0 ? detail : [NSString stringWithFormat:@"Couldn't connect to %@.", _host];
+            _failure = detail.length > 0 ? detail : [NSString stringWithFormat:NSLocalizedString(@"Couldn't connect to %@.", nil), _host];
         } else {
             _failure = detail.length > 0
-                ? [NSString stringWithFormat:@"Lost the connection to %@: %@", _host, detail]
-                : [NSString stringWithFormat:@"Lost the connection to %@.", _host];
+                ? [NSString stringWithFormat:NSLocalizedString(@"Lost the connection to %@: %@", nil), _host, detail]
+                : [NSString stringWithFormat:NSLocalizedString(@"Lost the connection to %@.", nil), _host];
             if (_wanted == index) _failedChunk = index;
             // Retrying again at once would only fail again; wait for a read.
             _prefetchHalted = YES;

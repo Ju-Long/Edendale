@@ -174,7 +174,7 @@ struct LibrarySectionsTests {
 
     #if os(macOS)
     @Test func sidebarRowsMapToRootTabs() {
-        for tab in [RootTab.movies, .watchlist, .downloaded, .search, .settings] {
+        for tab in [RootTab.movies, .watchlist, .downloaded, .search] {
             #expect(SidebarItem(tab).tab == tab)
         }
         // A route that picks a tab opens its whole page.

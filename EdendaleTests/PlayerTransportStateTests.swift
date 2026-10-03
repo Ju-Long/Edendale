@@ -249,6 +249,64 @@ struct PlayerTransportStateTests {
         #expect(fixture.session.player == nil)
     }
 
+    // MARK: - Player guide
+
+    @Test func firstRunGuideHoldsPlaybackUntilItCloses() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.first)
+        // What PlayerScreen does as it appears, before the surface attaches.
+        fixture.session.chrome?.presentGuideIfFirstRun()
+        #expect(fixture.session.chrome?.guideVisible == true)
+        #expect(fixture.session.chrome?.guideIsFirstRun == true)
+        fixture.session.surfaceDidAttach()
+
+        // The file opens, but playback waits for the guide.
+        for _ in 0..<300 {
+            if (fixture.session.player?.duration?.playbackSeconds ?? 0) > 0 { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(fixture.session.player?.isPlaying == false)
+
+        fixture.session.chrome?.dismissGuide()
+        try await fixture.waitForPlaying()
+
+        // Seen once, it stays closed for the next playback.
+        fixture.session.chrome?.presentGuideIfFirstRun()
+        #expect(fixture.session.chrome?.guideVisible == false)
+    }
+
+    @Test func openingTheGuidePausesAndClosingItResumes() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.second)
+        fixture.session.surfaceDidAttach()
+        try await fixture.waitForPlaying()
+
+        fixture.session.chrome?.presentGuide()
+        #expect(fixture.session.chrome?.guideIsFirstRun == false)
+        try await fixture.waitForPaused()
+
+        fixture.session.chrome?.dismissGuide()
+        try await fixture.waitForPlaying()
+    }
+
+    @Test func closingTheGuideLeavesPausedPlaybackPaused() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanup() }
+        await fixture.session.play(episode: fixture.second)
+        fixture.session.surfaceDidAttach()
+        try await fixture.waitForPlaying()
+        fixture.session.chrome?.togglePlayPause()
+        try await fixture.waitForPaused()
+
+        fixture.session.chrome?.presentGuide()
+        fixture.session.chrome?.dismissGuide()
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(fixture.session.player?.isPlaying == false)
+    }
+
     // MARK: - Fixture
 
     @MainActor

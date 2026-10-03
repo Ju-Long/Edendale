@@ -63,7 +63,7 @@ static const uint32_t EDSMBReadSize = 1 << 20;
 static NSError *EDSMBError(NSString *operation, struct smb2_context *smb2, int code) {
     const char *detail = smb2 ? smb2_get_error(smb2) : NULL;
     NSString *message = (detail && detail[0])
-        ? [NSString stringWithFormat:@"%@: %s", operation, detail]
+        ? [NSString stringWithFormat:NSLocalizedString(@"%@: %@", @"An operation, then the reason it failed"), operation, @(detail) ?: @""]
         : operation;
     return [NSError errorWithDomain:@"Edendale.FFmpeg" code:code userInfo:@{NSLocalizedDescriptionKey: message}];
 }
@@ -105,13 +105,13 @@ static NSError *EDSMBError(NSString *operation, struct smb2_context *smb2, int c
                                 user.length > 0 ? user.UTF8String : NULL);
     if (rc < 0) {
         _broken = YES;
-        if (error) *error = EDSMBError(@"SMB connect failed", _smb2, rc);
+        if (error) *error = EDSMBError(NSLocalizedString(@"SMB connect failed", nil), _smb2, rc);
         return nil;
     }
     _fh = smb2_open(_smb2, path.UTF8String, O_RDONLY);
     if (!_fh) {
         _broken = YES;
-        if (error) *error = EDSMBError(@"SMB open failed", _smb2, -ENOENT);
+        if (error) *error = EDSMBError(NSLocalizedString(@"SMB open failed", nil), _smb2, -ENOENT);
         return nil;
     }
     _buffer = malloc(EDSMBReadSize);
@@ -140,7 +140,7 @@ static NSError *EDSMBError(NSString *operation, struct smb2_context *smb2, int c
     if (length <= 0) return 0;
     if (_broken) {
         // A failed call's request may still be queued, aimed at _buffer.
-        if (error) *error = EDSMBError(@"SMB connection lost", NULL, -EIO);
+        if (error) *error = EDSMBError(NSLocalizedString(@"SMB connection lost", nil), NULL, -EIO);
         return -1;
     }
     // libsmb2 also caps each request at the server's maximum read size.
@@ -148,7 +148,7 @@ static NSError *EDSMBError(NSString *operation, struct smb2_context *smb2, int c
     int n = smb2_pread(_smb2, _fh, _buffer, count, (uint64_t)offset);
     if (n < 0) {
         _broken = YES;
-        if (error) *error = EDSMBError(@"SMB read failed", _smb2, n);
+        if (error) *error = EDSMBError(NSLocalizedString(@"SMB read failed", nil), _smb2, n);
         return -1;
     }
     n = MIN(n, (int)count);
@@ -171,8 +171,8 @@ static NSError *EDSMBError(NSString *operation, struct smb2_context *smb2, int c
         if (error) {
             *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:-EINVAL userInfo:@{
                 NSLocalizedDescriptionKey: host.length == 0
-                    ? @"Invalid SMB URL: missing host"
-                    : @"Invalid SMB URL: missing share or file path"
+                    ? NSLocalizedString(@"Invalid SMB URL: missing host", nil)
+                    : NSLocalizedString(@"Invalid SMB URL: missing share or file path", nil)
             }];
         }
         return nil;

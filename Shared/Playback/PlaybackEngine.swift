@@ -529,7 +529,7 @@ final class PlaybackEngine {
         var errorDescription: String? {
             switch self {
             case .unsupportedFormat(let ext):
-                return "Unsupported subtitle format: .\(ext)"
+                return String(localized: "Unsupported subtitle format: .\(ext)")
             case .unreadableText:
                 return String(localized: "The subtitle file could not be read as text.")
             }
@@ -727,7 +727,7 @@ final class PlaybackEngine {
         audioTracks = info.audioTracks.enumerated().map { index, track in
             PlaybackTrack(
                 id: "a\(track.index)",
-                name: track.title ?? track.language ?? "Track \(track.index + 1)",
+                name: track.title ?? track.language ?? String(localized: "Track \(track.index + 1)"),
                 language: track.language,
                 isSelected: index == 0,
                 width: nil,
@@ -740,7 +740,7 @@ final class PlaybackEngine {
         subtitleTracks = info.subtitleTracks.map { track in
             PlaybackTrack(
                 id: "s\(track.index)",
-                name: track.title ?? track.language ?? "Track \(track.index + 1)",
+                name: track.title ?? track.language ?? String(localized: "Track \(track.index + 1)"),
                 language: track.language,
                 isSelected: false,
                 width: nil,

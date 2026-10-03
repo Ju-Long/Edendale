@@ -298,7 +298,8 @@ static void EDPCMLayout(int channels, AVChannelLayout *layout, AudioChannelLayou
 static BOOL EDReaderError(NSError **error, NSString *operation, int code) {
     if (error) {
         *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:code userInfo:@{
-            NSLocalizedDescriptionKey: [NSString stringWithFormat:@"%@: %@", operation, edendale_av_err2str(code)]
+            NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"%@: %@", @"An operation, then the reason it failed"),
+                operation, edendale_av_err2str(code)]
         }];
     }
     return NO;
@@ -320,7 +321,8 @@ static BOOL EDSourceError(NSError **error, id<EDByteSource> source, NSString *op
 static BOOL EDVideoToolboxError(NSError **error, NSString *operation, OSStatus status) {
     if (error) {
         *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:status userInfo:@{
-            NSLocalizedDescriptionKey: [NSString stringWithFormat:@"%@ (VideoToolbox error %d)", operation, (int)status]
+            NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"%@ (VideoToolbox error %d)", nil),
+                operation, (int)status]
         }];
     }
     return NO;
@@ -414,7 +416,7 @@ static int EDInterrupt(void *opaque) {
     AVCodecParameters *parameters = _format->streams[index]->codecpar;
     const AVCodec *codec = avcodec_find_decoder(parameters->codec_id);
     if (!codec) {
-        EDReaderError(error, @"This media codec is not included in FFmpeg", AVERROR_DECODER_NOT_FOUND);
+        EDReaderError(error, NSLocalizedString(@"This media codec is not included in FFmpeg", nil), AVERROR_DECODER_NOT_FOUND);
         return NULL;
     }
     AVCodecContext *context = avcodec_alloc_context3(codec);
@@ -438,7 +440,7 @@ static int EDInterrupt(void *opaque) {
     if (result >= 0) result = avcodec_open2(context, codec, NULL);
     if (result < 0) {
         avcodec_free_context(&context);
-        EDReaderError(error, @"Open media decoder", result);
+        EDReaderError(error, NSLocalizedString(@"Open media decoder", nil), result);
     }
     return context;
 }
@@ -478,7 +480,7 @@ static int EDInterrupt(void *opaque) {
     BOOL fullRange = parameters->color_range == AVCOL_RANGE_JPEG;
     if (!_av1Format) {
         if (!EDHasAV1Configuration(parameters)) {
-            return EDReaderError(error, @"AV1 video has no decoder configuration", AVERROR_INVALIDDATA);
+            return EDReaderError(error, NSLocalizedString(@"AV1 video has no decoder configuration", nil), AVERROR_INVALIDDATA);
         }
         NSData *configuration = [NSData dataWithBytes:parameters->extradata length:(NSUInteger)parameters->extradata_size];
         NSDictionary *extensions = @{
@@ -487,7 +489,7 @@ static int EDInterrupt(void *opaque) {
         };
         OSStatus status = CMVideoFormatDescriptionCreate(kCFAllocatorDefault, kCMVideoCodecType_AV1,
             parameters->width, parameters->height, (__bridge CFDictionaryRef)extensions, &_av1Format);
-        if (status != noErr) return EDVideoToolboxError(error, @"Describe AV1 video", status);
+        if (status != noErr) return EDVideoToolboxError(error, NSLocalizedString(@"Describe AV1 video", nil), status);
     }
     OSType pixelFormat = EDAV1BitDepth(parameters) > 8
         ? (fullRange ? kCVPixelFormatType_420YpCbCr10BiPlanarFullRange : kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange)
@@ -501,7 +503,7 @@ static int EDInterrupt(void *opaque) {
         (__bridge CFDictionaryRef)attributes, NULL, &_av1Session);
     if (status != noErr) {
         _av1Session = NULL;
-        return EDVideoToolboxError(error, @"This device cannot decode AV1 video", status);
+        return EDVideoToolboxError(error, NSLocalizedString(@"This device cannot decode AV1 video", nil), status);
     }
     _av1NeedsKeyframe = YES;
     return YES;
@@ -630,7 +632,7 @@ static int EDInterrupt(void *opaque) {
             int err = errno;
             atomic_store(&_deadline, 0);
             [self close];
-            return EDReaderError(error, @"Could not open file", AVERROR(err));
+            return EDReaderError(error, NSLocalizedString(@"Could not open file", nil), AVERROR(err));
         }
         static const int kIOBufSize = 32768;
         unsigned char *ioBuf = av_malloc(kIOBufSize);
@@ -658,7 +660,7 @@ static int EDInterrupt(void *opaque) {
         [self close];
         if (error) {
             *error = [NSError errorWithDomain:@"Edendale.FFmpeg" code:AVERROR_PROTOCOL_NOT_FOUND userInfo:@{
-                NSLocalizedDescriptionKey: @"Edendale can't open this kind of location."
+                NSLocalizedDescriptionKey: NSLocalizedString(@"Edendale can't open this kind of location.", nil)
             }];
         }
         return NO;
@@ -674,7 +676,7 @@ static int EDInterrupt(void *opaque) {
     if (result < 0) {
         id<EDByteSource> source = _byteSource;
         [self close];
-        return EDSourceError(error, source, @"Could not open media", result);
+        return EDSourceError(error, source, NSLocalizedString(@"Could not open media", nil), result);
     }
 
     _origin = _format->start_time == AV_NOPTS_VALUE ? 0 : (double)_format->start_time / AV_TIME_BASE;
@@ -697,7 +699,7 @@ static int EDInterrupt(void *opaque) {
     }
     if (!videoParameters && !_audio) {
         [self close];
-        return EDReaderError(error, @"No playable audio or video stream", AVERROR_STREAM_NOT_FOUND);
+        return EDReaderError(error, NSLocalizedString(@"No playable audio or video stream", nil), AVERROR_STREAM_NOT_FOUND);
     }
     _packet = av_packet_alloc();
     _frame = av_frame_alloc();
@@ -775,7 +777,7 @@ static int EDInterrupt(void *opaque) {
 
 - (EDFFmpegFrame *)audioFrameWithError:(NSError **)error {
     if (_frame->sample_rate <= 0 || _frame->ch_layout.nb_channels <= 0) {
-        EDReaderError(error, @"Invalid audio format", AVERROR(EINVAL)); return nil;
+        EDReaderError(error, NSLocalizedString(@"Invalid audio format", nil), AVERROR(EINVAL)); return nil;
     }
     if (!_resampler || _inputRate != _frame->sample_rate || _inputFormat != _frame->format ||
         av_channel_layout_compare(&_inputLayout, &_frame->ch_layout) != 0) {
@@ -792,7 +794,7 @@ static int EDInterrupt(void *opaque) {
         if (result >= 0) result = swr_init(_resampler);
         if (result < 0) {
             swr_free(&_resampler);
-            EDReaderError(error, @"Convert audio format", result); return nil;
+            EDReaderError(error, NSLocalizedString(@"Convert audio format", nil), result); return nil;
         }
         UInt32 channels = (UInt32)output.nb_channels;
         AudioStreamBasicDescription asbd = { .mSampleRate = 48000, .mFormatID = kAudioFormatLinearPCM,
@@ -804,7 +806,7 @@ static int EDInterrupt(void *opaque) {
         OSStatus status = CMAudioFormatDescriptionCreate(NULL, &asbd, sizeof(layout), &layout, 0, NULL, NULL, &_pcmFormat);
         if (status) {
             swr_free(&_resampler);
-            EDReaderError(error, @"Describe audio format", status); return nil;
+            EDReaderError(error, NSLocalizedString(@"Describe audio format", nil), status); return nil;
         }
     }
     size_t frameBytes = CMAudioFormatDescriptionGetStreamBasicDescription(_pcmFormat)->mBytesPerFrame;
@@ -813,7 +815,7 @@ static int EDInterrupt(void *opaque) {
     NSMutableData *pcm = [NSMutableData dataWithLength:(NSUInteger)count * frameBytes];
     uint8_t *output[] = { pcm.mutableBytes };
     count = swr_convert(_resampler, output, count, (const uint8_t **)_frame->extended_data, _frame->nb_samples);
-    if (count < 0) { EDReaderError(error, @"Decode audio samples", count); return nil; }
+    if (count < 0) { EDReaderError(error, NSLocalizedString(@"Decode audio samples", nil), count); return nil; }
     AVStream *stream = _format->streams[_audioIndex];
     double pts = [self audioTimeForStreamTime:_frame->best_effort_timestamp == AV_NOPTS_VALUE ? NAN :
         _frame->best_effort_timestamp * av_q2d(stream->time_base) - _origin - (double)delay / _inputRate];
@@ -831,7 +833,7 @@ static int EDInterrupt(void *opaque) {
     if (!status) status = CMSampleBufferCreateReady(NULL, block, _pcmFormat, count, 1, &timing, 1, &frameBytes, &sample);
     EDFFmpegFrame *result = nil;
     if (!status) result = [[EDFFmpegFrame alloc] initWithPixelBuffer:NULL audio:sample time:pts duration:(double)count / 48000];
-    else EDReaderError(error, @"Create audio sample buffer", status);
+    else EDReaderError(error, NSLocalizedString(@"Create audio sample buffer", nil), status);
     if (sample) CFRelease(sample);
     if (block) CFRelease(block);
     return result;
@@ -910,7 +912,7 @@ static int EDInterrupt(void *opaque) {
     BOOL isVideo = codec == _video;
     int result = avcodec_send_packet(codec, packet);
     if (result < 0 && result != AVERROR_EOF) {
-        if (!isVideo) return EDReaderError(error, @"Submit media packet", result);
+        if (!isVideo) return EDReaderError(error, NSLocalizedString(@"Submit media packet", nil), result);
         // A video packet never fails the batch, which would stop the audio and
         // end playback. Recovery frees the decoder `codec` points to.
         codec = [self recoverVideoDecoderAfterError:result packet:packet];
@@ -934,7 +936,7 @@ static int EDInterrupt(void *opaque) {
     if (isVideo) {
         return YES;
     }
-    return result == AVERROR(EAGAIN) || result == AVERROR_EOF || EDReaderError(error, @"Decode media frame", result);
+    return result == AVERROR(EAGAIN) || result == AVERROR_EOF || EDReaderError(error, NSLocalizedString(@"Decode media frame", nil), result);
 }
 
 /// Whether the frame in a video packet falls before the seek target, where
@@ -1029,7 +1031,7 @@ static int EDInterrupt(void *opaque) {
             _demuxEnded = YES;
             continue;
         }
-        if (result < 0) { EDSourceError(error, _byteSource, @"Read media packet", result); return nil; }
+        if (result < 0) { EDSourceError(error, _byteSource, NSLocalizedString(@"Read media packet", nil), result); return nil; }
         if (_subtitle && _packet->stream_index == _subtitleIndex) {
             [self decodeSubtitle:_packet into:outputs];
             av_packet_unref(_packet);
@@ -1054,13 +1056,13 @@ static int EDInterrupt(void *opaque) {
 }
 
 - (BOOL)seekToSeconds:(double)seconds error:(NSError **)error {
-    if (!_format || !isfinite(seconds)) return EDReaderError(error, @"Seek unavailable", AVERROR(EINVAL));
+    if (!_format || !isfinite(seconds)) return EDReaderError(error, NSLocalizedString(@"Seek unavailable", nil), AVERROR(EINVAL));
     atomic_store(&_interrupted, false);
     atomic_store(&_deadline, (int64_t)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000) + 20000000);
     int64_t timestamp = (int64_t)((fmax(0, seconds) + _origin) * AV_TIME_BASE);
     int result = avformat_seek_file(_format, -1, INT64_MIN, timestamp, timestamp, AVSEEK_FLAG_BACKWARD);
     atomic_store(&_deadline, 0);
-    if (result < 0) return EDSourceError(error, _byteSource, @"Could not seek", result);
+    if (result < 0) return EDSourceError(error, _byteSource, NSLocalizedString(@"Could not seek", nil), result);
     // A read the seek interrupted left its error behind; reads resume now.
     if (_byteSource && _format->pb) _format->pb->error = 0;
     if (_video) avcodec_flush_buffers(_video);
@@ -1080,7 +1082,7 @@ static int EDInterrupt(void *opaque) {
 - (BOOL)selectAudioTrack:(NSInteger)index error:(NSError **)error {
     if (!_format || index < 0 || index >= _format->nb_streams ||
         _format->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
-        return EDReaderError(error, @"Invalid audio track", AVERROR(EINVAL));
+        return EDReaderError(error, NSLocalizedString(@"Invalid audio track", nil), AVERROR(EINVAL));
     AVCodecContext *next = [self openCodec:(int)index hardware:NO error:error];
     if (!next) return NO;
     avcodec_free_context(&_audio);
@@ -1109,7 +1111,7 @@ static int EDInterrupt(void *opaque) {
     }
     if (!_format || index >= _format->nb_streams ||
         _format->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE) {
-        EDReaderError(error, @"Invalid subtitle track", AVERROR(EINVAL));
+        EDReaderError(error, NSLocalizedString(@"Invalid subtitle track", nil), AVERROR(EINVAL));
         return nil;
     }
     AVCodecContext *next = [self openCodec:(int)index hardware:NO error:error];

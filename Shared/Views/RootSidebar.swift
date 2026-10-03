@@ -5,7 +5,7 @@
 //  The macOS library window's sidebar. Each root tab is a row; the
 //  Watchlist and Downloaded rows also list their page's sections as child
 //  rows, so a section opens directly instead of scrolling the whole page.
-//  Search sits above Settings.
+//  Settings is the app menu's Settings window, not a row.
 //
 
 #if os(macOS)
@@ -18,7 +18,6 @@ enum SidebarItem: Hashable {
     case watchlist(WatchlistSection?)
     case downloaded(DownloadedSection?)
     case search
-    case settings
 
     init(_ tab: RootTab) {
         switch tab {
@@ -26,7 +25,6 @@ enum SidebarItem: Hashable {
         case .watchlist: self = .watchlist(nil)
         case .downloaded: self = .downloaded(nil)
         case .search: self = .search
-        case .settings: self = .settings
         }
     }
 
@@ -36,7 +34,6 @@ enum SidebarItem: Hashable {
         case .watchlist: .watchlist
         case .downloaded: .downloaded
         case .search: .search
-        case .settings: .settings
         }
     }
 
@@ -93,7 +90,6 @@ struct RootSidebar: View {
             )
 
             row(String(localized: "Search"), image: "magnifying-glass-play", item: .search)
-            row(String(localized: "Settings"), image: "gear-complex", item: .settings)
         }
         .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 300)
     }
