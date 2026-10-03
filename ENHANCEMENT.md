@@ -1721,7 +1721,7 @@ The final order on handhelds and TV:
   mediarouter, OkHttp, androidx.browser, sshj, FSR 1, Snapdragon GSR if used,
   Nunito, and FFmpeg per D5); the new `secrets.json` keys;
   `connectedDebugAndroidTest`; and the manual device checks.
-- [ ] **L.2** This branch's `DESIGN.md` has the playlist tokens (B.5.1).
+- [x] **L.2** This branch's `DESIGN.md` has the playlist tokens (B.5.1).
 - [ ] **L.3** Release (D19, only when the owner asks): bump `versionCode` and
   `versionName`, and draft `Play Console/27.0/release.txt` in the 26.0 format.
 - [ ] **L.4** Leave notes for the owner (this isn't done on this branch):
@@ -1944,6 +1944,6 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | J.6 | Season shelf scrubber | Not started | |
 | K.1 | Settings order | Not started | |
 | L.1 | README | Not started | |
-| L.2 | DESIGN.md | Not started | |
+| L.2 | DESIGN.md | Complete | 0987890 |
 | L.3 | Release | Blocked (D19) | |
 | L.4 | Notes for other branches | Not started | |
