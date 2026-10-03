@@ -86,4 +86,11 @@
         <item quantity="one">%1$d source on this device</item>
         <item quantity="other">%1$d sources on this device</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Play From</string>
+    <string name="play_from_unavailable">%1$s · Unavailable</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d source</item>
+        <item quantity="other">%1$d sources</item>
+    </plurals>
 </resources>

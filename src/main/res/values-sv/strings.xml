@@ -355,4 +355,11 @@
         <item quantity="one">%1$d källa på den här enheten</item>
         <item quantity="other">%1$d källor på den här enheten</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Spela upp från</string>
+    <string name="play_from_unavailable">%1$s · Inte tillgänglig</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d källor</item>
+        <item quantity="other">%1$d källor</item>
+    </plurals>
 </resources>

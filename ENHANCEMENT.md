@@ -969,12 +969,12 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   episode), in season and episode order (ties broken by path).
 
 **Checklist:**
-- [ ] **D.5.1** Pure ordering, preference, and slot functions.
-- [ ] **D.5.2** UI on the local movie and show details, and everywhere Play
+- [x] **D.5.1** Pure ordering, preference, and slot functions.
+- [x] **D.5.2** UI on the local movie and show details, and everywhere Play
   starts a local file (Continue Watching uses the preferred copy).
 
 **Tests (JVM):**
-- [ ] **D.5.T1** Port `PlaybackSourcesTests`.
+- [x] **D.5.T1** Port `PlaybackSourcesTests`.
 
 ---
 
@@ -1868,7 +1868,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.2 | Source records (Room v3) | Complete | |
 | D.3 | Rescan throttle and per-source status | Complete | |
 | D.4 | Keep logins; Accounts | Complete | |
-| D.5 | Play From | Not started | |
+| D.5 | Play From | Complete | |
 | E.1 | EQ profiles and booster | Not started | |
 | E.2 | DTS and TrueHD (D5) | Not started | |
 | F.1 | Effects plumbing | Not started | |

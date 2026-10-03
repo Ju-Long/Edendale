@@ -355,4 +355,11 @@
         <item quantity="one">%1$d bron op dit apparaat</item>
         <item quantity="other">%1$d bronnen op dit apparaat</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Speel af vanaf</string>
+    <string name="play_from_unavailable">%1$s · Niet beschikbaar</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d bronnen</item>
+        <item quantity="other">%1$d bronnen</item>
+    </plurals>
 </resources>

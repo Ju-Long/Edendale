@@ -351,4 +351,11 @@
         <item quantity="one">此设备上的 %1$d 个来源</item>
         <item quantity="other">此设备上的 %1$d 个来源</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">播放来源</string>
+    <string name="play_from_unavailable">%1$s · 不可用</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d 个来源</item>
+        <item quantity="other">%1$d 个来源</item>
+    </plurals>
 </resources>

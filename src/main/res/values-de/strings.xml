@@ -355,4 +355,11 @@
         <item quantity="one">%1$d Quelle auf diesem Gerät</item>
         <item quantity="other">%1$d Quellen auf diesem Gerät</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Wiedergeben von</string>
+    <string name="play_from_unavailable">%1$s · Nicht verfügbar</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d Quellen</item>
+        <item quantity="other">%1$d Quellen</item>
+    </plurals>
 </resources>

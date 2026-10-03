@@ -355,4 +355,11 @@
         <item quantity="one">%1$d sorgente su questo dispositivo</item>
         <item quantity="other">%1$d sorgenti su questo dispositivo</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Riproduci da</string>
+    <string name="play_from_unavailable">%1$s · Non disponibile</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d sorgenti</item>
+        <item quantity="other">%1$d sorgenti</item>
+    </plurals>
 </resources>

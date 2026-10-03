@@ -1,5 +1,6 @@
 package com.babasama.edendale.android
 
+import com.babasama.edendale.android.data.LocalCopy
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -127,7 +128,7 @@ fun MoviesShowsScreen(
                         contentPadding = padding,
                         onSelectCollection = viewModel::selectCollection,
                         onOpenDetail = onOpenDetail,
-                        getLocalUri = viewModel::getLocalUri,
+                        getLocalCopies = viewModel::getLocalCopies,
                     )
                 }
             }
@@ -173,7 +174,7 @@ private fun MoviesShowsContent(
     contentPadding: PaddingValues,
     onSelectCollection: (CollectionFilter) -> Unit,
     onOpenDetail: (MediaRef) -> Unit,
-    getLocalUri: suspend (Int) -> String?,
+    getLocalCopies: suspend (Int) -> List<LocalCopy>,
 ) {
     val windowSize = currentWindowSizeDp()
     val regularWidth = windowSize.width >= 600.dp
@@ -223,7 +224,7 @@ private fun MoviesShowsContent(
                     edgeMargin = edgeMargin,
                     isTelevision = isTelevision,
                     onOpenDetail = onOpenDetail,
-                    getLocalUri = getLocalUri,
+                    getLocalCopies = getLocalCopies,
                 )
             }
         }
@@ -313,7 +314,7 @@ private fun HeroPager(
     edgeMargin: Dp,
     isTelevision: Boolean,
     onOpenDetail: (MediaRef) -> Unit,
-    getLocalUri: suspend (Int) -> String?,
+    getLocalCopies: suspend (Int) -> List<LocalCopy>,
 ) {
     val windowSize = currentWindowSizeDp()
     val pagerState = rememberPagerState(pageCount = { scenes.size })
@@ -351,7 +352,7 @@ private fun HeroPager(
                 scene = scenes[page],
                 edgeMargin = edgeMargin,
                 isTelevision = isTelevision,
-                getLocalUri = getLocalUri,
+                getLocalCopies = getLocalCopies,
                 onClick = { onOpenDetail(scenes[page].detail.ref) },
             )
         }
@@ -385,16 +386,16 @@ private fun HeroCard(
     scene: HeroScene,
     edgeMargin: Dp,
     isTelevision: Boolean,
-    getLocalUri: suspend (Int) -> String?,
+    getLocalCopies: suspend (Int) -> List<LocalCopy>,
     onClick: () -> Unit,
 ) {
     val detail = scene.detail
     val tmdbId = scene.progress?.tmdbId ?: detail.ref.id
     // Remembered per title: without this every recomposition reset the lookup
     // to null and the Play/Resume button vanished again.
-    var localUri by remember(tmdbId) { mutableStateOf<String?>(null) }
+    var copies by remember(tmdbId) { mutableStateOf<List<LocalCopy>>(emptyList()) }
     LaunchedEffect(tmdbId) {
-        localUri = getLocalUri(tmdbId)
+        copies = getLocalCopies(tmdbId)
     }
 
     Card(
@@ -438,7 +439,7 @@ private fun HeroCard(
             )
             HeroCopy(
                 scene = scene,
-                localUri = localUri,
+                copies = copies,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(
@@ -456,7 +457,7 @@ private fun HeroCard(
 @Composable
 private fun HeroCopy(
     scene: HeroScene,
-    localUri: String?,
+    copies: List<LocalCopy>,
     modifier: Modifier,
     isTelevision: Boolean,
     onClick: () -> Unit,
@@ -491,22 +492,28 @@ private fun HeroCopy(
         HeroMetadata(detail)
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (localUri != null && !isTelevision) {
-                Button(onClick = {
-                    com.babasama.edendale.android.player.PlayerActivity.play(
-                        context = context,
-                        uri = localUri,
-                        title = detail.title,
-                        tmdbId = scene.progress?.tmdbId ?: detail.ref.id,
-                        isEpisode = scene.progress?.mediaType == com.babasama.edendale.domain.WatchMediaType.EPISODE,
-                        showTmdbId = scene.progress?.showTmdbId,
-                        season = scene.progress?.seasonNumber,
-                        episode = scene.progress?.episodeNumber,
-                    )
-                }) {
+            // Play starts the first copy whose source is reachable (D.5).
+            val preferred = PlaybackSources.preferred(copies) { it.source.isUnavailable }
+            val play: (LocalCopy) -> Unit = { copy ->
+                com.babasama.edendale.android.player.PlayerActivity.play(
+                    context = context,
+                    uri = copy.uri,
+                    title = detail.title,
+                    tmdbId = scene.progress?.tmdbId ?: detail.ref.id,
+                    isEpisode = scene.progress?.mediaType == com.babasama.edendale.domain.WatchMediaType.EPISODE,
+                    showTmdbId = scene.progress?.showTmdbId,
+                    season = scene.progress?.seasonNumber,
+                    episode = scene.progress?.episodeNumber,
+                )
+            }
+            if (preferred != null && !isTelevision) {
+                Button(onClick = { play(preferred) }) {
                     Icon(painterResource(id = R.drawable.ic_play), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(if (scene.isContinueWatching) R.string.action_resume else R.string.action_play))
+                }
+                if (copies.size > 1) {
+                    PlayFromButton(copies = copies, source = { it.source }, path = { it.uri }, onPlay = play)
                 }
             }
             if (!isTelevision) {

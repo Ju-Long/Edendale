@@ -131,8 +131,16 @@ private fun DownloadedScreenContent(
     val runtimeFormat = rememberRuntimeFormat()
     val progressByKey = remember(progressList) { progressList.byStorageKey() }
     val upNextTemplate = stringResource(R.string.library_continue_up_next)
-    val continueEntries = remember(progressList, movies, visibleEpisodes, shows, upNextTemplate) {
-        continueWatching(progressList, movies, visibleEpisodes, shows, nextUpFormat = { upNextTemplate.format(it) })
+    val foldersByUri = remember(folders) { folders.associateBy { it.treeUri } }
+    val continueEntries = remember(progressList, movies, visibleEpisodes, shows, upNextTemplate, folders) {
+        continueWatching(
+            progressList,
+            movies,
+            visibleEpisodes,
+            shows,
+            nextUpFormat = { upNextTemplate.format(it) },
+            folders = folders,
+        )
     }
     val episodeCounts = remember(episodes) { episodes.groupingBy { it.showKey }.eachCount() }
 
@@ -314,11 +322,13 @@ private fun DownloadedScreenContent(
                             progress = progress.partialFraction(),
                             mediaType = MediaType.MOVIE,
                             onClick = {
+                                // This copy, unless its source is unreachable and another isn't (D.5).
+                                val copy = preferredMovie(movie, allMovies, foldersByUri)
                                 PlayerActivity.play(
                                     context = context,
-                                    uri = movie.uri,
-                                    title = movie.title,
-                                    tmdbId = movie.tmdbId,
+                                    uri = copy.uri,
+                                    title = copy.title,
+                                    tmdbId = copy.tmdbId,
                                     isEpisode = false,
                                 )
                             },

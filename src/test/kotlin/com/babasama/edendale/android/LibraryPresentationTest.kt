@@ -510,6 +510,50 @@ class LibraryPresentationTest {
         assertEquals("À suivre · S01E02", entry.subtitle)
     }
 
+    // MARK: - Copies of one title (D.5)
+
+    private fun folder(uri: String, name: String, kind: String, status: String? = null) =
+        com.babasama.edendale.android.data.LibraryFolderEntity(
+            treeUri = uri,
+            displayName = name,
+            addedAtEpochMillis = 0,
+            kind = kind,
+            status = status,
+        )
+
+    @Test
+    fun `a tapped copy plays unless its source is unreachable`() {
+        val folders = listOf(
+            folder("smb://nas/films/", "NAS", "smb", status = "offline"),
+            folder("content://tree/movies", "Movies", "local"),
+        ).associateBy { it.treeUri }
+        val onNas = movie(uri = "smb://nas/films/Heat.mkv", tmdbId = 949, folderUri = "smb://nas/films/")
+        val onPhone = movie(uri = "content://tree/movies/Heat.mkv", tmdbId = 949, folderUri = "content://tree/movies")
+        val other = movie(uri = "content://tree/movies/Alien.mkv", tmdbId = 348)
+
+        assertEquals(onPhone, preferredMovie(onNas, listOf(onNas, onPhone, other), folders))
+        assertEquals(onPhone, preferredMovie(onPhone, listOf(onNas, onPhone, other), folders))
+        // Reachable again: the tapped copy plays.
+        val online = folders + ("smb://nas/films/" to folders.getValue("smb://nas/films/").copy(status = null))
+        assertEquals(onNas, preferredMovie(onNas, listOf(onNas, onPhone), online))
+        assertEquals(listOf(onNas, onPhone), movieCopies(onNas, listOf(onPhone, onNas, other), online))
+    }
+
+    @Test
+    fun `continue watching resumes from a reachable copy, local first`() {
+        val folders = listOf(
+            folder("smb://nas/films/", "NAS", "smb"),
+            folder("content://tree/movies", "Movies", "local"),
+        )
+        val onNas = movie(uri = "smb://nas/films/Heat.mkv", tmdbId = 949, folderUri = "smb://nas/films/")
+        val onPhone = movie(uri = "content://tree/movies/Heat.mkv", tmdbId = 949, folderUri = "content://tree/movies")
+        val record = progress(949, position = 0.5)
+
+        assertEquals(onPhone.uri, continueWatching(listOf(record), listOf(onNas, onPhone), emptyList(), emptyList(), folders = folders).single().uri)
+        val phoneOffline = folders.map { if (it.kind == "local") it.copy(status = "offline") else it }
+        assertEquals(onNas.uri, continueWatching(listOf(record), listOf(onNas, onPhone), emptyList(), emptyList(), folders = phoneOffline).single().uri)
+    }
+
     // MARK: - Grid layout
 
     @Test

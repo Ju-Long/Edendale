@@ -355,4 +355,11 @@
         <item quantity="one">%1$d origem neste dispositivo</item>
         <item quantity="other">%1$d origens neste dispositivo</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Reproduzir de</string>
+    <string name="play_from_unavailable">%1$s · Indisponível</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d origens</item>
+        <item quantity="other">%1$d origens</item>
+    </plurals>
 </resources>

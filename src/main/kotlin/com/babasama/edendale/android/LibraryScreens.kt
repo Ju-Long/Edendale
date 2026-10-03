@@ -1,7 +1,9 @@
 package com.babasama.edendale.android
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,9 +28,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -179,6 +190,7 @@ fun LocalShowHost(
     val library = rememberLibrary()
     val shows by library.shows.collectAsState(initial = emptyList())
     val episodes by library.episodes.collectAsState(initial = emptyList())
+    val folders by library.folders.collectAsState(initial = emptyList())
     val progressList by library.watchProgress.collectAsState(initial = emptyList())
     val show = shows.firstOrNull { it.key == showKey }
 
@@ -191,9 +203,23 @@ fun LocalShowHost(
     }
 
     val progressByKey = progressList.byStorageKey()
+    val foldersByUri = folders.associateBy { it.treeUri }
+    // Every copy of the show (same TMDB id, imported from other sources) merges
+    // into one list, one row per episode (D.5).
+    val copyKeys = shows.filter { it.key == showKey || (show.tmdbId != null && it.tmdbId == show.tmdbId) }
+        .mapTo(HashSet()) { it.key }
+    val rank = compareBy<LibraryEpisodeEntity> { it.showKey != showKey }
+        .then(PlaybackSources.comparator({ foldersByUri.copySource(it.folderUri) }, { it.uri }))
+    val slots = PlaybackSources.episodeSlots(
+        episodes.filter { it.showKey in copyKeys },
+        season = { it.season },
+        number = { it.episode },
+        rank = rank,
+    )
     LocalShowScreen(
         show = show,
-        episodes = episodes.filter { it.showKey == showKey },
+        slots = slots,
+        foldersByUri = foldersByUri,
         progressByKey = progressByKey,
         isTelevision = isTelevision,
         onBack = onBack,
@@ -210,9 +236,10 @@ fun LocalShowHost(
  * for imported shows.
  */
 @Composable
-fun LocalShowScreen(
+internal fun LocalShowScreen(
     show: LibraryShowEntity,
-    episodes: List<LibraryEpisodeEntity>,
+    slots: List<PlaybackSources.EpisodeSlot<LibraryEpisodeEntity>>,
+    foldersByUri: Map<String, LibraryFolderEntity>,
     progressByKey: Map<String, WatchProgress>,
     isTelevision: Boolean,
     onBack: () -> Unit,
@@ -222,7 +249,8 @@ fun LocalShowScreen(
     val context = LocalContext.current
     val windowSize = currentWindowSizeDp()
     val edgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
-    val seasons = episodes.groupBy { it.season }.toSortedMap()
+    val seasons = slots.groupBy { it.season }.toSortedMap()
+    val episodeCount = slots.size
 
     Box(
         modifier = Modifier
@@ -280,7 +308,7 @@ fun LocalShowScreen(
                                 text = listOfNotNull(
                                     show.firstAirYear?.toString(),
                                     pluralStringResource(R.plurals.season_count, seasons.size, seasons.size),
-                                    pluralStringResource(R.plurals.episode_count, episodes.size, episodes.size),
+                                    pluralStringResource(R.plurals.episode_count, episodeCount, episodeCount),
                                 ).joinToString(" · "),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -299,25 +327,36 @@ fun LocalShowScreen(
                         large = isTelevision,
                     )
                 }
-                items(seasonEpisodes.size, key = { seasonEpisodes[it].uri }) { index ->
-                    val episode = seasonEpisodes[index]
+                items(seasonEpisodes.size, key = { seasonEpisodes[it].id }) { index ->
+                    val slot = seasonEpisodes[index]
+                    val episode = slot.primary
                     val progress = progressByKey.forEpisode(episode.tmdbId)
+                    val play: (LibraryEpisodeEntity) -> Unit = { copy ->
+                        PlayerActivity.play(
+                            context = context,
+                            uri = copy.uri,
+                            title = copy.title ?: copy.fileName,
+                            tmdbId = copy.tmdbId,
+                            isEpisode = true,
+                            showTmdbId = show.tmdbId,
+                            season = copy.season,
+                            episode = copy.episode,
+                        )
+                    }
                     LocalEpisodeRow(
                         episode = episode,
+                        copies = slot.copies,
+                        foldersByUri = foldersByUri,
                         progress = progress,
                         isTelevision = isTelevision,
                         onPlay = {
-                            PlayerActivity.play(
-                                context = context,
-                                uri = episode.uri,
-                                title = episode.title ?: episode.fileName,
-                                tmdbId = episode.tmdbId,
-                                isEpisode = true,
-                                showTmdbId = show.tmdbId,
-                                season = episode.season,
-                                episode = episode.episode,
-                            )
+                            // The first copy whose source is reachable (D.5).
+                            val copy = PlaybackSources.preferred(slot.copies) {
+                                foldersByUri.copySource(it.folderUri).isUnavailable
+                            } ?: episode
+                            play(copy)
                         },
+                        onPlayCopy = play,
                         onToggleWatched = { onToggleWatched(episode) },
                     )
                 }
@@ -326,22 +365,64 @@ fun LocalShowScreen(
     }
 }
 
+/**
+ * One episode, merged across every copy of the show. A tap plays the first
+ * reachable copy; with several copies, a long press (the menu key on TV)
+ * opens Play From, and the subtitle counts the sources (D.5).
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LocalEpisodeRow(
     episode: LibraryEpisodeEntity,
+    copies: List<LibraryEpisodeEntity>,
+    foldersByUri: Map<String, LibraryFolderEntity>,
     progress: WatchProgress?,
     isTelevision: Boolean,
     onPlay: () -> Unit,
+    onPlayCopy: (LibraryEpisodeEntity) -> Unit,
     onToggleWatched: () -> Unit,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val hasCopies = copies.size > 1
+    val playFrom = stringResource(R.string.play_from)
     Surface(
-        onClick = onPlay,
         modifier = Modifier
             .fillMaxWidth()
-            .tvFocusLift(isTelevision),
+            .tvFocusLift(isTelevision)
+            .clip(RoundedCornerShape(EdendaleRadii.Card.dp))
+            .combinedClickable(
+                onClick = onPlay,
+                onLongClickLabel = if (hasCopies) playFrom else null,
+                onLongClick = if (hasCopies) ({ menuOpen = true }) else null,
+            )
+            .onKeyEvent { event ->
+                if (hasCopies && event.type == KeyEventType.KeyUp && event.key == Key.Menu) {
+                    menuOpen = true
+                    true
+                } else {
+                    false
+                }
+            },
         shape = RoundedCornerShape(EdendaleRadii.Card.dp),
         color = EdendaleColors.SurfaceLow,
     ) {
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            Text(
+                text = playFrom.uppercase(),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            PlayFromItems(
+                copies = copies,
+                source = { foldersByUri.copySource(it.folderUri) },
+                path = { it.uri },
+                onPlay = {
+                    menuOpen = false
+                    onPlayCopy(it)
+                },
+            )
+        }
         Column {
             Row(
                 modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp),
@@ -365,7 +446,10 @@ private fun LocalEpisodeRow(
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    mediaSubtitle(null, episode.runtimeMinutes, rememberRuntimeFormat())?.let {
+                    listOfNotNull(
+                        mediaSubtitle(null, episode.runtimeMinutes, rememberRuntimeFormat()),
+                        if (hasCopies) pluralStringResource(R.plurals.play_from_source_count, copies.size, copies.size) else null,
+                    ).joinToString(" · ").takeIf { it.isNotEmpty() }?.let {
                         Text(
                             text = it,
                             style = MaterialTheme.typography.bodySmall,

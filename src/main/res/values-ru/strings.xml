@@ -365,4 +365,13 @@
         <item quantity="many">%1$d источников на этом устройстве</item>
         <item quantity="other">%1$d источника на этом устройстве</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Воспроизвести с</string>
+    <string name="play_from_unavailable">%1$s · Недоступно</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d источник</item>
+        <item quantity="few">%1$d источника</item>
+        <item quantity="many">%1$d источников</item>
+        <item quantity="other">%1$d источника</item>
+    </plurals>
 </resources>

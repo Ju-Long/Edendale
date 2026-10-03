@@ -275,6 +275,14 @@ interface LibraryDao {
     @Query("SELECT * FROM library_episode WHERE tmdbId = :tmdbId LIMIT 1")
     suspend fun episodeByTmdbId(tmdbId: Int): LibraryEpisodeEntity?
 
+    /** Every imported copy of a movie (D.5). */
+    @Query("SELECT * FROM library_movie WHERE tmdbId = :tmdbId")
+    suspend fun moviesByTmdbId(tmdbId: Int): List<LibraryMovieEntity>
+
+    /** Every imported copy of an episode (D.5). */
+    @Query("SELECT * FROM library_episode WHERE tmdbId = :tmdbId")
+    suspend fun episodesByTmdbId(tmdbId: Int): List<LibraryEpisodeEntity>
+
     // The player's playlist panel resolves what it is playing by URI — the
     // exact string handed to PlayerActivity is these tables' primary key —
     // and lists neighbours from the same imported source.

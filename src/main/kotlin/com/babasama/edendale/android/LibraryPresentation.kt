@@ -3,13 +3,15 @@ package com.babasama.edendale.android
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
+import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.data.SourceScanRules
 import com.babasama.edendale.android.player.CompletedProgressEntry
 import com.babasama.edendale.android.player.EpisodeCandidate
 import com.babasama.edendale.android.player.EpisodeProgression
-import com.babasama.edendale.android.player.PlayerLogic
 import com.babasama.edendale.android.player.ShowCandidate
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.TmdbImageSize
@@ -131,15 +133,63 @@ internal const val CONTINUE_WATCHING_LIMIT = 12
 /** A part-watched record: the shelf's and the next-up rule's shared test. */
 private fun WatchProgress.isResumable(): Boolean = !isCompleted && normalizedPosition > 0.01
 
+// MARK: - Copies of one title (D.5)
+
+/** The source a copy came from; an individually picked file counts as local. */
+internal fun Map<String, LibraryFolderEntity>.copySource(folderUri: String?): CopySource {
+    val folder = folderUri?.let { this[it] } ?: return CopySource("", MediaSourceKind.LOCAL, isUnavailable = false)
+    return CopySource(folder.displayName, SourceScanRules.kindOf(folder), isUnavailable = folder.status != null)
+}
+
 /**
- * One copy per TMDB id when the same title was imported more than once: the
- * first by natural path order, so the choice doesn't depend on scan order.
+ * The copy Play starts for each TMDB id when the same title was imported more
+ * than once: the first available one in Play From order (D.5), so the choice
+ * never depends on scan order.
  */
-private fun <T> List<T>.firstCopyByTmdbId(tmdbId: (T) -> Int?, uri: (T) -> String): Map<Int, T> =
+private fun <T> List<T>.preferredCopyByTmdbId(
+    tmdbId: (T) -> Int?,
+    folderUri: (T) -> String?,
+    uri: (T) -> String,
+    folders: Map<String, LibraryFolderEntity>,
+): Map<Int, T> =
     filter { tmdbId(it) != null }
-        .sortedWith(compareBy(PlayerLogic.naturalOrder) { uri(it) })
         .groupBy { tmdbId(it)!! }
-        .mapValues { it.value.first() }
+        .mapValues { (_, copies) -> preferredCopy(null, copies, folderUri, uri, folders)!! }
+
+/**
+ * The copy to play among [copies]: [primary] (the one the viewer picked) first,
+ * then local folders, then by source name, skipping sources whose last scan
+ * failed unless every one did (D.5).
+ */
+internal fun <T> preferredCopy(
+    primary: T?,
+    copies: List<T>,
+    folderUri: (T) -> String?,
+    uri: (T) -> String,
+    folders: Map<String, LibraryFolderEntity>,
+): T? {
+    val ordered = PlaybackSources.order(primary, copies, { folders.copySource(folderUri(it)) }, uri)
+    return PlaybackSources.preferred(ordered) { folders.copySource(folderUri(it)).isUnavailable }
+}
+
+/** A movie's copies in Play From order, [primary] (the page's own) first. */
+internal fun movieCopies(
+    primary: LibraryMovieEntity,
+    movies: List<LibraryMovieEntity>,
+    folders: Map<String, LibraryFolderEntity>,
+): List<LibraryMovieEntity> {
+    val others = primary.tmdbId?.let { id -> movies.filter { it.tmdbId == id && it.uri != primary.uri } }.orEmpty()
+    return PlaybackSources.order(primary, others, { folders.copySource(it.folderUri) }, { it.uri })
+}
+
+/** The movie copy a tap on [tapped] plays: itself unless its source is unavailable and another isn't. */
+internal fun preferredMovie(
+    tapped: LibraryMovieEntity,
+    movies: List<LibraryMovieEntity>,
+    folders: Map<String, LibraryFolderEntity>,
+): LibraryMovieEntity =
+    PlaybackSources.preferred(movieCopies(tapped, movies, folders)) { folders.copySource(it.folderUri).isUnavailable }
+        ?: tapped
 
 /**
  * Continue Watching, newest first, joined to the local files that play it:
@@ -161,10 +211,12 @@ internal fun continueWatching(
     shows: List<LibraryShowEntity>,
     nextUpFormat: (String) -> String = { "Up Next · $it" },
     limit: Int? = CONTINUE_WATCHING_LIMIT,
+    folders: List<LibraryFolderEntity> = emptyList(),
 ): List<ContinueEntry> {
     if (progress.isEmpty()) return emptyList()
-    val moviesByTmdbId = movies.firstCopyByTmdbId({ it.tmdbId }, { it.uri })
-    val episodesByTmdbId = episodes.firstCopyByTmdbId({ it.tmdbId }, { it.uri })
+    val foldersByUri = folders.associateBy { it.treeUri }
+    val moviesByTmdbId = movies.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri)
+    val episodesByTmdbId = episodes.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri)
     val showsByKey = shows.associateBy { it.key }
 
     val resumable = progress.filter { it.isResumable() }
@@ -204,7 +256,7 @@ internal fun continueWatching(
         entry to record.lastWatchedEpochMillis
     }
 
-    val nextUp = nextUpEntries(progress, resumable, episodes, shows, episodesByTmdbId, nextUpFormat)
+    val nextUp = nextUpEntries(progress, resumable, episodes, shows, episodesByTmdbId, nextUpFormat, foldersByUri)
 
     val sorted = (inProgress + nextUp)
         .sortedByDescending { it.second }
@@ -227,6 +279,7 @@ private fun nextUpEntries(
     shows: List<LibraryShowEntity>,
     episodesByTmdbId: Map<Int, LibraryEpisodeEntity>,
     nextUpFormat: (String) -> String,
+    folders: Map<String, LibraryFolderEntity>,
 ): List<Pair<ContinueEntry, Long>> {
     val showsByKey = shows.associateBy { it.key }
     val inProgressShowIds = resumable
@@ -246,7 +299,7 @@ private fun nextUpEntries(
                 name = copies.first().name,
                 episodes = copies
                     .flatMap { episodesByShowKey[it.key].orEmpty() }
-                    .sortedWith(compareBy(PlayerLogic.naturalOrder) { it.uri })
+                    .sortedWith(PlaybackSources.comparator({ folders.copySource(it.folderUri) }, { it.uri }))
                     .map { EpisodeCandidate(id = it.uri, season = it.season, episode = it.episode, title = it.title) },
             )
         }
@@ -264,7 +317,12 @@ private fun nextUpEntries(
     val episodesByUri = episodes.associateBy { it.uri }
     return EpisodeProgression.nextUpEpisodes(completed, inProgressShowIds, candidates)
         .mapNotNull { candidate ->
-            val episode = episodesByUri[candidate.episode.id] ?: return@mapNotNull null
+            val found = episodesByUri[candidate.episode.id] ?: return@mapNotNull null
+            val showKeys = shows.filter { it.tmdbId == candidate.show.tmdbId }.mapTo(HashSet()) { it.key }
+            val copies = episodes.filter {
+                it.showKey in showKeys && it.season == found.season && it.episode == found.episode
+            }
+            val episode = preferredCopy(null, copies, { it.folderUri }, { it.uri }, folders) ?: found
             val show = showsByKey[episode.showKey]
             ContinueEntry(
                 uri = episode.uri,

@@ -351,4 +351,11 @@
         <item quantity="one">このデバイス上の%1$d個のソース</item>
         <item quantity="other">このデバイス上の%1$d個のソース</item>
     </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">再生元</string>
+    <string name="play_from_unavailable">%1$s · 利用不可</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d個のソース</item>
+        <item quantity="other">%1$d個のソース</item>
+    </plurals>
 </resources>

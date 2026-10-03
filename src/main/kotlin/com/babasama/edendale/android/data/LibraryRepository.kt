@@ -7,6 +7,9 @@ import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
 import jcifs.smb.SmbFile
 import com.babasama.edendale.AndroidEdendaleCore
+import com.babasama.edendale.android.CopySource
+import com.babasama.edendale.android.PlaybackSources
+import com.babasama.edendale.android.copySource
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.MediaParser
 import com.babasama.edendale.domain.MediaType
@@ -249,15 +252,20 @@ class LibraryRepository(
     suspend fun episodesForShowTmdbId(tmdbId: Int): List<LibraryEpisodeEntity> =
         dao.showByTmdbId(tmdbId)?.key?.let { dao.episodesForShow(it) }.orEmpty()
 
-    suspend fun localUriFor(tmdbId: Int): String? {
-        val movie = dao.movieByTmdbId(tmdbId)
-        if (movie != null) return movie.uri
-        val episode = dao.episodeByTmdbId(tmdbId)
-        if (episode != null) return episode.uri
-        // For shows, we might need to find the first unwatched episode or just the first episode.
-        // For now, if it's a show, this returns null since we don't have episode tracking wired up easily here.
-        // Actually we can return the first episode of the show if we want, but let's stick to movie/episode matches.
-        return null
+    /**
+     * Every imported copy of the movie or episode with [tmdbId], in Play From
+     * order (D.5): local folders first, then by source name. Empty when the
+     * library holds none. A show's own id matches nothing here.
+     */
+    suspend fun localCopiesFor(tmdbId: Int): List<LocalCopy> {
+        val folders = dao.folders().associateBy { it.treeUri }
+        val movies = dao.moviesByTmdbId(tmdbId)
+        val copies = movies.map { LocalCopy(it.uri, it.folderUri, isEpisode = false) }
+            .ifEmpty {
+                dao.episodesByTmdbId(tmdbId).map { LocalCopy(it.uri, it.folderUri, isEpisode = true) }
+            }
+        return PlaybackSources.order(null, copies, { folders.copySource(it.folderUri) }, { it.uri })
+            .map { it.copy(source = folders.copySource(it.folderUri)) }
     }
 
     // MARK: - Scan (classify-before-network: only MediaParser runs here)
@@ -539,3 +547,11 @@ class LibraryRepository(
         )
     }
 }
+
+/** One imported copy of a title and the source it came from (D.5). */
+data class LocalCopy(
+    val uri: String,
+    val folderUri: String?,
+    val isEpisode: Boolean,
+    val source: CopySource = CopySource("", null, isUnavailable = false),
+)

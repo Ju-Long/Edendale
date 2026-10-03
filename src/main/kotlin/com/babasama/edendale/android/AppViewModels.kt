@@ -14,6 +14,7 @@ import com.babasama.edendale.domain.PersonItem
 import com.babasama.edendale.domain.SearchQuery
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.UserMediaRecord
+import com.babasama.edendale.android.data.LocalCopy
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.domain.WatchProgress
 import android.app.Application
@@ -279,9 +280,7 @@ class BrowseViewModel(
         }
     }
 
-    suspend fun getLocalUri(tmdbId: Int): String? {
-        return libraryRepo.localUriFor(tmdbId)
-    }
+    suspend fun getLocalCopies(tmdbId: Int): List<LocalCopy> = libraryRepo.localCopiesFor(tmdbId)
 
     var filmographyState by mutableStateOf(FilmographyUiState())
         private set
