@@ -129,6 +129,19 @@ Run the hermetic JVM tests and build the debug APK:
 ./gradlew assembleDebug
 ```
 
+Run the instrumented tests in `src/androidTest` on a connected device or a
+running emulator. They need no network access or credentials:
+
+```sh
+./gradlew connectedDebugAndroidTest
+```
+
+The task installs the debug app and test APKs and uninstalls both afterwards,
+which also deletes the app's data on that device, so prefer an emulator. CI
+runs the same suite on an API 35 emulator in
+`.github/workflows/instrumented.yml`, separately from the hermetic
+`build-and-test` job.
+
 Build an unsigned release APK with:
 
 ```sh

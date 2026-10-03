@@ -295,10 +295,13 @@ All new device-local player settings go through one small layer.
   `androidx.test:runner` (plus `androidx.room:room-testing` for D.2), and
   `testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"`.
   Instrumented tests never need network access or credentials.
-- [ ] **A.5.4** Optional: a separate CI job that runs instrumented tests on an
+- [x] **A.5.4** Optional: a separate CI job that runs instrumented tests on an
   emulator, triggered only for this branch and using no secrets (AGENTS.md hard
   constraint 2). The existing `build-and-test` job keeps running exactly what
-  it runs today.
+  it runs today. Done as `.github/workflows/instrumented.yml` (pushes and pull
+  requests for `android` and `android-27.0`, plus manual runs; API 35
+  `google_apis` x86_64 emulator; actions pinned by commit). It passes
+  actionlint but hasn't run on GitHub yet.
 - [x] **A.5.5** Network tests never reach the internet. Use transport fakes, or
   the JDK's built-in `com.sun.net.httpserver.HttpServer` on `127.0.0.1` when
   real HTTP behavior matters (`Range`, redirects, status codes). OkHttp's
