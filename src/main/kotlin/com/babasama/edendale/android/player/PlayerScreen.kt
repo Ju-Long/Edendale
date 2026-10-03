@@ -1035,7 +1035,8 @@ private fun PlayerChip(
  * Progress bar with a knob, drawn by hand: Material's Slider has no key
  * handling at all, so a focused Slider ignores D-pad left/right and the
  * focus system moves away instead of seeking. Touch taps and drags scrub;
- * on TV, focusing it turns left/right into immediate ±10 s seeks.
+ * on TV, focusing it turns left/right into immediate seeks by the App
+ * Controls skip lengths.
  */
 @Composable
 private fun TimelineBar(
@@ -2091,9 +2092,11 @@ private const val HOLD_DWELL_MILLIS = 400L
 /**
  * Touch-first hidden controls, mirroring Apple's gesture layer:
  *  - single tap             show/hide the controls
- *  - double tap L / C / R   seek −10 s / play-pause / +10 s
+ *  - double tap L / C / R   skip back / play-pause / skip forward, by the
+ *                           App Controls lengths (10, 15, or 30 s)
  *  - vertical swipe L / R   screen brightness / player volume
- *  - press-and-hold L / R   0.5× / 1.5× until released
+ *  - press-and-hold L / R   the App Controls hold speeds (0.5× / 2.0× by
+ *                           default) until released
  *  - hold + horizontal drag scrub the timeline (full width = 5 minutes)
  */
 @Composable
