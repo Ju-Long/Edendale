@@ -20,8 +20,44 @@ enum class MediaSourceKind(val raw: String) {
 
     val isRemote: Boolean get() = this != LOCAL
 
+    /** The scheme of this kind's item URLs (H.1); null for local folders. WebDAV also uses `dav` for plain HTTP. */
+    val scheme: String?
+        get() = when (this) {
+            LOCAL -> null
+            SMB -> "smb"
+            NFS -> "nfs"
+            SFTP -> "sftp"
+            WEBDAV -> "davs"
+            S3 -> "s3"
+            GOOGLE_DRIVE -> "gdrive"
+            ONE_DRIVE -> "onedrive"
+            DROPBOX -> "dropbox"
+        }
+
+    /** Linked through an OAuth account rather than a server login. */
+    val isCloudAccount: Boolean get() = this == GOOGLE_DRIVE || this == ONE_DRIVE || this == DROPBOX
+
+    /** Reached with a saved server login. */
+    val usesServerLogin: Boolean get() = this == SMB || this == SFTP || this == WEBDAV || this == S3
+
+    /** Streams through the HTTP byte source rather than a file-sharing protocol (H.2). */
+    val streamsOverHttp: Boolean get() = this == WEBDAV || this == S3 || isCloudAccount
+
     companion object {
         fun fromRaw(raw: String?): MediaSourceKind? = entries.firstOrNull { it.raw == raw }
+
+        /** The kind an item URL belongs to, from its scheme; null for unrelated schemes. */
+        fun fromScheme(scheme: String): MediaSourceKind? = when (scheme.lowercase()) {
+            "smb", "smb2" -> SMB
+            "nfs" -> NFS
+            "sftp" -> SFTP
+            "dav", "davs" -> WEBDAV
+            "s3" -> S3
+            "gdrive" -> GOOGLE_DRIVE
+            "onedrive" -> ONE_DRIVE
+            "dropbox" -> DROPBOX
+            else -> null
+        }
 
         /**
          * The kind a stored source URI belongs to, from its scheme: the D.2

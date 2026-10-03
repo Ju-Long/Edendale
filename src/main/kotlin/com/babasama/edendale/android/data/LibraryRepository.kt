@@ -5,12 +5,13 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
-import jcifs.smb.SmbFile
 import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.copySource
+import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.VideoFiles
 import com.babasama.edendale.domain.MediaParser
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.ParsedMedia
@@ -290,7 +291,7 @@ class LibraryRepository(
             errorMessage = null,
         )
         val listing = try {
-            if (folder.treeUri.startsWith("smb://")) listSmb(folder) else listDocuments(folder)
+            connectorFor(folder)?.let { listConnector(it) } ?: listDocuments(folder)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Throwable) {
@@ -342,15 +343,22 @@ class LibraryRepository(
         return Listing(files, complete = true)
     }
 
-    private fun listSmb(folder: LibraryFolderEntity): Listing {
-        val host = Uri.parse(folder.treeUri).host.orEmpty()
-        val cifsContext = SmbClient.context(smbCredentialsStore.getCredentials(host))
-        val root = SmbFile(folder.treeUri, cifsContext)
-        if (!root.exists()) error(strings.shareUnreachable)
-        if (!root.isDirectory) error(strings.addressIsFile)
-        val files = mutableListOf<Pair<String, String>>()
-        val complete = collectVideosSmb(root, files)
-        return Listing(files, complete)
+    /** The connector a remote source scans through (H.1); null for a local folder. */
+    private fun connectorFor(folder: LibraryFolderEntity): MediaConnector? =
+        when (MediaSourceKind.fromRaw(folder.kind) ?: MediaSourceKind.forSourceUri(folder.treeUri)) {
+            MediaSourceKind.SMB -> SmbConnector(
+                root = folder.treeUri,
+                credentials = smbCredentialsStore.getCredentials(Uri.parse(folder.treeUri).host.orEmpty()),
+                strings = strings,
+            )
+            else -> null
+        }
+
+    /** Validates the source, then walks it; a partial walk deletes nothing. */
+    private suspend fun listConnector(connector: MediaConnector): Listing {
+        connector.validate()
+        val enumeration = connector.enumerateVideos(connector.root)
+        return Listing(enumeration.videos.map { it.url to it.name }, enumeration.complete)
     }
 
     private fun collectVideos(directory: DocumentFile, into: MutableList<Pair<String, String>>) {
@@ -359,45 +367,11 @@ class LibraryRepository(
                 file.isDirectory -> collectVideos(file, into)
                 file.isFile -> {
                     val name = file.name ?: return@forEach
-                    val looksLikeVideo = file.type?.startsWith("video/") == true ||
-                        name.substringAfterLast('.', "").lowercase() in videoExtensions
+                    val looksLikeVideo = file.type?.startsWith("video/") == true || VideoFiles.isVideoName(name)
                     if (looksLikeVideo) into += file.uri.toString() to name
                 }
             }
         }
-    }
-
-    /**
-     * Returns false when any part of the subtree could not be read. One
-     * unreadable directory should not condemn the whole source, but it does
-     * make the listing untrustworthy for deletions.
-     */
-    private fun collectVideosSmb(
-        directory: SmbFile,
-        into: MutableList<Pair<String, String>>,
-    ): Boolean {
-        val children = try {
-            directory.listFiles()
-        } catch (error: Exception) {
-            return false
-        } ?: return false
-
-        var complete = true
-        children.forEach { file ->
-            try {
-                when {
-                    file.isDirectory -> if (!collectVideosSmb(file, into)) complete = false
-                    file.isFile -> {
-                        val name = file.name ?: return@forEach
-                        val extension = name.substringAfterLast('.', "").lowercase()
-                        if (extension in videoExtensions) into += file.url.toString() to name
-                    }
-                }
-            } catch (error: Exception) {
-                complete = false
-            }
-        }
-        return complete
     }
 
     private suspend fun classifyAndStore(
@@ -540,12 +514,6 @@ class LibraryRepository(
         null,
     )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
 
-    private companion object {
-        val videoExtensions = setOf(
-            "mkv", "mp4", "m4v", "mov", "avi", "wmv", "flv", "webm",
-            "ts", "m2ts", "mts", "mpg", "mpeg", "3gp", "ogv", "vob",
-        )
-    }
 }
 
 /** One imported copy of a title and the source it came from (D.5). */

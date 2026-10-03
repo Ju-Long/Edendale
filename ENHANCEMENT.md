@@ -1407,10 +1407,10 @@ Jellyfin, and Emby would be a separate feature.
   `Google Drive › My Drive › Movies`), `accountKey`, and `lastScannedAt` (D.2).
 
 **Checklist:**
-- [ ] **H.1.1** Pure URL builders and parsers, the account-key function, the
+- [x] **H.1.1** Pure URL builders and parsers, the account-key function, the
   connector interface, and the default enumerator.
-- [ ] **H.1.2** Move SMB scanning onto the interface, with no behavior change.
-- [ ] **H.1.T1** (JVM) Port `ConnectorTests`: URL round trips for every kind
+- [x] **H.1.2** Move SMB scanning onto the interface, with no behavior change.
+- [x] **H.1.T1** (JVM) Port `ConnectorTests`: URL round trips for every kind
   (including percent-encoding and names with spaces), account keys (copy
   Apple's expected strings), the enumeration cap, skipping dot-files, and root
   versus branch failures.
@@ -1896,6 +1896,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | bba68d8 |
 | F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | bba68d8 |
 | F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | bba68d8 |
+| H.1 | `enumerateVideos` returns the videos with a `complete` flag rather than a bare list. | Android's scanner deletes rows for missing files only after a full listing; Apple's walk silently skips unreadable branches. | H1-COMMIT |
+| H.1.2 | SMB item URLs keep jcifs's spelling (`SmbFile.url`) instead of `SourceUrl.server`'s percent-encoding. Moving SMB onto the walk also skips dot-files (macOS `._` files), caps the walk at 2,000 folders, and records a share whose top folder can't be listed as failed (D.3) instead of a partial scan. | Every SMB row already stored uses jcifs's spelling, so a rescan must produce the same strings or it would re-import the whole share. The other three follow the shared walk. | H1-COMMIT |
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |
