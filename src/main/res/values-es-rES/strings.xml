@@ -396,4 +396,22 @@
     <string name="video_sharpness">Nitidez</string>
     <string name="video_denoise">Reducción de ruido</string>
     <string name="video_not_available_hdr">No disponible para vídeo HDR</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Ocultar barra lateral</string>
+    <string name="navigation_show">Mostrar barra lateral</string>
+    <string name="rescan_library">Volver a analizar la biblioteca</string>
+    <string name="shelf_scroll_position">Posición de desplazamiento de %1$s</string>
+    <string name="shortcut_play_pause">Reproducir o pausar</string>
+    <string name="shortcut_skip_prompt">Omitir la intro o los créditos cuando se ofrezca</string>
+    <string name="shortcut_close_panel_then_player">Cerrar un panel y después el reproductor</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Retroceder %1$d segundo</item>
+        <item quantity="many">Retroceder %1$d segundos</item>
+        <item quantity="other">Retroceder %1$d segundos</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Avanzar %1$d segundo</item>
+        <item quantity="many">Avanzar %1$d segundos</item>
+        <item quantity="other">Avanzar %1$d segundos</item>
+    </plurals>
 </resources>

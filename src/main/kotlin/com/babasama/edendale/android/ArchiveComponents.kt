@@ -66,6 +66,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -137,6 +138,8 @@ fun SectionHeader(
     title: String,
     modifier: Modifier = Modifier,
     large: Boolean = false,
+    /** Given one, the heading carries a rule that scrolls its shelf (J.6). */
+    scrubber: ShelfScrubber? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -144,11 +147,37 @@ fun SectionHeader(
     ) {
         Text(
             text = title.uppercase(),
+            modifier = Modifier.semantics { heading() },
             style = if (large) MaterialTheme.typography.headlineMedium
             else MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Spacer(Modifier.weight(1f))
+        if (scrubber != null) {
+            Spacer(Modifier.width(16.dp))
+            ShelfRule(scrubber = scrubber, label = title, modifier = Modifier.weight(1f))
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/**
+ * A top bar title. A section page (J.1) names its parent above, since
+ * "Movies" alone could be the Watchlist's or the Downloaded page's.
+ */
+@Composable
+fun PageTitle(title: String, section: String? = null) {
+    if (section == null) {
+        Text(title)
+        return
+    }
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(section)
     }
 }
 

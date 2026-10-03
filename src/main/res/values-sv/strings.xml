@@ -396,4 +396,20 @@
     <string name="video_sharpness">Skärpa</string>
     <string name="video_denoise">Brusreducering</string>
     <string name="video_not_available_hdr">Inte tillgängligt för HDR-video</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Göm sidofält</string>
+    <string name="navigation_show">Visa sidofält</string>
+    <string name="rescan_library">Skanna om biblioteket</string>
+    <string name="shelf_scroll_position">Rullningsposition för %1$s</string>
+    <string name="shortcut_play_pause">Spela upp eller pausa</string>
+    <string name="shortcut_skip_prompt">Hoppa över intro eller eftertexter när det erbjuds</string>
+    <string name="shortcut_close_panel_then_player">Stäng en panel och sedan spelaren</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Tillbaka %1$d sekund</item>
+        <item quantity="other">Tillbaka %1$d sekunder</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Framåt %1$d sekund</item>
+        <item quantity="other">Framåt %1$d sekunder</item>
+    </plurals>
 </resources>

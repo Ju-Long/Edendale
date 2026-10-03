@@ -408,4 +408,24 @@
     <string name="video_sharpness">Резкость</string>
     <string name="video_denoise">Шумоподавление</string>
     <string name="video_not_available_hdr">Недоступно для видео HDR</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Скрыть боковое меню</string>
+    <string name="navigation_show">Показать боковое меню</string>
+    <string name="rescan_library">Сканировать медиатеку заново</string>
+    <string name="shelf_scroll_position">Позиция прокрутки: %1$s</string>
+    <string name="shortcut_play_pause">Воспроизведение или пауза</string>
+    <string name="shortcut_skip_prompt">Пропустить вступление или титры, когда это предложено</string>
+    <string name="shortcut_close_panel_then_player">Закрыть панель, затем плеер</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Назад на %1$d секунду</item>
+        <item quantity="few">Назад на %1$d секунды</item>
+        <item quantity="many">Назад на %1$d секунд</item>
+        <item quantity="other">Назад на %1$d секунды</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Вперед на %1$d секунду</item>
+        <item quantity="few">Вперед на %1$d секунды</item>
+        <item quantity="many">Вперед на %1$d секунд</item>
+        <item quantity="other">Вперед на %1$d секунды</item>
+    </plurals>
 </resources>

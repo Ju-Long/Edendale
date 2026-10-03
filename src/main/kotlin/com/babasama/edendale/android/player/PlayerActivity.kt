@@ -19,6 +19,8 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Rational
 import android.view.KeyEvent
+import android.view.KeyboardShortcutGroup
+import android.view.Menu
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -45,6 +47,8 @@ import com.babasama.edendale.cacheWyzieSubtitle
 import com.babasama.edendale.android.AppStrings
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleTheme
+import com.babasama.edendale.android.KeyboardShortcuts
+import com.babasama.edendale.android.PlayerKeyCommand
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
@@ -1053,6 +1057,23 @@ class PlayerActivity : ComponentActivity() {
             }
         }
 
+        // Keyboard keys on handhelds (J.3): Space, ← and → while no panel is
+        // open (a panel's sliders and switches keep their own keys), and Esc
+        // like Back. The TV's D-pad sends the same arrow codes and keeps its
+        // reveal-and-seek handling.
+        when (KeyboardShortcuts.playerCommand(event.keyCode, hasModifiers = !event.hasNoModifiers())) {
+            PlayerKeyCommand.PLAY_PAUSE, PlayerKeyCommand.SKIP_BACK, PlayerKeyCommand.SKIP_FORWARD ->
+                if (exoPlayer != null && !isTelevision && chrome.activePanel == null) {
+                    handleKeyboardTransport(exoPlayer, event)
+                    return true
+                }
+            PlayerKeyCommand.CLOSE -> {
+                if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) handleBack()
+                return true
+            }
+            null -> Unit
+        }
+
         if (event.keyCode == KeyEvent.KEYCODE_BACK || event.keyCode == KeyEvent.KEYCODE_MENU) {
             // Compose maps Back to a focus Exit at its root and silently
             // consumes it whenever focus is nested, so it never reaches the
@@ -1062,6 +1083,37 @@ class PlayerActivity : ComponentActivity() {
         }
 
         return super.dispatchKeyEvent(event)
+    }
+
+    /** Space plays and pauses; ← and → skip by the App Controls lengths, repeating while held. */
+    private fun handleKeyboardTransport(exoPlayer: ExoPlayer, event: KeyEvent) {
+        if (event.action != KeyEvent.ACTION_DOWN) return
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_SPACE -> if (event.repeatCount == 0) {
+                if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
+                chrome.showControls()
+            }
+            // A held key repeats every ~50 ms; every fourth repeat keeps the seeks followable.
+            KeyEvent.KEYCODE_DPAD_LEFT -> if (event.repeatCount % 4 == 0) {
+                seekBy(exoPlayer, chrome, -chrome.skipBackwardInterval.millis)
+            }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> if (event.repeatCount % 4 == 0) {
+                seekBy(exoPlayer, chrome, chrome.skipForwardInterval.millis)
+            }
+        }
+    }
+
+    /** Lists the player's keys in the system's keyboard shortcuts list (Meta+/). */
+    override fun onProvideKeyboardShortcuts(data: MutableList<KeyboardShortcutGroup>, menu: Menu?, deviceId: Int) {
+        super.onProvideKeyboardShortcuts(data, menu, deviceId)
+        if (!::chrome.isInitialized) return
+        data.add(
+            KeyboardShortcuts.playerGroup(
+                context = this,
+                backSeconds = chrome.skipBackwardInterval.seconds,
+                forwardSeconds = chrome.skipForwardInterval.seconds,
+            ),
+        )
     }
 
     /**

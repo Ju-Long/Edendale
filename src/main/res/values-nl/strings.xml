@@ -396,4 +396,20 @@
     <string name="video_sharpness">Scherpte</string>
     <string name="video_denoise">Ruisonderdrukking</string>
     <string name="video_not_available_hdr">Niet beschikbaar voor HDR-video</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Verberg navigatiekolom</string>
+    <string name="navigation_show">Toon navigatiekolom</string>
+    <string name="rescan_library">Scan bibliotheek opnieuw</string>
+    <string name="shelf_scroll_position">Scrollpositie van %1$s</string>
+    <string name="shortcut_play_pause">Afspelen of pauzeren</string>
+    <string name="shortcut_skip_prompt">Intro of aftiteling overslaan wanneer aangeboden</string>
+    <string name="shortcut_close_panel_then_player">Sluit een paneel, daarna de speler</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">%1$d seconde terug</item>
+        <item quantity="other">%1$d seconden terug</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">%1$d seconde vooruit</item>
+        <item quantity="other">%1$d seconden vooruit</item>
+    </plurals>
 </resources>

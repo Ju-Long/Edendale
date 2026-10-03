@@ -453,4 +453,20 @@
     <string name="video_sharpness">Sharpness</string>
     <string name="video_denoise">Denoise</string>
     <string name="video_not_available_hdr">Not available for HDR video</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Hide Sidebar</string>
+    <string name="navigation_show">Show Sidebar</string>
+    <string name="rescan_library">Rescan Library</string>
+    <string name="shelf_scroll_position">%1$s scroll position</string>
+    <string name="shortcut_play_pause">Play or pause</string>
+    <string name="shortcut_skip_prompt">Skip an intro or credits when offered</string>
+    <string name="shortcut_close_panel_then_player">Close a panel, then the player</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Back %1$d second</item>
+        <item quantity="other">Back %1$d seconds</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Forward %1$d second</item>
+        <item quantity="other">Forward %1$d seconds</item>
+    </plurals>
 </resources>

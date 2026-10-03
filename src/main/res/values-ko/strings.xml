@@ -392,4 +392,18 @@
     <string name="video_sharpness">선명도</string>
     <string name="video_denoise">노이즈 제거</string>
     <string name="video_not_available_hdr">HDR 비디오에서는 사용할 수 없습니다</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">사이드바 가리기</string>
+    <string name="navigation_show">사이드바 보기</string>
+    <string name="rescan_library">보관함 다시 스캔</string>
+    <string name="shelf_scroll_position">%1$s 스크롤 위치</string>
+    <string name="shortcut_play_pause">재생 또는 일시 정지</string>
+    <string name="shortcut_skip_prompt">표시될 때 인트로 또는 크레딧 건너뛰기</string>
+    <string name="shortcut_close_panel_then_player">패널을 닫은 다음 플레이어 닫기</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="other">%1$d초 뒤로</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="other">%1$d초 앞으로</item>
+    </plurals>
 </resources>

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -22,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,8 +32,19 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -101,6 +114,36 @@ fun SmbImportDialog(
         }
     }
 
+    // Keyboard behavior (J.4): the address field has focus when the form
+    // opens; Tab and Shift+Tab move between fields; Enter connects once the
+    // address (the only required field) is filled, and otherwise focuses it.
+    // User and password stay optional, so a guest connection is one tap.
+    val focusManager = LocalFocusManager.current
+    val hostFocus = remember { FocusRequester() }
+    fun connect() {
+        when {
+            server.isBlank() -> hostFocus.requestFocus()
+            !loading -> open(typedPath)
+        }
+    }
+    val formKeys = Modifier.onPreviewKeyEvent { event ->
+        val down = event.type == KeyEventType.KeyDown
+        when (event.key) {
+            Key.Tab -> {
+                if (down) focusManager.moveFocus(if (event.isShiftPressed) FocusDirection.Previous else FocusDirection.Next)
+                true
+            }
+            Key.Enter, Key.NumPadEnter -> {
+                if (down) connect()
+                true
+            }
+            else -> false
+        }
+    }
+    if (!isTelevision) {
+        LaunchedEffect(Unit) { hostFocus.requestFocus() }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (browsing) R.string.smb_choose_folder else R.string.add_network_source)) },
@@ -164,27 +207,32 @@ fun SmbImportDialog(
                     OutlinedTextField(
                         value = host,
                         onValueChange = { host = it },
+                        modifier = Modifier.focusRequester(hostFocus).then(formKeys),
                         enabled = !loading,
                         label = { Text(stringResource(R.string.smb_host_label)) },
                         placeholder = { Text(stringResource(R.string.smb_host_placeholder)) },
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next)
                     )
                     OutlinedTextField(
                         value = user,
                         onValueChange = { user = it },
+                        modifier = formKeys,
                         enabled = !loading,
                         label = { Text(stringResource(R.string.smb_username_label)) },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     )
                     OutlinedTextField(
                         value = pass,
                         onValueChange = { pass = it },
+                        modifier = formKeys,
                         enabled = !loading,
                         label = { Text(stringResource(R.string.smb_password_label)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
+                        keyboardActions = KeyboardActions(onGo = { connect() }),
                     )
                 }
                 error?.let { message ->

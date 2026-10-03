@@ -392,4 +392,18 @@
     <string name="video_sharpness">シャープネス</string>
     <string name="video_denoise">ノイズ除去</string>
     <string name="video_not_available_hdr">HDRビデオでは使用できません</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">サイドバーを非表示</string>
+    <string name="navigation_show">サイドバーを表示</string>
+    <string name="rescan_library">ライブラリを再スキャン</string>
+    <string name="shelf_scroll_position">%1$sのスクロール位置</string>
+    <string name="shortcut_play_pause">再生または一時停止</string>
+    <string name="shortcut_skip_prompt">表示されたときにイントロやクレジットをスキップ</string>
+    <string name="shortcut_close_panel_then_player">パネルを閉じ、次にプレーヤーを閉じる</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="other">%1$d秒戻る</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="other">%1$d秒進む</item>
+    </plurals>
 </resources>

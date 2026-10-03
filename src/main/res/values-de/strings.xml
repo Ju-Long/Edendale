@@ -396,4 +396,20 @@
     <string name="video_sharpness">Schärfe</string>
     <string name="video_denoise">Rauschunterdrückung</string>
     <string name="video_not_available_hdr">Für HDR-Videos nicht verfügbar</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Seitenleiste ausblenden</string>
+    <string name="navigation_show">Seitenleiste einblenden</string>
+    <string name="rescan_library">Mediathek erneut scannen</string>
+    <string name="shelf_scroll_position">Scrollposition von %1$s</string>
+    <string name="shortcut_play_pause">Wiedergabe oder Pause</string>
+    <string name="shortcut_skip_prompt">Intro oder Abspann überspringen, wenn angeboten</string>
+    <string name="shortcut_close_panel_then_player">Erst einen Bereich, dann den Player schließen</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">%1$d Sekunde zurück</item>
+        <item quantity="other">%1$d Sekunden zurück</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">%1$d Sekunde vor</item>
+        <item quantity="other">%1$d Sekunden vor</item>
+    </plurals>
 </resources>

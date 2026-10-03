@@ -1652,16 +1652,16 @@ AGENTS.md forbids.
 
 ## Section J — Large screens and keyboard (DIFF §3.15)
 
-- [ ] **J.1** Extended navigation (`WideShell` with `extendedNavigation`): the
+- [x] **J.1** Extended navigation (`WideShell` with `extendedNavigation`): the
   order is Movies & Shows, Watchlist, Downloaded, Search, then Settings.
   Watchlist expands into Movies and TV Shows; Downloaded expands into Continue
   Watching, Movies, and TV Shows. A child row appears only while its section has
   titles for the current audience setting; if the open section empties, the
   navigation returns to the parent page. The search query survives navigation.
-- [ ] **J.2** A Continue Watching page lists every resumable title (the shelf
+- [x] **J.2** A Continue Watching page lists every resumable title (the shelf
   keeps its 12-item cap). The Movies page includes movies that are also in
   Continue Watching.
-- [ ] **J.3** Hardware-keyboard shortcuts:
+- [x] **J.3** Hardware-keyboard shortcuts:
   - Ctrl+B toggles the navigation.
   - On Downloaded pages, Ctrl+N adds a media folder and Ctrl+Alt+N links a
     network source.
@@ -1672,7 +1672,7 @@ AGENTS.md forbids.
 
   Register them with `onProvideKeyboardShortcuts` in both activities, so
   Meta+/ lists them.
-- [ ] **J.4** The Link Source form: the address field has focus when it opens;
+- [x] **J.4** The Link Source form: the address field has focus when it opens;
   Tab and Shift+Tab move between fields; Enter connects when every required
   field is filled, and otherwise focuses the first empty one; a guest
   connection (no user or password) takes one tap.
@@ -1681,10 +1681,10 @@ AGENTS.md forbids.
   video instead of covering it. Tapping the video leaves the panel open. Esc or
   Back closes the panel, and a second press leaves the player. The controls
   still auto-hide, and Up Next and skip prompts stay available.
-- [ ] **J.6** Season shelves: each season heading's rule acts as that shelf's
+- [x] **J.6** Season shelves: each season heading's rule acts as that shelf's
   scroll indicator and scrubber; drag the gold thumb or tap the rule
   (`SeasonBrowser.kt`).
-- [ ] **J.T1** (JVM) Port `LibrarySectionsTests`: child-row visibility and the
+- [x] **J.T1** (JVM) Port `LibrarySectionsTests`: child-row visibility and the
   return to the parent page.
 
 ---
@@ -1853,6 +1853,9 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | bba68d8 |
 | F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | bba68d8 |
 | F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | bba68d8 |
+| J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 34312d3 |
+| J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 34312d3 |
+| J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 34312d3 |
 
 ---
 
@@ -1936,12 +1939,12 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | I.1 | OneDrive on TV | Not started | |
 | I.2 | Phone-to-TV handoff | Not started | |
 | I.3 | Watch Next row | Not started | |
-| J.1 | Navigation child rows | Not started | |
-| J.2 | Continue Watching and Movies pages | Not started | |
-| J.3 | Keyboard shortcuts | Not started | |
-| J.4 | Link Source keyboard behavior | Not started | |
-| J.5 | Docked player panels | Complete (device check not run; Esc comes with J.3) | |
-| J.6 | Season shelf scrubber | Not started | |
+| J.1 | Navigation child rows | Complete (device check not run) | 34312d3 |
+| J.2 | Continue Watching and Movies pages | Complete (device check not run) | 34312d3 |
+| J.3 | Keyboard shortcuts | Complete (device check not run) | 34312d3 |
+| J.4 | Link Source keyboard behavior | Complete (device check not run) | 34312d3 |
+| J.5 | Docked player panels | Complete (device check not run) | aa8b2ba |
+| J.6 | Season shelf scrubber | Complete (device check not run) | 34312d3 |
 | K.1 | Settings order | Not started | |
 | L.1 | README | Not started | |
 | L.2 | DESIGN.md | Complete | 0987890 |

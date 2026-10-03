@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import com.babasama.edendale.domain.AppRoute
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
@@ -63,11 +65,14 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.flow.Flow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private enum class AppTab(
+internal enum class AppTab(
     @StringRes val label: Int,
     val icon: Int,
     val selectedIcon: Int,
@@ -86,20 +91,27 @@ private enum class AppTab(
 fun EdendaleApp(
     isTelevision: Boolean,
     pendingRoute: AppRoute? = null,
-    onRouteConsumed: () -> Unit = {}
+    onRouteConsumed: () -> Unit = {},
+    /** Hardware-keyboard shortcuts raised by MainActivity (J.3). */
+    keyboard: LibraryKeyboard? = null,
 ) {
     val browseViewModel: BrowseViewModel = viewModel()
     val searchViewModel: SearchViewModel = viewModel()
     val tmdbAccountViewModel: TmdbAccountViewModel = viewModel()
     val watchlistViewModel: WatchlistViewModel = viewModel()
     val audienceFilter = (viewModel<AudienceFilterViewModel>()).filter
-    var selectedTab by rememberSaveable { mutableStateOf(AppTab.MOVIES) }
+    // The navigation row on screen: a tab, or (in extended navigation) one
+    // section of the Watchlist or Downloaded page (J.1).
+    var navigationItem by rememberSaveable(stateSaver = NavigationItem.Saver) {
+        mutableStateOf<NavigationItem>(NavigationItem.Movies)
+    }
+    val selectedTab = navigationItem.tab
     var showSettingsSheet by rememberSaveable { mutableStateOf(false) }
     // The local show drill-in is reachable from both Downloaded and Search, so
     // it is hoisted here alongside the other full-screen overrides.
     var openShowKey by rememberSaveable { mutableStateOf<String?>(null) }
     val openTab: (AppTab) -> Unit = { tab ->
-        selectedTab = tab
+        navigationItem = NavigationItem.of(tab)
     }
     val context = LocalContext.current
 
@@ -123,14 +135,18 @@ fun EdendaleApp(
         add(AppTab.SEARCH)
     }
     LaunchedEffect(hasWatchlist) {
-        if (!hasWatchlist && selectedTab == AppTab.WATCHLIST) selectedTab = AppTab.MOVIES
+        if (!hasWatchlist && selectedTab == AppTab.WATCHLIST) openTab(AppTab.MOVIES)
     }
+
+    // Ctrl+B hides or shows the navigation in wide windows.
+    var navigationHidden by rememberSaveable { mutableStateOf(false) }
+    SideEffect { keyboard?.navigationHidden = navigationHidden }
 
     LaunchedEffect(pendingRoute) {
         if (pendingRoute != null) {
             when (pendingRoute) {
                 is AppRoute.Search -> {
-                    selectedTab = AppTab.SEARCH
+                    openTab(AppTab.SEARCH)
                     searchViewModel.updateQuery(pendingRoute.query)
                 }
                 is AppRoute.Media -> {
@@ -218,10 +234,42 @@ fun EdendaleApp(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compactPortrait = !isTelevision && maxWidth < 600.dp && maxHeight > maxWidth
+        val wide = !isTelevision && !compactPortrait
+        val extendedNavigation = wide && maxWidth >= 1100.dp
+        // Section rows exist only in extended navigation; elsewhere a section
+        // shows as its whole page.
+        val shownItem = if (extendedNavigation) navigationItem else navigationItem.page
+
+        // Extended navigation's child rows appear only while their section has
+        // titles for the current audience setting. Both lists hold their last
+        // settled value while ratings are verified or the library loads, and
+        // an open section that empties returns to its parent page.
+        var watchlistSections: List<WatchlistSection>? = null
+        var downloadedSections: List<DownloadedSection>? = null
+        if (extendedNavigation) {
+            watchlistSections = remember { SettledValue<List<WatchlistSection>>() }.update(
+                WatchlistSection.available(watchlistRecords.filter { audienceFilter.allows(it.ref) }.map { it.mediaType })
+                    .takeUnless { audienceFilter.isVerifying(watchlistRefs) },
+            )
+            downloadedSections = remember { SettledValue<List<DownloadedSection>>() }
+                .update(rememberDownloadedSections(audienceFilter))
+            LaunchedEffect(watchlistSections, downloadedSections) {
+                if (watchlistSections != null && downloadedSections != null) {
+                    navigationItem = navigationItem.resolved(watchlistSections, downloadedSections)
+                }
+            }
+        }
+        val commands = keyboard?.commands
+        if (wide && keyboard != null) {
+            LaunchedEffect(keyboard) {
+                keyboard.commands.collect { if (it == LibraryCommand.TOGGLE_NAVIGATION) navigationHidden = !navigationHidden }
+            }
+        }
         when {
             isTelevision -> TvShell(
                 tabs = tabs,
-                selectedTab = selectedTab,
+                selectedItem = shownItem,
+                commands = commands,
                 onSelectTab = openTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
@@ -232,7 +280,8 @@ fun EdendaleApp(
             )
             compactPortrait -> PhoneShell(
                 tabs = tabs,
-                selectedTab = selectedTab,
+                selectedItem = shownItem,
+                commands = commands,
                 onSelectTab = openTab,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
@@ -243,13 +292,17 @@ fun EdendaleApp(
             )
             else -> WideShell(
                 tabs = tabs,
-                selectedTab = selectedTab,
-                onSelectTab = openTab,
+                selectedItem = shownItem,
+                onSelect = { navigationItem = it },
+                commands = commands,
+                watchlistSections = watchlistSections.orEmpty(),
+                downloadedSections = downloadedSections.orEmpty(),
+                navigationHidden = navigationHidden,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
                 audienceFilter = audienceFilter,
-                extendedNavigation = maxWidth >= 1100.dp,
+                extendedNavigation = extendedNavigation,
                 onOpenSettings = { showSettingsSheet = true },
                 onOpenShow = { openShowKey = it },
             )
@@ -277,7 +330,8 @@ fun EdendaleApp(
 @Composable
 private fun PhoneShell(
     tabs: List<AppTab>,
-    selectedTab: AppTab,
+    selectedItem: NavigationItem,
+    commands: Flow<LibraryCommand>?,
     onSelectTab: (AppTab) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
@@ -292,11 +346,11 @@ private fun PhoneShell(
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                 tabs.forEach { tab ->
                     NavigationBarItem(
-                        selected = selectedTab == tab,
+                        selected = selectedItem.tab == tab,
                         onClick = { onSelectTab(tab) },
                         icon = {
                             Icon(
-                                painter = painterResource(id = if (selectedTab == tab) tab.selectedIcon else tab.icon),
+                                painter = painterResource(id = if (selectedItem.tab == tab) tab.selectedIcon else tab.icon),
                                 contentDescription = null,
                             )
                         },
@@ -307,7 +361,8 @@ private fun PhoneShell(
         },
     ) { padding ->
         AppTabContent(
-            tab = selectedTab,
+            item = selectedItem,
+            commands = commands,
             browseViewModel = browseViewModel,
             searchViewModel = searchViewModel,
             watchlistViewModel = watchlistViewModel,
@@ -324,8 +379,12 @@ private fun PhoneShell(
 @Composable
 private fun WideShell(
     tabs: List<AppTab>,
-    selectedTab: AppTab,
-    onSelectTab: (AppTab) -> Unit,
+    selectedItem: NavigationItem,
+    onSelect: (NavigationItem) -> Unit,
+    commands: Flow<LibraryCommand>?,
+    watchlistSections: List<WatchlistSection>,
+    downloadedSections: List<DownloadedSection>,
+    navigationHidden: Boolean,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
     watchlistViewModel: WatchlistViewModel,
@@ -335,28 +394,35 @@ private fun WideShell(
     onOpenShow: (String) -> Unit,
 ) {
     Row(Modifier.fillMaxSize()) {
-        WideNavigation(
-            tabs = tabs,
-            selectedTab = selectedTab,
-            onSelectTab = onSelectTab,
-            extended = extendedNavigation,
-            onOpenSettings = onOpenSettings,
-        )
+        if (!navigationHidden) {
+            WideNavigation(
+                tabs = tabs,
+                selectedItem = selectedItem,
+                onSelect = onSelect,
+                watchlistSections = watchlistSections,
+                downloadedSections = downloadedSections,
+                extended = extendedNavigation,
+                onOpenSettings = onOpenSettings,
+            )
+        }
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
                 // The rail already sits inside the start inset, so the screens'
                 // own Scaffolds must not pad for it a second time.
-                .consumeWindowInsets(
-                    WindowInsets.systemBars
-                        .union(WindowInsets.displayCutout)
-                        .only(WindowInsetsSides.Start)
+                .then(
+                    if (navigationHidden) Modifier else Modifier.consumeWindowInsets(
+                        WindowInsets.systemBars
+                            .union(WindowInsets.displayCutout)
+                            .only(WindowInsetsSides.Start)
+                    )
                 )
                 .background(MaterialTheme.colorScheme.background)
         ) {
             AppTabContent(
-                tab = selectedTab,
+                item = selectedItem,
+                commands = commands,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
@@ -383,8 +449,10 @@ private fun railInsets(): WindowInsets =
 @Composable
 private fun WideNavigation(
     tabs: List<AppTab>,
-    selectedTab: AppTab?,
-    onSelectTab: (AppTab) -> Unit,
+    selectedItem: NavigationItem,
+    onSelect: (NavigationItem) -> Unit,
+    watchlistSections: List<WatchlistSection>,
+    downloadedSections: List<DownloadedSection>,
     extended: Boolean,
     onOpenSettings: () -> Unit,
 ) {
@@ -420,12 +488,31 @@ private fun WideNavigation(
                 )
             }
             tabs.forEach { tab ->
-                NavigationButton(
-                    tab = tab,
-                    selected = selectedTab == tab,
-                    extended = extended,
-                    onClick = { onSelectTab(tab) },
-                )
+                val page = NavigationItem.of(tab)
+                // Extended navigation lists the Watchlist and Downloaded
+                // sections as child rows, so a section opens directly.
+                val children = when {
+                    !extended -> emptyList()
+                    tab == AppTab.WATCHLIST -> watchlistSections.map { Triple(it.title, it.icon, NavigationItem.Watchlist(it)) }
+                    tab == AppTab.DOWNLOADED -> downloadedSections.map { Triple(it.title, it.icon, NavigationItem.Downloaded(it)) }
+                    else -> emptyList()
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    NavigationButton(
+                        tab = tab,
+                        selected = selectedItem == page,
+                        extended = extended,
+                        onClick = { onSelect(page) },
+                    )
+                    children.forEach { (title, icon, item) ->
+                        NavigationChildButton(
+                            title = stringResource(title),
+                            icon = icon,
+                            selected = selectedItem == item,
+                            onClick = { onSelect(item) },
+                        )
+                    }
+                }
             }
             Spacer(Modifier.weight(1f))
             Surface(
@@ -491,10 +578,51 @@ private fun NavigationButton(
     }
 }
 
+/** A section row under its page in extended navigation (J.1). */
+@Composable
+private fun NavigationChildButton(
+    title: String,
+    icon: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .semantics { this.selected = selected },
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
+        else androidx.compose.ui.graphics.Color.Transparent,
+        contentColor = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 30.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    }
+}
+
 @Composable
 private fun TvShell(
     tabs: List<AppTab>,
-    selectedTab: AppTab,
+    selectedItem: NavigationItem,
+    commands: Flow<LibraryCommand>?,
     onSelectTab: (AppTab) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
@@ -532,7 +660,7 @@ private fun TvShell(
                     tabs.forEach { tab ->
                         TvNavigationTab(
                             tab = tab,
-                            selected = selectedTab == tab,
+                            selected = selectedItem.tab == tab,
                             onClick = { onSelectTab(tab) },
                         )
                     }
@@ -552,7 +680,8 @@ private fun TvShell(
                 .focusGroup(),
         ) {
             AppTabContent(
-                tab = selectedTab,
+                item = selectedItem,
+                commands = commands,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
@@ -604,7 +733,8 @@ private fun TvNavigationTab(tab: AppTab, selected: Boolean, onClick: () -> Unit)
 
 @Composable
 private fun AppTabContent(
-    tab: AppTab,
+    item: NavigationItem,
+    commands: Flow<LibraryCommand>?,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
     watchlistViewModel: WatchlistViewModel,
@@ -614,7 +744,7 @@ private fun AppTabContent(
     onOpenSettings: () -> Unit,
     onOpenShow: (String) -> Unit,
 ) {
-    when (tab) {
+    when (item.tab) {
         AppTab.MOVIES -> MoviesShowsScreen(
             viewModel = browseViewModel,
             audienceFilter = audienceFilter,
@@ -623,21 +753,29 @@ private fun AppTabContent(
             contentPadding = contentPadding,
             onOpenSettings = onOpenSettings,
         )
-        AppTab.WATCHLIST -> WatchlistScreen(
-            viewModel = watchlistViewModel,
-            audienceFilter = audienceFilter,
-            isTelevision = isTelevision,
-            onOpenDetail = browseViewModel::openDetail,
-            contentPadding = contentPadding,
-            onOpenSettings = onOpenSettings,
-        )
-        AppTab.DOWNLOADED -> DownloadedScreen(
-            audienceFilter = audienceFilter,
-            isTelevision = isTelevision,
-            contentPadding = contentPadding,
-            onOpenSettings = onOpenSettings,
-            onOpenShow = onOpenShow,
-        )
+        // A fresh page per row: choosing a section always lands at its top.
+        AppTab.WATCHLIST -> key(item) {
+            WatchlistScreen(
+                viewModel = watchlistViewModel,
+                audienceFilter = audienceFilter,
+                isTelevision = isTelevision,
+                onOpenDetail = browseViewModel::openDetail,
+                contentPadding = contentPadding,
+                onOpenSettings = onOpenSettings,
+                section = (item as? NavigationItem.Watchlist)?.section,
+            )
+        }
+        AppTab.DOWNLOADED -> key(item) {
+            DownloadedScreen(
+                audienceFilter = audienceFilter,
+                isTelevision = isTelevision,
+                contentPadding = contentPadding,
+                onOpenSettings = onOpenSettings,
+                onOpenShow = onOpenShow,
+                section = (item as? NavigationItem.Downloaded)?.section,
+                commands = commands,
+            )
+        }
         AppTab.SEARCH -> SearchScreen(
             viewModel = searchViewModel,
             audienceFilter = audienceFilter,
@@ -648,5 +786,19 @@ private fun AppTabContent(
             onOpenSettings = onOpenSettings,
             onOpenShow = onOpenShow,
         )
+    }
+}
+
+/**
+ * Holds the last non-null value it was given: the navigation's section
+ * lists keep showing while audience ratings are verified or the library
+ * loads, and stay null until the first settled value arrives.
+ */
+private class SettledValue<T : Any> {
+    private var value: T? = null
+
+    fun update(next: T?): T? {
+        if (next != null) value = next
+        return value
     }
 }
