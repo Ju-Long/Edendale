@@ -406,4 +406,14 @@
     <plurals name="shortcut_forward_seconds">
         <item quantity="other">%1$d초 앞으로</item>
     </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">이 파일이 더 이상 %1$s에 없습니다.</string>
+    <string name="player_error_rate_limited">%1$s에서 현재 요청을 제한하고 있습니다. 1분 후에 다시 시도하십시오.</string>
+    <string name="player_error_server">%1$s에서 오류를 반환했습니다(HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s에서 이 파일의 탐색을 지원하지 않습니다.</string>
+    <string name="player_error_access_denied">%1$s에서 이 항목에 대한 접근을 거부했습니다.</string>
+    <string name="player_error_abusive_file">Google 드라이브에서 이 파일을 잠재적으로 유해한 파일로 표시했으므로 스트리밍할 수 없습니다.</string>
+    <string name="player_error_untrusted_certificate">%1$s의 인증서를 신뢰할 수 없으므로 Edendale은 해당 서버에서 스트리밍하지 않습니다.</string>
+    <string name="source_kind_s3">S3 호환 저장 공간</string>
+    <string name="source_kind_local">로컬 폴더</string>
 </resources>

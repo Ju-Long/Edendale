@@ -414,4 +414,14 @@
         <item quantity="many">Avanti di %1$d secondi</item>
         <item quantity="other">Avanti di %1$d secondi</item>
     </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Questo file non è più in %1$s.</string>
+    <string name="player_error_rate_limited">%1$s sta limitando le richieste in questo momento. Riprova tra un minuto.</string>
+    <string name="player_error_server">%1$s ha restituito un errore (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s non supporta lo spostamento in questo file.</string>
+    <string name="player_error_access_denied">%1$s ha negato l’accesso a questo elemento.</string>
+    <string name="player_error_abusive_file">Google Drive ha segnalato questo file come potenzialmente dannoso, quindi non può essere trasmesso.</string>
+    <string name="player_error_untrusted_certificate">Il certificato di %1$s non è attendibile, quindi Edendale non trasmetterà da questo server.</string>
+    <string name="source_kind_s3">Archiviazione compatibile con S3</string>
+    <string name="source_kind_local">Cartella locale</string>
 </resources>

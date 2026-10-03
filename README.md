@@ -338,6 +338,7 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | AndroidX MediaRouter | Audio output switcher | Apache-2.0 |
 | Jetpack Compose, Room, Activity, Lifecycle, DocumentFile, Security Crypto | UI, local records, encrypted settings | Apache-2.0 |
 | jcifs-ng | SMB | LGPL-2.1 |
+| OkHttp | Storage providers' HTTP | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in QR code | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |

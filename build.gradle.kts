@@ -132,6 +132,7 @@ dependencies {
     implementation(libs.jcifs.ng)
     implementation(libs.androidx.security.crypto)
     implementation(libs.zxing.core)
+    implementation(libs.okhttp)
     debugImplementation(libs.compose.ui.tooling)
 
     // JVM unit tests only (src/test): the suite is hermetic — no emulator or

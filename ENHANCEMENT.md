@@ -1443,10 +1443,10 @@ Jellyfin, and Emby would be a separate feature.
 - SFTP and NFS byte sources reuse D.1's buffered source.
 
 **Checklist:**
-- [ ] **H.2.1** `RemoteByteSource` (pure logic over a small HTTP interface) and
+- [x] **H.2.1** `RemoteByteSource` (pure logic over a small HTTP interface) and
   its OkHttp implementation.
-- [ ] **H.2.2** The scheme-dispatching `DataSource`.
-- [ ] **H.2.T1** (JVM) Port `RemoteByteSourceTests` against a local
+- [x] **H.2.2** The scheme-dispatching `DataSource`.
+- [x] **H.2.T1** (JVM) Port `RemoteByteSourceTests` against a local
   Range-capable stub (A.5.5): chunking, prefetch, cached backward seeks, a 401
   that triggers exactly one refresh shared by concurrent readers, a 410 that
   resolves a new link, an ignored `Range` at offset 0 and elsewhere, the backoff
@@ -1898,6 +1898,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | bba68d8 |
 | H.1 | `enumerateVideos` returns the videos with a `complete` flag rather than a bare list. | Android's scanner deletes rows for missing files only after a full listing; Apple's walk silently skips unreadable branches. | H1-COMMIT |
 | H.1.2 | SMB item URLs keep jcifs's spelling (`SmbFile.url`) instead of `SourceUrl.server`'s percent-encoding. Moving SMB onto the walk also skips dot-files (macOS `._` files), caps the walk at 2,000 folders, and records a share whose top folder can't be listed as failed (D.3) instead of a partial scan. | Every SMB row already stored uses jcifs's spelling, so a rescan must produce the same strings or it would re-import the whole share. The other three follow the shared walk. | H1-COMMIT |
+| H.2 | The byte source asks the resolver once and reuses the request for every chunk until a 401 or an expired link; the first load to see one refreshes and the others take the result. H.2.T1 runs against a small `ServerSocket` HTTP server in `src/test`. | A pre-authorized link (OneDrive) shouldn't be resolved per chunk, and the single flight has to hold within one source as well as per account. The JDK's `com.sun.net.httpserver` isn't on the Android unit-test compile classpath, and the socket server needs no new dependency. | H2-COMMIT |
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |

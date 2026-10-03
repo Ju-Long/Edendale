@@ -25,7 +25,11 @@ import com.babasama.edendale.android.ArchiveButton
 import com.babasama.edendale.android.ArchiveButtonKind
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.R
+import com.babasama.edendale.android.sourceKindName
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.remote.RemoteConnectionLostException
+import com.babasama.edendale.remote.RemoteFailure
+import com.babasama.edendale.remote.RemoteSourceException
 import com.babasama.edendale.remote.RemoteOpenException
 
 /** Why playback stopped, read from the player error's cause chain (pure). */
@@ -35,6 +39,9 @@ internal sealed interface PlaybackFailure {
 
     /** A remote file never opened: the host is down, or the login or path is wrong. */
     data class CouldNotConnect(val host: String, val detail: String?) : PlaybackFailure
+
+    /** A storage provider refused or failed a read (H.2). */
+    data class Provider(val kind: MediaSourceKind, val failure: RemoteFailure) : PlaybackFailure
 
     data object Other : PlaybackFailure
 
@@ -46,6 +53,7 @@ internal sealed interface PlaybackFailure {
                 when (cause) {
                     is RemoteConnectionLostException -> return ConnectionLost(cause.host, cause.detail)
                     is RemoteOpenException -> return CouldNotConnect(cause.host, cause.cause?.message?.takeIf { it.isNotBlank() })
+                    is RemoteSourceException -> return Provider(cause.kind, cause.failure)
                 }
                 cause = cause.cause
             }
@@ -62,7 +70,25 @@ internal fun playbackFailureMessage(failure: PlaybackFailure): String = when (fa
     // The transport's own words say what went wrong (bad login, no such path).
     is PlaybackFailure.CouldNotConnect -> failure.detail
         ?: stringResource(R.string.player_error_could_not_connect, failure.host)
+    is PlaybackFailure.Provider -> providerFailureMessage(failure.kind, failure.failure)
     PlaybackFailure.Other -> stringResource(R.string.player_error_could_not_open)
+}
+
+/** Apple's provider messages, named for the provider and never carrying a URL. */
+@Composable
+internal fun providerFailureMessage(kind: MediaSourceKind, failure: RemoteFailure): String {
+    val provider = sourceKindName(kind)
+    return when (failure) {
+        RemoteFailure.SignInRequired -> stringResource(R.string.sources_status_needs_sign_in, provider)
+        RemoteFailure.AccessDenied -> stringResource(R.string.player_error_access_denied, provider)
+        RemoteFailure.NotFound -> stringResource(R.string.player_error_not_found, provider)
+        RemoteFailure.RateLimited -> stringResource(R.string.player_error_rate_limited, provider)
+        RemoteFailure.RangeUnsupported -> stringResource(R.string.player_error_range_unsupported, provider)
+        RemoteFailure.AbusiveFile -> stringResource(R.string.player_error_abusive_file)
+        RemoteFailure.Unreachable -> stringResource(R.string.sources_status_offline, provider)
+        RemoteFailure.UntrustedCertificate -> stringResource(R.string.player_error_untrusted_certificate, provider)
+        is RemoteFailure.ServerError -> stringResource(R.string.player_error_server, provider, failure.status)
+    }
 }
 
 /** Shown in place of the picture when the file can't be opened or the connection is lost (Apple's PlaybackErrorView). */

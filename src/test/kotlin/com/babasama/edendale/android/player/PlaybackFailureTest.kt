@@ -1,7 +1,10 @@
 package com.babasama.edendale.android.player
 
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.remote.RemoteConnectionLostException
+import com.babasama.edendale.remote.RemoteFailure
 import com.babasama.edendale.remote.RemoteOpenException
+import com.babasama.edendale.remote.RemoteSourceException
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,6 +26,16 @@ class PlaybackFailureTest {
             PlaybackFailure.of(error),
         )
         assertEquals(PlaybackFailure.CouldNotConnect("nas.local", null), PlaybackFailure.of(RemoteOpenException("nas.local", null)))
+    }
+
+    @Test
+    fun aProviderFailureKeepsItsProviderAndReason() {
+        val error = RuntimeException("Source error", RemoteSourceException(MediaSourceKind.DROPBOX, RemoteFailure.NotFound))
+        assertEquals(PlaybackFailure.Provider(MediaSourceKind.DROPBOX, RemoteFailure.NotFound), PlaybackFailure.of(error))
+        assertEquals(
+            PlaybackFailure.Provider(MediaSourceKind.S3, RemoteFailure.ServerError(500)),
+            PlaybackFailure.of(RemoteSourceException(MediaSourceKind.S3, RemoteFailure.ServerError(500))),
+        )
     }
 
     @Test

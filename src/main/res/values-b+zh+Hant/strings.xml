@@ -406,4 +406,14 @@
     <plurals name="shortcut_forward_seconds">
         <item quantity="other">快轉 %1$d 秒</item>
     </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">此檔案已不在 %1$s 中。</string>
+    <string name="player_error_rate_limited">%1$s 目前正在限制請求。請一分鐘後再試一次。</string>
+    <string name="player_error_server">%1$s 傳回錯誤（HTTP %2$d）。</string>
+    <string name="player_error_range_unsupported">%1$s 不支援在此檔案中跳轉。</string>
+    <string name="player_error_access_denied">%1$s 拒絕存取此項目。</string>
+    <string name="player_error_abusive_file">Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</string>
+    <string name="player_error_untrusted_certificate">%1$s 的憑證不受信任，因此 Edendale 不會從其串流播放。</string>
+    <string name="source_kind_s3">S3 相容儲存空間</string>
+    <string name="source_kind_local">本機檔案夾</string>
 </resources>

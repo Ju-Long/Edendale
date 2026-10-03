@@ -412,4 +412,14 @@
         <item quantity="one">%1$d Sekunde vor</item>
         <item quantity="other">%1$d Sekunden vor</item>
     </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Diese Datei befindet sich nicht mehr in %1$s.</string>
+    <string name="player_error_rate_limited">%1$s begrenzt gerade die Anfragen. Versuche es in einer Minute erneut.</string>
+    <string name="player_error_server">%1$s hat einen Fehler zurückgegeben (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s unterstützt in dieser Datei kein Springen.</string>
+    <string name="player_error_access_denied">%1$s hat den Zugriff auf dieses Objekt verweigert.</string>
+    <string name="player_error_abusive_file">Google Drive hat diese Datei als potenziell schädlich markiert, daher kann sie nicht gestreamt werden.</string>
+    <string name="player_error_untrusted_certificate">Dem Zertifikat von %1$s wird nicht vertraut, daher streamt Edendale nicht davon.</string>
+    <string name="source_kind_s3">S3-kompatibler Speicher</string>
+    <string name="source_kind_local">Lokaler Ordner</string>
 </resources>

@@ -406,4 +406,14 @@
     <plurals name="shortcut_forward_seconds">
         <item quantity="other">%1$d秒進む</item>
     </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">このファイルは%1$sにもうありません。</string>
+    <string name="player_error_rate_limited">%1$sは現在リクエストを制限しています。1分後にもう一度お試しください。</string>
+    <string name="player_error_server">%1$sがエラーを返しました（HTTP %2$d）。</string>
+    <string name="player_error_range_unsupported">%1$sでは、このファイル内でのシークはサポートされていません。</string>
+    <string name="player_error_access_denied">%1$sによってこの項目へのアクセスが拒否されました。</string>
+    <string name="player_error_abusive_file">Googleドライブによってこのファイルは有害な可能性があると判断されたため、ストリーミングできません。</string>
+    <string name="player_error_untrusted_certificate">%1$sの証明書は信頼されていないため、Edendaleはそこからストリーミングしません。</string>
+    <string name="source_kind_s3">S3互換ストレージ</string>
+    <string name="source_kind_local">ローカルフォルダ</string>
 </resources>

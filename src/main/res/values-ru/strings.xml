@@ -428,4 +428,14 @@
         <item quantity="many">Вперед на %1$d секунд</item>
         <item quantity="other">Вперед на %1$d секунды</item>
     </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Этого файла больше нет в %1$s.</string>
+    <string name="player_error_rate_limited">%1$s сейчас ограничивает количество запросов. Повторите попытку через минуту.</string>
+    <string name="player_error_server">%1$s: ошибка (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s не поддерживает перемотку в этом файле.</string>
+    <string name="player_error_access_denied">%1$s: доступ к этому объекту запрещен.</string>
+    <string name="player_error_abusive_file">Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</string>
+    <string name="player_error_untrusted_certificate">Сертификат %1$s не является доверенным, поэтому Edendale не будет транслировать с этого сервера.</string>
+    <string name="source_kind_s3">S3-совместимое хранилище</string>
+    <string name="source_kind_local">Локальная папка</string>
 </resources>

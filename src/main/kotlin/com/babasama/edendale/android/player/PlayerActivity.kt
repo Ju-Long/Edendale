@@ -275,9 +275,10 @@ class PlayerActivity : ComponentActivity() {
         // One factory for the whole session, resolved per request: the item
         // playing can change mid-session via the playlist panel, so the
         // scheme must not be captured once at onCreate. DefaultDataSource
-        // routes any scheme it doesn't recognise (smb) to the base source.
+        // routes any scheme it doesn't recognise (smb and the storage
+        // providers' schemes, H.2) to the base source.
         val mediaSourceFactory = DefaultMediaSourceFactory(
-            DataSource.Factory { DefaultDataSource(this, SmbDataSource(this)) },
+            DataSource.Factory { DefaultDataSource(this, EdendaleDataSource(this)) },
         )
 
         val exoPlayer = ExoPlayer.Builder(this, EdendaleRenderersFactory(this, equalizer))
