@@ -22,8 +22,13 @@ internal data class PlaylistEntry(
     val season: Int?,
     val episode: Int?,
     val stillPath: String? = null,
+    /** The show's backdrop for an episode, the movie's own for a movie. */
     val backdropPath: String? = null,
-)
+    val runtimeMinutes: Int? = null,
+) {
+    /** The 16:9 artwork the playlist row shows: the episode still, else the backdrop. */
+    val artworkPath: String? get() = stillPath ?: backdropPath
+}
 
 internal data class PlayerPlaylist(
     val isEpisodeList: Boolean,
@@ -31,6 +36,33 @@ internal data class PlayerPlaylist(
     /** The show's name for an episode list, when the library has the show. */
     val showName: String? = null,
 )
+
+/**
+ * Whether a playlist row shows 16:9 artwork with its title and play time (B.5):
+ * identified episodes in a show's list, and the playing file when TMDB knows
+ * it. Unknown sibling files keep the plain file-name row.
+ */
+internal fun playlistShowsArtwork(entry: PlaylistEntry, isEpisodeList: Boolean, isCurrent: Boolean): Boolean =
+    entry.tmdbId != null && (isEpisodeList || isCurrent)
+
+/** One line of the playlist panel: a season heading or an entry. */
+internal sealed interface PlaylistItem {
+    data class Season(val number: Int) : PlaylistItem
+    data class Entry(val entry: PlaylistEntry) : PlaylistItem
+}
+
+/** The panel's lines in order: an episode list is grouped under season headings. */
+internal fun playlistItems(playlist: PlayerPlaylist?): List<PlaylistItem> {
+    val entries = playlist?.entries.orEmpty()
+    if (playlist?.isEpisodeList != true) return entries.map { PlaylistItem.Entry(it) }
+    return entries.groupBy { it.season ?: 0 }.flatMap { (season, seasonEntries) ->
+        listOf(PlaylistItem.Season(season)) + seasonEntries.map { PlaylistItem.Entry(it) }
+    }
+}
+
+/** The line the panel scrolls to when it opens, or -1. */
+internal fun List<PlaylistItem>.indexOfEntry(uri: String): Int =
+    indexOfFirst { it is PlaylistItem.Entry && it.entry.uri == uri }
 
 /**
  * The directory component of a stored library URI, used to narrow folder
@@ -89,6 +121,7 @@ internal suspend fun loadPlayerPlaylist(
                     episode = episode.episode,
                     stillPath = episode.stillPath,
                     backdropPath = backdropPath,
+                    runtimeMinutes = episode.runtimeMinutes,
                 )
             },
         )
@@ -109,6 +142,8 @@ internal suspend fun loadPlayerPlaylist(
                 showTmdbId = null,
                 season = null,
                 episode = null,
+                backdropPath = movie.backdropPath,
+                runtimeMinutes = movie.runtimeMinutes,
             )
         } + dao.episodesInFolder(root).map { episode ->
             PlaylistEntry(
@@ -120,6 +155,8 @@ internal suspend fun loadPlayerPlaylist(
                 showTmdbId = null,
                 season = episode.season,
                 episode = episode.episode,
+                stillPath = episode.stillPath,
+                runtimeMinutes = episode.runtimeMinutes,
             )
         }
         )

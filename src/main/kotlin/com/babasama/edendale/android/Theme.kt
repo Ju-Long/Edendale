@@ -51,6 +51,10 @@ object EdendaleColors {
     val HeatLow = Color(0xFF1D3A4A)
     val HeatMid = Color(0xFF2B678A)
     val QrCodeBackground = Color(0xFFFFFFFF)
+    /** Current or focused playlist row fill (B.5). */
+    val PlaylistActiveBackground = Color(0xFFFFFFFF)
+    /** Text and icons on an active playlist row. */
+    val PlaylistActiveText = Color(0xFF000000)
 }
 
 object EdendaleRadii {

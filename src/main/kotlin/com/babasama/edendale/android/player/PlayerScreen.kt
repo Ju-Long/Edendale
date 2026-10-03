@@ -378,18 +378,7 @@ internal fun PlayerScreen(
             )
         }
 
-        val context = LocalContext.current
-        val reduceMotion = remember {
-            try {
-                Settings.Global.getFloat(
-                    context.contentResolver,
-                    Settings.Global.ANIMATOR_DURATION_SCALE,
-                    1.0f,
-                ) == 0f
-            } catch (_: Exception) {
-                false
-            }
-        }
+        val reduceMotion = rememberReducedMotion()
         val upNextEnterTransition = remember(reduceMotion) {
             if (reduceMotion) {
                 fadeIn()
@@ -462,6 +451,23 @@ internal fun PlayerScreen(
             )
 
             PlayerHudView(chrome)
+        }
+    }
+}
+
+/** True when the system animator duration scale is 0: animations fall back to fades. */
+@Composable
+internal fun rememberReducedMotion(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        try {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1.0f,
+            ) == 0f
+        } catch (_: Exception) {
+            false
         }
     }
 }
@@ -2015,87 +2021,6 @@ internal fun SegmentChip(
 // ------------------------------------------------------------------
 // Playlist panel
 // ------------------------------------------------------------------
-
-@Composable
-private fun PlaylistPanel(
-    chrome: PlayerChromeState,
-    isTelevision: Boolean,
-    currentUri: String,
-    playlist: PlayerPlaylist?,
-    panelWidth: androidx.compose.ui.unit.Dp,
-    panelFocus: FocusRequester,
-    onSelectEntry: (PlaylistEntry) -> Unit,
-) {
-    PanelSurface(panelWidth, panelFocus, onDismiss = { chrome.closePanel() }) {
-        Column(Modifier.padding(24.dp)) {
-            PanelHeader(
-                title = stringResource(
-                    if (playlist?.isEpisodeList == true) {
-                        R.string.player_episodes
-                    } else {
-                        R.string.player_in_this_folder
-                    },
-                ),
-                isTelevision = isTelevision,
-                onClose = { chrome.closePanel() },
-            )
-            Spacer(Modifier.height(16.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                val entries = playlist?.entries.orEmpty()
-                if (playlist?.isEpisodeList == true) {
-                    entries.groupBy { it.season ?: 0 }.forEach { (season, seasonEntries) ->
-                        item("season-$season") {
-                            Text(
-                                text = if (season == 0) {
-                                    stringResource(R.string.season_specials)
-                                } else {
-                                    stringResource(R.string.season_number, season)
-                                }.uppercase(),
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        items(seasonEntries.size, key = { seasonEntries[it].uri }) { index ->
-                            PlaylistRow(seasonEntries[index], currentUri, onSelectEntry)
-                        }
-                    }
-                } else {
-                    items(entries.size, key = { entries[it].uri }) { index ->
-                        PlaylistRow(entries[index], currentUri, onSelectEntry)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlaylistRow(
-    entry: PlaylistEntry,
-    currentUri: String,
-    onSelectEntry: (PlaylistEntry) -> Unit,
-) {
-    val isCurrent = entry.uri == currentUri
-    PanelRow(
-        title = entry.title,
-        detail = entry.detail,
-        selected = isCurrent,
-        trailing = if (isCurrent) {
-            {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_play),
-                    contentDescription = null,
-                    modifier = Modifier.size(12.dp),
-                    tint = EdendaleColors.Gold,
-                )
-            }
-        } else {
-            null
-        },
-        onClick = { if (!isCurrent) onSelectEntry(entry) },
-    )
-}
 
 // ------------------------------------------------------------------
 // Touch gestures (handhelds)

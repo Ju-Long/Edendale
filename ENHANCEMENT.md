@@ -557,13 +557,13 @@ holds; the tests pass; the device checks are recorded.
   file-name row.
 
 **Checklist:**
-- [ ] **B.5.1** Add both tokens to `EdendaleColors`, and add the two table rows
+- [x] **B.5.1** Add both tokens to `EdendaleColors`, and add the two table rows
   and the "Playlist selection uses…" paragraph to this branch's `DESIGN.md`,
   copied verbatim from `git show origin/apple-27.0:DESIGN.md`.
-- [ ] **B.5.2** Extend `PlaylistEntry` with an artwork path and runtime, from
+- [x] **B.5.2** Extend `PlaylistEntry` with an artwork path and runtime, from
   `LibraryEpisodeEntity.stillPath`, the show's or movie's `backdropPath`, and
   `runtimeMinutes`.
-- [ ] **B.5.3** Restyle `PlaylistRow`; scroll to the current entry when the
+- [x] **B.5.3** Restyle `PlaylistRow`; scroll to the current entry when the
   panel opens; TV focus applies the active style.
 
 **On device:**
@@ -1856,7 +1856,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
 | B.3 | Track pickers and panel order | Complete | |
 | B.4 | Subtitle appearance and placement | Complete | |
-| B.5 | Playlist panel redesign | Not started | |
+| B.5 | Playlist panel redesign | Complete | |
 | B.6 | Speed and seek checks | Not started | |
 | C.1 | Episode progression rules | Complete | 1f01315 |
 | C.2 | Auto-advance and Up Next | Complete | fd6c2e9, 7cbb292 |
