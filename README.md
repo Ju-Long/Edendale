@@ -122,6 +122,22 @@ network errors, invalid ranges, and rate limits leave normal playback
 available without a prompt. Playback and initial import never wait for this
 service.
 
+### App Controls and player memory
+
+**Settings → App Controls** sets the skip lengths (10, 15, or 30 seconds,
+for back and forward separately) and the hold speeds (0.25× to 3.00× for each
+side). One skip length drives every skip: double-tap, the on-screen buttons,
+the D-pad and TV timeline, media keys, Picture-in-Picture actions, and the
+system media controls. Touching and holding a side of the video plays at that
+side's speed until you let go; on Android TV, holding fast-forward or rewind
+does the same. Changes apply at once, even to a floating video.
+
+Loop and Fit/Fill are remembered on the device. For each movie, and for each
+show as a whole, the player remembers the speed, the audio track, the
+subtitle track or that subtitles were off, and the video track, matching
+tracks by language and then by name. These settings stay on the device and
+are never synced.
+
 ### Network shares
 
 SMB shares stream through a buffered reader: a worker thread fetches 1 MiB
@@ -131,6 +147,22 @@ hotspot or a VPN doesn't stall playback. A dropped connection is reopened
 after 0.25, 0.5, 1, 2, 4, and 8 seconds before playback gives up with a
 message naming the server, and a paused connection gets a keep-alive every
 20 seconds. Nothing is written to disk.
+
+### Sources and accounts
+
+Each visit to Downloaded rescans local folders; a remote source is rescanned
+only if its last scan was over 15 minutes ago, and **Rescan** always scans.
+A source that can't be reached, or whose login was refused, says so on its own
+row in Settings → Sources and in Downloaded, where its rescan button becomes
+Try Again, instead of an error for the whole library. Removing a source keeps its login: **Settings →
+Accounts** lists every saved login with the number of sources using it, and
+removes a login only when you ask.
+
+When the same title is imported from several sources, each file stays its
+own record. **Play** uses the first copy whose source is reachable (the page's
+own copy, then local folders, then the rest by source name), and **Play
+From** picks a copy: beside Play for movies, and in an episode's long-press
+menu (the menu key on TV) for episodes.
 
 ### Audio Enhancement
 
@@ -186,6 +218,34 @@ static Regular and Bold instances (`src/main/res/font/nunito_*.ttf`) made from
 Google Fonts' `ofl/nunito/Nunito[wght].ttf` with fontTools'
 `varLib.instancer`; they keep the font's copyright and licence metadata.
 
+### Keyboard and large screens
+
+In windows at least 1100 dp wide, the navigation lists Watchlist → Movies and
+TV Shows, and Downloaded → Continue Watching, Movies, and TV Shows, as rows of
+their own while each has titles for the current audience setting. The
+Continue Watching page lists every title in progress; the shelf on the
+Downloaded page keeps its 12. In the player, the playlist and Player
+Adjustments dock beside the video instead of covering it.
+
+With a hardware keyboard:
+
+| Keys | Action |
+|---|---|
+| Ctrl+B | Hide or show the navigation (wide windows) |
+| Ctrl+N | Add a media folder (Downloaded) |
+| Ctrl+Alt+N | Link a network source (Downloaded) |
+| Ctrl+R or F5 | Rescan every source (Downloaded) |
+| Space | Play or pause |
+| ← and → | Skip back or forward by the App Controls lengths |
+| S | Skip an intro, recap, or credits when offered |
+| Esc | Close a panel, then the player |
+
+Meta+/ lists them. While a player panel is open, Space and the arrows go to
+its controls. In the Link Source form the address field starts focused, Tab
+and Shift+Tab move between fields, and Enter connects; user and password are
+optional, for guest access. A show's episode shelf scrolls by dragging or
+tapping the rule beside the Episodes heading.
+
 ### System media controls
 
 While a video plays, the player publishes a Media3 `MediaSession`
@@ -231,6 +291,28 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
 
+### Manual device checks
+
+Some behavior needs real hardware and isn't covered by the JVM or instrumented
+tests. Before a release, check on:
+
+- **A recent phone:** skip lengths and hold speeds by touch and in
+  Picture-in-Picture; per-title track memory; the track pickers and playlist
+  with TalkBack; subtitle appearance in Fit and Fill; the Up Next card and skip
+  prompts; equalizer changes while playing; Picture and Enhancement presets on
+  SDR video, with HDR video bypassed.
+- **A mid-range phone (Adreno 6xx or Mali-G57 class):** Balanced and High
+  Quality on 720p and 1080p video without dropped frames, and the governor
+  stepping down when the device runs hot.
+- **An Android TV box on a 4K panel, and a TV set running Google TV:** the
+  remote's hold speeds and skip-prompt focus, the playlist with the D-pad, the
+  system media controls, and enhancement output at the panel's resolution.
+- **A tablet, Chromebook, or desktop-windowing device:** the navigation's child
+  rows, docked panels, the keyboard shortcuts, and Meta+/.
+- **A Bluetooth headset:** play, pause, and skip from its buttons.
+- **An SMB server over a phone hotspot or Tailscale:** steady playback, and
+  recovery after the connection drops.
+
 ### DTS and TrueHD
 
 Media3 plays DTS, DTS-HD, and Dolby TrueHD through the device's own decoders
@@ -246,6 +328,24 @@ That FFmpeg decoder is licensed under the GNU General Public License v3.0, so
 the Android app built from this branch, as a whole, is distributed under the
 GPL-3.0. Its source is this branch plus the libraries it names; the decoder's
 own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
+
+### Dependencies and licences
+
+| Dependency | Use | Licence |
+|---|---|---|
+| AndroidX Media3 1.9.0 (`media3-exoplayer`, `media3-ui`, `media3-session`, `media3-effect`) | Playback, system media controls, video effects | Apache-2.0 |
+| `org.jellyfin.media3:media3-ffmpeg-decoder` 1.9.0+1 | DTS and TrueHD decoding | GPL-3.0 |
+| AndroidX MediaRouter | Audio output switcher | Apache-2.0 |
+| Jetpack Compose, Room, Activity, Lifecycle, DocumentFile, Security Crypto | UI, local records, encrypted settings | Apache-2.0 |
+| jcifs-ng | SMB | LGPL-2.1 |
+| Coil | Images | Apache-2.0 |
+| ZXing core | TMDB sign-in QR code | Apache-2.0 |
+| kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
+| AMD FidelityFX Super Resolution 1.0 (EASU, ported to GLSL) | Upscaling | MIT |
+| Nunito | The Rounded subtitle font | SIL OFL 1.1 |
+
+The build reads `TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, and
+`WYZIE_API_KEY` from `secrets.json`; this release adds no new keys.
 
 ### Languages
 
