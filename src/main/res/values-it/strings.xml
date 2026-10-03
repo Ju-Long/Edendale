@@ -131,9 +131,9 @@
     <string name="remove_folder">Rimuovi %1$s</string>
     <string name="remove_source_title">Rimuovi sorgente</string>
     <string name="remove_source_confirm_title">Rimuovere %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” verrà rimosso dalla tua libreria e l\'accesso salvato per %2$s verrà dimenticato, a meno che un\'altra sorgente non utilizzi ancora quel server. Nessun elemento sul server verrà eliminato.</string>
+    <string name="remove_source_message_smb">“%1$s” viene rimosso dalla libreria. Sul server non viene eliminato nulla e il login salvato per %2$s resta in Impostazioni → Account.</string>
     <string name="remove_source_message_local">“%1$s” verrà rimosso dalla tua libreria. Nessun elemento sul tuo dispositivo verrà eliminato.</string>
-    <string name="remove_source_message_generic">Edendale dimentica questa sorgente e tutto ciò che è stato indicizzato da essa, oltre a qualsiasi accesso salvato per l\'host quando nessun\'altra sorgente ne avrà bisogno. Nessun elemento verrà eliminato dal tuo dispositivo o dalla condivisione.</string>
+    <string name="remove_source_message_generic">Edendale dimentica questa sorgente e tutto ciò che ne è stato indicizzato. Nulla viene eliminato dal dispositivo o dalla condivisione, e gli accessi salvati restano in Impostazioni → Account.</string>
     <string name="mark_watched">Segna come visto</string>
     <string name="mark_unwatched">Segna come non visto</string>
     <string name="watched">Guardato</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Impossibile raggiungere %1$s. Controlla la connessione e riprova.</string>
     <string name="sources_status_needs_sign_in">Accedi di nuovo a %1$s per raggiungere questa sorgente.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Account</string>
+    <string name="accounts_empty">Nessun account collegato né login salvato. Aggiungili con “Collega sorgente”.</string>
+    <string name="accounts_no_sources">Nessuna sorgente su questo dispositivo</string>
+    <string name="accounts_forget">Dimentica</string>
+    <string name="accounts_forget_login">Dimentica login</string>
+    <string name="accounts_forget_message">Le sorgenti su %1$s non possono connettersi finché non inserisci di nuovo il login.</string>
+    <string name="accounts_note">Gli accessi restano su questo dispositivo e non vengono mai inclusi nei backup. Rimuovendo una sorgente vengono conservati; eliminali qui.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d sorgente su questo dispositivo</item>
+        <item quantity="other">%1$d sorgenti su questo dispositivo</item>
+    </plurals>
 </resources>

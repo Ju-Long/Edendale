@@ -131,9 +131,9 @@
     <string name="remove_folder">Ta bort %1$s</string>
     <string name="remove_source_title">Ta bort källa</string>
     <string name="remove_source_confirm_title">Ta bort %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” tas bort från ditt bibliotek och den sparade inloggningen för %2$s glöms bort, såvida inte en annan källa fortfarande använder den servern. Ingenting på servern raderas.</string>
+    <string name="remove_source_message_smb">”%1$s” tas bort från ditt bibliotek. Ingenting på servern raderas och den sparade inloggningen för %2$s finns kvar under Inställningar → Konton.</string>
     <string name="remove_source_message_local">“%1$s” tas bort från ditt bibliotek. Ingenting på din enhet raderas.</string>
-    <string name="remove_source_message_generic">Edendale glömmer denna källa och allt som indexerats från den, samt eventuell sparad inloggning för värden när ingen annan källa behöver den. Ingenting raderas från din enhet eller resursen.</string>
+    <string name="remove_source_message_generic">Edendale glömmer den här källan och allt som indexerats från den. Inget raderas från enheten eller utdelningen, och sparade inloggningar finns kvar under Inställningar → Konton.</string>
     <string name="mark_watched">Markera som sedd</string>
     <string name="mark_unwatched">Markera som osedd</string>
     <string name="watched">Sedd</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Det gick inte att nå %1$s. Kontrollera anslutningen och försök igen.</string>
     <string name="sources_status_needs_sign_in">Logga in på %1$s igen för att nå den här källan.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Konton</string>
+    <string name="accounts_empty">Inga länkade konton eller sparade inloggningar. Lägg till dem med ”Länka källa”.</string>
+    <string name="accounts_no_sources">Inga källor på den här enheten</string>
+    <string name="accounts_forget">Glöm</string>
+    <string name="accounts_forget_login">Glöm inloggning</string>
+    <string name="accounts_forget_message">Källor på %1$s kan inte ansluta förrän du anger inloggningen igen.</string>
+    <string name="accounts_note">Inloggningar stannar på den här enheten och säkerhetskopieras aldrig. De finns kvar när du tar bort en källa; ta bort dem här.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d källa på den här enheten</item>
+        <item quantity="other">%1$d källor på den här enheten</item>
+    </plurals>
 </resources>

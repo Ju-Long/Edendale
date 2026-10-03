@@ -131,9 +131,9 @@
     <string name="remove_folder">移除 %1$s</string>
     <string name="remove_source_title">移除源</string>
     <string name="remove_source_confirm_title">移除 %1$s？</string>
-    <string name="remove_source_message_smb">“%1$s”将从您的媒体库中移除，您保存的 %2$s 登录信息也将被遗忘，除非其他源仍在使用该服务器。服务器上的任何内容都不会被删除。</string>
+    <string name="remove_source_message_smb">“%1$s”将从你的资料库中移除。服务器上的任何内容都不会被删除，%2$s 的已存储登录信息仍保留在“设置”→“帐户”中。</string>
     <string name="remove_source_message_local">“%1$s”将从您的媒体库中移除。您设备上的任何内容都不会被删除。</string>
-    <string name="remove_source_message_generic">Edendale 将遗忘此源及从中索引的所有内容，一旦不再有其他源需要，还会遗忘保存的主机登录信息。您的设备或共享中的任何内容都不会被删除。</string>
+    <string name="remove_source_message_generic">Edendale 会忘记此来源及从中编入索引的所有内容。你的设备和共享位置上的内容都不会被删除，已存储的登录信息仍保留在“设置”→“帐户”中。</string>
     <string name="mark_watched">标记为已看</string>
     <string name="mark_unwatched">标记为未看</string>
     <string name="watched">已观看</string>
@@ -339,4 +339,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">无法连接 %1$s。请检查你的网络连接，然后重试。</string>
     <string name="sources_status_needs_sign_in">重新登录 %1$s 以访问此来源。</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">帐户</string>
+    <string name="accounts_empty">没有已链接的帐户或已存储的登录信息。可通过“链接来源”添加。</string>
+    <string name="accounts_no_sources">此设备上没有来源</string>
+    <string name="accounts_forget">忘记</string>
+    <string name="accounts_forget_login">忘记登录信息</string>
+    <string name="accounts_forget_message">在你重新输入登录信息之前，%1$s 上的来源将无法连接。</string>
+    <string name="accounts_note">登录信息仅保留在此设备上，且不会被备份。移除来源不会删除它们；请在此处删除。</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">此设备上的 %1$d 个来源</item>
+        <item quantity="other">此设备上的 %1$d 个来源</item>
+    </plurals>
 </resources>

@@ -131,9 +131,9 @@
     <string name="remove_folder">Удалить %1$s</string>
     <string name="remove_source_title">Удалить источник</string>
     <string name="remove_source_confirm_title">Удалить %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” удаляется из вашей библиотеки, а сохраненный логин для %2$s будет забыт, если только этот сервер не используется другим источником. На самом сервере ничего не удаляется.</string>
+    <string name="remove_source_message_smb">«%1$s» удаляется из медиатеки. На сервере ничего не удаляется, а сохраненные данные для входа в %2$s остаются в разделе Настройки → Аккаунты.</string>
     <string name="remove_source_message_local">“%1$s” удаляется из вашей библиотеки. На вашем устройстве ничего не удаляется.</string>
-    <string name="remove_source_message_generic">Edendale забудет этот источник и все проиндексированные из него данные, а также любые сохраненные логины для хоста, как только они перестанут быть нужны другим источникам. На вашем устройстве или сетевой папке ничего не удаляется.</string>
+    <string name="remove_source_message_generic">Edendale забывает этот источник и всё, что было из него проиндексировано. С устройства и из общей папки ничего не удаляется, а сохраненные данные для входа остаются в разделе Настройки → Аккаунты.</string>
     <string name="mark_watched">Отметить просмотренным</string>
     <string name="mark_unwatched">Отметить непросмотренным</string>
     <string name="watched">Просмотрено</string>
@@ -351,4 +351,18 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Не удалось связаться с %1$s. Проверьте подключение и повторите попытку.</string>
     <string name="sources_status_needs_sign_in">Войдите в %1$s снова, чтобы получить доступ к этому источнику.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Аккаунты</string>
+    <string name="accounts_empty">Нет подключенных аккаунтов и сохраненных данных для входа. Добавьте их через «Добавить источник».</string>
+    <string name="accounts_no_sources">На этом устройстве нет источников</string>
+    <string name="accounts_forget">Забыть</string>
+    <string name="accounts_forget_login">Забыть данные для входа</string>
+    <string name="accounts_forget_message">Источники на %1$s не смогут подключиться, пока вы снова не введете данные для входа.</string>
+    <string name="accounts_note">Данные для входа хранятся только на этом устройстве и не попадают в резервные копии. При удалении источника они сохраняются; удалить их можно здесь.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d источник на этом устройстве</item>
+        <item quantity="few">%1$d источника на этом устройстве</item>
+        <item quantity="many">%1$d источников на этом устройстве</item>
+        <item quantity="other">%1$d источника на этом устройстве</item>
+    </plurals>
 </resources>

@@ -131,9 +131,9 @@
     <string name="remove_folder">%1$s verwijderen</string>
     <string name="remove_source_title">Bron verwijderen</string>
     <string name="remove_source_confirm_title">%1$s verwijderen?</string>
-    <string name="remove_source_message_smb">“%1$s” is uit je bibliotheek verwijderd en de opgeslagen inloggegevens voor %2$s zijn vergeten, tenzij een andere bron die server nog gebruikt. Er is niets op de server verwijderd.</string>
+    <string name="remove_source_message_smb">“%1$s” wordt uit je bibliotheek verwijderd. Er wordt niets verwijderd van de server en de bewaarde inloggegevens voor %2$s blijven in Instellingen → Accounts.</string>
     <string name="remove_source_message_local">“%1$s” is uit je bibliotheek verwijderd. Er is niets van je apparaat verwijderd.</string>
-    <string name="remove_source_message_generic">Edendale vergeet deze bron en alles wat eruit is geïndexeerd, en alle opgeslagen inloggegevens voor de host zodra geen enkele andere bron deze meer nodig heeft. Er wordt niets van je apparaat of de share verwijderd.</string>
+    <string name="remove_source_message_generic">Edendale vergeet deze bron en alles wat eruit is geïndexeerd. Er wordt niets verwijderd van je apparaat of de share, en opgeslagen inloggegevens blijven in Instellingen → Accounts.</string>
     <string name="mark_watched">Markeren als bekeken</string>
     <string name="mark_unwatched">Markeren als onbekeken</string>
     <string name="watched">Bekeken</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Kan %1$s niet bereiken. Controleer je verbinding en probeer het opnieuw.</string>
     <string name="sources_status_needs_sign_in">Log opnieuw in bij %1$s om deze bron te bereiken.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="accounts_empty">Geen gekoppelde accounts of bewaarde inloggegevens. Voeg ze toe met “Koppel bron”.</string>
+    <string name="accounts_no_sources">Geen bronnen op dit apparaat</string>
+    <string name="accounts_forget">Vergeet</string>
+    <string name="accounts_forget_login">Vergeet inloggegevens</string>
+    <string name="accounts_forget_message">Bronnen op %1$s kunnen geen verbinding maken totdat je de inloggegevens opnieuw invoert.</string>
+    <string name="accounts_note">Inloggegevens blijven op dit apparaat en worden nooit geback-upt. Ze blijven bewaard als je een bron verwijdert; verwijder ze hier.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d bron op dit apparaat</item>
+        <item quantity="other">%1$d bronnen op dit apparaat</item>
+    </plurals>
 </resources>

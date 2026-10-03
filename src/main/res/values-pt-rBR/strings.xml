@@ -131,9 +131,9 @@
     <string name="remove_folder">Remover %1$s</string>
     <string name="remove_source_title">Remover Fonte</string>
     <string name="remove_source_confirm_title">Remover %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” é removido da sua biblioteca e o login salvo para %2$s é esquecido, a menos que outra fonte ainda use esse servidor. Nada no servidor é apagado.</string>
+    <string name="remove_source_message_smb">“%1$s” é removido da sua biblioteca. Nada no servidor é apagado, e o login salvo para %2$s continua em Ajustes → Contas.</string>
     <string name="remove_source_message_local">“%1$s” é removido da sua biblioteca. Nada no seu dispositivo é apagado.</string>
-    <string name="remove_source_message_generic">O Edendale esquece esta fonte e tudo o que foi indexado dela, e qualquer login salvo para o host quando nenhuma outra fonte precisar. Nada é apagado do seu dispositivo ou do compartilhamento.</string>
+    <string name="remove_source_message_generic">O Edendale esquece esta fonte e tudo o que foi indexado a partir dela. Nada é apagado do seu dispositivo nem do compartilhamento, e qualquer login salvo permanece em Ajustes → Contas.</string>
     <string name="mark_watched">Marcar como assistido</string>
     <string name="mark_unwatched">Marcar como não assistido</string>
     <string name="watched">Assistido</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Não foi possível acessar %1$s. Verifique sua conexão e tente novamente.</string>
     <string name="sources_status_needs_sign_in">Inicie a sessão em %1$s novamente para acessar esta origem.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Contas</string>
+    <string name="accounts_empty">Nenhuma conta vinculada ou login salvo. Adicione-os com “Vincular Origem”.</string>
+    <string name="accounts_no_sources">Nenhuma origem neste dispositivo</string>
+    <string name="accounts_forget">Esquecer</string>
+    <string name="accounts_forget_login">Esquecer Login</string>
+    <string name="accounts_forget_message">As origens em %1$s não conseguem se conectar até você digitar o login novamente.</string>
+    <string name="accounts_note">Os logins ficam neste dispositivo e nunca entram em backups. Ao remover uma fonte, eles são mantidos; remova-os aqui.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d origem neste dispositivo</item>
+        <item quantity="other">%1$d origens neste dispositivo</item>
+    </plurals>
 </resources>

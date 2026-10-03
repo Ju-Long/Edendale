@@ -941,14 +941,14 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   sources; their next scan shows "needs sign-in".
 
 **Checklist:**
-- [ ] **D.4.1** `removeFolder` stops calling `removeCredentials`. Update
+- [x] **D.4.1** `removeFolder` stops calling `removeCredentials`. Update
   `remove_source_message_smb` and `remove_source_message_generic` in every
   locale to say the login stays in Settings → Accounts.
-- [ ] **D.4.2** `SmbCredentialsStore` can list its hosts; add the Accounts
+- [x] **D.4.2** `SmbCredentialsStore` can list its hosts; add the Accounts
   section with usage counts.
 
 **Tests (JVM):**
-- [ ] **D.4.T1** Usage counts per host (case-insensitive host match, like
+- [x] **D.4.T1** Usage counts per host (case-insensitive host match, like
   `SmbClient.hostOf`).
 
 ### D.5 — Play From: several copies of one title (DIFF §3.11)
@@ -1867,7 +1867,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.1 | Buffered SMB reads | Complete | |
 | D.2 | Source records (Room v3) | Complete | |
 | D.3 | Rescan throttle and per-source status | Complete | |
-| D.4 | Keep logins; Accounts | Not started | |
+| D.4 | Keep logins; Accounts | Complete | |
 | D.5 | Play From | Not started | |
 | E.1 | EQ profiles and booster | Not started | |
 | E.2 | DTS and TrueHD (D5) | Not started | |

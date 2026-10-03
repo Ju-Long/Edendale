@@ -181,24 +181,20 @@ class LibraryRepository(
     }
 
     /**
-     * Fully unlinks a source: the folder and everything scanned from it go, the
-     * SAF grant is handed back, and the stored login is forgotten once no other
-     * source still points at that host. Credentials are per host, so removing
-     * one of two shares on the same NAS must leave the other one working.
+     * Unlinks a source: the folder and everything scanned from it go, and the
+     * SAF grant is handed back. A network source's saved login is kept — it
+     * lives in Settings → Accounts until removed there (D.4).
      */
     fun removeFolder(treeUri: String) {
         scope.launch {
-            val host = SmbClient.hostOf(treeUri)
             dao.removeFolderTree(treeUri)
-            if (host == null) {
+            if (SmbClient.hostOf(treeUri) == null) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
                         Uri.parse(treeUri),
                         Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     )
                 }
-            } else if (dao.folders().none { SmbClient.hostOf(it.treeUri).equals(host, ignoreCase = true) }) {
-                smbCredentialsStore.removeCredentials(host)
             }
         }
     }

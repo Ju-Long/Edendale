@@ -131,9 +131,9 @@
     <string name="remove_folder">Eliminar %1$s</string>
     <string name="remove_source_title">Eliminar Fuente</string>
     <string name="remove_source_confirm_title">¿Eliminar %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” se elimina de tu biblioteca y se olvida el inicio de sesión guardado para %2$s, a menos que otra fuente aún use ese servidor. No se elimina nada en el servidor.</string>
+    <string name="remove_source_message_smb">“%1$s” se quita de tu biblioteca. No se borra nada del servidor y el inicio de sesión guardado para %2$s se conserva en Configuración → Cuentas.</string>
     <string name="remove_source_message_local">“%1$s” se elimina de tu biblioteca. No se elimina nada en tu dispositivo.</string>
-    <string name="remove_source_message_generic">Edendale olvida esta fuente y todo lo indexado de ella, y cualquier inicio de sesión guardado para el host una vez que ninguna otra fuente lo necesite. No se elimina nada de tu dispositivo ni del recurso compartido.</string>
+    <string name="remove_source_message_generic">Edendale olvida esta fuente y todo lo indexado desde ella. No se elimina nada de tu dispositivo ni del recurso compartido, y cualquier inicio de sesión guardado se queda en Configuración → Cuentas.</string>
     <string name="mark_watched">Marcar como visto</string>
     <string name="mark_unwatched">Marcar como no visto</string>
     <string name="watched">Visto</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">No se pudo acceder a %1$s. Revisa tu conexión y vuelve a intentarlo.</string>
     <string name="sources_status_needs_sign_in">Vuelve a iniciar sesión en %1$s para acceder a este origen.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Cuentas</string>
+    <string name="accounts_empty">No hay cuentas vinculadas ni inicios de sesión guardados. Puedes agregarlos con “Vincular origen”.</string>
+    <string name="accounts_no_sources">No hay orígenes en este dispositivo</string>
+    <string name="accounts_forget">Olvidar</string>
+    <string name="accounts_forget_login">Olvidar inicio de sesión</string>
+    <string name="accounts_forget_message">Los orígenes de %1$s no pueden conectarse hasta que vuelvas a ingresar el inicio de sesión.</string>
+    <string name="accounts_note">Los inicios de sesión se quedan en este dispositivo y nunca se respaldan. Al quitar una fuente se conservan; elimínalos aquí.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d origen en este dispositivo</item>
+        <item quantity="other">%1$d orígenes en este dispositivo</item>
+    </plurals>
 </resources>

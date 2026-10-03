@@ -131,9 +131,9 @@
     <string name="remove_folder">Remover %1$s</string>
     <string name="remove_source_title">Remover Fonte</string>
     <string name="remove_source_confirm_title">Remover %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” é removido da sua biblioteca e o início de sessão guardado para %2$s é esquecido, a menos que outra fonte ainda utilize esse servidor. Nada no servidor é eliminado.</string>
+    <string name="remove_source_message_smb">“%1$s” é removido da sua biblioteca. Nada no servidor é apagado e as credenciais guardadas para %2$s permanecem em Definições → Contas.</string>
     <string name="remove_source_message_local">“%1$s” é removido da sua biblioteca. Nada no seu dispositivo é eliminado.</string>
-    <string name="remove_source_message_generic">O Edendale esquece esta fonte e tudo o que foi indexado a partir dela, assim como qualquer início de sessão guardado para o anfitrião, assim que nenhuma outra fonte o necessitar. Nada é eliminado do seu dispositivo ou partilha.</string>
+    <string name="remove_source_message_generic">O Edendale esquece esta fonte e tudo o que foi indexado a partir dela. Nada é apagado do seu dispositivo nem da partilha, e qualquer início de sessão guardado permanece em Definições → Contas.</string>
     <string name="mark_watched">Marcar como visto</string>
     <string name="mark_unwatched">Marcar como não visto</string>
     <string name="watched">Visto</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Não foi possível aceder a %1$s. Verifique a ligação e tente novamente.</string>
     <string name="sources_status_needs_sign_in">Inicie sessão em %1$s novamente para aceder a esta fonte.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Contas</string>
+    <string name="accounts_empty">Não há contas ligadas nem credenciais guardadas. Adicione-as com “Ligar Fonte”.</string>
+    <string name="accounts_no_sources">Nenhuma fonte neste dispositivo</string>
+    <string name="accounts_forget">Esquecer</string>
+    <string name="accounts_forget_login">Esquecer Credenciais</string>
+    <string name="accounts_forget_message">As fontes em %1$s não conseguem ligar-se até introduzir as credenciais novamente.</string>
+    <string name="accounts_note">Os inícios de sessão ficam neste dispositivo e nunca são incluídos em cópias de segurança. Ao remover uma fonte, são mantidos; remova-os aqui.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d fonte neste dispositivo</item>
+        <item quantity="other">%1$d fontes neste dispositivo</item>
+    </plurals>
 </resources>

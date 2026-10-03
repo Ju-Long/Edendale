@@ -131,9 +131,9 @@
     <string name="remove_folder">%1$s entfernen</string>
     <string name="remove_source_title">Quelle entfernen</string>
     <string name="remove_source_confirm_title">%1$s entfernen?</string>
-    <string name="remove_source_message_smb">“%1$s” wird aus deiner Bibliothek entfernt und das gespeicherte Login für %2$s wird vergessen, es sei denn, eine andere Quelle nutzt diesen Server noch. Auf dem Server wird nichts gelöscht.</string>
+    <string name="remove_source_message_smb">„%1$s“ wird aus deiner Mediathek entfernt. Auf dem Server wird nichts gelöscht, und die gespeicherten Anmeldedaten für %2$s bleiben unter Einstellungen → Accounts erhalten.</string>
     <string name="remove_source_message_local">“%1$s” wird aus deiner Bibliothek entfernt. Auf deinem Gerät wird nichts gelöscht.</string>
-    <string name="remove_source_message_generic">Edendale vergisst diese Quelle und alles, was daraus indiziert wurde, sowie jedes gespeicherte Login für den Host, sobald keine andere Quelle es mehr benötigt. Es wird nichts von deinem Gerät oder der Freigabe gelöscht.</string>
+    <string name="remove_source_message_generic">Edendale vergisst diese Quelle und alles, was daraus indiziert wurde. Auf deinem Gerät und in der Freigabe wird nichts gelöscht, und gespeicherte Anmeldedaten bleiben unter Einstellungen → Accounts erhalten.</string>
     <string name="mark_watched">Als gesehen markieren</string>
     <string name="mark_unwatched">Als ungesehen markieren</string>
     <string name="watched">Gesehen</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">%1$s ist nicht erreichbar. Überprüfe deine Verbindung und versuche es erneut.</string>
     <string name="sources_status_needs_sign_in">Melde dich erneut bei %1$s an, um diese Quelle zu erreichen.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="accounts_empty">Keine verknüpften Accounts oder gespeicherten Anmeldedaten. Mit „Quelle verknüpfen“ fügst du sie hinzu.</string>
+    <string name="accounts_no_sources">Keine Quellen auf diesem Gerät</string>
+    <string name="accounts_forget">Vergessen</string>
+    <string name="accounts_forget_login">Anmeldedaten vergessen</string>
+    <string name="accounts_forget_message">Quellen auf %1$s können keine Verbindung herstellen, bis du die Anmeldedaten erneut eingibst.</string>
+    <string name="accounts_note">Anmeldedaten bleiben auf diesem Gerät und werden nie gesichert. Beim Entfernen einer Quelle bleiben sie erhalten; entferne sie hier.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d Quelle auf diesem Gerät</item>
+        <item quantity="other">%1$d Quellen auf diesem Gerät</item>
+    </plurals>
 </resources>

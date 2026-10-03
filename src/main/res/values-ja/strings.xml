@@ -131,9 +131,9 @@
     <string name="remove_folder">%1$sを削除</string>
     <string name="remove_source_title">ソースを削除</string>
     <string name="remove_source_confirm_title">%1$sを削除しますか？</string>
-    <string name="remove_source_message_smb">“%1$s” はライブラリから削除され、他のソースがまだそのサーバーを使用していない限り、%2$s の保存済みログイン情報も忘れられます。サーバー上のファイルは何も削除されません。</string>
+    <string name="remove_source_message_smb">“%1$s”はライブラリから削除されます。サーバー上のものは何も削除されず、%2$sの保存済みログイン情報は「設定」→「アカウント」に残ります。</string>
     <string name="remove_source_message_local">“%1$s” はライブラリから削除されます。デバイス上のファイルは何も削除されません。</string>
-    <string name="remove_source_message_generic">Edendale はこのソースとそこからインデックスされたすべての情報を忘れ、他のソースがホストを必要としなくなった時点で保存されたログイン情報も忘れます。デバイスや共有からファイルが削除されることはありません。</string>
+    <string name="remove_source_message_generic">Edendaleはこのソースと、そこからインデックスしたすべての項目を消去します。デバイスや共有フォルダからは何も削除されず、保存済みのログイン情報は「設定」→「アカウント」に残ります。</string>
     <string name="mark_watched">視聴済みにする</string>
     <string name="mark_unwatched">未視聴にする</string>
     <string name="watched">視聴済み</string>
@@ -339,4 +339,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">%1$sにアクセスできませんでした。接続を確認して、もう一度お試しください。</string>
     <string name="sources_status_needs_sign_in">このソースにアクセスするには、%1$sにもう一度サインインしてください。</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">アカウント</string>
+    <string name="accounts_empty">リンク済みのアカウントや保存済みのログイン情報はありません。「ソースをリンク」で追加できます。</string>
+    <string name="accounts_no_sources">このデバイスにソースはありません</string>
+    <string name="accounts_forget">削除</string>
+    <string name="accounts_forget_login">ログイン情報を削除</string>
+    <string name="accounts_forget_message">%1$sのソースは、ログイン情報を再入力するまで接続できません。</string>
+    <string name="accounts_note">ログイン情報はこのデバイスに保持され、バックアップされることはありません。ソースを削除しても残ります。削除はここで行います。</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">このデバイス上の%1$d個のソース</item>
+        <item quantity="other">このデバイス上の%1$d個のソース</item>
+    </plurals>
 </resources>

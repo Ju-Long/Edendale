@@ -74,4 +74,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Couldn\'t reach %1$s. Check your connection and try again.</string>
     <string name="sources_status_needs_sign_in">Sign in to %1$s again to reach this source.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="accounts_empty">No linked accounts or saved logins. Link Source adds them.</string>
+    <string name="accounts_no_sources">No sources on this device</string>
+    <string name="accounts_forget">Forget</string>
+    <string name="accounts_forget_login">Forget Login</string>
+    <string name="accounts_forget_message">Sources on %1$s can\'t connect until you enter the login again.</string>
+    <string name="accounts_note">Logins stay on this device and are never backed up. Removing a source keeps them; remove them here.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d source on this device</item>
+        <item quantity="other">%1$d sources on this device</item>
+    </plurals>
 </resources>

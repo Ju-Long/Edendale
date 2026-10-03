@@ -367,6 +367,10 @@ fun SettingsScreen(
         }
 
         item {
+            AccountsSettingsSection(folders = folders, isTelevision = isTelevision)
+        }
+
+        item {
             TmdbAccountSettingsSection(
                 state = tmdbAccount.state,
                 isTelevision = isTelevision,

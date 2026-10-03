@@ -162,9 +162,9 @@
     <string name="remove_folder">Remove %1$s</string>
     <string name="remove_source_title">Remove Source</string>
     <string name="remove_source_confirm_title">Remove %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” is removed from your library and the saved login for %2$s is forgotten, unless another source still uses that server. Nothing on the server is deleted.</string>
+    <string name="remove_source_message_smb">“%1$s” is removed from your library. Nothing on the server is deleted, and the saved login for %2$s stays in Settings → Accounts.</string>
     <string name="remove_source_message_local">“%1$s” is removed from your library. Nothing on your device is deleted.</string>
-    <string name="remove_source_message_generic">Edendale forgets this source and everything indexed from it, and any saved login for the host once no other source needs it. Nothing is deleted from your device or the share.</string>
+    <string name="remove_source_message_generic">Edendale forgets this source and everything indexed from it. Nothing is deleted from your device or the share, and any saved login stays in Settings → Accounts.</string>
     <string name="mark_watched">Mark watched</string>
     <string name="mark_unwatched">Mark unwatched</string>
     <string name="watched">Watched</string>
@@ -400,4 +400,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Couldn\'t reach %1$s. Check your connection and try again.</string>
     <string name="sources_status_needs_sign_in">Sign in to %1$s again to reach this source.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="accounts_empty">No linked accounts or saved logins. Link Source adds them.</string>
+    <string name="accounts_no_sources">No sources on this device</string>
+    <string name="accounts_forget">Forget</string>
+    <string name="accounts_forget_login">Forget Login</string>
+    <string name="accounts_forget_message">Sources on %1$s can\'t connect until you enter the login again.</string>
+    <string name="accounts_note">Logins stay on this device and are never backed up. Removing a source keeps them; remove them here.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d source on this device</item>
+        <item quantity="other">%1$d sources on this device</item>
+    </plurals>
 </resources>

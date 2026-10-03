@@ -131,9 +131,9 @@
     <string name="remove_folder">Supprimer %1$s</string>
     <string name="remove_source_title">Supprimer la source</string>
     <string name="remove_source_confirm_title">Supprimer %1$s ?</string>
-    <string name="remove_source_message_smb">“%1$s” est supprimé de votre bibliothèque et l\'identifiant enregistré pour %2$s est oublié, à moins qu\'une autre source n\'utilise encore ce serveur. Rien n\'est supprimé sur le serveur.</string>
+    <string name="remove_source_message_smb">« %1$s » est retiré de votre bibliothèque. Rien n’est supprimé sur le serveur et l’identifiant enregistré pour %2$s reste dans Réglages → Comptes.</string>
     <string name="remove_source_message_local">“%1$s” est supprimé de votre bibliothèque. Rien n\'est supprimé sur votre appareil.</string>
-    <string name="remove_source_message_generic">Edendale oublie cette source et tout ce qui en a été indexé, ainsi que tout identifiant enregistré pour l\'hôte une fois qu\'aucune autre source n\'en a besoin. Rien n\'est supprimé de votre appareil ou du partage.</string>
+    <string name="remove_source_message_generic">Edendale oublie cette source et tout ce qui en a été indexé. Rien n’est supprimé de votre appareil ni du partage, et tout identifiant enregistré reste dans Réglages → Comptes.</string>
     <string name="mark_watched">Marquer comme vu</string>
     <string name="mark_unwatched">Marquer comme non vu</string>
     <string name="watched">Visionné</string>
@@ -343,4 +343,16 @@
     <!-- D.3 Source status -->
     <string name="sources_status_offline">Impossible de joindre %1$s. Vérifiez votre connexion et réessayez.</string>
     <string name="sources_status_needs_sign_in">Reconnectez-vous à %1$s pour accéder à cette source.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Comptes</string>
+    <string name="accounts_empty">Aucun compte lié ni identifiant enregistré. Utilisez « Lier une source » pour en ajouter.</string>
+    <string name="accounts_no_sources">Aucune source sur cet appareil</string>
+    <string name="accounts_forget">Oublier</string>
+    <string name="accounts_forget_login">Oublier l’identifiant</string>
+    <string name="accounts_forget_message">Les sources sur %1$s ne peuvent pas se connecter tant que vous n’avez pas saisi à nouveau l’identifiant.</string>
+    <string name="accounts_note">Les identifiants restent sur cet appareil et ne sont jamais sauvegardés. Ils sont conservés quand vous retirez une source ; supprimez-les ici.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d source sur cet appareil</item>
+        <item quantity="other">%1$d sources sur cet appareil</item>
+    </plurals>
 </resources>
