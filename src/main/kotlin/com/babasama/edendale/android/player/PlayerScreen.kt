@@ -1566,7 +1566,7 @@ private fun SettingsPanel(
                 onSearch = onSearchOnlineSubtitles,
                 onDownload = onDownloadOnlineSubtitle,
             )
-            PlaybackSection(player, chrome, supportsPip, onAutoPipChanged)
+            PlaybackSection(player, chrome, isTelevision, supportsPip, onAutoPipChanged)
             AspectSection(chrome, isTelevision)
         }
     }
@@ -1901,6 +1901,7 @@ private const val MAX_ONLINE_SUBTITLE_ROWS = 25
 private fun PlaybackSection(
     player: ExoPlayer,
     chrome: PlayerChromeState,
+    isTelevision: Boolean,
     supportsPip: Boolean,
     onAutoPipChanged: () -> Unit,
 ) {
@@ -1933,6 +1934,8 @@ private fun PlaybackSection(
                 onAutoPipChanged()
             }
         }
+        // A TV's output belongs to its own settings and the AV receiver.
+        if (!isTelevision) AudioOutputRow(chrome)
     }
 }
 

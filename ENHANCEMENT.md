@@ -822,9 +822,9 @@ Don't build a workaround without asking the owner.
   (DIFF's volume HUD is Apple-only).
 
 **Checklist:**
-- [ ] **C.6.1** Dependency and session lifecycle.
-- [ ] **C.6.2** The forwarding player, with increments and next/previous.
-- [ ] **C.6.3** The Audio Output row.
+- [x] **C.6.1** Dependency and session lifecycle.
+- [x] **C.6.2** The forwarding player, with increments and next/previous.
+- [x] **C.6.3** The Audio Output row.
 
 **On device:**
 - [ ] **C.6.D1** A Bluetooth headset's play/pause and next buttons work while
@@ -1863,7 +1863,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.3 | Continue Watching next-up | Complete | |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
-| C.6 | MediaSession and system surfaces | Not started | |
+| C.6 | MediaSession and system surfaces | Complete | |
 | D.1 | Buffered SMB reads | Not started | |
 | D.2 | Source records (Room v3) | Not started | |
 | D.3 | Rescan throttle and per-source status | Not started | |

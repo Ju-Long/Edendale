@@ -122,6 +122,20 @@ network errors, invalid ranges, and rate limits leave normal playback
 available without a prompt. Playback and initial import never wait for this
 service.
 
+### System media controls
+
+While a video plays, the player publishes a Media3 `MediaSession`
+(`androidx.media3:media3-session`), so headset buttons, Bluetooth controls,
+Google Assistant, and Android TV's system media UI reach it, including in
+Picture-in-Picture. Skip back and forward use the **Settings → App Controls**
+lengths, and next and previous play the neighboring playlist entry. The session
+lives only as long as the player: there is no background playback service, and
+playback still pauses when the player leaves the screen. The artwork it reports
+is the TMDB image the library already shows.
+
+On phones and tablets, **Player Adjustments → Playback → Audio Output** opens
+the system output switcher (`androidx.mediarouter:mediarouter`).
+
 Run the hermetic JVM tests and build the debug APK:
 
 ```sh

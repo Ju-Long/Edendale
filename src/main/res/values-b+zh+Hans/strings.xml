@@ -298,4 +298,7 @@
     <string name="player_up_next_hint">立即播放下一集</string>
     <!-- C.3 Continue Watching next-up -->
     <string name="library_continue_up_next">即将播放 · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">音频输出</string>
+    <string name="player_audio_output_unavailable">此设备不支持切换音频输出。</string>
 </resources>

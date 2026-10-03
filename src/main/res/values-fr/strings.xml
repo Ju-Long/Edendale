@@ -302,4 +302,7 @@
     <string name="player_up_next_hint">Lire l\'épisode suivant maintenant</string>
     <!-- C.3 Continue Watching next-up -->
     <string name="library_continue_up_next">À suivre · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Sortie audio</string>
+    <string name="player_audio_output_unavailable">Le sélecteur de sortie audio n’est pas disponible sur cet appareil.</string>
 </resources>

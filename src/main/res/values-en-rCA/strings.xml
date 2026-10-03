@@ -30,4 +30,7 @@
     <string name="player_up_next_hint">Play the next episode now</string>
     <!-- C.3 Continue Watching next-up -->
     <string name="library_continue_up_next">Up Next · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Audio Output</string>
+    <string name="player_audio_output_unavailable">The audio output switcher isn’t available on this device.</string>
 </resources>

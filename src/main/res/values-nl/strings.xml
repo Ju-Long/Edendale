@@ -302,4 +302,7 @@
     <string name="player_up_next_hint">Speel de volgende aflevering nu af</string>
     <!-- C.3 Continue Watching next-up -->
     <string name="library_continue_up_next">Hierna · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Audio-uitvoer</string>
+    <string name="player_audio_output_unavailable">De keuze voor audio-uitvoer is niet beschikbaar op dit apparaat.</string>
 </resources>

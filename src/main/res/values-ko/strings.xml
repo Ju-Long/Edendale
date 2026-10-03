@@ -298,4 +298,7 @@
     <string name="player_up_next_hint">다음 에피소드 지금 재생</string>
     <!-- C.3 Continue Watching next-up -->
     <string name="library_continue_up_next">다음 에피소드 · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">오디오 출력</string>
+    <string name="player_audio_output_unavailable">이 기기에서는 오디오 출력을 전환할 수 없습니다.</string>
 </resources>

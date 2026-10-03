@@ -28,6 +28,8 @@ internal data class PlaylistEntry(
 internal data class PlayerPlaylist(
     val isEpisodeList: Boolean,
     val entries: List<PlaylistEntry>,
+    /** The show's name for an episode list, when the library has the show. */
+    val showName: String? = null,
 )
 
 /**
@@ -74,6 +76,7 @@ internal suspend fun loadPlayerPlaylist(
         val showTmdbId = showTmdbIdExtra ?: show?.tmdbId
         return PlayerPlaylist(
             isEpisodeList = true,
+            showName = show?.name,
             entries = episodes.map { episode ->
                 PlaylistEntry(
                     uri = episode.uri,

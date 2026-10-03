@@ -112,6 +112,8 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
+    implementation(libs.media3.session)
+    implementation(libs.mediarouter)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)

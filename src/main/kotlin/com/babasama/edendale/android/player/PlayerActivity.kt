@@ -82,6 +82,7 @@ import kotlinx.coroutines.withContext
 class PlayerActivity : ComponentActivity() {
 
     private var player: ExoPlayer? = null
+    private var mediaSession: PlayerMediaSession? = null
     private var dataStore: LocalDataStore? = null
     private var progressKey: ProgressKey? = null
     private var resumeFraction: Double? = null
@@ -196,6 +197,7 @@ class PlayerActivity : ComponentActivity() {
         }
         prefsSubscription = chrome.preferences.addChangeListener {
             updatePipParams()
+            refreshMediaSession()
         }
         onlineSubtitles = OnlineSubtitlesState(playerPreferences)
         wyzieKeyStore = WyzieKeyStore(this)
@@ -304,6 +306,14 @@ class PlayerActivity : ComponentActivity() {
             }
         })
 
+        mediaSession = PlayerMediaSession(
+            context = this,
+            player = exoPlayer,
+            onSeekBy = { offset -> player?.let { seekBy(it, chrome, offset) } },
+            onNeighbor = ::switchToNeighbor,
+        )
+        refreshMediaSession()
+
         refreshWyzieConfigured()
 
         transitions.present()
@@ -393,6 +403,7 @@ class PlayerActivity : ComponentActivity() {
                 // subtitle line once the library row is known.
                 playlist.entries.firstOrNull { it.uri == currentUriState.value }
                     ?.let { subtitleState.value = it.detail }
+                refreshMediaSession()
             }
         }
     }
@@ -453,6 +464,31 @@ class PlayerActivity : ComponentActivity() {
         currentUriState.value = entry.uri
         lifecycleScopedStart(exoPlayer, Uri.parse(entry.uri))
         chrome.showControls()
+        refreshMediaSession()
+    }
+
+    /**
+     * Tells the system's media surfaces what's playing, which skip lengths
+     * App Controls set, and whether next and previous have somewhere to go.
+     */
+    private fun refreshMediaSession() {
+        val session = mediaSession ?: return
+        val playlist = playlistState.value
+        val entries = playlist?.entries.orEmpty()
+        val currentUri = currentUriState.value
+        session.update(
+            backMillis = chrome.preferences.skipBackwardInterval.millis,
+            forwardMillis = chrome.preferences.skipForwardInterval.millis,
+            neighbors = PlaylistNeighbors.of(entries.map { it.uri }, currentUri),
+            nowPlaying = NowPlayingInfo.of(
+                entry = entries.firstOrNull { it.uri == currentUri },
+                title = titleState.value,
+                subtitle = subtitleState.value,
+                showName = playlist?.showName,
+                isEpisode = currentIsEpisode,
+                tmdbId = currentTmdbId,
+            ),
+        )
     }
 
     // ------------------------------------------------------------------
@@ -712,7 +748,10 @@ class PlayerActivity : ComponentActivity() {
         downloadJob?.cancel()
         unregisterPipReceiver()
         setWindowBrightness(-1f)
-        player?.release()
+        // The session's player wraps ExoPlayer and releases it with itself.
+        val session = mediaSession
+        if (session != null) session.release() else player?.release()
+        mediaSession = null
         player = null
         super.onDestroy()
     }
