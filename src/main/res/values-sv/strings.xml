@@ -300,4 +300,6 @@
     <string name="player_up_next">Nästa</string>
     <string name="player_up_next_description">Nästa: %1$s %2$s</string>
     <string name="player_up_next_hint">Spela nästa avsnitt nu</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">Härnäst · %1$s</string>
 </resources>

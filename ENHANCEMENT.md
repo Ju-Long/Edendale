@@ -682,14 +682,14 @@ Don't build a workaround without asking the owner.
   12-item cap.
 
 **Checklist:**
-- [ ] **C.3.1** Extend `continueWatching` in `LibraryPresentation.kt` (pure)
+- [x] **C.3.1** Extend `continueWatching` in `LibraryPresentation.kt` (pure)
   with next-up entries (fraction 0, no progress bar).
-- [ ] **C.3.2** Pick duplicate copies deterministically with D.5's preferred
+- [x] **C.3.2** Pick duplicate copies deterministically with D.5's preferred
   copy (until D.5 lands: the first by natural path order) instead of
   `toMap()`'s last-one-wins.
 
 **Tests (JVM):**
-- [ ] **C.3.T1** Port `ContinueWatchingTests`: next-up after the furthest
+- [x] **C.3.T1** Port `ContinueWatchingTests`: next-up after the furthest
   completed episode; none when an episode is in progress; it works after the
   file was deleted; no progress writes; duplicate shows give one card; the cap
   of 12; ordering.
@@ -1860,7 +1860,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | B.6 | Speed and seek checks | Not started | |
 | C.1 | Episode progression rules | Complete | 1f01315 |
 | C.2 | Auto-advance and Up Next | Complete | fd6c2e9, 7cbb292 |
-| C.3 | Continue Watching next-up | Not started | |
+| C.3 | Continue Watching next-up | Complete | |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
 | C.6 | MediaSession and system surfaces | Not started | |

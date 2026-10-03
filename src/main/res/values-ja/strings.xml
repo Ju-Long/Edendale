@@ -296,4 +296,6 @@
     <string name="player_up_next">次を再生</string>
     <string name="player_up_next_description">次を再生: %1$s %2$s</string>
     <string name="player_up_next_hint">次のエピソードを今すぐ再生</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">次はこちら · %1$s</string>
 </resources>

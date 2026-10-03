@@ -252,4 +252,13 @@ object PlayerLogic {
         }
         return (a.length - i) - (b.length - j)
     }
+
+    /**
+     * [naturalCompare] made total: names it calls equal ("E01" and "E1", or
+     * two cases of one name) fall back to plain order, so picking "the first
+     * copy" gives the same answer on every scan.
+     */
+    val naturalOrder: Comparator<String> = Comparator { a, b ->
+        naturalCompare(a, b).takeIf { it != 0 } ?: a.compareTo(b)
+    }
 }

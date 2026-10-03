@@ -209,4 +209,17 @@ class PlayerLogicTest {
             0.0001,
         )
     }
+
+    @Test
+    fun naturalOrderIsTotal() {
+        // naturalCompare calls these equal; the order still has to be stable.
+        assertEquals(listOf("E01", "E1"), listOf("E1", "E01").sortedWith(PlayerLogic.naturalOrder))
+        assertEquals(listOf("E01", "E1"), listOf("E01", "E1").sortedWith(PlayerLogic.naturalOrder))
+        assertEquals(listOf("ABC", "abc"), listOf("abc", "ABC").sortedWith(PlayerLogic.naturalOrder))
+        assertEquals(
+            listOf("Disk 9/a.mkv", "Disk 10/a.mkv"),
+            listOf("Disk 10/a.mkv", "Disk 9/a.mkv").sortedWith(PlayerLogic.naturalOrder),
+        )
+        assertEquals(0, PlayerLogic.naturalOrder.compare("same", "same"))
+    }
 }

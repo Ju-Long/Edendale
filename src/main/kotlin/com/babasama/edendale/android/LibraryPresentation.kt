@@ -5,6 +5,11 @@ import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.player.CompletedProgressEntry
+import com.babasama.edendale.android.player.EpisodeCandidate
+import com.babasama.edendale.android.player.EpisodeProgression
+import com.babasama.edendale.android.player.PlayerLogic
+import com.babasama.edendale.android.player.ShowCandidate
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.TmdbImageSize
@@ -101,7 +106,11 @@ internal fun libraryGridMetrics(
 
 // MARK: - Continue Watching
 
-/** One resumable title, already joined to the local file that plays it. */
+/**
+ * One resumable title, already joined to the local file that plays it. A
+ * next-up entry is the stored episode after a show's furthest completed one: it
+ * has no watch record of its own, so [fraction] is 0 and it draws no progress.
+ */
 internal data class ContinueEntry(
     val uri: String,
     val title: String,
@@ -113,67 +122,164 @@ internal data class ContinueEntry(
     val showTmdbId: Int? = null,
     val season: Int? = null,
     val episode: Int? = null,
+    val isNextUp: Boolean = false,
 )
 
 /** How many resumable titles the shelf shows before it stops being a shelf. */
 internal const val CONTINUE_WATCHING_LIMIT = 12
 
+/** A part-watched record: the shelf's and the next-up rule's shared test. */
+private fun WatchProgress.isResumable(): Boolean = !isCompleted && normalizedPosition > 0.01
+
 /**
- * Part-watched titles, newest first, joined to the local file that plays them.
- * Records with no matching import are dropped — they belong to TMDB titles the
- * library does not hold.
+ * One copy per TMDB id when the same title was imported more than once: the
+ * first by natural path order, so the choice doesn't depend on scan order.
+ */
+private fun <T> List<T>.firstCopyByTmdbId(tmdbId: (T) -> Int?, uri: (T) -> String): Map<Int, T> =
+    filter { tmdbId(it) != null }
+        .sortedWith(compareBy(PlayerLogic.naturalOrder) { uri(it) })
+        .groupBy { tmdbId(it)!! }
+        .mapValues { it.value.first() }
+
+/**
+ * Continue Watching, newest first, joined to the local files that play it:
+ * every part-watched title, plus — for each show with nothing in progress — the
+ * stored episode after its furthest completed one (Apple's next-up card). The
+ * next-up entry is a suggestion only; nothing here writes watch progress, and
+ * it still appears after the completed episode's file was deleted. Records with
+ * no matching import are dropped — they belong to TMDB titles the library does
+ * not hold.
+ *
+ * [nextUpFormat] carries the localized "Up Next · %1$s" template; the English
+ * default keeps this file free of Android types for the JVM tests.
+ * [limit] caps the shelf; null returns every entry.
  */
 internal fun continueWatching(
     progress: List<WatchProgress>,
     movies: List<LibraryMovieEntity>,
     episodes: List<LibraryEpisodeEntity>,
     shows: List<LibraryShowEntity>,
+    nextUpFormat: (String) -> String = { "Up Next · $it" },
+    limit: Int? = CONTINUE_WATCHING_LIMIT,
 ): List<ContinueEntry> {
     if (progress.isEmpty()) return emptyList()
-    val moviesByTmdbId = movies.mapNotNull { movie -> movie.tmdbId?.let { it to movie } }.toMap()
-    val episodesByTmdbId = episodes.mapNotNull { ep -> ep.tmdbId?.let { it to ep } }.toMap()
+    val moviesByTmdbId = movies.firstCopyByTmdbId({ it.tmdbId }, { it.uri })
+    val episodesByTmdbId = episodes.firstCopyByTmdbId({ it.tmdbId }, { it.uri })
     val showsByKey = shows.associateBy { it.key }
 
-    return progress
-        .asSequence()
-        .filter { !it.isCompleted && it.normalizedPosition > 0.01 }
-        .sortedByDescending { it.lastWatchedEpochMillis }
-        .mapNotNull { record ->
-            val fraction = record.normalizedPosition.toFloat()
-            when (record.mediaType) {
-                WatchMediaType.MOVIE -> {
-                    val movie = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
-                    ContinueEntry(
-                        uri = movie.uri,
-                        title = movie.title,
-                        subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes),
-                        posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
-                        fraction = fraction,
-                        tmdbId = movie.tmdbId,
-                        isEpisode = false,
-                    )
-                }
-                WatchMediaType.EPISODE -> {
-                    val episode = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
-                    val show = showsByKey[episode.showKey]
-                    ContinueEntry(
-                        uri = episode.uri,
-                        title = show?.name ?: episode.fileName,
-                        subtitle = "S${episode.season.pad()}E${episode.episode.pad()}" +
-                            (episode.title?.let { " · $it" } ?: ""),
-                        posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
-                        fraction = fraction,
-                        tmdbId = episode.tmdbId,
-                        isEpisode = true,
-                        showTmdbId = show?.tmdbId,
-                        season = episode.season,
-                        episode = episode.episode,
-                    )
-                }
+    val resumable = progress.filter { it.isResumable() }
+    val inProgress = resumable.mapNotNull { record ->
+        val fraction = record.normalizedPosition.toFloat()
+        val entry = when (record.mediaType) {
+            WatchMediaType.MOVIE -> {
+                val movie = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                ContinueEntry(
+                    uri = movie.uri,
+                    title = movie.title,
+                    subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes),
+                    posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
+                    fraction = fraction,
+                    tmdbId = movie.tmdbId,
+                    isEpisode = false,
+                )
+            }
+            WatchMediaType.EPISODE -> {
+                val episode = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val show = showsByKey[episode.showKey]
+                ContinueEntry(
+                    uri = episode.uri,
+                    title = show?.name ?: episode.fileName,
+                    subtitle = episodeCode(episode.season, episode.episode) +
+                        (episode.title?.let { " · $it" } ?: ""),
+                    posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
+                    fraction = fraction,
+                    tmdbId = episode.tmdbId,
+                    isEpisode = true,
+                    showTmdbId = show?.tmdbId,
+                    season = episode.season,
+                    episode = episode.episode,
+                )
             }
         }
-        .take(CONTINUE_WATCHING_LIMIT)
-        .toList()
+        entry to record.lastWatchedEpochMillis
+    }
+
+    val nextUp = nextUpEntries(progress, resumable, episodes, shows, episodesByTmdbId, nextUpFormat)
+
+    val sorted = (inProgress + nextUp)
+        .sortedByDescending { it.second }
+        .map { it.first }
+    return if (limit == null) sorted else sorted.take(limit)
+}
+
+/** "S01E02". */
+internal fun episodeCode(season: Int, episode: Int): String = "S${season.pad()}E${episode.pad()}"
+
+/**
+ * Next-up entries paired with the completed episode's last-watched time, which
+ * is where they sort. Copies of one show (the same TMDB id imported from
+ * several folders) merge into one candidate list, so they give one card.
+ */
+private fun nextUpEntries(
+    progress: List<WatchProgress>,
+    resumable: List<WatchProgress>,
+    episodes: List<LibraryEpisodeEntity>,
+    shows: List<LibraryShowEntity>,
+    episodesByTmdbId: Map<Int, LibraryEpisodeEntity>,
+    nextUpFormat: (String) -> String,
+): List<Pair<ContinueEntry, Long>> {
+    val showsByKey = shows.associateBy { it.key }
+    val inProgressShowIds = resumable
+        .filter { it.mediaType == WatchMediaType.EPISODE }
+        .mapNotNull { record ->
+            record.showTmdbId
+                ?: episodesByTmdbId[record.tmdbId]?.let { showsByKey[it.showKey]?.tmdbId }
+        }
+        .toSet()
+    val episodesByShowKey = episodes.groupBy { it.showKey }
+    val candidates = shows
+        .filter { it.tmdbId != null }
+        .groupBy { it.tmdbId!! }
+        .map { (showId, copies) ->
+            ShowCandidate(
+                tmdbId = showId,
+                name = copies.first().name,
+                episodes = copies
+                    .flatMap { episodesByShowKey[it.key].orEmpty() }
+                    .sortedWith(compareBy(PlayerLogic.naturalOrder) { it.uri })
+                    .map { EpisodeCandidate(id = it.uri, season = it.season, episode = it.episode, title = it.title) },
+            )
+        }
+    val completed = progress.map {
+        CompletedProgressEntry(
+            tmdbId = it.tmdbId,
+            isEpisode = it.mediaType == WatchMediaType.EPISODE,
+            isCompleted = it.isCompleted,
+            showTmdbId = it.showTmdbId,
+            seasonNumber = it.seasonNumber,
+            episodeNumber = it.episodeNumber,
+            lastWatchedEpochMillis = it.lastWatchedEpochMillis,
+        )
+    }
+    val episodesByUri = episodes.associateBy { it.uri }
+    return EpisodeProgression.nextUpEpisodes(completed, inProgressShowIds, candidates)
+        .mapNotNull { candidate ->
+            val episode = episodesByUri[candidate.episode.id] ?: return@mapNotNull null
+            val show = showsByKey[episode.showKey]
+            ContinueEntry(
+                uri = episode.uri,
+                title = show?.name ?: candidate.show.name,
+                subtitle = nextUpFormat(episodeCode(episode.season, episode.episode)),
+                posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
+                fraction = 0f,
+                tmdbId = episode.tmdbId,
+                isEpisode = true,
+                showTmdbId = candidate.show.tmdbId,
+                season = episode.season,
+                episode = episode.episode,
+                isNextUp = true,
+            ) to candidate.lastWatchedEpochMillis
+        }
 }
 
 // MARK: - Critical Consensus

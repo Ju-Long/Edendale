@@ -130,8 +130,9 @@ private fun DownloadedScreenContent(
 
     val runtimeFormat = rememberRuntimeFormat()
     val progressByKey = remember(progressList) { progressList.byStorageKey() }
-    val continueEntries = remember(progressList, movies, visibleEpisodes, shows) {
-        continueWatching(progressList, movies, visibleEpisodes, shows)
+    val upNextTemplate = stringResource(R.string.library_continue_up_next)
+    val continueEntries = remember(progressList, movies, visibleEpisodes, shows, upNextTemplate) {
+        continueWatching(progressList, movies, visibleEpisodes, shows, nextUpFormat = { upNextTemplate.format(it) })
     }
     val episodeCounts = remember(episodes) { episodes.groupingBy { it.showKey }.eachCount() }
 
@@ -266,7 +267,7 @@ private fun DownloadedScreenContent(
                                     posterUrl = entry.posterUrl,
                                     width = preferredPoster,
                                     isTelevision = isTelevision,
-                                    progress = entry.fraction,
+                                    progress = entry.fraction.takeUnless { entry.isNextUp },
                                     mediaType = if (entry.isEpisode) MediaType.TV else MediaType.MOVIE,
                                     onClick = {
                                         PlayerActivity.play(

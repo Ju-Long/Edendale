@@ -300,4 +300,6 @@
     <string name="player_up_next">A continuación</string>
     <string name="player_up_next_description">A continuación: %1$s %2$s</string>
     <string name="player_up_next_hint">Reproducir el siguiente episodio ahora</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">A continuación · %1$s</string>
 </resources>
