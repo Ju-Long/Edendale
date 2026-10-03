@@ -391,4 +391,21 @@
     <string name="audio_passthrough_note">Эквалайзер и усилитель применяются к звуку, который декодирует Edendale. Объемный звук, передаваемый без изменений на ресивер или телевизор, воспроизводится без них.</string>
     <string name="audio_step_lower">%1$s, ниже</string>
     <string name="audio_step_higher">%1$s, выше</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Изображение</string>
+    <string name="video_brightness">Яркость</string>
+    <string name="video_contrast">Контрастность</string>
+    <string name="video_gamma">Гамма</string>
+    <string name="video_saturation">Насыщенность</string>
+    <string name="video_hue">Оттенок</string>
+    <string name="video_show_original">Показать оригинал</string>
+    <string name="video_enhancement">Улучшение</string>
+    <string name="video_preset">Пресет</string>
+    <string name="video_preset_off">Выкл.</string>
+    <string name="video_preset_sharpen_only">Только резкость</string>
+    <string name="video_preset_balanced">Сбалансированный</string>
+    <string name="video_preset_high_quality">Высокое качество</string>
+    <string name="video_sharpness">Резкость</string>
+    <string name="video_denoise">Шумоподавление</string>
+    <string name="video_not_available_hdr">Недоступно для видео HDR</string>
 </resources>

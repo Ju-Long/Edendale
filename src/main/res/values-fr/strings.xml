@@ -379,4 +379,21 @@
     <string name="audio_passthrough_note">L’égaliseur et l’amplificateur s’appliquent à l’audio décodé par Edendale. Le son surround transmis tel quel à un ampli ou à un téléviseur est lu sans eux.</string>
     <string name="audio_step_lower">%1$s, baisser</string>
     <string name="audio_step_higher">%1$s, monter</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Image</string>
+    <string name="video_brightness">Luminosité</string>
+    <string name="video_contrast">Contraste</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Saturation</string>
+    <string name="video_hue">Teinte</string>
+    <string name="video_show_original">Afficher l’original</string>
+    <string name="video_enhancement">Amélioration</string>
+    <string name="video_preset">Préréglage</string>
+    <string name="video_preset_off">Désactivé</string>
+    <string name="video_preset_sharpen_only">Netteté uniquement</string>
+    <string name="video_preset_balanced">Équilibré</string>
+    <string name="video_preset_high_quality">Haute qualité</string>
+    <string name="video_sharpness">Netteté</string>
+    <string name="video_denoise">Débruitage</string>
+    <string name="video_not_available_hdr">Non disponible pour les vidéos HDR</string>
 </resources>

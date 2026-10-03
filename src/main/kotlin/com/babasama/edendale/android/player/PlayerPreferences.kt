@@ -500,6 +500,13 @@ class PlayerPreferences(
             PlayerPreferencesRules.encodeFloatArray(PlayerPreferencesRules.normalizeAudioBands(value)),
         )
 
+    /** Picture adjustments (F.2), one JSON object under `video.adjustments`, normalized on load. */
+    var videoAdjustments: com.babasama.edendale.android.player.video.VideoAdjustmentValues
+        get() = com.babasama.edendale.android.player.video.VideoAdjustmentValues.fromJson(
+            store.getString(PlayerPreferencesRules.KEY_VIDEO_ADJUSTMENTS, null),
+        )
+        set(value) = store.putString(PlayerPreferencesRules.KEY_VIDEO_ADJUSTMENTS, value.normalized().toJson())
+
     /** Audio Enhancement as one typed value (E.1); setting it stores all four keys. */
     var audioEnhancement: AudioEnhancementSettings
         get() = AudioEnhancementSettings.fromStored(

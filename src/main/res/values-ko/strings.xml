@@ -375,4 +375,21 @@
     <string name="audio_passthrough_note">이퀄라이저와 부스터는 Edendale이 디코딩하는 오디오에 적용됩니다. 리시버나 TV로 그대로 전달되는 서라운드 오디오에는 적용되지 않습니다.</string>
     <string name="audio_step_lower">%1$s, 낮추기</string>
     <string name="audio_step_higher">%1$s, 높이기</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">화면</string>
+    <string name="video_brightness">밝기</string>
+    <string name="video_contrast">대비</string>
+    <string name="video_gamma">감마</string>
+    <string name="video_saturation">채도</string>
+    <string name="video_hue">색조</string>
+    <string name="video_show_original">원본 보기</string>
+    <string name="video_enhancement">향상</string>
+    <string name="video_preset">프리셋</string>
+    <string name="video_preset_off">끔</string>
+    <string name="video_preset_sharpen_only">선명화만</string>
+    <string name="video_preset_balanced">균형</string>
+    <string name="video_preset_high_quality">고품질</string>
+    <string name="video_sharpness">선명도</string>
+    <string name="video_denoise">노이즈 제거</string>
+    <string name="video_not_available_hdr">HDR 비디오에서는 사용할 수 없습니다</string>
 </resources>

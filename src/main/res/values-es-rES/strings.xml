@@ -379,4 +379,21 @@
     <string name="audio_passthrough_note">El ecualizador y el amplificador se aplican al audio que decodifica Edendale. El sonido envolvente que pasa sin cambios a un receptor o televisor se reproduce sin ellos.</string>
     <string name="audio_step_lower">%1$s, bajar</string>
     <string name="audio_step_higher">%1$s, subir</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Imagen</string>
+    <string name="video_brightness">Brillo</string>
+    <string name="video_contrast">Contraste</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Saturación</string>
+    <string name="video_hue">Tono</string>
+    <string name="video_show_original">Mostrar original</string>
+    <string name="video_enhancement">Mejora</string>
+    <string name="video_preset">Preajuste</string>
+    <string name="video_preset_off">Desactivado</string>
+    <string name="video_preset_sharpen_only">Solo nitidez</string>
+    <string name="video_preset_balanced">Equilibrado</string>
+    <string name="video_preset_high_quality">Alta calidad</string>
+    <string name="video_sharpness">Nitidez</string>
+    <string name="video_denoise">Reducción de ruido</string>
+    <string name="video_not_available_hdr">No disponible para vídeo HDR</string>
 </resources>

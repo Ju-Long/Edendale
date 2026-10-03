@@ -51,4 +51,11 @@ ffmpeg -y -f lavfi -i sine=frequency=1000:duration=1:sample_rate=48000 \
     -c:a truehd -strict -2 -fflags +bitexact -map_metadata -1 -f matroska \
     "$ASSETS/audio_truehd_5_1.mka"
 
+# 6. A 2-second 640×360 H.264 clip for the video effects pipeline test (F.1),
+#    also committed under src/androidTest/assets/fixtures.
+ffmpeg -y -f lavfi -i testsrc=duration=2:size=640x360:rate=24 \
+    -c:v libx264 -profile:v baseline -b:v 400k -pix_fmt yuv420p \
+    -fflags +bitexact -map_metadata -1 -movflags +faststart \
+    "$ASSETS/video_640x360.mp4"
+
 echo "Fixtures generated successfully."

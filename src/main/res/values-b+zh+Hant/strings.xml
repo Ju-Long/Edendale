@@ -375,4 +375,21 @@
     <string name="audio_passthrough_note">等化器和增強器作用於 Edendale 解碼的音訊。原樣直通到擴大機或電視的環繞聲不經過它們。</string>
     <string name="audio_step_lower">%1$s，降低</string>
     <string name="audio_step_higher">%1$s，提高</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">畫面</string>
+    <string name="video_brightness">亮度</string>
+    <string name="video_contrast">對比</string>
+    <string name="video_gamma">伽瑪</string>
+    <string name="video_saturation">飽和度</string>
+    <string name="video_hue">色相</string>
+    <string name="video_show_original">顯示原始畫面</string>
+    <string name="video_enhancement">增強</string>
+    <string name="video_preset">預設組合</string>
+    <string name="video_preset_off">關閉</string>
+    <string name="video_preset_sharpen_only">僅銳利化</string>
+    <string name="video_preset_balanced">平衡</string>
+    <string name="video_preset_high_quality">高品質</string>
+    <string name="video_sharpness">銳利度</string>
+    <string name="video_denoise">降噪</string>
+    <string name="video_not_available_hdr">不適用於 HDR 影片</string>
 </resources>

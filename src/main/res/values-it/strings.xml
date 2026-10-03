@@ -379,4 +379,21 @@
     <string name="audio_passthrough_note">L’equalizzatore e il booster si applicano all’audio decodificato da Edendale. L’audio surround inviato così com’è a un ricevitore o a un televisore viene riprodotto senza di essi.</string>
     <string name="audio_step_lower">%1$s, abbassa</string>
     <string name="audio_step_higher">%1$s, alza</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Immagine</string>
+    <string name="video_brightness">Luminosità</string>
+    <string name="video_contrast">Contrasto</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Saturazione</string>
+    <string name="video_hue">Tonalità</string>
+    <string name="video_show_original">Mostra originale</string>
+    <string name="video_enhancement">Miglioramento</string>
+    <string name="video_preset">Preset</string>
+    <string name="video_preset_off">No</string>
+    <string name="video_preset_sharpen_only">Solo nitidezza</string>
+    <string name="video_preset_balanced">Bilanciato</string>
+    <string name="video_preset_high_quality">Alta qualità</string>
+    <string name="video_sharpness">Nitidezza</string>
+    <string name="video_denoise">Riduzione rumore</string>
+    <string name="video_not_available_hdr">Non disponibile per i video HDR</string>
 </resources>

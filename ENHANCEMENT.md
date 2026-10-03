@@ -1111,12 +1111,12 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   G.1 needs one.
 
 **Checklist:**
-- [ ] **F.1.1** The dependency, the install-on-demand logic, and the
+- [x] **F.1.1** The dependency, the install-on-demand logic, and the
   re-prepare path.
-- [ ] **F.1.2** The settings holder, and REDRAW while paused.
-- [ ] **F.1.3** The fixed surface size from the target, using the physical
+- [x] **F.1.2** The settings holder, and REDRAW while paused.
+- [x] **F.1.3** The fixed surface size from the target, using the physical
   display mode.
-- [ ] **F.1.4** The HDR and Dolby Vision bypass, with the panel message.
+- [x] **F.1.4** The HDR and Dolby Vision bypass, with the panel message.
 - [ ] **F.1.5** **On device:** compare effects installed but neutral against
   effects not installed: no visible difference, no added stutter, and 4K video
   on a 4K TV box still renders at 4K.
@@ -1157,17 +1157,17 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 - The panel section is **Picture**, after Aspect Ratio.
 
 **Checklist:**
-- [ ] **F.2.1** The pure model, normalization, and JSON.
-- [ ] **F.2.2** `ColorAdjustmentEffect`, the GLSL port.
-- [ ] **F.2.3** The panel UI with Show Original and Reset.
+- [x] **F.2.1** The pure model, normalization, and JSON.
+- [x] **F.2.2** `ColorAdjustmentEffect`, the GLSL port.
+- [x] **F.2.3** The panel UI with Show Original and Reset.
 
 **Tests:**
-- [ ] **F.2.T1** (JVM) Normalization (snapping, clamping, non-finite values),
+- [x] **F.2.T1** (JVM) Normalization (snapping, clamping, non-finite values),
   neutral detection, and the JSON round trip.
-- [ ] **F.2.T2** (JVM) A Kotlin reference of the color math gives hand-computed
+- [x] **F.2.T2** (JVM) A Kotlin reference of the color math gives hand-computed
   results: neutral is the identity; saturation 0 gives the luma; a 120° hue turn
   moves pure red to pure green.
-- [ ] **F.2.T3** (instrumented) Render a solid-color texture through the
+- [x] **F.2.T3** (instrumented) Render a solid-color texture through the
   effect, read the pixels back, and match the Kotlin reference within 1/255.
 
 ### F.3 — Upscaler (DIFF §3.16; Apple §E.2)
@@ -1195,17 +1195,17 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   `1280×720 → 1920×1080`), and omits the target when there's no upscale.
 
 **Checklist:**
-- [ ] **F.3.1** The pure target-resolution function and the label.
-- [ ] **F.3.2** The Lanczos prototype with F.1's surface sizing.
-- [ ] **F.3.3** The EASU GLSL port.
+- [x] **F.3.1** The pure target-resolution function and the label.
+- [x] **F.3.2** The Lanczos prototype with F.1's surface sizing.
+- [x] **F.3.3** The EASU GLSL port.
 - [ ] **F.3.4** The GSR benchmark, recorded in Findings.
 
 **Tests:**
-- [ ] **F.3.T1** (JVM) Port the `targetResolution*` cases from
+- [x] **F.3.T1** (JVM) Port the `targetResolution*` cases from
   `MetalEnhancementPipelineTests` (720p, 1080p, and 4K sources; even
   dimensions), and add 720p on 1080p and 4K displays, 1080p on 1080p and 4K,
   4K on 4K, odd sizes rounded to even, and ultrawide and portrait sources.
-- [ ] **F.3.T2** (instrumented) EASU on a step-edge image: the output size is
+- [x] **F.3.T2** (instrumented) EASU on a step-edge image: the output size is
   correct and the edge stays monotonic, with no ringing beyond ±2/255.
 
 ### F.4 — Contrast Adaptive Sharpening (Apple §E.3)
@@ -1213,8 +1213,8 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 - Port the math in `CASShader.metal` exactly (not AMD's reference variant), so
   Sharpness means the same thing on both platforms. Sharpness ranges 0–1,
   default 0.5, step 0.05; 0 skips the pass.
-- [ ] **F.4.1** The CAS GLSL port.
-- [ ] **F.4.T1** (instrumented) Sharpness 0 is the identity; on a blurred edge,
+- [x] **F.4.1** The CAS GLSL port.
+- [x] **F.4.T1** (instrumented) Sharpness 0 is the identity; on a blurred edge,
   local contrast grows with sharpness; flat areas don't change.
 
 ### F.5 — Temporal denoise (Apple §E.4)
@@ -1224,8 +1224,8 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   Strength ranges 0–1, default 0.5. It runs only in High Quality.
 - Reset the history on seek (`GlShaderProgram.flush()`), preset change, item
   switch, and size change.
-- [ ] **F.5.1** The denoise GLSL port with history handling.
-- [ ] **F.5.T1** (instrumented) A static noisy input converges toward its mean;
+- [x] **F.5.1** The denoise GLSL port with history handling.
+- [x] **F.5.T1** (instrumented) A static noisy input converges toward its mean;
   a moving edge doesn't ghost (a difference above the threshold uses the current
   frame); `flush()` clears the history.
 
@@ -1248,14 +1248,14 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
 - Nothing about performance leaves the device.
 
 **Checklist:**
-- [ ] **F.6.1** A pure governor state machine (inputs: frame times, thermal
+- [x] **F.6.1** A pure governor state machine (inputs: frame times, thermal
   status, battery saver; output: the active stages), tested on the JVM.
-- [ ] **F.6.2** Timer-query or dropped-frame measurement, and the thermal
+- [x] **F.6.2** Timer-query or dropped-frame measurement, and the thermal
   listener.
-- [ ] **F.6.3** The capability check and its cached result.
+- [x] **F.6.3** The capability check and its cached result.
 
 **Tests (JVM):**
-- [ ] **F.6.T1** An over-budget sequence drops denoise, then the upscale; it
+- [x] **F.6.T1** An over-budget sequence drops denoise, then the upscale; it
   recovers with hysteresis; `THERMAL_STATUS_MODERATE` forces a step down;
   sharpening is never dropped.
 
@@ -1268,7 +1268,7 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   Smoothing (G.5).
 - The settings live in memory for the app process and aren't saved (D11).
 - TV uses −/+ steppers.
-- [ ] **F.7.1** The UI.
+- [x] **F.7.1** The UI.
 - [ ] **F.7.D1** **On device:** a 720p file on a 1080p phone shows
   `1280×720 → 1920×1080`; Show Original toggles while paused (REDRAW); changing
   the preset doesn't stall playback.
@@ -1812,12 +1812,47 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   emulator, PiP from Home opened at 598×336 px, fully on screen, and expanding
   it returned a focused player (a media key paused it; no ANR).
 
+- **FFmpeg's TrueHD encoder versus Jellyfin's decoder (E.2, 2026-10-04).** FFmpeg
+  7.1's experimental `truehd` encoder writes a 16-bit stereo stream that the
+  FFmpeg 6.0 decoder in `org.jellyfin.media3:media3-ffmpeg-decoder` 1.9.0+1
+  rejects packet by packet ("Invalid data found when processing input"). The
+  same encoder's 5.1 24-bit output decodes, so the E.2.3 fixture is 5.1 at 24
+  bits, as discs carry it. Real Blu-ray TrueHD isn't affected.
+- **REDRAW needs Media3's replayable frame cache (F.1.2, 2026-10-04).**
+  `setVideoEffects(VideoFrameProcessor.REDRAW)` fails playback with
+  "Replaying when enableReplayableCache is set to false" unless the video
+  graph was built with `PlaybackVideoGraphWrapper.Builder.setEnableReplayableCache(true)`,
+  which ExoPlayer's default video renderer doesn't do. `EdendaleRenderersFactory`
+  now builds `ReplayableVideoRenderer`, a `MediaCodecVideoRenderer` overriding
+  `createPlaybackVideoGraphWrapper` to turn it on. The cache holds one frame and
+  exists only on the effects path. Verified on the API 35 emulator.
+- **Apple's CAS divides 0 by 0 at Sharpness 1 (F.4, 2026-10-04).** In
+  `CASShader.metal`, the final `sum / (1 + 4w)` has `w = −0.25·sqrt(amp)` at
+  Sharpness 1, and `amp` is 1 in every flat area at or below mid-gray, so those
+  pixels come out NaN (black on the GPU). Android computes the same value as
+  `e + 4w·(mean − e) / max(1 + 4w, 1e−4)`, identical wherever Apple's is
+  defined. The Apple branch should take the same fix (L.4).
+- **Enhancement on the emulator (F.6.3, 2026-10-04).** The capability
+  benchmark (720p EASU to 1080p, then CAS at 1080p, offscreen) measured
+  1.24 ms per frame on the API 35 arm64 emulator (host GPU). That says nothing
+  about phones; F.3.4, F.6, and F.8.2 still need the reference devices.
+
 ---
 
 ## Deviations log
 
 | Step | What changed from the plan | Why | Commit |
 |---|---|---|---|
+| B.4.2 | Font and colors are chips on handhelds as well as TV (Apple's macOS/tvOS layout), with a slider for opacity on handhelds and −/+ on TV. | One control that works under a finger and a remote; every preset stays visible. | 7b1c028 |
+| C.3.2, D.5 | C.3 first picked duplicate copies by natural path order; D.5 replaced that with the preferred-copy rule, as planned. `PlayerLogic.naturalOrder` makes the old `naturalCompare` total for the tie-break. | `naturalCompare` calls "E01" and "E1" equal, which left the choice to scan order. | a2a3d46, 94970b0 |
+| D.1 | Added a playback error view (Apple's "Unable to Play" with the cause and Close). | The player had no error display, so the host-named "connection lost" message D.1 asks for would never have reached the viewer. | bdcc646 |
+| D.3 | A local folder's failed scan is recorded as `offline`. | The plan defines the statuses for remote hosts; a revoked grant or an unmounted card is closest to "unreachable", and "sign in" means nothing for a local folder. | 0acda8b |
+| D.5 | Android has no local movie detail page, so the movie Play From menu sits beside Play on the Movies & Shows hero; poster taps in Downloaded and Search play the preferred copy. | That's where Android starts a local movie. | 94970b0 |
+| F.1–F.7 | One commit for the section instead of one per step. | The passes run in one GL program and share the holder, controller, and shaders; split commits wouldn't build alone. | (F commit) |
+| F.1.1 | Once the pipeline is installed, it stays for the rest of that player session even if everything is turned Off (the passes then draw a plain copy); the next session starts on the direct path again. | Media3 creates the effects sink when the video renderer is first enabled and doesn't remove it. | (F commit) |
+| F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | (F commit) |
+| F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | (F commit) |
+| F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | (F commit) |
 
 ---
 
@@ -1871,14 +1906,14 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.5 | Play From | Complete | |
 | E.1 | EQ profiles and booster | Complete | |
 | E.2 | DTS and TrueHD (D5) | Complete | |
-| F.1 | Effects plumbing | Not started | |
-| F.2 | Picture adjustments | Not started | |
-| F.3 | Upscaler | Not started | |
-| F.4 | Sharpening | Not started | |
-| F.5 | Temporal denoise | Not started | |
-| F.6 | Budget and capability | Not started | |
-| F.7 | Enhancement UI | Not started | |
-| F.8 | Enhancement acceptance | Not started | |
+| F.1 | Effects plumbing | Complete (F.1.5, F.1.6 need devices) | |
+| F.2 | Picture adjustments | Complete | |
+| F.3 | Upscaler | Complete (F.3.4 needs a mid-range phone) | |
+| F.4 | Sharpening | Complete | |
+| F.5 | Temporal denoise | Complete | |
+| F.6 | Budget and capability | Complete | |
+| F.7 | Enhancement UI | Complete (F.7.D1 not run) | |
+| F.8 | Enhancement acceptance | Not run (needs devices) | |
 | G.1 | Frame generation feasibility | Not started | |
 | G.2 | Motion estimation | Blocked (G.1) | |
 | G.3 | Warping and blending | Blocked (G.1) | |

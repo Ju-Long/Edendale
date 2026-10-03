@@ -2,6 +2,7 @@ package com.babasama.edendale.android.player
 
 import android.os.SystemClock
 import android.provider.Settings
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
@@ -111,6 +112,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.babasama.edendale.android.player.video.VideoEffectsController
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleRadii
 import com.babasama.edendale.android.R
@@ -143,6 +145,7 @@ internal fun PlayerScreen(
     activeSegment: State<PlaybackSegment?>,
     upcomingEpisode: State<PlaylistEntry?>,
     playbackFailure: State<PlaybackFailure?>,
+    video: VideoEffectsController? = null,
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
@@ -273,6 +276,16 @@ internal fun PlayerScreen(
                     AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 } else {
                     AspectRatioFrameLayout.RESIZE_MODE_FIT
+                }
+                // F.1.3: on a TV that draws its interface at 1080p on a 4K panel, the
+                // effects path renders into the surface's buffer, so the buffer takes
+                // the upscaler's target size rather than the layout's.
+                val fixed = video?.fixedSurfaceSize
+                if (view.getTag(R.id.player_fixed_surface_size) != fixed) {
+                    view.setTag(R.id.player_fixed_surface_size, fixed)
+                    (view.videoSurfaceView as? SurfaceView)?.holder?.let { holder ->
+                        if (fixed != null) holder.setFixedSize(fixed.width, fixed.height) else holder.setSizeFromLayout()
+                    }
                 }
             },
             modifier = Modifier.fillMaxSize(),
@@ -453,6 +466,7 @@ internal fun PlayerScreen(
                 wyzieLookup = wyzieLookup.value,
                 supportsPip = supportsPip,
                 panelFocus = panelFocus,
+                video = video,
                 onAutoPipChanged = onAutoPipChanged,
                 onSelectEntry = onSelectEntry,
                 onSearchOnlineSubtitles = onSearchOnlineSubtitles,
@@ -1345,6 +1359,7 @@ private fun BoxScope.PlayerPanels(
     wyzieLookup: WyzieLookup?,
     supportsPip: Boolean,
     panelFocus: FocusRequester,
+    video: VideoEffectsController?,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
@@ -1401,6 +1416,7 @@ private fun BoxScope.PlayerPanels(
             supportsPip = supportsPip,
             panelWidth = panelWidth,
             panelFocus = panelFocus,
+            video = video,
             onAutoPipChanged = onAutoPipChanged,
             onSearchOnlineSubtitles = onSearchOnlineSubtitles,
             onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
@@ -1563,6 +1579,7 @@ private fun SettingsPanel(
     supportsPip: Boolean,
     panelWidth: androidx.compose.ui.unit.Dp,
     panelFocus: FocusRequester,
+    video: VideoEffectsController?,
     onAutoPipChanged: () -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
@@ -1597,6 +1614,10 @@ private fun SettingsPanel(
             )
             PlaybackSection(player, chrome, isTelevision, supportsPip, onAutoPipChanged)
             AspectSection(chrome, isTelevision)
+            if (video != null) {
+                PictureSection(video, chrome, isTelevision)
+                EnhancementSection(video, chrome, isTelevision)
+            }
         }
     }
 }

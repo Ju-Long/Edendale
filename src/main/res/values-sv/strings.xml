@@ -379,4 +379,21 @@
     <string name="audio_passthrough_note">Equalizern och förstärkaren gäller ljud som Edendale avkodar. Surroundljud som skickas oförändrat till en receiver eller tv spelas utan dem.</string>
     <string name="audio_step_lower">%1$s, lägre</string>
     <string name="audio_step_higher">%1$s, högre</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Bild</string>
+    <string name="video_brightness">Ljusstyrka</string>
+    <string name="video_contrast">Kontrast</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Mättnad</string>
+    <string name="video_hue">Nyans</string>
+    <string name="video_show_original">Visa original</string>
+    <string name="video_enhancement">Förbättring</string>
+    <string name="video_preset">Förinställning</string>
+    <string name="video_preset_off">Av</string>
+    <string name="video_preset_sharpen_only">Endast skärpa</string>
+    <string name="video_preset_balanced">Balanserad</string>
+    <string name="video_preset_high_quality">Hög kvalitet</string>
+    <string name="video_sharpness">Skärpa</string>
+    <string name="video_denoise">Brusreducering</string>
+    <string name="video_not_available_hdr">Inte tillgängligt för HDR-video</string>
 </resources>

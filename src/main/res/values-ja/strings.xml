@@ -375,4 +375,21 @@
     <string name="audio_passthrough_note">イコライザとブースターは、Edendaleがデコードするオーディオに適用されます。レシーバーやテレビにそのままパススルーされるサラウンド音声には適用されません。</string>
     <string name="audio_step_lower">%1$s、下げる</string>
     <string name="audio_step_higher">%1$s、上げる</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">映像</string>
+    <string name="video_brightness">明るさ</string>
+    <string name="video_contrast">コントラスト</string>
+    <string name="video_gamma">ガンマ</string>
+    <string name="video_saturation">彩度</string>
+    <string name="video_hue">色相</string>
+    <string name="video_show_original">オリジナルを表示</string>
+    <string name="video_enhancement">補正</string>
+    <string name="video_preset">プリセット</string>
+    <string name="video_preset_off">オフ</string>
+    <string name="video_preset_sharpen_only">シャープ化のみ</string>
+    <string name="video_preset_balanced">バランス</string>
+    <string name="video_preset_high_quality">高画質</string>
+    <string name="video_sharpness">シャープネス</string>
+    <string name="video_denoise">ノイズ除去</string>
+    <string name="video_not_available_hdr">HDRビデオでは使用できません</string>
 </resources>

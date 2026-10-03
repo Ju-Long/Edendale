@@ -375,4 +375,21 @@
     <string name="audio_passthrough_note">均衡器和增强器作用于 Edendale 解码的音频。原样直通到功放或电视的环绕声不经过它们。</string>
     <string name="audio_step_lower">%1$s，降低</string>
     <string name="audio_step_higher">%1$s，提高</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">画面</string>
+    <string name="video_brightness">亮度</string>
+    <string name="video_contrast">对比度</string>
+    <string name="video_gamma">伽马</string>
+    <string name="video_saturation">饱和度</string>
+    <string name="video_hue">色调</string>
+    <string name="video_show_original">显示原始画面</string>
+    <string name="video_enhancement">增强</string>
+    <string name="video_preset">预设</string>
+    <string name="video_preset_off">关闭</string>
+    <string name="video_preset_sharpen_only">仅锐化</string>
+    <string name="video_preset_balanced">均衡</string>
+    <string name="video_preset_high_quality">高质量</string>
+    <string name="video_sharpness">锐度</string>
+    <string name="video_denoise">降噪</string>
+    <string name="video_not_available_hdr">不适用于 HDR 视频</string>
 </resources>

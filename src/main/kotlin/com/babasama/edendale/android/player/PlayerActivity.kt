@@ -55,6 +55,9 @@ import com.babasama.edendale.introdb.IntroDbMedia
 import com.babasama.edendale.introdb.PlaybackSegment
 import com.babasama.edendale.introdb.PlayerSegmentController
 import com.babasama.edendale.introdb.SkipAction
+import com.babasama.edendale.android.player.video.EnhancementCapability
+import com.babasama.edendale.android.player.video.PixelSize
+import com.babasama.edendale.android.player.video.VideoEffectsController
 import com.babasama.edendale.wyzie.WyzieException
 import com.babasama.edendale.wyzie.WyzieSubtitle
 import com.babasama.edendale.wyzie.WyzieSubtitleQuery
@@ -87,6 +90,10 @@ class PlayerActivity : ComponentActivity() {
 
     /** Audio Enhancement's equalizer and booster, in every audio sink this player builds (E.1). */
     private val equalizer = EqAudioProcessor()
+
+    /** Picture and Enhancement (F): the effects pipeline, installed only when needed. */
+    private lateinit var videoEffects: VideoEffectsController
+    private var effectsTick = 0
     private var dataStore: LocalDataStore? = null
     private var progressKey: ProgressKey? = null
     private var resumeFraction: Double? = null
@@ -310,6 +317,7 @@ class PlayerActivity : ComponentActivity() {
             // item's only restore, so wait for the report that lists them.
             override fun onTracksChanged(tracks: Tracks) {
                 tracksState.value = tracks
+                videoEffects.onTracksChanged(tracks)
                 if (!hasRestoredContentPreferences && !tracks.isEmpty) {
                     hasRestoredContentPreferences = true
                     restoreContentPreferences(exoPlayer, tracks)
@@ -317,6 +325,17 @@ class PlayerActivity : ComponentActivity() {
                 selectPendingOnlineSubtitle(exoPlayer, tracks)
             }
         })
+
+        videoEffects = VideoEffectsController(
+            context = this,
+            isTelevision = isTelevision,
+            reprepare = ::reprepareAtCurrentPosition,
+            saveAdjustments = { chrome.preferences.videoAdjustments = it },
+        )
+        videoEffects.attach(exoPlayer, chrome.preferences.videoAdjustments)
+        updateVideoDisplaySize()
+        // Once per app version, off the main thread: can this device run enhancement in budget (F.6.3)?
+        writeScope.launch { EnhancementCapability.evaluateIfNeeded(applicationContext) }
 
         mediaSession = PlayerMediaSession(
             context = this,
@@ -349,6 +368,7 @@ class PlayerActivity : ComponentActivity() {
                     activeSegment = activeSegmentState,
                     upcomingEpisode = upcomingEpisodeState,
                     playbackFailure = playbackFailureState,
+                    video = videoEffects,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
@@ -375,6 +395,7 @@ class PlayerActivity : ComponentActivity() {
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
                 playbackFailureState.value = null
+                videoEffects.beforePrepare()
                 exoPlayer.setMediaItem(mediaItem(uri))
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
@@ -447,6 +468,7 @@ class PlayerActivity : ComponentActivity() {
         resumeApplied = false
         completedWritten = false
         upcomingEpisodeState.value = null
+        videoEffects.onItemChanged()
         progressKey = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
             ProgressKey(
                 tmdbId = tmdbId,
@@ -657,6 +679,50 @@ class PlayerActivity : ComponentActivity() {
         )
         activeSegmentState.value = segmentController.activeSegment
         updateUpcomingEpisode(positionMillis, durationMillis)
+        // The tick runs every half second; the effects governor wants about one sample a second.
+        if (++effectsTick % 2 == 0) videoEffects.onTick()
+    }
+
+    /**
+     * Stops and prepares the playing item again at its position. Media3 sets
+     * up the effects pipeline only when the video renderer is enabled, so
+     * turning Picture or Enhancement on mid-play needs this once (F.1.1).
+     */
+    private fun reprepareAtCurrentPosition() {
+        val exoPlayer = player ?: return
+        val position = exoPlayer.currentPosition.coerceAtLeast(0)
+        val playWhenReady = exoPlayer.playWhenReady
+        resumeApplied = true
+        exoPlayer.stop()
+        exoPlayer.setMediaItem(mediaItem(Uri.parse(currentUriState.value)), position)
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = playWhenReady
+    }
+
+    /**
+     * The upscaler's "display" (F.1.3, F.3): on TV the panel's own resolution
+     * from the display mode, since boxes often draw their interface at 1080p
+     * on a 4K panel; elsewhere the window, the largest the video can be.
+     */
+    private fun updateVideoDisplaySize() {
+        val size = if (isTelevision) {
+            @Suppress("DEPRECATION")
+            val mode = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display else windowManager.defaultDisplay)?.mode
+            mode?.let { PixelSize(maxOf(it.physicalWidth, it.physicalHeight), minOf(it.physicalWidth, it.physicalHeight)) }
+        } else {
+            val bounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                windowManager.currentWindowMetrics.bounds.let { PixelSize(it.width(), it.height()) }
+            } else {
+                resources.displayMetrics.let { PixelSize(it.widthPixels, it.heightPixels) }
+            }
+            bounds
+        }
+        size?.let(videoEffects::onDisplaySizeChanged)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (::videoEffects.isInitialized) updateVideoDisplaySize()
     }
 
     private fun updateUpcomingEpisode(positionMillis: Long, durationMillis: Long) {

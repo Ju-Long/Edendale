@@ -7,7 +7,14 @@ import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import androidx.media3.common.audio.AudioProcessor.StreamMetadata
 import androidx.media3.common.audio.BaseAudioProcessor
 import androidx.media3.common.util.UnstableApi
+import android.os.Handler
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
+import androidx.media3.exoplayer.video.PlaybackVideoGraphWrapper
+import androidx.media3.exoplayer.video.VideoFrameReleaseControl
+import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import java.nio.ByteBuffer
@@ -119,6 +126,38 @@ class EdendaleRenderersFactory(context: Context, private val eq: EqAudioProcesso
         setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)
     }
 
+    /**
+     * Media3's video renderers, with the platform one swapped for
+     * [ReplayableVideoRenderer] so a paused frame can be redrawn after a
+     * Picture or Enhancement change (F.1.2).
+     */
+    override fun buildVideoRenderers(
+        context: Context,
+        extensionRendererMode: Int,
+        mediaCodecSelector: MediaCodecSelector,
+        enableDecoderFallback: Boolean,
+        eventHandler: Handler,
+        eventListener: VideoRendererEventListener,
+        allowedVideoJoiningTimeMs: Long,
+        out: ArrayList<Renderer>,
+    ) {
+        val defaults = ArrayList<Renderer>()
+        super.buildVideoRenderers(
+            context, extensionRendererMode, mediaCodecSelector, enableDecoderFallback,
+            eventHandler, eventListener, allowedVideoJoiningTimeMs, defaults,
+        )
+        // The same settings DefaultRenderersFactory gives its own instance.
+        val builder = MediaCodecVideoRenderer.Builder(context)
+            .setCodecAdapterFactory(codecAdapterFactory)
+            .setMediaCodecSelector(mediaCodecSelector)
+            .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
+            .setEnableDecoderFallback(enableDecoderFallback)
+            .setEventHandler(eventHandler)
+            .setEventListener(eventListener)
+            .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY)
+        defaults.mapTo(out) { if (it is MediaCodecVideoRenderer) ReplayableVideoRenderer(builder) else it }
+    }
+
     override fun buildAudioSink(
         context: Context,
         enableFloatOutput: Boolean,
@@ -127,5 +166,24 @@ class EdendaleRenderersFactory(context: Context, private val eq: EqAudioProcesso
         .setEnableFloatOutput(enableFloatOutput)
         .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
         .setAudioProcessors(arrayOf(eq))
+        .build()
+}
+
+/**
+ * The platform video renderer with Media3's replayable frame cache turned on
+ * in its effects pipeline. Without it, `VideoFrameProcessor.REDRAW` — which
+ * repaints the paused frame after a Picture or Enhancement change — fails
+ * playback ("Replaying when enableReplayableCache is set to false"). The cache
+ * keeps one frame and exists only on the effects path.
+ */
+@OptIn(UnstableApi::class)
+class ReplayableVideoRenderer(builder: Builder) : MediaCodecVideoRenderer(builder) {
+    override fun createPlaybackVideoGraphWrapper(
+        context: Context,
+        videoFrameReleaseControl: VideoFrameReleaseControl,
+    ): PlaybackVideoGraphWrapper = PlaybackVideoGraphWrapper.Builder(context, videoFrameReleaseControl)
+        .setEnablePlaylistMode(true)
+        .setEnableReplayableCache(true)
+        .setClock(clock)
         .build()
 }

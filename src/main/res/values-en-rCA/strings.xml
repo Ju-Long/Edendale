@@ -109,4 +109,21 @@
     <string name="audio_passthrough_note">The equalizer and booster apply to audio Edendale decodes. Surround sound passed through untouched to a receiver or TV plays without them.</string>
     <string name="audio_step_lower">%1$s, lower</string>
     <string name="audio_step_higher">%1$s, higher</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Picture</string>
+    <string name="video_brightness">Brightness</string>
+    <string name="video_contrast">Contrast</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Saturation</string>
+    <string name="video_hue">Hue</string>
+    <string name="video_show_original">Show Original</string>
+    <string name="video_enhancement">Enhancement</string>
+    <string name="video_preset">Preset</string>
+    <string name="video_preset_off">Off</string>
+    <string name="video_preset_sharpen_only">Sharpen Only</string>
+    <string name="video_preset_balanced">Balanced</string>
+    <string name="video_preset_high_quality">High Quality</string>
+    <string name="video_sharpness">Sharpness</string>
+    <string name="video_denoise">Denoise</string>
+    <string name="video_not_available_hdr">Not available for HDR video</string>
 </resources>

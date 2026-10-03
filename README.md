@@ -144,6 +144,31 @@ pass audio through unchanged. The equalizer applies only to audio Edendale
 decodes: surround sound passed through untouched to a receiver or TV plays
 without it.
 
+### Picture and Enhancement
+
+**Player Adjustments → Picture** sets brightness, contrast, gamma, saturation,
+and hue, saved on the device; **Show Original** compares without changing them,
+and **Reset** returns to neutral. **Enhancement** upscales and sharpens video
+on the GPU: Off, Sharpen Only, Balanced (upscale and sharpen), or High Quality
+(adds temporal denoise), with Sharpness and Denoise and the resolution change
+shown as `1280×720 → 1920×1080`. Enhancement settings last until the app
+closes and are never saved. It starts at Balanced on phones and tablets that
+pass a one-time on-device GPU check, and at Off on Android TV and on devices
+that don't. HDR and Dolby Vision video skip every effect.
+
+The effects run through Media3's video effects (`androidx.media3:media3-effect`)
+and are installed only while something needs them; otherwise video goes
+straight from the decoder to the screen. A governor keeps the passes within
+8 ms of GPU time per frame, dropping denoise and then the upscale when a device
+falls behind, runs hot, or saves battery. Nothing about performance leaves the
+device.
+
+The upscaler is AMD FidelityFX Super Resolution 1.0's EASU, ported to GLSL in
+`src/main/assets/shaders/edendale_easu_es3.glsl` under the MIT licence
+(Copyright © 2021 Advanced Micro Devices, Inc.; the notice is kept in the
+shader). Sharpening, denoise, the Lanczos fallback, and the color math port
+Apple's Metal shaders.
+
 ### Subtitle appearance
 
 **Settings → Subtitles** sets how text subtitles look: the font (System,

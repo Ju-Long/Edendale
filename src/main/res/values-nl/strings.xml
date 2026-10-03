@@ -379,4 +379,21 @@
     <string name="audio_passthrough_note">De equalizer en booster werken op audio die Edendale zelf decodeert. Surroundgeluid dat ongewijzigd naar een receiver of tv wordt doorgegeven, speelt zonder.</string>
     <string name="audio_step_lower">%1$s, lager</string>
     <string name="audio_step_higher">%1$s, hoger</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Beeld</string>
+    <string name="video_brightness">Helderheid</string>
+    <string name="video_contrast">Contrast</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Verzadiging</string>
+    <string name="video_hue">Tint</string>
+    <string name="video_show_original">Toon origineel</string>
+    <string name="video_enhancement">Verbetering</string>
+    <string name="video_preset">Voorinstelling</string>
+    <string name="video_preset_off">Uit</string>
+    <string name="video_preset_sharpen_only">Alleen verscherpen</string>
+    <string name="video_preset_balanced">Gebalanceerd</string>
+    <string name="video_preset_high_quality">Hoge kwaliteit</string>
+    <string name="video_sharpness">Scherpte</string>
+    <string name="video_denoise">Ruisonderdrukking</string>
+    <string name="video_not_available_hdr">Niet beschikbaar voor HDR-video</string>
 </resources>
