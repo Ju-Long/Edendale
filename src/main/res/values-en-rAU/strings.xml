@@ -33,4 +33,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Audio Output</string>
     <string name="player_audio_output_unavailable">The audio output switcher isn’t available on this device.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Font</string>
+    <string name="settings_subtitles_text_color">Text Colour</string>
+    <string name="settings_subtitles_background_color">Background Colour</string>
+    <string name="settings_subtitles_background_opacity">Background Opacity</string>
+    <string name="settings_subtitles_reset">Reset Subtitle Style</string>
+    <string name="settings_subtitles_appearance_note">Applies to text subtitles. Image-based subtitles keep the look they were authored with.</string>
+    <string name="settings_subtitles_preview">Subtitle preview</string>
+    <string name="settings_subtitles_preview_sample">The archive never forgets a film.\nIt only waits for someone to press play.</string>
+    <string name="settings_subtitles_font_system">System</string>
+    <string name="settings_subtitles_font_rounded">Rounded</string>
+    <string name="settings_subtitles_font_serif">Serif</string>
+    <string name="settings_subtitles_font_monospaced">Monospaced</string>
+    <string name="settings_subtitles_color_parchment">Parchment</string>
+    <string name="settings_subtitles_color_white">White</string>
+    <string name="settings_subtitles_color_yellow">Yellow</string>
+    <string name="settings_subtitles_color_cyan">Cyan</string>
+    <string name="settings_subtitles_color_green">Green</string>
+    <string name="settings_subtitles_color_black">Black</string>
+    <string name="settings_subtitles_color_ink">Ink</string>
+    <string name="settings_subtitles_color_charcoal">Charcoal</string>
+    <string name="settings_subtitles_color_navy">Navy</string>
+    <string name="settings_subtitles_opacity_lower">Decrease background opacity</string>
+    <string name="settings_subtitles_opacity_higher">Increase background opacity</string>
+    <string name="settings_nunito_attribution">The Rounded subtitle font is Nunito by The Nunito Project Authors, under the SIL Open Font License 1.1.</string>
 </resources>

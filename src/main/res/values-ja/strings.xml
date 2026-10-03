@@ -301,4 +301,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">オーディオ出力</string>
     <string name="player_audio_output_unavailable">このデバイスではオーディオ出力を切り替えられません。</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">フォント</string>
+    <string name="settings_subtitles_text_color">文字色</string>
+    <string name="settings_subtitles_background_color">背景色</string>
+    <string name="settings_subtitles_background_opacity">背景の不透明度</string>
+    <string name="settings_subtitles_reset">字幕スタイルをリセット</string>
+    <string name="settings_subtitles_appearance_note">テキスト字幕に適用されます。画像ベースの字幕は作成時の見た目のままになります。</string>
+    <string name="settings_subtitles_preview">字幕のプレビュー</string>
+    <string name="settings_subtitles_preview_sample">アーカイブは映画を決して忘れません。\n誰かが再生を押すのを待っているだけです。</string>
+    <string name="settings_subtitles_font_system">システム</string>
+    <string name="settings_subtitles_font_rounded">ラウンド</string>
+    <string name="settings_subtitles_font_serif">セリフ</string>
+    <string name="settings_subtitles_font_monospaced">等幅</string>
+    <string name="settings_subtitles_color_parchment">パーチメント</string>
+    <string name="settings_subtitles_color_white">白</string>
+    <string name="settings_subtitles_color_yellow">黄</string>
+    <string name="settings_subtitles_color_cyan">シアン</string>
+    <string name="settings_subtitles_color_green">緑</string>
+    <string name="settings_subtitles_color_black">黒</string>
+    <string name="settings_subtitles_color_ink">インク</string>
+    <string name="settings_subtitles_color_charcoal">チャコール</string>
+    <string name="settings_subtitles_color_navy">ネイビー</string>
+    <string name="settings_subtitles_opacity_lower">背景の不透明度を下げる</string>
+    <string name="settings_subtitles_opacity_higher">背景の不透明度を上げる</string>
+    <string name="settings_nunito_attribution">字幕のラウンドフォントは The Nunito Project Authors による Nunito（SIL Open Font License 1.1）です。</string>
 </resources>

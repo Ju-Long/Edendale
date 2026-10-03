@@ -313,4 +313,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Аудиовыход</string>
     <string name="player_audio_output_unavailable">Переключение аудиовыхода недоступно на этом устройстве.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Шрифт</string>
+    <string name="settings_subtitles_text_color">Цвет текста</string>
+    <string name="settings_subtitles_background_color">Цвет фона</string>
+    <string name="settings_subtitles_background_opacity">Непрозрачность фона</string>
+    <string name="settings_subtitles_reset">Сбросить стиль субтитров</string>
+    <string name="settings_subtitles_appearance_note">Применяется к текстовым субтитрам. Субтитры в виде изображений сохраняют исходный вид.</string>
+    <string name="settings_subtitles_preview">Предпросмотр субтитров</string>
+    <string name="settings_subtitles_preview_sample">Архив никогда не забывает фильм.\nОн просто ждет, когда кто-нибудь нажмет «Воспроизвести».</string>
+    <string name="settings_subtitles_font_system">Системный</string>
+    <string name="settings_subtitles_font_rounded">Скругленный</string>
+    <string name="settings_subtitles_font_serif">С засечками</string>
+    <string name="settings_subtitles_font_monospaced">Моноширинный</string>
+    <string name="settings_subtitles_color_parchment">Пергамент</string>
+    <string name="settings_subtitles_color_white">Белый</string>
+    <string name="settings_subtitles_color_yellow">Желтый</string>
+    <string name="settings_subtitles_color_cyan">Голубой</string>
+    <string name="settings_subtitles_color_green">Зеленый</string>
+    <string name="settings_subtitles_color_black">Черный</string>
+    <string name="settings_subtitles_color_ink">Чернильный</string>
+    <string name="settings_subtitles_color_charcoal">Графитовый</string>
+    <string name="settings_subtitles_color_navy">Темно-синий</string>
+    <string name="settings_subtitles_opacity_lower">Уменьшить непрозрачность фона</string>
+    <string name="settings_subtitles_opacity_higher">Увеличить непрозрачность фона</string>
+    <string name="settings_nunito_attribution">Скруглённый шрифт субтитров — Nunito от The Nunito Project Authors, по лицензии SIL Open Font License 1.1.</string>
 </resources>

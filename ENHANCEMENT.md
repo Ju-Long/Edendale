@@ -520,21 +520,21 @@ holds; the tests pass; the device checks are recorded.
   including files with CRLF line endings and UTF-16 files with a BOM.
 
 **Checklist:**
-- [ ] **B.4.1** A pure model: enums with raw values, the color table, the
+- [x] **B.4.1** A pure model: enums with raw values, the color table, the
   outline rule, opacity normalization, and the size formula.
-- [ ] **B.4.2** The Settings UI (pickers on handhelds, steppers or menus on TV)
+- [x] **B.4.2** The Settings UI (pickers on handhelds, steppers or menus on TV)
   with Reset.
-- [ ] **B.4.3** The custom `SubtitleView` placed in the visible rectangle for
+- [x] **B.4.3** The custom `SubtitleView` placed in the visible rectangle for
   Fit and Fill, with bottom padding while the controls show.
-- [ ] **B.4.4** Bundle Nunito per D18 under `res/font/`, and credit it in
+- [x] **B.4.4** Bundle Nunito per D18 under `res/font/`, and credit it in
   Attribution and the README.
 
 **Tests:**
-- [ ] **B.4.T1** (JVM) `SubtitleAppearanceTest`: keys, defaults, unknown raw
+- [x] **B.4.T1** (JVM) `SubtitleAppearanceTest`: keys, defaults, unknown raw
   values, opacity rounding (0.123 → 0.12, −1 → 0, 2 → 1, NaN → 1), the outline
   rule, the size clamp at 16 and 48 and its multiplication by the scale, and
   the visible-rectangle math for Fit and Fill.
-- [ ] **B.4.T2** (instrumented) Media3 parses each fixture into the expected cue
+- [x] **B.4.T2** (instrumented) Media3 parses each fixture into the expected cue
   text: SRT with CRLF, SRT in UTF-16 LE with a BOM, WebVTT, and ASS dialogue
   with override tags.
 
@@ -1855,7 +1855,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | B.1 | App Controls | Complete | 9b2fbd5, 8ac41f9 |
 | B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
 | B.3 | Track pickers and panel order | Not started | |
-| B.4 | Subtitle appearance and placement | Not started | |
+| B.4 | Subtitle appearance and placement | Complete | |
 | B.5 | Playlist panel redesign | Not started | |
 | B.6 | Speed and seek checks | Not started | |
 | C.1 | Episode progression rules | Complete | 1f01315 |

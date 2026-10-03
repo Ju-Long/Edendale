@@ -305,4 +305,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Sortie audio</string>
     <string name="player_audio_output_unavailable">Le sélecteur de sortie audio n’est pas disponible sur cet appareil.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Police</string>
+    <string name="settings_subtitles_text_color">Couleur du texte</string>
+    <string name="settings_subtitles_background_color">Couleur d’arrière-plan</string>
+    <string name="settings_subtitles_background_opacity">Opacité de l’arrière-plan</string>
+    <string name="settings_subtitles_reset">Réinitialiser le style des sous-titres</string>
+    <string name="settings_subtitles_appearance_note">S’applique aux sous-titres textuels. Les sous-titres sous forme d’images conservent leur apparence d’origine.</string>
+    <string name="settings_subtitles_preview">Aperçu des sous-titres</string>
+    <string name="settings_subtitles_preview_sample">Les archives n’oublient jamais un film.\nElles attendent seulement qu’on appuie sur Lecture.</string>
+    <string name="settings_subtitles_font_system">Système</string>
+    <string name="settings_subtitles_font_rounded">Arrondie</string>
+    <string name="settings_subtitles_font_serif">Avec empattements</string>
+    <string name="settings_subtitles_font_monospaced">Chasse fixe</string>
+    <string name="settings_subtitles_color_parchment">Parchemin</string>
+    <string name="settings_subtitles_color_white">Blanc</string>
+    <string name="settings_subtitles_color_yellow">Jaune</string>
+    <string name="settings_subtitles_color_cyan">Cyan</string>
+    <string name="settings_subtitles_color_green">Vert</string>
+    <string name="settings_subtitles_color_black">Noir</string>
+    <string name="settings_subtitles_color_ink">Encre</string>
+    <string name="settings_subtitles_color_charcoal">Anthracite</string>
+    <string name="settings_subtitles_color_navy">Bleu marine</string>
+    <string name="settings_subtitles_opacity_lower">Réduire l’opacité de l’arrière-plan</string>
+    <string name="settings_subtitles_opacity_higher">Augmenter l’opacité de l’arrière-plan</string>
+    <string name="settings_nunito_attribution">La police arrondie des sous-titres est Nunito, de The Nunito Project Authors, sous licence SIL Open Font License 1.1.</string>
 </resources>

@@ -305,4 +305,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Audioausgabe</string>
     <string name="player_audio_output_unavailable">Die Auswahl der Audioausgabe ist auf diesem Gerät nicht verfügbar.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Schrift</string>
+    <string name="settings_subtitles_text_color">Textfarbe</string>
+    <string name="settings_subtitles_background_color">Hintergrundfarbe</string>
+    <string name="settings_subtitles_background_opacity">Hintergrunddeckkraft</string>
+    <string name="settings_subtitles_reset">Untertitelstil zurücksetzen</string>
+    <string name="settings_subtitles_appearance_note">Gilt für Textuntertitel. Bildbasierte Untertitel behalten ihr ursprüngliches Aussehen.</string>
+    <string name="settings_subtitles_preview">Untertitelvorschau</string>
+    <string name="settings_subtitles_preview_sample">Das Archiv vergisst keinen Film.\nEs wartet nur darauf, dass jemand auf Wiedergabe drückt.</string>
+    <string name="settings_subtitles_font_system">System</string>
+    <string name="settings_subtitles_font_rounded">Abgerundet</string>
+    <string name="settings_subtitles_font_serif">Serifen</string>
+    <string name="settings_subtitles_font_monospaced">Dicktengleich</string>
+    <string name="settings_subtitles_color_parchment">Pergament</string>
+    <string name="settings_subtitles_color_white">Weiß</string>
+    <string name="settings_subtitles_color_yellow">Gelb</string>
+    <string name="settings_subtitles_color_cyan">Cyan</string>
+    <string name="settings_subtitles_color_green">Grün</string>
+    <string name="settings_subtitles_color_black">Schwarz</string>
+    <string name="settings_subtitles_color_ink">Tinte</string>
+    <string name="settings_subtitles_color_charcoal">Anthrazit</string>
+    <string name="settings_subtitles_color_navy">Marineblau</string>
+    <string name="settings_subtitles_opacity_lower">Hintergrunddeckkraft verringern</string>
+    <string name="settings_subtitles_opacity_higher">Hintergrunddeckkraft erhöhen</string>
+    <string name="settings_nunito_attribution">Die abgerundete Untertitelschrift ist Nunito von The Nunito Project Authors, lizenziert unter der SIL Open Font License 1.1.</string>
 </resources>

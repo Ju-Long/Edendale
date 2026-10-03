@@ -305,4 +305,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Ljudutgång</string>
     <string name="player_audio_output_unavailable">Väljaren för ljudutgång är inte tillgänglig på den här enheten.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Typsnitt</string>
+    <string name="settings_subtitles_text_color">Textfärg</string>
+    <string name="settings_subtitles_background_color">Bakgrundsfärg</string>
+    <string name="settings_subtitles_background_opacity">Bakgrundens opacitet</string>
+    <string name="settings_subtitles_reset">Återställ undertextstil</string>
+    <string name="settings_subtitles_appearance_note">Gäller textundertexter. Bildbaserade undertexter behåller sitt ursprungliga utseende.</string>
+    <string name="settings_subtitles_preview">Förhandsvisning av undertexter</string>
+    <string name="settings_subtitles_preview_sample">Arkivet glömmer aldrig en film.\nDet väntar bara på att någon ska trycka på spela.</string>
+    <string name="settings_subtitles_font_system">System</string>
+    <string name="settings_subtitles_font_rounded">Rundad</string>
+    <string name="settings_subtitles_font_serif">Serif</string>
+    <string name="settings_subtitles_font_monospaced">Fast breddsteg</string>
+    <string name="settings_subtitles_color_parchment">Pergament</string>
+    <string name="settings_subtitles_color_white">Vit</string>
+    <string name="settings_subtitles_color_yellow">Gul</string>
+    <string name="settings_subtitles_color_cyan">Cyan</string>
+    <string name="settings_subtitles_color_green">Grön</string>
+    <string name="settings_subtitles_color_black">Svart</string>
+    <string name="settings_subtitles_color_ink">Bläck</string>
+    <string name="settings_subtitles_color_charcoal">Kolgrå</string>
+    <string name="settings_subtitles_color_navy">Marinblå</string>
+    <string name="settings_subtitles_opacity_lower">Minska bakgrundens opacitet</string>
+    <string name="settings_subtitles_opacity_higher">Öka bakgrundens opacitet</string>
+    <string name="settings_nunito_attribution">Det rundade undertexttypsnittet är Nunito av The Nunito Project Authors, licensierat under SIL Open Font License 1.1.</string>
 </resources>

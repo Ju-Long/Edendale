@@ -122,6 +122,23 @@ network errors, invalid ranges, and rate limits leave normal playback
 available without a prompt. Playback and initial import never wait for this
 service.
 
+### Subtitle appearance
+
+**Settings → Subtitles** sets how text subtitles look: the font (System,
+Rounded, Serif, or Monospaced), the text color, and the color and opacity of
+the box behind each cue, as named presets with a live preview and a Reset.
+The choices are device-local and apply at once, even to a video floating in
+Picture-in-Picture. Text cues are drawn inside the visible part of the picture
+in both Fit and Fill, sized from its height and the system caption font scale,
+and move above the transport controls while they show. Image-based subtitles
+(PGS, VobSub) keep their authored look.
+
+The Rounded font is [Nunito](https://github.com/googlefonts/nunito) by The
+Nunito Project Authors, under the SIL Open Font License 1.1. The app bundles
+static Regular and Bold instances (`src/main/res/font/nunito_*.ttf`) made from
+Google Fonts' `ofl/nunito/Nunito[wght].ttf` with fontTools'
+`varLib.instancer`; they keep the font's copyright and licence metadata.
+
 ### System media controls
 
 While a video plays, the player publishes a Media3 `MediaSession`

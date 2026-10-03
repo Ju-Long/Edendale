@@ -305,4 +305,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Audio-uitvoer</string>
     <string name="player_audio_output_unavailable">De keuze voor audio-uitvoer is niet beschikbaar op dit apparaat.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Lettertype</string>
+    <string name="settings_subtitles_text_color">Tekstkleur</string>
+    <string name="settings_subtitles_background_color">Achtergrondkleur</string>
+    <string name="settings_subtitles_background_opacity">Dekking van achtergrond</string>
+    <string name="settings_subtitles_reset">Stel ondertitelstijl opnieuw in</string>
+    <string name="settings_subtitles_appearance_note">Geldt voor tekstondertitels. Ondertitels op basis van afbeeldingen behouden hun oorspronkelijke uiterlijk.</string>
+    <string name="settings_subtitles_preview">Ondertitelvoorvertoning</string>
+    <string name="settings_subtitles_preview_sample">Het archief vergeet nooit een film.\nHet wacht alleen tot iemand op afspelen drukt.</string>
+    <string name="settings_subtitles_font_system">Systeem</string>
+    <string name="settings_subtitles_font_rounded">Afgerond</string>
+    <string name="settings_subtitles_font_serif">Schreef</string>
+    <string name="settings_subtitles_font_monospaced">Monospace</string>
+    <string name="settings_subtitles_color_parchment">Perkament</string>
+    <string name="settings_subtitles_color_white">Wit</string>
+    <string name="settings_subtitles_color_yellow">Geel</string>
+    <string name="settings_subtitles_color_cyan">Cyaan</string>
+    <string name="settings_subtitles_color_green">Groen</string>
+    <string name="settings_subtitles_color_black">Zwart</string>
+    <string name="settings_subtitles_color_ink">Inkt</string>
+    <string name="settings_subtitles_color_charcoal">Antraciet</string>
+    <string name="settings_subtitles_color_navy">Marineblauw</string>
+    <string name="settings_subtitles_opacity_lower">Dekking van achtergrond verlagen</string>
+    <string name="settings_subtitles_opacity_higher">Dekking van achtergrond verhogen</string>
+    <string name="settings_nunito_attribution">Het afgeronde ondertitellettertype is Nunito van The Nunito Project Authors, onder de SIL Open Font License 1.1.</string>
 </resources>

@@ -135,6 +135,19 @@ internal class PlayerChromeState(val preferences: PlayerPreferences) {
     var segmentPromptsEnabled by mutableStateOf(preferences.segmentPromptsEnabled)
         private set
 
+    /**
+     * Settings → Subtitles, held as state so the cue on screen restyles as
+     * soon as Settings changes it, even while the video floats in PiP.
+     */
+    var subtitleAppearance by mutableStateOf(preferences.subtitleAppearance)
+        private set
+
+    /**
+     * The top edge of the visible transport row, in the player's root
+     * coordinates, or null while it's hidden. Cues stay above it.
+     */
+    var controlsBottomEdgePx by mutableStateOf<Float?>(null)
+
     init {
         preferences.addChangeListener {
             skipBackwardInterval = preferences.skipBackwardInterval
@@ -142,6 +155,7 @@ internal class PlayerChromeState(val preferences: PlayerPreferences) {
             segmentPromptsEnabled = preferences.segmentPromptsEnabled
             loopEnabled = preferences.loopEnabled
             _aspectFill.value = preferences.aspectFill
+            subtitleAppearance = preferences.subtitleAppearance
         }
     }
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nunito (SIL Open Font License 1.1, Copyright 2014 The Nunito Project
+     Authors): the "Rounded" subtitle font (ENHANCEMENT.md D18). Static 400 and
+     700 instances of google/fonts ofl/nunito/Nunito[wght].ttf, made with
+     fontTools varLib.instancer; the variable font's default is ExtraLight. -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+    <font
+        android:font="@font/nunito_regular"
+        android:fontStyle="normal"
+        android:fontWeight="400" />
+    <font
+        android:font="@font/nunito_bold"
+        android:fontStyle="normal"
+        android:fontWeight="700" />
+</font-family>

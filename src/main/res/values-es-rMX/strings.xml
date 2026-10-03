@@ -305,4 +305,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Salida de audio</string>
     <string name="player_audio_output_unavailable">El selector de salida de audio no está disponible en este dispositivo.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Tipo de letra</string>
+    <string name="settings_subtitles_text_color">Color del texto</string>
+    <string name="settings_subtitles_background_color">Color de fondo</string>
+    <string name="settings_subtitles_background_opacity">Opacidad del fondo</string>
+    <string name="settings_subtitles_reset">Restablecer estilo de subtítulos</string>
+    <string name="settings_subtitles_appearance_note">Se aplica a los subtítulos de texto. Los subtítulos basados en imágenes conservan el aspecto con el que se crearon.</string>
+    <string name="settings_subtitles_preview">Vista previa de subtítulos</string>
+    <string name="settings_subtitles_preview_sample">El archivo nunca olvida una película.\nSolo espera a que alguien presione reproducir.</string>
+    <string name="settings_subtitles_font_system">Sistema</string>
+    <string name="settings_subtitles_font_rounded">Redondeada</string>
+    <string name="settings_subtitles_font_serif">Serif</string>
+    <string name="settings_subtitles_font_monospaced">Monoespaciada</string>
+    <string name="settings_subtitles_color_parchment">Pergamino</string>
+    <string name="settings_subtitles_color_white">Blanco</string>
+    <string name="settings_subtitles_color_yellow">Amarillo</string>
+    <string name="settings_subtitles_color_cyan">Cian</string>
+    <string name="settings_subtitles_color_green">Verde</string>
+    <string name="settings_subtitles_color_black">Negro</string>
+    <string name="settings_subtitles_color_ink">Tinta</string>
+    <string name="settings_subtitles_color_charcoal">Carbón</string>
+    <string name="settings_subtitles_color_navy">Azul marino</string>
+    <string name="settings_subtitles_opacity_lower">Reducir la opacidad del fondo</string>
+    <string name="settings_subtitles_opacity_higher">Aumentar la opacidad del fondo</string>
+    <string name="settings_nunito_attribution">La fuente redondeada de los subtítulos es Nunito, de The Nunito Project Authors, con licencia SIL Open Font License 1.1.</string>
 </resources>

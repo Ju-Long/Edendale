@@ -2,6 +2,7 @@ package com.babasama.edendale.android.player
 
 import android.os.SystemClock
 import android.provider.Settings
+import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -78,6 +79,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -260,6 +263,8 @@ internal fun PlayerScreen(
                     descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
                     isFocusable = false
                     this.player = player
+                    // PlayerSubtitleOverlay draws the cues instead (B.4.3).
+                    subtitleView?.visibility = View.GONE
                 }
             },
             update = { view ->
@@ -271,6 +276,9 @@ internal fun PlayerScreen(
             },
             modifier = Modifier.fillMaxSize(),
         )
+
+        // Beneath the gesture layer, so the cues never take a tap.
+        PlayerSubtitleOverlay(player = player, chrome = chrome, controlsVisible = controlsActive)
 
         if (!isTelevision && !inPipMode.value) {
             PlayerGestureLayer(player, chrome, activity)
@@ -959,6 +967,8 @@ private fun PlayerControlsOverlay(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
+                // Subtitles stay above this row while it shows.
+                .onGloballyPositioned { chrome.controlsBottomEdgePx = it.boundsInRoot().top }
                 .padding(horizontal = edgeMargin, vertical = 18.dp)
                 .focusGroup()
                 .focusProperties { if (isTelevision) up = centerFocus },

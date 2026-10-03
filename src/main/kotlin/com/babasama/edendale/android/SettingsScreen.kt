@@ -237,6 +237,56 @@ fun SettingsScreen(
         }
 
         item {
+            WyzieKeySettingsSection(
+                status = wyzieKeyStatus,
+                keyInput = wyzieKeyInput,
+                message = wyzieKeyMessage,
+                isTelevision = isTelevision,
+                onKeyInputChanged = {
+                    wyzieKeyInput = it
+                    wyzieKeyMessage = null
+                },
+                onOpenStore = {
+                    val result = runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(WYZIE_REDEEM_URL)),
+                        )
+                    }
+                    if (result.isFailure) wyzieKeyMessage = wyzieBrowserError
+                },
+                onSave = {
+                    settingsScope.launch {
+                        val result = runCatching { wyzieKeyStore.save(wyzieKeyInput) }
+                        if (result.isSuccess) {
+                            wyzieKeyInput = ""
+                            wyzieKeyMessage = null
+                            wyzieKeyStatus = WyzieKeyStatus(
+                                hasUserKey = true,
+                                usesBuildKey = false,
+                            )
+                        } else {
+                            wyzieKeyMessage = wyzieStorageError
+                        }
+                    }
+                },
+                onRemove = {
+                    settingsScope.launch {
+                        val result = runCatching { wyzieKeyStore.clear() }
+                        if (result.isSuccess) {
+                            wyzieKeyMessage = null
+                            wyzieKeyStatus = WyzieKeyStatus(
+                                hasUserKey = false,
+                                usesBuildKey = wyzieKeyStore.buildKey.isNotEmpty(),
+                            )
+                        } else {
+                            wyzieKeyMessage = wyzieStorageError
+                        }
+                    }
+                },
+            )
+        }
+
+        item {
             SkipPromptsSettingsSection(
                 isTelevision = isTelevision,
             )
@@ -329,56 +379,6 @@ fun SettingsScreen(
         }
 
         item {
-            WyzieKeySettingsSection(
-                status = wyzieKeyStatus,
-                keyInput = wyzieKeyInput,
-                message = wyzieKeyMessage,
-                isTelevision = isTelevision,
-                onKeyInputChanged = {
-                    wyzieKeyInput = it
-                    wyzieKeyMessage = null
-                },
-                onOpenStore = {
-                    val result = runCatching {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse(WYZIE_REDEEM_URL)),
-                        )
-                    }
-                    if (result.isFailure) wyzieKeyMessage = wyzieBrowserError
-                },
-                onSave = {
-                    settingsScope.launch {
-                        val result = runCatching { wyzieKeyStore.save(wyzieKeyInput) }
-                        if (result.isSuccess) {
-                            wyzieKeyInput = ""
-                            wyzieKeyMessage = null
-                            wyzieKeyStatus = WyzieKeyStatus(
-                                hasUserKey = true,
-                                usesBuildKey = false,
-                            )
-                        } else {
-                            wyzieKeyMessage = wyzieStorageError
-                        }
-                    }
-                },
-                onRemove = {
-                    settingsScope.launch {
-                        val result = runCatching { wyzieKeyStore.clear() }
-                        if (result.isSuccess) {
-                            wyzieKeyMessage = null
-                            wyzieKeyStatus = WyzieKeyStatus(
-                                hasUserKey = false,
-                                usesBuildKey = wyzieKeyStore.buildKey.isNotEmpty(),
-                            )
-                        } else {
-                            wyzieKeyMessage = wyzieStorageError
-                        }
-                    }
-                },
-            )
-        }
-
-        item {
             // Windows shows the equivalent OneDrive status; on Android the
             // platform default is Auto Backup, which needs no wiring of ours.
             SettingsSection(
@@ -406,6 +406,8 @@ fun SettingsScreen(
                 isTelevision = isTelevision,
             ) {
                 InfoRow(stringResource(R.string.tmdb_attribution))
+                SettingsRowDivider()
+                InfoRow(stringResource(R.string.settings_nunito_attribution))
                 SettingsRowDivider()
                 InfoRow(stringResource(R.string.settings_open_source))
             }
@@ -488,6 +490,9 @@ private fun WyzieKeySettingsSection(
         isTelevision = isTelevision,
         focusableContent = false,
     ) {
+        // Appearance first, then the online-search key (Apple's order).
+        SubtitleAppearanceRows(isTelevision)
+        SettingsRowDivider()
         when {
             status == null -> AccountProgressRow(stringResource(R.string.wyzie_loading_key))
 

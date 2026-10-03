@@ -305,4 +305,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">Saída de Áudio</string>
     <string name="player_audio_output_unavailable">O seletor de saída de áudio não está disponível neste dispositivo.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Tipo de letra</string>
+    <string name="settings_subtitles_text_color">Cor do Texto</string>
+    <string name="settings_subtitles_background_color">Cor do Fundo</string>
+    <string name="settings_subtitles_background_opacity">Opacidade do Fundo</string>
+    <string name="settings_subtitles_reset">Repor Estilo das Legendas</string>
+    <string name="settings_subtitles_appearance_note">Aplica-se às legendas de texto. As legendas baseadas em imagens mantêm o aspeto original.</string>
+    <string name="settings_subtitles_preview">Pré-visualização das legendas</string>
+    <string name="settings_subtitles_preview_sample">O arquivo nunca esquece um filme.\nSó espera que alguém carregue em reproduzir.</string>
+    <string name="settings_subtitles_font_system">Sistema</string>
+    <string name="settings_subtitles_font_rounded">Arredondado</string>
+    <string name="settings_subtitles_font_serif">Serifado</string>
+    <string name="settings_subtitles_font_monospaced">Monoespaçado</string>
+    <string name="settings_subtitles_color_parchment">Pergaminho</string>
+    <string name="settings_subtitles_color_white">Branco</string>
+    <string name="settings_subtitles_color_yellow">Amarelo</string>
+    <string name="settings_subtitles_color_cyan">Ciano</string>
+    <string name="settings_subtitles_color_green">Verde</string>
+    <string name="settings_subtitles_color_black">Preto</string>
+    <string name="settings_subtitles_color_ink">Tinta</string>
+    <string name="settings_subtitles_color_charcoal">Carvão</string>
+    <string name="settings_subtitles_color_navy">Azul-marinho</string>
+    <string name="settings_subtitles_opacity_lower">Diminuir a opacidade do fundo</string>
+    <string name="settings_subtitles_opacity_higher">Aumentar a opacidade do fundo</string>
+    <string name="settings_nunito_attribution">O tipo de letra arredondado das legendas é Nunito, de The Nunito Project Authors, ao abrigo da SIL Open Font License 1.1.</string>
 </resources>

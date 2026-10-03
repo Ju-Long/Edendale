@@ -298,7 +298,11 @@ class PlayerPreferences(
             PlayerPreferencesRules.KEY_LOOP_ENABLED,
             PlayerPreferencesRules.KEY_ASPECT_FILL,
             PlayerPreferencesRules.KEY_AUTO_PIP,
-            PlayerPreferencesRules.KEY_SEGMENT_PROMPTS_ENABLED -> {
+            PlayerPreferencesRules.KEY_SEGMENT_PROMPTS_ENABLED,
+            PlayerPreferencesRules.KEY_SUBTITLES_FONT,
+            PlayerPreferencesRules.KEY_SUBTITLES_TEXT_COLOR,
+            PlayerPreferencesRules.KEY_SUBTITLES_BACKGROUND_COLOR,
+            PlayerPreferencesRules.KEY_SUBTITLES_BACKGROUND_OPACITY -> {
                 listeners.toList().forEach { it() }
             }
         }
@@ -422,6 +426,21 @@ class PlayerPreferences(
             PlayerPreferencesRules.KEY_SUBTITLES_BACKGROUND_OPACITY,
             PlayerPreferencesRules.normalizeSubtitleBackgroundOpacity(value)
         )
+
+    /** The four subtitle settings as one typed value (B.4). */
+    var subtitleAppearance: SubtitleAppearance
+        get() = SubtitleAppearance(
+            font = SubtitleFontStyle.fromRaw(subtitleFont),
+            textColor = SubtitleTextColor.fromRaw(subtitleTextColor),
+            backgroundColor = SubtitleBackgroundColor.fromRaw(subtitleBackgroundColor),
+            backgroundOpacity = subtitleBackgroundOpacity,
+        )
+        set(value) {
+            subtitleFont = value.font.raw
+            subtitleTextColor = value.textColor.raw
+            subtitleBackgroundColor = value.backgroundColor.raw
+            subtitleBackgroundOpacity = value.backgroundOpacity
+        }
 
     fun resetSubtitleAppearance() {
         subtitleFont = PlayerPreferencesRules.DEFAULT_SUBTITLES_FONT

@@ -301,4 +301,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">音频输出</string>
     <string name="player_audio_output_unavailable">此设备不支持切换音频输出。</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">字体</string>
+    <string name="settings_subtitles_text_color">文本颜色</string>
+    <string name="settings_subtitles_background_color">背景颜色</string>
+    <string name="settings_subtitles_background_opacity">背景不透明度</string>
+    <string name="settings_subtitles_reset">重置字幕样式</string>
+    <string name="settings_subtitles_appearance_note">适用于文本字幕。基于图像的字幕会保留其原始外观。</string>
+    <string name="settings_subtitles_preview">字幕预览</string>
+    <string name="settings_subtitles_preview_sample">归档从不遗忘任何一部电影。\n它只是在等待有人按下播放。</string>
+    <string name="settings_subtitles_font_system">系统</string>
+    <string name="settings_subtitles_font_rounded">圆体</string>
+    <string name="settings_subtitles_font_serif">衬线体</string>
+    <string name="settings_subtitles_font_monospaced">等宽</string>
+    <string name="settings_subtitles_color_parchment">羊皮纸色</string>
+    <string name="settings_subtitles_color_white">白色</string>
+    <string name="settings_subtitles_color_yellow">黄色</string>
+    <string name="settings_subtitles_color_cyan">青色</string>
+    <string name="settings_subtitles_color_green">绿色</string>
+    <string name="settings_subtitles_color_black">黑色</string>
+    <string name="settings_subtitles_color_ink">墨色</string>
+    <string name="settings_subtitles_color_charcoal">炭灰色</string>
+    <string name="settings_subtitles_color_navy">藏青色</string>
+    <string name="settings_subtitles_opacity_lower">降低背景不透明度</string>
+    <string name="settings_subtitles_opacity_higher">提高背景不透明度</string>
+    <string name="settings_nunito_attribution">圆体字幕字体为 The Nunito Project Authors 的 Nunito，采用 SIL Open Font License 1.1 授权。</string>
 </resources>

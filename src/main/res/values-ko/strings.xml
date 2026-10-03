@@ -301,4 +301,29 @@
     <!-- C.6 Audio Output -->
     <string name="player_audio_output">오디오 출력</string>
     <string name="player_audio_output_unavailable">이 기기에서는 오디오 출력을 전환할 수 없습니다.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">서체</string>
+    <string name="settings_subtitles_text_color">텍스트 색상</string>
+    <string name="settings_subtitles_background_color">배경 색상</string>
+    <string name="settings_subtitles_background_opacity">배경 불투명도</string>
+    <string name="settings_subtitles_reset">자막 스타일 재설정</string>
+    <string name="settings_subtitles_appearance_note">텍스트 자막에 적용됩니다. 이미지 기반 자막은 제작된 모양을 유지합니다.</string>
+    <string name="settings_subtitles_preview">자막 미리보기</string>
+    <string name="settings_subtitles_preview_sample">아카이브는 영화를 결코 잊지 않습니다.\n누군가 재생을 누르기를 기다릴 뿐입니다.</string>
+    <string name="settings_subtitles_font_system">시스템</string>
+    <string name="settings_subtitles_font_rounded">라운드</string>
+    <string name="settings_subtitles_font_serif">세리프</string>
+    <string name="settings_subtitles_font_monospaced">고정폭</string>
+    <string name="settings_subtitles_color_parchment">양피지</string>
+    <string name="settings_subtitles_color_white">흰색</string>
+    <string name="settings_subtitles_color_yellow">노란색</string>
+    <string name="settings_subtitles_color_cyan">청록색</string>
+    <string name="settings_subtitles_color_green">녹색</string>
+    <string name="settings_subtitles_color_black">검은색</string>
+    <string name="settings_subtitles_color_ink">잉크</string>
+    <string name="settings_subtitles_color_charcoal">차콜</string>
+    <string name="settings_subtitles_color_navy">네이비</string>
+    <string name="settings_subtitles_opacity_lower">배경 불투명도 낮추기</string>
+    <string name="settings_subtitles_opacity_higher">배경 불투명도 높이기</string>
+    <string name="settings_nunito_attribution">자막의 둥근 서체는 The Nunito Project Authors의 Nunito이며 SIL Open Font License 1.1에 따라 제공됩니다.</string>
 </resources>
