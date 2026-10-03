@@ -79,13 +79,13 @@
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode">
             <!-- screenOrientation is ignored in multi-window, so a freeform
-                 desktop window needs its own 16:9 default to open landscape. -->
+                 desktop window needs its own 16:9 default to open landscape.
+                 No minWidth/minHeight: the system also applies them to the
+                 PiP window, which then opens wider than a phone's screen. -->
             <layout
                 android:defaultWidth="1280dp"
                 android:defaultHeight="720dp"
-                android:gravity="center"
-                android:minWidth="400dp"
-                android:minHeight="240dp" />
+                android:gravity="center" />
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
