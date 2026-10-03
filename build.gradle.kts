@@ -62,6 +62,12 @@ val generateAppSecrets = tasks.register("generateAppSecrets") {
     }
 }
 
+// Room writes each schema version's JSON here (D.2); the migration tests read
+// them from the androidTest assets.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 kotlin {
     jvmToolchain(17)
     sourceSets.named("main") {
@@ -96,6 +102,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
 }
 

@@ -893,7 +893,7 @@ throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
   `content://` → `local`). No data is dropped.
 
 **Checklist:**
-- [ ] **D.2.1** Turn on schema export first: `exportSchema = true` and the KSP
+- [x] **D.2.1** Turn on schema export first: `exportSchema = true` and the KSP
   argument `room.schemaLocation` set to `$projectDir/schemas` (also add that
   folder to the `androidTest` assets). Build at version 2 and commit the
   version 2 schema JSON.

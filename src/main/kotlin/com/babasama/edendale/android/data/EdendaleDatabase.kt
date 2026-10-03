@@ -337,7 +337,7 @@ interface LibraryDao {
         LibraryEpisodeEntity::class,
     ],
     version = 2,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class EdendaleDatabase : RoomDatabase() {
     abstract fun userMediaDao(): UserMediaDao
