@@ -1724,12 +1724,55 @@ The final order on handhelds and TV:
 - [x] **L.2** This branch's `DESIGN.md` has the playlist tokens (B.5.1).
 - [ ] **L.3** Release (D19, only when the owner asks): bump `versionCode` and
   `versionName`, and draft `Play Console/27.0/release.txt` in the 26.0 format.
-- [ ] **L.4** Leave notes for the owner (this isn't done on this branch):
+- [x] **L.4** Leave notes for the owner (this isn't done on this branch):
   `main`'s `DESIGN.md` needs the playlist tokens; `main`'s README should list
   the supported storage services; the `web` branch needs privacy-policy text
   for the providers (Google verification requires it); and D2, D3, D4, and D18
   are Android-specific choices the Apple and Windows branches should know
   about.
+
+### L.4 notes for the owner (2026-10-04)
+
+None of these changes belong on `android-27.0`; each is for the branch named.
+
+1. **`main`'s `DESIGN.md`** has no playlist tokens. Copy two rows from this
+   branch's color table, `PlaylistActiveBackground` `#FFFFFF` ("Current or
+   focused playlist row fill") and `PlaylistActiveText` `#000000` ("Text and
+   icons on an active playlist row"). Also copy the paragraph after the table
+   that begins "Playlist selection uses the requested white fill".
+2. **`main`'s README** says only "supported network sources". It should
+   list the storage services and note that platforms differ. Today Apple 27.0
+   has SMB, WebDAV, SFTP, S3-compatible storage, OneDrive, Dropbox, Google
+   Drive, and NFS. Android 27.0 has SMB only until Section H lands, and Google
+   Drive there waits on D9.
+3. **The `web` branch** has no privacy policy, only the "Nothing leaves your
+   library" hero copy. Google's OAuth verification for Drive requires a
+   policy page at a public URL. Microsoft's publisher verification and
+   Dropbox's production approval also expect one. It should say that sign-in
+   goes straight to the provider; that tokens stay in the device's keystore
+   (Keychain, Android Keystore) and are never sent to an Edendale server
+   (there isn't one); that Edendale asks only for read-only access to files
+   and the account's name to label it (Apple's scopes: `drive.readonly`;
+   `Files.Read`, `User.Read`, `offline_access`; `files.metadata.read`,
+   `files.content.read`, `account_info.read`); and that nothing is shared
+   with third parties. For
+   Google it must also include the Limited Use statement from the Google API
+   Services User Data Policy. The site already serves
+   `.well-known/microsoft-identity-association.json`.
+4. **Android-specific choices the Apple and Windows branches should know
+   about:**
+   - **D2:** on TV remotes, holding fast-forward or rewind for 400 ms or more
+     plays at the hold speed until release; a shorter press skips. D-pad
+     Left/Right keeps its repeat-scrub.
+   - **D3:** on TV, D-pad Down focuses a visible skip prompt and otherwise
+     opens the timeline.
+   - **D4:** Edendale's subtitle presets replace the system caption style,
+     but text size still follows the system caption font scale.
+   - **D18:** Android has no system rounded font, so the subtitle "Rounded"
+     choice is a bundled Nunito (SIL OFL 1.1), credited in Attribution.
+5. **The `apple` branch's CAS shader** returns NaN (black) in flat areas at
+   Sharpness 1. See the Findings entry "Apple's CAS divides 0 by 0 at
+   Sharpness 1" for the one-line fix Android uses.
 
 ---
 
@@ -1853,9 +1896,9 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | bba68d8 |
 | F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | bba68d8 |
 | F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | bba68d8 |
-| J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 34312d3 |
-| J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 34312d3 |
-| J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 34312d3 |
+| J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
+| J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
+| J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |
 
 ---
 
@@ -1878,6 +1921,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-02 | Emulator test run (Claude): A.5, B.1, B.2, C.2, C.5 | Built fd6c2e9 (debug) and installed it; instrumented smoke test (`am instrument`): pass. | Android emulator, Pixel 7 profile, Android 15 (API 35, Google APIs, arm64), local test files only. B.1: App Controls exposes the chosen skip length as checked and labels the steppers; changing Skip Back to 30 s while the video was in PiP relabeled the PiP action, and the PiP actions, on-screen buttons, and short media-key presses all skipped by the set lengths; a long ⏩ press didn't skip; holding the right side showed 2.00× and reverted. B.2: a French subtitle chosen in S01E01 carried to S01E02 after a playlist switch and was saved as `player.content.show.<id>`; Loop survived reopening the player. C.2: S01E01 → S01E02 → S01E03 advanced on their own, the Up Next card named the next episode and was absent on the last, and the player closed after it. C.5: Skip Prompts is off by default. | Not run: double-tap, TV (B.1.D2, D3, the C.5 TV focus fix), audio track memory (no picker until B.3), Fill, completion state and resume (no TMDB ids without a token), SMB, Wyzie, C.5.D1. A diagnostic log showed Media3 reporting empty tracks first after a playlist switch, with the B.2 restore now running on the next report. Correction to the review row above: the old restore bug did not stop a language choice from carrying over within a session, because the player keeps the preferred language (the pre-fix build 451d7f5 also showed French); it affected choices the player doesn't carry, such as a video track chosen by size or titles with different saved choices. PiP size issue: see Findings. |
 | 2026-10-03 | C.2 review fixes (R1–R3), B.1 KDoc, phone PiP size | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (194 tests, 0 failures). | Android emulator, Pixel 7 profile, Android 15 (API 35): instrumented smoke test (`am instrument`) pass; PiP from Home opened at 598×336 px (was 1120×630 px) and expanded back to a focused player. Not run: the C.2 TV focus path (no TV image). | 7cbb292 resolves C.2.R1–R3 (natural-case label, `player_up_next_hint` as the TalkBack click label, D-pad Up reveals the controls again; on TV, Down from the top row reaches the card). 1e4a1ec updates two comments B.1.2 missed. 51f2cca drops the player's `minWidth`/`minHeight` (Findings). ff97b39 makes the player panel and Settings helpers internal so later sections can live in their own files. C.2.D1 stays open (completion state and advancing inside PiP). |
 | 2026-10-03 to 2026-10-04 | Review of the CLI's C.2/PiP commits; A.5.4 picked up; C.3, C.6, B.4, B.3, B.5, D.1–D.5, E.1, E.2, F.1–F.7 implemented (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at every commit; 309 JVM tests, 0 failures, at bba68d8. Instrumented suite (`am instrument -e package com.babasama.edendale`, 19 tests): all pass at bba68d8. | Android emulator, Pixel 7 profile, Android 15 (API 35, Google APIs, arm64), headless (no display checks were run, at the owner's request): subtitle parsing (SRT CRLF and UTF-16 BOM, WebVTT, ASS), the Room 2 → 3 migration, the EQ processor's formats, bit-exact flat audio, live updates, and clamping, DTS 5.1 and TrueHD 5.1 decoded by FFmpeg through the EQ, every enhancement pass with pixel readback, the effects pipeline through ExoPlayer (installed before prepare, installed mid-play with re-prepare, REDRAW while paused), the capability benchmark (1.24 ms). | Not run: every display, touch, TalkBack, TV, Bluetooth, SMB-over-hotspot, HDMI passthrough, and real-GPU check (B.1.D1/D2, B.2.D1, B.3.D1, B.4.D1, B.5.D1, B.6, C.2.D1, C.5.D1, C.6.D1/D2, D.1.D1, E.1.D1, F.1.5/F.1.6, F.3.4, F.7.D1, F.8). The CLI's commits 7cbb292, 1e4a1ec, 51f2cca, ff97b39, e8835f1, and its A.5.4 CI job (cherry-picked as 1c9c58d; all four pinned action SHAs exist) were reviewed and look right. Steps since then are split with the CLI session (edendale-12), which works in its own worktrees: it reviews C.3–E.2 and takes H.2, the pure H layers, J.1–J.4, J.6, and the research notes. |
+| 2026-10-04 | J.5, K Attribution, L.2, J.1–J.4, J.6, L.4 (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at every commit; 322 JVM tests, 0 failures, at 983546a. | not run (headless, at the owner's request) | The CLI session hit its usage limit before it read the split proposal, with clean worktrees and nothing running, so this session took Section J (planned for the CLI above) and left it a message. Still the CLI's: review of C.3–E.2, H (pure layers first), the G.1 prototype, and the research notes. Not run: J.1–J.6 window, keyboard, and TalkBack checks; Meta+/ lists. K.1's final check and L.1 wait for Sections H and I. |
 
 ---
 
@@ -1939,14 +1983,14 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | I.1 | OneDrive on TV | Not started | |
 | I.2 | Phone-to-TV handoff | Not started | |
 | I.3 | Watch Next row | Not started | |
-| J.1 | Navigation child rows | Complete (device check not run) | 34312d3 |
-| J.2 | Continue Watching and Movies pages | Complete (device check not run) | 34312d3 |
-| J.3 | Keyboard shortcuts | Complete (device check not run) | 34312d3 |
-| J.4 | Link Source keyboard behavior | Complete (device check not run) | 34312d3 |
+| J.1 | Navigation child rows | Complete (device check not run) | 983546a |
+| J.2 | Continue Watching and Movies pages | Complete (device check not run) | 983546a |
+| J.3 | Keyboard shortcuts | Complete (device check not run) | 983546a |
+| J.4 | Link Source keyboard behavior | Complete (device check not run) | 983546a |
 | J.5 | Docked player panels | Complete (device check not run) | aa8b2ba |
-| J.6 | Season shelf scrubber | Complete (device check not run) | 34312d3 |
+| J.6 | Season shelf scrubber | Complete (device check not run) | 983546a |
 | K.1 | Settings order | Not started | |
 | L.1 | README | Not started | |
 | L.2 | DESIGN.md | Complete | 0987890 |
 | L.3 | Release | Blocked (D19) | |
-| L.4 | Notes for other branches | Not started | |
+| L.4 | Notes for other branches | Complete (notes in Section L) | |
