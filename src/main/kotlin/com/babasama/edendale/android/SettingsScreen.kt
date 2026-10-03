@@ -168,6 +168,9 @@ fun SettingsScreen(
 
     val windowSize = currentWindowSizeDp()
     val edgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
+    // Section K: on TV and in wide windows, attribution is part of About, near
+    // the top, where focus-scrolling and a glance both reach it.
+    val attributionInAbout = isTelevision || windowSize.width >= WIDE_SETTINGS_WIDTH
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -214,6 +217,10 @@ fun SettingsScreen(
                         },
                     ),
                 )
+                if (attributionInAbout) {
+                    SettingsRowDivider()
+                    AttributionRows()
+                }
             }
         }
 
@@ -408,16 +415,14 @@ fun SettingsScreen(
             }
         }
 
-        item {
-            SettingsSection(
-                header = stringResource(R.string.settings_section_attribution),
-                isTelevision = isTelevision,
-            ) {
-                InfoRow(stringResource(R.string.tmdb_attribution))
-                SettingsRowDivider()
-                InfoRow(stringResource(R.string.settings_nunito_attribution))
-                SettingsRowDivider()
-                InfoRow(stringResource(R.string.settings_open_source))
+        if (!attributionInAbout) {
+            item {
+                SettingsSection(
+                    header = stringResource(R.string.settings_section_attribution),
+                    isTelevision = isTelevision,
+                ) {
+                    AttributionRows()
+                }
             }
         }
     }
@@ -1307,6 +1312,19 @@ internal fun HoldSpeedStepper(
 }
 
 private const val WYZIE_REDEEM_URL = "https://store.wyzie.io/redeem"
+
+/** The window width from which Settings lays out as a page and attribution joins About (Section K). */
+private val WIDE_SETTINGS_WIDTH = 840.dp
+
+/** TMDB's required notice, the bundled font's credit, and the project line. */
+@Composable
+private fun AttributionRows() {
+    InfoRow(stringResource(R.string.tmdb_attribution))
+    SettingsRowDivider()
+    InfoRow(stringResource(R.string.settings_nunito_attribution))
+    SettingsRowDivider()
+    InfoRow(stringResource(R.string.settings_open_source))
+}
 
 @Composable
 internal fun LabelCapsStyle() = MaterialTheme.typography.labelLarge.copy(
