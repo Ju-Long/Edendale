@@ -1676,7 +1676,7 @@ AGENTS.md forbids.
   Tab and Shift+Tab move between fields; Enter connects when every required
   field is filled, and otherwise focuses the first empty one; a guest
   connection (no user or password) takes one tap.
-- [ ] **J.5** Docked player panels when the window is at least 1100 dp wide: the
+- [x] **J.5** Docked player panels when the window is at least 1100 dp wide: the
   playlist and Player Adjustments dock as a trailing sidebar that narrows the
   video instead of covering it. Tapping the video leaves the panel open. Esc or
   Back closes the panel, and a second press leaves the player. The controls
@@ -1940,7 +1940,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | J.2 | Continue Watching and Movies pages | Not started | |
 | J.3 | Keyboard shortcuts | Not started | |
 | J.4 | Link Source keyboard behavior | Not started | |
-| J.5 | Docked player panels | Not started | |
+| J.5 | Docked player panels | Complete (device check not run; Esc comes with J.3) | |
 | J.6 | Season shelf scrubber | Not started | |
 | K.1 | Settings order | Not started | |
 | L.1 | README | Not started | |

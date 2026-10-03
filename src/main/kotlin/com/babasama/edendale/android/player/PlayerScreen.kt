@@ -6,6 +6,9 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -83,6 +86,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -175,6 +179,19 @@ internal fun PlayerScreen(
 
     val controlsActive = chrome.controlsVisible && !inPipMode.value
 
+    // J.5: in a window at least 1100 dp wide, the playlist and Player
+    // Adjustments dock as a trailing sidebar that narrows the video instead of
+    // covering it.
+    val docked = !isTelevision && !inPipMode.value &&
+        LocalConfiguration.current.screenWidthDp >= DOCKED_PANEL_MIN_WIDTH_DP
+    val dockedPanelOpen = docked && chrome.activePanel != null
+    val reduceMotionForDock = rememberReducedMotion()
+    val dockInset by animateDpAsState(
+        targetValue = if (dockedPanelOpen) DOCKED_PANEL_WIDTH else 0.dp,
+        animationSpec = if (reduceMotionForDock) snap() else tween(200),
+        label = "Docked panel inset",
+    )
+
     DisposableListener(player) { state, playing ->
         isBuffering = state == Player.STATE_BUFFERING
         isPlaying = playing
@@ -202,7 +219,7 @@ internal fun PlayerScreen(
         chrome.activePanel, chrome.isScrubbing, chrome.interactionTick,
     ) {
         if (chrome.controlsVisible && isPlaying && !inPipMode.value &&
-            chrome.activePanel == null && !chrome.isScrubbing
+            (chrome.activePanel == null || dockedPanelOpen) && !chrome.isScrubbing
         ) {
             delay(PlayerLogic.AUTO_HIDE_MILLIS)
             chrome.hideControls()
@@ -258,198 +275,205 @@ internal fun PlayerScreen(
             .background(Color.Black)
             .onFocusChanged { hasFocusInside = it.hasFocus },
     ) {
-        AndroidView(
-            factory = { viewContext ->
-                PlayerView(viewContext).apply {
-                    useController = false
-                    // The hidden built-in controller is full of focusable
-                    // buttons; keep the D-pad out of the View world entirely.
-                    descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
-                    isFocusable = false
-                    this.player = player
-                    // PlayerSubtitleOverlay draws the cues instead (B.4.3).
-                    subtitleView?.visibility = View.GONE
-                }
-            },
-            update = { view ->
-                view.resizeMode = if (chrome.aspectFill) {
-                    AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                } else {
-                    AspectRatioFrameLayout.RESIZE_MODE_FIT
-                }
-                // F.1.3: on a TV that draws its interface at 1080p on a 4K panel, the
-                // effects path renders into the surface's buffer, so the buffer takes
-                // the upscaler's target size rather than the layout's.
-                val fixed = video?.fixedSurfaceSize
-                if (view.getTag(R.id.player_fixed_surface_size) != fixed) {
-                    view.setTag(R.id.player_fixed_surface_size, fixed)
-                    (view.videoSurfaceView as? SurfaceView)?.holder?.let { holder ->
-                        if (fixed != null) holder.setFixedSize(fixed.width, fixed.height) else holder.setSizeFromLayout()
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        // Beneath the gesture layer, so the cues never take a tap.
-        PlayerSubtitleOverlay(player = player, chrome = chrome, controlsVisible = controlsActive)
-
-        if (!isTelevision && !inPipMode.value) {
-            PlayerGestureLayer(player, chrome, activity)
-        }
-
-        val promptFocus = remember { FocusRequester() }
-        val visibleSegment = if (
-            !chrome.isScrubbing &&
-            chrome.activePanel == null &&
-            !inPipMode.value
+        // The picture and everything drawn over it; a docked panel takes the trailing edge.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(end = dockInset),
         ) {
-            activeSegment.value
-        } else {
-            null
-        }
-
-        val visibleUpNext = if (
-            !chrome.isScrubbing &&
-            chrome.activePanel == null &&
-            !inPipMode.value
-        ) {
-            upcomingEpisode.value
-        } else {
-            null
-        }
-
-        if (isTelevision) {
-            RevealCatcher(
-                active = isTelevision && !controlsActive && !inPipMode.value,
-                focusRequester = catcherFocus,
-                promptFocusRequester = promptFocus,
-                hasVisiblePrompt = visibleSegment != null,
-                chrome = chrome,
-                player = player,
-            )
-        }
-
-        if (isBuffering && !inPipMode.value && !controlsActive) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-
-        // Lightweight remote-seek timeline; the full controls carry their
-        // own timeline, so the two are never shown together.
-        if (isTelevision && !chrome.controlsVisible &&
-            (chrome.timelineVisible || chrome.remotePreviewMillis != null) &&
-            !inPipMode.value
-        ) {
-            TvTimelineOverlay(
-                positionMillis = chrome.remotePreviewMillis ?: positionMillis,
-                durationMillis = durationMillis,
-            )
-        }
-
-        AnimatedVisibility(
-            visible = controlsActive,
-            modifier = Modifier.fillMaxSize(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            PlayerControlsOverlay(
-                player = player,
-                chrome = chrome,
-                isTelevision = isTelevision,
-                title = title.value,
-                subtitle = subtitle.value,
-                isPlaying = isPlaying,
-                isBuffering = isBuffering,
-                positionMillis = positionMillis,
-                durationMillis = durationMillis,
-                hasPlaylist = playlist.value != null,
-                topFocus = topFocus,
-                centerFocus = centerFocus,
-                timelineFocus = timelineFocus,
-                upNextFocus = upNextFocus.takeIf { visibleUpNext != null },
-                onEnterPip = onEnterPip,
-                onClose = onClose,
-            )
-        }
-
-        visibleSegment?.let { segment ->
-            SkipPromptButton(
-                segment = segment,
-                isTelevision = isTelevision,
-                controlsVisible = controlsActive,
-                focusRequester = promptFocus,
-                onSkip = onSkip,
-                onExitFocus = {
-                    if (isTelevision && !chrome.controlsVisible) {
-                        catcherFocus.requestFocus()
-                    } else {
-                        chrome.showControls()
+            AndroidView(
+                factory = { viewContext ->
+                    PlayerView(viewContext).apply {
+                        useController = false
+                        // The hidden built-in controller is full of focusable
+                        // buttons; keep the D-pad out of the View world entirely.
+                        descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+                        isFocusable = false
+                        this.player = player
+                        // PlayerSubtitleOverlay draws the cues instead (B.4.3).
+                        subtitleView?.visibility = View.GONE
                     }
                 },
+                update = { view ->
+                    view.resizeMode = if (chrome.aspectFill) {
+                        AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    } else {
+                        AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    }
+                    // F.1.3: on a TV that draws its interface at 1080p on a 4K panel, the
+                    // effects path renders into the surface's buffer, so the buffer takes
+                    // the upscaler's target size rather than the layout's.
+                    val fixed = video?.fixedSurfaceSize
+                    if (view.getTag(R.id.player_fixed_surface_size) != fixed) {
+                        view.setTag(R.id.player_fixed_surface_size, fixed)
+                        (view.videoSurfaceView as? SurfaceView)?.holder?.let { holder ->
+                            if (fixed != null) holder.setFixedSize(fixed.width, fixed.height) else holder.setSizeFromLayout()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
             )
-        }
 
-        val reduceMotion = rememberReducedMotion()
-        val upNextEnterTransition = remember(reduceMotion) {
-            if (reduceMotion) {
-                fadeIn()
-            } else {
-                slideInHorizontally(initialOffsetX = { it }) + fadeIn()
+            // Beneath the gesture layer, so the cues never take a tap.
+            PlayerSubtitleOverlay(player = player, chrome = chrome, controlsVisible = controlsActive)
+
+            if (!isTelevision && !inPipMode.value) {
+                PlayerGestureLayer(player, chrome, activity)
             }
-        }
-        val upNextExitTransition = remember(reduceMotion) {
-            if (reduceMotion) {
-                fadeOut()
+
+            val promptFocus = remember { FocusRequester() }
+            val visibleSegment = if (
+                !chrome.isScrubbing &&
+                chrome.activePanel == null &&
+                !inPipMode.value
+            ) {
+                activeSegment.value
             } else {
-                slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                null
             }
-        }
 
-        var lastUpNextEntry by remember { mutableStateOf<PlaylistEntry?>(null) }
-        if (visibleUpNext != null) {
-            lastUpNextEntry = visibleUpNext
-        }
+            val visibleUpNext = if (
+                !chrome.isScrubbing &&
+                chrome.activePanel == null &&
+                !inPipMode.value
+            ) {
+                upcomingEpisode.value
+            } else {
+                null
+            }
 
-        AnimatedVisibility(
-            visible = visibleUpNext != null,
-            modifier = Modifier.align(Alignment.TopEnd),
-            enter = upNextEnterTransition,
-            exit = upNextExitTransition,
-        ) {
-            lastUpNextEntry?.let { entry ->
-                UpNextCard(
-                    entry = entry,
+            if (isTelevision) {
+                RevealCatcher(
+                    active = isTelevision && !controlsActive && !inPipMode.value,
+                    focusRequester = catcherFocus,
+                    promptFocusRequester = promptFocus,
+                    hasVisiblePrompt = visibleSegment != null,
+                    chrome = chrome,
+                    player = player,
+                )
+            }
+
+            if (isBuffering && !inPipMode.value && !controlsActive) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            // Lightweight remote-seek timeline; the full controls carry their
+            // own timeline, so the two are never shown together.
+            if (isTelevision && !chrome.controlsVisible &&
+                (chrome.timelineVisible || chrome.remotePreviewMillis != null) &&
+                !inPipMode.value
+            ) {
+                TvTimelineOverlay(
+                    positionMillis = chrome.remotePreviewMillis ?: positionMillis,
+                    durationMillis = durationMillis,
+                )
+            }
+
+            AnimatedVisibility(
+                visible = controlsActive,
+                modifier = Modifier.fillMaxSize(),
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                PlayerControlsOverlay(
+                    player = player,
+                    chrome = chrome,
+                    isTelevision = isTelevision,
+                    title = title.value,
+                    subtitle = subtitle.value,
+                    isPlaying = isPlaying,
+                    isBuffering = isBuffering,
+                    positionMillis = positionMillis,
+                    durationMillis = durationMillis,
+                    hasPlaylist = playlist.value != null,
+                    topFocus = topFocus,
+                    centerFocus = centerFocus,
+                    timelineFocus = timelineFocus,
+                    upNextFocus = upNextFocus.takeIf { visibleUpNext != null },
+                    onEnterPip = onEnterPip,
+                    onClose = onClose,
+                )
+            }
+
+            visibleSegment?.let { segment ->
+                SkipPromptButton(
+                    segment = segment,
                     isTelevision = isTelevision,
                     controlsVisible = controlsActive,
-                    focusRequester = upNextFocus,
-                    onPlayNext = { onSelectEntry(entry) },
-                    onFocus = { chrome.showControls() },
+                    focusRequester = promptFocus,
+                    onSkip = onSkip,
                     onExitFocus = {
-                        // The card takes focus only from the visible controls
-                        // (down from the top row), so down hands it back to
-                        // the transport row it sits above.
-                        when {
-                            controlsActive -> {
-                                chrome.showControls()
-                                runCatching { centerFocus.requestFocus() }
-                            }
-                            isTelevision -> catcherFocus.requestFocus()
-                            else -> chrome.showControls()
+                        if (isTelevision && !chrome.controlsVisible) {
+                            catcherFocus.requestFocus()
+                        } else {
+                            chrome.showControls()
                         }
                     },
                 )
             }
-        }
 
-        // Over everything but the panels: the picture is gone, and only Close
-        // (or Back) is left to do.
-        playbackFailure.value?.let { failure ->
-            // A Surface, so taps can't reach the hidden controls underneath.
-            Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
-                PlaybackErrorView(failure = failure, isTelevision = isTelevision, onClose = onClose)
+            val reduceMotion = rememberReducedMotion()
+            val upNextEnterTransition = remember(reduceMotion) {
+                if (reduceMotion) {
+                    fadeIn()
+                } else {
+                    slideInHorizontally(initialOffsetX = { it }) + fadeIn()
+                }
+            }
+            val upNextExitTransition = remember(reduceMotion) {
+                if (reduceMotion) {
+                    fadeOut()
+                } else {
+                    slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                }
+            }
+
+            var lastUpNextEntry by remember { mutableStateOf<PlaylistEntry?>(null) }
+            if (visibleUpNext != null) {
+                lastUpNextEntry = visibleUpNext
+            }
+
+            AnimatedVisibility(
+                visible = visibleUpNext != null,
+                modifier = Modifier.align(Alignment.TopEnd),
+                enter = upNextEnterTransition,
+                exit = upNextExitTransition,
+            ) {
+                lastUpNextEntry?.let { entry ->
+                    UpNextCard(
+                        entry = entry,
+                        isTelevision = isTelevision,
+                        controlsVisible = controlsActive,
+                        focusRequester = upNextFocus,
+                        onPlayNext = { onSelectEntry(entry) },
+                        onFocus = { chrome.showControls() },
+                        onExitFocus = {
+                            // The card takes focus only from the visible controls
+                            // (down from the top row), so down hands it back to
+                            // the transport row it sits above.
+                            when {
+                                controlsActive -> {
+                                    chrome.showControls()
+                                    runCatching { centerFocus.requestFocus() }
+                                }
+                                isTelevision -> catcherFocus.requestFocus()
+                                else -> chrome.showControls()
+                            }
+                        },
+                    )
+                }
+            }
+
+            // Over everything but the panels: the picture is gone, and only Close
+            // (or Back) is left to do.
+            playbackFailure.value?.let { failure ->
+                // A Surface, so taps can't reach the hidden controls underneath.
+                Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
+                    PlaybackErrorView(failure = failure, isTelevision = isTelevision, onClose = onClose)
+                }
             }
         }
 
@@ -467,6 +491,7 @@ internal fun PlayerScreen(
                 supportsPip = supportsPip,
                 panelFocus = panelFocus,
                 video = video,
+                docked = docked,
                 onAutoPipChanged = onAutoPipChanged,
                 onSelectEntry = onSelectEntry,
                 onSearchOnlineSubtitles = onSearchOnlineSubtitles,
@@ -1360,6 +1385,7 @@ private fun BoxScope.PlayerPanels(
     supportsPip: Boolean,
     panelFocus: FocusRequester,
     video: VideoEffectsController?,
+    docked: Boolean,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
@@ -1367,8 +1393,9 @@ private fun BoxScope.PlayerPanels(
     onTrackSelected: () -> Unit = {},
 ) {
     // Tap anywhere outside the panel to dismiss it. Never a focus target —
-    // a full-screen focusable would trap the D-pad.
-    if (chrome.activePanel != null) {
+    // a full-screen focusable would trap the D-pad. A docked panel stays open:
+    // taps on the video go to the video (J.5).
+    if (chrome.activePanel != null && !docked) {
         Box(
             Modifier
                 .matchParentSize()
@@ -1380,7 +1407,7 @@ private fun BoxScope.PlayerPanels(
         )
     }
 
-    val panelWidth = if (isTelevision) 460.dp else 340.dp
+    val panelWidth = if (isTelevision) 460.dp else DOCKED_PANEL_WIDTH
 
     AnimatedVisibility(
         visible = chrome.activePanel == PlayerPanel.PLAYLIST,
@@ -2248,3 +2275,9 @@ internal fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {
     return language?.replaceFirstChar { it.titlecase(Locale.getDefault()) }
         ?: stringResource(R.string.player_track_number, index + 1)
 }
+
+/** J.5: the window width from which the side panels dock instead of covering the video. */
+private const val DOCKED_PANEL_MIN_WIDTH_DP = 1100
+
+/** The handheld panel width, docked or not. */
+private val DOCKED_PANEL_WIDTH = 340.dp
