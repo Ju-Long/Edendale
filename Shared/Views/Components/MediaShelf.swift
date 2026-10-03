@@ -30,7 +30,7 @@ struct MediaShelf: View {
     let onSelect: (TMDBMediaItem) -> Void
 
     @State private var scrollPosition = ScrollPosition()
-    @State private var metrics = Metrics()
+    @State private var metrics = ShelfScrollMetrics()
     @Environment(WatchProgressStore.self) private var watchStore
 
     /// tvOS slots are the focused size and resting cards shrink inside them
@@ -44,29 +44,12 @@ struct MediaShelf: View {
         #endif
     }
 
-    /// Scroll geometry mirrored into the header scrubber.
-    private struct Metrics: Equatable {
-        var offset: CGFloat = 0
-        /// Scrollable distance: content width - container width.
-        var range: CGFloat = 0
-        var visibleFraction: Double = 1
-
-        var progress: Double {
-            range > 0 ? min(max(offset / range, 0), 1) : 0
-        }
-    }
-
     var body: some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(
                     title: title,
-                    scrubber: SectionScrubber(
-                        progress: metrics.progress,
-                        visibleFraction: metrics.visibleFraction
-                    ) { fraction in
-                        scrollPosition.scrollTo(x: fraction * metrics.range)
-                    }
+                    scrubber: metrics.scrubber(scrolling: $scrollPosition)
                 )
                 .padding(.horizontal, edgeMargin)
 
@@ -83,14 +66,8 @@ struct MediaShelf: View {
                 // The hover/spotlight glow may bleed past the shelf bounds
                 // instead of being clipped to a hard edge.
                 .scrollClipDisabled()
-                .onScrollGeometryChange(for: Metrics.self) { geometry in
-                    Metrics(
-                        offset: geometry.contentOffset.x + geometry.contentInsets.leading,
-                        range: geometry.contentSize.width - geometry.containerSize.width,
-                        visibleFraction: geometry.contentSize.width > 0
-                            ? geometry.containerSize.width / geometry.contentSize.width
-                            : 1
-                    )
+                .onScrollGeometryChange(for: ShelfScrollMetrics.self) { geometry in
+                    ShelfScrollMetrics(geometry)
                 } action: { _, new in
                     metrics = new
                 }

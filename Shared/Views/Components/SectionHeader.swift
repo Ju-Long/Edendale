@@ -5,6 +5,7 @@
 //  Bebas section heading with a trailing hairline rule: "YOUR ARCHIVE ———".
 //  Given a SectionScrubber, the rule becomes a slider mirroring an attached
 //  horizontal scroll view, with a draggable capsule as the thumb.
+//  SectionRule and ShelfScrollMetrics let other headings carry the same rule.
 //
 
 import SwiftUI
@@ -20,6 +21,36 @@ struct SectionScrubber {
 
     /// The scrubber only appears when the content actually overflows.
     var isScrollable: Bool { visibleFraction < 0.999 }
+}
+
+/// A horizontal shelf's scroll geometry, mirrored into its heading's
+/// scrubber. Feed it from `onScrollGeometryChange`.
+struct ShelfScrollMetrics: Equatable {
+    var offset: CGFloat = 0
+    /// Scrollable distance: content width - container width.
+    var range: CGFloat = 0
+    var visibleFraction: Double = 1
+
+    init() {}
+
+    init(_ geometry: ScrollGeometry) {
+        offset = geometry.contentOffset.x + geometry.contentInsets.leading
+        range = geometry.contentSize.width - geometry.containerSize.width
+        visibleFraction = geometry.contentSize.width > 0
+            ? geometry.containerSize.width / geometry.contentSize.width
+            : 1
+    }
+
+    var progress: Double {
+        range > 0 ? min(max(offset / range, 0), 1) : 0
+    }
+
+    /// A scrubber that moves the shelf bound to `position`.
+    func scrubber(scrolling position: Binding<ScrollPosition>) -> SectionScrubber {
+        SectionScrubber(progress: progress, visibleFraction: visibleFraction) { fraction in
+            position.wrappedValue.scrollTo(x: fraction * range)
+        }
+    }
 }
 
 struct SectionHeader: View {
@@ -39,15 +70,27 @@ struct SectionHeader: View {
                 // The trait rides on the title alone; on the HStack it would
                 // also land on the scrubber, which is a control, not a heading.
                 .accessibilityAddTraits(.isHeader)
-            if let scrubber, scrubber.isScrollable {
-                ScrubberRule(scrubber: scrubber, label: title)
-            } else {
-                // A decorative rule with nothing to announce.
-                Rectangle()
-                    .fill(Theme.outline)
-                    .frame(height: 1)
-                    .accessibilityHidden(true)
-            }
+            SectionRule(scrubber: scrubber, label: title)
+        }
+    }
+}
+
+/// The hairline rule after a heading. Given a scrubber whose content
+/// overflows, it becomes that shelf's scroll indicator and control.
+struct SectionRule: View {
+    var scrubber: SectionScrubber?
+    /// Shelf name, so the control announces which shelf it scrolls.
+    let label: String
+
+    var body: some View {
+        if let scrubber, scrubber.isScrollable {
+            ScrubberRule(scrubber: scrubber, label: label)
+        } else {
+            // A decorative rule with nothing to announce.
+            Rectangle()
+                .fill(Theme.outline)
+                .frame(height: 1)
+                .accessibilityHidden(true)
         }
     }
 }

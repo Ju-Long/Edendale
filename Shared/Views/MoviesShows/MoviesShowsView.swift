@@ -1164,7 +1164,7 @@ private struct MissingKeyState: View {
                 .font(Typography.headlineMD)
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.textPrimary)
-            Text("Add a TMDB API key to Shared/Secrets.xcconfig to browse movies and shows.")
+            Text("Add a TMDB API key to .secret/Secrets.xcconfig to browse movies and shows.")
                 .font(Typography.bodyLG)
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)

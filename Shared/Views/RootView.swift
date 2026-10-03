@@ -2,17 +2,24 @@
 //  RootView.swift
 //  Edendale
 //
-//  Adaptive shell: sidebar on iPadOS/macOS (Settings pinned at the
-//  bottom), tab bar on iPhone (Settings in each page's toolbar),
-//  ornament tabs on visionOS (Settings as its own tab). Search uses
-//  the OS 26 search tab role.
+//  Adaptive shell: sidebar on iPadOS, tab bar on iPhone — both reach
+//  Settings from each page's toolbar as a sheet. The tvOS sidebar and the
+//  visionOS ornament give Settings its own tab. Search uses the OS 26
+//  search tab role.
+//
+//  macOS uses a split view instead (see RootSidebar): its sidebar also
+//  lists the Watchlist and Downloaded sections, and ⌘B hides it. Settings
+//  is the app menu's Settings window (see EdendaleApp).
 //
 
 import SwiftUI
 import SwiftData
 
 enum RootTab: Hashable {
-    case movies, watchlist, downloaded, settings, search
+    case movies, watchlist, downloaded, search
+    #if os(tvOS) || os(visionOS)
+    case settings
+    #endif
 }
 
 struct RootView: View {
@@ -34,50 +41,27 @@ struct RootView: View {
     @State private var moviesModel = MoviesShowsModel()
     /// Routes cast taps in a detail page over to the Search tab.
     @State private var searchCoordinator = SearchCoordinator()
+    #if os(macOS)
+    @State private var sidebarItem: SidebarItem = .movies
+    @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
+    /// The split view shows one page at a time, so the search session lives
+    /// here to survive visits to other pages (a tab view keeps each tab).
+    @State private var searchModel = SearchModel()
+    #else
     @State private var selectedTab: RootTab = .movies
-    @State private var showSettings = false
+    #endif
     @State private var externalDetail: RoutedMediaDetail?
 
+    #if os(macOS)
+    /// The sidebar row's root tab; routes that pick a tab open its whole page.
+    private var selectedTab: RootTab {
+        get { sidebarItem.tab }
+        nonmutating set { sidebarItem = SidebarItem(newValue) }
+    }
+    #endif
+
     var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Movies & Shows", image: "clapperboard", value: RootTab.movies) {
-                MoviesShowsView()
-            }
-
-            if hasWatchlistItems {
-                Tab("Watchlist", image: "film-stack", value: RootTab.watchlist) {
-                    WatchlistView()
-                }
-            }
-
-            Tab("Downloaded", image: "folder-closed", value: RootTab.downloaded) {
-                DownloadedView()
-            }
-
-            #if os(visionOS) || os(tvOS)
-            Tab("Settings", image: "gear-complex", value: RootTab.settings) {
-                SettingsView()
-            }
-            #endif
-
-            Tab("Search", image: "magnifying-glass-play", value: RootTab.search, role: .search) {
-                SearchView()
-            }
-        }
-        .tabViewStyle(.sidebarAdaptable)
-        #if os(iOS) || os(macOS)
-        .tabViewSidebarBottomBar {
-            Button {
-                showSettings = true
-            } label: {
-                Label("Settings", image: "gear-complex")
-            }
-            .archiveButtonStyle(.ghost)
-        }
-        #endif
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-        }
+        navigation
         .environment(moviesModel)
         .environment(searchCoordinator)
         .sheet(item: $externalDetail) { destination in
@@ -131,6 +115,112 @@ struct RootView: View {
             Task { await syncAccountStateFromTMDB() }
         }
     }
+
+    // MARK: - Navigation
+
+    @ViewBuilder
+    private var navigation: some View {
+        #if os(macOS)
+        let watchlistSections = self.watchlistSections
+        let downloadedSections = self.downloadedSections
+        NavigationSplitView(columnVisibility: $sidebarVisibility) {
+            RootSidebar(
+                selection: $sidebarItem,
+                showsWatchlist: hasWatchlistItems,
+                watchlistSections: watchlistSections,
+                downloadedSections: downloadedSections
+            )
+        } detail: {
+            sidebarDestination
+        }
+        // View ▸ Hide Sidebar (⌘B); see EdendaleCommands.
+        .focusedSceneValue(\.sidebarVisibility, $sidebarVisibility)
+        // A section row that empties (its last title removed, or hidden by
+        // the audience filter) falls back to its whole page.
+        .onChange(of: watchlistSections) { _, sections in
+            sidebarItem = sidebarItem.resolved(
+                watchlistSections: sections,
+                downloadedSections: downloadedSections
+            )
+        }
+        .onChange(of: downloadedSections) { _, sections in
+            sidebarItem = sidebarItem.resolved(
+                watchlistSections: watchlistSections,
+                downloadedSections: sections
+            )
+        }
+        #else
+        TabView(selection: $selectedTab) {
+            Tab("Movies & Shows", image: "clapperboard", value: RootTab.movies) {
+                MoviesShowsView()
+            }
+
+            if hasWatchlistItems {
+                Tab("Watchlist", image: "film-stack", value: RootTab.watchlist) {
+                    WatchlistView()
+                }
+            }
+
+            Tab("Downloaded", image: "folder-closed", value: RootTab.downloaded) {
+                DownloadedView()
+            }
+
+            #if os(tvOS) || os(visionOS)
+            Tab("Settings", image: "gear-complex", value: RootTab.settings) {
+                SettingsView()
+            }
+            #endif
+
+            Tab("Search", image: "magnifying-glass-play", value: RootTab.search, role: .search) {
+                SearchView()
+            }
+        }
+        .tabViewStyle(.sidebarAdaptable)
+        #endif
+    }
+
+    #if os(macOS)
+    @ViewBuilder
+    private var sidebarDestination: some View {
+        switch sidebarItem {
+        case .movies:
+            MoviesShowsView()
+        case .watchlist(let section):
+            // A fresh navigation stack per row: choosing a section always
+            // lands on its page, never on a detail pushed from another row.
+            WatchlistView(section: section)
+                .id(sidebarItem)
+        case .downloaded(let section):
+            DownloadedView(section: section)
+                .id(sidebarItem)
+        case .search:
+            SearchView(model: searchModel)
+        }
+    }
+
+    private var watchlistSections: [WatchlistSection] {
+        WatchlistSection.available(in: watchlistStore.items.filter {
+            $0.isInWatchlist && youngAudienceFilter.allows($0.ref)
+        })
+    }
+
+    private var downloadedSections: [DownloadedSection] {
+        // Same show order as the Downloaded page, which decides between
+        // duplicate show records.
+        let shows = visibleLibraryShows.sorted { $0.dateAdded > $1.dateAdded }
+        let resumeItems = ResumeItem.items(
+            watchStore: watchStore,
+            movies: visibleLibraryMovies,
+            shows: shows,
+            limit: 1
+        )
+        return DownloadedSection.available(
+            hasResumeItems: !resumeItems.isEmpty,
+            movies: visibleLibraryMovies,
+            shows: shows
+        )
+    }
+    #endif
 
     private var hasWatchlistItems: Bool {
         watchlistStore.items.contains {

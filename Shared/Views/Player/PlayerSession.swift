@@ -2,7 +2,7 @@
 //  PlayerSession.swift
 //  Edendale
 //
-//  App-level playback coordinator. Owns the VLC `Player`, the current
+//  App-level playback coordinator. Owns the `PlaybackEngine`, the current
 //  `PlaybackItem`, and the chrome state for the active session, so every
 //  platform host presents the same player:
 //    - iOS/iPadOS/visionOS/tvOS: full-screen cover over RootView
@@ -10,7 +10,8 @@
 //
 
 import Foundation
-import SwiftVLC
+import CoreMedia
+import SwiftData
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -29,21 +30,48 @@ final class PlayerSession {
     /// The item being played; non-nil while the player is presented.
     private(set) var item: PlaybackItem?
 
-    /// Live VLC player for the session. Created on present, torn down on end,
-    /// reused across episode/file switches so rate and volume carry over.
-    private(set) var player: Player?
+    /// Observable playback engine for the session. Created on first present,
+    /// reused across media switches to preserve PiP, video surface, and
+    /// drawable bindings. Media switches stop the old media (awaiting
+    /// completion) before loading new media, so delayed old-media events
+    /// never corrupt transport state.
+    private(set) var player: PlaybackEngine?
 
     /// Chrome (controls) state for the session.
     private(set) var chrome: PlayerChromeModel?
 
+    let segmentSkipping: PlayerSegmentController
+    /// Skip lengths and press-and-hold speeds (Settings ▸ App Controls).
+    let controls: PlayerControlPreferences
+    /// Text subtitle font, colours, and box (Settings ▸ Subtitles).
+    let subtitleAppearance: SubtitleAppearance
+    /// Downloaded online subtitles, reattached when their video plays again.
+    let subtitleCache: SubtitleCacheStore
+    /// Provider IDs of the cached subtitles reattached to the current item,
+    /// which the online search lists as already added.
+    private(set) var reattachedSubtitleIDs: Set<String> = []
+
     private let library: LibraryController
     private let watchStore: WatchProgressStore
-    private var eventTask: Task<Void, Never>?
+    private let audioEnhancement: AudioEnhancementController
+    private let videoAdjustment: VideoAdjustmentController
+    /// Backs persisted player preferences (loop, fill, per-content choices).
+    private let defaults: UserDefaults
+    private let preferencesStore: PlayerPreferencesStore
+    private let nowPlayingBridge = NowPlayingBridge()
+    #if !os(macOS)
+    private let audioSessionManager = AudioSessionManager()
+    #endif
     private var activePlaybackRequestID = UUID()
+    /// Keeps the previous item's security scope alive until the next
+    /// file starts playing, so the outgoing media's native resources
+    /// (decode thread, file handles) are not revoked mid-teardown.
+    private var retainedPreviousScope: PlaybackScope?
 
     #if os(visionOS)
     /// A spatial or multiview asset routed through the system visionOS
-    /// player. Ordinary 2D and unsupported formats continue through VLC.
+    /// player. Ordinary 2D and unsupported formats continue through the
+    /// new pipeline.
     private(set) var visionNativeItem: PlaybackItem?
     /// User-selected interpretation for ambiguous packed video. Automatic
     /// leaves routing to AVFoundation's metadata inspection.
@@ -53,23 +81,89 @@ final class PlayerSession {
     private var visionLastSavedTime: TimeInterval?
     private var visionReachedEnd = false
     private var visionResumePositionOverride: Double?
-    private var vlcResumePositionOverride: Double?
+    private var decoderResumePositionOverride: Double?
     #endif
 
-    /// Whether a hosted `VideoPlayer` surface has attached a drawable to the
-    /// player. The macOS window and visionOS cover can mount after
-    /// `present(_:)`; playback there waits for this so libVLC never creates
-    /// its video output without a surface (which plays audio but no video).
+    /// Whether a hosted `EnhancedVideoPlayer` surface has attached its
+    /// MTKView to the session. The macOS window and visionOS cover can
+    /// mount after `present(_:)`; playback there waits for this so the
+    /// decoder never outputs frames without a render surface.
     private var surfaceReady = false
     /// A presented item is holding its playback start for `surfaceDidAttach`.
     private var awaitingSurface = false
+    private var pictureInPictureRestoreCompletion: ((Bool) -> Void)?
 
-    init(library: LibraryController, watchStore: WatchProgressStore) {
+    init(
+        library: LibraryController,
+        watchStore: WatchProgressStore,
+        audioEnhancement: AudioEnhancementController? = nil,
+        videoAdjustment: VideoAdjustmentController? = nil,
+        segmentSkipping: PlayerSegmentController? = nil,
+        controls: PlayerControlPreferences? = nil,
+        subtitleAppearance: SubtitleAppearance? = nil,
+        subtitleCache: SubtitleCacheStore? = nil,
+        defaults: UserDefaults? = nil
+    ) {
+        let defaults = defaults ?? AppIdentifiers.defaults
         self.library = library
         self.watchStore = watchStore
+        self.defaults = defaults
+        self.preferencesStore = PlayerPreferencesStore(defaults: defaults)
+        self.audioEnhancement = audioEnhancement ?? AudioEnhancementController(defaults: defaults)
+        self.videoAdjustment = videoAdjustment ?? VideoAdjustmentController(defaults: defaults)
+        self.segmentSkipping = segmentSkipping ?? PlayerSegmentController(defaults: defaults)
+        self.controls = controls ?? PlayerControlPreferences(defaults: defaults)
+        self.subtitleAppearance = subtitleAppearance ?? SubtitleAppearance(defaults: defaults)
+        self.subtitleCache = subtitleCache ?? SubtitleCacheStore(
+            modelContext: Persistence.subtitleCacheModelContainer.mainContext
+        )
+
+        // The Lock Screen and Control Center label their skip buttons with
+        // the chosen lengths, including after a change made mid-playback.
+        offerSkipIntervalsToSystem()
+        self.controls.onSkipIntervalsChange = { [weak self] in
+            self?.offerSkipIntervalsToSystem()
+        }
+    }
+
+    private func offerSkipIntervalsToSystem() {
+        nowPlayingBridge.setSkipIntervals(
+            backward: controls.skipBackwardInterval.seconds,
+            forward: controls.skipForwardInterval.seconds
+        )
     }
 
     var isPresented: Bool { item != nil }
+    private(set) var isHiddenForPictureInPicture = false
+    var isPlayerPresented: Bool { isPresented && !isHiddenForPictureInPicture }
+
+    func pictureInPictureDidStart() {
+        guard isPresented else { return }
+        isHiddenForPictureInPicture = true
+        chrome?.hideControls()
+        setIdleTimerDisabled(false)
+    }
+
+    func restoreFromPictureInPicture(completion: ((Bool) -> Void)? = nil) {
+        guard isPresented else { completion?(false); return }
+        pictureInPictureRestoreCompletion = completion
+        isHiddenForPictureInPicture = false
+        setIdleTimerDisabled(true)
+        if surfaceReady {
+            pictureInPictureRestoreCompletion?(true)
+            pictureInPictureRestoreCompletion = nil
+        }
+    }
+
+    func surfaceDidDetach() {
+        surfaceReady = false
+    }
+
+    func pictureInPictureDidStop() {
+        // Restore requests arrive before didStop. Closing PiP without restoring
+        // ends the retained playback session and releases its file access.
+        if isHiddenForPictureInPicture { end() }
+    }
 
     // MARK: - Presenting
 
@@ -102,13 +196,19 @@ final class PlayerSession {
         Task { await presentPrepared(newItem, requestID: requestID) }
     }
 
+    /// Whether an automatic advance is preparing the next episode.
+    /// Scoped to a request generation so a newer manual play wins.
+    private var advanceRequestID: UUID?
+    private var advanceInFlight: Bool { advanceRequestID != nil }
+
     private func beginPlaybackRequest() -> UUID {
         let requestID = UUID()
         activePlaybackRequestID = requestID
+        advanceRequestID = nil
         #if os(visionOS)
         visionFormatSelection = VisionFormatSelection()
         visionResumePositionOverride = nil
-        vlcResumePositionOverride = nil
+        decoderResumePositionOverride = nil
         #endif
         return requestID
     }
@@ -131,6 +231,14 @@ final class PlayerSession {
     }
 
     func present(_ newItem: PlaybackItem) {
+        if isHiddenForPictureInPicture {
+            restoreFromPictureInPicture()
+            #if os(iOS)
+            player?.pipSource.stop()
+            #endif
+        }
+        debugPrint("[PlayerSession.present] called — url=\(newItem.url?.lastPathComponent ?? "nil"), scope=\(newItem.scope == nil ? "nil" : "exists"), error=\(newItem.errorMessage ?? "none")")
+
         #if os(visionOS)
         if visionNativeItem != nil {
             saveVisionProgress(completed: visionReachedEnd)
@@ -138,60 +246,187 @@ final class PlayerSession {
         }
         #endif
 
-        let player = self.player ?? Player()
-        self.player = player
-        let chrome = self.chrome ?? PlayerChromeModel(session: self, watchStore: self.watchStore)
+        // Save outgoing progress and per-content preferences before changing item.
+        chrome?.saveProgressBeforeSwitch()
+        saveContentPreferences()
+
+        let engine = self.player ?? PlaybackEngine()
+        let isNewEngine = self.player == nil
+        self.player = engine
+        #if os(iOS)
+        engine.onPictureInPictureStarted = { [weak self] in self?.pictureInPictureDidStart() }
+        engine.onPictureInPictureStopped = { [weak self] in self?.pictureInPictureDidStop() }
+        engine.pipSource.onRestoreUI = { [weak self] completion in
+            guard let self else { completion(false); return }
+            self.restoreFromPictureInPicture(completion: completion)
+        }
+        #endif
+        debugPrint("[PlayerSession.present] engine \(isNewEngine ? "CREATED" : "REUSED"), state=\(engine.state)")
+
+        let chrome = self.chrome ?? PlayerChromeModel(
+            session: self,
+            watchStore: self.watchStore,
+            defaults: defaults
+        )
         self.chrome = chrome
 
-        // Assign after chrome exists so hosts observing `item` render a
-        // fully-formed session.
-        item = newItem
+        let needsStop = engine.state != .idle && engine.state != .stopped
+        let generation = activePlaybackRequestID
 
-        guard newItem.url != nil else { return }
+        // Assign new item after chrome exists so hosts observing `item`
+        // render a fully-formed session. Retain old scope alongside.
+        let oldScope = item?.scope
+        item = newItem
+        reattachedSubtitleIDs = []
+
+        segmentSkipping.begin(itemID: newItem.id, media: newItem.segmentLookup)
+
+        guard newItem.url != nil else {
+            debugPrint("[PlayerSession.present] ❌ url is nil — bailing out")
+            return
+        }
+        setIdleTimerDisabled(true)
+
+        debugPrint("[PlayerSession.present] needsStop=\(needsStop), surfaceReady=\(surfaceReady)")
+        if needsStop {
+            engine.stop()
+            retainedPreviousScope = oldScope
+            beginPlaybackOnReady()
+        } else {
+            retainedPreviousScope = oldScope
+            beginPlaybackOnReady()
+        }
+    }
+
+    /// Starts playback once the engine is idle and the surface is ready.
+    /// On platforms that require a drawable, waits for `surfaceDidAttach`.
+    private func beginPlaybackOnReady() {
         #if os(iOS) || os(macOS) || os(visionOS)
-        // The host may still be presenting; hold playback until its video
-        // surface attaches (see `surfaceDidAttach`). Item switches inside an
-        // already-presented host start straight away.
+        debugPrint("[PlayerSession.beginPlaybackOnReady] surfaceReady=\(surfaceReady)")
         if surfaceReady {
             startPlayback()
         } else {
+            debugPrint("[PlayerSession.beginPlaybackOnReady] ⏳ waiting for surface attach...")
             awaitingSurface = true
         }
         #else
         startPlayback()
         #endif
-        setIdleTimerDisabled(true)
     }
 
-    /// Reported by the hosting scene's `VideoPlayer` once its surface has
-    /// handed libVLC a drawable; starts any playback waiting on it.
+    /// Reported by the hosting scene's `EnhancedVideoPlayer` once its Metal
+    /// surface is ready; starts any playback waiting on it.
     func surfaceDidAttach() {
+        debugPrint("[PlayerSession.surfaceDidAttach] called — awaitingSurface=\(awaitingSurface)")
         surfaceReady = true
+        pictureInPictureRestoreCompletion?(true)
+        pictureInPictureRestoreCompletion = nil
         guard awaitingSurface else { return }
         awaitingSurface = false
+        debugPrint("[PlayerSession.surfaceDidAttach] ▶️ proceeding to startPlayback")
         startPlayback()
     }
 
     private func startPlayback() {
-        guard let player, let chrome, let url = item?.url else { return }
-        do {
-            try player.play(url: url)
-            #if os(visionOS)
-            let resumePosition = vlcResumePositionOverride
-            vlcResumePositionOverride = nil
-            chrome.playbackDidStart(resumePosition: resumePosition)
-            #else
-            chrome.playbackDidStart()
-            #endif
-        } catch {
-            item = PlaybackItem(failed: error.localizedDescription)
+        guard let engine = player, let chrome, let url = item?.url else {
+            debugPrint("[PlayerSession.startPlayback] ❌ guard failed — player=\(player == nil ? "nil" : "exists"), chrome=\(self.chrome == nil ? "nil" : "exists"), url=\(item?.url?.lastPathComponent ?? "nil")")
+            return
         }
-        startEventLoop()
+        debugPrint("[PlayerSession.startPlayback] ▶️ starting — url=\(url.lastPathComponent)")
+        let generation = activePlaybackRequestID
+
+        // Wire end-of-media and time callbacks
+        engine.onEnded = { [weak self] in
+            guard let self,
+                  self.activePlaybackRequestID == generation,
+                  let chrome = self.chrome
+            else { return }
+            guard chrome.reachedEndNaturally else { return }
+            if chrome.loopEnabled {
+                self.replayCurrent()
+            } else {
+                self.advanceToNextOrEnd()
+            }
+        }
+        engine.onTimeChanged = { [weak self] time in
+            guard let self,
+                  self.activePlaybackRequestID == generation,
+                  let chrome = self.chrome
+            else { return }
+            chrome.playbackTimeChanged(time)
+            self.nowPlayingBridge.updateElapsedTime()
+        }
+        #if !os(macOS)
+        engine.onSystemVolumeChanged = { [weak self] level in
+            self?.chrome?.showHUD(.volume(level))
+        }
+        #endif
+
+        Task {
+            do {
+                debugPrint("[PlayerSession.startPlayback] opening url: \(url)")
+                try await engine.open(url: url)
+                guard self.activePlaybackRequestID == generation else {
+                    debugPrint("[PlayerSession.startPlayback] ❌ generation mismatch after open")
+                    return
+                }
+                debugPrint("[PlayerSession.startPlayback] ✅ engine.open succeeded — state=\(engine.state), duration=\(engine.duration?.playbackSeconds ?? -1)s")
+
+                let prefs = self.item.flatMap { self.preferencesStore.preferences(for: $0) }
+                if let prefs {
+                    self.preferencesStore.apply(prefs, to: chrome, player: engine)
+                }
+                self.reattachCachedSubtitles(to: engine, preferences: prefs)
+
+                videoAdjustment.apply(to: engine)
+                audioEnhancement.apply(to: engine)
+
+                #if !os(macOS)
+                await audioSessionManager.activate(for: engine)
+                guard self.activePlaybackRequestID == generation else {
+                    debugPrint("[PlayerSession.startPlayback] ❌ generation mismatch after audio session activation")
+                    audioSessionManager.deactivate()
+                    return
+                }
+                #endif
+                nowPlayingBridge.attach(
+                    to: engine,
+                    title: item?.displayTitle,
+                    artworkURL: nil
+                )
+
+                if chrome.guideVisible {
+                    // The first-run guide covers the video; it starts
+                    // playback when the viewer closes it.
+                    chrome.holdPlaybackForGuide()
+                } else {
+                    debugPrint("[PlayerSession.startPlayback] calling engine.play()")
+                    engine.play()
+                    debugPrint("[PlayerSession.startPlayback] ✅ engine.play() returned — isPlaying=\(engine.isPlaying), state=\(engine.state)")
+                }
+
+                #if os(visionOS)
+                let resumePosition = decoderResumePositionOverride
+                decoderResumePositionOverride = nil
+                chrome.playbackDidStart(resumePosition: resumePosition)
+                #else
+                chrome.playbackDidStart()
+                #endif
+            } catch {
+                debugPrint("[PlayerSession.startPlayback] ❌ CAUGHT ERROR: \(error)")
+                guard self.activePlaybackRequestID == generation else { return }
+                self.item = PlaybackItem(failed: error.localizedDescription)
+            }
+        }
     }
 
     /// Ends the session: stops playback, releases the scoped file access,
     /// and dismisses the player on every platform (hosts observe `item`).
     func end() {
+        pictureInPictureRestoreCompletion?(false)
+        pictureInPictureRestoreCompletion = nil
+        segmentSkipping.end()
+        advanceRequestID = nil
         activePlaybackRequestID = UUID()
 
         #if os(visionOS)
@@ -201,19 +436,19 @@ final class PlayerSession {
         }
         #endif
 
-        eventTask?.cancel()
-        eventTask = nil
         chrome?.sessionWillEnd()
-        player?.stop()
-        player = nil
+        saveContentPreferences()
+        stopAndRetirePlayer()
         chrome = nil
         item = nil
+        reattachedSubtitleIDs = []
+        isHiddenForPictureInPicture = false
         surfaceReady = false
         awaitingSurface = false
         #if os(visionOS)
         visionFormatSelection = VisionFormatSelection()
         visionResumePositionOverride = nil
-        vlcResumePositionOverride = nil
+        decoderResumePositionOverride = nil
         #endif
         setIdleTimerDisabled(false)
     }
@@ -227,11 +462,8 @@ final class PlayerSession {
             saveVisionProgress(completed: visionReachedEnd)
         }
 
-        eventTask?.cancel()
-        eventTask = nil
         chrome?.sessionWillEnd()
-        player?.stop()
-        player = nil
+        stopAndRetirePlayer()
         chrome = nil
         surfaceReady = false
         awaitingSurface = false
@@ -243,6 +475,8 @@ final class PlayerSession {
         visionResumePositionOverride = initialPosition
         visionNativeItem = newItem
         item = newItem
+        // Spatial AVKit presentation does not yet expose a skip action.
+        segmentSkipping.begin(itemID: newItem.id, media: nil)
         setIdleTimerDisabled(true)
     }
 
@@ -283,7 +517,7 @@ final class PlayerSession {
             visionReachedEnd = true
             if let visionDuration { visionCurrentTime = visionDuration }
             saveVisionProgress(completed: true)
-            end()
+            advanceToNextOrEnd()
 
         case .dismissalRequested:
             end()
@@ -292,7 +526,7 @@ final class PlayerSession {
             if visionForcedLayout != nil, let playbackItem = visionNativeItem {
                 let position = currentVisionPosition
                 visionFormatSelection = VisionFormatSelection(preset: .twoDimensional)
-                vlcResumePositionOverride = position
+                decoderResumePositionOverride = position
                 present(playbackItem)
             } else {
                 present(PlaybackItem(failed: failure.localizedDescription))
@@ -370,7 +604,7 @@ final class PlayerSession {
 
         // Keep the active forced layout in place while metadata inspection is
         // asynchronous. Clearing it first would briefly reattach the untagged
-        // asset to AVKit and could fail before routing reaches VLC.
+        // asset to AVKit and could fail before routing reaches the decoder.
         if preset == .automatic {
             selectAutomaticVisionFormat()
             return
@@ -403,11 +637,11 @@ final class PlayerSession {
         activePlaybackRequestID = UUID()
         let position = visionNativeItem != nil
             ? currentVisionPosition
-            : normalizedVLCPosition
+            : normalizedDecoderPosition
 
         guard visionForcedLayout != nil else {
             if visionNativeItem != nil {
-                vlcResumePositionOverride = position
+                decoderResumePositionOverride = position
                 present(playbackItem)
             }
             return
@@ -415,7 +649,7 @@ final class PlayerSession {
 
         guard #available(visionOS 26.0, *) else {
             if visionNativeItem != nil {
-                vlcResumePositionOverride = position
+                decoderResumePositionOverride = position
                 present(playbackItem)
             }
             return
@@ -428,7 +662,7 @@ final class PlayerSession {
         guard let playbackItem = item else { return }
         let startingPosition = visionNativeItem != nil
             ? currentVisionPosition
-            : normalizedVLCPosition
+            : normalizedDecoderPosition
         let requestID = UUID()
         activePlaybackRequestID = requestID
 
@@ -442,7 +676,7 @@ final class PlayerSession {
 
             let latestPosition = self.visionNativeItem != nil
                 ? (self.currentVisionPosition ?? startingPosition)
-                : (self.normalizedVLCPosition ?? startingPosition)
+                : (self.normalizedDecoderPosition ?? startingPosition)
             self.visionFormatSelection = VisionFormatSelection()
 
             if prefersNative {
@@ -451,7 +685,7 @@ final class PlayerSession {
                     initialPosition: latestPosition
                 )
             } else if self.visionNativeItem != nil {
-                self.vlcResumePositionOverride = latestPosition
+                self.decoderResumePositionOverride = latestPosition
                 self.present(playbackItem)
             }
         }
@@ -466,9 +700,9 @@ final class PlayerSession {
         return position > 0 && position < 1 ? position : nil
     }
 
-    private var normalizedVLCPosition: Double? {
-        guard let player else { return nil }
-        let position = Double(player.position)
+    private var normalizedDecoderPosition: Double? {
+        guard let engine = player else { return nil }
+        let position = engine.position
         return position > 0 && position < 1 ? position : nil
     }
     #endif
@@ -480,37 +714,175 @@ final class PlayerSession {
         #endif
     }
 
-    // MARK: - Event handling
+    /// Stops the engine and releases it from the session (setting it nil) so
+    /// the next present creates a fresh one. Called only by `end()` and
+    /// visionOS routing.
+    private func stopAndRetirePlayer() {
+        guard let engine = player else { return }
+        nowPlayingBridge.detach()
+        #if !os(macOS)
+        audioSessionManager.deactivate()
+        #endif
+        videoAdjustment.detach()
+        audioEnhancement.detach()
+        engine.onEnded = nil
+        engine.onTimeChanged = nil
+        engine.onSystemVolumeChanged = nil
+        engine.close()
+        self.player = nil
+        retainedPreviousScope = nil
+    }
 
-    /// Watches the player's event stream for end-of-media so loop and
-    /// auto-exit behave the same on every platform.
-    private func startEventLoop() {
-        eventTask?.cancel()
-        guard let player else { return }
-        let events = player.events
-        eventTask = Task { [weak self] in
-            for await event in events {
-                guard let self, let chrome = self.chrome else { return }
-                switch event {
-                case .stateChanged(.stopped), .mediaStopping:
-                    guard chrome.reachedEndNaturally else { continue }
-                    if chrome.loopEnabled {
-                        self.replayCurrent()
-                    } else {
-                        self.end()
-                    }
-                case .timeChanged(let time):
-                    chrome.playbackTimeChanged(time)
-                default:
-                    break
-                }
+    // MARK: - Episode progression
+
+    /// Manual skip only. Bounded credits seek within the current file; only
+    /// a terminal credits range enters the completion/episode transition path.
+    func skipCurrentSegment() {
+        guard let engine = player, let chrome,
+              let action = segmentSkipping.consumeSkip(
+                at: engine.currentTime.playbackSeconds,
+                duration: engine.duration?.playbackSeconds,
+                isSeekable: engine.isSeekable
+              )
+        else { return }
+        switch action {
+        case .seek(let target):
+            engine.seek(to: .seconds(target))
+            // Paused seeks may not emit another native time event. Keep
+            // progress and prompt state current if the user closes now.
+            chrome.playbackTimeChanged(.seconds(target))
+        case .finish:
+            if chrome.loopEnabled {
+                chrome.saveCompletionProgress()
+                replayCurrent()
+            } else {
+                advanceToNextOrEnd()
+            }
+        }
+    }
+
+    /// Advances to the next locally stored episode or ends the session.
+    /// Idempotent: concurrent calls (credits-skip + buffered stop event)
+    /// collapse into one transition. The advance request is established
+    /// synchronously so a newer manual `play` (which calls
+    /// `beginPlaybackRequest`) invalidates it. No further time events
+    /// or saves run after this returns — the caller must not continue
+    /// processing the old media.
+    func advanceToNextOrEnd() {
+        guard !advanceInFlight else { return }
+
+        chrome?.saveCompletionProgress()
+
+        guard let currentEpisode = item?.episode,
+              let show = currentEpisode.show,
+              let next = PlayerLogic.nextEpisode(after: currentEpisode, in: show)
+        else {
+            end()
+            return
+        }
+
+        let requestID = beginPlaybackRequest()
+        advanceRequestID = requestID
+
+        Task { [weak self] in
+            guard let self,
+                  self.advanceRequestID == requestID
+            else { return }
+            let newItem = await self.library.preparePlayback(episode: next)
+            guard self.advanceRequestID == requestID else { return }
+            await self.presentPrepared(newItem, requestID: requestID)
+            // visionOS inspection can suspend before presentation. Keep the
+            // advance guarded throughout that work, without clearing a newer
+            // request that may have replaced it while we were suspended.
+            if self.advanceRequestID == requestID {
+                self.advanceRequestID = nil
             }
         }
     }
 
     private func replayCurrent() {
-        guard let player, let url = item?.url else { return }
-        try? player.play(url: url)
-        chrome?.playbackDidStart(resuming: false)
+        guard let engine = player, let url = item?.url else { return }
+        if let item { segmentSkipping.begin(itemID: item.id, media: item.segmentLookup) }
+        engine.close()
+
+        let generation = activePlaybackRequestID
+        engine.onEnded = { [weak self] in
+            guard let self,
+                  self.activePlaybackRequestID == generation,
+                  let chrome = self.chrome
+            else { return }
+            guard chrome.reachedEndNaturally else { return }
+            if chrome.loopEnabled {
+                self.replayCurrent()
+            } else {
+                self.advanceToNextOrEnd()
+            }
+        }
+        engine.onTimeChanged = { [weak self] time in
+            guard let self,
+                  self.activePlaybackRequestID == generation,
+                  let chrome = self.chrome
+            else { return }
+            chrome.playbackTimeChanged(time)
+            self.nowPlayingBridge.updateElapsedTime()
+        }
+
+        Task {
+            try? await engine.open(url: url)
+            guard self.activePlaybackRequestID == generation else { return }
+
+            let prefs = self.item.flatMap { self.preferencesStore.preferences(for: $0) }
+            if let prefs, let chrome = self.chrome {
+                self.preferencesStore.apply(prefs, to: chrome, player: engine)
+            }
+            self.reattachCachedSubtitles(to: engine, preferences: prefs)
+
+            nowPlayingBridge.attach(
+                to: engine,
+                title: item?.displayTitle,
+                artworkURL: nil
+            )
+
+            engine.play()
+            chrome?.playbackDidStart(resuming: false)
+        }
+    }
+
+    /// Adds the subtitles downloaded earlier for this video, and selects the
+    /// one used last unless this title's saved choice is an embedded track
+    /// or no subtitles. (A downloaded track isn't saved as the choice, so
+    /// replaying with one leaves the choice unset.)
+    private func reattachCachedSubtitles(
+        to engine: PlaybackEngine,
+        preferences: ContentPlayerPreferences?
+    ) {
+        reattachedSubtitleIDs = []
+        guard let videoKey = item?.subtitleVideoKey else { return }
+        let cached = subtitleCache.subtitles(for: videoKey)
+        guard !cached.isEmpty else { return }
+
+        let selectsDownloaded = preferences?.subtitleEnabled == nil
+        var attached: [CachedSubtitle] = []
+        for subtitle in cached {
+            do {
+                try engine.addExternalTrack(
+                    from: subtitleCache.fileURL(for: subtitle),
+                    type: .subtitle,
+                    name: subtitle.displayName,
+                    select: selectsDownloaded && attached.isEmpty
+                )
+                attached.append(subtitle)
+            } catch {
+                debugPrint("[PlayerSession] Skipping unreadable cached subtitle: \(error)")
+            }
+        }
+        reattachedSubtitleIDs = Set(attached.map(\.subtitleID))
+        subtitleCache.markUsed(attached)
+    }
+
+    private func saveContentPreferences() {
+        guard let item, let chrome, let player else { return }
+        let prefs = preferencesStore.snapshot(chrome: chrome, player: player)
+        preferencesStore.save(prefs, for: item)
     }
 }

@@ -7,13 +7,13 @@
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct OnlineSubtitlesSection: View {
     @Environment(WyzieKeyStore.self) private var keys
+    @Environment(PlayerSession.self) private var session
     @Bindable var model: OnlineSubtitlesModel
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
     let item: PlaybackItem
 
     private let resultLimit = 25
@@ -129,7 +129,12 @@ struct OnlineSubtitlesSection: View {
         Button {
             chrome.showControls()
             Task {
-                await model.download(subtitle, into: player)
+                await model.download(
+                    subtitle,
+                    videoKey: item.subtitleVideoKey,
+                    cache: session.subtitleCache,
+                    into: player
+                )
             }
         } label: {
             HStack(spacing: 12) {
@@ -159,10 +164,7 @@ struct OnlineSubtitlesSection: View {
             .contentShape(Rectangle())
         }
         .playerChipStyle(onFocus: { chrome.showControls() })
-        .disabled(
-            model.downloadedIDs.contains(subtitle.id)
-                || model.downloadingID != nil
-        )
+        .disabled(isAdded(subtitle) || model.downloadingID != nil)
         // Release, format, and the trailing state glyph are one result.
         .accessibilityLabel(subtitle.display)
         .accessibilityValue(resultAccessibilityValue(for: subtitle))
@@ -177,7 +179,7 @@ struct OnlineSubtitlesSection: View {
         if !detail.isEmpty { parts.append(detail) }
         if model.downloadingID == subtitle.id {
             parts.append(String(localized: "Downloading"))
-        } else if model.downloadedIDs.contains(subtitle.id) {
+        } else if isAdded(subtitle) {
             parts.append(String(localized: "Downloaded"))
         }
         return parts.joined(separator: ", ")
@@ -189,7 +191,7 @@ struct OnlineSubtitlesSection: View {
             ProgressView()
                 .controlSize(.small)
                 .tint(Theme.gold)
-        } else if model.downloadedIDs.contains(subtitle.id) {
+        } else if isAdded(subtitle) {
             Image(.check)
                 .font(Typography.bodySM.weight(.bold))
                 .foregroundStyle(Theme.gold)
@@ -200,6 +202,13 @@ struct OnlineSubtitlesSection: View {
                 .kerning(1.2)
                 .foregroundStyle(Theme.gold)
         }
+    }
+
+    /// Downloaded now, or kept from an earlier playback of this video and
+    /// already in the subtitle list.
+    private func isAdded(_ subtitle: WyzieSubtitle) -> Bool {
+        model.downloadedIDs.contains(subtitle.id)
+            || session.reattachedSubtitleIDs.contains(subtitle.id)
     }
 
     private var selectedLanguageLabel: String {

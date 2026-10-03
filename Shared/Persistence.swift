@@ -9,6 +9,20 @@ import CoreData
 
 struct Persistence {
 
+    /// Hosted unit tests must not open the user's stores or initialize
+    /// entitlement-dependent CloudKit services. UI tests launch a separate
+    /// application process without XCTest loaded and retain normal storage.
+    static let isRunningUnitTests: Bool = {
+        #if DEBUG
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCTestConfigurationFilePath"] != nil
+            || environment["XCTestBundlePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+        #else
+        return false
+        #endif
+    }()
+
     // MARK: - SwiftData (local-only library data)
 
     static var sharedModelContainer: ModelContainer = {
@@ -23,7 +37,7 @@ struct Persistence {
         // SwiftData defaults to `.automatic` and, because the app carries a CloudKit
         // entitlement (used by the WatchProgress store below), it would try to mirror
         // this store too and fail CloudKit's "all attributes/relationships optional" rule.
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isRunningUnitTests, cloudKitDatabase: .none)
 
         do {
             return try ModelContainer(for: schema, configurations: [config])
@@ -41,7 +55,7 @@ struct Persistence {
         let config = ModelConfiguration(
             "Watchlist",
             schema: schema,
-            isStoredInMemoryOnly: false,
+            isStoredInMemoryOnly: isRunningUnitTests,
             cloudKitDatabase: .none
         )
 
@@ -49,6 +63,39 @@ struct Persistence {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
             fatalError("Could not create Watchlist ModelContainer: \(error)")
+        }
+    }()
+
+    // MARK: - SwiftData (downloaded subtitles kept on this device)
+
+    /// Which downloaded subtitle files belong to which videos. Device-local
+    /// like the library; the files themselves live in Caches (see
+    /// `SubtitleCacheStore`). A store that can't open falls back to memory:
+    /// losing the cache only means downloading a subtitle again.
+    static var subtitleCacheModelContainer: ModelContainer = {
+        let schema = Schema([CachedSubtitle.self])
+        let config = ModelConfiguration(
+            "SubtitleCache",
+            schema: schema,
+            isStoredInMemoryOnly: isRunningUnitTests,
+            cloudKitDatabase: .none
+        )
+        let fallback = ModelConfiguration(
+            "SubtitleCache",
+            schema: schema,
+            isStoredInMemoryOnly: true,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            print("[Persistence] Subtitle cache store unavailable, keeping it in memory: \(error)")
+        }
+        do {
+            return try ModelContainer(for: schema, configurations: [fallback])
+        } catch {
+            fatalError("Could not create SubtitleCache ModelContainer: \(error)")
         }
     }()
 
@@ -61,10 +108,15 @@ struct Persistence {
             fatalError("Missing persistent store description for WatchProgress")
         }
 
-        // Point at the correct iCloud container
-        description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-            containerIdentifier: AppIdentifiers.iCloudContainer
-        )
+        if isRunningUnitTests {
+            description.type = NSInMemoryStoreType
+            description.url = nil
+            description.cloudKitContainerOptions = nil
+        } else {
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: AppIdentifiers.iCloudContainer
+            )
+        }
 
         // Enable remote change notifications so we can merge iCloud pushes
         description.setOption(

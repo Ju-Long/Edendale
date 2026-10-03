@@ -21,9 +21,16 @@ struct SearchView: View {
     @Query private var libraryMovies: [Movie]
     @Query private var libraryShows: [TVShow]
 
-    @State private var model = SearchModel()
+    @State private var model: SearchModel
     @State private var path = NavigationPath()
     @State private var showingDateFilter = false
+
+    /// macOS passes a model it owns so the query and results survive while
+    /// the sidebar shows other pages; a tab view keeps the tab alive instead.
+    @MainActor
+    init(model: SearchModel? = nil) {
+        _model = State(initialValue: model ?? SearchModel())
+    }
 
     var body: some View {
         NavigationStack(path: $path) {

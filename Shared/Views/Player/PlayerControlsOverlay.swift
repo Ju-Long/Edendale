@@ -4,21 +4,25 @@
 //
 //  Auto-hiding chrome over the video: back + title + tools on top, big
 //  play/pause in the center, timeline along the bottom, side panels on the
-//  trailing edge. Taps on empty overlay space hide the controls; on tvOS an
-//  invisible focus catcher brings them back.
+//  trailing edge (docked beside the video on macOS; see PlayerScreen).
+//  Taps on empty overlay space hide the controls; on tvOS an invisible
+//  focus catcher brings them back.
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerControlsOverlay: View {
+    @Environment(PlayerSession.self) private var session
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var segmentFocused: Bool
+    @State private var segmentHovered = false
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
     let item: PlaybackItem
     let exit: () -> Void
 
     #if os(iOS) || os(macOS)
-    let pipController: PiPController?
+    let pipSource: SampleBufferPiPSource?
     #endif
 
     #if os(tvOS)
@@ -44,11 +48,10 @@ struct PlayerControlsOverlay: View {
     var body: some View {
         ZStack {
             #if os(macOS)
-            // Clicks on empty space toggle the chrome (touch platforms do
-            // this in the gesture layer).
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { chrome.toggleControls() }
+            // Clicks on empty space toggle the chrome, and holding either
+            // half engages its hold speed (touch platforms do both in the
+            // gesture layer).
+            PlayerPointerSurface(chrome: chrome)
             #endif
 
             if chrome.controlsVisible {
@@ -66,10 +69,25 @@ struct PlayerControlsOverlay: View {
             }
             #endif
 
+            segmentPrompt
+            // macOS docks the panels beside the video (see PlayerScreen).
+            #if !os(macOS)
             panelHost
+            #endif
         }
         .animation(.easeInOut(duration: 0.2), value: chrome.controlsVisible)
         .animation(.easeInOut(duration: 0.25), value: chrome.activePanel)
+        .onChange(of: visibleSegment) { _, segment in
+            if segment == nil { segmentFocused = false }
+        }
+        .onChange(of: player.currentTime) { _, time in
+            // The engine publishes optimistic seek times even while paused,
+            // when the decoder's time-event stream can remain silent.
+            session.segmentSkipping.update(
+                time: time.playbackSeconds, duration: player.duration?.playbackSeconds,
+                isSeekable: player.isSeekable
+            )
+        }
         #if os(tvOS)
         .onAppear {
             if remoteInput == nil { remoteInput = TVRemoteInput(chrome: chrome) }
@@ -87,6 +105,45 @@ struct PlayerControlsOverlay: View {
             Task { @MainActor in focusedControl = .tool(previous) }
         }
         #endif
+    }
+
+    private var visibleSegment: PlaybackSegment? {
+        guard !chrome.panelCoversVideo, !chrome.isScrubbing else { return nil }
+        return session.segmentSkipping.activeSegment
+    }
+
+    /// Independent of the transport's auto-hide timer. The opaque semantic
+    /// surface stays readable against bright video without covering subtitles
+    /// at the center of the frame. No animated movement is needed for focus.
+    @ViewBuilder
+    private var segmentPrompt: some View {
+        if let segment = visibleSegment {
+            Button(action: session.skipCurrentSegment) {
+                Text(segment.kind.title)
+                    .font(Typography.bodyLG)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(segmentFocused || segmentHovered ? Theme.gold : Theme.textPrimary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Theme.Radius.card)
+                            .strokeBorder(segmentFocused || segmentHovered ? Theme.gold : Theme.outline, lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .focused($segmentFocused)
+            .focusEffectDisabled()
+            #if !os(tvOS)
+            .onHover { segmentHovered = $0 }
+            .keyboardShortcut("s", modifiers: [])
+            #endif
+            .accessibilityHint("Skip this segment and continue playback")
+            .padding(.horizontal, 24)
+            .padding(.bottom, chrome.controlsVisible ? 100 : 48)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .transaction { if reduceMotion { $0.animation = nil } }
+        }
     }
 
     #if os(tvOS)
@@ -204,15 +261,20 @@ struct PlayerControlsOverlay: View {
     private var trailingTools: some View {
         HStack(spacing: 12) {
             #if os(iOS) || os(macOS)
-            PlayerIconChip(
-                icon: .pictureInPicture,
-                label: String(localized: "Picture in Picture"),
-                isActive: pipController?.isActive == true,
-                onFocus: chipDidFocus
-            ) {
-                pipController?.toggle()
+            // Hidden while the system can't offer PiP; an active session
+            // keeps its chip so it can still be ended from here.
+            if let pipSource, pipSource.isPossible || pipSource.isActive {
+                PlayerIconChip(
+                    icon: .pictureInPicture,
+                    label: String(localized: "Picture in Picture"),
+                    isActive: pipSource.isActive,
+                    diameter: toolbarChipDiameter,
+                    glyphSize: toolbarGlyphSize,
+                    onFocus: chipDidFocus
+                ) {
+                    pipSource.toggle()
+                }
             }
-            .disabled(pipController?.isPossible != true)
             #endif
 
             #if os(iOS)
@@ -220,16 +282,22 @@ struct PlayerControlsOverlay: View {
                 icon: chrome.isOrientationLocked ? .mobileRotateLock : .mobileRotateUnlock,
                 label: String(localized: "Rotation Lock"),
                 isActive: chrome.isOrientationLocked,
+                diameter: toolbarChipDiameter,
+                glyphSize: toolbarGlyphSize,
                 onFocus: chipDidFocus
             ) {
                 chrome.toggleOrientationLock()
             }
             #endif
 
+            PlayerAudioRouteButton(diameter: toolbarChipDiameter, onFocus: chipDidFocus)
+
             PlayerIconChip(
                 icon: .listTree,
                 label: String(localized: "Playlist"),
                 isActive: chrome.activePanel == .playlist,
+                diameter: toolbarChipDiameter,
+                glyphSize: toolbarGlyphSize,
                 onFocus: chipDidFocus
             ) {
                 chrome.openPanel(.playlist)
@@ -242,6 +310,8 @@ struct PlayerControlsOverlay: View {
                 icon: .sidebarRight,
                 label: String(localized: "Adjustments"),
                 isActive: chrome.activePanel == .settings,
+                diameter: toolbarChipDiameter,
+                glyphSize: toolbarGlyphSize,
                 onFocus: chipDidFocus
             ) {
                 chrome.openPanel(.settings)
@@ -250,6 +320,24 @@ struct PlayerControlsOverlay: View {
             .focused($focusedControl, equals: .tool(.settings))
             #endif
         }
+    }
+
+    /// tvOS top-bar chips match the center play button: an 88 pt glass
+    /// circle around a 34 pt glyph. Elsewhere they stay compact.
+    private var toolbarChipDiameter: CGFloat {
+        #if os(tvOS)
+        88
+        #else
+        40
+        #endif
+    }
+
+    private var toolbarGlyphSize: CGFloat {
+        #if os(tvOS)
+        34
+        #else
+        22
+        #endif
     }
 
     // MARK: - Center
@@ -311,6 +399,7 @@ struct PlayerControlsOverlay: View {
 
     // MARK: - Side panels
 
+    #if !os(macOS)
     @ViewBuilder
     private var panelHost: some View {
         GeometryReader { proxy in
@@ -336,7 +425,7 @@ struct PlayerControlsOverlay: View {
                 // the move transition slides each panel in/out along the
                 // trailing edge, animated by the overlay's `activePanel` block.
                 if let panel = chrome.activePanel {
-                    panelContent(panel)
+                    PlayerPanelContent(panel: panel, chrome: chrome, player: player, item: item)
                         .padding(.vertical, proxy.safeAreaInsets.top)
                         .padding(.trailing, proxy.safeAreaInsets.trailing)
                         .frame(width: panelWidth + proxy.safeAreaInsets.trailing)
@@ -361,16 +450,6 @@ struct PlayerControlsOverlay: View {
         }
     }
 
-    @ViewBuilder
-    private func panelContent(_ panel: PlayerChromeModel.SidePanel) -> some View {
-        switch panel {
-        case .settings:
-            PlayerSettingsPanel(chrome: chrome, player: player, item: item)
-        case .playlist:
-            PlayerPlaylistPanel(chrome: chrome, item: item)
-        }
-    }
-
     private var panelWidth: CGFloat {
         #if os(tvOS)
         520
@@ -378,6 +457,7 @@ struct PlayerControlsOverlay: View {
         340
         #endif
     }
+    #endif
 
     #if os(tvOS)
     /// Invisible focus target hugging an open panel's leading edge: moving
@@ -431,11 +511,15 @@ struct PlayerControlsOverlay: View {
         .onMoveCommand { direction in
             switch direction {
             case .left:
-                chrome.remoteSeek(bySeconds: -10)
+                chrome.remoteSkip(.backward)
             case .right:
-                chrome.remoteSeek(bySeconds: 10)
+                chrome.remoteSkip(.forward)
             case .down:
-                chrome.showTimeline()
+                if visibleSegment != nil {
+                    segmentFocused = true
+                } else {
+                    chrome.showTimeline()
+                }
             case .up:
                 chrome.showControls()
             @unknown default:
@@ -456,6 +540,26 @@ private struct RevealCatcherButtonStyle: ButtonStyle {
 }
 #endif
 
+// MARK: - Panel content
+
+/// The playlist or adjustments panel, wherever it is hosted: layered over
+/// the video by the controls overlay, or docked beside it on macOS.
+struct PlayerPanelContent: View {
+    let panel: PlayerChromeModel.SidePanel
+    let chrome: PlayerChromeModel
+    let player: PlaybackEngine
+    let item: PlaybackItem
+
+    var body: some View {
+        switch panel {
+        case .settings:
+            PlayerSettingsPanel(chrome: chrome, player: player, item: item)
+        case .playlist:
+            PlayerPlaylistPanel(chrome: chrome, item: item)
+        }
+    }
+}
+
 // MARK: - Chips
 
 /// Circular icon button used in the player's top toolbar.
@@ -465,14 +569,16 @@ struct PlayerIconChip: View {
     /// is its only visible label, so a chip without one is silent.
     let label: String
     var isActive = false
+    var diameter: CGFloat = 40
+    var glyphSize: CGFloat = 22
     var onFocus: (() -> Void)? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(icon)
-                .font(.system(size: 15, weight: .bold))
-                .frame(width: 40, height: 40)
+                .font(.system(size: glyphSize, weight: .bold))
+                .frame(width: diameter, height: diameter)
                 .glassBackground(in: Circle())
                 .overlay {
                     if isActive {

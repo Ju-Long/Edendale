@@ -4,11 +4,10 @@
 //
 //  Controls-overlay state for one playback session: visibility with the
 //  5-second auto-hide, side panels, playback speed (base rate + temporary
-//  hold override), loop, auto-skip, and the transient gesture HUD.
+//  hold override), loop, and the transient gesture HUD.
 //
 
 import Foundation
-import SwiftVLC
 
 @MainActor
 @Observable
@@ -37,8 +36,25 @@ final class PlayerChromeModel {
     /// Whether the controls overlay is shown.
     private(set) var controlsVisible = true
 
-    /// Open side panel, if any. Auto-hide pauses while a panel is open.
+    /// Open side panel, if any. Auto-hide pauses while a panel covers video.
     var activePanel: SidePanel?
+
+    /// macOS docks side panels beside the video as a trailing sidebar;
+    /// every other platform layers them over it.
+    static let docksSidePanels: Bool = {
+        #if os(macOS)
+        true
+        #else
+        false
+        #endif
+    }()
+
+    /// An open panel is layered over the video, so the chrome stays up and
+    /// the Up Next card and skip prompts step aside. A docked panel leaves
+    /// the video uncovered.
+    var panelCoversVideo: Bool {
+        activePanel != nil && !Self.docksSidePanels
+    }
 
     /// Seconds of inactivity before the controls hide.
     static let autoHideDelay: Duration = .seconds(5)
@@ -54,23 +70,16 @@ final class PlayerChromeModel {
     /// Temporary rate while a press-and-hold speed gesture is active.
     private(set) var holdRate: Float?
 
-    var loopEnabled = false
-
-    var skipRecap: Bool = AppIdentifiers.defaults.bool(forKey: DefaultsKey.skipRecap) {
-        didSet { AppIdentifiers.defaults.set(skipRecap, forKey: DefaultsKey.skipRecap) }
-    }
-
-    var skipCredits: Bool = AppIdentifiers.defaults.bool(forKey: DefaultsKey.skipCredits) {
-        didSet { AppIdentifiers.defaults.set(skipCredits, forKey: DefaultsKey.skipCredits) }
+    var loopEnabled: Bool {
+        didSet { defaults.set(loopEnabled, forKey: DefaultsKey.loopEnabled) }
     }
 
     #if os(iOS)
     /// Automatically enter Picture in Picture when the app is backgrounded
-    /// mid-playback. Defaults on. The system arms auto-PiP as long as the
-    /// player is on screen; the host reads this flag to cancel a window the
-    /// system opened on its own when the user has turned the preference off.
-    var autoPiP: Bool = AppIdentifiers.defaults.object(forKey: DefaultsKey.autoPiP) as? Bool ?? true {
-        didSet { AppIdentifiers.defaults.set(autoPiP, forKey: DefaultsKey.autoPiP) }
+    /// mid-playback. Defaults on. The host applies this to AVKit's inline
+    /// auto-start setting; the explicit PiP button remains available.
+    var autoPiP: Bool {
+        didSet { defaults.set(autoPiP, forKey: DefaultsKey.autoPiP) }
     }
     #endif
 
@@ -79,13 +88,18 @@ final class PlayerChromeModel {
     /// `PlayerScreen`); libVLC's own display-fit override is a no-op on the
     /// drawable vout this app renders into, so we don't route it through the
     /// player's `aspectRatio`.
-    var aspectFill = false
+    var aspectFill: Bool {
+        didSet { defaults.set(aspectFill, forKey: DefaultsKey.aspectFill) }
+    }
 
     private enum DefaultsKey {
-        static let skipRecap = "player.skipRecap"
-        static let skipCredits = "player.skipCredits"
         static let autoPiP = "player.autoPiP"
+        static let loopEnabled = "player.loopEnabled"
+        static let aspectFill = "player.aspectFill"
     }
+
+    /// The session's preference store; the App Group outside of tests.
+    private let defaults: UserDefaults
 
     // MARK: - Transient state
 
@@ -93,10 +107,6 @@ final class PlayerChromeModel {
     var isScrubbing = false
     /// Preview position (0...1) while scrubbing.
     var scrubPosition: Double = 0
-
-    /// Player-image brightness, normalized to 0...1 for UI and mapped onto
-    /// VLC's 0...2 adjustment range. A value of 0.5 is VLC's neutral 1.0.
-    private(set) var brightnessLevel: Float = 0.5
 
     /// Gesture feedback HUD.
     private(set) var hud: HUD?
@@ -117,28 +127,53 @@ final class PlayerChromeModel {
     private(set) var isOrientationLocked = false
     #endif
 
+    // MARK: - Playback state for display
+
+    /// Derive the preview from observable transport values so paused seeks,
+    /// loop changes and file switches update it without waiting for a tick.
+    var upcomingEpisode: Episode? {
+        guard let player,
+              player.state == .playing || player.state == .paused || player.state == .buffering
+        else { return nil }
+        return PlayerLogic.upcomingEpisode(
+            time: player.currentTime,
+            duration: player.duration,
+            loopEnabled: loopEnabled,
+            episode: session.item?.episode,
+            show: session.item?.episode?.show
+        )
+    }
+
     // MARK: - End-of-media bookkeeping
 
     private var lastKnownTime: Duration = .zero
     /// Duration cached from time events — `player.duration` can reset to nil
     /// once playback stops, exactly when natural-end detection needs it.
     private var lastKnownDuration: Duration?
-    private var creditsSkipped = false
-    private var awaitingRecapSkip = false
 
     private unowned let session: PlayerSession
     private let watchStore: WatchProgressStore
     private var lastSavedTime: Duration?
+    /// Set after `saveCompletionProgress` writes a finished entry, so that
+    /// neither `sessionWillEnd` nor periodic `playbackTimeChanged` saves
+    /// overwrite the completed status with a lower position.
+    private var completionSaved = false
     /// Saved fractional position (0...1) to seek to once the resumed media
     /// reports a duration and becomes seekable. Cleared after it is applied.
     private var pendingResumePosition: Double?
 
-    init(session: PlayerSession, watchStore: WatchProgressStore) {
+    init(session: PlayerSession, watchStore: WatchProgressStore, defaults: UserDefaults) {
         self.session = session
         self.watchStore = watchStore
+        self.defaults = defaults
+        loopEnabled = defaults.bool(forKey: DefaultsKey.loopEnabled)
+        #if os(iOS)
+        autoPiP = defaults.object(forKey: DefaultsKey.autoPiP) as? Bool ?? true
+        #endif
+        aspectFill = defaults.bool(forKey: DefaultsKey.aspectFill)
     }
 
-    private var player: Player? { session.player }
+    private var player: PlaybackEngine? { session.player }
 
     // MARK: - Visibility control
 
@@ -168,9 +203,10 @@ final class PlayerChromeModel {
         controlsVisible = false
     }
 
-    /// Auto-hide only makes sense while actively playing with nothing open.
+    /// Auto-hide only makes sense while actively playing with nothing
+    /// covering the video.
     private var canAutoHide: Bool {
-        activePanel == nil
+        !panelCoversVideo
             && !isScrubbing
             && (player?.isPlaying ?? false)
     }
@@ -194,16 +230,79 @@ final class PlayerChromeModel {
         showControls()
     }
 
+    // MARK: - Player guide
+
+    /// Whether the player guide covers the video. Playback waits while it
+    /// is up and carries on when it closes.
+    private(set) var guideVisible = false
+    /// The guide opened by itself, ahead of this device's first playback.
+    private(set) var guideIsFirstRun = false
+    /// Playback the guide paused, or kept from starting.
+    private var guideHeldPlayback = false
+
+    /// Opens the guide if the viewer has never closed it on this device.
+    func presentGuideIfFirstRun() {
+        guard !guideVisible, PlayerGuide.isUnseen(in: defaults) else { return }
+        guideIsFirstRun = true
+        presentGuide()
+    }
+
+    /// Covers the video with the guide, pausing playback until it closes.
+    func presentGuide() {
+        activePanel = nil
+        endHoldRate()
+        dismissHUD()
+        hideTask?.cancel()
+        if let player, player.isPlaying {
+            player.pause()
+            guideHeldPlayback = true
+        }
+        guideVisible = true
+    }
+
+    /// Playback that was about to start waits for the guide instead; the
+    /// session calls this in place of starting the engine.
+    func holdPlaybackForGuide() {
+        guideHeldPlayback = true
+    }
+
+    /// Closes the guide, remembers that the viewer has seen it, and resumes
+    /// whatever playback it held.
+    func dismissGuide() {
+        guard guideVisible else { return }
+        guideVisible = false
+        guideIsFirstRun = false
+        PlayerGuide.markSeen(in: defaults)
+        if guideHeldPlayback, let player {
+            player.play()
+            player.setRate(holdRate ?? baseRate)
+        }
+        guideHeldPlayback = false
+        showControls()
+    }
+
     // MARK: - Transport
 
     func togglePlayPause() {
-        player?.togglePlayPause()
+        guard let player else { return }
+        player.togglePlayPause()
+        if player.isPlaying {
+            player.setRate(holdRate ?? baseRate)
+        }
         showControls()
     }
 
     func seek(bySeconds seconds: Int) {
         player?.seek(by: .seconds(seconds))
         showHUD(.seek(by: seconds))
+    }
+
+    /// Skip lengths and hold speeds from Settings ▸ App Controls.
+    var controls: PlayerControlPreferences { session.controls }
+
+    /// Skips back or forward by the viewer's chosen length.
+    func skip(_ direction: SkipDirection) {
+        seek(bySeconds: controls.skipOffset(for: direction))
     }
 
     /// Commits a timeline position (0...1).
@@ -233,21 +332,6 @@ final class PlayerChromeModel {
         showHUD(.volume(normalized))
     }
 
-    /// Adjusts the brightness of the rendered video, rather than attempting
-    /// to control a system display (which has no public API on macOS or
-    /// visionOS). This keeps the keyboard behavior consistent everywhere.
-    func adjustBrightness(by delta: Float) {
-        brightnessLevel = PlayerLogic.adjustedLevel(brightnessLevel, by: delta)
-        applyBrightness()
-        showHUD(.brightness(Double(brightnessLevel)))
-    }
-
-    private func applyBrightness() {
-        player?.withAdjustments { adjustments in
-            adjustments.isEnabled = brightnessLevel != 0.5
-            adjustments.brightness = brightnessLevel * 2
-        }
-    }
 
     // MARK: - Speed
 
@@ -258,23 +342,41 @@ final class PlayerChromeModel {
     func setBaseRate(_ rate: Float) {
         baseRate = PlayerLogic.normalizedRate(rate)
         if holdRate == nil {
-            try? player?.setRate(baseRate)
+            applyRate(baseRate)
         }
         showControls()
     }
 
-    /// Press-and-hold speed override (0.5× on the left, 1.5× on the right).
+    func restoreRate(_ rate: Float) {
+        baseRate = PlayerLogic.normalizedRate(rate)
+    }
+
+    /// Press-and-hold on one side of the video: that side's speed from
+    /// Settings ▸ App Controls (0.5× left and 2× right by default).
+    func beginHold(on side: HoldSide) {
+        beginHoldRate(controls.holdRate(for: side))
+    }
+
+    /// Temporary speed override until `endHoldRate()`.
     func beginHoldRate(_ rate: Float) {
         holdRate = rate
-        try? player?.setRate(rate)
+        applyRate(rate)
         showHUD(.speed(rate), sticky: true)
     }
 
     func endHoldRate() {
         guard holdRate != nil else { return }
         holdRate = nil
-        try? player?.setRate(baseRate)
+        applyRate(baseRate)
         dismissHUD()
+    }
+
+    /// Both decoders present already-decoded frames against the media clock,
+    /// so a new rate takes effect immediately without a seek. A seek would
+    /// throw the buffered video away and re-decode from the previous
+    /// keyframe, blanking the picture on every speed change.
+    private func applyRate(_ rate: Float) {
+        player?.setRate(rate)
     }
 
     // MARK: - HUD
@@ -300,6 +402,12 @@ final class PlayerChromeModel {
     // MARK: - tvOS remote timeline
 
     #if os(tvOS)
+    /// A remote left/right skip by the viewer's chosen length, gathered
+    /// into the same preview as `remoteSeek(bySeconds:)`.
+    func remoteSkip(_ direction: SkipDirection) {
+        remoteSeek(bySeconds: controls.skipOffset(for: direction))
+    }
+
     /// Accumulates repeated left/right input into one preview. The final
     /// position is committed after a short pause in remote input.
     func remoteSeek(bySeconds seconds: Int) {
@@ -441,26 +549,36 @@ final class PlayerChromeModel {
     ) {
         lastKnownTime = .zero
         lastKnownDuration = nil
-        creditsSkipped = false
-        awaitingRecapSkip = skipRecap
         lastSavedTime = nil
+        completionSaved = false
         pendingResumePosition = resumePosition
             ?? (resuming ? savedResumePosition() : nil)
-        if holdRate == nil, baseRate != 1.0 {
-            try? player?.setRate(baseRate)
-        }
-        if brightnessLevel != 0.5 {
-            applyBrightness()
-        }
+        player?.setRate(holdRate ?? baseRate)
         showControls()
     }
 
-    func sessionWillEnd() {
-        let time = lastKnownTime
+    /// Saves in-progress playback position before a media switch. Does not
+    /// clear timers, orientation lock, or other session state that carries
+    /// over between files.
+    func saveProgressBeforeSwitch() {
+        guard !completionSaved, pendingResumePosition == nil else { return }
+        // Paused seeks publish currentTime without necessarily emitting a
+        // native time event. Use that position while the transport is live;
+        // a stopped player has already reset it, so use the cached clock then.
+        let time: Duration
+        if let player, player.state == .playing || player.state == .paused {
+            time = player.currentTime
+        } else {
+            time = lastKnownTime
+        }
         if let duration = lastKnownDuration ?? player?.duration {
             saveProgress(time: time, duration: duration)
         }
-        
+    }
+
+    func sessionWillEnd() {
+        saveProgressBeforeSwitch()
+
         hideTask?.cancel()
         hudTask?.cancel()
         #if os(tvOS)
@@ -475,7 +593,41 @@ final class PlayerChromeModel {
         #endif
     }
 
-    /// Drives auto-skip off the player's time events.
+    /// Writes a completed watch-progress entry for the current item so
+    /// it leaves Continue Watching before the next episode starts.
+    func saveCompletionProgress() {
+        guard let item = session.item,
+              let duration = lastKnownDuration ?? player?.duration
+        else { return }
+        let durationSeconds = duration.playbackSeconds
+        guard durationSeconds > 0 else { return }
+
+        if let movie = item.movie, let tmdbId = movie.tmdbId {
+            watchStore.update(WatchProgress(
+                tmdbId: tmdbId,
+                mediaType: .movie,
+                position: 1.0,
+                watchedSeconds: durationSeconds,
+                isCompleted: true,
+                lastWatchedAt: Date()
+            ))
+        } else if let episode = item.episode, let tmdbId = episode.tmdbId {
+            watchStore.update(WatchProgress(
+                tmdbId: tmdbId,
+                mediaType: .episode,
+                position: 1.0,
+                watchedSeconds: durationSeconds,
+                isCompleted: true,
+                showTmdbId: episode.show?.tmdbId,
+                seasonNumber: episode.seasonNumber,
+                episodeNumber: episode.episodeNumber,
+                lastWatchedAt: Date()
+            ))
+        }
+        completionSaved = true
+    }
+
+    /// Updates progress and manual segment prompts from the player's clock.
     func playbackTimeChanged(_ time: Duration) {
         guard let player else { return }
 
@@ -494,14 +646,6 @@ final class PlayerChromeModel {
                 return
             }
             pendingResumePosition = nil
-            awaitingRecapSkip = false
-            // Resuming straight into the credits window shouldn't trip
-            // auto-skip and bounce the viewer back out immediately.
-            if skipCredits,
-               let creditsStart = PlayerLogic.creditsStart(duration: duration),
-               duration * target >= creditsStart {
-                creditsSkipped = true
-            }
             lastKnownDuration = duration
             lastKnownTime = duration * target
             lastSavedTime = duration * target
@@ -512,31 +656,14 @@ final class PlayerChromeModel {
         lastKnownTime = time
         if let duration = player.duration { lastKnownDuration = duration }
 
-        if awaitingRecapSkip {
-            // Wait until duration is known so short files are never skipped.
-            if let duration = player.duration {
-                awaitingRecapSkip = false
-                if let target = PlayerLogic.recapSkipTarget(duration: duration), time < target {
-                    player.seek(to: target)
-                }
-            }
-        }
+        session.segmentSkipping.update(
+            time: time.playbackSeconds,
+            duration: player.duration?.playbackSeconds,
+            isSeekable: player.isSeekable
+        )
 
-        if skipCredits, !creditsSkipped,
-           let creditsStart = PlayerLogic.creditsStart(duration: player.duration),
-           time >= creditsStart {
-            creditsSkipped = true
-            if loopEnabled {
-                // Credits are over as far as the viewer cares — restart.
-                player.seek(to: .zero)
-            } else {
-                session.end()
-            }
-        }
-
-        // Save progress every ~5 seconds.
-        if let duration = player.duration {
-            if lastSavedTime == nil || abs(time.playbackSeconds - lastSavedTime!.playbackSeconds) > 5.0 {
+        if !completionSaved, let duration = player.duration {
+            if lastSavedTime == nil || abs(time.playbackSeconds - lastSavedTime!.playbackSeconds) > 10.0 {
                 lastSavedTime = time
                 saveProgress(time: time, duration: duration)
             }

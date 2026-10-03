@@ -5,13 +5,56 @@
 //  The local library: a Continue Watching shelf of half-finished titles,
 //  poster grids for movies and shows, and the linked sources beneath.
 //  Empty state modeled on Infuse's files screen, restyled for the archive.
+//  The macOS sidebar also opens each section as a page of its own.
 //
 
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
+/// One part of the Downloaded page shown on its own — the Downloaded row's
+/// children in the macOS sidebar. A `nil` section is the whole page.
+enum DownloadedSection: Hashable, CaseIterable {
+    case continueWatching, movies, shows
+
+    var title: String {
+        switch self {
+        case .continueWatching: String(localized: "Continue Watching")
+        case .movies: String(localized: "Movies")
+        case .shows: String(localized: "TV Shows")
+        }
+    }
+
+    /// Symbol asset for the section's sidebar row.
+    var icon: String {
+        switch self {
+        case .continueWatching: "hourglass-half"
+        case .movies: "film"
+        case .shows: "tv"
+        }
+    }
+
+    /// The sections with something to show, in sidebar order.
+    static func available(
+        hasResumeItems: Bool,
+        movies: [Movie],
+        shows: [TVShow]
+    ) -> [DownloadedSection] {
+        allCases.filter { section in
+            switch section {
+            case .continueWatching: hasResumeItems
+            case .movies: !movies.isEmpty
+            case .shows: !shows.isEmpty
+            }
+        }
+    }
+}
+
 struct DownloadedView: View {
+    /// Shows only this section (a macOS sidebar child row); `nil` shows the
+    /// whole library.
+    var section: DownloadedSection? = nil
+
     @Environment(LibraryController.self) private var library
     @Environment(WatchProgressStore.self) private var watchStore
     @Environment(PlayerSession.self) private var playerSession
@@ -27,6 +70,9 @@ struct DownloadedView: View {
     @State private var path = NavigationPath()
     @State private var showImporter = false
     @State private var showLinkSource = false
+    /// A rescan requested from the menu bar (⌘R) is running. The automatic
+    /// sweep on appearance stays silent.
+    @State private var isRescanning = false
 
     private var isEmpty: Bool {
         visibleMovies.isEmpty && visibleShows.isEmpty && folders.isEmpty
@@ -87,7 +133,11 @@ struct DownloadedView: View {
             }
             // tvOS renders a large navigation title as a giant mid-screen overlay.
             #if !os(tvOS)
-            .navigationTitle("Downloaded")
+            .navigationTitle(section?.title ?? String(localized: "Downloaded"))
+            #endif
+            #if os(macOS)
+            // "Movies" alone could be the Watchlist page's; name the parent.
+            .navigationSubtitle(section == nil ? "" : String(localized: "Downloaded"))
             #endif
             .toolbar {
                 if !isEmpty {
@@ -96,7 +146,7 @@ struct DownloadedView: View {
                         Button {
                             showLinkSource = true
                         } label: {
-                            Label("Link Network Source…", image: .link)
+                            Label("Link Source…", image: .link)
                         }
                         .archiveButtonStyle(.ghost)
                     #else
@@ -109,26 +159,56 @@ struct DownloadedView: View {
             .navigationDestination(for: TVShow.self) { MediaDetailView(source: .localShow($0)) }
             .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             .settingsToolbar()
-            // Sheet on every platform: AddNetworkSourceView brings its own
-            // NavigationStack, and a second navigationDestination(isPresented:)
-            // on this path-driven stack is what wedged the flow on tvOS.
-            .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
-            #if !os(tvOS)
-            .fileImporter(
-                isPresented: $showImporter,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: true
-            ) { result in
-                guard case .success(let urls) = result else { return }
-                Task {
-                    for url in urls {
-                        await library.importFolder(url: url)
-                    }
+        }
+        // Presented from the stack itself rather than its root page so the
+        // macOS menu commands below can open them over a pushed detail page.
+        // Sheet on every platform: AddNetworkSourceView brings its own
+        // NavigationStack, and a second navigationDestination(isPresented:)
+        // on this path-driven stack is what wedged the flow on tvOS.
+        .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
+        #if !os(tvOS)
+        .fileImporter(
+            isPresented: $showImporter,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: true
+        ) { result in
+            guard case .success(let urls) = result else { return }
+            Task {
+                for url in urls {
+                    await library.importFolder(url: url)
                 }
             }
-            #endif
+        }
+        #endif
+        #if os(macOS)
+        // File ▸ Add Media Folder… (⌘N), Link Source… (⌥⌘N), and
+        // Rescan Library (⌘R) act on whichever Downloaded page is showing.
+        .focusedSceneValue(\.libraryCommands, libraryCommands)
+        #endif
+    }
+
+    #if os(macOS)
+    /// Nothing is offered while one of the add flows is already up.
+    private var libraryCommands: LibraryCommands? {
+        guard !showImporter, !showLinkSource else { return nil }
+        let canRescan = !folders.isEmpty && !isRescanning
+        return LibraryCommands(
+            addFolder: { showImporter = true },
+            linkSource: { showLinkSource = true },
+            rescan: canRescan ? { rescanLibrary() } : nil
+        )
+    }
+
+    /// ⌘R scans every source, including remote ones the automatic sweep
+    /// skipped because they were scanned recently.
+    private func rescanLibrary() {
+        isRescanning = true
+        Task {
+            await library.rescanAllFolders(force: true)
+            isRescanning = false
         }
     }
+    #endif
 
     // MARK: - Toolbar
 
@@ -156,10 +236,19 @@ struct DownloadedView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 40) {
                 statusRows
-                continueWatchingShelf
-                moviesSection
-                showsSection
-                sourcesSection
+                switch section {
+                case nil:
+                    continueWatchingShelf
+                    moviesSection
+                    showsSection
+                    sourcesSection
+                case .continueWatching:
+                    continueWatchingGrid
+                case .movies:
+                    moviesSection
+                case .shows:
+                    showsSection
+                }
             }
             .padding(.vertical, 24)
             .padding(.bottom, 40)
@@ -172,6 +261,15 @@ struct DownloadedView: View {
             HStack(spacing: 12) {
                 ProgressView().tint(Theme.gold)
                 Text("Verifying audience ratings").labelCaps()
+            }
+            .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .combine)
+        }
+
+        if isRescanning {
+            HStack(spacing: 12) {
+                ProgressView().tint(Theme.gold)
+                Text("Rescanning sources").labelCaps()
             }
             .padding(.horizontal, edgeMargin)
             .accessibilityElement(children: .combine)
@@ -201,19 +299,8 @@ struct DownloadedView: View {
 
     // MARK: - Continue watching
 
-    /// Everything half-watched that maps back to a local file, newest first.
     private var resumeItems: [ResumeItem] {
-        let items: [ResumeItem] = watchStore.inProgress.compactMap { progress in
-            switch progress.mediaType {
-            case .movie:
-                return visibleMovies.first { $0.tmdbId == progress.tmdbId }
-                    .map { ResumeItem(progress: progress, payload: .movie($0)) }
-            case .episode:
-                return visibleShows.lazy.flatMap(\.episodes).first { $0.tmdbId == progress.tmdbId }
-                    .map { ResumeItem(progress: progress, payload: .episode($0)) }
-            }
-        }
-        return Array(items.prefix(12))
+        ResumeItem.items(watchStore: watchStore, movies: visibleMovies, shows: visibleShows)
     }
 
     /// tmdbIds of movies already surfaced in Continue Watching, so the poster
@@ -238,24 +325,7 @@ struct DownloadedView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: shelfSpacing) {
                         ForEach(items) { item in
-                            Button {
-                                resume(item)
-                            } label: {
-                                LandscapeCard(
-                                    title: item.title,
-                                    subtitle: item.subtitle,
-                                    imageURL: item.imageURL,
-                                    placeholderIcon: item.placeholderIcon,
-                                    width: resumeCardWidth,
-                                    progress: item.progress.position
-                                )
-                            }
-                            #if os(tvOS)
-                            .buttonStyle(CardFocusButtonStyle())
-                            #else
-                            .buttonStyle(.plain)
-                            #endif
-                            .accessibilityHint("Resumes playback.")
+                            resumeCard(item)
                         }
                     }
                     .padding(.horizontal, edgeMargin)
@@ -268,6 +338,59 @@ struct DownloadedView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Continue Watching")
         }
+    }
+
+    /// Continue Watching as a page of its own: every resumable title in a
+    /// grid rather than the capped shelf.
+    @ViewBuilder
+    private var continueWatchingGrid: some View {
+        let items = ResumeItem.items(
+            watchStore: watchStore,
+            movies: visibleMovies,
+            shows: visibleShows,
+            limit: nil
+        )
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 18) {
+                SectionHeader(title: String(localized: "Continue Watching"))
+                LazyVGrid(
+                    columns: [GridItem(
+                        .adaptive(minimum: resumeCardWidth, maximum: resumeCardWidth),
+                        spacing: gridSpacing
+                    )],
+                    alignment: .center,
+                    spacing: gridSpacing
+                ) {
+                    ForEach(items) { item in
+                        resumeCard(item)
+                    }
+                }
+            }
+            .padding(.horizontal, edgeMargin)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Continue Watching")
+        }
+    }
+
+    private func resumeCard(_ item: ResumeItem) -> some View {
+        Button {
+            resume(item)
+        } label: {
+            LandscapeCard(
+                title: item.title,
+                subtitle: item.subtitle,
+                imageURL: item.imageURL,
+                placeholderIcon: item.placeholderIcon,
+                width: resumeCardWidth,
+                progress: item.progress.position
+            )
+        }
+        #if os(tvOS)
+        .buttonStyle(CardFocusButtonStyle())
+        #else
+        .buttonStyle(.plain)
+        #endif
+        .accessibilityHint(item.isNextUp ? "Plays next episode." : "Resumes playback.")
     }
 
     private func resume(_ item: ResumeItem) {
@@ -283,9 +406,10 @@ struct DownloadedView: View {
 
     @ViewBuilder
     private var moviesSection: some View {
-        // Anything currently in Continue Watching is shown there with its
-        // resume progress; leaving it out here keeps each movie to one card.
-        let gridMovies = visibleMovies.filter { movie in
+        // On the whole page, anything currently in Continue Watching is shown
+        // there with its resume progress; leaving it out here keeps each
+        // movie to one card. The Movies page on its own lists every movie.
+        let gridMovies = section == .movies ? visibleMovies : visibleMovies.filter { movie in
             guard let id = movie.tmdbId else { return true }
             return !resumeMovieIDs.contains(id)
         }
@@ -476,8 +600,10 @@ struct DownloadedView: View {
 
 // MARK: - Continue watching item
 
-/// A half-watched progress record joined back to its local library item.
-private struct ResumeItem: Identifiable {
+/// A half-watched or next-up progress record joined back to its local
+/// library item. Next-up items have no persisted progress — they surface
+/// the successor episode after a completed one without writing watch data.
+struct ResumeItem: Identifiable {
     enum Payload {
         case movie(Movie)
         case episode(Episode)
@@ -485,8 +611,83 @@ private struct ResumeItem: Identifiable {
 
     let progress: WatchProgress
     let payload: Payload
+    let isNextUp: Bool
 
-    var id: String { "\(progress.mediaType.rawValue)-\(progress.tmdbId)" }
+    init(progress: WatchProgress, payload: Payload, isNextUp: Bool = false) {
+        self.progress = progress
+        self.payload = payload
+        self.isNextUp = isNextUp
+    }
+
+    /// Continue Watching for the given (audience-filtered) library, most
+    /// recently watched first: movies in progress, each show's in-progress
+    /// episode, or the stored episode after its furthest completed one.
+    /// `limit` caps the shelf; `nil` returns every item.
+    @MainActor
+    static func items(
+        watchStore: WatchProgressStore,
+        movies: [Movie],
+        shows: [TVShow],
+        limit: Int? = 12
+    ) -> [ResumeItem] {
+        var items: [ResumeItem] = []
+
+        for progress in watchStore.inProgress where progress.mediaType == .movie {
+            if let movie = movies.first(where: { $0.tmdbId == progress.tmdbId }) {
+                items.append(ResumeItem(progress: progress, payload: .movie(movie)))
+            }
+        }
+
+        var seen: Set<Int> = []
+        for show in shows {
+            guard let showId = show.tmdbId, seen.insert(showId).inserted else { continue }
+
+            guard let latest = watchStore.progressMap.values
+                .filter({ $0.mediaType == .episode && $0.showTmdbId == showId })
+                .max(by: { $0.lastWatchedAt < $1.lastWatchedAt })
+            else { continue }
+
+            if !latest.isCompleted, latest.position > 0,
+               let ep = show.episodes.first(where: { $0.tmdbId == latest.tmdbId }) {
+                items.append(ResumeItem(progress: latest, payload: .episode(ep)))
+            } else if latest.isCompleted,
+                      let season = latest.seasonNumber,
+                      let epNum = latest.episodeNumber,
+                      let next = show.episodes
+                          .filter({ ($0.seasonNumber, $0.episodeNumber) > (season, epNum) })
+                          .min(by: { ($0.seasonNumber, $0.episodeNumber) < ($1.seasonNumber, $1.episodeNumber) }) {
+                items.append(ResumeItem(
+                    progress: WatchProgress(
+                        tmdbId: next.tmdbId ?? 0,
+                        mediaType: .episode,
+                        position: 0,
+                        showTmdbId: showId,
+                        seasonNumber: next.seasonNumber,
+                        episodeNumber: next.episodeNumber,
+                        lastWatchedAt: latest.lastWatchedAt
+                    ),
+                    payload: .episode(next),
+                    isNextUp: true
+                ))
+            }
+        }
+
+        let sorted = items.sorted {
+            if $0.progress.lastWatchedAt == $1.progress.lastWatchedAt {
+                return $0.id < $1.id
+            }
+            return $0.progress.lastWatchedAt > $1.progress.lastWatchedAt
+        }
+        guard let limit else { return sorted }
+        return Array(sorted.prefix(limit))
+    }
+
+    var id: String {
+        if isNextUp, case .episode(let ep) = payload {
+            return "nextup-\(ep.id)"
+        }
+        return "\(progress.mediaType.rawValue)-\(progress.tmdbId)"
+    }
 
     var title: String {
         switch payload {
@@ -497,8 +698,12 @@ private struct ResumeItem: Identifiable {
 
     var subtitle: String {
         switch payload {
-        case .movie: String(localized: "\(Int(progress.position * 100))% watched")
-        case .episode(let episode): "\(episode.episodeCode) · \(episode.displayTitle)"
+        case .movie: return String(localized: "\(Int(progress.position * 100))% watched")
+        case .episode(let episode):
+            if isNextUp {
+                return String(localized: "Up Next · \(episode.episodeCode)")
+            }
+            return "\(episode.episodeCode) · \(episode.displayTitle)"
         }
     }
 
@@ -536,6 +741,7 @@ private extension View {
 // MARK: - Rows
 
 private struct FolderRow: View {
+    @Environment(LibraryController.self) private var library
     let folder: VideoFolder
 
     var body: some View {
@@ -552,6 +758,12 @@ private struct FolderRow: View {
                 Text(subtitle)
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
+                if let state = library.sourceStates[folder.id] {
+                    Text(state.message)
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.gold)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer()
         }
@@ -560,7 +772,9 @@ private struct FolderRow: View {
         // custom actions from the context menu attached by the caller.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(folder.name)
-        .accessibilityValue(subtitle)
+        .accessibilityValue(
+            [subtitle, library.sourceStates[folder.id]?.message].compactMap(\.self).joined(separator: ", ")
+        )
     }
 
     private var subtitle: String {
@@ -568,10 +782,18 @@ private struct FolderRow: View {
             ? String(localized: "1 item")
             : String(localized: "\(folder.totalItemCount) items")]
         if folder.isRemote {
-            let host = folder.remoteURL?.host()
-            parts.append([folder.sourceKind.displayName, host].compactMap(\.self).joined(separator: " · "))
+            parts.append([folder.sourceKind.displayName, accountOrHost].compactMap(\.self).joined(separator: " · "))
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// The server, or for accounts and buckets the account, never the
+    /// account-key hash their URLs use as a host.
+    private var accountOrHost: String? {
+        switch folder.sourceKind {
+        case .googleDrive, .oneDrive, .dropbox, .s3: folder.username
+        default: folder.remoteURL?.host()
+        }
     }
 }
 
@@ -625,7 +847,7 @@ private struct EmptyLibraryState: View {
     /// only way in there.
     private var bodyMessage: String {
         #if os(tvOS)
-        String(localized: "Local folders aren’t reachable on Apple TV. Link a network share (SMB) to build your library.")
+        String(localized: "Local folders aren’t reachable on Apple TV. Link a network share or cloud storage to build your library.")
         #else
         String(localized: "Connect your local film collection to begin your cinematic journey.")
         #endif
@@ -636,7 +858,7 @@ private struct EmptyLibraryState: View {
         VStack(spacing: 16) {
             #if os(tvOS)
             Button(action: linkAction) {
-                Label("Link Network Source", image: .link)
+                Label("Link Source", image: .link)
             }
             .archiveButtonStyle(.primary)
             #else
@@ -646,7 +868,7 @@ private struct EmptyLibraryState: View {
             .archiveButtonStyle(.primary)
 
             Button(action: linkAction) {
-                Label("Link Network Source", image: .link)
+                Label("Link Source", image: .link)
             }
             .archiveButtonStyle(.secondary)
             #endif

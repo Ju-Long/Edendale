@@ -5,11 +5,12 @@
 //  MediaConnector for SMB shares, backed by the bundled libvlc's smb2/dsm
 //  access modules (via VLCNetworkBrowser). At the root URL (smb://host/)
 //  the listing returns the server's shares; below that, folders and files.
+//  Playback reads through libsmb2 custom I/O in FFmpegReader.m.
 //
 
 import Foundation
 
-struct SMBConnector: MediaConnector, Hashable {
+nonisolated struct SMBConnector: MediaConnector, Hashable {
 
     let kind: MediaSourceKind = .smb
     let host: String
@@ -36,11 +37,11 @@ struct SMBConnector: MediaConnector, Hashable {
 
     /// Rebuilds the connector for a stored source URL, pulling the
     /// credential back out of the Keychain.
-    init?(sourceURL: URL) {
+    init?(sourceURL: URL, store: any SecretStore = KeychainStore.shared) {
         guard let host = sourceURL.host() else { return nil }
         self.host = host
         self.port = sourceURL.port
-        self.credential = NetworkCredentialStore.credential(host: host)
+        self.credential = NetworkCredentialStore.credential(kind: .smb, host: host, store: store)
     }
 
     var root: URL {
@@ -53,8 +54,9 @@ struct SMBConnector: MediaConnector, Hashable {
         return components.url!
     }
 
-    func validate() async throws {
-        _ = try await list(directory: root)
+    var accountLabel: String? {
+        guard let credential, !credential.isGuest else { return nil }
+        return credential.username
     }
 
     func list(directory: URL) async throws -> [ConnectorEntry] {

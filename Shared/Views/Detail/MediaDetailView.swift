@@ -33,6 +33,7 @@ struct MediaDetailView: View {
     #endif
 
     @Environment(PlayerSession.self) private var playerSession
+    @Environment(LibraryController.self) private var library
 
     /// Live library queries so a TMDB browse item resolves its local match —
     /// and re-resolves when a background enrichment fills in `tmdbId` while
@@ -437,12 +438,20 @@ struct MediaDetailView: View {
         if hasContentActions {
             VStack(alignment: .leading, spacing: 8) {
                 if isPlayable {
-                    Button {
-                        play()
-                    } label: {
-                        Label(playLabel, image: .play)
+                    HStack(spacing: 8) {
+                        Button {
+                            play()
+                        } label: {
+                            Label(playLabel, image: .play)
+                        }
+                        .archiveButtonStyle(.primary)
+
+                        if movieCopies.count > 1 {
+                            playFromMenu
+                        }
                     }
-                    .archiveButtonStyle(.primary)
+                    // The icon-only menu button matches Play's height.
+                    .fixedSize(horizontal: false, vertical: true)
                 }
 
                 #if os(tvOS)
@@ -621,30 +630,16 @@ struct MediaDetailView: View {
     private func episodesSection(_ show: TVShow) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             SectionHeader(title: String(localized: "Episodes"))
-            ForEach(show.availableSeasons, id: \.self) { season in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Season \(season)")
-                        .font(Typography.titleLG)
-                        .foregroundStyle(Theme.textPrimary)
-                        .padding(.vertical, 12)
-                        .accessibilityAddTraits(.isHeader)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: episodeSpacing) {
-                            ForEach(show.episodes(for: season)) { episode in
-                                episodeCard(episode, show: show)
-                            }
-                        }
-                        .padding(.horizontal, edgeMargin)
-                        .padding(.vertical, 14)
-                    }
-                    // Full-bleed shelf inside the padded page column so the
-                    // hover/focus glow isn't clipped at the margins.
-                    .scrollClipDisabled()
-                    .padding(.horizontal, -edgeMargin)
+            let slots = episodeSlots(show)
+            ForEach(Array(Set(slots.map(\.season))).sorted(), id: \.self) { season in
+                SeasonEpisodeShelf(
+                    season: season,
+                    slots: slots.filter { $0.season == season },
+                    edgeMargin: edgeMargin,
+                    spacing: episodeSpacing
+                ) { slot in
+                    episodeCard(slot, show: show)
                 }
-                // Each season heading and its shelf are one group.
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel("Season \(season)")
             }
         }
         .accessibilityElement(children: .contain)
@@ -652,13 +647,14 @@ struct MediaDetailView: View {
     }
 
     @ViewBuilder
-    private func episodeCard(_ episode: Episode, show: TVShow) -> some View {
+    private func episodeCard(_ slot: PlaybackSources.EpisodeSlot, show: TVShow) -> some View {
+        let episode = slot.primary
         Button {
-            playEpisode(episode)
+            playEpisode(preferredCopy(slot.copies, folder: { $0.show?.folder }) ?? episode)
         } label: {
             LandscapeCard(
                 title: episode.displayTitle,
-                subtitle: episodeSubtitle(episode),
+                subtitle: episodeSubtitle(episode, copies: slot.copies.count),
                 imageURL: episode.stillURL ?? show.backdropURL,
                 placeholderIcon: "tv",
                 width: episodeCardWidth,
@@ -671,8 +667,19 @@ struct MediaDetailView: View {
         #else
         .buttonStyle(.plain)
         #endif
-        .accessibilityHint("Plays this episode.")
+        .accessibilityHint(slot.copies.count > 1
+            ? "Plays this episode. More sources are in the context menu."
+            : "Plays this episode.")
         .contextMenu {
+            if slot.copies.count > 1 {
+                Section("Play From") {
+                    ForEach(slot.copies) { copy in
+                        sourceButton(folder: copy.show?.folder, filePath: copy.filePath) {
+                            playEpisode(copy)
+                        }
+                    }
+                }
+            }
             if let tmdbId = episode.tmdbId {
                 Button {
                     if watchStore.isWatched(tmdbId, mediaType: .episode) {
@@ -692,10 +699,11 @@ struct MediaDetailView: View {
         }
     }
 
-    private func episodeSubtitle(_ episode: Episode) -> String {
-        episode.duration > 0
-            ? "\(episode.episodeCode) · \(episode.formattedDuration)"
-            : episode.episodeCode
+    private func episodeSubtitle(_ episode: Episode, copies: Int) -> String {
+        var parts = [episode.episodeCode]
+        if episode.duration > 0 { parts.append(episode.formattedDuration) }
+        if copies > 1 { parts.append(String(localized: "\(copies) sources")) }
+        return parts.joined(separator: " · ")
     }
 
     private func catalogueSummary(seasons: Int, episodes: Int) -> String {
@@ -829,9 +837,76 @@ struct MediaDetailView: View {
     }
 
     private func play() {
+        guard let movie = preferredCopy(movieCopies, folder: \.folder) else { return }
+        play(movie)
+    }
+
+    private func play(_ movie: Movie) {
         Task {
-            guard let movie = localMovie else { return }
             await playerSession.play(movie: movie)
+        }
+    }
+
+    // MARK: - Other copies
+
+    /// Every imported copy of this movie, this page's own first.
+    private var movieCopies: [Movie] {
+        guard let movie = localMovie else { return [] }
+        guard let tmdbId = movie.tmdbId else { return [movie] }
+        let others = libraryMovies.filter { $0.tmdbId == tmdbId && $0.id != movie.id }
+        return PlaybackSources.order(primary: movie, others: others, folder: \.folder)
+    }
+
+    /// The show's episodes across every imported copy of it.
+    private func episodeSlots(_ show: TVShow) -> [PlaybackSources.EpisodeSlot] {
+        let others = show.tmdbId.map { tmdbId in
+            libraryShows.filter { $0.tmdbId == tmdbId && $0.id != show.id }
+        } ?? []
+        return PlaybackSources.episodeSlots(primary: show, others: others)
+    }
+
+    /// A source the last scan couldn't reach, or whose login was refused.
+    private func isUnavailable(_ folder: VideoFolder?) -> Bool {
+        guard let folder else { return false }
+        return library.sourceStates[folder.id] != nil
+    }
+
+    private func preferredCopy<Item>(_ copies: [Item], folder: (Item) -> VideoFolder?) -> Item? {
+        PlaybackSources.preferred(copies) { isUnavailable(folder($0)) }
+    }
+
+    /// The chevron beside Play: every copy of the movie, by source.
+    private var playFromMenu: some View {
+        Menu {
+            Section("Play From") {
+                ForEach(movieCopies) { movie in
+                    sourceButton(folder: movie.folder, filePath: movie.filePath) {
+                        play(movie)
+                    }
+                }
+            }
+        } label: {
+            Label("Play From", image: .chevronDown)
+                .labelStyle(.iconOnly)
+                .frame(maxHeight: .infinity)
+        }
+        .menuStyle(.button)
+        .menuIndicator(.hidden)
+        .archiveButtonStyle(.secondary)
+        .accessibilityLabel("Play From")
+        .accessibilityHint("Chooses which source to play this title from.")
+    }
+
+    /// One copy in a Play From menu: its source's name, then the kind and
+    /// file name, and whether the source is unreachable.
+    private func sourceButton(folder: VideoFolder?, filePath: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(folder?.name ?? PlaybackSources.fileName(of: filePath))
+            if isUnavailable(folder) {
+                Text("\(PlaybackSources.detail(folder: folder, filePath: filePath)) · Unavailable")
+            } else {
+                Text(PlaybackSources.detail(folder: folder, filePath: filePath))
+            }
         }
     }
 
@@ -925,5 +1000,73 @@ struct MediaDetailView: View {
         #else
         20
         #endif
+    }
+}
+
+// MARK: - Season shelf
+
+/// One season's episode shelf. On macOS the season heading carries a rule
+/// that doubles as the shelf's scroll indicator and scrubber (the control
+/// MediaShelf headings use), so episodes past the window edge are visible
+/// and reachable without a horizontal scroll gesture.
+private struct SeasonEpisodeShelf<Card: View>: View {
+    let season: Int
+    let slots: [PlaybackSources.EpisodeSlot]
+    let edgeMargin: CGFloat
+    let spacing: CGFloat
+    @ViewBuilder let card: (PlaybackSources.EpisodeSlot) -> Card
+
+    #if os(macOS)
+    @State private var scrollPosition = ScrollPosition()
+    @State private var metrics = ShelfScrollMetrics()
+    #endif
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            heading
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: spacing) {
+                    ForEach(slots) { slot in
+                        card(slot)
+                    }
+                }
+                .padding(.horizontal, edgeMargin)
+                .padding(.vertical, 14)
+            }
+            #if os(macOS)
+            .scrollPosition($scrollPosition)
+            .onScrollGeometryChange(for: ShelfScrollMetrics.self) { geometry in
+                ShelfScrollMetrics(geometry)
+            } action: { _, new in
+                metrics = new
+            }
+            #endif
+            // Full-bleed shelf inside the padded page column so the
+            // hover/focus glow isn't clipped at the margins.
+            .scrollClipDisabled()
+            .padding(.horizontal, -edgeMargin)
+        }
+        // Each season heading and its shelf are one group.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Season \(season)")
+    }
+
+    private var heading: some View {
+        HStack(spacing: 16) {
+            Text("Season \(season)")
+                .font(Typography.titleLG)
+                .foregroundStyle(Theme.textPrimary)
+                #if os(macOS)
+                .fixedSize()
+                #endif
+                .accessibilityAddTraits(.isHeader)
+            #if os(macOS)
+            SectionRule(
+                scrubber: metrics.scrubber(scrolling: $scrollPosition),
+                label: String(localized: "Season \(season)")
+            )
+            #endif
+        }
+        .padding(.vertical, 12)
     }
 }

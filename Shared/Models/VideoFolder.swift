@@ -18,9 +18,23 @@ final class VideoFolder {
     /// `MediaSourceKind` raw value; inline default migrates pre-existing
     /// rows as local folders.
     var sourceKindRaw: String = MediaSourceKind.local.rawValue
-    /// Username the network source was linked with (password is in the
-    /// Keychain, keyed by host — see `NetworkCredentialStore`).
+    /// Username or account email the network source was linked with (the
+    /// password or token is in the Keychain — see `NetworkCredentialStore`
+    /// and `CloudAccountVault`).
     var username: String?
+    /// A readable location for the source's row, e.g.
+    /// "Google Drive › My Drive › Movies". Provider URLs hold IDs, not names.
+    /// Optional attributes like this one migrate existing rows as `nil`.
+    var displayPath: String?
+    /// The account key of a cloud or S3 source (also its URL host).
+    var accountKey: String?
+    /// When the source was last listed. The automatic rescan on each library
+    /// visit skips remote sources scanned within the last 15 minutes.
+    var lastScannedAt: Date?
+    /// A provider change cursor for incremental rescans (Dropbox
+    /// `list_folder/continue`, OneDrive `delta`, Drive `changes.list`).
+    /// Reserved: rescans still list the whole source.
+    var changeCursor: String?
 
     @Relationship(deleteRule: .cascade, inverse: \Movie.folder)
     var movies: [Movie]
@@ -55,6 +69,12 @@ final class VideoFolder {
     /// The network source's credential-free URL; `nil` for local folders.
     var remoteURL: URL? {
         isRemote ? URL(string: folderPath) : nil
+    }
+
+    /// What a source row shows as its location: the readable path when the
+    /// link flow recorded one, otherwise the stored path or URL.
+    var locationDescription: String {
+        displayPath ?? folderPath
     }
 
     func resolvedURL() -> URL? {

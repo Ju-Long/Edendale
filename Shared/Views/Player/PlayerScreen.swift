@@ -5,21 +5,19 @@
 //  The full-screen playback surface: video underneath, gesture layer on
 //  touch platforms, platform-specific input, and transient HUD feedback.
 //  Hosted full screen on iOS/visionOS/tvOS and in the "Now Playing" window
-//  on macOS.
+//  on macOS, where the side panels dock beside the video.
 //
 
+import CoreMedia
 import SwiftUI
-import SwiftVLC
 
 struct PlayerScreen: View {
     @Environment(PlayerSession.self) private var session
+    @Environment(VideoAdjustmentController.self) private var videoAdjustment
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     #if os(iOS) || os(macOS)
-    @State private var pipController: PiPController?
-    #endif
-
-    #if os(iOS)
-    @Environment(\.scenePhase) private var scenePhase
+    private var pipSource: SampleBufferPiPSource? { session.player?.pipSource }
     #endif
 
     #if !os(tvOS)
@@ -37,39 +35,50 @@ struct PlayerScreen: View {
             if let player = session.player,
                let item = session.item, item.scope != nil,
                player.state != .error {
+//                let _ = debugPrint("[PlayerScreen] ✅ showing playback — state=\(player.state), url=\(item.url?.lastPathComponent ?? "nil")")
                 playback(player: player, item: item)
             } else {
+//                let _ = debugPrint("[PlayerScreen] ❌ showing failure — player=\(session.player == nil ? "nil" : "exists") state=\(session.player?.state ?? .idle), item=\(session.item == nil ? "nil" : "exists"), scope=\(session.item?.scope == nil ? "nil" : "exists"), error=\(session.item?.errorMessage ?? "none")")
                 failure
             }
+
+            // Over the failure state too, should the file fail to open
+            // while the first-run guide is up.
+            if let chrome = session.chrome, chrome.guideVisible {
+                PlayerGuideView(
+                    controls: session.controls,
+                    finishTitle: chrome.guideIsFirstRun
+                        ? String(localized: "Start Watching")
+                        : String(localized: "Done"),
+                    onFinish: chrome.dismissGuide
+                )
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: session.chrome?.guideVisible)
         .preferredColorScheme(.dark)
         #if !os(tvOS)
         .focusable()
         .focused($keyboardFocused)
         .focusEffectDisabled()
         .onKeyPress(
-            keys: [.leftArrow, .rightArrow, .upArrow, .downArrow, "m", .space, .escape],
+            keys: [.leftArrow, .rightArrow, .upArrow, .downArrow, "f", "m", .space, .escape],
             phases: [.down, .repeat],
             action: handleKeyPress
         )
         .onAppear { keyboardFocused = true }
+        // The guide takes the keys while it is up; hand them back after.
+        .onChange(of: session.chrome?.guideVisible ?? false) { _, visible in
+            if !visible { keyboardFocused = true }
+        }
         #endif
         #if os(iOS)
         .statusBarHidden(!(session.chrome?.controlsVisible ?? true))
         .persistentSystemOverlays(
             (session.chrome?.controlsVisible ?? true) ? .automatic : .hidden
         )
-        // SwiftVLC always arms auto-PiP (`canStartPictureInPictureAutomatically
-        // FromInline`). When the user has turned the preference off, cancel a
-        // window the system opened as we left the foreground. Gating on
-        // `scenePhase != .active` leaves a foreground button-press PiP alone —
-        // that fires while the app is still active, so it never trips here.
-        .onChange(of: pipController?.isActive ?? false) { _, active in
-            guard active,
-                  scenePhase != .active,
-                  session.chrome?.autoPiP == false
-            else { return }
-            pipController?.stop()
+        .onChange(of: session.chrome?.autoPiP ?? true, initial: true) { _, enabled in
+            pipSource?.automaticallyStartsFromInline = enabled
         }
         #endif
         #if os(tvOS)
@@ -77,14 +86,17 @@ struct PlayerScreen: View {
         // they're hidden); these commands bubble up from whichever control
         // is focused, so the screen never has to own focus itself.
         .onPlayPauseCommand {
+            // Playback waits for the guide to close.
+            guard session.chrome?.guideVisible != true else { return }
             session.chrome?.togglePlayPause()
         }
         .onExitCommand { handleExitCommand() }
         #endif
         .onDisappear {
+            session.surfaceDidDetach()
             // The host closed underneath us (macOS red button or cover
             // dismissal), so release the player and its file access. On
-            // visionOS, changing a packed-video override can swap this VLC
+            // visionOS, changing a packed-video override can swap the decoder
             // surface for AVKit inside the same cover; that is not a session
             // dismissal.
             #if os(visionOS)
@@ -92,7 +104,7 @@ struct PlayerScreen: View {
                 session.end()
             }
             #else
-            if session.isPresented { session.end() }
+            if session.isPlayerPresented { session.end() }
             #endif
         }
     }
@@ -100,33 +112,58 @@ struct PlayerScreen: View {
     // MARK: - Layers
 
     @ViewBuilder
-    private func playback(player: Player, item: PlaybackItem) -> some View {
-        ZStack {
-            GeometryReader { geo in
-                let scale = videoFillScale(player: player, container: geo.size)
-                videoSurface(player: player)
-                    .scaleEffect(scale)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
-                    .animation(.easeInOut(duration: 0.25), value: scale)
+    private func playback(player: PlaybackEngine, item: PlaybackItem) -> some View {
+        #if os(macOS)
+        // The playlist and adjustments panels dock as a trailing sidebar:
+        // the video narrows beside an open panel instead of sitting under it.
+        HStack(spacing: 0) {
+            playbackLayers(player: player, item: item)
+            if let chrome = session.chrome, let panel = chrome.activePanel {
+                PlayerDockedPanel(panel: panel, chrome: chrome, player: player, item: item)
+                    .transition(.move(edge: .trailing))
             }
+        }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.25),
+            value: session.chrome?.activePanel
+        )
+        #else
+        playbackLayers(player: player, item: item)
+        #endif
+    }
+
+    @ViewBuilder
+    private func playbackLayers(player: PlaybackEngine, item: PlaybackItem) -> some View {
+        ZStack {
+            videoSurface(player: player)
+                .ignoresSafeArea()
+
+            PlayerSubtitleOverlay(
+                engine: player.subtitleEngine,
+                appearance: session.subtitleAppearance,
+                time: CMTime(seconds: player.currentTime.playbackSeconds, preferredTimescale: 60000),
+                videoSize: player.decoder?.mediaInfo?.naturalSize ?? .zero,
+                aspectFill: session.chrome?.aspectFill == true,
+                controlsVisible: session.chrome?.controlsVisible == true
+            )
             .ignoresSafeArea()
 
             #if os(iOS) || os(visionOS)
-            if let chrome = session.chrome {
+            if let chrome = session.chrome, !chrome.guideVisible {
                 PlayerGestureLayer(chrome: chrome, player: player)
                     .ignoresSafeArea()
             }
             #endif
 
-            if let chrome = session.chrome {
+            // The guide stands in for every control while it is up.
+            if let chrome = session.chrome, !chrome.guideVisible {
                 #if os(iOS) || os(macOS)
                 PlayerControlsOverlay(
                     chrome: chrome,
                     player: player,
                     item: item,
                     exit: exit,
-                    pipController: pipController
+                    pipSource: pipSource
                 )
                 #else
                 PlayerControlsOverlay(
@@ -146,51 +183,81 @@ struct PlayerScreen: View {
                 }
                 #endif
 
+                if let upcoming = chrome.upcomingEpisode,
+                   !chrome.panelCoversVideo, !chrome.isScrubbing {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            PlayerUpNextView(episode: upcoming) {
+                                Task { await session.play(episode: upcoming) }
+                            }
+                            .padding(.top, chrome.controlsVisible ? upNextControlsInset : 16)
+                            .padding(.trailing, upNextTrailingInset)
+                        }
+                        Spacer()
+                    }
+                    .allowsHitTesting(true)
+                    .transaction { if reduceMotion { $0.animation = nil } }
+                }
+
                 PlayerHUDView(chrome: chrome)
             }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: session.chrome?.upcomingEpisode?.id)
+        // The guide waits for the viewer's first playback on this device.
+        .onAppear { session.chrome?.presentGuideIfFirstRun() }
         #if os(tvOS)
         .animation(.easeInOut(duration: 0.2), value: session.chrome?.timelineVisible)
         #endif
     }
 
-    /// The raw VLC video surface. Fit/fill is layered on top by the caller
-    /// as a scale-and-clip transform, so this stays a plain host view.
-    @ViewBuilder
-    private func videoSurface(player: Player) -> some View {
-        #if os(iOS) || os(macOS)
-        VideoPlayer(
-            player: player,
-            pipController: $pipController,
-            onSurfaceReady: session.surfaceDidAttach
-        )
+    // Keep the card below the visible toolbar, with the same safe margin as
+    // the native controls. It stays reachable when a remote reveals controls.
+    private var upNextControlsInset: CGFloat {
+        #if os(tvOS)
+        180
         #else
-        VideoPlayer(
-            player: player,
-            onSurfaceReady: session.surfaceDidAttach
-        )
+        88
         #endif
     }
 
-    /// Scale that makes the letterboxed surface cover `container` when the
-    /// user picks "Fill"; 1 (fit) otherwise or until the video size is known.
-    private func videoFillScale(player: Player, container: CGSize) -> CGFloat {
-        guard session.chrome?.aspectFill == true else { return 1 }
-        return PlayerLogic.aspectFillScale(
-            container: container,
-            video: videoNaturalSize(player)
-        )
+    private var upNextTrailingInset: CGFloat {
+        #if os(tvOS)
+        60
+        #else
+        20
+        #endif
     }
 
-    /// The active video track's coded pixel size, or `.zero` before tracks
-    /// resolve (which yields a fit scale of 1).
-    private func videoNaturalSize(_ player: Player) -> CGSize {
-        let track = player.videoTracks.first { $0.isSelected }
-            ?? player.videoTracks.first
-        guard let width = track?.width, let height = track?.height else {
-            return .zero
-        }
-        return CGSize(width: width, height: height)
+    /// The Metal video surface. Aspect mode (fit/fill) is handled natively
+    /// by the `EnhancedVideoView` renderer, so no scale-and-clip hack is
+    /// needed here.
+    @ViewBuilder
+    private func videoSurface(player: PlaybackEngine) -> some View {
+        #if os(iOS) || os(macOS)
+        EnhancedVideoPlayer(
+            ringBuffer: player.ringBuffer,
+            presentationTime: player.videoPresentationTime,
+            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+            isPaused: !player.isPlaying,
+            enhancementPipeline: player.enhancementPipeline,
+            frameInterpolator: player.frameInterpolator,
+            sourceFrameRate: player.sourceFrameRate,
+            pipSource: player.pipSource,
+            onSurfaceReady: { _ in session.surfaceDidAttach() }
+        )
+        #else
+        EnhancedVideoPlayer(
+            ringBuffer: player.ringBuffer,
+            presentationTime: player.videoPresentationTime,
+            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+            isPaused: !player.isPlaying,
+            enhancementPipeline: player.enhancementPipeline,
+            frameInterpolator: player.frameInterpolator,
+            sourceFrameRate: player.sourceFrameRate,
+            onSurfaceReady: { _ in session.surfaceDidAttach() }
+        )
+        #endif
     }
 
     private var failure: some View {
@@ -208,30 +275,44 @@ struct PlayerScreen: View {
 
     #if !os(tvOS)
     private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
-        guard let chrome = session.chrome else { return .ignored }
+        guard let chrome = session.chrome, !chrome.guideVisible else { return .ignored }
         let commandPressed = press.modifiers.contains(.command)
 
         switch press.key {
         case .leftArrow where !commandPressed:
-            chrome.seek(bySeconds: -10)
+            chrome.skip(.backward)
         case .rightArrow where !commandPressed:
-            chrome.seek(bySeconds: 10)
+            chrome.skip(.forward)
         case .upArrow:
             if commandPressed {
-                chrome.adjustBrightness(by: PlayerLogic.levelStep)
+                let current = videoAdjustment.values[.brightness]
+                videoAdjustment.set(.brightness, to: current + VideoAdjustment.brightness.step)
+                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
             } else {
                 chrome.adjustVolume(by: PlayerLogic.levelStep)
             }
         case .downArrow:
             if commandPressed {
-                chrome.adjustBrightness(by: -PlayerLogic.levelStep)
+                let current = videoAdjustment.values[.brightness]
+                videoAdjustment.set(.brightness, to: current - VideoAdjustment.brightness.step)
+                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
             } else {
                 chrome.adjustVolume(by: -PlayerLogic.levelStep)
             }
+        #if os(macOS)
+        case "f" where !commandPressed && press.phase == .down:
+            NSApp.keyWindow?.toggleFullScreen(nil)
+        #endif
         case "m" where !commandPressed && press.phase == .down:
             chrome.toggleMute()
         case .space:
             chrome.togglePlayPause()
+        #if os(macOS)
+        // A docked panel stays open through clicks on the video, so Escape
+        // closes it before it closes the player.
+        case .escape where chrome.activePanel != nil:
+            chrome.closePanel()
+        #endif
         case .escape:
             exit()
         default:
@@ -244,11 +325,15 @@ struct PlayerScreen: View {
     // MARK: - tvOS remote
 
     #if os(tvOS)
-    /// Menu peels back one layer at a time: panel, scrub/timeline/HUD,
-    /// controls, then finally the player itself.
+    /// Menu peels back one layer at a time: the guide or a panel,
+    /// scrub/timeline/HUD, controls, then finally the player itself.
     private func handleExitCommand() {
         guard let chrome = session.chrome else {
             exit()
+            return
+        }
+        if chrome.guideVisible {
+            chrome.dismissGuide()
             return
         }
         if chrome.activePanel != nil {
@@ -264,6 +349,40 @@ struct PlayerScreen: View {
     }
     #endif
 }
+
+// MARK: - Docked panel (macOS)
+
+#if os(macOS)
+/// The playlist or adjustments panel as a trailing sidebar of the player
+/// window: an opaque dim column with a hairline edge, beside the video
+/// rather than over it. Clicks on the video leave it open; its close chip,
+/// the toolbar chip that opened it, or Escape close it.
+private struct PlayerDockedPanel: View {
+    let panel: PlayerChromeModel.SidePanel
+    let chrome: PlayerChromeModel
+    let player: PlaybackEngine
+    let item: PlaybackItem
+
+    var body: some View {
+        PlayerPanelContent(panel: panel, chrome: chrome, player: player, item: item)
+            .frame(width: 340)
+            .frame(maxHeight: .infinity)
+            // Nothing in the panel may draw over the video beside it.
+            .clipped()
+            .background { Theme.surfaceLow.ignoresSafeArea() }
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(width: 1)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
+            }
+            // A sibling of the video, not a modal layer: the transport
+            // controls stay in the reading order beside it.
+            .accessibilityElement(children: .contain)
+    }
+}
+#endif
 
 // MARK: - Exit button
 

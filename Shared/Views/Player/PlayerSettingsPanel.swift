@@ -2,17 +2,20 @@
 //  PlayerSettingsPanel.swift
 //  Edendale
 //
-//  The ellipsis sidebar: playback speed in 0.05× steps, subtitle track
-//  selection, auto-skip toggles, loop, and fit/fill aspect control.
+//  The ellipsis sidebar: playback speed in 0.05× steps, video/audio/subtitle
+//  track selection, skip prompts, loop, and fit/fill aspect control. Its
+//  header also reopens the player guide.
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerSettingsPanel: View {
     @Bindable var chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
     let item: PlaybackItem
+    @Environment(AudioEnhancementController.self) private var audioEnhancement
+    @Environment(VideoAdjustmentController.self) private var videoAdjustment
+    @Environment(PlayerSession.self) private var session
     @State private var onlineSubtitles = OnlineSubtitlesModel()
 
     var body: some View {
@@ -23,6 +26,12 @@ struct PlayerSettingsPanel: View {
                 visionFormatSection
                 #endif
                 speedSection
+                if player.videoTracks.count > 1 {
+                    videoTrackSection
+                }
+                if player.audioTracks.count > 1 {
+                    audioTrackSection
+                }
                 subtitleSection
                 OnlineSubtitlesSection(
                     model: onlineSubtitles,
@@ -32,10 +41,24 @@ struct PlayerSettingsPanel: View {
                 )
                 playbackSection
                 aspectSection
+                pictureSection
+                enhancementSection
             }
             .padding(24)
+            #if os(macOS)
+            // Held to the docked column's width and pinned to its leading
+            // edge: an oversized control can't widen the stack and shift it
+            // out past both sides of the column.
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            #endif
         }
+        // Docked as a sidebar on macOS, the long list keeps its scroller so
+        // pointer users can see and drag through what's below.
+        #if os(macOS)
+        .scrollIndicators(.automatic)
+        #else
         .scrollIndicators(.hidden)
+        #endif
         .onChange(of: item.id) {
             onlineSubtitles.reset()
         }
@@ -60,6 +83,12 @@ struct PlayerSettingsPanel: View {
                 .foregroundStyle(Theme.textPrimary)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
+            PlayerIconChip(
+                icon: .circleInfo,
+                label: String(localized: "Player Guide")
+            ) {
+                chrome.presentGuide()
+            }
             PlayerIconChip(
                 icon: .sidebarRight,
                 label: String(localized: "Close Adjustments"),
@@ -114,6 +143,87 @@ struct PlayerSettingsPanel: View {
                 Button(String(localized: "Reset")) { chrome.resetRate() }
             }
         }
+    }
+
+    // MARK: - Video Track
+
+    private var videoTrackSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Video Track").labelCaps().accessibilityAddTraits(.isHeader)
+
+            VStack(spacing: 4) {
+                ForEach(player.videoTracks) { track in
+                    subtitleRow(
+                        name: videoTrackLabel(track),
+                        isSelected: selectedVideoTrackID == track.id
+                    ) {
+                        selectVideoTrack(track)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Video Track")
+    }
+
+    private var selectedVideoTrackID: String? {
+        player.videoTracks.first(where: \.isSelected)?.id
+    }
+
+    private func videoTrackLabel(_ track: PlaybackTrack) -> String {
+        var label = track.name
+        if let language = track.language, !language.isEmpty,
+           !label.localizedCaseInsensitiveContains(language) {
+            label += " (\(language))"
+        }
+        if let width = track.width, let height = track.height, width > 0, height > 0 {
+            label += " — \(width)×\(height)"
+        }
+        return label
+    }
+
+    private func selectVideoTrack(_ track: PlaybackTrack) {
+        player.selectVideoTrack(track)
+    }
+
+    // MARK: - Audio Track
+
+    private var audioTrackSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Audio Track").labelCaps().accessibilityAddTraits(.isHeader)
+
+            VStack(spacing: 4) {
+                ForEach(player.audioTracks) { track in
+                    subtitleRow(
+                        name: audioTrackLabel(track),
+                        isSelected: player.selectedAudioTrack?.id == track.id
+                    ) {
+                        player.selectedAudioTrack = track
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audio Track")
+    }
+
+    private func audioTrackLabel(_ track: PlaybackTrack) -> String {
+        var label = track.name
+        if let language = track.language, !language.isEmpty,
+           !label.localizedCaseInsensitiveContains(language) {
+            label += " (\(language))"
+        }
+        if let channels = track.channels, channels > 0 {
+            let channelDesc: String = switch channels {
+            case 1: String(localized: "Mono")
+            case 2: String(localized: "Stereo")
+            case 6: "5.1"
+            case 8: "7.1"
+            default: "\(channels)ch"
+            }
+            label += " — \(channelDesc)"
+        }
+        return label
     }
 
     // MARK: - Subtitles
@@ -176,7 +286,7 @@ struct PlayerSettingsPanel: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    private func trackLabel(_ track: Track) -> String {
+    private func trackLabel(_ track: PlaybackTrack) -> String {
         if let language = track.language, !language.isEmpty, !track.name.localizedCaseInsensitiveContains(language) {
             return "\(track.name) (\(language))"
         }
@@ -189,22 +299,31 @@ struct PlayerSettingsPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Playback").labelCaps().accessibilityAddTraits(.isHeader)
 
-            ArchiveToggle(isOn: $chrome.skipRecap) {
+            ArchiveToggle(isOn: Binding(
+                get: { session.segmentSkipping.isEnabled },
+                set: { session.segmentSkipping.isEnabled = $0 }
+            )) {
                 optionLabel(
-                    String(localized: "Skip Recap"),
-                    detail: String(localized: "Jump past the first 90 seconds")
+                    String(localized: "Skip Prompts"),
+                    detail: String(localized: "Look up intro, recap, and credits timestamps with TheIntroDB")
                 )
             }
-            ArchiveToggle(isOn: $chrome.skipCredits) {
-                optionLabel(
-                    String(localized: "Skip Credits"),
-                    detail: String(localized: "End playback at the final 3 minutes")
-                )
-            }
+            Text("When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.")
+                .font(Typography.bodySM)
+                .foregroundStyle(Theme.textSecondary)
             ArchiveToggle(isOn: $chrome.loopEnabled) {
                 optionLabel(
                     String(localized: "Loop Video"),
                     detail: String(localized: "Restart playback when it ends")
+                )
+            }
+            ArchiveToggle(isOn: Binding(
+                get: { audioEnhancement.boosterEnabled },
+                set: { audioEnhancement.setBooster($0) }
+            )) {
+                optionLabel(
+                    String(localized: "Audio Booster"),
+                    detail: String(localized: "Increase audio gain for quiet recordings")
                 )
             }
             #if os(iOS)
@@ -248,6 +367,36 @@ struct PlayerSettingsPanel: View {
             // which `labelsHidden` takes away.
             .labelsHidden()
             .accessibilityLabel("Aspect Ratio")
+        }
+    }
+
+    // MARK: - Picture
+
+    private var pictureSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Picture").labelCaps().accessibilityAddTraits(.isHeader)
+            VideoAdjustmentControls(controller: videoAdjustment)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Picture")
+    }
+
+    // MARK: - Enhancement
+
+    @ViewBuilder
+    private var enhancementSection: some View {
+        if let pipeline = player.enhancementPipeline {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Enhancement").labelCaps().accessibilityAddTraits(.isHeader)
+                VideoEnhancementControls(
+                    pipeline: pipeline,
+                    sourceFrameRate: player.sourceFrameRate,
+                    interpolatorStats: player.frameInterpolator?.stats,
+                    frameInterpolator: player.frameInterpolator
+                )
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Enhancement")
         }
     }
 }

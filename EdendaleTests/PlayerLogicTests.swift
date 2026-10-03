@@ -3,7 +3,7 @@
 //  EdendaleTests
 //
 //  Unit tests for the player's pure playback rules: speed stepping, time
-//  formatting, auto-skip windows, natural-end detection, hold-drag scrub
+//  formatting, natural-end detection, hold-drag scrub
 //  math, and sibling-file discovery.
 //
 
@@ -49,24 +49,25 @@ struct PlayerLogicTests {
 
     // MARK: - tvOS press-and-hold speed
 
-    @Test func holdRateArmsFromTheRestingSide() {
+    @Test func holdSideArmsFromTheRestingSide() {
         // A fresh press must clear the higher arm threshold before it counts.
-        #expect(PlayerLogic.holdRate(x: 0.4, y: 0, active: false) == nil)
-        #expect(PlayerLogic.holdRate(x: 0.6, y: 0, active: false) == PlayerLogic.holdFastRate)
-        #expect(PlayerLogic.holdRate(x: -0.6, y: 0, active: false) == PlayerLogic.holdSlowRate)
+        #expect(PlayerLogic.holdSide(x: 0.4, y: 0, active: false) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.6, y: 0, active: false) == .right)
+        #expect(PlayerLogic.holdSide(x: -0.6, y: 0, active: false) == .left)
     }
 
-    @Test func holdRateHoldsThroughDriftOnceActive() {
+    @Test func holdSideHoldsThroughDriftOnceActive() {
         // Hysteresis: an engaged hold survives down to the release threshold…
-        #expect(PlayerLogic.holdRate(x: 0.4, y: 0, active: true) == PlayerLogic.holdFastRate)
+        #expect(PlayerLogic.holdSide(x: 0.4, y: 0, active: true) == .right)
+        #expect(PlayerLogic.holdSide(x: -0.4, y: 0, active: true) == .left)
         // …then lets go once the thumb slides back toward center.
-        #expect(PlayerLogic.holdRate(x: 0.2, y: 0, active: true) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.2, y: 0, active: true) == nil)
     }
 
-    @Test func holdRateIgnoresVerticalDominantTouches() {
+    @Test func holdSideIgnoresVerticalDominantTouches() {
         // An up/down move (vertical-dominant) is never a speed hold.
-        #expect(PlayerLogic.holdRate(x: 0.6, y: 0.7, active: false) == nil)
-        #expect(PlayerLogic.holdRate(x: 0.6, y: 0.7, active: true) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.6, y: 0.7, active: false) == nil)
+        #expect(PlayerLogic.holdSide(x: 0.6, y: 0.7, active: true) == nil)
     }
 
     // MARK: - Timestamps
@@ -82,20 +83,6 @@ struct PlayerLogicTests {
         #expect(PlayerLogic.timestamp(Double.nan) == "0:00")
     }
 
-    // MARK: - Auto-skip windows
-
-    @Test func recapSkipOnlyAppliesToLongEnoughMedia() {
-        #expect(PlayerLogic.recapSkipTarget(duration: .seconds(2700)) == .seconds(90))
-        #expect(PlayerLogic.recapSkipTarget(duration: .seconds(300)) == nil)
-        #expect(PlayerLogic.recapSkipTarget(duration: nil) == nil)
-    }
-
-    @Test func creditsWindowStartsBeforeTheEnd() {
-        #expect(PlayerLogic.creditsStart(duration: .seconds(3600)) == .seconds(3420))
-        #expect(PlayerLogic.creditsStart(duration: .seconds(300)) == nil)
-        #expect(PlayerLogic.creditsStart(duration: nil) == nil)
-    }
-
     // MARK: - Natural end
 
     @Test func naturalEndFiresNearNinetyFivePercent() {
@@ -108,19 +95,8 @@ struct PlayerLogicTests {
         #expect(!PlayerLogic.isNaturalEnd(time: .seconds(1152), duration: nil))
     }
 
-    @Test func naturalEndTreatsCreditsSkipAsFinished() {
-        // Skip-credits ends playback `creditsLength` before the tail — far
-        // more than 2 s. For a feature-length runtime that cutoff still sits
-        // past 95%, so the stop completes instead of lingering in Continue
-        // Watching (the bug when only the 2-second arm existed).
-        let feature = Duration.seconds(7200)
-        let creditsStart = PlayerLogic.creditsStart(duration: feature)!
-        #expect(PlayerLogic.isNaturalEnd(time: creditsStart, duration: feature))
-    }
-
     @Test func naturalEndKeepsTwoSecondArmForShortClips() {
-        // Below `minimumSkippableDuration` the credits window never applies,
-        // so completion rides the 2-second arm. Here the arms diverge: at 30 s
+        // Here the two completion tolerances diverge: at 30 s
         // the 2 s cutoff is 28 s while 95% is 28.5 s. A stop within 2 s of the
         // end still counts even though it falls short of 95%.
         let clip = Duration.seconds(30)

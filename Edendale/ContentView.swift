@@ -13,10 +13,19 @@ struct ContentView: View {
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
     #endif
+    #if os(iOS)
+    @Environment(AccountHandoffCenter.self) private var accountHandoff
+    #endif
 
     var body: some View {
         RootView()
             .onOpenURL(perform: handleIncomingURL)
+        #if os(iOS)
+            // An Apple TV asked for an account or login (AccountHandoff).
+            .sheet(item: Binding(get: { accountHandoff.pending }, set: { _ in })) { pending in
+                AccountHandoffRequestView(pending: pending)
+            }
+        #endif
         #if os(iOS) || os(tvOS) || os(visionOS)
             // The player takes over the entire screen; RootView stays alive
             // (its tab/session state survives) but is fully hidden beneath.
@@ -57,9 +66,9 @@ struct ContentView: View {
     #if os(iOS) || os(tvOS) || os(visionOS)
     private var playerPresented: Binding<Bool> {
         Binding(
-            get: { session.isPresented },
+            get: { session.isPlayerPresented },
             set: { presented in
-                if !presented { session.end() }
+                if !presented && !session.isHiddenForPictureInPicture { session.end() }
             }
         )
     }

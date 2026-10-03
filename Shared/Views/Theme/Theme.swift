@@ -50,6 +50,11 @@ enum Theme {
     /// High-contrast quiet zone required around generated QR codes.
     static let qrCodeBackground = Color("QRCodeBackground")
 
+    /// White fill behind the current or focused playlist row.
+    static let playlistActiveBackground = Color("PlaylistActiveBackground")
+    /// Black text and icons on a current or focused playlist row.
+    static let playlistActiveText = Color("PlaylistActiveText")
+
     /// Corner radii — "Precise and Architectural" (DESIGN.md).
     enum Radius {
         static let soft: CGFloat = 4

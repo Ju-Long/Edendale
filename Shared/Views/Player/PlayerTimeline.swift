@@ -4,15 +4,14 @@
 //
 //  Bottom progress bar + timeline adjustment, usable on every platform:
 //  drag to scrub with touch or mouse; on tvOS focus it and swipe/press
-//  left-right to step ±10 seconds.
+//  left-right to skip back or forward by the lengths set in Settings.
 //
 
 import SwiftUI
-import SwiftVLC
 
 struct PlayerTimeline: View {
     let chrome: PlayerChromeModel
-    let player: Player
+    let player: PlaybackEngine
 
     #if os(tvOS)
     @FocusState private var isFocused: Bool
@@ -53,8 +52,8 @@ struct PlayerTimeline: View {
         .focused($isFocused)
         .onMoveCommand { direction in
             switch direction {
-            case .left: chrome.seek(bySeconds: -10)
-            case .right: chrome.seek(bySeconds: 10)
+            case .left: chrome.skip(.backward)
+            case .right: chrome.skip(.forward)
             // onMoveCommand swallows every direction while focused, so
             // release focus vertically to let it land elsewhere.
             case .up, .down: isFocused = false
@@ -79,8 +78,8 @@ struct PlayerTimeline: View {
         .accessibilityValue(valueText)
         .accessibilityAdjustableAction { direction in
             switch direction {
-            case .increment: chrome.seek(bySeconds: 10)
-            case .decrement: chrome.seek(bySeconds: -10)
+            case .increment: chrome.skip(.forward)
+            case .decrement: chrome.skip(.backward)
             @unknown default: break
             }
             chrome.showControls()

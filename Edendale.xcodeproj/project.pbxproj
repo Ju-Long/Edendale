@@ -10,6 +10,12 @@
 		270D2C633004C7B200741225 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270D2C623004C7B200741225 /* WidgetKit.framework */; };
 		270D2C653004C7B200741225 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270D2C643004C7B200741225 /* SwiftUI.framework */; };
 		270D2C723004C7B300741225 /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 270D2C603004C7B200741225 /* WidgetsExtension.appex */; platformFilters = (ios, macos, xros, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		27AB550900000000000000A9 /* NIOSSH in Frameworks */ = {isa = PBXBuildFile; productRef = 27AB550300000000000000A3 /* NIOSSH */; };
+		27AB550A00000000000000AA /* NIOCore in Frameworks */ = {isa = PBXBuildFile; productRef = 27AB550400000000000000A4 /* NIOCore */; };
+		27AB550B00000000000000AB /* NIOPosix in Frameworks */ = {isa = PBXBuildFile; productRef = 27AB550500000000000000A5 /* NIOPosix */; };
+		27AB550C00000000000000AC /* NIOSSH in Frameworks */ = {isa = PBXBuildFile; productRef = 27AB550600000000000000A6 /* NIOSSH */; };
+		27AB550D00000000000000AD /* NIOCore in Frameworks */ = {isa = PBXBuildFile; productRef = 27AB550700000000000000A7 /* NIOCore */; };
+		27AB550E00000000000000AE /* NIOPosix in Frameworks */ = {isa = PBXBuildFile; productRef = 27AB550800000000000000A8 /* NIOPosix */; };
 		27BC63E72FBDBEA8005EAD5C /* SwiftVLC in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63E62FBDBEA8005EAD5C /* SwiftVLC */; };
 		27BC63ED2FBDBF1E005EAD5C /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63EC2FBDBF1E005EAD5C /* Kingfisher */; };
 		27BC63F02FBDBF68005EAD5C /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27BC63EF2FBDBF68005EAD5C /* Drops */; };
@@ -17,6 +23,8 @@
 		27ED01AB00000000000000AB /* SwiftVLC in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01AE00000000000000AE /* SwiftVLC */; };
 		27ED01AC00000000000000AC /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01AF00000000000000AF /* Kingfisher */; };
 		27ED01AD00000000000000AD /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01B000000000000000B0 /* Drops */; };
+		27FF00010000000000000001 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
+		27FF00010000000000000002 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,9 +72,10 @@
 		27BC63B62FBDBE64005EAD5C /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27BC63C72FBDBE65005EAD5C /* EdendaleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EdendaleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		27CF16C0000000000000C0F1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = Shared/Secrets.xcconfig; sourceTree = "<group>"; };
+		27CF16C0000000000000C0F1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = .secret/Secrets.xcconfig; sourceTree = "<group>"; };
 		27CF16C1000000000000A551 /* Shared Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Shared Assets.xcassets"; path = Shared/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		27ED01A100000000000000A1 /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +97,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Example.xcconfig,
+				Secrets.xcconfig,
 			);
 			target = 27BC63B52FBDBE64005EAD5C /* Edendale */;
 		};
@@ -111,6 +121,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Example.xcconfig,
+				Secrets.xcconfig,
 			);
 			target = 27ED01A200000000000000A2 /* Edendale TV */;
 		};
@@ -173,6 +184,10 @@
 				27BC63ED2FBDBF1E005EAD5C /* Kingfisher in Frameworks */,
 				27BC63F02FBDBF68005EAD5C /* Drops in Frameworks */,
 				27BC63E72FBDBEA8005EAD5C /* SwiftVLC in Frameworks */,
+				27FF00010000000000000001 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */,
+				27AB550900000000000000A9 /* NIOSSH in Frameworks */,
+				27AB550A00000000000000AA /* NIOCore in Frameworks */,
+				27AB550B00000000000000AB /* NIOPosix in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,6 +212,10 @@
 				27ED01AC00000000000000AC /* Kingfisher in Frameworks */,
 				27ED01AD00000000000000AD /* Drops in Frameworks */,
 				27ED01AB00000000000000AB /* SwiftVLC in Frameworks */,
+				27FF00010000000000000002 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */,
+				27AB550C00000000000000AC /* NIOSSH in Frameworks */,
+				27AB550D00000000000000AD /* NIOCore in Frameworks */,
+				27AB550E00000000000000AE /* NIOPosix in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -206,6 +225,7 @@
 		270D2C613004C7B200741225 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */,
 				270D2C623004C7B200741225 /* WidgetKit.framework */,
 				270D2C643004C7B200741225 /* SwiftUI.framework */,
 			);
@@ -295,6 +315,9 @@
 				27BC63E62FBDBEA8005EAD5C /* SwiftVLC */,
 				27BC63EC2FBDBF1E005EAD5C /* Kingfisher */,
 				27BC63EF2FBDBF68005EAD5C /* Drops */,
+				27AB550300000000000000A3 /* NIOSSH */,
+				27AB550400000000000000A4 /* NIOCore */,
+				27AB550500000000000000A5 /* NIOPosix */,
 			);
 			productName = Edendale;
 			productReference = 27BC63B62FBDBE64005EAD5C /* Edendale.app */;
@@ -367,6 +390,9 @@
 				27ED01AE00000000000000AE /* SwiftVLC */,
 				27ED01AF00000000000000AF /* Kingfisher */,
 				27ED01B000000000000000B0 /* Drops */,
+				27AB550600000000000000A6 /* NIOSSH */,
+				27AB550700000000000000A7 /* NIOCore */,
+				27AB550800000000000000A8 /* NIOPosix */,
 			);
 			productName = Edendale;
 			productReference = 27ED01A100000000000000A1 /* Edendale.app */;
@@ -432,6 +458,8 @@
 				27BC63E52FBDBEA8005EAD5C /* XCRemoteSwiftPackageReference "SwiftVLC" */,
 				27BC63EB2FBDBF1E005EAD5C /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				27BC63EE2FBDBF68005EAD5C /* XCRemoteSwiftPackageReference "Drops" */,
+				27AB550100000000000000A1 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */,
+				27AB550200000000000000A2 /* XCRemoteSwiftPackageReference "swift-nio" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 27BC63B72FBDBE64005EAD5C /* Products */;
@@ -578,7 +606,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -624,7 +652,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -667,9 +695,15 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = Edendale/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -684,7 +718,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -695,6 +729,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
@@ -729,9 +764,15 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = Edendale/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -746,7 +787,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -757,6 +798,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
@@ -997,11 +1039,15 @@
 				DEVELOPMENT_TEAM = 5678544286;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = "Edendale/Info-tvOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = Edendale;
 				REGISTER_APP_GROUPS = YES;
@@ -1011,6 +1057,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
@@ -1031,11 +1078,15 @@
 				DEVELOPMENT_TEAM = 5678544286;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)/FFmpeg.framework/Headers",
+				);
 				INFOPLIST_FILE = "Edendale/Info-tvOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = Edendale;
 				REGISTER_APP_GROUPS = YES;
@@ -1045,6 +1096,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/Playback/FFmpeg/Edendale-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
@@ -1112,6 +1164,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		27AB550100000000000000A1 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio-ssh.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.15.0;
+			};
+		};
+		27AB550200000000000000A2 /* XCRemoteSwiftPackageReference "swift-nio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.81.0;
+			};
+		};
 		27BC63E52FBDBEA8005EAD5C /* XCRemoteSwiftPackageReference "SwiftVLC" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/harflabs/SwiftVLC.git";
@@ -1139,6 +1207,36 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		27AB550300000000000000A3 /* NIOSSH */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27AB550100000000000000A1 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */;
+			productName = NIOSSH;
+		};
+		27AB550400000000000000A4 /* NIOCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27AB550200000000000000A2 /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOCore;
+		};
+		27AB550500000000000000A5 /* NIOPosix */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27AB550200000000000000A2 /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOPosix;
+		};
+		27AB550600000000000000A6 /* NIOSSH */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27AB550100000000000000A1 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */;
+			productName = NIOSSH;
+		};
+		27AB550700000000000000A7 /* NIOCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27AB550200000000000000A2 /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOCore;
+		};
+		27AB550800000000000000A8 /* NIOPosix */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27AB550200000000000000A2 /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOPosix;
+		};
 		27BC63E62FBDBEA8005EAD5C /* SwiftVLC */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 27BC63E52FBDBEA8005EAD5C /* XCRemoteSwiftPackageReference "SwiftVLC" */;

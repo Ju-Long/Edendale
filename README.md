@@ -51,18 +51,44 @@ through the platform branch's issue and pull-request workflow.
 The `apple` branch contains the native multiplatform Xcode project for
 iOS, iPadOS, macOS, tvOS, and visionOS. It requires Xcode 26.5 or newer.
 
-Before a local build, copy `Shared/Example.xcconfig` to
-`Shared/Secrets.xcconfig` and add the TMDB read access token. The generated
-file is gitignored. `WYZIE_API_KEY` is optional and enables online subtitle
-search; claim a free key at https://store.wyzie.io/redeem, or enter it later in
-Settings.
-
-Resolve dependencies and inspect the shared schemes:
+Local credentials live in the gitignored `.secret/` folder at the repository
+root, including the App Store Connect `AuthKey_*.p8` used by `ASC/`. Before a
+local build, copy `Shared/Example.xcconfig` to `.secret/Secrets.xcconfig` and
+add the TMDB read access token:
 
 ```sh
+mkdir -p .secret
+cp Shared/Example.xcconfig .secret/Secrets.xcconfig
+```
+
+`WYZIE_API_KEY` is optional and enables online subtitle search; claim a free
+key at https://store.wyzie.io/redeem, or enter it later in Settings.
+
+Build the local FFmpeg XCFramework (requires Xcode and downloads FFmpeg 7.1.1
+source), then resolve dependencies and inspect the shared schemes:
+
+```sh
+bash Vendor/FFmpeg/build-ffmpeg.sh
 xcodebuild -resolvePackageDependencies -project Edendale.xcodeproj
 xcodebuild -list -project Edendale.xcodeproj
 ```
+
+The FFmpeg source download is checked against a pinned SHA-256 checksum. Its
+source, intermediate frameworks, and final XCFramework are gitignored; commit
+the build script and Xcode project references, not the generated binaries.
+For a faster single-platform setup, use
+`bash Vendor/FFmpeg/build-ffmpeg.sh --platform ios` (also accepts `macos`,
+`tvos`, and `visionos`). This replaces the XCFramework with only that platform's
+device/simulator variants; rerun without `--platform` to restore all platforms.
+Build-option changes automatically invalidate cached slices. Use `--clean`
+to force a rebuild after changing FFmpeg source.
+
+The build isolates FFmpeg's symbols with Xcode's `ld` and `nmedit` tools so
+Edendale's decoder cannot bind to the different FFmpeg bundled in SwiftVLC.
+Older XCFrameworks must be regenerated with the command above; the first build
+also refreshes cached slices that lack `-fno-common` or PCM audio decoders.
+Both app targets keep using the static framework, with no additional runtime
+or package dependency.
 
 Run the native macOS build and tests:
 
@@ -73,14 +99,545 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
   -destination 'platform=macOS'
 ```
 
+Run the unit suite without signing or screen access:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' -only-testing:EdendaleTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Debug unit-test hosts use in-memory library, watchlist, and watch-progress
+stores with CloudKit disabled. In place of the `group.com.BaBaSaMa.Edendale`
+App Group preferences, which an unsigned macOS host would share with the Debug
+app and widgets, they use a per-process `EdendaleUnitTestHost-<pid>` suite that
+is emptied at launch and exit (an empty plist may remain in
+`~/Library/Preferences`). Normal app launches and UI tests retain their usual
+persistence. The command above excludes UI tests; run the full signed test
+command when an interactive test environment is available.
+
+For GPU upscaling and rendering regression checks with Metal API validation:
+
+```sh
+TEST_RUNNER_MTL_DEBUG_LAYER=1 xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/MetalEnhancementPipelineTests \
+  -only-testing:EdendaleTests/EnhancedVideoRenderingTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Upscaling uses a private, render-target-capable output texture for MetalFX and
+falls back to Lanczos when caller-provided textures do not meet MetalFX's usage
+or storage requirements. These checks require a Metal-capable Mac.
+
+FFmpeg 7.1's AV1 decoder only drives hardware accelerators, and it has no
+VideoToolbox one, so `EDFFmpegReader` demuxes AV1 with FFmpeg and decodes it in
+its own VideoToolbox session. That decoder is hardware-only (Apple M3, A17 Pro,
+or later). Other devices and all simulators report that they cannot decode AV1
+video instead of playing its audio alone.
+
+For FFmpeg startup, library compatibility, video dimensions, audio decoding,
+seeking, and track-switching regression checks, run:
+
+```sh
+bash Vendor/FFmpeg/test-symbol-isolation.sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Compile the tvOS app without signing:
+
+```sh
+xcodebuild build -project Edendale.xcodeproj -scheme 'Edendale TV' \
+  -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+Compile the iOS/iPadOS app without signing:
+
+```sh
+xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+Compile the visionOS app without launching a simulator:
+
+```sh
+xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=visionOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+### Picture in Picture and subtitles
+
+On iOS/iPadOS, starting PiP dismisses the full-screen player while preserving
+playback and file access. Restore returns to the same session; closing PiP ends
+the hidden session. PiP transport controls refresh from the playback state and
+use the media clock. The automatic PiP preference does not disable the manual
+PiP button.
+
+Each playback engine keeps one `AVPictureInPictureController` for its PiP
+display layer. AVKit holds an unretained reference from the layer to its first
+controller, so switching media stops PiP and flushes the layer instead of
+replacing the controller.
+
+On macOS, AVKit lays out the PiP panel's video from the display layer's bounds
+and never fits it to the panel. While PiP is open, the layer takes the panel's
+size (following resizes) and is scaled back over the player, so the panel
+shows the whole frame instead of its bottom-left corner.
+
+Embedded FFmpeg subtitles decode alongside audio/video. Changing tracks uses a
+bounded seek at the current position instead of scanning the entire file, and
+preserves the playing/paused state. ASS fallback rendering strips packet fields
+from dialogue text. `PlayerScreen` hosts a native SwiftUI subtitle overlay above
+the video and PiP source layer. It follows the playback clock, updates while
+paused, displays simultaneous text cues, and positions bitmap cues relative to
+the fitted/filled video. Text stays clear of visible transport controls and the
+overlay does not intercept gestures. SRT, WebVTT, and ASS downloads use the same
+overlay as embedded tracks, including CRLF files and UTF-16 files with a BOM.
+
+Run the playback regressions, then compile the iOS/iPadOS app:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/SubtitleEngineTests \
+  -only-testing:EdendaleTests/PlayerSessionTransitionTests \
+  -only-testing:EdendaleTests/EnhancedVideoRenderingTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+```
+
+The subtitle fixture contains generated test video/audio with SRT and ASS
+tracks; see `EdendaleTests/Fixtures/generate-subtitle-fixture.sh` to reproduce it.
+On an iPhone/iPad, additionally verify manual PiP, a single pause/play tap,
+return to the app, restore/close, and subtitle selection on the original media.
+These are Apple playback fixes; other platform branches require no rule change.
+
+For the subtitle overlay, download/import, and decoder regressions (including
+rendered-pixel checks), run:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/PlayerSubtitleOverlayTests \
+  -only-testing:EdendaleTests/SubtitleEngineTests \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/WyzieSubtitleTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -only-testing:EdendaleTests/PlayerSubtitleOverlayTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+The second command requires the named simulator; choose an installed iPhone or
+iPad simulator if it is unavailable. These tests use synthetic embedded tracks
+and downloaded-file payloads without contacting the subtitle provider. A PNG
+preview of the actual overlay is written to the test host's temporary directory;
+its path is printed in the test log.
+
+### Downloaded subtitles
+
+A subtitle downloaded from **Player Adjustments → Online Subtitles** is kept
+on the device in `Caches/Subtitles`, and a local SwiftData store
+(`SubtitleCache`, never synced) records which video it belongs to, its file
+name inside that folder (the app container's path changes across updates),
+and when it was last used. When the same video plays again, its kept
+subtitles are added to the subtitle list without a search or a download; the
+one used last is selected unless the title's saved choice is an embedded
+track or Off. Picking a result the device already holds, for this video or
+another, reuses the file instead of downloading it again.
+
+A video is identified by its TMDB match (movie, or show plus season and
+episode) and its file name, ignoring case and Unicode form. The server
+address, port, scheme, and folder are not part of it, so one file reached
+through several endpoints of the same device (a LAN IP and a Tailscale IP, a
+host name and an address) shares its subtitles, as does a local copy.
+Another release of the same title, whose timing may differ, keeps its own.
+
+At each launch, subtitles neither downloaded nor reattached for more than a
+month are deleted, as are records whose file the system purged and files no
+record refers to (including downloads saved before records were kept). Run
+the cache regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/SubtitleCacheTests \
+  -only-testing:EdendaleTests/WyzieSubtitleTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Settings → Subtitles sets the text subtitle font, colours, and background
+opacity. On tvOS the opacity's − and + buttons sit beneath its name at the
+leading edge, like the chip rows above it. Android and Windows need
+independent native implementations of the subtitle cache; the static Web
+branch is unaffected.
+
+The playlist opens at the current file and highlights current or focused rows
+with larger text on a white background. Identified episodes and the current
+identified movie include landscape artwork and stacked title/playtime details;
+unknown sibling files retain their filename fallback. Player Adjustments
+offers video and audio track selection when a file contains multiple tracks
+of that type.
+
+Settings includes adjustable Flat, Movies (default), Music, Dialogue, and Night
+Mode equalizer profiles. Profile selection and adjustments persist locally;
+changing profiles resets the adjustments. Player Adjustments also offers an
+Audio Booster, off by default, that adds 10 dB of preamp gain within the
+equalizer's bounds and restores the unboosted setting when disabled. Profiles
+and booster changes apply during playback and carry over between files.
+Night Mode changes the frequency balance; it does not compress dynamic range.
+These controls do not affect E-AC-3 audio (see
+[Surround and spatial audio](#surround-and-spatial-audio)) or visionOS
+spatial/multiview playback in the system player. tvOS uses remote-operated
+increment/decrement controls for adjustments.
+
+Episodes automatically advance to the next stored episode in season/episode
+order, including the next season and stored specials, without replaying an
+alternate file of the same episode. A newer manual playback request cancels
+pending automatic advancement. Finished episodes retain their completed watch
+state. Continue Watching suggests the next stored episode after the furthest
+completed one when that show has no episode already in progress. This also
+works after removing a watched file and does not create watch progress for the
+unwatched suggestion. Duplicate show records produce one next-up card.
+
+When a TV episode has a locally stored successor, an **Up Next** card appears
+at the top right during its final 30 seconds. It shows artwork, the episode
+code and title, and starts that episode when selected. The card clears when
+seeking earlier, enabling Loop Video, or ending playback, and remains
+reachable when controls are visible. Movies, files without episode context,
+unknown durations, and the final stored episode do not show it. The native
+visionOS system-player route uses the same preview rule. Artwork has a
+readable fallback, focus is visible, and transitions honor Reduce Motion.
+
+### Surround and spatial audio
+
+FFmpeg playback keeps a track's channels. Decoded audio reaches the renderer
+as stereo, 5.1, or 7.1 PCM, the smallest with as many channels as the source,
+labelled with the matching Core Audio channel layout, so the system downmixes
+it for the current output, sends it to an HDMI receiver, or spatializes it on
+supported headphones. The back surrounds of 5.1 play as its surround pair,
+6.1's back center splits between the rear pair, and layouts beyond 7.1 fold
+into 7.1. Mono and stereo play as before.
+
+E-AC-3 reaches the renderer undecoded on devices with a system E-AC-3 decoder,
+object audio (JOC) included. Each track is described with the `dec3`
+configuration that the system's own E-AC-3 parser derives from its first
+packet, which flags object audio the way an MP4 or HLS stream would. A track
+that can't be described this way, or a device without the decoder, decodes in
+FFmpeg to surround PCM instead, without the object audio; a packet that isn't
+one six-block access unit is skipped. After a seek, passed-through sound resumes with the first whole unit
+at or after the target, at most 32 ms after the picture. AC-3, DTS, TrueHD,
+and other codecs still decode in FFmpeg.
+
+Audio enhancement doesn't apply to E-AC-3: equalizing needs decoded audio,
+which would drop the object audio. FFmpeg playback passes it through
+untouched, and AVFoundation playback installs no equalizer tap when the file's
+first audio track is E-AC-3. Settings → Audio Enhancement says so. Enhancement
+of decoded surround covers every channel.
+
+When the renderer drops its queued audio because the output changed, or the
+output hardware changes format (for example, a receiver switching on), FFmpeg
+playback refills audio from the playhead so the new output is configured for
+the track's channels. On iOS, tvOS, and visionOS the audio session declares
+multichannel content support.
+
+The first audio timestamp after opening or seeking is taken as the stream
+gives it, and later ones continue the sample clock. Earlier, a first frame
+that started within 50 ms of a seek target was moved onto the target and
+played that much early or late against the picture.
+
+Run the audio regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/AVFoundationDecoderTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+`EdendaleTests/Fixtures/decoder-eac3.mkv` is synthetic: 5.1 E-AC-3 with a
+different tone on each channel, plus a stereo AC-3 track. Regenerate it with
+`bash EdendaleTests/Fixtures/generate-eac3-fixture.sh`, which needs an ffmpeg
+CLI with the eac3 and ac3 encoders. Passthrough tests run only where the
+system can decode E-AC-3. Whether object audio reaches the listener depends on
+the device and route (a receiver, or headphones with spatial audio), so check
+it on hardware. Keeping E-AC-3 out of audio enhancement is a product rule:
+Android and Windows need their own native implementations if they adopt it;
+the static Web branch is unaffected.
+
+### Speed changes and seeking
+
+Changing the playback speed, from Player Adjustments or by holding a side of
+the video or the Siri Remote's touch surface, only retimes the media clock.
+Decoded frames stay queued, so the picture never blanks. A seek or track
+switch keeps the current picture on screen until the first frame at the new
+position has decoded; only a media change clears the video surface. FFmpeg
+seeks decode from the previous keyframe but skip the frames before the target
+that no other frame references, shortening the post-seek freeze with hardware
+decoding. Frames from the target on are unchanged.
+
+FFmpeg playback restarts the clock only once that first frame is on screen, so
+picture and sound resume together; a seek while paused shows it as well.
+FFmpeg decoding never waits for the audio renderer. Decoded audio that the
+renderer cannot take yet is queued, up to 4 s ahead of playback, so video keeps
+decoding when a file stores its audio a second or more ahead of the video.
+Video decodes only while fewer than 12 frames are queued, and reads for audio
+alone hold video packets undecoded (up to 32 MB), so 60 fps files and files
+that store video ahead of audio, such as broadcast TS, no longer drop frames.
+
+Run the seek and speed regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/FFmpegDecoderTests \
+  -only-testing:EdendaleTests/EnhancedVideoRenderingTests \
+  -only-testing:EdendaleTests/PlayerTransportStateTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Keep the Mac's display awake while they run: the macOS display link drives
+FFmpeg playback time, so tests that wait for the clock stall while the display
+sleeps. These are Apple playback fixes; other platform branches require no rule
+change.
+
+### Returning from the background
+
+iOS invalidates hardware decoder sessions while an app is in the background
+without Picture in Picture. On return, FFmpeg playback refills video at the
+current position with a new decoder. A decoder that fails mid-stream is
+replaced once and resumes at the next keyframe; if the replacement fails again
+before decoding a frame, software decoding takes over.
+
+The video surface never draws from inside a SwiftUI update. While paused, it
+redraws once on a later main-queue turn, and on iOS and tvOS drawing resumes
+only when the app is active again. A draw inside an update, after a return
+from the background, used to block the main thread waiting for a Metal
+drawable and froze the app. The regressions above cover both; on a device,
+pause an HEVC `.mkv`, leave the app for ten seconds, return, and tap Play.
+
+SMB playback reads through a buffered connection that reconnects after a
+drop, which a lock or a VPN such as Tailscale changing networks causes. The
+libsmb2 inside libVLC 4 (6.1) frees a failed `smb2_close` request's callback
+data while the request is still queued, then frees it again when the
+connection is destroyed. That heap corruption crashed the app on return from
+the Lock Screen or background. `EDSMBFile` therefore never calls
+`smb2_close` (logging off closes the file on the server), destroys a
+connection that has failed without another round trip, and reads into
+buffers it frees only after the connection is gone, since a failed request
+can still point at them. Its idle keep-alive queries the file: libsmb2 6.1's
+`smb2_echo` always fails, which dropped every paused connection after 20
+seconds. On a device, pause an SMB video, lock for a few minutes (or switch
+between Wi-Fi and Tailscale), unlock, and play.
+
+### Intro, recap, and credits prompts
+
+Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
+Playback → Skip Prompts**, to use community timestamps from
+[TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The old
+90-second recap and final-three-minutes credits auto-skips have been removed;
+their saved preferences do not enable the new network feature.
+
+During a known segment, a **Skip Intro**, **Skip Recap**, or **Skip Credits**
+button appears at the bottom trailing edge, independently of hidden playback
+controls. Press the button to skip; playback never skips automatically. On
+keyboard platforms, **S** activates the visible prompt. On tvOS, **Down** from
+the hidden-controls surface focuses the prompt when one is available. Prompts
+hide while scrubbing or while a side panel covers the video; the macOS panels
+dock beside the video instead, so prompts stay available there. Bounded
+credits seek only to that range's end, preserving gaps for additional scenes.
+A terminal credits skip marks the item complete and advances to the next
+stored episode, ends playback if none exists, or restarts the file when Loop
+Video is enabled.
+
+The native Swift client calls `GET https://api.theintrodb.org/v3/media` directly
+from the device after the player reports a finite duration. Movies use their
+TMDB ID; episodes use the **show's** TMDB ID plus TMDB season/episode numbers.
+Requests include the video duration in milliseconds to help match release
+versions. No account, API key, filename, video upload, library scan, or server
+proxy is involved. The provider receives the media identifiers, runtime, and
+the device's public IP address. See its
+[privacy policy](https://theintrodb.org/docs/privacy) and
+[usage terms](https://theintrodb.org/docs/terms).
+
+Only a small in-memory cache exists during the playback session; timestamps
+are not saved to the library, disk, watch progress, or iCloud. Closing playback
+or disabling prompts clears the cache. Missing data, network errors, invalid
+ranges, and rate limits leave normal playback available without a prompt.
+Playback and initial import never wait for this service.
+
+Coverage depends on community submissions and the local file's edition; the
+provider can fall back to the most popular edition even when duration is sent.
+Unidentified files, season-zero specials, and runtimes beyond the provider's
+six-hour timestamp range receive no lookup. Anime uses TMDB episode numbering;
+combined episodes and alternate numbering are not remapped. Preview segments
+and local audio/video detection are outside this first stage. Prompts work in
+the SwiftVLC player on iOS, iPadOS, macOS, tvOS, and standard visionOS playback;
+visionOS spatial/multiview playback through AVKit needs a separate integration.
+
+The macOS unit command above includes API decoding, identity matching, request
+deduplication, failures, stale responses, preference migration, and real VLC
+skip/progress/loop regression tests. Android and Windows need independent
+native implementations of the same behavior; the static Web branch is unaffected.
+
+### App controls
+
+**Settings → App Controls** sets how far a skip jumps and how fast playback
+runs while a side of the video is held. **Skip Back** and **Skip Forward**
+each offer 10, 15, or 30 seconds (default 10) in a segmented control drawn
+with the matching arrow-rotate glyphs; VoiceOver reads each segment's length.
+The lengths apply to double-taps on either side of the video, the Left and
+Right Arrow keys, Siri Remote swipes and the tvOS timeline, the VoiceOver skip
+actions, and the Lock Screen and Control Center skip buttons, which relabel as
+soon as a length changes. Picture in Picture keeps the system's skip length.
+
+**Hold Left Side** and **Hold Right Side** set the press-and-hold speeds from
+0.25× to 3.00× in quarter steps (defaults 0.5× and 2×) with a stepper, or − and
++ buttons on tvOS. Touch and hold on iOS and iPadOS, pinch and hold on
+visionOS, click and hold in the macOS player, or rest a thumb on either side
+of the Siri Remote's touch surface; the speed reverts on release. A short
+macOS click still shows or hides the controls, and a drag does neither. The
+preferences are stored on the device and are not synced.
+
+Run the preference and hold-rule tests:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/PlayerControlPreferencesTests \
+  -only-testing:EdendaleTests/PlayerLogicTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Android and Windows need independent native implementations of these
+settings; the static Web branch is unaffected.
+
+### Player guide
+
+The first time a video opens on a device, a player guide covers it and
+playback waits until the guide closes; a guide opened mid-playback pauses and
+resumes the video the same way. Each page pairs a looping illustration with
+one control, chosen for the platform's input: tap, double-tap, swipe, hold, and
+hold-and-slide on iOS and iPadOS (keys too while a keyboard is attached); the
+same with look-and-tap and pinch gestures on visionOS; click, click-and-hold,
+and the key commands on macOS; and clickpad, swipe, resting thumb, Play/Pause,
+and Back on tvOS. The last page explains the toolbar chips. The pages quote the
+current **App Controls** skip lengths and hold speeds.
+
+The illustrations are SwiftUI drawings rather than recorded GIFs, so they
+follow those settings, the archive palette, and every localization. Under
+Reduce Motion each holds a single frame. Swipe, the arrow keys, or the Back and
+Next buttons turn pages. Escape, the close chip, or tvOS Back close the guide.
+Reopen it with the info chip in **Player Adjustments** or the player guide
+entry at the end of **Settings → App Controls**. Closing the guide stores
+`player.guideSeenVersion` in the device's preferences; raise
+`PlayerGuide.version` to show a revised guide once more.
+
+Run the guide tests:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/PlayerGuideTests \
+  -only-testing:EdendaleTests/PlayerTransportStateTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Android and Windows need their own native guides for their own controls; the
+static Web branch is unaffected.
+
+### macOS navigation, shortcuts, and player panels
+
+The macOS library window uses a split view instead of the adaptive tab view.
+Its sidebar lists Movies & Shows, Watchlist, Downloaded, and Search; Settings
+opens in its own window from **Edendale ▸ Settings…** (⌘,) instead of a
+sidebar row. (iPhone and iPad open Settings as a sheet from the gear button in
+each page's toolbar.) Watchlist and Downloaded are pages of their own and also
+disclose their sections as child rows, so one section opens without scrolling
+the whole page:
+
+- **Watchlist:** Movies and TV Shows.
+- **Downloaded:** Continue Watching, Movies, and TV Shows. The Continue
+  Watching page lists every resumable title in a grid (the shelf keeps its
+  12-item cap). The Movies page lists every movie, including those also in
+  Continue Watching.
+
+A child row appears only while its section has titles for the current
+audience setting. If the open section empties, the sidebar returns to the
+parent page. Choosing a row always opens that page at its root, and the
+search query survives visits to other pages.
+
+Menu bar commands:
+
+| Command | Shortcut | Available |
+|---|---|---|
+| Edendale ▸ Settings… | ⌘, | Always |
+| View ▸ Hide/Show Sidebar | ⌘B | Library window |
+| File ▸ Add Media Folder… | ⌘N | Downloaded pages |
+| File ▸ Link Network Source… | ⌥⌘N | Downloaded pages |
+| File ▸ Rescan Library | ⌘R | Downloaded pages with linked sources |
+
+The File commands replace File ▸ New Window; clicking the Dock icon reopens a
+closed library window. Rescanning uses the same duplicate-safe sweep that runs
+when the Downloaded page appears and shows a status row while it runs.
+
+The Link Source sheet opens with the server address focused. Tab and
+Shift-Tab move between the address, username, and password fields. Return
+connects once all three are filled and otherwise moves to the first empty
+field; a guest connection (no username or password) is still one click on
+Connect.
+
+In the Now Playing window, the playlist and Player Adjustments panels dock as
+a trailing sidebar: the video narrows beside the panel instead of being
+covered. Clicking the video leaves the panel open. Its close control, the
+toolbar control that opened it, or Escape close it; Escape then leaves the
+player. With a panel docked, playback controls still auto-hide and the Up
+Next card and skip prompts remain available. Other platforms keep the
+overlaid panel.
+
+On macOS, each season's episode shelf in a show's detail page has a heading
+rule that works as the shelf's scroll indicator and scrubber, like the shelf
+headings on Movies & Shows. The TMDB episode browser for shows that are not
+in the library uses the Episodes heading the same way. Drag the gold thumb or
+click the rule to move through the season.
+
+These are macOS presentation changes; other platform branches require no rule
+change.
+
 ### Xcode Cloud
 
 Xcode Cloud automatically runs the executable
 `ci_scripts/ci_post_clone.sh`. Configure `TMDB_READ_ACCESS_TOKEN` as a secret
 workflow environment variable; `TMDB_API_KEY` is an optional legacy fallback.
 `WYZIE_API_KEY` is also an optional secret workflow variable. The script
-generates the gitignored `Shared/Secrets.xcconfig` in Xcode Cloud's temporary
+generates the gitignored `.secret/Secrets.xcconfig` in Xcode Cloud's temporary
 checkout without printing credential values.
+
+The same post-clone script downloads and compiles FFmpeg for
+`CI_PRODUCT_PLATFORM`, including simulator slices for test actions, and creates
+`Vendor/FFmpeg/FFmpeg.xcframework` before the app build. No FFmpeg environment
+variables, hosting credentials, or committed binary are required. Allow extra
+build time for the source compilation. Both app targets link the resulting
+static framework without embedding it. Their FFmpeg paths are resolved by the
+Xcode project, so `Secrets.xcconfig` only needs credentials.
+
+To reproduce the iOS archive locally after building FFmpeg:
+
+```sh
+xcodebuild archive -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'generic/platform=iOS' -archivePath build/Edendale.xcarchive \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+This unsigned archive checks compilation and linking; Xcode Cloud manages
+signing and distribution. Configure the Cloud workflow to use this Apple branch
+and the shared `Edendale` scheme. The post-clone hook does not upload or release
+the app or build another platform branch.
 
 ### Branch contract
 

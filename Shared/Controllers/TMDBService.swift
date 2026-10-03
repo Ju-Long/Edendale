@@ -8,7 +8,7 @@
 //    2. The build-time "API Read Access Token" (Secrets.xcconfig TMDB_READ_ACCESS_TOKEN
 //       → Info.plist TMDBReadAccessToken), as a Bearer header.
 //    3. The legacy v3 key (TMDB_API_KEY → TMDBAPIKey), as an api_key query param.
-//  Secrets.xcconfig is gitignored — run the root setup script to generate it with secrets.json.
+//  .secret/Secrets.xcconfig is gitignored — copy Shared/Example.xcconfig there to create it.
 //
 
 import Foundation
