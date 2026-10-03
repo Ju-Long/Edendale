@@ -1896,9 +1896,9 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.1.3 | `SurfaceHolder.setFixedSize` is applied only on TV, and only while the effects path upscales. | On phones and tablets the SurfaceView already has the visible rectangle's size, which is the upscaler's display there. | bba68d8 |
 | F.3.2 | The Lanczos fallback ports Apple's `LanczosUpscaler.metal` instead of Media3's `LanczosResample`. | It runs inside the same GL program as the other passes, and matches Apple's fallback exactly. | bba68d8 |
 | F.4.1 | CAS uses an algebraically identical form of Apple's last step that stays defined at Sharpness 1. | Apple's form is 0/0 in flat areas at Sharpness 1 (see Findings). | bba68d8 |
-| H.1 | `enumerateVideos` returns the videos with a `complete` flag rather than a bare list. | Android's scanner deletes rows for missing files only after a full listing; Apple's walk silently skips unreadable branches. | H1-COMMIT |
-| H.1.2 | SMB item URLs keep jcifs's spelling (`SmbFile.url`) instead of `SourceUrl.server`'s percent-encoding. Moving SMB onto the walk also skips dot-files (macOS `._` files), caps the walk at 2,000 folders, and records a share whose top folder can't be listed as failed (D.3) instead of a partial scan. | Every SMB row already stored uses jcifs's spelling, so a rescan must produce the same strings or it would re-import the whole share. The other three follow the shared walk. | H1-COMMIT |
-| H.2 | The byte source asks the resolver once and reuses the request for every chunk until a 401 or an expired link; the first load to see one refreshes and the others take the result. H.2.T1 runs against a small `ServerSocket` HTTP server in `src/test`. | A pre-authorized link (OneDrive) shouldn't be resolved per chunk, and the single flight has to hold within one source as well as per account. The JDK's `com.sun.net.httpserver` isn't on the Android unit-test compile classpath, and the socket server needs no new dependency. | H2-COMMIT |
+| H.1 | `enumerateVideos` returns the videos with a `complete` flag rather than a bare list. | Android's scanner deletes rows for missing files only after a full listing; Apple's walk silently skips unreadable branches. | 0b43a91 |
+| H.1.2 | SMB item URLs keep jcifs's spelling (`SmbFile.url`) instead of `SourceUrl.server`'s percent-encoding. Moving SMB onto the walk also skips dot-files (macOS `._` files), caps the walk at 2,000 folders, and records a share whose top folder can't be listed as failed (D.3) instead of a partial scan. | Every SMB row already stored uses jcifs's spelling, so a rescan must produce the same strings or it would re-import the whole share. The other three follow the shared walk. | 0b43a91 |
+| H.2 | The byte source asks the resolver once and reuses the request for every chunk until a 401 or an expired link; the first load to see one refreshes and the others take the result. H.2.T1 runs against a small `ServerSocket` HTTP server in `src/test`. | A pre-authorized link (OneDrive) shouldn't be resolved per chunk, and the single flight has to hold within one source as well as per account. The JDK's `com.sun.net.httpserver` isn't on the Android unit-test compile classpath, and the socket server needs no new dependency. | 91cbc0e |
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |
@@ -1971,8 +1971,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | G.4 | Scheduling and presentation | Blocked (G.1) | |
 | G.5 | Gating and UI | Blocked (G.1) | |
 | G.6 | Tests and acceptance | Blocked (G.1) | |
-| H.1 | Connector contract | Not started | |
-| H.2 | Remote byte source | Not started | |
+| H.1 | Connector contract | Complete | 0b43a91 |
+| H.2 | Remote byte source | Complete | 91cbc0e |
 | H.3 | WebDAV | Not started | |
 | H.4 | SFTP | Not started | |
 | H.5 | S3 | Not started | |
@@ -1993,7 +1993,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | J.5 | Docked player panels | Complete (device check not run) | aa8b2ba |
 | J.6 | Season shelf scrubber | Complete (device check not run) | 983546a |
 | K.1 | Settings order | Not started | |
-| L.1 | README | Not started | |
+| L.1 | README | In progress (A–F, J, H.2 covered; H and I providers pending) | d60d466 |
 | L.2 | DESIGN.md | Complete | 0987890 |
 | L.3 | Release | Blocked (D19) | |
 | L.4 | Notes for other branches | Complete (notes in Section L) | |
