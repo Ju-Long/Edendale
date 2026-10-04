@@ -12,6 +12,7 @@ import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoFrameProcessor
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 
@@ -64,6 +65,19 @@ class VideoEffectsController(
         private set
     var targetSize by mutableStateOf<PixelSize?>(null)
         private set
+
+    /** The selected video track's size as shown: rotation and pixel shape applied. */
+    private var trackVideoSize by mutableStateOf<VideoSize?>(null)
+
+    /**
+     * The size to lay the picture out with while the effects pipeline is
+     * installed; null on the direct path, where ExoPlayer reports it. Media3
+     * 1.9.0 drops size reports from its video sink (b/292111083), so the
+     * player says 0 × 0 there: without this, Fit and Fill look the same, cues
+     * use the whole screen, and PiP is always 16:9.
+     */
+    val effectsVideoSize: VideoSize?
+        get() = trackVideoSize.takeIf { installed }
 
     /**
      * The surface buffer size on TV while the effects path upscales (F.1.3),
@@ -141,6 +155,7 @@ class VideoEffectsController(
             ?: return
         val hdr = isHdr(format)
         sourceSize = PixelSize(format.width, format.height).takeUnless { it.isEmpty }
+        trackVideoSize = displayVideoSize(format.width, format.height, format.rotationDegrees, format.pixelWidthHeightRatio)
         if (hdr != holder.isHdr) {
             holder.isHdr = hdr
             isHdr = hdr
@@ -197,6 +212,7 @@ class VideoEffectsController(
         isHdr = false
         sourceSize = null
         targetSize = null
+        trackVideoSize = null
     }
 
     private fun refreshTarget() {
@@ -231,6 +247,17 @@ class VideoEffectsController(
     }
 
     companion object {
+        /**
+         * A track's size as the screen shows it, the way ExoPlayer reports it
+         * on the direct path: a quarter turn swaps the sides and inverts the
+         * pixel shape. Null when the track gives no size.
+         */
+        fun displayVideoSize(width: Int, height: Int, rotationDegrees: Int, pixelRatio: Float): VideoSize? {
+            if (width <= 0 || height <= 0) return null
+            val ratio = pixelRatio.takeIf { it.isFinite() && it > 0f } ?: 1f
+            return if (rotationDegrees % 180 != 0) VideoSize(height, width, 1f / ratio) else VideoSize(width, height, ratio)
+        }
+
         /** HDR10, HLG, and Dolby Vision by their transfer function or MIME type. */
         fun isHdr(format: Format): Boolean {
             val transfer = format.colorInfo?.colorTransfer

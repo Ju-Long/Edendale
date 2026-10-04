@@ -1861,6 +1861,20 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   rejects packet by packet ("Invalid data found when processing input"). The
   same encoder's 5.1 24-bit output decodes, so the E.2.3 fixture is 5.1 at 24
   bits, as discs carry it. Real Blu-ray TrueHD isn't affected.
+- **No video size through the effects pipeline (F.1, 2026-10-04).** Media3
+  1.9.0's `MediaCodecVideoRenderer` drops the video sink's size reports
+  (a TODO for b/292111083), so while effects are installed
+  `Player.getVideoSize()` stays 0 × 0. PlayerView then kept its frame at the
+  screen's shape and Media3 letterboxed the picture inside it, so Fill did
+  nothing. That is the default on phones that pass the capability check, which
+  start at Balanced. Cues also used the whole screen, and PiP was always 16:9.
+  Found on the API 35 emulator during the review (1280×720 file on a 20:9
+  screen: the content frame stayed 2400×1080 in Fill). `VideoEffectsController`
+  now supplies the selected track's size (rotation and pixel shape applied)
+  while the pipeline is installed, and PlayerView's frame, the subtitle overlay,
+  and the PiP shape use it. After the fix, Fill gives a 2400×1350 frame and Fit
+  gives 1920×1080. Recheck after a Media3 upgrade; once Media3 reports the size
+  again, the stand-in can go.
 - **REDRAW needs Media3's replayable frame cache (F.1.2, 2026-10-04).**
   `setVideoEffects(VideoFrameProcessor.REDRAW)` fails playback with
   "Replaying when enableReplayableCache is set to false" unless the video

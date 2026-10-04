@@ -303,6 +303,12 @@ internal fun PlayerScreen(
                     // F.1.3: on a TV that draws its interface at 1080p on a 4K panel, the
                     // effects path renders into the surface's buffer, so the buffer takes
                     // the upscaler's target size rather than the layout's.
+                    // With effects installed Media3 reports no video size, so PlayerView
+                    // would leave its frame at the screen's shape and Fill would do nothing.
+                    video?.effectsVideoSize?.let { size ->
+                        view.findViewById<AspectRatioFrameLayout>(androidx.media3.ui.R.id.exo_content_frame)
+                            ?.setAspectRatio(size.width * size.pixelWidthHeightRatio / size.height)
+                    }
                     val fixed = video?.fixedSurfaceSize
                     if (view.getTag(R.id.player_fixed_surface_size) != fixed) {
                         view.setTag(R.id.player_fixed_surface_size, fixed)
@@ -315,7 +321,12 @@ internal fun PlayerScreen(
             )
 
             // Beneath the gesture layer, so the cues never take a tap.
-            PlayerSubtitleOverlay(player = player, chrome = chrome, controlsVisible = controlsActive)
+            PlayerSubtitleOverlay(
+                player = player,
+                chrome = chrome,
+                controlsVisible = controlsActive,
+                effectsVideoSize = video?.effectsVideoSize,
+            )
 
             if (!isTelevision && !inPipMode.value) {
                 PlayerGestureLayer(player, chrome, activity)

@@ -8,6 +8,7 @@ import android.os.HandlerThread
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.C
 import androidx.media3.common.util.Size
@@ -156,6 +157,10 @@ class VideoEffectsPipelineInstrumentedTest {
                 saveAdjustments = {},
             )
             controller.attach(player, VideoAdjustmentValues.NEUTRAL)
+            // As PlayerActivity does: the controller learns the track's size and HDR from here.
+            player.addListener(object : Player.Listener {
+                override fun onTracksChanged(tracks: Tracks) = controller.onTracksChanged(tracks)
+            })
             // Nothing needs effects yet: no pipeline, the decoder draws straight to the surface.
             controller.setPreset(EnhancementPreset.OFF)
             controller.beforePrepare()
@@ -174,6 +179,11 @@ class VideoEffectsPipelineInstrumentedTest {
             assertTrue("playback didn't end", run.done.await(30, TimeUnit.SECONDS))
             assertNull(run.error?.let { "${it.errorCodeName}: ${it.cause}" })
             assertTrue("no frames after installing (${frames.get()} total, $before before)", frames.get() > before)
+            // Media3 1.9.0 reports no video size through the effects pipeline
+            // (b/292111083); the controller's track size stands in for it.
+            instrumentation.runOnMainSync {
+                assertEquals(PixelSize(640, 360), controller.effectsVideoSize?.let { PixelSize(it.width, it.height) })
+            }
             // While paused, a change redraws through REDRAW without failing.
             instrumentation.runOnMainSync {
                 run.player.pause()

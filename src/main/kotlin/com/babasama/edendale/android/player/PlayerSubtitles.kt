@@ -47,10 +47,12 @@ internal fun PlayerSubtitleOverlay(
     player: Player,
     chrome: PlayerChromeState,
     controlsVisible: Boolean,
+    /** The track's size while the effects pipeline is installed, where ExoPlayer reports none. */
+    effectsVideoSize: VideoSize?,
     modifier: Modifier = Modifier,
 ) {
     var cues by remember { mutableStateOf(player.currentCues.cues) }
-    var videoSize by remember { mutableStateOf(player.videoSize) }
+    var reportedVideoSize by remember { mutableStateOf(player.videoSize) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onCues(cueGroup: CueGroup) {
@@ -58,15 +60,16 @@ internal fun PlayerSubtitleOverlay(
             }
 
             override fun onVideoSizeChanged(size: VideoSize) {
-                videoSize = size
+                reportedVideoSize = size
             }
         }
         player.addListener(listener)
         cues = player.currentCues.cues
-        videoSize = player.videoSize
+        reportedVideoSize = player.videoSize
         onDispose { player.removeListener(listener) }
     }
 
+    val videoSize = effectsVideoSize ?: reportedVideoSize
     val context = LocalContext.current
     val density = LocalDensity.current
     val appearance = chrome.subtitleAppearance

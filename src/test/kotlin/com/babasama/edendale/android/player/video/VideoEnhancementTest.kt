@@ -170,4 +170,20 @@ class VideoEnhancementTest {
         governor.setPressure(thermalModerateOrWorse = false, batterySaver = true)
         assertFalse(governor.limit(all).denoise)
     }
+
+    @Test
+    fun theTrackSizeStandsInForTheOneMedia3DoesNotReport() {
+        // Media3 1.9.0 reports no video size while effects are installed; the track's own size,
+        // shaped like ExoPlayer's direct-path report, keeps Fit and Fill apart.
+        val plain = VideoEffectsController.displayVideoSize(1280, 720, 0, 1f)!!
+        assertEquals(listOf(1280f, 720f, 1f), listOf(plain.width.toFloat(), plain.height.toFloat(), plain.pixelWidthHeightRatio))
+        // A quarter turn swaps the sides and inverts the pixel shape.
+        val portrait = VideoEffectsController.displayVideoSize(1920, 1080, 90, 1f)!!
+        assertEquals(listOf(1080, 1920), listOf(portrait.width, portrait.height))
+        val anamorphic = VideoEffectsController.displayVideoSize(720, 576, 270, 16f / 15f)!!
+        assertEquals(15f / 16f, anamorphic.pixelWidthHeightRatio, 1e-6f)
+        // Unknown or nonsense values.
+        assertEquals(1f, VideoEffectsController.displayVideoSize(720, 480, 180, Float.NaN)!!.pixelWidthHeightRatio)
+        assertEquals(null, VideoEffectsController.displayVideoSize(-1, 720, 0, 1f))
+    }
 }

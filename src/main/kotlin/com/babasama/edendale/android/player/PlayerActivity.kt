@@ -73,6 +73,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 /**
  * Full-screen in-app player. Resumes from stored watch progress, writes
@@ -323,6 +324,7 @@ class PlayerActivity : ComponentActivity() {
             override fun onTracksChanged(tracks: Tracks) {
                 tracksState.value = tracks
                 videoEffects.onTracksChanged(tracks)
+                updatePipParams()
                 if (!hasRestoredContentPreferences && !tracks.isEmpty) {
                     hasRestoredContentPreferences = true
                     restoreContentPreferences(exoPlayer, tracks)
@@ -946,8 +948,10 @@ class PlayerActivity : ComponentActivity() {
 
     /** Clamped to the range the system accepts; unknown sizes fall back to 16:9. */
     private fun videoAspectRatio(): Rational {
-        val size = player?.videoSize
-        val width = size?.width ?: 0
+        // ExoPlayer reports no size while the effects pipeline is installed.
+        val effectsSize = if (::videoEffects.isInitialized) videoEffects.effectsVideoSize else null
+        val size = effectsSize ?: player?.videoSize
+        val width = size?.let { (it.width * it.pixelWidthHeightRatio).roundToInt() } ?: 0
         val height = size?.height ?: 0
         if (width <= 0 || height <= 0) return Rational(16, 9)
         val ratio = width.toDouble() / height
