@@ -348,7 +348,8 @@ the system output switcher (`androidx.mediarouter:mediarouter`).
 On Android TV and Google TV, **Settings → Android TV → Continue Watching on Home
 Screen** (off by default) copies the Continue Watching shelf into the home
 screen's Watch Next row through the platform TV provider
-(`android.media.tv.TvContract.WatchNextPrograms`). Each movie and each show gets
+(`android.media.tv.TvContract.WatchNextPrograms`, written with the TV provider's
+`WRITE_EPG_DATA` permission, which is granted at install). Each movie and each show gets
 one row: a title in progress with its position, or a show's next episode.
 Selecting a row opens the player at the saved position, just like the shelf
 card. Rows update after playback pauses or stops, disappear when a title is

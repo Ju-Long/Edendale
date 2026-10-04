@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- I.3: rows in the TV home screen's Watch Next table. A normal permission
+         from the system TV provider; phones have no provider and ignore it. -->
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
 
     <!-- One APK supports handheld Android and Android TV. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
