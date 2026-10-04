@@ -1869,6 +1869,10 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   now builds `ReplayableVideoRenderer`, a `MediaCodecVideoRenderer` overriding
   `createPlaybackVideoGraphWrapper` to turn it on. The cache holds one frame and
   exists only on the effects path. Verified on the API 35 emulator.
+  `PlaybackVideoGraphWrapper` and its builder are `@RestrictTo(LIBRARY_GROUP)`
+  in Media3 1.9.0, so lint reports `RestrictedApi` there, and a Media3 upgrade
+  can change them without notice. Recheck REDRAW while paused after every
+  Media3 upgrade.
 - **Apple's CAS divides 0 by 0 at Sharpness 1 (F.4, 2026-10-04).** In
   `CASShader.metal`, the final `sum / (1 + 4w)` has `w = −0.25·sqrt(amp)` at
   Sharpness 1, and `amp` is 1 in every flat area at or below mid-gray, so those

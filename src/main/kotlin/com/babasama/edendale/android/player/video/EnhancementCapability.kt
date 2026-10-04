@@ -6,6 +6,7 @@ import android.opengl.EGL14
 import android.opengl.GLES20
 import android.os.SystemClock
 import androidx.annotation.OptIn
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.media3.common.util.GlUtil
 import androidx.media3.common.util.UnstableApi
 
@@ -88,6 +89,6 @@ object EnhancementCapability {
     }
 
     private fun appVersion(context: Context): String = runCatching {
-        context.packageManager.getPackageInfo(context.packageName, 0).let { "${it.longVersionCode}-${it.versionName}" }
+        context.packageManager.getPackageInfo(context.packageName, 0).let { "${PackageInfoCompat.getLongVersionCode(it)}-${it.versionName}" }
     }.getOrDefault("0")
 }
