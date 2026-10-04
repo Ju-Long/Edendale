@@ -468,4 +468,13 @@
     <string name="accounts_sign_out_revoke">Выйти и отозвать доступ</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">Источники из %1$s перестанут работать на этом устройстве, пока вы снова не подключите аккаунт.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">Личный, рабочий или учебный OneDrive.</string>
+    <string name="link_source_dropbox_description">Ваши папки Dropbox.</string>
+    <string name="link_source_linked_accounts">Подключенные аккаунты</string>
+    <string name="link_source_sign_in">Войти</string>
+    <string name="link_source_another_account">Другой аккаунт</string>
+    <string name="link_source_sign_in_to">Войти в %1$s</string>
+    <string name="link_source_waiting">Ожидание %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale запрашивает у %1$s доступ только для чтения. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет.</string>
 </resources>

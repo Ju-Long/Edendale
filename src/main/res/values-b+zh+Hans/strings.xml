@@ -446,4 +446,13 @@
     <string name="accounts_sign_out_revoke">退出登录并撤销访问权限</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">在你重新链接帐户之前，来自 %1$s 的来源将无法在此设备上使用。</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">个人、工作或学校 OneDrive。</string>
+    <string name="link_source_dropbox_description">你的 Dropbox 文件夹。</string>
+    <string name="link_source_linked_accounts">已链接的帐户</string>
+    <string name="link_source_sign_in">登录</string>
+    <string name="link_source_another_account">其他帐户</string>
+    <string name="link_source_sign_in_to">登录 %1$s</string>
+    <string name="link_source_waiting">正在等待 %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale 向 %1$s 请求只读访问权限。它仅从此设备连接，读取文件夹列表和你播放的视频，绝不会上传或更改任何内容。</string>
 </resources>

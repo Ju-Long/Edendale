@@ -446,4 +446,13 @@
     <string name="accounts_sign_out_revoke">サインアウトしてアクセスを取り消す</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">%1$sのソースは、アカウントを再度リンクするまでこのデバイスで機能しなくなります。</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">個人用、職場用、または学校用のOneDrive。</string>
+    <string name="link_source_dropbox_description">Dropboxのフォルダ。</string>
+    <string name="link_source_linked_accounts">リンク済みのアカウント</string>
+    <string name="link_source_sign_in">サインイン</string>
+    <string name="link_source_another_account">別のアカウント</string>
+    <string name="link_source_sign_in_to">%1$sにサインイン</string>
+    <string name="link_source_waiting">%1$sを待っています…</string>
+    <string name="link_source_cloud_privacy">Edendaleは%1$sに読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。</string>
 </resources>

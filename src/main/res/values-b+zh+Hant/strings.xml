@@ -446,4 +446,13 @@
     <string name="accounts_sign_out_revoke">登出並撤銷存取權限</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">在你重新連結帳號之前，來自 %1$s 的來源將無法在此裝置上使用。</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">個人、工作或學校 OneDrive。</string>
+    <string name="link_source_dropbox_description">你的 Dropbox 檔案夾。</string>
+    <string name="link_source_linked_accounts">已連結的帳號</string>
+    <string name="link_source_sign_in">登入</string>
+    <string name="link_source_another_account">其他帳號</string>
+    <string name="link_source_sign_in_to">登入 %1$s</string>
+    <string name="link_source_waiting">正在等候 %1$s⋯</string>
+    <string name="link_source_cloud_privacy">Edendale 會向 %1$s 請求唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</string>
 </resources>

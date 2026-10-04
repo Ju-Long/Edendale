@@ -148,6 +148,29 @@ after 0.25, 0.5, 1, 2, 4, and 8 seconds before playback gives up with a
 message naming the server, and a paused connection gets a keep-alive every
 20 seconds. Nothing is written to disk.
 
+### Storage services
+
+**Add Network Source** links a folder from any of these. Edendale lists the
+folder, classifies file names on the device, and then enriches matches from
+TMDB, as it does for local folders. Every connection goes from the device
+straight to the service; nothing passes through an Edendale server.
+
+| Service | Signs in with | The service receives |
+|---|---|---|
+| SMB (Windows, macOS, NAS shares) | User and password, or guest | The login, folder listings, and reads of the files that play |
+| WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
+| S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret | Signed listing requests and pre-signed byte-range requests |
+| OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
+| Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
+| Google Drive | Waits for D9 | — |
+
+Logins, key pairs, and account tokens are stored encrypted on the device,
+excluded from backup and device transfer, and listed in **Settings →
+Accounts**. Removing a source keeps them; remove them there. Linking another
+folder on a server whose login is saved reuses it when the user and password
+fields are left empty. A source's row shows its path, its account, and
+whether its last scan failed.
+
 ### WebDAV servers
 
 **Add Network Source → WebDAV** links a folder on a WebDAV server: Nextcloud

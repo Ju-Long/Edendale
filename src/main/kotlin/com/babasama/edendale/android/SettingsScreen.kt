@@ -906,7 +906,8 @@ private fun SourceRow(
             Text(
                 // TextOverflow.MiddleEllipsis needs Compose 1.9; truncate the string instead so
                 // both the host and the leaf folder stay readable.
-                text = folder.treeUri.middleTruncated(),
+                // The readable path a linked source records (H.11), else its address.
+                text = (folder.displayPath ?: folder.treeUri).middleTruncated(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = BodyCopyStyle(),

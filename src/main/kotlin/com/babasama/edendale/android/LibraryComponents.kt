@@ -1,6 +1,11 @@
 package com.babasama.edendale.android
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,6 +55,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryRepository
 import com.babasama.edendale.connectors.ConnectorEntry
+import com.babasama.edendale.oauth.CloudAccount
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
@@ -102,8 +112,20 @@ fun LinkSourceDialog(
     // fields hold the endpoint and the key pair.
     var region by remember { mutableStateOf("") }
     var bucket by remember { mutableStateOf("") }
+    // Cloud accounts (H.11): the provider's linked accounts, the one being
+    // browsed, and its folders from the root down as (URL, name).
+    val cloud = remember(context) { (context.applicationContext as EdendaleApplication).cloudAccounts }
+    var cloudAccounts by remember { mutableStateOf(emptyList<CloudAccount>()) }
+    var cloudAccountKey by remember { mutableStateOf<String?>(null) }
+    var cloudTrail by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+    var cloudFolders by remember { mutableStateOf(emptyList<ConnectorEntry>()) }
+    var signIn by remember { mutableStateOf<Job?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(kind) {
+        if (kind.isCloudAccount) cloudAccounts = withContext(Dispatchers.IO) { runCatching { cloud.vault.accounts(kind) }.getOrDefault(emptyList()) }
+    }
 
     // What people type is an address, not a URL — "10.0.0.4", "10.0.0.4/media",
     // "\\10.0.0.4\media" all have to land on the same server and starting path.
@@ -167,6 +189,41 @@ fun LinkSourceDialog(
         }
     }
 
+    fun openCloud(account: CloudAccount, trail: List<Pair<String, String>>) {
+        loading = true
+        error = null
+        scope.launch {
+            library.listAccountFolders(kind, account.key, trail.lastOrNull()?.first)
+                .onSuccess { (folder, entries) ->
+                    // The root reads as the account, so the source's path names it.
+                    cloudTrail = trail.ifEmpty { listOf(folder to account.label) }
+                    cloudFolders = entries
+                    cloudAccountKey = account.key
+                    browsing = true
+                }
+                .onFailure { error = connectorFailureMessage(context, it) ?: unreachableMessage }
+            loading = false
+        }
+    }
+
+    fun signInToCloud() {
+        val activity = context.findActivity() ?: return
+        error = null
+        signIn = scope.launch {
+            try {
+                val account = cloud.signIn(activity, kind)
+                cloudAccounts = withContext(Dispatchers.IO) { cloud.vault.accounts(kind) }
+                openCloud(account, emptyList())
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                error = connectorFailureMessage(context, failure) ?: unreachableMessage
+            } finally {
+                signIn = null
+            }
+        }
+    }
+
     // Keyboard behavior (J.4): the address field has focus when the form
     // opens; Tab and Shift+Tab move between fields; Enter connects once the
     // address (the only required field) is filled, and otherwise focuses it.
@@ -176,6 +233,8 @@ fun LinkSourceDialog(
     val bucketFocus = remember { FocusRequester() }
     val userFocus = remember { FocusRequester() }
     val passFocus = remember { FocusRequester() }
+    // Whether this attempt already looked for a saved login.
+    var reusedLogin by remember { mutableStateOf(false) }
     fun connect() {
         val isS3 = kind == MediaSourceKind.S3
         when {
@@ -185,6 +244,15 @@ fun LinkSourceDialog(
             isS3 && bucket.isBlank() -> bucketFocus.requestFocus()
             isS3 && user.isBlank() -> userFocus.requestFocus()
             isS3 && pass.isEmpty() -> passFocus.requestFocus()
+            // A server whose login is saved connects with it when the fields are left empty (H.11).
+            !isS3 && user.isBlank() && pass.isEmpty() && !reusedLogin -> scope.launch {
+                reusedLogin = true
+                library.savedLogin(kind, host)?.let { saved ->
+                    user = saved.user
+                    pass = saved.password
+                }
+                connect()
+            }
             kind == MediaSourceKind.SMB -> open(typedPath)
             isS3 -> if (host.trim().startsWith("http://", ignoreCase = true)) {
                 // Plain HTTP waits for D10.
@@ -221,8 +289,10 @@ fun LinkSourceDialog(
         LaunchedEffect(Unit) { hostFocus.requestFocus() }
     }
 
-    // WebDAV and S3 browse through their connectors' URLs.
-    val isDav = kind != MediaSourceKind.SMB
+    // WebDAV and S3 browse through their connectors' URLs; cloud accounts through their trail.
+    val isDav = kind == MediaSourceKind.WEBDAV || kind == MediaSourceKind.S3
+    val isCloud = kind.isCloudAccount
+    val cloudAccount = cloudAccounts.firstOrNull { it.key == cloudAccountKey }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (browsing) R.string.smb_choose_folder else R.string.add_network_source)) },
@@ -231,6 +301,8 @@ fun LinkSourceDialog(
                 if (browsing) {
                     Text(
                         text = when (kind) {
+                            MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE ->
+                                cloudTrail.joinToString(" › ") { it.second }
                             MediaSourceKind.S3 -> SourceUrl.parseS3(davTrail.last())
                                 ?.let { listOf(it.bucket) + it.key.split('/').filter(String::isNotEmpty) }
                                 ?.joinToString(" › ")
@@ -255,17 +327,36 @@ fun LinkSourceDialog(
                             modifier = Modifier.heightIn(max = 260.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            val canGoUp = if (isDav) davTrail.size > 1 else path.isNotEmpty()
+                            val canGoUp = when {
+                                isCloud -> cloudTrail.size > 1
+                                isDav -> davTrail.size > 1
+                                else -> path.isNotEmpty()
+                            }
                             if (canGoUp) {
                                 item("up") {
                                     SmbFolderRow(
                                         label = stringResource(R.string.smb_parent_folder),
                                         iconRes = R.drawable.ic_chevron_left,
-                                        onClick = { if (isDav) openDav(davTrail.dropLast(1)) else open(path.dropLast(1)) },
+                                        onClick = {
+                                            when {
+                                                isCloud -> cloudAccount?.let { openCloud(it, cloudTrail.dropLast(1)) }
+                                                isDav -> openDav(davTrail.dropLast(1))
+                                                else -> open(path.dropLast(1))
+                                            }
+                                        },
                                     )
                                 }
                             }
-                            if (isDav) {
+                            if (isCloud) {
+                                items(cloudFolders.size, key = { cloudFolders[it].url }) { index ->
+                                    val folder = cloudFolders[index]
+                                    SmbFolderRow(
+                                        label = folder.name,
+                                        iconRes = R.drawable.ic_folder_closed,
+                                        onClick = { cloudAccount?.let { openCloud(it, cloudTrail + (folder.url to folder.name)) } },
+                                    )
+                                }
+                            } else if (isDav) {
                                 items(davFolders.size, key = { davFolders[it].url }) { index ->
                                     val folder = davFolders[index]
                                     SmbFolderRow(
@@ -284,7 +375,12 @@ fun LinkSourceDialog(
                                     )
                                 }
                             }
-                            if ((isDav && davFolders.isEmpty()) || (!isDav && folders.isEmpty())) {
+                            val empty = when {
+                                isCloud -> cloudFolders.isEmpty()
+                                isDav -> davFolders.isEmpty()
+                                else -> folders.isEmpty()
+                            }
+                            if (empty) {
                                 item("empty") {
                                     Text(
                                         text = stringResource(R.string.smb_no_folders),
@@ -297,14 +393,24 @@ fun LinkSourceDialog(
                         }
                     }
                 } else {
-                    // The protocol: SMB shares, or a WebDAV server (H.3).
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV, MediaSourceKind.S3).forEach { option ->
+                    // The provider: servers on the network, then the cloud
+                    // accounts this build can sign in to (H.11). TV signs in
+                    // to OneDrive with a code (I.1); the browser flow is for handhelds.
+                    val providers = listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV, MediaSourceKind.S3) +
+                        listOf(MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE)
+                            .filter { !isTelevision && cloud.isOffered(it) }
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        providers.forEach { option ->
                             ArchiveFilterChip(
                                 selected = kind == option,
                                 onClick = {
+                                    signIn?.cancel()
                                     kind = option
                                     error = null
+                                    reusedLogin = false
                                 },
                                 // "S3" fits the chip; the description below names the services.
                                 label = { Text(if (option == MediaSourceKind.S3) "S3" else sourceKindLabel(option)) },
@@ -317,20 +423,36 @@ fun LinkSourceDialog(
                             when (kind) {
                                 MediaSourceKind.WEBDAV -> R.string.link_source_webdav_description
                                 MediaSourceKind.S3 -> R.string.link_source_s3_description
+                                MediaSourceKind.ONE_DRIVE -> R.string.link_source_onedrive_description
+                                MediaSourceKind.DROPBOX -> R.string.link_source_dropbox_description
                                 else -> R.string.link_source_smb_description
                             },
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (isCloud) {
+                        CloudAccountStep(
+                            kind = kind,
+                            accounts = cloudAccounts,
+                            signingIn = signIn != null,
+                            loading = loading,
+                            isTelevision = isTelevision,
+                            onUse = { openCloud(it, emptyList()) },
+                            onSignIn = ::signInToCloud,
+                        )
+                    }
                     // The attempt in flight captured these three values, so
                     // editing them mid-connect would leave the form describing
                     // something other than what is being tried. They unlock
                     // again when the attempt fails; success replaces them with
                     // the folder browser.
-                    OutlinedTextField(
+                    if (!isCloud) OutlinedTextField(
                         value = host,
-                        onValueChange = { host = it },
+                        onValueChange = {
+                            host = it
+                            reusedLogin = false
+                        },
                         modifier = Modifier.focusRequester(hostFocus).then(formKeys),
                         enabled = !loading,
                         label = {
@@ -369,7 +491,7 @@ fun LinkSourceDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
                         )
                     }
-                    OutlinedTextField(
+                    if (!isCloud) OutlinedTextField(
                         value = user,
                         onValueChange = { user = it },
                         modifier = Modifier.focusRequester(userFocus).then(formKeys),
@@ -380,7 +502,7 @@ fun LinkSourceDialog(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     )
-                    OutlinedTextField(
+                    if (!isCloud) OutlinedTextField(
                         value = pass,
                         onValueChange = { pass = it },
                         modifier = Modifier.focusRequester(passFocus).then(formKeys),
@@ -409,6 +531,9 @@ fun LinkSourceDialog(
                     label = stringResource(R.string.smb_import_this_folder),
                     onClick = {
                         when (kind) {
+                            MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE -> cloudAccountKey?.let { key ->
+                                library.importAccountFolder(kind, key, cloudTrail.last().first, cloudTrail.map { it.second })
+                            }
                             MediaSourceKind.WEBDAV -> library.importWebDavFolder(davTrail.last(), user, pass)
                             MediaSourceKind.S3 -> s3Configuration()?.let { configuration ->
                                 library.importS3Folder(configuration, ServerLogin(user.trim(), pass), davTrail.last())
@@ -418,11 +543,11 @@ fun LinkSourceDialog(
                         onLinked()
                     },
                     // An SMB server's top level lists shares, which are the smallest thing to import.
-                    enabled = !loading && (isDav || path.isNotEmpty()),
+                    enabled = !loading && (isCloud || isDav || path.isNotEmpty()),
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )
-            } else {
+            } else if (!isCloud) {
                 ArchiveButton(
                     label = stringResource(
                         if (loading) R.string.action_connecting else R.string.action_connect,
@@ -444,6 +569,7 @@ fun LinkSourceDialog(
                         browsing = false
                         error = null
                     } else {
+                        signIn?.cancel()
                         onDismiss()
                     }
                 },
@@ -451,6 +577,84 @@ fun LinkSourceDialog(
             )
         }
     )
+}
+
+/**
+ * A cloud provider's step in Link Source (H.11, Apple's `CloudAccountStep`):
+ * the accounts already linked, then signing in to one more. Sign-in opens a
+ * Custom Tab and comes back here.
+ */
+@Composable
+private fun CloudAccountStep(
+    kind: MediaSourceKind,
+    accounts: List<CloudAccount>,
+    signingIn: Boolean,
+    loading: Boolean,
+    isTelevision: Boolean,
+    onUse: (CloudAccount) -> Unit,
+    onSignIn: () -> Unit,
+) {
+    val provider = sourceKindLabel(kind)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.link_source_cloud_privacy, provider),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (accounts.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.link_source_linked_accounts).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            accounts.forEach { account ->
+                SmbFolderRow(
+                    label = account.label,
+                    iconRes = R.drawable.ic_circle_user_fill,
+                    onClick = { if (!loading && !signingIn) onUse(account) },
+                )
+            }
+        }
+        when {
+            signingIn -> Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                Text(stringResource(R.string.link_source_waiting, provider), style = MaterialTheme.typography.bodyMedium)
+            }
+            loading -> Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                Text(stringResource(R.string.reading), style = MaterialTheme.typography.bodyMedium)
+            }
+            else -> ArchiveButton(
+                label = if (accounts.isEmpty()) {
+                    stringResource(R.string.link_source_sign_in_to, provider)
+                } else {
+                    stringResource(R.string.link_source_another_account)
+                },
+                onClick = onSignIn,
+                kind = if (accounts.isEmpty()) ArchiveButtonKind.Primary else ArchiveButtonKind.Secondary,
+                iconRes = R.drawable.ic_link,
+                isTelevision = isTelevision,
+            )
+        }
+    }
+}
+
+/** The activity a Compose context belongs to, for starting a Custom Tab. */
+private fun Context.findActivity(): Activity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
 }
 
 /** An address shape for Nextcloud and ownCloud; other servers have their own paths. */

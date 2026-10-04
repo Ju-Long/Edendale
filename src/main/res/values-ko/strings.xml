@@ -446,4 +446,13 @@
     <string name="accounts_sign_out_revoke">로그아웃 및 접근 권한 취소</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">계정을 다시 연결할 때까지 %1$s의 소스가 이 기기에서 작동하지 않습니다.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">개인, 회사 또는 학교 OneDrive.</string>
+    <string name="link_source_dropbox_description">Dropbox 폴더.</string>
+    <string name="link_source_linked_accounts">연결된 계정</string>
+    <string name="link_source_sign_in">로그인</string>
+    <string name="link_source_another_account">다른 계정</string>
+    <string name="link_source_sign_in_to">%1$s에 로그인</string>
+    <string name="link_source_waiting">%1$s 기다리는 중…</string>
+    <string name="link_source_cloud_privacy">Edendale은 %1$s에 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다.</string>
 </resources>

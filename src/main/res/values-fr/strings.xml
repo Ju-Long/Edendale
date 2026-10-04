@@ -454,4 +454,13 @@
     <string name="accounts_sign_out_revoke">Se déconnecter et révoquer l’accès</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">Les sources de %1$s cessent de fonctionner sur cet appareil jusqu’à ce que vous liiez à nouveau le compte.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">OneDrive personnel, professionnel ou scolaire.</string>
+    <string name="link_source_dropbox_description">Vos dossiers Dropbox.</string>
+    <string name="link_source_linked_accounts">Comptes liés</string>
+    <string name="link_source_sign_in">Se connecter</string>
+    <string name="link_source_another_account">Autre compte</string>
+    <string name="link_source_sign_in_to">Se connecter à %1$s</string>
+    <string name="link_source_waiting">En attente de %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale demande à %1$s un accès en lecture seule. Il se connecte uniquement depuis cet appareil, lit les listes de dossiers et les vidéos que vous regardez, et n’envoie ni ne modifie jamais rien.</string>
 </resources>

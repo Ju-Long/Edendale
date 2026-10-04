@@ -115,7 +115,8 @@ fun SourceRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = sourceDisplayPath(folder.treeUri),
+                    // The readable path a linked source records (H.11), else one from its address.
+                    text = folder.displayPath ?: sourceDisplayPath(folder.treeUri),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,

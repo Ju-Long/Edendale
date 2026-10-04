@@ -452,4 +452,13 @@
     <string name="accounts_sign_out_revoke">Logga ut och återkalla åtkomst</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">Källor från %1$s slutar fungera på den här enheten tills du länkar kontot igen.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">Personlig OneDrive eller OneDrive för arbete eller skola.</string>
+    <string name="link_source_dropbox_description">Dina Dropbox-mappar.</string>
+    <string name="link_source_linked_accounts">Länkade konton</string>
+    <string name="link_source_sign_in">Logga in</string>
+    <string name="link_source_another_account">Ett annat konto</string>
+    <string name="link_source_sign_in_to">Logga in på %1$s</string>
+    <string name="link_source_waiting">Väntar på %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale ber %1$s om skrivskyddad åtkomst. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något.</string>
 </resources>

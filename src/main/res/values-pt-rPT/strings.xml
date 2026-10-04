@@ -454,4 +454,13 @@
     <string name="accounts_sign_out_revoke">Terminar Sessão e Revogar Acesso</string>
     <!-- H.6 Accounts sign-out -->
     <string name="accounts_sign_out_message">As fontes de %1$s deixam de funcionar neste dispositivo até voltar a ligar a conta.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">OneDrive pessoal, profissional ou escolar.</string>
+    <string name="link_source_dropbox_description">As suas pastas do Dropbox.</string>
+    <string name="link_source_linked_accounts">Contas Ligadas</string>
+    <string name="link_source_sign_in">Iniciar Sessão</string>
+    <string name="link_source_another_account">Outra Conta</string>
+    <string name="link_source_sign_in_to">Iniciar Sessão em %1$s</string>
+    <string name="link_source_waiting">A aguardar %1$s…</string>
+    <string name="link_source_cloud_privacy">O Edendale pede a %1$s acesso só de leitura. Liga-se apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que reproduz, e nunca envia nem altera nada.</string>
 </resources>

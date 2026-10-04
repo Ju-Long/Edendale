@@ -162,6 +162,22 @@ class LibraryRepository(
     }
 
     /**
+     * The login already saved for the server [address] names (H.11), so
+     * linking another folder there doesn't mean typing it again.
+     */
+    suspend fun savedLogin(kind: MediaSourceKind, address: String): ServerLogin? = withContext(Dispatchers.IO) {
+        runCatching {
+            when (kind) {
+                MediaSourceKind.SMB -> SmbClient.normalizeUrl(address)?.let { Uri.parse(it).host }
+                    ?.let(smbCredentialsStore::getCredentials)
+                    ?.let { (user, pass) -> ServerLogin(user, pass) }
+                MediaSourceKind.WEBDAV -> WebDav.canonicalRoot(address)?.let { serverLogins.forUrl(kind, it) }
+                else -> null
+            }
+        }.getOrNull()
+    }
+
+    /**
      * The folders under a WebDAV [folderUrl] (`davs://…/`), for the Link
      * Source browser (H.3). The login is the one being typed, not yet saved.
      */
