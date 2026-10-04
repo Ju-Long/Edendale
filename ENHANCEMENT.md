@@ -1553,7 +1553,7 @@ Jellyfin, and Emby would be a separate feature.
 
 ### H.9 — Google Drive (blocked by D9)
 
-- [ ] **H.9.1** A research note in Findings: Google's current rules for OAuth on
+- [x] **H.9.1** A research note in Findings: Google's current rules for OAuth on
   Android (custom schemes, App Links, `AuthorizationClient`), and what the owner
   must register. **Stop for D9.**
 - [ ] **H.9.2** List with `files.list` using
@@ -1570,7 +1570,7 @@ Jellyfin, and Emby would be a separate feature.
 
 - The export needs the `insecure` option, because Android apps can't bind
   privileged ports. The connection error must say so.
-- [ ] **H.10.1** Evaluate a client library (licence and Android
+- [x] **H.10.1** Evaluate a client library (licence and Android
   compatibility) and record the result in Findings before building anything.
 
 ### H.11 — Link Source flow and Accounts
@@ -1628,7 +1628,7 @@ AGENTS.md forbids.
 - The TV validates the payload (refreshes the token, or tests the login) before
   storing it locally. It reuses the phone's refresh token, because Google
   allows only 100 refresh tokens per account per client.
-- [ ] **I.2.1** A design note in Findings: protocol, crypto library, and threat
+- [x] **I.2.1** A design note in Findings: protocol, crypto library, and threat
   model. **Stop for owner review before implementing.**
 - [ ] **I.2.2** The implementation on both sides.
 - [ ] **I.2.T1** (JVM) Port `AccountHandoffTests`: encoding, the size cap, and
@@ -1638,7 +1638,7 @@ AGENTS.md forbids.
 
 ### I.3 — Watch Next row (D15)
 
-- [ ] **I.3.1** A research note: do the target launchers (Google TV and the
+- [x] **I.3.1** A research note: do the target launchers (Google TV and the
   Android TV home screen) still read `TvContractCompat.WatchNextPrograms`, or
   only Google's Engage SDK? **Stop if it's Engage only.**
 - [ ] **I.3.2** An opt-in setting in Settings → Android TV, off by default, with
@@ -1891,6 +1891,103 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   default providers. The APK needs one packaging exclusion: Bouncy Castle's and
   jspecify's multi-release jars all carry `META-INF/versions/9/OSGI-INF/MANIFEST.MF`.
   MINA SSHD stays a test-only dependency (H.4.T1); no fallback was needed.
+- **H.9.1 — Google Drive sign-in on Android (research, 2026-10-04; D9 is the
+  owner's).** Google disables custom URI scheme redirects by default for new
+  Android OAuth clients ("vulnerable to app impersonation") but lets a
+  developer turn them on in the client's Advanced Settings; it recommends
+  Google Identity Services instead. The options:
+  1. **PKCE in a Custom Tab with an Android client and the custom scheme turned
+     on** (redirect `com.babasama.edendale:/oauth2redirect`). This is Apple's
+     flow and reuses H.6 unchanged, and a public client gets a refresh token
+     without a secret. The risk is that Google tightens the rule further, or
+     that its restricted-scope review (needed for `drive.readonly`) objects.
+  2. **`AuthorizationClient` (Google Identity Services).** Google's
+     recommendation, but it needs Google Play services and the closed-source
+     `play-services-auth`. It returns only a one-hour access token. A refresh
+     token needs a server holding a client secret, which Edendale can't have,
+     so the app would call `authorize()` again (silently once granted) each
+     time a token expires.
+  3. **Drive only through WebDAV** (for example `rclone serve webdav`), which
+     works today through H.3 and needs no Google registration.
+
+  Either sign-in option needs the same registration: an Android OAuth client
+  (package `com.babasama.edendale` plus the SHA-1 of each signing
+  certificate), the consent screen with `drive.readonly`, and restricted-scope
+  verification (a public homepage and privacy policy on `web`, and a demo
+  video). While the consent screen is in Testing, refresh tokens expire after
+  7 days. Neither option reaches Android TV: Google's device flow can't grant
+  `drive.readonly` (Apple §J.7). Suggested: option 1 for parity with Apple,
+  with option 2 as the fallback if verification refuses the custom scheme.
+  Sources: Google's 2023 announcement of custom URI scheme restrictions, the
+  API Console help page on OAuth clients, and the Android authorization guide.
+- **H.10.1 — NFS client (evaluation, 2026-10-04; D17).** The only NFSv3
+  client that fits D17's licences is EMC's `com.emc.ecs:nfs-client`
+  (Apache-2.0). Its last release, 1.1.0, was in July 2022, and it depends on
+  Netty 3.10.6.Final (end of life since 2016), commons-lang3, and SLF4J.
+  Without root it connects from an unprivileged port, so an export needs the
+  `insecure` option, as on Apple. dCache's nfs4j is a server under LGPL;
+  libnfs (Apple's route through libvlc) is LGPL-2.1; Sun's WebNFS client
+  (YANFS) is unmaintained. Recommendation: don't build H.10 now. The library
+  is unmaintained and brings an end-of-life Netty, and there's no NFS server
+  here to test against. If the owner wants NFS, vendor the client's RPC/XDR
+  layer on top of a plain socket rather than taking Netty 3.
+- **H.12.1 — Cloud apps in the system folder picker (research, 2026-10-04; not
+  checked on a device).** Add Folder uses `ACTION_OPEN_DOCUMENT_TREE`, and a
+  provider appears there only if it supports subtree selection
+  (`FLAG_SUPPORTS_IS_CHILD` and `isChildDocument`); "few cloud storage
+  providers seem to support" it (CommonsWare). Nextcloud's app has since 2020
+  (nextcloud/android #303); OpenCloud added it in July 2026. Google Drive's
+  provider is widely reported not to offer folder trees. Dropbox and
+  OneDrive need checking. Providers usually download the whole file before
+  `openFile` returns (Android's `openProxyFileDescriptor` makes streaming
+  possible, but few providers use it), so even a listed provider would play
+  only after a full download. The device check needs a phone with the Play
+  Store and the four apps signed in; the emulator image here has neither. It
+  stays open as a device check, and nothing in the app depends on it.
+- **I.2.1 — Phone-to-TV handoff design (2026-10-04). Stop for owner review
+  before I.2.2.**
+  - *Discovery:* the TV registers `_edendale-handoff._tcp` with NsdManager
+    on a random port while its Link Source shows "Continue on a phone", and
+    shows a 6-digit code that changes for each session. The phone browses for
+    the service and lists TVs by name.
+  - *Key agreement:* J-PAKE over P-256 keyed by the code, using Bouncy
+    Castle's `org.bouncycastle.crypto.agreement.jpake`. Bouncy Castle is
+    already in the app for sshj (H.4), and J-PAKE needs no extra dependency.
+    Its third round confirms the key, so a wrong code fails before any
+    payload is sent. HKDF-SHA256 derives an AES-256-GCM key, and each
+    message's nonce is its counter. ECDH with codes compared on both screens
+    would also work, but it depends on the viewer actually comparing them.
+    Android's own X25519 (`XDH`) arrives only in API 33, and minSdk is 26.
+  - *Messages:* JSON behind a 4-byte big-endian length, at most 64 KiB, with
+    `"v": 1`; unknown versions and oversized frames close the connection. The
+    payload is either a provider, account key, email, refresh token, and
+    scopes, or a server login (kind, host, port, user, password, and for S3
+    its configuration).
+  - *Phone:* it asks "Link <provider> on <TV name>?" and offers an account
+    already linked there or a fresh sign-in, and sends nothing until the
+    viewer confirms. It reuses its refresh token, because Google allows 100
+    per account per client.
+  - *TV:* it refreshes the token, or tests the login, before storing it. It
+    allows three attempts per code, then shows a new code.
+  - *Threat model:* a passive listener on the network learns nothing. An
+    active attacker gets one online guess per handshake, which is a 1 in
+    10^6 chance before the code changes. A malicious app on the phone can't
+    start a transfer, since the viewer confirms in Edendale. The code and
+    keys exist only for the session, and nothing is logged. A stolen TV holds
+    the same tokens it would after a direct sign-in, and Sign Out (with
+    Revoke Access) ends them. Out of scope: handoff between Android and Apple
+    devices (Apple uses DeviceDiscoveryUI).
+- **I.3.1 — Watch Next (research, 2026-10-04): stop for the owner.** Google
+  TV still shows Watch Next programs (`TvContractCompat.WatchNextPrograms`) in
+  its "continue watching 1.0" row, but Google's May 2026 post says that API
+  "will lose support in the 2nd half of 2027". All new Continue Watching
+  integrations are meant to use the Engage SDK. Engage needs Google's
+  enrollment ("express interest … if eligible"), an `AccountProfile` with an
+  account ID, and adult profiles only. Edendale has no accounts and isn't a
+  streaming partner, so Engage is out of reach. Building I.3.2–I.3.3 on Watch
+  Next would work today on Google TV and the older Android TV home screen,
+  but only until the second half of 2027. It isn't "Engage only" yet, but
+  close enough that the owner should decide; I.3.2–I.3.3 wait.
 
 ---
 
@@ -1997,13 +2094,13 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.6 | OAuth and accounts | Complete (sign-in not run: needs registered client IDs) | ed065ea |
 | H.7 | OneDrive | Complete (linking UI with H.11; not run against a real account) | 4c83c40 |
 | H.8 | Dropbox | Complete (linking UI with H.11; not run against a real account) | 4b73e0f |
-| H.9 | Google Drive (D9) | Blocked | |
-| H.10 | NFS (optional) | Not started | |
+| H.9 | Google Drive (D9) | Blocked (D9); H.9.1 note in Findings | |
+| H.10 | NFS (optional) | Not building (H.10.1: no maintained client; see Findings) | |
 | H.11 | Link Source flow | Complete (device check not run; cloud sign-in needs registered client IDs) | 57ec4d1 |
-| H.12 | Folder-picker experiment | Not started | |
+| H.12 | Folder-picker experiment | Research note in Findings; device check not run (needs Play Store apps) | |
 | I.1 | OneDrive on TV | I.1.1 complete; I.1.D1 not run (needs a TV and a registered client ID) | 0f00786 |
-| I.2 | Phone-to-TV handoff | Not started | |
-| I.3 | Watch Next row | Not started | |
+| I.2 | Phone-to-TV handoff | I.2.1 design in Findings; waiting for owner review | |
+| I.3 | Watch Next row | I.3.1 in Findings; waiting for owner (Watch Next ends 2H 2027, Engage needs enrollment) | |
 | J.1 | Navigation child rows | Complete (device check not run) | 983546a |
 | J.2 | Continue Watching and Movies pages | Complete (device check not run) | 983546a |
 | J.3 | Keyboard shortcuts | Complete (device check not run) | 983546a |
