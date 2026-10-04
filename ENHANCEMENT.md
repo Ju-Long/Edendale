@@ -1291,7 +1291,7 @@ Never on Android TV, because TVs do their own motion smoothing. Off by default.
 
 ### G.1 — Feasibility and go/no-go
 
-- [ ] **G.1.1** One-day test: a custom `GlShaderProgram` that outputs an extra
+- [x] **G.1.1** One-day test: a custom `GlShaderProgram` that outputs an extra
   frame at the midpoint timestamp between two input frames (start with a plain
   50/50 blend). Media3 documents that effects which change frame timestamps
   aren't supported during playback, so check:
@@ -1305,9 +1305,13 @@ Never on Android TV, because TVs do their own motion smoothing. Off by default.
   enhancement and interpolation and presents each frame with
   `eglPresentationTimeANDROID`, using the buffer timestamps. Request twice the
   frame rate with `Surface.setFrameRate`.
+  Not needed: G.1.1 passed on Media3 1.9.0 (Findings — G.1).
 - [ ] **G.1.3** Estimate the cost: port only the coarse motion-estimation pass,
   and time it at 1080p on a recent flagship and on a mid-range phone.
-- [ ] **G.1.4** Write **Findings — G.1** below, with the presentation path
+  The port and its timing probe exist (`CoarseMotionEstimationInstrumentedTest`,
+  one command in the README), but they ran only on an emulator with a
+  software GPU. Neither phone was available.
+- [x] **G.1.4** Write **Findings — G.1** below, with the presentation path
   chosen, the timings, and a go/no-go recommendation. **Stop for owner review
   before G.2.**
 
@@ -2056,6 +2060,128 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   Next would work today on Google TV and the older Android TV home screen,
   but only until the second half of 2027. It isn't "Engage only" yet, but
   close enough that the owner should decide; I.3.2–I.3.3 wait.
+- **Findings — G.1: frame generation feasibility (2026-10-04). Stop for
+  owner review before G.2.**
+  - *Where it ran:* the owner's Pixel_10_Pro_XL emulator (Android 17, API
+    37). Its GPU is SwiftShader, which is software GL running on the Mac's
+    CPU, and its panel has only a 60 Hz mode. That answers how Media3
+    schedules frames. It says nothing about what a phone's GPU costs, and
+    it can't show a refresh-rate switch. The probes are in `src/androidTest`
+    under `player/video/framegen`, and the README shows how to run them on
+    a phone.
+  - *G.1.1, the presentation path: Media3's effects path works in 1.9.0.*
+    `MidpointFrameEffect` is a test-only `GlShaderProgram` that outputs a
+    50/50 blend at the midpoint timestamp before each frame whose
+    predecessor is less than 1.5 frame durations earlier. It announces input
+    capacity only while two output textures are free, because
+    `BaseGlShaderProgram` can't output two frames per input.
+    `FrameGenerationPlaybackInstrumentedTest` plays 30 s clips with two AAC
+    tracks into a SurfaceView with the app's renderers
+    (`EdendaleRenderersFactory`), and compares each run with the same
+    pipeline with midpoints off. It ran 12 times.
+    - *Released on time:* yes. ExoPlayer schedules each added frame by its
+      own timestamp, like any other frame (`VideoFrameRenderControl`), and
+      `VideoFrameMetadataListener` reports it. At 24 → 48 fps (720p), each
+      run released 776–802 frames, 385–399 of them midpoints. SurfaceFlinger's
+      timestats counted 48.2–48.7 fps presented, with 3–6 of about 235
+      frames dropped (47.2 fps and 9 dropped after Balanced enhancement).
+      Without midpoints it was 24.0 fps, with none dropped.
+      At 30 → 60 fps (360p), 60.2 fps were released and 61.7 fps presented,
+      with 1 dropped. One 24 fps run stalled early on the software GPU: after
+      a 42 ms GL-thread stall, 14 frames were dropped and one midpoint was
+      shown 113 ms late.
+    - *A/V sync:* every frame, real or midpoint, was released on the
+      display refresh nearest its time on ExoPlayer's audio clock. At 48 fps
+      on the 60 Hz panel, midpoints landed within 12.5 ms of their exact
+      time (one refresh is 16.7 ms), because they fall between refreshes.
+      At 60 fps, real frames and midpoints both landed within 0.3 ms. Real
+      frames were spread the same way with midpoints on as off.
+    - *Seeks, pauses, and track switches:* each seek called `flush()`. The
+      first frame arrived 43–97 ms later at the target, and no frame from
+      before a seek was released after it. Each run had three seeks, two of
+      them 150 ms apart. Pausing and resuming, REDRAW while paused (F.1.2's
+      path), switching the audio language, and running after Edendale's
+      Balanced effect all kept playing without errors.
+    - *Display rate:* ExoPlayer's frame-rate estimator
+      (`VideoFrameReleaseHelper`) measures the output timestamps, so once
+      it locks on, the SurfaceView votes `Surface.setFrameRate` at 48 Hz
+      (60 Hz for a 30 fps source). SurfaceFlinger shows the vote as
+      ExactOrMultiple. Before the estimator locks on, the vote is the
+      source rate, which `DefaultVideoFrameProcessor` reports as its output
+      rate. The emulator's panel has only 60 Hz, so
+      the display couldn't switch. On 60 Hz, 48 fps can't be shown evenly:
+      present intervals alternated between one refresh and two (16–17 ms
+      and 30–33 ms). At 60 fps (360p) they were mostly one refresh
+      (13–19 ms on the software GPU).
+    - *Headroom:* without midpoints, frames reach ExoPlayer's release stage
+      about 45 ms before they're due (median; the stage takes a frame at
+      most 50 ms before it's due). With midpoints the median is 21–35 ms, because a
+      midpoint can be made only once the frame after it has been decoded.
+      Holding the GL thread 8 ms per midpoint, as a stand-in for motion
+      estimation and warping, kept 24 → 48 fps on time in two runs: 48.2
+      and 49.1 fps presented, with 4 and 1 frames dropped. One 2 s segment
+      of the second run lost 10 frames. Holding it about 19 ms (8 ms plus
+      waiting for the software GPU to finish) was too much: 36 fps
+      presented, 60 dropped. At 30 → 60 fps in 720p, the software GPU fell
+      behind even without extra work, and SurfaceFlinger dropped 84 and 105
+      of about 300 frames in two runs. Doubling the output textures to 12
+      didn't help, and 360p ran clean, so the limit was throughput rather
+      than lookahead. With the 19 ms hold at 30 fps, only 131 of 490
+      midpoints were released. Late midpoints are simply dropped, and real
+      frames keep their timing.
+    - *What this means for G.4:* Media3 delivers frames ahead of their
+      release time, so the effect can output the midpoint and then frame N,
+      each with its own timestamp, and ExoPlayer paces them. Apple's
+      scheduler holds N back by one refresh because its renderer gets
+      frames only when they're due. Android doesn't need that hold. G.4.1's
+      port reduces to the rules about when to blend: neighbors closer than
+      1.5 frame durations, and a reset after a flush, an end of stream, or
+      a size change.
+    - *Risks:* Media3 documents that effects which change frame timestamps
+      aren't supported during playback (`ExoPlayer.setVideoEffects`). They
+      work in 1.9.0, but nothing promises they will after an upgrade, as
+      with the REDRAW cache above. Rerun the probe after every Media3
+      upgrade. Not checked: speeds other than 1× (at 1.5×, 48 fps means 72
+      frames a second), Picture-in-Picture, and 1080p sources.
+  - *G.1.2:* not needed, because G.1.1 passed. The enhancement passes stay
+    in plain classes (F.1), so a custom renderer is still possible if a
+    Media3 upgrade breaks this path.
+  - *G.1.3, the cost: measured only on the emulator.*
+    `CoarseMotionEstimationInstrumentedTest` ports `motionEstimationCoarse`
+    exactly: 16×16 blocks, a ±16 px search, Apple's charge per pixel of
+    offset, and its unmatched-block threshold. Each variant found a known
+    6 × −4 px pan in every interior block. Median of 5 runs at 1080p, timed
+    with `glFinish`, since the emulator has no GPU timer queries:
+
+    | Variant | SwiftShader (ms) |
+    |---|---|
+    | Fragment pass, RGBA input (the exact port) | 106 |
+    | Fragment pass after a one-byte luma prepass | 82 |
+    | Half resolution: downscale, luma, and search at 960×540 | 22 |
+    | Compute shader (GLSL ES 3.1), RGBA input, atomic count | 106 |
+
+    These are CPU timings of a software renderer, so only the ratios carry
+    over: the luma prepass saves about a quarter, half resolution about
+    four fifths, and the compute port costs the same as the fragment pass.
+    (It has no shared-memory tiling yet.) The fragment pass needs only
+    OpenGL ES 3.0. On ES 3.0 it would count unmatched blocks in a reduction
+    pass instead of an atomic. The flagship and mid-range timings that the
+    go/no-go needs weren't measured.
+  - *Recommendation: a conditional go, pending G.1.3 on phones.* The
+    presentation path works without a custom renderer, and sync holds. Go
+    ahead with G.2 only if the coarse pass on a recent flagship takes about
+    2 ms or less at 1080p, so that the whole synthetic frame fits in 8 ms.
+    Apple's plan budgets 1–2 ms of its 3–6 ms total on an M1. On mid-range
+    phones, use the half-resolution path or don't offer the feature. Before
+    G.5, the owner should also tighten D12's display rule. Offer Motion
+    Smoothing only when `Display.getSupportedModes()` has a mode at an
+    integer multiple of twice the source rate: 24 fps needs 48, 96, or
+    144 Hz; 30 fps works on 60 and 120 Hz; 25 fps needs 50 or 100 Hz. A
+    phone with only 60 and 120 Hz shows 48 fps unevenly (one and two
+    refreshes, or two and three), which defeats the purpose for most films.
+    An even picture from 24 fps on a 120 Hz panel would need 5×
+    interpolation (four synthetic frames per source frame), which is
+    outside this plan. Also turn it off at speeds above 1×.
 
 ---
 
@@ -2120,6 +2246,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-04 | Owner decisions (521519d), L.3 version 0.27 (86df492), and the H.6 Microsoft redirect (90b891f) (Claude, CLI session) | On a scratch worktree of 6a09c33 plus 86df492 and 90b891f: `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (419 JVM tests, 0 failures). The debug APK reports versionCode 2 and versionName 0.27, and its manifest routes `msauth` / `com.babasama.edendale` / `/VzSiQcXRmi2kyjzcA+mYLEtbGVs=` to `OAuthRedirectActivity` (aapt2). | not run: `OAuthRedirectInstrumentedTest` needs an emulator; `edendale_api35` no longer exists, and the only one running was the owner's own Pixel_10_Pro_XL. | The owner decided D9 (PKCE through Custom Tabs), D10 (as proposed), D17 (no NFS), and D19 (0.27), and asked for I.2 to be built from I.2.1's design and reviewed at the end; I.3 is still open. The Microsoft redirect is the one the owner registered for Entra's Android platform (see Deviations). Owner steps still to do: the Google Android OAuth client and `drive.readonly` verification (H.9), and a check that the Entra app allows public client flows, which TV sign-in needs (I.1). |
 | 2026-10-04 | H.6 redirect test (83f6baf) and I.3 Watch Next (f99a366) (Claude, desktop session, finishing edendale-99's I.3 after it hit its usage limit) | At f99a366: `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (436 JVM tests, 0 failures). Strings: both new keys in all 19 files. | The owner's Pixel_10_Pro_XL emulator (Android 17, API 37, 16 KB pages): `OAuthRedirectInstrumentedTest` 4 of 4 after 83f6baf (the Dropbox case had assumed a build without an app key); the whole instrumented suite 26 of 26 at 83f6baf and 27 of 27 at f99a366, with `WatchNextStoreInstrumentedTest` skipped (no TV provider on a phone). `libffmpegJNI.so` and `libandroidx.graphics.path.so` are 16 KB aligned in the APK and in their ELF LOAD segments. | I.3 built as the owner decided (D15). Not run: I.3.D1 (needs a TV device or emulator; the owner's Television_4K AVD would do). |
 | 2026-10-04 | Device checks B.2.D1 and C.2.D1 (Claude, desktop session) | — (checks only; built at 95d8551 with the owner's `secrets.json`, so TMDB identifies titles) | The owner's Pixel_10_Pro_XL emulator (Android 17, API 37). Media: three 60 s episodes made with a scratch ffmpeg 7.1.1 (testsrc counter, H.264 via VideoToolbox, `eng` "Main" and `fre` "Commentaire" AAC, `eng` and `fre` SRT), named `Severance S01E0n.mkv` so TMDB matches show 95396, in a local folder linked through the system picker. B.2.D1 pass: French audio and French subtitles chosen in S01E01 were saved as `player.content.show.95396`; after closing the player, S01E02 opened in a new player with both restored, Fill restored (content frame 2992×1683 on a 2992×1344 screen), and Loop Video still on. C.2.D1 pass: S01E01 played to its end, was stored as completed (position 1.0), and S01E02 started on its own; S01E02 then ended in Picture-in-Picture and S01E03 started inside the PiP window (task still pinned, session metadata "In Perpetuity, S01E03", French subtitles carried); the show page lists S01E01 and S01E02 as watched. | On this emulator the F.6 capability check stored `fail`, so Enhancement starts at Off here. The test episodes stay in `/sdcard/Movies/EdendaleTest/Severance` for later checks. |
+| 2026-10-04 | G.1 feasibility: G.1.1 and the G.1.3 probe (3bf5199), Findings — G.1 (Claude, desktop session) | At 3bf5199 on a scratch worktree: `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (436 JVM tests, 0 failures). `FrameGenerationPlaybackInstrumentedTest` and `CoarseMotionEstimationInstrumentedTest` run with `am instrument`; without their arguments both are skipped. | The owner's Pixel_10_Pro_XL emulator (Android 17, API 37, SwiftShader GL, 60 Hz only), used with the owner's permission and the peer sessions' emulator lock. The debug build (0.27) replaced the 0.26 build installed there; the app's data was kept. Playback probe, 12 runs: 24 → 48 fps at 720p (with and without 8 ms of simulated work per midpoint, after Balanced enhancement, with REDRAW while paused), and 30 → 60 fps at 720p and 360p, each with a midpoints-off baseline; SurfaceFlinger timestats were turned on for each run and off afterwards. Motion search at 1080p: the RGBA, luma-prepass, half-resolution, and compute variants. Results are in Findings — G.1. | Not run: G.1.3 on a flagship and a mid-range phone (no phones), a refresh-rate switch (the emulator has one mode), speeds other than 1×, PiP. Test clips were made with a scratch ffmpeg (testsrc2, VideoToolbox H.264, two AAC tracks) and aren't committed; the probe takes any clip with audio. Stop for the owner's go/no-go before G.2. |
 
 ---
 
@@ -2160,7 +2287,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.6 | Budget and capability | Complete | bba68d8, 753dd89 |
 | F.7 | Enhancement UI | Complete (F.7.D1 partly checked on the emulator; see the Handoff log) | bba68d8 |
 | F.8 | Enhancement acceptance | Not run (needs devices) | |
-| G.1 | Frame generation feasibility | Not started | |
+| G.1 | Frame generation feasibility | G.1.1 passed on the emulator (Media3's effects path releases added frames on time); G.1.2 not needed; G.1.3 probe built, phone timings not run; Findings — G.1 written. Waiting for phone timings and the owner's go/no-go | 3bf5199 |
 | G.2 | Motion estimation | Blocked (G.1) | |
 | G.3 | Warping and blending | Blocked (G.1) | |
 | G.4 | Scheduling and presentation | Blocked (G.1) | |
