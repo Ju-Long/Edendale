@@ -24,8 +24,17 @@ fun TmdbApprovalQrCode(
     approvalUrl: String,
     isTelevision: Boolean,
     modifier: Modifier = Modifier,
+) = ApprovalQrCode(approvalUrl, stringResource(R.string.tmdb_qr_content_description), isTelevision, modifier)
+
+/** A QR code a phone can scan to open [url]: the TMDB approval page, or a provider's device sign-in page (I.1). */
+@Composable
+fun ApprovalQrCode(
+    url: String,
+    contentDescription: String,
+    isTelevision: Boolean,
+    modifier: Modifier = Modifier,
 ) {
-    val bitmap = remember(approvalUrl) { qrBitmap(approvalUrl) }
+    val bitmap = remember(url) { qrBitmap(url) }
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(EdendaleRadii.Soft.dp),
@@ -33,7 +42,7 @@ fun TmdbApprovalQrCode(
     ) {
         Image(
             bitmap = bitmap.asImageBitmap(),
-            contentDescription = stringResource(R.string.tmdb_qr_content_description),
+            contentDescription = contentDescription,
             modifier = Modifier
                 .padding(20.dp)
                 .size(if (isTelevision) 280.dp else 208.dp),

@@ -196,7 +196,9 @@ listed in Settings → Accounts. Use a key that can only read that bucket.
 ### Cloud accounts
 
 OneDrive and Dropbox accounts sign in in a Custom Tab with OAuth 2.0 and
-PKCE. Edendale uses no provider SDK and ships no client secret. Google Drive
+PKCE. On Android TV, OneDrive signs in with a code: the TV shows the code, the
+address to enter it at, and a QR code for that address, and waits while you
+approve on a phone or computer. Dropbox and Google don't offer TV sign-in. Edendale uses no provider SDK and ships no client secret. Google Drive
 waits for the owner's decision on how Android signs in (D9). Each provider
 receives the sign-in, folder listings, and the byte ranges of what plays.
 Nothing passes through an Edendale server, because there isn't one. The

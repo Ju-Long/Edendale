@@ -1603,7 +1603,7 @@ Jellyfin, and Emby would be a separate feature.
 - The device-code flow (H.6), showing a QR code for `verification_uri` plus the
   code (Microsoft doesn't support `verification_uri_complete`). Reuse the QR
   rendering in `TmdbApprovalQrCode.kt`.
-- [ ] **I.1.1** The TV sign-in screen.
+- [x] **I.1.1** The TV sign-in screen.
 - [ ] **I.1.D1** On a TV: sign in from a phone, link a folder, and play a file.
 
 ### I.2 — Phone-to-TV handoff (DIFF §3.14; Apple §J.7)

@@ -463,4 +463,10 @@
     <string name="link_source_sign_in_to">Se connecter à %1$s</string>
     <string name="link_source_waiting">En attente de %1$s…</string>
     <string name="link_source_cloud_privacy">Edendale demande à %1$s un accès en lecture seule. Il se connecte uniquement depuis cet appareil, lit les listes de dossiers et les vidéos que vous regardez, et n’envoie ni ne modifie jamais rien.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">Sur votre téléphone ou ordinateur, ouvrez %1$s%2$s et saisissez ce code :</string>
+    <string name="device_code_accessibility">Code %1$s</string>
+    <string name="device_code_qr_description">Code QR de connexion à %1$s</string>
+    <string name="device_code_waiting">En attente d’approbation…</string>
+    <string name="device_code_sign_in">Se connecter avec un code</string>
 </resources>

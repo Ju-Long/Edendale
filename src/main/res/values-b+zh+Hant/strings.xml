@@ -455,4 +455,10 @@
     <string name="link_source_sign_in_to">登入 %1$s</string>
     <string name="link_source_waiting">正在等候 %1$s⋯</string>
     <string name="link_source_cloud_privacy">Edendale 會向 %1$s 請求唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">在你的手機或電腦上打開 %1$s%2$s，然後輸入此代碼：</string>
+    <string name="device_code_accessibility">代碼 %1$s</string>
+    <string name="device_code_qr_description">%1$s 登入 QR 碼</string>
+    <string name="device_code_waiting">正在等候核准⋯</string>
+    <string name="device_code_sign_in">使用代碼登入</string>
 </resources>

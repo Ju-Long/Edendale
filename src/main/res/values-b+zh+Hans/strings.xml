@@ -455,4 +455,10 @@
     <string name="link_source_sign_in_to">登录 %1$s</string>
     <string name="link_source_waiting">正在等待 %1$s…</string>
     <string name="link_source_cloud_privacy">Edendale 向 %1$s 请求只读访问权限。它仅从此设备连接，读取文件夹列表和你播放的视频，绝不会上传或更改任何内容。</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">在你的手机或电脑上打开 %1$s%2$s，然后输入此代码：</string>
+    <string name="device_code_accessibility">代码 %1$s</string>
+    <string name="device_code_qr_description">%1$s 登录二维码</string>
+    <string name="device_code_waiting">正在等待批准…</string>
+    <string name="device_code_sign_in">使用代码登录</string>
 </resources>

@@ -16,10 +16,12 @@ import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
 import com.babasama.edendale.oauth.CloudProviders
 import com.babasama.edendale.oauth.CloudTokenProvider
+import com.babasama.edendale.oauth.DeviceAuthorization
 import com.babasama.edendale.oauth.OAuthClient
 import com.babasama.edendale.oauth.OAuthConfiguration
 import com.babasama.edendale.oauth.OAuthException
 import com.babasama.edendale.oauth.OAuthFailure
+import com.babasama.edendale.oauth.OAuthTokens
 import com.babasama.edendale.oauth.Pkce
 import com.babasama.edendale.oauth.SecretStore
 import com.babasama.edendale.remote.OkHttpRemoteHttp
@@ -48,6 +50,9 @@ class CloudAccounts(context: Context) {
      */
     fun isOffered(kind: MediaSourceKind): Boolean = kind != MediaSourceKind.GOOGLE_DRIVE && configuration(kind) != null
 
+    /** Whether a TV can sign in on its own: with a code, which only Microsoft grants Edendale's scopes through (I.1). */
+    fun isOfferedOnTelevision(kind: MediaSourceKind): Boolean = isOffered(kind) && CloudProviders.supportsDeviceCode(kind)
+
     private fun clientId(kind: MediaSourceKind): String = when (kind) {
         MediaSourceKind.GOOGLE_DRIVE -> CloudSecrets.googleClientId
         MediaSourceKind.ONE_DRIVE -> CloudSecrets.microsoftClientId
@@ -70,7 +75,24 @@ class CloudAccounts(context: Context) {
                 .launchUrl(activity, Uri.parse(client.authorizationUrl(state, Pkce.challenge(verifier))))
         }
         val code = OAuthClient.authorizationCode(callback, state, kind)
-        val response = client.exchange(code, verifier)
+        return store(kind, configuration, client.exchange(code, verifier))
+    }
+
+    /** Starts a TV sign-in with a code to enter on another device (I.1; RFC 8628, OneDrive only). */
+    suspend fun startDeviceSignIn(kind: MediaSourceKind): DeviceAuthorization {
+        val configuration = configuration(kind)?.takeIf { CloudProviders.supportsDeviceCode(kind) }
+            ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
+        return OAuthClient(configuration, http).startDeviceAuthorization()
+    }
+
+    /** Waits for the code's approval, then stores the account. Cancelling the coroutine stops the polling. */
+    suspend fun finishDeviceSignIn(kind: MediaSourceKind, authorization: DeviceAuthorization): CloudAccount {
+        val configuration = configuration(kind) ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
+        val response = OAuthClient(configuration, http).waitForDeviceAuthorization(authorization)
+        return store(kind, configuration, response)
+    }
+
+    private suspend fun store(kind: MediaSourceKind, configuration: OAuthConfiguration, response: OAuthTokens): CloudAccount {
         val identity = CloudProviders.identity(kind, response, http)
         val refreshToken = response.refreshToken ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
         val account = CloudAccount(

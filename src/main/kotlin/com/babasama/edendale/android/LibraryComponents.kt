@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryRepository
 import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.oauth.CloudAccount
+import com.babasama.edendale.oauth.DeviceAuthorization
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -120,6 +124,8 @@ fun LinkSourceDialog(
     var cloudTrail by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
     var cloudFolders by remember { mutableStateOf(emptyList<ConnectorEntry>()) }
     var signIn by remember { mutableStateOf<Job?>(null) }
+    // A TV sign-in's code while it waits for approval (I.1).
+    var deviceAuthorization by remember { mutableStateOf<DeviceAuthorization?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -211,7 +217,14 @@ fun LinkSourceDialog(
         error = null
         signIn = scope.launch {
             try {
-                val account = cloud.signIn(activity, kind)
+                val account = if (isTelevision) {
+                    // A remote can't drive a browser: approve on a phone or computer instead.
+                    val authorization = cloud.startDeviceSignIn(kind)
+                    deviceAuthorization = authorization
+                    cloud.finishDeviceSignIn(kind, authorization)
+                } else {
+                    cloud.signIn(activity, kind)
+                }
                 cloudAccounts = withContext(Dispatchers.IO) { cloud.vault.accounts(kind) }
                 openCloud(account, emptyList())
             } catch (cancelled: CancellationException) {
@@ -220,6 +233,7 @@ fun LinkSourceDialog(
                 error = connectorFailureMessage(context, failure) ?: unreachableMessage
             } finally {
                 signIn = null
+                deviceAuthorization = null
             }
         }
     }
@@ -297,7 +311,12 @@ fun LinkSourceDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (browsing) R.string.smb_choose_folder else R.string.add_network_source)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // The form scrolls when a TV's sign-in code and QR code don't fit; the
+            // folder browser has its own bounded list.
+            Column(
+                modifier = if (browsing) Modifier else Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 if (browsing) {
                     Text(
                         text = when (kind) {
@@ -395,10 +414,10 @@ fun LinkSourceDialog(
                 } else {
                     // The provider: servers on the network, then the cloud
                     // accounts this build can sign in to (H.11). TV signs in
-                    // to OneDrive with a code (I.1); the browser flow is for handhelds.
+                    // with a code, which only OneDrive offers (I.1).
                     val providers = listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV, MediaSourceKind.S3) +
                         listOf(MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE)
-                            .filter { !isTelevision && cloud.isOffered(it) }
+                            .filter { if (isTelevision) cloud.isOfferedOnTelevision(it) else cloud.isOffered(it) }
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -436,6 +455,8 @@ fun LinkSourceDialog(
                             kind = kind,
                             accounts = cloudAccounts,
                             signingIn = signIn != null,
+                            deviceAuthorization = deviceAuthorization,
+                            onCancelSignIn = { signIn?.cancel() },
                             loading = loading,
                             isTelevision = isTelevision,
                             onUse = { openCloud(it, emptyList()) },
@@ -589,6 +610,8 @@ private fun CloudAccountStep(
     kind: MediaSourceKind,
     accounts: List<CloudAccount>,
     signingIn: Boolean,
+    deviceAuthorization: DeviceAuthorization?,
+    onCancelSignIn: () -> Unit,
     loading: Boolean,
     isTelevision: Boolean,
     onUse: (CloudAccount) -> Unit,
@@ -616,6 +639,7 @@ private fun CloudAccountStep(
             }
         }
         when {
+            deviceAuthorization != null -> DeviceCodeSignIn(kind, deviceAuthorization, isTelevision, onCancelSignIn)
             signingIn -> Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -633,10 +657,10 @@ private fun CloudAccountStep(
                 Text(stringResource(R.string.reading), style = MaterialTheme.typography.bodyMedium)
             }
             else -> ArchiveButton(
-                label = if (accounts.isEmpty()) {
-                    stringResource(R.string.link_source_sign_in_to, provider)
-                } else {
-                    stringResource(R.string.link_source_another_account)
+                label = when {
+                    isTelevision -> stringResource(R.string.device_code_sign_in)
+                    accounts.isEmpty() -> stringResource(R.string.link_source_sign_in_to, provider)
+                    else -> stringResource(R.string.link_source_another_account)
                 },
                 onClick = onSignIn,
                 kind = if (accounts.isEmpty()) ArchiveButtonKind.Primary else ArchiveButtonKind.Secondary,
@@ -644,6 +668,46 @@ private fun CloudAccountStep(
                 isTelevision = isTelevision,
             )
         }
+    }
+}
+
+/**
+ * A TV sign-in with a code (I.1, Apple's device-code view): where to go on a
+ * phone or computer, the code, a QR code for the address (Microsoft has no
+ * `verification_uri_complete`), and the wait.
+ */
+@Composable
+private fun DeviceCodeSignIn(
+    kind: MediaSourceKind,
+    authorization: DeviceAuthorization,
+    isTelevision: Boolean,
+    onCancel: () -> Unit,
+) {
+    val provider = sourceKindLabel(kind)
+    val address = authorization.verificationUri.substringAfter("://")
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(R.string.device_code_instructions, address.substringBefore('/'), address.removePrefix(address.substringBefore('/'))),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        val spoken = stringResource(R.string.device_code_accessibility, authorization.userCode.toList().joinToString(" "))
+        Text(
+            text = authorization.userCode,
+            modifier = Modifier.semantics { contentDescription = spoken },
+            style = MaterialTheme.typography.displaySmall,
+            color = EdendaleColors.Gold,
+        )
+        ApprovalQrCode(
+            url = authorization.verificationUriComplete ?: authorization.verificationUri,
+            contentDescription = stringResource(R.string.device_code_qr_description, provider),
+            isTelevision = isTelevision,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            Text(stringResource(R.string.device_code_waiting), style = MaterialTheme.typography.bodyMedium)
+        }
+        ArchiveButton(label = stringResource(R.string.action_cancel), onClick = onCancel, isTelevision = isTelevision)
     }
 }
 

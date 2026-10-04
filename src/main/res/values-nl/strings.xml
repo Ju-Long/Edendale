@@ -461,4 +461,10 @@
     <string name="link_source_sign_in_to">Log in bij %1$s</string>
     <string name="link_source_waiting">Wachten op %1$s…</string>
     <string name="link_source_cloud_privacy">Edendale vraagt %1$s om alleen-lezentoegang. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">Open op je telefoon of computer %1$s%2$s en voer deze code in:</string>
+    <string name="device_code_accessibility">Code %1$s</string>
+    <string name="device_code_qr_description">QR-code om in te loggen bij %1$s</string>
+    <string name="device_code_waiting">Wachten op goedkeuring…</string>
+    <string name="device_code_sign_in">Log in met een code</string>
 </resources>
