@@ -169,17 +169,17 @@ steps until they are answered.
 | D6 | Old auto-skip | Remove the timed 90 s recap / 180 s credits skip. Delete `player.skipRecap` and `player.skipCredits`, and never read them into Skip Prompts (DIFF decision 5). | — |
 | D7 | Hold-speed migration | None: Android never stored a hold speed, so everyone gets the new defaults, 0.5× and 2.0×. | — |
 | D8 | Accounts | Device-local only; excluded from backup and device transfer (DIFF decision 1). | — |
-| D9 | Google Drive sign-in | **Owner**, after H.9.1. Google steers Android apps to Identity Services' `AuthorizationClient` (Play Services, closed source) and restricts custom-scheme redirects for Android clients. Options: `AuthorizationClient`; PKCE through Custom Tabs if Google's current rules allow it for this app; or Drive only through WebDAV (for example `rclone serve webdav`). | H.9 |
-| D10 | Home-server TLS | **Owner**; must match Apple and Windows (DIFF decision 4). Proposed: valid HTTPS always works; self-signed HTTPS works after the user approves the certificate's SHA-256 fingerprint, pinned per host; plain `http://` (`dav://`) only to private-network addresses. | H.3.4 |
+| D9 | Google Drive sign-in | **Decided by the owner (2026-10-04): PKCE through Custom Tabs** (H.9.1's option 1), the flow H.6 already uses. Edendale gets an Android OAuth client with its custom URI scheme turned on, and the redirect is `com.babasama.edendale:/oauth2redirect`. If Google's verification refuses the custom scheme, ask the owner before falling back to Identity Services' `AuthorizationClient` (option 2), because it adds Play Services. | — |
+| D10 | Home-server TLS | **Decided by the owner (2026-10-04), as proposed:** valid HTTPS always works; self-signed HTTPS works after the user approves the certificate's SHA-256 fingerprint, pinned per host; plain `http://` (`dav://`) only to private-network addresses. DIFF decision 4 asks Apple and Windows to match (L.4 note 6). | — |
 | D11 | Enhancement default | Apple starts each playback at Balanced, Sharpness 0.5, Denoise 0.5, Motion Smoothing off, and doesn't save changes. Android matches that (in memory, not saved), except: Off on devices that fail the capability check (F.6); Off on Android TV until F.1.6 passes on a real TV; and HDR / Dolby Vision always bypassed in this release. | — |
 | D12 | Frame generation | Phones and tablets only, off by default, behind the experiment in G.1. Never offered on Android TV. | G.2–G.6 |
 | D13 | MediaSession scope | A `MediaSession` owned by `PlayerActivity`. No `MediaSessionService` and no background playback; playback still pauses in `onStop`. | — |
 | D14 | Instrumented tests | Add `src/androidTest` for GL, parser, and migration checks, run on a device or emulator. Adding them to CI is optional (A.5.4). | — |
 | D15 | Watch Next row | Research first (I.3.1). Build it only if the launchers on target devices still read `WatchNextPrograms`. Opt-in, off by default. | I.3.2–I.3.3 |
 | D16 | SFTP library | sshj (Apache-2.0) if it passes H.4.1; otherwise Apache MINA SSHD (Apache-2.0). | — |
-| D17 | NFS | Optional, last. Only if an Apache-, MIT-, or BSD-licensed NFSv3 client works on Android without privileged ports. | H.10 |
+| D17 | NFS | **Decided by the owner (2026-10-04): no NFS on Android.** H.10.1 found no maintained NFSv3 client under a compatible licence. | — |
 | D18 | Rounded subtitle font | Android has no system rounded font. Default: bundle Nunito (SIL OFL 1.1) as the "Rounded" choice and credit it in Attribution. The owner may prefer to drop "Rounded" on Android. | — |
-| D19 | Release version | **Owner.** `versionName` is `0.26` and `versionCode` is `1` today. | L.3 |
+| D19 | Release version | **Decided by the owner (2026-10-04): `versionName` `0.27`** while the app waits for Google Play's approval for the Play Store; the owner picks the numbering after that. `versionCode` goes from 1 to 2, since every upload needs a higher code. | — |
 
 ---
 
@@ -223,7 +223,7 @@ Each phase leaves the app shippable. Within a phase, follow the listed order.
 4. **Audio:** E.1, then E.2 once D5 is decided.
 5. **Picture:** F.1 → F.8 in order.
 6. **Storage providers:** H.1 → H.2 → H.3 → H.4 → H.5 → H.6 → H.7 → H.8, with
-   H.11 alongside; H.9 after D9; H.10 optional; H.12 any time.
+   H.11 alongside; then H.9 (D9 is decided); no H.10 (D17); H.12 any time.
 7. **Android TV:** I.1 → I.2 → I.3.
 8. **Large screens and keyboard:** J.1 → J.6 (independent; may move earlier).
 9. **Frame generation:** G.1, then G.2 → G.6 only if G.1 recommends going ahead
@@ -1462,7 +1462,23 @@ Jellyfin, and Emby would be a separate feature.
   in an encrypted store keyed by host and port and excluded from backup.
 - [ ] **H.3.3** The valid-HTTPS path, end to end.
 - [ ] **H.3.4** (D10) Self-signed certificates with fingerprint pinning, and LAN
-  `dav://`, once the owner decides.
+  `dav://`, for WebDAV and S3-compatible endpoints:
+  - When system validation fails, Link Source shows the server certificate's
+    SHA-256 fingerprint and subject, as it does for SFTP host keys, and
+    connects only after the user trusts it. Pin it per host and port in a
+    device-local store excluded from backup. Refuse a changed certificate
+    until the user trusts it again. Everything else keeps system validation
+    and hostname checks.
+  - `dav://` (and an `http://` S3 endpoint) connects only to private-network
+    addresses, checked on the resolved address: 10/8, 172.16/12,
+    192.168/16, 100.64/10 (Tailscale), 127/8, 169.254/16, `::1`, `fc00::/7`,
+    and `fe80::/10`. Anything else gets a message that the address needs
+    HTTPS.
+  - `usesCleartextTraffic="false"` makes OkHttp refuse every `http://`
+    request, so this needs a network security config that permits cleartext,
+    with the private-address check in the app as the gate.
+  - Listing and playback (H.2) follow the same rules. Update the README's
+    WebDAV and S3 sections.
 - [x] **H.3.T1** (JVM) Recorded `PROPFIND` responses from Nextcloud, Synology,
   and Apache `mod_dav`: folders versus files, `href`s, sizes, dates, and
   percent-encoded names.
@@ -1551,7 +1567,17 @@ Jellyfin, and Emby would be a separate feature.
 - [x] **H.8.1** The connector and the link resolver.
 - [x] **H.8.T1** (JVM) Recorded listing pages, and 410 handling through H.2.
 
-### H.9 — Google Drive (blocked by D9)
+### H.9 — Google Drive (D9)
+
+- D9 (decided 2026-10-04): sign in with H.6's PKCE flow through Custom Tabs.
+  Change the Google configuration from the reversed-client-ID scheme to the
+  Android client's redirect, `com.babasama.edendale:/oauth2redirect`, add its
+  intent filter to `OAuthRedirectActivity`, offer Google Drive in Link Source
+  whenever `GOOGLE_OAUTH_CLIENT_ID` is set, and update the README's Google
+  rows. Not on Android TV, where Drive arrives through I.2. The owner
+  registers the Android OAuth client (package name and the SHA-1 of each
+  signing certificate), turns on its custom URI scheme, and sets up the
+  consent screen and verification for `drive.readonly` (H.9.1).
 
 - [x] **H.9.1** A research note in Findings: Google's current rules for OAuth on
   Android (custom schemes, App Links, `AuthorizationClient`), and what the owner
@@ -1566,12 +1592,13 @@ Jellyfin, and Emby would be a separate feature.
 - [ ] **H.9.T1** (JVM) Recorded responses: paging, shortcuts, shared drives,
   and filtering.
 
-### H.10 — NFS (optional, D17)
+### H.10 — NFS (dropped, D17)
 
 - The export needs the `insecure` option, because Android apps can't bind
   privileged ports. The connection error must say so.
 - [x] **H.10.1** Evaluate a client library (licence and Android
   compatibility) and record the result in Findings before building anything.
+- Dropped by the owner on 2026-10-04 after H.10.1. Nothing more to build.
 
 ### H.11 — Link Source flow and Accounts
 
@@ -1629,7 +1656,9 @@ AGENTS.md forbids.
   storing it locally. It reuses the phone's refresh token, because Google
   allows only 100 refresh tokens per account per client.
 - [x] **I.2.1** A design note in Findings: protocol, crypto library, and threat
-  model. **Stop for owner review before implementing.**
+  model. **Stop for owner review before implementing.** The owner
+  (2026-10-04): proceed with this design; they'll review and adjust it with
+  the finished work.
 - [ ] **I.2.2** The implementation on both sides.
 - [ ] **I.2.T1** (JVM) Port `AccountHandoffTests`: encoding, the size cap, and
   version rejection; plus a key-agreement round trip, and failure with a wrong
@@ -1722,8 +1751,9 @@ The final order on handhelds and TV:
   Nunito, and FFmpeg per D5); the new `secrets.json` keys;
   `connectedDebugAndroidTest`; and the manual device checks.
 - [x] **L.2** This branch's `DESIGN.md` has the playlist tokens (B.5.1).
-- [ ] **L.3** Release (D19, only when the owner asks): bump `versionCode` and
-  `versionName`, and draft `Play Console/27.0/release.txt` in the 26.0 format.
+- [ ] **L.3** Release (D19: `0.27`): bump `versionCode` to 2 and `versionName`
+  to `0.27`, along with `EdendaleCore.version`. When the owner asks, draft
+  `Play Console/27.0/release.txt` in the 26.0 format.
 - [x] **L.4** Leave notes for the owner (this isn't done on this branch):
   `main`'s `DESIGN.md` needs the playlist tokens; `main`'s README should list
   the supported storage services; the `web` branch needs privacy-policy text
@@ -1744,7 +1774,8 @@ None of these changes belong on `android-27.0`; each is for the branch named.
    list the storage services and note that platforms differ. Today Apple 27.0
    has SMB, WebDAV, SFTP, S3-compatible storage, OneDrive, Dropbox, Google
    Drive, and NFS. Android 27.0 has SMB, WebDAV, SFTP, S3-compatible storage,
-   OneDrive, and Dropbox; Google Drive waits on D9, and NFS on D11.
+   OneDrive, and Dropbox. Google Drive comes with H.9 (D9 is decided), and
+   Android won't have NFS (D17).
 3. **The `web` branch** has no privacy policy, only the "Nothing leaves your
    library" hero copy. Google's OAuth verification for Drive requires a
    policy page at a public URL. Microsoft's publisher verification and
@@ -1773,6 +1804,12 @@ None of these changes belong on `android-27.0`; each is for the branch named.
 5. **The `apple` branch's CAS shader** returns NaN (black) in flat areas at
    Sharpness 1. See the Findings entry "Apple's CAS divides 0 by 0 at
    Sharpness 1" for the one-line fix Android uses.
+6. **D10, decided for Android on 2026-10-04:** valid HTTPS always works,
+   self-signed HTTPS after the user approves the certificate's SHA-256
+   fingerprint (pinned per host), and plain HTTP only to private-network
+   addresses. DIFF decision 4 asks every platform to match. Apple today
+   allows plain HTTP to `.local` names, unqualified names, and any IP
+   address (ATS `NSAllowsLocalNetworking`), and has no self-signed option.
 
 ---
 
@@ -1938,6 +1975,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   with option 2 as the fallback if verification refuses the custom scheme.
   Sources: Google's 2023 announcement of custom URI scheme restrictions, the
   API Console help page on OAuth clients, and the Android authorization guide.
+  **Owner decision (2026-10-04): option 1** (D9).
 - **H.10.1 — NFS client (evaluation, 2026-10-04; D17).** The only NFSv3
   client that fits D17's licences is EMC's `com.emc.ecs:nfs-client`
   (Apache-2.0). Its last release, 1.1.0, was in July 2022, and it depends on
@@ -1949,6 +1987,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   is unmaintained and brings an end-of-life Netty, and there's no NFS server
   here to test against. If the owner wants NFS, vendor the client's RPC/XDR
   layer on top of a plain socket rather than taking Netty 3.
+  **Owner decision (2026-10-04): skip NFS** (D17).
 - **H.12.1 — Cloud apps in the system folder picker (research, 2026-10-04; not
   checked on a device).** Add Folder uses `ACTION_OPEN_DOCUMENT_TREE`, and a
   provider appears there only if it supports subtree selection
@@ -1995,6 +2034,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
     the same tokens it would after a direct sign-in, and Sign Out (with
     Revoke Access) ends them. Out of scope: handoff between Android and Apple
     devices (Apple uses DeviceDiscoveryUI).
+  - *Owner (2026-10-04):* proceed with this design; the owner reviews and
+    adjusts it with the finished work.
 - **I.3.1 — Watch Next (research, 2026-10-04): stop for the owner.** Google
   TV still shows Watch Next programs (`TvContractCompat.WatchNextPrograms`) in
   its "continue watching 1.0" row, but Google's May 2026 post says that API
@@ -2112,18 +2153,18 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | G.6 | Tests and acceptance | Blocked (G.1) | |
 | H.1 | Connector contract | Complete | 0b43a91 |
 | H.2 | Remote byte source | Complete | 91cbc0e |
-| H.3 | WebDAV | H.3.1, H.3.2, H.3.T1 complete; H.3.3 HTTPS end to end not run (needs a real server); H.3.4 blocked (D10) | c9b6f6a |
+| H.3 | WebDAV | H.3.1, H.3.2, H.3.T1 complete; H.3.3 HTTPS end to end not run (needs a real server); H.3.4 ready (D10 decided 2026-10-04) | c9b6f6a |
 | H.4 | SFTP | Complete (H.4.1 checked on the emulator against OpenSSH 10.3) | 7d061b1, c42421c |
 | H.5 | S3 | Complete (device check not run) | 90072dc |
 | H.6 | OAuth and accounts | Complete (sign-in not run: needs registered client IDs) | ed065ea |
 | H.7 | OneDrive | Complete (linking UI with H.11; not run against a real account) | 4c83c40 |
 | H.8 | Dropbox | Complete (linking UI with H.11; not run against a real account) | 4b73e0f |
-| H.9 | Google Drive (D9) | Blocked (D9); H.9.1 note in Findings | 2d28460 |
-| H.10 | NFS (optional) | Not building (H.10.1: no maintained client; see Findings) | 2d28460 |
+| H.9 | Google Drive (D9) | Ready (D9 decided 2026-10-04: PKCE through Custom Tabs); a real sign-in needs the owner's Android OAuth client | 2d28460 |
+| H.10 | NFS | Dropped by the owner (2026-10-04, D17) | 2d28460 |
 | H.11 | Link Source flow | Complete (device check not run; cloud sign-in needs registered client IDs) | 57ec4d1, f92a1b0 |
 | H.12 | Folder-picker experiment | Research note in Findings; device check not run (needs Play Store apps) | 2d28460 |
 | I.1 | OneDrive on TV | I.1.1 complete; I.1.D1 not run (needs a TV and a registered client ID) | 0f00786 |
-| I.2 | Phone-to-TV handoff | I.2.1 design in Findings; waiting for owner review | 2d28460 |
+| I.2 | Phone-to-TV handoff | Ready: build I.2.1's design (owner, 2026-10-04); the owner reviews it with the finished work | 2d28460 |
 | I.3 | Watch Next row | I.3.1 in Findings; waiting for owner (Watch Next ends 2H 2027, Engage needs enrollment) | 2d28460 |
 | J.1 | Navigation child rows | Complete (device check not run) | 983546a |
 | J.2 | Continue Watching and Movies pages | Complete (device check not run) | 983546a |
@@ -2134,5 +2175,5 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | K.1 | Settings order | Complete (final order matches the plan across all phases) | 08c55db |
 | L.1 | README | Complete (covers sshj, SFTP, and manual device checks) | be55c1b |
 | L.2 | DESIGN.md | Complete | 0987890 |
-| L.3 | Release | Blocked (D19) | |
+| L.3 | Release | Ready: version 0.27 (D19, 2026-10-04); release.txt when the owner asks | |
 | L.4 | Notes for other branches | Complete (notes in Section L) | |
