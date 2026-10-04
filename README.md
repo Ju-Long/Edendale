@@ -227,7 +227,7 @@ hides that provider:
 
 | Key | Registration | Redirect URI |
 |---|---|---|
-| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth.com.babasama.edendale://auth` (mobile and desktop platform) |
+| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
 | `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
 | `GOOGLE_OAUTH_CLIENT_ID` | Waits for D9 | — |
 

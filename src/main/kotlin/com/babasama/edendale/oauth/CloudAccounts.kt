@@ -37,8 +37,12 @@ object CloudProviders {
     /** Personal and work or school Microsoft accounts both sign in through the `common` authority. */
     const val MICROSOFT_AUTHORITY = "https://login.microsoftonline.com/common/oauth2/v2.0/"
 
-    /** The Microsoft redirect: a custom scheme the owner registers for the Entra app's mobile and desktop platform. */
-    const val MICROSOFT_REDIRECT_SCHEME = "msauth.com.babasama.edendale"
+    /**
+     * The Microsoft redirect the owner registered for the Entra app's Android platform: the package
+     * name and a signing certificate's SHA-1 in base64, URL-encoded. Without MSAL nothing compares
+     * the hash with the app's signature, so every build uses this one string.
+     */
+    const val MICROSOFT_REDIRECT_URI = "msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D"
 
     fun configuration(kind: MediaSourceKind, clientId: String): OAuthConfiguration? {
         if (clientId.isBlank()) return null
@@ -63,8 +67,8 @@ object CloudProviders {
                 authorizationEndpoint = MICROSOFT_AUTHORITY + "authorize",
                 tokenEndpoint = MICROSOFT_AUTHORITY + "token",
                 deviceAuthorizationEndpoint = MICROSOFT_AUTHORITY + "devicecode",
-                redirectUri = "$MICROSOFT_REDIRECT_SCHEME://auth",
-                callbackScheme = MICROSOFT_REDIRECT_SCHEME,
+                redirectUri = MICROSOFT_REDIRECT_URI,
+                callbackScheme = "msauth",
                 scopes = ONE_DRIVE_SCOPES,
                 additionalAuthorizationParameters = mapOf("prompt" to "select_account"),
                 sendsScopeToTokenEndpoint = true,

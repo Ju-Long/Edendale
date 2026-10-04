@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
+import com.babasama.edendale.oauth.CloudProviders
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
@@ -34,10 +35,12 @@ class OAuthRedirectInstrumentedTest {
 
     @Test
     fun aMicrosoftRedirectReachesTheWaitingSignIn() = runBlocking {
+        // The manifest matches the decoded signature-hash path of the registered redirect.
+        val redirect = CloudProviders.MICROSOFT_REDIRECT_URI + "?code=abc&state=state-ms"
         val callback = withTimeout(10_000) {
-            OAuthRedirects.await("state-ms") { open("msauth.com.babasama.edendale://auth?code=abc&state=state-ms") }
+            OAuthRedirects.await("state-ms") { open(redirect) }
         }
-        assertEquals("msauth.com.babasama.edendale://auth?code=abc&state=state-ms", callback)
+        assertEquals(redirect, callback)
     }
 
     @Test
@@ -51,8 +54,8 @@ class OAuthRedirectInstrumentedTest {
 
     @Test
     fun aRedirectNobodyWaitsForIsDropped() {
-        assertFalse(OAuthRedirects.deliver(Uri.parse("msauth.com.babasama.edendale://auth?code=abc&state=nobody")))
-        assertFalse(OAuthRedirects.deliver(Uri.parse("msauth.com.babasama.edendale://auth?code=abc")))
+        assertFalse(OAuthRedirects.deliver(Uri.parse(CloudProviders.MICROSOFT_REDIRECT_URI + "?code=abc&state=nobody")))
+        assertFalse(OAuthRedirects.deliver(Uri.parse(CloudProviders.MICROSOFT_REDIRECT_URI + "?code=abc")))
     }
 
     @Test

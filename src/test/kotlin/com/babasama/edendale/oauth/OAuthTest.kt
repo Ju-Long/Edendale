@@ -84,7 +84,9 @@ class OAuthTest {
         val microsoft = CloudProviders.configuration(MediaSourceKind.ONE_DRIVE, "guid")!!
         assertEquals("https://login.microsoftonline.com/common/oauth2/v2.0/devicecode", microsoft.deviceAuthorizationEndpoint)
         assertEquals(listOf("Files.Read", "User.Read", "offline_access"), microsoft.scopes)
-        assertEquals("msauth.com.babasama.edendale://auth", microsoft.redirectUri)
+        assertEquals("msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D", microsoft.redirectUri)
+        // The registered redirect already holds %2B and %3D; they must reach Entra encoded again.
+        assertEquals(microsoft.redirectUri, query(OAuthClient(microsoft, OkHttpRemoteHttp()).authorizationUrl("s", "c"))["redirect_uri"])
         assertTrue(CloudProviders.supportsDeviceCode(MediaSourceKind.ONE_DRIVE))
         assertTrue(!CloudProviders.supportsDeviceCode(MediaSourceKind.GOOGLE_DRIVE))
         // An empty client ID hides the provider.

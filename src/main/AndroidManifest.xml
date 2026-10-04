@@ -80,7 +80,12 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="msauth.com.babasama.edendale" android:host="auth" />
+                <!-- Microsoft, through Entra's Android platform: the path is the
+                     signature hash from CloudProviders.MICROSOFT_REDIRECT_URI, decoded. -->
+                <data
+                    android:scheme="msauth"
+                    android:host="com.babasama.edendale"
+                    android:path="/VzSiQcXRmi2kyjzcA+mYLEtbGVs=" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
