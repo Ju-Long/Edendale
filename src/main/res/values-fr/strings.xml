@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Ajoutez un jeton à secrets.json et recompilez</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Les gros caractères, les marges sécurisées, le focus surélevé pour la télécommande et la présentation paysage sont actifs.</string>
+    <string name="settings_watch_next_title">Reprendre la lecture sur l’écran d’accueil</string>
+    <string name="settings_watch_next_description">Affiche ce que vous regardez dans la rangée « Reprendre la lecture » de l’écran d’accueil. Edendale n’envoie rien sur le réseau pour cela, mais l’application de l’écran d’accueil peut voir ces titres.</string>
     <string name="settings_section_sources">Sources</string>
     <string name="settings_no_sources">Aucune source liée</string>
     <string name="settings_section_backup">Sauvegarde</string>

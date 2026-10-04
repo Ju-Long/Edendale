@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Lägg till en token i secrets.json och bygg om</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Stor text, overscan-säkra marginaler, fokuslyft för fjärrkontroll och landskapspresentation är aktiva.</string>
+    <string name="settings_watch_next_title">Fortsätt titta på hemskärmen</string>
+    <string name="settings_watch_next_description">Visar det du tittar på i hemskärmens rad ”Fortsätt titta”. Edendale skickar inget över nätverket för detta, men hemskärmsappen kan se dessa titlar.</string>
     <string name="settings_section_sources">Källor</string>
     <string name="settings_no_sources">Inga källor länkade</string>
     <string name="settings_section_backup">Säkerhetskopiering</string>

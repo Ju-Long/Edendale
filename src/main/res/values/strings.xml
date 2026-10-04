@@ -194,6 +194,8 @@
     <string name="settings_tmdb_missing">Add a token to secrets.json and rebuild</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Large type, overscan-safe margins, remote focus lift, and landscape presentation are active.</string>
+    <string name="settings_watch_next_title">Continue Watching on Home Screen</string>
+    <string name="settings_watch_next_description">Lists what you’re watching in the home screen’s Continue Watching row. Edendale sends nothing over the network for this, but the home screen app can see these titles.</string>
     <string name="settings_section_sources">Sources</string>
     <string name="settings_no_sources">No sources linked</string>
     <string name="settings_section_backup">Backup</string>

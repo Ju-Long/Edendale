@@ -343,6 +343,25 @@ is the TMDB image the library already shows.
 On phones and tablets, **Player Adjustments → Playback → Audio Output** opens
 the system output switcher (`androidx.mediarouter:mediarouter`).
 
+### Continue Watching on the TV home screen
+
+On Android TV and Google TV, **Settings → Android TV → Continue Watching on Home
+Screen** (off by default) copies the Continue Watching shelf into the home
+screen's Watch Next row through the platform TV provider
+(`android.media.tv.TvContract.WatchNextPrograms`). Each movie and each show gets
+one row: a title in progress with its position, or a show's next episode.
+Selecting a row opens the player at the saved position, just like the shelf
+card. Rows update after playback pauses or stops, disappear when a title is
+finished or its file is deleted, and all disappear when the setting is turned
+off. A row removed from the home screen comes back only after you watch that
+title again. Titles hidden by Young Audience Friendly never appear.
+
+The rows stay on the TV and Edendale sends nothing over the network for them,
+but the launcher (Google's app on Google TV) can read them, which is why the
+setting is opt-in. Google plans to end support for this API in the second half
+of 2027 in favor of the Engage SDK, which needs partner enrollment and user
+accounts that Edendale doesn't have.
+
 Run the hermetic JVM tests and build the debug APK:
 
 ```sh
@@ -389,7 +408,9 @@ tests. Before a release, check on:
   stepping down when the device runs hot.
 - **An Android TV box on a 4K panel, and a TV set running Google TV:** the
   remote's hold speeds and skip-prompt focus, the playlist with the D-pad, the
-  system media controls, and enhancement output at the panel's resolution.
+  system media controls, enhancement output at the panel's resolution, and
+  Continue Watching on the home screen (rows appear, open the player at the
+  saved position, and disappear when the setting is turned off).
 - **A tablet, Chromebook, or desktop-windowing device:** the navigation's child
   rows, docked panels, the keyboard shortcuts, and Meta+/.
 - **A Bluetooth headset:** play, pause, and skip from its buttons.

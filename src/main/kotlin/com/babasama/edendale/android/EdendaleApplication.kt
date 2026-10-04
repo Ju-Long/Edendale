@@ -16,6 +16,9 @@ class EdendaleApplication : Application() {
     /** Linked storage-provider accounts (H.6). */
     val cloudAccounts: CloudAccounts by lazy { CloudAccounts(this) }
 
+    /** Settings → Android TV's Continue Watching on the home screen (I.3). */
+    internal val watchNextSettings: WatchNextSettings by lazy { WatchNextSettings(this) }
+
     override fun onCreate() {
         super.onCreate()
         database = Room.databaseBuilder(
@@ -26,5 +29,7 @@ class EdendaleApplication : Application() {
             .addMigrations(EdendaleDatabase.MIGRATION_1_2, EdendaleDatabase.MIGRATION_2_3)
             .build()
         libraryRepository = LibraryRepository(this, database)
+        // Only a TV has the home screen's Watch Next row; it stays empty until the setting is on.
+        if (isTelevisionDevice()) WatchNextPublisher(this, libraryRepository, watchNextSettings).start()
     }
 }

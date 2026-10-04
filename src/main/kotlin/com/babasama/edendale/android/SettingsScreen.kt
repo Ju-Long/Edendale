@@ -233,12 +233,7 @@ fun SettingsScreen(
 
         if (isTelevision) {
             item {
-                SettingsSection(
-                    header = stringResource(R.string.settings_section_android_tv),
-                    isTelevision = true,
-                ) {
-                    InfoRow(stringResource(R.string.settings_android_tv_note))
-                }
+                AndroidTvSettingsSection()
             }
         }
 
@@ -443,40 +438,80 @@ private fun AudienceSettingsSection(
         isTelevision = isTelevision,
         focusableContent = false,
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-        val focused by interactionSource.collectIsFocusedAsState()
-        Surface(
-            onClick = { onToggle(!isEnabled) },
-            modifier = Modifier.fillMaxWidth(),
-            color = if (focused) EdendaleColors.Gold else Color.Transparent,
-            contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
-            interactionSource = interactionSource,
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_young_audience_title),
+            detail = stringResource(R.string.settings_young_audience_description),
+            checked = isEnabled,
+            onToggle = onToggle,
+        )
+    }
+}
+
+/**
+ * Settings → Android TV: Continue Watching on the home screen (I.3), off by
+ * default, and the note about the TV layout.
+ */
+@Composable
+private fun AndroidTvSettingsSection() {
+    val settings = (LocalContext.current.applicationContext as EdendaleApplication).watchNextSettings
+    val watchNextEnabled by settings.changes.collectAsState(initial = settings.isEnabled)
+    SettingsSection(
+        header = stringResource(R.string.settings_section_android_tv),
+        isTelevision = true,
+        focusableContent = false,
+    ) {
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_watch_next_title),
+            detail = stringResource(R.string.settings_watch_next_description),
+            checked = watchNextEnabled,
+            onToggle = { settings.isEnabled = it },
+        )
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_android_tv_note))
+    }
+}
+
+/** A setting with a title, a line of detail, and a switch; the whole row toggles it and takes focus on TV. */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    detail: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    Surface(
+        onClick = { onToggle(!checked) },
+        modifier = Modifier.fillMaxWidth(),
+        color = if (focused) EdendaleColors.Gold else Color.Transparent,
+        contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp)
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_young_audience_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_young_audience_description),
-                        style = BodyCopyStyle(),
-                        color = if (focused) EdendaleColors.OnGold
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(Modifier.width(16.dp))
-                Switch(checked = isEnabled, onCheckedChange = null)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = detail,
+                    style = BodyCopyStyle(),
+                    color = if (focused) EdendaleColors.OnGold
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
+            Spacer(Modifier.width(16.dp))
+            Switch(checked = checked, onCheckedChange = null)
         }
     }
 }

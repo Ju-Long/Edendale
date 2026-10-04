@@ -2,6 +2,7 @@ package com.babasama.edendale.android
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,7 +16,11 @@ import com.babasama.edendale.tmdb.ContentCertificationProvider
 import com.babasama.edendale.tmdb.YoungAudienceCertificationPolicy
 import java.util.Locale
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /** The three verification outcomes the filter caches per title. */
 enum class AudienceDecision { ALLOWED, BLOCKED, UNAVAILABLE }
@@ -76,6 +81,11 @@ class YoungAudienceFilter(
             enabledState.value = value
             preferences.enabled = value
         }
+
+    /** Reads the stored preference again, for a filter outside the UI that another filter changes. */
+    fun refreshPreference() {
+        enabledState.value = preferences.enabled
+    }
 
     /** The region the cached decisions belong to; a change clears them. */
     val contextIdentifier: String
@@ -144,20 +154,37 @@ class YoungAudienceFilter(
     }
 }
 
+private const val AUDIENCE_PREFERENCES_NAME = "edendale_audience"
+private const val AUDIENCE_KEY_ENABLED = "young_audience_friendly"
+
 /** SharedPreferences-backed preference store for the shipping app. */
 private class AndroidAudiencePreferenceStore(context: Context) : AudiencePreferenceStore {
     private val preferences =
-        context.applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences(AUDIENCE_PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     override var enabled: Boolean
-        get() = preferences.getBoolean(KEY_ENABLED, false)
-        set(value) { preferences.edit().putBoolean(KEY_ENABLED, value).apply() }
-
-    private companion object {
-        const val PREFERENCES_NAME = "edendale_audience"
-        const val KEY_ENABLED = "young_audience_friendly"
-    }
+        get() = preferences.getBoolean(AUDIENCE_KEY_ENABLED, false)
+        set(value) { preferences.edit().putBoolean(AUDIENCE_KEY_ENABLED, value).apply() }
 }
+
+/** A filter over the device's stored preference, for work outside the UI such as the Watch Next row (I.3). */
+internal fun youngAudienceFilter(context: Context): YoungAudienceFilter = YoungAudienceFilter(
+    provider = AndroidEdendaleCore.contentCertificationProvider(
+        regionProvider = { Locale.getDefault().country },
+    ),
+    preferences = AndroidAudiencePreferenceStore(context),
+)
+
+/** The stored Young Audience preference now, and again after every change. */
+internal fun audiencePreferenceChanges(context: Context): Flow<Boolean> = callbackFlow {
+    val preferences = context.applicationContext.getSharedPreferences(AUDIENCE_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == AUDIENCE_KEY_ENABLED || key == null) trySend(preferences.getBoolean(AUDIENCE_KEY_ENABLED, false))
+    }
+    preferences.registerOnSharedPreferenceChangeListener(listener)
+    send(preferences.getBoolean(AUDIENCE_KEY_ENABLED, false))
+    awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+}.distinctUntilChanged()
 
 /**
  * Hosts the one [YoungAudienceFilter] the whole shell shares, so its
@@ -165,10 +192,5 @@ private class AndroidAudiencePreferenceStore(context: Context) : AudiencePrefere
  * changes. Created once at the app root and passed to every surface.
  */
 class AudienceFilterViewModel(application: Application) : AndroidViewModel(application) {
-    val filter: YoungAudienceFilter = YoungAudienceFilter(
-        provider = AndroidEdendaleCore.contentCertificationProvider(
-            regionProvider = { Locale.getDefault().country },
-        ),
-        preferences = AndroidAudiencePreferenceStore(application),
-    )
+    val filter: YoungAudienceFilter = youngAudienceFilter(application)
 }

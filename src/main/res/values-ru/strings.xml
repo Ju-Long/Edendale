@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Добавьте токен в secrets.json и пересоберите</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Включены крупный шрифт, безопасные для оверскана поля, увеличение при фокусе с пульта и альбомная ориентация.</string>
+    <string name="settings_watch_next_title">«Продолжить просмотр» на главном экране</string>
+    <string name="settings_watch_next_description">Показывает то, что вы смотрите, в ряду «Продолжить просмотр» на главном экране. Edendale ничего не отправляет для этого по сети, но приложение главного экрана может видеть эти названия.</string>
     <string name="settings_section_sources">Источники</string>
     <string name="settings_no_sources">Нет привязанных источников</string>
     <string name="settings_section_backup">Резервное копирование</string>

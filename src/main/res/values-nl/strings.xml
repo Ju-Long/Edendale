@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Voeg een token toe aan secrets.json en bouw opnieuw op</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Grote letters, overscan-veilige marges, afstandsbediening-focus lift en landschapsweergave zijn actief.</string>
+    <string name="settings_watch_next_title">Verder kijken op het startscherm</string>
+    <string name="settings_watch_next_description">Toont wat je aan het kijken bent in de rij ‘Verder kijken’ van het startscherm. Edendale stuurt hiervoor niets over het netwerk, maar de startscherm-app kan deze titels zien.</string>
     <string name="settings_section_sources">Bronnen</string>
     <string name="settings_no_sources">Geen bronnen gekoppeld</string>
     <string name="settings_section_backup">Back-up</string>

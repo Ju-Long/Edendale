@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">secrets.jsonにトークンを追加して再ビルドしてください</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">大きな文字、オーバースキャン対応のマージン、リモコンフォーカスのリフト、およびランドスケープ表示が有効になっています。</string>
+    <string name="settings_watch_next_title">ホーム画面に「視聴を続ける」を表示</string>
+    <string name="settings_watch_next_description">視聴中のタイトルをホーム画面の「視聴を続ける」の列に表示します。Edendale はこのためにネットワークへ何も送信しませんが、ホーム画面のアプリはこれらのタイトルを見ることができます。</string>
     <string name="settings_section_sources">ソース</string>
     <string name="settings_no_sources">リンクされたソースはありません</string>
     <string name="settings_section_backup">バックアップ</string>

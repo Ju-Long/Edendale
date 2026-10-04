@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">請在 secrets.json 加入憑證並重新建置</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">已啟用大字體、防止過度掃描的邊距、遙控器焦點提升，以及橫向顯示模式。</string>
+    <string name="settings_watch_next_title">在主畫面顯示「繼續觀看」</string>
+    <string name="settings_watch_next_description">在主畫面的「繼續觀看」列中顯示你正在觀看的內容。Edendale 不會為此透過網路傳送任何內容，但主畫面應用程式可以看到這些標題。</string>
     <string name="settings_section_sources">來源</string>
     <string name="settings_no_sources">未連結任何來源</string>
     <string name="settings_section_backup">備份</string>

@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Agrega un token a secrets.json y vuelve a compilar</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">La letra grande, los márgenes seguros contra overscan, la elevación de enfoque con el control remoto y la presentación horizontal están activos.</string>
+    <string name="settings_watch_next_title">Continuar viendo en la pantalla principal</string>
+    <string name="settings_watch_next_description">Muestra lo que estás viendo en la fila “Continuar viendo” de la pantalla principal. Edendale no envía nada por la red para esto, pero la app de la pantalla principal puede ver estos títulos.</string>
     <string name="settings_section_sources">Orígenes</string>
     <string name="settings_no_sources">No hay fuentes vinculadas</string>
     <string name="settings_section_backup">Copia de Seguridad</string>

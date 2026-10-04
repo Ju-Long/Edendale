@@ -175,7 +175,7 @@ steps until they are answered.
 | D12 | Frame generation | Phones and tablets only, off by default, behind the experiment in G.1. Never offered on Android TV. | G.2–G.6 |
 | D13 | MediaSession scope | A `MediaSession` owned by `PlayerActivity`. No `MediaSessionService` and no background playback; playback still pauses in `onStop`. | — |
 | D14 | Instrumented tests | Add `src/androidTest` for GL, parser, and migration checks, run on a device or emulator. Adding them to CI is optional (A.5.4). | — |
-| D15 | Watch Next row | Research first (I.3.1). Build it only if the launchers on target devices still read `WatchNextPrograms`. Opt-in, off by default. | I.3.2–I.3.3 |
+| D15 | Watch Next row | **Decided by the owner (2026-10-04): build it** on the platform's `WatchNextPrograms`, knowing Google ends support in the second half of 2027 (I.3.1). Opt-in, off by default. | — |
 | D16 | SFTP library | sshj (Apache-2.0) if it passes H.4.1; otherwise Apache MINA SSHD (Apache-2.0). | — |
 | D17 | NFS | **Decided by the owner (2026-10-04): no NFS on Android.** H.10.1 found no maintained NFSv3 client under a compatible licence. | — |
 | D18 | Rounded subtitle font | Android has no system rounded font. Default: bundle Nunito (SIL OFL 1.1) as the "Rounded" choice and credit it in Attribution. The owner may prefer to drop "Rounded" on Android. | — |
@@ -1670,11 +1670,20 @@ AGENTS.md forbids.
 - [x] **I.3.1** A research note: do the target launchers (Google TV and the
   Android TV home screen) still read `TvContractCompat.WatchNextPrograms`, or
   only Google's Engage SDK? **Stop if it's Engage only.**
-- [ ] **I.3.2** An opt-in setting in Settings → Android TV, off by default, with
+- [x] **I.3.2** An opt-in setting in Settings → Android TV, off by default, with
   a note that the launcher can see these titles.
-- [ ] **I.3.3** Publish in-progress titles (type CONTINUE) and next-up episodes
+- [x] **I.3.3** Publish in-progress titles (type CONTINUE) and next-up episodes
   (type NEXT), with `edendale://` deep links to the existing play routes.
   Update them as progress changes; remove them on completion, deletion, or when
+  the setting is turned off.
+- [x] **I.3.T1** (JVM) `WatchNextTest`: programs from Continue Watching (one row
+  per movie or show, the shelf's cap), and the reconciliation with the
+  provider's rows (insert, update, unchanged, delete, rows that aren't
+  Edendale's, duplicates, rows the viewer removed). `LibraryPresentationTest`:
+  position, length, 16:9 artwork, and engagement time on Continue Watching.
+- [ ] **I.3.D1** (instrumented, TV only) `WatchNextStoreInstrumentedTest` writes,
+  updates, and removes a row through the TV provider; on a TV, the row appears
+  in the home screen, opens the player at the saved position, and goes when
   the setting is turned off.
 
 ---
@@ -2073,6 +2082,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.6 | Since 2026-10-04, Microsoft redirects to `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` instead of `msauth.com.babasama.edendale://auth`. The manifest matches the decoded hash as the path. | The owner registered the Entra app's Android platform, which generates this redirect from the package name and a signing certificate's SHA-1. Without MSAL nothing compares the hash with the app's signature, so debug and release builds share it. | 90b891f |
 | H.7 | OneDrive enumerates with the breadth-first walk instead of a recursive `delta` override; folder-level `delta` works only for personal accounts. Linking a OneDrive folder from the UI comes with H.11. | Apple's connector does the same, and work or school accounts are part of the target. | 4c83c40 |
 | H.11 | Link Source stays one dialog: a row of provider chips (servers, then the cloud providers this build can sign in to), then the server form or the account step, then the folder browser. On TV, cloud providers wait for I.1's device code. A cloud source's path starts with the account's email, so its row names the account. | The servers' form already lived there (H.3, H.5), and one flow keeps D-pad focus in one place. | 57ec4d1 |
+| I.3.3 | Rows open the player through an explicit `PlayerActivity` intent (the shelf card's own request), stored as the row's intent URI, instead of `edendale://` links. Each show gets one row (its most recent episode), not one per episode. Rows are written 8 s after the last library change, so playback's 5 s progress saves update them when playback pauses or stops. | The `edendale://` routes open a detail page by design, not the player at a position. Google's Watch Next guidance asks for one program per series. Writing on every progress save would churn the launcher's row. | — |
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |
@@ -2168,7 +2178,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.12 | Folder-picker experiment | Research note in Findings; device check not run (needs Play Store apps) | 2d28460 |
 | I.1 | OneDrive on TV | I.1.1 complete; I.1.D1 not run (needs a TV and a registered client ID) | 0f00786 |
 | I.2 | Phone-to-TV handoff | Ready: build I.2.1's design (owner, 2026-10-04); the owner reviews it with the finished work | 2d28460 |
-| I.3 | Watch Next row | I.3.1 in Findings; waiting for owner (Watch Next ends 2H 2027, Engage needs enrollment) | 2d28460 |
+| I.3 | Watch Next row | Complete (I.3.D1 not run: needs a TV device or emulator) | 2d28460 |
 | J.1 | Navigation child rows | Complete (device check not run) | 983546a |
 | J.2 | Continue Watching and Movies pages | Complete (device check not run) | 983546a |
 | J.3 | Keyboard shortcuts | Complete (device check not run) | 983546a |

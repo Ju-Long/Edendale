@@ -1390,17 +1390,27 @@ class PlayerActivity : ComponentActivity() {
             season: Int? = null,
             episode: Int? = null,
         ) {
-            context.startActivity(
-                Intent(context, PlayerActivity::class.java).apply {
-                    putExtra(EXTRA_URI, uri)
-                    putExtra(EXTRA_TITLE, title)
-                    tmdbId?.let { putExtra(EXTRA_TMDB_ID, it) }
-                    putExtra(EXTRA_IS_EPISODE, isEpisode)
-                    showTmdbId?.let { putExtra(EXTRA_SHOW_TMDB_ID, it) }
-                    season?.let { putExtra(EXTRA_SEASON, it) }
-                    episode?.let { putExtra(EXTRA_EPISODE, it) }
-                },
-            )
+            context.startActivity(intent(context, uri, title, tmdbId, isEpisode, showTmdbId, season, episode))
+        }
+
+        /** The request [play] sends, also written into the TV home screen's Watch Next rows (I.3). */
+        fun intent(
+            context: Context,
+            uri: String,
+            title: String,
+            tmdbId: Int? = null,
+            isEpisode: Boolean = false,
+            showTmdbId: Int? = null,
+            season: Int? = null,
+            episode: Int? = null,
+        ): Intent = Intent(context, PlayerActivity::class.java).apply {
+            putExtra(EXTRA_URI, uri)
+            putExtra(EXTRA_TITLE, title)
+            tmdbId?.let { putExtra(EXTRA_TMDB_ID, it) }
+            putExtra(EXTRA_IS_EPISODE, isEpisode)
+            showTmdbId?.let { putExtra(EXTRA_SHOW_TMDB_ID, it) }
+            season?.let { putExtra(EXTRA_SEASON, it) }
+            episode?.let { putExtra(EXTRA_EPISODE, it) }
         }
     }
 }

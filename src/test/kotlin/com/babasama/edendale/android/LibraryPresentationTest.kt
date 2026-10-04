@@ -238,6 +238,74 @@ class LibraryPresentationTest {
 
     // MARK: - Continue Watching: next-up (C.3, Apple ContinueWatchingTests)
 
+    // MARK: - What the TV home screen's Watch Next row needs (I.3)
+
+    @Test
+    fun `a part-watched title carries its position, length, and 16 by 9 artwork`() {
+        val entry = continueWatching(
+            progress = listOf(progress(603, position = 0.25, lastWatched = 5_000L).copy(watchedSeconds = 1_800.0)),
+            movies = listOf(movie().copy(backdropPath = "/matrix-wide.jpg")),
+            episodes = emptyList(),
+            shows = emptyList(),
+        ).single()
+
+        assertEquals(1_800_000L, entry.positionMillis)
+        assertEquals(7_200_000L, entry.durationMillis)
+        assertEquals("https://image.tmdb.org/t/p/w780/matrix-wide.jpg", entry.backdropUrl)
+        assertEquals(5_000L, entry.lastWatchedEpochMillis)
+    }
+
+    @Test
+    fun `without stored seconds the length comes from the TMDB runtime`() {
+        fun entry(runtime: Int?) = continueWatching(
+            progress = listOf(progress(603, position = 0.5)),
+            movies = listOf(movie(runtime = runtime)),
+            episodes = emptyList(),
+            shows = emptyList(),
+        ).single()
+
+        assertEquals(4_080_000L, entry(136).positionMillis)
+        assertEquals(8_160_000L, entry(136).durationMillis)
+        assertNull(entry(null).positionMillis)
+        assertNull(entry(null).durationMillis)
+        assertNull(entry(null).backdropUrl)
+    }
+
+    @Test
+    fun `an episode shows its still, else its show's backdrop`() {
+        val severance = show().copy(backdropPath = "/severance-wide.jpg")
+        fun entry(still: String?) = continueWatching(
+            progress = listOf(progress(3000, type = WatchMediaType.EPISODE)),
+            movies = emptyList(),
+            episodes = listOf(episode().copy(stillPath = still)),
+            shows = listOf(severance),
+        ).single()
+
+        assertEquals("https://image.tmdb.org/t/p/w780/still.jpg", entry("/still.jpg").backdropUrl)
+        assertEquals("https://image.tmdb.org/t/p/w780/severance-wide.jpg", entry(null).backdropUrl)
+        assertEquals("Half Loop", entry(null).episodeTitle)
+        assertEquals(1_000L, entry(null).lastWatchedEpochMillis)
+    }
+
+    @Test
+    fun `next-up has the episode's runtime, no position, and the finished episode's time`() {
+        val entry = continueWatching(
+            progress = listOf(completedEpisode(101, show = 1, season = 1, number = 1, lastWatched = 9_000L)),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("anime", 1, 1, tmdbId = 101),
+                showEpisode("anime", 1, 2, tmdbId = 102).copy(runtimeMinutes = 24, title = "Second"),
+            ),
+            shows = listOf(show(key = "anime", name = "Anime", tmdbId = 1)),
+        ).single()
+
+        assertTrue(entry.isNextUp)
+        assertNull(entry.positionMillis)
+        assertEquals(1_440_000L, entry.durationMillis)
+        assertEquals("Second", entry.episodeTitle)
+        assertEquals(9_000L, entry.lastWatchedEpochMillis)
+    }
+
     private fun completedEpisode(
         tmdbId: Int,
         show: Int,

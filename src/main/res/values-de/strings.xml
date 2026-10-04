@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Füge einen Token zu secrets.json hinzu und erstelle den Build neu</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Große Schrift, Overscan-sichere Ränder, Fokus-Hervorhebung durch die Fernbedienung und Querformat-Präsentation sind aktiv.</string>
+    <string name="settings_watch_next_title">Weiter ansehen auf dem Startbildschirm</string>
+    <string name="settings_watch_next_description">Zeigt, was du gerade ansiehst, in der Reihe „Weiter ansehen“ des Startbildschirms. Edendale sendet dafür nichts über das Netzwerk, aber die Startbildschirm-App kann diese Titel sehen.</string>
     <string name="settings_section_sources">Quellen</string>
     <string name="settings_no_sources">Keine Quellen verknüpft</string>
     <string name="settings_section_backup">Backup</string>

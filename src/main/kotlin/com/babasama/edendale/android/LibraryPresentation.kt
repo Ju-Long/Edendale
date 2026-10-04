@@ -126,6 +126,16 @@ internal data class ContinueEntry(
     val season: Int? = null,
     val episode: Int? = null,
     val isNextUp: Boolean = false,
+    /** The episode's own title, apart from its code. */
+    val episodeTitle: String? = null,
+    /** 16:9 artwork: the episode still, else the show backdrop; a movie's backdrop. */
+    val backdropUrl: String? = null,
+    /** Where playback stopped; null for a next-up entry. */
+    val positionMillis: Long? = null,
+    /** The file's length, from the watch record or else the TMDB runtime. */
+    val durationMillis: Long? = null,
+    /** When it was last watched (for next-up, the completed episode): the shelf's order. */
+    val lastWatchedEpochMillis: Long = 0L,
 )
 
 /** How many resumable titles the shelf shows before it stops being a shelf. */
@@ -133,6 +143,20 @@ internal const val CONTINUE_WATCHING_LIMIT = 12
 
 /** A part-watched record: the shelf's and the next-up rule's shared test. */
 private fun WatchProgress.isResumable(): Boolean = !isCompleted && normalizedPosition > 0.01
+
+/**
+ * Where a part-watched record stopped and how long the file is, in
+ * milliseconds. The player stores the position in seconds beside the
+ * fraction, which gives the length; a record without seconds (an import)
+ * falls back to the TMDB runtime.
+ */
+private fun WatchProgress.playbackMillis(runtimeMinutes: Int?): Pair<Long?, Long?> {
+    val fraction = normalizedPosition
+    val position = (watchedSeconds * 1000).toLong()
+    if (position > 0 && fraction > 0) return position to (position / fraction).toLong()
+    val duration = runtimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L } ?: return null to null
+    return (duration * fraction).toLong() to duration
+}
 
 // MARK: - Copies of one title (D.5)
 
@@ -226,6 +250,7 @@ internal fun continueWatching(
         val entry = when (record.mediaType) {
             WatchMediaType.MOVIE -> {
                 val movie = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val (position, duration) = record.playbackMillis(movie.runtimeMinutes)
                 ContinueEntry(
                     uri = movie.uri,
                     title = movie.title,
@@ -234,11 +259,16 @@ internal fun continueWatching(
                     fraction = fraction,
                     tmdbId = movie.tmdbId,
                     isEpisode = false,
+                    backdropUrl = tmdbImageUrl(movie.backdropPath, TmdbImageSize.BACKDROP),
+                    positionMillis = position,
+                    durationMillis = duration,
+                    lastWatchedEpochMillis = record.lastWatchedEpochMillis,
                 )
             }
             WatchMediaType.EPISODE -> {
                 val episode = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
                 val show = showsByKey[episode.showKey]
+                val (position, duration) = record.playbackMillis(episode.runtimeMinutes)
                 ContinueEntry(
                     uri = episode.uri,
                     title = show?.name ?: episode.fileName,
@@ -251,6 +281,11 @@ internal fun continueWatching(
                     showTmdbId = show?.tmdbId,
                     season = episode.season,
                     episode = episode.episode,
+                    episodeTitle = episode.title,
+                    backdropUrl = tmdbImageUrl(episode.stillPath ?: show?.backdropPath, TmdbImageSize.BACKDROP),
+                    positionMillis = position,
+                    durationMillis = duration,
+                    lastWatchedEpochMillis = record.lastWatchedEpochMillis,
                 )
             }
         }
@@ -337,6 +372,10 @@ private fun nextUpEntries(
                 season = episode.season,
                 episode = episode.episode,
                 isNextUp = true,
+                episodeTitle = episode.title,
+                backdropUrl = tmdbImageUrl(episode.stillPath ?: show?.backdropPath, TmdbImageSize.BACKDROP),
+                durationMillis = episode.runtimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L },
+                lastWatchedEpochMillis = candidate.lastWatchedEpochMillis,
             ) to candidate.lastWatchedEpochMillis
         }
 }
