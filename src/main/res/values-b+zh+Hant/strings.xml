@@ -432,4 +432,18 @@
     <string name="s3_bucket_label">儲存貯體</string>
     <string name="s3_access_key_label">存取金鑰 ID</string>
     <string name="s3_secret_key_label">私密存取金鑰</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">此版本的 Edendale 未設定 %1$s。</string>
+    <string name="oauth_cancelled">已取消登入。</string>
+    <string name="oauth_unverified">無法驗證登入回應。請再試一次。</string>
+    <string name="oauth_denied">不允許存取 %1$s。</string>
+    <string name="oauth_invalid_grant">你的 %1$s 登入已過期或已被撤銷。請重新登入。</string>
+    <string name="oauth_device_code_expired">代碼在核准前已過期。請取得新代碼並再試一次。</string>
+    <string name="oauth_server_detail">%1$s 無法完成登入（%2$s）：%3$s</string>
+    <string name="oauth_server">%1$s 無法完成登入（%2$s）。</string>
+    <string name="oauth_malformed">%1$s 傳送了 Edendale 無法讀取的回應。</string>
+    <string name="accounts_sign_out">登出</string>
+    <string name="accounts_sign_out_revoke">登出並撤銷存取權限</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">在你重新連結帳號之前，來自 %1$s 的來源將無法在此裝置上使用。</string>
 </resources>

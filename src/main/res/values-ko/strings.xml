@@ -432,4 +432,18 @@
     <string name="s3_bucket_label">버킷</string>
     <string name="s3_access_key_label">액세스 키 ID</string>
     <string name="s3_secret_key_label">비밀 액세스 키</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">이 Edendale 빌드에는 %1$s이(가) 설정되어 있지 않습니다.</string>
+    <string name="oauth_cancelled">로그인이 취소되었습니다.</string>
+    <string name="oauth_unverified">로그인 응답을 확인할 수 없습니다. 다시 시도하십시오.</string>
+    <string name="oauth_denied">%1$s에 대한 접근이 허용되지 않았습니다.</string>
+    <string name="oauth_invalid_grant">%1$s 로그인이 만료되었거나 취소되었습니다. 다시 로그인하십시오.</string>
+    <string name="oauth_device_code_expired">승인되기 전에 코드가 만료되었습니다. 새 코드를 받아 다시 시도하십시오.</string>
+    <string name="oauth_server_detail">%1$s에서 로그인을 완료할 수 없습니다(%2$s): %3$s</string>
+    <string name="oauth_server">%1$s에서 로그인을 완료할 수 없습니다(%2$s).</string>
+    <string name="oauth_malformed">%1$s에서 Edendale이 읽을 수 없는 응답을 보냈습니다.</string>
+    <string name="accounts_sign_out">로그아웃</string>
+    <string name="accounts_sign_out_revoke">로그아웃 및 접근 권한 취소</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">계정을 다시 연결할 때까지 %1$s의 소스가 이 기기에서 작동하지 않습니다.</string>
 </resources>

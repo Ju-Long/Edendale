@@ -4,5 +4,6 @@
     <exclude domain="sharedpref" path="edendale_tmdb_session.xml" />
     <exclude domain="sharedpref" path="edendale_smb_credentials.xml" />
     <exclude domain="sharedpref" path="edendale_server_logins.xml" />
+    <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
     <exclude domain="sharedpref" path="edendale_wyzie.xml" />
 </full-backup-content>

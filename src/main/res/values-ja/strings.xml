@@ -432,4 +432,18 @@
     <string name="s3_bucket_label">バケット</string>
     <string name="s3_access_key_label">アクセスキーID</string>
     <string name="s3_secret_key_label">シークレットアクセスキー</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$sはこのビルドのEdendaleでは設定されていません。</string>
+    <string name="oauth_cancelled">サインインがキャンセルされました。</string>
+    <string name="oauth_unverified">サインインの応答を確認できませんでした。もう一度お試しください。</string>
+    <string name="oauth_denied">%1$sへのアクセスは許可されませんでした。</string>
+    <string name="oauth_invalid_grant">%1$sのサインインの有効期限が切れたか、取り消されました。もう一度サインインしてください。</string>
+    <string name="oauth_device_code_expired">承認される前にコードの有効期限が切れました。新しいコードを取得して、もう一度お試しください。</string>
+    <string name="oauth_server_detail">%1$sでサインインを完了できませんでした（%2$s）: %3$s</string>
+    <string name="oauth_server">%1$sでサインインを完了できませんでした（%2$s）。</string>
+    <string name="oauth_malformed">%1$sから、Edendaleが読み取れない応答が送信されました。</string>
+    <string name="accounts_sign_out">サインアウト</string>
+    <string name="accounts_sign_out_revoke">サインアウトしてアクセスを取り消す</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">%1$sのソースは、アカウントを再度リンクするまでこのデバイスで機能しなくなります。</string>
 </resources>

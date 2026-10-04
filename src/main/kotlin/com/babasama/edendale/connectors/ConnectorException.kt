@@ -14,6 +14,9 @@ sealed interface ConnectorFailure {
     data class AuthenticationFailed(val host: String) : ConnectorFailure
     data class SignInRequired(val kind: MediaSourceKind) : ConnectorFailure
 
+    /** This build has no client ID for the provider (H.6). */
+    data class NotConfigured(val kind: MediaSourceKind) : ConnectorFailure
+
     /** Plain HTTP isn't accepted (D10 decides the home-server rules). */
     data object InsecureConnection : ConnectorFailure
 
@@ -23,7 +26,7 @@ sealed interface ConnectorFailure {
     data class ServerError(val kind: MediaSourceKind, val status: Int) : ConnectorFailure
 
     /** The source needs the viewer to sign in or approve something again, rather than being unreachable. */
-    val needsUserAction: Boolean get() = this is AuthenticationFailed || this is SignInRequired
+    val needsUserAction: Boolean get() = this is AuthenticationFailed || this is SignInRequired || this is NotConfigured
 }
 
 class ConnectorException(val failure: ConnectorFailure, cause: Throwable? = null) : IOException(failure.toString(), cause)

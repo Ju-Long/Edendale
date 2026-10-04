@@ -440,4 +440,18 @@
     <string name="s3_bucket_label">Compartiment</string>
     <string name="s3_access_key_label">ID de clé d’accès</string>
     <string name="s3_secret_key_label">Clé d’accès secrète</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s n’est pas configuré dans cette version d’Edendale.</string>
+    <string name="oauth_cancelled">La connexion a été annulée.</string>
+    <string name="oauth_unverified">La réponse de connexion n’a pas pu être vérifiée. Réessayez.</string>
+    <string name="oauth_denied">L’accès à %1$s n’a pas été autorisé.</string>
+    <string name="oauth_invalid_grant">Votre connexion à %1$s a expiré ou a été révoquée. Reconnectez-vous.</string>
+    <string name="oauth_device_code_expired">Le code a expiré avant d’être approuvé. Obtenez un nouveau code et réessayez.</string>
+    <string name="oauth_server_detail">%1$s n’a pas pu terminer la connexion (%2$s) : %3$s</string>
+    <string name="oauth_server">%1$s n’a pas pu terminer la connexion (%2$s).</string>
+    <string name="oauth_malformed">%1$s a envoyé une réponse qu’Edendale n’a pas pu lire.</string>
+    <string name="accounts_sign_out">Se déconnecter</string>
+    <string name="accounts_sign_out_revoke">Se déconnecter et révoquer l’accès</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Les sources de %1$s cessent de fonctionner sur cet appareil jusqu’à ce que vous liiez à nouveau le compte.</string>
 </resources>

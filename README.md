@@ -170,6 +170,28 @@ byte-range requests for what plays. The key pair and the bucket's location are
 stored encrypted on the device, excluded from backup and device transfer, and
 listed in Settings → Accounts. Use a key that can only read that bucket.
 
+### Cloud accounts
+
+OneDrive and Dropbox accounts sign in in a Custom Tab with OAuth 2.0 and
+PKCE. Edendale uses no provider SDK and ships no client secret. Google Drive
+waits for the owner's decision on how Android signs in (D9). Each provider
+receives the sign-in, folder listings, and the byte ranges of what plays.
+Nothing passes through an Edendale server, because there isn't one. The
+refresh token for each account is stored encrypted on the device, excluded
+from backup and device transfer. Access tokens are kept in memory only.
+**Settings → Accounts** lists each account with its sources and Sign Out.
+For Dropbox, **Sign Out and Revoke Access** also ends Edendale's access at
+the provider.
+
+To build with a provider, add its client ID to `secrets.json`. An empty value
+hides that provider:
+
+| Key | Registration | Redirect URI |
+|---|---|---|
+| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth.com.babasama.edendale://auth` (mobile and desktop platform) |
+| `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
+| `GOOGLE_OAUTH_CLIENT_ID` | Waits for D9 | — |
+
 ### Sources and accounts
 
 Each visit to Downloaded rescans local folders; a remote source is rescanned
@@ -361,6 +383,7 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | Jetpack Compose, Room, Activity, Lifecycle, DocumentFile, Security Crypto | UI, local records, encrypted settings | Apache-2.0 |
 | jcifs-ng | SMB | LGPL-2.1 |
 | OkHttp | Storage providers' HTTP | Apache-2.0 |
+| AndroidX Browser | Custom Tabs for cloud sign-in | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in QR code | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
@@ -368,7 +391,9 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | Nunito | The Rounded subtitle font | SIL OFL 1.1 |
 
 The build reads `TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, and
-`WYZIE_API_KEY` from `secrets.json`; this release adds no new keys.
+`WYZIE_API_KEY` from `secrets.json`. This release adds
+`MICROSOFT_OAUTH_CLIENT_ID`, `DROPBOX_APP_KEY`, and `GOOGLE_OAUTH_CLIENT_ID`
+(see Cloud accounts).
 
 ### Languages
 

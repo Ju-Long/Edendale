@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.babasama.edendale.android.data.EdendaleDatabase
 import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.android.oauth.CloudAccounts
 
 class EdendaleApplication : Application() {
     lateinit var database: EdendaleDatabase
@@ -11,6 +12,9 @@ class EdendaleApplication : Application() {
 
     lateinit var libraryRepository: LibraryRepository
         private set
+
+    /** Linked storage-provider accounts (H.6). */
+    val cloudAccounts: CloudAccounts by lazy { CloudAccounts(this) }
 
     override fun onCreate() {
         super.onCreate()

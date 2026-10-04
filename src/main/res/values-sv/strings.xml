@@ -438,4 +438,18 @@
     <string name="s3_bucket_label">Bucket</string>
     <string name="s3_access_key_label">Åtkomstnyckel-ID</string>
     <string name="s3_secret_key_label">Hemlig åtkomstnyckel</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s är inte konfigurerat i den här versionen av Edendale.</string>
+    <string name="oauth_cancelled">Inloggningen avbröts.</string>
+    <string name="oauth_unverified">Inloggningssvaret kunde inte verifieras. Försök igen.</string>
+    <string name="oauth_denied">Åtkomst till %1$s tilläts inte.</string>
+    <string name="oauth_invalid_grant">Din inloggning på %1$s har gått ut eller återkallats. Logga in igen.</string>
+    <string name="oauth_device_code_expired">Koden gick ut innan den godkändes. Hämta en ny kod och försök igen.</string>
+    <string name="oauth_server_detail">%1$s kunde inte slutföra inloggningen (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s kunde inte slutföra inloggningen (%2$s).</string>
+    <string name="oauth_malformed">%1$s skickade ett svar som Edendale inte kunde läsa.</string>
+    <string name="accounts_sign_out">Logga ut</string>
+    <string name="accounts_sign_out_revoke">Logga ut och återkalla åtkomst</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Källor från %1$s slutar fungera på den här enheten tills du länkar kontot igen.</string>
 </resources>

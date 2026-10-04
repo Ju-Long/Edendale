@@ -34,7 +34,10 @@ import com.babasama.edendale.android.data.SavedServerLogin
 import com.babasama.edendale.android.data.ServerLoginStore
 import com.babasama.edendale.android.data.SmbCredentialsStore
 import com.babasama.edendale.android.data.serverLoginUsage
+import com.babasama.edendale.android.data.SourceScanRules
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.oauth.CloudAccount
+import com.babasama.edendale.oauth.CloudProviders
 import com.babasama.edendale.android.data.smbLoginUsage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,20 +60,28 @@ internal fun AccountsSettingsSection(
     val scope = rememberCoroutineScope()
     var smbLogins by remember { mutableStateOf<List<SavedSmbLogin>?>(null) }
     var serverLogins by remember { mutableStateOf<List<SavedServerLogin>?>(null) }
+    val cloud = remember(context) { (context.applicationContext as EdendaleApplication).cloudAccounts }
+    var cloudAccounts by remember { mutableStateOf<List<CloudAccount>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var pendingForget by remember { mutableStateOf<SavedLoginRow?>(null) }
+    var pendingSignOut by remember { mutableStateOf<CloudAccount?>(null) }
 
     LaunchedEffect(store, reload) {
         smbLogins = withContext(Dispatchers.IO) { runCatching { store.savedLogins() }.getOrDefault(emptyList()) }
         serverLogins = withContext(Dispatchers.IO) { runCatching { serverStore.all() }.getOrDefault(emptyList()) }
+        cloudAccounts = withContext(Dispatchers.IO) { runCatching { cloud.vault.all() }.getOrDefault(emptyList()) }
     }
-    // SMB logins first, then other servers' (H.3) by kind and host.
-    val logins = remember(smbLogins, serverLogins, folders) {
+    // Cloud accounts (H.6) first, then SMB logins, then other servers' (H.3) by kind and host.
+    val logins = remember(smbLogins, serverLogins, cloudAccounts, folders) {
         val smb = smbLogins ?: return@remember null
         val servers = serverLogins ?: return@remember null
+        val accounts = cloudAccounts ?: return@remember null
         val smbUsage = smbLoginUsage(smb, folders.map { it.treeUri })
         val serverUsage = serverLoginUsage(servers, folders)
-        smb.map { login ->
+        accounts.map { account ->
+            val sources = folders.count { SourceScanRules.kindOf(it) == account.kind && it.accountKey == account.key }
+            SavedLoginRow(account.kind, account.label, account.label, sources, detail = account.label, cloudAccount = account) {}
+        } + smb.map { login ->
             SavedLoginRow(MediaSourceKind.SMB, login.user, login.host, smbUsage[login] ?: 0) { store.removeCredentials(login.host) }
         } + servers.map { login ->
             SavedLoginRow(login.kind, login.user, login.address, serverUsage[login] ?: 0, login.detail) {
@@ -96,7 +107,10 @@ internal fun AccountsSettingsSection(
                 LoginRow(
                     login = login,
                     isTelevision = isTelevision,
-                    onForget = { pendingForget = login },
+                    onForget = {
+                        val account = login.cloudAccount
+                        if (account != null) pendingSignOut = account else pendingForget = login
+                    },
                 )
             }
         }
@@ -104,6 +118,67 @@ internal fun AccountsSettingsSection(
         FocusableRows(isTelevision) {
             InfoRow(stringResource(R.string.accounts_note))
         }
+    }
+
+    pendingSignOut?.let { account ->
+        val label = account.label
+        AlertDialog(
+            onDismissRequest = { pendingSignOut = null },
+            shape = RoundedCornerShape(EdendaleRadii.Card.dp),
+            containerColor = EdendaleColors.Surface,
+            title = {
+                Text(
+                    text = stringResource(R.string.accounts_sign_out),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.accounts_sign_out_message, label),
+                    style = BodyCopyStyle(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            dismissButton = {
+                ArchiveButton(
+                    label = stringResource(R.string.action_cancel),
+                    isTelevision = isTelevision,
+                    onClick = { pendingSignOut = null },
+                )
+            },
+            confirmButton = {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ArchiveButton(
+                        label = stringResource(R.string.accounts_sign_out),
+                        kind = ArchiveButtonKind.Secondary,
+                        isTelevision = isTelevision,
+                        onClick = {
+                            pendingSignOut = null
+                            scope.launch {
+                                runCatching { cloud.signOut(account, revoke = false) }
+                                reload++
+                            }
+                        },
+                    )
+                    // Google and Dropbox let Edendale end its own access; Microsoft's is removed on the account page.
+                    if (CloudProviders.supportsRevocation(account.kind)) {
+                        ArchiveButton(
+                            label = stringResource(R.string.accounts_sign_out_revoke),
+                            kind = ArchiveButtonKind.Secondary,
+                            isTelevision = isTelevision,
+                            onClick = {
+                                pendingSignOut = null
+                                scope.launch {
+                                    runCatching { cloud.signOut(account, revoke = true) }
+                                    reload++
+                                }
+                            },
+                        )
+                    }
+                }
+            },
+        )
     }
 
     pendingForget?.let { login ->
@@ -157,8 +232,10 @@ private class SavedLoginRow(
     /** The host, with its port when one was typed. */
     val address: String,
     val sourceCount: Int,
-    /** Replaces `user @ address` where that would show a key rather than a name (S3). */
+    /** Replaces `user @ address` where that would show a key rather than a name (S3), or an account's email. */
     val detail: String? = null,
+    /** A linked cloud account (H.6): signed out rather than forgotten. */
+    val cloudAccount: CloudAccount? = null,
     val forget: suspend () -> Unit,
 ) {
     val title: String get() = detail ?: "$user @ $address"
@@ -207,7 +284,7 @@ private fun LoginRow(
         }
         Spacer(Modifier.width(16.dp))
         ArchiveButton(
-            label = stringResource(R.string.accounts_forget),
+            label = stringResource(if (login.cloudAccount != null) R.string.accounts_sign_out else R.string.accounts_forget),
             isTelevision = isTelevision,
             onClick = onForget,
         )

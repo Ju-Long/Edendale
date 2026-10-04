@@ -169,4 +169,18 @@
     <string name="s3_bucket_label">Bucket</string>
     <string name="s3_access_key_label">Access Key ID</string>
     <string name="s3_secret_key_label">Secret Access Key</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s isn\'t set up in this build of Edendale.</string>
+    <string name="oauth_cancelled">Sign-in was canceled.</string>
+    <string name="oauth_unverified">The sign-in response couldn\'t be verified. Try again.</string>
+    <string name="oauth_denied">Access to %1$s wasn\'t allowed.</string>
+    <string name="oauth_invalid_grant">Your %1$s sign-in has expired or was revoked. Sign in again.</string>
+    <string name="oauth_device_code_expired">The code expired before it was approved. Get a new code and try again.</string>
+    <string name="oauth_server_detail">%1$s couldn\'t complete sign-in (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s couldn\'t complete sign-in (%2$s).</string>
+    <string name="oauth_malformed">%1$s sent a response Edendale couldn\'t read.</string>
+    <string name="accounts_sign_out">Sign Out</string>
+    <string name="accounts_sign_out_revoke">Sign Out and Revoke Access</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Sources from %1$s stop working on this device until you link the account again.</string>
 </resources>

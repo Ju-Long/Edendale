@@ -438,4 +438,18 @@
     <string name="s3_bucket_label">Bucket</string>
     <string name="s3_access_key_label">Toegangssleutel-ID</string>
     <string name="s3_secret_key_label">Geheime toegangssleutel</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s is niet ingesteld in deze build van Edendale.</string>
+    <string name="oauth_cancelled">Inloggen is geannuleerd.</string>
+    <string name="oauth_unverified">Het inlogantwoord kon niet worden geverifieerd. Probeer het opnieuw.</string>
+    <string name="oauth_denied">Toegang tot %1$s is niet toegestaan.</string>
+    <string name="oauth_invalid_grant">Je inlog bij %1$s is verlopen of ingetrokken. Log opnieuw in.</string>
+    <string name="oauth_device_code_expired">De code is verlopen voordat hij werd goedgekeurd. Vraag een nieuwe code aan en probeer het opnieuw.</string>
+    <string name="oauth_server_detail">%1$s kon het inloggen niet voltooien (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s kon het inloggen niet voltooien (%2$s).</string>
+    <string name="oauth_malformed">%1$s stuurde een antwoord dat Edendale niet kon lezen.</string>
+    <string name="accounts_sign_out">Log uit</string>
+    <string name="accounts_sign_out_revoke">Log uit en trek toegang in</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Bronnen van %1$s werken niet meer op dit apparaat totdat je het account opnieuw koppelt.</string>
 </resources>

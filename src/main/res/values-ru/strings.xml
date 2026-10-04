@@ -454,4 +454,18 @@
     <string name="s3_bucket_label">Бакет</string>
     <string name="s3_access_key_label">ID ключа доступа</string>
     <string name="s3_secret_key_label">Секретный ключ доступа</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s не настроен в этой сборке Edendale.</string>
+    <string name="oauth_cancelled">Вход отменен.</string>
+    <string name="oauth_unverified">Не удалось проверить ответ на запрос входа. Повторите попытку.</string>
+    <string name="oauth_denied">Доступ к %1$s не разрешен.</string>
+    <string name="oauth_invalid_grant">Срок действия входа в %1$s истек или вход был отозван. Войдите снова.</string>
+    <string name="oauth_device_code_expired">Срок действия кода истек до подтверждения. Получите новый код и повторите попытку.</string>
+    <string name="oauth_server_detail">%1$s: не удалось завершить вход (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s: не удалось завершить вход (%2$s).</string>
+    <string name="oauth_malformed">Edendale не удалось прочитать ответ от %1$s.</string>
+    <string name="accounts_sign_out">Выйти</string>
+    <string name="accounts_sign_out_revoke">Выйти и отозвать доступ</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Источники из %1$s перестанут работать на этом устройстве, пока вы снова не подключите аккаунт.</string>
 </resources>

@@ -68,6 +68,28 @@
             </intent-filter>
         </activity>
 
+        <!-- Storage providers' sign-in redirects (H.6). It hands the code to
+             the waiting sign-in and returns to the app; nothing else opens it. -->
+        <activity
+            android:name=".oauth.OAuthRedirectActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="msauth.com.babasama.edendale" android:host="auth" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${dropboxRedirectScheme}" android:host="2" android:path="/token" />
+            </intent-filter>
+        </activity>
+
         <!-- In-app player; also the "Open with" target for video files, which
              play directly without being imported into the library. -->
         <activity

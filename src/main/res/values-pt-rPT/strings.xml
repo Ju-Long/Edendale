@@ -440,4 +440,18 @@
     <string name="s3_bucket_label">Bucket</string>
     <string name="s3_access_key_label">ID da Chave de Acesso</string>
     <string name="s3_secret_key_label">Chave de Acesso Secreta</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s não está configurado nesta versão do Edendale.</string>
+    <string name="oauth_cancelled">O início de sessão foi cancelado.</string>
+    <string name="oauth_unverified">Não foi possível verificar a resposta do início de sessão. Tente novamente.</string>
+    <string name="oauth_denied">O acesso a %1$s não foi permitido.</string>
+    <string name="oauth_invalid_grant">A sua sessão em %1$s expirou ou foi revogada. Inicie sessão novamente.</string>
+    <string name="oauth_device_code_expired">O código expirou antes de ser aprovado. Obtenha um novo código e tente novamente.</string>
+    <string name="oauth_server_detail">%1$s não conseguiu concluir o início de sessão (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s não conseguiu concluir o início de sessão (%2$s).</string>
+    <string name="oauth_malformed">%1$s enviou uma resposta que o Edendale não conseguiu ler.</string>
+    <string name="accounts_sign_out">Terminar sessão</string>
+    <string name="accounts_sign_out_revoke">Terminar Sessão e Revogar Acesso</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">As fontes de %1$s deixam de funcionar neste dispositivo até voltar a ligar a conta.</string>
 </resources>

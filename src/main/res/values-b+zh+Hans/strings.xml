@@ -432,4 +432,18 @@
     <string name="s3_bucket_label">存储桶</string>
     <string name="s3_access_key_label">访问密钥 ID</string>
     <string name="s3_secret_key_label">秘密访问密钥</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">此版本的 Edendale 未设置 %1$s。</string>
+    <string name="oauth_cancelled">登录已取消。</string>
+    <string name="oauth_unverified">无法验证登录响应。请重试。</string>
+    <string name="oauth_denied">不允许访问 %1$s。</string>
+    <string name="oauth_invalid_grant">你的 %1$s 登录已过期或被撤销。请重新登录。</string>
+    <string name="oauth_device_code_expired">代码在批准前已过期。请获取新代码并重试。</string>
+    <string name="oauth_server_detail">%1$s 无法完成登录（%2$s）：%3$s</string>
+    <string name="oauth_server">%1$s 无法完成登录（%2$s）。</string>
+    <string name="oauth_malformed">%1$s 发送了 Edendale 无法读取的响应。</string>
+    <string name="accounts_sign_out">退出登录</string>
+    <string name="accounts_sign_out_revoke">退出登录并撤销访问权限</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">在你重新链接帐户之前，来自 %1$s 的来源将无法在此设备上使用。</string>
 </resources>

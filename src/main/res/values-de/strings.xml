@@ -438,4 +438,18 @@
     <string name="s3_bucket_label">Bucket</string>
     <string name="s3_access_key_label">Zugriffsschlüssel-ID</string>
     <string name="s3_secret_key_label">Geheimer Zugriffsschlüssel</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s ist in diesem Build von Edendale nicht eingerichtet.</string>
+    <string name="oauth_cancelled">Die Anmeldung wurde abgebrochen.</string>
+    <string name="oauth_unverified">Die Anmeldeantwort konnte nicht überprüft werden. Versuche es erneut.</string>
+    <string name="oauth_denied">Der Zugriff auf %1$s wurde nicht erlaubt.</string>
+    <string name="oauth_invalid_grant">Deine Anmeldung bei %1$s ist abgelaufen oder wurde widerrufen. Melde dich erneut an.</string>
+    <string name="oauth_device_code_expired">Der Code ist abgelaufen, bevor er bestätigt wurde. Fordere einen neuen Code an und versuche es erneut.</string>
+    <string name="oauth_server_detail">%1$s konnte die Anmeldung nicht abschließen (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s konnte die Anmeldung nicht abschließen (%2$s).</string>
+    <string name="oauth_malformed">%1$s hat eine Antwort gesendet, die Edendale nicht lesen konnte.</string>
+    <string name="accounts_sign_out">Abmelden</string>
+    <string name="accounts_sign_out_revoke">Abmelden und Zugriff widerrufen</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Quellen von %1$s funktionieren auf diesem Gerät nicht mehr, bis du den Account erneut verknüpfst.</string>
 </resources>
