@@ -1982,7 +1982,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.5 | S3 | Complete (device check not run) | 90072dc |
 | H.6 | OAuth and accounts | Complete (sign-in not run: needs registered client IDs) | ed065ea |
 | H.7 | OneDrive | Complete (linking UI with H.11; not run against a real account) | 4c83c40 |
-| H.8 | Dropbox | Not started | |
+| H.8 | Dropbox | Complete (linking UI with H.11; not run against a real account) | 4b73e0f |
 | H.9 | Google Drive (D9) | Blocked | |
 | H.10 | NFS (optional) | Not started | |
 | H.11 | Link Source flow | Not started | |
