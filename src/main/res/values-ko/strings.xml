@@ -461,4 +461,19 @@
     <string name="device_code_qr_description">%1$s 로그인 QR 코드</string>
     <string name="device_code_waiting">승인 기다리는 중…</string>
     <string name="device_code_sign_in">코드로 로그인</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">SSH로 접근할 수 있는 모든 서버.</string>
+    <string name="sftp_port_label">포트</string>
+    <string name="sftp_host_key_note">Edendale은 처음 연결할 때 승인할 수 있도록 서버의 호스트 키를 표시합니다.</string>
+    <string name="sftp_verify_title">호스트 키 확인</string>
+    <string name="sftp_changed_title">호스트 키 변경됨</string>
+    <string name="sftp_verify_message">신뢰하기 전에 서버의 SSH 호스트 키와 일치하는지 확인하십시오.\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$s이(가) 제시한 키가 이전에 승인한 키와 다릅니다. 서버가 재설치되었거나 키가 변경된 것을 알고 있는 경우에만 계속하십시오.\n\n%2$s</string>
+    <string name="sftp_trust">신뢰</string>
+    <string name="sftp_trust_new">새 키 신뢰</string>
+    <string name="connector_host_key_mismatch">%1$s의 SSH 호스트 키가 변경되었습니다. 서버를 다시 연결하여 새 키를 승인할 때까지 Edendale은 연결하지 않습니다.</string>
+    <string name="connector_host_key_unverified">%1$s의 SSH 호스트 키가 아직 승인되지 않았습니다.</string>
+    <string name="connector_secure_connection_failed">%1$s과(와) 보안 연결을 설정할 수 없습니다. 해당 SSH 서버는 Edendale이 지원하지 않는 이전 암호화 방식만 제공합니다.</string>
+    <string name="connector_password_login_unavailable">%1$s에서 암호 로그인을 허용하지 않습니다. 연결하려면 SSH 설정에서 암호 인증을 허용하십시오.</string>
+    <string name="connector_sftp_unavailable">%1$s에서 이 계정에 SFTP를 제공하지 않습니다.</string>
 </resources>

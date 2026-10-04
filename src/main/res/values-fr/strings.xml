@@ -469,4 +469,19 @@
     <string name="device_code_qr_description">Code QR de connexion à %1$s</string>
     <string name="device_code_waiting">En attente d’approbation…</string>
     <string name="device_code_sign_in">Se connecter avec un code</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Tout serveur accessible via SSH.</string>
+    <string name="sftp_port_label">Port</string>
+    <string name="sftp_host_key_note">Lors de la première connexion, Edendale affiche la clé d’hôte du serveur pour que vous l’approuviez.</string>
+    <string name="sftp_verify_title">Vérifier la clé d’hôte</string>
+    <string name="sftp_changed_title">Clé d’hôte modifiée</string>
+    <string name="sftp_verify_message">Vérifiez que cela correspond à la clé d’hôte SSH du serveur avant de lui faire confiance.\n\n%1$s</string>
+    <string name="sftp_changed_message">La clé présentée par %1$s n’est pas celle que vous avez approuvée auparavant. Ne continuez que si vous savez que le serveur a été réinstallé ou que sa clé a été modifiée.\n\n%2$s</string>
+    <string name="sftp_trust">Faire confiance</string>
+    <string name="sftp_trust_new">Faire confiance à la nouvelle clé</string>
+    <string name="connector_host_key_mismatch">La clé d’hôte SSH de %1$s a changé. Edendale ne se connectera pas tant que vous n’aurez pas approuvé la nouvelle clé en liant à nouveau le serveur.</string>
+    <string name="connector_host_key_unverified">La clé d’hôte SSH de %1$s n’a pas encore été approuvée.</string>
+    <string name="connector_secure_connection_failed">Impossible d’établir une connexion sécurisée avec %1$s. Son serveur SSH ne propose qu’un chiffrement ancien, qu’Edendale ne prend pas en charge.</string>
+    <string name="connector_password_login_unavailable">%1$s n’accepte pas les connexions par mot de passe. Autorisez l’authentification par mot de passe dans ses réglages SSH pour le lier.</string>
+    <string name="connector_sftp_unavailable">%1$s ne propose pas SFTP pour ce compte.</string>
 </resources>

@@ -461,4 +461,19 @@
     <string name="device_code_qr_description">%1$s 登录二维码</string>
     <string name="device_code_waiting">正在等待批准…</string>
     <string name="device_code_sign_in">使用代码登录</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">可通过 SSH 访问的任何服务器。</string>
+    <string name="sftp_port_label">端口</string>
+    <string name="sftp_host_key_note">Edendale 首次连接时，会显示服务器的主机密钥供你批准。</string>
+    <string name="sftp_verify_title">验证主机密钥</string>
+    <string name="sftp_changed_title">主机密钥已更改</string>
+    <string name="sftp_verify_message">在信任之前，请检查此内容是否与服务器的 SSH 主机密钥相符。\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$s 提供的密钥与你之前批准的不同。仅当你确定服务器已重装或其密钥已更改时才继续。\n\n%2$s</string>
+    <string name="sftp_trust">信任</string>
+    <string name="sftp_trust_new">信任新密钥</string>
+    <string name="connector_host_key_mismatch">%1$s 的 SSH 主机密钥已更改。在你通过重新链接服务器批准新密钥之前，Edendale 不会连接。</string>
+    <string name="connector_host_key_unverified">%1$s 的 SSH 主机密钥尚未获得批准。</string>
+    <string name="connector_secure_connection_failed">无法与 %1$s 建立安全连接。其 SSH 服务器仅提供较旧的加密方式，Edendale 不支持这些方式。</string>
+    <string name="connector_password_login_unavailable">%1$s 不接受密码登录。请在其 SSH 设置中允许密码认证以进行链接。</string>
+    <string name="connector_sftp_unavailable">%1$s 未为此帐户提供 SFTP。</string>
 </resources>

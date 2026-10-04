@@ -1476,14 +1476,14 @@ Jellyfin, and Emby would be a separate feature.
   Pin it per host and port, and refuse a changed key until the user approves it
   again.
 - Password login first; key login later. Reads are pipelined 32 KiB requests.
-- [ ] **H.4.1** Check that sshj 0.41.x (D16) connects to a current OpenSSH (9.x)
+- [x] **H.4.1** Check that sshj 0.41.x (D16) connects to a current OpenSSH (9.x)
   with default settings, on Android. (sshj needs a full BouncyCastle provider
   registered in place of Android's stripped-down one.) Record the negotiated
   algorithms in Findings. Fall back to MINA SSHD if sshj fails.
-- [ ] **H.4.2** The connector, the byte source (buffered, D.1), and the host-key
+- [x] **H.4.2** The connector, the byte source (buffered, D.1), and the host-key
   pin store (device-local, not secret, but excluded from backup along with the
   logins).
-- [ ] **H.4.T1** (JVM) Fingerprints match `ssh-keygen -l` for Ed25519, ECDSA,
+- [x] **H.4.T1** (JVM) Fingerprints match `ssh-keygen -l` for Ed25519, ECDSA,
   and RSA test keys; the pin-and-compare logic; and listing and ranged reads
   against an in-process SFTP server (MINA SSHD as a `testImplementation`).
 
@@ -1879,6 +1879,18 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   benchmark (720p EASU to 1080p, then CAS at 1080p, offscreen) measured
   1.24 ms per frame on the API 35 arm64 emulator (host GPU). That says nothing
   about phones; F.3.4, F.6, and F.8.2 still need the reference devices.
+- **sshj on Android against OpenSSH 10.3 (H.4.1, 2026-10-04).** sshj 0.41.1
+  with `DefaultConfig`, on the API 35 arm64 emulator, connected to OpenSSH
+  10.3p1 (macOS, default algorithms) and negotiated `curve25519-sha256`, an
+  `ssh-ed25519` host key, and `chacha20-poly1305@openssh.com` both ways; it
+  listed a folder and read a range with pipelined 32 KiB requests
+  (`SftpOpenSshInstrumentedTest`, given the server through instrumentation
+  arguments). Android's built-in "BC" provider is a stripped copy, so
+  `Sftp.ensureProvider()` replaces it with Bouncy Castle 1.84 under the same
+  name, last in line, and points sshj at it; the rest of the app keeps its
+  default providers. The APK needs one packaging exclusion: Bouncy Castle's and
+  jspecify's multi-release jars all carry `META-INF/versions/9/OSGI-INF/MANIFEST.MF`.
+  MINA SSHD stays a test-only dependency (H.4.T1); no fallback was needed.
 
 ---
 

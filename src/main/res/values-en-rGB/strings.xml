@@ -197,4 +197,19 @@
     <string name="device_code_qr_description">%1$s sign-in QR code</string>
     <string name="device_code_waiting">Waiting for approval…</string>
     <string name="device_code_sign_in">Sign In with a Code</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Any server you can reach over SSH.</string>
+    <string name="sftp_port_label">Port</string>
+    <string name="sftp_host_key_note">The first time Edendale connects, it shows the server\'s host key for you to approve.</string>
+    <string name="sftp_verify_title">Verify Host Key</string>
+    <string name="sftp_changed_title">Host Key Changed</string>
+    <string name="sftp_verify_message">Check that this matches the server\'s SSH host key before trusting it.\n\n%1$s</string>
+    <string name="sftp_changed_message">The key %1$s presents isn\'t the one you approved before. Only continue if you know the server was reinstalled or its key was changed.\n\n%2$s</string>
+    <string name="sftp_trust">Trust</string>
+    <string name="sftp_trust_new">Trust New Key</string>
+    <string name="connector_host_key_mismatch">The SSH host key for %1$s has changed. Edendale won\'t connect until you approve the new key by linking the server again.</string>
+    <string name="connector_host_key_unverified">The SSH host key for %1$s hasn\'t been approved yet.</string>
+    <string name="connector_secure_connection_failed">Couldn\'t set up a secure connection with %1$s. Its SSH server offers only older encryption, which Edendale doesn\'t support.</string>
+    <string name="connector_password_login_unavailable">%1$s doesn\'t accept password logins. Allow password authentication in its SSH settings to link it.</string>
+    <string name="connector_sftp_unavailable">%1$s doesn\'t offer SFTP for this account.</string>
 </resources>

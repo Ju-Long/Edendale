@@ -467,4 +467,19 @@
     <string name="device_code_qr_description">QR-kod för inloggning på %1$s</string>
     <string name="device_code_waiting">Väntar på godkännande…</string>
     <string name="device_code_sign_in">Logga in med en kod</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Alla servrar som du når via SSH.</string>
+    <string name="sftp_port_label">Port</string>
+    <string name="sftp_host_key_note">Första gången Edendale ansluter visas serverns värdnyckel så att du kan godkänna den.</string>
+    <string name="sftp_verify_title">Verifiera värdnyckel</string>
+    <string name="sftp_changed_title">Värdnyckeln har ändrats</string>
+    <string name="sftp_verify_message">Kontrollera att detta matchar serverns SSH-värdnyckel innan du litar på den.\n\n%1$s</string>
+    <string name="sftp_changed_message">Nyckeln som %1$s visar är inte den du godkände tidigare. Fortsätt bara om du vet att servern har installerats om eller att dess nyckel har ändrats.\n\n%2$s</string>
+    <string name="sftp_trust">Lita på</string>
+    <string name="sftp_trust_new">Lita på ny nyckel</string>
+    <string name="connector_host_key_mismatch">SSH-värdnyckeln för %1$s har ändrats. Edendale ansluter inte förrän du godkänner den nya nyckeln genom att länka servern igen.</string>
+    <string name="connector_host_key_unverified">SSH-värdnyckeln för %1$s har inte godkänts ännu.</string>
+    <string name="connector_secure_connection_failed">Det gick inte att upprätta en säker anslutning till %1$s. SSH-servern erbjuder bara äldre kryptering, som Edendale inte har stöd för.</string>
+    <string name="connector_password_login_unavailable">%1$s godtar inte inloggning med lösenord. Tillåt lösenordsautentisering i dess SSH-inställningar för att länka den.</string>
+    <string name="connector_sftp_unavailable">%1$s erbjuder inte SFTP för det här kontot.</string>
 </resources>

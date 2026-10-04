@@ -139,6 +139,14 @@ android {
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
+
+    packaging {
+        resources {
+            // Bouncy Castle's and jspecify's multi-release jars (sshj, H.4) each
+            // carry the same OSGi manifest, which an APK doesn't use.
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
 }
 
 dependencies {
@@ -162,6 +170,8 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.jcifs.ng)
+    implementation(libs.sshj)
+    implementation(libs.bouncycastle.bcprov)
     implementation(libs.androidx.security.crypto)
     implementation(libs.zxing.core)
     implementation(libs.okhttp)
@@ -173,6 +183,8 @@ dependencies {
     // SMB URL logic rather than the Compose layer.
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit)
+    testImplementation(libs.sshd.core)
+    testImplementation(libs.sshd.sftp)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

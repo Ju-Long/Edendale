@@ -159,6 +159,7 @@ straight to the service; nothing passes through an Edendale server.
 |---|---|---|
 | SMB (Windows, macOS, NAS shares) | User and password, or guest | The login, folder listings, and reads of the files that play |
 | WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
+| SFTP (any server you can reach over SSH) | User and password; the server's host key is approved on first use | The login, folder listings, and pipelined reads of the files that play |
 | S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret | Signed listing requests and pre-signed byte-range requests |
 | OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
 | Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
@@ -181,6 +182,19 @@ receives the login (Basic or Digest, sent only after it asks), folder
 listings (`PROPFIND`), and the byte ranges of what plays. The login is stored
 encrypted on the device, excluded from backup and device transfer, and listed
 in Settings → Accounts.
+
+### SFTP
+
+**Add Network Source → SFTP** links a folder on any server you can reach over
+SSH, with a username and password (key logins come later). The first time
+Edendale connects, it shows the server's host key (its type and `SHA256:`
+fingerprint, as `ssh-keygen -l` prints them) for you to compare and trust.
+The key is pinned per host and port. If a server later presents a different
+key, Edendale refuses to connect until you trust the new key by linking the
+server again. Logins and pinned keys stay on the device, excluded from
+backup and device transfer. Playback reads through the same read-ahead and
+reconnect as SMB. Servers that offer only older encryption, or only key
+logins, get a message that says so.
 
 ### S3-compatible storage
 
@@ -414,6 +428,8 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | jcifs-ng | SMB | LGPL-2.1 |
 | OkHttp | Storage providers' HTTP | Apache-2.0 |
 | AndroidX Browser | Custom Tabs for cloud sign-in | Apache-2.0 |
+| sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
+| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography | MIT (Bouncy Castle Licence) |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in QR code | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |

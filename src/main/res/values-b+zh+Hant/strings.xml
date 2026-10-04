@@ -461,4 +461,19 @@
     <string name="device_code_qr_description">%1$s 登入 QR 碼</string>
     <string name="device_code_waiting">正在等候核准⋯</string>
     <string name="device_code_sign_in">使用代碼登入</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">可透過 SSH 連線的任何伺服器。</string>
+    <string name="sftp_port_label">埠</string>
+    <string name="sftp_host_key_note">Edendale 首次連線時，會顯示伺服器的主機金鑰供你核准。</string>
+    <string name="sftp_verify_title">驗證主機金鑰</string>
+    <string name="sftp_changed_title">主機金鑰已更改</string>
+    <string name="sftp_verify_message">在信任之前，請檢查此內容是否與伺服器的 SSH 主機金鑰相符。\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$s 提供的金鑰與你先前核准的不同。只有在你確定伺服器已重新安裝或其金鑰已更改時才繼續。\n\n%2$s</string>
+    <string name="sftp_trust">信任</string>
+    <string name="sftp_trust_new">信任新金鑰</string>
+    <string name="connector_host_key_mismatch">%1$s 的 SSH 主機金鑰已更改。在你重新連結伺服器以核准新金鑰之前，Edendale 不會連線。</string>
+    <string name="connector_host_key_unverified">%1$s 的 SSH 主機金鑰尚未核准。</string>
+    <string name="connector_secure_connection_failed">無法與 %1$s 建立安全連線。其 SSH 伺服器僅提供較舊的加密方式，Edendale 不支援這些方式。</string>
+    <string name="connector_password_login_unavailable">%1$s 不接受密碼登入。請在其 SSH 設定中允許密碼認證以進行連結。</string>
+    <string name="connector_sftp_unavailable">%1$s 未為此帳號提供 SFTP。</string>
 </resources>

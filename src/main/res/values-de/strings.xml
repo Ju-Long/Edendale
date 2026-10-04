@@ -467,4 +467,19 @@
     <string name="device_code_qr_description">QR-Code für die Anmeldung bei %1$s</string>
     <string name="device_code_waiting">Warten auf Bestätigung …</string>
     <string name="device_code_sign_in">Mit einem Code anmelden</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Jeder Server, den du per SSH erreichst.</string>
+    <string name="sftp_port_label">Port</string>
+    <string name="sftp_host_key_note">Bei der ersten Verbindung zeigt Edendale den Hostschlüssel des Servers zur Bestätigung an.</string>
+    <string name="sftp_verify_title">Hostschlüssel überprüfen</string>
+    <string name="sftp_changed_title">Hostschlüssel geändert</string>
+    <string name="sftp_verify_message">Prüfe, ob dies mit dem SSH-Hostschlüssel des Servers übereinstimmt, bevor du ihm vertraust.\n\n%1$s</string>
+    <string name="sftp_changed_message">Der Schlüssel, den %1$s vorlegt, ist nicht derjenige, den du zuvor bestätigt hast. Fahre nur fort, wenn du weißt, dass der Server neu installiert oder sein Schlüssel geändert wurde.\n\n%2$s</string>
+    <string name="sftp_trust">Vertrauen</string>
+    <string name="sftp_trust_new">Neuem Schlüssel vertrauen</string>
+    <string name="connector_host_key_mismatch">Der SSH-Hostschlüssel für %1$s hat sich geändert. Edendale stellt keine Verbindung her, bis du den neuen Schlüssel bestätigst, indem du den Server erneut verknüpfst.</string>
+    <string name="connector_host_key_unverified">Der SSH-Hostschlüssel für %1$s wurde noch nicht bestätigt.</string>
+    <string name="connector_secure_connection_failed">Mit %1$s konnte keine sichere Verbindung hergestellt werden. Sein SSH-Server bietet nur ältere Verschlüsselung an, die Edendale nicht unterstützt.</string>
+    <string name="connector_password_login_unavailable">%1$s akzeptiert keine Anmeldung per Passwort. Erlaube die Passwortauthentifizierung in den SSH-Einstellungen, um den Server zu verknüpfen.</string>
+    <string name="connector_sftp_unavailable">%1$s bietet für diesen Account kein SFTP an.</string>
 </resources>

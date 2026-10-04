@@ -51,6 +51,11 @@ internal fun connectorFailureMessage(context: Context, error: Throwable): String
             ?: context.getString(R.string.connector_bucket_other_region)
         is ConnectorFailure.ServerError ->
             context.getString(R.string.player_error_server, sourceKindLabel(context, failure.kind), failure.status)
+        is ConnectorFailure.HostKeyUnverified -> context.getString(R.string.connector_host_key_unverified, failure.host)
+        is ConnectorFailure.HostKeyMismatch -> context.getString(R.string.connector_host_key_mismatch, failure.host)
+        is ConnectorFailure.SecureConnectionFailed -> context.getString(R.string.connector_secure_connection_failed, failure.host)
+        is ConnectorFailure.PasswordLoginUnavailable -> context.getString(R.string.connector_password_login_unavailable, failure.host)
+        is ConnectorFailure.SftpUnavailable -> context.getString(R.string.connector_sftp_unavailable, failure.host)
         is ConnectorFailure.NotConfigured ->
             context.getString(R.string.connector_not_configured, sourceKindLabel(context, failure.kind))
         is ConnectorFailure.SignInRequired ->

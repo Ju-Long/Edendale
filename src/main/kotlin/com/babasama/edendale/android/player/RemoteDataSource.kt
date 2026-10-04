@@ -1,5 +1,6 @@
 package com.babasama.edendale.android.player
 
+import android.app.ActivityManager
 import android.content.Context
 import android.net.Uri
 import androidx.media3.common.C
@@ -8,28 +9,75 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
 import com.babasama.edendale.android.data.ServerLoginStore
+import com.babasama.edendale.android.data.SshHostKeyStore
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.connectors.DropboxContentResolver
 import com.babasama.edendale.connectors.OneDriveContentResolver
 import com.babasama.edendale.connectors.ProviderHttp
 import com.babasama.edendale.connectors.S3ContentResolver
+import com.babasama.edendale.connectors.Sftp
+import com.babasama.edendale.connectors.SftpBufferedFile
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.WebDavContentResolver
 import com.babasama.edendale.remote.HttpAuthSession
 import com.babasama.edendale.remote.OkHttpRemoteHttp
+import com.babasama.edendale.remote.BufferedByteSource
+import com.babasama.edendale.remote.BufferedSourceConfig
 import com.babasama.edendale.remote.RemoteByteSource
 import com.babasama.edendale.remote.RemoteFailure
 import com.babasama.edendale.remote.RemoteSourceException
 import com.babasama.edendale.remote.ReusableSourceSlot
+import java.io.Closeable
 import java.io.IOException
 
 /**
- * The byte source for a remote item URL (H.2): each provider's connector
- * registers its resolver here as Section H adds it. Null when the source's
- * account or login is missing, so playback asks the viewer to sign in again.
+ * A remote file the data source reads: an HTTP provider's byte source (H.2)
+ * or a buffered SFTP connection (H.4).
+ */
+internal interface RemoteReader : Closeable {
+    /** Prepares a read from [position]; the file's length, or -1 while unknown. */
+    fun open(position: Long): Long
+
+    /** Reads at [position]; the count, or 0 or less at the end of the file. */
+    fun read(position: Long, buffer: ByteArray, offset: Int, length: Int): Int
+}
+
+private class HttpReader(private val source: RemoteByteSource) : RemoteReader {
+    override fun open(position: Long): Long = source.length
+    override fun read(position: Long, buffer: ByteArray, offset: Int, length: Int) = source.read(position, buffer, offset, length)
+    override fun close() = source.close()
+}
+
+private class BufferedReader(private val source: BufferedByteSource) : RemoteReader {
+    override fun open(position: Long): Long = source.open(position)
+    override fun read(position: Long, buffer: ByteArray, offset: Int, length: Int) = source.read(position, buffer, offset, length)
+    override fun close() = source.close()
+}
+
+/**
+ * The reader for a remote item URL (H.2): each provider's connector registers
+ * here as Section H adds it. Null when the source's account or login is
+ * missing, so playback asks the viewer to sign in again.
  */
 internal object RemotePlayback {
+    fun reader(context: Context, url: String, kind: MediaSourceKind): RemoteReader? =
+        if (kind == MediaSourceKind.SFTP) sftpReader(context, url) else byteSource(context, url, kind)?.let(::HttpReader)
+
+    /** SFTP reads through D.1's buffered source: read-ahead, reconnect, and keep-alive (H.4). */
+    private fun sftpReader(context: Context, url: String): RemoteReader? {
+        val host = SourceUrl.credentialHost(url) ?: return null
+        val port = SourceUrl.port(url) ?: Sftp.DEFAULT_PORT
+        val login = ServerLoginStore(context).get(MediaSourceKind.SFTP, host, port) ?: return null
+        val pinned = SshHostKeyStore(context).pinned(host, port)
+        val manager = context.getSystemService(ActivityManager::class.java)
+        val config = BufferedSourceConfig.forDevice(
+            isLowRamDevice = manager?.isLowRamDevice == true,
+            memoryClassMb = manager?.memoryClass ?: Int.MAX_VALUE,
+        )
+        return BufferedReader(BufferedByteSource(host, { SftpBufferedFile.open(url, login, pinned) }, config))
+    }
+
     fun byteSource(context: Context, url: String, kind: MediaSourceKind): RemoteByteSource? = when (kind) {
         // WebDAV works as a guest too, so a missing login isn't a reason to stop (H.3).
         MediaSourceKind.WEBDAV -> RemoteByteSource(
@@ -70,9 +118,9 @@ internal object RemotePlayback {
  */
 class RemoteDataSource(context: Context) : BaseDataSource(true) {
     private val appContext = context.applicationContext
-    private val slot = ReusableSourceSlot<RemoteByteSource>()
+    private val slot = ReusableSourceSlot<RemoteReader>()
 
-    private var source: RemoteByteSource? = null
+    private var source: RemoteReader? = null
     private var uri: Uri? = null
     private var position = 0L
     private var bytesRemaining = 0L
@@ -84,18 +132,21 @@ class RemoteDataSource(context: Context) : BaseDataSource(true) {
         val kind = dataSpec.uri.scheme?.let(MediaSourceKind::fromScheme)
             ?: throw IOException("No connector reads ${dataSpec.uri.scheme} URLs")
         transferInitializing(dataSpec)
-        val remote = try {
-            slot.acquire(url) {
-                RemotePlayback.byteSource(appContext, url, kind)
+        val remote: RemoteReader
+        val length: Long
+        try {
+            remote = slot.acquire(url) {
+                RemotePlayback.reader(appContext, url, kind)
                     ?: throw RemoteSourceException(kind, RemoteFailure.SignInRequired)
             }
+            length = remote.open(dataSpec.position)
         } catch (error: IOException) {
+            // A source whose first open failed never retries; the next open starts fresh.
             slot.releaseNow()
             throw error
         }
         source = remote
         position = dataSpec.position
-        val length = remote.length
         bytesRemaining = when {
             dataSpec.length != C.LENGTH_UNSET.toLong() -> dataSpec.length
             length >= 0 -> (length - dataSpec.position).coerceAtLeast(0)

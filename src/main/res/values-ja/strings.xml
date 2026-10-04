@@ -461,4 +461,19 @@
     <string name="device_code_qr_description">%1$sのサインイン用QRコード</string>
     <string name="device_code_waiting">承認を待っています…</string>
     <string name="device_code_sign_in">コードでサインイン</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">SSHで接続できるすべてのサーバー。</string>
+    <string name="sftp_port_label">ポート</string>
+    <string name="sftp_host_key_note">Edendaleは初めて接続するときに、承認のためにサーバーのホストキーを表示します。</string>
+    <string name="sftp_verify_title">ホストキーを確認</string>
+    <string name="sftp_changed_title">ホストキーが変更されました</string>
+    <string name="sftp_verify_message">信頼する前に、これがサーバーのSSHホストキーと一致していることを確認してください。\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$sが提示したキーは、以前に承認したものと異なります。サーバーが再インストールされたか、キーが変更されたことがわかっている場合にのみ続行してください。\n\n%2$s</string>
+    <string name="sftp_trust">信頼</string>
+    <string name="sftp_trust_new">新しいキーを信頼</string>
+    <string name="connector_host_key_mismatch">%1$sのSSHホストキーが変更されました。サーバーを再度リンクして新しいキーを承認するまで、Edendaleは接続しません。</string>
+    <string name="connector_host_key_unverified">%1$sのSSHホストキーはまだ承認されていません。</string>
+    <string name="connector_secure_connection_failed">%1$sとの安全な接続を確立できませんでした。SSHサーバーが古い暗号化方式しか提供しておらず、Edendaleはそれに対応していません。</string>
+    <string name="connector_password_login_unavailable">%1$sではパスワードによるログインが許可されていません。リンクするには、SSH設定でパスワード認証を許可してください。</string>
+    <string name="connector_sftp_unavailable">%1$sでは、このアカウントでSFTPを利用できません。</string>
 </resources>

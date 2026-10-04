@@ -20,7 +20,10 @@ import com.babasama.edendale.connectors.OneDriveConnector
 import com.babasama.edendale.connectors.ProviderHttp
 import com.babasama.edendale.connectors.S3Configuration
 import com.babasama.edendale.connectors.S3Connector
+import com.babasama.edendale.connectors.Sftp
+import com.babasama.edendale.connectors.SftpConnector
 import com.babasama.edendale.connectors.SourceUrl
+import com.babasama.edendale.connectors.SshHostKey
 import com.babasama.edendale.connectors.VideoFiles
 import com.babasama.edendale.connectors.WebDav
 import com.babasama.edendale.connectors.WebDavConnector
@@ -72,6 +75,7 @@ class LibraryRepository(
     private val enrichmentLock = Mutex()
     private val smbCredentialsStore = SmbCredentialsStore(context)
     private val serverLogins = ServerLoginStore(context)
+    val sshHostKeys = SshHostKeyStore(context)
     private val http = OkHttpRemoteHttp()
     private val cloud by lazy { (context.applicationContext as EdendaleApplication).cloudAccounts }
 
@@ -172,9 +176,48 @@ class LibraryRepository(
                     ?.let(smbCredentialsStore::getCredentials)
                     ?.let { (user, pass) -> ServerLogin(user, pass) }
                 MediaSourceKind.WEBDAV -> WebDav.canonicalRoot(address)?.let { serverLogins.forUrl(kind, it) }
+                MediaSourceKind.SFTP -> sftpAddress(address)?.let { (host, port, _) -> serverLogins.get(kind, host, port) }
                 else -> null
             }
         }.getOrNull()
+    }
+
+    /** The key an SSH server presents, for the viewer to approve before linking (H.4). */
+    suspend fun fetchSftpHostKey(host: String, port: Int): Result<SshHostKey> =
+        runCatching { withContext(Dispatchers.IO) { Sftp.fetchHostKey(host, port) } }
+
+    /**
+     * The folders under [folderUrl] on an SSH server (the login directory when
+     * null), for the Link Source browser (H.4): the folder listed and its
+     * subfolders. The login is the one being typed, not yet saved.
+     */
+    suspend fun listSftpFolders(host: String, port: Int, login: ServerLogin, folderUrl: String?): Result<Pair<String, List<ConnectorEntry>>> =
+        runCatching {
+            val start = SftpConnector(host, port, login, sshHostKeys)
+            val folder = folderUrl ?: Sftp.url(host, port, start.homeDirectory(), isDirectory = true)
+                ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
+            folder to start.list(folder).filter { it.isDirectory }
+        }
+
+    /** Links a folder on an SSH server (H.4): saves the login under its host and port, then scans. */
+    fun importSftpFolder(folderUrl: String, login: ServerLogin) {
+        val host = SourceUrl.credentialHost(folderUrl) ?: return
+        val port = SourceUrl.port(folderUrl) ?: Sftp.DEFAULT_PORT
+        scope.launch {
+            serverLogins.save(MediaSourceKind.SFTP, host, port, login)
+            val segments = SourceUrl.pathSegments(folderUrl)
+            val address = if (port != Sftp.DEFAULT_PORT) "$host:$port" else host
+            val folder = LibraryFolderEntity(
+                treeUri = folderUrl,
+                displayName = segments.lastOrNull() ?: address,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.SFTP.raw,
+                displayPath = (listOf(address) + segments).joinToString(" › "),
+                accountKey = address,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
     }
 
     /**
@@ -448,6 +491,13 @@ class LibraryRepository(
                 ?: throw ConnectorException(ConnectorFailure.SignInRequired(MediaSourceKind.S3))
             MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE ->
                 cloudConnector(kind, folder.accountKey ?: SourceUrl.credentialHost(folder.treeUri).orEmpty())
+            MediaSourceKind.SFTP -> {
+                val host = SourceUrl.credentialHost(folder.treeUri).orEmpty()
+                val port = SourceUrl.port(folder.treeUri) ?: Sftp.DEFAULT_PORT
+                // SFTP needs its login; without one the source has to sign in again.
+                val login = serverLogins.get(kind, host, port) ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
+                SftpConnector(host, port, login, sshHostKeys, Sftp.path(folder.treeUri))
+            }
             MediaSourceKind.WEBDAV -> WebDavConnector(
                 root = folder.treeUri,
                 login = serverLogins.forUrl(MediaSourceKind.WEBDAV, folder.treeUri),
@@ -670,3 +720,17 @@ data class LocalCopy(
     val isEpisode: Boolean,
     val source: CopySource = CopySource("", null, isUnavailable = false),
 )
+
+/**
+ * What a viewer types for an SSH server — `nas.local`, `nas.local:2222`,
+ * `sftp://nas.local/home/me` — as its host, port, and starting path.
+ */
+internal fun sftpAddress(input: String): Triple<String, Int, String?>? {
+    val text = input.trim().removePrefix("sftp://").removePrefix("ssh://").trimEnd('/')
+    if (text.isEmpty()) return null
+    val authority = text.substringBefore('/').substringAfterLast('@')
+    val path = text.substringAfter('/', "").takeIf { it.isNotEmpty() }?.let { "/$it" }
+    val port = authority.substringAfterLast(':', "").toIntOrNull()
+    val host = (if (port != null) authority.substringBeforeLast(':') else authority).ifEmpty { return null }
+    return Triple(host, port ?: Sftp.DEFAULT_PORT, path)
+}

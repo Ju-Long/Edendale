@@ -467,4 +467,19 @@
     <string name="device_code_qr_description">QR-code om in te loggen bij %1$s</string>
     <string name="device_code_waiting">Wachten op goedkeuring…</string>
     <string name="device_code_sign_in">Log in met een code</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Elke server die je via SSH kunt bereiken.</string>
+    <string name="sftp_port_label">Poort</string>
+    <string name="sftp_host_key_note">De eerste keer dat Edendale verbinding maakt, toont het de hostsleutel van de server zodat je die kunt goedkeuren.</string>
+    <string name="sftp_verify_title">Controleer hostsleutel</string>
+    <string name="sftp_changed_title">Hostsleutel gewijzigd</string>
+    <string name="sftp_verify_message">Controleer of dit overeenkomt met de SSH-hostsleutel van de server voordat je deze vertrouwt.\n\n%1$s</string>
+    <string name="sftp_changed_message">De sleutel die %1$s toont, is niet de sleutel die je eerder hebt goedgekeurd. Ga alleen verder als je weet dat de server opnieuw is geïnstalleerd of dat de sleutel is gewijzigd.\n\n%2$s</string>
+    <string name="sftp_trust">Vertrouw</string>
+    <string name="sftp_trust_new">Vertrouw nieuwe sleutel</string>
+    <string name="connector_host_key_mismatch">De SSH-hostsleutel voor %1$s is gewijzigd. Edendale maakt geen verbinding totdat je de nieuwe sleutel goedkeurt door de server opnieuw te koppelen.</string>
+    <string name="connector_host_key_unverified">De SSH-hostsleutel voor %1$s is nog niet goedgekeurd.</string>
+    <string name="connector_secure_connection_failed">Kan geen beveiligde verbinding maken met %1$s. De SSH-server biedt alleen oudere versleuteling, die Edendale niet ondersteunt.</string>
+    <string name="connector_password_login_unavailable">%1$s accepteert geen inlog met wachtwoord. Sta wachtwoordverificatie toe in de SSH-instellingen om de server te koppelen.</string>
+    <string name="connector_sftp_unavailable">%1$s biedt geen SFTP voor dit account.</string>
 </resources>

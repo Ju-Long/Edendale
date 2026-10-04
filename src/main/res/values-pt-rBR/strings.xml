@@ -469,4 +469,19 @@
     <string name="device_code_qr_description">Código QR para iniciar sessão em %1$s</string>
     <string name="device_code_waiting">Aguardando aprovação…</string>
     <string name="device_code_sign_in">Iniciar Sessão com um Código</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Qualquer servidor que você acesse via SSH.</string>
+    <string name="sftp_port_label">Porta</string>
+    <string name="sftp_host_key_note">Na primeira conexão, o Edendale mostra a chave de host do servidor para você aprovar.</string>
+    <string name="sftp_verify_title">Verificar Chave de Host</string>
+    <string name="sftp_changed_title">Chave de Host Alterada</string>
+    <string name="sftp_verify_message">Verifique se corresponde à chave de host SSH do servidor antes de confiar nele.\n\n%1$s</string>
+    <string name="sftp_changed_message">A chave apresentada por %1$s não é a que você aprovou antes. Só continue se souber que o servidor foi reinstalado ou que a chave dele foi alterada.\n\n%2$s</string>
+    <string name="sftp_trust">Confiar</string>
+    <string name="sftp_trust_new">Confiar na Nova Chave</string>
+    <string name="connector_host_key_mismatch">A chave de host SSH de %1$s mudou. O Edendale não se conectará até você aprovar a nova chave vinculando o servidor novamente.</string>
+    <string name="connector_host_key_unverified">A chave de host SSH de %1$s ainda não foi aprovada.</string>
+    <string name="connector_secure_connection_failed">Não foi possível estabelecer uma conexão segura com %1$s. O servidor SSH oferece apenas criptografia antiga, que o Edendale não suporta.</string>
+    <string name="connector_password_login_unavailable">%1$s não aceita login com senha. Permita a autenticação por senha nos ajustes SSH dele para vinculá-lo.</string>
+    <string name="connector_sftp_unavailable">%1$s não oferece SFTP para esta conta.</string>
 </resources>

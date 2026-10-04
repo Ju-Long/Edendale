@@ -15,6 +15,11 @@ mediarouter = "1.8.1"
 jellyfin-ffmpeg = "1.9.0+1"
 ksp = "2.2.0-2.0.2"
 jcifs = "2.1.10"
+# SFTP (H.4, decision D16), with the full Bouncy Castle provider sshj needs on Android.
+sshj = "0.41.1"
+bouncycastle = "1.84"
+# An in-process SSH and SFTP server for the JVM tests only (H.4.T1).
+sshd = "2.20.0"
 security-crypto = "1.1.0-alpha06"
 zxing = "3.5.4"
 # The HTTP client for storage providers (H.2); the version Coil already brings.
@@ -49,6 +54,10 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 jcifs-ng = { module = "eu.agno3.jcifs:jcifs-ng", version.ref = "jcifs" }
+sshj = { module = "com.hierynomus:sshj", version.ref = "sshj" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+sshd-core = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
+sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "security-crypto" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }

@@ -69,7 +69,10 @@ import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.S3
 import com.babasama.edendale.connectors.S3Configuration
+import com.babasama.edendale.connectors.Sftp
 import com.babasama.edendale.connectors.SourceUrl
+import com.babasama.edendale.connectors.SshHostKey
+import com.babasama.edendale.android.data.sftpAddress
 import com.babasama.edendale.connectors.WebDav
 import com.babasama.edendale.remote.ServerLogin
 
@@ -116,6 +119,10 @@ fun LinkSourceDialog(
     // fields hold the endpoint and the key pair.
     var region by remember { mutableStateOf("") }
     var bucket by remember { mutableStateOf("") }
+    // SFTP (H.4): the port, the server being browsed, and a host key waiting for approval.
+    var port by remember { mutableStateOf("") }
+    var sftpServer by remember { mutableStateOf<Pair<String, Int>?>(null) }
+    var hostKeyReview by remember { mutableStateOf<HostKeyReview?>(null) }
     // Cloud accounts (H.11): the provider's linked accounts, the one being
     // browsed, and its folders from the root down as (URL, name).
     val cloud = remember(context) { (context.applicationContext as EdendaleApplication).cloudAccounts }
@@ -173,7 +180,15 @@ fun LinkSourceDialog(
         loading = true
         error = null
         scope.launch {
-            val listing = if (kind == MediaSourceKind.S3) {
+            val listing = if (kind == MediaSourceKind.SFTP) {
+                val server = sftpServer
+                if (server == null) {
+                    Result.failure(ConnectorException(ConnectorFailure.InvalidAddress))
+                } else {
+                    library.listSftpFolders(server.first, server.second, ServerLogin(user.trim(), pass), trail.lastOrNull())
+                        .map { (folder, entries) -> (if (trail.isEmpty()) listOf(folder) else trail) to entries }
+                }
+            } else if (kind == MediaSourceKind.S3) {
                 val configuration = s3Configuration()
                 if (configuration == null) {
                     Result.failure(ConnectorException(ConnectorFailure.InvalidAddress))
@@ -238,6 +253,43 @@ fun LinkSourceDialog(
         }
     }
 
+    /**
+     * SFTP (H.4): fetch the server's key first; a key that matches the one
+     * pinned goes straight on, anything else waits for the viewer to approve it.
+     */
+    fun connectSftp() {
+        val (typedHost, typedPort, _) = sftpAddress(host) ?: run {
+            error = context.getString(R.string.connector_invalid_address)
+            return
+        }
+        val serverPort = port.trim().toIntOrNull() ?: typedPort
+        loading = true
+        error = null
+        scope.launch {
+            library.fetchSftpHostKey(typedHost, serverPort)
+                .onSuccess { key ->
+                    sftpServer = typedHost to serverPort
+                    val pinned = withContext(Dispatchers.IO) { library.sshHostKeys.pinned(typedHost, serverPort) }
+                    if (pinned == key.fingerprint) {
+                        loading = false
+                        openDav(emptyList())
+                        return@launch
+                    }
+                    hostKeyReview = HostKeyReview(typedHost, serverPort, key, replacesPinnedKey = pinned != null)
+                }
+                .onFailure { error = connectorFailureMessage(context, it) ?: unreachableMessage }
+            loading = false
+        }
+    }
+
+    fun trustHostKey(review: HostKeyReview) {
+        hostKeyReview = null
+        scope.launch {
+            withContext(Dispatchers.IO) { library.sshHostKeys.pin(review.host, review.port, review.key.fingerprint) }
+            openDav(emptyList())
+        }
+    }
+
     // Keyboard behavior (J.4): the address field has focus when the form
     // opens; Tab and Shift+Tab move between fields; Enter connects once the
     // address (the only required field) is filled, and otherwise focuses it.
@@ -258,6 +310,8 @@ fun LinkSourceDialog(
             isS3 && bucket.isBlank() -> bucketFocus.requestFocus()
             isS3 && user.isBlank() -> userFocus.requestFocus()
             isS3 && pass.isEmpty() -> passFocus.requestFocus()
+            // SFTP logs in with a password; there's no guest.
+            kind == MediaSourceKind.SFTP && user.isBlank() && reusedLogin -> userFocus.requestFocus()
             // A server whose login is saved connects with it when the fields are left empty (H.11).
             !isS3 && user.isBlank() && pass.isEmpty() && !reusedLogin -> scope.launch {
                 reusedLogin = true
@@ -268,6 +322,7 @@ fun LinkSourceDialog(
                 connect()
             }
             kind == MediaSourceKind.SMB -> open(typedPath)
+            kind == MediaSourceKind.SFTP -> connectSftp()
             isS3 -> if (host.trim().startsWith("http://", ignoreCase = true)) {
                 // Plain HTTP waits for D10.
                 error = context.getString(R.string.connector_insecure_connection)
@@ -304,7 +359,7 @@ fun LinkSourceDialog(
     }
 
     // WebDAV and S3 browse through their connectors' URLs; cloud accounts through their trail.
-    val isDav = kind == MediaSourceKind.WEBDAV || kind == MediaSourceKind.S3
+    val isDav = kind == MediaSourceKind.WEBDAV || kind == MediaSourceKind.S3 || kind == MediaSourceKind.SFTP
     val isCloud = kind.isCloudAccount
     val cloudAccount = cloudAccounts.firstOrNull { it.key == cloudAccountKey }
     AlertDialog(
@@ -327,6 +382,7 @@ fun LinkSourceDialog(
                                 ?.joinToString(" › ")
                                 .orEmpty()
                             MediaSourceKind.WEBDAV -> WebDav.httpUrl(davTrail.last()).orEmpty()
+                            MediaSourceKind.SFTP -> (listOfNotNull(sftpServer?.first) + SourceUrl.pathSegments(davTrail.last())).joinToString(" › ")
                             else -> urlFor(path)
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -415,7 +471,7 @@ fun LinkSourceDialog(
                     // The provider: servers on the network, then the cloud
                     // accounts this build can sign in to (H.11). TV signs in
                     // with a code, which only OneDrive offers (I.1).
-                    val providers = listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV, MediaSourceKind.S3) +
+                    val providers = listOf(MediaSourceKind.SMB, MediaSourceKind.WEBDAV, MediaSourceKind.SFTP, MediaSourceKind.S3) +
                         listOf(MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE)
                             .filter { if (isTelevision) cloud.isOfferedOnTelevision(it) else cloud.isOffered(it) }
                     Row(
@@ -430,6 +486,7 @@ fun LinkSourceDialog(
                                     kind = option
                                     error = null
                                     reusedLogin = false
+                                    hostKeyReview = null
                                 },
                                 // "S3" fits the chip; the description below names the services.
                                 label = { Text(if (option == MediaSourceKind.S3) "S3" else sourceKindLabel(option)) },
@@ -441,6 +498,7 @@ fun LinkSourceDialog(
                         text = stringResource(
                             when (kind) {
                                 MediaSourceKind.WEBDAV -> R.string.link_source_webdav_description
+                                MediaSourceKind.SFTP -> R.string.link_source_sftp_description
                                 MediaSourceKind.S3 -> R.string.link_source_s3_description
                                 MediaSourceKind.ONE_DRIVE -> R.string.link_source_onedrive_description
                                 MediaSourceKind.DROPBOX -> R.string.link_source_dropbox_description
@@ -450,6 +508,21 @@ fun LinkSourceDialog(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (kind == MediaSourceKind.SFTP) {
+                        Text(
+                            text = stringResource(R.string.sftp_host_key_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    hostKeyReview?.let { review ->
+                        HostKeyReviewBlock(
+                            review = review,
+                            isTelevision = isTelevision,
+                            onTrust = { trustHostKey(review) },
+                            onCancel = { hostKeyReview = null },
+                        )
+                    }
                     if (isCloud) {
                         CloudAccountStep(
                             kind = kind,
@@ -491,6 +564,18 @@ fun LinkSourceDialog(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next)
                     )
+                    if (kind == MediaSourceKind.SFTP) {
+                        OutlinedTextField(
+                            value = port,
+                            onValueChange = { port = it.filter(Char::isDigit).take(5) },
+                            modifier = formKeys,
+                            enabled = !loading,
+                            label = { Text(stringResource(R.string.sftp_port_label)) },
+                            placeholder = { Text(Sftp.DEFAULT_PORT.toString()) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                        )
+                    }
                     if (kind == MediaSourceKind.S3) {
                         OutlinedTextField(
                             value = region,
@@ -556,6 +641,7 @@ fun LinkSourceDialog(
                                 library.importAccountFolder(kind, key, cloudTrail.last().first, cloudTrail.map { it.second })
                             }
                             MediaSourceKind.WEBDAV -> library.importWebDavFolder(davTrail.last(), user, pass)
+                            MediaSourceKind.SFTP -> library.importSftpFolder(davTrail.last(), ServerLogin(user.trim(), pass))
                             MediaSourceKind.S3 -> s3Configuration()?.let { configuration ->
                                 library.importS3Folder(configuration, ServerLogin(user.trim(), pass), davTrail.last())
                             }
@@ -568,7 +654,7 @@ fun LinkSourceDialog(
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )
-            } else if (!isCloud) {
+            } else if (!isCloud && hostKeyReview == null) {
                 ArchiveButton(
                     label = stringResource(
                         if (loading) R.string.action_connecting else R.string.action_connect,
@@ -708,6 +794,51 @@ private fun DeviceCodeSignIn(
             Text(stringResource(R.string.device_code_waiting), style = MaterialTheme.typography.bodyMedium)
         }
         ArchiveButton(label = stringResource(R.string.action_cancel), onClick = onCancel, isTelevision = isTelevision)
+    }
+}
+
+/** An SSH server's key waiting for the viewer's approval (H.4). */
+private class HostKeyReview(val host: String, val port: Int, val key: SshHostKey, val replacesPinnedKey: Boolean) {
+    /** The key type and its fingerprint, as `ssh-keygen -l` shows them. */
+    val displayedKey: String get() = "${key.type}\n${key.fingerprint}"
+}
+
+/**
+ * Trust on first use (H.4, Apple's host-key alert): the key the server
+ * presents, to compare with the server's own, and Trust; a key that differs
+ * from the approved one says so.
+ */
+@Composable
+private fun HostKeyReviewBlock(
+    review: HostKeyReview,
+    isTelevision: Boolean,
+    onTrust: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(if (review.replacesPinnedKey) R.string.sftp_changed_title else R.string.sftp_verify_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = if (review.replacesPinnedKey) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = if (review.replacesPinnedKey) {
+                stringResource(R.string.sftp_changed_message, review.host, review.displayedKey)
+            } else {
+                stringResource(R.string.sftp_verify_message, review.displayedKey)
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ArchiveButton(
+                label = stringResource(if (review.replacesPinnedKey) R.string.sftp_trust_new else R.string.sftp_trust),
+                onClick = onTrust,
+                kind = ArchiveButtonKind.Primary,
+                isTelevision = isTelevision,
+            )
+            ArchiveButton(label = stringResource(R.string.action_cancel), onClick = onCancel, isTelevision = isTelevision)
+        }
     }
 }
 
