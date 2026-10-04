@@ -1997,8 +1997,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | J.4 | Link Source keyboard behavior | Complete (device check not run) | 983546a |
 | J.5 | Docked player panels | Complete (device check not run) | aa8b2ba |
 | J.6 | Season shelf scrubber | Complete (device check not run) | 983546a |
-| K.1 | Settings order | Not started | |
-| L.1 | README | In progress (A–F, J, H.2 covered; H and I providers pending) | d60d466 |
+| K.1 | Settings order | Order checked at 08c55db (About … Attribution, as listed); check again after H.4 and I.3 | |
+| L.1 | README | In progress (all landed sections covered; sshj and SFTP wait for H.4) | d60d466 |
 | L.2 | DESIGN.md | Complete | 0987890 |
 | L.3 | Release | Blocked (D19) | |
 | L.4 | Notes for other branches | Complete (notes in Section L) | |
