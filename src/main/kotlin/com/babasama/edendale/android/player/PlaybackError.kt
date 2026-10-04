@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -25,7 +26,7 @@ import com.babasama.edendale.android.ArchiveButton
 import com.babasama.edendale.android.ArchiveButtonKind
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.R
-import com.babasama.edendale.android.sourceKindLabel
+import com.babasama.edendale.android.remoteFailureMessage
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.remote.RemoteConnectionLostException
 import com.babasama.edendale.remote.RemoteFailure
@@ -76,20 +77,8 @@ internal fun playbackFailureMessage(failure: PlaybackFailure): String = when (fa
 
 /** Apple's provider messages, named for the provider and never carrying a URL. */
 @Composable
-internal fun providerFailureMessage(kind: MediaSourceKind, failure: RemoteFailure): String {
-    val provider = sourceKindLabel(kind)
-    return when (failure) {
-        RemoteFailure.SignInRequired -> stringResource(R.string.sources_status_needs_sign_in, provider)
-        RemoteFailure.AccessDenied -> stringResource(R.string.player_error_access_denied, provider)
-        RemoteFailure.NotFound -> stringResource(R.string.player_error_not_found, provider)
-        RemoteFailure.RateLimited -> stringResource(R.string.player_error_rate_limited, provider)
-        RemoteFailure.RangeUnsupported -> stringResource(R.string.player_error_range_unsupported, provider)
-        RemoteFailure.AbusiveFile -> stringResource(R.string.player_error_abusive_file)
-        RemoteFailure.Unreachable -> stringResource(R.string.sources_status_offline, provider)
-        RemoteFailure.UntrustedCertificate -> stringResource(R.string.player_error_untrusted_certificate, provider)
-        is RemoteFailure.ServerError -> stringResource(R.string.player_error_server, provider, failure.status)
-    }
-}
+internal fun providerFailureMessage(kind: MediaSourceKind, failure: RemoteFailure): String =
+    remoteFailureMessage(LocalContext.current, kind, failure)
 
 /** Shown in place of the picture when the file can't be opened or the connection is lost (Apple's PlaybackErrorView). */
 @Composable

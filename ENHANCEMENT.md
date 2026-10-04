@@ -1540,8 +1540,8 @@ Jellyfin, and Emby would be a separate feature.
 - Graph `children` with `@odata.nextLink` paging, plus the recursive-listing
   override. Stream from `@microsoft.graph.downloadUrl`, which needs no auth
   header, expires within minutes, and accepts `Range`.
-- [ ] **H.7.1** The connector and the download-link resolver.
-- [ ] **H.7.T1** (JVM) Recorded Graph responses for personal and work or school
+- [x] **H.7.1** The connector and the download-link resolver.
+- [x] **H.7.T1** (JVM) Recorded Graph responses for personal and work or school
   accounts: paging, folders, and the video facet's duration.
 
 ### H.8 — Dropbox
@@ -1902,6 +1902,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.3 | Add Network Source gained an SMB / WebDAV choice (an early slice of H.11's Link Source), and the form links through the library itself. WebDAV logins live in a new encrypted `ServerLoginStore` (kind, host, port); SMB keeps its own store and key names. A `dav://` address is refused with its own message until D10. | The server form already existed for SMB; H.11 adds the cloud providers to the same chooser. Moving SMB logins would sign every existing source out. | c9b6f6a |
 | H.5 | Path- or host-style addressing is worked out from the endpoint and bucket (Apple's rule) rather than asked for; an `http://` endpoint is refused until D10. | Apple's form has no such switch, and Android blocks cleartext traffic anyway. | 90072dc |
 | H.6 | Microsoft redirects to `msauth.com.babasama.edendale://auth`, a custom-scheme redirect the owner adds to the Entra app's mobile and desktop platform. Dropbox uses Apple's `db-<app key>://2/token`. The Google configuration exists (and is tested) but isn't offered until D9. Sign-in starts from Link Source in H.7, H.8, and H.11; Settings → Accounts lists accounts and signs out. | Android's Entra platform type needs the release signing hash, which a custom scheme avoids; Apple's Dropbox redirect needs no new registration. | ed065ea |
+| H.7 | OneDrive enumerates with the breadth-first walk instead of a recursive `delta` override; folder-level `delta` works only for personal accounts. Linking a OneDrive folder from the UI comes with H.11. | Apple's connector does the same, and work or school accounts are part of the target. | H7-COMMIT |
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |

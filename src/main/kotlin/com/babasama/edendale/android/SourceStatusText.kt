@@ -13,6 +13,8 @@ import com.babasama.edendale.connectors.SourceStatus
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.oauth.OAuthException
 import com.babasama.edendale.oauth.OAuthFailure
+import com.babasama.edendale.remote.RemoteFailure
+import com.babasama.edendale.remote.RemoteSourceException
 
 /**
  * Why a source's last scan failed, for its row in Settings → Sources and in
@@ -34,7 +36,11 @@ internal fun sourceStatusMessage(folder: LibraryFolderEntity): String? {
 /** What the viewer reads when linking or listing a server fails (H.3); null for an error that isn't a connector's. */
 internal fun connectorFailureMessage(context: Context, error: Throwable): String? =
     when (val failure = (error as? ConnectorException)?.failure) {
-        null -> (error as? OAuthException)?.let { oauthFailureMessage(context, it) }
+        null -> when (error) {
+            is OAuthException -> oauthFailureMessage(context, error)
+            is RemoteSourceException -> remoteFailureMessage(context, error.kind, error.failure)
+            else -> null
+        }
         ConnectorFailure.InvalidAddress -> context.getString(R.string.connector_invalid_address)
         ConnectorFailure.InsecureConnection -> context.getString(R.string.connector_insecure_connection)
         is ConnectorFailure.Unreachable -> context.getString(R.string.connector_unreachable, failure.host)
@@ -71,5 +77,21 @@ internal fun oauthFailureMessage(context: Context, error: OAuthException): Strin
             context.getString(R.string.player_error_server, provider, failure.status)
         }
         OAuthFailure.MalformedResponse -> context.getString(R.string.oauth_malformed, provider)
+    }
+}
+
+/** Apple's provider messages, named for the provider and never carrying a URL (H.2). */
+internal fun remoteFailureMessage(context: Context, kind: MediaSourceKind, failure: RemoteFailure): String {
+    val provider = sourceKindLabel(context, kind)
+    return when (failure) {
+        RemoteFailure.SignInRequired -> context.getString(R.string.sources_status_needs_sign_in, provider)
+        RemoteFailure.AccessDenied -> context.getString(R.string.player_error_access_denied, provider)
+        RemoteFailure.NotFound -> context.getString(R.string.player_error_not_found, provider)
+        RemoteFailure.RateLimited -> context.getString(R.string.player_error_rate_limited, provider)
+        RemoteFailure.RangeUnsupported -> context.getString(R.string.player_error_range_unsupported, provider)
+        RemoteFailure.AbusiveFile -> context.getString(R.string.player_error_abusive_file)
+        RemoteFailure.Unreachable -> context.getString(R.string.sources_status_offline, provider)
+        RemoteFailure.UntrustedCertificate -> context.getString(R.string.player_error_untrusted_certificate, provider)
+        is RemoteFailure.ServerError -> context.getString(R.string.player_error_server, provider, failure.status)
     }
 }

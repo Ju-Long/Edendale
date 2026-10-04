@@ -9,11 +9,14 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.copySource
+import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.OneDriveConnector
+import com.babasama.edendale.connectors.ProviderHttp
 import com.babasama.edendale.connectors.S3Configuration
 import com.babasama.edendale.connectors.S3Connector
 import com.babasama.edendale.connectors.SourceUrl
@@ -69,6 +72,7 @@ class LibraryRepository(
     private val smbCredentialsStore = SmbCredentialsStore(context)
     private val serverLogins = ServerLoginStore(context)
     private val http = OkHttpRemoteHttp()
+    private val cloud by lazy { (context.applicationContext as EdendaleApplication).cloudAccounts }
 
     private val _activity = MutableStateFlow(LibraryActivity())
     val activity: StateFlow<LibraryActivity> = _activity.asStateFlow()
@@ -414,7 +418,7 @@ class LibraryRepository(
 
     /** The connector a remote source scans through (H.1); null for a local folder. */
     private fun connectorFor(folder: LibraryFolderEntity): MediaConnector? =
-        when (MediaSourceKind.fromRaw(folder.kind) ?: MediaSourceKind.forSourceUri(folder.treeUri)) {
+        when (val kind = MediaSourceKind.fromRaw(folder.kind) ?: MediaSourceKind.forSourceUri(folder.treeUri)) {
             MediaSourceKind.SMB -> SmbConnector(
                 root = folder.treeUri,
                 credentials = smbCredentialsStore.getCredentials(Uri.parse(folder.treeUri).host.orEmpty()),
@@ -425,6 +429,8 @@ class LibraryRepository(
                 ?.let { (login, configuration) -> S3Connector(configuration, login, http) }
                 // No key pair: the scan records that the source needs signing in again.
                 ?: throw ConnectorException(ConnectorFailure.SignInRequired(MediaSourceKind.S3))
+            MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE ->
+                cloudConnector(kind, folder.accountKey ?: SourceUrl.credentialHost(folder.treeUri).orEmpty())
             MediaSourceKind.WEBDAV -> WebDavConnector(
                 root = folder.treeUri,
                 login = serverLogins.forUrl(MediaSourceKind.WEBDAV, folder.treeUri),
@@ -432,6 +438,50 @@ class LibraryRepository(
             )
             else -> null
         }
+
+    /**
+     * The connector for a linked cloud account (H.7 on); a missing account
+     * means the source has to sign in again.
+     */
+    private fun cloudConnector(kind: MediaSourceKind, accountKey: String): MediaConnector {
+        val account = cloud.vault.account(kind, accountKey) ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
+        val provider = ProviderHttp(kind, account.key, cloud.tokens, cloud.http)
+        val connector = when (kind) {
+            MediaSourceKind.ONE_DRIVE -> OneDriveConnector.create(account, provider)
+            else -> null
+        }
+        return connector ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
+    }
+
+    /**
+     * The folders under [folderUrl] (the account's root when null) of a linked
+     * cloud account, for the Link Source browser (H.11): the folder listed and
+     * its subfolders.
+     */
+    suspend fun listAccountFolders(kind: MediaSourceKind, accountKey: String, folderUrl: String?): Result<Pair<String, List<ConnectorEntry>>> =
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val connector = cloudConnector(kind, accountKey)
+                val folder = folderUrl ?: connector.root
+                folder to connector.list(folder).filter { it.isDirectory && connector.canIndex(it.url) }
+            }
+        }
+
+    /** Links a folder of a linked cloud account (H.11), then scans it. */
+    fun importAccountFolder(kind: MediaSourceKind, accountKey: String, folderUrl: String, trail: List<String>) {
+        scope.launch {
+            val folder = LibraryFolderEntity(
+                treeUri = folderUrl,
+                displayName = trail.lastOrNull() ?: SourceUrl.fileName(folderUrl).orEmpty(),
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = kind.raw,
+                displayPath = trail.joinToString(" › "),
+                accountKey = accountKey,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
+    }
 
     /** Validates the source, then walks it; a partial walk deletes nothing. */
     private suspend fun listConnector(connector: MediaConnector): Listing {

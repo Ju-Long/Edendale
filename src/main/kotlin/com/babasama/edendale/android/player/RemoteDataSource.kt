@@ -9,6 +9,9 @@ import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
 import com.babasama.edendale.android.data.ServerLoginStore
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.android.EdendaleApplication
+import com.babasama.edendale.connectors.OneDriveContentResolver
+import com.babasama.edendale.connectors.ProviderHttp
 import com.babasama.edendale.connectors.S3ContentResolver
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.WebDavContentResolver
@@ -36,6 +39,13 @@ internal object RemotePlayback {
             val item = SourceUrl.parseS3(url)
             item?.let { ServerLoginStore(context).getS3(it.account) }?.let { (login, configuration) ->
                 RemoteByteSource(S3ContentResolver(configuration, login, item.key), http)
+            }
+        }
+        MediaSourceKind.ONE_DRIVE -> SourceUrl.parseAccountItem(url)?.takeIf { it.ids.size == 2 }?.let { item ->
+            val cloud = (context.applicationContext as EdendaleApplication).cloudAccounts
+            cloud.vault.account(kind, item.account)?.let { account ->
+                val provider = ProviderHttp(kind, account.key, cloud.tokens, cloud.http)
+                RemoteByteSource(OneDriveContentResolver(item.ids[0], item.ids[1], provider), cloud.http)
             }
         }
         else -> null
