@@ -382,6 +382,25 @@ runs the same suite on an API 35 emulator in
 `.github/workflows/instrumented.yml`, separately from the hermetic
 `build-and-test` job.
 
+Two probes for the frame-generation experiment (ENHANCEMENT.md G.1) are
+skipped unless asked for. Install both APKs with
+`./gradlew installDebug installDebugAndroidTest`, which keeps the app's data,
+then time Apple's coarse motion search at 1080p on the device's GPU:
+
+```sh
+adb shell am instrument -w -r -e g1 true -e class com.babasama.edendale.android.player.video.framegen.CoarseMotionEstimationInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The second plays a clip that has audio through a prototype effect that adds a
+frame between each pair of frames, and reports when each frame was released
+and presented. It opens the app's main screen and turns SurfaceFlinger's
+timestats on for the run:
+
+```sh
+adb push clip.mp4 /data/local/tmp/
+adb shell am instrument -w -r -e g1Clip /data/local/tmp/clip.mp4 -e g1Fps 24 -e class com.babasama.edendale.android.player.video.framegen.FrameGenerationPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
 Build an unsigned release APK with:
 
 ```sh
