@@ -16,6 +16,13 @@ class EdendaleApplication : Application() {
     /** Linked storage-provider accounts (H.6). */
     val cloudAccounts: CloudAccounts by lazy { CloudAccounts(this) }
 
+    /**
+     * Held for the life of the process: while the setting is off, nothing else
+     * reaches the publisher's coroutines, and they'd be collected before the
+     * setting is turned on.
+     */
+    private var watchNextPublisher: WatchNextPublisher? = null
+
     /** Settings → Android TV's Continue Watching on the home screen (I.3). */
     internal val watchNextSettings: WatchNextSettings by lazy { WatchNextSettings(this) }
 
@@ -30,6 +37,8 @@ class EdendaleApplication : Application() {
             .build()
         libraryRepository = LibraryRepository(this, database)
         // Only a TV has the home screen's Watch Next row; it stays empty until the setting is on.
-        if (isTelevisionDevice()) WatchNextPublisher(this, libraryRepository, watchNextSettings).start()
+        if (isTelevisionDevice()) {
+            watchNextPublisher = WatchNextPublisher(this, libraryRepository, watchNextSettings).also { it.start() }
+        }
     }
 }

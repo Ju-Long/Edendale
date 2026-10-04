@@ -19,12 +19,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
@@ -41,15 +41,20 @@ internal class WatchNextSettings(context: Context) {
             preferences.edit().putBoolean(KEY_ENABLED, value).apply()
         }
 
-    /** The setting now, and again after every change. */
-    val changes: Flow<Boolean> = callbackFlow {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == KEY_ENABLED || key == null) trySend(isEnabled)
-        }
+    private val state = MutableStateFlow(isEnabled)
+
+    // SharedPreferences holds its listeners weakly, so this field keeps the
+    // listener alive for as long as the settings object lives (the process).
+    private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == KEY_ENABLED || key == null) state.value = isEnabled
+    }
+
+    init {
         preferences.registerOnSharedPreferenceChangeListener(listener)
-        send(isEnabled)
-        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
-    }.distinctUntilChanged()
+    }
+
+    /** The setting now, and again after every change. */
+    val changes: StateFlow<Boolean> = state.asStateFlow()
 
     private companion object {
         const val FILE_NAME = "edendale_tv"
