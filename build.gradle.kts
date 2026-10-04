@@ -105,8 +105,8 @@ android {
         applicationId = "com.babasama.edendale"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.26"
+        versionCode = 2
+        versionName = "0.27"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Dropbox redirects to db-<app key>://, so the redirect activity's
