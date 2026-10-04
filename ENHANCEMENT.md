@@ -1992,7 +1992,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.1 | Connector contract | Complete | 0b43a91 |
 | H.2 | Remote byte source | Complete | 91cbc0e |
 | H.3 | WebDAV | H.3.1, H.3.2, H.3.T1 complete; H.3.3 HTTPS end to end not run (needs a real server); H.3.4 blocked (D10) | c9b6f6a |
-| H.4 | SFTP | Not started | |
+| H.4 | SFTP | Complete (H.4.1 checked on the emulator against OpenSSH 10.3) | 7d061b1 |
 | H.5 | S3 | Complete (device check not run) | 90072dc |
 | H.6 | OAuth and accounts | Complete (sign-in not run: needs registered client IDs) | ed065ea |
 | H.7 | OneDrive | Complete (linking UI with H.11; not run against a real account) | 4c83c40 |
