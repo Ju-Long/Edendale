@@ -1988,7 +1988,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.10 | NFS (optional) | Not started | |
 | H.11 | Link Source flow | Complete (device check not run; cloud sign-in needs registered client IDs) | 57ec4d1 |
 | H.12 | Folder-picker experiment | Not started | |
-| I.1 | OneDrive on TV | Not started | |
+| I.1 | OneDrive on TV | I.1.1 complete; I.1.D1 not run (needs a TV and a registered client ID) | 0f00786 |
 | I.2 | Phone-to-TV handoff | Not started | |
 | I.3 | Watch Next row | Not started | |
 | J.1 | Navigation child rows | Complete (device check not run) | 983546a |
