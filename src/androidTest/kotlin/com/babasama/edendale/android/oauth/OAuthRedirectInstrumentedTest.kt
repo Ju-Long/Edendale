@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.babasama.edendale.CloudSecrets
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
@@ -45,11 +46,14 @@ class OAuthRedirectInstrumentedTest {
 
     @Test
     fun aDropboxRedirectUsesTheBuildsScheme() = runBlocking {
-        // This build's secrets.json has no app key, so the scheme is db-unset.
+        // db-<app key> from secrets.json, or db-unset in a build without one (the manifest's placeholder).
+        val base = CloudProviders.configuration(MediaSourceKind.DROPBOX, CloudSecrets.dropboxAppKey)?.redirectUri
+            ?: "db-unset://2/token"
+        val redirect = "$base?code=xyz&state=state-db"
         val callback = withTimeout(10_000) {
-            OAuthRedirects.await("state-db") { open("db-unset://2/token?code=xyz&state=state-db") }
+            OAuthRedirects.await("state-db") { open(redirect) }
         }
-        assertEquals("db-unset://2/token?code=xyz&state=state-db", callback)
+        assertEquals(redirect, callback)
     }
 
     @Test
