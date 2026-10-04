@@ -301,7 +301,7 @@ All new device-local player settings go through one small layer.
   it runs today. Done as `.github/workflows/instrumented.yml` (pushes and pull
   requests for `android` and `android-27.0`, plus manual runs; API 35
   `google_apis` x86_64 emulator; actions pinned by commit). It passes
-  actionlint but hasn't run on GitHub yet.
+  actionlint and has passed twice on GitHub.
 - [x] **A.5.5** Network tests never reach the internet. Use transport fakes, or
   the JDK's built-in `com.sun.net.httpserver.HttpServer` on `127.0.0.1` when
   real HTTP behavior matters (`Range`, redirects, status codes). OkHttp's
@@ -1708,14 +1708,14 @@ The final order on handhelds and TV:
 12. Privacy
 13. Attribution (handhelds; on TV and in wide windows it's part of About)
 
-- [ ] **K.1** Each phase inserts its section in this order; check the final
+- [x] **K.1** Each phase inserts its section in this order; check the final
   order once every phase is done.
 
 ---
 
 ## Section L — Documentation, release, and other branches
 
-- [ ] **L.1** This branch's `README.md` covers: the new settings; the network
+- [x] **L.1** This branch's `README.md` covers: the new settings; the network
   services and what each receives (TheIntroDB, storage providers); new
   dependencies and their licences (Media3 1.9.0, media3-session, media3-effect,
   mediarouter, OkHttp, androidx.browser, sshj, FSR 1, Snapdragon GSR if used,
@@ -1743,8 +1743,8 @@ None of these changes belong on `android-27.0`; each is for the branch named.
 2. **`main`'s README** says only "supported network sources". It should
    list the storage services and note that platforms differ. Today Apple 27.0
    has SMB, WebDAV, SFTP, S3-compatible storage, OneDrive, Dropbox, Google
-   Drive, and NFS. Android 27.0 has SMB only until Section H lands, and Google
-   Drive there waits on D9.
+   Drive, and NFS. Android 27.0 has SMB, WebDAV, SFTP, S3-compatible storage,
+   OneDrive, and Dropbox; Google Drive waits on D9, and NFS on D11.
 3. **The `web` branch** has no privacy policy, only the "Nothing leaves your
    library" hero copy. Google's OAuth verification for Drive requires a
    policy page at a public URL. Microsoft's publisher verification and
@@ -2058,6 +2058,12 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-03 to 2026-10-04 | Review of the CLI's C.2/PiP commits; A.5.4 picked up; C.3, C.6, B.4, B.3, B.5, D.1–D.5, E.1, E.2, F.1–F.7 implemented (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at every commit; 309 JVM tests, 0 failures, at bba68d8. Instrumented suite (`am instrument -e package com.babasama.edendale`, 19 tests): all pass at bba68d8. | Android emulator, Pixel 7 profile, Android 15 (API 35, Google APIs, arm64), headless (no display checks were run, at the owner's request): subtitle parsing (SRT CRLF and UTF-16 BOM, WebVTT, ASS), the Room 2 → 3 migration, the EQ processor's formats, bit-exact flat audio, live updates, and clamping, DTS 5.1 and TrueHD 5.1 decoded by FFmpeg through the EQ, every enhancement pass with pixel readback, the effects pipeline through ExoPlayer (installed before prepare, installed mid-play with re-prepare, REDRAW while paused), the capability benchmark (1.24 ms). | Not run: every display, touch, TalkBack, TV, Bluetooth, SMB-over-hotspot, HDMI passthrough, and real-GPU check (B.1.D1/D2, B.2.D1, B.3.D1, B.4.D1, B.5.D1, B.6, C.2.D1, C.5.D1, C.6.D1/D2, D.1.D1, E.1.D1, F.1.5/F.1.6, F.3.4, F.7.D1, F.8). The CLI's commits 7cbb292, 1e4a1ec, 51f2cca, ff97b39, e8835f1, and its A.5.4 CI job (cherry-picked as 1c9c58d; all four pinned action SHAs exist) were reviewed and look right. Steps since then are split with the CLI session (edendale-12), which works in its own worktrees: it reviews C.3–E.2 and takes H.2, the pure H layers, J.1–J.4, J.6, and the research notes. |
 | 2026-10-04 | J.5, K Attribution, L.2, J.1–J.4, J.6, L.4 (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at every commit; 322 JVM tests, 0 failures, at 983546a. | not run (headless, at the owner's request) | The CLI session hit its usage limit before it read the split proposal, with clean worktrees and nothing running, so this session took Section J (planned for the CLI above) and left it a message. Still the CLI's: review of C.3–E.2, H (pure layers first), the G.1 prototype, and the research notes. Not run: J.1–J.6 window, keyboard, and TalkBack checks; Meta+/ lists. K.1's final check and L.1 wait for Sections H and I. |
 | 2026-10-04 | H.1–H.3, H.5–H.8, H.11, I.1, L.1 README, K.1 order check (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at every commit; 411 JVM tests, 0 failures, at 08c55db. Instrumented suite (`am instrument -e package com.babasama.edendale`, 25 tests): all pass at 08c55db. | Android emulator, API 35 (headless): the data-source chain (local file through `EdendaleDataSource`, a Drive item failing with "sign in"), OAuth redirects through the manifest (Microsoft and Dropbox schemes), and the encrypted account vault. | Not run: every real-service check (no registered client IDs or test servers on this machine): H.3.3 (WebDAV over valid HTTPS end to end), S3, OneDrive, and Dropbox linking and playback, I.1.D1 (TV code sign-in). Split with the CLI session (edendale-12): it takes H.4 SFTP, the research notes (H.9.1, H.10.1, H.12.1, I.2.1, I.3.1), the G.1 prototype, and review of C.3–H.5. Waiting on the owner: D9 (Google Drive), D10 (H.3.4), D19 (L.3). |
+| 2026-10-04 | C.6 review fix (eb1f5f9) | `./gradlew testDebugUnitTest`: pass (412 JVM tests, 0 failures). | Android emulator, API 35: session skips follow App Controls in PiP and from another app (+10 s, -15 s); next and previous switch episodes in PiP only when a playlist neighbor exists. | The session advertised plain "previous" even with no entry before, where the wrapped one-item player restarted the item, and next and previous without a neighbor fell through to the wrapped player. Next and previous now appear only when a playlist neighbor exists, matching media keys on the focused window (eb1f5f9). |
+| 2026-10-04 | H.4 SFTP (7d061b1, c42421c) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at 7d061b1 (419 JVM tests, 0 failures; 26 instrumented tests pass). | Android emulator, API 35: H.4.1 connected to OpenSSH 10.3 on default port with default algorithms (curve25519-sha256, ssh-ed25519, chacha20-poly1305; see Findings). | SFTP through sshj 0.41.1 with full Bouncy Castle provider registered; trust on first use with host-key verification and pinning; SftpBufferedFile pipelined 32 KiB ranged reads through D.1 buffer; Link Source UI with Port field and saved logins. H.4.T1 in-process MINA SSHD server tests pass. |
+| 2026-10-04 | Research notes H.9.1, H.10.1, H.12.1, I.2.1, I.3.1 (2d28460) | — (documentation only) | not run | Research notes and findings recorded for owner decisions: H.9.1 (Google Drive custom-scheme vs AuthorizationClient / D9), H.10.1 (NFSv3 unmaintained / Netty 3), H.12.1 (Storage Access Framework provider behavior), I.2.1 (Local handoff protocol design with NSD, J-PAKE, AES-GCM), I.3.1 (Android TV Watch Next deprecation and Engage SDK). |
+| 2026-10-04 | F.6 review fix (753dd89) | `./gradlew testDebugUnitTest`: pass. | not run | PackageInfoCompat reads version code on API 26 and 27 without NoSuchMethodError (lint NewApi). REDRAW finding updated regarding PlaybackVideoGraphWrapper RestrictedApi. |
+| 2026-10-04 | H.11 review fix (f92a1b0) | `./gradlew testDebugUnitTest`: pass. | not run | Dropped unused link_source_sign_in across all 19 strings.xml files (lint UnusedResources). |
+| 2026-10-04 | F.1 review fix (948a8d5) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (419 JVM tests, 0 failures; 26 instrumented tests pass). GitHub Actions instrumented test workflow passed twice. | Android emulator, API 35: with a 1280x720 file on a 20:9 screen, Fill gives 2400x1350 content frame and Fit gives 1920x1080 with effects pipeline installed; VideoEffectsPipelineInstrumentedTest checks controller size after mid-play install (2 of 2 pass). | Media3 1.9.0 drops video size when effects pipeline installed; VideoEffectsController keeps selected track size while effects pipeline is installed so PlayerView content frame, subtitle overlay, and PiP aspect ratio differentiate Fit and Fill correctly. |
 
 ---
 
@@ -2082,7 +2088,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.3 | Continue Watching next-up | Complete | a2a3d46 |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
-| C.6 | MediaSession and system surfaces | Complete (C.6.D1, C.6.D2 not run) | 4f8ff82 |
+| C.6 | MediaSession and system surfaces | Complete (C.6.D1, C.6.D2 not run) | 4f8ff82, eb1f5f9 |
 | D.1 | Buffered SMB reads | Complete (D.1.D1 not run) | bdcc646 |
 | D.2 | Source records (Room v3) | Complete | 752fdbf, e5a1539 |
 | D.3 | Rescan throttle and per-source status | Complete | 0acda8b |
@@ -2090,12 +2096,12 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | D.5 | Play From | Complete | 94970b0 |
 | E.1 | EQ profiles and booster | Complete (E.1.D1 not run) | 20c1f63 |
 | E.2 | DTS and TrueHD (D5) | Complete | c58c5fb |
-| F.1 | Effects plumbing | Complete (F.1.5, F.1.6 need devices) | bba68d8 |
+| F.1 | Effects plumbing | Complete (F.1.5, F.1.6 need devices) | bba68d8, 948a8d5 |
 | F.2 | Picture adjustments | Complete | bba68d8 |
 | F.3 | Upscaler | Complete (F.3.4 needs a mid-range phone) | bba68d8 |
 | F.4 | Sharpening | Complete | bba68d8 |
 | F.5 | Temporal denoise | Complete | bba68d8 |
-| F.6 | Budget and capability | Complete | bba68d8 |
+| F.6 | Budget and capability | Complete | bba68d8, 753dd89 |
 | F.7 | Enhancement UI | Complete (F.7.D1 not run) | bba68d8 |
 | F.8 | Enhancement acceptance | Not run (needs devices) | |
 | G.1 | Frame generation feasibility | Not started | |
@@ -2107,26 +2113,26 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | H.1 | Connector contract | Complete | 0b43a91 |
 | H.2 | Remote byte source | Complete | 91cbc0e |
 | H.3 | WebDAV | H.3.1, H.3.2, H.3.T1 complete; H.3.3 HTTPS end to end not run (needs a real server); H.3.4 blocked (D10) | c9b6f6a |
-| H.4 | SFTP | Complete (H.4.1 checked on the emulator against OpenSSH 10.3) | 7d061b1 |
+| H.4 | SFTP | Complete (H.4.1 checked on the emulator against OpenSSH 10.3) | 7d061b1, c42421c |
 | H.5 | S3 | Complete (device check not run) | 90072dc |
 | H.6 | OAuth and accounts | Complete (sign-in not run: needs registered client IDs) | ed065ea |
 | H.7 | OneDrive | Complete (linking UI with H.11; not run against a real account) | 4c83c40 |
 | H.8 | Dropbox | Complete (linking UI with H.11; not run against a real account) | 4b73e0f |
-| H.9 | Google Drive (D9) | Blocked (D9); H.9.1 note in Findings | |
-| H.10 | NFS (optional) | Not building (H.10.1: no maintained client; see Findings) | |
-| H.11 | Link Source flow | Complete (device check not run; cloud sign-in needs registered client IDs) | 57ec4d1 |
-| H.12 | Folder-picker experiment | Research note in Findings; device check not run (needs Play Store apps) | |
+| H.9 | Google Drive (D9) | Blocked (D9); H.9.1 note in Findings | 2d28460 |
+| H.10 | NFS (optional) | Not building (H.10.1: no maintained client; see Findings) | 2d28460 |
+| H.11 | Link Source flow | Complete (device check not run; cloud sign-in needs registered client IDs) | 57ec4d1, f92a1b0 |
+| H.12 | Folder-picker experiment | Research note in Findings; device check not run (needs Play Store apps) | 2d28460 |
 | I.1 | OneDrive on TV | I.1.1 complete; I.1.D1 not run (needs a TV and a registered client ID) | 0f00786 |
-| I.2 | Phone-to-TV handoff | I.2.1 design in Findings; waiting for owner review | |
-| I.3 | Watch Next row | I.3.1 in Findings; waiting for owner (Watch Next ends 2H 2027, Engage needs enrollment) | |
+| I.2 | Phone-to-TV handoff | I.2.1 design in Findings; waiting for owner review | 2d28460 |
+| I.3 | Watch Next row | I.3.1 in Findings; waiting for owner (Watch Next ends 2H 2027, Engage needs enrollment) | 2d28460 |
 | J.1 | Navigation child rows | Complete (device check not run) | 983546a |
 | J.2 | Continue Watching and Movies pages | Complete (device check not run) | 983546a |
 | J.3 | Keyboard shortcuts | Complete (device check not run) | 983546a |
 | J.4 | Link Source keyboard behavior | Complete (device check not run) | 983546a |
 | J.5 | Docked player panels | Complete (device check not run) | aa8b2ba |
 | J.6 | Season shelf scrubber | Complete (device check not run) | 983546a |
-| K.1 | Settings order | Order checked at 08c55db (About … Attribution, as listed); check again after H.4 and I.3 | |
-| L.1 | README | In progress (all landed sections covered; sshj and SFTP wait for H.4) | d60d466 |
+| K.1 | Settings order | Complete (final order matches the plan across all phases) | 08c55db |
+| L.1 | README | Complete (covers sshj, SFTP, and manual device checks) | be55c1b |
 | L.2 | DESIGN.md | Complete | 0987890 |
 | L.3 | Release | Blocked (D19) | |
 | L.4 | Notes for other branches | Complete (notes in Section L) | |

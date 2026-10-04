@@ -395,11 +395,12 @@ tests. Before a release, check on:
 - **A Bluetooth headset:** play, pause, and skip from its buttons.
 - **An SMB server over a phone hotspot or Tailscale:** steady playback, and
   recovery after the connection drops.
-- **Storage services:** link a folder, scan it, and play and seek a file on a
-  Nextcloud or Synology server over HTTPS, an S3 bucket (AWS or R2), OneDrive
-  (a personal and a work or school account), and Dropbox. Then sign out in
-  Settings → Accounts and check that the sources ask to sign in again. On a
-  TV, sign in to OneDrive with the code from a phone.
+- **Storage services:** link a folder, scan it, and play and seek a file on an
+  SFTP server (password authentication, host-key fingerprint check on first use,
+  and changed-key rejection), a Nextcloud or Synology server over HTTPS, an S3
+  bucket (AWS or R2), OneDrive (a personal and a work or school account), and
+  Dropbox. Then sign out in Settings → Accounts and check that the sources ask to
+  sign in again. On a TV, sign in to OneDrive with the code from a phone.
 
 ### DTS and TrueHD
 
