@@ -473,7 +473,7 @@ holds; the tests pass; the device checks are recorded.
   channels → Mono, "3 ch", 7.1.
 
 **On device:**
-- [ ] **B.3.D1** A multi-audio MKV shows Audio Track and switches immediately;
+- [x] **B.3.D1** A multi-audio MKV shows Audio Track and switches immediately;
   a single-audio file hides the section.
 
 ### B.4 — Subtitle appearance and placement (DIFF §3.8)
@@ -574,9 +574,9 @@ holds; the tests pass; the device checks are recorded.
 
 Verification only; Media3 already keeps the last frame on screen.
 
-- [ ] **B.6.D1** Rapid play/pause at 1.5× doesn't stall the clock.
-- [ ] **B.6.D2** Changing speed during playback never shows a black frame.
-- [ ] **B.6.D3** A seek while paused shows the new frame.
+- [x] **B.6.D1** Rapid play/pause at 1.5× doesn't stall the clock.
+- [x] **B.6.D2** Changing speed during playback never shows a black frame.
+- [x] **B.6.D3** A seek while paused shows the new frame.
 
 If any check fails, record it in the Deviations log with the device and file.
 Don't build a workaround without asking the owner.
@@ -2105,6 +2105,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-04 | F.6 review fix (753dd89) | `./gradlew testDebugUnitTest`: pass. | not run | PackageInfoCompat reads version code on API 26 and 27 without NoSuchMethodError (lint NewApi). REDRAW finding updated regarding PlaybackVideoGraphWrapper RestrictedApi. |
 | 2026-10-04 | H.11 review fix (f92a1b0) | `./gradlew testDebugUnitTest`: pass. | not run | Dropped unused link_source_sign_in across all 19 strings.xml files (lint UnusedResources). |
 | 2026-10-04 | F.1 review fix (948a8d5) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (419 JVM tests, 0 failures; 26 instrumented tests pass). GitHub Actions instrumented test workflow passed twice. | Android emulator, API 35: with a 1280x720 file on a 20:9 screen, Fill gives 2400x1350 content frame and Fit gives 1920x1080 with effects pipeline installed; VideoEffectsPipelineInstrumentedTest checks controller size after mid-play install (2 of 2 pass). | Media3 1.9.0 drops video size when effects pipeline installed; VideoEffectsController keeps selected track size while effects pipeline is installed so PlayerView content frame, subtitle overlay, and PiP aspect ratio differentiate Fit and Fill correctly. |
+| 2026-10-04 | Review of C.3–H.5 and its emulator checks, with fixes eb1f5f9 (C.6), 753dd89 (F.6), f92a1b0 (H.11), and 948a8d5 (F.1) (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug`: pass at 948a8d5 (419 JVM tests, 0 failures); `VideoEffectsPipelineInstrumentedTest`: 2 of 2 at 948a8d5. `lintDebug`: its new findings were the two fixed here (NewApi in `EnhancementCapability`, UnusedResources `link_source_sign_in`); the rest are MissingTranslation for the `en-r*` files (they override only some strings) and for the audience keys missing from every locale on `android`, RestrictedApi (a false positive on `ComponentActivity.dispatchKeyEvent`, and `PlaybackVideoGraphWrapper`, see Findings), and WrongConstant on the session's command arrays. Strings: every key in all 19 files; the new keys left identical to English are real cognates (Mono, Gamma, Port, Stereo). No logging calls were added on this branch. | Android emulator edendale_api35 (API 35 arm64, headless, SwiftShader GL). B.3.D1 pass: a two-audio MKV lists "Main (English) — Stereo" and "Commentaire (French) — Stereo", and switching carries on playing; a single-audio file has no Audio Track section. B.4.D1 pass except the PGS part (no PGS fixture): Yellow on Navy at 50 % reads well in the Settings preview and in the player; cues clear the controls while they show and drop back when they hide (one early capture had a cue over the seek bar with the controls up, and three replays didn't reproduce it); in Fill the cue stays on screen. B.6.D1 pass: after ten play/pause toggles at 1.5× the clock ran at 1.51×. B.6.D2 pass: a screen recording through ten speed changes had no black frame (220 frames, luma 93.3–93.4). B.6.D3 pass: a skip while paused at 1:48 showed the 1:58 frame. F.7.D1 partly: the label read `1280×720 → 1920×1080`; Show Original while paused redrew the frame and restored it exactly; one preset change mid-play (Balanced → Off) kept playing; under SwiftShader the governor later dropped the upscale (label `1280×720`), as F.6 intends. PiP: the CLI's report of a black, unfocused player after expanding PiP over Settings didn't reproduce on a fresh boot (4 of 4 expansions drew, took focus, and answered media keys and double-tap); its emulator had been up for hours with leftover rotation leashes in SurfaceFlinger. | Found and fixed: Fill did nothing while effects were installed (Media3 1.9.0 reports no video size there; see Findings), F.6's cache key on API 26–27, and an unused string. Reviewed with no further findings: B.3, B.4, B.5 (DESIGN.md rows match Apple's), C.3, D.1, D.2 (schema export and migration wiring), E.1 (profile table, keys, filter constants), E.2 (README licence), and F (HDR bypass, thermal guard, EASU licence notice). Not run: B.1.D1/D2, B.2.D1 (needs TMDB ids; this build has no token), B.5.D1, C.2.D1, C.5.D1, C.6.D1/D2, D.1.D1, E.1.D1, F.1.5, F.1.6, F.3.4, F.8, the PGS part of B.4.D1. G.1 not started. The emulator later went away; emulator-5554 is now the owner's own Android Studio AVD, so nothing more was run. |
 
 ---
 
@@ -2120,10 +2121,10 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | A.5 | Test conventions | Complete | 4310f03, 1c9c58d |
 | B.1 | App Controls | Complete | 9b2fbd5, 8ac41f9 |
 | B.2 | Persisted state and per-title memory | Complete | 15db4ef, 9b57892 |
-| B.3 | Track pickers and panel order | Complete | 9820139 |
-| B.4 | Subtitle appearance and placement | Complete | 7b1c028 |
+| B.3 | Track pickers and panel order | Complete (B.3.D1 checked on the emulator) | 9820139 |
+| B.4 | Subtitle appearance and placement | Complete (B.4.D1 checked on the emulator except the PGS part) | 7b1c028 |
 | B.5 | Playlist panel redesign | Complete | 0987890 |
-| B.6 | Speed and seek checks | Code checked; device checks not run | — |
+| B.6 | Speed and seek checks | Complete (B.6.D1–D3 checked on the API 35 emulator) | — |
 | C.1 | Episode progression rules | Complete | 1f01315 |
 | C.2 | Auto-advance and Up Next | Complete | fd6c2e9, 7cbb292 |
 | C.3 | Continue Watching next-up | Complete | a2a3d46 |
@@ -2143,7 +2144,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.4 | Sharpening | Complete | bba68d8 |
 | F.5 | Temporal denoise | Complete | bba68d8 |
 | F.6 | Budget and capability | Complete | bba68d8, 753dd89 |
-| F.7 | Enhancement UI | Complete (F.7.D1 not run) | bba68d8 |
+| F.7 | Enhancement UI | Complete (F.7.D1 partly checked on the emulator; see the Handoff log) | bba68d8 |
 | F.8 | Enhancement acceptance | Not run (needs devices) | |
 | G.1 | Frame generation feasibility | Not started | |
 | G.2 | Motion estimation | Blocked (G.1) | |
