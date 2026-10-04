@@ -14,6 +14,7 @@ import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaConnector
+import com.babasama.edendale.connectors.DropboxConnector
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.OneDriveConnector
 import com.babasama.edendale.connectors.ProviderHttp
@@ -448,6 +449,7 @@ class LibraryRepository(
         val provider = ProviderHttp(kind, account.key, cloud.tokens, cloud.http)
         val connector = when (kind) {
             MediaSourceKind.ONE_DRIVE -> OneDriveConnector.create(account, provider)
+            MediaSourceKind.DROPBOX -> DropboxConnector(account, provider)
             else -> null
         }
         return connector ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))

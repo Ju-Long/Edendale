@@ -1548,8 +1548,8 @@ Jellyfin, and Emby would be a separate feature.
 
 - `list_folder` (recursive) and `/continue`. Stream from `get_temporary_link`,
   which lasts 4 hours and then returns 410, so resolve a new link.
-- [ ] **H.8.1** The connector and the link resolver.
-- [ ] **H.8.T1** (JVM) Recorded listing pages, and 410 handling through H.2.
+- [x] **H.8.1** The connector and the link resolver.
+- [x] **H.8.T1** (JVM) Recorded listing pages, and 410 handling through H.2.
 
 ### H.9 — Google Drive (blocked by D9)
 
