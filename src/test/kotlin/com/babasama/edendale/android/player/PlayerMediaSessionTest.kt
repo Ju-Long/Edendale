@@ -62,11 +62,20 @@ class PlayerMediaSessionTest {
         )
         val nextOnly = MediaSessionRules.addedCommands(isSeekable = false, neighbors = PlaylistNeighbors(false, true))
         assertEquals(setOf(Player.COMMAND_SEEK_TO_NEXT, Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM), nextOnly)
-        // The wrapped player's one-item playlist never decides next/previous item.
-        assertTrue(Player.COMMAND_SEEK_TO_NEXT in MediaSessionRules.removedCommands)
-        assertTrue(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM in MediaSessionRules.removedCommands)
-        // Plain previous may still restart the item.
-        assertTrue(Player.COMMAND_SEEK_TO_PREVIOUS !in MediaSessionRules.removedCommands)
+        val previousOnly = MediaSessionRules.addedCommands(isSeekable = true, neighbors = PlaylistNeighbors(true, false))
+        assertTrue(Player.COMMAND_SEEK_TO_PREVIOUS in previousOnly)
+        assertTrue(Player.COMMAND_SEEK_TO_NEXT !in previousOnly)
+        // The wrapped player's one-item playlist never decides next or
+        // previous, not even plain "previous", which there only restarts.
+        assertEquals(
+            setOf(
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+            ),
+            MediaSessionRules.removedCommands,
+        )
     }
 
     @Test
@@ -97,10 +106,15 @@ class PlayerMediaSessionTest {
             MediaSessionRules.SeekAction.Neighbor(-1),
             MediaSessionRules.seekAction(Player.COMMAND_SEEK_TO_PREVIOUS, 10_000, 10_000, both),
         )
-        // Without an entry before, previous falls through to the player's restart.
+        // Without an entry that way, next and previous do nothing, like the
+        // media keys on a focused window; previous never restarts the item.
         assertEquals(
-            MediaSessionRules.SeekAction.Forward,
+            MediaSessionRules.SeekAction.None,
             MediaSessionRules.seekAction(Player.COMMAND_SEEK_TO_PREVIOUS, 10_000, 10_000, PlaylistNeighbors.NONE),
+        )
+        assertEquals(
+            MediaSessionRules.SeekAction.None,
+            MediaSessionRules.seekAction(Player.COMMAND_SEEK_TO_NEXT, 10_000, 10_000, PlaylistNeighbors(true, false)),
         )
         assertEquals(
             MediaSessionRules.SeekAction.Forward,

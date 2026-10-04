@@ -105,14 +105,15 @@ internal object MediaSessionRules {
     }
 
     /**
-     * The wrapped player's own next/previous-item commands describe a
-     * one-item playlist; the session's come from [addedCommands] instead.
-     * Plain "previous" stays when the wrapped player offers it, since it can
-     * still restart the item.
+     * The wrapped player's own next/previous commands describe a one-item
+     * playlist, where "previous" would only restart the item; the session's
+     * come from [addedCommands] instead, so they show only while the playlist
+     * has an entry that way.
      */
     val removedCommands: Set<Int> = setOf(
         Player.COMMAND_SEEK_TO_NEXT,
         Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+        Player.COMMAND_SEEK_TO_PREVIOUS,
         Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
     )
 
@@ -120,6 +121,8 @@ internal object MediaSessionRules {
     sealed interface SeekAction {
         data class By(val offsetMillis: Long) : SeekAction
         data class Neighbor(val offset: Int) : SeekAction
+        /** Next or previous with no playlist entry that way: nothing happens. */
+        data object None : SeekAction
         /** Not Edendale's to change: the wrapped player handles it. */
         data object Forward : SeekAction
     }
@@ -132,14 +135,14 @@ internal object MediaSessionRules {
     ): SeekAction = when (command) {
         Player.COMMAND_SEEK_BACK -> SeekAction.By(-backMillis)
         Player.COMMAND_SEEK_FORWARD -> SeekAction.By(forwardMillis)
+        // Same as the media keys on a focused window: next and previous play
+        // the neighboring entry, and do nothing when there's none.
         Player.COMMAND_SEEK_TO_NEXT,
         Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
-        -> if (neighbors.hasNext) SeekAction.Neighbor(+1) else SeekAction.Forward
-        // Same as the media key on a focused window: previous plays the
-        // entry before, and restarts the item only when there's none.
+        -> if (neighbors.hasNext) SeekAction.Neighbor(+1) else SeekAction.None
         Player.COMMAND_SEEK_TO_PREVIOUS,
         Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
-        -> if (neighbors.hasPrevious) SeekAction.Neighbor(-1) else SeekAction.Forward
+        -> if (neighbors.hasPrevious) SeekAction.Neighbor(-1) else SeekAction.None
         else -> SeekAction.Forward
     }
 }
@@ -210,6 +213,7 @@ internal class SessionPlayer(
                 onNeighbor(action.offset)
                 Futures.immediateVoidFuture()
             }
+            MediaSessionRules.SeekAction.None -> Futures.immediateVoidFuture()
             MediaSessionRules.SeekAction.Forward -> super.handleSeek(mediaItemIndex, positionMs, seekCommand)
         }
     }
