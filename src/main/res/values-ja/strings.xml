@@ -450,7 +450,6 @@
     <string name="link_source_onedrive_description">個人用、職場用、または学校用のOneDrive。</string>
     <string name="link_source_dropbox_description">Dropboxのフォルダ。</string>
     <string name="link_source_linked_accounts">リンク済みのアカウント</string>
-    <string name="link_source_sign_in">サインイン</string>
     <string name="link_source_another_account">別のアカウント</string>
     <string name="link_source_sign_in_to">%1$sにサインイン</string>
     <string name="link_source_waiting">%1$sを待っています…</string>

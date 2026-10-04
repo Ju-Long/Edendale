@@ -456,7 +456,6 @@
     <string name="link_source_onedrive_description">Persoonlijke, werk- of school-OneDrive.</string>
     <string name="link_source_dropbox_description">Je Dropbox-mappen.</string>
     <string name="link_source_linked_accounts">Gekoppelde accounts</string>
-    <string name="link_source_sign_in">Log in</string>
     <string name="link_source_another_account">Ander account</string>
     <string name="link_source_sign_in_to">Log in bij %1$s</string>
     <string name="link_source_waiting">Wachten op %1$s…</string>

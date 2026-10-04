@@ -450,7 +450,6 @@
     <string name="link_source_onedrive_description">개인, 회사 또는 학교 OneDrive.</string>
     <string name="link_source_dropbox_description">Dropbox 폴더.</string>
     <string name="link_source_linked_accounts">연결된 계정</string>
-    <string name="link_source_sign_in">로그인</string>
     <string name="link_source_another_account">다른 계정</string>
     <string name="link_source_sign_in_to">%1$s에 로그인</string>
     <string name="link_source_waiting">%1$s 기다리는 중…</string>

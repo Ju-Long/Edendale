@@ -513,7 +513,6 @@
     <string name="link_source_onedrive_description">Personal, work, or school OneDrive.</string>
     <string name="link_source_dropbox_description">Your Dropbox folders.</string>
     <string name="link_source_linked_accounts">Linked Accounts</string>
-    <string name="link_source_sign_in">Sign In</string>
     <string name="link_source_another_account">Another Account</string>
     <string name="link_source_sign_in_to">Sign In to %1$s</string>
     <string name="link_source_waiting">Waiting for %1$s…</string>

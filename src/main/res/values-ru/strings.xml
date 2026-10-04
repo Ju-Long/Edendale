@@ -472,7 +472,6 @@
     <string name="link_source_onedrive_description">Личный, рабочий или учебный OneDrive.</string>
     <string name="link_source_dropbox_description">Ваши папки Dropbox.</string>
     <string name="link_source_linked_accounts">Подключенные аккаунты</string>
-    <string name="link_source_sign_in">Войти</string>
     <string name="link_source_another_account">Другой аккаунт</string>
     <string name="link_source_sign_in_to">Войти в %1$s</string>
     <string name="link_source_waiting">Ожидание %1$s…</string>

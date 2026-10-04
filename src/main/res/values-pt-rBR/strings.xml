@@ -458,7 +458,6 @@
     <string name="link_source_onedrive_description">OneDrive pessoal, de trabalho ou escolar.</string>
     <string name="link_source_dropbox_description">Suas pastas do Dropbox.</string>
     <string name="link_source_linked_accounts">Contas Vinculadas</string>
-    <string name="link_source_sign_in">Iniciar Sessão</string>
     <string name="link_source_another_account">Outra Conta</string>
     <string name="link_source_sign_in_to">Iniciar Sessão em %1$s</string>
     <string name="link_source_waiting">Aguardando %1$s…</string>

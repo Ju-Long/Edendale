@@ -456,7 +456,6 @@
     <string name="link_source_onedrive_description">Personlig OneDrive eller OneDrive för arbete eller skola.</string>
     <string name="link_source_dropbox_description">Dina Dropbox-mappar.</string>
     <string name="link_source_linked_accounts">Länkade konton</string>
-    <string name="link_source_sign_in">Logga in</string>
     <string name="link_source_another_account">Ett annat konto</string>
     <string name="link_source_sign_in_to">Logga in på %1$s</string>
     <string name="link_source_waiting">Väntar på %1$s…</string>

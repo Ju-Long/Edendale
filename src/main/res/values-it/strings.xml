@@ -458,7 +458,6 @@
     <string name="link_source_onedrive_description">OneDrive personale, di lavoro o della scuola.</string>
     <string name="link_source_dropbox_description">Le tue cartelle Dropbox.</string>
     <string name="link_source_linked_accounts">Account collegati</string>
-    <string name="link_source_sign_in">Accedi</string>
     <string name="link_source_another_account">Altro account</string>
     <string name="link_source_sign_in_to">Accedi a %1$s</string>
     <string name="link_source_waiting">In attesa di %1$s…</string>

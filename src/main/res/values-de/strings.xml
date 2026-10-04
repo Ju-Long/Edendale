@@ -456,7 +456,6 @@
     <string name="link_source_onedrive_description">Privates, Arbeits- oder Schul-OneDrive.</string>
     <string name="link_source_dropbox_description">Deine Dropbox-Ordner.</string>
     <string name="link_source_linked_accounts">Verknüpfte Accounts</string>
-    <string name="link_source_sign_in">Anmelden</string>
     <string name="link_source_another_account">Weiterer Account</string>
     <string name="link_source_sign_in_to">Bei %1$s anmelden</string>
     <string name="link_source_waiting">Warten auf %1$s …</string>
