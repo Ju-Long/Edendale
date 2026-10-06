@@ -9,6 +9,7 @@ import {
   getLocale,
   homeUrl,
   LOCALES,
+  pageUrl,
   useTranslations,
   type LocalePath,
   type UIKey,
@@ -36,6 +37,12 @@ interface Props {
   noIndex?: boolean;
   /** Page-specific keys to include in a `browser` page's string table. */
   browserKeys?: readonly UIKey[];
+  /**
+   * The page's path below the locale root, such as `privacy`, for every
+   * localized page except the home page. It drives the canonical URL, the
+   * `hreflang` alternates, and the language picker's links.
+   */
+  path?: string;
 }
 
 const {
@@ -45,6 +52,7 @@ const {
   localeMode = "static",
   noIndex = false,
   browserKeys = [],
+  path,
 } = Astro.props;
 
 const t = useTranslations(locale);
@@ -55,10 +63,13 @@ const description = t(descriptionKey);
 const resolveInBrowser = localeMode === "browser";
 const canonical = resolveInBrowser
   ? new URL(Astro.url.pathname, Astro.site).href
-  : getAbsoluteLocaleUrl(locale);
-const alternates = resolveInBrowser ? [] : alternateLinks();
+  : getAbsoluteLocaleUrl(locale, path);
+const alternates = resolveInBrowser ? [] : alternateLinks(path);
 
 const home = homeUrl(locale);
+const privacyPath = "privacy";
+const privacy = pageUrl(locale, privacyPath);
+const onPrivacy = path === privacyPath;
 const socialImage = new URL(
   `${import.meta.env.BASE_URL}app_icon.png`,
   Astro.site,
@@ -79,9 +90,11 @@ const i18n = {
         "chrome.navAria",
         "chrome.navFeatures",
         "chrome.navPlatforms",
+        "chrome.navPrivacy",
         "chrome.navGithub",
         "chrome.footerTagline",
         "chrome.footerNote",
+        "chrome.footerPrivacy",
         "chrome.footerSource",
         "language.aria",
         ...browserKeys,
@@ -211,6 +224,13 @@ const i18n = {
           <a href={`${home}#platforms`} data-locale-home-hash="platforms">
             <span data-i18n="chrome.navPlatforms">{t("chrome.navPlatforms")}</span>
           </a>
+          <a
+            href={privacy}
+            data-locale-page={privacyPath}
+            aria-current={onPrivacy ? "page" : undefined}
+          >
+            <span data-i18n="chrome.navPrivacy">{t("chrome.navPrivacy")}</span>
+          </a>
           <a class="header-github" href="https://github.com/Ju-Long/Edendale">
             <i class="fa-brands fa-github" aria-hidden="true"></i>
             <span data-i18n="chrome.navGithub">{t("chrome.navGithub")}</span>
@@ -233,7 +253,15 @@ const i18n = {
         </a>
         <p data-i18n="chrome.footerNote">{t("chrome.footerNote")}</p>
         <div class="footer-actions">
-          <LanguagePicker locale={locale} resolveInBrowser={resolveInBrowser} />
+          <LanguagePicker locale={locale} resolveInBrowser={resolveInBrowser} path={path} />
+          <a
+            class="footer-link"
+            href={privacy}
+            data-locale-page={privacyPath}
+            aria-current={onPrivacy ? "page" : undefined}
+          >
+            <span data-i18n="chrome.footerPrivacy">{t("chrome.footerPrivacy")}</span>
+          </a>
           <a class="footer-source" href="https://github.com/Ju-Long/Edendale">
             <span data-i18n="chrome.footerSource">{t("chrome.footerSource")}</span>
             <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
@@ -278,6 +306,9 @@ const i18n = {
             });
             document.querySelectorAll("[data-locale-home-hash]").forEach(function (node) {
               node.href = locale.homeHref + "#" + node.dataset.localeHomeHash;
+            });
+            document.querySelectorAll("[data-locale-page]").forEach(function (node) {
+              node.href = locale.homeHref + node.dataset.localePage + "/";
             });
 
             var label = document.querySelector("[data-language-current]");

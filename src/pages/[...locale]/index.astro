@@ -1,6 +1,13 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import { lines, LOCALES, useTranslations, type LocalePath } from "../../i18n/utils.ts";
+import {
+  lines,
+  LOCALES,
+  pageUrl,
+  useTranslations,
+  type LocalePath,
+  type UIKey,
+} from "../../i18n/utils.ts";
 
 /**
  * One source file, one page per language, plus the automatic entry point.
@@ -29,8 +36,23 @@ const t = useTranslations(locale);
 const heroTitle = lines(t("hero.title"));
 const heroAccent = heroTitle.length > 2 ? 1 : -1;
 const featuresTitle = lines(t("features.title"));
+const sourcesTitle = lines(t("sources.title"));
+const playerTitle = lines(t("player.title"));
 const platformsTitle = lines(t("platforms.title"));
 const closingTitle = lines(t("closing.title"));
+
+// Protocol and provider names are never translated.
+const networkSources = ["SMB", "NFS", "SFTP", "WebDAV"];
+const cloudSources = ["Google Drive", "OneDrive", "Dropbox", "S3"];
+
+const playerFeatures: readonly { icon: string; title: UIKey; body: UIKey }[] = [
+  { icon: "fa-forward", title: "player.skipTitle", body: "player.skipBody" },
+  { icon: "fa-forward-step", title: "player.nextTitle", body: "player.nextBody" },
+  { icon: "fa-sliders", title: "player.soundTitle", body: "player.soundBody" },
+  { icon: "fa-wand-magic-sparkles", title: "player.pictureTitle", body: "player.pictureBody" },
+  { icon: "fa-closed-captioning", title: "player.subtitlesTitle", body: "player.subtitlesBody" },
+  { icon: "fa-hand-pointer", title: "player.controlsTitle", body: "player.controlsBody" },
+];
 ---
 
 <SiteLayout
@@ -152,6 +174,92 @@ const closingTitle = lines(t("closing.title"));
           <h3>{t("features.privacyTitle")}</h3>
           <p>{t("features.privacyBody")}</p>
         </article>
+      </div>
+    </section>
+
+    <section class="sources-section" id="sources" aria-labelledby="sources-title">
+      <div class="section-shell">
+        <div class="section-intro">
+          <p class="eyebrow"><span></span> {t("sources.eyebrow")}</p>
+          <h2 id="sources-title">
+            {sourcesTitle.map((line, index) => (
+              <Fragment>{index > 0 && <br />}{line}</Fragment>
+            ))}
+          </h2>
+          <p>{t("sources.lede")}</p>
+        </div>
+        <div class="source-grid">
+          <article class="source-card">
+            <span class="source-icon" aria-hidden="true">
+              <i class="fa-solid fa-hard-drive"></i>
+            </span>
+            <h3>{t("sources.deviceTitle")}</h3>
+            <p>{t("sources.deviceBody")}</p>
+            <ul class="source-names">
+              <li>{t("sources.deviceFolders")}</li>
+              <li>{t("sources.deviceDrives")}</li>
+            </ul>
+          </article>
+          <article class="source-card">
+            <span class="source-icon" aria-hidden="true">
+              <i class="fa-solid fa-server"></i>
+            </span>
+            <h3>{t("sources.networkTitle")}</h3>
+            <p>{t("sources.networkBody")}</p>
+            <ul class="source-names">
+              {networkSources.map((name) => <li>{name}</li>)}
+            </ul>
+          </article>
+          <article class="source-card">
+            <span class="source-icon" aria-hidden="true">
+              <i class="fa-solid fa-cloud"></i>
+            </span>
+            <h3>{t("sources.cloudTitle")}</h3>
+            <p>{t("sources.cloudBody")}</p>
+            <ul class="source-names">
+              {cloudSources.map((name) => <li>{name}</li>)}
+            </ul>
+          </article>
+        </div>
+        <div class="source-access">
+          <span class="source-icon" aria-hidden="true">
+            <i class="fa-solid fa-lock"></i>
+          </span>
+          <div>
+            <h3>{t("sources.accessTitle")}</h3>
+            <p>{t("sources.accessBody")}</p>
+          </div>
+          <a class="button button-secondary" href={pageUrl(locale, "privacy")}>
+            {t("sources.accessLink")}
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </a>
+        </div>
+        <p class="source-footnote">{t("sources.availability")}</p>
+      </div>
+    </section>
+
+    <section class="section-shell player-section" id="player" aria-labelledby="player-title">
+      <div class="section-intro">
+        <p class="eyebrow"><span></span> {t("player.eyebrow")}</p>
+        <h2 id="player-title">
+          {playerTitle.map((line, index) => (
+            <Fragment>{index > 0 && <br />}{line}</Fragment>
+          ))}
+        </h2>
+        <p>{t("player.lede")}</p>
+      </div>
+      <div class="player-grid">
+        {
+          playerFeatures.map((feature) => (
+            <article class="player-card">
+              <span class="source-icon" aria-hidden="true">
+                <i class={`fa-solid ${feature.icon}`}></i>
+              </span>
+              <h3>{t(feature.title)}</h3>
+              <p>{t(feature.body)}</p>
+            </article>
+          ))
+        }
       </div>
     </section>
 

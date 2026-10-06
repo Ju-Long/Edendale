@@ -1,0 +1,135 @@
+---
+import { getEntry, render } from "astro:content";
+
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import {
+  DEFAULT_LOCALE,
+  getLocale,
+  lines,
+  LOCALES,
+  pageUrl,
+  useTranslations,
+  type LocalePath,
+} from "../../i18n/utils.ts";
+
+/**
+ * The privacy policy: `/privacy/` in English and `/<locale>/privacy/` in every
+ * other language. Unlike the home page there is no automatic redirect, so
+ * English needs no `/en/` alias.
+ *
+ * The text comes from `src/content/privacy/<locale>.md`. Google's OAuth
+ * verification and Microsoft's app registration point at this URL, so the build
+ * fails rather than publish a missing translation, or one whose effective date
+ * no longer matches the authoritative English text.
+ */
+export async function getStaticPaths() {
+  const english = await getEntry("privacy", DEFAULT_LOCALE);
+  if (!english) {
+    throw new Error("The English privacy policy, src/content/privacy/en.md, is missing.");
+  }
+
+  return Promise.all(
+    LOCALES.map(async ({ path }) => {
+      const entry = await getEntry("privacy", path);
+      if (!entry) {
+        throw new Error(`src/content/privacy/${path}.md is missing.`);
+      }
+      if (entry.data.updated.getTime() !== english.data.updated.getTime()) {
+        throw new Error(
+          `src/content/privacy/${path}.md is dated differently from en.md. ` +
+            "Translate the English changes and copy its `updated` date.",
+        );
+      }
+      return {
+        params: { locale: path === DEFAULT_LOCALE ? undefined : path },
+        props: { locale: path as LocalePath },
+      };
+    }),
+  );
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const entry = await getEntry("privacy", locale);
+if (!entry) throw new Error(`src/content/privacy/${locale}.md is missing.`);
+
+const { Content, headings } = await render(entry);
+const sections = headings.filter((heading) => heading.depth === 2);
+
+// The effective date is a calendar date, so format it in UTC: a build machine
+// west of Greenwich would otherwise print the day before.
+const updated = entry.data.updated;
+const updatedLabel = t("privacy.updated").replace(
+  "{date}",
+  new Intl.DateTimeFormat(getLocale(locale).lang, {
+    dateStyle: "long",
+    timeZone: "UTC",
+  }).format(updated),
+);
+const isTranslation = locale !== DEFAULT_LOCALE;
+const title = lines(t("privacy.title"));
+---
+
+<SiteLayout
+  titleKey="meta.privacy.title"
+  descriptionKey="meta.privacy.description"
+  locale={locale}
+  path="privacy"
+>
+  <main class="policy">
+    <header class="policy-hero section-shell">
+      <p class="eyebrow"><span></span> {t("privacy.eyebrow")}</p>
+      <h1>
+        {title.map((line, index) => (
+          <Fragment>{index > 0 && <br />}{line}</Fragment>
+        ))}
+      </h1>
+      <p class="policy-lede">{t("privacy.lede")}</p>
+      <p class="policy-meta">
+        <time datetime={updated.toISOString().slice(0, 10)}>{updatedLabel}</time>
+      </p>
+      {
+        isTranslation && (
+          <p class="policy-translation">
+            {t("privacy.translationNote")}{" "}
+            <a href={pageUrl(DEFAULT_LOCALE, "privacy")} hreflang="en">
+              {t("privacy.readEnglish")}
+            </a>
+          </p>
+        )
+      }
+    </header>
+
+    <section class="policy-summary section-shell" aria-labelledby="policy-summary-title">
+      <h2 id="policy-summary-title">{t("privacy.summaryTitle")}</h2>
+      <ul>
+        {
+          entry.data.summary.map((point) => (
+            <li>
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              <span>{point}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div class="policy-layout section-shell">
+      <nav class="policy-toc" aria-labelledby="policy-toc-title">
+        <p id="policy-toc-title">{t("privacy.tocTitle")}</p>
+        <ol>
+          {
+            sections.map((heading) => (
+              <li>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+      <article class="prose">
+        <Content />
+      </article>
+    </div>
+  </main>
+</SiteLayout>

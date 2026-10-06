@@ -80,7 +80,8 @@ On `web`, the repository root contains Edendale's static Astro marketing
 and verified-link site. It has no browser player, media library, watch tracker,
 TMDB proxy, server runtime, account system, analytics, application persistence,
 or runtime credentials. It is published in eight languages and matches the
-visitor's browser language automatically; see [Languages](#languages).
+visitor's browser language automatically; see [Languages](#languages). It also
+publishes the apps' privacy policy; see [Privacy policy](#privacy-policy).
 
 ### Requirements and local commands
 
@@ -114,10 +115,13 @@ git push origin web
 ```
 
 Both workflows then assert that `dist/` still contains `.nojekyll`, `CNAME`,
-`.well-known/apple-app-site-association`, and `app_icon.png`. Those files are
-referenced by path rather than imported, so nothing else in the build fails when
-one goes missing. `actions/upload-pages-artifact` also stopped including
-dotfiles by default in v4, which is why `include-hidden-files: true` is set.
+`.well-known/apple-app-site-association`,
+`.well-known/microsoft-identity-association.json`, `app_icon.png`, and
+`privacy/index.html`. Those files are referenced by path rather than imported,
+or, for the privacy policy, by URL from Google's and Microsoft's app
+registrations, so nothing else in the build fails when one goes missing.
+`actions/upload-pages-artifact` also stopped including dotfiles by default in
+v4, which is why `include-hidden-files: true` is set.
 
 Every action is pinned to a commit SHA. The deploy workflow does not cancel runs
 already in progress, so a production deployment is always allowed to finish.
@@ -155,6 +159,7 @@ apple.com uses for `/` and `/jp/`.
 | `/` | English, and redirects a visitor whose browser asks for another shipped language to that language |
 | `/en/` | English, with no redirect, canonical back to `/` |
 | `/es/`, `/fr/`, `/de/`, `/pt-br/`, `/ja/`, `/ko/`, `/zh-hans/` | That language |
+| `/privacy/`, `/<locale>/privacy/` | The privacy policy in English or that language; it never redirects, so English needs no `/en/` alias |
 | `/search/`, `/media/`, `/library/`, `/play/`, `/404` | The app-link pages, which stay unprefixed |
 
 Detection is a small inline script in `<head>`. It matches
@@ -185,7 +190,9 @@ Adding a language:
    it claims.
 2. Add its dictionary to [`src/i18n/ui.ts`](src/i18n/ui.ts). It is typed as a
    complete `Dictionary`, so `npm run check` fails until every key is present.
-3. Check the headline widths. Headings carry authored line breaks (`\n` in the
+3. Translate the privacy policy into `src/content/privacy/<segment>.md` with
+   the English file's `updated` date. `npm run build` fails until it exists.
+4. Check the headline widths. Headings carry authored line breaks (`\n` in the
    dictionary) so each language wraps where its words allow, and
    `--display-scale` in [`global.css`](src/styles/global.css) sizes the
    condensed display face per language — French and German need noticeably less
@@ -197,6 +204,56 @@ Every locale is currently left-to-right. `dir` is already wired from the locale
 registry to `<html>`, but the stylesheet still uses some physical properties
 (the skip link, the picker's alignment), so adding a right-to-left language
 needs a pass over those first.
+
+### Privacy policy
+
+`/privacy/` and `/<locale>/privacy/` hold the privacy policy for every
+Edendale app and for this site. Google requires it before it verifies the
+Google Drive source's restricted `drive.readonly` scope: a public home page on
+a verified domain that describes the app and why it requests user data, linked
+to a privacy policy that discloses how the app accesses, uses, stores, and
+shares Google user data. Microsoft Entra's app branding takes a privacy
+statement URL as well. Register these addresses:
+
+| Field | URL |
+|---|---|
+| Application home page | `https://edendale.babasama.com/` |
+| Privacy policy | `https://edendale.babasama.com/privacy/` |
+
+The policy text lives in [`src/content/privacy/`](src/content/privacy), one
+Markdown file per language, named after the locale's URL segment; the page's
+heading and labels live in `ui.ts` like every other string. English is
+authoritative, and each translation says so with a link to it. Every file's
+`updated` front matter must match `en.md`: the build fails when a translation
+is missing or dated differently, so a policy change cannot ship
+half-translated.
+
+Keep the policy true to the shipped apps. It names every service an app
+contacts (TMDB, Wyzie Subs, TheIntroDB, YouTube, and the storage providers),
+what each one receives, what syncs and through which user-controlled service,
+and the OAuth scopes each provider is asked for. Change it, in every language
+and with a new `updated` date, alongside any platform change to data handling:
+a new provider or scope, a new online service, or Google Drive reaching
+Android or Windows (today it is Apple-only). Google's reviewers look for two
+passages in "Google user data"; keep both:
+
+- the Limited Use statement, which links the Google API Services User Data
+  Policy; and
+- the statement that Google user data is never used to develop, improve, or
+  train AI or machine-learning models.
+
+The home page's "Your sources" section is the other half of the requirement:
+it says what Google Drive, OneDrive, and Dropbox are asked for and why, and
+links to the policy, which the header and footer also link from every page.
+
+### Microsoft identity association
+
+`/.well-known/microsoft-identity-association.json` lists Edendale's Microsoft
+Entra application ID, so Entra can verify that `edendale.babasama.com` belongs
+to the app's publisher. Keep it at that exact
+path. GitHub Pages already serves `.json` files as `application/json`, so it
+needs no response-header rule. The ID names a public client and is not a
+secret.
 
 ### Universal Links and App Links
 

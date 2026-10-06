@@ -9,9 +9,14 @@ interface Props {
    * the selected item are filled in by script instead of at build time.
    */
   resolveInBrowser?: boolean;
+  /**
+   * The page's path below the locale root, such as `privacy`, so each language
+   * links to the same page. Omitted on the home page.
+   */
+  path?: string;
 }
 
-const { locale, resolveInBrowser = false } = Astro.props;
+const { locale, resolveInBrowser = false, path } = Astro.props;
 const t = useTranslations(locale);
 const current = LOCALES.find((entry) => entry.path === locale) ?? LOCALES[0];
 ---
@@ -33,7 +38,7 @@ const current = LOCALES.find((entry) => entry.path === locale) ?? LOCALES[0];
       LOCALES.map((entry) => (
         <li>
           <a
-            href={pickerUrl(entry.path)}
+            href={pickerUrl(entry.path, path)}
             hreflang={entry.lang}
             lang={entry.lang}
             data-language-option={entry.path}

@@ -43,16 +43,25 @@ export function homeUrl(locale: LocalePath): string {
 }
 
 /**
- * The URL the language picker points at. Unlike {@link homeUrl}, English
- * resolves to the explicit `/en/` alias rather than `/`.
+ * The canonical URL of a localized page other than the home page —
+ * `/privacy/` for English, `/es/privacy/` for Spanish.
+ */
+export function pageUrl(locale: LocalePath, path: string): string {
+  return getRelativeLocaleUrl(locale, path);
+}
+
+/**
+ * The URL the language picker points at. For the home page, English resolves
+ * to the explicit `/en/` alias rather than `/`.
  *
  * `/` is the automatic entry point: it redirects to whatever language the
  * browser asks for. A visitor who deliberately chooses English needs somewhere
  * that will not bounce them back, and since DESIGN.md forbids this site from
- * storing preferences, that "somewhere" has to be the URL itself.
+ * storing preferences, that "somewhere" has to be the URL itself. No other page
+ * redirects, so every other page's English URL is already that place.
  */
 export function pickerUrl(locale: LocalePath, path?: string): string {
-  return locale === DEFAULT_LOCALE
+  return locale === DEFAULT_LOCALE && !path
     ? `${getRelativeLocaleUrl(DEFAULT_LOCALE)}${DEFAULT_LOCALE}/`
     : getRelativeLocaleUrl(locale, path);
 }

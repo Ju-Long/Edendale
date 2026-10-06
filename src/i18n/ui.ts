@@ -8,6 +8,10 @@ import type { LocalePath } from "./locales.ts";
  * A `\n` inside a heading is an authored line break: `SiteLayout`'s `lines()`
  * helper turns it into `<br>`, which lets each language break its own headline
  * where the words allow.
+ *
+ * `{date}` in `privacy.updated` is replaced with the policy's effective date,
+ * formatted for the language. The policy text itself lives in
+ * `src/content/privacy/`, one Markdown file per language.
  */
 const en = {
   "meta.home.title": "Edendale — Your library, your history",
@@ -17,6 +21,9 @@ const en = {
   "meta.link.description": "Continue this link in the Edendale app.",
   "meta.notFound.description":
     "Continue this link in the Edendale app, or return to the Edendale project site.",
+  "meta.privacy.title": "Privacy policy — Edendale",
+  "meta.privacy.description":
+    "How Edendale handles your data: no account, no Edendale servers, no analytics, and read-only access to the storage you link.",
   "meta.socialAlt": "Edendale — your private cinematic archive.",
 
   "chrome.skipToContent": "Skip to content",
@@ -25,9 +32,11 @@ const en = {
   "chrome.navAria": "Primary navigation",
   "chrome.navFeatures": "Features",
   "chrome.navPlatforms": "Platforms",
+  "chrome.navPrivacy": "Privacy",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Your stories stay yours.",
   "chrome.footerNote": "Free and open source · No analytics · Built with care",
+  "chrome.footerPrivacy": "Privacy policy",
   "chrome.footerSource": "Source on GitHub",
 
   "language.label": "Language",
@@ -51,7 +60,7 @@ const en = {
   "hero.windowNowPlaying": "Now playing from your library",
   "hero.windowPickUp": "Pick up exactly where you left off.",
   "hero.privacyTitle": "Nothing leaves your library",
-  "hero.privacyBody": "Your files stay on your devices.",
+  "hero.privacyBody": "Your files stay where you keep them.",
 
   "proof.aria": "Supported experiences",
   "proof.archiveTitle": "One archive",
@@ -77,6 +86,50 @@ const en = {
   "features.privacyBody":
     "No accounts to sell, no viewing profile, and no analytics watching what you watch.",
 
+  "sources.eyebrow": "Your sources",
+  "sources.title": "Play it from\nwherever it lives.",
+  "sources.lede":
+    "Link a folder on this device, a server at home, or a cloud drive. Edendale lists it, sorts the files on your device, and streams only what you play, straight from the source to your screen.",
+  "sources.deviceTitle": "On this device",
+  "sources.deviceBody":
+    "The folders and drives you already use, read where they are, never copied.",
+  "sources.deviceFolders": "Folders",
+  "sources.deviceDrives": "External drives",
+  "sources.networkTitle": "On your network",
+  "sources.networkBody":
+    "Servers and NAS shares at home, with their logins kept in your device’s protected storage.",
+  "sources.cloudTitle": "In the cloud",
+  "sources.cloudBody":
+    "Cloud drives sign you in on the provider’s own page, so Edendale never sees your password.",
+  "sources.accessTitle": "Read-only, and only to play",
+  "sources.accessBody":
+    "Edendale asks Google Drive, OneDrive, and Dropbox for read-only access: to show which account is linked, list the folders you choose, and stream the videos you play. It can’t change or delete anything there, and nothing passes through an Edendale server.",
+  "sources.accessLink": "How Edendale handles your data",
+  "sources.availability": "Available services differ by platform.",
+
+  "player.eyebrow": "The player",
+  "player.title": "Every detail,\ntuned by you.",
+  "player.lede":
+    "The Edendale player gives you the controls a home cinema deserves, and every online extra waits until you ask for it.",
+  "player.skipTitle": "Skip prompts",
+  "player.skipBody":
+    "Skip Intro, Recap, and Credits buttons from TheIntroDB’s community timestamps. Off until you turn it on, and it never skips on its own.",
+  "player.nextTitle": "Up Next",
+  "player.nextBody":
+    "Episodes roll on to the next one you have, and Continue Watching remembers what comes after the last one you finished.",
+  "player.soundTitle": "Sound",
+  "player.soundBody":
+    "Equalizer profiles for movies, music, dialogue, and late nights, plus an Audio Booster for quiet mixes.",
+  "player.pictureTitle": "Picture",
+  "player.pictureBody":
+    "Fine-tune brightness, contrast, and color, with GPU upscaling and sharpening on supported hardware.",
+  "player.subtitlesTitle": "Subtitles",
+  "player.subtitlesBody":
+    "Choose the font, colors, and background, or search online when a file doesn’t have your language.",
+  "player.controlsTitle": "Controls",
+  "player.controlsBody":
+    "Set how far skips jump and how fast a press-and-hold plays, with touch, keyboard, mouse, or remote.",
+
   "platforms.eyebrow": "Native where it matters",
   "platforms.title": "At home on\nevery screen.",
   "platforms.lede":
@@ -90,6 +143,17 @@ const en = {
   "closing.body":
     "Edendale is free, open source, and in active development. Follow the project and help shape what comes next.",
   "closing.cta": "Follow development",
+
+  "privacy.eyebrow": "Privacy",
+  "privacy.title": "Privacy policy",
+  "privacy.lede":
+    "Edendale is built so that your library, your viewing history, and your files stay under your control. This page explains exactly what the apps and this website handle, and what they never touch.",
+  "privacy.updated": "Effective {date}",
+  "privacy.summaryTitle": "The short version",
+  "privacy.tocTitle": "On this page",
+  "privacy.translationNote":
+    "This translation is provided for convenience. If it differs from the English version, the English version applies.",
+  "privacy.readEnglish": "Read the English version",
 
   "link.eyebrow": "App link",
   "link.heading": "Continue in Edendale",
@@ -114,6 +178,9 @@ const es: Dictionary = {
   "meta.link.description": "Continúa este enlace en la app de Edendale.",
   "meta.notFound.description":
     "Continúa este enlace en la app de Edendale o vuelve al sitio del proyecto.",
+  "meta.privacy.title": "Política de privacidad — Edendale",
+  "meta.privacy.description":
+    "Cómo trata Edendale tus datos: sin cuenta, sin servidores de Edendale, sin analíticas y con acceso de solo lectura al almacenamiento que vinculas.",
   "meta.socialAlt": "Edendale: tu archivo cinematográfico privado.",
 
   "chrome.skipToContent": "Saltar al contenido",
@@ -122,10 +189,12 @@ const es: Dictionary = {
   "chrome.navAria": "Navegación principal",
   "chrome.navFeatures": "Funciones",
   "chrome.navPlatforms": "Plataformas",
+  "chrome.navPrivacy": "Privacidad",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Tus historias siguen siendo tuyas.",
   "chrome.footerNote":
     "Libre y de código abierto · Sin analíticas · Hecho con cuidado",
+  "chrome.footerPrivacy": "Política de privacidad",
   "chrome.footerSource": "Código en GitHub",
 
   "language.label": "Idioma",
@@ -149,7 +218,7 @@ const es: Dictionary = {
   "hero.windowNowPlaying": "Reproduciendo desde tu biblioteca",
   "hero.windowPickUp": "Retoma justo donde lo dejaste.",
   "hero.privacyTitle": "Nada sale de tu biblioteca",
-  "hero.privacyBody": "Tus archivos se quedan en tus dispositivos.",
+  "hero.privacyBody": "Tus archivos se quedan donde los guardas.",
 
   "proof.aria": "Experiencias disponibles",
   "proof.archiveTitle": "Un solo archivo",
@@ -175,6 +244,51 @@ const es: Dictionary = {
   "features.privacyBody":
     "Sin cuentas que vender, sin perfil de visionado y sin analíticas vigilando lo que ves.",
 
+  "sources.eyebrow": "Tus fuentes",
+  "sources.title": "Reprodúcelo desde\ndonde lo guardes.",
+  "sources.lede":
+    "Vincula una carpeta de este dispositivo, un servidor de casa o una unidad en la nube. Edendale la recorre, ordena los archivos en tu dispositivo y transmite solo lo que reproduces, directamente del origen a tu pantalla.",
+  "sources.deviceTitle": "En este dispositivo",
+  "sources.deviceBody":
+    "Las carpetas y unidades que ya usas, leídas donde están, sin copiarlas.",
+  "sources.deviceFolders": "Carpetas",
+  "sources.deviceDrives": "Unidades externas",
+  "sources.networkTitle": "En tu red",
+  "sources.networkBody":
+    "Servidores y NAS de casa, con sus credenciales guardadas en el almacenamiento protegido de tu dispositivo.",
+  "sources.cloudTitle": "En la nube",
+  "sources.cloudBody":
+    "En las unidades en la nube inicias sesión en la página del propio proveedor, así que Edendale nunca ve tu contraseña.",
+  "sources.accessTitle": "Solo lectura, y solo para reproducir",
+  "sources.accessBody":
+    "Edendale pide a Google Drive, OneDrive y Dropbox acceso de solo lectura: para mostrar qué cuenta está vinculada, listar las carpetas que eliges y transmitir los vídeos que reproduces. No puede cambiar ni borrar nada allí, y nada pasa por un servidor de Edendale.",
+  "sources.accessLink": "Cómo trata Edendale tus datos",
+  "sources.availability":
+    "Los servicios disponibles varían según la plataforma.",
+
+  "player.eyebrow": "El reproductor",
+  "player.title": "Cada detalle,\na tu medida.",
+  "player.lede":
+    "El reproductor de Edendale te da los controles que merece un cine en casa, y cada extra en línea espera a que tú lo pidas.",
+  "player.skipTitle": "Avisos para omitir",
+  "player.skipBody":
+    "Botones para omitir la intro, el resumen y los créditos con las marcas de tiempo de la comunidad de TheIntroDB. Desactivados hasta que los actives, y nunca omiten nada por sí solos.",
+  "player.nextTitle": "A continuación",
+  "player.nextBody":
+    "Los episodios pasan al siguiente que tengas, y Seguir viendo recuerda qué viene después del último que terminaste.",
+  "player.soundTitle": "Sonido",
+  "player.soundBody":
+    "Perfiles de ecualizador para películas, música, diálogos y noches tranquilas, además de un amplificador de audio para mezclas con poco volumen.",
+  "player.pictureTitle": "Imagen",
+  "player.pictureBody":
+    "Ajusta el brillo, el contraste y el color, con escalado y nitidez por GPU en el hardware compatible.",
+  "player.subtitlesTitle": "Subtítulos",
+  "player.subtitlesBody":
+    "Elige la fuente, los colores y el fondo, o busca en línea cuando un archivo no incluye tu idioma.",
+  "player.controlsTitle": "Controles",
+  "player.controlsBody":
+    "Decide cuánto avanza cada salto y a qué velocidad se reproduce al mantener pulsado, con pantalla táctil, teclado, ratón o mando.",
+
   "platforms.eyebrow": "Nativa donde importa",
   "platforms.title": "Como en casa en\ncada pantalla.",
   "platforms.lede":
@@ -188,6 +302,17 @@ const es: Dictionary = {
   "closing.body":
     "Edendale es libre, de código abierto y está en desarrollo activo. Sigue el proyecto y ayuda a decidir qué viene después.",
   "closing.cta": "Seguir el desarrollo",
+
+  "privacy.eyebrow": "Privacidad",
+  "privacy.title": "Política de\nprivacidad",
+  "privacy.lede":
+    "Edendale está hecho para que tu biblioteca, tu historial y tus archivos sigan bajo tu control. Esta página explica exactamente qué manejan las apps y este sitio web, y qué no tocan nunca.",
+  "privacy.updated": "Vigente desde el {date}",
+  "privacy.summaryTitle": "En resumen",
+  "privacy.tocTitle": "En esta página",
+  "privacy.translationNote":
+    "Esta traducción se ofrece por comodidad. Si difiere de la versión en inglés, prevalece la versión en inglés.",
+  "privacy.readEnglish": "Leer la versión en inglés",
 
   "link.eyebrow": "Enlace de la app",
   "link.heading": "Continuar en Edendale",
@@ -209,6 +334,9 @@ const fr: Dictionary = {
   "meta.link.description": "Poursuivez ce lien dans l’app Edendale.",
   "meta.notFound.description":
     "Poursuivez ce lien dans l’app Edendale ou revenez au site du projet.",
+  "meta.privacy.title": "Politique de confidentialité — Edendale",
+  "meta.privacy.description":
+    "Comment Edendale traite vos données : aucun compte, aucun serveur Edendale, aucune analyse, et un accès en lecture seule aux stockages que vous associez.",
   "meta.socialAlt": "Edendale — votre archive cinématographique privée.",
 
   "chrome.skipToContent": "Aller au contenu",
@@ -217,10 +345,12 @@ const fr: Dictionary = {
   "chrome.navAria": "Navigation principale",
   "chrome.navFeatures": "Fonctionnalités",
   "chrome.navPlatforms": "Plateformes",
+  "chrome.navPrivacy": "Confidentialité",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Vos histoires restent les vôtres.",
   "chrome.footerNote":
     "Libre et open source · Aucune analyse · Conçu avec soin",
+  "chrome.footerPrivacy": "Politique de confidentialité",
   "chrome.footerSource": "Code source sur GitHub",
 
   "language.label": "Langue",
@@ -244,7 +374,7 @@ const fr: Dictionary = {
   "hero.windowNowPlaying": "Lecture depuis votre bibliothèque",
   "hero.windowPickUp": "Reprenez exactement où vous vous êtes arrêté.",
   "hero.privacyTitle": "Rien ne quitte votre bibliothèque",
-  "hero.privacyBody": "Vos fichiers restent sur vos appareils.",
+  "hero.privacyBody": "Vos fichiers restent là où vous les rangez.",
 
   "proof.aria": "Expériences prises en charge",
   "proof.archiveTitle": "Une seule archive",
@@ -270,6 +400,51 @@ const fr: Dictionary = {
   "features.privacyBody":
     "Aucun compte à revendre, aucun profil de visionnage et aucune analyse pour surveiller ce que vous regardez.",
 
+  "sources.eyebrow": "Vos sources",
+  "sources.title": "Lisez vos vidéos\nlà où elles sont.",
+  "sources.lede":
+    "Associez un dossier de cet appareil, un serveur à la maison ou un stockage en ligne. Edendale le parcourt, trie les fichiers sur votre appareil et ne diffuse que ce que vous regardez, directement de la source à votre écran.",
+  "sources.deviceTitle": "Sur cet appareil",
+  "sources.deviceBody":
+    "Les dossiers et disques que vous utilisez déjà, lus sur place, jamais copiés.",
+  "sources.deviceFolders": "Dossiers",
+  "sources.deviceDrives": "Disques externes",
+  "sources.networkTitle": "Sur votre réseau",
+  "sources.networkBody":
+    "Serveurs et NAS à la maison, avec leurs identifiants conservés dans le stockage protégé de votre appareil.",
+  "sources.cloudTitle": "Dans le cloud",
+  "sources.cloudBody":
+    "Pour les stockages en ligne, vous vous connectez sur la page du fournisseur : Edendale ne voit jamais votre mot de passe.",
+  "sources.accessTitle": "En lecture seule, juste pour regarder",
+  "sources.accessBody":
+    "Edendale ne demande à Google Drive, OneDrive et Dropbox qu’un accès en lecture seule : pour afficher le compte associé, parcourir les dossiers que vous choisissez et diffuser les vidéos que vous regardez. Il ne peut rien y modifier ni supprimer, et rien ne passe par un serveur Edendale.",
+  "sources.accessLink": "Comment Edendale traite vos données",
+  "sources.availability":
+    "Les services disponibles varient selon la plateforme.",
+
+  "player.eyebrow": "Le lecteur",
+  "player.title": "Chaque détail,\nà votre goût.",
+  "player.lede":
+    "Le lecteur Edendale vous donne les commandes que mérite un cinéma à la maison, et chaque option en ligne attend que vous la demandiez.",
+  "player.skipTitle": "Boutons pour passer",
+  "player.skipBody":
+    "Des boutons pour passer l’introduction, le résumé et le générique, grâce aux repères de la communauté TheIntroDB. Désactivés tant que vous ne les activez pas, ils ne passent jamais rien d’eux-mêmes.",
+  "player.nextTitle": "À suivre",
+  "player.nextBody":
+    "Les épisodes s’enchaînent avec le suivant que vous possédez, et Reprendre la lecture retient ce qui vient après le dernier épisode terminé.",
+  "player.soundTitle": "Son",
+  "player.soundBody":
+    "Des profils d’égaliseur pour les films, la musique, les dialogues et les soirées tardives, plus un amplificateur audio pour les mixages trop discrets.",
+  "player.pictureTitle": "Image",
+  "player.pictureBody":
+    "Réglez la luminosité, le contraste et les couleurs, avec mise à l’échelle et netteté par GPU sur le matériel compatible.",
+  "player.subtitlesTitle": "Sous-titres",
+  "player.subtitlesBody":
+    "Choisissez la police, les couleurs et le fond, ou cherchez en ligne quand un fichier n’a pas votre langue.",
+  "player.controlsTitle": "Commandes",
+  "player.controlsBody":
+    "Réglez la durée des sauts et la vitesse d’un appui prolongé, au toucher, au clavier, à la souris ou à la télécommande.",
+
   "platforms.eyebrow": "Native là où ça compte",
   "platforms.title": "À l’aise sur\nchaque écran.",
   "platforms.lede":
@@ -283,6 +458,17 @@ const fr: Dictionary = {
   "closing.body":
     "Edendale est libre, open source et en développement actif. Suivez le projet et aidez à décider de la suite.",
   "closing.cta": "Suivre le développement",
+
+  "privacy.eyebrow": "Confidentialité",
+  "privacy.title": "Politique de\nconfidentialité",
+  "privacy.lede":
+    "Edendale est conçu pour que votre bibliothèque, votre historique et vos fichiers restent sous votre contrôle. Cette page explique précisément ce que les apps et ce site traitent, et ce à quoi ils ne touchent jamais.",
+  "privacy.updated": "En vigueur depuis le {date}",
+  "privacy.summaryTitle": "L’essentiel",
+  "privacy.tocTitle": "Sur cette page",
+  "privacy.translationNote":
+    "Cette traduction est fournie par commodité. En cas de divergence avec la version anglaise, la version anglaise prévaut.",
+  "privacy.readEnglish": "Lire la version anglaise",
 
   "link.eyebrow": "Lien d’app",
   "link.heading": "Continuer dans Edendale",
@@ -305,6 +491,9 @@ const de: Dictionary = {
   "meta.link.description": "Setze diesen Link in der Edendale-App fort.",
   "meta.notFound.description":
     "Setze diesen Link in der Edendale-App fort oder kehre zur Projektseite zurück.",
+  "meta.privacy.title": "Datenschutzerklärung — Edendale",
+  "meta.privacy.description":
+    "Wie Edendale mit deinen Daten umgeht: kein Konto, keine Edendale-Server, keine Analysen und nur Lesezugriff auf die Speicher, die du verknüpfst.",
   "meta.socialAlt": "Edendale – dein privates Filmarchiv.",
 
   "chrome.skipToContent": "Zum Inhalt springen",
@@ -313,10 +502,12 @@ const de: Dictionary = {
   "chrome.navAria": "Hauptnavigation",
   "chrome.navFeatures": "Funktionen",
   "chrome.navPlatforms": "Plattformen",
+  "chrome.navPrivacy": "Datenschutz",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Deine Geschichten bleiben deine.",
   "chrome.footerNote":
     "Frei und quelloffen · Keine Analysen · Mit Sorgfalt gebaut",
+  "chrome.footerPrivacy": "Datenschutzerklärung",
   "chrome.footerSource": "Quellcode auf GitHub",
 
   "language.label": "Sprache",
@@ -341,7 +532,7 @@ const de: Dictionary = {
   "hero.windowNowPlaying": "Läuft aus deiner Mediathek",
   "hero.windowPickUp": "Mach genau dort weiter, wo du aufgehört hast.",
   "hero.privacyTitle": "Nichts verlässt deine Mediathek",
-  "hero.privacyBody": "Deine Dateien bleiben auf deinen Geräten.",
+  "hero.privacyBody": "Deine Dateien bleiben, wo du sie aufbewahrst.",
 
   "proof.aria": "Unterstützte Erlebnisse",
   "proof.archiveTitle": "Ein Archiv",
@@ -367,6 +558,51 @@ const de: Dictionary = {
   "features.privacyBody":
     "Keine Konten zum Verkaufen, kein Sehprofil und keine Analysen, die mitschauen.",
 
+  "sources.eyebrow": "Deine Quellen",
+  "sources.title": "Spiel es ab,\nwo immer es liegt.",
+  "sources.lede":
+    "Verknüpfe einen Ordner auf diesem Gerät, einen Server zu Hause oder einen Cloud-Speicher. Edendale liest ihn ein, sortiert die Dateien auf deinem Gerät und streamt nur, was du abspielst – direkt von der Quelle auf deinen Bildschirm.",
+  "sources.deviceTitle": "Auf diesem Gerät",
+  "sources.deviceBody":
+    "Die Ordner und Laufwerke, die du schon nutzt – direkt dort gelesen, nie kopiert.",
+  "sources.deviceFolders": "Ordner",
+  "sources.deviceDrives": "Externe Laufwerke",
+  "sources.networkTitle": "In deinem Netzwerk",
+  "sources.networkBody":
+    "Server und NAS-Freigaben zu Hause, deren Anmeldedaten im geschützten Speicher deines Geräts bleiben.",
+  "sources.cloudTitle": "In der Cloud",
+  "sources.cloudBody":
+    "Bei Cloud-Speichern meldest du dich auf der Seite des Anbieters an, deshalb sieht Edendale dein Passwort nie.",
+  "sources.accessTitle": "Nur lesen, nur zum Abspielen",
+  "sources.accessBody":
+    "Edendale bittet Google Drive, OneDrive und Dropbox nur um Lesezugriff: um das verknüpfte Konto anzuzeigen, die gewählten Ordner aufzulisten und die Videos zu streamen, die du abspielst. Es kann dort nichts ändern oder löschen, und nichts läuft über einen Edendale-Server.",
+  "sources.accessLink": "Wie Edendale mit deinen Daten umgeht",
+  "sources.availability":
+    "Welche Dienste verfügbar sind, hängt von der Plattform ab.",
+
+  "player.eyebrow": "Der Player",
+  "player.title": "Jedes Detail,\nnach deinem Geschmack.",
+  "player.lede":
+    "Der Edendale-Player gibt dir die Steuerung, die ein Heimkino verdient, und jedes Online-Extra wartet, bis du es willst.",
+  "player.skipTitle": "Hinweise zum Überspringen",
+  "player.skipBody":
+    "Schaltflächen zum Überspringen von Intro, Rückblick und Abspann, basierend auf den Zeitmarken der TheIntroDB-Community. Aus, bis du sie einschaltest – und sie überspringen nie von selbst.",
+  "player.nextTitle": "Als Nächstes",
+  "player.nextBody":
+    "Folgen gehen in die nächste über, die du hast, und „Weiter ansehen“ merkt sich, was nach der zuletzt beendeten Folge kommt.",
+  "player.soundTitle": "Ton",
+  "player.soundBody":
+    "Equalizer-Profile für Filme, Musik, Dialoge und späte Abende, dazu ein Audio-Booster für leise Abmischungen.",
+  "player.pictureTitle": "Bild",
+  "player.pictureBody":
+    "Stelle Helligkeit, Kontrast und Farbe fein ein, mit GPU-Hochskalierung und Schärfung auf unterstützter Hardware.",
+  "player.subtitlesTitle": "Untertitel",
+  "player.subtitlesBody":
+    "Wähle Schrift, Farben und Hintergrund, oder suche online, wenn eine Datei deine Sprache nicht enthält.",
+  "player.controlsTitle": "Steuerung",
+  "player.controlsBody":
+    "Lege fest, wie weit Sprünge reichen und wie schnell langes Drücken abspielt – per Touch, Tastatur, Maus oder Fernbedienung.",
+
   "platforms.eyebrow": "Nativ, wo es zählt",
   "platforms.title": "Zu Hause auf\njedem Bildschirm.",
   "platforms.lede":
@@ -380,6 +616,17 @@ const de: Dictionary = {
   "closing.body":
     "Edendale ist frei, quelloffen und in aktiver Entwicklung. Folge dem Projekt und gestalte mit, was als Nächstes kommt.",
   "closing.cta": "Entwicklung verfolgen",
+
+  "privacy.eyebrow": "Datenschutz",
+  "privacy.title": "Datenschutz",
+  "privacy.lede":
+    "Edendale ist so gebaut, dass deine Mediathek, dein Verlauf und deine Dateien unter deiner Kontrolle bleiben. Diese Seite erklärt genau, was die Apps und diese Website verarbeiten – und was sie nie anrühren.",
+  "privacy.updated": "Gültig ab {date}",
+  "privacy.summaryTitle": "Das Wichtigste in Kürze",
+  "privacy.tocTitle": "Auf dieser Seite",
+  "privacy.translationNote":
+    "Diese Übersetzung dient der Bequemlichkeit. Weicht sie von der englischen Fassung ab, gilt die englische Fassung.",
+  "privacy.readEnglish": "Englische Fassung lesen",
 
   "link.eyebrow": "App-Link",
   "link.heading": "In Edendale fortsetzen",
@@ -402,6 +649,9 @@ const ptBR: Dictionary = {
   "meta.link.description": "Continue este link no app Edendale.",
   "meta.notFound.description":
     "Continue este link no app Edendale ou volte ao site do projeto.",
+  "meta.privacy.title": "Política de privacidade — Edendale",
+  "meta.privacy.description":
+    "Como o Edendale trata seus dados: sem conta, sem servidores do Edendale, sem analytics e com acesso somente leitura ao armazenamento que você vincula.",
   "meta.socialAlt": "Edendale — seu acervo de cinema particular.",
 
   "chrome.skipToContent": "Ir para o conteúdo",
@@ -410,10 +660,12 @@ const ptBR: Dictionary = {
   "chrome.navAria": "Navegação principal",
   "chrome.navFeatures": "Recursos",
   "chrome.navPlatforms": "Plataformas",
+  "chrome.navPrivacy": "Privacidade",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Suas histórias continuam suas.",
   "chrome.footerNote":
     "Livre e de código aberto · Sem analytics · Feito com cuidado",
+  "chrome.footerPrivacy": "Política de privacidade",
   "chrome.footerSource": "Código no GitHub",
 
   "language.label": "Idioma",
@@ -437,7 +689,7 @@ const ptBR: Dictionary = {
   "hero.windowNowPlaying": "Reproduzindo da sua biblioteca",
   "hero.windowPickUp": "Retome exatamente de onde parou.",
   "hero.privacyTitle": "Nada sai da sua biblioteca",
-  "hero.privacyBody": "Seus arquivos ficam nos seus dispositivos.",
+  "hero.privacyBody": "Seus arquivos ficam onde você os guarda.",
 
   "proof.aria": "Experiências disponíveis",
   "proof.archiveTitle": "Um só acervo",
@@ -463,6 +715,51 @@ const ptBR: Dictionary = {
   "features.privacyBody":
     "Sem contas para vender, sem perfil de consumo e sem analytics observando o que você assiste.",
 
+  "sources.eyebrow": "Suas origens",
+  "sources.title": "Assista de onde\nestiver guardado.",
+  "sources.lede":
+    "Vincule uma pasta deste dispositivo, um servidor em casa ou um armazenamento na nuvem. O Edendale lista o conteúdo, organiza os arquivos no seu dispositivo e transmite só o que você assiste, direto da origem para a sua tela.",
+  "sources.deviceTitle": "Neste dispositivo",
+  "sources.deviceBody":
+    "As pastas e unidades que você já usa, lidas onde estão, sem cópias.",
+  "sources.deviceFolders": "Pastas",
+  "sources.deviceDrives": "Unidades externas",
+  "sources.networkTitle": "Na sua rede",
+  "sources.networkBody":
+    "Servidores e NAS em casa, com os logins guardados no armazenamento protegido do seu dispositivo.",
+  "sources.cloudTitle": "Na nuvem",
+  "sources.cloudBody":
+    "Nos armazenamentos na nuvem, você entra pela página do próprio provedor, então o Edendale nunca vê sua senha.",
+  "sources.accessTitle": "Somente leitura, só para assistir",
+  "sources.accessBody":
+    "O Edendale pede ao Google Drive, OneDrive e Dropbox apenas acesso somente leitura: para mostrar qual conta está vinculada, listar as pastas que você escolhe e transmitir os vídeos que você assiste. Ele não pode alterar nem apagar nada lá, e nada passa por um servidor do Edendale.",
+  "sources.accessLink": "Como o Edendale trata seus dados",
+  "sources.availability":
+    "Os serviços disponíveis variam conforme a plataforma.",
+
+  "player.eyebrow": "O reprodutor",
+  "player.title": "Cada detalhe,\ndo seu jeito.",
+  "player.lede":
+    "O reprodutor do Edendale traz os controles que um cinema em casa merece, e cada recurso online espera você pedir.",
+  "player.skipTitle": "Botões para pular",
+  "player.skipBody":
+    "Botões para pular a abertura, o resumo e os créditos com as marcações da comunidade do TheIntroDB. Ficam desativados até você ativar, e nunca pulam nada sozinhos.",
+  "player.nextTitle": "A seguir",
+  "player.nextBody":
+    "Os episódios seguem para o próximo que você tem, e Continuar assistindo lembra o que vem depois do último que você terminou.",
+  "player.soundTitle": "Som",
+  "player.soundBody":
+    "Perfis de equalizador para filmes, música, diálogos e madrugadas, além de um amplificador de áudio para mixagens baixas.",
+  "player.pictureTitle": "Imagem",
+  "player.pictureBody":
+    "Ajuste brilho, contraste e cor, com ampliação e nitidez por GPU no hardware compatível.",
+  "player.subtitlesTitle": "Legendas",
+  "player.subtitlesBody":
+    "Escolha a fonte, as cores e o fundo, ou busque online quando um arquivo não tem o seu idioma.",
+  "player.controlsTitle": "Controles",
+  "player.controlsBody":
+    "Defina quanto cada salto avança e a velocidade ao manter pressionado, no toque, no teclado, no mouse ou no controle remoto.",
+
   "platforms.eyebrow": "Nativo onde importa",
   "platforms.title": "Em casa em\ncada tela.",
   "platforms.lede":
@@ -476,6 +773,17 @@ const ptBR: Dictionary = {
   "closing.body":
     "O Edendale é livre, de código aberto e está em desenvolvimento ativo. Acompanhe o projeto e ajude a definir o que vem a seguir.",
   "closing.cta": "Acompanhar o desenvolvimento",
+
+  "privacy.eyebrow": "Privacidade",
+  "privacy.title": "Política de\nprivacidade",
+  "privacy.lede":
+    "O Edendale foi feito para que sua biblioteca, seu histórico e seus arquivos continuem sob o seu controle. Esta página explica exatamente o que os apps e este site tratam, e o que eles nunca tocam.",
+  "privacy.updated": "Em vigor desde {date}",
+  "privacy.summaryTitle": "Em resumo",
+  "privacy.tocTitle": "Nesta página",
+  "privacy.translationNote":
+    "Esta tradução é oferecida por conveniência. Se houver divergência com a versão em inglês, prevalece a versão em inglês.",
+  "privacy.readEnglish": "Ler a versão em inglês",
 
   "link.eyebrow": "Link do app",
   "link.heading": "Continuar no Edendale",
@@ -498,6 +806,9 @@ const ja: Dictionary = {
   "meta.link.description": "このリンクを Edendale アプリで続けます。",
   "meta.notFound.description":
     "このリンクを Edendale アプリで続けるか、プロジェクトサイトに戻ってください。",
+  "meta.privacy.title": "プライバシーポリシー — Edendale",
+  "meta.privacy.description":
+    "Edendale のデータの扱い：アカウントなし、Edendale のサーバーなし、解析なし。リンクしたストレージには読み取り専用でアクセスします。",
   "meta.socialAlt": "Edendale — あなただけのプライベートな映画アーカイブ。",
 
   "chrome.skipToContent": "本文へスキップ",
@@ -506,9 +817,11 @@ const ja: Dictionary = {
   "chrome.navAria": "メインナビゲーション",
   "chrome.navFeatures": "機能",
   "chrome.navPlatforms": "対応プラットフォーム",
+  "chrome.navPrivacy": "プライバシー",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "あなたの物語は、あなたのもの。",
   "chrome.footerNote": "無料・オープンソース · 解析なし · ていねいに作りました",
+  "chrome.footerPrivacy": "プライバシーポリシー",
   "chrome.footerSource": "GitHub のソース",
 
   "language.label": "言語",
@@ -532,7 +845,7 @@ const ja: Dictionary = {
   "hero.windowNowPlaying": "ライブラリから再生中",
   "hero.windowPickUp": "止めたところから、そのまま続きを。",
   "hero.privacyTitle": "ライブラリの外には出ません",
-  "hero.privacyBody": "ファイルはあなたのデバイスに残ります。",
+  "hero.privacyBody": "ファイルは、あなたが置いた場所にそのまま。",
 
   "proof.aria": "対応している体験",
   "proof.archiveTitle": "ひとつのアーカイブ",
@@ -558,6 +871,45 @@ const ja: Dictionary = {
   "features.privacyBody":
     "売られるアカウントも、視聴プロフィールも、見ているものを監視する解析もありません。",
 
+  "sources.eyebrow": "あなたのソース",
+  "sources.title": "どこにあっても、\nそのまま再生。",
+  "sources.lede":
+    "このデバイスのフォルダ、自宅のサーバー、クラウドストレージをリンクできます。Edendale は中身を一覧にし、ファイルをデバイス上で仕分けて、再生する部分だけをソースから画面へ直接ストリーミングします。",
+  "sources.deviceTitle": "このデバイス",
+  "sources.deviceBody": "いつものフォルダやドライブを、コピーせずにその場で読み込みます。",
+  "sources.deviceFolders": "フォルダ",
+  "sources.deviceDrives": "外部ドライブ",
+  "sources.networkTitle": "自宅のネットワーク",
+  "sources.networkBody": "自宅のサーバーや NAS の共有フォルダ。ログイン情報はデバイスの保護されたストレージに保管されます。",
+  "sources.cloudTitle": "クラウド",
+  "sources.cloudBody":
+    "クラウドストレージへのサインインは各サービス自身のページで行うため、Edendale がパスワードを見ることはありません。",
+  "sources.accessTitle": "読み取り専用、再生のためだけに",
+  "sources.accessBody":
+    "Edendale が Google Drive、OneDrive、Dropbox に求めるのは読み取り専用のアクセスだけです。リンク中のアカウントの表示、選んだフォルダの一覧、再生する動画のストリーミングにのみ使います。そこにあるものを変更・削除することはできず、Edendale のサーバーを経由するものもありません。",
+  "sources.accessLink": "Edendale のデータの扱い",
+  "sources.availability": "利用できるサービスはプラットフォームによって異なります。",
+
+  "player.eyebrow": "プレーヤー",
+  "player.title": "細部まで、\nあなた好みに。",
+  "player.lede":
+    "Edendale のプレーヤーには、ホームシアターにふさわしい操作がそろっています。オンラインの機能は、あなたが求めるまで動きません。",
+  "player.skipTitle": "スキップボタン",
+  "player.skipBody":
+    "TheIntroDB のコミュニティによるタイムスタンプをもとに、イントロ、これまでのあらすじ、クレジットをスキップするボタンを表示します。オンにするまでは使われず、勝手にスキップすることもありません。",
+  "player.nextTitle": "次はこちら",
+  "player.nextBody": "エピソードは手元にある次の話へ自動で進み、「視聴を続ける」は最後に見終えた話の次を覚えています。",
+  "player.soundTitle": "サウンド",
+  "player.soundBody":
+    "映画、音楽、ダイアログ、夜間向けのイコライザープロファイルに加え、音量の小さいミックス向けのオーディオブースターも備えています。",
+  "player.pictureTitle": "映像",
+  "player.pictureBody":
+    "明るさ、コントラスト、色を細かく調整できます。対応ハードウェアでは GPU によるアップスケールとシャープ化も使えます。",
+  "player.subtitlesTitle": "字幕",
+  "player.subtitlesBody": "フォント、色、背景を選べます。ファイルにあなたの言語がなければ、オンラインで検索することもできます。",
+  "player.controlsTitle": "操作",
+  "player.controlsBody": "スキップの秒数や長押し中の再生速度を、タッチ、キーボード、マウス、リモコンに合わせて設定できます。",
+
   "platforms.eyebrow": "必要なところはネイティブで",
   "platforms.title": "どの画面でも、\n自分の家のように。",
   "platforms.lede":
@@ -571,6 +923,16 @@ const ja: Dictionary = {
   "closing.body":
     "Edendale は無料でオープンソース、開発が活発に続いています。プロジェクトをフォローして、次に来るものを一緒に形づくってください。",
   "closing.cta": "開発をフォロー",
+
+  "privacy.eyebrow": "プライバシー",
+  "privacy.title": "プライバシーポリシー",
+  "privacy.lede":
+    "Edendale は、ライブラリも視聴履歴もファイルも、あなたの管理下に置いたままにするよう作られています。このページでは、アプリとこのサイトが何を扱い、何に決して触れないのかを具体的に説明します。",
+  "privacy.updated": "{date}施行",
+  "privacy.summaryTitle": "要点",
+  "privacy.tocTitle": "このページの内容",
+  "privacy.translationNote": "この翻訳は便宜のために提供しています。英語版と内容が異なる場合は、英語版が優先されます。",
+  "privacy.readEnglish": "英語版を読む",
 
   "link.eyebrow": "アプリリンク",
   "link.heading": "Edendale で続ける",
@@ -592,6 +954,9 @@ const ko: Dictionary = {
   "meta.link.description": "이 링크를 Edendale 앱에서 이어서 봅니다.",
   "meta.notFound.description":
     "이 링크를 Edendale 앱에서 이어서 보거나 프로젝트 사이트로 돌아가세요.",
+  "meta.privacy.title": "개인정보 처리방침 — Edendale",
+  "meta.privacy.description":
+    "Edendale이 데이터를 다루는 방식: 계정 없음, Edendale 서버 없음, 분석 없음. 연결한 저장소에는 읽기 전용으로만 접근합니다.",
   "meta.socialAlt": "Edendale — 나만의 사적인 영화 아카이브.",
 
   "chrome.skipToContent": "본문으로 건너뛰기",
@@ -600,9 +965,11 @@ const ko: Dictionary = {
   "chrome.navAria": "기본 탐색",
   "chrome.navFeatures": "기능",
   "chrome.navPlatforms": "플랫폼",
+  "chrome.navPrivacy": "개인정보",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "당신의 이야기는 당신의 것으로.",
   "chrome.footerNote": "무료 오픈 소스 · 분석 없음 · 정성껏 만들었습니다",
+  "chrome.footerPrivacy": "개인정보 처리방침",
   "chrome.footerSource": "GitHub 소스",
 
   "language.label": "언어",
@@ -626,7 +993,7 @@ const ko: Dictionary = {
   "hero.windowNowPlaying": "내 라이브러리에서 재생 중",
   "hero.windowPickUp": "멈춘 그 지점에서 그대로 이어집니다.",
   "hero.privacyTitle": "라이브러리 밖으로 나가지 않습니다",
-  "hero.privacyBody": "파일은 내 기기에 그대로 남습니다.",
+  "hero.privacyBody": "파일은 당신이 둔 곳에 그대로 있습니다.",
 
   "proof.aria": "지원하는 경험",
   "proof.archiveTitle": "하나의 아카이브",
@@ -652,6 +1019,47 @@ const ko: Dictionary = {
   "features.privacyBody":
     "팔아넘길 계정도, 시청 프로필도, 무엇을 보는지 지켜보는 분석도 없습니다.",
 
+  "sources.eyebrow": "나의 소스",
+  "sources.title": "어디에 있든\n그대로 재생하세요.",
+  "sources.lede":
+    "이 기기의 폴더, 집에 있는 서버, 클라우드 저장소를 연결하세요. Edendale은 목록을 읽고, 기기에서 파일을 정리한 뒤, 재생하는 부분만 소스에서 화면으로 바로 스트리밍합니다.",
+  "sources.deviceTitle": "이 기기",
+  "sources.deviceBody": "이미 쓰고 있는 폴더와 드라이브를 복사하지 않고 그 자리에서 읽습니다.",
+  "sources.deviceFolders": "폴더",
+  "sources.deviceDrives": "외장 드라이브",
+  "sources.networkTitle": "내 네트워크",
+  "sources.networkBody": "집에 있는 서버와 NAS 공유 폴더. 로그인 정보는 기기의 보호된 저장소에 보관됩니다.",
+  "sources.cloudTitle": "클라우드",
+  "sources.cloudBody":
+    "클라우드 저장소는 서비스 자체 페이지에서 로그인하므로 Edendale은 비밀번호를 볼 수 없습니다.",
+  "sources.accessTitle": "읽기 전용, 재생을 위해서만",
+  "sources.accessBody":
+    "Edendale은 Google Drive, OneDrive, Dropbox에 읽기 전용 접근만 요청합니다. 연결된 계정을 표시하고, 선택한 폴더의 목록을 보여 주고, 재생하는 동영상을 스트리밍하는 데에만 씁니다. 그곳의 어떤 것도 바꾸거나 지울 수 없으며, Edendale 서버를 거치는 것도 없습니다.",
+  "sources.accessLink": "Edendale의 데이터 처리 방식",
+  "sources.availability": "사용할 수 있는 서비스는 플랫폼마다 다릅니다.",
+
+  "player.eyebrow": "플레이어",
+  "player.title": "모든 디테일을\n내 취향대로.",
+  "player.lede":
+    "Edendale 플레이어는 홈 시네마에 어울리는 조작을 갖추고 있으며, 온라인 기능은 당신이 원할 때까지 기다립니다.",
+  "player.skipTitle": "건너뛰기 버튼",
+  "player.skipBody":
+    "TheIntroDB 커뮤니티의 타임스탬프로 인트로, 요약, 크레딧을 건너뛰는 버튼을 보여 줍니다. 켜기 전까지는 꺼져 있고, 스스로 건너뛰는 일은 없습니다.",
+  "player.nextTitle": "다음 에피소드",
+  "player.nextBody":
+    "에피소드는 가지고 있는 다음 화로 이어지고, ‘시청 계속하기’는 마지막으로 다 본 화의 다음을 기억합니다.",
+  "player.soundTitle": "사운드",
+  "player.soundBody":
+    "영화, 음악, 대화, 늦은 밤을 위한 이퀄라이저 프로필과 소리가 작은 믹스를 위한 오디오 부스터를 갖췄습니다.",
+  "player.pictureTitle": "화면",
+  "player.pictureBody":
+    "밝기, 대비, 색상을 세밀하게 조정하고, 지원되는 하드웨어에서는 GPU 업스케일링과 선명화를 사용합니다.",
+  "player.subtitlesTitle": "자막",
+  "player.subtitlesBody": "글꼴, 색상, 배경을 고르고, 파일에 원하는 언어가 없으면 온라인에서 찾아보세요.",
+  "player.controlsTitle": "조작",
+  "player.controlsBody":
+    "건너뛰는 시간과 길게 누를 때의 재생 속도를 터치, 키보드, 마우스, 리모컨에 맞게 설정하세요.",
+
   "platforms.eyebrow": "중요한 곳은 네이티브로",
   "platforms.title": "어느 화면에서나\n제자리처럼.",
   "platforms.lede":
@@ -665,6 +1073,17 @@ const ko: Dictionary = {
   "closing.body":
     "Edendale은 무료 오픈 소스이며 활발히 개발 중입니다. 프로젝트를 팔로우하고 다음에 올 것을 함께 만들어 주세요.",
   "closing.cta": "개발 팔로우하기",
+
+  "privacy.eyebrow": "개인정보",
+  "privacy.title": "개인정보 처리방침",
+  "privacy.lede":
+    "Edendale은 라이브러리와 시청 기록, 파일이 계속 당신의 관리 아래 있도록 만들어졌습니다. 이 페이지는 앱과 이 웹사이트가 무엇을 다루고 무엇에는 절대 손대지 않는지 정확히 설명합니다.",
+  "privacy.updated": "{date} 시행",
+  "privacy.summaryTitle": "요약",
+  "privacy.tocTitle": "이 페이지의 내용",
+  "privacy.translationNote":
+    "이 번역은 편의를 위해 제공됩니다. 영어 버전과 내용이 다를 경우 영어 버전이 우선합니다.",
+  "privacy.readEnglish": "영어 버전 읽기",
 
   "link.eyebrow": "앱 링크",
   "link.heading": "Edendale에서 계속하기",
@@ -686,6 +1105,9 @@ const zhHans: Dictionary = {
   "meta.link.description": "在 Edendale 应用中继续打开此链接。",
   "meta.notFound.description":
     "在 Edendale 应用中继续打开此链接，或返回项目网站。",
+  "meta.privacy.title": "隐私政策 — Edendale",
+  "meta.privacy.description":
+    "Edendale 如何处理你的数据：没有账号，没有 Edendale 服务器，没有分析统计，对你关联的存储只有只读访问权限。",
   "meta.socialAlt": "Edendale — 属于你自己的私人影库。",
 
   "chrome.skipToContent": "跳到主要内容",
@@ -694,9 +1116,11 @@ const zhHans: Dictionary = {
   "chrome.navAria": "主导航",
   "chrome.navFeatures": "功能",
   "chrome.navPlatforms": "平台",
+  "chrome.navPrivacy": "隐私",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "你的故事，始终属于你。",
   "chrome.footerNote": "自由开源 · 无分析统计 · 用心打造",
+  "chrome.footerPrivacy": "隐私政策",
   "chrome.footerSource": "GitHub 源码",
 
   "language.label": "语言",
@@ -720,7 +1144,7 @@ const zhHans: Dictionary = {
   "hero.windowNowPlaying": "正在播放你片库中的内容",
   "hero.windowPickUp": "从上次停下的地方继续。",
   "hero.privacyTitle": "没有任何内容离开你的片库",
-  "hero.privacyBody": "文件始终留在你的设备上。",
+  "hero.privacyBody": "文件始终留在你存放它们的地方。",
 
   "proof.aria": "支持的体验",
   "proof.archiveTitle": "一座影库",
@@ -746,6 +1170,41 @@ const zhHans: Dictionary = {
   "features.privacyBody":
     "没有可供出售的账号，没有观看画像，也没有分析工具盯着你在看什么。",
 
+  "sources.eyebrow": "你的来源",
+  "sources.title": "无论存在哪里，\n都能直接播放。",
+  "sources.lede":
+    "关联这台设备上的文件夹、家里的服务器或云端存储。Edendale 读取目录，在你的设备上整理文件，只把你正在播放的内容从来源直接串流到屏幕上。",
+  "sources.deviceTitle": "这台设备",
+  "sources.deviceBody": "你正在使用的文件夹和硬盘，原地读取，从不复制。",
+  "sources.deviceFolders": "文件夹",
+  "sources.deviceDrives": "外接硬盘",
+  "sources.networkTitle": "你的网络",
+  "sources.networkBody": "家中的服务器和 NAS 共享，登录信息保存在设备受保护的存储中。",
+  "sources.cloudTitle": "云端",
+  "sources.cloudBody": "云端存储在服务商自己的页面上登录，因此 Edendale 永远看不到你的密码。",
+  "sources.accessTitle": "只读，只为播放",
+  "sources.accessBody":
+    "Edendale 只向 Google Drive、OneDrive 和 Dropbox 申请只读访问权限：用来显示已关联的账号、列出你选择的文件夹，以及串流你播放的视频。它无法更改或删除其中的任何内容，也没有任何数据经过 Edendale 的服务器。",
+  "sources.accessLink": "Edendale 如何处理你的数据",
+  "sources.availability": "可用的服务因平台而异。",
+
+  "player.eyebrow": "播放器",
+  "player.title": "每个细节，\n都由你来调。",
+  "player.lede": "Edendale 播放器提供家庭影院应有的各种控制，而每一项联网功能都会等你开口才启用。",
+  "player.skipTitle": "跳过按钮",
+  "player.skipBody":
+    "根据 TheIntroDB 社区提供的时间点，显示跳过片头、前情提要和片尾的按钮。在你开启之前保持关闭，也从不自行跳过。",
+  "player.nextTitle": "即将播放",
+  "player.nextBody": "剧集会接着播放你拥有的下一集，「继续观看」会记住你看完的最后一集之后是哪一集。",
+  "player.soundTitle": "声音",
+  "player.soundBody": "为电影、音乐、对白和深夜准备的均衡器预设，另有音量增强，适合音量偏小的混音。",
+  "player.pictureTitle": "画面",
+  "player.pictureBody": "精细调整亮度、对比度和色彩；在支持的硬件上，还能用 GPU 放大和锐化画面。",
+  "player.subtitlesTitle": "字幕",
+  "player.subtitlesBody": "选择字体、颜色和背景；文件里没有你的语言时，也可以在线搜索。",
+  "player.controlsTitle": "操控",
+  "player.controlsBody": "按触控、键盘、鼠标或遥控器，设定每次跳转的秒数和长按时的播放速度。",
+
   "platforms.eyebrow": "在要紧之处保持原生",
   "platforms.title": "在每块屏幕上\n都自在如家。",
   "platforms.lede":
@@ -759,6 +1218,16 @@ const zhHans: Dictionary = {
   "closing.body":
     "Edendale 自由、开源，并在持续开发中。关注这个项目，一起决定接下来的方向。",
   "closing.cta": "关注开发进展",
+
+  "privacy.eyebrow": "隐私",
+  "privacy.title": "隐私政策",
+  "privacy.lede":
+    "Edendale 的设计让你的片库、观影记录和文件始终由你掌控。本页会具体说明这些应用和本网站会处理什么，以及绝不会碰什么。",
+  "privacy.updated": "自{date}起生效",
+  "privacy.summaryTitle": "要点",
+  "privacy.tocTitle": "本页内容",
+  "privacy.translationNote": "本译文仅为方便阅读而提供。如与英文版本有出入，以英文版本为准。",
+  "privacy.readEnglish": "阅读英文版本",
 
   "link.eyebrow": "应用链接",
   "link.heading": "在 Edendale 中继续",

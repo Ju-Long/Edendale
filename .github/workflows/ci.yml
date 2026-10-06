@@ -50,4 +50,6 @@ jobs:
           test -f dist/.nojekyll
           test -f dist/CNAME
           test -f dist/.well-known/apple-app-site-association
+          test -f dist/.well-known/microsoft-identity-association.json
           test -f dist/app_icon.png
+          test -f dist/privacy/index.html
