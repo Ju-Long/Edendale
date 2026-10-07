@@ -490,4 +490,8 @@
     <string name="tls_expires">만료: %1$s</string>
     <string name="connector_certificate_unverified">%1$s의 인증서가 아직 승인되지 않았습니다. 확인하려면 서버를 다시 연결하세요.</string>
     <string name="connector_certificate_mismatch">%1$s의 인증서가 변경되었습니다. 서버를 다시 연결하여 새 인증서를 승인할 때까지 Edendale이 연결하지 않습니다.</string>
+    <string name="link_source_gdrive_description">내 드라이브, 나와 공유된 폴더, 공유 드라이브.</string>
+    <string name="gdrive_my_drive">내 드라이브</string>
+    <string name="gdrive_shared_with_me">공유 문서함</string>
+    <string name="gdrive_shared_drives">공유 드라이브</string>
 </resources>

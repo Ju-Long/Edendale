@@ -498,4 +498,8 @@
     <string name="tls_expires">Vence el %1$s</string>
     <string name="connector_certificate_unverified">El certificado de %1$s aún no se ha aprobado. Vuelve a vincular el servidor para revisarlo.</string>
     <string name="connector_certificate_mismatch">El certificado de %1$s cambió. Edendale no se conectará hasta que apruebes el nuevo volviendo a vincular el servidor.</string>
+    <string name="link_source_gdrive_description">Mi unidad, carpetas compartidas contigo y unidades compartidas.</string>
+    <string name="gdrive_my_drive">Mi unidad</string>
+    <string name="gdrive_shared_with_me">Compartido conmigo</string>
+    <string name="gdrive_shared_drives">Unidades compartidas</string>
 </resources>

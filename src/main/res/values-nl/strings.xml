@@ -496,4 +496,8 @@
     <string name="tls_expires">Verloopt op %1$s</string>
     <string name="connector_certificate_unverified">Het certificaat van %1$s is nog niet goedgekeurd. Koppel de server opnieuw om het te controleren.</string>
     <string name="connector_certificate_mismatch">Het certificaat van %1$s is gewijzigd. Edendale maakt geen verbinding totdat je het nieuwe certificaat goedkeurt door de server opnieuw te koppelen.</string>
+    <string name="link_source_gdrive_description">Mijn Drive, mappen die met je zijn gedeeld en gedeelde Drives.</string>
+    <string name="gdrive_my_drive">Mijn Drive</string>
+    <string name="gdrive_shared_with_me">Gedeeld met mij</string>
+    <string name="gdrive_shared_drives">Gedeelde Drives</string>
 </resources>

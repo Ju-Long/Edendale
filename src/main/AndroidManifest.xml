@@ -96,6 +96,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="${dropboxRedirectScheme}" android:host="2" android:path="/token" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Google (D9): the Android client's custom scheme is the package name;
+                     the redirect is com.babasama.edendale:/oauth2redirect, which has no
+                     authority, so the scheme-specific part is matched instead of a path. -->
+                <data android:scheme="com.babasama.edendale" android:sspPrefix="/oauth2redirect" />
+            </intent-filter>
         </activity>
 
         <!-- In-app player; also the "Open with" target for video files, which

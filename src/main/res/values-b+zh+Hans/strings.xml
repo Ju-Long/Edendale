@@ -490,4 +490,8 @@
     <string name="tls_expires">有效期至 %1$s</string>
     <string name="connector_certificate_unverified">%1$s 的证书尚未批准。请重新链接服务器以进行核对。</string>
     <string name="connector_certificate_mismatch">%1$s 的证书已更改。在你重新链接服务器并批准新证书之前，Edendale 不会连接。</string>
+    <string name="link_source_gdrive_description">我的云端硬盘、与你共享的文件夹和共享云端硬盘。</string>
+    <string name="gdrive_my_drive">我的云端硬盘</string>
+    <string name="gdrive_shared_with_me">与我共享</string>
+    <string name="gdrive_shared_drives">共享云端硬盘</string>
 </resources>

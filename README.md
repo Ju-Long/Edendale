@@ -163,7 +163,7 @@ straight to the service; nothing passes through an Edendale server.
 | S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
 | OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
 | Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
-| Google Drive | Waits for D9 | — |
+| Google Drive | Google sign-in, read-only (`drive.readonly`) | The sign-in, folder listings (My Drive, Shared with me, shared drives), and byte ranges of the files that play |
 
 Logins, key pairs, and account tokens are stored encrypted on the device,
 excluded from backup and device transfer, and listed in **Settings →
@@ -226,12 +226,17 @@ listed in Settings → Accounts. Use a key that can only read that bucket.
 
 ### Cloud accounts
 
-OneDrive and Dropbox accounts sign in in a Custom Tab with OAuth 2.0 and
-PKCE. On Android TV, OneDrive signs in with a code: the TV shows the code, the
-address to enter it at, and a QR code for that address, and waits while you
-approve on a phone or computer. Dropbox and Google don't offer TV sign-in. Edendale uses no provider SDK and ships no client secret. Google Drive
-waits for the owner's decision on how Android signs in (D9). Each provider
-receives the sign-in, folder listings, and the byte ranges of what plays.
+Google Drive, OneDrive, and Dropbox accounts sign in in a Custom Tab with
+OAuth 2.0 and PKCE. On Android TV, OneDrive signs in with a code: the TV shows
+the code, the address to enter it at, and a QR code for that address, and
+waits while you approve on a phone or computer. Dropbox and Google don't offer
+TV sign-in. Edendale uses no provider SDK and ships no client secret. Google
+Drive's picker starts with My Drive, Shared with me, and Shared drives; link a
+folder inside one of them (the root and the list of shared drives can't be
+linked, since that would scan all of Drive). Shortcuts are followed, Google
+Docs and other Google formats are skipped, and videos are recognized by file
+extension. Each provider receives the sign-in, folder listings, and the byte
+ranges of what plays.
 Nothing passes through an Edendale server, because there isn't one. The
 refresh token for each account is stored encrypted on the device, excluded
 from backup and device transfer. Access tokens are kept in memory only.
@@ -246,7 +251,7 @@ hides that provider:
 |---|---|---|
 | `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
 | `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
-| `GOOGLE_OAUTH_CLIENT_ID` | Waits for D9 | — |
+| `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on, a consent screen requesting `openid email https://www.googleapis.com/auth/drive.readonly`, and Google's restricted-scope verification (D9) | `com.babasama.edendale:/oauth2redirect` |
 
 ### Sources and accounts
 
@@ -459,7 +464,8 @@ tests. Before a release, check on:
   trusted certificate, then a self-signed one: the fingerprint prompt, a changed
   certificate refused, and plain `http://` on the LAN but not to a public
   address), an S3 bucket (AWS or R2), OneDrive (a personal and a work or school
-  account), and Dropbox. Then sign out in Settings → Accounts and check that the sources ask to
+  account), Dropbox, and Google Drive (a folder in My Drive, one shared with
+  you, and one in a shared drive). Then sign out in Settings → Accounts and check that the sources ask to
   sign in again. On a TV, sign in to OneDrive with the code from a phone.
 
 ### DTS and TrueHD

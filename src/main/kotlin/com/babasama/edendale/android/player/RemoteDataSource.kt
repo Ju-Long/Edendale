@@ -13,6 +13,7 @@ import com.babasama.edendale.android.data.SshHostKeyStore
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.connectors.DropboxContentResolver
+import com.babasama.edendale.connectors.GoogleDriveContentResolver
 import com.babasama.edendale.connectors.OneDriveContentResolver
 import com.babasama.edendale.connectors.ProviderHttp
 import com.babasama.edendale.connectors.S3ContentResolver
@@ -102,6 +103,13 @@ internal object RemotePlayback {
             cloud.vault.account(kind, item.account)?.let { account ->
                 val provider = ProviderHttp(kind, account.key, cloud.tokens, cloud.http)
                 RemoteByteSource(DropboxContentResolver(item.ids.first(), provider), cloud.http)
+            }
+        }
+        // Drive streams with the Bearer token itself (H.9.2); the token provider refreshes it after a 401.
+        MediaSourceKind.GOOGLE_DRIVE -> SourceUrl.parseAccountItem(url)?.let { item ->
+            val cloud = (context.applicationContext as EdendaleApplication).cloudAccounts
+            cloud.vault.account(kind, item.account)?.let { account ->
+                RemoteByteSource(GoogleDriveContentResolver(item.ids.first(), account.key, cloud.tokens), cloud.http)
             }
         }
         else -> null

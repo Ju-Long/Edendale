@@ -136,6 +136,8 @@ fun LinkSourceDialog(
     var cloudAccountKey by remember { mutableStateOf<String?>(null) }
     var cloudTrail by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
     var cloudFolders by remember { mutableStateOf(emptyList<ConnectorEntry>()) }
+    // Whether the cloud folder being browsed can be linked (Drive's root only gathers others, H.9).
+    var cloudCanIndex by remember { mutableStateOf(true) }
     var signIn by remember { mutableStateOf<Job?>(null) }
     // A TV sign-in's code while it waits for approval (I.1).
     var deviceAuthorization by remember { mutableStateOf<DeviceAuthorization?>(null) }
@@ -238,10 +240,11 @@ fun LinkSourceDialog(
         error = null
         scope.launch {
             library.listAccountFolders(kind, account.key, trail.lastOrNull()?.first)
-                .onSuccess { (folder, entries) ->
+                .onSuccess { listing ->
                     // The root reads as the account, so the source's path names it.
-                    cloudTrail = trail.ifEmpty { listOf(folder to account.label) }
-                    cloudFolders = entries
+                    cloudTrail = trail.ifEmpty { listOf(listing.folder to account.label) }
+                    cloudFolders = listing.entries
+                    cloudCanIndex = listing.canIndex
                     cloudAccountKey = account.key
                     browsing = true
                 }
@@ -517,6 +520,7 @@ fun LinkSourceDialog(
                                 MediaSourceKind.S3 -> R.string.link_source_s3_description
                                 MediaSourceKind.ONE_DRIVE -> R.string.link_source_onedrive_description
                                 MediaSourceKind.DROPBOX -> R.string.link_source_dropbox_description
+                                MediaSourceKind.GOOGLE_DRIVE -> R.string.link_source_gdrive_description
                                 else -> R.string.link_source_smb_description
                             },
                         ),
@@ -679,8 +683,9 @@ fun LinkSourceDialog(
                         }
                         onLinked()
                     },
-                    // An SMB server's top level lists shares, which are the smallest thing to import.
-                    enabled = !loading && (isCloud || isDav || path.isNotEmpty()),
+                    // An SMB server's top level lists shares, which are the smallest thing to import;
+                    // Drive's root and its list of shared drives would import all of Drive.
+                    enabled = !loading && ((isCloud && cloudCanIndex) || isDav || path.isNotEmpty()),
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )

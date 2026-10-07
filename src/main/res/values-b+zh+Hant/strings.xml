@@ -490,4 +490,8 @@
     <string name="tls_expires">有效期至 %1$s</string>
     <string name="connector_certificate_unverified">%1$s 的憑證尚未核准。請重新連結伺服器以進行核對。</string>
     <string name="connector_certificate_mismatch">%1$s 的憑證已變更。在你重新連結伺服器並核准新憑證之前，Edendale 不會連線。</string>
+    <string name="link_source_gdrive_description">我的雲端硬碟、與你共用的資料夾和共用雲端硬碟。</string>
+    <string name="gdrive_my_drive">我的雲端硬碟</string>
+    <string name="gdrive_shared_with_me">與我共用</string>
+    <string name="gdrive_shared_drives">共用雲端硬碟</string>
 </resources>

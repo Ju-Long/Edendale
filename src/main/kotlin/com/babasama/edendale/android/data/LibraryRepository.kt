@@ -15,6 +15,7 @@ import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.DropboxConnector
+import com.babasama.edendale.connectors.GoogleDriveConnector
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.OneDriveConnector
 import com.babasama.edendale.connectors.ProviderHttp
@@ -516,22 +517,32 @@ class LibraryRepository(
         val connector = when (kind) {
             MediaSourceKind.ONE_DRIVE -> OneDriveConnector.create(account, provider)
             MediaSourceKind.DROPBOX -> DropboxConnector(account, provider)
+            MediaSourceKind.GOOGLE_DRIVE -> GoogleDriveConnector(account, provider, strings.googleDriveLabels)
             else -> null
         }
         return connector ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
     }
 
+    /** One step of the Link Source browser through a cloud account (H.11). */
+    class AccountFolderListing(
+        val folder: String,
+        /** The subfolders, every one of them browsable. */
+        val entries: List<ConnectorEntry>,
+        /** Whether [folder] itself can be linked; Drive's root and its list of shared drives only gather others (H.9). */
+        val canIndex: Boolean,
+    )
+
     /**
      * The folders under [folderUrl] (the account's root when null) of a linked
-     * cloud account, for the Link Source browser (H.11): the folder listed and
-     * its subfolders.
+     * cloud account, for the Link Source browser (H.11): the folder listed, its
+     * subfolders, and whether it can be linked.
      */
-    suspend fun listAccountFolders(kind: MediaSourceKind, accountKey: String, folderUrl: String?): Result<Pair<String, List<ConnectorEntry>>> =
+    suspend fun listAccountFolders(kind: MediaSourceKind, accountKey: String, folderUrl: String?): Result<AccountFolderListing> =
         runCatching {
             withContext(Dispatchers.IO) {
                 val connector = cloudConnector(kind, accountKey)
                 val folder = folderUrl ?: connector.root
-                folder to connector.list(folder).filter { it.isDirectory && connector.canIndex(it.url) }
+                AccountFolderListing(folder, connector.list(folder).filter { it.isDirectory }, connector.canIndex(folder))
             }
         }
 

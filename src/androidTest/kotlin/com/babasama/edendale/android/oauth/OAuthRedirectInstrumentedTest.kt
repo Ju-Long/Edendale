@@ -57,6 +57,16 @@ class OAuthRedirectInstrumentedTest {
     }
 
     @Test
+    fun aGoogleRedirectReachesTheWaitingSignIn() = runBlocking {
+        // D9: the package-name scheme with no authority; the manifest matches the scheme-specific part.
+        val redirect = CloudProviders.GOOGLE_REDIRECT_URI + "?code=g1&state=state-google&scope=openid"
+        val callback = withTimeout(10_000) {
+            OAuthRedirects.await("state-google") { open(redirect) }
+        }
+        assertEquals(redirect, callback)
+    }
+
+    @Test
     fun aRedirectNobodyWaitsForIsDropped() {
         assertFalse(OAuthRedirects.deliver(Uri.parse(CloudProviders.MICROSOFT_REDIRECT_URI + "?code=abc&state=nobody")))
         assertFalse(OAuthRedirects.deliver(Uri.parse(CloudProviders.MICROSOFT_REDIRECT_URI + "?code=abc")))

@@ -44,11 +44,8 @@ class CloudAccounts(context: Context) {
     /** The provider's OAuth settings, or null when this build has no client ID for it. */
     fun configuration(kind: MediaSourceKind): OAuthConfiguration? = CloudProviders.configuration(kind, clientId(kind))
 
-    /**
-     * Whether Link Source offers the provider: it has a client ID, and for
-     * Google Drive the owner has chosen how Android signs in (D9).
-     */
-    fun isOffered(kind: MediaSourceKind): Boolean = kind != MediaSourceKind.GOOGLE_DRIVE && configuration(kind) != null
+    /** Whether Link Source offers the provider: this build has a client ID for it (Google Drive since D9). */
+    fun isOffered(kind: MediaSourceKind): Boolean = configuration(kind) != null
 
     /** Whether a TV can sign in on its own: with a code, which only Microsoft grants Edendale's scopes through (I.1). */
     fun isOfferedOnTelevision(kind: MediaSourceKind): Boolean = isOffered(kind) && CloudProviders.supportsDeviceCode(kind)

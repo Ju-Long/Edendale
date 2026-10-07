@@ -44,23 +44,28 @@ object CloudProviders {
      */
     const val MICROSOFT_REDIRECT_URI = "msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D"
 
+    /**
+     * The Google redirect (D9): the Android OAuth client's custom URI scheme, which is the package
+     * name, with the scheme turned on in the client's advanced settings. The manifest routes it to
+     * `OAuthRedirectActivity`.
+     */
+    const val GOOGLE_REDIRECT_SCHEME = "com.babasama.edendale"
+    const val GOOGLE_REDIRECT_URI = "$GOOGLE_REDIRECT_SCHEME:/oauth2redirect"
+
     fun configuration(kind: MediaSourceKind, clientId: String): OAuthConfiguration? {
         if (clientId.isBlank()) return null
         return when (kind) {
-            MediaSourceKind.GOOGLE_DRIVE -> {
-                val scheme = googleRedirectScheme(clientId)
-                OAuthConfiguration(
-                    kind = kind,
-                    clientId = clientId,
-                    authorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
-                    tokenEndpoint = "https://oauth2.googleapis.com/token",
-                    deviceAuthorizationEndpoint = null,
-                    redirectUri = "$scheme:/oauth2redirect",
-                    callbackScheme = scheme,
-                    scopes = GOOGLE_SCOPES,
-                    additionalAuthorizationParameters = mapOf("prompt" to "select_account"),
-                )
-            }
+            MediaSourceKind.GOOGLE_DRIVE -> OAuthConfiguration(
+                kind = kind,
+                clientId = clientId,
+                authorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
+                tokenEndpoint = "https://oauth2.googleapis.com/token",
+                deviceAuthorizationEndpoint = null,
+                redirectUri = GOOGLE_REDIRECT_URI,
+                callbackScheme = GOOGLE_REDIRECT_SCHEME,
+                scopes = GOOGLE_SCOPES,
+                additionalAuthorizationParameters = mapOf("prompt" to "select_account"),
+            )
             MediaSourceKind.ONE_DRIVE -> OAuthConfiguration(
                 kind = kind,
                 clientId = clientId,
@@ -91,10 +96,6 @@ object CloudProviders {
             else -> null
         }
     }
-
-    /** `com.googleusercontent.apps.<id>` for a client ID `<id>.apps.googleusercontent.com`. */
-    fun googleRedirectScheme(clientId: String): String =
-        "com.googleusercontent.apps." + clientId.removeSuffix(".apps.googleusercontent.com")
 
     /** Whether a TV can sign in on its own: Google limits its device flow to scopes that can't browse a folder, and Dropbox has none. */
     fun supportsDeviceCode(kind: MediaSourceKind): Boolean = kind == MediaSourceKind.ONE_DRIVE

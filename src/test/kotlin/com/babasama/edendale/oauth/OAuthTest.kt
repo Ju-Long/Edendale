@@ -60,8 +60,9 @@ class OAuthTest {
     @Test
     fun `builds each provider's authorization URL`() {
         val google = CloudProviders.configuration(MediaSourceKind.GOOGLE_DRIVE, "1234-abc.apps.googleusercontent.com")!!
-        assertEquals("com.googleusercontent.apps.1234-abc", google.callbackScheme)
-        assertEquals("com.googleusercontent.apps.1234-abc:/oauth2redirect", google.redirectUri)
+        // D9: the Android client's custom scheme is the package name, whatever the client ID.
+        assertEquals("com.babasama.edendale", google.callbackScheme)
+        assertEquals("com.babasama.edendale:/oauth2redirect", google.redirectUri)
         assertNull(google.deviceAuthorizationEndpoint)
         val url = OAuthClient(google, OkHttpRemoteHttp()).authorizationUrl("state-1", "challenge-1")
         assertTrue(url.startsWith("https://accounts.google.com/o/oauth2/v2/auth?"))

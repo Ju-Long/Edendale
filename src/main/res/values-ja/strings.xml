@@ -490,4 +490,8 @@
     <string name="tls_expires">有効期限: %1$s</string>
     <string name="connector_certificate_unverified">%1$s の証明書はまだ承認されていません。確認するにはサーバーをもう一度リンクしてください。</string>
     <string name="connector_certificate_mismatch">%1$s の証明書が変更されました。サーバーをもう一度リンクして新しい証明書を承認するまで、Edendale は接続しません。</string>
+    <string name="link_source_gdrive_description">マイドライブ、共有されたフォルダ、共有ドライブ。</string>
+    <string name="gdrive_my_drive">マイドライブ</string>
+    <string name="gdrive_shared_with_me">共有アイテム</string>
+    <string name="gdrive_shared_drives">共有ドライブ</string>
 </resources>

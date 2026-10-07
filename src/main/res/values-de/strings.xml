@@ -496,4 +496,8 @@
     <string name="tls_expires">Gültig bis %1$s</string>
     <string name="connector_certificate_unverified">Das Zertifikat für %1$s wurde noch nicht bestätigt. Verknüpfe den Server erneut, um es zu prüfen.</string>
     <string name="connector_certificate_mismatch">Das Zertifikat für %1$s hat sich geändert. Edendale stellt keine Verbindung her, bis du das neue Zertifikat bestätigst, indem du den Server erneut verknüpfst.</string>
+    <string name="link_source_gdrive_description">Meine Ablage, für dich freigegebene Ordner und geteilte Ablagen.</string>
+    <string name="gdrive_my_drive">Meine Ablage</string>
+    <string name="gdrive_shared_with_me">Für mich freigegeben</string>
+    <string name="gdrive_shared_drives">Geteilte Ablagen</string>
 </resources>

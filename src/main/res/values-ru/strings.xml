@@ -512,4 +512,8 @@
     <string name="tls_expires">Действителен до %1$s</string>
     <string name="connector_certificate_unverified">Сертификат для %1$s ещё не подтверждён. Привяжите сервер заново, чтобы проверить его.</string>
     <string name="connector_certificate_mismatch">Сертификат для %1$s изменился. Edendale не подключится, пока вы не подтвердите новый, привязав сервер заново.</string>
+    <string name="link_source_gdrive_description">Мой диск, папки, доступные вам, и общие диски.</string>
+    <string name="gdrive_my_drive">Мой диск</string>
+    <string name="gdrive_shared_with_me">Доступные мне</string>
+    <string name="gdrive_shared_drives">Общие диски</string>
 </resources>

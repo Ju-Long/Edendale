@@ -496,4 +496,8 @@
     <string name="tls_expires">Går ut %1$s</string>
     <string name="connector_certificate_unverified">Certifikatet för %1$s har inte godkänts ännu. Länka servern igen för att granska det.</string>
     <string name="connector_certificate_mismatch">Certifikatet för %1$s har ändrats. Edendale ansluter inte förrän du godkänner det nya genom att länka servern igen.</string>
+    <string name="link_source_gdrive_description">Min enhet, mappar som delats med dig och delade enheter.</string>
+    <string name="gdrive_my_drive">Min enhet</string>
+    <string name="gdrive_shared_with_me">Delas med mig</string>
+    <string name="gdrive_shared_drives">Delade enheter</string>
 </resources>
