@@ -57,6 +57,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.android.handoff.HandoffCodeBlock
+import com.babasama.edendale.android.handoff.HandoffHost
+import com.babasama.edendale.android.handoff.handoffFailureMessage
+import com.babasama.edendale.handoff.AccountHandoff
+import com.babasama.edendale.oauth.CloudProviders
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.DeviceAuthorization
@@ -141,6 +148,9 @@ fun LinkSourceDialog(
     var signIn by remember { mutableStateOf<Job?>(null) }
     // A TV sign-in's code while it waits for approval (I.1).
     var deviceAuthorization by remember { mutableStateOf<DeviceAuthorization?>(null) }
+    // Phone-to-TV handoff (I.2): this TV advertising itself while the viewer continues on a phone.
+    var handoffHost by remember { mutableStateOf<HandoffHost?>(null) }
+    DisposableEffect(Unit) { onDispose { handoffHost?.stop() } }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -233,6 +243,32 @@ fun LinkSourceDialog(
             withContext(Dispatchers.IO) { tlsPins.pin(review.host, review.port, review.certificate.fingerprint) }
             openDav(review.retry)
         }
+    }
+
+    fun stopHandoff() {
+        handoffHost?.stop()
+        handoffHost = null
+    }
+
+    /**
+     * TV (I.2): advertise this TV and show a code; the phone's account is
+     * validated and stored here, a login tested and saved, and either way
+     * the phone hears the outcome.
+     */
+    fun startHandoff() {
+        stopHandoff()
+        error = null
+        val host = HandoffHost(context, kind) { response ->
+            response.account?.let { account ->
+                runCatching { cloud.adoptHandedOffAccount(account.cloudAccount) }.fold(
+                    { AccountHandoff.Result(stored = true) },
+                    { AccountHandoff.Result(stored = false, message = handoffFailureMessage(context, it)) },
+                )
+            } ?: response.login?.let { library.adoptHandedOffLogin(it) }
+                ?: AccountHandoff.Result(stored = false)
+        }
+        handoffHost = host
+        host.start(scope)
     }
 
     fun openCloud(account: CloudAccount, trail: List<Pair<String, String>>) {
@@ -355,6 +391,36 @@ fun LinkSourceDialog(
                 val root = WebDav.canonicalRoot(host)
                 if (root == null) error = context.getString(R.string.connector_invalid_address) else openDav(listOf(root))
             }
+        }
+    }
+    // A finished handoff (I.2): an account opens its folder browser; a login fills the form and connects.
+    val handoffState = handoffHost?.state?.collectAsState()?.value
+    LaunchedEffect(handoffState?.status) {
+        val done = handoffState?.status as? HandoffHost.Status.Done ?: return@LaunchedEffect
+        stopHandoff()
+        done.response.account?.let { account ->
+            cloudAccounts = withContext(Dispatchers.IO) { runCatching { cloud.vault.accounts(kind) }.getOrDefault(emptyList()) }
+            openCloud(account.cloudAccount, emptyList())
+        }
+        done.response.login?.let { login ->
+            val first = login.addresses.firstOrNull()
+            when (login.kind) {
+                MediaSourceKind.SMB -> host = first?.removePrefix("smb://")?.trimEnd('/') ?: login.host
+                MediaSourceKind.SFTP -> {
+                    host = login.host
+                    port = login.port?.toString().orEmpty()
+                }
+                MediaSourceKind.S3 -> login.s3?.let { configuration ->
+                    host = configuration.endpoint
+                    region = configuration.region
+                    bucket = configuration.bucket
+                }
+                else -> host = first?.let(WebDav::httpUrl) ?: "https://${login.host}${login.port?.let { ":$it" }.orEmpty()}/"
+            }
+            user = login.user
+            pass = login.password
+            reusedLogin = true
+            connect()
         }
     }
     val formKeys = Modifier.onPreviewKeyEvent { event ->
@@ -505,6 +571,7 @@ fun LinkSourceDialog(
                                     reusedLogin = false
                                     hostKeyReview = null
                                     certificateReview = null
+                                    stopHandoff()
                                 },
                                 // "S3" fits the chip; the description below names the services.
                                 label = { Text(if (option == MediaSourceKind.S3) "S3" else sourceKindLabel(option)) },
@@ -512,149 +579,166 @@ fun LinkSourceDialog(
                             )
                         }
                     }
-                    Text(
-                        text = stringResource(
-                            when (kind) {
-                                MediaSourceKind.WEBDAV -> R.string.link_source_webdav_description
-                                MediaSourceKind.SFTP -> R.string.link_source_sftp_description
-                                MediaSourceKind.S3 -> R.string.link_source_s3_description
-                                MediaSourceKind.ONE_DRIVE -> R.string.link_source_onedrive_description
-                                MediaSourceKind.DROPBOX -> R.string.link_source_dropbox_description
-                                MediaSourceKind.GOOGLE_DRIVE -> R.string.link_source_gdrive_description
-                                else -> R.string.link_source_smb_description
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (kind == MediaSourceKind.SFTP) {
+                    handoffState?.let { state ->
+                        HandoffCodeBlock(state = state, isTelevision = isTelevision, onCancel = ::stopHandoff)
+                    }
+                    if (handoffHost == null) {
                         Text(
-                            text = stringResource(R.string.sftp_host_key_note),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (kind == MediaSourceKind.WEBDAV || kind == MediaSourceKind.S3) {
-                        Text(
-                            text = stringResource(R.string.link_source_tls_note),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    hostKeyReview?.let { review ->
-                        HostKeyReviewBlock(
-                            review = review,
-                            isTelevision = isTelevision,
-                            onTrust = { trustHostKey(review) },
-                            onCancel = { hostKeyReview = null },
-                        )
-                    }
-                    certificateReview?.let { review ->
-                        CertificateReviewBlock(
-                            review = review,
-                            isTelevision = isTelevision,
-                            onTrust = { trustCertificate(review) },
-                            onCancel = { certificateReview = null },
-                        )
-                    }
-                    if (isCloud) {
-                        CloudAccountStep(
-                            kind = kind,
-                            accounts = cloudAccounts,
-                            signingIn = signIn != null,
-                            deviceAuthorization = deviceAuthorization,
-                            onCancelSignIn = { signIn?.cancel() },
-                            loading = loading,
-                            isTelevision = isTelevision,
-                            onUse = { openCloud(it, emptyList()) },
-                            onSignIn = ::signInToCloud,
-                        )
-                    }
-                    // The attempt in flight captured these three values, so
-                    // editing them mid-connect would leave the form describing
-                    // something other than what is being tried. They unlock
-                    // again when the attempt fails; success replaces them with
-                    // the folder browser.
-                    if (!isCloud) OutlinedTextField(
-                        value = host,
-                        onValueChange = {
-                            host = it
-                            reusedLogin = false
-                        },
-                        modifier = Modifier.focusRequester(hostFocus).then(formKeys),
-                        enabled = !loading,
-                        label = {
-                            Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_endpoint_label else R.string.smb_host_label))
-                        },
-                        placeholder = {
-                            Text(
+                            text = stringResource(
                                 when (kind) {
-                                    MediaSourceKind.WEBDAV -> WEBDAV_ADDRESS_EXAMPLE
-                                    MediaSourceKind.S3 -> S3_ENDPOINT_EXAMPLE
-                                    else -> stringResource(R.string.smb_host_placeholder)
+                                    MediaSourceKind.WEBDAV -> R.string.link_source_webdav_description
+                                    MediaSourceKind.SFTP -> R.string.link_source_sftp_description
+                                    MediaSourceKind.S3 -> R.string.link_source_s3_description
+                                    MediaSourceKind.ONE_DRIVE -> R.string.link_source_onedrive_description
+                                    MediaSourceKind.DROPBOX -> R.string.link_source_dropbox_description
+                                    MediaSourceKind.GOOGLE_DRIVE -> R.string.link_source_gdrive_description
+                                    else -> R.string.link_source_smb_description
                                 },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (kind == MediaSourceKind.SFTP) {
+                            Text(
+                                text = stringResource(R.string.sftp_host_key_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next)
-                    )
-                    if (kind == MediaSourceKind.SFTP) {
-                        OutlinedTextField(
-                            value = port,
-                            onValueChange = { port = it.filter(Char::isDigit).take(5) },
-                            modifier = formKeys,
+                        }
+                        if (kind == MediaSourceKind.WEBDAV || kind == MediaSourceKind.S3) {
+                            Text(
+                                text = stringResource(R.string.link_source_tls_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        hostKeyReview?.let { review ->
+                            HostKeyReviewBlock(
+                                review = review,
+                                isTelevision = isTelevision,
+                                onTrust = { trustHostKey(review) },
+                                onCancel = { hostKeyReview = null },
+                            )
+                        }
+                        certificateReview?.let { review ->
+                            CertificateReviewBlock(
+                                review = review,
+                                isTelevision = isTelevision,
+                                onTrust = { trustCertificate(review) },
+                                onCancel = { certificateReview = null },
+                            )
+                        }
+                        if (isCloud) {
+                            CloudAccountStep(
+                                kind = kind,
+                                accounts = cloudAccounts,
+                                signingIn = signIn != null,
+                                deviceAuthorization = deviceAuthorization,
+                                onCancelSignIn = { signIn?.cancel() },
+                                loading = loading,
+                                isTelevision = isTelevision,
+                                onUse = { openCloud(it, emptyList()) },
+                                onSignIn = ::signInToCloud,
+                                onContinueOnPhone = if (isTelevision) ::startHandoff else null,
+                            )
+                        }
+                        // The attempt in flight captured these three values, so
+                        // editing them mid-connect would leave the form describing
+                        // something other than what is being tried. They unlock
+                        // again when the attempt fails; success replaces them with
+                        // the folder browser.
+                        if (!isCloud) OutlinedTextField(
+                            value = host,
+                            onValueChange = {
+                                host = it
+                                reusedLogin = false
+                            },
+                            modifier = Modifier.focusRequester(hostFocus).then(formKeys),
                             enabled = !loading,
-                            label = { Text(stringResource(R.string.sftp_port_label)) },
-                            placeholder = { Text(Sftp.DEFAULT_PORT.toString()) },
+                            label = {
+                                Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_endpoint_label else R.string.smb_host_label))
+                            },
+                            placeholder = {
+                                Text(
+                                    when (kind) {
+                                        MediaSourceKind.WEBDAV -> WEBDAV_ADDRESS_EXAMPLE
+                                        MediaSourceKind.S3 -> S3_ENDPOINT_EXAMPLE
+                                        else -> stringResource(R.string.smb_host_placeholder)
+                                    },
+                                )
+                            },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next)
                         )
+                        if (kind == MediaSourceKind.SFTP) {
+                            OutlinedTextField(
+                                value = port,
+                                onValueChange = { port = it.filter(Char::isDigit).take(5) },
+                                modifier = formKeys,
+                                enabled = !loading,
+                                label = { Text(stringResource(R.string.sftp_port_label)) },
+                                placeholder = { Text(Sftp.DEFAULT_PORT.toString()) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            )
+                        }
+                        if (kind == MediaSourceKind.S3) {
+                            OutlinedTextField(
+                                value = region,
+                                onValueChange = { region = it },
+                                modifier = formKeys,
+                                enabled = !loading,
+                                label = { Text(stringResource(R.string.s3_region_label)) },
+                                placeholder = { Text("us-east-1") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
+                            )
+                            OutlinedTextField(
+                                value = bucket,
+                                onValueChange = { bucket = it },
+                                modifier = Modifier.focusRequester(bucketFocus).then(formKeys),
+                                enabled = !loading,
+                                label = { Text(stringResource(R.string.s3_bucket_label)) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
+                            )
+                        }
+                        if (!isCloud) OutlinedTextField(
+                            value = user,
+                            onValueChange = { user = it },
+                            modifier = Modifier.focusRequester(userFocus).then(formKeys),
+                            enabled = !loading,
+                            label = {
+                                Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_access_key_label else R.string.smb_username_label))
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        )
+                        if (!isCloud) OutlinedTextField(
+                            value = pass,
+                            onValueChange = { pass = it },
+                            modifier = Modifier.focusRequester(passFocus).then(formKeys),
+                            enabled = !loading,
+                            label = {
+                                Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_secret_key_label else R.string.smb_password_label))
+                            },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
+                            keyboardActions = KeyboardActions(onGo = { connect() }),
+                        )
+                        // TV (I.2): a phone can hand over a login it has saved.
+                        if (isTelevision && !isCloud) {
+                            ArchiveButton(
+                                label = stringResource(R.string.handoff_continue_on_phone),
+                                onClick = ::startHandoff,
+                                enabled = !loading,
+                                kind = ArchiveButtonKind.Secondary,
+                                iconRes = R.drawable.ic_tv,
+                                isTelevision = isTelevision,
+                            )
+                        }
                     }
-                    if (kind == MediaSourceKind.S3) {
-                        OutlinedTextField(
-                            value = region,
-                            onValueChange = { region = it },
-                            modifier = formKeys,
-                            enabled = !loading,
-                            label = { Text(stringResource(R.string.s3_region_label)) },
-                            placeholder = { Text("us-east-1") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
-                        )
-                        OutlinedTextField(
-                            value = bucket,
-                            onValueChange = { bucket = it },
-                            modifier = Modifier.focusRequester(bucketFocus).then(formKeys),
-                            enabled = !loading,
-                            label = { Text(stringResource(R.string.s3_bucket_label)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
-                        )
-                    }
-                    if (!isCloud) OutlinedTextField(
-                        value = user,
-                        onValueChange = { user = it },
-                        modifier = Modifier.focusRequester(userFocus).then(formKeys),
-                        enabled = !loading,
-                        label = {
-                            Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_access_key_label else R.string.smb_username_label))
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    )
-                    if (!isCloud) OutlinedTextField(
-                        value = pass,
-                        onValueChange = { pass = it },
-                        modifier = Modifier.focusRequester(passFocus).then(formKeys),
-                        enabled = !loading,
-                        label = {
-                            Text(stringResource(if (kind == MediaSourceKind.S3) R.string.s3_secret_key_label else R.string.smb_password_label))
-                        },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
-                        keyboardActions = KeyboardActions(onGo = { connect() }),
-                    )
                 }
                 error?.let { message ->
                     Text(
@@ -737,6 +821,8 @@ private fun CloudAccountStep(
     isTelevision: Boolean,
     onUse: (CloudAccount) -> Unit,
     onSignIn: () -> Unit,
+    /** TV (I.2): hand the account over from a phone; null on handhelds. */
+    onContinueOnPhone: (() -> Unit)? = null,
 ) {
     val provider = sourceKindLabel(kind)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -777,17 +863,31 @@ private fun CloudAccountStep(
                 CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                 Text(stringResource(R.string.reading), style = MaterialTheme.typography.bodyMedium)
             }
-            else -> ArchiveButton(
-                label = when {
-                    isTelevision -> stringResource(R.string.device_code_sign_in)
-                    accounts.isEmpty() -> stringResource(R.string.link_source_sign_in_to, provider)
-                    else -> stringResource(R.string.link_source_another_account)
-                },
-                onClick = onSignIn,
-                kind = if (accounts.isEmpty()) ArchiveButtonKind.Primary else ArchiveButtonKind.Secondary,
-                iconRes = R.drawable.ic_link,
-                isTelevision = isTelevision,
-            )
+            else -> {
+                // A TV signs in with a code only where the provider grants Edendale's scopes that way (OneDrive, I.1).
+                if (!isTelevision || CloudProviders.supportsDeviceCode(kind)) {
+                    ArchiveButton(
+                        label = when {
+                            isTelevision -> stringResource(R.string.device_code_sign_in)
+                            accounts.isEmpty() -> stringResource(R.string.link_source_sign_in_to, provider)
+                            else -> stringResource(R.string.link_source_another_account)
+                        },
+                        onClick = onSignIn,
+                        kind = if (accounts.isEmpty()) ArchiveButtonKind.Primary else ArchiveButtonKind.Secondary,
+                        iconRes = R.drawable.ic_link,
+                        isTelevision = isTelevision,
+                    )
+                }
+                onContinueOnPhone?.let { continueOnPhone ->
+                    ArchiveButton(
+                        label = stringResource(R.string.handoff_continue_on_phone),
+                        onClick = continueOnPhone,
+                        kind = if (accounts.isEmpty() && !CloudProviders.supportsDeviceCode(kind)) ArchiveButtonKind.Primary else ArchiveButtonKind.Secondary,
+                        iconRes = R.drawable.ic_tv,
+                        isTelevision = isTelevision,
+                    )
+                }
+            }
         }
     }
 }

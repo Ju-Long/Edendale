@@ -39,6 +39,7 @@ import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudProviders
 import com.babasama.edendale.android.data.smbLoginUsage
+import com.babasama.edendale.android.handoff.HandoffToTelevisionDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,6 +66,8 @@ internal fun AccountsSettingsSection(
     var reload by remember { mutableIntStateOf(0) }
     var pendingForget by remember { mutableStateOf<SavedLoginRow?>(null) }
     var pendingSignOut by remember { mutableStateOf<CloudAccount?>(null) }
+    // Phone-to-TV handoff (I.2): send a linked account or saved login to a TV on this network.
+    var linkingToTelevision by remember { mutableStateOf(false) }
 
     LaunchedEffect(store, reload) {
         smbLogins = withContext(Dispatchers.IO) { runCatching { store.savedLogins() }.getOrDefault(emptyList()) }
@@ -94,6 +97,32 @@ internal fun AccountsSettingsSection(
         header = stringResource(R.string.settings_section_accounts),
         isTelevision = isTelevision,
         focusableContent = false,
+        // A TV receives handoffs in Link Source; only handhelds send them.
+        actions = if (isTelevision) {
+            null
+        } else {
+            {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ArchiveButton(
+                        label = stringResource(R.string.handoff_link_to_tv),
+                        onClick = { linkingToTelevision = true },
+                        iconRes = R.drawable.ic_tv,
+                    )
+                    Text(
+                        text = stringResource(R.string.handoff_link_to_tv_note),
+                        modifier = Modifier.weight(1f),
+                        style = BodyCopyStyle(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
     ) {
         val current = logins
         when {
@@ -118,6 +147,10 @@ internal fun AccountsSettingsSection(
         FocusableRows(isTelevision) {
             InfoRow(stringResource(R.string.accounts_note))
         }
+    }
+
+    if (linkingToTelevision) {
+        HandoffToTelevisionDialog(onDismiss = { linkingToTelevision = false })
     }
 
     pendingSignOut?.let { account ->

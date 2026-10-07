@@ -11,7 +11,9 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.babasama.edendale.CloudSecrets
 import com.babasama.edendale.android.MainActivity
+import com.babasama.edendale.android.oauthFailureMessage
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.handoff.adoptHandedOffAccount as adoptAccount
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
 import com.babasama.edendale.oauth.CloudProviders
@@ -47,8 +49,12 @@ class CloudAccounts(context: Context) {
     /** Whether Link Source offers the provider: this build has a client ID for it (Google Drive since D9). */
     fun isOffered(kind: MediaSourceKind): Boolean = configuration(kind) != null
 
-    /** Whether a TV can sign in on its own: with a code, which only Microsoft grants Edendale's scopes through (I.1). */
-    fun isOfferedOnTelevision(kind: MediaSourceKind): Boolean = isOffered(kind) && CloudProviders.supportsDeviceCode(kind)
+    /**
+     * Whether a TV offers the provider: every provider this build has a client
+     * ID for, since a phone can hand its account over (I.2); OneDrive can also
+     * sign in with a code on its own (I.1).
+     */
+    fun isOfferedOnTelevision(kind: MediaSourceKind): Boolean = isOffered(kind)
 
     private fun clientId(kind: MediaSourceKind): String = when (kind) {
         MediaSourceKind.GOOGLE_DRIVE -> CloudSecrets.googleClientId
@@ -104,6 +110,15 @@ class CloudAccounts(context: Context) {
         withContext(Dispatchers.IO) { vault.save(account) }
         tokens.store(response, account)
         return account
+    }
+
+    /**
+     * The TV side of a handoff (I.2): proves the phone's refresh token works,
+     * then stores the account. A token the provider refuses is rejected with
+     * a message in the viewer's language, and nothing is stored.
+     */
+    suspend fun adoptHandedOffAccount(account: CloudAccount): CloudAccount = withContext(Dispatchers.IO) {
+        adoptAccount(account, configuration(account.kind), http, vault, tokens) { oauthFailureMessage(appContext, it) }
     }
 
     /**

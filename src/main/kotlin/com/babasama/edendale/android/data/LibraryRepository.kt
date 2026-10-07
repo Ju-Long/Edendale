@@ -28,6 +28,7 @@ import com.babasama.edendale.connectors.SshHostKey
 import com.babasama.edendale.connectors.VideoFiles
 import com.babasama.edendale.connectors.WebDav
 import com.babasama.edendale.connectors.WebDavConnector
+import com.babasama.edendale.handoff.AccountHandoff
 import com.babasama.edendale.remote.OkHttpRemoteHttp
 import com.babasama.edendale.remote.ServerLogin
 import com.babasama.edendale.domain.MediaParser
@@ -49,6 +50,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import com.babasama.edendale.android.AppStrings
+import com.babasama.edendale.android.connectorFailureMessage
 
 /** What the Downloaded tab shows while imports and enrichment run. */
 data class LibraryActivity(
@@ -79,6 +81,7 @@ class LibraryRepository(
     val sshHostKeys = SshHostKeyStore(context)
     private val http = OkHttpRemoteHttp()
     private val cloud by lazy { (context.applicationContext as EdendaleApplication).cloudAccounts }
+    private val tlsPins by lazy { (context.applicationContext as EdendaleApplication).tlsPins }
 
     private val _activity = MutableStateFlow(LibraryActivity())
     val activity: StateFlow<LibraryActivity> = _activity.asStateFlow()
@@ -560,6 +563,108 @@ class LibraryRepository(
             dao.upsertFolder(folder)
             scan(folder)
         }
+    }
+
+    // MARK: - Phone-to-TV handoff (I.2)
+
+    /**
+     * The saved logins of [kind] on this device, as a phone hands them to a
+     * TV: with the server's pinned SSH host key or certificate so the TV
+     * trusts it the same way, an S3 bucket's location, and the sources
+     * linked on each so the TV can start browsing from one.
+     */
+    suspend fun handedOffLogins(kind: MediaSourceKind): List<AccountHandoff.Login> = withContext(Dispatchers.IO) {
+        val folders = dao.folders()
+        when (kind) {
+            MediaSourceKind.SMB -> smbCredentialsStore.savedLogins().mapNotNull { saved ->
+                val (user, password) = smbCredentialsStore.getCredentials(saved.host) ?: return@mapNotNull null
+                val addresses = folders.filter { SmbClient.hostOf(it.treeUri).equals(saved.host, ignoreCase = true) }.map { it.treeUri }
+                AccountHandoff.Login(kind, saved.host, null, user, password, addresses = addresses)
+            }
+            MediaSourceKind.SFTP, MediaSourceKind.WEBDAV, MediaSourceKind.S3 -> serverLogins.all().filter { it.kind == kind }.mapNotNull { saved ->
+                val addresses = folders.filter { folder ->
+                    SourceScanRules.kindOf(folder) == kind &&
+                        SourceUrl.credentialHost(folder.treeUri) == saved.host.lowercase() &&
+                        SourceUrl.port(folder.treeUri) == saved.port
+                }.map { it.treeUri }
+                when (kind) {
+                    MediaSourceKind.S3 -> serverLogins.getS3(saved.host)?.let { (login, configuration) ->
+                        val (host, port) = endpointHostAndPort(configuration.endpoint)
+                        AccountHandoff.Login(
+                            kind, saved.host, null, login.user, login.password,
+                            certificateFingerprint = tlsPins.pinned(host, port), s3 = configuration, addresses = addresses,
+                        )
+                    }
+                    MediaSourceKind.SFTP -> serverLogins.get(kind, saved.host, saved.port)?.let { login ->
+                        val port = saved.port ?: Sftp.DEFAULT_PORT
+                        AccountHandoff.Login(
+                            kind, saved.host, port, login.user, login.password,
+                            hostKeyFingerprint = sshHostKeys.pinned(saved.host, port), addresses = addresses,
+                        )
+                    }
+                    else -> serverLogins.get(kind, saved.host, saved.port)?.let { login ->
+                        AccountHandoff.Login(
+                            kind, saved.host, saved.port, login.user, login.password,
+                            certificateFingerprint = tlsPins.pinned(saved.host, saved.port ?: 443), addresses = addresses,
+                        )
+                    }
+                }
+            }
+            else -> emptyList()
+        }
+    }
+
+    /**
+     * The TV side: tests a login a phone handed over where a quick test
+     * exists (SMB lists the shares, SFTP its home folder, S3 the bucket,
+     * WebDAV the first linked folder), then stores it, pinning the server's
+     * host key or certificate first so the test and later connections trust
+     * it as the phone did. A failed test stores nothing and says why.
+     */
+    suspend fun adoptHandedOffLogin(login: AccountHandoff.Login): AccountHandoff.Result = withContext(Dispatchers.IO) {
+        runCatching {
+            when (login.kind) {
+                MediaSourceKind.SMB -> {
+                    SmbClient.listDirectories("smb://${login.host}/", login.user.takeIf { it.isNotBlank() }?.let { it to login.password })
+                    smbCredentialsStore.saveCredentials(login.host, login.user, login.password)
+                }
+                MediaSourceKind.SFTP -> {
+                    val port = login.port ?: Sftp.DEFAULT_PORT
+                    login.hostKeyFingerprint?.let { sshHostKeys.pin(login.host, port, it) }
+                    // Without the phone's host key the TV's Link Source shows the key for approval instead.
+                    if (login.hostKeyFingerprint != null) SftpConnector(login.host, port, login.serverLogin, sshHostKeys).homeDirectory()
+                    serverLogins.save(login.kind, login.host, port, login.serverLogin)
+                }
+                MediaSourceKind.WEBDAV -> {
+                    login.certificateFingerprint?.let { tlsPins.pin(login.host, login.port ?: 443, it) }
+                    login.addresses.firstOrNull()?.let { WebDavConnector(it, login.serverLogin, http).list(it) }
+                    serverLogins.save(login.kind, login.host, login.port, login.serverLogin)
+                }
+                MediaSourceKind.S3 -> {
+                    val configuration = login.s3 ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
+                    login.certificateFingerprint?.let { fingerprint ->
+                        val (host, port) = endpointHostAndPort(configuration.endpoint)
+                        tlsPins.pin(host, port, fingerprint)
+                    }
+                    val connector = S3Connector(configuration, login.serverLogin, http)
+                    connector.list(connector.root)
+                    serverLogins.saveS3(login.host, login.serverLogin, configuration)
+                }
+                else -> throw ConnectorException(ConnectorFailure.InvalidAddress)
+            }
+        }.fold(
+            { AccountHandoff.Result(stored = true) },
+            { error -> AccountHandoff.Result(stored = false, message = connectorFailureMessage(context, error) ?: error.message) },
+        )
+    }
+
+    /** The host and port an endpoint URL connects to, with the scheme's default port. */
+    private fun endpointHostAndPort(endpoint: String): Pair<String, Int> {
+        val scheme = endpoint.substringBefore("://", "https").lowercase()
+        val authority = endpoint.substringAfter("://").substringBefore('/').substringAfterLast('@')
+        val port = authority.substringAfterLast(':', "").toIntOrNull()
+        val host = if (port != null) authority.substringBeforeLast(':') else authority
+        return host.lowercase() to (port ?: if (scheme == "http") 80 else 443)
     }
 
     /** Validates the source, then walks it; a partial walk deletes nothing. */

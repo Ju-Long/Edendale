@@ -253,6 +253,34 @@ hides that provider:
 | `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
 | `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on, a consent screen requesting `openid email https://www.googleapis.com/auth/drive.readonly`, and Google's restricted-scope verification (D9) | `com.babasama.edendale:/oauth2redirect` |
 
+### Phone-to-TV handoff
+
+Google's device sign-in can't grant `drive.readonly` and Dropbox has no
+device flow, so an Android TV asks a phone instead. On the TV, **Link Source →
+provider → Continue on a Phone** shows a six-digit code; on a phone running
+Edendale on the same network, **Settings → Accounts → Link to a TV** lists the
+TVs found, takes the code, and then asks "Link Google Drive on Living Room?",
+offering an account already linked on the phone, a fresh sign-in, or (for
+SMB, SFTP, WebDAV, and S3) a saved login. Nothing is sent until you choose.
+The TV checks what it received (it refreshes the token, or tests the login),
+stores it in its own encrypted storage, and goes on to the folder picker. The
+phone's refresh token is reused rather than exchanged for another, because
+Google allows 100 per account per client. A saved login travels with the
+server's pinned SSH host key or certificate, so the TV trusts the server the
+way the phone does.
+
+The two devices talk directly over the local network, never through a server:
+the TV registers the DNS-SD service `_edendale-handoff._tcp` on a random TCP
+port while the code is on screen, the phone finds it with Network Service
+Discovery, both derive a key from the code with J-PAKE over P-256 (Bouncy
+Castle's `ecjpake`), and everything after that is AES-256-GCM. A wrong code
+fails the key confirmation before anything is sent; three wrong codes replace
+the code. A passive listener learns nothing, and an active attacker gets one
+guess per handshake. The code and keys last only for the session, and nothing
+about it is logged. The TV offers the handoff for every provider it has a
+client ID for and for every server kind; OneDrive can also sign in with a code
+on its own.
+
 ### Sources and accounts
 
 Each visit to Downloaded rescans local folders; a remote source is rescanned
@@ -466,7 +494,11 @@ tests. Before a release, check on:
   address), an S3 bucket (AWS or R2), OneDrive (a personal and a work or school
   account), Dropbox, and Google Drive (a folder in My Drive, one shared with
   you, and one in a shared drive). Then sign out in Settings → Accounts and check that the sources ask to
-  sign in again. On a TV, sign in to OneDrive with the code from a phone.
+  sign in again. On a TV, sign in to OneDrive with the code from a phone, and
+  hand over a Google Drive account and, separately, an SMB login from a phone
+  (Link Source → Continue on a Phone; Settings → Accounts → Link to a TV on the
+  phone): a wrong code is refused, the right one links the account, and the TV
+  then browses the folders.
 
 ### DTS and TrueHD
 
@@ -496,7 +528,7 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | OkHttp | Storage providers' HTTP | Apache-2.0 |
 | AndroidX Browser | Custom Tabs for cloud sign-in | Apache-2.0 |
 | sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
-| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography | MIT (Bouncy Castle Licence) |
+| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE for the phone-to-TV handoff | MIT (Bouncy Castle Licence) |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in QR code | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
