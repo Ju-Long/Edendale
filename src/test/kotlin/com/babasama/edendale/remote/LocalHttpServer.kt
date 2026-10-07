@@ -8,13 +8,15 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import javax.net.ssl.SSLContext
 
 /**
  * A tiny HTTP/1.1 server on 127.0.0.1 for the JVM suite (A.5.5): one request
  * per connection, answered by [handler] on its own thread. The JDK's
  * `com.sun.net.httpserver` isn't on the Android unit-test compile classpath.
+ * With [sslContext] it serves HTTPS with that context's certificate (D10).
  */
-class LocalHttpServer(private val handler: (Request) -> Response) : Closeable {
+class LocalHttpServer(private val handler: (Request) -> Response, sslContext: SSLContext? = null) : Closeable {
 
     class Request(
         val method: String,
@@ -33,7 +35,8 @@ class LocalHttpServer(private val handler: (Request) -> Response) : Closeable {
 
     class Response(val status: Int, val headers: Map<String, String> = emptyMap(), val body: ByteArray = ByteArray(0))
 
-    private val socket = ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
+    private val socket: ServerSocket = sslContext?.serverSocketFactory?.createServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
+        ?: ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
     private val workers = Executors.newCachedThreadPool { Thread(it, "LocalHttpServer").apply { isDaemon = true } }
     val requests = CopyOnWriteArrayList<Request>()
 
@@ -43,7 +46,7 @@ class LocalHttpServer(private val handler: (Request) -> Response) : Closeable {
         workers.execute {
             while (!socket.isClosed) {
                 val connection = runCatching { socket.accept() }.getOrNull() ?: break
-                workers.execute { serve(connection) }
+                workers.execute { runCatching { serve(connection) } }
             }
         }
     }

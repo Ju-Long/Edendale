@@ -196,15 +196,15 @@ object WebDav {
 /**
  * A WebDAV server (H.3): listing with `PROPFIND` and `Depth: 1` (most servers
  * disable `infinity`, so enumeration walks breadth-first), answering Basic
- * or Digest with the saved login. Plain HTTP waits for D10.
+ * or Digest with the saved login. A self-signed certificate or plain HTTP
+ * off the private network surfaces as its own failure (D10), for the viewer
+ * to approve or correct.
  */
 class WebDavConnector(
     /** The folder the viewer entered, canonical (`davs://…/`). */
     root: String,
     login: ServerLogin?,
     private val http: RemoteHttp,
-    /** Plain `dav://` waits for D10; the JVM suite's local server turns it on. */
-    private val allowPlainHttp: Boolean = false,
 ) : MediaConnector {
     override val kind = MediaSourceKind.WEBDAV
     override val root: String = WebDav.directoryUrl(root)
@@ -213,7 +213,6 @@ class WebDavConnector(
 
     override suspend fun list(directory: String): List<ConnectorEntry> = withContext(Dispatchers.IO) {
         val folder = WebDav.directoryUrl(directory)
-        if (!allowPlainHttp && folder.startsWith("dav://", ignoreCase = true)) throw ConnectorException(ConnectorFailure.InsecureConnection)
         val httpUrl = WebDav.httpUrl(folder) ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
         val host = SourceUrl.credentialHost(folder) ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
         val path = SourceUrl.pathSegments(folder).joinToString("/", prefix = "/")
@@ -227,7 +226,7 @@ class WebDavConnector(
         val response = try {
             auth.execute(http, request, bodyLimit = MAX_LISTING_BYTES)
         } catch (error: IOException) {
-            throw ConnectorException(ConnectorFailure.Unreachable(host), error)
+            throw ConnectorException(ConnectorFailure.transport(error, host), error)
         }
         when (response.status) {
             207 -> Unit

@@ -424,7 +424,7 @@
     <string name="connector_authentication_failed">%1$sでユーザー名とパスワードが受け入れられませんでした。</string>
     <string name="connector_listing_failed">フォルダ%1$sを読み込めませんでした。異なる認証情報またはアクセス権が必要な可能性があります。</string>
     <string name="connector_invalid_address">サーバーアドレスが正しくないようです。nas.localのようなホスト名またはIPアドレスを入力してください。</string>
-    <string name="connector_insecure_connection">https:// のアドレスを入力してください。暗号化されていない HTTP にはまだ対応していません。</string>
+    <string name="connector_insecure_connection">暗号化されていない http:// は、自分のネットワーク内のサーバーにのみ使えます。このサーバーには https:// アドレスを使ってください。</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">このバケットは%1$sリージョンにあります。リージョンを変更して、もう一度接続してください。</string>
     <string name="connector_bucket_other_region">このバケットは別のリージョンにあります。リージョンを確認して、もう一度接続してください。</string>
@@ -477,4 +477,17 @@
     <string name="connector_secure_connection_failed">%1$sとの安全な接続を確立できませんでした。SSHサーバーが古い暗号化方式しか提供しておらず、Edendaleはそれに対応していません。</string>
     <string name="connector_password_login_unavailable">%1$sではパスワードによるログインが許可されていません。リンクするには、SSH設定でパスワード認証を許可してください。</string>
     <string name="connector_sftp_unavailable">%1$sでは、このアカウントでSFTPを利用できません。</string>
+    <string name="link_source_tls_note">自分のネットワーク内のサーバーは http:// を使えます。この端末が信頼していない証明書に初めて出会ったとき、Edendale はその証明書を表示して承認を求めます。</string>
+    <string name="tls_verify_title">証明書を確認</string>
+    <string name="tls_changed_title">証明書が変更されました</string>
+    <string name="tls_verify_message">この端末は %1$s が提示する証明書を信頼していません。信頼する前に、サーバー自身の証明書と一致することを確認してください。
+
+%2$s</string>
+    <string name="tls_changed_message">%1$s が提示する証明書は、以前に承認したものと異なります。サーバーの証明書が差し替えられたと分かっている場合にのみ続行してください。
+
+%2$s</string>
+    <string name="tls_trust_new">新しい証明書を信頼</string>
+    <string name="tls_expires">有効期限: %1$s</string>
+    <string name="connector_certificate_unverified">%1$s の証明書はまだ承認されていません。確認するにはサーバーをもう一度リンクしてください。</string>
+    <string name="connector_certificate_mismatch">%1$s の証明書が変更されました。サーバーをもう一度リンクして新しい証明書を承認するまで、Edendale は接続しません。</string>
 </resources>

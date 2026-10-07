@@ -432,7 +432,7 @@
     <string name="connector_authentication_failed">%1$s non ha accettato il nome utente e la password.</string>
     <string name="connector_listing_failed">Impossibile leggere la cartella %1$s. Potrebbero essere necessari credenziali o permessi diversi.</string>
     <string name="connector_invalid_address">L\'indirizzo del server non sembra corretto. Inserisci un nome host come nas.local o un indirizzo IP.</string>
-    <string name="connector_insecure_connection">Inserisci un indirizzo https://. L’HTTP non cifrato non è ancora supportato.</string>
+    <string name="connector_insecure_connection">http:// in chiaro funziona solo con i server della tua rete. Usa un indirizzo https:// per questo server.</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">Questo bucket si trova nella regione %1$s. Cambia la regione e connettiti di nuovo.</string>
     <string name="connector_bucket_other_region">Questo bucket si trova in un’altra regione. Controlla la regione e connettiti di nuovo.</string>
@@ -485,4 +485,17 @@
     <string name="connector_secure_connection_failed">Impossibile stabilire una connessione sicura con %1$s. Il suo server SSH offre solo una crittografia obsoleta, che Edendale non supporta.</string>
     <string name="connector_password_login_unavailable">%1$s non accetta l’accesso con password. Consenti l’autenticazione tramite password nelle sue impostazioni SSH per collegarlo.</string>
     <string name="connector_sftp_unavailable">%1$s non offre SFTP per questo account.</string>
+    <string name="link_source_tls_note">I server della tua rete possono usare http://. La prima volta che Edendale incontra un certificato di cui questo dispositivo non si fida, lo mostra perché tu lo approvi.</string>
+    <string name="tls_verify_title">Verifica certificato</string>
+    <string name="tls_changed_title">Certificato cambiato</string>
+    <string name="tls_verify_message">Questo dispositivo non si fida del certificato presentato da %1$s. Controlla che corrisponda al certificato del server prima di fidarti.
+
+%2$s</string>
+    <string name="tls_changed_message">Il certificato presentato da %1$s non è quello che avevi approvato. Continua solo se sai che il certificato del server è stato sostituito.
+
+%2$s</string>
+    <string name="tls_trust_new">Fidati del nuovo certificato</string>
+    <string name="tls_expires">Scade il %1$s</string>
+    <string name="connector_certificate_unverified">Il certificato di %1$s non è ancora stato approvato. Collega di nuovo il server per esaminarlo.</string>
+    <string name="connector_certificate_mismatch">Il certificato di %1$s è cambiato. Edendale non si connetterà finché non approvi quello nuovo collegando di nuovo il server.</string>
 </resources>

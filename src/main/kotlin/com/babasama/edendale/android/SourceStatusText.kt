@@ -51,6 +51,8 @@ internal fun connectorFailureMessage(context: Context, error: Throwable): String
             ?: context.getString(R.string.connector_bucket_other_region)
         is ConnectorFailure.ServerError ->
             context.getString(R.string.player_error_server, sourceKindLabel(context, failure.kind), failure.status)
+        is ConnectorFailure.CertificateUntrusted -> context.getString(R.string.connector_certificate_unverified, failure.host)
+        is ConnectorFailure.CertificateMismatch -> context.getString(R.string.connector_certificate_mismatch, failure.host)
         is ConnectorFailure.HostKeyUnverified -> context.getString(R.string.connector_host_key_unverified, failure.host)
         is ConnectorFailure.HostKeyMismatch -> context.getString(R.string.connector_host_key_mismatch, failure.host)
         is ConnectorFailure.SecureConnectionFailed -> context.getString(R.string.connector_secure_connection_failed, failure.host)

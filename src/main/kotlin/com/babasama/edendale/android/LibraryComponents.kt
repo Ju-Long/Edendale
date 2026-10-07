@@ -75,6 +75,9 @@ import com.babasama.edendale.connectors.SshHostKey
 import com.babasama.edendale.android.data.sftpAddress
 import com.babasama.edendale.connectors.WebDav
 import com.babasama.edendale.remote.ServerLogin
+import com.babasama.edendale.remote.TlsCertificate
+import java.text.DateFormat
+import java.util.Date
 
 /** The one repository instance the whole app shares. */
 @Composable
@@ -123,6 +126,9 @@ fun LinkSourceDialog(
     var port by remember { mutableStateOf("") }
     var sftpServer by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var hostKeyReview by remember { mutableStateOf<HostKeyReview?>(null) }
+    // WebDAV and S3 (D10): a server certificate the device doesn't trust, waiting for approval.
+    val tlsPins = remember(context) { (context.applicationContext as EdendaleApplication).tlsPins }
+    var certificateReview by remember { mutableStateOf<CertificateReview?>(null) }
     // Cloud accounts (H.11): the provider's linked accounts, the one being
     // browsed, and its folders from the root down as (URL, name).
     val cloud = remember(context) { (context.applicationContext as EdendaleApplication).cloudAccounts }
@@ -205,8 +211,25 @@ fun LinkSourceDialog(
                     davTrail = newTrail
                     browsing = true
                 }
-                .onFailure { error = connectorFailureMessage(context, it) ?: unreachableMessage }
+                .onFailure { failure ->
+                    // A certificate the device doesn't trust is reviewed, not reported (D10).
+                    when (val reason = (failure as? ConnectorException)?.failure) {
+                        is ConnectorFailure.CertificateUntrusted ->
+                            certificateReview = CertificateReview(reason.host, reason.port, reason.certificate, replacesPinned = false, retry = trail)
+                        is ConnectorFailure.CertificateMismatch ->
+                            certificateReview = CertificateReview(reason.host, reason.port, reason.certificate, replacesPinned = true, retry = trail)
+                        else -> error = connectorFailureMessage(context, failure) ?: unreachableMessage
+                    }
+                }
             loading = false
+        }
+    }
+
+    fun trustCertificate(review: CertificateReview) {
+        certificateReview = null
+        scope.launch {
+            withContext(Dispatchers.IO) { tlsPins.pin(review.host, review.port, review.certificate.fingerprint) }
+            openDav(review.retry)
         }
     }
 
@@ -323,20 +346,11 @@ fun LinkSourceDialog(
             }
             kind == MediaSourceKind.SMB -> open(typedPath)
             kind == MediaSourceKind.SFTP -> connectSftp()
-            isS3 -> if (host.trim().startsWith("http://", ignoreCase = true)) {
-                // Plain HTTP waits for D10.
-                error = context.getString(R.string.connector_insecure_connection)
-            } else {
-                openDav(emptyList())
-            }
+            // Plain http:// reaches private-network addresses only; the transport enforces it (D10).
+            isS3 -> openDav(emptyList())
             else -> {
                 val root = WebDav.canonicalRoot(host)
-                when {
-                    root == null -> error = context.getString(R.string.connector_invalid_address)
-                    // Plain HTTP waits for D10.
-                    root.startsWith("dav://") -> error = context.getString(R.string.connector_insecure_connection)
-                    else -> openDav(listOf(root))
-                }
+                if (root == null) error = context.getString(R.string.connector_invalid_address) else openDav(listOf(root))
             }
         }
     }
@@ -487,6 +501,7 @@ fun LinkSourceDialog(
                                     error = null
                                     reusedLogin = false
                                     hostKeyReview = null
+                                    certificateReview = null
                                 },
                                 // "S3" fits the chip; the description below names the services.
                                 label = { Text(if (option == MediaSourceKind.S3) "S3" else sourceKindLabel(option)) },
@@ -515,12 +530,27 @@ fun LinkSourceDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    if (kind == MediaSourceKind.WEBDAV || kind == MediaSourceKind.S3) {
+                        Text(
+                            text = stringResource(R.string.link_source_tls_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     hostKeyReview?.let { review ->
                         HostKeyReviewBlock(
                             review = review,
                             isTelevision = isTelevision,
                             onTrust = { trustHostKey(review) },
                             onCancel = { hostKeyReview = null },
+                        )
+                    }
+                    certificateReview?.let { review ->
+                        CertificateReviewBlock(
+                            review = review,
+                            isTelevision = isTelevision,
+                            onTrust = { trustCertificate(review) },
+                            onCancel = { certificateReview = null },
                         )
                     }
                     if (isCloud) {
@@ -654,7 +684,7 @@ fun LinkSourceDialog(
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )
-            } else if (!isCloud && hostKeyReview == null) {
+            } else if (!isCloud && hostKeyReview == null && certificateReview == null) {
                 ArchiveButton(
                     label = stringResource(
                         if (loading) R.string.action_connecting else R.string.action_connect,
@@ -833,6 +863,60 @@ private fun HostKeyReviewBlock(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ArchiveButton(
                 label = stringResource(if (review.replacesPinnedKey) R.string.sftp_trust_new else R.string.sftp_trust),
+                onClick = onTrust,
+                kind = ArchiveButtonKind.Primary,
+                isTelevision = isTelevision,
+            )
+            ArchiveButton(label = stringResource(R.string.action_cancel), onClick = onCancel, isTelevision = isTelevision)
+        }
+    }
+}
+
+/** A server certificate waiting for the viewer's approval (D10), and the listing to retry once it's trusted. */
+private class CertificateReview(
+    val host: String,
+    val port: Int,
+    val certificate: TlsCertificate,
+    val replacesPinned: Boolean,
+    val retry: List<String>,
+) {
+    /** `host:port` unless the port is HTTPS's default. */
+    val address: String get() = if (port == 443) host else "$host:$port"
+}
+
+/**
+ * Trust on first use for HTTPS (D10, the TLS twin of [HostKeyReviewBlock]):
+ * the certificate's subject, fingerprint, and expiry, to compare with the
+ * server's own, and Trust; a certificate that differs from the approved one
+ * says so.
+ */
+@Composable
+private fun CertificateReviewBlock(
+    review: CertificateReview,
+    isTelevision: Boolean,
+    onTrust: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val expires = remember(review) { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(review.certificate.notAfterEpochMillis)) }
+    val displayed = "${review.certificate.subject}\n${review.certificate.fingerprint}\n" + stringResource(R.string.tls_expires, expires)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(if (review.replacesPinned) R.string.tls_changed_title else R.string.tls_verify_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = if (review.replacesPinned) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = stringResource(
+                if (review.replacesPinned) R.string.tls_changed_message else R.string.tls_verify_message,
+                review.address,
+                displayed,
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ArchiveButton(
+                label = stringResource(if (review.replacesPinned) R.string.tls_trust_new else R.string.sftp_trust),
                 onClick = onTrust,
                 kind = ArchiveButtonKind.Primary,
                 isTelevision = isTelevision,

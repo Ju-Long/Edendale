@@ -446,7 +446,7 @@
     <string name="connector_authentication_failed">%1$s: имя пользователя и пароль не приняты.</string>
     <string name="connector_listing_failed">Не удалось прочитать папку %1$s. Возможно, требуются другие учетные данные или права доступа.</string>
     <string name="connector_invalid_address">Неверный адрес сервера. Введите имя хоста (например, nas.local) или IP-адрес.</string>
-    <string name="connector_insecure_connection">Введите адрес https://. Незашифрованный HTTP пока не поддерживается.</string>
+    <string name="connector_insecure_connection">Незашифрованный http:// работает только для серверов в вашей собственной сети. Для этого сервера используйте адрес https://.</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">Этот бакет находится в регионе %1$s. Измените регион и подключитесь снова.</string>
     <string name="connector_bucket_other_region">Этот бакет находится в другом регионе. Проверьте регион и подключитесь снова.</string>
@@ -499,4 +499,17 @@
     <string name="connector_secure_connection_failed">Не удалось установить защищенное соединение с %1$s. SSH-сервер поддерживает только устаревшее шифрование, которое Edendale не поддерживает.</string>
     <string name="connector_password_login_unavailable">%1$s не поддерживает вход по паролю. Разрешите аутентификацию по паролю в настройках SSH, чтобы подключить сервер.</string>
     <string name="connector_sftp_unavailable">%1$s не предоставляет SFTP для этого аккаунта.</string>
+    <string name="link_source_tls_note">Серверы в вашей собственной сети могут использовать http://. Когда Edendale впервые встречает сертификат, которому это устройство не доверяет, он показывает сертификат для подтверждения.</string>
+    <string name="tls_verify_title">Проверка сертификата</string>
+    <string name="tls_changed_title">Сертификат изменился</string>
+    <string name="tls_verify_message">Это устройство не доверяет сертификату, который предъявляет %1$s. Прежде чем доверять ему, убедитесь, что он совпадает с сертификатом самого сервера.
+
+%2$s</string>
+    <string name="tls_changed_message">Сертификат, который предъявляет %1$s, не тот, что вы подтвердили раньше. Продолжайте, только если знаете, что сертификат сервера был заменён.
+
+%2$s</string>
+    <string name="tls_trust_new">Доверять новому сертификату</string>
+    <string name="tls_expires">Действителен до %1$s</string>
+    <string name="connector_certificate_unverified">Сертификат для %1$s ещё не подтверждён. Привяжите сервер заново, чтобы проверить его.</string>
+    <string name="connector_certificate_mismatch">Сертификат для %1$s изменился. Edendale не подключится, пока вы не подтвердите новый, привязав сервер заново.</string>
 </resources>

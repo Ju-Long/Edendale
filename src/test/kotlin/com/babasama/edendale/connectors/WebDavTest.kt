@@ -5,14 +5,20 @@ import com.babasama.edendale.remote.HttpAuthSession
 import com.babasama.edendale.remote.LocalHttpServer
 import com.babasama.edendale.remote.OkHttpRemoteHttp
 import com.babasama.edendale.remote.RemoteByteSource
+import com.babasama.edendale.remote.RemoteTls
 import com.babasama.edendale.remote.ServerLogin
+import com.babasama.edendale.remote.TestCertificates
+import com.babasama.edendale.remote.TlsPins
 import kotlinx.coroutines.runBlocking
+import okhttp3.Dns
+import java.net.InetAddress
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -219,7 +225,7 @@ class WebDavTest {
             }
         }
         val root = WebDav.canonicalRoot("http://127.0.0.1:${server.port}/remote.php/dav/files/me/Movies")!!
-        val connector = WebDavConnector(root, ServerLogin("me", "secret"), OkHttpRemoteHttp(), allowPlainHttp = true)
+        val connector = WebDavConnector(root, ServerLogin("me", "secret"), OkHttpRemoteHttp())
         assertEquals("dav://127.0.0.1:${server.port}/remote.php/dav/files/me/Movies/", connector.root)
 
         val entries = connector.list(connector.root)
@@ -252,14 +258,14 @@ class WebDavTest {
                 LocalHttpServer.Response(207, emptyMap(), listing.toByteArray())
             }
         }
-        val connector = WebDavConnector("dav://127.0.0.1:${server.port}/remote.php/dav/files/me/Movies/", login, OkHttpRemoteHttp(), allowPlainHttp = true)
+        val connector = WebDavConnector("dav://127.0.0.1:${server.port}/remote.php/dav/files/me/Movies/", login, OkHttpRemoteHttp())
         assertEquals(2, connector.list(connector.root).size)
     }
 
     @Test
     fun `a refused login says so`() {
         val server = server { LocalHttpServer.Response(401, mapOf("WWW-Authenticate" to "Basic realm=\"x\"")) }
-        val connector = WebDavConnector("dav://127.0.0.1:${server.port}/dav/", null, OkHttpRemoteHttp(), allowPlainHttp = true)
+        val connector = WebDavConnector("dav://127.0.0.1:${server.port}/dav/", null, OkHttpRemoteHttp())
         val error = assertFailsWith<ConnectorException> { runBlocking { connector.validate() } }
         assertEquals(ConnectorFailure.AuthenticationFailed("127.0.0.1"), error.failure)
         assertTrue(error.failure.needsUserAction)
@@ -268,16 +274,49 @@ class WebDavTest {
     @Test
     fun `an address that isn't a WebDAV folder fails to list`() {
         val server = server { LocalHttpServer.Response(200, emptyMap(), "<html/>".toByteArray()) }
-        val connector = WebDavConnector("dav://127.0.0.1:${server.port}/dav/", null, OkHttpRemoteHttp(), allowPlainHttp = true)
+        val connector = WebDavConnector("dav://127.0.0.1:${server.port}/dav/", null, OkHttpRemoteHttp())
         val error = assertFailsWith<ConnectorException> { runBlocking { connector.list(connector.root) } }
         assertEquals(ConnectorFailure.ListingFailed("/dav"), error.failure)
     }
 
     @Test
-    fun `plain HTTP waits for D10`() {
-        val connector = WebDavConnector("dav://nas.local/dav/", null, OkHttpRemoteHttp())
+    fun `plain HTTP off the private network is refused (D10)`() {
+        // The name resolves to a public address, so the connection never starts.
+        val publicDns = object : Dns {
+            override fun lookup(hostname: String) = listOf(InetAddress.getByName("203.0.113.5"))
+        }
+        val http = OkHttpRemoteHttp(RemoteTls.newClient(TlsPins.NONE, publicDns))
+        val connector = WebDavConnector("dav://nas.example/dav/", null, http)
         val error = assertFailsWith<ConnectorException> { runBlocking { connector.list(connector.root) } }
         assertEquals(ConnectorFailure.InsecureConnection, error.failure)
+    }
+
+    @Test
+    fun `a self-signed certificate is reviewed, then pinned (D10)`() {
+        val identity = TestCertificates.selfSigned("nas.local")
+        val server = LocalHttpServer(
+            { LocalHttpServer.Response(207, mapOf("Content-Type" to "application/xml"), listing.toByteArray()) },
+            identity.sslContext,
+        ).also { servers += it }
+        val pins = mutableMapOf<String, String>()
+        val http = OkHttpRemoteHttp(RemoteTls.newClient(TlsPins { host, port -> pins["$host:$port"] }))
+        val connector = WebDavConnector("davs://127.0.0.1:${server.port}/remote.php/dav/files/me/Movies/", null, http)
+
+        val first = assertFailsWith<ConnectorException> { runBlocking { connector.list(connector.root) } }
+        val untrusted = assertIs<ConnectorFailure.CertificateUntrusted>(first.failure)
+        assertEquals("127.0.0.1", untrusted.host)
+        assertEquals(server.port, untrusted.port)
+        assertEquals(identity.fingerprint, untrusted.certificate.fingerprint)
+        assertTrue(first.failure.needsUserAction)
+
+        pins["127.0.0.1:${server.port}"] = "00:11:22"
+        val changed = assertFailsWith<ConnectorException> { runBlocking { connector.list(connector.root) } }
+        assertEquals(identity.fingerprint, assertIs<ConnectorFailure.CertificateMismatch>(changed.failure).certificate.fingerprint)
+
+        pins["127.0.0.1:${server.port}"] = identity.fingerprint
+        val entries = runBlocking { connector.list(connector.root) }
+        assertEquals(listOf("Season 1", "Heat (1995).mkv"), entries.map { it.name })
+        assertTrue(entries.all { it.url.startsWith("davs://127.0.0.1:${server.port}/") })
     }
 
     @Test

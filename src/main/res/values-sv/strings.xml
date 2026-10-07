@@ -430,7 +430,7 @@
     <string name="connector_authentication_failed">%1$s godkände inte användarnamnet och lösenordet.</string>
     <string name="connector_listing_failed">Kunde inte läsa mappen %1$s. Den kan kräva andra inloggningsuppgifter eller behörigheter.</string>
     <string name="connector_invalid_address">Serveradressen ser inte rätt ut. Ange ett värdnamn som nas.local eller en IP-adress.</string>
-    <string name="connector_insecure_connection">Ange en https://-adress. Okrypterad HTTP stöds inte ännu.</string>
+    <string name="connector_insecure_connection">Okrypterad http:// fungerar bara för servrar i ditt eget nätverk. Använd en https://-adress för den här servern.</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">Den här bucketen finns i regionen %1$s. Ändra regionen och anslut igen.</string>
     <string name="connector_bucket_other_region">Den här bucketen finns i en annan region. Kontrollera regionen och anslut igen.</string>
@@ -483,4 +483,17 @@
     <string name="connector_secure_connection_failed">Det gick inte att upprätta en säker anslutning till %1$s. SSH-servern erbjuder bara äldre kryptering, som Edendale inte har stöd för.</string>
     <string name="connector_password_login_unavailable">%1$s godtar inte inloggning med lösenord. Tillåt lösenordsautentisering i dess SSH-inställningar för att länka den.</string>
     <string name="connector_sftp_unavailable">%1$s erbjuder inte SFTP för det här kontot.</string>
+    <string name="link_source_tls_note">Servrar i ditt eget nätverk kan använda http://. Första gången Edendale möter ett certifikat som den här enheten inte litar på visas certifikatet så att du kan godkänna det.</string>
+    <string name="tls_verify_title">Verifiera certifikat</string>
+    <string name="tls_changed_title">Certifikatet har ändrats</string>
+    <string name="tls_verify_message">Den här enheten litar inte på certifikatet som %1$s visar. Kontrollera att det stämmer med serverns eget certifikat innan du litar på det.
+
+%2$s</string>
+    <string name="tls_changed_message">Certifikatet som %1$s visar är inte det du godkände tidigare. Fortsätt bara om du vet att serverns certifikat har bytts ut.
+
+%2$s</string>
+    <string name="tls_trust_new">Lita på nytt certifikat</string>
+    <string name="tls_expires">Går ut %1$s</string>
+    <string name="connector_certificate_unverified">Certifikatet för %1$s har inte godkänts ännu. Länka servern igen för att granska det.</string>
+    <string name="connector_certificate_mismatch">Certifikatet för %1$s har ändrats. Edendale ansluter inte förrän du godkänner det nya genom att länka servern igen.</string>
 </resources>

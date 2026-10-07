@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.room.Room
 import com.babasama.edendale.android.data.EdendaleDatabase
 import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.android.data.TlsPinStore
 import com.babasama.edendale.android.oauth.CloudAccounts
+import com.babasama.edendale.remote.RemoteTls
 
 class EdendaleApplication : Application() {
     lateinit var database: EdendaleDatabase
@@ -26,8 +28,12 @@ class EdendaleApplication : Application() {
     /** Settings → Android TV's Continue Watching on the home screen (I.3). */
     internal val watchNextSettings: WatchNextSettings by lazy { WatchNextSettings(this) }
 
+    /** Server certificates the viewer approved (D10); the HTTP clients consult it on every handshake. */
+    val tlsPins: TlsPinStore by lazy { TlsPinStore(this) }
+
     override fun onCreate() {
         super.onCreate()
+        RemoteTls.pins = tlsPins
         database = Room.databaseBuilder(
             this,
             EdendaleDatabase::class.java,

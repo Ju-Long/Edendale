@@ -158,9 +158,9 @@ straight to the service; nothing passes through an Edendale server.
 | Service | Signs in with | The service receives |
 |---|---|---|
 | SMB (Windows, macOS, NAS shares) | User and password, or guest | The login, folder listings, and reads of the files that play |
-| WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
+| WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest; a self-signed certificate is approved on first use | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
 | SFTP (any server you can reach over SSH) | User and password; the server's host key is approved on first use | The login, folder listings, and pipelined reads of the files that play |
-| S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret | Signed listing requests and pre-signed byte-range requests |
+| S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
 | OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
 | Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
 | Google Drive | Waits for D9 | — |
@@ -176,12 +176,28 @@ whether its last scan failed.
 
 **Add Network Source → WebDAV** links a folder on a WebDAV server: Nextcloud
 or ownCloud (`https://host/remote.php/dav/files/<user>/`), Synology, QNAP,
-pCloud, Koofr, or `rclone serve webdav`. The address must be `https://` with a
-certificate the device trusts; plain HTTP isn't supported yet. The server
-receives the login (Basic or Digest, sent only after it asks), folder
-listings (`PROPFIND`), and the byte ranges of what plays. The login is stored
-encrypted on the device, excluded from backup and device transfer, and listed
-in Settings → Accounts.
+pCloud, Koofr, or `rclone serve webdav`. The server receives the login (Basic
+or Digest, sent only after it asks), folder listings (`PROPFIND`), and the
+byte ranges of what plays. The login is stored encrypted on the device,
+excluded from backup and device transfer, and listed in Settings → Accounts.
+
+Three kinds of address work (the same rules apply to S3 endpoints):
+
+- `https://` with a certificate the device trusts connects straight away.
+- `https://` with a self-signed or otherwise untrusted certificate shows the
+  certificate's subject, SHA-256 fingerprint, and expiry the first time, for
+  you to compare with the server's own and trust. The fingerprint is pinned
+  per host and port on the device, excluded from backup and device transfer.
+  If the server later presents a different certificate, Edendale refuses to
+  connect until you trust the new one by linking the server again. Other
+  servers keep the device's normal certificate and hostname checks.
+- `http://` connects only to addresses on a private network, checked on the
+  resolved address: `10/8`, `172.16/12`, `192.168/16`, `100.64/10`
+  (Tailscale), `127/8`, `169.254/16`, `::1`, `fc00::/7`, and `fe80::/10`.
+  Anything else gets a message that the server needs HTTPS. The app's network
+  security configuration permits cleartext for this; every other connection
+  Edendale makes uses `https://`, and a redirect from `https://` to `http://`
+  is never followed.
 
 ### SFTP
 
@@ -199,9 +215,10 @@ logins, get a message that says so.
 ### S3-compatible storage
 
 **Add Network Source → S3** links a bucket or a folder in it on AWS, Backblaze
-B2, Cloudflare R2, Wasabi, or MinIO: the endpoint (`https://`), the region
-(`us-east-1` if left empty; `auto` for R2), the bucket, and an access key ID
-and secret access key. Edendale signs its requests itself (AWS Signature
+B2, Cloudflare R2, Wasabi, or MinIO: the endpoint (`https://`, or `http://` for
+a MinIO on your own network; the WebDAV section's certificate and private-network
+rules apply), the region (`us-east-1` if left empty; `auto` for R2), the
+bucket, and an access key ID and secret access key. Edendale signs its requests itself (AWS Signature
 Version 4) and sends the service listings (`ListObjectsV2`) and pre-signed
 byte-range requests for what plays. The key pair and the bucket's location are
 stored encrypted on the device, excluded from backup and device transfer, and
@@ -438,9 +455,11 @@ tests. Before a release, check on:
   recovery after the connection drops.
 - **Storage services:** link a folder, scan it, and play and seek a file on an
   SFTP server (password authentication, host-key fingerprint check on first use,
-  and changed-key rejection), a Nextcloud or Synology server over HTTPS, an S3
-  bucket (AWS or R2), OneDrive (a personal and a work or school account), and
-  Dropbox. Then sign out in Settings → Accounts and check that the sources ask to
+  and changed-key rejection), a Nextcloud or Synology server over HTTPS (a
+  trusted certificate, then a self-signed one: the fingerprint prompt, a changed
+  certificate refused, and plain `http://` on the LAN but not to a public
+  address), an S3 bucket (AWS or R2), OneDrive (a personal and a work or school
+  account), and Dropbox. Then sign out in Settings → Accounts and check that the sources ask to
   sign in again. On a TV, sign in to OneDrive with the code from a phone.
 
 ### DTS and TrueHD

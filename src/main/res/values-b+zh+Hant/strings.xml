@@ -424,7 +424,7 @@
     <string name="connector_authentication_failed">%1$s 不接受該使用者名稱和密碼。</string>
     <string name="connector_listing_failed">無法讀取檔案夾 %1$s。可能需要不同的憑證或權限。</string>
     <string name="connector_invalid_address">該伺服器位址似乎不正確。請輸入如 nas.local 的主機名稱或 IP 位址。</string>
-    <string name="connector_insecure_connection">請輸入 https:// 位址。尚不支援未加密的 HTTP。</string>
+    <string name="connector_insecure_connection">未加密的 http:// 僅適用於你自己網路中的伺服器。請為此伺服器使用 https:// 位址。</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">此儲存貯體位於 %1$s 區域。請更改區域並重新連線。</string>
     <string name="connector_bucket_other_region">此儲存貯體位於其他區域。請檢查區域並重新連線。</string>
@@ -477,4 +477,17 @@
     <string name="connector_secure_connection_failed">無法與 %1$s 建立安全連線。其 SSH 伺服器僅提供較舊的加密方式，Edendale 不支援這些方式。</string>
     <string name="connector_password_login_unavailable">%1$s 不接受密碼登入。請在其 SSH 設定中允許密碼認證以進行連結。</string>
     <string name="connector_sftp_unavailable">%1$s 未為此帳號提供 SFTP。</string>
+    <string name="link_source_tls_note">你自己網路中的伺服器可以使用 http://。當 Edendale 第一次遇到此裝置不信任的憑證時，會顯示該憑證供你核准。</string>
+    <string name="tls_verify_title">驗證憑證</string>
+    <string name="tls_changed_title">憑證已變更</string>
+    <string name="tls_verify_message">此裝置不信任 %1$s 出示的憑證。信任之前，請核對它與伺服器本身的憑證一致。
+
+%2$s</string>
+    <string name="tls_changed_message">%1$s 出示的憑證不是你先前核准的那一個。只有在確知伺服器憑證已更換時才繼續。
+
+%2$s</string>
+    <string name="tls_trust_new">信任新憑證</string>
+    <string name="tls_expires">有效期至 %1$s</string>
+    <string name="connector_certificate_unverified">%1$s 的憑證尚未核准。請重新連結伺服器以進行核對。</string>
+    <string name="connector_certificate_mismatch">%1$s 的憑證已變更。在你重新連結伺服器並核准新憑證之前，Edendale 不會連線。</string>
 </resources>

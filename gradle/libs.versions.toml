@@ -56,6 +56,8 @@ room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 jcifs-ng = { module = "eu.agno3.jcifs:jcifs-ng", version.ref = "jcifs" }
 sshj = { module = "com.hierynomus:sshj", version.ref = "sshj" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+# Builds the self-signed certificates the JVM TLS tests serve (H.3.4); test classpath only.
+bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
 sshd-core = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
 sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "security-crypto" }

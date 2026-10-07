@@ -487,7 +487,7 @@
     <string name="connector_authentication_failed">%1$s didn\'t accept the username and password.</string>
     <string name="connector_listing_failed">Couldn\'t read the folder %1$s. It may need different credentials or permissions.</string>
     <string name="connector_invalid_address">That server address doesn\'t look right. Enter a hostname like nas.local or an IP address.</string>
-    <string name="connector_insecure_connection">Enter an https:// address. Plain HTTP isn\'t supported yet.</string>
+    <string name="connector_insecure_connection">Plain http:// works only for servers on your own network. Use an https:// address for this server.</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">This bucket is in the %1$s region. Change the region and connect again.</string>
     <string name="connector_bucket_other_region">This bucket is in a different region. Check the region and connect again.</string>
@@ -540,4 +540,17 @@
     <string name="connector_secure_connection_failed">Couldn\'t set up a secure connection with %1$s. Its SSH server offers only older encryption, which Edendale doesn\'t support.</string>
     <string name="connector_password_login_unavailable">%1$s doesn\'t accept password logins. Allow password authentication in its SSH settings to link it.</string>
     <string name="connector_sftp_unavailable">%1$s doesn\'t offer SFTP for this account.</string>
+    <string name="link_source_tls_note">Servers on your own network can use http://. The first time Edendale meets a certificate this device doesn\'t trust, it shows the certificate for you to approve.</string>
+    <string name="tls_verify_title">Verify Certificate</string>
+    <string name="tls_changed_title">Certificate Changed</string>
+    <string name="tls_verify_message">This device doesn\'t trust the certificate %1$s presents. Check that it matches the server\'s own certificate before trusting it.
+
+%2$s</string>
+    <string name="tls_changed_message">The certificate %1$s presents isn\'t the one you approved before. Only continue if you know the server\'s certificate was replaced.
+
+%2$s</string>
+    <string name="tls_trust_new">Trust New Certificate</string>
+    <string name="tls_expires">Expires %1$s</string>
+    <string name="connector_certificate_unverified">The certificate for %1$s hasn\'t been approved yet. Link the server again to review it.</string>
+    <string name="connector_certificate_mismatch">The certificate for %1$s has changed. Edendale won\'t connect until you approve the new one by linking the server again.</string>
 </resources>

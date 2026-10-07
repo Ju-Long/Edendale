@@ -424,7 +424,7 @@
     <string name="connector_authentication_failed">%1$s 未接受该用户名和密码。</string>
     <string name="connector_listing_failed">无法读取文件夹 %1$s。可能需要不同的凭据或权限。</string>
     <string name="connector_invalid_address">服务器地址格式不正确。请输入类似 nas.local 的主机名或 IP 地址。</string>
-    <string name="connector_insecure_connection">请输入 https:// 地址。暂不支持未加密的 HTTP。</string>
+    <string name="connector_insecure_connection">未加密的 http:// 仅适用于你自己网络中的服务器。请为此服务器使用 https:// 地址。</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">此存储桶位于 %1$s 区域。请更改区域并重新连接。</string>
     <string name="connector_bucket_other_region">此存储桶位于其他区域。请检查区域并重新连接。</string>
@@ -477,4 +477,17 @@
     <string name="connector_secure_connection_failed">无法与 %1$s 建立安全连接。其 SSH 服务器仅提供较旧的加密方式，Edendale 不支持这些方式。</string>
     <string name="connector_password_login_unavailable">%1$s 不接受密码登录。请在其 SSH 设置中允许密码认证以进行链接。</string>
     <string name="connector_sftp_unavailable">%1$s 未为此帐户提供 SFTP。</string>
+    <string name="link_source_tls_note">你自己网络中的服务器可以使用 http://。当 Edendale 第一次遇到此设备不信任的证书时，会显示该证书供你批准。</string>
+    <string name="tls_verify_title">验证证书</string>
+    <string name="tls_changed_title">证书已更改</string>
+    <string name="tls_verify_message">此设备不信任 %1$s 出示的证书。信任之前，请核对它与服务器自身的证书一致。
+
+%2$s</string>
+    <string name="tls_changed_message">%1$s 出示的证书不是你之前批准的那个。只有在确知服务器证书已更换时才继续。
+
+%2$s</string>
+    <string name="tls_trust_new">信任新证书</string>
+    <string name="tls_expires">有效期至 %1$s</string>
+    <string name="connector_certificate_unverified">%1$s 的证书尚未批准。请重新链接服务器以进行核对。</string>
+    <string name="connector_certificate_mismatch">%1$s 的证书已更改。在你重新链接服务器并批准新证书之前，Edendale 不会连接。</string>
 </resources>

@@ -297,7 +297,7 @@ class S3Connector(
             val response = try {
                 http.newCall(request, bodyLimit = 32 shl 20).execute()
             } catch (error: IOException) {
-                throw ConnectorException(ConnectorFailure.Unreachable(host), error)
+                throw ConnectorException(ConnectorFailure.transport(error, host), error)
             }
             if (response.status != 200) throw ConnectorException(S3.failure(response.status, response.body, host))
             val page = S3.parseListing(response.body, accountKey, configuration.bucket, item.key)

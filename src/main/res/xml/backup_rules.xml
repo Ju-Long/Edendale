@@ -5,6 +5,7 @@
     <exclude domain="sharedpref" path="edendale_smb_credentials.xml" />
     <exclude domain="sharedpref" path="edendale_server_logins.xml" />
     <exclude domain="sharedpref" path="edendale_ssh_host_keys.xml" />
+        <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
     <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
     <exclude domain="sharedpref" path="edendale_wyzie.xml" />
 </full-backup-content>

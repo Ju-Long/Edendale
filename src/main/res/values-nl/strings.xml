@@ -430,7 +430,7 @@
     <string name="connector_authentication_failed">%1$s heeft de gebruikersnaam en het wachtwoord niet geaccepteerd.</string>
     <string name="connector_listing_failed">Kon de map %1$s niet lezen. Mogelijk zijn er andere inloggegevens of bevoegdheden nodig.</string>
     <string name="connector_invalid_address">Dat serveradres ziet er niet goed uit. Voer een hostnaam in zoals nas.local of een IP-adres.</string>
-    <string name="connector_insecure_connection">Voer een https://-adres in. Onversleutelde HTTP wordt nog niet ondersteund.</string>
+    <string name="connector_insecure_connection">Onversleuteld http:// werkt alleen voor servers in je eigen netwerk. Gebruik een https://-adres voor deze server.</string>
     <!-- H.5 S3-compatible storage -->
     <string name="connector_bucket_region">Deze bucket staat in de regio %1$s. Wijzig de regio en maak opnieuw verbinding.</string>
     <string name="connector_bucket_other_region">Deze bucket staat in een andere regio. Controleer de regio en maak opnieuw verbinding.</string>
@@ -483,4 +483,17 @@
     <string name="connector_secure_connection_failed">Kan geen beveiligde verbinding maken met %1$s. De SSH-server biedt alleen oudere versleuteling, die Edendale niet ondersteunt.</string>
     <string name="connector_password_login_unavailable">%1$s accepteert geen inlog met wachtwoord. Sta wachtwoordverificatie toe in de SSH-instellingen om de server te koppelen.</string>
     <string name="connector_sftp_unavailable">%1$s biedt geen SFTP voor dit account.</string>
+    <string name="link_source_tls_note">Servers in je eigen netwerk kunnen http:// gebruiken. De eerste keer dat Edendale een certificaat tegenkomt dat dit apparaat niet vertrouwt, toont het dat certificaat zodat je het kunt goedkeuren.</string>
+    <string name="tls_verify_title">Certificaat controleren</string>
+    <string name="tls_changed_title">Certificaat gewijzigd</string>
+    <string name="tls_verify_message">Dit apparaat vertrouwt het certificaat dat %1$s toont niet. Controleer of het overeenkomt met het certificaat van de server voordat je het vertrouwt.
+
+%2$s</string>
+    <string name="tls_changed_message">Het certificaat dat %1$s toont is niet het certificaat dat je eerder hebt goedgekeurd. Ga alleen verder als je weet dat het certificaat van de server is vervangen.
+
+%2$s</string>
+    <string name="tls_trust_new">Nieuw certificaat vertrouwen</string>
+    <string name="tls_expires">Verloopt op %1$s</string>
+    <string name="connector_certificate_unverified">Het certificaat van %1$s is nog niet goedgekeurd. Koppel de server opnieuw om het te controleren.</string>
+    <string name="connector_certificate_mismatch">Het certificaat van %1$s is gewijzigd. Edendale maakt geen verbinding totdat je het nieuwe certificaat goedkeurt door de server opnieuw te koppelen.</string>
 </resources>

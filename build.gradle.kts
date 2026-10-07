@@ -185,6 +185,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.sshd.core)
     testImplementation(libs.sshd.sftp)
+    testImplementation(libs.bouncycastle.bcpkix)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
