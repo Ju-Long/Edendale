@@ -529,4 +529,6 @@
     <string name="handoff_malformed">El otro dispositivo envió algo que Edendale no pudo usar. Inténtalo de nuevo.</string>
     <string name="handoff_rejected">La TV no pudo usar lo enviado: %1$s</string>
     <string name="handoff_rejected_plain">La TV no pudo usar lo enviado.</string>
+    <string name="handoff_tv_address">Si tu teléfono no encuentra esta TV, ingresa su dirección: %1$s</string>
+    <string name="handoff_address_label">O ingresa la dirección que muestra la TV</string>
 </resources>

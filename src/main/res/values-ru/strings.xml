@@ -543,4 +543,6 @@
     <string name="handoff_malformed">Другое устройство отправило данные, которые Edendale не смог использовать. Попробуйте снова.</string>
     <string name="handoff_rejected">Телевизор не смог использовать отправленное: %1$s</string>
     <string name="handoff_rejected_plain">Телевизор не смог использовать отправленное.</string>
+    <string name="handoff_tv_address">Если телефон не находит этот телевизор, введите его адрес: %1$s</string>
+    <string name="handoff_address_label">Или введите адрес, показанный на телевизоре</string>
 </resources>

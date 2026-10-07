@@ -527,4 +527,6 @@
     <string name="handoff_malformed">Das andere Gerät hat etwas gesendet, das Edendale nicht verwenden konnte. Versuche es erneut.</string>
     <string name="handoff_rejected">Der Fernseher konnte das Gesendete nicht verwenden: %1$s</string>
     <string name="handoff_rejected_plain">Der Fernseher konnte das Gesendete nicht verwenden.</string>
+    <string name="handoff_tv_address">Falls dein Telefon diesen Fernseher nicht findet, gib stattdessen seine Adresse ein: %1$s</string>
+    <string name="handoff_address_label">Oder die auf dem Fernseher angezeigte Adresse eingeben</string>
 </resources>

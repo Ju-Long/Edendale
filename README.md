@@ -273,7 +273,10 @@ The two devices talk directly over the local network, never through a server:
 the TV registers the DNS-SD service `_edendale-handoff._tcp` on a random TCP
 port while the code is on screen, the phone finds it with Network Service
 Discovery, both derive a key from the code with J-PAKE over P-256 (Bouncy
-Castle's `ecjpake`), and everything after that is AES-256-GCM. A wrong code
+Castle's `ecjpake`), and everything after that is AES-256-GCM. On networks
+that block discovery (guest Wi-Fi, some routers), the TV also shows its
+address and port beside the code, and the phone's dialog takes that address
+by hand. A wrong code
 fails the key confirmation before anything is sent; three wrong codes replace
 the code. A passive listener learns nothing, and an active attacker gets one
 guess per handshake. The code and keys last only for the session, and nothing

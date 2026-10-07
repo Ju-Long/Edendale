@@ -521,4 +521,6 @@
     <string name="handoff_malformed">另一部裝置傳送的內容 Edendale 無法使用。請重試。</string>
     <string name="handoff_rejected">電視無法使用所傳送的內容：%1$s</string>
     <string name="handoff_rejected_plain">電視無法使用所傳送的內容。</string>
+    <string name="handoff_tv_address">如果手機找不到這台電視，請改為輸入它的位址：%1$s</string>
+    <string name="handoff_address_label">或輸入電視上顯示的位址</string>
 </resources>

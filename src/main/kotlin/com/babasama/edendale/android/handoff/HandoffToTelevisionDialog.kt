@@ -102,6 +102,13 @@ internal fun HandoffCodeBlock(
             style = MaterialTheme.typography.displaySmall,
             color = EdendaleColors.Gold,
         )
+        if (state.addresses.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.handoff_tv_address, state.addresses.joinToString("  ")),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         val status = state.status
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (status !is HandoffHost.Status.Failed) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -128,9 +135,20 @@ private sealed interface Step {
     data class Code(val television: DiscoveredTelevision) : Step
     data class Connecting(val television: DiscoveredTelevision) : Step
     data class Confirm(val television: DiscoveredTelevision, val request: AccountHandoff.Request) : Step
-    data class Sending(val television: DiscoveredTelevision) : Step
-    data class Done(val television: DiscoveredTelevision) : Step
+    data class Sending(val television: DiscoveredTelevision, val request: AccountHandoff.Request) : Step
+    data class Done(val television: DiscoveredTelevision, val request: AccountHandoff.Request?) : Step
     data class Failed(val television: DiscoveredTelevision?, val message: String) : Step
+}
+
+/** The TV's name as its request states it; a TV reached by a typed address is otherwise named by that address. */
+private fun Step.televisionName(): String = when (this) {
+    is Step.Confirm -> request.deviceName
+    is Step.Sending -> request.deviceName
+    is Step.Done -> request?.deviceName ?: television.name
+    is Step.Code -> television.name
+    is Step.Connecting -> television.name
+    is Step.Failed -> television?.name.orEmpty()
+    Step.Discover -> ""
 }
 
 /**
@@ -152,6 +170,8 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
     val stepFlow = remember { MutableStateFlow<Step>(Step.Discover) }
     val step by stepFlow.collectAsState()
     var code by remember { mutableStateOf("") }
+    // The TV's address typed by hand, for networks that block discovery.
+    var typedAddress by remember { mutableStateOf("") }
     var exchange by remember { mutableStateOf<Job?>(null) }
     // The viewer's answer, awaited by the protocol thread while the dialog asks.
     var pending by remember { mutableStateOf<CompletableDeferred<AccountHandoff.Response>?>(null) }
@@ -182,13 +202,13 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
                         val answer = CompletableDeferred<AccountHandoff.Response>()
                         pending = answer
                         stepFlow.value = Step.Confirm(television, request)
-                        runBlocking { answer.await() }.also { stepFlow.value = Step.Sending(television) }
+                        runBlocking { answer.await() }.also { stepFlow.value = Step.Sending(television, request) }
                     }
                 }
                 stepFlow.value = if (pending?.isCompleted == true && pending?.getCompleted()?.status == AccountHandoff.Status.DECLINED) {
                     Step.Discover
                 } else {
-                    Step.Done(television)
+                    Step.Done(television, (stepFlow.value as? Step.Sending)?.request)
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -239,7 +259,7 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
         title = {
             Text(
                 when (current) {
-                    is Step.Confirm -> stringResource(R.string.handoff_request_title, sourceKindLabel(current.request.kind), current.television.name)
+                    is Step.Confirm -> stringResource(R.string.handoff_request_title, sourceKindLabel(current.request.kind), current.televisionName())
                     else -> stringResource(R.string.handoff_link_to_tv)
                 },
             )
@@ -277,6 +297,16 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
                                 }
                             }
                         }
+                        // Some networks block discovery; the TV shows its address beside the code.
+                        OutlinedTextField(
+                            value = typedAddress,
+                            onValueChange = { typedAddress = it },
+                            label = { Text(stringResource(R.string.handoff_address_label)) },
+                            placeholder = { Text("192.168.1.20:40123") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
+                            keyboardActions = KeyboardActions(onGo = { typedTelevision(typedAddress)?.let { code = ""; stepFlow.value = Step.Code(it) } }),
+                        )
                     }
                     is Step.Code -> {
                         OutlinedTextField(
@@ -348,9 +378,9 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
                             }
                         }
                     }
-                    is Step.Sending -> Waiting(stringResource(R.string.handoff_sending, current.television.name))
+                    is Step.Sending -> Waiting(stringResource(R.string.handoff_sending, current.televisionName()))
                     is Step.Done -> Text(
-                        text = stringResource(R.string.handoff_done, current.television.name),
+                        text = stringResource(R.string.handoff_done, current.televisionName()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -367,6 +397,14 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             when (current) {
+                Step.Discover -> if (typedAddress.isNotBlank()) {
+                    ArchiveButton(
+                        label = stringResource(R.string.action_connect),
+                        onClick = { typedTelevision(typedAddress)?.let { code = ""; stepFlow.value = Step.Code(it) } },
+                        enabled = typedTelevision(typedAddress) != null,
+                        kind = ArchiveButtonKind.Primary,
+                    )
+                }
                 is Step.Code -> ArchiveButton(
                     label = stringResource(R.string.action_connect),
                     onClick = { connect(current.television) },
@@ -380,7 +418,11 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
                 )
                 is Step.Failed -> ArchiveButton(
                     label = stringResource(R.string.action_try_again),
-                    onClick = { stepFlow.value = current.television?.let { Step.Code(it) } ?: Step.Discover },
+                    onClick = {
+                        // A wrong code is the usual reason to be here; start the field fresh.
+                        code = ""
+                        stepFlow.value = current.television?.let { Step.Code(it) } ?: Step.Discover
+                    },
                     kind = ArchiveButtonKind.Primary,
                 )
                 is Step.Done -> ArchiveButton(label = stringResource(R.string.action_close), onClick = onDismiss, kind = ArchiveButtonKind.Primary)
@@ -456,3 +498,13 @@ private fun Context.findActivity(): Activity? {
 
 /** Connecting to a TV the discovery just resolved on the same network. */
 private const val CONNECT_TIMEOUT_MILLIS = 10_000
+
+/** A TV from an `address:port` the viewer typed off the TV's screen; null until it reads as one. */
+private fun typedTelevision(text: String): DiscoveredTelevision? {
+    val trimmed = text.trim()
+    val port = trimmed.substringAfterLast(':', "").toIntOrNull()?.takeIf { it in 1..65535 } ?: return null
+    val host = trimmed.substringBeforeLast(':').trim('[', ']').takeIf { it.isNotBlank() } ?: return null
+    // No DNS here: the TV shows numeric addresses, and a name would resolve on connect anyway.
+    val address = runCatching { java.net.InetAddress.getByName(host) }.getOrNull() ?: return null
+    return DiscoveredTelevision(trimmed, address, port)
+}

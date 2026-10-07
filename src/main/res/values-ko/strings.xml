@@ -521,4 +521,6 @@
     <string name="handoff_malformed">다른 기기가 Edendale이 사용할 수 없는 데이터를 보냈습니다. 다시 시도하세요.</string>
     <string name="handoff_rejected">TV가 보낸 항목을 사용할 수 없습니다: %1$s</string>
     <string name="handoff_rejected_plain">TV가 보낸 항목을 사용할 수 없습니다.</string>
+    <string name="handoff_tv_address">휴대전화가 이 TV를 찾지 못하면 대신 주소를 입력하세요: %1$s</string>
+    <string name="handoff_address_label">또는 TV에 표시된 주소 입력</string>
 </resources>

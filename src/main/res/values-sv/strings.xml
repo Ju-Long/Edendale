@@ -527,4 +527,6 @@
     <string name="handoff_malformed">Den andra enheten skickade något som Edendale inte kunde använda. Försök igen.</string>
     <string name="handoff_rejected">TV:n kunde inte använda det som skickades: %1$s</string>
     <string name="handoff_rejected_plain">TV:n kunde inte använda det som skickades.</string>
+    <string name="handoff_tv_address">Om telefonen inte hittar den här TV:n, ange dess adress i stället: %1$s</string>
+    <string name="handoff_address_label">Eller ange adressen som visas på TV:n</string>
 </resources>

@@ -521,4 +521,6 @@
     <string name="handoff_malformed">もう一方の端末から Edendale が使用できないデータが送られました。もう一度お試しください。</string>
     <string name="handoff_rejected">テレビは送信された内容を使用できませんでした: %1$s</string>
     <string name="handoff_rejected_plain">テレビは送信された内容を使用できませんでした。</string>
+    <string name="handoff_tv_address">スマートフォンでこのテレビが見つからない場合は、代わりにアドレスを入力してください: %1$s</string>
+    <string name="handoff_address_label">またはテレビに表示されたアドレスを入力</string>
 </resources>

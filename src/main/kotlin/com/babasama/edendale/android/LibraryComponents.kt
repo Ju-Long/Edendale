@@ -773,7 +773,7 @@ fun LinkSourceDialog(
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
                 )
-            } else if (!isCloud && hostKeyReview == null && certificateReview == null) {
+            } else if (!isCloud && hostKeyReview == null && certificateReview == null && handoffHost == null) {
                 ArchiveButton(
                     label = stringResource(
                         if (loading) R.string.action_connecting else R.string.action_connect,

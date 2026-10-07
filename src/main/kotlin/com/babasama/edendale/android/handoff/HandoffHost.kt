@@ -19,7 +19,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.IOException
+import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
 
@@ -51,7 +53,13 @@ class HandoffHost(
         data class Failed(val error: Exception) : Status
     }
 
-    data class State(val code: String, val status: Status = Status.Waiting, val deviceName: String)
+    data class State(
+        val code: String,
+        val status: Status = Status.Waiting,
+        val deviceName: String,
+        /** `address:port` pairs a phone can type when discovery is blocked on the network; empty until the port is open. */
+        val addresses: List<String> = emptyList(),
+    )
 
     private val appContext = context.applicationContext
     private val nsd = appContext.getSystemService(Context.NSD_SERVICE) as NsdManager
@@ -69,6 +77,7 @@ class HandoffHost(
         if (job != null) return
         val socket = ServerSocket(0, 1, null as InetAddress?)
         listener = socket
+        _state.value = _state.value.copy(addresses = localAddresses().map { "$it:${socket.localPort}" })
         register(socket.localPort)
         job = scope.launch(Dispatchers.IO) {
             while (!socket.isClosed) {
@@ -138,6 +147,17 @@ class HandoffHost(
 
     companion object {
         const val MAX_WRONG_CODES = 3
+
+        /** This device's IPv4 addresses on its networks (Wi-Fi, Ethernet), without the loopback. */
+        fun localAddresses(): List<String> = runCatching {
+            NetworkInterface.getNetworkInterfaces().toList()
+                .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
+                .flatMap { it.inetAddresses.toList() }
+                .filterIsInstance<Inet4Address>()
+                .map { it.hostAddress.orEmpty() }
+                .filter { it.isNotEmpty() }
+                .sorted()
+        }.getOrDefault(emptyList())
 
         /** The name the viewer gave the device, else its model. */
         fun deviceName(context: Context): String =
