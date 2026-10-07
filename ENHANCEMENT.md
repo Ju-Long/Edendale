@@ -212,1567 +212,191 @@ Where `android` stood at `ad00efc`, and which step changes each item.
 
 ---
 
-## 2. Build order
+## 2. Build order and status
 
-Each phase leaves the app shippable. Within a phase, follow the listed order.
+Each phase leaves the app shippable.
 
-1. **Foundations:** A.1 → A.5.
-2. **Player basics:** B.1 → C.4 → C.5 → B.2 → C.1 → C.2 → C.3 → C.6 → B.4 →
-   B.3 → B.5 → B.6.
-3. **SMB and library rules:** D.1 → D.2 → D.3 → D.4 → D.5.
-4. **Audio:** E.1, then E.2 once D5 is decided.
-5. **Picture:** F.1 → F.8 in order.
-6. **Storage providers:** H.1 → H.2 → H.3 → H.4 → H.5 → H.6 → H.7 → H.8, with
-   H.11 alongside; then H.9 (D9 is decided); no H.10 (D17); H.12 any time.
-7. **Android TV:** I.1 → I.2 → I.3.
-8. **Large screens and keyboard:** J.1 → J.6 (independent; may move earlier).
-9. **Frame generation:** G.1, then G.2 → G.6 only if G.1 recommends going ahead
-   and the owner agrees.
+### Completed phases (landed on `android-27.0`)
+- **Phase 1 — Foundations:** A.1 → A.5 (Complete)
+- **Phase 2 — Player basics:** B.1 → C.4 → C.5 → B.2 → C.1 → C.2 → C.3 → C.6 → B.4 → B.3 → B.5 → B.6 (Complete)
+- **Phase 3 — SMB and library rules:** D.1 → D.2 → D.3 → D.4 → D.5 (Complete)
+- **Phase 4 — Audio:** E.1, E.2 (Complete)
+- **Phase 8 — Large screens and keyboard:** J.1 → J.6 (Complete)
+- **Settings layout:** K.1 (Complete)
+- **Landed storage providers:** H.1, H.2, H.4, H.5, H.6, H.7, H.8, H.10 (dropped per D17), H.11 (Complete)
+- **Landed TV features:** I.1.1, I.2.1, I.3.1–I.3.3, I.3.T1 (Complete)
+- **Landed picture enhancement pipeline:** F.1–F.7 code & unit tests (Complete)
+- **Documentation:** L.1, L.2, L.4 (Complete)
 
-Section K (Settings layout) applies whenever a phase adds a Settings section.
-Section L (docs and release) closes the work.
-
-This follows DIFF §7's Android order, with MediaSession added to phase 2 and SMB
-hardening moved ahead of the audio work.
-
----
-
-## Section A — Foundations
-
-### A.1 — Branch and baseline
-
-- [x] **A.1.1** S.1–S.5 are done and the baseline result is in the Handoff log.
-
-### A.2 — Media3 upgrade (D1)
-
-- [x] **A.2.1** In `gradle/libs.versions.toml`, set `media3 = "1.9.0"`. Every
-  `androidx.media3` artifact uses `version.ref = "media3"`; Media3 requires all
-  its modules at the same version.
-- [x] **A.2.2** Fix compile errors and deprecations from 1.7 to 1.9 without
-  changing behavior. List each API change in the commit message.
-- [ ] **A.2.3** **On device:** a local file, an SMB file, attaching a Wyzie
-  subtitle, PiP, switching items from the playlist, and resume all still work,
-  on a phone and on Android TV.
-
-**Acceptance:** the JVM suite and `assembleDebug` pass; the device checks are
-recorded.
-
-### A.3 — Player preference store
-
-All new device-local player settings go through one small layer.
-
-- [x] **A.3.1** Create `player/PlayerPreferences.kt` (or a `prefs` subpackage)
-  with:
-  - pure parse and normalize functions for each setting (no Android imports),
-    tested on the JVM;
-  - a thin adapter over the SharedPreferences file `"player"`, which
-    `PlayerActivity` already opens, readable from both `MainActivity`
-    (Settings) and `PlayerActivity`;
-  - change notification (`OnSharedPreferenceChangeListener`) so an open player,
-    including one in PiP, picks up changes made in Settings.
-- [x] **A.3.2** Key names match Apple's exactly (each step lists them). Missing,
-  unparseable, or unknown values fall back to the default; out-of-range values
-  are normalized on read and never throw.
-
-### A.4 — Strings and translations
-
-- [x] **A.4.1** Each step adds its strings to `values/strings.xml` and all 18
-  locales in the same commit, with the name prefixes `settings_`, `player_`,
-  `sources_`, `accounts_`, `audio_`, and `video_`. Removed strings disappear
-  from every locale.
-
-### A.5 — Test conventions
-
-- [x] **A.5.1** JVM tests live under `src/test/kotlin/com/babasama/edendale/…`,
-  mirroring the main package, and use `kotlin.test` and JUnit 4 like the
-  existing suite.
-- [x] **A.5.2** For each Apple test file a step names, port **the cases** (not
-  the code), and keep case names recognizable (for example
-  `nextEpisodeCrossesSeasons`). Read them with
-  `git show origin/apple-27.0:EdendaleTests/<File>.swift`.
-- [x] **A.5.3** Add an `androidTest` source set (D14):
-  `androidTestImplementation` for `androidx.test.ext:junit` and
-  `androidx.test:runner` (plus `androidx.room:room-testing` for D.2), and
-  `testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"`.
-  Instrumented tests never need network access or credentials.
-- [x] **A.5.4** Optional: a separate CI job that runs instrumented tests on an
-  emulator, triggered only for this branch and using no secrets (AGENTS.md hard
-  constraint 2). The existing `build-and-test` job keeps running exactly what
-  it runs today. Done as `.github/workflows/instrumented.yml` (pushes and pull
-  requests for `android` and `android-27.0`, plus manual runs; API 35
-  `google_apis` x86_64 emulator; actions pinned by commit). It passes
-  actionlint and has passed twice on GitHub.
-- [x] **A.5.5** Network tests never reach the internet. Use transport fakes, or
-  the JDK's built-in `com.sun.net.httpserver.HttpServer` on `127.0.0.1` when
-  real HTTP behavior matters (`Range`, redirects, status codes). OkHttp's
-  `mockwebserver` is acceptable as a `testImplementation` dependency.
-- [x] **A.5.6** Binary fixtures (short video or audio files) are generated by a
-  checked-in script (for example `src/test/fixtures/generate.sh`, using the
-  `ffmpeg` command-line tool) and stay under 1 MB each.
+### Active and remaining phases
+1. **Storage providers:**
+   - H.3: WebDAV valid-HTTPS path (H.3.3) is a device check; H.3.4 (D10) landed
+   - H.9: landed (e965a3a); a real sign-in still needs the owner's Android OAuth client
+   - H.12: System folder picker experiment (H.12.1)
+2. **Android TV:**
+   - I.2: landed (a45cf05); the device check I.2.D1 remains, and the owner's review of the finished work
+   - Device checks: I.1.D1 (OneDrive TV sign-in), I.3.D1 (Watch Next store instrumented test on TV)
+3. **Picture adjustments & enhancement verification:**
+   - Device checks & benchmarks on physical hardware: F.1.5, F.1.6, F.3.4 (Snapdragon GSR benchmark), F.7.D1, F.8.1, F.8.2
+4. **Frame generation experiment:**
+   - G.1 feasibility probe and findings complete (`3bf5199`, Findings — G.1)
+   - G.2 → G.6: Blocked pending physical phone timings and owner go/no-go decision
+5. **Release close-out:**
+   - L.3: Draft `Play Console/27.0/release.txt` when owner requests (`versionCode 2` / `versionName 0.27` already set in `86df492`)
 
 ---
 
-## Section B — Player controls and state
-
-### B.1 — App Controls: skip lengths and hold speeds (DIFF §3.1)
-
-**Rules:**
-- **Settings → App Controls** has four settings: Skip Back, Skip Forward, Hold
-  Left Side, and Hold Right Side.
-- Skip lengths are 10, 15, or 30 s (default 10). The keys
-  `player.skipBackwardSeconds` and `player.skipForwardSeconds` store the whole
-  seconds; any other stored value reads as 10. Each is a segmented control
-  showing the matching arrow-rotate glyph (`ic_arrow_rotate_left_10/15/30` and
-  `ic_arrow_rotate_right_10/15/30` already exist). TalkBack announces the
-  length.
-- One skip length drives every skip: double-tap on either side, the ± controls,
-  D-pad seeks and the TV timeline, short presses of the media fast-forward and
-  rewind keys (D2), accessibility skip actions, the PiP actions (icon and title
-  follow the length), and MediaSession seek back/forward (C.6). Changes apply
-  live, including to a video floating in PiP.
-- Hold speeds range from 0.25× to 3.00× in **0.25 steps**. Defaults: left 0.5×,
-  right 2.0×. Keys `player.holdLeftRate` and `player.holdRightRate` (float). A
-  stored value snaps to the 0.25 grid and clamps to the range; a non-finite
-  value becomes 0.25; a missing key means the default.
-- A hold temporarily overrides the base speed and reverts on release. A short
-  tap still toggles the controls, and a drag does neither (existing behavior).
-- The player reads the preferences at each gesture, so a change applies
-  without restarting playback. They stay on the device and are never synced.
-
-**Checklist:**
-- [x] **B.1.1** Pure `SkipInterval` enum (10/15/30), `normalizedHoldRate`,
-  parsing, and defaults (A.3).
-- [x] **B.1.2** Replace `PlayerLogic.HOLD_SLOW_RATE`, `HOLD_FAST_RATE`, and
-  `holdRate(...)` with a side function (left or right half) plus the stored
-  rates. Replace every use of `SEEK_STEP_MILLIS` with the stored lengths, and
-  update KDoc that mentions 0.5×, 1.5×, or 10 s.
-- [x] **B.1.3** Wire the lengths into the `PlayerGestureLayer` double-tap, the ±
-  controls in `PlayerControlsOverlay`, the `RevealCatcher` D-pad seeks
-  (`remoteSeek`), `handleTransportKey`, and `pipActions` (icon and label for
-  each length).
-- [x] **B.1.4** TV (D2): fast-forward or rewind held for 400 ms or more calls
-  `beginHoldRate` with the right or left rate until key up; a shorter press
-  skips. Key repeats while the key is held must not also seek.
-- [x] **B.1.5** The Settings → App Controls section (position per K), with the
-  two segmented skip controls and two −/value/+ hold steppers. The value is
-  shown like `0.50×` via `PlayerLogic.rateLabel`. It works with the D-pad on TV.
-- [x] **B.1.6** `PlayerActivity` listens for preference changes and refreshes
-  the PiP params (and the MediaSession, once C.6 lands).
-
-**Tests (JVM):**
-- [x] **B.1.T1** `PlayerControlPreferencesTest`: defaults; 10/15/30 round trip;
-  unknown integers (0, 20, −10) read as 10; hold snapping (0.3 → 0.25,
-  0.4 → 0.5, 2.6 → 2.5); clamping (0.1 → 0.25, 5 → 3.0); NaN and ±∞ → 0.25;
-  missing keys → 0.5 / 2.0. Port the remaining cases from
-  `PlayerControlPreferencesTests`.
-- [x] **B.1.T2** `PlayerLogicTest`: the hold side for the left half, the right
-  half, and the exact midpoint (keep the old boundary: `x < width / 2` is left).
-
-**On device:**
-- [ ] **B.1.D1** Change Skip Forward to 30 s while a video floats in PiP: the
-  PiP button relabels, and double-tap, D-pad, and media keys skip 30 s.
-- [ ] **B.1.D2** Android TV: a short ⏩ press skips; holding ⏩ plays at the
-  right hold speed and reverts on release.
-
-**Acceptance:** no code path still uses a fixed 10 s skip or the 0.5×/1.5×
-holds; the tests pass; the device checks are recorded.
-
-### B.2 — Persisted player state and per-title memory (DIFF §3.3)
-
-**Rules:**
-- Loop (`player.loopEnabled`, default false) and Fit/Fill (`player.aspectFill`,
-  default false, meaning Fit) persist globally on the device. Auto-PiP keeps its
-  existing key `player.autoPiP` (default true).
-- For each title, remember the speed, the audio track, the subtitle track or
-  that subtitles were off, and the video track.
-  - Key `player.content.movie.<tmdbId>`, or `player.content.show.<showTmdbId>`
-    for episodes, so a whole show shares one entry. Files without a TMDB id
-    store nothing.
-  - Value: a JSON object with the optional fields `speed`,
-    `audioTrackLanguage`, `audioTrackName`, `subtitleEnabled`,
-    `subtitleTrackLanguage`, `subtitleTrackName`, `videoTrackWidth`, and
-    `videoTrackHeight` (Apple's `ContentPlayerPreferences`).
-  - Store these in a separate SharedPreferences file, `"player_content"`, so
-    the main `"player"` file stays small.
-- Restore once per item, on the first `onTracksChanged` that lists the item's
-  tracks (Media3 reports empty tracks first whenever a new item replaces the
-  playing one):
-  - Audio and subtitle tracks match by **language first, then track name**.
-  - Only embedded subtitle tracks are remembered or restored. Sideloaded Wyzie
-    tracks never are: give their `SubtitleConfiguration` ids an `ext-` prefix
-    (Apple's convention), exclude ids starting with `ext-`, and update the id
-    matching in `selectPendingOnlineSubtitle`.
-  - The video track is restored by width × height, and only when the file has
-    more than one video track.
-  - `subtitleEnabled == false` restores Off.
-- Save on a speed change, a user track choice, switching items, and `onStop`.
-  Restoring never triggers a save.
-- Progress keeps saving every 5 s. That is more often than Apple's 10 s, so it
-  doesn't change.
-
-**Checklist:**
-- [x] **B.2.1** Persist Loop and Fit/Fill; `PlayerChromeState` reads them at
-  start.
-- [x] **B.2.2** A pure model, JSON codec, content-key function, and matching
-  functions over plain data (for example
-  `TrackCandidate(id, language, label, width, height)`), independent of Media3
-  types.
-- [x] **B.2.3** A Media3 adapter: build the candidates from `Tracks`, apply them
-  with `TrackSelectionOverride` / `setTrackTypeDisabled`, and apply the speed
-  with `chrome.setRate`.
-- [x] **B.2.4** The `ext-` prefix for sideloaded subtitle ids.
-
-**Tests (JVM):**
-- [x] **B.2.T1** Content keys for a movie and an episode (show key); missing ids
-  store nothing.
-- [x] **B.2.T2** JSON round trip; unknown fields are ignored; corrupt JSON
-  yields no preferences.
-- [x] **B.2.T3** Matching: language beats name; the name is used when the
-  language is missing or absent from the file; `ext-` tracks are never chosen
-  or saved; the video track is restored only with more than one track and an
-  exact W×H match; Off is restored.
-
-**On device:**
-- [x] **B.2.D1** Pick a non-default audio track and subtitle in episode 1, then
-  open episode 2 of the same show: both carry over. Loop and Fill survive
-  closing the player.
-
-### B.3 — Track pickers and panel order (DIFF §3.9)
-
-**Rules:**
-- **Video Track** appears only when the file has more than one video track.
-  Rows read `name (language) — W×H`.
-- **Audio Track** appears only when the file has more than one audio track.
-  Rows read `name (language) — <channels>`, where 1 channel is Mono, 2 is
-  Stereo, 6 is 5.1, 8 is 7.1, and any other count N is `N ch`.
-- The language is appended only when the name doesn't already contain it
-  (case-insensitive, checked against both the display language name and the
-  language code). A track with no label falls back to its language, then to
-  "Track N" (the existing `trackOptionLabel` behavior).
-- **Panel order**, taken from Apple's `PlayerSettingsPanel.swift` (DIFF §3.9
-  lists a different order): Speed · Video Track · Audio Track · Subtitles ·
-  Online Subtitles · Playback (Skip Prompts, Loop, Audio Booster, Auto Picture
-  in Picture, then Android's Audio Output) · Aspect Ratio · Picture ·
-  Enhancement.
-- The Enhancement preset is a dropdown menu, not a segmented control (Apple
-  commit `4f8383a`: four segments truncate in narrow panels).
-
-**Checklist:**
-- [x] **B.3.1** Pure label builders (channel label, language-suffix rule,
-  resolution), tested on the JVM.
-- [x] **B.3.2** `videoTrackOptions` and `audioTrackOptions` built from
-  `Tracks.groups` (`C.TRACK_TYPE_VIDEO` / `C.TRACK_TYPE_AUDIO`), selected with
-  `TrackSelectionOverride`, and remembered per B.2.
-- [x] **B.3.3** Reorder the panel; sections from later steps slot into place as
-  they land.
-
-**Tests (JVM):**
-- [x] **B.3.T1** Labels for: "English — Stereo"; a "Commentary" track in
-  English with 6 channels → "Commentary (English) — 5.1"; a name that already
-  contains the language ("English Commentary") gets no suffix; 1, 3, and 8
-  channels → Mono, "3 ch", 7.1.
-
-**On device:**
-- [x] **B.3.D1** A multi-audio MKV shows Audio Track and switches immediately;
-  a single-audio file hides the section.
-
-### B.4 — Subtitle appearance and placement (DIFF §3.8)
-
-**Rules:**
-- Settings → Subtitles gains four settings, as named presets with no free
-  color picker, above the existing Wyzie key:
-
-  | Setting | Key | Values (stored raw value) | Default |
-  |---|---|---|---|
-  | Font | `subtitles.font` | `system`, `rounded`, `serif`, `monospaced` | `system` |
-  | Text color | `subtitles.textColor` | `parchment` (#E4E1E9, `EdendaleColors.TextPrimary`), `white` (#FFFFFF), `yellow` (#FFE033), `cyan` (#59E6FF), `green` (#73F273), `black` (#000000) | `parchment` |
-  | Box color | `subtitles.backgroundColor` | `ink` (#0A0A0F, `EdendaleColors.Background`), `black` (#000000), `charcoal` (#383838), `navy` (#0F1A3D), `white` (#FFFFFF) | `ink` |
-  | Box opacity | `subtitles.backgroundOpacity` | 0–1, stored rounded to 0.01; TV steps by 0.1 | 1 |
-
-  - Unknown raw values read as the default. A non-finite opacity reads as 1,
-    and opacity clamps to 0–1.
-  - A Reset action restores all four defaults.
-- Fonts: System → `Typeface.DEFAULT`, Serif → `Typeface.SERIF`, Monospaced →
-  `Typeface.MONOSPACE`, Rounded → the bundled Nunito (D18).
-- Every glyph gets an outline: white around Black text, and
-  `EdendaleColors.Background` around every other color. At opacity 0 the box
-  disappears and the outline keeps the text legible. Build a
-  `CaptionStyleCompat` with the text color as foreground, the box color times
-  the opacity as background, a transparent window color, `EDGE_TYPE_OUTLINE`,
-  the outline color as edge color, and the font's typeface. Also call
-  `setApplyEmbeddedStyles(false)` and `setApplyEmbeddedFontSizes(false)`.
-- Changes apply to the cue already on screen, including after the user returns
-  from Settings while the video floats in PiP. Bitmap subtitles (PGS, VobSub)
-  keep their authored pixels.
-- **Placement:**
-  - Cues are laid out inside the **visible video rectangle**, which is correct
-    for both Fit and Fill, and stay clear of visible transport controls
-    (`setBottomPaddingFraction` while the controls show).
-  - Size: `clamp(16, visibleHeightDp × 0.055, 48)` dp, times the system caption
-    font scale (`CaptioningManager.getFontScale()`), applied with
-    `setFixedTextSize(TypedValue.COMPLEX_UNIT_DIP, size)`.
-  - Simultaneous cues stack. The overlay never takes input, and it updates
-    while paused.
-  - `PlayerView`'s built-in subtitle view sits inside the content frame, which
-    extends past the screen in Fill mode. Hide it and draw a `SubtitleView`
-    sized to the visible rectangle, fed from `Player.Listener.onCues`.
-- Downloaded (Wyzie) SRT, WebVTT, and ASS files go through the same path,
-  including files with CRLF line endings and UTF-16 files with a BOM.
-
-**Checklist:**
-- [x] **B.4.1** A pure model: enums with raw values, the color table, the
-  outline rule, opacity normalization, and the size formula.
-- [x] **B.4.2** The Settings UI (pickers on handhelds, steppers or menus on TV)
-  with Reset.
-- [x] **B.4.3** The custom `SubtitleView` placed in the visible rectangle for
-  Fit and Fill, with bottom padding while the controls show.
-- [x] **B.4.4** Bundle Nunito per D18 under `res/font/`, and credit it in
-  Attribution and the README.
-
-**Tests:**
-- [x] **B.4.T1** (JVM) `SubtitleAppearanceTest`: keys, defaults, unknown raw
-  values, opacity rounding (0.123 → 0.12, −1 → 0, 2 → 1, NaN → 1), the outline
-  rule, the size clamp at 16 and 48 and its multiplication by the scale, and
-  the visible-rectangle math for Fit and Fill.
-- [x] **B.4.T2** (instrumented) Media3 parses each fixture into the expected cue
-  text: SRT with CRLF, SRT in UTF-16 LE with a BOM, WebVTT, and ASS dialogue
-  with override tags.
-
-**On device:**
-- [ ] **B.4.D1** Yellow on Navy at 50 % is legible; in Fill mode the cue stays
-  on screen; showing the controls lifts the cue; a PGS track keeps its look.
-
-### B.5 — Playlist panel redesign (DIFF §3.10)
-
-**Rules:**
-- New tokens: `PlaylistActiveBackground` `#FFFFFF` and `PlaylistActiveText`
-  `#000000`.
-- The current **or** focused row uses the white fill, black text, and the larger
-  title size. A playing indicator tells the current file apart from a row that
-  only has focus.
-- The panel opens scrolled to the current file.
-- Identified episodes, and the current identified movie, show 16:9 artwork (the
-  episode still, falling back to the show backdrop; the movie backdrop) with the
-  title and the play time stacked beside it. Unknown sibling files keep the
-  file-name row.
-
-**Checklist:**
-- [x] **B.5.1** Add both tokens to `EdendaleColors`, and add the two table rows
-  and the "Playlist selection uses…" paragraph to this branch's `DESIGN.md`,
-  copied verbatim from `git show origin/apple-27.0:DESIGN.md`.
-- [x] **B.5.2** Extend `PlaylistEntry` with an artwork path and runtime, from
-  `LibraryEpisodeEntity.stillPath`, the show's or movie's `backdropPath`, and
-  `runtimeMinutes`.
-- [x] **B.5.3** Restyle `PlaylistRow`; scroll to the current entry when the
-  panel opens; TV focus applies the active style.
-
-**On device:**
-- [ ] **B.5.D1** TV: moving focus through the list shows the white row on the
-  focused item and the playing indicator on the current one.
-
-### B.6 — Speed changes and seeks (DIFF §3.2)
-
-Verification only; Media3 already keeps the last frame on screen.
-
-- [x] **B.6.D1** Rapid play/pause at 1.5× doesn't stall the clock.
-- [x] **B.6.D2** Changing speed during playback never shows a black frame.
-- [x] **B.6.D3** A seek while paused shows the new frame.
-
-If any check fails, record it in the Deviations log with the device and file.
-Don't build a workaround without asking the owner.
-
----
-
-## Section C — Binge flow and system integration
-
-### C.1 — Episode progression rules (DIFF §3.4)
-
-**Rules:**
-- **Next episode:** among the show's stored episodes, the one with the smallest
-  (season, episode) that is strictly greater than the current one.
-  - It crosses seasons, and duplicate encodes of the same (season, episode) are
-    skipped.
-  - Season 0 specials advance among themselves and then into season 1; main
-    seasons never fall back to season 0.
-  - It returns nothing when the current episode isn't in the show.
-- **Up Next window:** offer the next episode when the remaining time is more
-  than 0 and at most 30 s, Loop is off, the duration is known, and a next
-  episode exists.
-- **Next-up for Continue Watching:** for each show, the furthest completed
-  (season, episode) in watch progress. Only shows with no episode in progress
-  get a candidate.
-
-**Checklist:**
-- [x] **C.1.1** A pure `EpisodeProgression` object over plain data (season,
-  episode, id or URI), with no Room types.
-
-**Tests (JVM):**
-- [x] **C.1.T1** Port every case from `EpisodeProgressionTests` and
-  `UpcomingEpisodePreviewTests`: crossing seasons, duplicates, specials into
-  season 1, no fallback to season 0, the last episode, an episode not in the
-  show, Loop on, an unknown duration, and the 30 s boundary.
-
-### C.2 — Auto-advance and the Up Next card (DIFF §3.4)
-
-**Rules:**
-- At the natural end of an episode (`STATE_ENDED`; `PlayerLogic.isNaturalEnd`
-  is 95 % or within 2 s of the end), write completed progress, then play the
-  next episode in place, staying in PiP if it is active. With no next episode,
-  finish as today.
-- A newer manual play request (the playlist panel, the Up Next card, media keys)
-  cancels a pending advance. Use a generation counter.
-- Finished episodes keep their completed state; switching never overwrites it
-  with a partial position.
-- **Up Next card:**
-  - It appears top-trailing during the last 30 s of a TV episode that has a
-    stored successor (the C.1 window). It's recomputed on every tick, so seeking
-    back hides it.
-  - It shows the episode still (falling back to the show backdrop), the episode
-    code (`S01E02`), and the title. Selecting it plays that episode.
-  - It's hidden when Loop is on, for movies, when the duration is unknown, on
-    the last stored episode, and in PiP.
-  - It stays reachable while the controls are visible, can take focus on TV with
-    a visible focus state, and uses a fade under reduced motion.
-
-**Checklist:**
-- [x] **C.2.1** Replace `finish()` on `STATE_ENDED` with the advance logic,
-  reusing `switchTo`.
-- [x] **C.2.2** A pure transition coordinator (generation counter, pending
-  advance, manual override), tested on the JVM.
-- [x] **C.2.3** An `UpNextCard` composable, wired into `PlayerScreen`.
-
-**Tests:**
-- [x] **C.2.T1** (JVM) Port the `PlayerSessionTransitionTests` cases: a natural
-  end advances; a manual request during the advance wins; the last episode
-  finishes; Loop on restarts instead; completion is written before the switch.
-
-**On device:**
-- [x] **C.2.D1** Let an episode end: the next one starts and the first shows as
-  completed. In PiP, the next episode plays inside the PiP window.
-
-**Review notes (2026-10-02, on the uncommitted C.2 work):**
-- [x] **C.2.R1** Store the card's label in natural case and apply
-  `.uppercase()` in the view (A.4). `player_up_next` is in capitals today
-  ("UP NEXT", "ALS NÄCHSTES", and so on).
-- [x] **C.2.R2** `player_up_next_hint` is in all 19 string files but nothing
-  uses it. Use it, for example as the card's click label, or remove it
-  everywhere.
-- [x] **C.2.R3** D-pad Up on the hidden-controls surface now focuses the Up
-  Next card instead of revealing the controls; D3 only redirects Down, for the
-  skip prompt. Keep Up revealing the controls, or record the change and its
-  reason in the Deviations log.
-- The card needs no focus handling of its own when it disappears: since
-  83699b9, `PlayerScreen` seeds focus again whenever the focused node leaves.
-- Resolved 2026-10-03: the label is stored as "Up Next" (and so on) and
-  upper-cased in the card; `player_up_next_hint` is the card's TalkBack click
-  label (Apple's accessibility hint); D-pad Up on the hidden-controls surface
-  reveals the controls again. On TV the card is reached from the revealed
-  controls: Down from the top row focuses it while it shows, and Down from
-  the card returns to the transport row. No Deviations entry is needed.
-
-### C.3 — Continue Watching next-up (DIFF §3.4)
-
-**Rules:**
-- For a show with no episode in progress, suggest the stored episode after the
-  furthest completed one, even if the watched file has since been deleted.
-- The suggestion never writes watch progress.
-- Duplicate show records produce one card.
-- In-progress items keep their current behavior. Next-up cards join the list,
-  ordered by the completed episode's last-watched time. The shelf keeps its
-  12-item cap.
-
-**Checklist:**
-- [x] **C.3.1** Extend `continueWatching` in `LibraryPresentation.kt` (pure)
-  with next-up entries (fraction 0, no progress bar).
-- [x] **C.3.2** Pick duplicate copies deterministically with D.5's preferred
-  copy (until D.5 lands: the first by natural path order) instead of
-  `toMap()`'s last-one-wins.
-
-**Tests (JVM):**
-- [x] **C.3.T1** Port `ContinueWatchingTests`: next-up after the furthest
-  completed episode; none when an episode is in progress; it works after the
-  file was deleted; no progress writes; duplicate shows give one card; the cap
-  of 12; ordering.
-
-### C.4 — Remove the timed auto-skip (D6)
-
-- [x] **C.4.1** Delete `RECAP_LENGTH_MILLIS`, `CREDITS_LENGTH_MILLIS`,
-  `MINIMUM_SKIPPABLE_MILLIS`, `recapSkipTargetMillis`, and `creditsStartMillis`
-  from `PlayerLogic`; the `recapPending` / `creditsHandled` logic and the skip
-  parts of `onPlaybackTick` from `PlayerActivity`; `skipRecap` and
-  `skipCredits` from `PlayerChromeState`; the two toggles from the Playback
-  section; the strings `player_skip_recap`, `player_skip_recap_detail`,
-  `player_skip_credits`, and `player_skip_credits_detail` from every locale;
-  and their tests.
-- [x] **C.4.2** On the first launch after the upgrade, remove the stored keys
-  `player.skipRecap` and `player.skipCredits`. Skip Prompts never reads them.
-- [x] **C.4.3** Update the KDoc on `isNaturalEnd`, which explains its 95 % arm
-  through skip-credits.
-
-**Tests (JVM):**
-- [x] **C.4.T1** With `player.skipRecap = true` and `player.skipCredits = true`
-  stored, Skip Prompts still reads as off.
-
-### C.5 — Skip prompts via TheIntroDB (DIFF §3.5)
-
-**Rules:**
-- **Opt-in.** `player.segmentPromptsEnabled`, default **off**, including on
-  upgraded installs.
-- **Request:** `GET https://api.theintrodb.org/v3/media` with the query
-  parameters `tmdb_id`; `season` and `episode` for episodes (with the **show's**
-  TMDB id and the stored season and episode numbers); and `duration_ms`
-  (rounded). Header `Accept: application/json`. Timeout 8 s. No cookies and no
-  cache (`useCaches = false`).
-- **Skip the lookup** when the TMDB id is outside 1…10,000,000; when the season
-  or episode is 0 or less (so season 0 specials get no lookup); or when the
-  duration is unknown, 0 or less, or over 21,600 s.
-- **Response:**
-  - 404 means no segments. Any other non-200 status is an error, and no prompt
-    shows.
-  - 429 starts a provider-wide cooldown: the largest of `Retry-After`,
-    `X-RateLimit-Reset`, and `X-UsageLimit-Reset` (seconds), with a minimum of
-    60 s. No request is sent until it ends. One `IntroDbService` serves the
-    whole app (Apple's `IntroDBService.shared`), so the cooldown holds across
-    items and player sessions.
-  - Reject a body whose `tmdb_id`, `type` (`movie` or `tv`), `season`, or
-    `episode` doesn't match the request.
-- **Decoding** (`intro`, `recap`, and `credits` arrays of
-  `{start_ms, end_ms}`, each value nullable):
-  - Drop entries where both values are null.
-  - Credits need `start > 0`. A null credits end means "until the end of the
-    file", and that segment `reachesEnd`.
-  - Intro and recap need an end; a null start means 0.
-  - Keep a segment only when `0 ≤ start < end ≤ duration`.
-  - Deduplicate, drop **every** segment that overlaps another (never decide
-    which content to cut), and sort by start.
-- **Prompt:**
-  - A **Skip Intro**, **Skip Recap**, or **Skip Credits** button shows
-    bottom-trailing while the position is inside a segment, even when the
-    controls are hidden. It never skips automatically.
-  - It's hidden while scrubbing (`chrome.isScrubbing`), while a side panel
-    covers the video, and in PiP.
-  - The **S** key on a hardware keyboard activates it. TV: see D3.
-  - After a press, it stays hidden until playback leaves that segment.
-- **What a skip does:** a bounded segment seeks to its end. A credits segment
-  that `reachesEnd` writes completed progress, then advances to the next
-  episode (C.2), finishes, or restarts when Loop is on.
-- **Cache:** in memory only, per player session, with at most 12 entries (clear
-  them all when it's full). It's cleared when the player closes and when the
-  setting is turned off. Nothing is written to disk. Playback never waits for
-  the lookup, and a response for a previous item is discarded (generation
-  token).
-- **Copy:** Settings → Skip Prompts and the panel toggle use Apple's text: "Look
-  up intro, recap, and credits timestamps with TheIntroDB" and "When enabled,
-  TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and
-  your IP address. Skipping always requires a button press."
-
-**Checklist:**
-- [x] **C.5.1** A `com.babasama.edendale.introdb` package with request
-  validation, a transport interface, the decoder, and the cooldown, all pure.
-- [x] **C.5.2** `AndroidIntroDbTransport` in `AndroidEdendaleCore.kt`
-  (`HttpURLConnection`, an 8 s overall timeout, no cache, and response headers
-  exposed for 429).
-- [x] **C.5.3** A pure segment controller: the active segment, suppression, the
-  result of a skip (`Seek(endMs)` or `Finish`), the cache, and enable/disable.
-- [x] **C.5.4** The prompt UI in `PlayerScreen`, the S key, and TV focus (D3).
-- [x] **C.5.5** The Settings → Skip Prompts section and the Playback toggle in
-  the player panel.
-- [x] **C.5.6** README: TheIntroDB as an opt-in network service, and what it
-  receives.
-
-**Tests (JVM):**
-- [x] **C.5.T1** Port all `IntroDBTests` cases: the URL and parameters for a
-  movie and an episode; every skip-the-lookup bound (id 0 and 10,000,001,
-  season 0, episode 0, duration 0 s, 21,600 s accepted, 21,601 s rejected);
-  404; the 429 cooldown with each header and the 60 s floor; a mismatched
-  identity rejected; the decoding rules; overlap rejection; deduplication;
-  sorting.
-- [x] **C.5.T2** Controller: suppression until the range is left; the skip
-  result for bounded and `reachesEnd` segments; the 12-entry cap; clearing on
-  disable; the transport is never called while the setting is off.
-
-**On device:**
-- [ ] **C.5.D1** With the setting on, a title known to TheIntroDB shows Skip
-  Intro, and pressing it (or S on a keyboard) seeks past the intro.
-
-### C.6 — MediaSession and system surfaces (DIFF §3.18, D13)
-
-**Rules:**
-- Add `androidx.media3:media3-session` (same version as the rest, D1).
-  `PlayerActivity` owns one `MediaSession` for its lifetime and releases it in
-  `onDestroy`.
-- Wrap ExoPlayer in a `ForwardingSimpleBasePlayer` (or `ForwardingPlayer`) that:
-  - reports the seek back/forward increments from App Controls and implements
-    `seekBack()` / `seekForward()` with them, following live changes (B.1.6);
-  - advertises `COMMAND_SEEK_TO_NEXT` / `COMMAND_SEEK_TO_PREVIOUS` when a
-    playlist neighbor exists, and routes them to `switchToNeighbor`;
-  - exposes metadata: the title, the episode code or show, and the TMDB artwork
-    URI.
-- Headset buttons, Google Assistant ("pause", "skip forward"), Bluetooth
-  controls, and Android TV's system media UI then reach the player, including in
-  PiP. Keep the `dispatchKeyEvent` handling for the focused window, and never
-  handle a key twice.
-- The PiP actions follow App Controls (B.1).
-- **Audio Output** row in the panel's Playback section, on handhelds only: opens
-  the system output switcher with
-  `androidx.mediarouter.app.SystemOutputSwitcherDialogController.showDialog(context)`
-  (mediarouter 1.8.x). If it returns false, show a short message that the
-  switcher isn't available.
-- The system volume UI belongs to the platform; there's nothing to build
-  (DIFF's volume HUD is Apple-only).
-
-**Checklist:**
-- [x] **C.6.1** Dependency and session lifecycle.
-- [x] **C.6.2** The forwarding player, with increments and next/previous.
-- [x] **C.6.3** The Audio Output row.
-
-**On device:**
-- [ ] **C.6.D1** A Bluetooth headset's play/pause and next buttons work while
-  the player is in PiP; "Hey Google, pause" works; skips follow App Controls.
-- [ ] **C.6.D2** Android TV: the system media UI shows the title and controls.
-
----
-
-## Section D — SMB hardening and library rules
-
-### D.1 — Buffered SMB reads (DIFF §3.13)
-
-Why: Media3 reads in small pieces, so one SMB round trip per read caps
-throughput below video bitrates over a phone hotspot, Tailscale, or a VPN.
-
-**Rules:**
-- A worker thread fetches **1 MiB** chunks and keeps up to **48 MiB** ahead of
-  the read position, within a **64 MiB** cache.
-- The chunk a blocked read needs always goes first, so a seek never waits
-  behind read-ahead.
-- After a failure on a file that opened once, drop the connection and reopen it
-  with delays of **0.25, 0.5, 1, 2, 4, and 8 s**. The read fails only after
-  every retry has failed.
-- An idle connection (paused playback) gets a **keep-alive after 20 s**.
-- Cancellation (`close()`, player release) fails blocked reads at once. The
-  "connection lost" message names the host.
-- **Android addition:** on low-memory devices (`ActivityManager.isLowRamDevice()`
-  or a `memoryClass` under 192 MB), keep 16 MiB ahead within a 24 MiB cache.
-- Media3 reuses one `DataSource` for a media period and reopens it on every
-  seek. Keep the buffered source (connection and cache) across `close()` →
-  `open()` for the same URI, so the container index at the end of the file
-  stays cached. Release it when a different URI opens, or after 30 s without an
-  open.
-
-**Checklist:**
-- [x] **D.1.1** A pure `BufferedByteSource` over an interface (`open`,
-  `read(position, buffer, offset, length)`, `length`, `keepAlive`, `close`),
-  with an injectable clock and sleeper so tests run in virtual time.
-- [x] **D.1.2** A jcifs-ng implementation of the interface over
-  `SmbRandomAccessFile` (keep-alive is a cheap metadata call).
-- [x] **D.1.3** `SmbDataSource` serves reads from the buffered source; remove
-  the 512 KiB `readAhead` path.
-
-**Tests (JVM):**
-- [x] **D.1.T1** Port `BufferedByteSourceTests`: sequential reads fill
-  read-ahead up to the limit; a seek gets its chunk first; reconnect after a
-  failure follows the delay sequence; the read fails after the last retry;
-  keep-alive after 20 s idle; cancellation unblocks a waiting read; the cache
-  never exceeds its limit; low-memory sizing; reuse across close/open for the
-  same URI.
-
-**On device:**
-- [ ] **D.1.D1** Play a high-bitrate SMB file over a phone hotspot or
-  Tailscale: no stalls at the file's bitrate. Turning Wi-Fi off and on mid-play
-  resumes after a reconnect.
-
-### D.2 — Source records (Room version 3)
-
-**Rules** (DIFF §3.12, "Library integration"):
-- `library_folder` gains nullable columns: `kind` (raw values from H.1: `local`,
-  `smb`, `nfs`, `sftp`, `webdav`, `s3`, `gdrive`, `onedrive`, `dropbox`),
-  `displayPath`, `accountKey`, `lastScannedAt` (epoch milliseconds),
-  `changeCursor` (reserved for later), and `status` (`offline`, `needsSignIn`,
-  or null).
-- Migration 2 → 3 adds the columns and fills in `kind` (`smb://` → `smb`,
-  `content://` → `local`). No data is dropped.
-
-**Checklist:**
-- [x] **D.2.1** Turn on schema export first: `exportSchema = true` and the KSP
-  argument `room.schemaLocation` set to `$projectDir/schemas` (also add that
-  folder to the `androidTest` assets). Build at version 2 and commit the
-  version 2 schema JSON.
-- [x] **D.2.2** Add the columns, set `version = 3`, add `MIGRATION_2_3`, and
-  register it next to `MIGRATION_1_2` in `EdendaleApplication`. Commit the
-  version 3 schema JSON.
-
-**Tests:**
-- [x] **D.2.T1** (JVM) The `kind` backfill function.
-- [x] **D.2.T2** (instrumented) `MigrationTestHelper` from 2 to 3 keeps every
-  row and fills in `kind`.
-
-### D.3 — Rescan throttle and per-source status
-
-**Rules:**
-- The automatic rescan on each Downloaded visit skips **remote** sources
-  scanned in the last **15 minutes**. Local sources always rescan. A manual
-  Rescan always scans.
-- Failures are recorded **per source**: `offline` for unreachable hosts and
-  timeouts, `needsSignIn` for authentication failures. They show on that
-  source's row in Settings → Sources and in Downloaded, not as a library-wide
-  error. The next successful scan clears them.
-- `lastScannedAt` is set after every successful scan.
-
-**Checklist:**
-- [x] **D.3.1** Pure throttle and error-classification functions.
-- [x] **D.3.2** `LibraryRepository.scan` records `status` and `lastScannedAt`;
-  `rescanAll` applies the throttle; a manual rescan bypasses it (add a Rescan
-  action for each source if none exists).
-- [x] **D.3.3** Source rows show the status with a retry action.
-
-**Tests (JVM):**
-- [x] **D.3.T1** The throttle at 14:59, 15:00, and 15:01 since the last scan;
-  local sources are never throttled; jcifs authentication errors classify as
-  `needsSignIn` and I/O errors as `offline`.
-
-### D.4 — Keep logins; Settings → Accounts
-
-**Rules:**
-- **Removing a source never deletes its saved login or account** (DIFF §3.12;
-  Apple §J.11, decision 5).
-- **Settings → Accounts** lists every saved login (SMB host and user for now;
-  Section H adds cloud accounts and other servers) with the number of sources
-  using it, and a Remove action with confirmation. Removing a login keeps its
-  sources; their next scan shows "needs sign-in".
-
-**Checklist:**
-- [x] **D.4.1** `removeFolder` stops calling `removeCredentials`. Update
-  `remove_source_message_smb` and `remove_source_message_generic` in every
-  locale to say the login stays in Settings → Accounts.
-- [x] **D.4.2** `SmbCredentialsStore` can list its hosts; add the Accounts
-  section with usage counts.
-
-**Tests (JVM):**
-- [x] **D.4.T1** Usage counts per host (case-insensitive host match, like
-  `SmbClient.hostOf`).
-
-### D.5 — Play From: several copies of one title (DIFF §3.11)
-
-**Rules:**
-- The same TMDB id can be imported from several sources, and each file stays
-  its own record.
-- **Order:** the page's own copy first, then copies in local folders, then the
-  rest by source name (natural, case-insensitive comparison).
-- **Play** starts the first copy whose source isn't `offline` or `needsSignIn`,
-  or the first copy when every source is.
-- Movies get an icon-only **Play From** menu beside Play when there is more
-  than one copy. Episodes get a **Play From** section in the episode's context
-  menu (long-press; on TV, the menu key), and the subtitle adds "· N sources".
-- Each menu row shows the source name, then `Kind · filename`, plus
-  "· Unavailable" when the source is offline.
-- Episode slots merge every copy of the show into one list keyed by (season,
-  episode), in season and episode order (ties broken by path).
-
-**Checklist:**
-- [x] **D.5.1** Pure ordering, preference, and slot functions.
-- [x] **D.5.2** UI on the local movie and show details, and everywhere Play
-  starts a local file (Continue Watching uses the preferred copy).
-
-**Tests (JVM):**
-- [x] **D.5.T1** Port `PlaybackSourcesTests`.
-
----
-
-## Section E — Audio
-
-### E.1 — Equalizer profiles and Audio Booster (DIFF §3.6)
-
-**Rules:**
-- Profiles (raw values): `flat`, `movies` (**default**), `music`, `dialogue`,
-  `nightMode`.
-- Bands: 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, and 16000 Hz.
-
-  | Profile | Preamp (dB) | Bands (dB) |
-  |---|---|---|
-  | Flat | 0 | 0 0 0 0 0 0 0 0 0 0 |
-  | Movies | −8 | 8 5 3 0 0 2 3 2 1 0 |
-  | Music | −4 | 4 2 0 −1 −1 2 3 3 2 1 |
-  | Dialogue | −6 | −3 −1 0 5 6 5 3 1 0 −1 |
-  | Night Mode | −5 | −5 −2 1 4 5 5 3 1 0 −1 |
-
-- Night Mode is equalization only; it is not a compressor.
-- User adjustments (preamp and each band) are stored separately and added to
-  the profile. **Changing the profile resets them.** Every value clamps to
-  −20…+20 dB.
-- **Audio Booster** (default off) adds **+10 dB** to the preamp, through the EQ
-  rather than the volume. The effective preamp clamps to ±20 dB. Turning the
-  booster off restores the previous setting.
-- Settings apply live and carry across files. Keys:
-  `audio.enhancementProfile` (raw value), `audio.enhancementPreamp` (float),
-  `audio.enhancementBands` (a JSON array of 10 floats; any other length reads as
-  zeros), and `audio.boosterEnabled` (boolean).
-- **Filter**, matching Apple's `AudioEQProcessor.swift`: each band is an RBJ
-  peaking biquad with a 1-octave bandwidth:
-  - `A = 10^(gain/40)`, `w0 = 2π·f/fs`,
-    `alpha = sin(w0) · sinh(ln(2)/2 · 1 · w0/sin(w0))`
-  - `b0 = 1 + alpha·A`, `b1 = −2·cos(w0)`, `b2 = 1 − alpha·A`,
-    `a0 = 1 + alpha/A`, `a1 = −2·cos(w0)`, `a2 = 1 − alpha/A`, all divided by
-    `a0`.
-  - A band at or above the Nyquist frequency, or with |gain| < 0.01 dB, passes
-    through.
-  - One cascade per channel. The preamp gain `10^(preamp/20)` multiplies the
-    cascade's output.
-- When the effective preamp and every band are 0, audio passes through
-  bit-exact.
-- **Android specifics:**
-  - A `BaseAudioProcessor` that accepts `PCM_16BIT` and `PCM_FLOAT` at any
-    sample rate and channel count, and computes in floating point with state
-    per channel. 16-bit output clamps to [−32768, 32767]. (Apple has no limiter;
-    Android must never wrap around.)
-  - Install it through a `DefaultRenderersFactory` subclass that overrides
-    `buildAudioSink(context, enableFloatOutput, enableAudioOutputPlaybackParams)`
-    to return
-    `DefaultAudioSink.Builder(context).setAudioProcessors(arrayOf(eq)).build()`.
-  - Media3 evaluates `isActive()` only when the sink reconfigures. So keep the
-    processor active, pass audio through bit-exact while the settings are flat,
-    and apply new coefficients at the next buffer boundary (no reconfiguration,
-    no glitch).
-  - Passthrough and offload (AC3, E-AC3, or DTS sent undecoded to a receiver)
-    bypass audio processors. Settings → Audio Enhancement says the EQ applies
-    only to audio Edendale decodes.
-  - Don't use `android.media.audiofx.Equalizer`; its bands depend on the
-    device.
-- **UI:** Settings → Audio Enhancement (a profile menu, preamp and band sliders
-  or steppers, Reset Adjustments, and the booster toggle). The player panel's
-  Playback section has the Audio Booster toggle with Apple's detail text,
-  "Increase audio gain for quiet recordings".
-
-**Checklist:**
-- [x] **E.1.1** Pure profile model, clamping, persistence parsing, coefficient
-  function, and a pure DSP core (`process(FloatArray, channels)`).
-- [x] **E.1.2** `EqAudioProcessor` and the renderers-factory wiring in
-  `PlayerActivity`.
-- [x] **E.1.3** The Settings section and the panel toggle.
-
-**Tests (JVM):**
-- [x] **E.1.T1** Port `AudioEnhancementTests`: the profile table, the Movies
-  default, clamping, the booster's +10 dB with clamping, reset on profile
-  change, unknown raw values, and a wrong band count.
-- [x] **E.1.T2** Coefficients for (1 kHz, +6 dB, 48 kHz) and (60 Hz, −5 dB,
-  44.1 kHz) match the formula; bands pass through at or above Nyquist (the 12,
-  14, and 16 kHz bands at 22.05 kHz) and when |gain| < 0.01 dB.
-- [x] **E.1.T3** DSP: a sine at a band's center frequency gains that band's
-  boost within ±0.5 dB; flat settings are bit-exact; 16-bit output clamps at
-  full scale.
-
-**On device:**
-- [ ] **E.1.D1** Switching profile mid-play is glitch-free; the booster is
-  audibly louder; HDMI passthrough to a receiver is unaffected.
-
-### E.2 — DTS and TrueHD decoding (D5)
-
-- [x] **E.2.1** Record the owner's D5 choice here: (a) Jellyfin decoder (`org.jellyfin.media3:media3-ffmpeg-decoder`), confirmed by the owner on 2026-10-02.
-- [x] **E.2.2** For (a): add `org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1`
-  and call `setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)` (platform
-  decoders first, FFmpeg as the fallback), and update the README's licence
-  section for a GPL-3.0 APK. For (b): an NDK build of Media3's FFmpeg extension
-  with an LGPL-only FFmpeg configured for just the needed audio decoders, a
-  checked-in build script, and CI that builds it without secrets.
-- [x] **E.2.3** Generated fixtures (A.5.6) with a DTS track and with a TrueHD
-  track play with sound on a phone that has neither decoder, and the EQ applies
-  to their decoded audio.
+## Completed sections summary
+
+The following sections are fully implemented, tested, and landed on `android-27.0`. Full audit logs and commits are in the [Tracking](#tracking) table, [Deviations log](#deviations-log), and [Handoff log](#handoff-log).
+
+| Section | Scope | Key Commits |
+|---|---|---|
+| **Section A — Foundations** | A.1–A.5: Media3 1.9.0 upgrade, `PlayerPreferences`, 18-locale string infrastructure, `androidTest` suite & CI workflow | `b0c04f0`–`1c9c58d` |
+| **Section B — Player controls and state** | B.1–B.6: App Controls (skip lengths 10/15/30 s, hold rates 0.25–3.00×), persisted state & per-title memory (`ContentPlayerPreferences`), video/audio track pickers & panel reorder, subtitle appearance & visible rect placement (`SubtitleAppearance`), playlist panel redesign, speed/seek verification | `9b2fbd5`–`7b1c028` |
+| **Section C — Binge flow and system integration** | C.1–C.6: Episode progression rules (`EpisodeProgression`), auto-advance & `UpNextCard`, Continue Watching next-up shelf, removed timed auto-skip, TheIntroDB skip prompts (`introdb`), `MediaSession` & system surfaces (`ForwardingPlayer`) | `1f01315`–`eb1f5f9` |
+| **Section D — SMB hardening and library rules** | D.1–D.5: Buffered SMB reads (`BufferedByteSource`), Room v3 source records with `kind`/`accountKey`, rescan throttle (15 min) & per-source status (`offline`/`needsSignIn`), keep logins in Settings → Accounts, Play From multi-source resolution | `bdcc646`–`94970b0` |
+| **Section E — Audio** | E.1–E.2: 10-band peaking EQ & Audio Booster (+10 dB) processor (`EqAudioProcessor`), DTS & TrueHD software decoding via Jellyfin FFmpeg extension (`org.jellyfin.media3:media3-ffmpeg-decoder`) | `20c1f63`, `c58c5fb` |
+| **Section J — Large screens and keyboard** | J.1–J.6: Extended navigation child rows, Continue Watching/Movies pages, hardware keyboard shortcuts (`onProvideKeyboardShortcuts`), Link Source form keyboard navigation, docked player panels (≥1100 dp), season shelf scrubber | `983546a`, `aa8b2ba` |
+| **Section K — Settings layout** | K.1: Settings section order verified across handhelds and TV | `08c55db` |
 
 ---
 
 ## Section F — Picture adjustments and video enhancement
 
-### F.1 — Effects plumbing (Android-specific)
+**Implementation status:**
+F.1–F.7 (Effects plumbing with on-demand install and REDRAW support, Color adjustments GLSL port, AMD FSR 1 EASU upscaler, CAS sharpening with divide-by-zero guard, temporal denoise with history textures, performance budget governor and capability check, and Enhancement UI in player panel) are fully implemented and unit/instrumented tested. Landed in `bba68d8`, `948a8d5`, and `753dd89`.
 
-**Rules:**
-- Use Media3's video effects: `ExoPlayer.setVideoEffects(...)` with Edendale
-  `GlEffect`s, from `androidx.media3:media3-effect` (same version, D1).
-- **Install on demand.** Media3 requires `setVideoEffects` before `prepare()`
-  to set up the effects pipeline at all. When nothing needs effects at the start
-  of playback (Picture neutral and Enhancement Off), don't install it, so video
-  goes straight from the decoder to the screen. Turning something on mid-play
-  installs the pipeline and re-prepares at the current position, the way
-  `attachOnlineSubtitle` already re-prepares.
-- **Live changes.** Effects read their settings from a thread-safe holder on
-  each frame. While paused, call `setVideoEffects(VideoFrameProcessor.REDRAW)`
-  so the paused frame updates (Show Original, sliders).
-- **Output size.** In the effects path, the output takes the `SurfaceView`'s
-  size. Call `SurfaceHolder.setFixedSize` with the target size (F.3), and treat
-  the panel's real resolution as the "display":
-  `Display.getMode().physicalWidth` / `physicalHeight`. TV boxes often draw
-  their interface at 1080p on a 4K panel, and without this they would downscale
-  4K video.
-- **HDR and Dolby Vision:** bypass every effect. Picture and Enhancement show
-  "Not available for HDR video". Detect HDR from the selected video track's
-  `Format.colorInfo` (`C.COLOR_TRANSFER_ST2084` or `C.COLOR_TRANSFER_HLG`) or a
-  Dolby Vision MIME type.
-- Shaders are GLSL ES 3.0 fragment shaders under `src/main/assets/shaders/`,
-  drawn by `BaseGlShaderProgram` subclasses. Keep the passes in plain classes
-  behind a thin `GlEffect` wrapper, so they can move into a custom renderer if
-  G.1 needs one.
+Remaining items are manual hardware device checks and benchmarks:
 
-**Checklist:**
-- [x] **F.1.1** The dependency, the install-on-demand logic, and the
-  re-prepare path.
-- [x] **F.1.2** The settings holder, and REDRAW while paused.
-- [x] **F.1.3** The fixed surface size from the target, using the physical
-  display mode.
-- [x] **F.1.4** The HDR and Dolby Vision bypass, with the panel message.
-- [ ] **F.1.5** **On device:** compare effects installed but neutral against
-  effects not installed: no visible difference, no added stutter, and 4K video
-  on a 4K TV box still renders at 4K.
-- [ ] **F.1.6** **On a real Android TV set** (not only a box): check whether
-  video drawn through the effects path loses the TV's own picture processing.
-  Record the finding. D11 keeps TV at Off until this passes.
-
-### F.2 — Picture adjustments (DIFF §3.7)
-
-**Rules:**
-
-| Adjustment | Range | Neutral | Step |
-|---|---|---|---|
-| Brightness | 0–2 | 1 | 0.05 |
-| Contrast | 0–2 | 1 | 0.05 |
-| Gamma | 0.25–3 | 1 | 0.05 |
-| Saturation | 0–3 | 1 | 0.05 |
-| Hue | 0–360° | 0 | 5° |
-
-- Stored on the device as one JSON object under the key `video.adjustments`
-  (fields `brightness`, `contrast`, `gamma`, `saturation`, `hue`), normalized on
-  load: a non-finite value becomes neutral, then the value clamps and snaps to
-  its step.
-- **Show Original** temporarily applies neutral values without changing the
-  stored ones. **Reset** returns every value to neutral.
-- Neutral values skip the effect entirely.
-- **Math.** Port `ColorAdjustment.metal` exactly in one GLSL pass. Media3's
-  built-in `Brightness`, `Contrast`, and `HslAdjustment` use different math and
-  ranges. In order:
-  1. `rgb *= brightness`
-  2. `rgb = (rgb − 0.5) · contrast + 0.5`
-  3. if gamma ≠ 1: `rgb = pow(max(rgb, 0), 1/gamma)`
-  4. `luma = dot(rgb, (0.2126, 0.7152, 0.0722))`; `rgb = mix(luma, rgb, saturation)`
-  5. rotate the hue about the axis (1, 1, 1)/√3 by `hue` degrees (skip when
-     |hue| < 0.001)
-  6. clamp to 0…1
-- TV uses −/+ steppers instead of sliders.
-- The panel section is **Picture**, after Aspect Ratio.
-
-**Checklist:**
-- [x] **F.2.1** The pure model, normalization, and JSON.
-- [x] **F.2.2** `ColorAdjustmentEffect`, the GLSL port.
-- [x] **F.2.3** The panel UI with Show Original and Reset.
-
-**Tests:**
-- [x] **F.2.T1** (JVM) Normalization (snapping, clamping, non-finite values),
-  neutral detection, and the JSON round trip.
-- [x] **F.2.T2** (JVM) A Kotlin reference of the color math gives hand-computed
-  results: neutral is the identity; saturation 0 gives the luma; a 120° hue turn
-  moves pure red to pure green.
-- [x] **F.2.T3** (instrumented) Render a solid-color texture through the
-  effect, read the pixels back, and match the Kotlin reference within 1/255.
-
-### F.3 — Upscaler (DIFF §3.16; Apple §E.2)
-
-**Rules:**
-- **Target resolution:** port `SpatialUpscaler.targetResolution` exactly,
-  including its even-size rounding:
-  - A source at or above the display in both dimensions isn't upscaled
-    (sharpen only).
-  - A source below 1080p (width under 1920 and height under 1080) scales to fit
-    within min(1920, display width) × min(1080, display height).
-  - A 1080p source scales to the display when the display is 4K (width at least
-    3840 or height at least 2160).
-  - "Display" means the video's on-screen viewport in physical pixels: the
-    physical display mode (F.1) on TV, and the visible video rectangle on phones
-    and tablets.
-- **Upscaler:** AMD FSR 1 EASU (MIT licence; keep its copyright notice in the
-  shader and the README) takes the place of Apple's MetalFX. Prototype first
-  with Media3's built-in `LanczosResample.scaleToFit(width, height)`, which is
-  also Apple's fallback, to prove F.1's plumbing before writing EASU.
-- **Benchmark** Qualcomm's Snapdragon GSR (BSD-3-Clause) against EASU on a
-  mid-range phone. Use GSR only if it's clearly cheaper at similar quality, and
-  record the numbers in Findings.
-- The panel's resolution label uses Apple's format, `W×H → W×H` (for example
-  `1280×720 → 1920×1080`), and omits the target when there's no upscale.
-
-**Checklist:**
-- [x] **F.3.1** The pure target-resolution function and the label.
-- [x] **F.3.2** The Lanczos prototype with F.1's surface sizing.
-- [x] **F.3.3** The EASU GLSL port.
-- [ ] **F.3.4** The GSR benchmark, recorded in Findings.
-
-**Tests:**
-- [x] **F.3.T1** (JVM) Port the `targetResolution*` cases from
-  `MetalEnhancementPipelineTests` (720p, 1080p, and 4K sources; even
-  dimensions), and add 720p on 1080p and 4K displays, 1080p on 1080p and 4K,
-  4K on 4K, odd sizes rounded to even, and ultrawide and portrait sources.
-- [x] **F.3.T2** (instrumented) EASU on a step-edge image: the output size is
-  correct and the edge stays monotonic, with no ringing beyond ±2/255.
-
-### F.4 — Contrast Adaptive Sharpening (Apple §E.3)
-
-- Port the math in `CASShader.metal` exactly (not AMD's reference variant), so
-  Sharpness means the same thing on both platforms. Sharpness ranges 0–1,
-  default 0.5, step 0.05; 0 skips the pass.
-- [x] **F.4.1** The CAS GLSL port.
-- [x] **F.4.T1** (instrumented) Sharpness 0 is the identity; on a blurred edge,
-  local contrast grows with sharpness; flat areas don't change.
-
-### F.5 — Temporal denoise (Apple §E.4)
-
-- Port `TemporalDenoise.metal`: a pair of history textures, blended with the
-  current frame where the difference is under the motion threshold (0.08).
-  Strength ranges 0–1, default 0.5. It runs only in High Quality.
-- Reset the history on seek (`GlShaderProgram.flush()`), preset change, item
-  switch, and size change.
-- [x] **F.5.1** The denoise GLSL port with history handling.
-- [x] **F.5.T1** (instrumented) A static noisy input converges toward its mean;
-  a moving edge doesn't ghost (a difference above the threshold uses the current
-  frame); `flush()` clears the history.
-
-### F.6 — Budget and capability (Apple §E.6)
-
-**Rules:**
-- Budget: under **8 ms** of GPU time per frame for all enhancement passes
-  together. Over budget, drop denoise first, then the upscale. Sharpening at
-  the source size always stays.
-- Measure with GPU timer queries (`GL_EXT_disjoint_timer_query`) where the
-  driver supports them, reading each result a few frames later so nothing
-  stalls. Otherwise use ExoPlayer's dropped-frame count (`DecoderCounters`).
-  Use a rolling window with hysteresis so stages don't flap on and off.
-- Also step down when `PowerManager.getCurrentThermalStatus()` reaches
-  `THERMAL_STATUS_MODERATE` or battery saver is on.
-- **Capability check (D11):** run once per device and keep the result locally:
-  OpenGL ES 3.0 or later, not `isLowRamDevice()`, and a short offscreen
-  benchmark of the Balanced passes at 1080p that stays under the budget.
-  Devices that fail start at Off, but the user can still pick any preset.
-- Nothing about performance leaves the device.
-
-**Checklist:**
-- [x] **F.6.1** A pure governor state machine (inputs: frame times, thermal
-  status, battery saver; output: the active stages), tested on the JVM.
-- [x] **F.6.2** Timer-query or dropped-frame measurement, and the thermal
-  listener.
-- [x] **F.6.3** The capability check and its cached result.
-
-**Tests (JVM):**
-- [x] **F.6.T1** An over-budget sequence drops denoise, then the upscale; it
-  recovers with hysteresis; `THERMAL_STATUS_MODERATE` forces a step down;
-  sharpening is never dropped.
-
-### F.7 — Enhancement UI
-
-- The panel's last section is **Enhancement**, with: a Preset menu (Off,
-  Sharpen Only, Balanced, High Quality, Apple's names); a Sharpness slider
-  (0–1, step 0.05, disabled when Off); a Denoise slider (High Quality only); a
-  Show Original toggle; the resolution label (F.3); and, later, Motion
-  Smoothing (G.5).
-- The settings live in memory for the app process and aren't saved (D11).
-- TV uses −/+ steppers.
-- [x] **F.7.1** The UI.
-- [ ] **F.7.D1** **On device:** a 720p file on a 1080p phone shows
-  `1280×720 → 1920×1080`; Show Original toggles while paused (REDRAW); changing
-  the preset doesn't stall playback.
-
-### F.8 — Enhancement acceptance
-
-- [ ] **F.8.1** A 720p test file upscaled to 1080p on a phone, and to 4K on a TV
-  box, looks visibly sharper than Off and stays within budget on the reference
-  devices. Turning everything Off restores the direct path from the next item.
-- [ ] **F.8.2** Findings record each device, its GPU, the time per pass, and the
-  stages the governor kept.
+- [ ] **F.1.5** **On device:** compare effects installed but neutral against effects not installed: no visible difference, no added stutter, and 4K video on a 4K TV box still renders at 4K.
+- [ ] **F.1.6** **On a real Android TV set** (not only a box): check whether video drawn through the effects path loses the TV's own picture processing. Record the finding. D11 keeps TV at Off until this passes.
+- [ ] **F.3.4** The Snapdragon GSR benchmark against EASU on a mid-range phone, recorded in Findings.
+- [ ] **F.7.D1** **On device:** a 720p file on a 1080p phone shows `1280×720 → 1920×1080`; Show Original toggles while paused (REDRAW); changing the preset doesn't stall playback.
+- [ ] **F.8.1** A 720p test file upscaled to 1080p on a phone, and to 4K on a TV box, looks visibly sharper than Off and stays within budget on the reference devices. Turning everything Off restores the direct path from the next item.
+- [ ] **F.8.2** Findings record each device, its GPU, the time per pass, and the stages the governor kept.
 
 ---
 
 ## Section G — Frame generation experiment (DIFF §3.17; Apple §I; D12)
 
-**Scope:** phones and tablets only; sources at 30 fps or less; displays whose
-refresh rate is at least twice the source rate (`Display.getSupportedModes()`).
-Never on Android TV, because TVs do their own motion smoothing. Off by default.
+**Scope:** phones and tablets only; sources at 30 fps or less; displays whose refresh rate is at least twice the source rate (`Display.getSupportedModes()`). Never on Android TV, because TVs do their own motion smoothing. Off by default.
 
-### G.1 — Feasibility and go/no-go
+### G.1 — Feasibility status
+- [x] **G.1.1** One-day test: `MidpointFrameEffect` with 50/50 blend proved Media3 1.9.0's effects path releases added frames on time, sync holds, and seeks/flushes behave (`3bf5199`, Findings — G.1).
+- [x] **G.1.2** Custom renderer: not needed, since G.1.1 passed on Media3 1.9.0 (nothing to build).
+- [ ] **G.1.3** Estimate the cost: Coarse motion-estimation probe built (`CoarseMotionEstimationInstrumentedTest`), tested on emulator. Real phone timings not run.
+- [x] **G.1.4** **Findings — G.1** recorded with recommendation: conditional go pending phone timings. **Stop for owner review before G.2.**
 
-- [x] **G.1.1** One-day test: a custom `GlShaderProgram` that outputs an extra
-  frame at the midpoint timestamp between two input frames (start with a plain
-  50/50 blend). Media3 documents that effects which change frame timestamps
-  aren't supported during playback, so check:
-  - Are the midpoint frames released on time (frame timestamps from
-    `VideoFrameMetadataListener`)?
-  - Does A/V sync hold?
-  - Do seeks and flushes behave?
-  - Does the display switch to twice the frame rate?
-- [ ] **G.1.2** If G.1.1 fails, prototype a custom renderer instead: ExoPlayer
-  renders into a `SurfaceTexture` Edendale owns, and a GL thread runs
-  enhancement and interpolation and presents each frame with
-  `eglPresentationTimeANDROID`, using the buffer timestamps. Request twice the
-  frame rate with `Surface.setFrameRate`.
-  Not needed: G.1.1 passed on Media3 1.9.0 (Findings — G.1).
-- [ ] **G.1.3** Estimate the cost: port only the coarse motion-estimation pass,
-  and time it at 1080p on a recent flagship and on a mid-range phone.
-  The port and its timing probe exist (`CoarseMotionEstimationInstrumentedTest`,
-  one command in the README), but they ran only on an emulator with a
-  software GPU. Neither phone was available.
-- [x] **G.1.4** Write **Findings — G.1** below, with the presentation path
-  chosen, the timings, and a go/no-go recommendation. **Stop for owner review
-  before G.2.**
+### G.2 — Motion estimation (Apple §I.1) [Blocked on G.1 go/no-go]
 
-Going ahead needs all of these: a 1080p synthetic frame (24 → 48 fps) in under
-8 ms on a recent flagship; A/V sync within one display refresh; and no crash or
-desync across seeks, pauses, and track switches.
+- [ ] **G.2.1** GLSL ES 3.1 compute shaders porting `MotionEstimation.metal`: coarse 16×16 blocks searched ±16 px with the per-pixel offset cost; a 4×4 refinement searched ±4 px around the coarse vector; and densifying to per-pixel vectors (RG16F), with an optional 3×3 median filter.
+- [ ] **G.2.2** Scene-cut counting on the GPU: a block is unmatched when its best match still differs by more than 0.06 mean luma, and a cut is 30 % or more unmatched blocks. On a cut, the synthetic slot repeats frame N−1, with no CPU readback.
+- [ ] **G.2.3** Sources wider than 1920 px run motion estimation at half resolution.
 
-### G.2 — Motion estimation (Apple §I.1)
+### G.3 — Warping and blending (Apple §I.2) [Blocked]
 
-- [ ] **G.2.1** GLSL ES 3.1 compute shaders porting `MotionEstimation.metal`:
-  coarse 16×16 blocks searched ±16 px with the per-pixel offset cost; a 4×4
-  refinement searched ±4 px around the coarse vector; and densifying to
-  per-pixel vectors (RG16F), with an optional 3×3 median filter.
-- [ ] **G.2.2** Scene-cut counting on the GPU: a block is unmatched when its
-  best match still differs by more than 0.06 mean luma, and a cut is 30 % or
-  more unmatched blocks. On a cut, the synthetic slot repeats frame N−1, with
-  no CPU readback.
-- [ ] **G.2.3** Sources wider than 1920 px run motion estimation at half
-  resolution.
+- [ ] **G.3.1** Port `FrameInterpolation.metal`: a two-way warp at t = 0.5, occlusion-aware blending, and hole filling from frame N.
 
-### G.3 — Warping and blending (Apple §I.2)
+### G.4 — Scheduling and presentation (Apple §I.3–I.4) [Blocked]
 
-- [ ] **G.3.1** Port `FrameInterpolation.metal`: a two-way warp at t = 0.5,
-  occlusion-aware blending, and hole filling from frame N.
-
-### G.4 — Scheduling and presentation (Apple §I.3–I.4)
-
-- [ ] **G.4.1** Port `FrameInterpolationScheduler` as a pure Kotlin state
-  machine: the synthetic frame first and the real frame one refresh later. Show
-  the real frame directly for the first frame, after seeks, after dropped
-  frames, and after gaps of 1.5 frame durations or more. No interpolation while
-  paused or scrubbing.
-- [ ] **G.4.2** Reset on seek, pause, track switch, item switch, and size
-  change. History is committed after interpolating, never before.
+- [ ] **G.4.1** Port `FrameInterpolationScheduler` as a pure Kotlin state machine: the synthetic frame first and the real frame one refresh later. Show the real frame directly for the first frame, after seeks, after dropped frames, and after gaps of 1.5 frame durations or more. No interpolation while paused or scrubbing.
+- [ ] **G.4.2** Reset on seek, pause, track switch, item switch, and size change. History is committed after interpolating, never before.
 - [ ] **G.4.3** Wire it into the presentation path chosen in G.1.
 
-### G.5 — Gating and UI (Apple §I.6)
+### G.5 — Gating and UI (Apple §I.6) [Blocked]
 
-- [ ] **G.5.1** A **Motion Smoothing** toggle in the Enhancement section, shown
-  only when eligible, labeled with the rates (for example `24 fps → 48 fps`).
-- [ ] **G.5.2** The governor turns Motion Smoothing off first when over budget
-  or under thermal pressure, because it costs more than any enhancement stage.
+- [ ] **G.5.1** A **Motion Smoothing** toggle in the Enhancement section, shown only when eligible, labeled with the rates (for example `24 fps → 48 fps`).
+- [ ] **G.5.2** The governor turns Motion Smoothing off first when over budget or under thermal pressure, because it costs more than any enhancement stage.
 
-### G.6 — Tests and acceptance (Apple §I.7–I.8)
+### G.6 — Tests and acceptance (Apple §I.7–I.8) [Blocked]
 
-- [ ] **G.6.T1** (JVM) Port the `FrameInterpolationScheduler` draw-order cases
-  from `FrameInterpolationTests`.
-- [ ] **G.6.T2** (instrumented) Port the GPU cases: a horizontal pan gives
-  non-zero vectors of the right sign; a static scene gives near-zero vectors;
-  unrelated frames trip the scene cut and repeat frame N−1; letterbox bars and
-  flat areas stay unchanged; a fade of about 4 % blends; the interpolated pan
-  lands at the midpoint.
-- [ ] **G.6.D1** **On device:** 30 minutes of 24 fps playback with Motion
-  Smoothing on a flagship. Record the battery drop and thermal state, and
-  review artifacts on pans, cuts, fades, and letterboxed scenes.
+- [ ] **G.6.T1** (JVM) Port the `FrameInterpolationScheduler` draw-order cases from `FrameInterpolationTests`.
+- [ ] **G.6.T2** (instrumented) Port the GPU cases: a horizontal pan gives non-zero vectors of the right sign; a static scene gives near-zero vectors; unrelated frames trip the scene cut and repeat frame N−1; letterbox bars and flat areas stay unchanged; a fade of about 4 % blends; the interpolated pan lands at the midpoint.
+- [ ] **G.6.D1** **On device:** 30 minutes of 24 fps playback with Motion Smoothing on a flagship. Record the battery drop and thermal state, and review artifacts on pans, cuts, fades, and letterboxed scenes.
 
 ---
 
 ## Section H — Storage providers (DIFF §3.12; Apple §J)
 
-Read Section J of `git show origin/apple-27.0:ENHANCEMENT.md` in full before
-starting. Not planned: Box (it needs a client secret), MEGA, and FTP. Plex,
-Jellyfin, and Emby would be a separate feature.
-
-### H.1 — Connector contract, canonical URLs, and account keys
-
-**Rules:**
-- Raw kind values are persisted and must never be renamed: `local`, `smb`,
-  `nfs`, `sftp`, `webdav`, `s3`, `gdrive`, `onedrive`, `dropbox`.
-- Item URLs are canonical and credential-free:
-
-  | Kind | Item URL |
-  |---|---|
-  | `smb` | `smb://host/share/path/Name.ext` |
-  | `nfs` | `nfs://host/export/path/Name.ext` |
-  | `sftp` | `sftp://host[:port]/path/Name.ext` |
-  | `webdav` | `davs://host[:port]/path/Name.ext` (`dav://` for plain HTTP) |
-  | `s3` | `s3://<account>/<bucket>/<key path>/Name.ext` |
-  | `gdrive` | `gdrive://<account>/<fileId>/Name.ext` |
-  | `onedrive` | `onedrive://<account>/<driveId>/<itemId>/Name.ext` |
-  | `dropbox` | `dropbox://<account>/<fileId>/Name.ext` |
-
-- `<account>` is the first 32 hex digits of `SHA-256("<kind>:<subject>")`. The
-  subject is Google's `sub`, the Microsoft user `id`, or Dropbox's
-  `account_id`. For S3 it is `endpoint|bucket|accessKeyID`, with the endpoint
-  lowercased and its trailing `/` trimmed. The account key is also the
-  credential-store key.
-- Every URL ends with the real file name, so the filename parser runs unchanged,
-  before any enrichment.
-- **Connector contract:** `validate()`, `list(directory)`, and
-  `enumerateVideos(under)`. The default enumeration is breadth-first, capped at
-  **2,000 folders**, and skips dot-files. A failure at the root throws; a
-  failure deeper down skips that branch only. Dropbox and OneDrive override it
-  with their recursive listings. Entries carry `size`, `duration` (Drive
-  `videoMediaMetadata.durationMillis`, Graph `video.duration`), and `modified`.
-- **Library:** new sources fill in `kind`, `displayPath` (for example
-  `Google Drive › My Drive › Movies`), `accountKey`, and `lastScannedAt` (D.2).
-
-**Checklist:**
-- [x] **H.1.1** Pure URL builders and parsers, the account-key function, the
-  connector interface, and the default enumerator.
-- [x] **H.1.2** Move SMB scanning onto the interface, with no behavior change.
-- [x] **H.1.T1** (JVM) Port `ConnectorTests`: URL round trips for every kind
-  (including percent-encoding and names with spaces), account keys (copy
-  Apple's expected strings), the enumeration cap, skipping dot-files, and root
-  versus branch failures.
-
-### H.2 — Remote byte source and Media3 data source (Apple §J.5)
-
-**Rules:**
-- One random-access byte source per HTTP provider: **4 MiB** `Range` chunks,
-  prefetching the next chunk while reads are sequential, and keeping the last
-  **8 chunks** (32 MiB), so MKV cues and the MP4 `moov` box at the end of a file
-  stay cached.
-- An OkHttp client with no cache, no cookie jar, and system TLS validation.
-  **Never** log URLs, tokens, or headers.
-
-  | Response | Action |
-  |---|---|
-  | 206 | Serve the range |
-  | 200 at offset 0 | Accept it (Graph may ignore `Range`) |
-  | 200 at any other offset | Retry once, then fail |
-  | 401 | One single-flight token refresh, then retry |
-  | 403 rate limit, 429, 5xx | Back off 0.5, 1, then 2 s with jitter, then fail |
-  | 403 expired signed link, 410 (Dropbox) | Resolve a new link once |
-  | 404 | Fail with "This file is no longer in <provider>" |
-
-- Media3: one Edendale `DataSource` that dispatches by scheme (`smb`, `nfs`,
-  `sftp`, `dav`, `davs`, `s3`, `gdrive`, `onedrive`, `dropbox`) to the right
-  byte source, installed as the base source of `DefaultDataSource` the way
-  `SmbDataSource` is today. Never hand a provider's HTTPS URL or token to
-  Media3's `DefaultHttpDataSource`.
-- SFTP and NFS byte sources reuse D.1's buffered source.
-
-**Checklist:**
-- [x] **H.2.1** `RemoteByteSource` (pure logic over a small HTTP interface) and
-  its OkHttp implementation.
-- [x] **H.2.2** The scheme-dispatching `DataSource`.
-- [x] **H.2.T1** (JVM) Port `RemoteByteSourceTests` against a local
-  Range-capable stub (A.5.5): chunking, prefetch, cached backward seeks, a 401
-  that triggers exactly one refresh shared by concurrent readers, a 410 that
-  resolves a new link, an ignored `Range` at offset 0 and elsewhere, the backoff
-  sequence, the 404 message, and cancellation.
+**Implementation status:**
+- **H.1 (Connector contract & account keys):** Landed in `0b43a91`.
+- **H.2 (Remote byte source & Media3 data source):** Landed in `91cbc0e`.
+- **H.4 (SFTP via sshj & Bouncy Castle):** Landed in `7d061b1`, `c42421c`.
+- **H.5 (S3-compatible storage & SigV4):** Landed in `90072dc`.
+- **H.6 (OAuth PKCE & account vault):** Landed in `ed065ea`, `90b891f`, `83f6baf`.
+- **H.7 (OneDrive Graph connector):** Landed in `4c83c40`.
+- **H.8 (Dropbox connector):** Landed in `4b73e0f`.
+- **H.10 (NFS):** Dropped by owner per D17 (`2d28460`).
+- **H.11 (Link Source flow & Accounts):** Landed in `57ec4d1`, `f92a1b0`.
 
 ### H.3 — WebDAV
 
-- `PROPFIND` with `Depth: 1` (OkHttp), using Basic or Digest authentication.
-  Decode relative and absolute `href`s, with percent-decoding. Suggest
-  `/remote.php/dav/files/<user>/` for Nextcloud and ownCloud.
-- [x] **H.3.1** The connector and the listing parser.
-- [x] **H.3.2** The server form (address, user, password), with the login saved
-  in an encrypted store keyed by host and port and excluded from backup.
+- `PROPFIND` with `Depth: 1` (OkHttp), using Basic or Digest authentication. Decode relative and absolute `href`s, with percent-decoding. Suggest `/remote.php/dav/files/<user>/` for Nextcloud and ownCloud.
+- [x] **H.3.1** The connector and the listing parser (`c9b6f6a`).
+- [x] **H.3.2** The server form (address, user, password), with the login saved in an encrypted store keyed by host and port and excluded from backup (`c9b6f6a`).
 - [ ] **H.3.3** The valid-HTTPS path, end to end.
-- [ ] **H.3.4** (D10) Self-signed certificates with fingerprint pinning, and LAN
-  `dav://`, for WebDAV and S3-compatible endpoints:
-  - When system validation fails, Link Source shows the server certificate's
-    SHA-256 fingerprint and subject, as it does for SFTP host keys, and
-    connects only after the user trusts it. Pin it per host and port in a
-    device-local store excluded from backup. Refuse a changed certificate
-    until the user trusts it again. Everything else keeps system validation
-    and hostname checks.
-  - `dav://` (and an `http://` S3 endpoint) connects only to private-network
-    addresses, checked on the resolved address: 10/8, 172.16/12,
-    192.168/16, 100.64/10 (Tailscale), 127/8, 169.254/16, `::1`, `fc00::/7`,
-    and `fe80::/10`. Anything else gets a message that the address needs
-    HTTPS.
-  - `usesCleartextTraffic="false"` makes OkHttp refuse every `http://`
-    request, so this needs a network security config that permits cleartext,
-    with the private-address check in the app as the gate.
-  - Listing and playback (H.2) follow the same rules. Update the README's
-    WebDAV and S3 sections.
-- [x] **H.3.T1** (JVM) Recorded `PROPFIND` responses from Nextcloud, Synology,
-  and Apache `mod_dav`: folders versus files, `href`s, sizes, dates, and
-  percent-encoded names.
-
-### H.4 — SFTP
-
-- Modern algorithms are required: curve25519 or ECDH key exchange, Ed25519 or
-  ECDSA host keys, and AES-GCM (or ChaCha20-Poly1305).
-- **Trust on first use:** show the host key's SHA-256 fingerprint, formatted
-  like `ssh-keygen -l` (`SHA256:<base64 without padding>`), and its key type.
-  Pin it per host and port, and refuse a changed key until the user approves it
-  again.
-- Password login first; key login later. Reads are pipelined 32 KiB requests.
-- [x] **H.4.1** Check that sshj 0.41.x (D16) connects to a current OpenSSH (9.x)
-  with default settings, on Android. (sshj needs a full BouncyCastle provider
-  registered in place of Android's stripped-down one.) Record the negotiated
-  algorithms in Findings. Fall back to MINA SSHD if sshj fails.
-- [x] **H.4.2** The connector, the byte source (buffered, D.1), and the host-key
-  pin store (device-local, not secret, but excluded from backup along with the
-  logins).
-- [x] **H.4.T1** (JVM) Fingerprints match `ssh-keygen -l` for Ed25519, ECDSA,
-  and RSA test keys; the pin-and-compare logic; and listing and ranged reads
-  against an in-process SFTP server (MINA SSHD as a `testImplementation`).
-
-### H.5 — S3-compatible storage
-
-- SigV4 signing; `ListObjectsV2` with `delimiter=/` and continuation tokens;
-  streaming through pre-signed GETs that are re-signed after a 403. The form
-  takes the endpoint, region, bucket, access key ID, and secret key (stored
-  encrypted and excluded from backup).
-- [x] **H.5.1** A pure SigV4 signer.
-- [x] **H.5.2** The connector and byte source.
-- [x] **H.5.T1** (JVM) SigV4 against AWS's published signature test vectors;
-  listing pagination fixtures from AWS, MinIO, and Backblaze B2.
-
-### H.6 — OAuth and accounts (Apple §J.6)
-
-**Rules:**
-- The authorization-code flow with **PKCE (S256)** through Custom Tabs
-  (`androidx.browser`), with **no provider SDKs and no client secrets**. A
-  dedicated exported redirect activity checks `state` and hands back the code.
-- The device authorization grant (RFC 8628) for OneDrive on TV (I.1): handle
-  `authorization_pending`, `slow_down` (add 5 s to the interval), access
-  denied, and `expired_token`.
-- Refresh tokens live in an encrypted store, one entry per account
-  (`cloud-account-<kind>-<accountKey>`: provider, subject, display email,
-  refresh token, and granted scopes), excluded from backup. Access tokens live
-  only in memory. One single-flight refresh per account serves every waiter
-  (a `Mutex`).
-- Scopes: Google `openid email https://www.googleapis.com/auth/drive.readonly`;
-  Microsoft `Files.Read User.Read offline_access` through the `/common`
-  authority; Dropbox `files.metadata.read files.content.read account_info.read`
-  with `token_access_type=offline`.
-- Client IDs come from `secrets.json` (`GOOGLE_OAUTH_CLIENT_ID`,
-  `MICROSOFT_OAUTH_CLIENT_ID`, `DROPBOX_APP_KEY`) through `generateAppSecrets`.
-  Add them, empty, to `secrets.example.json`. An empty value **hides that
-  provider**. Registering the apps with each provider is the owner's job.
-- Settings → Accounts (D.4) also lists cloud accounts (provider, email, and the
-  sources using each) with Sign Out. A source whose account is gone shows "Sign
-  in again".
-
-**Checklist:**
-- [x] **H.6.1** PKCE, the authorization URL builder, and the token and
-  device-code clients, pure where possible.
-- [x] **H.6.2** The account store and token provider.
-- [x] **H.6.3** The redirect activity and the Custom Tabs launcher.
-- [x] **H.6.T1** (JVM) Port `OAuthTests`: the RFC 7636 Appendix B vector
-  (verifier `dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk` gives challenge
-  `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`); the URL parameters for each
-  provider; token and device-code responses; a single refresh for concurrent
-  callers; and no token in any string that could reach a log or URL.
-
-### H.7 — OneDrive
-
-- Graph `children` with `@odata.nextLink` paging, plus the recursive-listing
-  override. Stream from `@microsoft.graph.downloadUrl`, which needs no auth
-  header, expires within minutes, and accepts `Range`.
-- [x] **H.7.1** The connector and the download-link resolver.
-- [x] **H.7.T1** (JVM) Recorded Graph responses for personal and work or school
-  accounts: paging, folders, and the video facet's duration.
-
-### H.8 — Dropbox
-
-- `list_folder` (recursive) and `/continue`. Stream from `get_temporary_link`,
-  which lasts 4 hours and then returns 410, so resolve a new link.
-- [x] **H.8.1** The connector and the link resolver.
-- [x] **H.8.T1** (JVM) Recorded listing pages, and 410 handling through H.2.
+- [x] **H.3.4** (D10) Self-signed certificates with fingerprint pinning, and LAN `dav://`, for WebDAV and S3-compatible endpoints (`PinnedTrustManager`, `PrivateNetworkDns`, `TlsPinStore`; JVM tests `TlsTest` and the WebDAV D10 cases):
+  - When system validation fails, Link Source shows the server certificate's SHA-256 fingerprint and subject, as it does for SFTP host keys, and connects only after the user trusts it. Pin it per host and port in a device-local store excluded from backup. Refuse a changed certificate until the user trusts it again. Everything else keeps system validation and hostname checks.
+  - `dav://` (and an `http://` S3 endpoint) connects only to private-network addresses, checked on the resolved address: 10/8, 172.16/12, 192.168/16, 100.64/10 (Tailscale), 127/8, 169.254/16, `::1`, `fc00::/7`, and `fe80::/10`. Anything else gets a message that the address needs HTTPS.
+  - `usesCleartextTraffic="false"` makes OkHttp refuse every `http://` request, so this needs a network security config that permits cleartext, with the private-address check in the app as the gate.
+  - Listing and playback (H.2) follow the same rules. Update the README's WebDAV and S3 sections.
+- [x] **H.3.T1** (JVM) Recorded `PROPFIND` responses from Nextcloud, Synology, and Apache `mod_dav`: folders versus files, `href`s, sizes, dates, and percent-encoded names (`c9b6f6a`).
 
 ### H.9 — Google Drive (D9)
 
-- D9 (decided 2026-10-04): sign in with H.6's PKCE flow through Custom Tabs.
-  Change the Google configuration from the reversed-client-ID scheme to the
-  Android client's redirect, `com.babasama.edendale:/oauth2redirect`, add its
-  intent filter to `OAuthRedirectActivity`, offer Google Drive in Link Source
-  whenever `GOOGLE_OAUTH_CLIENT_ID` is set, and update the README's Google
-  rows. Not on Android TV, where Drive arrives through I.2. The owner
-  registers the Android OAuth client (package name and the SHA-1 of each
-  signing certificate), turns on its custom URI scheme, and sets up the
-  consent screen and verification for `drive.readonly` (H.9.1).
-
-- [x] **H.9.1** A research note in Findings: Google's current rules for OAuth on
-  Android (custom schemes, App Links, `AuthorizationClient`), and what the owner
-  must register. **Stop for D9.**
-- [ ] **H.9.2** List with `files.list` using
-  `q='<id>' in parents and trashed = false`, `supportsAllDrives=true`, and
-  `includeItemsFromAllDrives=true`. Roots:
-  My Drive, Shared with me, and Shared drives. Follow shortcuts; skip
-  `application/vnd.google-apps.*` files; filter videos by file extension, not
-  MIME type. Stream with `alt=media`, a Bearer token, and `Range`. Never send
-  `acknowledgeAbuse`.
-- [ ] **H.9.T1** (JVM) Recorded responses: paging, shortcuts, shared drives,
-  and filtering.
-
-### H.10 — NFS (dropped, D17)
-
-- The export needs the `insecure` option, because Android apps can't bind
-  privileged ports. The connection error must say so.
-- [x] **H.10.1** Evaluate a client library (licence and Android
-  compatibility) and record the result in Findings before building anything.
-- Dropped by the owner on 2026-10-04 after H.10.1. Nothing more to build.
-
-### H.11 — Link Source flow and Accounts
-
-- Link Source: pick a provider (only those whose client IDs or credentials are
-  configured), then fill in the server form or sign in to the cloud account,
-  then pick a folder in a browser that uses `list(directory)`, then save and
-  scan.
-- Saved logins and accounts are reused, and removing a source keeps them (D.4).
-- Source rows show the `displayPath`, the status (D.3), and the account.
-- The README lists every provider and what it receives: the user's sign-in,
-  folder listings, and file byte ranges.
-- [x] **H.11.1** The flow and the folder picker, usable with a TV remote.
-- [x] **H.11.2** The README provider and privacy section.
+- D9 (decided 2026-10-04): sign in with H.6's PKCE flow through Custom Tabs. Change the Google configuration from the reversed-client-ID scheme to the Android client's redirect, `com.babasama.edendale:/oauth2redirect`, add its intent filter to `OAuthRedirectActivity`, offer Google Drive in Link Source whenever `GOOGLE_OAUTH_CLIENT_ID` is set, and update the README's Google rows. Not on Android TV, where Drive arrives through I.2. The owner registers the Android OAuth client (package name and the SHA-1 of each signing certificate), turns on its custom URI scheme, and sets up the consent screen and verification for `drive.readonly` (H.9.1).
+- [x] **H.9.1** Research note in Findings: Google's rules for OAuth on Android and owner registration steps (`2d28460`).
+- [x] **H.9.2** (`GoogleDriveConnector`, `GoogleDriveContentResolver`; e965a3a) List with `files.list` using `q='<id>' in parents and trashed = false`, `supportsAllDrives=true`, and `includeItemsFromAllDrives=true`. Roots: My Drive, Shared with me, and Shared drives. Follow shortcuts; skip `application/vnd.google-apps.*` files; filter videos by file extension, not MIME type. Stream with `alt=media`, a Bearer token, and `Range`. Never send `acknowledgeAbuse`.
+- [x] **H.9.T1** (JVM) Recorded responses: paging, shortcuts, shared drives, and filtering (`GoogleDriveTest`, e965a3a).
 
 ### H.12 — Experiment: cloud apps in the system folder picker
 
-- [ ] **H.12.1** With the Google Drive, OneDrive, Dropbox, and Nextcloud apps
-  installed, check which ones appear in Add Folder
-  (`ACTION_OPEN_DOCUMENT_TREE`), whether scanning works, and whether playback
-  streams or copies the whole file first. Record the results in Findings. No
-  code.
+- [ ] **H.12.1** With the Google Drive, OneDrive, Dropbox, and Nextcloud apps installed, check which ones appear in Add Folder (`ACTION_OPEN_DOCUMENT_TREE`), whether scanning works, and whether playback streams or copies the whole file first. Record the results in Findings. No code.
 
 ---
 
 ## Section I — Android TV
 
-### I.1 — OneDrive sign-in on the TV
+**Implementation status:**
+- **I.1.1 (OneDrive TV sign-in UI):** Landed in `0f00786`.
+- **I.2.1 (Phone-to-TV handoff design):** Landed in `2d28460` (Findings — I.2.1; approved by owner).
+- **I.3 (Watch Next row):** I.3.1 research, I.3.2 settings toggle, I.3.3 publisher, I.3.T1 tests landed in `2d28460`, `f99a366`, and `6b67628`.
 
-- The device-code flow (H.6), showing a QR code for `verification_uri` plus the
-  code (Microsoft doesn't support `verification_uri_complete`). Reuse the QR
-  rendering in `TmdbApprovalQrCode.kt`.
-- [x] **I.1.1** The TV sign-in screen.
+### I.1 — OneDrive sign-in on the TV
+- [x] **I.1.1** The TV sign-in screen (`0f00786`).
 - [ ] **I.1.D1** On a TV: sign in from a phone, link a folder, and play a file.
 
 ### I.2 — Phone-to-TV handoff (DIFF §3.14; Apple §J.7)
 
-Google's device flow can't grant `drive.readonly`, and Dropbox has no device
-flow at all. So a phone running Edendale signs in and hands the account to the
-TV, device to device only: a web relay would be an Edendale server, which
-AGENTS.md forbids.
+Google's device flow can't grant `drive.readonly`, and Dropbox has no device flow at all. So a phone running Edendale signs in and hands the account to the TV, device to device only: a web relay would be an Edendale server, which AGENTS.md forbids.
 
 **Rules:**
-- Discovery uses Network Service Discovery with the service type
-  `_edendale-handoff._tcp`. The TV shows a short code.
-- Authentication: a PAKE keyed by the code (for example BouncyCastle's J-PAKE),
-  or an ECDH exchange confirmed by comparing codes on both screens, then
-  AES-GCM for the payload.
-- Messages are JSON behind a 4-byte big-endian length, at most 64 KiB, and
-  versioned; unknown versions are rejected. The payload is a provider, account
-  key, email, refresh token, and scopes, or a server login (SMB, SFTP, WebDAV,
-  S3).
-- The phone asks for confirmation ("Link Google Drive on <TV name>?") and
-  offers an account already linked there, or a fresh sign-in.
-- The TV validates the payload (refreshes the token, or tests the login) before
-  storing it locally. It reuses the phone's refresh token, because Google
-  allows only 100 refresh tokens per account per client.
-- [x] **I.2.1** A design note in Findings: protocol, crypto library, and threat
-  model. **Stop for owner review before implementing.** The owner
-  (2026-10-04): proceed with this design; they'll review and adjust it with
-  the finished work.
-- [ ] **I.2.2** The implementation on both sides.
-- [ ] **I.2.T1** (JVM) Port `AccountHandoffTests`: encoding, the size cap, and
-  version rejection; plus a key-agreement round trip, and failure with a wrong
-  code.
-- [ ] **I.2.D1** Link Drive, and separately an SMB login, from a phone to a TV.
+- Discovery uses Network Service Discovery with the service type `_edendale-handoff._tcp`. The TV shows a short code.
+- Authentication: a PAKE keyed by the code (BouncyCastle's J-PAKE), then AES-GCM for the payload.
+- Messages are JSON behind a 4-byte big-endian length, at most 64 KiB, and versioned; unknown versions are rejected. The payload is a provider, account key, email, refresh token, and scopes, or a server login (SMB, SFTP, WebDAV, S3).
+- The phone asks for confirmation ("Link Google Drive on <TV name>?") and offers an account already linked there, or a fresh sign-in.
+- The TV validates the payload (refreshes the token, or tests the login) before storing it locally. It reuses the phone's refresh token, because Google allows only 100 refresh tokens per account per client.
+- [x] **I.2.1** Design note in Findings: protocol, crypto library, threat model (`2d28460`). Owner approved to proceed with implementation.
+- [x] **I.2.2** The implementation on both sides (`handoff` package: `AccountHandoff`, `HandoffCrypto`, `HandoffProtocol`; Android `HandoffHost`, `HandoffDiscovery`, `HandoffToTelevisionDialog`, Link Source's Continue on a Phone; a45cf05).
+- [x] **I.2.T1** (JVM) Port `AccountHandoffTests`: encoding, the size cap, and version rejection; plus a key-agreement round trip, and failure with a wrong code (`AccountHandoffTest`, 14 cases including a whole exchange over a loopback socket and the TV's adoption of a refreshed or refused token; a45cf05).
+- [ ] **I.2.D1** Link Drive, and separately an SMB login, from a phone to a TV. (2026-10-07: a WebDAV login was handed from the phone emulator to the TV emulator end to end, with the wrong-code and decline paths; Drive and SMB still need a real Google account and an SMB server.)
 
 ### I.3 — Watch Next row (D15)
-
-- [x] **I.3.1** A research note: do the target launchers (Google TV and the
-  Android TV home screen) still read `TvContractCompat.WatchNextPrograms`, or
-  only Google's Engage SDK? **Stop if it's Engage only.**
-- [x] **I.3.2** An opt-in setting in Settings → Android TV, off by default, with
-  a note that the launcher can see these titles.
-- [x] **I.3.3** Publish in-progress titles (type CONTINUE) and next-up episodes
-  (type NEXT), with `edendale://` deep links to the existing play routes.
-  Update them as progress changes; remove them on completion, deletion, or when
-  the setting is turned off.
-- [x] **I.3.T1** (JVM) `WatchNextTest`: programs from Continue Watching (one row
-  per movie or show, the shelf's cap), and the reconciliation with the
-  provider's rows (insert, update, unchanged, delete, rows that aren't
-  Edendale's, duplicates, rows the viewer removed). `LibraryPresentationTest`:
-  position, length, 16:9 artwork, and engagement time on Continue Watching.
-- [ ] **I.3.D1** (instrumented, TV only) `WatchNextStoreInstrumentedTest` writes,
-  updates, and removes a row through the TV provider; on a TV, the row appears
-  in the home screen, opens the player at the saved position, and goes when
-  the setting is turned off.
-
----
-
-## Section J — Large screens and keyboard (DIFF §3.15)
-
-- [x] **J.1** Extended navigation (`WideShell` with `extendedNavigation`): the
-  order is Movies & Shows, Watchlist, Downloaded, Search, then Settings.
-  Watchlist expands into Movies and TV Shows; Downloaded expands into Continue
-  Watching, Movies, and TV Shows. A child row appears only while its section has
-  titles for the current audience setting; if the open section empties, the
-  navigation returns to the parent page. The search query survives navigation.
-- [x] **J.2** A Continue Watching page lists every resumable title (the shelf
-  keeps its 12-item cap). The Movies page includes movies that are also in
-  Continue Watching.
-- [x] **J.3** Hardware-keyboard shortcuts:
-  - Ctrl+B toggles the navigation.
-  - On Downloaded pages, Ctrl+N adds a media folder and Ctrl+Alt+N links a
-    network source.
-  - Ctrl+R or F5 rescans, when a source exists.
-  - In the player: Space plays and pauses; ← and → skip by the App Controls
-    lengths; S activates the skip prompt; Esc closes a panel, then leaves the
-    player.
-
-  Register them with `onProvideKeyboardShortcuts` in both activities, so
-  Meta+/ lists them.
-- [x] **J.4** The Link Source form: the address field has focus when it opens;
-  Tab and Shift+Tab move between fields; Enter connects when every required
-  field is filled, and otherwise focuses the first empty one; a guest
-  connection (no user or password) takes one tap.
-- [x] **J.5** Docked player panels when the window is at least 1100 dp wide: the
-  playlist and Player Adjustments dock as a trailing sidebar that narrows the
-  video instead of covering it. Tapping the video leaves the panel open. Esc or
-  Back closes the panel, and a second press leaves the player. The controls
-  still auto-hide, and Up Next and skip prompts stay available.
-- [x] **J.6** Season shelves: each season heading's rule acts as that shelf's
-  scroll indicator and scrubber; drag the gold thumb or tap the rule
-  (`SeasonBrowser.kt`).
-- [x] **J.T1** (JVM) Port `LibrarySectionsTests`: child-row visibility and the
-  return to the parent page.
-
----
-
-## Section K — Settings layout (DIFF §3.19)
-
-The final order on handhelds and TV:
-
-1. About: version and sync note. On TV and in wide windows, attribution moves
-   here too, so focus-scrolling can reach it.
-2. Audience
-3. Android TV (TV only)
-4. Audio Enhancement (E.1)
-5. Subtitles (B.4, plus the existing Wyzie key)
-6. Skip Prompts (C.5)
-7. App Controls (B.1)
-8. Sources
-9. Accounts (D.4, H.6)
-10. TMDB Account
-11. Backup
-12. Privacy
-13. Attribution (handhelds; on TV and in wide windows it's part of About)
-
-- [x] **K.1** Each phase inserts its section in this order; check the final
-  order once every phase is done.
+- [x] **I.3.1** Research note: Google TV WatchNextPrograms vs Engage SDK (`2d28460`).
+- [x] **I.3.2** Opt-in setting in Settings → Android TV, off by default (`f99a366`).
+- [x] **I.3.3** Publish in-progress and next-up titles; update on progress change, remove on completion/disable (`f99a366`, `6b67628`).
+- [x] **I.3.T1** (JVM) `WatchNextTest` and `LibraryPresentationTest` (`f99a366`).
+- [x] **I.3.D1** (instrumented, TV only) `WatchNextStoreInstrumentedTest` writes, updates, and removes a row through the TV provider; on a TV, the row appears in the home screen, opens the player at the saved position, and goes when the setting is turned off. Checked 2026-10-07 on the Television_4K emulator (Google TV launcher): see the Handoff log.
 
 ---
 
 ## Section L — Documentation, release, and other branches
 
-- [x] **L.1** This branch's `README.md` covers: the new settings; the network
-  services and what each receives (TheIntroDB, storage providers); new
-  dependencies and their licences (Media3 1.9.0, media3-session, media3-effect,
-  mediarouter, OkHttp, androidx.browser, sshj, FSR 1, Snapdragon GSR if used,
-  Nunito, and FFmpeg per D5); the new `secrets.json` keys;
-  `connectedDebugAndroidTest`; and the manual device checks.
-- [x] **L.2** This branch's `DESIGN.md` has the playlist tokens (B.5.1).
-- [ ] **L.3** Release (D19: `0.27`): bump `versionCode` to 2 and `versionName`
-  to `0.27`, along with `EdendaleCore.version` (done in 86df492). When the
-  owner asks, draft `Play Console/27.0/release.txt` in the 26.0 format.
-- [x] **L.4** Leave notes for the owner (this isn't done on this branch):
-  `main`'s `DESIGN.md` needs the playlist tokens; `main`'s README should list
-  the supported storage services; the `web` branch needs privacy-policy text
-  for the providers (Google verification requires it); and D2, D3, D4, and D18
-  are Android-specific choices the Apple and Windows branches should know
-  about.
+- [x] **L.1** This branch's `README.md` covers new settings, network services, dependencies & licences, `secrets.json`, and manual checks (`be55c1b`).
+- [x] **L.2** This branch's `DESIGN.md` has playlist tokens (`0987890`).
+- [ ] **L.3** Release (D19: `0.27`): `versionCode 2` and `versionName 0.27` set in `86df492`. When the owner asks, draft `Play Console/27.0/release.txt` in the 26.0 format.
+- [x] **L.4** Leave notes for the owner (this isn't done on this branch): `main`'s `DESIGN.md` needs the playlist tokens; `main`'s README should list the supported storage services; the `web` branch needs privacy-policy text for the providers (Google verification requires it); and D2, D3, D4, and D18 are Android-specific choices the Apple and Windows branches should know about.
 
 ### L.4 notes for the owner (2026-10-04)
 
@@ -2182,6 +806,10 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
     An even picture from 24 fps on a 120 Hz panel would need 5×
     interpolation (four synthetic frames per source frame), which is
     outside this plan. Also turn it off at speeds above 1×.
+- **TV Settings: the Wyzie API Key field traps D-pad focus (found 2026-10-07 on the Television_4K emulator, pre-existing).** Walking Settings with the D-pad lands on the Wyzie "API Key" text field (shown even when the build has a key: "Using the key from secrets.json."), the on-screen keyboard opens, and every further Down press goes to the keyboard. Back closes the keyboard but focus stays on the field, so the sections below (Playback, Sources, Accounts, TMDB, Backup) can only be reached by scrolling with a pointer. Suggested fix: on TV, don't show the field when a key is built in, or make it a button that opens the keyboard only on Select.
+- **Auto-advance can pick a copy on an offline source, and the player shows the raw failure (found 2026-10-07 on the Television_4K emulator, pre-existing).** With Severance imported from a dead SFTP source (left by an earlier session) and from a reachable WebDAV source, S01E01 played from WebDAV and the end-of-episode advance opened S01E02 from the SFTP copy, which failed with "Unable to Play — Unreachable(host=10.0.2.2)": the `ConnectorFailure` printed through `toString()` rather than its localized message, and the choice didn't follow D.5's reachable-copy rule. Opening S01E02 from the launcher's Play Next row played the WebDAV copy. Suggested fixes: route C.2's next item through `PlaybackSources.order` with the sources' last status, and map `ConnectorException` through `connectorFailureMessage` in the player's error view.
+- **TV: a touch tap on a settings switch row doesn't toggle it (2026-10-07, Television_4K emulator, cosmetic).** `SettingsSwitchRow` toggles on D-pad Select; `input tap` on the row changed nothing, which doesn't matter on a remote-driven TV but may on a touch-screen Android TV box.
+- **Emulators and the handoff (2026-10-07).** Two emulators on one host don't see each other's DNS-SD, so the handoff was checked by forwarding the TV's port with `adb forward` and typing `10.0.2.2:<port>` into the phone's new address field (which is why that field exists; see Deviations). The XR_Headset AVD (API 34) only boots reliably with `-gpu host`; under `swiftshader_indirect` its system server died twice. Its keyboard autocompletes `adb shell input text` into fields ("…/Severance/to the office"), so Link Source there was driven with Enter (J.4's keyboard rule), which works.
 
 ---
 
@@ -2212,6 +840,11 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | J.3 | Space, ← and → act only while no panel is open; with a panel open they go to its sliders and switches. Esc on TV follows Back (panel, then controls, then the player). Ctrl+B also hides the compact rail (600–1100 dp). Meta+/ labels it "Hide Sidebar"/"Show Sidebar", Apple's strings. | A focused slider needs the arrows; Apple's player reads keys the focused control left unhandled. | 983546a |
 | J.4 | The address field takes focus when the form opens on phones and tablets, not on TV. | On TV, a focused text field opens the full-screen keyboard over the dialog before the viewer chose a field. | 983546a |
 | J.6 | The scrubber is on the Episodes heading of `SeasonBrowser` (the selected season's shelf), on phones and tablets as well as wide windows; on TV the rule is a read-only indicator. | Android's local show page lists seasons vertically, so the TMDB season browser has the only horizontal season shelf (as in Apple's `TMDBSeasonBrowser`). A finger can drag the thumb too; a remote scrolls the shelf itself. | 983546a |
+| H.3.4 | A valid certificate whose name doesn't match the typed host (an IP address for a server whose certificate names its hostname) is offered for review and pinning like a self-signed one, instead of failing with a bare hostname error. The pin check also runs in the hostname verifier, because a resumed TLS session skips the trust manager. | One flow for every certificate the device can't accept on its own; a resumed session must still honor a pin removed or changed since the last handshake. | 65219dd |
+| H.3.4 | `android:usesCleartextTraffic="false"` is replaced by a network security configuration that permits cleartext, and the storage providers' OkHttp client no longer follows `https://` → `http://` redirects. Plain `http://` requests go through a DNS resolver that refuses any address outside the private networks, on the addresses OkHttp is about to connect to. | The platform flag can't carve out private addresses; the DNS gate checks the resolved address, as D10 asks, without resolving twice. The other HTTP clients only use `https://` URLs and `HttpURLConnection` never changes scheme on a redirect. | 65219dd |
+| I.2.2 | The TV answers the phone's approved response with a `result` message (stored, or why not) before closing, where Apple's TV only closes the connection. A handed-over login also carries the phone's linked source URLs on that login, its pinned SSH host key (as on Apple) and pinned certificate (D10), and for S3 the bucket's location; the TV tests the login (SMB lists the shares, SFTP its home folder, S3 the bucket, WebDAV the first linked folder) before storing it. | The phone otherwise learns nothing when the TV refuses the token or login; the addresses let the TV's Link Source start browsing where the phone did, and the pins let the TV trust the server the way the phone already does. | a45cf05 |
+| I.2.2 | On the TV, Link Source offers every provider the build has a client ID for (Google Drive and Dropbox arrive through the handoff) and every server kind gets Continue on a Phone; the handoff host and its DNS-SD registration exist only while the code is on screen, and three wrong codes replace the code. | I.2.1's design: the TV asks a phone where it can't sign in itself, and the code and keys exist only for the session. | a45cf05 |
+| I.2.2 | The TV's code block also shows the TV's own address and port, and the phone's dialog takes that address by hand under the list of TVs found. | Multicast DNS doesn't cross some home routers or guest networks, and two emulators on one host can't see each other's discovery at all; the typed address is how the emulator check ran. | f9ac696 |
 
 ---
 
@@ -2247,6 +880,10 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-10-04 | H.6 redirect test (83f6baf) and I.3 Watch Next (f99a366) (Claude, desktop session, finishing edendale-99's I.3 after it hit its usage limit) | At f99a366: `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (436 JVM tests, 0 failures). Strings: both new keys in all 19 files. | The owner's Pixel_10_Pro_XL emulator (Android 17, API 37, 16 KB pages): `OAuthRedirectInstrumentedTest` 4 of 4 after 83f6baf (the Dropbox case had assumed a build without an app key); the whole instrumented suite 26 of 26 at 83f6baf and 27 of 27 at f99a366, with `WatchNextStoreInstrumentedTest` skipped (no TV provider on a phone). `libffmpegJNI.so` and `libandroidx.graphics.path.so` are 16 KB aligned in the APK and in their ELF LOAD segments. | I.3 built as the owner decided (D15). Not run: I.3.D1 (needs a TV device or emulator; the owner's Television_4K AVD would do). |
 | 2026-10-04 | Device checks B.2.D1 and C.2.D1 (Claude, desktop session) | — (checks only; built at 95d8551 with the owner's `secrets.json`, so TMDB identifies titles) | The owner's Pixel_10_Pro_XL emulator (Android 17, API 37). Media: three 60 s episodes made with a scratch ffmpeg 7.1.1 (testsrc counter, H.264 via VideoToolbox, `eng` "Main" and `fre` "Commentaire" AAC, `eng` and `fre` SRT), named `Severance S01E0n.mkv` so TMDB matches show 95396, in a local folder linked through the system picker. B.2.D1 pass: French audio and French subtitles chosen in S01E01 were saved as `player.content.show.95396`; after closing the player, S01E02 opened in a new player with both restored, Fill restored (content frame 2992×1683 on a 2992×1344 screen), and Loop Video still on. C.2.D1 pass: S01E01 played to its end, was stored as completed (position 1.0), and S01E02 started on its own; S01E02 then ended in Picture-in-Picture and S01E03 started inside the PiP window (task still pinned, session metadata "In Perpetuity, S01E03", French subtitles carried); the show page lists S01E01 and S01E02 as watched. | On this emulator the F.6 capability check stored `fail`, so Enhancement starts at Off here. The test episodes stay in `/sdcard/Movies/EdendaleTest/Severance` for later checks. |
 | 2026-10-04 | G.1 feasibility: G.1.1 and the G.1.3 probe (3bf5199), Findings — G.1 (Claude, desktop session) | At 3bf5199 on a scratch worktree: `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (436 JVM tests, 0 failures). `FrameGenerationPlaybackInstrumentedTest` and `CoarseMotionEstimationInstrumentedTest` run with `am instrument`; without their arguments both are skipped. | The owner's Pixel_10_Pro_XL emulator (Android 17, API 37, SwiftShader GL, 60 Hz only), used with the owner's permission and the peer sessions' emulator lock. The debug build (0.27) replaced the 0.26 build installed there; the app's data was kept. Playback probe, 12 runs: 24 → 48 fps at 720p (with and without 8 ms of simulated work per midpoint, after Balanced enhancement, with REDRAW while paused), and 30 → 60 fps at 720p and 360p, each with a midpoints-off baseline; SurfaceFlinger timestats were turned on for each run and off afterwards. Motion search at 1080p: the RGBA, luma-prepass, half-resolution, and compute variants. Results are in Findings — G.1. | Not run: G.1.3 on a flagship and a mid-range phone (no phones), a refresh-rate switch (the emulator has one mode), speeds other than 1×, PiP. Test clips were made with a scratch ffmpeg (testsrc2, VideoToolbox H.264, two AAC tracks) and aren't committed; the probe takes any clip with audio. Stop for the owner's go/no-go before G.2. |
+| 2026-10-07 | H.3.4 (D10): certificate pinning and LAN `http://` for WebDAV and S3 (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug`: pass (444 JVM tests, 0 failures). New `TlsTest` runs OkHttp against a local HTTPS server with a self-signed certificate (untrusted → review, pinned → connects, changed → refused, another port's pin ignored), the private-network ranges, and the cleartext DNS gate; `WebDavTest` lists through a pinned self-signed server and refuses `dav://` to a public address. | not run (no device; the real-server checks in README's "Manual device checks" cover the D10 flow) | `bcpkix-jdk18on` added to the test classpath only, to mint the test certificates. Strings: 10 keys (9 new, `connector_insecure_connection` reworded) in all 19 files. |
+| 2026-10-07 | H.9.2 and H.9.T1: Google Drive (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug`: pass (450 JVM tests, 0 failures). `GoogleDriveTest`: the virtual root and `canIndex`, a paged listing with shortcuts followed and Google formats skipped, extension-based video detection, shared drives with `corpora=drive`, Shared with me, `about` on validate, a revoked refresh token → sign in, and streaming through the Bearer token with one refresh after a 401. | not run (no Google OAuth client registered; `OAuthRedirectInstrumentedTest` gained a Google case for the next emulator run) | D9 wired: the redirect is `com.babasama.edendale:/oauth2redirect` (`CloudProviders.GOOGLE_REDIRECT_URI`), matched in the manifest by scheme and `sspPrefix` because the URI has no authority; the reversed-client-ID scheme is gone. Link Source offers Google Drive whenever `GOOGLE_OAUTH_CLIENT_ID` is set (phones and tablets; TV through I.2). The cloud browser now reports whether the listed folder can be linked instead of hiding unlinkable subfolders, so Shared drives stays browsable. Strings: 4 new keys in all 19 files. |
+| 2026-10-07 | I.2.2 and I.2.T1: phone-to-TV handoff (Claude, desktop session) | `./gradlew testDebugUnitTest assembleDebug`: pass (464 JVM tests, 0 failures). `AccountHandoffTest`: frames and the three message types round-trip, unknown versions and malformed bodies and oversized frames are rejected, J-PAKE over P-256 agrees one key on both sides and a wrong code fails only at the key confirmation, the AES-GCM channel refuses tampering, replay, and the wrong direction, a whole exchange runs over a loopback socket (approved, wrong code, declined, rejected by the TV, wrong provider), and the TV keeps an account whose token refreshes (reusing the phone's refresh token) and refuses one that doesn't. | not run (I.2.D1 needs a TV and a phone on one network; no device here) | Bouncy Castle's `ecjpake` (already in the APK for sshj) does the key agreement; `ECSchnorrZKP`'s constructor is package-private, so the received proofs are rebuilt through reflection (release builds aren't minified). Network Service Discovery needs no new permission. Strings: 27 new keys in all 19 files. |
+| 2026-10-07 | Emulator run of H.3.4 (D10), H.9, I.2, I.3.D1, C.6.D2 (Claude, desktop session) | Built f9ac696 (debug, with the owner's `secrets.json`); `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass (464 JVM tests). Instrumented suite (`am instrument -e package com.babasama.edendale`): 30 of 30 on the Pixel_10_Pro_XL emulator (Watch Next and the opt-in probes skipped) and 30 of 30 on the Television_4K emulator (`WatchNextStoreInstrumentedTest` ran there), including the new Google redirect case on both. | Pixel_10_Pro_XL (Android 17, API 37, headless SwiftShader), Television_4K (Android 16, API 36, Google TV launcher, headless), XR_Headset (API 34, `-gpu host`); a Python WebDAV server on the Mac (`10.0.2.2` from the emulators) with two self-signed certificates on 8443 and Basic auth on 8080, serving the three Severance test episodes. **D10 (phone):** `https://10.0.2.2:8443/Severance/` showed Verify Certificate with `CN=nas.local`, the server's exact SHA-256 fingerprint, and the expiry; Trust pinned `10.0.2.2|8443` and imported 3 items; a `davs://` episode played (frame and subtitle cue drawn, ranged GETs on the server); after the server switched to the second certificate, Rescan marked the source "Sign in to 10.0.2.2 again", re-linking showed Certificate Changed with the new fingerprint, and Trust New Certificate replaced the pin and listed the folder; `http://10.0.2.2:8080/` with the Basic login listed and imported; `http://example.com/dav/` got "Plain http:// works only for servers on your own network". **H.9 (phone):** the Google Drive chip appears with its description and Sign In to Google Drive (sign-in itself needs the owner's registered client). **I.2 (TV + phone):** TV Link Source → WebDAV → Continue on a Phone showed the code and `10.0.2.15:<port>`; the phone's Link to a TV took the typed address and code, showed "Link WebDAV on sdk_google_atv64_arm64?" with the saved login `me @ 10.0.2.2:8080`, and ended with "Linked on … Continue on the TV"; the TV tested the login against the phone's folder, stored it (Settings → Accounts lists it), filled its form, and opened the folder browser, and Import scanned the source. A wrong code failed on both sides with the right messages and the TV kept waiting; the right code with Decline left the phone on the TV list and the TV saying so. **I.3.D1 (TV):** with Continue Watching on Home Screen on (toggled by D-pad), playing an episode put a Severance card in the Google TV launcher's Play Next row; selecting it opened Edendale's player; turning the setting off removed the row. **C.6.D2 (TV):** `dumpsys media_session` showed an active Edendale session, PLAYING, with "Good News About Hell, S01E01". **XR:** the app launched in the rail layout, the Settings sheet, Link to a TV, Add Network Source, and the certificate review all rendered. | Fixed during the run (f9ac696): the TV's Connect button showed under the code; the phone named the TV by its typed address; Try Again kept the wrong code; and the typed-address fallback itself. Found, not fixed: see the three new Findings (TV focus trap in the Wyzie field, auto-advance onto an offline copy with a raw error, switch rows ignoring touch on TV). Not run: a Google Drive or SMB handoff (no Google account or SMB server), H.3.3 against a real server, I.1.D1, F.*, G.1.3, H.12.1. The emulators were shut down afterwards and the shared lock released. |
 
 ---
 
@@ -2271,7 +908,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | C.3 | Continue Watching next-up | Complete | a2a3d46 |
 | C.4 | Remove timed auto-skip | Complete | 4a13b2f |
 | C.5 | TheIntroDB skip prompts | Complete | 4c2be70, 451d7f5, 83699b9 |
-| C.6 | MediaSession and system surfaces | Complete (C.6.D1, C.6.D2 not run) | 4f8ff82, eb1f5f9 |
+| C.6 | MediaSession and system surfaces | Complete (C.6.D2 checked on the TV emulator: an active session with the episode's title and playback state; C.6.D1 not run) | 4f8ff82, eb1f5f9 |
 | D.1 | Buffered SMB reads | Complete (D.1.D1 not run) | bdcc646 |
 | D.2 | Source records (Room v3) | Complete | 752fdbf, e5a1539 |
 | D.3 | Rescan throttle and per-source status | Complete | 0acda8b |
@@ -2295,19 +932,19 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | G.6 | Tests and acceptance | Blocked (G.1) | |
 | H.1 | Connector contract | Complete | 0b43a91 |
 | H.2 | Remote byte source | Complete | 91cbc0e |
-| H.3 | WebDAV | H.3.1, H.3.2, H.3.T1 complete; H.3.3 HTTPS end to end not run (needs a real server); H.3.4 ready (D10 decided 2026-10-04) | c9b6f6a |
+| H.3 | WebDAV | Complete; D10 checked on the phone emulator against a local server (self-signed review, pinned playback, changed certificate refused and re-trusted, LAN `http://` with a login, public `http://` refused); H.3.3 against a real server with a trusted certificate not run | c9b6f6a, 65219dd |
 | H.4 | SFTP | Complete (H.4.1 checked on the emulator against OpenSSH 10.3) | 7d061b1, c42421c |
 | H.5 | S3 | Complete (device check not run) | 90072dc |
 | H.6 | OAuth and accounts | Complete (Microsoft redirect registered by the owner; sign-in not run) | ed065ea, 90b891f |
 | H.7 | OneDrive | Complete (linking UI with H.11; not run against a real account) | 4c83c40 |
 | H.8 | Dropbox | Complete (linking UI with H.11; not run against a real account) | 4b73e0f |
-| H.9 | Google Drive (D9) | Ready (D9 decided 2026-10-04: PKCE through Custom Tabs); a real sign-in needs the owner's Android OAuth client | 2d28460 |
+| H.9 | Google Drive (D9) | Complete; Link Source offers Google Drive on the phone emulator with the owner's client ID, and the D9 redirect reaches the waiting sign-in on the phone and TV emulators; a real sign-in needs the owner's Android OAuth client and `drive.readonly` verification | 2d28460, e965a3a |
 | H.10 | NFS | Dropped by the owner (2026-10-04, D17) | 2d28460 |
 | H.11 | Link Source flow | Complete (device check not run; cloud sign-in needs registered client IDs) | 57ec4d1, f92a1b0 |
 | H.12 | Folder-picker experiment | Research note in Findings; device check not run (needs Play Store apps) | 2d28460 |
 | I.1 | OneDrive on TV | I.1.1 complete; I.1.D1 not run (needs a TV and a registered client ID) | 0f00786 |
-| I.2 | Phone-to-TV handoff | Ready: build I.2.1's design (owner, 2026-10-04); the owner reviews it with the finished work | 2d28460 |
-| I.3 | Watch Next row | Complete (I.3.D1 not run: needs a TV device or emulator) | 2d28460, f99a366 |
+| I.2 | Phone-to-TV handoff | Complete; I.2.D1 partly run on the emulators (a WebDAV login, wrong code, decline); Drive and SMB handoffs need a real account and server; the owner reviews the finished work | 2d28460, a45cf05, f9ac696 |
+| I.3 | Watch Next row | Complete (I.3.D1 checked on the Television_4K emulator) | 2d28460, f99a366, 6b67628 |
 | J.1 | Navigation child rows | Complete (device check not run) | 983546a |
 | J.2 | Continue Watching and Movies pages | Complete (device check not run) | 983546a |
 | J.3 | Keyboard shortcuts | Complete (device check not run) | 983546a |
