@@ -1,6 +1,8 @@
 package com.babasama.edendale.android.data
 
 import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.Enumeration
+import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.SourceStatus
 import com.babasama.edendale.remote.RemoteFailure
@@ -31,6 +33,17 @@ internal object SourceScanRules {
         if (kindOf(folder)?.isRemote != true) return true
         val last = folder.lastScannedAt ?: return true
         return nowMillis - last >= AUTOMATIC_RESCAN_INTERVAL_MILLIS
+    }
+
+    /**
+     * Every video in the linked [folder], after checking the source still
+     * answers. The walk starts at the folder itself, not the connector's
+     * root: a cloud account's or S3 bucket's root is the whole account, so
+     * starting there imported everything the account holds.
+     */
+    suspend fun enumerate(connector: MediaConnector, folder: LibraryFolderEntity): Enumeration {
+        connector.validate()
+        return connector.enumerateVideos(folder.treeUri)
     }
 
     /** NT status codes that mean the server refused the login rather than the network failing. */

@@ -433,7 +433,6 @@ class PlayerActivity : ComponentActivity() {
             val playlist = runCatching {
                 loadPlayerPlaylist(
                     dao = app.database.libraryDao(),
-                    repository = app.libraryRepository,
                     uriString = uriString,
                     showTmdbIdExtra = showTmdbId,
                 )

@@ -35,12 +35,16 @@ internal fun sourceStatusMessage(folder: LibraryFolderEntity): String? {
 
 /** What the viewer reads when linking or listing a server fails (H.3); null for an error that isn't a connector's. */
 internal fun connectorFailureMessage(context: Context, error: Throwable): String? =
-    when (val failure = (error as? ConnectorException)?.failure) {
-        null -> when (error) {
-            is OAuthException -> oauthFailureMessage(context, error)
-            is RemoteSourceException -> remoteFailureMessage(context, error.kind, error.failure)
-            else -> null
-        }
+    when (error) {
+        is ConnectorException -> connectorFailureMessage(context, error.failure)
+        is OAuthException -> oauthFailureMessage(context, error)
+        is RemoteSourceException -> remoteFailureMessage(context, error.kind, error.failure)
+        else -> null
+    }
+
+/** What the viewer reads for one connector [failure]: linking, listing, or opening a file (H.3). */
+internal fun connectorFailureMessage(context: Context, failure: ConnectorFailure): String =
+    when (failure) {
         ConnectorFailure.InvalidAddress -> context.getString(R.string.connector_invalid_address)
         ConnectorFailure.InsecureConnection -> context.getString(R.string.connector_insecure_connection)
         is ConnectorFailure.Unreachable -> context.getString(R.string.connector_unreachable, failure.host)

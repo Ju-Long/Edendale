@@ -56,8 +56,9 @@ data class BufferedSourceConfig(
 }
 
 /** The connection dropped for good mid-file; the message names the host. */
-class RemoteConnectionLostException(val host: String, val detail: String?) : IOException(
+class RemoteConnectionLostException(val host: String, val detail: String?, cause: Throwable? = null) : IOException(
     if (detail.isNullOrBlank()) "Lost the connection to $host." else "Lost the connection to $host: $detail",
+    cause,
 )
 
 /** The first open failed (bad login, missing path, host down); no retries were made. */
@@ -389,7 +390,7 @@ class BufferedByteSource(
                 if (!everOpened) {
                     fatal = RemoteOpenException(host, error)
                 } else {
-                    failure = RemoteConnectionLostException(host, error?.message)
+                    failure = RemoteConnectionLostException(host, error?.message, error)
                     if (wanted == index) failedChunk = index
                     // Retrying again at once would only fail again; wait for a read.
                     prefetchHalted = true

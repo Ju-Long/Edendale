@@ -1,5 +1,7 @@
 package com.babasama.edendale.android.player
 
+import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.remote.RemoteConnectionLostException
 import com.babasama.edendale.remote.RemoteFailure
@@ -26,6 +28,20 @@ class PlaybackFailureTest {
             PlaybackFailure.of(error),
         )
         assertEquals(PlaybackFailure.CouldNotConnect("nas.local", null), PlaybackFailure.of(RemoteOpenException("nas.local", null)))
+    }
+
+    @Test
+    fun aConnectorsRefusalIsReadAsItsFailureNotItsText() {
+        // An SFTP copy on a host that's down: the view shows the connector's own message, not "Unreachable(host=…)".
+        val unreachable = ConnectorFailure.Unreachable("10.0.2.2")
+        val error = RuntimeException("Source error", RemoteOpenException("10.0.2.2", ConnectorException(unreachable)))
+        assertEquals(PlaybackFailure.Connector(unreachable), PlaybackFailure.of(error))
+        val wrapped = RemoteOpenException("nas", IOException("open", ConnectorException(ConnectorFailure.AuthenticationFailed("nas"))))
+        assertEquals(PlaybackFailure.Connector(ConnectorFailure.AuthenticationFailed("nas")), PlaybackFailure.of(wrapped))
+        assertEquals(PlaybackFailure.Connector(unreachable), PlaybackFailure.of(ConnectorException(unreachable)))
+        // A reconnect that failed the same way keeps only the host.
+        val lost = RemoteConnectionLostException("10.0.2.2", ConnectorException(unreachable).message, ConnectorException(unreachable))
+        assertEquals(PlaybackFailure.ConnectionLost("10.0.2.2", null), PlaybackFailure.of(lost))
     }
 
     @Test

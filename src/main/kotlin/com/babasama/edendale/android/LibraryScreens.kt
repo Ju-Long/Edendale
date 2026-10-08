@@ -51,6 +51,7 @@ import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
 import com.babasama.edendale.android.player.PlayerActivity
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
@@ -69,7 +70,8 @@ fun SourceRow(
     onRescan: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val isNetwork = SourceScanRules.kindOf(folder)?.isRemote == true
+    val kind = SourceScanRules.kindOf(folder)
+    val isNetwork = kind?.isRemote == true
     val statusMessage = sourceStatusMessage(folder)
     Surface(
         modifier = Modifier
@@ -105,10 +107,12 @@ fun SourceRow(
                 Text(
                     text = stringResource(
                         R.string.metadata_separator,
-                        stringResource(
-                            if (isNetwork) R.string.source_kind_network_share
-                            else R.string.source_kind_local_folder_lower,
-                        ),
+                        when {
+                            !isNetwork -> stringResource(R.string.source_kind_local_folder_lower)
+                            kind == MediaSourceKind.SMB -> stringResource(R.string.source_kind_network_share)
+                            // Cloud accounts, SFTP, WebDAV, and S3 by name.
+                            else -> sourceKindLabel(kind)
+                        },
                         pluralStringResource(R.plurals.item_count, itemCount, itemCount),
                     ),
                     style = MaterialTheme.typography.bodySmall,

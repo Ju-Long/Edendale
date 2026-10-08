@@ -2,8 +2,9 @@ package com.babasama.edendale.android.player
 
 import android.net.Uri
 import android.provider.DocumentsContract
+import com.babasama.edendale.android.PlaybackSources
+import com.babasama.edendale.android.copySource
 import com.babasama.edendale.android.data.LibraryDao
-import com.babasama.edendale.android.data.LibraryRepository
 import com.babasama.edendale.connectors.MediaSourceKind
 
 /**
@@ -89,7 +90,6 @@ internal fun playlistParentKey(uri: String): String? = when {
  */
 internal suspend fun loadPlayerPlaylist(
     dao: LibraryDao,
-    repository: LibraryRepository,
     uriString: String,
     showTmdbIdExtra: Int?,
 ): PlayerPlaylist? {
@@ -98,16 +98,27 @@ internal suspend fun loadPlayerPlaylist(
     // show. The intent's showTmdbId covers files launched by TMDB id whose
     // URI never entered the library (for instance a re-imported path).
     val playingEpisode = dao.episodeByUri(uriString)
-    val episodes = when {
-        playingEpisode != null -> dao.episodesForShow(playingEpisode.showKey)
-        showTmdbIdExtra != null -> repository.episodesForShowTmdbId(showTmdbIdExtra)
-        else -> emptyList()
+    val show = playingEpisode?.let { dao.showByKey(it.showKey) }
+        ?: showTmdbIdExtra?.let { dao.showByTmdbId(it) }
+    val showTmdbId = showTmdbIdExtra ?: show?.tmdbId
+    // Every copy of the show, merged the way its page merges them (D.5).
+    val showKeys = buildSet {
+        playingEpisode?.let { add(it.showKey) }
+        show?.let { add(it.key) }
+        if (showTmdbId != null) dao.shows().filter { it.tmdbId == showTmdbId }.forEach { add(it.key) }
     }
+    val folders = dao.folders().associateBy { it.treeUri }
+    val episodes = PlaybackSources.playerEpisodes(
+        episodes = showKeys.flatMap { dao.episodesForShow(it) },
+        playing = playingEpisode,
+        season = { it.season },
+        number = { it.episode },
+        folderUri = { it.folderUri },
+        source = { folders.copySource(it.folderUri) },
+        path = { it.uri },
+    )
     if (episodes.isNotEmpty()) {
-        val show = playingEpisode?.let { dao.showByKey(it.showKey) }
-            ?: showTmdbIdExtra?.let { dao.showByTmdbId(it) }
         val backdropPath = show?.backdropPath
-        val showTmdbId = showTmdbIdExtra ?: show?.tmdbId
         return PlayerPlaylist(
             isEpisodeList = true,
             showName = show?.name,

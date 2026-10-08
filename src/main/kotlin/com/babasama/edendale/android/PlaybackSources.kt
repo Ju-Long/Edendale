@@ -66,6 +66,35 @@ internal object PlaybackSources {
             .map { (key, copies) -> EpisodeSlot(key.first, key.second, copies.sortedWith(rank)) }
             .sortedWith(compareBy({ it.season }, { it.number }))
 
+    /**
+     * One copy per episode for the player's episode list, which Up Next and
+     * auto-advance walk (C.2 with D.5): [playing] for its own episode; for the
+     * others, a copy on the playing copy's source while that source is
+     * reachable, else the first reachable copy in [comparator] order. Listing
+     * every copy made advancing take whichever the database returned first,
+     * even one on an offline source.
+     */
+    fun <T> playerEpisodes(
+        episodes: List<T>,
+        playing: T?,
+        season: (T) -> Int,
+        number: (T) -> Int,
+        folderUri: (T) -> String?,
+        source: (T) -> CopySource,
+        path: (T) -> String,
+    ): List<T> {
+        val playingFolder = playing?.let(folderUri)
+        val sameSourceFirst = compareBy<T> { playing == null || folderUri(it) != playingFolder }
+            .then(comparator(source, path))
+        return episodeSlots(episodes, season, number, sameSourceFirst).map { slot ->
+            if (playing != null && playing in slot.copies) {
+                playing
+            } else {
+                preferred(slot.copies) { source(it).isUnavailable } ?: slot.primary
+            }
+        }
+    }
+
     /** The file name of a stored path or URI, decoded. */
     fun fileName(path: String): String {
         val decoded = runCatching { URLDecoder.decode(path.replace("+", "%2B"), "UTF-8") }.getOrDefault(path)

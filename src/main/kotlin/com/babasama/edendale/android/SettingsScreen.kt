@@ -586,17 +586,23 @@ private fun WyzieKeySettingsSection(
                     }
                 }
                 SettingsRowDivider()
-                OutlinedTextField(
-                    value = keyInput,
-                    onValueChange = onKeyInputChanged,
+                // On TV the keyboard waits for Select, so walking Settings with the remote passes by.
+                TvTextFieldGate(
+                    isTelevision = isTelevision,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 14.dp),
-                    label = { Text(stringResource(R.string.wyzie_api_key)) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    singleLine = true,
-                )
+                ) { fieldModifier ->
+                    OutlinedTextField(
+                        value = keyInput,
+                        onValueChange = onKeyInputChanged,
+                        modifier = Modifier.fillMaxWidth().then(fieldModifier),
+                        label = { Text(stringResource(R.string.wyzie_api_key)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                    )
+                }
                 SettingsRowDivider()
                 SettingsActionRow {
                     ArchiveButton(

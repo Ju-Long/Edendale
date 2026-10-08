@@ -26,7 +26,10 @@ import com.babasama.edendale.android.ArchiveButton
 import com.babasama.edendale.android.ArchiveButtonKind
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.R
+import com.babasama.edendale.android.connectorFailureMessage
 import com.babasama.edendale.android.remoteFailureMessage
+import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.remote.RemoteConnectionLostException
 import com.babasama.edendale.remote.RemoteFailure
@@ -41,6 +44,13 @@ internal sealed interface PlaybackFailure {
     /** A remote file never opened: the host is down, or the login or path is wrong. */
     data class CouldNotConnect(val host: String, val detail: String?) : PlaybackFailure
 
+    /**
+     * A remote file never opened because its connector refused (an SFTP host
+     * down, a host key or certificate changed): the connector's own message,
+     * never the exception's text.
+     */
+    data class Connector(val failure: ConnectorFailure) : PlaybackFailure
+
     /** A storage provider refused or failed a read (H.2). */
     data class Provider(val kind: MediaSourceKind, val failure: RemoteFailure) : PlaybackFailure
 
@@ -52,13 +62,27 @@ internal sealed interface PlaybackFailure {
             val seen = HashSet<Throwable>()
             while (cause != null && seen.add(cause)) {
                 when (cause) {
-                    is RemoteConnectionLostException -> return ConnectionLost(cause.host, cause.detail)
-                    is RemoteOpenException -> return CouldNotConnect(cause.host, cause.cause?.message?.takeIf { it.isNotBlank() })
+                    // A connector's failure text isn't for reading; the host alone says enough.
+                    is RemoteConnectionLostException ->
+                        return ConnectionLost(cause.host, cause.detail.takeIf { connectorFailure(cause.cause) == null })
+                    is RemoteOpenException -> return connectorFailure(cause.cause)?.let(::Connector)
+                        ?: CouldNotConnect(cause.host, cause.cause?.message?.takeIf { it.isNotBlank() })
+                    is ConnectorException -> return Connector(cause.failure)
                     is RemoteSourceException -> return Provider(cause.kind, cause.failure)
                 }
                 cause = cause.cause
             }
             return Other
+        }
+
+        private fun connectorFailure(error: Throwable?): ConnectorFailure? {
+            var cause = error
+            val seen = HashSet<Throwable>()
+            while (cause != null && seen.add(cause)) {
+                if (cause is ConnectorException) return cause.failure
+                cause = cause.cause
+            }
+            return null
         }
     }
 }
@@ -71,6 +95,7 @@ internal fun playbackFailureMessage(failure: PlaybackFailure): String = when (fa
     // The transport's own words say what went wrong (bad login, no such path).
     is PlaybackFailure.CouldNotConnect -> failure.detail
         ?: stringResource(R.string.player_error_could_not_connect, failure.host)
+    is PlaybackFailure.Connector -> connectorFailureMessage(LocalContext.current, failure.failure)
     is PlaybackFailure.Provider -> providerFailureMessage(failure.kind, failure.failure)
     PlaybackFailure.Other -> stringResource(R.string.player_error_could_not_open)
 }

@@ -386,10 +386,6 @@ class LibraryRepository(
         }
     }
 
-    /** Imported episodes belonging to an enriched show, ordered by season/episode. */
-    suspend fun episodesForShowTmdbId(tmdbId: Int): List<LibraryEpisodeEntity> =
-        dao.showByTmdbId(tmdbId)?.key?.let { dao.episodesForShow(it) }.orEmpty()
-
     /**
      * Every imported copy of the movie or episode with [tmdbId], in Play From
      * order (D.5): local folders first, then by source name. Empty when the
@@ -428,7 +424,7 @@ class LibraryRepository(
             errorMessage = null,
         )
         val listing = try {
-            connectorFor(folder)?.let { listConnector(it) } ?: listDocuments(folder)
+            connectorFor(folder)?.let { listConnector(it, folder) } ?: listDocuments(folder)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Throwable) {
@@ -668,9 +664,8 @@ class LibraryRepository(
     }
 
     /** Validates the source, then walks it; a partial walk deletes nothing. */
-    private suspend fun listConnector(connector: MediaConnector): Listing {
-        connector.validate()
-        val enumeration = connector.enumerateVideos(connector.root)
+    private suspend fun listConnector(connector: MediaConnector, folder: LibraryFolderEntity): Listing {
+        val enumeration = SourceScanRules.enumerate(connector, folder)
         return Listing(enumeration.videos.map { it.url to it.name }, enumeration.complete)
     }
 
