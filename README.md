@@ -135,7 +135,9 @@ printf '%s\n' "$WYZIE_KEY" | dotnet run --project tools/Edendale.Secrets -- --wy
 
 The tool writes the gitignored root `secrets.json` with
 `TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, `WYZIE_API_KEY`, and the optional
-`ONEDRIVE_CLIENT_ID` and `DROPBOX_APP_KEY`. It serializes
+`GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`,
+and `DROPBOX_APP_KEY` ([secrets.example.json](secrets.example.json) lists
+them). It serializes
 the file rather than concatenating it, writes through a sibling temporary file
 that is restricted to the current Windows user before any secret reaches it,
 renames that over the destination, and verifies the resulting ACL. It never
@@ -159,14 +161,30 @@ The Wyzie key is optional. Get one at
 to build without it, and the player hides the online subtitle search rather
 than offering a dead entry.
 
-The OneDrive and Dropbox IDs are optional too, and an empty value hides that
-provider from Link Source. Both are public-client identifiers for OAuth with
-PKCE: no client secret exists for either, and none ships.
+The Google Drive, OneDrive, and Dropbox IDs are optional too, and an empty
+client ID hides that provider from Link Source. All three sign in with OAuth
+and PKCE through the system browser and a loopback redirect on `127.0.0.1`.
+OneDrive and Dropbox are public clients with no secret. Google's Desktop
+client type also issues a client secret its token endpoint expects; Google
+documents it as not confidential, because every copy of a desktop app carries
+it (D9). It stays in the gitignored `secrets.json` like the TMDB token.
 
-- **OneDrive:** register a Microsoft Entra application as a public client
-  (Mobile and desktop) with the redirect URI `http://localhost` and the
-  delegated `Files.Read` and `User.Read` permissions. Microsoft ignores the
-  port of a loopback redirect, so Edendale listens on any free one.
+- **Google Drive:** in Google Cloud, enable the Google Drive API, set up the
+  OAuth consent screen with the `openid`, `email`, and
+  `https://www.googleapis.com/auth/drive.readonly` scopes, and create an OAuth
+  client of type **Desktop app**. Its client ID and secret are the two Google
+  values. Desktop clients accept any loopback port, so no redirect URI is
+  registered. `drive.readonly` is a restricted scope: while the consent
+  screen is in Testing, only listed test users can sign in and their sign-in
+  lasts 7 days; publishing to everyone needs Google's verification and
+  security assessment.
+- **OneDrive:** register a Microsoft Entra application for personal and work
+  or school accounts, with the delegated `Files.Read` and `User.Read`
+  permissions and **Allow public client flows** on. Add `http://127.0.0.1` to
+  `publicClient.redirectUris` in its Manifest: the portal's Redirect URI box
+  refuses http loopback addresses, and a registered `http://localhost` doesn't
+  match `127.0.0.1`. Microsoft ignores the port of a loopback redirect, so
+  Edendale listens on any free one.
 - **Dropbox:** create a scoped app with Full Dropbox access, the redirect URI
   `http://127.0.0.1:49735/`, and the `files.metadata.read`,
   `files.content.read`, and `account_info.read` scopes.
@@ -315,18 +333,21 @@ Player Adjustments → Enhancement uses only what the bundled LibVLC 3 ships
   8-bit.
 
 **Frame Generation** (Player Adjustments → Enhancement, off by default) is
-Edendale's own, on NVIDIA and Intel GPUs. It doubles 30 fps and slower video
-by motion-compensated interpolation, and upscales to the window's physical
-pixels with Lanczos-3. NVIDIA runs it as CUDA kernels through the driver
-(`nvcuda.dll`, no CUDA runtime ships), and Intel runs the same algorithm as
-Direct3D 11 compute shaders. While it's on:
+Edendale's own, on NVIDIA, Intel, and AMD GPUs. It doubles 30 fps and slower
+video by motion-compensated interpolation, and upscales to the window's
+physical pixels with Lanczos-3. NVIDIA runs it as CUDA kernels through the
+driver (`nvcuda.dll`, no CUDA runtime ships), and Intel and AMD run the same
+algorithm as Direct3D 11 compute shaders. On AMD it is the alternative to
+Motion Smoothing: turning either on turns the other off. While it's on:
 
 - Edendale draws LibVLC's frames on its own swap chain, about half a frame
   late, and delays the audio to match.
 - Scene cuts hold the previous frame, and poorly matched areas blend the two
   frames instead of warping them.
 - 10-bit and HDR sources, speeds above 1.5×, and any GPU failure fall back to
-  normal playback. AMD keeps Motion Smoothing.
+  normal playback.
+- The picture comes from Edendale's own swap chain, so the driver's super
+  resolution (Balanced) doesn't apply on top; Lanczos-3 does the upscaling.
 - After changing `FrameGeneration.cu`, rebuild the PTX with
   `python3 tools/build-frame-generation-ptx.py` (NVRTC from
   `pip install nvidia-cuda-nvrtc-cu12`) and commit it.
@@ -344,12 +365,14 @@ Source form (DIFF.md §3.12):
 | WebDAV | PROPFIND with Basic or Digest login (Nextcloud, ownCloud, Synology, QNAP, `rclone serve webdav`) |
 | S3-compatible | Signature Version 4 (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) |
 | NFS | LibVLC's bundled NFS client; the export needs the `insecure` option |
+| Google Drive | Drive API v3, read-only: My Drive, Shared with me, and shared drives |
 | OneDrive | Microsoft Graph, personal and work or school accounts |
 | Dropbox | Dropbox API v2 |
 
-- **Google Drive** is not offered directly: its desktop OAuth clients carry
-  a client secret, which Edendale never ships (D9). Reach Drive through
-  WebDAV with `rclone serve webdav`.
+- **Cloud accounts** appear in Link Source only when this build has their
+  client ID (see [API credentials](#api-credentials)). Google Drive follows
+  shortcuts, skips Docs, Sheets, and other Google formats, and refuses files
+  Google flags as harmful rather than overriding the warning.
 - **TLS:** HTTPS sources need a certificate Windows trusts; self-signed
   certificates are refused (D10). Plain HTTP reaches only local addresses
   (`.local` and unqualified names, private and Tailscale IP ranges).
@@ -378,7 +401,7 @@ Subtitles downloaded from Wyzie Subs are kept in
 without being turned on, unless that's switched off in Settings → Subtitles.
 
 Every login stays on this device (D11). The TMDB session, SMB, SFTP, WebDAV,
-and S3 logins, and OneDrive and Dropbox refresh tokens are protected with DPAPI
+and S3 logins, and Google Drive, OneDrive, and Dropbox refresh tokens are protected with DPAPI
 for the current Windows user and never enter the OneDrive replica. Access
 tokens exist only in memory. Pinned SSH host keys are stored beside them. A
 OneDrive account linked as a storage source is separate from the OneDrive
@@ -389,6 +412,8 @@ Network access is limited to:
 
 - TMDB, for metadata and artwork;
 - the sources the user links (SMB, NFS, SFTP, WebDAV, S3-compatible,
+  Google Drive through `accounts.google.com`, `oauth2.googleapis.com`, and
+  `www.googleapis.com`,
   OneDrive through `graph.microsoft.com` and `login.microsoftonline.com`,
   and Dropbox through `api.dropboxapi.com`, `www.dropbox.com`, and
   `dl.dropboxusercontent.com`), to list and play the user's files;

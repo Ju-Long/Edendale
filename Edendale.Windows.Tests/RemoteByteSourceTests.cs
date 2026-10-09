@@ -399,6 +399,12 @@ public sealed class RemoteByteSourceTests
         Assert.AreEqual(ProviderActionKind.Refresh,
             Action(403, "<Error><Code>AccessDenied</Code><Message>Request has expired</Message></Error>", preauthorized: true, kind: MediaSourceKind.S3).Kind);
         Assert.AreEqual(ConnectorFailure.AccessDenied, Action(403, "forbidden").Error?.Failure);
+        // Drive's abuse flag fails with its own message; acknowledgeAbuse is never sent.
+        var abusive = Action(403, """{"error":{"errors":[{"reason":"cannotDownloadAbusiveFile"}]}}""", kind: MediaSourceKind.GoogleDrive).Error;
+        Assert.AreEqual(ConnectorFailure.AbusiveFile, abusive?.Failure);
+        StringAssert.Contains(abusive?.Message, "potentially harmful");
+        Assert.AreEqual(ConnectorFailure.RateLimited,
+            Action(403, """{"error":{"errors":[{"reason":"downloadQuotaExceeded"}]}}""", kind: MediaSourceKind.GoogleDrive).Error?.Failure);
         Assert.AreEqual(ConnectorFailure.NotFound, Action(404).Error?.Failure);
         Assert.AreEqual(ConnectorFailure.NotFound, Action(409, """{"error_summary":"path/not_found/"}""", kind: MediaSourceKind.Dropbox).Error?.Failure);
         Assert.AreEqual(ProviderActionKind.Backoff, Action(429).Kind);

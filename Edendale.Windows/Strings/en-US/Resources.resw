@@ -1619,4 +1619,22 @@ IS SILENT</value>
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>Works on video at 30 fps or less, up to 4K.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Your browser opens to sign in to Google. Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>My Drive</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Shared with me</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Shared drives</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive flagged this file as potentially harmful, so it can’t be streamed.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected.</value>
+  </data>
 </root>

@@ -1619,4 +1619,22 @@
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>30fps 이하, 최대 4K 동영상에서 작동합니다.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>브라우저가 열리고 Google에 로그인합니다. Edendale은 Google에 드라이브에 대한 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>내 드라이브</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>공유 문서함</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>공유 드라이브</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google 드라이브에서 이 파일을 잠재적으로 유해한 파일로 표시했으므로 스트리밍할 수 없습니다.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale이 Google 드라이브 파일을 보려면 권한이 필요합니다. 다시 로그인하고 드라이브 접근을 선택된 상태로 두십시오.</value>
+  </data>
 </root>

@@ -1,10 +1,12 @@
-// A dependency-free OAuth 2.0 client for public (secret-less) apps
+// A dependency-free OAuth 2.0 client for public (installed) apps
 // (OAuthClient.swift): the authorization-code flow with PKCE (RFC 7636, S256)
 // through the system browser and a loopback redirect (RFC 8252), refresh, and
-// a single-flight token provider. No SDKs and no client secrets: client IDs
-// and app keys come from the gitignored secrets.json (tools/Edendale.Secrets),
-// and an empty value hides that provider. Nothing here logs tokens or puts
-// them into error messages.
+// a single-flight token provider. No SDKs: client IDs and app keys come from
+// the gitignored secrets.json (tools/Edendale.Secrets), and an empty value
+// hides that provider. The one client secret is Google's (D9): its Desktop
+// client type issues one that Google documents as not confidential, and it
+// comes from the same gitignored file. Nothing here logs tokens or secrets or
+// puts them into error messages.
 
 using System.Net;
 using System.Net.Sockets;
@@ -35,6 +37,14 @@ public sealed record OAuthConfiguration
 {
     public required MediaSourceKind Kind { get; init; }
     public required string ClientId { get; init; }
+
+    /// <summary>
+    /// Sent to the token endpoint only, never in the authorization URL.
+    /// Google's Desktop client type issues one that Google documents as not
+    /// confidential (D9); every other provider has none.
+    /// </summary>
+    public string? ClientSecret { get; init; }
+
     public required string AuthorizationEndpoint { get; init; }
     public required string TokenEndpoint { get; init; }
     public required IReadOnlyList<string> Scopes { get; init; }
@@ -63,6 +73,8 @@ public sealed record OAuthTokenResponse
     [JsonPropertyName("scope")] public string? Scope { get; init; }
     /// <summary>Dropbox returns the account with the token.</summary>
     [JsonPropertyName("account_id")] public string? AccountId { get; init; }
+    /// <summary>Google's OpenID Connect ID token, which names the account.</summary>
+    [JsonPropertyName("id_token")] public string? IdToken { get; init; }
 
     public IReadOnlyList<string>? GrantedScopes => Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 }
@@ -77,6 +89,8 @@ public enum OAuthFailure
     AuthorizationDenied,
     /// <summary>The refresh token was revoked or expired: sign in again.</summary>
     InvalidGrant,
+    /// <summary>Google's consent page let the user untick Drive access.</summary>
+    DriveAccessMissing,
     Server,
     Http,
     MalformedResponse,
@@ -94,6 +108,7 @@ public sealed class OAuthException(OAuthFailure failure, string provider, string
         OAuthFailure.StateMismatch or OAuthFailure.MissingAuthorizationCode => AppText.Get("OAuth_Unverified"),
         OAuthFailure.AuthorizationDenied => AppText.Format("OAuth_Denied", provider),
         OAuthFailure.InvalidGrant => AppText.Format("OAuth_InvalidGrant", provider),
+        OAuthFailure.DriveAccessMissing => AppText.Get("OAuth_DriveAccessMissing"),
         OAuthFailure.Server when !string.IsNullOrEmpty(description) => AppText.Format("OAuth_ServerDetail", provider, code, description),
         OAuthFailure.Server => AppText.Format("OAuth_Server", provider, code),
         OAuthFailure.Http => AppText.Format("Connector_ServerError", provider, status),
@@ -152,6 +167,7 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
             ("redirect_uri", redirectUri),
             ("code_verifier", verifier),
         };
+        AddClientSecret(parameters);
         if (configuration.SendsScopeToTokenEndpoint) parameters.Add(("scope", string.Join(' ', configuration.Scopes)));
         return TokenRequestAsync(parameters, cancellation);
     }
@@ -164,8 +180,14 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
             ("refresh_token", refreshToken),
             ("client_id", configuration.ClientId),
         };
+        AddClientSecret(parameters);
         if (configuration.SendsScopeToTokenEndpoint) parameters.Add(("scope", string.Join(' ', configuration.Scopes)));
         return TokenRequestAsync(parameters, cancellation);
+    }
+
+    private void AddClientSecret(List<(string, string)> parameters)
+    {
+        if (configuration.ClientSecret is { Length: > 0 } secret) parameters.Add(("client_secret", secret));
     }
 
     private async Task<OAuthTokenResponse> TokenRequestAsync(List<(string, string)> parameters, CancellationToken cancellation)
@@ -242,12 +264,14 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
 }
 
 /// <summary>
-/// Per-provider OAuth settings (CloudProviders.swift). Google Drive is not
-/// offered on Windows (D9): its desktop clients need a client secret, so
-/// Drive is reached through WebDAV (for example rclone serve webdav).
+/// Per-provider OAuth settings (CloudProviders.swift). Google Drive uses a
+/// Desktop-type OAuth client with a loopback redirect; its token endpoint
+/// expects the client secret Google issues to those clients (D9).
 /// </summary>
 public static class CloudProviders
 {
+    public const string GoogleDriveScope = "https://www.googleapis.com/auth/drive.readonly";
+    public static readonly IReadOnlyList<string> GoogleScopes = ["openid", "email", GoogleDriveScope];
     public static readonly IReadOnlyList<string> OneDriveScopes = ["Files.Read", "User.Read", "offline_access"];
     public static readonly IReadOnlyList<string> DropboxScopes = ["files.metadata.read", "files.content.read", "account_info.read"];
 
@@ -259,12 +283,28 @@ public static class CloudProviders
 
     /// <summary>The configuration for <paramref name="kind"/>, or null when this build has no client ID for it.</summary>
     public static OAuthConfiguration? Configuration(MediaSourceKind kind) =>
-        CloudClientIds.For(kind) is { } clientId ? Configuration(kind, clientId) : null;
+        CloudClientIds.For(kind) is { } clientId ? Configuration(kind, clientId, CloudClientIds.SecretFor(kind)) : null;
 
     public static bool IsConfigured(MediaSourceKind kind) => Configuration(kind) is not null;
 
-    public static OAuthConfiguration? Configuration(MediaSourceKind kind, string clientId) => kind switch
+    public static OAuthConfiguration? Configuration(MediaSourceKind kind, string clientId, string? clientSecret = null) => kind switch
     {
+        MediaSourceKind.GoogleDrive => new OAuthConfiguration
+        {
+            Kind = kind,
+            ClientId = clientId,
+            ClientSecret = clientSecret,
+            AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
+            TokenEndpoint = "https://oauth2.googleapis.com/token",
+            Scopes = GoogleScopes,
+            // "consent" makes Google issue a refresh token even when this
+            // account already granted access (relinking after a sign-out).
+            AdditionalAuthorizationParameters = new Dictionary<string, string>
+            {
+                ["access_type"] = "offline",
+                ["prompt"] = "select_account consent",
+            },
+        },
         MediaSourceKind.OneDrive => new OAuthConfiguration
         {
             Kind = kind,
@@ -291,13 +331,34 @@ public static class CloudProviders
     /// <summary>Who a fresh token belongs to.</summary>
     public sealed record Identity(string Subject, string? Email, string? DisplayName, string? DriveId = null);
 
-    /// <summary>Microsoft Graph /me and /me/drive, or Dropbox get_current_account.</summary>
-    public static async Task<Identity> IdentityAsync(MediaSourceKind kind, string accessToken, HttpMessageInvoker? client, CancellationToken cancellation)
+    /// <summary>
+    /// Fails when Google's consent page had Drive access unticked: the
+    /// account would link but list nothing.
+    /// </summary>
+    public static void CheckGrantedScopes(MediaSourceKind kind, OAuthTokenResponse tokens)
+    {
+        if (kind != MediaSourceKind.GoogleDrive) return;
+        if (tokens.GrantedScopes is { } granted && !granted.Contains(GoogleDriveScope, StringComparer.Ordinal))
+        {
+            throw new OAuthException(OAuthFailure.DriveAccessMissing, kind.DisplayName());
+        }
+    }
+
+    /// <summary>Google's ID token, Microsoft Graph /me and /me/drive, or Dropbox get_current_account.</summary>
+    public static async Task<Identity> IdentityAsync(MediaSourceKind kind, OAuthTokenResponse tokens, HttpMessageInvoker? client, CancellationToken cancellation)
     {
         client ??= RemoteHttp.Shared;
         var provider = kind.DisplayName();
+        var accessToken = tokens.AccessToken;
         switch (kind)
         {
+            case MediaSourceKind.GoogleDrive:
+            {
+                using var claims = tokens.IdToken is { } idToken ? DecodeJwtClaims(idToken) : null;
+                var root = claims?.RootElement;
+                if (root?.String("sub") is not { Length: > 0 } subject) throw new OAuthException(OAuthFailure.MalformedResponse, provider);
+                return new Identity(subject, root.Value.String("email"), root.Value.String("name"));
+            }
             case MediaSourceKind.OneDrive:
             {
                 using var me = await GetJsonAsync("https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName", accessToken, provider, client, cancellation);
@@ -323,20 +384,64 @@ public static class CloudProviders
         }
     }
 
-    /// <summary>Best effort: Dropbox can end the grant (revoking an access token disables its refresh token).</summary>
-    public static async Task RevokeAsync(MediaSourceKind kind, string? accessToken, HttpMessageInvoker? client = null)
+    /// <summary>
+    /// The payload of a JWT. Its signature isn't checked: the ID token came
+    /// straight from Google's token endpoint over TLS (OpenID Connect Core
+    /// §3.1.3.7). Null when it isn't a JWT.
+    /// </summary>
+    public static JsonDocument? DecodeJwtClaims(string jwt)
     {
-        if (kind != MediaSourceKind.Dropbox || accessToken is null) return;
+        var parts = jwt.Split('.');
+        if (parts.Length < 2) return null;
+        var payload = parts[1].Replace('-', '+').Replace('_', '/');
+        payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/auth/token/revoke");
+            var document = JsonDocument.Parse(Convert.FromBase64String(payload));
+            if (document.RootElement.ValueKind == JsonValueKind.Object) return document;
+            document.Dispose();
+            return null;
+        }
+        catch (Exception error) when (error is FormatException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Best effort: ends the grant at the provider. Google revokes the
+    /// refresh token; Dropbox revokes the access token, which disables its
+    /// refresh token too. A Microsoft grant is removed from the account's
+    /// app permissions page.
+    /// </summary>
+    public static async Task RevokeAsync(MediaSourceKind kind, string? refreshToken, string? accessToken, HttpMessageInvoker? client = null)
+    {
+        HttpRequestMessage? request = null;
+        if (kind == MediaSourceKind.GoogleDrive && (refreshToken ?? accessToken) is { } token)
+        {
+            request = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/revoke")
+            {
+                Content = new StringContent(OAuthClient.FormEncode([("token", token)]), Encoding.ASCII, "application/x-www-form-urlencoded"),
+            };
+        }
+        else if (kind == MediaSourceKind.Dropbox && accessToken is not null)
+        {
+            request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/auth/token/revoke");
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        }
+        if (request is null) return;
+        try
+        {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var _ = await (client ?? RemoteHttp.Shared).SendAsync(request, timeout.Token).ConfigureAwait(false);
         }
         catch
         {
             // The account is forgotten here either way.
+        }
+        finally
+        {
+            request.Dispose();
         }
     }
 
@@ -367,7 +472,8 @@ public static class CloudProviders
 /// Client IDs and app keys, from the environment or the gitignored
 /// secrets.json the build embeds (tools/Edendale.Secrets). They aren't
 /// secrets for PKCE clients, but they stay out of source control like the
-/// TMDB credentials. An empty value hides that provider.
+/// TMDB credentials. An empty client ID hides that provider. Google's
+/// Desktop client secret comes the same way (D9).
 /// </summary>
 public static class CloudClientIds
 {
@@ -376,16 +482,19 @@ public static class CloudClientIds
     /// <summary>Tests replace this to configure providers without a secrets file.</summary>
     public static Func<string, string?> Source { get; set; } = Load;
 
-    public static string? For(MediaSourceKind kind)
+    public static string? For(MediaSourceKind kind) => Value(kind switch
     {
-        var name = kind switch
-        {
-            MediaSourceKind.OneDrive => "ONEDRIVE_CLIENT_ID",
-            MediaSourceKind.Dropbox => "DROPBOX_APP_KEY",
-            _ => null,
-        };
-        return name is null ? null : Source(name) is { Length: > 0 } value ? value : null;
-    }
+        MediaSourceKind.GoogleDrive => "GOOGLE_DRIVE_CLIENT_ID",
+        MediaSourceKind.OneDrive => "ONEDRIVE_CLIENT_ID",
+        MediaSourceKind.Dropbox => "DROPBOX_APP_KEY",
+        _ => null,
+    });
+
+    /// <summary>Google's Desktop client secret; null for every other provider.</summary>
+    public static string? SecretFor(MediaSourceKind kind) =>
+        kind == MediaSourceKind.GoogleDrive ? Value("GOOGLE_DRIVE_CLIENT_SECRET") : null;
+
+    private static string? Value(string? name) => name is null ? null : Source(name) is { Length: > 0 } value ? value : null;
 
     private static string? Load(string name)
     {

@@ -90,7 +90,7 @@ internal sealed class RemoteFolderPicker
     /// <summary>The root as the trail starts: the provider, the bucket, or the server and its path.</summary>
     private static string RootName(IMediaConnector connector) => connector.Kind switch
     {
-        MediaSourceKind.OneDrive or MediaSourceKind.Dropbox => connector.Kind.DisplayName(),
+        MediaSourceKind.GoogleDrive or MediaSourceKind.OneDrive or MediaSourceKind.Dropbox => connector.Kind.DisplayName(),
         MediaSourceKind.S3 => connector.AccountLabel ?? connector.Kind.DisplayName(),
         _ => string.Join(" › ", new[] { SourceUrl.CredentialHost(connector.Root) ?? connector.Kind.DisplayName() }
             .Concat(SourceUrl.PathSegments(connector.Root))),

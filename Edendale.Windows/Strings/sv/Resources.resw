@@ -1619,4 +1619,22 @@
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>Fungerar med video på högst 30 bilder/s, upp till 4K.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Webbläsaren öppnas så att du kan logga in hos Google. Edendale ber Google om skrivskyddad åtkomst till din Drive. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Min enhet</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Delade med mig</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Delade enheter</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale behöver tillstånd att se dina Google Drive-filer. Logga in igen och låt Drive-åtkomsten vara markerad.</value>
+  </data>
 </root>

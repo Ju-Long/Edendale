@@ -1619,4 +1619,22 @@
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>30 fps 以下、4K までの動画で使えます。</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>ブラウザが開き、Google にサインインします。EdendaleはGoogleにドライブへの読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>マイドライブ</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>共有アイテム</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>共有ドライブ</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Googleドライブによってこのファイルは有害な可能性があると判断されたため、ストリーミングできません。</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>EdendaleがGoogleドライブのファイルを表示するには許可が必要です。もう一度サインインして、ドライブへのアクセスを選択したままにしてください。</value>
+  </data>
 </root>

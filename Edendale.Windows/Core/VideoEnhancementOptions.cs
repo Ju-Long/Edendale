@@ -182,20 +182,30 @@ public sealed class VideoEnhancementSettings
         set => _store.SetString(VideoEnhancementOptions.PresetKey, VideoEnhancementOptions.RawValue(value));
     }
 
+    /// <summary>AMD's doubler. Turning it on turns Frame Generation off: both double the rate.</summary>
     public bool MotionSmoothing
     {
         get => _store.GetBool(VideoEnhancementOptions.MotionSmoothingKey, fallback: false);
-        set => _store.SetBool(VideoEnhancementOptions.MotionSmoothingKey, value);
+        set
+        {
+            _store.SetBool(VideoEnhancementOptions.MotionSmoothingKey, value);
+            if (value) _store.SetBool(FrameGenerationRules.EnabledKey, false);
+        }
     }
 
     /// <summary>
-    /// Frame generation and upscaling on NVIDIA (CUDA) and Intel (Direct3D
-    /// compute), ENHANCEMENT.md G. Off by default; device-local like the preset.
+    /// Frame generation and upscaling on NVIDIA (CUDA), Intel, and AMD
+    /// (Direct3D compute), ENHANCEMENT.md G. Off by default; device-local like
+    /// the preset. Turning it on turns Motion Smoothing off.
     /// </summary>
     public bool FrameGeneration
     {
         get => _store.GetBool(FrameGenerationRules.EnabledKey, fallback: false);
-        set => _store.SetBool(FrameGenerationRules.EnabledKey, value);
+        set
+        {
+            _store.SetBool(FrameGenerationRules.EnabledKey, value);
+            if (value) _store.SetBool(VideoEnhancementOptions.MotionSmoothingKey, false);
+        }
     }
 
     /// <summary>Show Original (decision D2): plays unenhanced for the moment, not stored.</summary>

@@ -194,7 +194,7 @@ public sealed class ServerLoginStore
 }
 
 // ----------------------------------------------------------------------
-// Cloud accounts: OneDrive and Dropbox
+// Cloud accounts: Google Drive, OneDrive, and Dropbox
 // ----------------------------------------------------------------------
 
 /// <summary>
@@ -206,7 +206,7 @@ public sealed record CloudAccount
     /// <summary><see cref="MediaSourceKind"/> raw value.</summary>
     public required string Kind { get; init; }
 
-    /// <summary>The provider's stable user id (Microsoft user id, Dropbox account_id).</summary>
+    /// <summary>The provider's stable user id (Google sub, Microsoft user id, Dropbox account_id).</summary>
     public required string Subject { get; init; }
 
     public string? Email { get; init; }

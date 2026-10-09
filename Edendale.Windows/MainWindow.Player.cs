@@ -208,7 +208,8 @@ public sealed partial class MainWindow
         var scale = PlayerElement.XamlRoot?.RasterizationScale ?? 1;
         return VideoEnhancementOptions.Build(
             settings.EffectivePreset,
-            settings.MotionSmoothing && !settings.IsShowingOriginal,
+            // Never both doublers at once (a settings file from before they excluded each other).
+            settings.MotionSmoothing && !settings.IsShowingOriginal && !WantsFrameGeneration(capabilities),
             onBattery: false,
             capabilities,
             source,

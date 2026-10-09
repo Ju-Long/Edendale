@@ -310,6 +310,7 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
     {
         if (_updating) return;
         AppServices.VideoEnhancement.MotionSmoothing = MotionSmoothingToggle.IsOn;
+        SyncDoublerToggles();
         EngineReopenRequested?.Invoke(this, EventArgs.Empty);
     }
 
@@ -318,8 +319,9 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// The toggle shows on NVIDIA and Intel GPUs. The line under it names
-    /// the rates and the engine while it runs, or why it can't for this file.
+    /// The toggle shows on NVIDIA, Intel, and AMD GPUs. The line under it
+    /// names the rates and the engine while it runs, or why it can't for this
+    /// file.
     /// </summary>
     public void ShowFrameGeneration(FrameGenerationBackend backend, string? status)
     {
@@ -344,7 +346,25 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
     {
         if (_updating) return;
         AppServices.VideoEnhancement.FrameGeneration = FrameGenerationToggle.IsOn;
+        SyncDoublerToggles();
         EngineReopenRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>On AMD both doublers are offered; switching one on switches the other off.</summary>
+    private void SyncDoublerToggles()
+    {
+        _updating = true;
+        try
+        {
+            MotionSmoothingToggle.IsOn = AppServices.VideoEnhancement.MotionSmoothing;
+            FrameGenerationToggle.IsOn = AppServices.VideoEnhancement.FrameGeneration;
+            if (!MotionSmoothingToggle.IsOn) FrameRateLabel.Visibility = Visibility.Collapsed;
+            if (!FrameGenerationToggle.IsOn) FrameGenerationLabel.Visibility = Visibility.Collapsed;
+        }
+        finally
+        {
+            _updating = false;
+        }
     }
 
     /// <summary>

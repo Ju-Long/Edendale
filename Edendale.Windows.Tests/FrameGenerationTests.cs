@@ -97,11 +97,11 @@ public sealed class FrameGenerationTests
     // ------------------------------------------------------------------
 
     [TestMethod]
-    public void NvidiaUsesCudaIntelUsesDirect3DAndOthersNothing()
+    public void NvidiaUsesCudaIntelAndAmdUseDirect3DAndOthersNothing()
     {
         Assert.AreEqual(FrameGenerationBackend.Cuda, FrameGenerationRules.BackendFor(Gpu(GpuVendor.Nvidia)));
         Assert.AreEqual(FrameGenerationBackend.Direct3D, FrameGenerationRules.BackendFor(Gpu(GpuVendor.Intel)));
-        Assert.AreEqual(FrameGenerationBackend.None, FrameGenerationRules.BackendFor(Gpu(GpuVendor.Amd)));
+        Assert.AreEqual(FrameGenerationBackend.Direct3D, FrameGenerationRules.BackendFor(Gpu(GpuVendor.Amd)));
         Assert.AreEqual(FrameGenerationBackend.None, FrameGenerationRules.BackendFor(Gpu(GpuVendor.Qualcomm)));
         Assert.AreEqual(FrameGenerationBackend.None, FrameGenerationRules.BackendFor(Gpu(GpuVendor.Software)));
         Assert.AreEqual(FrameGenerationBackend.None, FrameGenerationRules.BackendFor(GpuCapabilities.None));

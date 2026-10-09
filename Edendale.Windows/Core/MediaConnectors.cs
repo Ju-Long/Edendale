@@ -195,6 +195,8 @@ public enum ConnectorFailure
     BucketInAnotherRegion,
     /// <summary>LibVLC couldn't mount or read the NFS export.</summary>
     NfsMountFailed,
+    /// <summary>Google Drive flagged the file as abusive; acknowledgeAbuse is never sent.</summary>
+    AbusiveFile,
 }
 
 /// <summary>
@@ -251,6 +253,7 @@ public sealed class ConnectorException : Exception
         ConnectorFailure.PasswordLoginUnavailable => AppText.Format("Connector_PasswordLoginUnavailable", subject),
         ConnectorFailure.SftpUnavailable => AppText.Format("Connector_SftpUnavailable", subject),
         ConnectorFailure.NfsMountFailed => AppText.Format("Connector_NfsMountFailed", subject),
+        ConnectorFailure.AbusiveFile => AppText.Get("Connector_AbusiveFile"),
         ConnectorFailure.BucketInAnotherRegion => subject is null
             ? AppText.Get("Connector_BucketInAnotherRegionUnknown")
             : AppText.Format("Connector_BucketInAnotherRegion", subject),

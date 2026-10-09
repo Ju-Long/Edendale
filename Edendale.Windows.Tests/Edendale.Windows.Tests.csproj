@@ -46,6 +46,7 @@
     <Compile Include="..\Edendale.Windows\Services\Remote\BufferedByteSource.cs" Link="App\Services\Remote\BufferedByteSource.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\CloudConnectors.cs" Link="App\Services\Remote\CloudConnectors.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\ConnectorFactory.cs" Link="App\Services\Remote\ConnectorFactory.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\GoogleDriveConnector.cs" Link="App\Services\Remote\GoogleDriveConnector.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\OAuth.cs" Link="App\Services\Remote\OAuth.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\ProviderHttp.cs" Link="App\Services\Remote\ProviderHttp.cs" />
     <Compile Include="..\Edendale.Windows\Services\Remote\RemoteByteSource.cs" Link="App\Services\Remote\RemoteByteSource.cs" />

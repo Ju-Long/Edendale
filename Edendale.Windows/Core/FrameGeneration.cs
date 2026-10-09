@@ -11,7 +11,7 @@ public enum FrameGenerationBackend
     /// <summary>NVIDIA: Edendale's CUDA kernels through the driver API (nvcuda.dll).</summary>
     Cuda,
 
-    /// <summary>Intel: the same algorithm as Direct3D 11 compute shaders.</summary>
+    /// <summary>Intel and AMD: the same algorithm as Direct3D 11 compute shaders.</summary>
     Direct3D,
 }
 
@@ -98,14 +98,17 @@ public static class FrameGenerationRules
     /// <summary>Faster than this, frames arrive too quickly to double; real frames are shown as they come.</summary>
     public const double MaximumPlaybackRate = 1.5;
 
-    /// <summary>NVIDIA uses CUDA, Intel uses Direct3D compute. AMD keeps LibVLC's own doubler (Motion Smoothing).</summary>
+    /// <summary>
+    /// NVIDIA uses CUDA; Intel and AMD use Direct3D compute. AMD's Motion
+    /// Smoothing (LibVLC's amf_frc) stays available as the alternative.
+    /// </summary>
     public static FrameGenerationBackend BackendFor(GpuCapabilities capabilities) =>
         capabilities.IsSoftwareAdapter
             ? FrameGenerationBackend.None
             : capabilities.Vendor switch
             {
                 GpuVendor.Nvidia => FrameGenerationBackend.Cuda,
-                GpuVendor.Intel => FrameGenerationBackend.Direct3D,
+                GpuVendor.Intel or GpuVendor.Amd => FrameGenerationBackend.Direct3D,
                 _ => FrameGenerationBackend.None,
             };
 

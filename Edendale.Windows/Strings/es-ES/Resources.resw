@@ -1619,4 +1619,22 @@ ESTÁ EN SILENCIO</value>
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>Funciona con vídeo de 30 fps o menos, hasta 4K.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Tu navegador se abrirá para iniciar sesión en Google. Edendale solicita a Google acceso de solo lectura a tu Drive. Se conecta únicamente desde este dispositivo, lee los listados de carpetas y los vídeos que reproduces, y nunca sube ni cambia nada.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Mi unidad</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Compartido conmigo</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Unidades compartidas</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive ha marcado este archivo como potencialmente dañino, así que no se puede transmitir.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale necesita permiso para ver tus archivos de Google Drive. Vuelve a iniciar sesión y deja seleccionado el acceso a Drive.</value>
+  </data>
 </root>

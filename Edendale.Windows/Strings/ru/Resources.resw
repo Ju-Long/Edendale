@@ -1619,4 +1619,22 @@
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>Работает с видео до 30 кадров/с и разрешением до 4K.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Откроется браузер для входа в Google. Edendale запрашивает у Google доступ только для чтения к вашему Диску. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Мой диск</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Доступные мне</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Общие диски</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale нужно разрешение на просмотр ваших файлов Google Диска. Войдите снова и оставьте доступ к Диску выбранным.</value>
+  </data>
 </root>

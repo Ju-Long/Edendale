@@ -1619,4 +1619,22 @@ IS STIL</value>
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Je browser opent om bij Google in te loggen. Edendale vraagt Google om alleen-lezentoegang tot je Drive. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Mijn Drive</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Gedeeld met mij</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Gedeelde drives</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale heeft toestemming nodig om je Google Drive-bestanden te zien. Log opnieuw in en laat de toegang tot Drive geselecteerd.</value>
+  </data>
 </root>

@@ -38,6 +38,11 @@ public static class ConnectorFactory
                 return SftpConnector.FromSource(sourceUrl, environment.Logins, environment.HostKeys);
             case MediaSourceKind.Nfs:
                 return NfsConnectors?.Invoke(sourceUrl);
+            case MediaSourceKind.GoogleDrive:
+                return SourceUrl.CredentialHost(sourceUrl) is { } driveKey
+                    && environment.Accounts.Account(MediaSourceKind.GoogleDrive, driveKey) is { } drive
+                    ? new GoogleDriveConnector(drive, environment.Tokens)
+                    : null;
             case MediaSourceKind.OneDrive:
                 return SourceUrl.CredentialHost(sourceUrl) is { } oneDriveKey
                     && environment.Accounts.Account(MediaSourceKind.OneDrive, oneDriveKey) is { } oneDrive
@@ -87,6 +92,15 @@ public static class ConnectorFactory
                     throw new ConnectorException(ConnectorFailure.SignInRequired, provider);
                 }
                 return new RemoteByteSource(new S3ContentResolver(configuration, login.Username, login.Password, item.Key), length);
+            }
+            case MediaSourceKind.GoogleDrive:
+            {
+                var item = SourceUrl.ParseAccountItem(itemUrl) ?? throw new ConnectorException(ConnectorFailure.InvalidAddress);
+                if (environment.Accounts.Account(MediaSourceKind.GoogleDrive, item.Account) is null)
+                {
+                    throw new ConnectorException(ConnectorFailure.SignInRequired, provider);
+                }
+                return new RemoteByteSource(new GoogleDriveContentResolver(item.Ids[0], item.Account, environment.Tokens), length);
             }
             case MediaSourceKind.OneDrive:
             {

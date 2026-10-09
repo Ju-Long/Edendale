@@ -4,7 +4,7 @@ using Edendale.Windows.Core;
 namespace Edendale.Windows.Services.Remote;
 
 /// <summary>
-/// Links a OneDrive or Dropbox account (DIFF.md §3.12): the system browser
+/// Links a Google Drive, OneDrive, or Dropbox account (DIFF.md §3.12): the system browser
 /// opens the provider's consent page, the loopback redirect receives the
 /// code, PKCE redeems it, and only the refresh token is kept (DPAPI). The
 /// account stays on this device (D11) and is separate from the OneDrive
@@ -41,7 +41,8 @@ public static class CloudSignIn
 
         var code = OAuthClient.AuthorizationCode(query, state, provider);
         var tokens = await client.ExchangeAsync(code, verifier, redirect.RedirectUri, cancellation).ConfigureAwait(false);
-        var identity = await CloudProviders.IdentityAsync(kind, tokens.AccessToken, null, cancellation).ConfigureAwait(false);
+        CloudProviders.CheckGrantedScopes(kind, tokens);
+        var identity = await CloudProviders.IdentityAsync(kind, tokens, null, cancellation).ConfigureAwait(false);
         var refreshToken = tokens.RefreshToken is { Length: > 0 } value
             ? value
             : throw new OAuthException(OAuthFailure.MalformedResponse, provider);
@@ -60,12 +61,13 @@ public static class CloudSignIn
         return account;
     }
 
-    /// <summary>Signs an account out: Dropbox's grant is revoked (best effort) and the tokens forgotten.</summary>
+    /// <summary>Signs an account out: Google's and Dropbox's grants are revoked (best effort) and the tokens forgotten.</summary>
     public static async Task SignOutAsync(MediaSourceKind kind, string accountKey)
     {
         var cached = AppServices.CloudTokens.CachedToken(kind, accountKey);
+        var refreshToken = AppServices.CloudAccounts.Account(kind, accountKey)?.RefreshToken;
         AppServices.CloudTokens.Forget(kind, accountKey);
         AppServices.CloudAccounts.Remove(kind, accountKey);
-        await CloudProviders.RevokeAsync(kind, cached).ConfigureAwait(false);
+        await CloudProviders.RevokeAsync(kind, refreshToken, cached).ConfigureAwait(false);
     }
 }

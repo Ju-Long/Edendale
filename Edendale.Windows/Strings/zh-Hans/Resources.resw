@@ -1619,4 +1619,22 @@
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>适用于 30 fps 及以下、最高 4K 的视频。</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>浏览器将打开以登录 Google。Edendale 向 Google 请求对你的云端硬盘的只读访问权限。它仅从此设备连接，读取文件夹列表和你播放的视频，绝不会上传或更改任何内容。</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>我的云端硬盘</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>与我共享</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>共享云端硬盘</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google 云端硬盘已将此文件标记为可能有害，因此无法流式播放。</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale 需要权限才能查看你的 Google 云端硬盘文件。请重新登录，并保持选中云端硬盘访问权限。</value>
+  </data>
 </root>

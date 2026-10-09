@@ -95,8 +95,98 @@ public sealed class OAuthTests
         Assert.AreEqual(CloudProviders.DropboxLoopbackPort, dropbox.LoopbackPort);
         CollectionAssert.AreEqual(new[] { "files.metadata.read", "files.content.read", "account_info.read" }, dropbox.Scopes.ToArray());
 
-        // Google Drive is reached through WebDAV on Windows (D9).
-        Assert.IsNull(CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "id"));
+        var google = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "123-abc.apps.googleusercontent.com", "GOCSPX-secret")!;
+        CollectionAssert.AreEqual(new[] { "openid", "email", "https://www.googleapis.com/auth/drive.readonly" }, google.Scopes.ToArray());
+        Assert.IsNull(google.LoopbackPort);
+        Assert.IsFalse(google.SendsScopeToTokenEndpoint);
+        var googleUri = new Uri(new OAuthClient(google).AuthorizationUrl("http://127.0.0.1:50123/", "s", "c"));
+        var googleQuery = OAuthClient.ParseQuery(googleUri.Query);
+        Assert.AreEqual("accounts.google.com", googleUri.Host);
+        Assert.AreEqual("/o/oauth2/v2/auth", googleUri.AbsolutePath);
+        Assert.AreEqual("offline", googleQuery["access_type"]);
+        Assert.AreEqual("select_account consent", googleQuery["prompt"]);
+        Assert.AreEqual("S256", googleQuery["code_challenge_method"]);
+        // The Desktop client's secret goes to the token endpoint only (D9).
+        Assert.IsFalse(googleQuery.ContainsKey("client_secret"));
+        Assert.AreEqual("https://oauth2.googleapis.com/token", google.TokenEndpoint);
+    }
+
+    [TestMethod]
+    public async Task OnlyGoogleSendsItsClientSecretAndOnlyToTheTokenEndpoint()
+    {
+        var stub = new HttpStub(_ => HttpStub.Json(new Dictionary<string, object> { ["access_token"] = "a", ["expires_in"] = 3600 }));
+        var google = new OAuthClient(CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "id", "GOCSPX-secret")!, stub.Client);
+        await google.ExchangeAsync("code", "verifier", "http://127.0.0.1:1/", CancellationToken.None);
+        await google.RefreshAsync("refresh", CancellationToken.None);
+        Assert.AreEqual("GOCSPX-secret", stub.Requests[0].Form["client_secret"]);
+        Assert.AreEqual("GOCSPX-secret", stub.Requests[1].Form["client_secret"]);
+
+        // Without a secret configured, none is sent; OneDrive never has one.
+        var noSecret = new OAuthClient(CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "id")!, stub.Client);
+        await noSecret.RefreshAsync("refresh", CancellationToken.None);
+        Assert.IsFalse(stub.Requests[2].Form.ContainsKey("client_secret"));
+        Assert.IsNull(CloudProviders.Configuration(MediaSourceKind.OneDrive, "guid", "ignored")!.ClientSecret);
+    }
+
+    [TestMethod]
+    public void TheGoogleSecretComesFromItsOwnKeyAndOnlyForGoogle()
+    {
+        var original = CloudClientIds.Source;
+        try
+        {
+            CloudClientIds.Source = name => name switch
+            {
+                "GOOGLE_DRIVE_CLIENT_ID" => "123-abc.apps.googleusercontent.com",
+                "GOOGLE_DRIVE_CLIENT_SECRET" => "GOCSPX-secret",
+                _ => "",
+            };
+            Assert.IsTrue(CloudProviders.IsConfigured(MediaSourceKind.GoogleDrive));
+            Assert.AreEqual("GOCSPX-secret", CloudProviders.Configuration(MediaSourceKind.GoogleDrive)!.ClientSecret);
+            Assert.IsNull(CloudClientIds.SecretFor(MediaSourceKind.OneDrive));
+            Assert.IsNull(CloudClientIds.SecretFor(MediaSourceKind.Dropbox));
+
+            // The client ID alone decides whether Drive is offered.
+            CloudClientIds.Source = name => name == "GOOGLE_DRIVE_CLIENT_SECRET" ? "GOCSPX-secret" : "";
+            Assert.IsFalse(CloudProviders.IsConfigured(MediaSourceKind.GoogleDrive));
+        }
+        finally
+        {
+            CloudClientIds.Source = original;
+        }
+    }
+
+    [TestMethod]
+    public async Task GoogleIdentityComesFromTheIdToken()
+    {
+        static string Segment(string json) => Pkce.Base64Url(System.Text.Encoding.UTF8.GetBytes(json));
+        var idToken = $"{Segment("""{"alg":"RS256"}""")}.{Segment("""{"sub":"110169484474386276334","email":"me@example.com","name":"Me"}""")}.signature";
+        var identity = await CloudProviders.IdentityAsync(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "a", IdToken = idToken }, null, CancellationToken.None);
+        Assert.AreEqual("110169484474386276334", identity.Subject);
+        Assert.AreEqual("me@example.com", identity.Email);
+        Assert.AreEqual("Me", identity.DisplayName);
+        Assert.AreEqual("fc33299258dcfba4155a09b5ec6ea6c9", SourceUrl.AccountKey(MediaSourceKind.GoogleDrive, identity.Subject));
+
+        var missing = await Assert.ThrowsExceptionAsync<OAuthException>(() => CloudProviders.IdentityAsync(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "a" }, null, CancellationToken.None));
+        Assert.AreEqual(OAuthFailure.MalformedResponse, missing.Failure);
+        Assert.IsNull(CloudProviders.DecodeJwtClaims("not-a-jwt"));
+        Assert.IsNull(CloudProviders.DecodeJwtClaims("a.!!!.c"));
+    }
+
+    [TestMethod]
+    public void AGoogleSignInWithoutDriveAccessIsRefused()
+    {
+        var withoutDrive = new OAuthTokenResponse { AccessToken = "a", Scope = "openid https://www.googleapis.com/auth/userinfo.email" };
+        var error = Assert.ThrowsException<OAuthException>(() => CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive, withoutDrive));
+        Assert.AreEqual(OAuthFailure.DriveAccessMissing, error.Failure);
+        StringAssert.Contains(error.Message, "leave Drive access selected");
+
+        CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "a", Scope = "openid https://www.googleapis.com/auth/drive.readonly" });
+        // Other providers, and a response that lists no scopes, aren't checked.
+        CloudProviders.CheckGrantedScopes(MediaSourceKind.OneDrive, withoutDrive);
+        CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive, new OAuthTokenResponse { AccessToken = "a" });
     }
 
     [TestMethod]

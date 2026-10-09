@@ -1,4 +1,4 @@
-// Edendale frame generation and upscaling for Intel GPUs (ENHANCEMENT.md G),
+// Edendale frame generation and upscaling for Intel and AMD GPUs (ENHANCEMENT.md G),
 // as Direct3D 11 compute shaders (cs_5_0).
 //
 // The same algorithm as FrameGeneration.cu and Core/FrameGeneration.cs's

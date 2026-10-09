@@ -1619,4 +1619,22 @@ IST STUMM</value>
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>Funktioniert bei Videos mit höchstens 30 fps bis 4K.</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Dein Browser öffnet die Google-Anmeldung. Edendale bittet Google um Lesezugriff auf dein Drive. Die Verbindung erfolgt nur von diesem Gerät aus. Edendale liest Ordnerlisten und die Videos, die du wiedergibst, und lädt niemals etwas hoch oder ändert etwas.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Meine Ablage</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Für mich freigegeben</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Geteilte Ablagen</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive hat diese Datei als potenziell schädlich markiert, daher kann sie nicht gestreamt werden.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale benötigt die Berechtigung, deine Google Drive-Dateien zu sehen. Melde dich erneut an und lass den Drive-Zugriff ausgewählt.</value>
+  </data>
 </root>

@@ -331,4 +331,41 @@ public sealed class VideoEnhancementOptionsTests
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    [TestMethod]
+    public void FrameGenerationAndMotionSmoothingExcludeEachOther()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"eden-enhancement-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var path = Path.Combine(directory, "player-settings.json");
+            var settings = new VideoEnhancementSettings(new PlayerSettingsStore(path));
+
+            settings.MotionSmoothing = true;
+            settings.FrameGeneration = true;
+            Assert.IsTrue(settings.FrameGeneration);
+            Assert.IsFalse(settings.MotionSmoothing);
+
+            settings.MotionSmoothing = true;
+            Assert.IsTrue(settings.MotionSmoothing);
+            Assert.IsFalse(settings.FrameGeneration);
+
+            // Switching one off leaves the other alone.
+            settings.MotionSmoothing = false;
+            Assert.IsFalse(settings.FrameGeneration);
+            settings.FrameGeneration = true;
+            settings.FrameGeneration = false;
+            Assert.IsFalse(settings.MotionSmoothing);
+
+            settings.FrameGeneration = true;
+            var restored = new VideoEnhancementSettings(new PlayerSettingsStore(path));
+            Assert.IsTrue(restored.FrameGeneration);
+            Assert.IsFalse(restored.MotionSmoothing);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
 }

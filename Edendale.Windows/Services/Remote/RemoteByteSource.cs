@@ -104,6 +104,10 @@ public static class ProviderResponse
                 {
                     return ProviderAction.Fail(new ConnectorException(ConnectorFailure.RateLimited, provider));
                 }
+                if (text.Contains("cannotdownloadabusivefile"))
+                {
+                    return ProviderAction.Fail(new ConnectorException(ConnectorFailure.AbusiveFile, provider));
+                }
                 // An expired signed link (S3's "Request has expired") or a
                 // OneDrive download URL past its lifetime: resolve a new one.
                 return preauthorizedLink

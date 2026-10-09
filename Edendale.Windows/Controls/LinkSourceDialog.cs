@@ -161,6 +161,7 @@ internal sealed class LinkSourceForm
         SignInAgain = signInAgain;
         _kinds = [MediaSourceKind.Smb, MediaSourceKind.Sftp, MediaSourceKind.WebDav, MediaSourceKind.S3, MediaSourceKind.Nfs];
         // A provider without a client ID in this build is hidden.
+        if (CloudProviders.IsConfigured(MediaSourceKind.GoogleDrive)) _kinds.Add(MediaSourceKind.GoogleDrive);
         if (CloudProviders.IsConfigured(MediaSourceKind.OneDrive)) _kinds.Add(MediaSourceKind.OneDrive);
         if (CloudProviders.IsConfigured(MediaSourceKind.Dropbox)) _kinds.Add(MediaSourceKind.Dropbox);
         if (!_kinds.Contains(kind)) _kinds.Add(kind);
@@ -354,7 +355,12 @@ internal sealed class LinkSourceForm
                 _fields.Children.Add(_address);
                 break;
             default:
-                Note(kind == MediaSourceKind.OneDrive ? "LinkSource_OneDriveNote" : "LinkSource_DropboxNote");
+                Note(kind switch
+                {
+                    MediaSourceKind.GoogleDrive => "LinkSource_GoogleDriveNote",
+                    MediaSourceKind.OneDrive => "LinkSource_OneDriveNote",
+                    _ => "LinkSource_DropboxNote",
+                });
                 var accounts = AppServices.CloudAccounts.AccountsOf(kind);
                 if (accounts.Count > 0 && SignInAgain is null)
                 {
@@ -518,9 +524,12 @@ internal sealed class LinkSourceForm
                     ShowStatus(Loc.Format("LinkSource_Waiting", kind.DisplayName()));
                     account = await CloudSignIn.SignInAsync(kind, SignedInPage(), cancellation);
                 }
-                IMediaConnector? connector = kind == MediaSourceKind.OneDrive
-                    ? OneDriveConnector.Create(account, AppServices.CloudTokens)
-                    : new DropboxConnector(account, AppServices.CloudTokens);
+                IMediaConnector? connector = kind switch
+                {
+                    MediaSourceKind.GoogleDrive => new GoogleDriveConnector(account, AppServices.CloudTokens),
+                    MediaSourceKind.OneDrive => OneDriveConnector.Create(account, AppServices.CloudTokens),
+                    _ => new DropboxConnector(account, AppServices.CloudTokens),
+                };
                 if (connector is null) throw new ConnectorException(ConnectorFailure.SignInRequired, kind.DisplayName());
                 await connector.ValidateAsync(cancellation);
                 return new LinkResult { Connector = connector };

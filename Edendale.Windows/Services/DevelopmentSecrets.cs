@@ -14,6 +14,8 @@ internal static class DevelopmentSecrets
         "TMDB_READ_ACCESS_TOKEN",
         "TMDB_API_KEY",
         "WYZIE_API_KEY",
+        "GOOGLE_DRIVE_CLIENT_ID",
+        "GOOGLE_DRIVE_CLIENT_SECRET",
         "ONEDRIVE_CLIENT_ID",
         "DROPBOX_APP_KEY",
     ];

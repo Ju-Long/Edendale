@@ -12,8 +12,8 @@ Windows, plus Windows gaps found while comparing the branches.
 - **Video enhancement uses Option A:** only what LibVLC 3 already ships
   (GPU super resolution, the graphics driver's video processor, and AMD's
   frame-rate doubler and denoiser).
-- **Option B adds frame generation and upscaling** on NVIDIA (CUDA) and Intel
-  (Direct3D compute), opt-in, with Edendale's own swap chain; see
+- **Option B adds frame generation and upscaling** on NVIDIA (CUDA), Intel,
+  and AMD (Direct3D compute), opt-in, with Edendale's own swap chain; see
   [Frame generation and upscaling](#frame-generation-and-upscaling-option-b).
   It was requested after the tracker started.
 - **Last reviewed:** 2026-10-01, against apple-27.0 `4f8383a`. The branch
@@ -130,7 +130,7 @@ the tracker started)
 
 - [x] [G.1 Algorithm and rules](#g1-algorithm-and-rules) (P3)
 - [x] [G.2 NVIDIA: CUDA](#g2-nvidia-cuda) (P3)
-- [x] [G.3 Intel: Direct3D compute](#g3-intel-direct3d-compute) (P3)
+- [x] [G.3 Intel and AMD: Direct3D compute](#g3-intel-and-amd-direct3d-compute) (P3)
 - [x] [G.4 Presenter](#g4-presenter) (P3)
 - [x] [G.5 Controls](#g5-controls) (P3)
 - [ ] [G.6 Hardware checks](#g6-hardware-checks) (P3)
@@ -163,8 +163,11 @@ still open needs Windows hardware or a change on another branch.
 - W.3: the 5-minute screen timeout check.
 - X.3: Headphone Surround compared with Windows Sonic.
 - X.5: NFS against a real export.
-- G.6: frame generation and upscaling on NVIDIA and Intel hardware.
-- Live sign-ins to OneDrive and Dropbox, and SFTP, WebDAV, and S3 against
+- G.6: frame generation and upscaling on NVIDIA and Intel hardware, and the
+  AMD path again now that it ships without the test patch.
+- Live sign-ins to Google Drive, OneDrive, and Dropbox, which first need
+  app registrations and their IDs in `secrets.json` (README "API
+  credentials"), and SFTP, WebDAV, and S3 against
   real servers. The tests use stub handlers only.
 
 **Changes on other branches** (AGENTS.md hard constraint 7)
@@ -174,7 +177,8 @@ still open needs Windows hardware or a change on another branch.
 - `main` README: the Windows provider list (3.12).
 - `main` DESIGN.md: the `PlaylistActiveBackground` and `PlaylistActiveText`
   rows (3.10).
-- `web`: the privacy text for linked storage providers (DIFF.md J.12).
+- `web`: the privacy text for linked storage providers (DIFF.md J.12),
+  now including Google Drive, which Google's verification requires.
 - `apple-27.0`: X.1–X.8 are new behavior. Apple can adopt them or record them
   as Windows-only. X.8 matters most: Apple also caches downloads by file
   without tying them to a title.
@@ -225,8 +229,12 @@ decision once its outcome is written into the section, and into DIFF.md on
   DIFF.md row pending on `main`.
 - [ ] **D9 Google Drive** (3.12). DIFF.md §6.2: accept the desktop client's
   non-confidential secret, or offer Drive only through WebDAV.
-  **Outcome:** Drive only through WebDAV (`rclone serve webdav`), so no
-  client secret ships. DIFF.md §6.2 answer pending on `main`.
+  **Outcome:** first Drive only through WebDAV (`rclone serve webdav`).
+  Revised 2026-10-09 at the owner's request: Drive is linked directly with a
+  Desktop OAuth client. Its client secret, which Google documents as not
+  confidential, comes from the gitignored `secrets.json` like the TMDB
+  token and is sent only to Google's token endpoint. WebDAV still works.
+  DIFF.md §6.2 answer pending on `main`.
 - [ ] **D10 Home-server TLS** (3.12). DIFF.md §6.4: self-signed certificates
   with per-host pinning, or valid HTTPS only.
   **Outcome:** valid HTTPS only. A certificate Windows doesn't trust fails
@@ -677,14 +685,23 @@ Google Drive after D9.
   system browser and a loopback redirect (`http://127.0.0.1:<port>`).
   - Refresh tokens are stored with DPAPI; access tokens stay in memory.
   - A single refresh serves every waiting request.
-- [x] Google Drive: through WebDAV with `rclone serve webdav` (D9).
+- [x] Google Drive: Drive API v3 with `drive.readonly` through a Desktop
+  OAuth client and the loopback redirect (D9, revised). The picker's root
+  is My Drive, Shared with me, and Shared drives; shortcuts are followed,
+  Google formats skipped, and files streamed with `alt=media`. A file
+  Google flags as abusive fails with its own message, and a sign-in with
+  Drive access unticked is refused. WebDAV through `rclone serve webdav`
+  still works.
 - [x] NFS: through LibVLC (X.5).
 
 **Stage 4: docs and secrets**
 
 - [x] Client IDs and app keys come from the gitignored `secrets.json` through
   `tools/Edendale.Secrets`. An empty value hides that provider.
-- [x] README: the supported providers, and the outcomes of D10, D11, and D12.
+- [x] README: the supported providers, how to register each cloud app, and
+  the outcomes of D9, D10, D11, and D12. The OneDrive registration now
+  names `http://127.0.0.1` (added in the Manifest), because a registered
+  `http://localhost` doesn't match the redirect Edendale sends.
 - [ ] Ask for the matching changes on other branches (DIFF.md J.12): privacy
   text on `web`, and the provider list in `main`'s README. Listed under
   [Open items](#open-items); this branch can't change them.
@@ -1027,8 +1044,10 @@ Requested after Option A shipped: generate the in-between frames and upscale
 on NVIDIA with CUDA, and on Intel with something else. Intel uses Direct3D 11
 compute shaders, which every Intel GPU that runs Windows 10 or 11 supports.
 Both run the same algorithm, written once as a C# reference that the tests
-pin. AMD keeps Option A's Motion Smoothing (`amf_frc`). The feature is opt-in
-and off by default.
+pin. AMD was added on 2026-10-09 on the same Direct3D path, after the G.6
+run on a Radeon; there it is the alternative to Option A's Motion Smoothing
+(`amf_frc`), and switching either on switches the other off. The feature is
+opt-in and off by default.
 
 Why not NVIDIA's Optical Flow FRUC library or Intel VPL's AI interpolation:
 both need SDK binaries Edendale can't build or ship from this branch, and
@@ -1039,7 +1058,7 @@ d3dcompiler_47.dll (part of Windows).
 ### G.1 Algorithm and rules
 
 - [x] `Core/FrameGeneration.cs`:
-  - the backend: CUDA for NVIDIA, Direct3D for Intel, nothing for AMD,
+  - the backend: CUDA for NVIDIA, Direct3D for Intel and AMD, nothing for
     Qualcomm, and the software adapter;
   - eligibility: a known rate of 30 fps or less, up to 3840 × 2160, 8-bit
     sources only (LibVLC converts 10-bit and HDR to NV12 without tone
@@ -1086,7 +1105,7 @@ d3dcompiler_47.dll (part of Windows).
   `cuGraphicsD3D11RegisterResource` to write the result straight into a
   Direct3D texture. No CUDA runtime ships.
 
-### G.3 Intel: Direct3D compute
+### G.3 Intel and AMD: Direct3D compute
 
 - [x] `FrameGeneration/FrameGeneration.hlsl`: the same seven steps as cs_5_0
   compute shaders. Every entry point compiles with DXC (cs_6_0, warnings as
@@ -1118,9 +1137,13 @@ d3dcompiler_47.dll (part of Windows).
 
 ### G.5 Controls
 
-- [x] Player Adjustments → Enhancement → Frame Generation on NVIDIA and Intel
-  GPUs, stored as `video.frameGeneration` (device-local, like D5). The line
-  under it reads "24 fps → 48 fps · CUDA" or says why it isn't running.
+- [x] Player Adjustments → Enhancement → Frame Generation on NVIDIA, Intel,
+  and AMD GPUs, stored as `video.frameGeneration` (device-local, like D5).
+  The line under it reads "24 fps → 48 fps · CUDA" or says why it isn't
+  running.
+- [x] On AMD, Frame Generation and Motion Smoothing exclude each other:
+  switching one on switches the other off, and the engine never gets
+  `amf_frc` while frame generation runs (`VideoEnhancementSettings`).
 - [x] README "Video enhancement" describes it.
 
 ### G.6 Hardware checks
@@ -1151,7 +1174,7 @@ cuts:
   software (I420) on this machine. Worth checking on NVIDIA and Intel, and
   for 4K HEVC.
 
-Still to run on NVIDIA and Intel:
+Still to run on NVIDIA and Intel, and on AMD without the patch:
 
 - [ ] NVIDIA RTX and GTX: 24 fps 1080p in a 4K window doubles smoothly,
   audio stays in sync, and GPU load is reasonable.
@@ -1161,12 +1184,15 @@ Still to run on NVIDIA and Intel:
   DPI changes, Fit and Fill, and Picture in Picture.
 - [ ] A 10-bit HEVC or HDR10 file falls back to normal playback.
 - [ ] A driver without CUDA (or a CUDA failure) falls back cleanly.
+- [ ] AMD Radeon: the shipped toggle doubles real footage as the patched
+  run did, and switching between Frame Generation and Motion Smoothing
+  reopens once with only one of them running.
 
 ## Not planned
 
 Option A was chosen over these for 27.0. Revisit them if its limits matter.
 Option B (G) has since added frame generation and upscaling on its own swap
-chain for NVIDIA and Intel; what follows is still not planned.
+chain for NVIDIA, Intel, and AMD; what follows is still not planned.
 
 - **HDR output:** needed for HDR video and NVIDIA's SDR-to-HDR. Both video
   outputs are 8-bit, so HDR video is tone-mapped to SDR (Option A) or plays

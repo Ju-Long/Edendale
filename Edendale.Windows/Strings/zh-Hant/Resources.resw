@@ -1619,4 +1619,22 @@
   <data name="FrameGeneration_NotThisFile" xml:space="preserve">
     <value>適用於 30 fps 以下、最高 4K 的影片。</value>
   </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>瀏覽器會開啟以登入 Google。Edendale 會向 Google 請求你雲端硬碟的唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>我的雲端硬碟</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>與我共用</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>共用雲端硬碟</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale 需要權限才能查看你的 Google 雲端硬碟檔案。請重新登入，並保持選取雲端硬碟存取權限。</value>
+  </data>
 </root>

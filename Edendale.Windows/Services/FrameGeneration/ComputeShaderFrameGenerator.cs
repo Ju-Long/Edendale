@@ -1,4 +1,4 @@
-// Intel frame generation and upscaling (ENHANCEMENT.md G.3): the same
+// Intel and AMD frame generation and upscaling (ENHANCEMENT.md G.3): the same
 // algorithm as the CUDA kernels, as Direct3D 11 compute shaders
 // (FrameGeneration/FrameGeneration.hlsl) compiled at run time. Registers
 // follow the HLSL: t0 LumaA, t1 LumaB, t2 FieldIn, t3 ColorA, t4 ColorB,
