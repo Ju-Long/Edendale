@@ -1,8 +1,8 @@
 [versions]
 kotlin = "2.2.0"
 agp = "8.10.1"
-compileSdk = "35"
-targetSdk = "35"
+compileSdk = "36"
+targetSdk = "36"
 minSdk = "26"
 kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.8.1"
