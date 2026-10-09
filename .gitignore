@@ -57,3 +57,4 @@ Web/dist/
 /.vs
 /Vendor
 /.secret
+/release

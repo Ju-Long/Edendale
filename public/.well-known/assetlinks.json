@@ -1,0 +1,17 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.babasama.edendale",
+      "sha256_cert_fingerprints": [
+        "0E:F5:87:8F:A1:79:46:DF:5B:A4:0A:82:9C:C8:91:D0:AB:60:0C:BA:79:20:41:88:21:B9:59:E7:EA:9F:DE:EB",
+        "68:49:95:43:70:86:30:80:FB:97:00:88:B0:20:CC:02:F8:CD:26:05:03:BF:15:87:15:4E:E6:AF:1F:B0:21:14",
+        "E9:09:AF:C2:F5:44:DE:B7:1F:27:F0:79:DB:0F:D1:9A:1D:37:7B:38:41:FC:DB:91:23:7E:38:FF:EF:47:87:E9"
+      ]
+    }
+  }
+]
