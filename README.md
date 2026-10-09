@@ -115,7 +115,7 @@ git push origin web
 ```
 
 Both workflows then assert that `dist/` still contains `.nojekyll`, `CNAME`,
-`.well-known/apple-app-site-association`,
+`.well-known/apple-app-site-association`, `.well-known/assetlinks.json`,
 `.well-known/microsoft-identity-association.json`, `app_icon.png`, and
 `privacy/index.html`. Those files are referenced by path rather than imported,
 or, for the privacy policy, by URL from Google's and Microsoft's app
@@ -272,22 +272,26 @@ Verify the live response before enabling Universal Links:
 curl -I https://edendale.babasama.com/.well-known/apple-app-site-association
 ```
 
-Android App Links remain intentionally disabled at the website layer until the
-release signing certificate is known. At that point, add
-`public/.well-known/assetlinks.json` with the real release certificate's SHA-256
-fingerprint:
+The Android association file is published at `/.well-known/assetlinks.json` for
+package `com.babasama.edendale`. The Android app's `autoVerify` intent filter
+claims the `/search`, `/media`, `/library`, and `/play` prefixes on this host.
+The file lists the SHA-256 fingerprints of the three Google Play app signing
+certificates that Play Console's App integrity page offers for download:
+`deployment_cert.der`, `hybrid_classical_cert.der`, and `hybrid_pqc_cert.der`.
+Play re-signs every installed build with one of these, so the upload key's
+fingerprint does not belong here. When Play rotates or adds an app signing key,
+download the new certificate and add its fingerprint:
 
-```json
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "com.babasama.edendale",
-      "sha256_cert_fingerprints": ["REAL_RELEASE_SHA256_FINGERPRINT"]
-    }
-  }
-]
+```sh
+openssl x509 -inform DER -in deployment_cert.der -noout -fingerprint -sha256
+```
+
+GitHub Pages already serves `.json` files as `application/json`. Confirm that
+Google resolves the live file for the app signing key before re-checking Play
+Console's Deep links page:
+
+```sh
+curl "https://digitalassetlinks.googleapis.com/v1/assetlinks:check?source.web.site=https://edendale.babasama.com&relation=delegate_permission/common.handle_all_urls&target.android_app.package_name=com.babasama.edendale&target.android_app.certificate.sha256_fingerprint=<SHA256>"
 ```
 
 Never publish a debug fingerprint or a placeholder value.

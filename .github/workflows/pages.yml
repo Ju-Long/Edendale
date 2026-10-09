@@ -51,15 +51,16 @@ jobs:
         run: npm run build
 
       # upload-pages-artifact v4 began excluding dotfiles by default; v5 restored
-      # them behind include-hidden-files. Universal Links and Entra's publisher
-      # verification break silently if an association file is dropped, and
-      # Google's OAuth verification links to the privacy policy, so assert they
-      # survived the build.
+      # them behind include-hidden-files. Universal Links, Android App Links, and
+      # Entra's publisher verification break silently if an association file is
+      # dropped, and Google's OAuth verification links to the privacy policy, so
+      # assert they survived the build.
       - name: Verify static output
         run: |
           test -f dist/.nojekyll
           test -f dist/CNAME
           test -f dist/.well-known/apple-app-site-association
+          test -f dist/.well-known/assetlinks.json
           test -f dist/.well-known/microsoft-identity-association.json
           test -f dist/app_icon.png
           test -f dist/privacy/index.html
