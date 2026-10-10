@@ -34,7 +34,20 @@ internal sealed interface PlayerHud {
  * HUD fade, remote-seek commit) live in `PlayerScreen`'s LaunchedEffects,
  * which react to this state, so the class itself stays coroutine-free.
  */
-internal class PlayerChromeState(private val prefs: SharedPreferences) {
+internal class PlayerChromeState(val preferences: PlayerPreferences) {
+
+    constructor(prefs: SharedPreferences) : this(PlayerPreferences(prefs))
+
+    /**
+     * App Controls skip lengths, held as state so the ± glyphs and their
+     * labels redraw when Settings changes them while the player is open.
+     */
+    var skipBackwardInterval by mutableStateOf(preferences.skipBackwardInterval)
+        private set
+    var skipForwardInterval by mutableStateOf(preferences.skipForwardInterval)
+        private set
+    val holdLeftRate: Float get() = preferences.holdLeftRate
+    val holdRightRate: Float get() = preferences.holdRightRate
 
     // ------------------------------------------------------------------
     // Visibility
@@ -108,25 +121,72 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     var holdRate by mutableStateOf<Float?>(null)
         private set
 
-    var loopEnabled by mutableStateOf(false)
+    var loopEnabled by mutableStateOf(preferences.loopEnabled)
         private set
 
-    var aspectFill by mutableStateOf(false)
+    private var _aspectFill = mutableStateOf(preferences.aspectFill)
+    var aspectFill: Boolean
+        get() = _aspectFill.value
+        set(value) {
+            _aspectFill.value = value
+            preferences.aspectFill = value
+        }
 
-    var skipRecap by mutableStateOf(prefs.getBoolean(KEY_SKIP_RECAP, false))
+    var segmentPromptsEnabled by mutableStateOf(preferences.segmentPromptsEnabled)
         private set
 
-    var skipCredits by mutableStateOf(prefs.getBoolean(KEY_SKIP_CREDITS, false))
+    /**
+     * Settings → Subtitles, held as state so the cue on screen restyles as
+     * soon as Settings changes it, even while the video floats in PiP.
+     */
+    var subtitleAppearance by mutableStateOf(preferences.subtitleAppearance)
         private set
+
+    /** Audio Enhancement's booster, which the panel's Playback section toggles (E.1). */
+    var audioBoosterEnabled by mutableStateOf(preferences.audioBoosterEnabled)
+        private set
+
+    fun setAudioBooster(enabled: Boolean) {
+        audioBoosterEnabled = enabled
+        preferences.audioBoosterEnabled = enabled
+        noteInteraction()
+    }
+
+    /**
+     * The top edge of the visible transport row, in the player's root
+     * coordinates, or null while it's hidden. Cues stay above it.
+     */
+    var controlsBottomEdgePx by mutableStateOf<Float?>(null)
+
+    init {
+        preferences.addChangeListener {
+            skipBackwardInterval = preferences.skipBackwardInterval
+            skipForwardInterval = preferences.skipForwardInterval
+            segmentPromptsEnabled = preferences.segmentPromptsEnabled
+            loopEnabled = preferences.loopEnabled
+            _aspectFill.value = preferences.aspectFill
+            subtitleAppearance = preferences.subtitleAppearance
+            audioBoosterEnabled = preferences.audioBoosterEnabled
+        }
+    }
+
+    fun setSegmentPrompts(enabled: Boolean) {
+        segmentPromptsEnabled = enabled
+        preferences.segmentPromptsEnabled = enabled
+        noteInteraction()
+    }
 
     /** Enter Picture in Picture on its own when the user leaves mid-play. */
-    var autoPip by mutableStateOf(prefs.getBoolean(KEY_AUTO_PIP, true))
+    var autoPip by mutableStateOf(preferences.autoPip)
         private set
+
+    var onSpeedChanged: (() -> Unit)? = null
 
     fun setRate(player: Player, rate: Float) {
         baseRate = PlayerLogic.normalizedRate(rate)
         if (holdRate == null) player.setPlaybackSpeed(baseRate)
         noteInteraction()
+        onSpeedChanged?.invoke()
     }
 
     /** Press-and-hold speed override; reverts in [endHoldRate]. */
@@ -145,22 +205,13 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
 
     fun setLoop(player: Player, enabled: Boolean) {
         loopEnabled = enabled
+        preferences.loopEnabled = enabled
         player.repeatMode = if (enabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
-    }
-
-    fun setSkipRecapEnabled(enabled: Boolean) {
-        skipRecap = enabled
-        prefs.edit().putBoolean(KEY_SKIP_RECAP, enabled).apply()
-    }
-
-    fun setSkipCreditsEnabled(enabled: Boolean) {
-        skipCredits = enabled
-        prefs.edit().putBoolean(KEY_SKIP_CREDITS, enabled).apply()
     }
 
     fun setAutoPipEnabled(enabled: Boolean) {
         autoPip = enabled
-        prefs.edit().putBoolean(KEY_AUTO_PIP, enabled).apply()
+        preferences.autoPip = enabled
     }
 
     // ------------------------------------------------------------------
@@ -262,13 +313,11 @@ internal class PlayerChromeState(private val prefs: SharedPreferences) {
     }
 
     private companion object {
-        const val KEY_SKIP_RECAP = "player.skipRecap"
-        const val KEY_SKIP_CREDITS = "player.skipCredits"
         const val KEY_AUTO_PIP = "player.autoPiP"
     }
 }
 
-/** Relative seek with HUD feedback — the ±10 s buttons, D-pad, and media keys. */
+/** Relative seek with HUD feedback — the ±buttons, D-pad, and media keys. */
 internal fun seekBy(player: Player, chrome: PlayerChromeState, offsetMillis: Long) {
     val duration = player.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: 0L
     player.seekTo(PlayerLogic.seekTargetMillis(player.currentPosition, offsetMillis, duration))

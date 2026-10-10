@@ -131,9 +131,9 @@
     <string name="remove_folder">%1$sを削除</string>
     <string name="remove_source_title">ソースを削除</string>
     <string name="remove_source_confirm_title">%1$sを削除しますか？</string>
-    <string name="remove_source_message_smb">“%1$s” はライブラリから削除され、他のソースがまだそのサーバーを使用していない限り、%2$s の保存済みログイン情報も忘れられます。サーバー上のファイルは何も削除されません。</string>
+    <string name="remove_source_message_smb">“%1$s”はライブラリから削除されます。サーバー上のものは何も削除されず、%2$sの保存済みログイン情報は「設定」→「アカウント」に残ります。</string>
     <string name="remove_source_message_local">“%1$s” はライブラリから削除されます。デバイス上のファイルは何も削除されません。</string>
-    <string name="remove_source_message_generic">Edendale はこのソースとそこからインデックスされたすべての情報を忘れ、他のソースがホストを必要としなくなった時点で保存されたログイン情報も忘れます。デバイスや共有からファイルが削除されることはありません。</string>
+    <string name="remove_source_message_generic">Edendaleはこのソースと、そこからインデックスしたすべての項目を消去します。デバイスや共有フォルダからは何も削除されず、保存済みのログイン情報は「設定」→「アカウント」に残ります。</string>
     <string name="mark_watched">視聴済みにする</string>
     <string name="mark_unwatched">未視聴にする</string>
     <string name="watched">視聴済み</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">secrets.jsonにトークンを追加して再ビルドしてください</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">大きな文字、オーバースキャン対応のマージン、リモコンフォーカスのリフト、およびランドスケープ表示が有効になっています。</string>
+    <string name="settings_watch_next_title">ホーム画面に「視聴を続ける」を表示</string>
+    <string name="settings_watch_next_description">視聴中のタイトルをホーム画面の「視聴を続ける」の列に表示します。Edendale はこのためにネットワークへ何も送信しませんが、ホーム画面のアプリはこれらのタイトルを見ることができます。</string>
     <string name="settings_section_sources">ソース</string>
     <string name="settings_no_sources">リンクされたソースはありません</string>
     <string name="settings_section_backup">バックアップ</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">このファイルには字幕トラックがありません。</string>
     <string name="player_track_number">トラック%1$d</string>
     <string name="player_playback">再生</string>
+    <string name="player_skip_intro">イントロをスキップ</string>
     <string name="player_skip_recap">これまでのあらすじをスキップ</string>
-    <string name="player_skip_recap_detail">最初の90秒をスキップ</string>
     <string name="player_skip_credits">クレジットをスキップ</string>
-    <string name="player_skip_credits_detail">残り3分で再生を終了</string>
+    <string name="player_skip_prompts">スキップの通知</string>
+    <string name="player_skip_prompts_detail">TheIntroDB でイントロ、あらすじ、クレジットのタイムスタンプを検索</string>
+    <string name="settings_skip_prompts_note">有効にすると、TheIntroDB はタイトルの TMDB ID、エピソード番号、動画の長さ、および IP アドレスを受信します。スキップには常にボタンを押す必要があります。</string>
+    <string name="settings_theintrodb_link">タイムスタンプ提供: TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB プライバシーポリシー</string>
     <string name="player_loop">ビデオをループ</string>
     <string name="player_loop_detail">再生終了後に最初から再生</string>
     <string name="player_auto_pip">自動ピクチャ・イン・ピクチャ</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">フォルダ</string>
     <string name="default_video_name">ビデオ</string>
     <string name="error_not_share_address">\"%1$s\" は共有アドレスではありません。192.168.1.10/media をお試しください。</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: このソースの一部を読み込めなかったため、ライブラリからは何も削除されませんでした。</string>
     <string name="error_permission_revoked">このフォルダへのアクセスが取り消されました — もう一度追加してください</string>
     <string name="error_folder_unopenable">フォルダを開けませんでした</string>
     <string name="error_share_unreachable">共有に到達できないか、認証情報が拒否されました</string>
     <string name="error_address_is_file">そのアドレスはファイルであり、共有ではありません</string>
-    <string name="error_scan_failed">スキャンに失敗しました</string>
     <plurals name="item_count">
         <item quantity="other">%1$dアイテム</item>
     </plurals>
@@ -275,4 +279,248 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">ほか%1$d件が一致しました。</item>
     </plurals>
+    <string name="settings_section_app_controls">アプリコントロール</string>
+    <string name="settings_app_controls_skip_backward">戻る</string>
+    <string name="settings_app_controls_skip_forward">進む</string>
+    <string name="settings_app_controls_skip_note">ビデオの左側または右側をダブルタップして、戻るか進みます。</string>
+    <string name="settings_app_controls_hold_left">左側を長押し</string>
+    <string name="settings_app_controls_hold_right">右側を長押し</string>
+    <string name="settings_app_controls_hold_note">ビデオの左側または右側を長押しすると、指を離すまでその速度で再生されます。</string>
+    <string name="settings_app_controls_hold_slower">%1$s、遅く</string>
+    <string name="settings_app_controls_hold_faster">%1$s、速く</string>
+    <string name="settings_seconds_format">%d秒</string>
+    <string name="player_back_15">15秒戻る</string>
+    <string name="player_back_30">30秒戻る</string>
+    <string name="player_forward_15">15秒進む</string>
+    <string name="player_forward_30">30秒進む</string>
+    <string name="player_up_next">次を再生</string>
+    <string name="player_up_next_description">次を再生: %1$s %2$s</string>
+    <string name="player_up_next_hint">次のエピソードを今すぐ再生</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">次はこちら · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">オーディオ出力</string>
+    <string name="player_audio_output_unavailable">このデバイスではオーディオ出力を切り替えられません。</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">フォント</string>
+    <string name="settings_subtitles_text_color">文字色</string>
+    <string name="settings_subtitles_background_color">背景色</string>
+    <string name="settings_subtitles_background_opacity">背景の不透明度</string>
+    <string name="settings_subtitles_reset">字幕スタイルをリセット</string>
+    <string name="settings_subtitles_appearance_note">テキスト字幕に適用されます。画像ベースの字幕は作成時の見た目のままになります。</string>
+    <string name="settings_subtitles_preview">字幕のプレビュー</string>
+    <string name="settings_subtitles_preview_sample">アーカイブは映画を決して忘れません。\n誰かが再生を押すのを待っているだけです。</string>
+    <string name="settings_subtitles_font_system">システム</string>
+    <string name="settings_subtitles_font_rounded">ラウンド</string>
+    <string name="settings_subtitles_font_serif">セリフ</string>
+    <string name="settings_subtitles_font_monospaced">等幅</string>
+    <string name="settings_subtitles_color_parchment">パーチメント</string>
+    <string name="settings_subtitles_color_white">白</string>
+    <string name="settings_subtitles_color_yellow">黄</string>
+    <string name="settings_subtitles_color_cyan">シアン</string>
+    <string name="settings_subtitles_color_green">緑</string>
+    <string name="settings_subtitles_color_black">黒</string>
+    <string name="settings_subtitles_color_ink">インク</string>
+    <string name="settings_subtitles_color_charcoal">チャコール</string>
+    <string name="settings_subtitles_color_navy">ネイビー</string>
+    <string name="settings_subtitles_opacity_lower">背景の不透明度を下げる</string>
+    <string name="settings_subtitles_opacity_higher">背景の不透明度を上げる</string>
+    <string name="settings_nunito_attribution">字幕のラウンドフォントは The Nunito Project Authors による Nunito（SIL Open Font License 1.1）です。</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">ビデオトラック</string>
+    <string name="player_audio_track">オーディオトラック</string>
+    <string name="player_audio_mono">モノラル</string>
+    <string name="player_audio_stereo">ステレオ</string>
+    <string name="player_audio_channels">%dch</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">再生できません</string>
+    <string name="player_error_could_not_open">このタイトルは開けませんでした。</string>
+    <string name="player_error_connection_lost">%1$sとの接続が切断されました。</string>
+    <string name="player_error_connection_lost_detail">%1$sとの接続が切断されました: %2$s</string>
+    <string name="player_error_could_not_connect">%1$sに接続できませんでした。</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">%1$sにアクセスできませんでした。接続を確認して、もう一度お試しください。</string>
+    <string name="sources_status_needs_sign_in">このソースにアクセスするには、%1$sにもう一度サインインしてください。</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">アカウント</string>
+    <string name="accounts_empty">リンク済みのアカウントや保存済みのログイン情報はありません。「ソースをリンク」で追加できます。</string>
+    <string name="accounts_no_sources">このデバイスにソースはありません</string>
+    <string name="accounts_forget">削除</string>
+    <string name="accounts_forget_login">ログイン情報を削除</string>
+    <string name="accounts_forget_message">%1$sのソースは、ログイン情報を再入力するまで接続できません。</string>
+    <string name="accounts_note">ログイン情報はこのデバイスに保持され、バックアップされることはありません。ソースを削除しても残ります。削除はここで行います。</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">このデバイス上の%1$d個のソース</item>
+        <item quantity="other">このデバイス上の%1$d個のソース</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">再生元</string>
+    <string name="play_from_unavailable">%1$s · 利用不可</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d個のソース</item>
+        <item quantity="other">%1$d個のソース</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">オーディオ補正</string>
+    <string name="audio_profile">プロファイル</string>
+    <string name="audio_profile_flat">フラット</string>
+    <string name="audio_profile_movies">映画</string>
+    <string name="audio_profile_music">音楽</string>
+    <string name="audio_profile_dialogue">ダイアログ</string>
+    <string name="audio_profile_night_mode">ナイトモード</string>
+    <string name="audio_preamp">プリアンプ</string>
+    <string name="audio_reset_adjustments">調整をリセット</string>
+    <string name="audio_booster">オーディオブースター</string>
+    <string name="audio_booster_detail">静かな録音の音量を上げます</string>
+    <string name="audio_show_equalizer">イコライザを表示</string>
+    <string name="audio_hide_equalizer">イコライザを隠す</string>
+    <string name="audio_passthrough_note">イコライザとブースターは、Edendaleがデコードするオーディオに適用されます。レシーバーやテレビにそのままパススルーされるサラウンド音声には適用されません。</string>
+    <string name="audio_step_lower">%1$s、下げる</string>
+    <string name="audio_step_higher">%1$s、上げる</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">映像</string>
+    <string name="video_brightness">明るさ</string>
+    <string name="video_contrast">コントラスト</string>
+    <string name="video_gamma">ガンマ</string>
+    <string name="video_saturation">彩度</string>
+    <string name="video_hue">色相</string>
+    <string name="video_show_original">オリジナルを表示</string>
+    <string name="video_enhancement">補正</string>
+    <string name="video_preset">プリセット</string>
+    <string name="video_preset_off">オフ</string>
+    <string name="video_preset_sharpen_only">シャープ化のみ</string>
+    <string name="video_preset_balanced">バランス</string>
+    <string name="video_preset_high_quality">高画質</string>
+    <string name="video_sharpness">シャープネス</string>
+    <string name="video_denoise">ノイズ除去</string>
+    <string name="video_not_available_hdr">HDRビデオでは使用できません</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">サイドバーを非表示</string>
+    <string name="navigation_show">サイドバーを表示</string>
+    <string name="rescan_library">ライブラリを再スキャン</string>
+    <string name="shelf_scroll_position">%1$sのスクロール位置</string>
+    <string name="shortcut_play_pause">再生または一時停止</string>
+    <string name="shortcut_skip_prompt">表示されたときにイントロやクレジットをスキップ</string>
+    <string name="shortcut_close_panel_then_player">パネルを閉じ、次にプレーヤーを閉じる</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="other">%1$d秒戻る</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="other">%1$d秒進む</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">このファイルは%1$sにもうありません。</string>
+    <string name="player_error_rate_limited">%1$sは現在リクエストを制限しています。1分後にもう一度お試しください。</string>
+    <string name="player_error_server">%1$sがエラーを返しました（HTTP %2$d）。</string>
+    <string name="player_error_range_unsupported">%1$sでは、このファイル内でのシークはサポートされていません。</string>
+    <string name="player_error_access_denied">%1$sによってこの項目へのアクセスが拒否されました。</string>
+    <string name="player_error_abusive_file">Googleドライブによってこのファイルは有害な可能性があると判断されたため、ストリーミングできません。</string>
+    <string name="player_error_untrusted_certificate">%1$sの証明書は信頼されていないため、Edendaleはそこからストリーミングしません。</string>
+    <string name="source_kind_s3">S3互換ストレージ</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac、PC、またはNAS上の共有フォルダ。</string>
+    <string name="link_source_webdav_description">Nextcloud、ownCloud、Synology、QNAP、pCloud、Koofr、またはrclone。</string>
+    <string name="connector_unreachable">%1$sにアクセスできません。サーバーが起動し、同じネットワーク上にあり、名前または認証情報が正しいことを確認してください。</string>
+    <string name="connector_authentication_failed">%1$sでユーザー名とパスワードが受け入れられませんでした。</string>
+    <string name="connector_listing_failed">フォルダ%1$sを読み込めませんでした。異なる認証情報またはアクセス権が必要な可能性があります。</string>
+    <string name="connector_invalid_address">サーバーアドレスが正しくないようです。nas.localのようなホスト名またはIPアドレスを入力してください。</string>
+    <string name="connector_insecure_connection">暗号化されていない http:// は、自分のネットワーク内のサーバーにのみ使えます。このサーバーには https:// アドレスを使ってください。</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">このバケットは%1$sリージョンにあります。リージョンを変更して、もう一度接続してください。</string>
+    <string name="connector_bucket_other_region">このバケットは別のリージョンにあります。リージョンを確認して、もう一度接続してください。</string>
+    <string name="link_source_s3_description">AWS、Backblaze B2、Cloudflare R2、Wasabi、またはMinIO。</string>
+    <string name="s3_endpoint_label">エンドポイント</string>
+    <string name="s3_region_label">リージョン</string>
+    <string name="s3_bucket_label">バケット</string>
+    <string name="s3_access_key_label">アクセスキーID</string>
+    <string name="s3_secret_key_label">シークレットアクセスキー</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$sはこのビルドのEdendaleでは設定されていません。</string>
+    <string name="oauth_cancelled">サインインがキャンセルされました。</string>
+    <string name="oauth_unverified">サインインの応答を確認できませんでした。もう一度お試しください。</string>
+    <string name="oauth_denied">%1$sへのアクセスは許可されませんでした。</string>
+    <string name="oauth_invalid_grant">%1$sのサインインの有効期限が切れたか、取り消されました。もう一度サインインしてください。</string>
+    <string name="oauth_device_code_expired">承認される前にコードの有効期限が切れました。新しいコードを取得して、もう一度お試しください。</string>
+    <string name="oauth_server_detail">%1$sでサインインを完了できませんでした（%2$s）: %3$s</string>
+    <string name="oauth_server">%1$sでサインインを完了できませんでした（%2$s）。</string>
+    <string name="oauth_malformed">%1$sから、Edendaleが読み取れない応答が送信されました。</string>
+    <string name="accounts_sign_out">サインアウト</string>
+    <string name="accounts_sign_out_revoke">サインアウトしてアクセスを取り消す</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">%1$sのソースは、アカウントを再度リンクするまでこのデバイスで機能しなくなります。</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">個人用、職場用、または学校用のOneDrive。</string>
+    <string name="link_source_dropbox_description">Dropboxのフォルダ。</string>
+    <string name="link_source_linked_accounts">リンク済みのアカウント</string>
+    <string name="link_source_another_account">別のアカウント</string>
+    <string name="link_source_sign_in_to">%1$sにサインイン</string>
+    <string name="link_source_waiting">%1$sを待っています…</string>
+    <string name="link_source_cloud_privacy">Edendaleは%1$sに読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">スマートフォンまたはコンピュータで%1$s%2$sを開き、次のコードを入力してください:</string>
+    <string name="device_code_accessibility">コード %1$s</string>
+    <string name="device_code_qr_description">%1$sのサインイン用QRコード</string>
+    <string name="device_code_waiting">承認を待っています…</string>
+    <string name="device_code_sign_in">コードでサインイン</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">SSHで接続できるすべてのサーバー。</string>
+    <string name="sftp_port_label">ポート</string>
+    <string name="sftp_host_key_note">Edendaleは初めて接続するときに、承認のためにサーバーのホストキーを表示します。</string>
+    <string name="sftp_verify_title">ホストキーを確認</string>
+    <string name="sftp_changed_title">ホストキーが変更されました</string>
+    <string name="sftp_verify_message">信頼する前に、これがサーバーのSSHホストキーと一致していることを確認してください。\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$sが提示したキーは、以前に承認したものと異なります。サーバーが再インストールされたか、キーが変更されたことがわかっている場合にのみ続行してください。\n\n%2$s</string>
+    <string name="sftp_trust">信頼</string>
+    <string name="sftp_trust_new">新しいキーを信頼</string>
+    <string name="connector_host_key_mismatch">%1$sのSSHホストキーが変更されました。サーバーを再度リンクして新しいキーを承認するまで、Edendaleは接続しません。</string>
+    <string name="connector_host_key_unverified">%1$sのSSHホストキーはまだ承認されていません。</string>
+    <string name="connector_secure_connection_failed">%1$sとの安全な接続を確立できませんでした。SSHサーバーが古い暗号化方式しか提供しておらず、Edendaleはそれに対応していません。</string>
+    <string name="connector_password_login_unavailable">%1$sではパスワードによるログインが許可されていません。リンクするには、SSH設定でパスワード認証を許可してください。</string>
+    <string name="connector_sftp_unavailable">%1$sでは、このアカウントでSFTPを利用できません。</string>
+    <string name="link_source_tls_note">自分のネットワーク内のサーバーは http:// を使えます。この端末が信頼していない証明書に初めて出会ったとき、Edendale はその証明書を表示して承認を求めます。</string>
+    <string name="tls_verify_title">証明書を確認</string>
+    <string name="tls_changed_title">証明書が変更されました</string>
+    <string name="tls_verify_message">この端末は %1$s が提示する証明書を信頼していません。信頼する前に、サーバー自身の証明書と一致することを確認してください。
+
+%2$s</string>
+    <string name="tls_changed_message">%1$s が提示する証明書は、以前に承認したものと異なります。サーバーの証明書が差し替えられたと分かっている場合にのみ続行してください。
+
+%2$s</string>
+    <string name="tls_trust_new">新しい証明書を信頼</string>
+    <string name="tls_expires">有効期限: %1$s</string>
+    <string name="connector_certificate_unverified">%1$s の証明書はまだ承認されていません。確認するにはサーバーをもう一度リンクしてください。</string>
+    <string name="connector_certificate_mismatch">%1$s の証明書が変更されました。サーバーをもう一度リンクして新しい証明書を承認するまで、Edendale は接続しません。</string>
+    <string name="link_source_gdrive_description">マイドライブ、共有されたフォルダ、共有ドライブ。</string>
+    <string name="gdrive_my_drive">マイドライブ</string>
+    <string name="gdrive_shared_with_me">共有アイテム</string>
+    <string name="gdrive_shared_drives">共有ドライブ</string>
+    <string name="handoff_continue_on_phone">スマートフォンで続行</string>
+    <string name="handoff_tv_instructions">スマートフォンで Edendale を開き、設定 → アカウント → テレビとリンクに進み、%1$s を選んでこのコードを入力してください:</string>
+    <string name="handoff_tv_waiting">スマートフォンを待っています…</string>
+    <string name="handoff_tv_connected">スマートフォンで送信する内容を選択中…</string>
+    <string name="handoff_tv_validating">スマートフォンから送信された内容を確認中…</string>
+    <string name="handoff_link_to_tv">テレビとリンク</string>
+    <string name="handoff_link_to_tv_note">このネットワーク上で Edendale を実行している Android TV に、リンク済みのアカウントや保存済みのログインを送ります。テレビ側はソースをリンクから要求します。</string>
+    <string name="handoff_searching">このネットワーク上のテレビを探しています…</string>
+    <string name="handoff_no_tvs">テレビがまだ見つかりません。テレビでソースをリンクを開き、プロバイダーを選んでスマートフォンで続行を選んでください。</string>
+    <string name="handoff_discovery_failed">Edendale はこのネットワークでテレビを検索できません。Wi-Fi がオンになっているか確認してください。</string>
+    <string name="handoff_code_label">%1$s に表示されたコード</string>
+    <string name="handoff_connecting">%1$s に接続中…</string>
+    <string name="handoff_request_title">%2$s で %1$s をリンクしますか？</string>
+    <string name="handoff_request_message">Edendale は入力したコードで暗号化したログイン情報を、このネットワーク経由でテレビに直接送ります。サーバーを経由せず、テレビは自身のストレージにのみ保存します。</string>
+    <string name="handoff_saved_logins">保存済みのログイン</string>
+    <string name="handoff_no_saved_logins">この端末に %1$s のログインは保存されていません。先にソースをリンクでリンクしてください。</string>
+    <string name="handoff_decline">拒否</string>
+    <string name="handoff_sending">%1$s に送信中…</string>
+    <string name="handoff_done">%1$s でリンクしました。テレビで続けてください。</string>
+    <string name="handoff_declined">もう一方の端末でリクエストが拒否されました。</string>
+    <string name="handoff_wrong_code">コードが一致しませんでした。テレビのコードを確認してもう一度お試しください。</string>
+    <string name="handoff_connection_failed">もう一方の端末に接続できませんでした。両方が同じネットワークにあり、テレビにコードが表示されたままか確認してください。</string>
+    <string name="handoff_timed_out">もう一方の端末が時間内に応答しませんでした。</string>
+    <string name="handoff_unsupported_version">両方の端末で Edendale を更新してからもう一度お試しください。</string>
+    <string name="handoff_malformed">もう一方の端末から Edendale が使用できないデータが送られました。もう一度お試しください。</string>
+    <string name="handoff_rejected">テレビは送信された内容を使用できませんでした: %1$s</string>
+    <string name="handoff_rejected_plain">テレビは送信された内容を使用できませんでした。</string>
+    <string name="handoff_tv_address">スマートフォンでこのテレビが見つからない場合は、代わりにアドレスを入力してください: %1$s</string>
+    <string name="handoff_address_label">またはテレビに表示されたアドレスを入力</string>
 </resources>

@@ -131,9 +131,9 @@
     <string name="remove_folder">%1$s 삭제</string>
     <string name="remove_source_title">소스 삭제</string>
     <string name="remove_source_confirm_title">%1$s 소스를 삭제할까요?</string>
-    <string name="remove_source_message_smb">“%1$s”이(가) 라이브러리에서 삭제되며, 다른 소스에서 해당 서버를 여전히 사용하지 않는 한 저장된 %2$s 로그인 정보도 삭제됩니다. 서버의 항목은 아무것도 삭제되지 않습니다.</string>
+    <string name="remove_source_message_smb">“%1$s” 항목이 보관함에서 제거됩니다. 서버의 항목은 삭제되지 않으며, %2$s에 대해 저장된 로그인 정보는 설정 → 계정에 유지됩니다.</string>
     <string name="remove_source_message_local">“%1$s”이(가) 라이브러리에서 삭제됩니다. 기기의 항목은 아무것도 삭제되지 않습니다.</string>
-    <string name="remove_source_message_generic">Edendale은 이 소스와 이로부터 색인된 모든 항목을 삭제하며, 다른 소스에서 필요로 하지 않는 경우 호스트에 대해 저장된 로그인 정보도 삭제합니다. 기기나 공유된 곳의 항목은 아무것도 삭제되지 않습니다.</string>
+    <string name="remove_source_message_generic">Edendale은 이 소스와 여기에서 색인한 모든 항목을 삭제합니다. 기기나 공유 폴더에서는 아무것도 삭제되지 않으며, 저장된 로그인 정보는 설정 → 계정에 남아 있습니다.</string>
     <string name="mark_watched">시청함으로 표시</string>
     <string name="mark_unwatched">시청하지 않음으로 표시</string>
     <string name="watched">시청함</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">secrets.json에 토큰을 추가하고 다시 빌드하세요</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">큰 글꼴, 오버스캔 안전 여백, 리모컨 포커스 강조, 가로 모드 표시가 활성화됩니다.</string>
+    <string name="settings_watch_next_title">홈 화면에 시청 계속하기 표시</string>
+    <string name="settings_watch_next_description">시청 중인 타이틀을 홈 화면의 ‘시청 계속하기’ 줄에 표시합니다. Edendale은 이를 위해 네트워크로 아무것도 보내지 않지만, 홈 화면 앱은 이 타이틀을 볼 수 있습니다.</string>
     <string name="settings_section_sources">소스</string>
     <string name="settings_no_sources">연결된 소스 없음</string>
     <string name="settings_section_backup">백업</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">이 파일에는 자막 트랙이 없습니다.</string>
     <string name="player_track_number">트랙 %1$d</string>
     <string name="player_playback">재생</string>
+    <string name="player_skip_intro">오프닝 건너뛰기</string>
     <string name="player_skip_recap">요약 건너뛰기</string>
-    <string name="player_skip_recap_detail">처음 90초 건너뛰기</string>
     <string name="player_skip_credits">크레딧 건너뛰기</string>
-    <string name="player_skip_credits_detail">마지막 3분에 재생 종료</string>
+    <string name="player_skip_prompts">건너뛰기 안내</string>
+    <string name="player_skip_prompts_detail">TheIntroDB에서 인트로, 요약 및 크레딧 타임스탬프 조회</string>
+    <string name="settings_skip_prompts_note">활성화하면 TheIntroDB가 타이틀의 TMDB ID, 에피소드 번호, 비디오 재생 시간 및 IP 주소를 수신합니다. 건너뛰기에는 항상 버튼을 눌러야 합니다.</string>
+    <string name="settings_theintrodb_link">타임스탬프 제공: TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB 개인정보 처리방침</string>
     <string name="player_loop">비디오 반복 재생</string>
     <string name="player_loop_detail">종료 시 재생 다시 시작</string>
     <string name="player_auto_pip">자동 화면 속 화면</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">폴더</string>
     <string name="default_video_name">비디오</string>
     <string name="error_not_share_address">\"%1$s\"은(는) 공유 주소가 아닙니다. 192.168.1.10/media로 시도해 보세요.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: 이 소스의 일부를 읽을 수 없어 라이브러리에서 삭제된 항목이 없습니다.</string>
     <string name="error_permission_revoked">이 폴더에 대한 접근 권한이 취소되었습니다 — 다시 추가하세요</string>
     <string name="error_folder_unopenable">폴더를 열 수 없습니다</string>
     <string name="error_share_unreachable">공유에 접근할 수 없거나 자격 증명이 거부되었습니다</string>
     <string name="error_address_is_file">해당 주소는 공유가 아닌 파일입니다</string>
-    <string name="error_scan_failed">스캔에 실패했습니다</string>
     <plurals name="item_count">
         <item quantity="other">항목 %1$d개</item>
     </plurals>
@@ -275,4 +279,248 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">%1$d개가 더 일치합니다.</item>
     </plurals>
+    <string name="settings_section_app_controls">앱 제어</string>
+    <string name="settings_app_controls_skip_backward">뒤로 건너뛰기</string>
+    <string name="settings_app_controls_skip_forward">앞으로 건너뛰기</string>
+    <string name="settings_app_controls_skip_note">비디오의 왼쪽이나 오른쪽을 두 번 탭하여 뒤로 또는 앞으로 건너뜁니다.</string>
+    <string name="settings_app_controls_hold_left">왼쪽 길게 누르기</string>
+    <string name="settings_app_controls_hold_right">오른쪽 길게 누르기</string>
+    <string name="settings_app_controls_hold_note">비디오의 왼쪽이나 오른쪽을 길게 누르면 손을 뗄 때까지 해당 속도로 재생됩니다.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, 느리게</string>
+    <string name="settings_app_controls_hold_faster">%1$s, 빠르게</string>
+    <string name="settings_seconds_format">%d초</string>
+    <string name="player_back_15">15초 뒤로</string>
+    <string name="player_back_30">30초 뒤로</string>
+    <string name="player_forward_15">15초 앞으로</string>
+    <string name="player_forward_30">30초 앞으로</string>
+    <string name="player_up_next">다음 재생</string>
+    <string name="player_up_next_description">다음 재생: %1$s %2$s</string>
+    <string name="player_up_next_hint">다음 에피소드 지금 재생</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">다음 에피소드 · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">오디오 출력</string>
+    <string name="player_audio_output_unavailable">이 기기에서는 오디오 출력을 전환할 수 없습니다.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">서체</string>
+    <string name="settings_subtitles_text_color">텍스트 색상</string>
+    <string name="settings_subtitles_background_color">배경 색상</string>
+    <string name="settings_subtitles_background_opacity">배경 불투명도</string>
+    <string name="settings_subtitles_reset">자막 스타일 재설정</string>
+    <string name="settings_subtitles_appearance_note">텍스트 자막에 적용됩니다. 이미지 기반 자막은 제작된 모양을 유지합니다.</string>
+    <string name="settings_subtitles_preview">자막 미리보기</string>
+    <string name="settings_subtitles_preview_sample">아카이브는 영화를 결코 잊지 않습니다.\n누군가 재생을 누르기를 기다릴 뿐입니다.</string>
+    <string name="settings_subtitles_font_system">시스템</string>
+    <string name="settings_subtitles_font_rounded">라운드</string>
+    <string name="settings_subtitles_font_serif">세리프</string>
+    <string name="settings_subtitles_font_monospaced">고정폭</string>
+    <string name="settings_subtitles_color_parchment">양피지</string>
+    <string name="settings_subtitles_color_white">흰색</string>
+    <string name="settings_subtitles_color_yellow">노란색</string>
+    <string name="settings_subtitles_color_cyan">청록색</string>
+    <string name="settings_subtitles_color_green">녹색</string>
+    <string name="settings_subtitles_color_black">검은색</string>
+    <string name="settings_subtitles_color_ink">잉크</string>
+    <string name="settings_subtitles_color_charcoal">차콜</string>
+    <string name="settings_subtitles_color_navy">네이비</string>
+    <string name="settings_subtitles_opacity_lower">배경 불투명도 낮추기</string>
+    <string name="settings_subtitles_opacity_higher">배경 불투명도 높이기</string>
+    <string name="settings_nunito_attribution">자막의 둥근 서체는 The Nunito Project Authors의 Nunito이며 SIL Open Font License 1.1에 따라 제공됩니다.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">비디오 트랙</string>
+    <string name="player_audio_track">오디오 트랙</string>
+    <string name="player_audio_mono">모노</string>
+    <string name="player_audio_stereo">스테레오</string>
+    <string name="player_audio_channels">%d채널</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">재생할 수 없음</string>
+    <string name="player_error_could_not_open">이 제목을 열 수 없습니다.</string>
+    <string name="player_error_connection_lost">%1$s과(와)의 연결이 끊어졌습니다.</string>
+    <string name="player_error_connection_lost_detail">%1$s과(와)의 연결이 끊어졌습니다: %2$s</string>
+    <string name="player_error_could_not_connect">%1$s에 연결할 수 없습니다.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">%1$s에 연결할 수 없습니다. 연결 상태를 확인한 후 다시 시도하십시오.</string>
+    <string name="sources_status_needs_sign_in">이 소스에 접근하려면 %1$s에 다시 로그인하십시오.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">계정</string>
+    <string name="accounts_empty">연결된 계정이나 저장된 로그인 정보가 없습니다. 소스 연결에서 추가할 수 있습니다.</string>
+    <string name="accounts_no_sources">이 기기에 소스 없음</string>
+    <string name="accounts_forget">삭제</string>
+    <string name="accounts_forget_login">로그인 정보 삭제</string>
+    <string name="accounts_forget_message">로그인 정보를 다시 입력할 때까지 %1$s의 소스에 연결할 수 없습니다.</string>
+    <string name="accounts_note">로그인 정보는 이 기기에만 저장되며 백업되지 않습니다. 소스를 제거해도 유지되며, 여기에서 삭제할 수 있습니다.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">이 기기의 소스 %1$d개</item>
+        <item quantity="other">이 기기의 소스 %1$d개</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">재생 소스</string>
+    <string name="play_from_unavailable">%1$s · 사용할 수 없음</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">소스 %1$d개</item>
+        <item quantity="other">소스 %1$d개</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">오디오 향상</string>
+    <string name="audio_profile">프로필</string>
+    <string name="audio_profile_flat">플랫</string>
+    <string name="audio_profile_movies">영화</string>
+    <string name="audio_profile_music">음악</string>
+    <string name="audio_profile_dialogue">대화</string>
+    <string name="audio_profile_night_mode">야간 모드</string>
+    <string name="audio_preamp">프리앰프</string>
+    <string name="audio_reset_adjustments">조정 재설정</string>
+    <string name="audio_booster">오디오 부스터</string>
+    <string name="audio_booster_detail">조용한 녹음의 오디오 게인 높이기</string>
+    <string name="audio_show_equalizer">이퀄라이저 보기</string>
+    <string name="audio_hide_equalizer">이퀄라이저 가리기</string>
+    <string name="audio_passthrough_note">이퀄라이저와 부스터는 Edendale이 디코딩하는 오디오에 적용됩니다. 리시버나 TV로 그대로 전달되는 서라운드 오디오에는 적용되지 않습니다.</string>
+    <string name="audio_step_lower">%1$s, 낮추기</string>
+    <string name="audio_step_higher">%1$s, 높이기</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">화면</string>
+    <string name="video_brightness">밝기</string>
+    <string name="video_contrast">대비</string>
+    <string name="video_gamma">감마</string>
+    <string name="video_saturation">채도</string>
+    <string name="video_hue">색조</string>
+    <string name="video_show_original">원본 보기</string>
+    <string name="video_enhancement">향상</string>
+    <string name="video_preset">프리셋</string>
+    <string name="video_preset_off">끔</string>
+    <string name="video_preset_sharpen_only">선명화만</string>
+    <string name="video_preset_balanced">균형</string>
+    <string name="video_preset_high_quality">고품질</string>
+    <string name="video_sharpness">선명도</string>
+    <string name="video_denoise">노이즈 제거</string>
+    <string name="video_not_available_hdr">HDR 비디오에서는 사용할 수 없습니다</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">사이드바 가리기</string>
+    <string name="navigation_show">사이드바 보기</string>
+    <string name="rescan_library">보관함 다시 스캔</string>
+    <string name="shelf_scroll_position">%1$s 스크롤 위치</string>
+    <string name="shortcut_play_pause">재생 또는 일시 정지</string>
+    <string name="shortcut_skip_prompt">표시될 때 인트로 또는 크레딧 건너뛰기</string>
+    <string name="shortcut_close_panel_then_player">패널을 닫은 다음 플레이어 닫기</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="other">%1$d초 뒤로</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="other">%1$d초 앞으로</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">이 파일이 더 이상 %1$s에 없습니다.</string>
+    <string name="player_error_rate_limited">%1$s에서 현재 요청을 제한하고 있습니다. 1분 후에 다시 시도하십시오.</string>
+    <string name="player_error_server">%1$s에서 오류를 반환했습니다(HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s에서 이 파일의 탐색을 지원하지 않습니다.</string>
+    <string name="player_error_access_denied">%1$s에서 이 항목에 대한 접근을 거부했습니다.</string>
+    <string name="player_error_abusive_file">Google 드라이브에서 이 파일을 잠재적으로 유해한 파일로 표시했으므로 스트리밍할 수 없습니다.</string>
+    <string name="player_error_untrusted_certificate">%1$s의 인증서를 신뢰할 수 없으므로 Edendale은 해당 서버에서 스트리밍하지 않습니다.</string>
+    <string name="source_kind_s3">S3 호환 저장 공간</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac, PC 또는 NAS의 공유 폴더.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr 또는 rclone.</string>
+    <string name="connector_unreachable">%1$s에 연결할 수 없습니다. 서버가 켜져 있고 같은 네트워크에 있는지, 이름이나 자격 증명이 올바른지 확인하십시오.</string>
+    <string name="connector_authentication_failed">%1$s에서 사용자 이름과 암호를 허용하지 않았습니다.</string>
+    <string name="connector_listing_failed">%1$s 폴더를 읽을 수 없습니다. 다른 자격 증명이나 권한이 필요할 수 있습니다.</string>
+    <string name="connector_invalid_address">서버 주소가 올바르지 않은 것 같습니다. nas.local과 같은 호스트 이름이나 IP 주소를 입력하십시오.</string>
+    <string name="connector_insecure_connection">암호화되지 않은 http://는 내 네트워크의 서버에만 사용할 수 있습니다. 이 서버에는 https:// 주소를 사용하세요.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">이 버킷은 %1$s 지역에 있습니다. 지역을 변경하고 다시 연결하십시오.</string>
+    <string name="connector_bucket_other_region">이 버킷은 다른 지역에 있습니다. 지역을 확인하고 다시 연결하십시오.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi 또는 MinIO.</string>
+    <string name="s3_endpoint_label">엔드포인트</string>
+    <string name="s3_region_label">지역</string>
+    <string name="s3_bucket_label">버킷</string>
+    <string name="s3_access_key_label">액세스 키 ID</string>
+    <string name="s3_secret_key_label">비밀 액세스 키</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">이 Edendale 빌드에는 %1$s이(가) 설정되어 있지 않습니다.</string>
+    <string name="oauth_cancelled">로그인이 취소되었습니다.</string>
+    <string name="oauth_unverified">로그인 응답을 확인할 수 없습니다. 다시 시도하십시오.</string>
+    <string name="oauth_denied">%1$s에 대한 접근이 허용되지 않았습니다.</string>
+    <string name="oauth_invalid_grant">%1$s 로그인이 만료되었거나 취소되었습니다. 다시 로그인하십시오.</string>
+    <string name="oauth_device_code_expired">승인되기 전에 코드가 만료되었습니다. 새 코드를 받아 다시 시도하십시오.</string>
+    <string name="oauth_server_detail">%1$s에서 로그인을 완료할 수 없습니다(%2$s): %3$s</string>
+    <string name="oauth_server">%1$s에서 로그인을 완료할 수 없습니다(%2$s).</string>
+    <string name="oauth_malformed">%1$s에서 Edendale이 읽을 수 없는 응답을 보냈습니다.</string>
+    <string name="accounts_sign_out">로그아웃</string>
+    <string name="accounts_sign_out_revoke">로그아웃 및 접근 권한 취소</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">계정을 다시 연결할 때까지 %1$s의 소스가 이 기기에서 작동하지 않습니다.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">개인, 회사 또는 학교 OneDrive.</string>
+    <string name="link_source_dropbox_description">Dropbox 폴더.</string>
+    <string name="link_source_linked_accounts">연결된 계정</string>
+    <string name="link_source_another_account">다른 계정</string>
+    <string name="link_source_sign_in_to">%1$s에 로그인</string>
+    <string name="link_source_waiting">%1$s 기다리는 중…</string>
+    <string name="link_source_cloud_privacy">Edendale은 %1$s에 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">휴대폰이나 컴퓨터에서 %1$s%2$s을(를) 열고 다음 코드를 입력하십시오:</string>
+    <string name="device_code_accessibility">코드 %1$s</string>
+    <string name="device_code_qr_description">%1$s 로그인 QR 코드</string>
+    <string name="device_code_waiting">승인 기다리는 중…</string>
+    <string name="device_code_sign_in">코드로 로그인</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">SSH로 접근할 수 있는 모든 서버.</string>
+    <string name="sftp_port_label">포트</string>
+    <string name="sftp_host_key_note">Edendale은 처음 연결할 때 승인할 수 있도록 서버의 호스트 키를 표시합니다.</string>
+    <string name="sftp_verify_title">호스트 키 확인</string>
+    <string name="sftp_changed_title">호스트 키 변경됨</string>
+    <string name="sftp_verify_message">신뢰하기 전에 서버의 SSH 호스트 키와 일치하는지 확인하십시오.\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$s이(가) 제시한 키가 이전에 승인한 키와 다릅니다. 서버가 재설치되었거나 키가 변경된 것을 알고 있는 경우에만 계속하십시오.\n\n%2$s</string>
+    <string name="sftp_trust">신뢰</string>
+    <string name="sftp_trust_new">새 키 신뢰</string>
+    <string name="connector_host_key_mismatch">%1$s의 SSH 호스트 키가 변경되었습니다. 서버를 다시 연결하여 새 키를 승인할 때까지 Edendale은 연결하지 않습니다.</string>
+    <string name="connector_host_key_unverified">%1$s의 SSH 호스트 키가 아직 승인되지 않았습니다.</string>
+    <string name="connector_secure_connection_failed">%1$s과(와) 보안 연결을 설정할 수 없습니다. 해당 SSH 서버는 Edendale이 지원하지 않는 이전 암호화 방식만 제공합니다.</string>
+    <string name="connector_password_login_unavailable">%1$s에서 암호 로그인을 허용하지 않습니다. 연결하려면 SSH 설정에서 암호 인증을 허용하십시오.</string>
+    <string name="connector_sftp_unavailable">%1$s에서 이 계정에 SFTP를 제공하지 않습니다.</string>
+    <string name="link_source_tls_note">내 네트워크의 서버는 http://를 사용할 수 있습니다. 이 기기가 신뢰하지 않는 인증서를 처음 만나면 Edendale이 인증서를 표시하고 승인을 요청합니다.</string>
+    <string name="tls_verify_title">인증서 확인</string>
+    <string name="tls_changed_title">인증서가 변경됨</string>
+    <string name="tls_verify_message">이 기기는 %1$s이(가) 제시한 인증서를 신뢰하지 않습니다. 신뢰하기 전에 서버의 인증서와 일치하는지 확인하세요.
+
+%2$s</string>
+    <string name="tls_changed_message">%1$s이(가) 제시한 인증서가 이전에 승인한 것과 다릅니다. 서버의 인증서가 교체된 것을 알고 있는 경우에만 계속하세요.
+
+%2$s</string>
+    <string name="tls_trust_new">새 인증서 신뢰</string>
+    <string name="tls_expires">만료: %1$s</string>
+    <string name="connector_certificate_unverified">%1$s의 인증서가 아직 승인되지 않았습니다. 확인하려면 서버를 다시 연결하세요.</string>
+    <string name="connector_certificate_mismatch">%1$s의 인증서가 변경되었습니다. 서버를 다시 연결하여 새 인증서를 승인할 때까지 Edendale이 연결하지 않습니다.</string>
+    <string name="link_source_gdrive_description">내 드라이브, 나와 공유된 폴더, 공유 드라이브.</string>
+    <string name="gdrive_my_drive">내 드라이브</string>
+    <string name="gdrive_shared_with_me">공유 문서함</string>
+    <string name="gdrive_shared_drives">공유 드라이브</string>
+    <string name="handoff_continue_on_phone">휴대전화에서 계속</string>
+    <string name="handoff_tv_instructions">휴대전화에서 Edendale을 열고 설정 → 계정 → TV에 연결로 이동한 뒤 %1$s을(를) 선택하고 이 코드를 입력하세요:</string>
+    <string name="handoff_tv_waiting">휴대전화를 기다리는 중…</string>
+    <string name="handoff_tv_connected">휴대전화에서 보낼 항목을 선택하는 중…</string>
+    <string name="handoff_tv_validating">휴대전화에서 보낸 항목을 확인하는 중…</string>
+    <string name="handoff_link_to_tv">TV에 연결</string>
+    <string name="handoff_link_to_tv_note">이 네트워크에서 Edendale을 실행 중인 Android TV로 연결된 계정이나 저장된 로그인을 보냅니다. TV는 소스 연결에서 요청합니다.</string>
+    <string name="handoff_searching">이 네트워크에서 TV를 찾는 중…</string>
+    <string name="handoff_no_tvs">아직 TV를 찾지 못했습니다. TV에서 소스 연결을 열고 제공업체를 고른 뒤 휴대전화에서 계속을 선택하세요.</string>
+    <string name="handoff_discovery_failed">Edendale이 이 네트워크에서 TV를 검색할 수 없습니다. Wi-Fi가 켜져 있는지 확인하세요.</string>
+    <string name="handoff_code_label">%1$s에 표시된 코드</string>
+    <string name="handoff_connecting">%1$s에 연결하는 중…</string>
+    <string name="handoff_request_title">%2$s에서 %1$s을(를) 연결할까요?</string>
+    <string name="handoff_request_message">Edendale은 입력한 코드로 암호화한 로그인 정보를 이 네트워크를 통해 TV로 직접 보냅니다. 서버를 거치지 않으며 TV는 자체 저장소에만 보관합니다.</string>
+    <string name="handoff_saved_logins">저장된 로그인</string>
+    <string name="handoff_no_saved_logins">이 기기에 저장된 %1$s 로그인이 없습니다. 먼저 소스 연결에서 하나를 연결하세요.</string>
+    <string name="handoff_decline">거부</string>
+    <string name="handoff_sending">%1$s(으)로 보내는 중…</string>
+    <string name="handoff_done">%1$s에 연결되었습니다. TV에서 계속하세요.</string>
+    <string name="handoff_declined">다른 기기에서 요청이 거부되었습니다.</string>
+    <string name="handoff_wrong_code">코드가 일치하지 않습니다. TV의 코드를 확인하고 다시 시도하세요.</string>
+    <string name="handoff_connection_failed">다른 기기에 연결할 수 없습니다. 두 기기가 같은 네트워크에 있고 TV에 코드가 아직 표시되어 있는지 확인하세요.</string>
+    <string name="handoff_timed_out">다른 기기가 제시간에 응답하지 않았습니다.</string>
+    <string name="handoff_unsupported_version">두 기기에서 Edendale을 업데이트한 뒤 다시 시도하세요.</string>
+    <string name="handoff_malformed">다른 기기가 Edendale이 사용할 수 없는 데이터를 보냈습니다. 다시 시도하세요.</string>
+    <string name="handoff_rejected">TV가 보낸 항목을 사용할 수 없습니다: %1$s</string>
+    <string name="handoff_rejected_plain">TV가 보낸 항목을 사용할 수 없습니다.</string>
+    <string name="handoff_tv_address">휴대전화가 이 TV를 찾지 못하면 대신 주소를 입력하세요: %1$s</string>
+    <string name="handoff_address_label">또는 TV에 표시된 주소 입력</string>
 </resources>

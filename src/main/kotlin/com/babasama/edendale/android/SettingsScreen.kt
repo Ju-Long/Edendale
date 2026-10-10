@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +49,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
@@ -57,9 +67,16 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SmbClient
 import com.babasama.edendale.android.data.WyzieKeyStore
+import com.babasama.edendale.android.player.PlayerLogic
+import com.babasama.edendale.android.player.PlayerPreferences
+import com.babasama.edendale.android.player.PlayerPreferencesRules
+import com.babasama.edendale.android.player.SkipDirection
+import com.babasama.edendale.android.player.SkipInterval
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.babasama.edendale.connectors.SourceUrl
+import com.babasama.edendale.android.data.SourceScanRules
 
 @Composable
 fun SettingsScreen(
@@ -85,13 +102,10 @@ fun SettingsScreen(
     }
 
     if (showSmbDialog) {
-        SmbImportDialog(
+        LinkSourceDialog(
             isTelevision = isTelevision,
             onDismiss = { showSmbDialog = false },
-            onImport = { host, user, pass ->
-                library.importSmbFolder(host, user, pass)
-                showSmbDialog = false
-            },
+            onLinked = { showSmbDialog = false },
         )
     }
 
@@ -153,6 +167,9 @@ fun SettingsScreen(
 
     val windowSize = currentWindowSizeDp()
     val edgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
+    // Section K: on TV and in wide windows, attribution is part of About, near
+    // the top, where focus-scrolling and a glance both reach it.
+    val attributionInAbout = isTelevision || windowSize.width >= WIDE_SETTINGS_WIDTH
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -199,6 +216,10 @@ fun SettingsScreen(
                         },
                     ),
                 )
+                if (attributionInAbout) {
+                    SettingsRowDivider()
+                    AttributionRows()
+                }
             }
         }
 
@@ -212,13 +233,74 @@ fun SettingsScreen(
 
         if (isTelevision) {
             item {
-                SettingsSection(
-                    header = stringResource(R.string.settings_section_android_tv),
-                    isTelevision = true,
-                ) {
-                    InfoRow(stringResource(R.string.settings_android_tv_note))
-                }
+                AndroidTvSettingsSection()
             }
+        }
+
+        item {
+            AudioEnhancementSettingsSection(isTelevision = isTelevision)
+        }
+
+        item {
+            WyzieKeySettingsSection(
+                status = wyzieKeyStatus,
+                keyInput = wyzieKeyInput,
+                message = wyzieKeyMessage,
+                isTelevision = isTelevision,
+                onKeyInputChanged = {
+                    wyzieKeyInput = it
+                    wyzieKeyMessage = null
+                },
+                onOpenStore = {
+                    val result = runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(WYZIE_REDEEM_URL)),
+                        )
+                    }
+                    if (result.isFailure) wyzieKeyMessage = wyzieBrowserError
+                },
+                onSave = {
+                    settingsScope.launch {
+                        val result = runCatching { wyzieKeyStore.save(wyzieKeyInput) }
+                        if (result.isSuccess) {
+                            wyzieKeyInput = ""
+                            wyzieKeyMessage = null
+                            wyzieKeyStatus = WyzieKeyStatus(
+                                hasUserKey = true,
+                                usesBuildKey = false,
+                            )
+                        } else {
+                            wyzieKeyMessage = wyzieStorageError
+                        }
+                    }
+                },
+                onRemove = {
+                    settingsScope.launch {
+                        val result = runCatching { wyzieKeyStore.clear() }
+                        if (result.isSuccess) {
+                            wyzieKeyMessage = null
+                            wyzieKeyStatus = WyzieKeyStatus(
+                                hasUserKey = false,
+                                usesBuildKey = wyzieKeyStore.buildKey.isNotEmpty(),
+                            )
+                        } else {
+                            wyzieKeyMessage = wyzieStorageError
+                        }
+                    }
+                },
+            )
+        }
+
+        item {
+            SkipPromptsSettingsSection(
+                isTelevision = isTelevision,
+            )
+        }
+
+        item {
+            AppControlsSettingsSection(
+                isTelevision = isTelevision,
+            )
         }
 
         item {
@@ -290,6 +372,10 @@ fun SettingsScreen(
         }
 
         item {
+            AccountsSettingsSection(folders = folders, isTelevision = isTelevision)
+        }
+
+        item {
             TmdbAccountSettingsSection(
                 state = tmdbAccount.state,
                 isTelevision = isTelevision,
@@ -298,56 +384,6 @@ fun SettingsScreen(
                 onCancel = tmdbAccount::cancelConnect,
                 onSync = tmdbAccount::syncNow,
                 onSignOut = tmdbAccount::signOut,
-            )
-        }
-
-        item {
-            WyzieKeySettingsSection(
-                status = wyzieKeyStatus,
-                keyInput = wyzieKeyInput,
-                message = wyzieKeyMessage,
-                isTelevision = isTelevision,
-                onKeyInputChanged = {
-                    wyzieKeyInput = it
-                    wyzieKeyMessage = null
-                },
-                onOpenStore = {
-                    val result = runCatching {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse(WYZIE_REDEEM_URL)),
-                        )
-                    }
-                    if (result.isFailure) wyzieKeyMessage = wyzieBrowserError
-                },
-                onSave = {
-                    settingsScope.launch {
-                        val result = runCatching { wyzieKeyStore.save(wyzieKeyInput) }
-                        if (result.isSuccess) {
-                            wyzieKeyInput = ""
-                            wyzieKeyMessage = null
-                            wyzieKeyStatus = WyzieKeyStatus(
-                                hasUserKey = true,
-                                usesBuildKey = false,
-                            )
-                        } else {
-                            wyzieKeyMessage = wyzieStorageError
-                        }
-                    }
-                },
-                onRemove = {
-                    settingsScope.launch {
-                        val result = runCatching { wyzieKeyStore.clear() }
-                        if (result.isSuccess) {
-                            wyzieKeyMessage = null
-                            wyzieKeyStatus = WyzieKeyStatus(
-                                hasUserKey = false,
-                                usesBuildKey = wyzieKeyStore.buildKey.isNotEmpty(),
-                            )
-                        } else {
-                            wyzieKeyMessage = wyzieStorageError
-                        }
-                    }
-                },
             )
         }
 
@@ -373,14 +409,14 @@ fun SettingsScreen(
             }
         }
 
-        item {
-            SettingsSection(
-                header = stringResource(R.string.settings_section_attribution),
-                isTelevision = isTelevision,
-            ) {
-                InfoRow(stringResource(R.string.tmdb_attribution))
-                SettingsRowDivider()
-                InfoRow(stringResource(R.string.settings_open_source))
+        if (!attributionInAbout) {
+            item {
+                SettingsSection(
+                    header = stringResource(R.string.settings_section_attribution),
+                    isTelevision = isTelevision,
+                ) {
+                    AttributionRows()
+                }
             }
         }
     }
@@ -402,40 +438,80 @@ private fun AudienceSettingsSection(
         isTelevision = isTelevision,
         focusableContent = false,
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-        val focused by interactionSource.collectIsFocusedAsState()
-        Surface(
-            onClick = { onToggle(!isEnabled) },
-            modifier = Modifier.fillMaxWidth(),
-            color = if (focused) EdendaleColors.Gold else Color.Transparent,
-            contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
-            interactionSource = interactionSource,
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_young_audience_title),
+            detail = stringResource(R.string.settings_young_audience_description),
+            checked = isEnabled,
+            onToggle = onToggle,
+        )
+    }
+}
+
+/**
+ * Settings → Android TV: Continue Watching on the home screen (I.3), off by
+ * default, and the note about the TV layout.
+ */
+@Composable
+private fun AndroidTvSettingsSection() {
+    val settings = (LocalContext.current.applicationContext as EdendaleApplication).watchNextSettings
+    val watchNextEnabled by settings.changes.collectAsState(initial = settings.isEnabled)
+    SettingsSection(
+        header = stringResource(R.string.settings_section_android_tv),
+        isTelevision = true,
+        focusableContent = false,
+    ) {
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_watch_next_title),
+            detail = stringResource(R.string.settings_watch_next_description),
+            checked = watchNextEnabled,
+            onToggle = { settings.isEnabled = it },
+        )
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_android_tv_note))
+    }
+}
+
+/** A setting with a title, a line of detail, and a switch; the whole row toggles it and takes focus on TV. */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    detail: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    Surface(
+        onClick = { onToggle(!checked) },
+        modifier = Modifier.fillMaxWidth(),
+        color = if (focused) EdendaleColors.Gold else Color.Transparent,
+        contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp)
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_young_audience_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_young_audience_description),
-                        style = BodyCopyStyle(),
-                        color = if (focused) EdendaleColors.OnGold
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(Modifier.width(16.dp))
-                Switch(checked = isEnabled, onCheckedChange = null)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = detail,
+                    style = BodyCopyStyle(),
+                    color = if (focused) EdendaleColors.OnGold
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
+            Spacer(Modifier.width(16.dp))
+            Switch(checked = checked, onCheckedChange = null)
         }
     }
 }
@@ -461,6 +537,9 @@ private fun WyzieKeySettingsSection(
         isTelevision = isTelevision,
         focusableContent = false,
     ) {
+        // Appearance first, then the online-search key (Apple's order).
+        SubtitleAppearanceRows(isTelevision)
+        SettingsRowDivider()
         when {
             status == null -> AccountProgressRow(stringResource(R.string.wyzie_loading_key))
 
@@ -507,17 +586,23 @@ private fun WyzieKeySettingsSection(
                     }
                 }
                 SettingsRowDivider()
-                OutlinedTextField(
-                    value = keyInput,
-                    onValueChange = onKeyInputChanged,
+                // On TV the keyboard waits for Select, so walking Settings with the remote passes by.
+                TvTextFieldGate(
+                    isTelevision = isTelevision,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 14.dp),
-                    label = { Text(stringResource(R.string.wyzie_api_key)) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    singleLine = true,
-                )
+                ) { fieldModifier ->
+                    OutlinedTextField(
+                        value = keyInput,
+                        onValueChange = onKeyInputChanged,
+                        modifier = Modifier.fillMaxWidth().then(fieldModifier),
+                        label = { Text(stringResource(R.string.wyzie_api_key)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                    )
+                }
                 SettingsRowDivider()
                 SettingsActionRow {
                     ArchiveButton(
@@ -676,7 +761,7 @@ private fun TmdbAccountSettingsSection(
 
 /** One D-pad focus stop wrapping a group of read-only rows. */
 @Composable
-private fun FocusableRows(
+internal fun FocusableRows(
     isTelevision: Boolean,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -689,7 +774,7 @@ private fun FocusableRows(
 }
 
 @Composable
-private fun AccountProgressRow(label: String) {
+internal fun AccountProgressRow(label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -703,7 +788,7 @@ private fun AccountProgressRow(label: String) {
 }
 
 @Composable
-private fun SettingsActionRow(content: @Composable RowScope.() -> Unit) {
+internal fun SettingsActionRow(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -722,7 +807,7 @@ private fun SettingsActionRow(content: @Composable RowScope.() -> Unit) {
  * focus and stay clickable.
  */
 @Composable
-private fun SettingsSection(
+internal fun SettingsSection(
     header: String,
     isTelevision: Boolean = false,
     // Sections whose rows carry their own buttons focus each row instead, so the
@@ -761,7 +846,7 @@ private fun SettingsSection(
 
 /** Hairline between sibling rows, inset to the row's text leading edge. */
 @Composable
-private fun SettingsRowDivider() {
+internal fun SettingsRowDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = 20.dp),
         thickness = 1.dp,
@@ -770,7 +855,7 @@ private fun SettingsRowDivider() {
 }
 
 @Composable
-private fun LabeledRow(label: String, value: String) {
+internal fun LabeledRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -795,7 +880,7 @@ private fun LabeledRow(label: String, value: String) {
 }
 
 @Composable
-private fun InfoRow(text: String) {
+internal fun InfoRow(text: String) {
     Text(
         text = text,
         modifier = Modifier
@@ -816,10 +901,10 @@ private fun SourceRow(
     onRescan: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val isRemote = SmbClient.hostOf(folder.treeUri) != null
-    val kindLabel = stringResource(
-        if (isRemote) R.string.source_kind_smb else R.string.source_kind_local_folder,
-    )
+    val kind = SourceScanRules.kindOf(folder)
+    val isRemote = kind?.isRemote == true
+    val kindLabel = sourceKindLabel(kind)
+    val statusMessage = if (isScanning) null else sourceStatusMessage(folder)
     val detail = if (isScanning) {
         stringResource(R.string.scanning)
     } else {
@@ -862,16 +947,21 @@ private fun SourceRow(
             Text(
                 // TextOverflow.MiddleEllipsis needs Compose 1.9; truncate the string instead so
                 // both the host and the leaf folder stay readable.
-                text = folder.treeUri.middleTruncated(),
+                // The readable path a linked source records (H.11), else its address.
+                text = (folder.displayPath ?: folder.treeUri).middleTruncated(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = BodyCopyStyle(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            statusMessage?.let {
+                Text(text = it, style = BodyCopyStyle(), color = EdendaleColors.Gold)
+            }
         }
         Spacer(Modifier.width(16.dp))
         ArchiveButton(
-            label = stringResource(R.string.action_rescan),
+            // A failed source's rescan is its retry.
+            label = stringResource(if (statusMessage != null) R.string.action_try_again else R.string.action_rescan),
             iconRes = R.drawable.ic_arrow_rotate_right,
             isTelevision = isTelevision,
             onClick = onRescan,
@@ -894,6 +984,7 @@ private fun RemoveSourceDialog(
     onConfirm: () -> Unit,
 ) {
     val host = SmbClient.hostOf(folder.treeUri)
+        ?: SourceUrl.credentialHost(folder.treeUri).takeIf { SourceScanRules.kindOf(folder)?.isRemote == true }
     val message = if (host != null) {
         stringResource(R.string.remove_source_message_smb, folder.displayName, host)
     } else {
@@ -931,21 +1022,364 @@ private fun RemoveSourceDialog(
     )
 }
 
-private const val WYZIE_REDEEM_URL = "https://store.wyzie.io/redeem"
+@Composable
+private fun SkipPromptsSettingsSection(
+    isTelevision: Boolean,
+) {
+    val context = LocalContext.current
+    val playerPreferences = remember(context) { PlayerPreferences.from(context) }
+    var isEnabled by remember { mutableStateOf(playerPreferences.segmentPromptsEnabled) }
+
+    SettingsSection(
+        header = stringResource(R.string.player_playback),
+        isTelevision = isTelevision,
+        focusableContent = false,
+        actions = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ArchiveButton(
+                    label = stringResource(R.string.settings_theintrodb_link),
+                    kind = ArchiveButtonKind.Secondary,
+                    isTelevision = isTelevision,
+                    onClick = {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://theintrodb.org")))
+                        }
+                    },
+                )
+                ArchiveButton(
+                    label = stringResource(R.string.settings_theintrodb_privacy_link),
+                    kind = ArchiveButtonKind.Secondary,
+                    isTelevision = isTelevision,
+                    onClick = {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://theintrodb.org/docs/privacy")))
+                        }
+                    },
+                )
+            }
+        },
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val focused by interactionSource.collectIsFocusedAsState()
+        Surface(
+            onClick = {
+                val next = !isEnabled
+                isEnabled = next
+                playerPreferences.segmentPromptsEnabled = next
+            },
+            modifier = Modifier.fillMaxWidth(),
+            color = if (focused) EdendaleColors.Gold else Color.Transparent,
+            contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            interactionSource = interactionSource,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.player_skip_prompts),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.player_skip_prompts_detail),
+                        style = BodyCopyStyle(),
+                        color = if (focused) EdendaleColors.OnGold
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Switch(checked = isEnabled, onCheckedChange = null)
+            }
+        }
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_skip_prompts_note))
+    }
+}
 
 @Composable
-private fun LabelCapsStyle() = MaterialTheme.typography.labelLarge.copy(
+private fun AppControlsSettingsSection(
+    isTelevision: Boolean,
+) {
+    val context = LocalContext.current
+    val playerPreferences = remember(context) { PlayerPreferences.from(context) }
+    var skipBackward by remember { mutableStateOf(playerPreferences.skipBackwardInterval) }
+    var skipForward by remember { mutableStateOf(playerPreferences.skipForwardInterval) }
+    var holdLeft by remember { mutableStateOf(playerPreferences.holdLeftRate) }
+    var holdRight by remember { mutableStateOf(playerPreferences.holdRightRate) }
+
+    SettingsSection(
+        header = stringResource(R.string.settings_section_app_controls),
+        isTelevision = isTelevision,
+        focusableContent = false,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_skip_backward),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            SkipSegmentGroup(
+                direction = SkipDirection.BACKWARD,
+                selected = skipBackward,
+                isTelevision = isTelevision,
+                onSelect = {
+                    skipBackward = it
+                    playerPreferences.skipBackwardInterval = it
+                },
+            )
+        }
+
+        SettingsRowDivider()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_skip_forward),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            SkipSegmentGroup(
+                direction = SkipDirection.FORWARD,
+                selected = skipForward,
+                isTelevision = isTelevision,
+                onSelect = {
+                    skipForward = it
+                    playerPreferences.skipForwardInterval = it
+                },
+            )
+        }
+
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_app_controls_skip_note))
+        SettingsRowDivider()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_hold_left),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            HoldSpeedStepper(
+                title = stringResource(R.string.settings_app_controls_hold_left),
+                rate = holdLeft,
+                isTelevision = isTelevision,
+                onRateChange = {
+                    val normalized = PlayerPreferencesRules.normalizeHoldRate(it)
+                    holdLeft = normalized
+                    playerPreferences.holdLeftRate = normalized
+                },
+            )
+        }
+
+        SettingsRowDivider()
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_controls_hold_right),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            HoldSpeedStepper(
+                title = stringResource(R.string.settings_app_controls_hold_right),
+                rate = holdRight,
+                isTelevision = isTelevision,
+                onRateChange = {
+                    val normalized = PlayerPreferencesRules.normalizeHoldRate(it)
+                    holdRight = normalized
+                    playerPreferences.holdRightRate = normalized
+                },
+            )
+        }
+
+        SettingsRowDivider()
+        InfoRow(stringResource(R.string.settings_app_controls_hold_note))
+    }
+}
+
+@Composable
+internal fun SkipSegmentGroup(
+    direction: SkipDirection,
+    selected: SkipInterval,
+    isTelevision: Boolean,
+    onSelect: (SkipInterval) -> Unit,
+) {
+    Surface(
+        shape = CircleShape,
+        color = EdendaleColors.Surface,
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(3.dp)
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SkipInterval.entries.forEach { interval ->
+                val isSelected = interval == selected
+                val iconRes = when (direction) {
+                    SkipDirection.BACKWARD -> when (interval) {
+                        SkipInterval.TEN -> R.drawable.ic_arrow_rotate_left_10
+                        SkipInterval.FIFTEEN -> R.drawable.ic_arrow_rotate_left_15
+                        SkipInterval.THIRTY -> R.drawable.ic_arrow_rotate_left_30
+                    }
+                    SkipDirection.FORWARD -> when (interval) {
+                        SkipInterval.TEN -> R.drawable.ic_arrow_rotate_right_10
+                        SkipInterval.FIFTEEN -> R.drawable.ic_arrow_rotate_right_15
+                        SkipInterval.THIRTY -> R.drawable.ic_arrow_rotate_right_30
+                    }
+                }
+                Surface(
+                    onClick = { onSelect(interval) },
+                    modifier = Modifier
+                        .size(width = 48.dp, height = 36.dp)
+                        .tvFocusLift(isTelevision, CircleShape)
+                        // Radio semantics, so TalkBack says which length is chosen.
+                        .semantics {
+                            role = Role.RadioButton
+                            // `this.`: the group's `selected` parameter shadows the property.
+                            this.selected = isSelected
+                        },
+                    shape = CircleShape,
+                    color = if (isSelected) EdendaleColors.Gold else Color.Transparent,
+                    contentColor = if (isSelected) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = stringResource(R.string.settings_seconds_format, interval.seconds),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun HoldSpeedStepper(
+    title: String,
+    rate: Float,
+    isTelevision: Boolean,
+    onRateChange: (Float) -> Unit,
+) {
+    // The glyphs alone read as "minus" and "plus"; name the row so the
+    // two steppers can be told apart when the remote moves between them.
+    val slower = stringResource(R.string.settings_app_controls_hold_slower, title)
+    val faster = stringResource(R.string.settings_app_controls_hold_faster, title)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        ArchiveIconButton(
+            onClick = { onRateChange(rate - PlayerPreferencesRules.HOLD_RATE_STEP) },
+            modifier = Modifier
+                .size(40.dp)
+                .semantics { contentDescription = slower },
+            enabled = rate > PlayerPreferencesRules.HOLD_RATE_MIN,
+            isTelevision = isTelevision,
+        ) { focused ->
+            Text(
+                text = "−",
+                style = MaterialTheme.typography.titleLarge,
+                color = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Text(
+            text = PlayerLogic.rateLabel(rate),
+            // Speaks the new speed after each − or + press.
+            modifier = Modifier
+                .widthIn(min = 64.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.bodyLarge,
+            color = EdendaleColors.Gold,
+            textAlign = TextAlign.Center,
+        )
+        ArchiveIconButton(
+            onClick = { onRateChange(rate + PlayerPreferencesRules.HOLD_RATE_STEP) },
+            modifier = Modifier
+                .size(40.dp)
+                .semantics { contentDescription = faster },
+            enabled = rate < PlayerPreferencesRules.HOLD_RATE_MAX,
+            isTelevision = isTelevision,
+        ) { focused ->
+            Text(
+                text = "+",
+                style = MaterialTheme.typography.titleLarge,
+                color = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+private const val WYZIE_REDEEM_URL = "https://store.wyzie.io/redeem"
+
+/** The window width from which Settings lays out as a page and attribution joins About (Section K). */
+private val WIDE_SETTINGS_WIDTH = 840.dp
+
+/** TMDB's required notice, the bundled font's credit, and the project line. */
+@Composable
+private fun AttributionRows() {
+    InfoRow(stringResource(R.string.tmdb_attribution))
+    SettingsRowDivider()
+    InfoRow(stringResource(R.string.settings_nunito_attribution))
+    SettingsRowDivider()
+    InfoRow(stringResource(R.string.settings_open_source))
+}
+
+@Composable
+internal fun LabelCapsStyle() = MaterialTheme.typography.labelLarge.copy(
     fontSize = 12.sp,
     lineHeight = 16.sp,
 )
 
 @Composable
-private fun BodyCopyStyle() = MaterialTheme.typography.bodyMedium.copy(
+internal fun BodyCopyStyle() = MaterialTheme.typography.bodyMedium.copy(
     fontSize = 14.sp,
     lineHeight = 20.sp,
 )
 
-private fun String.middleTruncated(budget: Int = 56): String {
+internal fun String.middleTruncated(budget: Int = 56): String {
     if (length <= budget) return this
     val head = (budget - 1) / 2
     val tail = budget - 1 - head

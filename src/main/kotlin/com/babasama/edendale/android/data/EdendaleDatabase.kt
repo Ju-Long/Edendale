@@ -11,6 +11,7 @@ import androidx.room.RoomDatabase
 import androidx.room.Transaction
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.UserMediaRecord
 import com.babasama.edendale.domain.WatchMediaType
@@ -178,6 +179,18 @@ data class LibraryFolderEntity(
     @PrimaryKey val treeUri: String,
     val displayName: String,
     val addedAtEpochMillis: Long,
+    /** `MediaSourceKind.raw` (v3): `local`, `smb`, and Section H's providers. */
+    val kind: String? = null,
+    /** A readable location, such as `Google Drive › My Drive › Movies` (v3). */
+    val displayPath: String? = null,
+    /** The saved login or account the source reads with, when it has one (v3). */
+    val accountKey: String? = null,
+    /** Epoch milliseconds of the last successful scan (v3, D.3). */
+    val lastScannedAt: Long? = null,
+    /** Reserved for providers' change feeds (v3). */
+    val changeCursor: String? = null,
+    /** `SourceStatus.raw` after a failed scan, or null (v3, D.3). */
+    val status: String? = null,
 )
 
 @Entity(tableName = "library_movie")
@@ -262,6 +275,14 @@ interface LibraryDao {
     @Query("SELECT * FROM library_episode WHERE tmdbId = :tmdbId LIMIT 1")
     suspend fun episodeByTmdbId(tmdbId: Int): LibraryEpisodeEntity?
 
+    /** Every imported copy of a movie (D.5). */
+    @Query("SELECT * FROM library_movie WHERE tmdbId = :tmdbId")
+    suspend fun moviesByTmdbId(tmdbId: Int): List<LibraryMovieEntity>
+
+    /** Every imported copy of an episode (D.5). */
+    @Query("SELECT * FROM library_episode WHERE tmdbId = :tmdbId")
+    suspend fun episodesByTmdbId(tmdbId: Int): List<LibraryEpisodeEntity>
+
     // The player's playlist panel resolves what it is playing by URI — the
     // exact string handed to PlayerActivity is these tables' primary key —
     // and lists neighbours from the same imported source.
@@ -295,6 +316,14 @@ interface LibraryDao {
 
     @Query("DELETE FROM library_folder WHERE treeUri = :treeUri")
     suspend fun deleteFolder(treeUri: String)
+
+    /** A scan finished: clears a failure status and records when (D.3). */
+    @Query("UPDATE library_folder SET status = NULL, lastScannedAt = :scannedAt WHERE treeUri = :treeUri")
+    suspend fun markFolderScanned(treeUri: String, scannedAt: Long)
+
+    /** A scan failed: records why on the source, keeping its last good scan time (D.3). */
+    @Query("UPDATE library_folder SET status = :status WHERE treeUri = :treeUri")
+    suspend fun markFolderFailed(treeUri: String, status: String)
 
     @Query("DELETE FROM library_movie WHERE folderUri = :treeUri")
     suspend fun deleteMoviesInFolder(treeUri: String)
@@ -336,8 +365,8 @@ interface LibraryDao {
         LibraryShowEntity::class,
         LibraryEpisodeEntity::class,
     ],
-    version = 2,
-    exportSchema = false,
+    version = 3,
+    exportSchema = true,
 )
 abstract class EdendaleDatabase : RoomDatabase() {
     abstract fun userMediaDao(): UserMediaDao
@@ -345,6 +374,38 @@ abstract class EdendaleDatabase : RoomDatabase() {
     abstract fun libraryDao(): LibraryDao
 
     companion object {
+        /**
+         * v3 gives each source its kind, a readable path, an account, and its
+         * scan state (D.2). Existing rows keep every value; `kind` is filled
+         * in from the URI's scheme by the same rule new rows use.
+         */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                listOf(
+                    "kind" to "TEXT",
+                    "displayPath" to "TEXT",
+                    "accountKey" to "TEXT",
+                    "lastScannedAt" to "INTEGER",
+                    "changeCursor" to "TEXT",
+                    "status" to "TEXT",
+                ).forEach { (column, type) ->
+                    db.execSQL("ALTER TABLE `library_folder` ADD COLUMN `$column` $type")
+                }
+                val uris = buildList {
+                    db.query("SELECT `treeUri` FROM `library_folder`").use { cursor ->
+                        while (cursor.moveToNext()) add(cursor.getString(0))
+                    }
+                }
+                uris.forEach { uri ->
+                    val kind = MediaSourceKind.forSourceUri(uri) ?: return@forEach
+                    db.execSQL(
+                        "UPDATE `library_folder` SET `kind` = ? WHERE `treeUri` = ?",
+                        arrayOf<Any>(kind.raw, uri),
+                    )
+                }
+            }
+        }
+
         /** v2 adds the local library index; user data tables are untouched. */
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {

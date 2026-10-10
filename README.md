@@ -86,11 +86,373 @@ way.
 Online subtitle search, like trailer playback, starts only after an explicit
 user action; opening the player or its settings panel never sends a search.
 
+### Intro, recap, and credits prompts
+
+Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
+Playback → Skip Prompts**, to use community timestamps from
+[TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The legacy
+90-second recap and final-three-minutes credits auto-skips have been removed;
+their saved preferences do not enable the new network feature.
+
+During a known segment, a **Skip Intro**, **Skip Recap**, or **Skip Credits**
+button appears at the bottom trailing edge, independently of hidden playback
+controls. Press the button to skip; playback never skips automatically. On
+keyboard platforms, **S** activates the visible prompt. On Android TV, **Down**
+from the hidden-controls surface focuses the prompt when one is available.
+Prompts hide while scrubbing or while a side panel covers the video. Bounded
+credits seek only to that range's end, preserving gaps for additional scenes.
+A terminal credits skip marks the item complete and advances to the next
+stored episode, ends playback if none exists, or restarts the file when Loop
+Video is enabled.
+
+The native Kotlin client calls `GET https://api.theintrodb.org/v3/media` directly
+from the device after the player reports a finite duration. Movies use their
+TMDB ID; episodes use the **show's** TMDB ID plus TMDB season/episode numbers.
+Requests include the video duration in milliseconds to help match release
+versions. No account, API key, filename, video upload, library scan, or server
+proxy is involved. The provider receives the media identifiers, runtime, and
+the device's public IP address. See its
+[privacy policy](https://theintrodb.org/docs/privacy) and
+[usage terms](https://theintrodb.org/docs/terms).
+
+Only a small in-memory cache exists during the playback session (at most 12
+items); timestamps are not saved to the library, disk, watch progress, or
+backup. Closing playback or disabling prompts clears the cache. Missing data,
+network errors, invalid ranges, and rate limits leave normal playback
+available without a prompt. Playback and initial import never wait for this
+service.
+
+### App Controls and player memory
+
+**Settings → App Controls** sets the skip lengths (10, 15, or 30 seconds,
+for back and forward separately) and the hold speeds (0.25× to 3.00× for each
+side). One skip length drives every skip: double-tap, the on-screen buttons,
+the D-pad and TV timeline, media keys, Picture-in-Picture actions, and the
+system media controls. Touching and holding a side of the video plays at that
+side's speed until you let go; on Android TV, holding fast-forward or rewind
+does the same. Changes apply at once, even to a floating video.
+
+Loop and Fit/Fill are remembered on the device. For each movie, and for each
+show as a whole, the player remembers the speed, the audio track, the
+subtitle track or that subtitles were off, and the video track, matching
+tracks by language and then by name. These settings stay on the device and
+are never synced.
+
+### Network shares
+
+SMB shares stream through a buffered reader: a worker thread fetches 1 MiB
+chunks and keeps up to 48 MiB ahead of playback within a 64 MiB memory cache
+(16 MiB within 24 MiB on low-memory devices), so a slow link such as a phone
+hotspot or a VPN doesn't stall playback. A dropped connection is reopened
+after 0.25, 0.5, 1, 2, 4, and 8 seconds before playback gives up with a
+message naming the server, and a paused connection gets a keep-alive every
+20 seconds. Nothing is written to disk.
+
+### Storage services
+
+**Add Network Source** links a folder from any of these. Edendale lists the
+folder, classifies file names on the device, and then enriches matches from
+TMDB, as it does for local folders. Every connection goes from the device
+straight to the service; nothing passes through an Edendale server.
+
+| Service | Signs in with | The service receives |
+|---|---|---|
+| SMB (Windows, macOS, NAS shares) | User and password, or guest | The login, folder listings, and reads of the files that play |
+| WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest; a self-signed certificate is approved on first use | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
+| SFTP (any server you can reach over SSH) | User and password; the server's host key is approved on first use | The login, folder listings, and pipelined reads of the files that play |
+| S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
+| OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
+| Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
+| Google Drive | Google sign-in, read-only (`drive.readonly`) | The sign-in, folder listings (My Drive, Shared with me, shared drives), and byte ranges of the files that play |
+
+Logins, key pairs, and account tokens are stored encrypted on the device,
+excluded from backup and device transfer, and listed in **Settings →
+Accounts**. Removing a source keeps them; remove them there. Linking another
+folder on a server whose login is saved reuses it when the user and password
+fields are left empty. A source's row shows its path, its account, and
+whether its last scan failed.
+
+### WebDAV servers
+
+**Add Network Source → WebDAV** links a folder on a WebDAV server: Nextcloud
+or ownCloud (`https://host/remote.php/dav/files/<user>/`), Synology, QNAP,
+pCloud, Koofr, or `rclone serve webdav`. The server receives the login (Basic
+or Digest, sent only after it asks), folder listings (`PROPFIND`), and the
+byte ranges of what plays. The login is stored encrypted on the device,
+excluded from backup and device transfer, and listed in Settings → Accounts.
+
+Three kinds of address work (the same rules apply to S3 endpoints):
+
+- `https://` with a certificate the device trusts connects straight away.
+- `https://` with a self-signed or otherwise untrusted certificate shows the
+  certificate's subject, SHA-256 fingerprint, and expiry the first time, for
+  you to compare with the server's own and trust. The fingerprint is pinned
+  per host and port on the device, excluded from backup and device transfer.
+  If the server later presents a different certificate, Edendale refuses to
+  connect until you trust the new one by linking the server again. Other
+  servers keep the device's normal certificate and hostname checks.
+- `http://` connects only to addresses on a private network, checked on the
+  resolved address: `10/8`, `172.16/12`, `192.168/16`, `100.64/10`
+  (Tailscale), `127/8`, `169.254/16`, `::1`, `fc00::/7`, and `fe80::/10`.
+  Anything else gets a message that the server needs HTTPS. The app's network
+  security configuration permits cleartext for this; every other connection
+  Edendale makes uses `https://`, and a redirect from `https://` to `http://`
+  is never followed.
+
+### SFTP
+
+**Add Network Source → SFTP** links a folder on any server you can reach over
+SSH, with a username and password (key logins come later). The first time
+Edendale connects, it shows the server's host key (its type and `SHA256:`
+fingerprint, as `ssh-keygen -l` prints them) for you to compare and trust.
+The key is pinned per host and port. If a server later presents a different
+key, Edendale refuses to connect until you trust the new key by linking the
+server again. Logins and pinned keys stay on the device, excluded from
+backup and device transfer. Playback reads through the same read-ahead and
+reconnect as SMB. Servers that offer only older encryption, or only key
+logins, get a message that says so.
+
+### S3-compatible storage
+
+**Add Network Source → S3** links a bucket or a folder in it on AWS, Backblaze
+B2, Cloudflare R2, Wasabi, or MinIO: the endpoint (`https://`, or `http://` for
+a MinIO on your own network; the WebDAV section's certificate and private-network
+rules apply), the region (`us-east-1` if left empty; `auto` for R2), the
+bucket, and an access key ID and secret access key. Edendale signs its requests itself (AWS Signature
+Version 4) and sends the service listings (`ListObjectsV2`) and pre-signed
+byte-range requests for what plays. The key pair and the bucket's location are
+stored encrypted on the device, excluded from backup and device transfer, and
+listed in Settings → Accounts. Use a key that can only read that bucket.
+
+### Cloud accounts
+
+Google Drive, OneDrive, and Dropbox accounts sign in in a Custom Tab with
+OAuth 2.0 and PKCE. On Android TV, OneDrive signs in with a code: the TV shows
+the code, the address to enter it at, and a QR code for that address, and
+waits while you approve on a phone or computer. Dropbox and Google don't offer
+TV sign-in. Edendale uses no provider SDK and ships no client secret. Google
+Drive's picker starts with My Drive, Shared with me, and Shared drives; link a
+folder inside one of them (the root and the list of shared drives can't be
+linked, since that would scan all of Drive). Shortcuts are followed, Google
+Docs and other Google formats are skipped, and videos are recognized by file
+extension. Each provider receives the sign-in, folder listings, and the byte
+ranges of what plays.
+Nothing passes through an Edendale server, because there isn't one. The
+refresh token for each account is stored encrypted on the device, excluded
+from backup and device transfer. Access tokens are kept in memory only.
+**Settings → Accounts** lists each account with its sources and Sign Out.
+For Dropbox, **Sign Out and Revoke Access** also ends Edendale's access at
+the provider.
+
+To build with a provider, add its client ID to `secrets.json`. An empty value
+hides that provider:
+
+| Key | Registration | Redirect URI |
+|---|---|---|
+| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
+| `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
+| `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on, a consent screen requesting `openid email https://www.googleapis.com/auth/drive.readonly`, and Google's restricted-scope verification (D9) | `com.babasama.edendale:/oauth2redirect` |
+
+### Phone-to-TV handoff
+
+Google's device sign-in can't grant `drive.readonly` and Dropbox has no
+device flow, so an Android TV asks a phone instead. On the TV, **Link Source →
+provider → Continue on a Phone** shows a six-digit code; on a phone running
+Edendale on the same network, **Settings → Accounts → Link to a TV** lists the
+TVs found, takes the code, and then asks "Link Google Drive on Living Room?",
+offering an account already linked on the phone, a fresh sign-in, or (for
+SMB, SFTP, WebDAV, and S3) a saved login. Nothing is sent until you choose.
+The TV checks what it received (it refreshes the token, or tests the login),
+stores it in its own encrypted storage, and goes on to the folder picker. The
+phone's refresh token is reused rather than exchanged for another, because
+Google allows 100 per account per client. A saved login travels with the
+server's pinned SSH host key or certificate, so the TV trusts the server the
+way the phone does.
+
+The two devices talk directly over the local network, never through a server:
+the TV registers the DNS-SD service `_edendale-handoff._tcp` on a random TCP
+port while the code is on screen, the phone finds it with Network Service
+Discovery, both derive a key from the code with J-PAKE over P-256 (Bouncy
+Castle's `ecjpake`), and everything after that is AES-256-GCM. On networks
+that block discovery (guest Wi-Fi, some routers), the TV also shows its
+address and port beside the code, and the phone's dialog takes that address
+by hand. A wrong code
+fails the key confirmation before anything is sent; three wrong codes replace
+the code. A passive listener learns nothing, and an active attacker gets one
+guess per handshake. The code and keys last only for the session, and nothing
+about it is logged. The TV offers the handoff for every provider it has a
+client ID for and for every server kind; OneDrive can also sign in with a code
+on its own.
+
+### Sources and accounts
+
+Each visit to Downloaded rescans local folders; a remote source is rescanned
+only if its last scan was over 15 minutes ago, and **Rescan** always scans.
+A source that can't be reached, or whose login was refused, says so on its own
+row in Settings → Sources and in Downloaded, where its rescan button becomes
+Try Again, instead of an error for the whole library. Removing a source keeps its login: **Settings →
+Accounts** lists every saved login with the number of sources using it, and
+removes a login only when you ask.
+
+When the same title is imported from several sources, each file stays its
+own record. **Play** uses the first copy whose source is reachable (the page's
+own copy, then local folders, then the rest by source name), and **Play
+From** picks a copy: beside Play for movies, and in an episode's long-press
+menu (the menu key on TV) for episodes.
+
+### Audio Enhancement
+
+**Settings → Audio Enhancement** applies a 10-band equalizer (60 Hz to 16 kHz)
+through a Media3 audio processor: choose Flat, Movies (the default), Music,
+Dialogue, or Night Mode, then fine-tune the preamp and each band; changing the
+profile resets the adjustments. **Audio Booster** (also in Player Adjustments →
+Playback) adds 10 dB of gain through the equalizer for quiet recordings.
+Settings are device-local, apply live, and carry across files. Flat settings
+pass audio through unchanged. The equalizer applies only to audio Edendale
+decodes: surround sound passed through untouched to a receiver or TV plays
+without it.
+
+### Picture and Enhancement
+
+**Player Adjustments → Picture** sets brightness, contrast, gamma, saturation,
+and hue, saved on the device; **Show Original** compares without changing them,
+and **Reset** returns to neutral. **Enhancement** upscales and sharpens video
+on the GPU: Off, Sharpen Only, Balanced (upscale and sharpen), or High Quality
+(adds temporal denoise), with Sharpness and Denoise and the resolution change
+shown as `1280×720 → 1920×1080`. Enhancement settings last until the app
+closes and are never saved. It starts at Balanced on phones and tablets that
+pass a one-time on-device GPU check, and at Off on Android TV and on devices
+that don't. HDR and Dolby Vision video skip every effect.
+
+The effects run through Media3's video effects (`androidx.media3:media3-effect`)
+and are installed only while something needs them; otherwise video goes
+straight from the decoder to the screen. A governor keeps the passes within
+8 ms of GPU time per frame, dropping denoise and then the upscale when a device
+falls behind, runs hot, or saves battery. Nothing about performance leaves the
+device.
+
+The upscaler is AMD FidelityFX Super Resolution 1.0's EASU, ported to GLSL in
+`src/main/assets/shaders/edendale_easu_es3.glsl` under the MIT licence
+(Copyright © 2021 Advanced Micro Devices, Inc.; the notice is kept in the
+shader). Sharpening, denoise, the Lanczos fallback, and the color math port
+Apple's Metal shaders.
+
+### Subtitle appearance
+
+**Settings → Subtitles** sets how text subtitles look: the font (System,
+Rounded, Serif, or Monospaced), the text color, and the color and opacity of
+the box behind each cue, as named presets with a live preview and a Reset.
+The choices are device-local and apply at once, even to a video floating in
+Picture-in-Picture. Text cues are drawn inside the visible part of the picture
+in both Fit and Fill, sized from its height and the system caption font scale,
+and move above the transport controls while they show. Image-based subtitles
+(PGS, VobSub) keep their authored look.
+
+The Rounded font is [Nunito](https://github.com/googlefonts/nunito) by The
+Nunito Project Authors, under the SIL Open Font License 1.1. The app bundles
+static Regular and Bold instances (`src/main/res/font/nunito_*.ttf`) made from
+Google Fonts' `ofl/nunito/Nunito[wght].ttf` with fontTools'
+`varLib.instancer`; they keep the font's copyright and licence metadata.
+
+### Keyboard and large screens
+
+In windows at least 1100 dp wide, the navigation lists Watchlist → Movies and
+TV Shows, and Downloaded → Continue Watching, Movies, and TV Shows, as rows of
+their own while each has titles for the current audience setting. The
+Continue Watching page lists every title in progress; the shelf on the
+Downloaded page keeps its 12. In the player, the playlist and Player
+Adjustments dock beside the video instead of covering it.
+
+With a hardware keyboard:
+
+| Keys | Action |
+|---|---|
+| Ctrl+B | Hide or show the navigation (wide windows) |
+| Ctrl+N | Add a media folder (Downloaded) |
+| Ctrl+Alt+N | Link a network source (Downloaded) |
+| Ctrl+R or F5 | Rescan every source (Downloaded) |
+| Space | Play or pause |
+| ← and → | Skip back or forward by the App Controls lengths |
+| S | Skip an intro, recap, or credits when offered |
+| Esc | Close a panel, then the player |
+
+Meta+/ lists them. While a player panel is open, Space and the arrows go to
+its controls. In the Link Source form the address field starts focused, Tab
+and Shift+Tab move between fields, and Enter connects; user and password are
+optional, for guest access. A show's episode shelf scrolls by dragging or
+tapping the rule beside the Episodes heading.
+
+### System media controls
+
+While a video plays, the player publishes a Media3 `MediaSession`
+(`androidx.media3:media3-session`), so headset buttons, Bluetooth controls,
+Google Assistant, and Android TV's system media UI reach it, including in
+Picture-in-Picture. Skip back and forward use the **Settings → App Controls**
+lengths, and next and previous play the neighboring playlist entry. The session
+lives only as long as the player: there is no background playback service, and
+playback still pauses when the player leaves the screen. The artwork it reports
+is the TMDB image the library already shows.
+
+On phones and tablets, **Player Adjustments → Playback → Audio Output** opens
+the system output switcher (`androidx.mediarouter:mediarouter`).
+
+### Continue Watching on the TV home screen
+
+On Android TV and Google TV, **Settings → Android TV → Continue Watching on Home
+Screen** (off by default) copies the Continue Watching shelf into the home
+screen's Watch Next row through the platform TV provider
+(`android.media.tv.TvContract.WatchNextPrograms`, written with the TV provider's
+`WRITE_EPG_DATA` permission, which is granted at install). Each movie and each show gets
+one row: a title in progress with its position, or a show's next episode.
+Selecting a row opens the player at the saved position, just like the shelf
+card. Rows update after playback pauses or stops, disappear when a title is
+finished or its file is deleted, and all disappear when the setting is turned
+off. A row removed from the home screen comes back only after you watch that
+title again. Titles hidden by Young Audience Friendly never appear.
+
+The rows stay on the TV and Edendale sends nothing over the network for them,
+but the launcher (Google's app on Google TV) can read them, which is why the
+setting is opt-in. Google plans to end support for this API in the second half
+of 2027 in favor of the Engage SDK, which needs partner enrollment and user
+accounts that Edendale doesn't have.
+
 Run the hermetic JVM tests and build the debug APK:
 
 ```sh
 ./gradlew testDebugUnitTest
 ./gradlew assembleDebug
+```
+
+Run the instrumented tests in `src/androidTest` on a connected device or a
+running emulator. They need no network access or credentials:
+
+```sh
+./gradlew connectedDebugAndroidTest
+```
+
+The task installs the debug app and test APKs and uninstalls both afterwards,
+which also deletes the app's data on that device, so prefer an emulator. CI
+runs the same suite on an API 35 emulator in
+`.github/workflows/instrumented.yml`, separately from the hermetic
+`build-and-test` job.
+
+Two probes for the frame-generation experiment (ENHANCEMENT.md G.1) are
+skipped unless asked for. Install both APKs with
+`./gradlew installDebug installDebugAndroidTest`, which keeps the app's data,
+then time Apple's coarse motion search at 1080p on the device's GPU:
+
+```sh
+adb shell am instrument -w -r -e g1 true -e class com.babasama.edendale.android.player.video.framegen.CoarseMotionEstimationInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The second plays a clip that has audio through a prototype effect that adds a
+frame between each pair of frames, and reports when each frame was released
+and presented. It opens the app's main screen and turns SurfaceFlinger's
+timestats on for the run:
+
+```sh
+adb push clip.mp4 /data/local/tmp/
+adb shell am instrument -w -r -e g1Clip /data/local/tmp/clip.mp4 -e g1Fps 24 -e class com.babasama.edendale.android.player.video.framegen.FrameGenerationPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 Build an unsigned release APK with:
@@ -103,6 +465,83 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 `build/outputs/apk/release/Edendale-release-unsigned.apk`. Release signing is
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
+
+### Manual device checks
+
+Some behavior needs real hardware and isn't covered by the JVM or instrumented
+tests. Before a release, check on:
+
+- **A recent phone:** skip lengths and hold speeds by touch and in
+  Picture-in-Picture; per-title track memory; the track pickers and playlist
+  with TalkBack; subtitle appearance in Fit and Fill; the Up Next card and skip
+  prompts; equalizer changes while playing; Picture and Enhancement presets on
+  SDR video, with HDR video bypassed.
+- **A mid-range phone (Adreno 6xx or Mali-G57 class):** Balanced and High
+  Quality on 720p and 1080p video without dropped frames, and the governor
+  stepping down when the device runs hot.
+- **An Android TV box on a 4K panel, and a TV set running Google TV:** the
+  remote's hold speeds and skip-prompt focus, the playlist with the D-pad, the
+  system media controls, enhancement output at the panel's resolution, and
+  Continue Watching on the home screen (rows appear, open the player at the
+  saved position, and disappear when the setting is turned off).
+- **A tablet, Chromebook, or desktop-windowing device:** the navigation's child
+  rows, docked panels, the keyboard shortcuts, and Meta+/.
+- **A Bluetooth headset:** play, pause, and skip from its buttons.
+- **An SMB server over a phone hotspot or Tailscale:** steady playback, and
+  recovery after the connection drops.
+- **Storage services:** link a folder, scan it, and play and seek a file on an
+  SFTP server (password authentication, host-key fingerprint check on first use,
+  and changed-key rejection), a Nextcloud or Synology server over HTTPS (a
+  trusted certificate, then a self-signed one: the fingerprint prompt, a changed
+  certificate refused, and plain `http://` on the LAN but not to a public
+  address), an S3 bucket (AWS or R2), OneDrive (a personal and a work or school
+  account), Dropbox, and Google Drive (a folder in My Drive, one shared with
+  you, and one in a shared drive). Then sign out in Settings → Accounts and check that the sources ask to
+  sign in again. On a TV, sign in to OneDrive with the code from a phone, and
+  hand over a Google Drive account and, separately, an SMB login from a phone
+  (Link Source → Continue on a Phone; Settings → Accounts → Link to a TV on the
+  phone): a wrong code is refused, the right one links the account, and the TV
+  then browses the folders.
+
+### DTS and TrueHD
+
+Media3 plays DTS, DTS-HD, and Dolby TrueHD through the device's own decoders
+when it has them, or sends them undecoded to a receiver or TV that accepts
+them. Everywhere else, Jellyfin's build of Media3's FFmpeg audio decoder
+(`org.jellyfin.media3:media3-ffmpeg-decoder`, one native library per ABI)
+decodes them, and the result goes through Audio Enhancement like any other
+decoded audio.
+
+### Licence
+
+That FFmpeg decoder is licensed under the GNU General Public License v3.0, so
+the Android app built from this branch, as a whole, is distributed under the
+GPL-3.0. Its source is this branch plus the libraries it names; the decoder's
+own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
+
+### Dependencies and licences
+
+| Dependency | Use | Licence |
+|---|---|---|
+| AndroidX Media3 1.9.0 (`media3-exoplayer`, `media3-ui`, `media3-session`, `media3-effect`) | Playback, system media controls, video effects | Apache-2.0 |
+| `org.jellyfin.media3:media3-ffmpeg-decoder` 1.9.0+1 | DTS and TrueHD decoding | GPL-3.0 |
+| AndroidX MediaRouter | Audio output switcher | Apache-2.0 |
+| Jetpack Compose, Room, Activity, Lifecycle, DocumentFile, Security Crypto | UI, local records, encrypted settings | Apache-2.0 |
+| jcifs-ng | SMB | LGPL-2.1 |
+| OkHttp | Storage providers' HTTP | Apache-2.0 |
+| AndroidX Browser | Custom Tabs for cloud sign-in | Apache-2.0 |
+| sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
+| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE for the phone-to-TV handoff | MIT (Bouncy Castle Licence) |
+| Coil | Images | Apache-2.0 |
+| ZXing core | TMDB sign-in QR code | Apache-2.0 |
+| kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
+| AMD FidelityFX Super Resolution 1.0 (EASU, ported to GLSL) | Upscaling | MIT |
+| Nunito | The Rounded subtitle font | SIL OFL 1.1 |
+
+The build reads `TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, and
+`WYZIE_API_KEY` from `secrets.json`. This release adds
+`MICROSOFT_OAUTH_CLIENT_ID`, `DROPBOX_APP_KEY`, and `GOOGLE_OAUTH_CLIENT_ID`
+(see Cloud accounts).
 
 ### Languages
 

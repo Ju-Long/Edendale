@@ -54,3 +54,5 @@ Web/dist/
 /dist
 *.lock
 /release
+/.secret
+/Vendor

@@ -131,9 +131,9 @@
     <string name="remove_folder">Удалить %1$s</string>
     <string name="remove_source_title">Удалить источник</string>
     <string name="remove_source_confirm_title">Удалить %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” удаляется из вашей библиотеки, а сохраненный логин для %2$s будет забыт, если только этот сервер не используется другим источником. На самом сервере ничего не удаляется.</string>
+    <string name="remove_source_message_smb">«%1$s» удаляется из медиатеки. На сервере ничего не удаляется, а сохраненные данные для входа в %2$s остаются в разделе Настройки → Аккаунты.</string>
     <string name="remove_source_message_local">“%1$s” удаляется из вашей библиотеки. На вашем устройстве ничего не удаляется.</string>
-    <string name="remove_source_message_generic">Edendale забудет этот источник и все проиндексированные из него данные, а также любые сохраненные логины для хоста, как только они перестанут быть нужны другим источникам. На вашем устройстве или сетевой папке ничего не удаляется.</string>
+    <string name="remove_source_message_generic">Edendale забывает этот источник и всё, что было из него проиндексировано. С устройства и из общей папки ничего не удаляется, а сохраненные данные для входа остаются в разделе Настройки → Аккаунты.</string>
     <string name="mark_watched">Отметить просмотренным</string>
     <string name="mark_unwatched">Отметить непросмотренным</string>
     <string name="watched">Просмотрено</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Добавьте токен в secrets.json и пересоберите</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Включены крупный шрифт, безопасные для оверскана поля, увеличение при фокусе с пульта и альбомная ориентация.</string>
+    <string name="settings_watch_next_title">«Продолжить просмотр» на главном экране</string>
+    <string name="settings_watch_next_description">Показывает то, что вы смотрите, в ряду «Продолжить просмотр» на главном экране. Edendale ничего не отправляет для этого по сети, но приложение главного экрана может видеть эти названия.</string>
     <string name="settings_section_sources">Источники</string>
     <string name="settings_no_sources">Нет привязанных источников</string>
     <string name="settings_section_backup">Резервное копирование</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">В этом файле нет дорожек субтитров.</string>
     <string name="player_track_number">Дорожка %1$d</string>
     <string name="player_playback">Воспроизведение</string>
+    <string name="player_skip_intro">Пропустить заставку</string>
     <string name="player_skip_recap">Пропустить краткое содержание</string>
-    <string name="player_skip_recap_detail">Пропускать первые 90 секунд</string>
     <string name="player_skip_credits">Пропустить титры</string>
-    <string name="player_skip_credits_detail">Завершать воспроизведение за 3 минуты до конца</string>
+    <string name="player_skip_prompts">Кнопки пропуска</string>
+    <string name="player_skip_prompts_detail">Поиск меток заставки, краткого содержания и титров через TheIntroDB</string>
+    <string name="settings_skip_prompts_note">При включении TheIntroDB получает идентификатор TMDB, номера серий, длительность видео и ваш IP-адрес. Пропуск всегда выполняется только по нажатию кнопки.</string>
+    <string name="settings_theintrodb_link">Метки времени от TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Политика конфиденциальности TheIntroDB</string>
     <string name="player_loop">Зациклить видео</string>
     <string name="player_loop_detail">Перезапускать воспроизведение по окончании</string>
     <string name="player_auto_pip">Автоматический режим «Картинка в картинке»</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">Папка</string>
     <string name="default_video_name">Видео</string>
     <string name="error_not_share_address">\"%1$s\" не является адресом сетевой папки. Попробуйте 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: часть этого источника не удалось прочитать, поэтому ничего не было удалено из библиотеки.</string>
     <string name="error_permission_revoked">доступ к этой папке был отозван — добавьте ее снова</string>
     <string name="error_folder_unopenable">папку не удалось открыть</string>
     <string name="error_share_unreachable">сетевая папка недоступна или учетные данные были отклонены</string>
     <string name="error_address_is_file">этот адрес является файлом, а не сетевой папкой</string>
-    <string name="error_scan_failed">сбой сканирования</string>
     <plurals name="item_count">
         <item quantity="one">%1$d элемент</item>
         <item quantity="few">%1$d элемента</item>
@@ -287,4 +291,258 @@
         <item quantity="many">Ещё %1$d совпадений.</item>
         <item quantity="other">Ещё %1$d совпадения.</item>
     </plurals>
+    <string name="settings_section_app_controls">Управление приложением</string>
+    <string name="settings_app_controls_skip_backward">Перемотка назад</string>
+    <string name="settings_app_controls_skip_forward">Перемотка вперед</string>
+    <string name="settings_app_controls_skip_note">Дважды коснитесь левой или правой части видео для перемотки назад или вперед.</string>
+    <string name="settings_app_controls_hold_left">Удерживать левую сторону</string>
+    <string name="settings_app_controls_hold_right">Удерживать правую сторону</string>
+    <string name="settings_app_controls_hold_note">Нажмите и удерживайте левую или правую часть видео для воспроизведения с этой скоростью.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, медленнее</string>
+    <string name="settings_app_controls_hold_faster">%1$s, быстрее</string>
+    <string name="settings_seconds_format">%d сек.</string>
+    <string name="player_back_15">Назад на 15 секунд</string>
+    <string name="player_back_30">Назад на 30 секунд</string>
+    <string name="player_forward_15">Вперед на 15 секунд</string>
+    <string name="player_forward_30">Вперед на 30 секунд</string>
+    <string name="player_up_next">Далее</string>
+    <string name="player_up_next_description">Далее: %1$s %2$s</string>
+    <string name="player_up_next_hint">Воспроизвести следующую серию сейчас</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">Далее · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Аудиовыход</string>
+    <string name="player_audio_output_unavailable">Переключение аудиовыхода недоступно на этом устройстве.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Шрифт</string>
+    <string name="settings_subtitles_text_color">Цвет текста</string>
+    <string name="settings_subtitles_background_color">Цвет фона</string>
+    <string name="settings_subtitles_background_opacity">Непрозрачность фона</string>
+    <string name="settings_subtitles_reset">Сбросить стиль субтитров</string>
+    <string name="settings_subtitles_appearance_note">Применяется к текстовым субтитрам. Субтитры в виде изображений сохраняют исходный вид.</string>
+    <string name="settings_subtitles_preview">Предпросмотр субтитров</string>
+    <string name="settings_subtitles_preview_sample">Архив никогда не забывает фильм.\nОн просто ждет, когда кто-нибудь нажмет «Воспроизвести».</string>
+    <string name="settings_subtitles_font_system">Системный</string>
+    <string name="settings_subtitles_font_rounded">Скругленный</string>
+    <string name="settings_subtitles_font_serif">С засечками</string>
+    <string name="settings_subtitles_font_monospaced">Моноширинный</string>
+    <string name="settings_subtitles_color_parchment">Пергамент</string>
+    <string name="settings_subtitles_color_white">Белый</string>
+    <string name="settings_subtitles_color_yellow">Желтый</string>
+    <string name="settings_subtitles_color_cyan">Голубой</string>
+    <string name="settings_subtitles_color_green">Зеленый</string>
+    <string name="settings_subtitles_color_black">Черный</string>
+    <string name="settings_subtitles_color_ink">Чернильный</string>
+    <string name="settings_subtitles_color_charcoal">Графитовый</string>
+    <string name="settings_subtitles_color_navy">Темно-синий</string>
+    <string name="settings_subtitles_opacity_lower">Уменьшить непрозрачность фона</string>
+    <string name="settings_subtitles_opacity_higher">Увеличить непрозрачность фона</string>
+    <string name="settings_nunito_attribution">Скруглённый шрифт субтитров — Nunito от The Nunito Project Authors, по лицензии SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Видеодорожка</string>
+    <string name="player_audio_track">Звуковая дорожка</string>
+    <string name="player_audio_mono">Моно</string>
+    <string name="player_audio_stereo">Стерео</string>
+    <string name="player_audio_channels">%d кан.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Не удалось воспроизвести</string>
+    <string name="player_error_could_not_open">Не удалось открыть этот материал.</string>
+    <string name="player_error_connection_lost">Соединение с %1$s потеряно.</string>
+    <string name="player_error_connection_lost_detail">Соединение с %1$s потеряно: %2$s</string>
+    <string name="player_error_could_not_connect">Не удалось подключиться к %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Не удалось связаться с %1$s. Проверьте подключение и повторите попытку.</string>
+    <string name="sources_status_needs_sign_in">Войдите в %1$s снова, чтобы получить доступ к этому источнику.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Аккаунты</string>
+    <string name="accounts_empty">Нет подключенных аккаунтов и сохраненных данных для входа. Добавьте их через «Добавить источник».</string>
+    <string name="accounts_no_sources">На этом устройстве нет источников</string>
+    <string name="accounts_forget">Забыть</string>
+    <string name="accounts_forget_login">Забыть данные для входа</string>
+    <string name="accounts_forget_message">Источники на %1$s не смогут подключиться, пока вы снова не введете данные для входа.</string>
+    <string name="accounts_note">Данные для входа хранятся только на этом устройстве и не попадают в резервные копии. При удалении источника они сохраняются; удалить их можно здесь.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d источник на этом устройстве</item>
+        <item quantity="few">%1$d источника на этом устройстве</item>
+        <item quantity="many">%1$d источников на этом устройстве</item>
+        <item quantity="other">%1$d источника на этом устройстве</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Воспроизвести с</string>
+    <string name="play_from_unavailable">%1$s · Недоступно</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d источник</item>
+        <item quantity="few">%1$d источника</item>
+        <item quantity="many">%1$d источников</item>
+        <item quantity="other">%1$d источника</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Улучшение звука</string>
+    <string name="audio_profile">Профиль</string>
+    <string name="audio_profile_flat">Ровный</string>
+    <string name="audio_profile_movies">Фильмы</string>
+    <string name="audio_profile_music">Музыка</string>
+    <string name="audio_profile_dialogue">Диалоги</string>
+    <string name="audio_profile_night_mode">Ночной режим</string>
+    <string name="audio_preamp">Предусилитель</string>
+    <string name="audio_reset_adjustments">Сбросить коррекцию</string>
+    <string name="audio_booster">Усилитель звука</string>
+    <string name="audio_booster_detail">Увеличить громкость тихих записей</string>
+    <string name="audio_show_equalizer">Показать эквалайзер</string>
+    <string name="audio_hide_equalizer">Скрыть эквалайзер</string>
+    <string name="audio_passthrough_note">Эквалайзер и усилитель применяются к звуку, который декодирует Edendale. Объемный звук, передаваемый без изменений на ресивер или телевизор, воспроизводится без них.</string>
+    <string name="audio_step_lower">%1$s, ниже</string>
+    <string name="audio_step_higher">%1$s, выше</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Изображение</string>
+    <string name="video_brightness">Яркость</string>
+    <string name="video_contrast">Контрастность</string>
+    <string name="video_gamma">Гамма</string>
+    <string name="video_saturation">Насыщенность</string>
+    <string name="video_hue">Оттенок</string>
+    <string name="video_show_original">Показать оригинал</string>
+    <string name="video_enhancement">Улучшение</string>
+    <string name="video_preset">Пресет</string>
+    <string name="video_preset_off">Выкл.</string>
+    <string name="video_preset_sharpen_only">Только резкость</string>
+    <string name="video_preset_balanced">Сбалансированный</string>
+    <string name="video_preset_high_quality">Высокое качество</string>
+    <string name="video_sharpness">Резкость</string>
+    <string name="video_denoise">Шумоподавление</string>
+    <string name="video_not_available_hdr">Недоступно для видео HDR</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Скрыть боковое меню</string>
+    <string name="navigation_show">Показать боковое меню</string>
+    <string name="rescan_library">Сканировать медиатеку заново</string>
+    <string name="shelf_scroll_position">Позиция прокрутки: %1$s</string>
+    <string name="shortcut_play_pause">Воспроизведение или пауза</string>
+    <string name="shortcut_skip_prompt">Пропустить вступление или титры, когда это предложено</string>
+    <string name="shortcut_close_panel_then_player">Закрыть панель, затем плеер</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Назад на %1$d секунду</item>
+        <item quantity="few">Назад на %1$d секунды</item>
+        <item quantity="many">Назад на %1$d секунд</item>
+        <item quantity="other">Назад на %1$d секунды</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Вперед на %1$d секунду</item>
+        <item quantity="few">Вперед на %1$d секунды</item>
+        <item quantity="many">Вперед на %1$d секунд</item>
+        <item quantity="other">Вперед на %1$d секунды</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Этого файла больше нет в %1$s.</string>
+    <string name="player_error_rate_limited">%1$s сейчас ограничивает количество запросов. Повторите попытку через минуту.</string>
+    <string name="player_error_server">%1$s: ошибка (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s не поддерживает перемотку в этом файле.</string>
+    <string name="player_error_access_denied">%1$s: доступ к этому объекту запрещен.</string>
+    <string name="player_error_abusive_file">Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</string>
+    <string name="player_error_untrusted_certificate">Сертификат %1$s не является доверенным, поэтому Edendale не будет транслировать с этого сервера.</string>
+    <string name="source_kind_s3">S3-совместимое хранилище</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Общие папки на Mac, ПК или NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr или rclone.</string>
+    <string name="connector_unreachable">Не удается подключиться к %1$s. Убедитесь, что сервер включен, находится в той же сети, а его имя и учетные данные верны.</string>
+    <string name="connector_authentication_failed">%1$s: имя пользователя и пароль не приняты.</string>
+    <string name="connector_listing_failed">Не удалось прочитать папку %1$s. Возможно, требуются другие учетные данные или права доступа.</string>
+    <string name="connector_invalid_address">Неверный адрес сервера. Введите имя хоста (например, nas.local) или IP-адрес.</string>
+    <string name="connector_insecure_connection">Незашифрованный http:// работает только для серверов в вашей собственной сети. Для этого сервера используйте адрес https://.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Этот бакет находится в регионе %1$s. Измените регион и подключитесь снова.</string>
+    <string name="connector_bucket_other_region">Этот бакет находится в другом регионе. Проверьте регион и подключитесь снова.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi или MinIO.</string>
+    <string name="s3_endpoint_label">Конечная точка</string>
+    <string name="s3_region_label">Регион</string>
+    <string name="s3_bucket_label">Бакет</string>
+    <string name="s3_access_key_label">ID ключа доступа</string>
+    <string name="s3_secret_key_label">Секретный ключ доступа</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s не настроен в этой сборке Edendale.</string>
+    <string name="oauth_cancelled">Вход отменен.</string>
+    <string name="oauth_unverified">Не удалось проверить ответ на запрос входа. Повторите попытку.</string>
+    <string name="oauth_denied">Доступ к %1$s не разрешен.</string>
+    <string name="oauth_invalid_grant">Срок действия входа в %1$s истек или вход был отозван. Войдите снова.</string>
+    <string name="oauth_device_code_expired">Срок действия кода истек до подтверждения. Получите новый код и повторите попытку.</string>
+    <string name="oauth_server_detail">%1$s: не удалось завершить вход (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s: не удалось завершить вход (%2$s).</string>
+    <string name="oauth_malformed">Edendale не удалось прочитать ответ от %1$s.</string>
+    <string name="accounts_sign_out">Выйти</string>
+    <string name="accounts_sign_out_revoke">Выйти и отозвать доступ</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Источники из %1$s перестанут работать на этом устройстве, пока вы снова не подключите аккаунт.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">Личный, рабочий или учебный OneDrive.</string>
+    <string name="link_source_dropbox_description">Ваши папки Dropbox.</string>
+    <string name="link_source_linked_accounts">Подключенные аккаунты</string>
+    <string name="link_source_another_account">Другой аккаунт</string>
+    <string name="link_source_sign_in_to">Войти в %1$s</string>
+    <string name="link_source_waiting">Ожидание %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale запрашивает у %1$s доступ только для чтения. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">На телефоне или компьютере откройте %1$s%2$s и введите этот код:</string>
+    <string name="device_code_accessibility">Код %1$s</string>
+    <string name="device_code_qr_description">QR-код для входа в %1$s</string>
+    <string name="device_code_waiting">Ожидание подтверждения…</string>
+    <string name="device_code_sign_in">Войти с кодом</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Любой сервер, доступный по SSH.</string>
+    <string name="sftp_port_label">Порт</string>
+    <string name="sftp_host_key_note">При первом подключении Edendale показывает ключ хоста сервера, чтобы вы его подтвердили.</string>
+    <string name="sftp_verify_title">Проверить ключ хоста</string>
+    <string name="sftp_changed_title">Ключ хоста изменился</string>
+    <string name="sftp_verify_message">Перед тем как доверять серверу, проверьте, совпадает ли это с его ключом хоста SSH.\n\n%1$s</string>
+    <string name="sftp_changed_message">Ключ, который предъявляет %1$s, отличается от подтвержденного ранее. Продолжайте, только если знаете, что сервер переустановили или его ключ изменили.\n\n%2$s</string>
+    <string name="sftp_trust">Доверять</string>
+    <string name="sftp_trust_new">Доверять новому ключу</string>
+    <string name="connector_host_key_mismatch">Ключ хоста SSH для %1$s изменился. Edendale не будет подключаться, пока вы не подтвердите новый ключ, подключив сервер заново.</string>
+    <string name="connector_host_key_unverified">Ключ хоста SSH для %1$s еще не подтвержден.</string>
+    <string name="connector_secure_connection_failed">Не удалось установить защищенное соединение с %1$s. SSH-сервер поддерживает только устаревшее шифрование, которое Edendale не поддерживает.</string>
+    <string name="connector_password_login_unavailable">%1$s не поддерживает вход по паролю. Разрешите аутентификацию по паролю в настройках SSH, чтобы подключить сервер.</string>
+    <string name="connector_sftp_unavailable">%1$s не предоставляет SFTP для этого аккаунта.</string>
+    <string name="link_source_tls_note">Серверы в вашей собственной сети могут использовать http://. Когда Edendale впервые встречает сертификат, которому это устройство не доверяет, он показывает сертификат для подтверждения.</string>
+    <string name="tls_verify_title">Проверка сертификата</string>
+    <string name="tls_changed_title">Сертификат изменился</string>
+    <string name="tls_verify_message">Это устройство не доверяет сертификату, который предъявляет %1$s. Прежде чем доверять ему, убедитесь, что он совпадает с сертификатом самого сервера.
+
+%2$s</string>
+    <string name="tls_changed_message">Сертификат, который предъявляет %1$s, не тот, что вы подтвердили раньше. Продолжайте, только если знаете, что сертификат сервера был заменён.
+
+%2$s</string>
+    <string name="tls_trust_new">Доверять новому сертификату</string>
+    <string name="tls_expires">Действителен до %1$s</string>
+    <string name="connector_certificate_unverified">Сертификат для %1$s ещё не подтверждён. Привяжите сервер заново, чтобы проверить его.</string>
+    <string name="connector_certificate_mismatch">Сертификат для %1$s изменился. Edendale не подключится, пока вы не подтвердите новый, привязав сервер заново.</string>
+    <string name="link_source_gdrive_description">Мой диск, папки, доступные вам, и общие диски.</string>
+    <string name="gdrive_my_drive">Мой диск</string>
+    <string name="gdrive_shared_with_me">Доступные мне</string>
+    <string name="gdrive_shared_drives">Общие диски</string>
+    <string name="handoff_continue_on_phone">Продолжить на телефоне</string>
+    <string name="handoff_tv_instructions">На телефоне откройте Edendale, перейдите в Настройки → Учётные записи → Привязать к телевизору, выберите %1$s и введите этот код:</string>
+    <string name="handoff_tv_waiting">Ожидание телефона…</string>
+    <string name="handoff_tv_connected">Телефон выбирает, что отправить…</string>
+    <string name="handoff_tv_validating">Проверка полученного с телефона…</string>
+    <string name="handoff_link_to_tv">Привязать к телевизору</string>
+    <string name="handoff_link_to_tv_note">Отправьте привязанную учётную запись или сохранённый логин на Android TV с Edendale в этой сети. Телевизор запрашивает его из раздела «Привязать источник».</string>
+    <string name="handoff_searching">Поиск телевизоров в этой сети…</string>
+    <string name="handoff_no_tvs">Телевизор пока не найден. На телевизоре откройте «Привязать источник», выберите сервис и нажмите «Продолжить на телефоне».</string>
+    <string name="handoff_discovery_failed">Edendale не может искать телевизоры в этой сети. Убедитесь, что Wi-Fi включён.</string>
+    <string name="handoff_code_label">Код на экране %1$s</string>
+    <string name="handoff_connecting">Подключение к %1$s…</string>
+    <string name="handoff_request_title">Привязать %1$s на %2$s?</string>
+    <string name="handoff_request_message">Edendale отправляет логин напрямую на телевизор по этой сети, зашифровав его введённым кодом. Ничего не проходит через сервер, а телевизор хранит данные только у себя.</string>
+    <string name="handoff_saved_logins">Сохранённые логины</string>
+    <string name="handoff_no_saved_logins">На этом устройстве нет сохранённого логина %1$s. Сначала привяжите его в разделе «Привязать источник».</string>
+    <string name="handoff_decline">Отклонить</string>
+    <string name="handoff_sending">Отправка на %1$s…</string>
+    <string name="handoff_done">Привязано на %1$s. Продолжайте на телевизоре.</string>
+    <string name="handoff_declined">Запрос отклонён на другом устройстве.</string>
+    <string name="handoff_wrong_code">Код не совпал. Проверьте код на телевизоре и попробуйте снова.</string>
+    <string name="handoff_connection_failed">Не удалось подключиться к другому устройству. Убедитесь, что оба в одной сети и телевизор всё ещё показывает код.</string>
+    <string name="handoff_timed_out">Другое устройство не ответило вовремя.</string>
+    <string name="handoff_unsupported_version">Обновите Edendale на обоих устройствах и попробуйте снова.</string>
+    <string name="handoff_malformed">Другое устройство отправило данные, которые Edendale не смог использовать. Попробуйте снова.</string>
+    <string name="handoff_rejected">Телевизор не смог использовать отправленное: %1$s</string>
+    <string name="handoff_rejected_plain">Телевизор не смог использовать отправленное.</string>
+    <string name="handoff_tv_address">Если телефон не находит этот телевизор, введите его адрес: %1$s</string>
+    <string name="handoff_address_label">Или введите адрес, показанный на телевизоре</string>
 </resources>

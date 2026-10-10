@@ -624,6 +624,10 @@ private fun LibraryResultsGrid(
 ) {
     val context = LocalContext.current
     val runtimeFormat = rememberRuntimeFormat()
+    val library = rememberLibrary()
+    val allMovies by library.movies.collectAsState(initial = emptyList())
+    val folders by library.folders.collectAsState(initial = emptyList())
+    val foldersByUri = remember(folders) { folders.associateBy { it.treeUri } }
     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = edgeMargin)) {
         val spacing = if (isTelevision) 24.dp else 16.dp
         val minimumWidth = if (isTelevision) 180.dp else 145.dp
@@ -648,11 +652,13 @@ private fun LibraryResultsGrid(
                                     progress = progress.partialFraction(),
                                     mediaType = MediaType.MOVIE,
                                     onClick = {
+                                        // This copy, unless its source is unreachable and another isn't (D.5).
+                                        val copy = preferredMovie(cell, allMovies, foldersByUri)
                                         PlayerActivity.play(
                                             context = context,
-                                            uri = cell.uri,
-                                            title = cell.title,
-                                            tmdbId = cell.tmdbId,
+                                            uri = copy.uri,
+                                            title = copy.title,
+                                            tmdbId = copy.tmdbId,
                                             isEpisode = false,
                                         )
                                     },

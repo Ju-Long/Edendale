@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -49,6 +50,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,14 +60,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -137,6 +151,8 @@ fun SectionHeader(
     title: String,
     modifier: Modifier = Modifier,
     large: Boolean = false,
+    /** Given one, the heading carries a rule that scrolls its shelf (J.6). */
+    scrubber: ShelfScrubber? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -144,11 +160,37 @@ fun SectionHeader(
     ) {
         Text(
             text = title.uppercase(),
+            modifier = Modifier.semantics { heading() },
             style = if (large) MaterialTheme.typography.headlineMedium
             else MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Spacer(Modifier.weight(1f))
+        if (scrubber != null) {
+            Spacer(Modifier.width(16.dp))
+            ShelfRule(scrubber = scrubber, label = title, modifier = Modifier.weight(1f))
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/**
+ * A top bar title. A section page (J.1) names its parent above, since
+ * "Movies" alone could be the Watchlist's or the Downloaded page's.
+ */
+@Composable
+fun PageTitle(title: String, section: String? = null) {
+    if (section == null) {
+        Text(title)
+        return
+    }
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(section)
     }
 }
 
@@ -519,6 +561,70 @@ fun Modifier.tvFocusableBlock(enabled: Boolean): Modifier = if (!enabled) this e
             shape = RoundedCornerShape(EdendaleRadii.Group.dp),
         )
         .focusable()
+}
+
+/**
+ * A text field the remote walks past on TV. TV keyboards open as soon as a
+ * text field takes focus and then keep the D-pad, so a field in a long list
+ * trapped the remote. Here the remote lands on a gate around the field
+ * instead; Select (or a tap) moves focus into [field] and opens the keyboard,
+ * and Back, Up, or Down hand focus back. Elsewhere [field] is composed as is.
+ * [field] receives the modifier to put on the text field.
+ */
+@Composable
+fun TvTextFieldGate(
+    isTelevision: Boolean,
+    modifier: Modifier = Modifier,
+    field: @Composable (Modifier) -> Unit,
+) {
+    if (!isTelevision) {
+        Box(modifier) { field(Modifier) }
+        return
+    }
+    var editing by remember { mutableStateOf(false) }
+    val gateFocus = remember { FocusRequester() }
+    val fieldFocus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val gateFocused by interactionSource.collectIsFocusedAsState()
+    LaunchedEffect(editing) {
+        if (editing) {
+            fieldFocus.requestFocus()
+            keyboard?.show()
+        }
+    }
+    Box(
+        modifier = modifier
+            .focusRequester(gateFocus)
+            .border(
+                width = if (gateFocused) 2.dp else 0.dp,
+                color = if (gateFocused) EdendaleColors.Gold else Color.Transparent,
+                shape = RoundedCornerShape(EdendaleRadii.Group.dp),
+            )
+            .clickable(interactionSource = interactionSource, indication = null) { editing = true },
+    ) {
+        field(
+            Modifier
+                .focusRequester(fieldFocus)
+                .focusProperties { canFocus = editing }
+                .onFocusChanged { if (!it.isFocused && editing) editing = false }
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.key) {
+                        Key.DirectionDown -> focusManager.moveFocus(FocusDirection.Down)
+                        Key.DirectionUp -> focusManager.moveFocus(FocusDirection.Up)
+                        // The keyboard is already closed when Back reaches the field.
+                        Key.Back -> {
+                            editing = false
+                            gateFocus.requestFocus()
+                            true
+                        }
+                        else -> false
+                    }
+                },
+        )
+    }
 }
 
 /**

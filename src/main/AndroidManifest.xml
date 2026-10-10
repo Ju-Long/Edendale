@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- I.3: rows in the TV home screen's Watch Next table. A normal permission
+         from the system TV provider; phones have no provider and ignore it. -->
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
 
     <!-- One APK supports handheld Android and Android TV. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -18,7 +21,7 @@
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.Edendale">
 
         <activity
@@ -68,6 +71,42 @@
             </intent-filter>
         </activity>
 
+        <!-- Storage providers' sign-in redirects (H.6). It hands the code to
+             the waiting sign-in and returns to the app; nothing else opens it. -->
+        <activity
+            android:name=".oauth.OAuthRedirectActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Microsoft, through Entra's Android platform: the path is the
+                     signature hash from CloudProviders.MICROSOFT_REDIRECT_URI, decoded. -->
+                <data
+                    android:scheme="msauth"
+                    android:host="com.babasama.edendale"
+                    android:path="/VzSiQcXRmi2kyjzcA+mYLEtbGVs=" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${dropboxRedirectScheme}" android:host="2" android:path="/token" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Google (D9): the Android client's custom scheme is the package name;
+                     the redirect is com.babasama.edendale:/oauth2redirect, which has no
+                     authority, so the scheme-specific part is matched instead of a path. -->
+                <data android:scheme="com.babasama.edendale" android:sspPrefix="/oauth2redirect" />
+            </intent-filter>
+        </activity>
+
         <!-- In-app player; also the "Open with" target for video files, which
              play directly without being imported into the library. -->
         <activity
@@ -79,13 +118,13 @@
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode">
             <!-- screenOrientation is ignored in multi-window, so a freeform
-                 desktop window needs its own 16:9 default to open landscape. -->
+                 desktop window needs its own 16:9 default to open landscape.
+                 No minWidth/minHeight: the system also applies them to the
+                 PiP window, which then opens wider than a phone's screen. -->
             <layout
                 android:defaultWidth="1280dp"
                 android:defaultHeight="720dp"
-                android:gravity="center"
-                android:minWidth="400dp"
-                android:minHeight="240dp" />
+                android:gravity="center" />
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

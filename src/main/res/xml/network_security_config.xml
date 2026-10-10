@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    D10 (H.3.4): plain http:// is allowed here so that WebDAV (dav://) and S3
+    endpoints on a home network can connect at all; the app itself is the gate.
+    Every http:// request goes through a DNS resolver that refuses any address
+    outside the private networks (PrivateNetworkDns in OkHttpRemoteHttp.kt),
+    and the other HTTP clients only ever use https:// URLs. Self-signed
+    certificates are handled in code (PinnedTrustManager), not here, because
+    the user approves them per server at run time.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -236,6 +236,392 @@ class LibraryPresentationTest {
         )
     }
 
+    // MARK: - Continue Watching: next-up (C.3, Apple ContinueWatchingTests)
+
+    // MARK: - What the TV home screen's Watch Next row needs (I.3)
+
+    @Test
+    fun `a part-watched title carries its position, length, and 16 by 9 artwork`() {
+        val entry = continueWatching(
+            progress = listOf(progress(603, position = 0.25, lastWatched = 5_000L).copy(watchedSeconds = 1_800.0)),
+            movies = listOf(movie().copy(backdropPath = "/matrix-wide.jpg")),
+            episodes = emptyList(),
+            shows = emptyList(),
+        ).single()
+
+        assertEquals(1_800_000L, entry.positionMillis)
+        assertEquals(7_200_000L, entry.durationMillis)
+        assertEquals("https://image.tmdb.org/t/p/w780/matrix-wide.jpg", entry.backdropUrl)
+        assertEquals(5_000L, entry.lastWatchedEpochMillis)
+    }
+
+    @Test
+    fun `without stored seconds the length comes from the TMDB runtime`() {
+        fun entry(runtime: Int?) = continueWatching(
+            progress = listOf(progress(603, position = 0.5)),
+            movies = listOf(movie(runtime = runtime)),
+            episodes = emptyList(),
+            shows = emptyList(),
+        ).single()
+
+        assertEquals(4_080_000L, entry(136).positionMillis)
+        assertEquals(8_160_000L, entry(136).durationMillis)
+        assertNull(entry(null).positionMillis)
+        assertNull(entry(null).durationMillis)
+        assertNull(entry(null).backdropUrl)
+    }
+
+    @Test
+    fun `an episode shows its still, else its show's backdrop`() {
+        val severance = show().copy(backdropPath = "/severance-wide.jpg")
+        fun entry(still: String?) = continueWatching(
+            progress = listOf(progress(3000, type = WatchMediaType.EPISODE)),
+            movies = emptyList(),
+            episodes = listOf(episode().copy(stillPath = still)),
+            shows = listOf(severance),
+        ).single()
+
+        assertEquals("https://image.tmdb.org/t/p/w780/still.jpg", entry("/still.jpg").backdropUrl)
+        assertEquals("https://image.tmdb.org/t/p/w780/severance-wide.jpg", entry(null).backdropUrl)
+        assertEquals("Half Loop", entry(null).episodeTitle)
+        assertEquals(1_000L, entry(null).lastWatchedEpochMillis)
+    }
+
+    @Test
+    fun `next-up has the episode's runtime, no position, and the finished episode's time`() {
+        val entry = continueWatching(
+            progress = listOf(completedEpisode(101, show = 1, season = 1, number = 1, lastWatched = 9_000L)),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("anime", 1, 1, tmdbId = 101),
+                showEpisode("anime", 1, 2, tmdbId = 102).copy(runtimeMinutes = 24, title = "Second"),
+            ),
+            shows = listOf(show(key = "anime", name = "Anime", tmdbId = 1)),
+        ).single()
+
+        assertTrue(entry.isNextUp)
+        assertNull(entry.positionMillis)
+        assertEquals(1_440_000L, entry.durationMillis)
+        assertEquals("Second", entry.episodeTitle)
+        assertEquals(9_000L, entry.lastWatchedEpochMillis)
+    }
+
+    private fun completedEpisode(
+        tmdbId: Int,
+        show: Int,
+        season: Int,
+        number: Int,
+        lastWatched: Long = 1_000L,
+    ) = WatchProgress(
+        tmdbId = tmdbId,
+        mediaType = WatchMediaType.EPISODE,
+        position = 1.0,
+        lastWatchedEpochMillis = lastWatched,
+        isCompleted = true,
+        showTmdbId = show,
+        seasonNumber = season,
+        episodeNumber = number,
+    )
+
+    private fun inProgressEpisode(tmdbId: Int, show: Int, season: Int, number: Int, lastWatched: Long = 1_000L) =
+        completedEpisode(tmdbId, show, season, number, lastWatched).copy(position = 0.4, isCompleted = false)
+
+    private fun showEpisode(key: String, season: Int, number: Int, tmdbId: Int? = null, uri: String? = null) =
+        episode(
+            uri = uri ?: "content://tree/$key/S${season}E$number.mkv",
+            showKey = key,
+            season = season,
+            number = number,
+            tmdbId = tmdbId,
+            title = null,
+        )
+
+    @Test
+    fun `a completed episode suggests the next stored one`() {
+        val entries = continueWatching(
+            progress = listOf(completedEpisode(101, show = 1, season = 1, number = 1)),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("anime", 1, 1, tmdbId = 101),
+                showEpisode("anime", 1, 2, tmdbId = 102),
+            ),
+            shows = listOf(show(key = "anime", name = "Anime", tmdbId = 1)),
+        )
+
+        val entry = entries.single()
+        assertTrue(entry.isNextUp)
+        assertEquals("content://tree/anime/S1E2.mkv", entry.uri)
+        assertEquals("Anime", entry.title)
+        assertEquals("Up Next · S01E02", entry.subtitle)
+        assertEquals(0f, entry.fraction)
+        assertEquals(102, entry.tmdbId)
+        assertEquals(1, entry.showTmdbId)
+        assertEquals(1, entry.season)
+        assertEquals(2, entry.episode)
+    }
+
+    @Test
+    fun `next-up follows the furthest completed episode across seasons`() {
+        val entries = continueWatching(
+            progress = listOf(
+                completedEpisode(201, show = 2, season = 1, number = 1),
+                completedEpisode(203, show = 2, season = 1, number = 3),
+                completedEpisode(202, show = 2, season = 1, number = 2),
+            ),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("drama", 1, 1, tmdbId = 201),
+                showEpisode("drama", 1, 2, tmdbId = 202),
+                showEpisode("drama", 1, 3, tmdbId = 203),
+                showEpisode("drama", 2, 1, tmdbId = 204),
+            ),
+            shows = listOf(show(key = "drama", tmdbId = 2)),
+        )
+
+        assertEquals(listOf(2 to 1), entries.map { it.season to it.episode })
+    }
+
+    @Test
+    fun `no next-up after the last stored episode`() {
+        assertTrue(
+            continueWatching(
+                progress = listOf(completedEpisode(301, show = 3, season = 1, number = 1)),
+                movies = emptyList(),
+                episodes = listOf(showEpisode("short", 1, 1, tmdbId = 301)),
+                shows = listOf(show(key = "short", tmdbId = 3)),
+            ).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `an episode in progress keeps its own card and suppresses next-up`() {
+        val entries = continueWatching(
+            progress = listOf(
+                completedEpisode(401, show = 4, season = 1, number = 1, lastWatched = 100L),
+                inProgressEpisode(402, show = 4, season = 1, number = 2, lastWatched = 200L),
+            ),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("sitcom", 1, 1, tmdbId = 401),
+                showEpisode("sitcom", 1, 2, tmdbId = 402),
+                showEpisode("sitcom", 1, 3, tmdbId = 403),
+            ),
+            shows = listOf(show(key = "sitcom", tmdbId = 4)),
+        )
+
+        val entry = entries.single()
+        assertFalse(entry.isNextUp)
+        assertEquals(402, entry.tmdbId)
+        assertEquals(0.4f, entry.fraction)
+    }
+
+    @Test
+    fun `next-up survives the completed file being deleted`() {
+        // Episode 1's file is gone; its portable season and episode numbers
+        // still identify the successor.
+        val entries = continueWatching(
+            progress = listOf(completedEpisode(5001, show = 50, season = 1, number = 1)),
+            movies = emptyList(),
+            episodes = listOf(showEpisode("pruned", 1, 2, tmdbId = 5002)),
+            shows = listOf(show(key = "pruned", tmdbId = 50)),
+        )
+
+        assertEquals(listOf(5002), entries.map { it.tmdbId })
+    }
+
+    @Test
+    fun `next-up never writes or borrows watch progress`() {
+        val progress = listOf(completedEpisode(6001, show = 60, season = 1, number = 1))
+        val snapshot = progress.toList()
+        val entry = continueWatching(
+            progress = progress,
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("dated", 1, 1, tmdbId = 6001),
+                // An un-enriched successor: no TMDB id, so no record could exist.
+                showEpisode("dated", 1, 2, tmdbId = null),
+            ),
+            shows = listOf(show(key = "dated", tmdbId = 60)),
+        ).single()
+
+        assertEquals(snapshot, progress)
+        assertTrue(entry.isNextUp)
+        assertNull(entry.tmdbId)
+        assertEquals(0f, entry.fraction)
+    }
+
+    @Test
+    fun `duplicate show records give one card with the earliest successor`() {
+        val entries = continueWatching(
+            progress = listOf(completedEpisode(9001, show = 90, season = 1, number = 10)),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("folder a", 2, 3, tmdbId = 9003),
+                showEpisode("folder b", 2, 1, tmdbId = 9002),
+            ),
+            shows = listOf(
+                show(key = "folder a", name = "Folder A", tmdbId = 90),
+                show(key = "folder b", name = "Folder B", tmdbId = 90),
+            ),
+        )
+
+        assertEquals(listOf(9002), entries.map { it.tmdbId })
+    }
+
+    @Test
+    fun `two copies of the next episode pick the first by natural path order`() {
+        val entries = continueWatching(
+            progress = listOf(completedEpisode(1, show = 7, season = 1, number = 1)),
+            movies = emptyList(),
+            episodes = listOf(
+                showEpisode("copy", 1, 2, tmdbId = 2, uri = "content://tree/Disk 10/S01E02.mkv"),
+                showEpisode("copy", 1, 2, tmdbId = 2, uri = "content://tree/Disk 9/S01E02.mkv"),
+            ),
+            shows = listOf(show(key = "copy", tmdbId = 7)),
+        )
+
+        assertEquals("content://tree/Disk 9/S01E02.mkv", entries.single().uri)
+    }
+
+    @Test
+    fun `duplicate copies of a resumable title resolve the same way every time`() {
+        val record = progress(603, position = 0.5)
+        val copies = listOf(
+            movie(uri = "content://tree/b/Matrix.mkv", tmdbId = 603),
+            movie(uri = "content://tree/a/Matrix.mkv", tmdbId = 603),
+        )
+
+        assertEquals("content://tree/a/Matrix.mkv", continueWatching(listOf(record), copies, emptyList(), emptyList()).single().uri)
+        assertEquals("content://tree/a/Matrix.mkv", continueWatching(listOf(record), copies.reversed(), emptyList(), emptyList()).single().uri)
+    }
+
+    @Test
+    fun `progress for shows outside the visible library gives no card`() {
+        assertTrue(
+            continueWatching(
+                progress = listOf(completedEpisode(9201, show = 92, season = 1, number = 1)),
+                movies = emptyList(),
+                episodes = listOf(showEpisode("visible", 1, 2, tmdbId = 9102)),
+                shows = listOf(show(key = "visible", tmdbId = 91)),
+            ).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `shows without a TMDB id and movie progress give no next-up`() {
+        assertTrue(
+            continueWatching(
+                progress = listOf(
+                    completedEpisode(501, show = 5, season = 1, number = 1),
+                    progress(999, position = 1.0, completed = true),
+                ),
+                movies = emptyList(),
+                episodes = listOf(showEpisode("unknown", 1, 1, tmdbId = 501), showEpisode("unknown", 1, 2)),
+                shows = listOf(show(key = "unknown", tmdbId = null)),
+            ).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `next-up cards sort with resumable titles by last watched time`() {
+        val entries = continueWatching(
+            progress = listOf(
+                progress(603, position = 0.3, lastWatched = 200L),
+                completedEpisode(1001, show = 10, season = 1, number = 1, lastWatched = 300L),
+                completedEpisode(2001, show = 20, season = 1, number = 1, lastWatched = 100L),
+            ),
+            movies = listOf(movie(uri = "matrix", tmdbId = 603)),
+            episodes = listOf(
+                showEpisode("a", 1, 1, tmdbId = 1001),
+                showEpisode("a", 1, 2, tmdbId = 1002),
+                showEpisode("b", 1, 1, tmdbId = 2001),
+                showEpisode("b", 1, 2, tmdbId = 2002),
+            ),
+            shows = listOf(show(key = "a", name = "Show A", tmdbId = 10), show(key = "b", name = "Show B", tmdbId = 20)),
+        )
+
+        assertEquals(listOf(1002, 603, 2002), entries.map { it.tmdbId })
+        assertEquals(listOf(true, false, true), entries.map { it.isNextUp })
+    }
+
+    @Test
+    fun `next-up cards count toward the shelf cap`() {
+        val shows = (1..CONTINUE_WATCHING_LIMIT + 3).map { show(key = "show$it", name = "Show $it", tmdbId = it) }
+        val entries = continueWatching(
+            progress = shows.map { completedEpisode(it.tmdbId!! * 100 + 1, show = it.tmdbId!!, season = 1, number = 1, lastWatched = it.tmdbId!!.toLong()) },
+            movies = emptyList(),
+            episodes = shows.flatMap { listOf(showEpisode(it.key, 1, 1, tmdbId = it.tmdbId!! * 100 + 1), showEpisode(it.key, 1, 2)) },
+            shows = shows,
+        )
+
+        assertEquals(CONTINUE_WATCHING_LIMIT, entries.size)
+        assertEquals("Show ${CONTINUE_WATCHING_LIMIT + 3}", entries.first().title)
+        assertEquals(CONTINUE_WATCHING_LIMIT + 3, continueWatching(
+            progress = shows.map { completedEpisode(it.tmdbId!! * 100 + 1, show = it.tmdbId!!, season = 1, number = 1) },
+            movies = emptyList(),
+            episodes = shows.flatMap { listOf(showEpisode(it.key, 1, 1), showEpisode(it.key, 1, 2)) },
+            shows = shows,
+            limit = null,
+        ).size)
+    }
+
+    @Test
+    fun `the next-up label is localized by the caller`() {
+        val entry = continueWatching(
+            progress = listOf(completedEpisode(1, show = 1, season = 1, number = 1)),
+            movies = emptyList(),
+            episodes = listOf(showEpisode("x", 1, 2)),
+            shows = listOf(show(key = "x", tmdbId = 1)),
+            nextUpFormat = { "À suivre · $it" },
+        ).single()
+
+        assertEquals("À suivre · S01E02", entry.subtitle)
+    }
+
+    // MARK: - Copies of one title (D.5)
+
+    private fun folder(uri: String, name: String, kind: String, status: String? = null) =
+        com.babasama.edendale.android.data.LibraryFolderEntity(
+            treeUri = uri,
+            displayName = name,
+            addedAtEpochMillis = 0,
+            kind = kind,
+            status = status,
+        )
+
+    @Test
+    fun `a tapped copy plays unless its source is unreachable`() {
+        val folders = listOf(
+            folder("smb://nas/films/", "NAS", "smb", status = "offline"),
+            folder("content://tree/movies", "Movies", "local"),
+        ).associateBy { it.treeUri }
+        val onNas = movie(uri = "smb://nas/films/Heat.mkv", tmdbId = 949, folderUri = "smb://nas/films/")
+        val onPhone = movie(uri = "content://tree/movies/Heat.mkv", tmdbId = 949, folderUri = "content://tree/movies")
+        val other = movie(uri = "content://tree/movies/Alien.mkv", tmdbId = 348)
+
+        assertEquals(onPhone, preferredMovie(onNas, listOf(onNas, onPhone, other), folders))
+        assertEquals(onPhone, preferredMovie(onPhone, listOf(onNas, onPhone, other), folders))
+        // Reachable again: the tapped copy plays.
+        val online = folders + ("smb://nas/films/" to folders.getValue("smb://nas/films/").copy(status = null))
+        assertEquals(onNas, preferredMovie(onNas, listOf(onNas, onPhone), online))
+        assertEquals(listOf(onNas, onPhone), movieCopies(onNas, listOf(onPhone, onNas, other), online))
+    }
+
+    @Test
+    fun `continue watching resumes from a reachable copy, local first`() {
+        val folders = listOf(
+            folder("smb://nas/films/", "NAS", "smb"),
+            folder("content://tree/movies", "Movies", "local"),
+        )
+        val onNas = movie(uri = "smb://nas/films/Heat.mkv", tmdbId = 949, folderUri = "smb://nas/films/")
+        val onPhone = movie(uri = "content://tree/movies/Heat.mkv", tmdbId = 949, folderUri = "content://tree/movies")
+        val record = progress(949, position = 0.5)
+
+        assertEquals(onPhone.uri, continueWatching(listOf(record), listOf(onNas, onPhone), emptyList(), emptyList(), folders = folders).single().uri)
+        val phoneOffline = folders.map { if (it.kind == "local") it.copy(status = "offline") else it }
+        assertEquals(onNas.uri, continueWatching(listOf(record), listOf(onNas, onPhone), emptyList(), emptyList(), folders = phoneOffline).single().uri)
+    }
+
     // MARK: - Grid layout
 
     @Test

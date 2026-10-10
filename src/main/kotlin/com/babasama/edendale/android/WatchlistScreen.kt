@@ -64,6 +64,8 @@ fun WatchlistScreen(
     onOpenDetail: (MediaRef) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
     onOpenSettings: () -> Unit,
+    /** Shows only this group (a navigation child row, J.1); null shows the whole watchlist. */
+    section: WatchlistSection? = null,
 ) {
     val records by viewModel.items.collectAsState()
 
@@ -114,7 +116,7 @@ fun WatchlistScreen(
                     }
                 }
 
-                if (movies.isNotEmpty()) {
+                if (section != WatchlistSection.SHOWS && movies.isNotEmpty()) {
                     item("movies-header") {
                         SectionHeader(
                             title = stringResource(R.string.section_movies),
@@ -134,7 +136,7 @@ fun WatchlistScreen(
                     }
                 }
 
-                if (shows.isNotEmpty()) {
+                if (section != WatchlistSection.MOVIES && shows.isNotEmpty()) {
                     item("shows-header") {
                         SectionHeader(
                             title = stringResource(R.string.section_tv_shows),
@@ -164,7 +166,7 @@ fun WatchlistScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(stringResource(R.string.tab_watchlist)) },
+                    title = { PageTitle(stringResource(R.string.tab_watchlist), section?.let { stringResource(it.title) }) },
                     actions = {
                         IconButton(onClick = onOpenSettings) {
                             Icon(

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -21,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -61,11 +63,19 @@ fun SeasonBrowser(
 ) {
     if (seasons.isEmpty()) return
 
+    // The selected season's shelf, mirrored into the Episodes heading's rule
+    // (J.6). Each season's shelf starts at its first episode.
+    val shelfState = rememberLazyListState()
+    LaunchedEffect(selectedSeason) { shelfState.scrollToItem(0) }
+    val scrubber = rememberShelfScrubber(shelfState, interactive = !isTelevision)
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader(
             title = stringResource(R.string.section_episodes),
             modifier = Modifier.padding(horizontal = edgeMargin),
             large = isTelevision,
+            // Only a loaded, non-empty season has a shelf to scrub.
+            scrubber = scrubber.takeIf { !episodes.isNullOrEmpty() },
         )
 
         LazyRow(
@@ -87,6 +97,7 @@ fun SeasonBrowser(
 
         when {
             episodes != null && episodes.isNotEmpty() -> LazyRow(
+                state = shelfState,
                 contentPadding = PaddingValues(
                     horizontal = edgeMargin,
                     vertical = if (isTelevision) 12.dp else 0.dp,

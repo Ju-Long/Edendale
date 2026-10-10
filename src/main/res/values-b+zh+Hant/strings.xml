@@ -131,9 +131,9 @@
     <string name="remove_folder">移除 %1$s</string>
     <string name="remove_source_title">移除來源</string>
     <string name="remove_source_confirm_title">要移除 %1$s 嗎？</string>
-    <string name="remove_source_message_smb">“%1$s” 會從你的媒體庫中移除，而且 %2$s 的已儲存登入資訊也會被清除（除非有其他來源仍在使用該伺服器）。伺服器上的任何內容都不會被刪除。</string>
+    <string name="remove_source_message_smb">「%1$s」將從你的資料庫中移除。伺服器上的任何內容都不會被刪除，%2$s 的已儲存登入資訊仍保留在「設定」→「帳號」中。</string>
     <string name="remove_source_message_local">“%1$s” 會從你的媒體庫中移除。裝置上的任何內容都不會被刪除。</string>
-    <string name="remove_source_message_generic">Edendale 將會清除此來源以及從中建立索引的所有內容；如果沒有其他來源需要該主機的登入資訊，該資訊也會被清除。裝置或共用空間中的任何內容都不會被刪除。</string>
+    <string name="remove_source_message_generic">Edendale 會忘記此來源及從中編入索引的所有內容。你的裝置和共享位置上的內容都不會被刪除，已儲存的登入資訊仍保留在「設定」→「帳號」中。</string>
     <string name="mark_watched">標示為已觀看</string>
     <string name="mark_unwatched">標示為未觀看</string>
     <string name="watched">已觀看</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">請在 secrets.json 加入憑證並重新建置</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">已啟用大字體、防止過度掃描的邊距、遙控器焦點提升，以及橫向顯示模式。</string>
+    <string name="settings_watch_next_title">在主畫面顯示「繼續觀看」</string>
+    <string name="settings_watch_next_description">在主畫面的「繼續觀看」列中顯示你正在觀看的內容。Edendale 不會為此透過網路傳送任何內容，但主畫面應用程式可以看到這些標題。</string>
     <string name="settings_section_sources">來源</string>
     <string name="settings_no_sources">未連結任何來源</string>
     <string name="settings_section_backup">備份</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">此檔案中沒有字幕軌。</string>
     <string name="player_track_number">軌道 %1$d</string>
     <string name="player_playback">播放</string>
+    <string name="player_skip_intro">略過片頭</string>
     <string name="player_skip_recap">略過前情提要</string>
-    <string name="player_skip_recap_detail">跳過前 90 秒</string>
     <string name="player_skip_credits">略過片尾</string>
-    <string name="player_skip_credits_detail">在最後 3 分鐘結束播放</string>
+    <string name="player_skip_prompts">略過提示</string>
+    <string name="player_skip_prompts_detail">透過 TheIntroDB 查詢片頭、前情提要與片尾時間戳記</string>
+    <string name="settings_skip_prompts_note">啟用後，TheIntroDB 會接收節目的 TMDB ID、集數編號、影片長度與您的 IP 位址。略過一律需要手動按下按鈕。</string>
+    <string name="settings_theintrodb_link">時間戳記由 TheIntroDB 提供</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB 隱私權政策</string>
     <string name="player_loop">循環播放影片</string>
     <string name="player_loop_detail">結束時重新開始播放</string>
     <string name="player_auto_pip">自動子母畫面</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">資料夾</string>
     <string name="default_video_name">影片</string>
     <string name="error_not_share_address">\"%1$s\" 不是共用位址。請嘗試 192.168.1.10/media。</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: 無法讀取此來源的部分內容，因此沒有任何內容從媒體庫中移除。</string>
     <string name="error_permission_revoked">已撤銷此資料夾的存取權限 — 請重新加入</string>
     <string name="error_folder_unopenable">無法開啟此資料夾</string>
     <string name="error_share_unreachable">無法連線至共用空間或憑證被拒絕</string>
     <string name="error_address_is_file">該位址是檔案，不是共用空間</string>
-    <string name="error_scan_failed">掃描失敗</string>
     <plurals name="item_count">
         <item quantity="other">%1$d 個項目</item>
     </plurals>
@@ -275,4 +279,248 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">還有 %1$d 個配對項目。</item>
     </plurals>
+    <string name="settings_section_app_controls">應用程式控制</string>
+    <string name="settings_app_controls_skip_backward">倒退</string>
+    <string name="settings_app_controls_skip_forward">快轉</string>
+    <string name="settings_app_controls_skip_note">點兩下影片左側或右側以倒退或快轉。</string>
+    <string name="settings_app_controls_hold_left">按住左側</string>
+    <string name="settings_app_controls_hold_right">按住右側</string>
+    <string name="settings_app_controls_hold_note">按住影片左側或右側以該速度播放，放開即可恢復。</string>
+    <string name="settings_app_controls_hold_slower">%1$s，減慢</string>
+    <string name="settings_app_controls_hold_faster">%1$s，加快</string>
+    <string name="settings_seconds_format">%d 秒</string>
+    <string name="player_back_15">倒退 15 秒</string>
+    <string name="player_back_30">倒退 30 秒</string>
+    <string name="player_forward_15">快轉 15 秒</string>
+    <string name="player_forward_30">快轉 30 秒</string>
+    <string name="player_up_next">接下來播放</string>
+    <string name="player_up_next_description">接下來播放：%1$s %2$s</string>
+    <string name="player_up_next_hint">立即播放下一集</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">接下來播放 · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">音訊輸出</string>
+    <string name="player_audio_output_unavailable">此裝置不支援切換音訊輸出。</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">字體</string>
+    <string name="settings_subtitles_text_color">文字顏色</string>
+    <string name="settings_subtitles_background_color">背景顏色</string>
+    <string name="settings_subtitles_background_opacity">背景不透明度</string>
+    <string name="settings_subtitles_reset">重置字幕樣式</string>
+    <string name="settings_subtitles_appearance_note">適用於文字字幕。影像型字幕會保留其原始外觀。</string>
+    <string name="settings_subtitles_preview">字幕預覽</string>
+    <string name="settings_subtitles_preview_sample">封存從不遺忘任何一部電影。\n它只是在等待有人按下播放。</string>
+    <string name="settings_subtitles_font_system">系統</string>
+    <string name="settings_subtitles_font_rounded">圓體</string>
+    <string name="settings_subtitles_font_serif">襯線體</string>
+    <string name="settings_subtitles_font_monospaced">等寬</string>
+    <string name="settings_subtitles_color_parchment">羊皮紙色</string>
+    <string name="settings_subtitles_color_white">白色</string>
+    <string name="settings_subtitles_color_yellow">黃色</string>
+    <string name="settings_subtitles_color_cyan">青色</string>
+    <string name="settings_subtitles_color_green">綠色</string>
+    <string name="settings_subtitles_color_black">黑色</string>
+    <string name="settings_subtitles_color_ink">墨色</string>
+    <string name="settings_subtitles_color_charcoal">炭灰色</string>
+    <string name="settings_subtitles_color_navy">海軍藍</string>
+    <string name="settings_subtitles_opacity_lower">降低背景不透明度</string>
+    <string name="settings_subtitles_opacity_higher">提高背景不透明度</string>
+    <string name="settings_nunito_attribution">圓體字幕字體為 The Nunito Project Authors 的 Nunito，採用 SIL Open Font License 1.1 授權。</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">影片軌道</string>
+    <string name="player_audio_track">音軌</string>
+    <string name="player_audio_mono">單聲道</string>
+    <string name="player_audio_stereo">立體聲</string>
+    <string name="player_audio_channels">%d 聲道</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">無法播放</string>
+    <string name="player_error_could_not_open">無法開啟此作品。</string>
+    <string name="player_error_connection_lost">與 %1$s 的連線已中斷。</string>
+    <string name="player_error_connection_lost_detail">與 %1$s 的連線已中斷：%2$s</string>
+    <string name="player_error_could_not_connect">無法連線至 %1$s。</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">無法連線至 %1$s。請檢查你的網路連線，然後再試一次。</string>
+    <string name="sources_status_needs_sign_in">重新登入 %1$s 以存取此來源。</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">帳號</string>
+    <string name="accounts_empty">沒有已連結的帳號或已儲存的登入資訊。可透過「連結來源」加入。</string>
+    <string name="accounts_no_sources">此裝置上沒有來源</string>
+    <string name="accounts_forget">忘記</string>
+    <string name="accounts_forget_login">忘記登入資訊</string>
+    <string name="accounts_forget_message">在你重新輸入登入資訊之前，%1$s 上的來源將無法連線。</string>
+    <string name="accounts_note">登入資訊只會保留在此裝置上，且不會被備份。移除來源不會刪除它們；請在此處刪除。</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">此裝置上的 %1$d 個來源</item>
+        <item quantity="other">此裝置上的 %1$d 個來源</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">播放來源</string>
+    <string name="play_from_unavailable">%1$s · 無法使用</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d 個來源</item>
+        <item quantity="other">%1$d 個來源</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">音訊增強</string>
+    <string name="audio_profile">音效模式</string>
+    <string name="audio_profile_flat">平坦</string>
+    <string name="audio_profile_movies">電影</string>
+    <string name="audio_profile_music">音樂</string>
+    <string name="audio_profile_dialogue">對白</string>
+    <string name="audio_profile_night_mode">夜間模式</string>
+    <string name="audio_preamp">前級放大</string>
+    <string name="audio_reset_adjustments">重置調整</string>
+    <string name="audio_booster">音量增強</string>
+    <string name="audio_booster_detail">提高安靜錄音的音訊增益</string>
+    <string name="audio_show_equalizer">顯示等化器</string>
+    <string name="audio_hide_equalizer">隱藏等化器</string>
+    <string name="audio_passthrough_note">等化器和增強器作用於 Edendale 解碼的音訊。原樣直通到擴大機或電視的環繞聲不經過它們。</string>
+    <string name="audio_step_lower">%1$s，降低</string>
+    <string name="audio_step_higher">%1$s，提高</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">畫面</string>
+    <string name="video_brightness">亮度</string>
+    <string name="video_contrast">對比</string>
+    <string name="video_gamma">伽瑪</string>
+    <string name="video_saturation">飽和度</string>
+    <string name="video_hue">色相</string>
+    <string name="video_show_original">顯示原始畫面</string>
+    <string name="video_enhancement">增強</string>
+    <string name="video_preset">預設組合</string>
+    <string name="video_preset_off">關閉</string>
+    <string name="video_preset_sharpen_only">僅銳利化</string>
+    <string name="video_preset_balanced">平衡</string>
+    <string name="video_preset_high_quality">高品質</string>
+    <string name="video_sharpness">銳利度</string>
+    <string name="video_denoise">降噪</string>
+    <string name="video_not_available_hdr">不適用於 HDR 影片</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">隱藏側邊欄</string>
+    <string name="navigation_show">顯示側邊欄</string>
+    <string name="rescan_library">重新掃描資料庫</string>
+    <string name="shelf_scroll_position">%1$s的捲動位置</string>
+    <string name="shortcut_play_pause">播放或暫停</string>
+    <string name="shortcut_skip_prompt">出現提示時略過片頭或片尾</string>
+    <string name="shortcut_close_panel_then_player">先關閉面板，再關閉播放器</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="other">倒轉 %1$d 秒</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="other">快轉 %1$d 秒</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">此檔案已不在 %1$s 中。</string>
+    <string name="player_error_rate_limited">%1$s 目前正在限制請求。請一分鐘後再試一次。</string>
+    <string name="player_error_server">%1$s 傳回錯誤（HTTP %2$d）。</string>
+    <string name="player_error_range_unsupported">%1$s 不支援在此檔案中跳轉。</string>
+    <string name="player_error_access_denied">%1$s 拒絕存取此項目。</string>
+    <string name="player_error_abusive_file">Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</string>
+    <string name="player_error_untrusted_certificate">%1$s 的憑證不受信任，因此 Edendale 不會從其串流播放。</string>
+    <string name="source_kind_s3">S3 相容儲存空間</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Mac、PC 或 NAS 上的共享檔案夾。</string>
+    <string name="link_source_webdav_description">Nextcloud、ownCloud、Synology、QNAP、pCloud、Koofr 或 rclone。</string>
+    <string name="connector_unreachable">無法連線至 %1$s。請檢查伺服器是否已開機、位於相同的網路，且名稱或憑證正確無誤。</string>
+    <string name="connector_authentication_failed">%1$s 不接受該使用者名稱和密碼。</string>
+    <string name="connector_listing_failed">無法讀取檔案夾 %1$s。可能需要不同的憑證或權限。</string>
+    <string name="connector_invalid_address">該伺服器位址似乎不正確。請輸入如 nas.local 的主機名稱或 IP 位址。</string>
+    <string name="connector_insecure_connection">未加密的 http:// 僅適用於你自己網路中的伺服器。請為此伺服器使用 https:// 位址。</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">此儲存貯體位於 %1$s 區域。請更改區域並重新連線。</string>
+    <string name="connector_bucket_other_region">此儲存貯體位於其他區域。請檢查區域並重新連線。</string>
+    <string name="link_source_s3_description">AWS、Backblaze B2、Cloudflare R2、Wasabi 或 MinIO。</string>
+    <string name="s3_endpoint_label">端點</string>
+    <string name="s3_region_label">區域</string>
+    <string name="s3_bucket_label">儲存貯體</string>
+    <string name="s3_access_key_label">存取金鑰 ID</string>
+    <string name="s3_secret_key_label">私密存取金鑰</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">此版本的 Edendale 未設定 %1$s。</string>
+    <string name="oauth_cancelled">已取消登入。</string>
+    <string name="oauth_unverified">無法驗證登入回應。請再試一次。</string>
+    <string name="oauth_denied">不允許存取 %1$s。</string>
+    <string name="oauth_invalid_grant">你的 %1$s 登入已過期或已被撤銷。請重新登入。</string>
+    <string name="oauth_device_code_expired">代碼在核准前已過期。請取得新代碼並再試一次。</string>
+    <string name="oauth_server_detail">%1$s 無法完成登入（%2$s）：%3$s</string>
+    <string name="oauth_server">%1$s 無法完成登入（%2$s）。</string>
+    <string name="oauth_malformed">%1$s 傳送了 Edendale 無法讀取的回應。</string>
+    <string name="accounts_sign_out">登出</string>
+    <string name="accounts_sign_out_revoke">登出並撤銷存取權限</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">在你重新連結帳號之前，來自 %1$s 的來源將無法在此裝置上使用。</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">個人、工作或學校 OneDrive。</string>
+    <string name="link_source_dropbox_description">你的 Dropbox 檔案夾。</string>
+    <string name="link_source_linked_accounts">已連結的帳號</string>
+    <string name="link_source_another_account">其他帳號</string>
+    <string name="link_source_sign_in_to">登入 %1$s</string>
+    <string name="link_source_waiting">正在等候 %1$s⋯</string>
+    <string name="link_source_cloud_privacy">Edendale 會向 %1$s 請求唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">在你的手機或電腦上打開 %1$s%2$s，然後輸入此代碼：</string>
+    <string name="device_code_accessibility">代碼 %1$s</string>
+    <string name="device_code_qr_description">%1$s 登入 QR 碼</string>
+    <string name="device_code_waiting">正在等候核准⋯</string>
+    <string name="device_code_sign_in">使用代碼登入</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">可透過 SSH 連線的任何伺服器。</string>
+    <string name="sftp_port_label">埠</string>
+    <string name="sftp_host_key_note">Edendale 首次連線時，會顯示伺服器的主機金鑰供你核准。</string>
+    <string name="sftp_verify_title">驗證主機金鑰</string>
+    <string name="sftp_changed_title">主機金鑰已更改</string>
+    <string name="sftp_verify_message">在信任之前，請檢查此內容是否與伺服器的 SSH 主機金鑰相符。\n\n%1$s</string>
+    <string name="sftp_changed_message">%1$s 提供的金鑰與你先前核准的不同。只有在你確定伺服器已重新安裝或其金鑰已更改時才繼續。\n\n%2$s</string>
+    <string name="sftp_trust">信任</string>
+    <string name="sftp_trust_new">信任新金鑰</string>
+    <string name="connector_host_key_mismatch">%1$s 的 SSH 主機金鑰已更改。在你重新連結伺服器以核准新金鑰之前，Edendale 不會連線。</string>
+    <string name="connector_host_key_unverified">%1$s 的 SSH 主機金鑰尚未核准。</string>
+    <string name="connector_secure_connection_failed">無法與 %1$s 建立安全連線。其 SSH 伺服器僅提供較舊的加密方式，Edendale 不支援這些方式。</string>
+    <string name="connector_password_login_unavailable">%1$s 不接受密碼登入。請在其 SSH 設定中允許密碼認證以進行連結。</string>
+    <string name="connector_sftp_unavailable">%1$s 未為此帳號提供 SFTP。</string>
+    <string name="link_source_tls_note">你自己網路中的伺服器可以使用 http://。當 Edendale 第一次遇到此裝置不信任的憑證時，會顯示該憑證供你核准。</string>
+    <string name="tls_verify_title">驗證憑證</string>
+    <string name="tls_changed_title">憑證已變更</string>
+    <string name="tls_verify_message">此裝置不信任 %1$s 出示的憑證。信任之前，請核對它與伺服器本身的憑證一致。
+
+%2$s</string>
+    <string name="tls_changed_message">%1$s 出示的憑證不是你先前核准的那一個。只有在確知伺服器憑證已更換時才繼續。
+
+%2$s</string>
+    <string name="tls_trust_new">信任新憑證</string>
+    <string name="tls_expires">有效期至 %1$s</string>
+    <string name="connector_certificate_unverified">%1$s 的憑證尚未核准。請重新連結伺服器以進行核對。</string>
+    <string name="connector_certificate_mismatch">%1$s 的憑證已變更。在你重新連結伺服器並核准新憑證之前，Edendale 不會連線。</string>
+    <string name="link_source_gdrive_description">我的雲端硬碟、與你共用的資料夾和共用雲端硬碟。</string>
+    <string name="gdrive_my_drive">我的雲端硬碟</string>
+    <string name="gdrive_shared_with_me">與我共用</string>
+    <string name="gdrive_shared_drives">共用雲端硬碟</string>
+    <string name="handoff_continue_on_phone">在手機上繼續</string>
+    <string name="handoff_tv_instructions">在手機上開啟 Edendale，進入設定 → 帳戶 → 連結到電視，選擇 %1$s，然後輸入此代碼：</string>
+    <string name="handoff_tv_waiting">正在等待手機…</string>
+    <string name="handoff_tv_connected">手機正在選擇要傳送的內容…</string>
+    <string name="handoff_tv_validating">正在檢查手機傳送的內容…</string>
+    <string name="handoff_link_to_tv">連結到電視</string>
+    <string name="handoff_link_to_tv_note">將已連結的帳戶或已儲存的登入資訊傳送到此網路中執行 Edendale 的 Android TV。電視會在「連結來源」中發出要求。</string>
+    <string name="handoff_searching">正在尋找此網路中的電視…</string>
+    <string name="handoff_no_tvs">尚未找到電視。請在電視上開啟「連結來源」，選擇一個服務，然後選擇「在手機上繼續」。</string>
+    <string name="handoff_discovery_failed">Edendale 無法在此網路中搜尋電視。請確認 Wi-Fi 已開啟。</string>
+    <string name="handoff_code_label">%1$s 上顯示的代碼</string>
+    <string name="handoff_connecting">正在連線到 %1$s…</string>
+    <string name="handoff_request_title">在 %2$s 上連結 %1$s？</string>
+    <string name="handoff_request_message">Edendale 會使用你輸入的代碼加密登入資訊，並透過此網路直接傳送到電視。不經過任何伺服器，電視只會將其儲存在自己的儲存空間中。</string>
+    <string name="handoff_saved_logins">已儲存的登入資訊</string>
+    <string name="handoff_no_saved_logins">此裝置上沒有儲存 %1$s 登入資訊。請先在「連結來源」中連結一個。</string>
+    <string name="handoff_decline">拒絕</string>
+    <string name="handoff_sending">正在傳送到 %1$s…</string>
+    <string name="handoff_done">已在 %1$s 上連結。請在電視上繼續。</string>
+    <string name="handoff_declined">該要求已在另一部裝置上被拒絕。</string>
+    <string name="handoff_wrong_code">代碼不符。請核對電視上的代碼後重試。</string>
+    <string name="handoff_connection_failed">無法連線到另一部裝置。請確認兩部裝置在同一網路中，且電視仍顯示該代碼。</string>
+    <string name="handoff_timed_out">另一部裝置未及時回應。</string>
+    <string name="handoff_unsupported_version">請在兩部裝置上更新 Edendale 後重試。</string>
+    <string name="handoff_malformed">另一部裝置傳送的內容 Edendale 無法使用。請重試。</string>
+    <string name="handoff_rejected">電視無法使用所傳送的內容：%1$s</string>
+    <string name="handoff_rejected_plain">電視無法使用所傳送的內容。</string>
+    <string name="handoff_tv_address">如果手機找不到這台電視，請改為輸入它的位址：%1$s</string>
+    <string name="handoff_address_label">或輸入電視上顯示的位址</string>
 </resources>

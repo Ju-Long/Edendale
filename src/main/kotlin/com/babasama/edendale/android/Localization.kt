@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import com.babasama.edendale.connectors.GoogleDriveLabels
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.tmdb.CollectionFilter
 import com.babasama.edendale.wyzie.WyzieException
@@ -61,14 +62,18 @@ class AppStrings(private val context: Context) {
     val permissionRevoked: String get() = context.getString(R.string.error_permission_revoked)
     val folderUnopenable: String get() = context.getString(R.string.error_folder_unopenable)
     val shareUnreachable: String get() = context.getString(R.string.error_share_unreachable)
+
+    /** The names of Google Drive's virtual folders in the Link Source browser (H.9). */
+    val googleDriveLabels: GoogleDriveLabels
+        get() = GoogleDriveLabels(
+            myDrive = context.getString(R.string.gdrive_my_drive),
+            sharedWithMe = context.getString(R.string.gdrive_shared_with_me),
+            sharedDrives = context.getString(R.string.gdrive_shared_drives),
+        )
     val addressIsFile: String get() = context.getString(R.string.error_address_is_file)
-    val scanFailed: String get() = context.getString(R.string.error_scan_failed)
 
     fun notShareAddress(input: String): String =
         context.getString(R.string.error_not_share_address, input)
-
-    fun sourceError(displayName: String, reason: String): String =
-        context.getString(R.string.error_source_scan, displayName, reason)
 
     fun sourcePartialError(displayName: String): String =
         context.getString(R.string.error_source_partial, displayName)

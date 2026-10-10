@@ -3,8 +3,15 @@ package com.babasama.edendale.android
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
+import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.data.SourceScanRules
+import com.babasama.edendale.android.player.CompletedProgressEntry
+import com.babasama.edendale.android.player.EpisodeCandidate
+import com.babasama.edendale.android.player.EpisodeProgression
+import com.babasama.edendale.android.player.ShowCandidate
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.TmdbImageSize
@@ -74,7 +81,8 @@ internal fun mediaSubtitle(
  * closest readable thing without resolving the provider.
  */
 internal fun sourceDisplayPath(treeUri: String): String {
-    if (treeUri.startsWith("smb://")) return treeUri
+    // Remote source URLs are credential-free and readable as they are.
+    if (MediaSourceKind.forSourceUri(treeUri)?.isRemote == true) return treeUri
     val decoded = java.net.URLDecoder.decode(treeUri, "UTF-8")
     return decoded.substringAfterLast("/tree/", decoded)
 }
@@ -101,7 +109,11 @@ internal fun libraryGridMetrics(
 
 // MARK: - Continue Watching
 
-/** One resumable title, already joined to the local file that plays it. */
+/**
+ * One resumable title, already joined to the local file that plays it. A
+ * next-up entry is the stored episode after a show's furthest completed one: it
+ * has no watch record of its own, so [fraction] is 0 and it draws no progress.
+ */
 internal data class ContinueEntry(
     val uri: String,
     val title: String,
@@ -113,67 +125,259 @@ internal data class ContinueEntry(
     val showTmdbId: Int? = null,
     val season: Int? = null,
     val episode: Int? = null,
+    val isNextUp: Boolean = false,
+    /** The episode's own title, apart from its code. */
+    val episodeTitle: String? = null,
+    /** 16:9 artwork: the episode still, else the show backdrop; a movie's backdrop. */
+    val backdropUrl: String? = null,
+    /** Where playback stopped; null for a next-up entry. */
+    val positionMillis: Long? = null,
+    /** The file's length, from the watch record or else the TMDB runtime. */
+    val durationMillis: Long? = null,
+    /** When it was last watched (for next-up, the completed episode): the shelf's order. */
+    val lastWatchedEpochMillis: Long = 0L,
 )
 
 /** How many resumable titles the shelf shows before it stops being a shelf. */
 internal const val CONTINUE_WATCHING_LIMIT = 12
 
+/** A part-watched record: the shelf's and the next-up rule's shared test. */
+private fun WatchProgress.isResumable(): Boolean = !isCompleted && normalizedPosition > 0.01
+
 /**
- * Part-watched titles, newest first, joined to the local file that plays them.
- * Records with no matching import are dropped — they belong to TMDB titles the
- * library does not hold.
+ * Where a part-watched record stopped and how long the file is, in
+ * milliseconds. The player stores the position in seconds beside the
+ * fraction, which gives the length; a record without seconds (an import)
+ * falls back to the TMDB runtime.
+ */
+private fun WatchProgress.playbackMillis(runtimeMinutes: Int?): Pair<Long?, Long?> {
+    val fraction = normalizedPosition
+    val position = (watchedSeconds * 1000).toLong()
+    if (position > 0 && fraction > 0) return position to (position / fraction).toLong()
+    val duration = runtimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L } ?: return null to null
+    return (duration * fraction).toLong() to duration
+}
+
+// MARK: - Copies of one title (D.5)
+
+/** The source a copy came from; an individually picked file counts as local. */
+internal fun Map<String, LibraryFolderEntity>.copySource(folderUri: String?): CopySource {
+    val folder = folderUri?.let { this[it] } ?: return CopySource("", MediaSourceKind.LOCAL, isUnavailable = false)
+    return CopySource(folder.displayName, SourceScanRules.kindOf(folder), isUnavailable = folder.status != null)
+}
+
+/**
+ * The copy Play starts for each TMDB id when the same title was imported more
+ * than once: the first available one in Play From order (D.5), so the choice
+ * never depends on scan order.
+ */
+private fun <T> List<T>.preferredCopyByTmdbId(
+    tmdbId: (T) -> Int?,
+    folderUri: (T) -> String?,
+    uri: (T) -> String,
+    folders: Map<String, LibraryFolderEntity>,
+): Map<Int, T> =
+    filter { tmdbId(it) != null }
+        .groupBy { tmdbId(it)!! }
+        .mapValues { (_, copies) -> preferredCopy(null, copies, folderUri, uri, folders)!! }
+
+/**
+ * The copy to play among [copies]: [primary] (the one the viewer picked) first,
+ * then local folders, then by source name, skipping sources whose last scan
+ * failed unless every one did (D.5).
+ */
+internal fun <T> preferredCopy(
+    primary: T?,
+    copies: List<T>,
+    folderUri: (T) -> String?,
+    uri: (T) -> String,
+    folders: Map<String, LibraryFolderEntity>,
+): T? {
+    val ordered = PlaybackSources.order(primary, copies, { folders.copySource(folderUri(it)) }, uri)
+    return PlaybackSources.preferred(ordered) { folders.copySource(folderUri(it)).isUnavailable }
+}
+
+/** A movie's copies in Play From order, [primary] (the page's own) first. */
+internal fun movieCopies(
+    primary: LibraryMovieEntity,
+    movies: List<LibraryMovieEntity>,
+    folders: Map<String, LibraryFolderEntity>,
+): List<LibraryMovieEntity> {
+    val others = primary.tmdbId?.let { id -> movies.filter { it.tmdbId == id && it.uri != primary.uri } }.orEmpty()
+    return PlaybackSources.order(primary, others, { folders.copySource(it.folderUri) }, { it.uri })
+}
+
+/** The movie copy a tap on [tapped] plays: itself unless its source is unavailable and another isn't. */
+internal fun preferredMovie(
+    tapped: LibraryMovieEntity,
+    movies: List<LibraryMovieEntity>,
+    folders: Map<String, LibraryFolderEntity>,
+): LibraryMovieEntity =
+    PlaybackSources.preferred(movieCopies(tapped, movies, folders)) { folders.copySource(it.folderUri).isUnavailable }
+        ?: tapped
+
+/**
+ * Continue Watching, newest first, joined to the local files that play it:
+ * every part-watched title, plus — for each show with nothing in progress — the
+ * stored episode after its furthest completed one (Apple's next-up card). The
+ * next-up entry is a suggestion only; nothing here writes watch progress, and
+ * it still appears after the completed episode's file was deleted. Records with
+ * no matching import are dropped — they belong to TMDB titles the library does
+ * not hold.
+ *
+ * [nextUpFormat] carries the localized "Up Next · %1$s" template; the English
+ * default keeps this file free of Android types for the JVM tests.
+ * [limit] caps the shelf; null returns every entry.
  */
 internal fun continueWatching(
     progress: List<WatchProgress>,
     movies: List<LibraryMovieEntity>,
     episodes: List<LibraryEpisodeEntity>,
     shows: List<LibraryShowEntity>,
+    nextUpFormat: (String) -> String = { "Up Next · $it" },
+    limit: Int? = CONTINUE_WATCHING_LIMIT,
+    folders: List<LibraryFolderEntity> = emptyList(),
 ): List<ContinueEntry> {
     if (progress.isEmpty()) return emptyList()
-    val moviesByTmdbId = movies.mapNotNull { movie -> movie.tmdbId?.let { it to movie } }.toMap()
-    val episodesByTmdbId = episodes.mapNotNull { ep -> ep.tmdbId?.let { it to ep } }.toMap()
+    val foldersByUri = folders.associateBy { it.treeUri }
+    val moviesByTmdbId = movies.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri)
+    val episodesByTmdbId = episodes.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri)
     val showsByKey = shows.associateBy { it.key }
 
-    return progress
-        .asSequence()
-        .filter { !it.isCompleted && it.normalizedPosition > 0.01 }
-        .sortedByDescending { it.lastWatchedEpochMillis }
-        .mapNotNull { record ->
-            val fraction = record.normalizedPosition.toFloat()
-            when (record.mediaType) {
-                WatchMediaType.MOVIE -> {
-                    val movie = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
-                    ContinueEntry(
-                        uri = movie.uri,
-                        title = movie.title,
-                        subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes),
-                        posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
-                        fraction = fraction,
-                        tmdbId = movie.tmdbId,
-                        isEpisode = false,
-                    )
-                }
-                WatchMediaType.EPISODE -> {
-                    val episode = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
-                    val show = showsByKey[episode.showKey]
-                    ContinueEntry(
-                        uri = episode.uri,
-                        title = show?.name ?: episode.fileName,
-                        subtitle = "S${episode.season.pad()}E${episode.episode.pad()}" +
-                            (episode.title?.let { " · $it" } ?: ""),
-                        posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
-                        fraction = fraction,
-                        tmdbId = episode.tmdbId,
-                        isEpisode = true,
-                        showTmdbId = show?.tmdbId,
-                        season = episode.season,
-                        episode = episode.episode,
-                    )
-                }
+    val resumable = progress.filter { it.isResumable() }
+    val inProgress = resumable.mapNotNull { record ->
+        val fraction = record.normalizedPosition.toFloat()
+        val entry = when (record.mediaType) {
+            WatchMediaType.MOVIE -> {
+                val movie = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val (position, duration) = record.playbackMillis(movie.runtimeMinutes)
+                ContinueEntry(
+                    uri = movie.uri,
+                    title = movie.title,
+                    subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes),
+                    posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
+                    fraction = fraction,
+                    tmdbId = movie.tmdbId,
+                    isEpisode = false,
+                    backdropUrl = tmdbImageUrl(movie.backdropPath, TmdbImageSize.BACKDROP),
+                    positionMillis = position,
+                    durationMillis = duration,
+                    lastWatchedEpochMillis = record.lastWatchedEpochMillis,
+                )
+            }
+            WatchMediaType.EPISODE -> {
+                val episode = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val show = showsByKey[episode.showKey]
+                val (position, duration) = record.playbackMillis(episode.runtimeMinutes)
+                ContinueEntry(
+                    uri = episode.uri,
+                    title = show?.name ?: episode.fileName,
+                    subtitle = episodeCode(episode.season, episode.episode) +
+                        (episode.title?.let { " · $it" } ?: ""),
+                    posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
+                    fraction = fraction,
+                    tmdbId = episode.tmdbId,
+                    isEpisode = true,
+                    showTmdbId = show?.tmdbId,
+                    season = episode.season,
+                    episode = episode.episode,
+                    episodeTitle = episode.title,
+                    backdropUrl = tmdbImageUrl(episode.stillPath ?: show?.backdropPath, TmdbImageSize.BACKDROP),
+                    positionMillis = position,
+                    durationMillis = duration,
+                    lastWatchedEpochMillis = record.lastWatchedEpochMillis,
+                )
             }
         }
-        .take(CONTINUE_WATCHING_LIMIT)
-        .toList()
+        entry to record.lastWatchedEpochMillis
+    }
+
+    val nextUp = nextUpEntries(progress, resumable, episodes, shows, episodesByTmdbId, nextUpFormat, foldersByUri)
+
+    val sorted = (inProgress + nextUp)
+        .sortedByDescending { it.second }
+        .map { it.first }
+    return if (limit == null) sorted else sorted.take(limit)
+}
+
+/** "S01E02". */
+internal fun episodeCode(season: Int, episode: Int): String = "S${season.pad()}E${episode.pad()}"
+
+/**
+ * Next-up entries paired with the completed episode's last-watched time, which
+ * is where they sort. Copies of one show (the same TMDB id imported from
+ * several folders) merge into one candidate list, so they give one card.
+ */
+private fun nextUpEntries(
+    progress: List<WatchProgress>,
+    resumable: List<WatchProgress>,
+    episodes: List<LibraryEpisodeEntity>,
+    shows: List<LibraryShowEntity>,
+    episodesByTmdbId: Map<Int, LibraryEpisodeEntity>,
+    nextUpFormat: (String) -> String,
+    folders: Map<String, LibraryFolderEntity>,
+): List<Pair<ContinueEntry, Long>> {
+    val showsByKey = shows.associateBy { it.key }
+    val inProgressShowIds = resumable
+        .filter { it.mediaType == WatchMediaType.EPISODE }
+        .mapNotNull { record ->
+            record.showTmdbId
+                ?: episodesByTmdbId[record.tmdbId]?.let { showsByKey[it.showKey]?.tmdbId }
+        }
+        .toSet()
+    val episodesByShowKey = episodes.groupBy { it.showKey }
+    val candidates = shows
+        .filter { it.tmdbId != null }
+        .groupBy { it.tmdbId!! }
+        .map { (showId, copies) ->
+            ShowCandidate(
+                tmdbId = showId,
+                name = copies.first().name,
+                episodes = copies
+                    .flatMap { episodesByShowKey[it.key].orEmpty() }
+                    .sortedWith(PlaybackSources.comparator({ folders.copySource(it.folderUri) }, { it.uri }))
+                    .map { EpisodeCandidate(id = it.uri, season = it.season, episode = it.episode, title = it.title) },
+            )
+        }
+    val completed = progress.map {
+        CompletedProgressEntry(
+            tmdbId = it.tmdbId,
+            isEpisode = it.mediaType == WatchMediaType.EPISODE,
+            isCompleted = it.isCompleted,
+            showTmdbId = it.showTmdbId,
+            seasonNumber = it.seasonNumber,
+            episodeNumber = it.episodeNumber,
+            lastWatchedEpochMillis = it.lastWatchedEpochMillis,
+        )
+    }
+    val episodesByUri = episodes.associateBy { it.uri }
+    return EpisodeProgression.nextUpEpisodes(completed, inProgressShowIds, candidates)
+        .mapNotNull { candidate ->
+            val found = episodesByUri[candidate.episode.id] ?: return@mapNotNull null
+            val showKeys = shows.filter { it.tmdbId == candidate.show.tmdbId }.mapTo(HashSet()) { it.key }
+            val copies = episodes.filter {
+                it.showKey in showKeys && it.season == found.season && it.episode == found.episode
+            }
+            val episode = preferredCopy(null, copies, { it.folderUri }, { it.uri }, folders) ?: found
+            val show = showsByKey[episode.showKey]
+            ContinueEntry(
+                uri = episode.uri,
+                title = show?.name ?: candidate.show.name,
+                subtitle = nextUpFormat(episodeCode(episode.season, episode.episode)),
+                posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
+                fraction = 0f,
+                tmdbId = episode.tmdbId,
+                isEpisode = true,
+                showTmdbId = candidate.show.tmdbId,
+                season = episode.season,
+                episode = episode.episode,
+                isNextUp = true,
+                episodeTitle = episode.title,
+                backdropUrl = tmdbImageUrl(episode.stillPath ?: show?.backdropPath, TmdbImageSize.BACKDROP),
+                durationMillis = episode.runtimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L },
+                lastWatchedEpochMillis = candidate.lastWatchedEpochMillis,
+            ) to candidate.lastWatchedEpochMillis
+        }
 }
 
 // MARK: - Critical Consensus

@@ -3,4 +3,258 @@
      anything absent falls back to values/strings.xml. -->
 <resources>
     <string name="detail_favorite">Favourite</string>
+    <string name="settings_section_app_controls">App Controls</string>
+    <string name="settings_app_controls_skip_backward">Skip Back</string>
+    <string name="settings_app_controls_skip_forward">Skip Forward</string>
+    <string name="settings_app_controls_skip_note">Double-tap the left or right side of the video to skip back or forward.</string>
+    <string name="settings_app_controls_hold_left">Hold Left Side</string>
+    <string name="settings_app_controls_hold_right">Hold Right Side</string>
+    <string name="settings_app_controls_hold_note">Touch and hold the left or right side of the video to play at that speed until you let go.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, slower</string>
+    <string name="settings_app_controls_hold_faster">%1$s, faster</string>
+    <string name="settings_seconds_format">%d seconds</string>
+    <string name="player_back_15">Back 15 seconds</string>
+    <string name="player_back_30">Back 30 seconds</string>
+    <string name="player_forward_15">Forward 15 seconds</string>
+    <string name="player_forward_30">Forward 30 seconds</string>
+    <string name="player_skip_intro">Skip Intro</string>
+    <string name="player_skip_recap">Skip Recap</string>
+    <string name="player_skip_credits">Skip Credits</string>
+    <string name="player_skip_prompts">Skip Prompts</string>
+    <string name="player_skip_prompts_detail">Look up intro, recap, and credits timestamps with TheIntroDB</string>
+    <string name="settings_skip_prompts_note">When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.</string>
+    <string name="settings_theintrodb_link">Timestamps by TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB Privacy Policy</string>
+    <string name="player_up_next">Up Next</string>
+    <string name="player_up_next_description">Up Next: %1$s %2$s</string>
+    <string name="player_up_next_hint">Play the next episode now</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">Up Next · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Audio Output</string>
+    <string name="player_audio_output_unavailable">The audio output switcher isn’t available on this device.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Font</string>
+    <string name="settings_subtitles_text_color">Text Colour</string>
+    <string name="settings_subtitles_background_color">Background Colour</string>
+    <string name="settings_subtitles_background_opacity">Background Opacity</string>
+    <string name="settings_subtitles_reset">Reset Subtitle Style</string>
+    <string name="settings_subtitles_appearance_note">Applies to text subtitles. Image-based subtitles keep the look they were authored with.</string>
+    <string name="settings_subtitles_preview">Subtitle preview</string>
+    <string name="settings_subtitles_preview_sample">The archive never forgets a film.\nIt only waits for someone to press play.</string>
+    <string name="settings_subtitles_font_system">System</string>
+    <string name="settings_subtitles_font_rounded">Rounded</string>
+    <string name="settings_subtitles_font_serif">Serif</string>
+    <string name="settings_subtitles_font_monospaced">Monospaced</string>
+    <string name="settings_subtitles_color_parchment">Parchment</string>
+    <string name="settings_subtitles_color_white">White</string>
+    <string name="settings_subtitles_color_yellow">Yellow</string>
+    <string name="settings_subtitles_color_cyan">Cyan</string>
+    <string name="settings_subtitles_color_green">Green</string>
+    <string name="settings_subtitles_color_black">Black</string>
+    <string name="settings_subtitles_color_ink">Ink</string>
+    <string name="settings_subtitles_color_charcoal">Charcoal</string>
+    <string name="settings_subtitles_color_navy">Navy</string>
+    <string name="settings_subtitles_opacity_lower">Decrease background opacity</string>
+    <string name="settings_subtitles_opacity_higher">Increase background opacity</string>
+    <string name="settings_nunito_attribution">The Rounded subtitle font is Nunito by The Nunito Project Authors, under the SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Video Track</string>
+    <string name="player_audio_track">Audio Track</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d ch</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Unable to Play</string>
+    <string name="player_error_could_not_open">This title could not be opened.</string>
+    <string name="player_error_connection_lost">Lost the connection to %1$s.</string>
+    <string name="player_error_connection_lost_detail">Lost the connection to %1$s: %2$s</string>
+    <string name="player_error_could_not_connect">Couldn\'t connect to %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Couldn\'t reach %1$s. Check your connection and try again.</string>
+    <string name="sources_status_needs_sign_in">Sign in to %1$s again to reach this source.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="accounts_empty">No linked accounts or saved logins. Link Source adds them.</string>
+    <string name="accounts_no_sources">No sources on this device</string>
+    <string name="accounts_forget">Forget</string>
+    <string name="accounts_forget_login">Forget Login</string>
+    <string name="accounts_forget_message">Sources on %1$s can\'t connect until you enter the login again.</string>
+    <string name="accounts_note">Logins stay on this device and are never backed up. Removing a source keeps them; remove them here.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d source on this device</item>
+        <item quantity="other">%1$d sources on this device</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Play From</string>
+    <string name="play_from_unavailable">%1$s · Unavailable</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d source</item>
+        <item quantity="other">%1$d sources</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Audio Enhancement</string>
+    <string name="audio_profile">Profile</string>
+    <string name="audio_profile_flat">Flat</string>
+    <string name="audio_profile_movies">Movies</string>
+    <string name="audio_profile_music">Music</string>
+    <string name="audio_profile_dialogue">Dialogue</string>
+    <string name="audio_profile_night_mode">Night Mode</string>
+    <string name="audio_preamp">Preamp</string>
+    <string name="audio_reset_adjustments">Reset Adjustments</string>
+    <string name="audio_booster">Audio Booster</string>
+    <string name="audio_booster_detail">Increase audio gain for quiet recordings</string>
+    <string name="audio_show_equalizer">Show equalizer</string>
+    <string name="audio_hide_equalizer">Hide equalizer</string>
+    <string name="audio_passthrough_note">The equalizer and booster apply to audio Edendale decodes. Surround sound passed through untouched to a receiver or TV plays without them.</string>
+    <string name="audio_step_lower">%1$s, lower</string>
+    <string name="audio_step_higher">%1$s, higher</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Picture</string>
+    <string name="video_brightness">Brightness</string>
+    <string name="video_contrast">Contrast</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Saturation</string>
+    <string name="video_hue">Hue</string>
+    <string name="video_show_original">Show Original</string>
+    <string name="video_enhancement">Enhancement</string>
+    <string name="video_preset">Preset</string>
+    <string name="video_preset_off">Off</string>
+    <string name="video_preset_sharpen_only">Sharpen Only</string>
+    <string name="video_preset_balanced">Balanced</string>
+    <string name="video_preset_high_quality">High Quality</string>
+    <string name="video_sharpness">Sharpness</string>
+    <string name="video_denoise">Denoise</string>
+    <string name="video_not_available_hdr">Not available for HDR video</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Hide Sidebar</string>
+    <string name="navigation_show">Show Sidebar</string>
+    <string name="rescan_library">Rescan Library</string>
+    <string name="shelf_scroll_position">%1$s scroll position</string>
+    <string name="shortcut_play_pause">Play or pause</string>
+    <string name="shortcut_skip_prompt">Skip an intro or credits when offered</string>
+    <string name="shortcut_close_panel_then_player">Close a panel, then the player</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Back %1$d second</item>
+        <item quantity="other">Back %1$d seconds</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Forward %1$d second</item>
+        <item quantity="other">Forward %1$d seconds</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">This file is no longer in %1$s.</string>
+    <string name="player_error_rate_limited">%1$s is limiting requests right now. Try again in a minute.</string>
+    <string name="player_error_server">%1$s returned an error (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s doesn\'t support seeking in this file.</string>
+    <string name="player_error_access_denied">%1$s denied access to this item.</string>
+    <string name="player_error_abusive_file">Google Drive flagged this file as potentially harmful, so it can\'t be streamed.</string>
+    <string name="player_error_untrusted_certificate">%1$s\'s certificate isn\'t trusted, so Edendale won\'t stream from it.</string>
+    <string name="source_kind_s3">S3-Compatible Storage</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Shared folders on a Mac, PC, or NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, or rclone.</string>
+    <string name="connector_unreachable">Can\'t reach %1$s. Check that the server is on, on the same network, and that the name or credentials are correct.</string>
+    <string name="connector_authentication_failed">%1$s didn\'t accept the username and password.</string>
+    <string name="connector_listing_failed">Couldn\'t read the folder %1$s. It may need different credentials or permissions.</string>
+    <string name="connector_invalid_address">That server address doesn\'t look right. Enter a hostname like nas.local or an IP address.</string>
+    <string name="connector_insecure_connection">Plain http:// works only for servers on your own network. Use an https:// address for this server.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">This bucket is in the %1$s region. Change the region and connect again.</string>
+    <string name="connector_bucket_other_region">This bucket is in a different region. Check the region and connect again.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi, or MinIO.</string>
+    <string name="s3_endpoint_label">Endpoint</string>
+    <string name="s3_region_label">Region</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Access Key ID</string>
+    <string name="s3_secret_key_label">Secret Access Key</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s isn\'t set up in this build of Edendale.</string>
+    <string name="oauth_cancelled">Sign-in was cancelled.</string>
+    <string name="oauth_unverified">The sign-in response couldn\'t be verified. Try again.</string>
+    <string name="oauth_denied">Access to %1$s wasn\'t allowed.</string>
+    <string name="oauth_invalid_grant">Your %1$s sign-in has expired or was revoked. Sign in again.</string>
+    <string name="oauth_device_code_expired">The code expired before it was approved. Get a new code and try again.</string>
+    <string name="oauth_server_detail">%1$s couldn\'t complete sign-in (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s couldn\'t complete sign-in (%2$s).</string>
+    <string name="oauth_malformed">%1$s sent a response Edendale couldn\'t read.</string>
+    <string name="accounts_sign_out">Sign Out</string>
+    <string name="accounts_sign_out_revoke">Sign Out and Revoke Access</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Sources from %1$s stop working on this device until you link the account again.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">Personal, work, or school OneDrive.</string>
+    <string name="link_source_dropbox_description">Your Dropbox folders.</string>
+    <string name="link_source_linked_accounts">Linked Accounts</string>
+    <string name="link_source_another_account">Another Account</string>
+    <string name="link_source_sign_in_to">Sign In to %1$s</string>
+    <string name="link_source_waiting">Waiting for %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale asks %1$s for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">On your phone or computer, open %1$s%2$s and enter this code:</string>
+    <string name="device_code_accessibility">Code %1$s</string>
+    <string name="device_code_qr_description">%1$s sign-in QR code</string>
+    <string name="device_code_waiting">Waiting for approval…</string>
+    <string name="device_code_sign_in">Sign In with a Code</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Any server you can reach over SSH.</string>
+    <string name="sftp_port_label">Port</string>
+    <string name="sftp_host_key_note">The first time Edendale connects, it shows the server\'s host key for you to approve.</string>
+    <string name="sftp_verify_title">Verify Host Key</string>
+    <string name="sftp_changed_title">Host Key Changed</string>
+    <string name="sftp_verify_message">Check that this matches the server\'s SSH host key before trusting it.\n\n%1$s</string>
+    <string name="sftp_changed_message">The key %1$s presents isn\'t the one you approved before. Only continue if you know the server was reinstalled or its key was changed.\n\n%2$s</string>
+    <string name="sftp_trust">Trust</string>
+    <string name="sftp_trust_new">Trust New Key</string>
+    <string name="connector_host_key_mismatch">The SSH host key for %1$s has changed. Edendale won\'t connect until you approve the new key by linking the server again.</string>
+    <string name="connector_host_key_unverified">The SSH host key for %1$s hasn\'t been approved yet.</string>
+    <string name="connector_secure_connection_failed">Couldn\'t set up a secure connection with %1$s. Its SSH server offers only older encryption, which Edendale doesn\'t support.</string>
+    <string name="connector_password_login_unavailable">%1$s doesn\'t accept password logins. Allow password authentication in its SSH settings to link it.</string>
+    <string name="connector_sftp_unavailable">%1$s doesn\'t offer SFTP for this account.</string>
+    <string name="link_source_tls_note">Servers on your own network can use http://. The first time Edendale meets a certificate this device doesn\'t trust, it shows the certificate for you to approve.</string>
+    <string name="tls_verify_title">Verify Certificate</string>
+    <string name="tls_changed_title">Certificate Changed</string>
+    <string name="tls_verify_message">This device doesn\'t trust the certificate %1$s presents. Check that it matches the server\'s own certificate before trusting it.
+
+%2$s</string>
+    <string name="tls_changed_message">The certificate %1$s presents isn\'t the one you approved before. Only continue if you know the server\'s certificate was replaced.
+
+%2$s</string>
+    <string name="tls_trust_new">Trust New Certificate</string>
+    <string name="tls_expires">Expires %1$s</string>
+    <string name="connector_certificate_unverified">The certificate for %1$s hasn\'t been approved yet. Link the server again to review it.</string>
+    <string name="connector_certificate_mismatch">The certificate for %1$s has changed. Edendale won\'t connect until you approve the new one by linking the server again.</string>
+    <string name="link_source_gdrive_description">My Drive, folders shared with you, and shared drives.</string>
+    <string name="gdrive_my_drive">My Drive</string>
+    <string name="gdrive_shared_with_me">Shared with me</string>
+    <string name="gdrive_shared_drives">Shared drives</string>
+    <string name="handoff_continue_on_phone">Continue on a Phone</string>
+    <string name="handoff_tv_instructions">On your phone, open Edendale, go to Settings → Accounts → Link to a TV, choose %1$s, and enter this code:</string>
+    <string name="handoff_tv_waiting">Waiting for your phone…</string>
+    <string name="handoff_tv_connected">Your phone is choosing what to send…</string>
+    <string name="handoff_tv_validating">Checking what your phone sent…</string>
+    <string name="handoff_link_to_tv">Link to a TV</string>
+    <string name="handoff_link_to_tv_note">Send a linked account or saved login to an Android TV running Edendale on this network. The TV asks for it from Link Source.</string>
+    <string name="handoff_searching">Looking for TVs on this network…</string>
+    <string name="handoff_no_tvs">No TV found yet. On the TV, open Link Source, pick a provider, and choose Continue on a Phone.</string>
+    <string name="handoff_discovery_failed">Edendale can\'t search this network for TVs. Make sure Wi-Fi is on.</string>
+    <string name="handoff_code_label">Code shown on %1$s</string>
+    <string name="handoff_connecting">Connecting to %1$s…</string>
+    <string name="handoff_request_title">Link %1$s on %2$s?</string>
+    <string name="handoff_request_message">Edendale sends the login straight to the TV over this network, encrypted with the code you entered. Nothing passes through a server, and the TV keeps it in its own storage.</string>
+    <string name="handoff_saved_logins">Saved Logins</string>
+    <string name="handoff_no_saved_logins">No %1$s login is saved on this device. Link one in Link Source first.</string>
+    <string name="handoff_decline">Decline</string>
+    <string name="handoff_sending">Sending to %1$s…</string>
+    <string name="handoff_done">Linked on %1$s. Continue on the TV.</string>
+    <string name="handoff_declined">The request was declined on the other device.</string>
+    <string name="handoff_wrong_code">That code didn\'t match. Check the code on the TV and try again.</string>
+    <string name="handoff_connection_failed">Couldn\'t connect to the other device. Make sure both are on the same network and the TV still shows the code.</string>
+    <string name="handoff_timed_out">The other device didn\'t answer in time.</string>
+    <string name="handoff_unsupported_version">Update Edendale on both devices, then try again.</string>
+    <string name="handoff_malformed">The other device sent something Edendale couldn\'t use. Try again.</string>
+    <string name="handoff_rejected">The TV couldn\'t use what was sent: %1$s</string>
+    <string name="handoff_rejected_plain">The TV couldn\'t use what was sent.</string>
+    <string name="handoff_tv_address">If your phone doesn\'t find this TV, enter its address instead: %1$s</string>
+    <string name="handoff_address_label">Or enter the address shown on the TV</string>
 </resources>

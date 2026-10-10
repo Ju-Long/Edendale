@@ -131,9 +131,9 @@
     <string name="remove_folder">Remover %1$s</string>
     <string name="remove_source_title">Remover Fonte</string>
     <string name="remove_source_confirm_title">Remover %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” é removido da sua biblioteca e o login salvo para %2$s é esquecido, a menos que outra fonte ainda use esse servidor. Nada no servidor é apagado.</string>
+    <string name="remove_source_message_smb">“%1$s” é removido da sua biblioteca. Nada no servidor é apagado, e o login salvo para %2$s continua em Ajustes → Contas.</string>
     <string name="remove_source_message_local">“%1$s” é removido da sua biblioteca. Nada no seu dispositivo é apagado.</string>
-    <string name="remove_source_message_generic">O Edendale esquece esta fonte e tudo o que foi indexado dela, e qualquer login salvo para o host quando nenhuma outra fonte precisar. Nada é apagado do seu dispositivo ou do compartilhamento.</string>
+    <string name="remove_source_message_generic">O Edendale esquece esta fonte e tudo o que foi indexado a partir dela. Nada é apagado do seu dispositivo nem do compartilhamento, e qualquer login salvo permanece em Ajustes → Contas.</string>
     <string name="mark_watched">Marcar como assistido</string>
     <string name="mark_unwatched">Marcar como não assistido</string>
     <string name="watched">Assistido</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Adicione um token ao secrets.json e recompile</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Tipografia grande, margens seguras contra overscan, elevação de foco pelo controle remoto e apresentação em modo paisagem estão ativos.</string>
+    <string name="settings_watch_next_title">Continuar assistindo na tela inicial</string>
+    <string name="settings_watch_next_description">Mostra o que você está assistindo na fileira “Continuar assistindo” da tela inicial. O Edendale não envia nada pela rede para isso, mas o app da tela inicial pode ver esses títulos.</string>
     <string name="settings_section_sources">Origens</string>
     <string name="settings_no_sources">Nenhuma fonte vinculada</string>
     <string name="settings_section_backup">Backup</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">Nenhuma faixa de legenda neste arquivo.</string>
     <string name="player_track_number">Faixa %1$d</string>
     <string name="player_playback">Reprodução</string>
+    <string name="player_skip_intro">Pular introdução</string>
     <string name="player_skip_recap">Pular resumo</string>
-    <string name="player_skip_recap_detail">Pular os primeiros 90 segundos</string>
     <string name="player_skip_credits">Pular créditos</string>
-    <string name="player_skip_credits_detail">Encerrar a reprodução quando restarem 3 minutos</string>
+    <string name="player_skip_prompts">Avisos para pular</string>
+    <string name="player_skip_prompts_detail">Buscar marcadores de introdução, resumo e créditos no TheIntroDB</string>
+    <string name="settings_skip_prompts_note">Quando ativado, o TheIntroDB recebe o ID do TMDB do título, números de episódios, duração do vídeo e seu endereço IP. Pular sempre requer pressionar um botão.</string>
+    <string name="settings_theintrodb_link">Marcadores por TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Política de Privacidade do TheIntroDB</string>
     <string name="player_loop">Repetir Vídeo</string>
     <string name="player_loop_detail">Reiniciar a reprodução ao terminar</string>
     <string name="player_auto_pip">Picture in Picture automático</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">Pasta</string>
     <string name="default_video_name">Vídeo</string>
     <string name="error_not_share_address">\"%1$s\" não é um endereço de compartilhamento. Tente 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: parte desta fonte não pôde ser lida, então nada foi removido da biblioteca.</string>
     <string name="error_permission_revoked">o acesso a esta pasta foi revogado — adicione-a novamente</string>
     <string name="error_folder_unopenable">a pasta não pôde ser aberta</string>
     <string name="error_share_unreachable">o compartilhamento está inacessível ou as credenciais foram rejeitadas</string>
     <string name="error_address_is_file">esse endereço é um arquivo, não um compartilhamento</string>
-    <string name="error_scan_failed">a análise falhou</string>
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d itens</item>
@@ -279,4 +283,252 @@
         <item quantity="one">Mais %1$d correspondência.</item>
         <item quantity="other">Mais %1$d correspondências.</item>
     </plurals>
+    <string name="settings_section_app_controls">Controles do aplicativo</string>
+    <string name="settings_app_controls_skip_backward">Retroceder</string>
+    <string name="settings_app_controls_skip_forward">Avançar</string>
+    <string name="settings_app_controls_skip_note">Toque duas vezes no lado esquerdo ou direito do vídeo para retroceder ou avançar.</string>
+    <string name="settings_app_controls_hold_left">Segurar lado esquerdo</string>
+    <string name="settings_app_controls_hold_right">Segurar lado direito</string>
+    <string name="settings_app_controls_hold_note">Toque e segure o lado esquerdo ou direito do vídeo para reproduzir nessa velocidade até soltar.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, mais lento</string>
+    <string name="settings_app_controls_hold_faster">%1$s, mais rápido</string>
+    <string name="settings_seconds_format">%d segundos</string>
+    <string name="player_back_15">Voltar 15 segundos</string>
+    <string name="player_back_30">Voltar 30 segundos</string>
+    <string name="player_forward_15">Avançar 15 segundos</string>
+    <string name="player_forward_30">Avançar 30 segundos</string>
+    <string name="player_up_next">A seguir</string>
+    <string name="player_up_next_description">A seguir: %1$s %2$s</string>
+    <string name="player_up_next_hint">Reproduzir o próximo episódio agora</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">A seguir · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Saída de Áudio</string>
+    <string name="player_audio_output_unavailable">O seletor de saída de áudio não está disponível neste dispositivo.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Fonte</string>
+    <string name="settings_subtitles_text_color">Cor do Texto</string>
+    <string name="settings_subtitles_background_color">Cor do Fundo</string>
+    <string name="settings_subtitles_background_opacity">Opacidade do Fundo</string>
+    <string name="settings_subtitles_reset">Redefinir Estilo das Legendas</string>
+    <string name="settings_subtitles_appearance_note">Aplica-se às legendas de texto. Legendas baseadas em imagem mantêm a aparência original.</string>
+    <string name="settings_subtitles_preview">Pré-visualização da legenda</string>
+    <string name="settings_subtitles_preview_sample">O arquivo nunca esquece um filme.\nEle só espera alguém apertar o play.</string>
+    <string name="settings_subtitles_font_system">Sistema</string>
+    <string name="settings_subtitles_font_rounded">Arredondada</string>
+    <string name="settings_subtitles_font_serif">Serifada</string>
+    <string name="settings_subtitles_font_monospaced">Monoespaçada</string>
+    <string name="settings_subtitles_color_parchment">Pergaminho</string>
+    <string name="settings_subtitles_color_white">Branco</string>
+    <string name="settings_subtitles_color_yellow">Amarelo</string>
+    <string name="settings_subtitles_color_cyan">Ciano</string>
+    <string name="settings_subtitles_color_green">Verde</string>
+    <string name="settings_subtitles_color_black">Preto</string>
+    <string name="settings_subtitles_color_ink">Tinta</string>
+    <string name="settings_subtitles_color_charcoal">Carvão</string>
+    <string name="settings_subtitles_color_navy">Azul-marinho</string>
+    <string name="settings_subtitles_opacity_lower">Diminuir a opacidade do fundo</string>
+    <string name="settings_subtitles_opacity_higher">Aumentar a opacidade do fundo</string>
+    <string name="settings_nunito_attribution">A fonte arredondada das legendas é Nunito, de The Nunito Project Authors, sob a SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Faixa de Vídeo</string>
+    <string name="player_audio_track">Faixa de Áudio</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Estéreo</string>
+    <string name="player_audio_channels">%d can.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Não foi possível reproduzir</string>
+    <string name="player_error_could_not_open">Não foi possível abrir este título.</string>
+    <string name="player_error_connection_lost">Conexão com %1$s perdida.</string>
+    <string name="player_error_connection_lost_detail">Conexão com %1$s perdida: %2$s</string>
+    <string name="player_error_could_not_connect">Não foi possível conectar a %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Não foi possível acessar %1$s. Verifique sua conexão e tente novamente.</string>
+    <string name="sources_status_needs_sign_in">Inicie a sessão em %1$s novamente para acessar esta origem.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Contas</string>
+    <string name="accounts_empty">Nenhuma conta vinculada ou login salvo. Adicione-os com “Vincular Origem”.</string>
+    <string name="accounts_no_sources">Nenhuma origem neste dispositivo</string>
+    <string name="accounts_forget">Esquecer</string>
+    <string name="accounts_forget_login">Esquecer Login</string>
+    <string name="accounts_forget_message">As origens em %1$s não conseguem se conectar até você digitar o login novamente.</string>
+    <string name="accounts_note">Os logins ficam neste dispositivo e nunca entram em backups. Ao remover uma fonte, eles são mantidos; remova-os aqui.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d origem neste dispositivo</item>
+        <item quantity="other">%1$d origens neste dispositivo</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Reproduzir de</string>
+    <string name="play_from_unavailable">%1$s · Indisponível</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d origens</item>
+        <item quantity="other">%1$d origens</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Aprimoramento de Áudio</string>
+    <string name="audio_profile">Perfil</string>
+    <string name="audio_profile_flat">Neutro</string>
+    <string name="audio_profile_movies">Filmes</string>
+    <string name="audio_profile_music">Música</string>
+    <string name="audio_profile_dialogue">Diálogos</string>
+    <string name="audio_profile_night_mode">Modo Noturno</string>
+    <string name="audio_preamp">Pré-amplificador</string>
+    <string name="audio_reset_adjustments">Redefinir Ajustes</string>
+    <string name="audio_booster">Amplificador de Áudio</string>
+    <string name="audio_booster_detail">Aumentar o ganho de áudio em gravações baixas</string>
+    <string name="audio_show_equalizer">Mostrar equalizador</string>
+    <string name="audio_hide_equalizer">Ocultar equalizador</string>
+    <string name="audio_passthrough_note">O equalizador e o amplificador se aplicam ao áudio que o Edendale decodifica. O som surround enviado sem alterações a um receiver ou TV é reproduzido sem eles.</string>
+    <string name="audio_step_lower">%1$s, diminuir</string>
+    <string name="audio_step_higher">%1$s, aumentar</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Imagem</string>
+    <string name="video_brightness">Brilho</string>
+    <string name="video_contrast">Contraste</string>
+    <string name="video_gamma">Gama</string>
+    <string name="video_saturation">Saturação</string>
+    <string name="video_hue">Matiz</string>
+    <string name="video_show_original">Mostrar Original</string>
+    <string name="video_enhancement">Aprimoramento</string>
+    <string name="video_preset">Predefinição</string>
+    <string name="video_preset_off">Desativado</string>
+    <string name="video_preset_sharpen_only">Somente Nitidez</string>
+    <string name="video_preset_balanced">Equilibrado</string>
+    <string name="video_preset_high_quality">Alta Qualidade</string>
+    <string name="video_sharpness">Nitidez</string>
+    <string name="video_denoise">Redução de Ruído</string>
+    <string name="video_not_available_hdr">Indisponível para vídeo HDR</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Ocultar Barra Lateral</string>
+    <string name="navigation_show">Mostrar Barra Lateral</string>
+    <string name="rescan_library">Reescanear Biblioteca</string>
+    <string name="shelf_scroll_position">Posição de rolagem de %1$s</string>
+    <string name="shortcut_play_pause">Reproduzir ou pausar</string>
+    <string name="shortcut_skip_prompt">Pular a abertura ou os créditos quando oferecido</string>
+    <string name="shortcut_close_panel_then_player">Fechar um painel e depois o reprodutor</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Voltar %1$d segundo</item>
+        <item quantity="many">Voltar %1$d segundos</item>
+        <item quantity="other">Voltar %1$d segundos</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Avançar %1$d segundo</item>
+        <item quantity="many">Avançar %1$d segundos</item>
+        <item quantity="other">Avançar %1$d segundos</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Este arquivo não está mais em %1$s.</string>
+    <string name="player_error_rate_limited">%1$s está limitando as solicitações agora. Tente novamente em um minuto.</string>
+    <string name="player_error_server">%1$s retornou um erro (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s não permite avançar ou voltar neste arquivo.</string>
+    <string name="player_error_access_denied">%1$s negou o acesso a este item.</string>
+    <string name="player_error_abusive_file">O Google Drive marcou este arquivo como potencialmente nocivo, então ele não pode ser transmitido.</string>
+    <string name="player_error_untrusted_certificate">O certificado de %1$s não é confiável, então o Edendale não fará streaming a partir dele.</string>
+    <string name="source_kind_s3">Armazenamento Compatível com S3</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Pastas compartilhadas em um Mac, PC ou NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr ou rclone.</string>
+    <string name="connector_unreachable">Não é possível alcançar %1$s. Verifique se o servidor está ligado, na mesma rede, e se o nome ou as credenciais estão corretos.</string>
+    <string name="connector_authentication_failed">%1$s não aceitou o nome de usuário e a senha.</string>
+    <string name="connector_listing_failed">Não foi possível ler a pasta %1$s. Ela pode precisar de credenciais ou permissões diferentes.</string>
+    <string name="connector_invalid_address">Esse endereço de servidor não parece correto. Insira um nome de host como nas.local ou um endereço IP.</string>
+    <string name="connector_insecure_connection">http:// sem criptografia funciona apenas com servidores na sua própria rede. Use um endereço https:// para este servidor.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Este bucket está na região %1$s. Altere a região e conecte novamente.</string>
+    <string name="connector_bucket_other_region">Este bucket está em outra região. Verifique a região e conecte novamente.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi ou MinIO.</string>
+    <string name="s3_endpoint_label">Endpoint</string>
+    <string name="s3_region_label">Região</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">ID da Chave de Acesso</string>
+    <string name="s3_secret_key_label">Chave de Acesso Secreta</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s não está configurado nesta versão do Edendale.</string>
+    <string name="oauth_cancelled">O início de sessão foi cancelado.</string>
+    <string name="oauth_unverified">Não foi possível verificar a resposta do início de sessão. Tente novamente.</string>
+    <string name="oauth_denied">O acesso a %1$s não foi permitido.</string>
+    <string name="oauth_invalid_grant">Sua sessão em %1$s expirou ou foi revogada. Inicie a sessão novamente.</string>
+    <string name="oauth_device_code_expired">O código expirou antes de ser aprovado. Obtenha um novo código e tente novamente.</string>
+    <string name="oauth_server_detail">%1$s não conseguiu concluir o início de sessão (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s não conseguiu concluir o início de sessão (%2$s).</string>
+    <string name="oauth_malformed">%1$s enviou uma resposta que o Edendale não conseguiu ler.</string>
+    <string name="accounts_sign_out">Finalizar sessão</string>
+    <string name="accounts_sign_out_revoke">Finalizar Sessão e Revogar Acesso</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">As origens de %1$s param de funcionar neste dispositivo até você vincular a conta novamente.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">OneDrive pessoal, de trabalho ou escolar.</string>
+    <string name="link_source_dropbox_description">Suas pastas do Dropbox.</string>
+    <string name="link_source_linked_accounts">Contas Vinculadas</string>
+    <string name="link_source_another_account">Outra Conta</string>
+    <string name="link_source_sign_in_to">Iniciar Sessão em %1$s</string>
+    <string name="link_source_waiting">Aguardando %1$s…</string>
+    <string name="link_source_cloud_privacy">O Edendale pede a %1$s acesso somente leitura. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">No seu celular ou computador, abra %1$s%2$s e digite este código:</string>
+    <string name="device_code_accessibility">Código %1$s</string>
+    <string name="device_code_qr_description">Código QR para iniciar sessão em %1$s</string>
+    <string name="device_code_waiting">Aguardando aprovação…</string>
+    <string name="device_code_sign_in">Iniciar Sessão com um Código</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Qualquer servidor que você acesse via SSH.</string>
+    <string name="sftp_port_label">Porta</string>
+    <string name="sftp_host_key_note">Na primeira conexão, o Edendale mostra a chave de host do servidor para você aprovar.</string>
+    <string name="sftp_verify_title">Verificar Chave de Host</string>
+    <string name="sftp_changed_title">Chave de Host Alterada</string>
+    <string name="sftp_verify_message">Verifique se corresponde à chave de host SSH do servidor antes de confiar nele.\n\n%1$s</string>
+    <string name="sftp_changed_message">A chave apresentada por %1$s não é a que você aprovou antes. Só continue se souber que o servidor foi reinstalado ou que a chave dele foi alterada.\n\n%2$s</string>
+    <string name="sftp_trust">Confiar</string>
+    <string name="sftp_trust_new">Confiar na Nova Chave</string>
+    <string name="connector_host_key_mismatch">A chave de host SSH de %1$s mudou. O Edendale não se conectará até você aprovar a nova chave vinculando o servidor novamente.</string>
+    <string name="connector_host_key_unverified">A chave de host SSH de %1$s ainda não foi aprovada.</string>
+    <string name="connector_secure_connection_failed">Não foi possível estabelecer uma conexão segura com %1$s. O servidor SSH oferece apenas criptografia antiga, que o Edendale não suporta.</string>
+    <string name="connector_password_login_unavailable">%1$s não aceita login com senha. Permita a autenticação por senha nos ajustes SSH dele para vinculá-lo.</string>
+    <string name="connector_sftp_unavailable">%1$s não oferece SFTP para esta conta.</string>
+    <string name="link_source_tls_note">Servidores na sua própria rede podem usar http://. Na primeira vez que o Edendale encontra um certificado em que este dispositivo não confia, ele mostra o certificado para você aprovar.</string>
+    <string name="tls_verify_title">Verificar certificado</string>
+    <string name="tls_changed_title">Certificado alterado</string>
+    <string name="tls_verify_message">Este dispositivo não confia no certificado que %1$s apresenta. Verifique se ele corresponde ao certificado do próprio servidor antes de confiar nele.
+
+%2$s</string>
+    <string name="tls_changed_message">O certificado que %1$s apresenta não é o que você aprovou antes. Continue apenas se souber que o certificado do servidor foi substituído.
+
+%2$s</string>
+    <string name="tls_trust_new">Confiar no novo certificado</string>
+    <string name="tls_expires">Expira em %1$s</string>
+    <string name="connector_certificate_unverified">O certificado de %1$s ainda não foi aprovado. Vincule o servidor novamente para revisá-lo.</string>
+    <string name="connector_certificate_mismatch">O certificado de %1$s mudou. O Edendale não se conectará até que você aprove o novo vinculando o servidor novamente.</string>
+    <string name="link_source_gdrive_description">Meu Drive, pastas compartilhadas com você e drives compartilhados.</string>
+    <string name="gdrive_my_drive">Meu Drive</string>
+    <string name="gdrive_shared_with_me">Compartilhados comigo</string>
+    <string name="gdrive_shared_drives">Drives compartilhados</string>
+    <string name="handoff_continue_on_phone">Continuar em um celular</string>
+    <string name="handoff_tv_instructions">No seu celular, abra o Edendale, vá em Configurações → Contas → Vincular a uma TV, escolha %1$s e digite este código:</string>
+    <string name="handoff_tv_waiting">Aguardando seu celular…</string>
+    <string name="handoff_tv_connected">Seu celular está escolhendo o que enviar…</string>
+    <string name="handoff_tv_validating">Verificando o que seu celular enviou…</string>
+    <string name="handoff_link_to_tv">Vincular a uma TV</string>
+    <string name="handoff_link_to_tv_note">Envie uma conta vinculada ou um login salvo para uma Android TV com o Edendale nesta rede. A TV pede por ele em Vincular fonte.</string>
+    <string name="handoff_searching">Procurando TVs nesta rede…</string>
+    <string name="handoff_no_tvs">Nenhuma TV encontrada ainda. Na TV, abra Vincular fonte, escolha um provedor e selecione Continuar em um celular.</string>
+    <string name="handoff_discovery_failed">O Edendale não consegue procurar TVs nesta rede. Verifique se o Wi-Fi está ativado.</string>
+    <string name="handoff_code_label">Código exibido em %1$s</string>
+    <string name="handoff_connecting">Conectando a %1$s…</string>
+    <string name="handoff_request_title">Vincular %1$s em %2$s?</string>
+    <string name="handoff_request_message">O Edendale envia o login diretamente para a TV por esta rede, criptografado com o código que você digitou. Nada passa por um servidor, e a TV o guarda no próprio armazenamento.</string>
+    <string name="handoff_saved_logins">Logins salvos</string>
+    <string name="handoff_no_saved_logins">Nenhum login de %1$s está salvo neste dispositivo. Vincule um primeiro em Vincular fonte.</string>
+    <string name="handoff_decline">Recusar</string>
+    <string name="handoff_sending">Enviando para %1$s…</string>
+    <string name="handoff_done">Vinculado em %1$s. Continue na TV.</string>
+    <string name="handoff_declined">A solicitação foi recusada no outro dispositivo.</string>
+    <string name="handoff_wrong_code">Esse código não confere. Verifique o código na TV e tente novamente.</string>
+    <string name="handoff_connection_failed">Não foi possível conectar ao outro dispositivo. Verifique se os dois estão na mesma rede e se a TV ainda mostra o código.</string>
+    <string name="handoff_timed_out">O outro dispositivo não respondeu a tempo.</string>
+    <string name="handoff_unsupported_version">Atualize o Edendale nos dois dispositivos e tente novamente.</string>
+    <string name="handoff_malformed">O outro dispositivo enviou algo que o Edendale não pôde usar. Tente novamente.</string>
+    <string name="handoff_rejected">A TV não pôde usar o que foi enviado: %1$s</string>
+    <string name="handoff_rejected_plain">A TV não pôde usar o que foi enviado.</string>
+    <string name="handoff_tv_address">Se o seu celular não encontrar esta TV, digite o endereço dela: %1$s</string>
+    <string name="handoff_address_label">Ou digite o endereço exibido na TV</string>
 </resources>

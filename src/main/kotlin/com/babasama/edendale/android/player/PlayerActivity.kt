@@ -13,10 +13,14 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Rational
 import android.view.KeyEvent
+import android.view.KeyboardShortcutGroup
+import android.view.Menu
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,6 +34,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
@@ -42,12 +47,21 @@ import com.babasama.edendale.cacheWyzieSubtitle
 import com.babasama.edendale.android.AppStrings
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleTheme
+import com.babasama.edendale.android.KeyboardShortcuts
+import com.babasama.edendale.android.PlayerKeyCommand
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.isTelevisionDevice
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
+import com.babasama.edendale.introdb.IntroDbMedia
+import com.babasama.edendale.introdb.PlaybackSegment
+import com.babasama.edendale.introdb.PlayerSegmentController
+import com.babasama.edendale.introdb.SkipAction
+import com.babasama.edendale.android.player.video.EnhancementCapability
+import com.babasama.edendale.android.player.video.PixelSize
+import com.babasama.edendale.android.player.video.VideoEffectsController
 import com.babasama.edendale.wyzie.WyzieException
 import com.babasama.edendale.wyzie.WyzieSubtitle
 import com.babasama.edendale.wyzie.WyzieSubtitleQuery
@@ -59,6 +73,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 /**
  * Full-screen in-app player. Resumes from stored watch progress, writes
@@ -76,18 +91,28 @@ import kotlinx.coroutines.withContext
 class PlayerActivity : ComponentActivity() {
 
     private var player: ExoPlayer? = null
+    private var mediaSession: PlayerMediaSession? = null
+
+    /** Audio Enhancement's equalizer and booster, in every audio sink this player builds (E.1). */
+    private val equalizer = EqAudioProcessor()
+
+    /** Picture and Enhancement (F): the effects pipeline, installed only when needed. */
+    private lateinit var videoEffects: VideoEffectsController
+    private var effectsTick = 0
     private var dataStore: LocalDataStore? = null
     private var progressKey: ProgressKey? = null
     private var resumeFraction: Double? = null
     private var resumeApplied = false
     private var completedWritten = false
 
-    /** One-shot auto-skip latches, reset on every item switch. */
-    private var recapPending = false
-    private var creditsHandled = false
-
     private var isTelevision = false
     private lateinit var chrome: PlayerChromeState
+    private lateinit var contentPreferencesStore: ContentPlayerPreferencesStore
+    private var currentTmdbId: Int? = null
+    private var currentIsEpisode: Boolean = false
+    private var currentShowTmdbId: Int? = null
+    private var hasRestoredContentPreferences = false
+    private var isRestoringContentPreferences = false
     private lateinit var onlineSubtitles: OnlineSubtitlesState
     private lateinit var wyzieKeyStore: WyzieKeyStore
     private lateinit var wyzieService: WyzieSubtitleService
@@ -103,6 +128,19 @@ class PlayerActivity : ComponentActivity() {
     private val tracksState = mutableStateOf(Tracks.EMPTY)
     private val wyzieConfiguredState = mutableStateOf(false)
     private val wyzieLookupState = mutableStateOf<WyzieLookup?>(null)
+    private val activeSegmentState = mutableStateOf<PlaybackSegment?>(null)
+    private val upcomingEpisodeState = mutableStateOf<PlaylistEntry?>(null)
+    private val playbackFailureState = mutableStateOf<PlaybackFailure?>(null)
+
+    private val transitions = PlaybackTransitions()
+
+    private val segmentController by lazy {
+        PlayerSegmentController(
+            preferences = chrome.preferences,
+            onActiveSegmentChanged = { activeSegmentState.value = it },
+            lookup = { request -> AndroidEdendaleCore.introDbService().segments(request) },
+        )
+    }
 
     private data class AttachedSubtitle(
         val subtitle: WyzieSubtitle,
@@ -113,6 +151,12 @@ class PlayerActivity : ComponentActivity() {
     /** Sideloaded tracks survive switches within this player session only. */
     private val attachedSubtitles = mutableMapOf<String, MutableList<AttachedSubtitle>>()
     private var pendingSubtitleSelection: AttachedSubtitle? = null
+
+    private var prefsSubscription: AutoCloseable? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var mediaKeyHoldRunnable: Runnable? = null
+    private var mediaKeyHoldActive = false
+    private var activeHoldKeyCode: Int? = null
 
     /** Absent on handhelds where the OEM dropped PiP; present on TV from API 34. */
     private val supportsPip: Boolean by lazy {
@@ -128,10 +172,10 @@ class PlayerActivity : ComponentActivity() {
                 PIP_CONTROL_PLAY -> exoPlayer.play()
                 PIP_CONTROL_PAUSE -> exoPlayer.pause()
                 PIP_CONTROL_REWIND ->
-                    exoPlayer.seekTo((exoPlayer.currentPosition - 10_000).coerceAtLeast(0))
+                    exoPlayer.seekTo((exoPlayer.currentPosition - chrome.skipBackwardInterval.millis).coerceAtLeast(0))
                 PIP_CONTROL_FORWARD -> {
                     val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 }
-                    val target = exoPlayer.currentPosition + 10_000
+                    val target = exoPlayer.currentPosition + chrome.skipForwardInterval.millis
                     exoPlayer.seekTo(duration?.let { target.coerceAtMost(it) } ?: target)
                 }
             }
@@ -162,7 +206,19 @@ class PlayerActivity : ComponentActivity() {
 
         isTelevision = isTelevisionDevice()
         val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
+        val contentPreferences = getSharedPreferences(ContentPlayerPreferencesRules.PREFS_NAME, MODE_PRIVATE)
+        contentPreferencesStore = SharedPreferencesContentStore(contentPreferences)
         chrome = PlayerChromeState(playerPreferences)
+        chrome.onSpeedChanged = {
+            saveContentPreferences()
+        }
+        equalizer.update(chrome.preferences.audioEnhancement)
+        prefsSubscription = chrome.preferences.addChangeListener {
+            updatePipParams()
+            refreshMediaSession()
+            // Settings and the panel's booster apply live, from the next buffer.
+            equalizer.update(chrome.preferences.audioEnhancement)
+        }
         onlineSubtitles = OnlineSubtitlesState(playerPreferences)
         wyzieKeyStore = WyzieKeyStore(this)
         wyzieService = AndroidEdendaleCore.wyzieService()
@@ -186,12 +242,20 @@ class PlayerActivity : ComponentActivity() {
         val showTmdbId = intent.getIntExtra(EXTRA_SHOW_TMDB_ID, -1).takeIf { it > 0 }
         val season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 }
         val episode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
+        currentTmdbId = tmdbId
+        currentIsEpisode = isEpisode
+        currentShowTmdbId = showTmdbId
+        hasRestoredContentPreferences = false
         wyzieLookupState.value = subtitleLookup(
             tmdbId = tmdbId,
             isEpisode = isEpisode,
             showTmdbId = showTmdbId,
             season = season,
             episode = episode,
+        )
+        segmentController.begin(
+            itemId = uri.toString(),
+            media = introDbMedia(tmdbId, isEpisode, showTmdbId, season, episode),
         )
         if (tmdbId != null) {
             progressKey = ProgressKey(
@@ -208,17 +272,17 @@ class PlayerActivity : ComponentActivity() {
         }
         val app = application as EdendaleApplication
         dataStore = LocalDataStore(app.database)
-        recapPending = chrome.skipRecap
 
         // One factory for the whole session, resolved per request: the item
         // playing can change mid-session via the playlist panel, so the
         // scheme must not be captured once at onCreate. DefaultDataSource
-        // routes any scheme it doesn't recognise (smb) to the base source.
+        // routes any scheme it doesn't recognise (smb and the storage
+        // providers' schemes, H.2) to the base source.
         val mediaSourceFactory = DefaultMediaSourceFactory(
-            DataSource.Factory { DefaultDataSource(this, SmbDataSource(this)) },
+            DataSource.Factory { DefaultDataSource(this, EdendaleDataSource(this)) },
         )
 
-        val exoPlayer = ExoPlayer.Builder(this)
+        val exoPlayer = ExoPlayer.Builder(this, EdendaleRenderersFactory(this, equalizer))
             .setMediaSourceFactory(mediaSourceFactory)
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -234,12 +298,12 @@ class PlayerActivity : ComponentActivity() {
             .setHandleAudioBecomingNoisy(true)
             .build()
         player = exoPlayer
+        exoPlayer.repeatMode = if (chrome.loopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) applyPendingResume()
                 if (playbackState == Player.STATE_ENDED) {
-                    writeProgress(completed = true)
-                    finish()
+                    handlePlaybackEnded()
                 }
             }
 
@@ -248,16 +312,49 @@ class PlayerActivity : ComponentActivity() {
             // whenever what they describe changes.
             override fun onIsPlayingChanged(isPlaying: Boolean) = updatePipParams()
 
+            override fun onPlayerError(error: PlaybackException) {
+                playbackFailureState.value = PlaybackFailure.of(error)
+            }
+
             override fun onVideoSizeChanged(videoSize: VideoSize) = updatePipParams()
 
+            // A new item first reports empty tracks, before it's prepared.
+            // Restoring against those would match nothing and use up the
+            // item's only restore, so wait for the report that lists them.
             override fun onTracksChanged(tracks: Tracks) {
                 tracksState.value = tracks
+                videoEffects.onTracksChanged(tracks)
+                updatePipParams()
+                if (!hasRestoredContentPreferences && !tracks.isEmpty) {
+                    hasRestoredContentPreferences = true
+                    restoreContentPreferences(exoPlayer, tracks)
+                }
                 selectPendingOnlineSubtitle(exoPlayer, tracks)
             }
         })
 
+        videoEffects = VideoEffectsController(
+            context = this,
+            isTelevision = isTelevision,
+            reprepare = ::reprepareAtCurrentPosition,
+            saveAdjustments = { chrome.preferences.videoAdjustments = it },
+        )
+        videoEffects.attach(exoPlayer, chrome.preferences.videoAdjustments)
+        updateVideoDisplaySize()
+        // Once per app version, off the main thread: can this device run enhancement in budget (F.6.3)?
+        writeScope.launch { EnhancementCapability.evaluateIfNeeded(applicationContext) }
+
+        mediaSession = PlayerMediaSession(
+            context = this,
+            player = exoPlayer,
+            onSeekBy = { offset -> player?.let { seekBy(it, chrome, offset) } },
+            onNeighbor = ::switchToNeighbor,
+        )
+        refreshMediaSession()
+
         refreshWyzieConfigured()
 
+        transitions.present()
         lifecycleScopedStart(exoPlayer, uri)
         loadPlaylist(uri.toString(), showTmdbId)
 
@@ -275,6 +372,10 @@ class PlayerActivity : ComponentActivity() {
                     onlineSubtitles = onlineSubtitles,
                     wyzieConfigured = wyzieConfiguredState,
                     wyzieLookup = wyzieLookupState,
+                    activeSegment = activeSegmentState,
+                    upcomingEpisode = upcomingEpisodeState,
+                    playbackFailure = playbackFailureState,
+                    video = videoEffects,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
@@ -282,6 +383,8 @@ class PlayerActivity : ComponentActivity() {
                     onSelectEntry = ::switchTo,
                     onSearchOnlineSubtitles = ::searchOnlineSubtitles,
                     onDownloadOnlineSubtitle = ::downloadOnlineSubtitle,
+                    onSkip = { performSkip() },
+                    onTrackSelected = { saveContentPreferences() },
                     onClose = { finish() },
                 )
             }
@@ -298,6 +401,8 @@ class PlayerActivity : ComponentActivity() {
                 ?.takeIf { it in 0.02..0.94 }
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
+                playbackFailureState.value = null
+                videoEffects.beforePrepare()
                 exoPlayer.setMediaItem(mediaItem(uri))
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
@@ -313,15 +418,7 @@ class PlayerActivity : ComponentActivity() {
         val duration = exoPlayer.duration
         if (duration != C.TIME_UNSET && duration > 0) {
             resumeApplied = true
-            // A resume replaces the recap skip; resuming straight into the
-            // credits window must not trip auto-skip and bounce right out.
-            recapPending = false
             val target = (duration * fraction).toLong()
-            if (chrome.skipCredits) {
-                PlayerLogic.creditsStartMillis(duration)?.let { creditsStart ->
-                    if (target >= creditsStart) creditsHandled = true
-                }
-            }
             exoPlayer.seekTo(target)
         }
     }
@@ -336,7 +433,6 @@ class PlayerActivity : ComponentActivity() {
             val playlist = runCatching {
                 loadPlayerPlaylist(
                     dao = app.database.libraryDao(),
-                    repository = app.libraryRepository,
                     uriString = uriString,
                     showTmdbIdExtra = showTmdbId,
                 )
@@ -348,6 +444,7 @@ class PlayerActivity : ComponentActivity() {
                 // subtitle line once the library row is known.
                 playlist.entries.firstOrNull { it.uri == currentUriState.value }
                     ?.let { subtitleState.value = it.detail }
+                refreshMediaSession()
             }
         }
     }
@@ -360,7 +457,13 @@ class PlayerActivity : ComponentActivity() {
      */
     internal fun switchTo(entry: PlaylistEntry) {
         val exoPlayer = player ?: return
+        saveContentPreferences()
+        currentTmdbId = entry.tmdbId?.takeIf { it > 0 }
+        currentIsEpisode = entry.isEpisode
+        currentShowTmdbId = entry.showTmdbId?.takeIf { it > 0 }
+        hasRestoredContentPreferences = false
         writeProgress()
+        transitions.present()
         searchJob?.cancel()
         downloadJob?.cancel()
         searchJob = null
@@ -370,8 +473,8 @@ class PlayerActivity : ComponentActivity() {
         resumeFraction = null
         resumeApplied = false
         completedWritten = false
-        recapPending = chrome.skipRecap
-        creditsHandled = false
+        upcomingEpisodeState.value = null
+        videoEffects.onItemChanged()
         progressKey = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
             ProgressKey(
                 tmdbId = tmdbId,
@@ -388,11 +491,46 @@ class PlayerActivity : ComponentActivity() {
             season = entry.season,
             episode = entry.episode,
         )
+        segmentController.begin(
+            itemId = entry.uri,
+            media = introDbMedia(
+                tmdbId = entry.tmdbId,
+                isEpisode = entry.isEpisode,
+                showTmdbId = entry.showTmdbId,
+                season = entry.season,
+                episode = entry.episode,
+            ),
+        )
         titleState.value = entry.title
         subtitleState.value = entry.detail
         currentUriState.value = entry.uri
         lifecycleScopedStart(exoPlayer, Uri.parse(entry.uri))
         chrome.showControls()
+        refreshMediaSession()
+    }
+
+    /**
+     * Tells the system's media surfaces what's playing, which skip lengths
+     * App Controls set, and whether next and previous have somewhere to go.
+     */
+    private fun refreshMediaSession() {
+        val session = mediaSession ?: return
+        val playlist = playlistState.value
+        val entries = playlist?.entries.orEmpty()
+        val currentUri = currentUriState.value
+        session.update(
+            backMillis = chrome.preferences.skipBackwardInterval.millis,
+            forwardMillis = chrome.preferences.skipForwardInterval.millis,
+            neighbors = PlaylistNeighbors.of(entries.map { it.uri }, currentUri),
+            nowPlaying = NowPlayingInfo.of(
+                entry = entries.firstOrNull { it.uri == currentUri },
+                title = titleState.value,
+                subtitle = subtitleState.value,
+                showName = playlist?.showName,
+                isEpisode = currentIsEpisode,
+                tmdbId = currentTmdbId,
+            ),
+        )
     }
 
     // ------------------------------------------------------------------
@@ -487,7 +625,7 @@ class PlayerActivity : ComponentActivity() {
             .setMimeType(subtitleMimeType(subtitle.format))
             .setLanguage(subtitle.language)
             .setLabel(label)
-            .setId(subtitle.id)
+            .setId("ext-${subtitle.id}")
             .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
             .build()
         val attachments = attachedSubtitles.getOrPut(playingUri) { mutableListOf() }
@@ -515,7 +653,8 @@ class PlayerActivity : ComponentActivity() {
     private fun selectPendingOnlineSubtitle(exoPlayer: ExoPlayer, tracks: Tracks) {
         val pending = pendingSubtitleSelection ?: return
         val options = textTrackOptions(tracks)
-        val option = options.firstOrNull { it.id == pending.subtitle.id }
+        val targetId = pending.configuration.id ?: "ext-${pending.subtitle.id}"
+        val option = options.firstOrNull { it.id == targetId }
             ?: options.firstOrNull { it.label == pending.label }
             ?: options.firstOrNull { it.language == pending.subtitle.language }
             ?: return
@@ -531,37 +670,112 @@ class PlayerActivity : ComponentActivity() {
         .build()
 
     // ------------------------------------------------------------------
-    // Auto-skip
+    // Playback position tick
     // ------------------------------------------------------------------
 
     /**
-     * Driven by the UI's position ticker. Applies the skip-recap jump once
-     * the duration is known and ends (or loops) playback at the credits.
+     * Driven by the UI's position ticker.
      */
     internal fun onPlaybackTick(positionMillis: Long, durationMillis: Long) {
         val exoPlayer = player ?: return
-        if (durationMillis <= 0) return
-        // Never skip ahead of a resume seek that hasn't landed yet.
-        if (resumeFraction != null && !resumeApplied) return
+        segmentController.update(
+            positionMillis = positionMillis,
+            durationMillis = durationMillis.takeIf { it > 0 },
+            isSeekable = exoPlayer.isCurrentMediaItemSeekable,
+        )
+        activeSegmentState.value = segmentController.activeSegment
+        updateUpcomingEpisode(positionMillis, durationMillis)
+        // The tick runs every half second; the effects governor wants about one sample a second.
+        if (++effectsTick % 2 == 0) videoEffects.onTick()
+    }
 
-        if (recapPending) {
-            recapPending = false
-            val target = PlayerLogic.recapSkipTargetMillis(durationMillis)
-            if (target != null && positionMillis < target) exoPlayer.seekTo(target)
-        }
+    /**
+     * Stops and prepares the playing item again at its position. Media3 sets
+     * up the effects pipeline only when the video renderer is enabled, so
+     * turning Picture or Enhancement on mid-play needs this once (F.1.1).
+     */
+    private fun reprepareAtCurrentPosition() {
+        val exoPlayer = player ?: return
+        val position = exoPlayer.currentPosition.coerceAtLeast(0)
+        val playWhenReady = exoPlayer.playWhenReady
+        resumeApplied = true
+        exoPlayer.stop()
+        exoPlayer.setMediaItem(mediaItem(Uri.parse(currentUriState.value)), position)
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = playWhenReady
+    }
 
-        if (chrome.skipCredits && !creditsHandled) {
-            val creditsStart = PlayerLogic.creditsStartMillis(durationMillis) ?: return
-            if (positionMillis >= creditsStart) {
-                creditsHandled = true
-                if (chrome.loopEnabled) {
-                    // Credits are over as far as the viewer cares — restart.
-                    exoPlayer.seekTo(0)
-                } else {
-                    writeProgress(completed = true)
-                    finish()
-                }
+    /**
+     * The upscaler's "display" (F.1.3, F.3): on TV the panel's own resolution
+     * from the display mode, since boxes often draw their interface at 1080p
+     * on a 4K panel; elsewhere the window, the largest the video can be.
+     */
+    private fun updateVideoDisplaySize() {
+        val size = if (isTelevision) {
+            @Suppress("DEPRECATION")
+            val mode = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display else windowManager.defaultDisplay)?.mode
+            mode?.let { PixelSize(maxOf(it.physicalWidth, it.physicalHeight), minOf(it.physicalWidth, it.physicalHeight)) }
+        } else {
+            val bounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                windowManager.currentWindowMetrics.bounds.let { PixelSize(it.width(), it.height()) }
+            } else {
+                resources.displayMetrics.let { PixelSize(it.widthPixels, it.heightPixels) }
             }
+            bounds
+        }
+        size?.let(videoEffects::onDisplaySizeChanged)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (::videoEffects.isInitialized) updateVideoDisplaySize()
+    }
+
+    private fun updateUpcomingEpisode(positionMillis: Long, durationMillis: Long) {
+        if (!currentIsEpisode || chrome.loopEnabled || durationMillis <= 0) {
+            if (upcomingEpisodeState.value != null) upcomingEpisodeState.value = null
+            return
+        }
+        val playlist = playlistState.value
+        if (playlist == null || !playlist.isEpisodeList) {
+            if (upcomingEpisodeState.value != null) upcomingEpisodeState.value = null
+            return
+        }
+        val currentUri = currentUriState.value
+        val entries = playlist.entries
+        val currentEntry = entries.firstOrNull { it.uri == currentUri }
+        if (currentEntry == null || currentEntry.season == null || currentEntry.episode == null) {
+            if (upcomingEpisodeState.value != null) upcomingEpisodeState.value = null
+            return
+        }
+        val currentCandidate = EpisodeCandidate(
+            id = currentEntry.uri,
+            season = currentEntry.season,
+            episode = currentEntry.episode,
+            title = currentEntry.title,
+        )
+        val candidates = entries.mapNotNull { entry ->
+            if (entry.season != null && entry.episode != null) {
+                EpisodeCandidate(
+                    id = entry.uri,
+                    season = entry.season,
+                    episode = entry.episode,
+                    title = entry.title,
+                )
+            } else null
+        }
+        val nextCandidate = EpisodeProgression.upcomingEpisode(
+            timeMillis = positionMillis,
+            durationMillis = durationMillis,
+            loopEnabled = chrome.loopEnabled,
+            current = currentCandidate,
+            episodes = candidates,
+        )
+        val nextEntry = nextCandidate?.let { next ->
+            entries.firstOrNull { it.uri == next.id }
+        }
+        if (upcomingEpisodeState.value != nextEntry) {
+            upcomingEpisodeState.value = nextEntry
         }
     }
 
@@ -604,20 +818,70 @@ class PlayerActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        cancelMediaKeyHold()
+        saveContentPreferences()
         writeProgress()
         player?.playWhenReady = false
         super.onStop()
     }
 
     override fun onDestroy() {
+        prefsSubscription?.close()
+        segmentController.end()
+        transitions.end()
         writeProgress()
         searchJob?.cancel()
         downloadJob?.cancel()
         unregisterPipReceiver()
         setWindowBrightness(-1f)
-        player?.release()
+        // The session's player wraps ExoPlayer and releases it with itself.
+        val session = mediaSession
+        if (session != null) session.release() else player?.release()
+        mediaSession = null
         player = null
         super.onDestroy()
+    }
+
+    // ------------------------------------------------------------------
+    // Per-content preferences
+    // ------------------------------------------------------------------
+
+    private fun restoreContentPreferences(exoPlayer: ExoPlayer, tracks: Tracks) {
+        val key = ContentPlayerPreferencesRules.contentKey(
+            tmdbId = currentTmdbId,
+            isEpisode = currentIsEpisode,
+            showTmdbId = currentShowTmdbId,
+        ) ?: return
+        val prefs = contentPreferencesStore.get(key) ?: return
+        isRestoringContentPreferences = true
+        try {
+            applyContentPreferences(
+                preferences = prefs,
+                player = exoPlayer,
+                chrome = chrome,
+                tracks = tracks,
+            )
+        } finally {
+            isRestoringContentPreferences = false
+        }
+    }
+
+    private fun saveContentPreferences() {
+        if (isRestoringContentPreferences) return
+        val key = ContentPlayerPreferencesRules.contentKey(
+            tmdbId = currentTmdbId,
+            isEpisode = currentIsEpisode,
+            showTmdbId = currentShowTmdbId,
+        ) ?: return
+        val exoPlayer = player ?: return
+        val existing = contentPreferencesStore.get(key)
+        val prefs = snapshotPreferences(
+            baseRate = chrome.baseRate,
+            tracks = exoPlayer.currentTracks,
+            trackSelectionParameters = exoPlayer.trackSelectionParameters,
+            existing = existing,
+        )
+        contentPreferencesStore.save(key, prefs)
     }
 
     // ------------------------------------------------------------------
@@ -683,8 +947,10 @@ class PlayerActivity : ComponentActivity() {
 
     /** Clamped to the range the system accepts; unknown sizes fall back to 16:9. */
     private fun videoAspectRatio(): Rational {
-        val size = player?.videoSize
-        val width = size?.width ?: 0
+        // ExoPlayer reports no size while the effects pipeline is installed.
+        val effectsSize = if (::videoEffects.isInitialized) videoEffects.effectsVideoSize else null
+        val size = effectsSize ?: player?.videoSize
+        val width = size?.let { (it.width * it.pixelWidthHeightRatio).roundToInt() } ?: 0
         val height = size?.height ?: 0
         if (width <= 0 || height <= 0) return Rational(16, 9)
         val ratio = width.toDouble() / height
@@ -703,10 +969,23 @@ class PlayerActivity : ComponentActivity() {
             pipAction(R.drawable.ic_play, getString(R.string.action_play), PIP_CONTROL_PLAY)
         }
         if (maxNumPictureInPictureActions < 3) return listOf(playPause)
+
+        val backInterval = chrome.skipBackwardInterval
+        val forwardInterval = chrome.skipForwardInterval
+        val (backIcon, backString) = when (backInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_left_10, R.string.player_back_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_left_15, R.string.player_back_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_left_30, R.string.player_back_30)
+        }
+        val (forwardIcon, forwardString) = when (forwardInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_right_10, R.string.player_forward_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_right_15, R.string.player_forward_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_right_30, R.string.player_forward_30)
+        }
         return listOf(
-            pipAction(R.drawable.ic_arrow_rotate_left_10, getString(R.string.player_back_10), PIP_CONTROL_REWIND),
+            pipAction(backIcon, getString(backString), PIP_CONTROL_REWIND),
             playPause,
-            pipAction(R.drawable.ic_arrow_rotate_right_10, getString(R.string.player_forward_10), PIP_CONTROL_FORWARD),
+            pipAction(forwardIcon, getString(forwardString), PIP_CONTROL_FORWARD),
         )
     }
 
@@ -755,13 +1034,48 @@ class PlayerActivity : ComponentActivity() {
 
         if (!::chrome.isInitialized) return super.dispatchKeyEvent(event)
 
+        if (event.keyCode == KeyEvent.KEYCODE_S) {
+            if (activeSegmentState.value != null) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    performSkip()
+                }
+                return true
+            }
+        }
+
         val exoPlayer = player
         if (exoPlayer != null && event.keyCode in TRANSPORT_KEYS) {
-            // Consume both halves so no orphan ACTION_UP reaches a child.
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                handleTransportKey(exoPlayer, event.keyCode)
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+                KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                    handleFastForwardRewindKey(exoPlayer, event)
+                    return true
+                }
+                else -> {
+                    // Consume both halves so no orphan ACTION_UP reaches a child.
+                    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                        handleTransportKey(exoPlayer, event.keyCode)
+                    }
+                    return true
+                }
             }
-            return true
+        }
+
+        // Keyboard keys on handhelds (J.3): Space, ← and → while no panel is
+        // open (a panel's sliders and switches keep their own keys), and Esc
+        // like Back. The TV's D-pad sends the same arrow codes and keeps its
+        // reveal-and-seek handling.
+        when (KeyboardShortcuts.playerCommand(event.keyCode, hasModifiers = !event.hasNoModifiers())) {
+            PlayerKeyCommand.PLAY_PAUSE, PlayerKeyCommand.SKIP_BACK, PlayerKeyCommand.SKIP_FORWARD ->
+                if (exoPlayer != null && !isTelevision && chrome.activePanel == null) {
+                    handleKeyboardTransport(exoPlayer, event)
+                    return true
+                }
+            PlayerKeyCommand.CLOSE -> {
+                if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) handleBack()
+                return true
+            }
+            null -> Unit
         }
 
         if (event.keyCode == KeyEvent.KEYCODE_BACK || event.keyCode == KeyEvent.KEYCODE_MENU) {
@@ -773,6 +1087,37 @@ class PlayerActivity : ComponentActivity() {
         }
 
         return super.dispatchKeyEvent(event)
+    }
+
+    /** Space plays and pauses; ← and → skip by the App Controls lengths, repeating while held. */
+    private fun handleKeyboardTransport(exoPlayer: ExoPlayer, event: KeyEvent) {
+        if (event.action != KeyEvent.ACTION_DOWN) return
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_SPACE -> if (event.repeatCount == 0) {
+                if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
+                chrome.showControls()
+            }
+            // A held key repeats every ~50 ms; every fourth repeat keeps the seeks followable.
+            KeyEvent.KEYCODE_DPAD_LEFT -> if (event.repeatCount % 4 == 0) {
+                seekBy(exoPlayer, chrome, -chrome.skipBackwardInterval.millis)
+            }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> if (event.repeatCount % 4 == 0) {
+                seekBy(exoPlayer, chrome, chrome.skipForwardInterval.millis)
+            }
+        }
+    }
+
+    /** Lists the player's keys in the system's keyboard shortcuts list (Meta+/). */
+    override fun onProvideKeyboardShortcuts(data: MutableList<KeyboardShortcutGroup>, menu: Menu?, deviceId: Int) {
+        super.onProvideKeyboardShortcuts(data, menu, deviceId)
+        if (!::chrome.isInitialized) return
+        data.add(
+            KeyboardShortcuts.playerGroup(
+                context = this,
+                backSeconds = chrome.skipBackwardInterval.seconds,
+                forwardSeconds = chrome.skipForwardInterval.seconds,
+            ),
+        )
     }
 
     /**
@@ -787,6 +1132,60 @@ class PlayerActivity : ComponentActivity() {
             chrome.dismissRemotePresentation() -> Unit
             chrome.controlsVisible -> chrome.hideControls()
             else -> finish()
+        }
+    }
+
+    private fun handleFastForwardRewindKey(exoPlayer: ExoPlayer, event: KeyEvent) {
+        val isForward = event.keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+        when (event.action) {
+            KeyEvent.ACTION_DOWN -> {
+                if (event.repeatCount == 0) {
+                    cancelMediaKeyHold()
+                    mediaKeyHoldActive = false
+                    activeHoldKeyCode = event.keyCode
+                    val runnable = Runnable {
+                        mediaKeyHoldActive = true
+                        val rate = if (isForward) chrome.holdRightRate else chrome.holdLeftRate
+                        chrome.beginHoldRate(exoPlayer, rate)
+                    }
+                    mediaKeyHoldRunnable = runnable
+                    mainHandler.postDelayed(runnable, 400L)
+                }
+                // Key repeats while the key is held must not also seek.
+            }
+            KeyEvent.ACTION_UP -> {
+                val runnable = mediaKeyHoldRunnable
+                if (runnable != null) {
+                    mainHandler.removeCallbacks(runnable)
+                    mediaKeyHoldRunnable = null
+                }
+                if (mediaKeyHoldActive) {
+                    mediaKeyHoldActive = false
+                    activeHoldKeyCode = null
+                    chrome.endHoldRate(exoPlayer)
+                } else if (!event.isCanceled && activeHoldKeyCode == event.keyCode) {
+                    activeHoldKeyCode = null
+                    if (isForward) {
+                        seekBy(exoPlayer, chrome, chrome.skipForwardInterval.millis)
+                    } else {
+                        seekBy(exoPlayer, chrome, -chrome.skipBackwardInterval.millis)
+                    }
+                } else {
+                    activeHoldKeyCode = null
+                }
+            }
+        }
+    }
+
+    private fun cancelMediaKeyHold() {
+        mediaKeyHoldRunnable?.let { mainHandler.removeCallbacks(it) }
+        mediaKeyHoldRunnable = null
+        if (mediaKeyHoldActive) {
+            mediaKeyHoldActive = false
+            activeHoldKeyCode = null
+            player?.let { chrome.endHoldRate(it) }
+        } else {
+            activeHoldKeyCode = null
         }
     }
 
@@ -807,9 +1206,9 @@ class PlayerActivity : ComponentActivity() {
                 chrome.showControls()
             }
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD ->
-                seekBy(exoPlayer, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+                seekBy(exoPlayer, chrome, chrome.skipForwardInterval.millis)
             KeyEvent.KEYCODE_MEDIA_REWIND ->
-                seekBy(exoPlayer, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+                seekBy(exoPlayer, chrome, -chrome.skipBackwardInterval.millis)
             KeyEvent.KEYCODE_MEDIA_NEXT -> switchToNeighbor(+1)
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> switchToNeighbor(-1)
             KeyEvent.KEYCODE_MEDIA_STOP -> finish()
@@ -824,6 +1223,7 @@ class PlayerActivity : ComponentActivity() {
     }
 
     internal fun writeProgress(completed: Boolean = false) {
+        if (!completed && !transitions.shouldWriteProgress) return
         val key = progressKey ?: return
         val store = dataStore ?: return
         val exoPlayer = player ?: return
@@ -832,7 +1232,10 @@ class PlayerActivity : ComponentActivity() {
         val fraction = position.toDouble() / duration
         val isCompleted = completed || fraction >= PlayerLogic.COMPLETE_FRACTION
         if (completedWritten && !isCompleted) return
-        completedWritten = isCompleted
+        if (isCompleted) {
+            completedWritten = true
+            transitions.markCurrentCompleted()
+        }
         writeScope.launch {
             store.updateWatchProgress(
                 WatchProgress(
@@ -848,6 +1251,95 @@ class PlayerActivity : ComponentActivity() {
                 ),
             )
         }
+    }
+
+    internal fun performSkip(): Boolean {
+        val exoPlayer = player ?: return false
+        val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 }
+        val action = segmentController.consumeSkip(
+            positionMillis = exoPlayer.currentPosition,
+            durationMillis = duration,
+            isSeekable = exoPlayer.isCurrentMediaItemSeekable,
+        ) ?: return false
+
+        when (action) {
+            is SkipAction.Seek -> {
+                exoPlayer.seekTo(action.positionMillis)
+                chrome.showControls()
+            }
+            is SkipAction.Finish -> {
+                handlePlaybackEnded()
+            }
+        }
+        return true
+    }
+
+    private fun handlePlaybackEnded() {
+        val exoPlayer = player ?: return
+        writeProgress(completed = true)
+        val entries = playlistState.value?.entries.orEmpty()
+        val currentUri = currentUriState.value
+        val currentEntry = entries.firstOrNull { it.uri == currentUri }
+        val currentCandidate = currentEntry?.let { entry ->
+            if (entry.season != null && entry.episode != null) {
+                EpisodeCandidate(
+                    id = entry.uri,
+                    season = entry.season,
+                    episode = entry.episode,
+                    title = entry.title,
+                )
+            } else null
+        }
+        val episodeCandidates = entries.mapNotNull { entry ->
+            if (entry.season != null && entry.episode != null) {
+                EpisodeCandidate(
+                    id = entry.uri,
+                    season = entry.season,
+                    episode = entry.episode,
+                    title = entry.title,
+                )
+            } else null
+        }
+        val action = transitions.onNaturalEnd(
+            loopEnabled = chrome.loopEnabled,
+            currentEpisode = currentCandidate,
+            episodes = episodeCandidates,
+        )
+        when (action) {
+            is NaturalEndAction.LoopRestart -> {
+                exoPlayer.seekTo(0)
+                exoPlayer.play()
+            }
+            is NaturalEndAction.Advance -> {
+                if (transitions.claim(action.ticket)) {
+                    val nextEntry = entries.firstOrNull { it.uri == action.nextEpisode.id }
+                    if (nextEntry != null) {
+                        switchTo(nextEntry)
+                    } else {
+                        finish()
+                    }
+                }
+            }
+            is NaturalEndAction.Finish -> {
+                finish()
+            }
+        }
+    }
+
+    private fun introDbMedia(
+        tmdbId: Int?,
+        isEpisode: Boolean,
+        showTmdbId: Int?,
+        season: Int?,
+        episode: Int?,
+    ): IntroDbMedia? = if (isEpisode) {
+        val showId = showTmdbId?.takeIf { it in 1..10_000_000 } ?: return null
+        val s = season?.takeIf { it > 0 } ?: return null
+        val e = episode?.takeIf { it > 0 } ?: return null
+        IntroDbMedia.create(tmdbId = showId, season = s, episode = e)
+    } else {
+        val movieId = tmdbId?.takeIf { it in 1..10_000_000 } ?: return null
+        IntroDbMedia.create(tmdbId = movieId)
     }
 
     private fun displayName(uri: Uri): String? = runCatching {
@@ -897,17 +1389,27 @@ class PlayerActivity : ComponentActivity() {
             season: Int? = null,
             episode: Int? = null,
         ) {
-            context.startActivity(
-                Intent(context, PlayerActivity::class.java).apply {
-                    putExtra(EXTRA_URI, uri)
-                    putExtra(EXTRA_TITLE, title)
-                    tmdbId?.let { putExtra(EXTRA_TMDB_ID, it) }
-                    putExtra(EXTRA_IS_EPISODE, isEpisode)
-                    showTmdbId?.let { putExtra(EXTRA_SHOW_TMDB_ID, it) }
-                    season?.let { putExtra(EXTRA_SEASON, it) }
-                    episode?.let { putExtra(EXTRA_EPISODE, it) }
-                },
-            )
+            context.startActivity(intent(context, uri, title, tmdbId, isEpisode, showTmdbId, season, episode))
+        }
+
+        /** The request [play] sends, also written into the TV home screen's Watch Next rows (I.3). */
+        fun intent(
+            context: Context,
+            uri: String,
+            title: String,
+            tmdbId: Int? = null,
+            isEpisode: Boolean = false,
+            showTmdbId: Int? = null,
+            season: Int? = null,
+            episode: Int? = null,
+        ): Intent = Intent(context, PlayerActivity::class.java).apply {
+            putExtra(EXTRA_URI, uri)
+            putExtra(EXTRA_TITLE, title)
+            tmdbId?.let { putExtra(EXTRA_TMDB_ID, it) }
+            putExtra(EXTRA_IS_EPISODE, isEpisode)
+            showTmdbId?.let { putExtra(EXTRA_SHOW_TMDB_ID, it) }
+            season?.let { putExtra(EXTRA_SEASON, it) }
+            episode?.let { putExtra(EXTRA_EPISODE, it) }
         }
     }
 }

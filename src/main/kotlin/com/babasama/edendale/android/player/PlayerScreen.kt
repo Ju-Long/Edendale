@@ -1,12 +1,20 @@
 package com.babasama.edendale.android.player
 
 import android.os.SystemClock
+import android.provider.Settings
+import android.view.SurfaceView
+import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +24,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -72,18 +82,32 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.focusable
+import coil.compose.AsyncImage
+import com.babasama.edendale.domain.TmdbImageSize
+import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.introdb.PlaybackSegment
+import com.babasama.edendale.introdb.SegmentKind
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
@@ -92,6 +116,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.babasama.edendale.android.player.video.VideoEffectsController
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleRadii
 import com.babasama.edendale.android.R
@@ -121,6 +146,10 @@ internal fun PlayerScreen(
     onlineSubtitles: OnlineSubtitlesState,
     wyzieConfigured: State<Boolean>,
     wyzieLookup: State<WyzieLookup?>,
+    activeSegment: State<PlaybackSegment?>,
+    upcomingEpisode: State<PlaylistEntry?>,
+    playbackFailure: State<PlaybackFailure?>,
+    video: VideoEffectsController? = null,
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
@@ -128,6 +157,8 @@ internal fun PlayerScreen(
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
+    onSkip: () -> Unit,
+    onTrackSelected: () -> Unit = {},
     onClose: () -> Unit,
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
@@ -144,8 +175,22 @@ internal fun PlayerScreen(
     val centerFocus = remember { FocusRequester() }
     val timelineFocus = remember { FocusRequester() }
     val panelFocus = remember { FocusRequester() }
+    val upNextFocus = remember { FocusRequester() }
 
     val controlsActive = chrome.controlsVisible && !inPipMode.value
+
+    // J.5: in a window at least 1100 dp wide, the playlist and Player
+    // Adjustments dock as a trailing sidebar that narrows the video instead of
+    // covering it.
+    val docked = !isTelevision && !inPipMode.value &&
+        LocalConfiguration.current.screenWidthDp >= DOCKED_PANEL_MIN_WIDTH_DP
+    val dockedPanelOpen = docked && chrome.activePanel != null
+    val reduceMotionForDock = rememberReducedMotion()
+    val dockInset by animateDpAsState(
+        targetValue = if (dockedPanelOpen) DOCKED_PANEL_WIDTH else 0.dp,
+        animationSpec = if (reduceMotionForDock) snap() else tween(200),
+        label = "Docked panel inset",
+    )
 
     DisposableListener(player) { state, playing ->
         isBuffering = state == Player.STATE_BUFFERING
@@ -174,7 +219,7 @@ internal fun PlayerScreen(
         chrome.activePanel, chrome.isScrubbing, chrome.interactionTick,
     ) {
         if (chrome.controlsVisible && isPlaying && !inPipMode.value &&
-            chrome.activePanel == null && !chrome.isScrubbing
+            (chrome.activePanel == null || dockedPanelOpen) && !chrome.isScrubbing
         ) {
             delay(PlayerLogic.AUTO_HIDE_MILLIS)
             chrome.hideControls()
@@ -206,9 +251,12 @@ internal fun PlayerScreen(
     // Focus never lands anywhere on its own: seed it wherever the remote
     // should act. Both flips run after the frame that (un)mounted the
     // target subtree, so the nodes are attached; runCatching covers the
-    // teardown race when the activity is finishing.
+    // teardown race when the activity is finishing. A focused node that
+    // leaves by itself, like a skip prompt whose segment ended, takes the
+    // focus with it, so losing focus seeds it again too.
+    var hasFocusInside by remember { mutableStateOf(false) }
     if (isTelevision) {
-        LaunchedEffect(controlsActive, chrome.activePanel) {
+        val seedFocus = {
             runCatching {
                 when {
                     !controlsActive -> catcherFocus.requestFocus()
@@ -217,89 +265,227 @@ internal fun PlayerScreen(
                 }
             }
         }
+        LaunchedEffect(controlsActive, chrome.activePanel) { seedFocus() }
+        LaunchedEffect(hasFocusInside) { if (!hasFocusInside) seedFocus() }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .onFocusChanged { hasFocusInside = it.hasFocus },
     ) {
-        AndroidView(
-            factory = { viewContext ->
-                PlayerView(viewContext).apply {
-                    useController = false
-                    // The hidden built-in controller is full of focusable
-                    // buttons; keep the D-pad out of the View world entirely.
-                    descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
-                    isFocusable = false
-                    this.player = player
-                }
-            },
-            update = { view ->
-                view.resizeMode = if (chrome.aspectFill) {
-                    AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        // The picture and everything drawn over it; a docked panel takes the trailing edge.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(end = dockInset),
+        ) {
+            AndroidView(
+                factory = { viewContext ->
+                    PlayerView(viewContext).apply {
+                        useController = false
+                        // The hidden built-in controller is full of focusable
+                        // buttons; keep the D-pad out of the View world entirely.
+                        descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+                        isFocusable = false
+                        this.player = player
+                        // PlayerSubtitleOverlay draws the cues instead (B.4.3).
+                        subtitleView?.visibility = View.GONE
+                    }
+                },
+                update = { view ->
+                    view.resizeMode = if (chrome.aspectFill) {
+                        AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    } else {
+                        AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    }
+                    // F.1.3: on a TV that draws its interface at 1080p on a 4K panel, the
+                    // effects path renders into the surface's buffer, so the buffer takes
+                    // the upscaler's target size rather than the layout's.
+                    // With effects installed Media3 reports no video size, so PlayerView
+                    // would leave its frame at the screen's shape and Fill would do nothing.
+                    video?.effectsVideoSize?.let { size ->
+                        view.findViewById<AspectRatioFrameLayout>(androidx.media3.ui.R.id.exo_content_frame)
+                            ?.setAspectRatio(size.width * size.pixelWidthHeightRatio / size.height)
+                    }
+                    val fixed = video?.fixedSurfaceSize
+                    if (view.getTag(R.id.player_fixed_surface_size) != fixed) {
+                        view.setTag(R.id.player_fixed_surface_size, fixed)
+                        (view.videoSurfaceView as? SurfaceView)?.holder?.let { holder ->
+                            if (fixed != null) holder.setFixedSize(fixed.width, fixed.height) else holder.setSizeFromLayout()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            // Beneath the gesture layer, so the cues never take a tap.
+            PlayerSubtitleOverlay(
+                player = player,
+                chrome = chrome,
+                controlsVisible = controlsActive,
+                effectsVideoSize = video?.effectsVideoSize,
+            )
+
+            if (!isTelevision && !inPipMode.value) {
+                PlayerGestureLayer(player, chrome, activity)
+            }
+
+            val promptFocus = remember { FocusRequester() }
+            val visibleSegment = if (
+                !chrome.isScrubbing &&
+                chrome.activePanel == null &&
+                !inPipMode.value
+            ) {
+                activeSegment.value
+            } else {
+                null
+            }
+
+            val visibleUpNext = if (
+                !chrome.isScrubbing &&
+                chrome.activePanel == null &&
+                !inPipMode.value
+            ) {
+                upcomingEpisode.value
+            } else {
+                null
+            }
+
+            if (isTelevision) {
+                RevealCatcher(
+                    active = isTelevision && !controlsActive && !inPipMode.value,
+                    focusRequester = catcherFocus,
+                    promptFocusRequester = promptFocus,
+                    hasVisiblePrompt = visibleSegment != null,
+                    chrome = chrome,
+                    player = player,
+                )
+            }
+
+            if (isBuffering && !inPipMode.value && !controlsActive) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            // Lightweight remote-seek timeline; the full controls carry their
+            // own timeline, so the two are never shown together.
+            if (isTelevision && !chrome.controlsVisible &&
+                (chrome.timelineVisible || chrome.remotePreviewMillis != null) &&
+                !inPipMode.value
+            ) {
+                TvTimelineOverlay(
+                    positionMillis = chrome.remotePreviewMillis ?: positionMillis,
+                    durationMillis = durationMillis,
+                )
+            }
+
+            AnimatedVisibility(
+                visible = controlsActive,
+                modifier = Modifier.fillMaxSize(),
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                PlayerControlsOverlay(
+                    player = player,
+                    chrome = chrome,
+                    isTelevision = isTelevision,
+                    title = title.value,
+                    subtitle = subtitle.value,
+                    isPlaying = isPlaying,
+                    isBuffering = isBuffering,
+                    positionMillis = positionMillis,
+                    durationMillis = durationMillis,
+                    hasPlaylist = playlist.value != null,
+                    topFocus = topFocus,
+                    centerFocus = centerFocus,
+                    timelineFocus = timelineFocus,
+                    upNextFocus = upNextFocus.takeIf { visibleUpNext != null },
+                    onEnterPip = onEnterPip,
+                    onClose = onClose,
+                )
+            }
+
+            visibleSegment?.let { segment ->
+                SkipPromptButton(
+                    segment = segment,
+                    isTelevision = isTelevision,
+                    controlsVisible = controlsActive,
+                    focusRequester = promptFocus,
+                    onSkip = onSkip,
+                    onExitFocus = {
+                        if (isTelevision && !chrome.controlsVisible) {
+                            catcherFocus.requestFocus()
+                        } else {
+                            chrome.showControls()
+                        }
+                    },
+                )
+            }
+
+            val reduceMotion = rememberReducedMotion()
+            val upNextEnterTransition = remember(reduceMotion) {
+                if (reduceMotion) {
+                    fadeIn()
                 } else {
-                    AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    slideInHorizontally(initialOffsetX = { it }) + fadeIn()
                 }
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
+            }
+            val upNextExitTransition = remember(reduceMotion) {
+                if (reduceMotion) {
+                    fadeOut()
+                } else {
+                    slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                }
+            }
 
-        if (!isTelevision && !inPipMode.value) {
-            PlayerGestureLayer(player, chrome, activity)
-        }
+            var lastUpNextEntry by remember { mutableStateOf<PlaylistEntry?>(null) }
+            if (visibleUpNext != null) {
+                lastUpNextEntry = visibleUpNext
+            }
 
-        if (isTelevision) {
-            RevealCatcher(
-                active = isTelevision && !controlsActive && !inPipMode.value,
-                focusRequester = catcherFocus,
-                chrome = chrome,
-                player = player,
-            )
-        }
+            AnimatedVisibility(
+                visible = visibleUpNext != null,
+                modifier = Modifier.align(Alignment.TopEnd),
+                enter = upNextEnterTransition,
+                exit = upNextExitTransition,
+            ) {
+                lastUpNextEntry?.let { entry ->
+                    UpNextCard(
+                        entry = entry,
+                        isTelevision = isTelevision,
+                        controlsVisible = controlsActive,
+                        focusRequester = upNextFocus,
+                        onPlayNext = { onSelectEntry(entry) },
+                        onFocus = { chrome.showControls() },
+                        onExitFocus = {
+                            // The card takes focus only from the visible controls
+                            // (down from the top row), so down hands it back to
+                            // the transport row it sits above.
+                            when {
+                                controlsActive -> {
+                                    chrome.showControls()
+                                    runCatching { centerFocus.requestFocus() }
+                                }
+                                isTelevision -> catcherFocus.requestFocus()
+                                else -> chrome.showControls()
+                            }
+                        },
+                    )
+                }
+            }
 
-        if (isBuffering && !inPipMode.value && !controlsActive) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-
-        // Lightweight remote-seek timeline; the full controls carry their
-        // own timeline, so the two are never shown together.
-        if (isTelevision && !chrome.controlsVisible &&
-            (chrome.timelineVisible || chrome.remotePreviewMillis != null) &&
-            !inPipMode.value
-        ) {
-            TvTimelineOverlay(
-                positionMillis = chrome.remotePreviewMillis ?: positionMillis,
-                durationMillis = durationMillis,
-            )
-        }
-
-        AnimatedVisibility(
-            visible = controlsActive,
-            modifier = Modifier.fillMaxSize(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            PlayerControlsOverlay(
-                player = player,
-                chrome = chrome,
-                isTelevision = isTelevision,
-                title = title.value,
-                subtitle = subtitle.value,
-                isPlaying = isPlaying,
-                isBuffering = isBuffering,
-                positionMillis = positionMillis,
-                durationMillis = durationMillis,
-                hasPlaylist = playlist.value != null,
-                topFocus = topFocus,
-                centerFocus = centerFocus,
-                timelineFocus = timelineFocus,
-                onEnterPip = onEnterPip,
-                onClose = onClose,
-            )
+            // Over everything but the panels: the picture is gone, and only Close
+            // (or Back) is left to do.
+            playbackFailure.value?.let { failure ->
+                // A Surface, so taps can't reach the hidden controls underneath.
+                Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
+                    PlaybackErrorView(failure = failure, isTelevision = isTelevision, onClose = onClose)
+                }
+            }
         }
 
         if (!inPipMode.value) {
@@ -315,13 +501,33 @@ internal fun PlayerScreen(
                 wyzieLookup = wyzieLookup.value,
                 supportsPip = supportsPip,
                 panelFocus = panelFocus,
+                video = video,
+                docked = docked,
                 onAutoPipChanged = onAutoPipChanged,
                 onSelectEntry = onSelectEntry,
                 onSearchOnlineSubtitles = onSearchOnlineSubtitles,
                 onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
+                onTrackSelected = onTrackSelected,
             )
 
             PlayerHudView(chrome)
+        }
+    }
+}
+
+/** True when the system animator duration scale is 0: animations fall back to fades. */
+@Composable
+internal fun rememberReducedMotion(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        try {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1.0f,
+            ) == 0f
+        } catch (_: Exception) {
+            false
         }
     }
 }
@@ -357,13 +563,16 @@ private fun DisposableListener(
  * hidden — the reason the D-pad works at all with nothing on screen. It
  * handles every direction itself instead of relying on focus search (a
  * full-screen focus target is a dead end for directional search): left and
- * right accumulate a seek preview, down peeks the timeline, and up or
- * select reveal the controls.
+ * right accumulate a seek preview, down peeks the timeline (or focuses a
+ * visible skip prompt, D3), and up or select reveal the controls. The Up
+ * Next card is reached from the revealed controls, not from here.
  */
 @Composable
 private fun BoxScope.RevealCatcher(
     active: Boolean,
     focusRequester: FocusRequester,
+    promptFocusRequester: FocusRequester?,
+    hasVisiblePrompt: Boolean,
     chrome: PlayerChromeState,
     player: ExoPlayer,
 ) {
@@ -378,15 +587,19 @@ private fun BoxScope.RevealCatcher(
                 val act = repeat == 0 || repeat % 4 == 0
                 when (event.key) {
                     Key.DirectionLeft -> {
-                        if (act) chrome.remoteSeek(player, -PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) chrome.remoteSeek(player, -chrome.skipBackwardInterval.millis)
                         true
                     }
                     Key.DirectionRight -> {
-                        if (act) chrome.remoteSeek(player, PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) chrome.remoteSeek(player, chrome.skipForwardInterval.millis)
                         true
                     }
                     Key.DirectionDown -> {
-                        chrome.showTimeline()
+                        if (hasVisiblePrompt && promptFocusRequester != null) {
+                            promptFocusRequester.requestFocus()
+                        } else {
+                            chrome.showTimeline()
+                        }
                         true
                     }
                     Key.DirectionUp, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
@@ -400,6 +613,207 @@ private fun BoxScope.RevealCatcher(
             .focusProperties { canFocus = active }
             .focusable(),
     )
+}
+
+@Composable
+private fun BoxScope.SkipPromptButton(
+    segment: PlaybackSegment,
+    isTelevision: Boolean,
+    controlsVisible: Boolean,
+    focusRequester: FocusRequester,
+    onSkip: () -> Unit,
+    onExitFocus: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val highlighted = isFocused || isHovered
+
+    val label = when (segment.kind) {
+        SegmentKind.INTRO -> stringResource(R.string.player_skip_intro)
+        SegmentKind.RECAP -> stringResource(R.string.player_skip_recap)
+        SegmentKind.CREDITS -> stringResource(R.string.player_skip_credits)
+    }
+
+    val bottomPadding = if (isTelevision) {
+        if (controlsVisible) 112.dp else 48.dp
+    } else {
+        if (controlsVisible) 96.dp else 24.dp
+    }
+    val endPadding = if (isTelevision) 48.dp else 24.dp
+
+    Surface(
+        onClick = onSkip,
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = endPadding, bottom = bottomPadding)
+            .focusRequester(focusRequester)
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    when (event.key) {
+                        Key.DirectionUp -> {
+                            onExitFocus()
+                            true
+                        }
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                            onSkip()
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            },
+        shape = RoundedCornerShape(12.dp),
+        color = EdendaleColors.Surface,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (highlighted) EdendaleColors.Gold else EdendaleColors.Outline,
+        ),
+        interactionSource = interactionSource,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = if (highlighted) EdendaleColors.Gold else EdendaleColors.TextPrimary,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.UpNextCard(
+    entry: PlaylistEntry,
+    isTelevision: Boolean,
+    controlsVisible: Boolean,
+    focusRequester: FocusRequester,
+    onPlayNext: () -> Unit,
+    onFocus: () -> Unit,
+    onExitFocus: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val highlighted = isFocused || isHovered
+
+    val topPadding = if (isTelevision) {
+        if (controlsVisible) 88.dp else 48.dp
+    } else {
+        if (controlsVisible) 80.dp else 24.dp
+    }
+    val endPadding = if (isTelevision) 48.dp else 24.dp
+
+    val episodeCode = entry.detail ?: entry.season?.let { s ->
+        entry.episode?.let { e -> "S%02dE%02d".format(s, e) }
+    } ?: ""
+
+    val imagePath = entry.stillPath ?: entry.backdropPath
+    val imageUrl = remember(imagePath) { tmdbImageUrl(imagePath, TmdbImageSize.BACKDROP) }
+    val description = stringResource(R.string.player_up_next_description, episodeCode, entry.title)
+    // Apple's accessibility hint; TalkBack reads it as the double-tap action.
+    val clickLabel = stringResource(R.string.player_up_next_hint)
+
+    Surface(
+        onClick = onPlayNext,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(end = endPadding, top = topPadding)
+            .widthIn(max = 280.dp)
+            .focusRequester(focusRequester)
+            .onFocusChanged { if (it.isFocused) onFocus() }
+            .tvFocusLift(isTelevision, RoundedCornerShape(12.dp))
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    when (event.key) {
+                        Key.DirectionDown -> {
+                            onExitFocus()
+                            true
+                        }
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                            onPlayNext()
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            }
+            .semantics {
+                contentDescription = description
+                // Outermost semantics win, so this labels the Surface's own
+                // click action rather than adding a second one.
+                onClick(label = clickLabel) {
+                    onPlayNext()
+                    true
+                }
+            },
+        shape = RoundedCornerShape(12.dp),
+        color = EdendaleColors.Surface,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (highlighted) EdendaleColors.Gold else EdendaleColors.Outline,
+        ),
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Artwork (80 x 45, 16:9 ratio)
+            Box(
+                modifier = Modifier
+                    .size(width = 80.dp, height = 45.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(EdendaleColors.SurfaceHigh)
+                    .border(1.dp, EdendaleColors.Outline, RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_clapperboard),
+                    contentDescription = null,
+                    tint = EdendaleColors.TextSecondary,
+                    modifier = Modifier.size(18.dp),
+                )
+                if (imageUrl != null) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+
+            // Details
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.player_up_next).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                    ),
+                    color = EdendaleColors.Gold,
+                )
+                if (episodeCode.isNotEmpty()) {
+                    Text(
+                        text = episodeCode,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = EdendaleColors.TextSecondary,
+                        maxLines = 1,
+                    )
+                }
+                Text(
+                    text = entry.title,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    color = EdendaleColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
 }
 
 // ------------------------------------------------------------------
@@ -421,6 +835,8 @@ private fun PlayerControlsOverlay(
     topFocus: FocusRequester,
     centerFocus: FocusRequester,
     timelineFocus: FocusRequester,
+    /** Set while the Up Next card shows; it sits just below the top row. */
+    upNextFocus: FocusRequester?,
     onEnterPip: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
@@ -454,7 +870,7 @@ private fun PlayerControlsOverlay(
                 .fillMaxWidth()
                 .padding(horizontal = edgeMargin, vertical = 16.dp)
                 .focusGroup()
-                .focusProperties { if (isTelevision) down = centerFocus },
+                .focusProperties { if (isTelevision) down = upNextFocus ?: centerFocus },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -517,6 +933,17 @@ private fun PlayerControlsOverlay(
             )
         }
 
+        val (backIcon, backString) = when (chrome.skipBackwardInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_left_10, R.string.player_back_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_left_15, R.string.player_back_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_left_30, R.string.player_back_30)
+        }
+        val (forwardIcon, forwardString) = when (chrome.skipForwardInterval) {
+            SkipInterval.TEN -> Pair(R.drawable.ic_arrow_rotate_right_10, R.string.player_forward_10)
+            SkipInterval.FIFTEEN -> Pair(R.drawable.ic_arrow_rotate_right_15, R.string.player_forward_15)
+            SkipInterval.THIRTY -> Pair(R.drawable.ic_arrow_rotate_right_30, R.string.player_forward_30)
+        }
+
         Row(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -531,7 +958,7 @@ private fun PlayerControlsOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ArchiveIconButton(
-                onClick = { seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS) },
+                onClick = { seekBy(player, chrome, -chrome.skipBackwardInterval.millis) },
                 modifier = Modifier
                     .size(56.dp)
                     .focusProperties { canFocus = controlsFocusable }
@@ -539,8 +966,8 @@ private fun PlayerControlsOverlay(
                 isTelevision = isTelevision,
             ) { focused ->
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_rotate_left_10),
-                    contentDescription = stringResource(R.string.player_back_10),
+                    painter = painterResource(id = backIcon),
+                    contentDescription = stringResource(backString),
                     modifier = Modifier.size(34.dp),
                     tint = if (focused) EdendaleColors.OnGold
                     else MaterialTheme.colorScheme.onBackground,
@@ -582,7 +1009,7 @@ private fun PlayerControlsOverlay(
                 }
             }
             ArchiveIconButton(
-                onClick = { seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS) },
+                onClick = { seekBy(player, chrome, chrome.skipForwardInterval.millis) },
                 modifier = Modifier
                     .size(56.dp)
                     .focusProperties { canFocus = controlsFocusable }
@@ -590,8 +1017,8 @@ private fun PlayerControlsOverlay(
                 isTelevision = isTelevision,
             ) { focused ->
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_rotate_right_10),
-                    contentDescription = stringResource(R.string.player_forward_10),
+                    painter = painterResource(id = forwardIcon),
+                    contentDescription = stringResource(forwardString),
                     modifier = Modifier.size(34.dp),
                     tint = if (focused) EdendaleColors.OnGold
                     else MaterialTheme.colorScheme.onBackground,
@@ -606,6 +1033,8 @@ private fun PlayerControlsOverlay(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
+                // Subtitles stay above this row while it shows.
+                .onGloballyPositioned { chrome.controlsBottomEdgePx = it.boundsInRoot().top }
                 .padding(horizontal = edgeMargin, vertical = 18.dp)
                 .focusGroup()
                 .focusProperties { if (isTelevision) up = centerFocus },
@@ -643,7 +1072,7 @@ private fun PlayerControlsOverlay(
 
 /** Circular icon button used across the player chrome. */
 @Composable
-private fun PlayerChip(
+internal fun PlayerChip(
     iconRes: Int,
     contentDescription: String?,
     isTelevision: Boolean,
@@ -682,7 +1111,8 @@ private fun PlayerChip(
  * Progress bar with a knob, drawn by hand: Material's Slider has no key
  * handling at all, so a focused Slider ignores D-pad left/right and the
  * focus system moves away instead of seeking. Touch taps and drags scrub;
- * on TV, focusing it turns left/right into immediate ±10 s seeks.
+ * on TV, focusing it turns left/right into immediate seeks by the App
+ * Controls skip lengths.
  */
 @Composable
 private fun TimelineBar(
@@ -712,12 +1142,12 @@ private fun TimelineBar(
                 val act = repeat == 0 || repeat % 4 == 0
                 when (event.key) {
                     Key.DirectionLeft -> {
-                        if (act) seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) seekBy(player, chrome, -chrome.skipBackwardInterval.millis)
                         chrome.showControls()
                         true
                     }
                     Key.DirectionRight -> {
-                        if (act) seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+                        if (act) seekBy(player, chrome, chrome.skipForwardInterval.millis)
                         chrome.showControls()
                         true
                     }
@@ -965,14 +1395,18 @@ private fun BoxScope.PlayerPanels(
     wyzieLookup: WyzieLookup?,
     supportsPip: Boolean,
     panelFocus: FocusRequester,
+    video: VideoEffectsController?,
+    docked: Boolean,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
+    onTrackSelected: () -> Unit = {},
 ) {
     // Tap anywhere outside the panel to dismiss it. Never a focus target —
-    // a full-screen focusable would trap the D-pad.
-    if (chrome.activePanel != null) {
+    // a full-screen focusable would trap the D-pad. A docked panel stays open:
+    // taps on the video go to the video (J.5).
+    if (chrome.activePanel != null && !docked) {
         Box(
             Modifier
                 .matchParentSize()
@@ -984,7 +1418,7 @@ private fun BoxScope.PlayerPanels(
         )
     }
 
-    val panelWidth = if (isTelevision) 460.dp else 340.dp
+    val panelWidth = if (isTelevision) 460.dp else DOCKED_PANEL_WIDTH
 
     AnimatedVisibility(
         visible = chrome.activePanel == PlayerPanel.PLAYLIST,
@@ -1020,15 +1454,17 @@ private fun BoxScope.PlayerPanels(
             supportsPip = supportsPip,
             panelWidth = panelWidth,
             panelFocus = panelFocus,
+            video = video,
             onAutoPipChanged = onAutoPipChanged,
             onSearchOnlineSubtitles = onSearchOnlineSubtitles,
             onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
+            onTrackSelected = onTrackSelected,
         )
     }
 }
 
 @Composable
-private fun PanelSurface(
+internal fun PanelSurface(
     panelWidth: androidx.compose.ui.unit.Dp,
     panelFocus: FocusRequester,
     onDismiss: () -> Unit,
@@ -1072,7 +1508,7 @@ private fun PanelSurface(
 }
 
 @Composable
-private fun PanelHeader(title: String, isTelevision: Boolean, onClose: () -> Unit) {
+internal fun PanelHeader(title: String, isTelevision: Boolean, onClose: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -1094,7 +1530,7 @@ private fun PanelHeader(title: String, isTelevision: Boolean, onClose: () -> Uni
 }
 
 @Composable
-private fun PanelLabel(text: String) {
+internal fun PanelLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelLarge,
@@ -1108,7 +1544,7 @@ private fun PanelLabel(text: String) {
  * distort a block spanning the panel.
  */
 @Composable
-private fun PanelRow(
+internal fun PanelRow(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1181,9 +1617,11 @@ private fun SettingsPanel(
     supportsPip: Boolean,
     panelWidth: androidx.compose.ui.unit.Dp,
     panelFocus: FocusRequester,
+    video: VideoEffectsController?,
     onAutoPipChanged: () -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
+    onTrackSelected: () -> Unit = {},
 ) {
     PanelSurface(panelWidth, panelFocus, onDismiss = { chrome.closePanel() }) {
         Column(
@@ -1199,8 +1637,11 @@ private fun SettingsPanel(
                 onClose = { chrome.closePanel() },
             )
 
+            // Apple's PlayerSettingsPanel order (B.3).
             SpeedSection(player, chrome, isTelevision)
-            SubtitleSection(player, chrome, tracks)
+            VideoTrackSection(player, chrome, tracks, onTrackSelected)
+            AudioTrackSection(player, chrome, tracks, onTrackSelected)
+            SubtitleSection(player, chrome, tracks, onTrackSelected)
             OnlineSubtitlesSection(
                 state = onlineSubtitles,
                 chrome = chrome,
@@ -1209,8 +1650,12 @@ private fun SettingsPanel(
                 onSearch = onSearchOnlineSubtitles,
                 onDownload = onDownloadOnlineSubtitle,
             )
-            PlaybackSection(player, chrome, supportsPip, onAutoPipChanged)
+            PlaybackSection(player, chrome, isTelevision, supportsPip, onAutoPipChanged)
             AspectSection(chrome, isTelevision)
+            if (video != null) {
+                PictureSection(video, chrome, isTelevision)
+                EnhancementSection(video, chrome, isTelevision)
+            }
         }
     }
 }
@@ -1260,7 +1705,7 @@ private fun SpeedSection(player: ExoPlayer, chrome: PlayerChromeState, isTelevis
 }
 
 @Composable
-private fun SpeedChip(label: String, isTelevision: Boolean, onClick: () -> Unit) {
+internal fun SpeedChip(label: String, isTelevision: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = Modifier
@@ -1277,7 +1722,12 @@ private fun SpeedChip(label: String, isTelevision: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks: Tracks) {
+private fun SubtitleSection(
+    player: ExoPlayer,
+    chrome: PlayerChromeState,
+    tracks: Tracks,
+    onTrackSelected: () -> Unit = {},
+) {
     val options = remember(tracks) { textTrackOptions(tracks) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         PanelLabel(stringResource(R.string.player_subtitles))
@@ -1301,6 +1751,7 @@ private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks
                     onClick = {
                         selectTextTrack(player, null)
                         chrome.noteInteraction()
+                        onTrackSelected()
                     },
                 )
                 options.forEachIndexed { index, option ->
@@ -1315,6 +1766,7 @@ private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks
                         onClick = {
                             selectTextTrack(player, option)
                             chrome.noteInteraction()
+                            onTrackSelected()
                         },
                     )
                 }
@@ -1324,7 +1776,7 @@ private fun SubtitleSection(player: ExoPlayer, chrome: PlayerChromeState, tracks
 }
 
 @Composable
-private fun SelectedCheck() {
+internal fun SelectedCheck() {
     Icon(
         painter = painterResource(id = R.drawable.ic_check),
         contentDescription = null,
@@ -1503,7 +1955,7 @@ private fun OnlineSubtitleResults(
 }
 
 @Composable
-private fun SecondaryPanelCopy(text: String) {
+internal fun SecondaryPanelCopy(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodySmall,
@@ -1511,7 +1963,7 @@ private fun SecondaryPanelCopy(text: String) {
     )
 }
 
-private fun localizedLanguageName(code: String): String =
+internal fun localizedLanguageName(code: String): String =
     Locale.forLanguageTag(code).displayLanguage
         .replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
@@ -1537,6 +1989,7 @@ private const val MAX_ONLINE_SUBTITLE_ROWS = 25
 private fun PlaybackSection(
     player: ExoPlayer,
     chrome: PlayerChromeState,
+    isTelevision: Boolean,
     supportsPip: Boolean,
     onAutoPipChanged: () -> Unit,
 ) {
@@ -1544,20 +1997,26 @@ private fun PlaybackSection(
         PanelLabel(stringResource(R.string.player_playback))
         Spacer(Modifier.height(8.dp))
         ToggleRow(
-            title = stringResource(R.string.player_skip_recap),
-            detail = stringResource(R.string.player_skip_recap_detail),
-            checked = chrome.skipRecap,
-        ) { chrome.setSkipRecapEnabled(it) }
-        ToggleRow(
-            title = stringResource(R.string.player_skip_credits),
-            detail = stringResource(R.string.player_skip_credits_detail),
-            checked = chrome.skipCredits,
-        ) { chrome.setSkipCreditsEnabled(it) }
+            title = stringResource(R.string.player_skip_prompts),
+            detail = stringResource(R.string.player_skip_prompts_detail),
+            checked = chrome.segmentPromptsEnabled,
+        ) { chrome.setSegmentPrompts(it) }
+        Text(
+            text = stringResource(R.string.settings_skip_prompts_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+        )
         ToggleRow(
             title = stringResource(R.string.player_loop),
             detail = stringResource(R.string.player_loop_detail),
             checked = chrome.loopEnabled,
         ) { chrome.setLoop(player, it) }
+        ToggleRow(
+            title = stringResource(R.string.audio_booster),
+            detail = stringResource(R.string.audio_booster_detail),
+            checked = chrome.audioBoosterEnabled,
+        ) { chrome.setAudioBooster(it) }
         if (supportsPip) {
             ToggleRow(
                 title = stringResource(R.string.player_auto_pip),
@@ -1568,11 +2027,13 @@ private fun PlaybackSection(
                 onAutoPipChanged()
             }
         }
+        // A TV's output belongs to its own settings and the AV receiver.
+        if (!isTelevision) AudioOutputRow(chrome)
     }
 }
 
 @Composable
-private fun ToggleRow(
+internal fun ToggleRow(
     title: String,
     detail: String,
     checked: Boolean,
@@ -1610,7 +2071,7 @@ private fun AspectSection(chrome: PlayerChromeState, isTelevision: Boolean) {
 }
 
 @Composable
-private fun SegmentChip(
+internal fun SegmentChip(
     label: String,
     selected: Boolean,
     isTelevision: Boolean,
@@ -1635,87 +2096,6 @@ private fun SegmentChip(
 // Playlist panel
 // ------------------------------------------------------------------
 
-@Composable
-private fun PlaylistPanel(
-    chrome: PlayerChromeState,
-    isTelevision: Boolean,
-    currentUri: String,
-    playlist: PlayerPlaylist?,
-    panelWidth: androidx.compose.ui.unit.Dp,
-    panelFocus: FocusRequester,
-    onSelectEntry: (PlaylistEntry) -> Unit,
-) {
-    PanelSurface(panelWidth, panelFocus, onDismiss = { chrome.closePanel() }) {
-        Column(Modifier.padding(24.dp)) {
-            PanelHeader(
-                title = stringResource(
-                    if (playlist?.isEpisodeList == true) {
-                        R.string.player_episodes
-                    } else {
-                        R.string.player_in_this_folder
-                    },
-                ),
-                isTelevision = isTelevision,
-                onClose = { chrome.closePanel() },
-            )
-            Spacer(Modifier.height(16.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                val entries = playlist?.entries.orEmpty()
-                if (playlist?.isEpisodeList == true) {
-                    entries.groupBy { it.season ?: 0 }.forEach { (season, seasonEntries) ->
-                        item("season-$season") {
-                            Text(
-                                text = if (season == 0) {
-                                    stringResource(R.string.season_specials)
-                                } else {
-                                    stringResource(R.string.season_number, season)
-                                }.uppercase(),
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        items(seasonEntries.size, key = { seasonEntries[it].uri }) { index ->
-                            PlaylistRow(seasonEntries[index], currentUri, onSelectEntry)
-                        }
-                    }
-                } else {
-                    items(entries.size, key = { entries[it].uri }) { index ->
-                        PlaylistRow(entries[index], currentUri, onSelectEntry)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlaylistRow(
-    entry: PlaylistEntry,
-    currentUri: String,
-    onSelectEntry: (PlaylistEntry) -> Unit,
-) {
-    val isCurrent = entry.uri == currentUri
-    PanelRow(
-        title = entry.title,
-        detail = entry.detail,
-        selected = isCurrent,
-        trailing = if (isCurrent) {
-            {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_play),
-                    contentDescription = null,
-                    modifier = Modifier.size(12.dp),
-                    tint = EdendaleColors.Gold,
-                )
-            }
-        } else {
-            null
-        },
-        onClick = { if (!isCurrent) onSelectEntry(entry) },
-    )
-}
-
 // ------------------------------------------------------------------
 // Touch gestures (handhelds)
 // ------------------------------------------------------------------
@@ -1727,9 +2107,11 @@ private const val HOLD_DWELL_MILLIS = 400L
 /**
  * Touch-first hidden controls, mirroring Apple's gesture layer:
  *  - single tap             show/hide the controls
- *  - double tap L / C / R   seek −10 s / play-pause / +10 s
+ *  - double tap L / C / R   skip back / play-pause / skip forward, by the
+ *                           App Controls lengths (10, 15, or 30 s)
  *  - vertical swipe L / R   screen brightness / player volume
- *  - press-and-hold L / R   0.5× / 1.5× until released
+ *  - press-and-hold L / R   the App Controls hold speeds (0.5× / 2.0× by
+ *                           default) until released
  *  - hold + horizontal drag scrub the timeline (full width = 5 minutes)
  */
 @Composable
@@ -1747,12 +2129,12 @@ private fun BoxScope.PlayerGestureLayer(
                     onTap = { chrome.toggleControls() },
                     onDoubleTap = { offset ->
                         when ((offset.x / size.width * 3).toInt().coerceIn(0, 2)) {
-                            0 -> seekBy(player, chrome, -PlayerLogic.SEEK_STEP_MILLIS)
+                            0 -> seekBy(player, chrome, -chrome.skipBackwardInterval.millis)
                             1 -> {
                                 if (player.isPlaying) player.pause() else player.play()
                                 chrome.showControls()
                             }
-                            else -> seekBy(player, chrome, PlayerLogic.SEEK_STEP_MILLIS)
+                            else -> seekBy(player, chrome, chrome.skipForwardInterval.millis)
                         }
                     },
                 )
@@ -1786,7 +2168,12 @@ private fun BoxScope.PlayerGestureLayer(
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 chrome.beginHoldRate(
                                     player,
-                                    PlayerLogic.holdRate(down.position.x, size.width.toFloat()),
+                                    PlayerLogic.holdRate(
+                                        touchX = down.position.x,
+                                        width = size.width.toFloat(),
+                                        leftRate = chrome.holdLeftRate,
+                                        rightRate = chrome.holdRightRate,
+                                    ),
                                 )
                                 GestureMode.HOLD_SPEED
                             } else {
@@ -1887,61 +2274,10 @@ private fun BoxScope.PlayerGestureLayer(
     )
 }
 
-// ------------------------------------------------------------------
-// Track selection
-// ------------------------------------------------------------------
 
-internal data class PlayerTrackOption(
-    val group: TrackGroup,
-    val trackIndex: Int,
-    val id: String?,
-    val label: String?,
-    val language: String?,
-    val isSelected: Boolean,
-)
-
-/** Selectable subtitle tracks in the current media, in declaration order. */
-internal fun textTrackOptions(tracks: Tracks): List<PlayerTrackOption> =
-    tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT }.flatMap { group ->
-        (0 until group.length).mapNotNull { index ->
-            if (!group.isTrackSupported(index)) return@mapNotNull null
-            val format = group.getTrackFormat(index)
-            PlayerTrackOption(
-                group = group.mediaTrackGroup,
-                trackIndex = index,
-                id = format.id,
-                label = format.label,
-                language = format.language,
-                isSelected = group.isTrackSelected(index),
-            )
-        }
-    }
-
-/**
- * Applies a subtitle choice. Off must both disable the text type and clear
- * any override — a stale override would otherwise resurface on the next
- * selection; picking a track must re-enable the type or a previous Off
- * silently suppresses the override.
- */
-internal fun selectTextTrack(player: Player, option: PlayerTrackOption?) {
-    player.trackSelectionParameters = player.trackSelectionParameters
-        .buildUpon()
-        .apply {
-            if (option == null) {
-                clearOverridesOfType(C.TRACK_TYPE_TEXT)
-                setPreferredTextLanguage(null)
-                setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-            } else {
-                setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                setOverrideForType(TrackSelectionOverride(option.group, option.trackIndex))
-                option.language?.let { setPreferredTextLanguage(it) }
-            }
-        }
-        .build()
-}
 
 @Composable
-private fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {
+internal fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {
     option.label?.takeIf { it.isNotBlank() }?.let { return it }
     val language = option.language
         ?.takeIf { it.isNotBlank() && it != "und" }
@@ -1950,3 +2286,9 @@ private fun trackOptionLabel(option: PlayerTrackOption, index: Int): String {
     return language?.replaceFirstChar { it.titlecase(Locale.getDefault()) }
         ?: stringResource(R.string.player_track_number, index + 1)
 }
+
+/** J.5: the window width from which the side panels dock instead of covering the video. */
+private const val DOCKED_PANEL_MIN_WIDTH_DP = 1100
+
+/** The handheld panel width, docked or not. */
+private val DOCKED_PANEL_WIDTH = 340.dp

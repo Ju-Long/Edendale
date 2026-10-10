@@ -1,6 +1,9 @@
 package com.babasama.edendale
 
 import android.content.Context
+import com.babasama.edendale.introdb.IntroDbResponse
+import com.babasama.edendale.introdb.IntroDbService
+import com.babasama.edendale.introdb.IntroDbTransport
 import com.babasama.edendale.tmdb.BrowseRepository
 import com.babasama.edendale.tmdb.ContentCertificationProvider
 import com.babasama.edendale.tmdb.TmdbAccountApi
@@ -48,6 +51,17 @@ object AndroidEdendaleCore {
         TmdbContentCertificationProvider(TmdbApi(AndroidTmdbTransport()), regionProvider)
 
     fun wyzieService(): WyzieSubtitleService = WyzieSubtitleService(AndroidWyzieTransport())
+
+    /**
+     * One TheIntroDB service for the whole process, like Apple's
+     * `IntroDBService.shared`: its 429 cooldown is provider-wide, so it must
+     * outlive any single lookup, item, or player session.
+     */
+    private val sharedIntroDbService: IntroDbService by lazy {
+        IntroDbService(AndroidIntroDbTransport())
+    }
+
+    fun introDbService(): IntroDbService = sharedIntroDbService
 
     fun hasTmdbCredentials(): Boolean = EdendaleCore.hasTmdbCredentials()
 }
@@ -168,6 +182,35 @@ internal class AndroidWyzieTransport : WyzieTransport {
 
     private fun HttpURLConnection.responseBody(status: Int) =
         if (status in 200..299) inputStream else errorStream ?: ByteArray(0).inputStream()
+}
+
+internal class AndroidIntroDbTransport : IntroDbTransport {
+    override suspend fun execute(urlString: String): IntroDbResponse = withContext(Dispatchers.IO) {
+        val url = URI(urlString).toURL()
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 8_000
+            readTimeout = 8_000
+            useCaches = false
+            defaultUseCaches = false
+            setRequestProperty("Accept", "application/json")
+        }
+        try {
+            val status = connection.responseCode
+            val headers = buildMap<String, String> {
+                connection.headerFields.forEach { (key, values) ->
+                    if (key != null && values.isNotEmpty()) {
+                        put(key, values.first())
+                    }
+                }
+            }
+            val stream = if (status in 200..299) connection.inputStream else connection.errorStream ?: ByteArray(0).inputStream()
+            val body = stream.bufferedReader().use { it.readText() }
+            IntroDbResponse(status, body, headers)
+        } finally {
+            connection.disconnect()
+        }
+    }
 }
 
 /**

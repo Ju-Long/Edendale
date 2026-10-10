@@ -5,8 +5,32 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
-import jcifs.smb.SmbFile
 import com.babasama.edendale.AndroidEdendaleCore
+import com.babasama.edendale.android.CopySource
+import com.babasama.edendale.android.PlaybackSources
+import com.babasama.edendale.android.copySource
+import com.babasama.edendale.android.EdendaleApplication
+import com.babasama.edendale.connectors.ConnectorEntry
+import com.babasama.edendale.connectors.ConnectorException
+import com.babasama.edendale.connectors.ConnectorFailure
+import com.babasama.edendale.connectors.MediaConnector
+import com.babasama.edendale.connectors.DropboxConnector
+import com.babasama.edendale.connectors.GoogleDriveConnector
+import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.OneDriveConnector
+import com.babasama.edendale.connectors.ProviderHttp
+import com.babasama.edendale.connectors.S3Configuration
+import com.babasama.edendale.connectors.S3Connector
+import com.babasama.edendale.connectors.Sftp
+import com.babasama.edendale.connectors.SftpConnector
+import com.babasama.edendale.connectors.SourceUrl
+import com.babasama.edendale.connectors.SshHostKey
+import com.babasama.edendale.connectors.VideoFiles
+import com.babasama.edendale.connectors.WebDav
+import com.babasama.edendale.connectors.WebDavConnector
+import com.babasama.edendale.handoff.AccountHandoff
+import com.babasama.edendale.remote.OkHttpRemoteHttp
+import com.babasama.edendale.remote.ServerLogin
 import com.babasama.edendale.domain.MediaParser
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.ParsedMedia
@@ -26,6 +50,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import com.babasama.edendale.android.AppStrings
+import com.babasama.edendale.android.connectorFailureMessage
 
 /** What the Downloaded tab shows while imports and enrichment run. */
 data class LibraryActivity(
@@ -52,6 +77,11 @@ class LibraryRepository(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val enrichmentLock = Mutex()
     private val smbCredentialsStore = SmbCredentialsStore(context)
+    private val serverLogins = ServerLoginStore(context)
+    val sshHostKeys = SshHostKeyStore(context)
+    private val http = OkHttpRemoteHttp()
+    private val cloud by lazy { (context.applicationContext as EdendaleApplication).cloudAccounts }
+    private val tlsPins by lazy { (context.applicationContext as EdendaleApplication).tlsPins }
 
     private val _activity = MutableStateFlow(LibraryActivity())
     val activity: StateFlow<LibraryActivity> = _activity.asStateFlow()
@@ -87,6 +117,7 @@ class LibraryRepository(
                 treeUri = treeUri.toString(),
                 displayName = document.name ?: strings.defaultFolderName,
                 addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.LOCAL.raw,
             )
             dao.upsertFolder(folder)
             scan(folder)
@@ -114,6 +145,9 @@ class LibraryRepository(
                 treeUri = url,
                 displayName = share.ifBlank { host },
                 addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.SMB.raw,
+                displayPath = url,
+                accountKey = host,
             )
             dao.upsertFolder(folder)
             scan(folder)
@@ -132,6 +166,118 @@ class LibraryRepository(
     ): Result<List<String>> = withContext(Dispatchers.IO) {
         runCatching {
             SmbClient.listDirectories(url, if (user.isBlank()) null else user to pass)
+        }
+    }
+
+    /**
+     * The login already saved for the server [address] names (H.11), so
+     * linking another folder there doesn't mean typing it again.
+     */
+    suspend fun savedLogin(kind: MediaSourceKind, address: String): ServerLogin? = withContext(Dispatchers.IO) {
+        runCatching {
+            when (kind) {
+                MediaSourceKind.SMB -> SmbClient.normalizeUrl(address)?.let { Uri.parse(it).host }
+                    ?.let(smbCredentialsStore::getCredentials)
+                    ?.let { (user, pass) -> ServerLogin(user, pass) }
+                MediaSourceKind.WEBDAV -> WebDav.canonicalRoot(address)?.let { serverLogins.forUrl(kind, it) }
+                MediaSourceKind.SFTP -> sftpAddress(address)?.let { (host, port, _) -> serverLogins.get(kind, host, port) }
+                else -> null
+            }
+        }.getOrNull()
+    }
+
+    /** The key an SSH server presents, for the viewer to approve before linking (H.4). */
+    suspend fun fetchSftpHostKey(host: String, port: Int): Result<SshHostKey> =
+        runCatching { withContext(Dispatchers.IO) { Sftp.fetchHostKey(host, port) } }
+
+    /**
+     * The folders under [folderUrl] on an SSH server (the login directory when
+     * null), for the Link Source browser (H.4): the folder listed and its
+     * subfolders. The login is the one being typed, not yet saved.
+     */
+    suspend fun listSftpFolders(host: String, port: Int, login: ServerLogin, folderUrl: String?): Result<Pair<String, List<ConnectorEntry>>> =
+        runCatching {
+            val start = SftpConnector(host, port, login, sshHostKeys)
+            val folder = folderUrl ?: Sftp.url(host, port, start.homeDirectory(), isDirectory = true)
+                ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
+            folder to start.list(folder).filter { it.isDirectory }
+        }
+
+    /** Links a folder on an SSH server (H.4): saves the login under its host and port, then scans. */
+    fun importSftpFolder(folderUrl: String, login: ServerLogin) {
+        val host = SourceUrl.credentialHost(folderUrl) ?: return
+        val port = SourceUrl.port(folderUrl) ?: Sftp.DEFAULT_PORT
+        scope.launch {
+            serverLogins.save(MediaSourceKind.SFTP, host, port, login)
+            val segments = SourceUrl.pathSegments(folderUrl)
+            val address = if (port != Sftp.DEFAULT_PORT) "$host:$port" else host
+            val folder = LibraryFolderEntity(
+                treeUri = folderUrl,
+                displayName = segments.lastOrNull() ?: address,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.SFTP.raw,
+                displayPath = (listOf(address) + segments).joinToString(" › "),
+                accountKey = address,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
+    }
+
+    /**
+     * The folders under a WebDAV [folderUrl] (`davs://…/`), for the Link
+     * Source browser (H.3). The login is the one being typed, not yet saved.
+     */
+    suspend fun listWebDavFolders(folderUrl: String, user: String, pass: String): Result<List<ConnectorEntry>> =
+        runCatching {
+            WebDavConnector(folderUrl, ServerLogin(user, pass), http).list(folderUrl).filter { it.isDirectory }
+        }
+
+    /** Links a WebDAV folder (H.3): saves the login under its host and port, then scans. */
+    fun importWebDavFolder(folderUrl: String, user: String, pass: String) {
+        val host = SourceUrl.credentialHost(folderUrl) ?: return
+        val port = SourceUrl.port(folderUrl)
+        scope.launch {
+            serverLogins.save(MediaSourceKind.WEBDAV, host, port, ServerLogin(user.trim(), pass))
+            val segments = SourceUrl.pathSegments(folderUrl)
+            val address = if (port != null) "$host:$port" else host
+            val folder = LibraryFolderEntity(
+                treeUri = WebDav.directoryUrl(folderUrl),
+                displayName = segments.lastOrNull() ?: address,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.WEBDAV.raw,
+                displayPath = (listOf(address) + segments).joinToString(" › "),
+                accountKey = address,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
+    }
+
+    /** The folders under an S3 [prefixUrl] (`s3://<account>/<bucket>/<prefix>/`), for the Link Source browser (H.5). */
+    suspend fun listS3Folders(configuration: S3Configuration, login: ServerLogin, prefixUrl: String?): Result<Pair<String, List<ConnectorEntry>>> =
+        runCatching {
+            val connector = S3Connector(configuration, login, http)
+            val folder = prefixUrl ?: connector.root
+            folder to connector.list(folder).filter { it.isDirectory }
+        }
+
+    /** Links an S3 bucket or prefix (H.5): saves the key pair and location under the account key, then scans. */
+    fun importS3Folder(configuration: S3Configuration, login: ServerLogin, folderUrl: String) {
+        val item = SourceUrl.parseS3(folderUrl) ?: return
+        scope.launch {
+            serverLogins.saveS3(item.account, login, configuration)
+            val segments = item.key.split('/').filter { it.isNotEmpty() }
+            val folder = LibraryFolderEntity(
+                treeUri = folderUrl,
+                displayName = segments.lastOrNull() ?: configuration.bucket,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.S3.raw,
+                displayPath = (listOf(configuration.bucket) + segments).joinToString(" › "),
+                accountKey = item.account,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
         }
     }
 
@@ -162,31 +308,34 @@ class LibraryRepository(
         }
     }
 
-    fun rescanAll() {
+    /**
+     * The sweep on each Downloaded visit skips remote sources scanned in the
+     * last 15 minutes (D.3); [force] (a manual Rescan) scans every source.
+     */
+    fun rescanAll(force: Boolean = false) {
         scope.launch {
-            dao.folders().forEach { scan(it) }
+            val now = System.currentTimeMillis()
+            dao.folders()
+                .filter { force || SourceScanRules.shouldAutoRescan(it, now) }
+                .forEach { scan(it) }
         }
     }
 
     /**
-     * Fully unlinks a source: the folder and everything scanned from it go, the
-     * SAF grant is handed back, and the stored login is forgotten once no other
-     * source still points at that host. Credentials are per host, so removing
-     * one of two shares on the same NAS must leave the other one working.
+     * Unlinks a source: the folder and everything scanned from it go, and the
+     * SAF grant is handed back. A network source's saved login is kept — it
+     * lives in Settings → Accounts until removed there (D.4).
      */
     fun removeFolder(treeUri: String) {
         scope.launch {
-            val host = SmbClient.hostOf(treeUri)
             dao.removeFolderTree(treeUri)
-            if (host == null) {
+            if (treeUri.startsWith("content://")) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
                         Uri.parse(treeUri),
                         Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     )
                 }
-            } else if (dao.folders().none { SmbClient.hostOf(it.treeUri).equals(host, ignoreCase = true) }) {
-                smbCredentialsStore.removeCredentials(host)
             }
         }
     }
@@ -237,19 +386,20 @@ class LibraryRepository(
         }
     }
 
-    /** Imported episodes belonging to an enriched show, ordered by season/episode. */
-    suspend fun episodesForShowTmdbId(tmdbId: Int): List<LibraryEpisodeEntity> =
-        dao.showByTmdbId(tmdbId)?.key?.let { dao.episodesForShow(it) }.orEmpty()
-
-    suspend fun localUriFor(tmdbId: Int): String? {
-        val movie = dao.movieByTmdbId(tmdbId)
-        if (movie != null) return movie.uri
-        val episode = dao.episodeByTmdbId(tmdbId)
-        if (episode != null) return episode.uri
-        // For shows, we might need to find the first unwatched episode or just the first episode.
-        // For now, if it's a show, this returns null since we don't have episode tracking wired up easily here.
-        // Actually we can return the first episode of the show if we want, but let's stick to movie/episode matches.
-        return null
+    /**
+     * Every imported copy of the movie or episode with [tmdbId], in Play From
+     * order (D.5): local folders first, then by source name. Empty when the
+     * library holds none. A show's own id matches nothing here.
+     */
+    suspend fun localCopiesFor(tmdbId: Int): List<LocalCopy> {
+        val folders = dao.folders().associateBy { it.treeUri }
+        val movies = dao.moviesByTmdbId(tmdbId)
+        val copies = movies.map { LocalCopy(it.uri, it.folderUri, isEpisode = false) }
+            .ifEmpty {
+                dao.episodesByTmdbId(tmdbId).map { LocalCopy(it.uri, it.folderUri, isEpisode = true) }
+            }
+        return PlaybackSources.order(null, copies, { folders.copySource(it.folderUri) }, { it.uri })
+            .map { it.copy(source = folders.copySource(it.folderUri)) }
     }
 
     // MARK: - Scan (classify-before-network: only MediaParser runs here)
@@ -274,20 +424,19 @@ class LibraryRepository(
             errorMessage = null,
         )
         val listing = try {
-            if (folder.treeUri.startsWith("smb://")) listSmb(folder) else listDocuments(folder)
+            connectorFor(folder)?.let { listConnector(it, folder) } ?: listDocuments(folder)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Throwable) {
-            // Reaching the screen matters more than the stack trace: this used
-            // to escape into scope.launch, where nothing reported it.
-            _activity.value = _activity.value.copy(
-                errorMessage = strings.sourceError(folder.displayName, error.readableMessage()),
-            )
+            // Recorded on the source's own row (D.3), not as a library-wide
+            // error on every visit; the next successful scan clears it.
+            dao.markFolderFailed(folder.treeUri, SourceScanRules.classifyFailure(error).raw)
             null
         } finally {
             _activity.value = _activity.value.copy(scanningFolder = null)
         }
         if (listing == null) return
+        dao.markFolderScanned(folder.treeUri, System.currentTimeMillis())
 
         if (listing.complete) {
             // Drop records whose file disappeared since the last scan.
@@ -327,15 +476,197 @@ class LibraryRepository(
         return Listing(files, complete = true)
     }
 
-    private fun listSmb(folder: LibraryFolderEntity): Listing {
-        val host = Uri.parse(folder.treeUri).host.orEmpty()
-        val cifsContext = SmbClient.context(smbCredentialsStore.getCredentials(host))
-        val root = SmbFile(folder.treeUri, cifsContext)
-        if (!root.exists()) error(strings.shareUnreachable)
-        if (!root.isDirectory) error(strings.addressIsFile)
-        val files = mutableListOf<Pair<String, String>>()
-        val complete = collectVideosSmb(root, files)
-        return Listing(files, complete)
+    /** The connector a remote source scans through (H.1); null for a local folder. */
+    private fun connectorFor(folder: LibraryFolderEntity): MediaConnector? =
+        when (val kind = MediaSourceKind.fromRaw(folder.kind) ?: MediaSourceKind.forSourceUri(folder.treeUri)) {
+            MediaSourceKind.SMB -> SmbConnector(
+                root = folder.treeUri,
+                credentials = smbCredentialsStore.getCredentials(Uri.parse(folder.treeUri).host.orEmpty()),
+                strings = strings,
+            )
+            MediaSourceKind.S3 -> SourceUrl.credentialHost(folder.treeUri)
+                ?.let(serverLogins::getS3)
+                ?.let { (login, configuration) -> S3Connector(configuration, login, http) }
+                // No key pair: the scan records that the source needs signing in again.
+                ?: throw ConnectorException(ConnectorFailure.SignInRequired(MediaSourceKind.S3))
+            MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX, MediaSourceKind.GOOGLE_DRIVE ->
+                cloudConnector(kind, folder.accountKey ?: SourceUrl.credentialHost(folder.treeUri).orEmpty())
+            MediaSourceKind.SFTP -> {
+                val host = SourceUrl.credentialHost(folder.treeUri).orEmpty()
+                val port = SourceUrl.port(folder.treeUri) ?: Sftp.DEFAULT_PORT
+                // SFTP needs its login; without one the source has to sign in again.
+                val login = serverLogins.get(kind, host, port) ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
+                SftpConnector(host, port, login, sshHostKeys, Sftp.path(folder.treeUri))
+            }
+            MediaSourceKind.WEBDAV -> WebDavConnector(
+                root = folder.treeUri,
+                login = serverLogins.forUrl(MediaSourceKind.WEBDAV, folder.treeUri),
+                http = http,
+            )
+            else -> null
+        }
+
+    /**
+     * The connector for a linked cloud account (H.7 on); a missing account
+     * means the source has to sign in again.
+     */
+    private fun cloudConnector(kind: MediaSourceKind, accountKey: String): MediaConnector {
+        val account = cloud.vault.account(kind, accountKey) ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
+        val provider = ProviderHttp(kind, account.key, cloud.tokens, cloud.http)
+        val connector = when (kind) {
+            MediaSourceKind.ONE_DRIVE -> OneDriveConnector.create(account, provider)
+            MediaSourceKind.DROPBOX -> DropboxConnector(account, provider)
+            MediaSourceKind.GOOGLE_DRIVE -> GoogleDriveConnector(account, provider, strings.googleDriveLabels)
+            else -> null
+        }
+        return connector ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
+    }
+
+    /** One step of the Link Source browser through a cloud account (H.11). */
+    class AccountFolderListing(
+        val folder: String,
+        /** The subfolders, every one of them browsable. */
+        val entries: List<ConnectorEntry>,
+        /** Whether [folder] itself can be linked; Drive's root and its list of shared drives only gather others (H.9). */
+        val canIndex: Boolean,
+    )
+
+    /**
+     * The folders under [folderUrl] (the account's root when null) of a linked
+     * cloud account, for the Link Source browser (H.11): the folder listed, its
+     * subfolders, and whether it can be linked.
+     */
+    suspend fun listAccountFolders(kind: MediaSourceKind, accountKey: String, folderUrl: String?): Result<AccountFolderListing> =
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val connector = cloudConnector(kind, accountKey)
+                val folder = folderUrl ?: connector.root
+                AccountFolderListing(folder, connector.list(folder).filter { it.isDirectory }, connector.canIndex(folder))
+            }
+        }
+
+    /** Links a folder of a linked cloud account (H.11), then scans it. */
+    fun importAccountFolder(kind: MediaSourceKind, accountKey: String, folderUrl: String, trail: List<String>) {
+        scope.launch {
+            val folder = LibraryFolderEntity(
+                treeUri = folderUrl,
+                displayName = trail.lastOrNull() ?: SourceUrl.fileName(folderUrl).orEmpty(),
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = kind.raw,
+                displayPath = trail.joinToString(" › "),
+                accountKey = accountKey,
+            )
+            dao.upsertFolder(folder)
+            scan(folder)
+        }
+    }
+
+    // MARK: - Phone-to-TV handoff (I.2)
+
+    /**
+     * The saved logins of [kind] on this device, as a phone hands them to a
+     * TV: with the server's pinned SSH host key or certificate so the TV
+     * trusts it the same way, an S3 bucket's location, and the sources
+     * linked on each so the TV can start browsing from one.
+     */
+    suspend fun handedOffLogins(kind: MediaSourceKind): List<AccountHandoff.Login> = withContext(Dispatchers.IO) {
+        val folders = dao.folders()
+        when (kind) {
+            MediaSourceKind.SMB -> smbCredentialsStore.savedLogins().mapNotNull { saved ->
+                val (user, password) = smbCredentialsStore.getCredentials(saved.host) ?: return@mapNotNull null
+                val addresses = folders.filter { SmbClient.hostOf(it.treeUri).equals(saved.host, ignoreCase = true) }.map { it.treeUri }
+                AccountHandoff.Login(kind, saved.host, null, user, password, addresses = addresses)
+            }
+            MediaSourceKind.SFTP, MediaSourceKind.WEBDAV, MediaSourceKind.S3 -> serverLogins.all().filter { it.kind == kind }.mapNotNull { saved ->
+                val addresses = folders.filter { folder ->
+                    SourceScanRules.kindOf(folder) == kind &&
+                        SourceUrl.credentialHost(folder.treeUri) == saved.host.lowercase() &&
+                        SourceUrl.port(folder.treeUri) == saved.port
+                }.map { it.treeUri }
+                when (kind) {
+                    MediaSourceKind.S3 -> serverLogins.getS3(saved.host)?.let { (login, configuration) ->
+                        val (host, port) = endpointHostAndPort(configuration.endpoint)
+                        AccountHandoff.Login(
+                            kind, saved.host, null, login.user, login.password,
+                            certificateFingerprint = tlsPins.pinned(host, port), s3 = configuration, addresses = addresses,
+                        )
+                    }
+                    MediaSourceKind.SFTP -> serverLogins.get(kind, saved.host, saved.port)?.let { login ->
+                        val port = saved.port ?: Sftp.DEFAULT_PORT
+                        AccountHandoff.Login(
+                            kind, saved.host, port, login.user, login.password,
+                            hostKeyFingerprint = sshHostKeys.pinned(saved.host, port), addresses = addresses,
+                        )
+                    }
+                    else -> serverLogins.get(kind, saved.host, saved.port)?.let { login ->
+                        AccountHandoff.Login(
+                            kind, saved.host, saved.port, login.user, login.password,
+                            certificateFingerprint = tlsPins.pinned(saved.host, saved.port ?: 443), addresses = addresses,
+                        )
+                    }
+                }
+            }
+            else -> emptyList()
+        }
+    }
+
+    /**
+     * The TV side: tests a login a phone handed over where a quick test
+     * exists (SMB lists the shares, SFTP its home folder, S3 the bucket,
+     * WebDAV the first linked folder), then stores it, pinning the server's
+     * host key or certificate first so the test and later connections trust
+     * it as the phone did. A failed test stores nothing and says why.
+     */
+    suspend fun adoptHandedOffLogin(login: AccountHandoff.Login): AccountHandoff.Result = withContext(Dispatchers.IO) {
+        runCatching {
+            when (login.kind) {
+                MediaSourceKind.SMB -> {
+                    SmbClient.listDirectories("smb://${login.host}/", login.user.takeIf { it.isNotBlank() }?.let { it to login.password })
+                    smbCredentialsStore.saveCredentials(login.host, login.user, login.password)
+                }
+                MediaSourceKind.SFTP -> {
+                    val port = login.port ?: Sftp.DEFAULT_PORT
+                    login.hostKeyFingerprint?.let { sshHostKeys.pin(login.host, port, it) }
+                    // Without the phone's host key the TV's Link Source shows the key for approval instead.
+                    if (login.hostKeyFingerprint != null) SftpConnector(login.host, port, login.serverLogin, sshHostKeys).homeDirectory()
+                    serverLogins.save(login.kind, login.host, port, login.serverLogin)
+                }
+                MediaSourceKind.WEBDAV -> {
+                    login.certificateFingerprint?.let { tlsPins.pin(login.host, login.port ?: 443, it) }
+                    login.addresses.firstOrNull()?.let { WebDavConnector(it, login.serverLogin, http).list(it) }
+                    serverLogins.save(login.kind, login.host, login.port, login.serverLogin)
+                }
+                MediaSourceKind.S3 -> {
+                    val configuration = login.s3 ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
+                    login.certificateFingerprint?.let { fingerprint ->
+                        val (host, port) = endpointHostAndPort(configuration.endpoint)
+                        tlsPins.pin(host, port, fingerprint)
+                    }
+                    val connector = S3Connector(configuration, login.serverLogin, http)
+                    connector.list(connector.root)
+                    serverLogins.saveS3(login.host, login.serverLogin, configuration)
+                }
+                else -> throw ConnectorException(ConnectorFailure.InvalidAddress)
+            }
+        }.fold(
+            { AccountHandoff.Result(stored = true) },
+            { error -> AccountHandoff.Result(stored = false, message = connectorFailureMessage(context, error) ?: error.message) },
+        )
+    }
+
+    /** The host and port an endpoint URL connects to, with the scheme's default port. */
+    private fun endpointHostAndPort(endpoint: String): Pair<String, Int> {
+        val scheme = endpoint.substringBefore("://", "https").lowercase()
+        val authority = endpoint.substringAfter("://").substringBefore('/').substringAfterLast('@')
+        val port = authority.substringAfterLast(':', "").toIntOrNull()
+        val host = if (port != null) authority.substringBeforeLast(':') else authority
+        return host.lowercase() to (port ?: if (scheme == "http") 80 else 443)
+    }
+
+    /** Validates the source, then walks it; a partial walk deletes nothing. */
+    private suspend fun listConnector(connector: MediaConnector, folder: LibraryFolderEntity): Listing {
+        val enumeration = SourceScanRules.enumerate(connector, folder)
+        return Listing(enumeration.videos.map { it.url to it.name }, enumeration.complete)
     }
 
     private fun collectVideos(directory: DocumentFile, into: MutableList<Pair<String, String>>) {
@@ -344,45 +675,11 @@ class LibraryRepository(
                 file.isDirectory -> collectVideos(file, into)
                 file.isFile -> {
                     val name = file.name ?: return@forEach
-                    val looksLikeVideo = file.type?.startsWith("video/") == true ||
-                        name.substringAfterLast('.', "").lowercase() in videoExtensions
+                    val looksLikeVideo = file.type?.startsWith("video/") == true || VideoFiles.isVideoName(name)
                     if (looksLikeVideo) into += file.uri.toString() to name
                 }
             }
         }
-    }
-
-    /**
-     * Returns false when any part of the subtree could not be read. One
-     * unreadable directory should not condemn the whole source, but it does
-     * make the listing untrustworthy for deletions.
-     */
-    private fun collectVideosSmb(
-        directory: SmbFile,
-        into: MutableList<Pair<String, String>>,
-    ): Boolean {
-        val children = try {
-            directory.listFiles()
-        } catch (error: Exception) {
-            return false
-        } ?: return false
-
-        var complete = true
-        children.forEach { file ->
-            try {
-                when {
-                    file.isDirectory -> if (!collectVideosSmb(file, into)) complete = false
-                    file.isFile -> {
-                        val name = file.name ?: return@forEach
-                        val extension = name.substringAfterLast('.', "").lowercase()
-                        if (extension in videoExtensions) into += file.url.toString() to name
-                    }
-                }
-            } catch (error: Exception) {
-                complete = false
-            }
-        }
-        return complete
     }
 
     private suspend fun classifyAndStore(
@@ -517,10 +814,6 @@ class LibraryRepository(
 
     // MARK: - Helpers
 
-    /** jcifs messages read well enough to show; the class name is the fallback. */
-    private fun Throwable.readableMessage(): String =
-        message?.takeIf { it.isNotBlank() } ?: this::class.simpleName ?: strings.scanFailed
-
     private fun displayName(uri: Uri): String? = context.contentResolver.query(
         uri,
         arrayOf(OpenableColumns.DISPLAY_NAME),
@@ -529,10 +822,26 @@ class LibraryRepository(
         null,
     )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
 
-    private companion object {
-        val videoExtensions = setOf(
-            "mkv", "mp4", "m4v", "mov", "avi", "wmv", "flv", "webm",
-            "ts", "m2ts", "mts", "mpg", "mpeg", "3gp", "ogv", "vob",
-        )
-    }
+}
+
+/** One imported copy of a title and the source it came from (D.5). */
+data class LocalCopy(
+    val uri: String,
+    val folderUri: String?,
+    val isEpisode: Boolean,
+    val source: CopySource = CopySource("", null, isUnavailable = false),
+)
+
+/**
+ * What a viewer types for an SSH server — `nas.local`, `nas.local:2222`,
+ * `sftp://nas.local/home/me` — as its host, port, and starting path.
+ */
+internal fun sftpAddress(input: String): Triple<String, Int, String?>? {
+    val text = input.trim().removePrefix("sftp://").removePrefix("ssh://").trimEnd('/')
+    if (text.isEmpty()) return null
+    val authority = text.substringBefore('/').substringAfterLast('@')
+    val path = text.substringAfter('/', "").takeIf { it.isNotEmpty() }?.let { "/$it" }
+    val port = authority.substringAfterLast(':', "").toIntOrNull()
+    val host = (if (port != null) authority.substringBeforeLast(':') else authority).ifEmpty { return null }
+    return Triple(host, port ?: Sftp.DEFAULT_PORT, path)
 }

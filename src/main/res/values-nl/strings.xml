@@ -131,9 +131,9 @@
     <string name="remove_folder">%1$s verwijderen</string>
     <string name="remove_source_title">Bron verwijderen</string>
     <string name="remove_source_confirm_title">%1$s verwijderen?</string>
-    <string name="remove_source_message_smb">“%1$s” is uit je bibliotheek verwijderd en de opgeslagen inloggegevens voor %2$s zijn vergeten, tenzij een andere bron die server nog gebruikt. Er is niets op de server verwijderd.</string>
+    <string name="remove_source_message_smb">“%1$s” wordt uit je bibliotheek verwijderd. Er wordt niets verwijderd van de server en de bewaarde inloggegevens voor %2$s blijven in Instellingen → Accounts.</string>
     <string name="remove_source_message_local">“%1$s” is uit je bibliotheek verwijderd. Er is niets van je apparaat verwijderd.</string>
-    <string name="remove_source_message_generic">Edendale vergeet deze bron en alles wat eruit is geïndexeerd, en alle opgeslagen inloggegevens voor de host zodra geen enkele andere bron deze meer nodig heeft. Er wordt niets van je apparaat of de share verwijderd.</string>
+    <string name="remove_source_message_generic">Edendale vergeet deze bron en alles wat eruit is geïndexeerd. Er wordt niets verwijderd van je apparaat of de share, en opgeslagen inloggegevens blijven in Instellingen → Accounts.</string>
     <string name="mark_watched">Markeren als bekeken</string>
     <string name="mark_unwatched">Markeren als onbekeken</string>
     <string name="watched">Bekeken</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Voeg een token toe aan secrets.json en bouw opnieuw op</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Grote letters, overscan-veilige marges, afstandsbediening-focus lift en landschapsweergave zijn actief.</string>
+    <string name="settings_watch_next_title">Verder kijken op het startscherm</string>
+    <string name="settings_watch_next_description">Toont wat je aan het kijken bent in de rij ‘Verder kijken’ van het startscherm. Edendale stuurt hiervoor niets over het netwerk, maar de startscherm-app kan deze titels zien.</string>
     <string name="settings_section_sources">Bronnen</string>
     <string name="settings_no_sources">Geen bronnen gekoppeld</string>
     <string name="settings_section_backup">Back-up</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">Geen ondertitelsporen in dit bestand.</string>
     <string name="player_track_number">Track %1$d</string>
     <string name="player_playback">Afspelen</string>
+    <string name="player_skip_intro">Sla intro over</string>
     <string name="player_skip_recap">Sla samenvatting over</string>
-    <string name="player_skip_recap_detail">Sla de eerste 90 seconden over</string>
     <string name="player_skip_credits">Sla aftiteling over</string>
-    <string name="player_skip_credits_detail">Stop afspelen bij de laatste 3 minuten</string>
+    <string name="player_skip_prompts">Overslaanknoppen</string>
+    <string name="player_skip_prompts_detail">Tijdstempels voor intro, samenvatting en aftiteling opzoeken met TheIntroDB</string>
+    <string name="settings_skip_prompts_note">Wanneer ingeschakeld, ontvangt TheIntroDB het TMDB-ID van de titel, afleveringsnummers, videoduur en je IP-adres. Overslaan vereist altijd een druk op de knop.</string>
+    <string name="settings_theintrodb_link">Tijdstempels door TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">TheIntroDB-privacybeleid</string>
     <string name="player_loop">Herhaal video</string>
     <string name="player_loop_detail">Start de weergave opnieuw wanneer deze eindigt</string>
     <string name="player_auto_pip">Automatisch beeld in beeld</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">Map</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" is geen share-adres. Probeer 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: een deel van deze bron kon niet worden gelezen, dus er is niets uit de bibliotheek verwijderd.</string>
     <string name="error_permission_revoked">toegang tot deze map is ingetrokken — voeg deze opnieuw toe</string>
     <string name="error_folder_unopenable">de map kon niet worden geopend</string>
     <string name="error_share_unreachable">de share is onbereikbaar of de inloggegevens zijn geweigerd</string>
     <string name="error_address_is_file">dat adres is een bestand, geen share</string>
-    <string name="error_scan_failed">de scan is mislukt</string>
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
@@ -279,4 +283,250 @@
         <item quantity="one">Nog %1$d overeenkomst.</item>
         <item quantity="other">Nog %1$d overeenkomsten.</item>
     </plurals>
+    <string name="settings_section_app_controls">App-bediening</string>
+    <string name="settings_app_controls_skip_backward">Terugspoelen</string>
+    <string name="settings_app_controls_skip_forward">Vooruitspoelen</string>
+    <string name="settings_app_controls_skip_note">Dubbeltik op de linker- of rechterkant van de video om terug of vooruit te springen.</string>
+    <string name="settings_app_controls_hold_left">Linkerkant vasthouden</string>
+    <string name="settings_app_controls_hold_right">Rechterkant vasthouden</string>
+    <string name="settings_app_controls_hold_note">Houd de linker- of rechterkant van de video ingedrukt om met die snelheid af te spelen tot je loslaat.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, langzamer</string>
+    <string name="settings_app_controls_hold_faster">%1$s, sneller</string>
+    <string name="settings_seconds_format">%d seconden</string>
+    <string name="player_back_15">15 seconden terug</string>
+    <string name="player_back_30">30 seconden terug</string>
+    <string name="player_forward_15">15 seconden vooruit</string>
+    <string name="player_forward_30">30 seconden vooruit</string>
+    <string name="player_up_next">Volgende</string>
+    <string name="player_up_next_description">Volgende: %1$s %2$s</string>
+    <string name="player_up_next_hint">Speel de volgende aflevering nu af</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">Hierna · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Audio-uitvoer</string>
+    <string name="player_audio_output_unavailable">De keuze voor audio-uitvoer is niet beschikbaar op dit apparaat.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Lettertype</string>
+    <string name="settings_subtitles_text_color">Tekstkleur</string>
+    <string name="settings_subtitles_background_color">Achtergrondkleur</string>
+    <string name="settings_subtitles_background_opacity">Dekking van achtergrond</string>
+    <string name="settings_subtitles_reset">Stel ondertitelstijl opnieuw in</string>
+    <string name="settings_subtitles_appearance_note">Geldt voor tekstondertitels. Ondertitels op basis van afbeeldingen behouden hun oorspronkelijke uiterlijk.</string>
+    <string name="settings_subtitles_preview">Ondertitelvoorvertoning</string>
+    <string name="settings_subtitles_preview_sample">Het archief vergeet nooit een film.\nHet wacht alleen tot iemand op afspelen drukt.</string>
+    <string name="settings_subtitles_font_system">Systeem</string>
+    <string name="settings_subtitles_font_rounded">Afgerond</string>
+    <string name="settings_subtitles_font_serif">Schreef</string>
+    <string name="settings_subtitles_font_monospaced">Monospace</string>
+    <string name="settings_subtitles_color_parchment">Perkament</string>
+    <string name="settings_subtitles_color_white">Wit</string>
+    <string name="settings_subtitles_color_yellow">Geel</string>
+    <string name="settings_subtitles_color_cyan">Cyaan</string>
+    <string name="settings_subtitles_color_green">Groen</string>
+    <string name="settings_subtitles_color_black">Zwart</string>
+    <string name="settings_subtitles_color_ink">Inkt</string>
+    <string name="settings_subtitles_color_charcoal">Antraciet</string>
+    <string name="settings_subtitles_color_navy">Marineblauw</string>
+    <string name="settings_subtitles_opacity_lower">Dekking van achtergrond verlagen</string>
+    <string name="settings_subtitles_opacity_higher">Dekking van achtergrond verhogen</string>
+    <string name="settings_nunito_attribution">Het afgeronde ondertitellettertype is Nunito van The Nunito Project Authors, onder de SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Videotrack</string>
+    <string name="player_audio_track">Audiotrack</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d kan.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Kan niet afspelen</string>
+    <string name="player_error_could_not_open">Deze titel kon niet worden geopend.</string>
+    <string name="player_error_connection_lost">Verbinding met %1$s verbroken.</string>
+    <string name="player_error_connection_lost_detail">Verbinding met %1$s verbroken: %2$s</string>
+    <string name="player_error_could_not_connect">Kan geen verbinding maken met %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Kan %1$s niet bereiken. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="sources_status_needs_sign_in">Log opnieuw in bij %1$s om deze bron te bereiken.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="accounts_empty">Geen gekoppelde accounts of bewaarde inloggegevens. Voeg ze toe met “Koppel bron”.</string>
+    <string name="accounts_no_sources">Geen bronnen op dit apparaat</string>
+    <string name="accounts_forget">Vergeet</string>
+    <string name="accounts_forget_login">Vergeet inloggegevens</string>
+    <string name="accounts_forget_message">Bronnen op %1$s kunnen geen verbinding maken totdat je de inloggegevens opnieuw invoert.</string>
+    <string name="accounts_note">Inloggegevens blijven op dit apparaat en worden nooit geback-upt. Ze blijven bewaard als je een bron verwijdert; verwijder ze hier.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d bron op dit apparaat</item>
+        <item quantity="other">%1$d bronnen op dit apparaat</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Speel af vanaf</string>
+    <string name="play_from_unavailable">%1$s · Niet beschikbaar</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d bronnen</item>
+        <item quantity="other">%1$d bronnen</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Audioverbetering</string>
+    <string name="audio_profile">Profiel</string>
+    <string name="audio_profile_flat">Neutraal</string>
+    <string name="audio_profile_movies">Films</string>
+    <string name="audio_profile_music">Muziek</string>
+    <string name="audio_profile_dialogue">Dialoog</string>
+    <string name="audio_profile_night_mode">Nachtmodus</string>
+    <string name="audio_preamp">Voorversterker</string>
+    <string name="audio_reset_adjustments">Stel aanpassingen opnieuw in</string>
+    <string name="audio_booster">Audioversterker</string>
+    <string name="audio_booster_detail">Verhoog het audioniveau voor zachte opnamen</string>
+    <string name="audio_show_equalizer">Toon equalizer</string>
+    <string name="audio_hide_equalizer">Verberg equalizer</string>
+    <string name="audio_passthrough_note">De equalizer en booster werken op audio die Edendale zelf decodeert. Surroundgeluid dat ongewijzigd naar een receiver of tv wordt doorgegeven, speelt zonder.</string>
+    <string name="audio_step_lower">%1$s, lager</string>
+    <string name="audio_step_higher">%1$s, hoger</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Beeld</string>
+    <string name="video_brightness">Helderheid</string>
+    <string name="video_contrast">Contrast</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Verzadiging</string>
+    <string name="video_hue">Tint</string>
+    <string name="video_show_original">Toon origineel</string>
+    <string name="video_enhancement">Verbetering</string>
+    <string name="video_preset">Voorinstelling</string>
+    <string name="video_preset_off">Uit</string>
+    <string name="video_preset_sharpen_only">Alleen verscherpen</string>
+    <string name="video_preset_balanced">Gebalanceerd</string>
+    <string name="video_preset_high_quality">Hoge kwaliteit</string>
+    <string name="video_sharpness">Scherpte</string>
+    <string name="video_denoise">Ruisonderdrukking</string>
+    <string name="video_not_available_hdr">Niet beschikbaar voor HDR-video</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Verberg navigatiekolom</string>
+    <string name="navigation_show">Toon navigatiekolom</string>
+    <string name="rescan_library">Scan bibliotheek opnieuw</string>
+    <string name="shelf_scroll_position">Scrollpositie van %1$s</string>
+    <string name="shortcut_play_pause">Afspelen of pauzeren</string>
+    <string name="shortcut_skip_prompt">Intro of aftiteling overslaan wanneer aangeboden</string>
+    <string name="shortcut_close_panel_then_player">Sluit een paneel, daarna de speler</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">%1$d seconde terug</item>
+        <item quantity="other">%1$d seconden terug</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">%1$d seconde vooruit</item>
+        <item quantity="other">%1$d seconden vooruit</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Dit bestand staat niet meer in %1$s.</string>
+    <string name="player_error_rate_limited">%1$s beperkt momenteel het aantal verzoeken. Probeer het over een minuut opnieuw.</string>
+    <string name="player_error_server">%1$s gaf een fout (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s ondersteunt geen spoelen in dit bestand.</string>
+    <string name="player_error_access_denied">%1$s heeft toegang tot dit onderdeel geweigerd.</string>
+    <string name="player_error_abusive_file">Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</string>
+    <string name="player_error_untrusted_certificate">Het certificaat van %1$s wordt niet vertrouwd, dus Edendale streamt er niet vanaf.</string>
+    <string name="source_kind_s3">S3-compatibele opslag</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Gedeelde mappen op een Mac, pc of NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr of rclone.</string>
+    <string name="connector_unreachable">Kan %1$s niet bereiken. Controleer of de server aanstaat, in hetzelfde netwerk zit en of de naam of inloggegevens kloppen.</string>
+    <string name="connector_authentication_failed">%1$s heeft de gebruikersnaam en het wachtwoord niet geaccepteerd.</string>
+    <string name="connector_listing_failed">Kon de map %1$s niet lezen. Mogelijk zijn er andere inloggegevens of bevoegdheden nodig.</string>
+    <string name="connector_invalid_address">Dat serveradres ziet er niet goed uit. Voer een hostnaam in zoals nas.local of een IP-adres.</string>
+    <string name="connector_insecure_connection">Onversleuteld http:// werkt alleen voor servers in je eigen netwerk. Gebruik een https://-adres voor deze server.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Deze bucket staat in de regio %1$s. Wijzig de regio en maak opnieuw verbinding.</string>
+    <string name="connector_bucket_other_region">Deze bucket staat in een andere regio. Controleer de regio en maak opnieuw verbinding.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi of MinIO.</string>
+    <string name="s3_endpoint_label">Endpoint</string>
+    <string name="s3_region_label">Regio</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Toegangssleutel-ID</string>
+    <string name="s3_secret_key_label">Geheime toegangssleutel</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s is niet ingesteld in deze build van Edendale.</string>
+    <string name="oauth_cancelled">Inloggen is geannuleerd.</string>
+    <string name="oauth_unverified">Het inlogantwoord kon niet worden geverifieerd. Probeer het opnieuw.</string>
+    <string name="oauth_denied">Toegang tot %1$s is niet toegestaan.</string>
+    <string name="oauth_invalid_grant">Je inlog bij %1$s is verlopen of ingetrokken. Log opnieuw in.</string>
+    <string name="oauth_device_code_expired">De code is verlopen voordat hij werd goedgekeurd. Vraag een nieuwe code aan en probeer het opnieuw.</string>
+    <string name="oauth_server_detail">%1$s kon het inloggen niet voltooien (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s kon het inloggen niet voltooien (%2$s).</string>
+    <string name="oauth_malformed">%1$s stuurde een antwoord dat Edendale niet kon lezen.</string>
+    <string name="accounts_sign_out">Log uit</string>
+    <string name="accounts_sign_out_revoke">Log uit en trek toegang in</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Bronnen van %1$s werken niet meer op dit apparaat totdat je het account opnieuw koppelt.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">Persoonlijke, werk- of school-OneDrive.</string>
+    <string name="link_source_dropbox_description">Je Dropbox-mappen.</string>
+    <string name="link_source_linked_accounts">Gekoppelde accounts</string>
+    <string name="link_source_another_account">Ander account</string>
+    <string name="link_source_sign_in_to">Log in bij %1$s</string>
+    <string name="link_source_waiting">Wachten op %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale vraagt %1$s om alleen-lezentoegang. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">Open op je telefoon of computer %1$s%2$s en voer deze code in:</string>
+    <string name="device_code_accessibility">Code %1$s</string>
+    <string name="device_code_qr_description">QR-code om in te loggen bij %1$s</string>
+    <string name="device_code_waiting">Wachten op goedkeuring…</string>
+    <string name="device_code_sign_in">Log in met een code</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Elke server die je via SSH kunt bereiken.</string>
+    <string name="sftp_port_label">Poort</string>
+    <string name="sftp_host_key_note">De eerste keer dat Edendale verbinding maakt, toont het de hostsleutel van de server zodat je die kunt goedkeuren.</string>
+    <string name="sftp_verify_title">Controleer hostsleutel</string>
+    <string name="sftp_changed_title">Hostsleutel gewijzigd</string>
+    <string name="sftp_verify_message">Controleer of dit overeenkomt met de SSH-hostsleutel van de server voordat je deze vertrouwt.\n\n%1$s</string>
+    <string name="sftp_changed_message">De sleutel die %1$s toont, is niet de sleutel die je eerder hebt goedgekeurd. Ga alleen verder als je weet dat de server opnieuw is geïnstalleerd of dat de sleutel is gewijzigd.\n\n%2$s</string>
+    <string name="sftp_trust">Vertrouw</string>
+    <string name="sftp_trust_new">Vertrouw nieuwe sleutel</string>
+    <string name="connector_host_key_mismatch">De SSH-hostsleutel voor %1$s is gewijzigd. Edendale maakt geen verbinding totdat je de nieuwe sleutel goedkeurt door de server opnieuw te koppelen.</string>
+    <string name="connector_host_key_unverified">De SSH-hostsleutel voor %1$s is nog niet goedgekeurd.</string>
+    <string name="connector_secure_connection_failed">Kan geen beveiligde verbinding maken met %1$s. De SSH-server biedt alleen oudere versleuteling, die Edendale niet ondersteunt.</string>
+    <string name="connector_password_login_unavailable">%1$s accepteert geen inlog met wachtwoord. Sta wachtwoordverificatie toe in de SSH-instellingen om de server te koppelen.</string>
+    <string name="connector_sftp_unavailable">%1$s biedt geen SFTP voor dit account.</string>
+    <string name="link_source_tls_note">Servers in je eigen netwerk kunnen http:// gebruiken. De eerste keer dat Edendale een certificaat tegenkomt dat dit apparaat niet vertrouwt, toont het dat certificaat zodat je het kunt goedkeuren.</string>
+    <string name="tls_verify_title">Certificaat controleren</string>
+    <string name="tls_changed_title">Certificaat gewijzigd</string>
+    <string name="tls_verify_message">Dit apparaat vertrouwt het certificaat dat %1$s toont niet. Controleer of het overeenkomt met het certificaat van de server voordat je het vertrouwt.
+
+%2$s</string>
+    <string name="tls_changed_message">Het certificaat dat %1$s toont is niet het certificaat dat je eerder hebt goedgekeurd. Ga alleen verder als je weet dat het certificaat van de server is vervangen.
+
+%2$s</string>
+    <string name="tls_trust_new">Nieuw certificaat vertrouwen</string>
+    <string name="tls_expires">Verloopt op %1$s</string>
+    <string name="connector_certificate_unverified">Het certificaat van %1$s is nog niet goedgekeurd. Koppel de server opnieuw om het te controleren.</string>
+    <string name="connector_certificate_mismatch">Het certificaat van %1$s is gewijzigd. Edendale maakt geen verbinding totdat je het nieuwe certificaat goedkeurt door de server opnieuw te koppelen.</string>
+    <string name="link_source_gdrive_description">Mijn Drive, mappen die met je zijn gedeeld en gedeelde Drives.</string>
+    <string name="gdrive_my_drive">Mijn Drive</string>
+    <string name="gdrive_shared_with_me">Gedeeld met mij</string>
+    <string name="gdrive_shared_drives">Gedeelde Drives</string>
+    <string name="handoff_continue_on_phone">Doorgaan op een telefoon</string>
+    <string name="handoff_tv_instructions">Open Edendale op je telefoon, ga naar Instellingen → Accounts → Koppelen met een tv, kies %1$s en voer deze code in:</string>
+    <string name="handoff_tv_waiting">Wachten op je telefoon…</string>
+    <string name="handoff_tv_connected">Je telefoon kiest wat er wordt verzonden…</string>
+    <string name="handoff_tv_validating">Controleren wat je telefoon heeft verzonden…</string>
+    <string name="handoff_link_to_tv">Koppelen met een tv</string>
+    <string name="handoff_link_to_tv_note">Stuur een gekoppeld account of een opgeslagen login naar een Android TV met Edendale in dit netwerk. De tv vraagt erom vanuit Bron koppelen.</string>
+    <string name="handoff_searching">Zoeken naar tv\'s in dit netwerk…</string>
+    <string name="handoff_no_tvs">Nog geen tv gevonden. Open op de tv Bron koppelen, kies een provider en kies Doorgaan op een telefoon.</string>
+    <string name="handoff_discovery_failed">Edendale kan dit netwerk niet doorzoeken naar tv\'s. Controleer of wifi aanstaat.</string>
+    <string name="handoff_code_label">Code op %1$s</string>
+    <string name="handoff_connecting">Verbinden met %1$s…</string>
+    <string name="handoff_request_title">%1$s koppelen op %2$s?</string>
+    <string name="handoff_request_message">Edendale stuurt de login rechtstreeks via dit netwerk naar de tv, versleuteld met de ingevoerde code. Er gaat niets via een server, en de tv bewaart het in zijn eigen opslag.</string>
+    <string name="handoff_saved_logins">Opgeslagen logins</string>
+    <string name="handoff_no_saved_logins">Er is geen %1$s-login opgeslagen op dit apparaat. Koppel er eerst een in Bron koppelen.</string>
+    <string name="handoff_decline">Weigeren</string>
+    <string name="handoff_sending">Verzenden naar %1$s…</string>
+    <string name="handoff_done">Gekoppeld op %1$s. Ga verder op de tv.</string>
+    <string name="handoff_declined">Het verzoek is op het andere apparaat geweigerd.</string>
+    <string name="handoff_wrong_code">Die code kwam niet overeen. Controleer de code op de tv en probeer het opnieuw.</string>
+    <string name="handoff_connection_failed">Kan geen verbinding maken met het andere apparaat. Controleer of beide in hetzelfde netwerk zitten en de tv de code nog toont.</string>
+    <string name="handoff_timed_out">Het andere apparaat heeft niet op tijd geantwoord.</string>
+    <string name="handoff_unsupported_version">Werk Edendale op beide apparaten bij en probeer het opnieuw.</string>
+    <string name="handoff_malformed">Het andere apparaat heeft iets gestuurd dat Edendale niet kon gebruiken. Probeer het opnieuw.</string>
+    <string name="handoff_rejected">De tv kon het verzondene niet gebruiken: %1$s</string>
+    <string name="handoff_rejected_plain">De tv kon het verzondene niet gebruiken.</string>
+    <string name="handoff_tv_address">Als je telefoon deze tv niet vindt, voer dan het adres in: %1$s</string>
+    <string name="handoff_address_label">Of voer het adres in dat op de tv staat</string>
 </resources>

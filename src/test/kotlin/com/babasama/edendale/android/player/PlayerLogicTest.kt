@@ -59,11 +59,15 @@ class PlayerLogicTest {
     // ------------------------------------------------------------------
 
     @Test
-    fun holdRateComesFromTheHalfThePressStartedIn() {
-        assertEquals(PlayerLogic.HOLD_SLOW_RATE, PlayerLogic.holdRate(touchX = 10f, width = 100f))
-        assertEquals(PlayerLogic.HOLD_FAST_RATE, PlayerLogic.holdRate(touchX = 90f, width = 100f))
-        // Dead centre counts as the fast half rather than falling through.
-        assertEquals(PlayerLogic.HOLD_FAST_RATE, PlayerLogic.holdRate(touchX = 50f, width = 100f))
+    fun holdSideForLeftRightAndMidpoint() {
+        assertEquals(HoldSide.LEFT, PlayerLogic.holdSide(touchX = 10f, width = 100f))
+        assertEquals(HoldSide.RIGHT, PlayerLogic.holdSide(touchX = 90f, width = 100f))
+        // Exact midpoint counts as the right half.
+        assertEquals(HoldSide.RIGHT, PlayerLogic.holdSide(touchX = 50f, width = 100f))
+
+        assertEquals(0.5f, PlayerLogic.holdRate(touchX = 10f, width = 100f, leftRate = 0.5f, rightRate = 2.0f))
+        assertEquals(2.0f, PlayerLogic.holdRate(touchX = 90f, width = 100f, leftRate = 0.5f, rightRate = 2.0f))
+        assertEquals(2.0f, PlayerLogic.holdRate(touchX = 50f, width = 100f, leftRate = 0.5f, rightRate = 2.0f))
     }
 
     // ------------------------------------------------------------------
@@ -89,25 +93,6 @@ class PlayerLogicTest {
     }
 
     // ------------------------------------------------------------------
-    // Auto-skip windows
-    // ------------------------------------------------------------------
-
-    @Test
-    fun recapSkipOnlyAppliesToLongEnoughMedia() {
-        assertEquals(90_000, PlayerLogic.recapSkipTargetMillis(2_700_000))
-        assertNull(PlayerLogic.recapSkipTargetMillis(300_000))
-        // An unknown duration reads as zero and must not skip.
-        assertNull(PlayerLogic.recapSkipTargetMillis(0))
-    }
-
-    @Test
-    fun creditsWindowStartsBeforeTheEnd() {
-        assertEquals(3_420_000, PlayerLogic.creditsStartMillis(3_600_000))
-        assertNull(PlayerLogic.creditsStartMillis(300_000))
-        assertNull(PlayerLogic.creditsStartMillis(0))
-    }
-
-    // ------------------------------------------------------------------
     // Natural end
     // ------------------------------------------------------------------
 
@@ -122,21 +107,9 @@ class PlayerLogicTest {
     }
 
     @Test
-    fun naturalEndTreatsCreditsSkipAsFinished() {
-        // Skip-credits ends playback CREDITS_LENGTH before the tail — far
-        // more than two seconds. For a feature-length runtime that cutoff
-        // still sits past 95%, so the stop completes instead of lingering in
-        // Continue Watching.
-        val feature = 7_200_000L
-        val creditsStart = PlayerLogic.creditsStartMillis(feature)!!
-        assertTrue(PlayerLogic.isNaturalEnd(creditsStart, feature))
-    }
-
-    @Test
     fun naturalEndKeepsTwoSecondArmForShortClips() {
-        // Below MINIMUM_SKIPPABLE the credits window never applies, so
-        // completion rides the two-second arm. At 30 s the arms diverge: the
-        // 2 s cutoff is 28 s while 95% is 28.5 s.
+        // For short clips, completion rides the two-second arm. At 30 s the
+        // arms diverge: the 2 s cutoff is 28 s while 95% is 28.5 s.
         val clip = 30_000L
         assertTrue(PlayerLogic.isNaturalEnd(28_200, clip))   // within 2 s, below 95%
         assertFalse(PlayerLogic.isNaturalEnd(27_000, clip))  // short of both arms
@@ -235,5 +208,18 @@ class PlayerLogicTest {
             PlayerLogic.scrubTarget(basePosition = 0.4, translation = 100f, width = 400f, durationMillis = 0),
             0.0001,
         )
+    }
+
+    @Test
+    fun naturalOrderIsTotal() {
+        // naturalCompare calls these equal; the order still has to be stable.
+        assertEquals(listOf("E01", "E1"), listOf("E1", "E01").sortedWith(PlayerLogic.naturalOrder))
+        assertEquals(listOf("E01", "E1"), listOf("E01", "E1").sortedWith(PlayerLogic.naturalOrder))
+        assertEquals(listOf("ABC", "abc"), listOf("abc", "ABC").sortedWith(PlayerLogic.naturalOrder))
+        assertEquals(
+            listOf("Disk 9/a.mkv", "Disk 10/a.mkv"),
+            listOf("Disk 10/a.mkv", "Disk 9/a.mkv").sortedWith(PlayerLogic.naturalOrder),
+        )
+        assertEquals(0, PlayerLogic.naturalOrder.compare("same", "same"))
     }
 }

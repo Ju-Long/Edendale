@@ -2,8 +2,10 @@ package com.babasama.edendale.android.player
 
 import android.net.Uri
 import android.provider.DocumentsContract
+import com.babasama.edendale.android.PlaybackSources
+import com.babasama.edendale.android.copySource
 import com.babasama.edendale.android.data.LibraryDao
-import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.connectors.MediaSourceKind
 
 /**
  * One row of the player's playlist side panel: the show's episodes when the
@@ -21,12 +23,48 @@ internal data class PlaylistEntry(
     val showTmdbId: Int?,
     val season: Int?,
     val episode: Int?,
-)
+    val stillPath: String? = null,
+    /** The show's backdrop for an episode, the movie's own for a movie. */
+    val backdropPath: String? = null,
+    val runtimeMinutes: Int? = null,
+) {
+    /** The 16:9 artwork the playlist row shows: the episode still, else the backdrop. */
+    val artworkPath: String? get() = stillPath ?: backdropPath
+}
 
 internal data class PlayerPlaylist(
     val isEpisodeList: Boolean,
     val entries: List<PlaylistEntry>,
+    /** The show's name for an episode list, when the library has the show. */
+    val showName: String? = null,
 )
+
+/**
+ * Whether a playlist row shows 16:9 artwork with its title and play time (B.5):
+ * identified episodes in a show's list, and the playing file when TMDB knows
+ * it. Unknown sibling files keep the plain file-name row.
+ */
+internal fun playlistShowsArtwork(entry: PlaylistEntry, isEpisodeList: Boolean, isCurrent: Boolean): Boolean =
+    entry.tmdbId != null && (isEpisodeList || isCurrent)
+
+/** One line of the playlist panel: a season heading or an entry. */
+internal sealed interface PlaylistItem {
+    data class Season(val number: Int) : PlaylistItem
+    data class Entry(val entry: PlaylistEntry) : PlaylistItem
+}
+
+/** The panel's lines in order: an episode list is grouped under season headings. */
+internal fun playlistItems(playlist: PlayerPlaylist?): List<PlaylistItem> {
+    val entries = playlist?.entries.orEmpty()
+    if (playlist?.isEpisodeList != true) return entries.map { PlaylistItem.Entry(it) }
+    return entries.groupBy { it.season ?: 0 }.flatMap { (season, seasonEntries) ->
+        listOf(PlaylistItem.Season(season)) + seasonEntries.map { PlaylistItem.Entry(it) }
+    }
+}
+
+/** The line the panel scrolls to when it opens, or -1. */
+internal fun List<PlaylistItem>.indexOfEntry(uri: String): Int =
+    indexOfFirst { it is PlaylistItem.Entry && it.entry.uri == uri }
 
 /**
  * The directory component of a stored library URI, used to narrow folder
@@ -37,7 +75,8 @@ internal data class PlayerPlaylist(
  * is opaque, in which case callers fall back to grouping by source root.
  */
 internal fun playlistParentKey(uri: String): String? = when {
-    uri.startsWith("smb://") ->
+    // Server URLs are path-shaped (smb, nfs, sftp, WebDAV).
+    MediaSourceKind.forSourceUri(uri)?.let { it.isRemote && !it.isCloudAccount && it != MediaSourceKind.S3 } == true ->
         uri.trimEnd('/').substringBeforeLast('/', "").ifBlank { null }
     uri.startsWith("content://") -> runCatching {
         DocumentsContract.getDocumentId(Uri.parse(uri))
@@ -51,7 +90,6 @@ internal fun playlistParentKey(uri: String): String? = when {
  */
 internal suspend fun loadPlayerPlaylist(
     dao: LibraryDao,
-    repository: LibraryRepository,
     uriString: String,
     showTmdbIdExtra: Int?,
 ): PlayerPlaylist? {
@@ -60,16 +98,30 @@ internal suspend fun loadPlayerPlaylist(
     // show. The intent's showTmdbId covers files launched by TMDB id whose
     // URI never entered the library (for instance a re-imported path).
     val playingEpisode = dao.episodeByUri(uriString)
-    val episodes = when {
-        playingEpisode != null -> dao.episodesForShow(playingEpisode.showKey)
-        showTmdbIdExtra != null -> repository.episodesForShowTmdbId(showTmdbIdExtra)
-        else -> emptyList()
+    val show = playingEpisode?.let { dao.showByKey(it.showKey) }
+        ?: showTmdbIdExtra?.let { dao.showByTmdbId(it) }
+    val showTmdbId = showTmdbIdExtra ?: show?.tmdbId
+    // Every copy of the show, merged the way its page merges them (D.5).
+    val showKeys = buildSet {
+        playingEpisode?.let { add(it.showKey) }
+        show?.let { add(it.key) }
+        if (showTmdbId != null) dao.shows().filter { it.tmdbId == showTmdbId }.forEach { add(it.key) }
     }
+    val folders = dao.folders().associateBy { it.treeUri }
+    val episodes = PlaybackSources.playerEpisodes(
+        episodes = showKeys.flatMap { dao.episodesForShow(it) },
+        playing = playingEpisode,
+        season = { it.season },
+        number = { it.episode },
+        folderUri = { it.folderUri },
+        source = { folders.copySource(it.folderUri) },
+        path = { it.uri },
+    )
     if (episodes.isNotEmpty()) {
-        val showTmdbId = showTmdbIdExtra
-            ?: playingEpisode?.let { dao.showByKey(it.showKey)?.tmdbId }
+        val backdropPath = show?.backdropPath
         return PlayerPlaylist(
             isEpisodeList = true,
+            showName = show?.name,
             entries = episodes.map { episode ->
                 PlaylistEntry(
                     uri = episode.uri,
@@ -80,6 +132,9 @@ internal suspend fun loadPlayerPlaylist(
                     showTmdbId = showTmdbId,
                     season = episode.season,
                     episode = episode.episode,
+                    stillPath = episode.stillPath,
+                    backdropPath = backdropPath,
+                    runtimeMinutes = episode.runtimeMinutes,
                 )
             },
         )
@@ -100,6 +155,8 @@ internal suspend fun loadPlayerPlaylist(
                 showTmdbId = null,
                 season = null,
                 episode = null,
+                backdropPath = movie.backdropPath,
+                runtimeMinutes = movie.runtimeMinutes,
             )
         } + dao.episodesInFolder(root).map { episode ->
             PlaylistEntry(
@@ -111,6 +168,8 @@ internal suspend fun loadPlayerPlaylist(
                 showTmdbId = null,
                 season = episode.season,
                 episode = episode.episode,
+                stillPath = episode.stillPath,
+                runtimeMinutes = episode.runtimeMinutes,
             )
         }
         )

@@ -131,9 +131,9 @@
     <string name="remove_folder">Ta bort %1$s</string>
     <string name="remove_source_title">Ta bort källa</string>
     <string name="remove_source_confirm_title">Ta bort %1$s?</string>
-    <string name="remove_source_message_smb">“%1$s” tas bort från ditt bibliotek och den sparade inloggningen för %2$s glöms bort, såvida inte en annan källa fortfarande använder den servern. Ingenting på servern raderas.</string>
+    <string name="remove_source_message_smb">”%1$s” tas bort från ditt bibliotek. Ingenting på servern raderas och den sparade inloggningen för %2$s finns kvar under Inställningar → Konton.</string>
     <string name="remove_source_message_local">“%1$s” tas bort från ditt bibliotek. Ingenting på din enhet raderas.</string>
-    <string name="remove_source_message_generic">Edendale glömmer denna källa och allt som indexerats från den, samt eventuell sparad inloggning för värden när ingen annan källa behöver den. Ingenting raderas från din enhet eller resursen.</string>
+    <string name="remove_source_message_generic">Edendale glömmer den här källan och allt som indexerats från den. Inget raderas från enheten eller utdelningen, och sparade inloggningar finns kvar under Inställningar → Konton.</string>
     <string name="mark_watched">Markera som sedd</string>
     <string name="mark_unwatched">Markera som osedd</string>
     <string name="watched">Sedd</string>
@@ -159,6 +159,8 @@
     <string name="settings_tmdb_missing">Lägg till en token i secrets.json och bygg om</string>
     <string name="settings_section_android_tv">Android TV</string>
     <string name="settings_android_tv_note">Stor text, overscan-säkra marginaler, fokuslyft för fjärrkontroll och landskapspresentation är aktiva.</string>
+    <string name="settings_watch_next_title">Fortsätt titta på hemskärmen</string>
+    <string name="settings_watch_next_description">Visar det du tittar på i hemskärmens rad ”Fortsätt titta”. Edendale skickar inget över nätverket för detta, men hemskärmsappen kan se dessa titlar.</string>
     <string name="settings_section_sources">Källor</string>
     <string name="settings_no_sources">Inga källor länkade</string>
     <string name="settings_section_backup">Säkerhetskopiering</string>
@@ -204,10 +206,14 @@
     <string name="player_subtitles_none">Inga undertextspår i den här filen.</string>
     <string name="player_track_number">Spår %1$d</string>
     <string name="player_playback">Uppspelning</string>
+    <string name="player_skip_intro">Hoppa över intro</string>
     <string name="player_skip_recap">Hoppa över sammanfattning</string>
-    <string name="player_skip_recap_detail">Hoppa över de första 90 sekunderna</string>
     <string name="player_skip_credits">Hoppa över eftertexter</string>
-    <string name="player_skip_credits_detail">Avsluta uppspelning de sista 3 minuterna</string>
+    <string name="player_skip_prompts">Hoppa över-uppmaningar</string>
+    <string name="player_skip_prompts_detail">Slå upp tidsstämplar för intro, sammanfattning och eftertexter med TheIntroDB</string>
+    <string name="settings_skip_prompts_note">När detta är aktiverat tar TheIntroDB emot filmens eller seriens TMDB-ID, avsnittsnummer, videons längd och din IP-adress. Hoppa över kräver alltid en knapptryckning.</string>
+    <string name="settings_theintrodb_link">Tidsstämplar från TheIntroDB</string>
+    <string name="settings_theintrodb_privacy_link">Integritetspolicy för TheIntroDB</string>
     <string name="player_loop">Upprepa video</string>
     <string name="player_loop_detail">Starta om uppspelningen när den slutar</string>
     <string name="player_auto_pip">Automatisk bild-i-bild</string>
@@ -224,13 +230,11 @@
     <string name="default_folder_name">Mapp</string>
     <string name="default_video_name">Video</string>
     <string name="error_not_share_address">\"%1$s\" är inte en resursadress. Prova 192.168.1.10/media.</string>
-    <string name="error_source_scan">%1$s: %2$s</string>
     <string name="error_source_partial">%1$s: en del av denna källa kunde inte läsas, så ingenting togs bort från biblioteket.</string>
     <string name="error_permission_revoked">åtkomsten till denna mapp drogs in — lägg till den igen</string>
     <string name="error_folder_unopenable">mappen kunde inte öppnas</string>
     <string name="error_share_unreachable">resursen är onåbar eller så avvisades uppgifterna</string>
     <string name="error_address_is_file">den adressen är en fil, inte en resurs</string>
-    <string name="error_scan_failed">skanningen misslyckades</string>
     <plurals name="item_count">
         <item quantity="one">%1$d objekt</item>
         <item quantity="other">%1$d objekt</item>
@@ -279,4 +283,250 @@
         <item quantity="one">%1$d träff till.</item>
         <item quantity="other">%1$d träffar till.</item>
     </plurals>
+    <string name="settings_section_app_controls">Appkontroller</string>
+    <string name="settings_app_controls_skip_backward">Hoppa bakåt</string>
+    <string name="settings_app_controls_skip_forward">Hoppa framåt</string>
+    <string name="settings_app_controls_skip_note">Tryck två gånger på vänster eller höger sida av videon för att hoppa bakåt eller framåt.</string>
+    <string name="settings_app_controls_hold_left">Håll vänster sida</string>
+    <string name="settings_app_controls_hold_right">Håll höger sida</string>
+    <string name="settings_app_controls_hold_note">Håll ned vänster eller höger sida av videon för att spela i den hastigheten tills du släpper.</string>
+    <string name="settings_app_controls_hold_slower">%1$s, långsammare</string>
+    <string name="settings_app_controls_hold_faster">%1$s, snabbare</string>
+    <string name="settings_seconds_format">%d sekunder</string>
+    <string name="player_back_15">Bakåt 15 sekunder</string>
+    <string name="player_back_30">Bakåt 30 sekunder</string>
+    <string name="player_forward_15">Framåt 15 sekunder</string>
+    <string name="player_forward_30">Framåt 30 sekunder</string>
+    <string name="player_up_next">Nästa</string>
+    <string name="player_up_next_description">Nästa: %1$s %2$s</string>
+    <string name="player_up_next_hint">Spela nästa avsnitt nu</string>
+    <!-- C.3 Continue Watching next-up -->
+    <string name="library_continue_up_next">Härnäst · %1$s</string>
+    <!-- C.6 Audio Output -->
+    <string name="player_audio_output">Ljudutgång</string>
+    <string name="player_audio_output_unavailable">Väljaren för ljudutgång är inte tillgänglig på den här enheten.</string>
+    <!-- B.4 Subtitle appearance -->
+    <string name="settings_subtitles_font">Typsnitt</string>
+    <string name="settings_subtitles_text_color">Textfärg</string>
+    <string name="settings_subtitles_background_color">Bakgrundsfärg</string>
+    <string name="settings_subtitles_background_opacity">Bakgrundens opacitet</string>
+    <string name="settings_subtitles_reset">Återställ undertextstil</string>
+    <string name="settings_subtitles_appearance_note">Gäller textundertexter. Bildbaserade undertexter behåller sitt ursprungliga utseende.</string>
+    <string name="settings_subtitles_preview">Förhandsvisning av undertexter</string>
+    <string name="settings_subtitles_preview_sample">Arkivet glömmer aldrig en film.\nDet väntar bara på att någon ska trycka på spela.</string>
+    <string name="settings_subtitles_font_system">System</string>
+    <string name="settings_subtitles_font_rounded">Rundad</string>
+    <string name="settings_subtitles_font_serif">Serif</string>
+    <string name="settings_subtitles_font_monospaced">Fast breddsteg</string>
+    <string name="settings_subtitles_color_parchment">Pergament</string>
+    <string name="settings_subtitles_color_white">Vit</string>
+    <string name="settings_subtitles_color_yellow">Gul</string>
+    <string name="settings_subtitles_color_cyan">Cyan</string>
+    <string name="settings_subtitles_color_green">Grön</string>
+    <string name="settings_subtitles_color_black">Svart</string>
+    <string name="settings_subtitles_color_ink">Bläck</string>
+    <string name="settings_subtitles_color_charcoal">Kolgrå</string>
+    <string name="settings_subtitles_color_navy">Marinblå</string>
+    <string name="settings_subtitles_opacity_lower">Minska bakgrundens opacitet</string>
+    <string name="settings_subtitles_opacity_higher">Öka bakgrundens opacitet</string>
+    <string name="settings_nunito_attribution">Det rundade undertexttypsnittet är Nunito av The Nunito Project Authors, licensierat under SIL Open Font License 1.1.</string>
+    <!-- B.3 Track pickers -->
+    <string name="player_video_track">Videospår</string>
+    <string name="player_audio_track">Ljudspår</string>
+    <string name="player_audio_mono">Mono</string>
+    <string name="player_audio_stereo">Stereo</string>
+    <string name="player_audio_channels">%d kan.</string>
+    <!-- D.1 Playback errors -->
+    <string name="player_error_title">Kunde inte spela upp</string>
+    <string name="player_error_could_not_open">Den här titeln kunde inte öppnas.</string>
+    <string name="player_error_connection_lost">Anslutningen till %1$s bröts.</string>
+    <string name="player_error_connection_lost_detail">Anslutningen till %1$s bröts: %2$s</string>
+    <string name="player_error_could_not_connect">Det gick inte att ansluta till %1$s.</string>
+    <!-- D.3 Source status -->
+    <string name="sources_status_offline">Det gick inte att nå %1$s. Kontrollera anslutningen och försök igen.</string>
+    <string name="sources_status_needs_sign_in">Logga in på %1$s igen för att nå den här källan.</string>
+    <!-- D.4 Accounts -->
+    <string name="settings_section_accounts">Konton</string>
+    <string name="accounts_empty">Inga länkade konton eller sparade inloggningar. Lägg till dem med ”Länka källa”.</string>
+    <string name="accounts_no_sources">Inga källor på den här enheten</string>
+    <string name="accounts_forget">Glöm</string>
+    <string name="accounts_forget_login">Glöm inloggning</string>
+    <string name="accounts_forget_message">Källor på %1$s kan inte ansluta förrän du anger inloggningen igen.</string>
+    <string name="accounts_note">Inloggningar stannar på den här enheten och säkerhetskopieras aldrig. De finns kvar när du tar bort en källa; ta bort dem här.</string>
+    <plurals name="accounts_source_count">
+        <item quantity="one">%1$d källa på den här enheten</item>
+        <item quantity="other">%1$d källor på den här enheten</item>
+    </plurals>
+    <!-- D.5 Play From -->
+    <string name="play_from">Spela upp från</string>
+    <string name="play_from_unavailable">%1$s · Inte tillgänglig</string>
+    <plurals name="play_from_source_count">
+        <item quantity="one">%1$d källor</item>
+        <item quantity="other">%1$d källor</item>
+    </plurals>
+    <!-- E.1 Audio Enhancement -->
+    <string name="settings_section_audio_enhancement">Ljudförbättring</string>
+    <string name="audio_profile">Profil</string>
+    <string name="audio_profile_flat">Neutral</string>
+    <string name="audio_profile_movies">Filmer</string>
+    <string name="audio_profile_music">Musik</string>
+    <string name="audio_profile_dialogue">Dialog</string>
+    <string name="audio_profile_night_mode">Nattläge</string>
+    <string name="audio_preamp">Förförstärkare</string>
+    <string name="audio_reset_adjustments">Återställ justeringar</string>
+    <string name="audio_booster">Ljudförstärkare</string>
+    <string name="audio_booster_detail">Öka ljudnivån för tysta inspelningar</string>
+    <string name="audio_show_equalizer">Visa equalizer</string>
+    <string name="audio_hide_equalizer">Dölj equalizer</string>
+    <string name="audio_passthrough_note">Equalizern och förstärkaren gäller ljud som Edendale avkodar. Surroundljud som skickas oförändrat till en receiver eller tv spelas utan dem.</string>
+    <string name="audio_step_lower">%1$s, lägre</string>
+    <string name="audio_step_higher">%1$s, högre</string>
+    <!-- F Picture and Enhancement -->
+    <string name="video_picture">Bild</string>
+    <string name="video_brightness">Ljusstyrka</string>
+    <string name="video_contrast">Kontrast</string>
+    <string name="video_gamma">Gamma</string>
+    <string name="video_saturation">Mättnad</string>
+    <string name="video_hue">Nyans</string>
+    <string name="video_show_original">Visa original</string>
+    <string name="video_enhancement">Förbättring</string>
+    <string name="video_preset">Förinställning</string>
+    <string name="video_preset_off">Av</string>
+    <string name="video_preset_sharpen_only">Endast skärpa</string>
+    <string name="video_preset_balanced">Balanserad</string>
+    <string name="video_preset_high_quality">Hög kvalitet</string>
+    <string name="video_sharpness">Skärpa</string>
+    <string name="video_denoise">Brusreducering</string>
+    <string name="video_not_available_hdr">Inte tillgängligt för HDR-video</string>
+    <!-- J Large screens and keyboard -->
+    <string name="navigation_hide">Göm sidofält</string>
+    <string name="navigation_show">Visa sidofält</string>
+    <string name="rescan_library">Skanna om biblioteket</string>
+    <string name="shelf_scroll_position">Rullningsposition för %1$s</string>
+    <string name="shortcut_play_pause">Spela upp eller pausa</string>
+    <string name="shortcut_skip_prompt">Hoppa över intro eller eftertexter när det erbjuds</string>
+    <string name="shortcut_close_panel_then_player">Stäng en panel och sedan spelaren</string>
+    <plurals name="shortcut_back_seconds">
+        <item quantity="one">Tillbaka %1$d sekund</item>
+        <item quantity="other">Tillbaka %1$d sekunder</item>
+    </plurals>
+    <plurals name="shortcut_forward_seconds">
+        <item quantity="one">Framåt %1$d sekund</item>
+        <item quantity="other">Framåt %1$d sekunder</item>
+    </plurals>
+    <!-- H.2 Storage providers: playback errors -->
+    <string name="player_error_not_found">Den här filen finns inte längre i %1$s.</string>
+    <string name="player_error_rate_limited">%1$s begränsar förfrågningar just nu. Försök igen om en minut.</string>
+    <string name="player_error_server">%1$s returnerade ett fel (HTTP %2$d).</string>
+    <string name="player_error_range_unsupported">%1$s har inte stöd för att hoppa i den här filen.</string>
+    <string name="player_error_access_denied">%1$s nekade åtkomst till det här objektet.</string>
+    <string name="player_error_abusive_file">Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</string>
+    <string name="player_error_untrusted_certificate">Certifikatet för %1$s är inte betrott, så Edendale strömmar inte från det.</string>
+    <string name="source_kind_s3">S3-kompatibel lagring</string>
+    <!-- H.3 WebDAV and Link Source -->
+    <string name="link_source_smb_description">Delade mappar på en Mac, PC eller NAS.</string>
+    <string name="link_source_webdav_description">Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr eller rclone.</string>
+    <string name="connector_unreachable">Kan inte nå %1$s. Kontrollera att servern är på, i samma nätverk, och att namnet eller inloggningsuppgifterna stämmer.</string>
+    <string name="connector_authentication_failed">%1$s godkände inte användarnamnet och lösenordet.</string>
+    <string name="connector_listing_failed">Kunde inte läsa mappen %1$s. Den kan kräva andra inloggningsuppgifter eller behörigheter.</string>
+    <string name="connector_invalid_address">Serveradressen ser inte rätt ut. Ange ett värdnamn som nas.local eller en IP-adress.</string>
+    <string name="connector_insecure_connection">Okrypterad http:// fungerar bara för servrar i ditt eget nätverk. Använd en https://-adress för den här servern.</string>
+    <!-- H.5 S3-compatible storage -->
+    <string name="connector_bucket_region">Den här bucketen finns i regionen %1$s. Ändra regionen och anslut igen.</string>
+    <string name="connector_bucket_other_region">Den här bucketen finns i en annan region. Kontrollera regionen och anslut igen.</string>
+    <string name="link_source_s3_description">AWS, Backblaze B2, Cloudflare R2, Wasabi eller MinIO.</string>
+    <string name="s3_endpoint_label">Slutpunkt</string>
+    <string name="s3_region_label">Region</string>
+    <string name="s3_bucket_label">Bucket</string>
+    <string name="s3_access_key_label">Åtkomstnyckel-ID</string>
+    <string name="s3_secret_key_label">Hemlig åtkomstnyckel</string>
+    <!-- H.6 OAuth and accounts -->
+    <string name="connector_not_configured">%1$s är inte konfigurerat i den här versionen av Edendale.</string>
+    <string name="oauth_cancelled">Inloggningen avbröts.</string>
+    <string name="oauth_unverified">Inloggningssvaret kunde inte verifieras. Försök igen.</string>
+    <string name="oauth_denied">Åtkomst till %1$s tilläts inte.</string>
+    <string name="oauth_invalid_grant">Din inloggning på %1$s har gått ut eller återkallats. Logga in igen.</string>
+    <string name="oauth_device_code_expired">Koden gick ut innan den godkändes. Hämta en ny kod och försök igen.</string>
+    <string name="oauth_server_detail">%1$s kunde inte slutföra inloggningen (%2$s): %3$s</string>
+    <string name="oauth_server">%1$s kunde inte slutföra inloggningen (%2$s).</string>
+    <string name="oauth_malformed">%1$s skickade ett svar som Edendale inte kunde läsa.</string>
+    <string name="accounts_sign_out">Logga ut</string>
+    <string name="accounts_sign_out_revoke">Logga ut och återkalla åtkomst</string>
+    <!-- H.6 Accounts sign-out -->
+    <string name="accounts_sign_out_message">Källor från %1$s slutar fungera på den här enheten tills du länkar kontot igen.</string>
+    <!-- H.11 Link Source for cloud accounts -->
+    <string name="link_source_onedrive_description">Personlig OneDrive eller OneDrive för arbete eller skola.</string>
+    <string name="link_source_dropbox_description">Dina Dropbox-mappar.</string>
+    <string name="link_source_linked_accounts">Länkade konton</string>
+    <string name="link_source_another_account">Ett annat konto</string>
+    <string name="link_source_sign_in_to">Logga in på %1$s</string>
+    <string name="link_source_waiting">Väntar på %1$s…</string>
+    <string name="link_source_cloud_privacy">Edendale ber %1$s om skrivskyddad åtkomst. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något.</string>
+    <!-- I.1 OneDrive sign-in on the TV -->
+    <string name="device_code_instructions">Öppna %1$s%2$s på din telefon eller dator och ange den här koden:</string>
+    <string name="device_code_accessibility">Kod %1$s</string>
+    <string name="device_code_qr_description">QR-kod för inloggning på %1$s</string>
+    <string name="device_code_waiting">Väntar på godkännande…</string>
+    <string name="device_code_sign_in">Logga in med en kod</string>
+    <!-- H.4 SFTP -->
+    <string name="link_source_sftp_description">Alla servrar som du når via SSH.</string>
+    <string name="sftp_port_label">Port</string>
+    <string name="sftp_host_key_note">Första gången Edendale ansluter visas serverns värdnyckel så att du kan godkänna den.</string>
+    <string name="sftp_verify_title">Verifiera värdnyckel</string>
+    <string name="sftp_changed_title">Värdnyckeln har ändrats</string>
+    <string name="sftp_verify_message">Kontrollera att detta matchar serverns SSH-värdnyckel innan du litar på den.\n\n%1$s</string>
+    <string name="sftp_changed_message">Nyckeln som %1$s visar är inte den du godkände tidigare. Fortsätt bara om du vet att servern har installerats om eller att dess nyckel har ändrats.\n\n%2$s</string>
+    <string name="sftp_trust">Lita på</string>
+    <string name="sftp_trust_new">Lita på ny nyckel</string>
+    <string name="connector_host_key_mismatch">SSH-värdnyckeln för %1$s har ändrats. Edendale ansluter inte förrän du godkänner den nya nyckeln genom att länka servern igen.</string>
+    <string name="connector_host_key_unverified">SSH-värdnyckeln för %1$s har inte godkänts ännu.</string>
+    <string name="connector_secure_connection_failed">Det gick inte att upprätta en säker anslutning till %1$s. SSH-servern erbjuder bara äldre kryptering, som Edendale inte har stöd för.</string>
+    <string name="connector_password_login_unavailable">%1$s godtar inte inloggning med lösenord. Tillåt lösenordsautentisering i dess SSH-inställningar för att länka den.</string>
+    <string name="connector_sftp_unavailable">%1$s erbjuder inte SFTP för det här kontot.</string>
+    <string name="link_source_tls_note">Servrar i ditt eget nätverk kan använda http://. Första gången Edendale möter ett certifikat som den här enheten inte litar på visas certifikatet så att du kan godkänna det.</string>
+    <string name="tls_verify_title">Verifiera certifikat</string>
+    <string name="tls_changed_title">Certifikatet har ändrats</string>
+    <string name="tls_verify_message">Den här enheten litar inte på certifikatet som %1$s visar. Kontrollera att det stämmer med serverns eget certifikat innan du litar på det.
+
+%2$s</string>
+    <string name="tls_changed_message">Certifikatet som %1$s visar är inte det du godkände tidigare. Fortsätt bara om du vet att serverns certifikat har bytts ut.
+
+%2$s</string>
+    <string name="tls_trust_new">Lita på nytt certifikat</string>
+    <string name="tls_expires">Går ut %1$s</string>
+    <string name="connector_certificate_unverified">Certifikatet för %1$s har inte godkänts ännu. Länka servern igen för att granska det.</string>
+    <string name="connector_certificate_mismatch">Certifikatet för %1$s har ändrats. Edendale ansluter inte förrän du godkänner det nya genom att länka servern igen.</string>
+    <string name="link_source_gdrive_description">Min enhet, mappar som delats med dig och delade enheter.</string>
+    <string name="gdrive_my_drive">Min enhet</string>
+    <string name="gdrive_shared_with_me">Delas med mig</string>
+    <string name="gdrive_shared_drives">Delade enheter</string>
+    <string name="handoff_continue_on_phone">Fortsätt på en telefon</string>
+    <string name="handoff_tv_instructions">Öppna Edendale på telefonen, gå till Inställningar → Konton → Länka till en TV, välj %1$s och ange den här koden:</string>
+    <string name="handoff_tv_waiting">Väntar på din telefon…</string>
+    <string name="handoff_tv_connected">Din telefon väljer vad som ska skickas…</string>
+    <string name="handoff_tv_validating">Kontrollerar vad din telefon skickade…</string>
+    <string name="handoff_link_to_tv">Länka till en TV</string>
+    <string name="handoff_link_to_tv_note">Skicka ett länkat konto eller en sparad inloggning till en Android TV som kör Edendale i det här nätverket. TV:n ber om det från Länka källa.</string>
+    <string name="handoff_searching">Letar efter TV-apparater i det här nätverket…</string>
+    <string name="handoff_no_tvs">Ingen TV hittad ännu. Öppna Länka källa på TV:n, välj en leverantör och välj Fortsätt på en telefon.</string>
+    <string name="handoff_discovery_failed">Edendale kan inte söka efter TV-apparater i det här nätverket. Kontrollera att Wi-Fi är på.</string>
+    <string name="handoff_code_label">Kod som visas på %1$s</string>
+    <string name="handoff_connecting">Ansluter till %1$s…</string>
+    <string name="handoff_request_title">Länka %1$s på %2$s?</string>
+    <string name="handoff_request_message">Edendale skickar inloggningen direkt till TV:n över det här nätverket, krypterad med koden du angav. Inget passerar en server, och TV:n behåller den i sitt eget lagringsutrymme.</string>
+    <string name="handoff_saved_logins">Sparade inloggningar</string>
+    <string name="handoff_no_saved_logins">Ingen %1$s-inloggning är sparad på den här enheten. Länka en först i Länka källa.</string>
+    <string name="handoff_decline">Avböj</string>
+    <string name="handoff_sending">Skickar till %1$s…</string>
+    <string name="handoff_done">Länkad på %1$s. Fortsätt på TV:n.</string>
+    <string name="handoff_declined">Begäran avböjdes på den andra enheten.</string>
+    <string name="handoff_wrong_code">Koden stämde inte. Kontrollera koden på TV:n och försök igen.</string>
+    <string name="handoff_connection_failed">Kunde inte ansluta till den andra enheten. Kontrollera att båda är i samma nätverk och att TV:n fortfarande visar koden.</string>
+    <string name="handoff_timed_out">Den andra enheten svarade inte i tid.</string>
+    <string name="handoff_unsupported_version">Uppdatera Edendale på båda enheterna och försök igen.</string>
+    <string name="handoff_malformed">Den andra enheten skickade något som Edendale inte kunde använda. Försök igen.</string>
+    <string name="handoff_rejected">TV:n kunde inte använda det som skickades: %1$s</string>
+    <string name="handoff_rejected_plain">TV:n kunde inte använda det som skickades.</string>
+    <string name="handoff_tv_address">Om telefonen inte hittar den här TV:n, ange dess adress i stället: %1$s</string>
+    <string name="handoff_address_label">Eller ange adressen som visas på TV:n</string>
 </resources>
