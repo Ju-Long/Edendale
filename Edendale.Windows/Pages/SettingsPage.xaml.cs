@@ -17,32 +17,32 @@ namespace Edendale.Windows.Pages;
 public sealed partial class SettingsPage : Page
 {
     /// <summary>
-    /// UI-only projection of a <see cref="LibraryFolder"/> for the source list.
-    /// LibraryFolder carries no kind flag and no item count, so the row's icon
-    /// and "SMB · 12 items" subtitle — both of which SourceRow.swift shows —
-    /// are derived here from the path shape and LibraryService.ItemCount rather
-    /// than added to the service. <see cref="Folder"/> is what the Rescan and
-    /// Remove buttons put in their Tag, so the handlers still see the real model.
+    /// UI-only projection of a <see cref="LibraryFolder"/> for the source list
+    /// (SourceRow.swift): its icon, "SMB · 12 items" subtitle, location, and
+    /// the last scan's failure. <see cref="Folder"/> is what the row's buttons
+    /// put in their Tag, so the handlers still see the real model.
     /// </summary>
     public sealed class SourceRowItem
     {
         public SourceRowItem(LibraryFolder folder, int itemCount)
         {
             Folder = folder;
-            // Same test LibraryService.Scan() uses to spot a network share.
-            var isRemote = folder.Path.StartsWith(@"\\", StringComparison.Ordinal);
-            IconUri = new Uri(isRemote
-                ? "ms-appx:///Assets/Icons/link.svg"
-                : "ms-appx:///Assets/Icons/folder-closed.svg");
-            var items = Loc.Plural("Plural_ItemOne", "Plural_ItemOther", itemCount);
-            Subtitle = $"{(isRemote ? "SMB" : "Local Folder")} · {items}";
+            IconUri = new Uri(Controls.SourceActions.IconUri(folder));
+            Subtitle = Controls.SourceActions.Subtitle(folder, itemCount);
+            StateText = Controls.SourceActions.StateText(folder) ?? "";
+            StateVisibility = StateText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            SignInVisibility = Controls.SourceActions.NeedsSignIn(folder) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public LibraryFolder Folder { get; }
         public string Name => Folder.Name;
-        public string Path => Folder.Path;
+        /// <summary>Credential-free: a local path, a UNC share, or a readable provider path.</summary>
+        public string Path => Folder.LocationDescription;
         public Uri IconUri { get; }
         public string Subtitle { get; }
+        public string StateText { get; }
+        public Visibility StateVisibility { get; }
+        public Visibility SignInVisibility { get; }
     }
 
     public SettingsPage()
@@ -225,91 +225,11 @@ public sealed partial class SettingsPage : Page
         NoSourcesRow.Visibility = folders.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private async void AddFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var picker = new global::Windows.Storage.Pickers.FolderPicker();
-        picker.FileTypeFilter.Add("*");
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-        var folder = await picker.PickSingleFolderAsync();
-        if (folder is null) return;
-        await AppServices.Library.ImportFolderAsync(folder.Path);
-    }
+    private async void AddFolder_Click(object sender, RoutedEventArgs e) =>
+        await Controls.SourceActions.AddLocalFolderAsync();
 
-    private async void AddNetworkFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var pathBox = new TextBox { PlaceholderText = @"\\SMB-SERVER\Share\Movies" };
-        var usernameBox = new TextBox { PlaceholderText = Loc.Get("Smb_UsernameOptional") };
-        var passwordBox = new PasswordBox { PlaceholderText = Loc.Get("Smb_Password") };
-
-        var dialog = new ContentDialog
-        {
-            Title = Loc.Get("Smb_AddNetworkSource"),
-            Content = new StackPanel
-            {
-                Spacing = 12,
-                MinWidth = 400,
-                Children =
-                {
-                    new TextBlock { Text = Loc.Get("Smb_UncPrompt") },
-                    pathBox,
-                    new TextBlock
-                    {
-                        Text = Loc.Get("Smb_CredentialNote"),
-                        Style = (Style)Application.Current.Resources["BodySMTextStyle"],
-                    },
-                    usernameBox,
-                    passwordBox,
-                }
-            },
-            PrimaryButtonText = Loc.Get("Common_Add"),
-            CloseButtonText = Loc.Get("Common_Cancel"),
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = XamlRoot,
-        };
-
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
-
-        var path = pathBox.Text.Trim();
-        if (string.IsNullOrEmpty(path)) return;
-        var username = usernameBox.Text.Trim();
-        var password = passwordBox.Password;
-
-        string? failure = null;
-        try
-        {
-            var share = SmbCredentialsStore.ShareFromUncPath(path);
-            if (share is not null && username.Length > 0)
-            {
-                await Task.Run(() => NetworkShare.Connect(share, username, password));
-                var host = SmbCredentialsStore.HostFromUncPath(path)!;
-                AppServices.SmbCredentials.Save(host, username, password);
-            }
-
-            if (await Task.Run(() => Directory.Exists(path)))
-            {
-                await AppServices.Library.ImportFolderAsync(path);
-                return;
-            }
-            failure = Loc.Format("Smb_CouldNotAccess", path);
-        }
-        catch (Exception connectFailure)
-        {
-            failure = Loc.Format("Smb_ConnectFailed", path, connectFailure.Message);
-        }
-
-        if (failure is not null)
-        {
-            var errDialog = new ContentDialog
-            {
-                Title = Loc.Get("Smb_ConnectionFailedTitle"),
-                Content = new TextBlock { Text = failure, TextWrapping = TextWrapping.Wrap },
-                CloseButtonText = Loc.Get("Common_OK"),
-                XamlRoot = XamlRoot,
-            };
-            await errDialog.ShowAsync();
-        }
-    }
+    private async void AddNetworkFolder_Click(object sender, RoutedEventArgs e) =>
+        await Controls.LinkSourceDialog.ShowAsync(XamlRoot);
 
     private async void RescanFolder_Click(object sender, RoutedEventArgs e)
     {
@@ -319,32 +239,19 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    /// <summary>
-    /// Unlinking always confirms first (SourceRow.swift). The copy says the two
-    /// things the user needs: nothing is deleted where the files live, and the
-    /// share's saved login goes with it once nothing else needs it.
-    /// </summary>
+    private async void SignInFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is LibraryFolder folder)
+        {
+            await Controls.SourceActions.SignInAsync(XamlRoot, folder);
+        }
+    }
+
     private async void RemoveFolder_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as Button)?.Tag is not LibraryFolder folder) return;
-
-        var host = SmbCredentialsStore.HostFromUncPath(folder.Path);
-        var message = host is not null
-            ? Loc.Format("Source_RemoveMessageSmb", folder.Name, host)
-            : Loc.Format("Source_RemoveMessageLocal", folder.Name);
-
-        var confirm = new ContentDialog
+        if ((sender as Button)?.Tag is LibraryFolder folder)
         {
-            Title = Loc.Get("Source_RemoveTitle"),
-            Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
-            PrimaryButtonText = Loc.Get("Common_Remove"),
-            CloseButtonText = Loc.Get("Common_Cancel"),
-            // Destructive: the safe button is the default one.
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
-        };
-
-        if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
-        AppServices.Library.RemoveFolder(folder);
+            await Controls.SourceActions.RemoveAsync(XamlRoot, folder);
+        }
     }
 }

@@ -1,0 +1,154 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.SubtitleAppearanceSettings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- SUBTITLES (SubtitleAppearanceSection.swift): named presets, not a
+         color picker, with a preview. LibVLC draws the text, so a change
+         applies from the next file (or the next reopen of the player). -->
+    <StackPanel>
+        <TextBlock x:Uid="SettingsSubtitlesHeader" Text="SUBTITLES" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+        <Border Style="{StaticResource SettingsGroupBorderStyle}">
+            <StackPanel>
+                <!-- Preview over a dark frame, like a scene behind the cue. -->
+                <Border Margin="20,16" Height="120" CornerRadius="4" Background="{StaticResource EdendaleSurfaceHighBrush}">
+                    <Border
+                        x:Name="PreviewBox"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,0,16"
+                        Padding="10,4"
+                        CornerRadius="2">
+                        <TextBlock
+                            x:Uid="SettingsSubtitlePreviewText"
+                            x:Name="PreviewText"
+                            Text="Subtitles will look like this."
+                            FontSize="20"
+                            TextAlignment="Center"
+                            AutomationProperties.Name="Subtitle preview" />
+                    </Border>
+                </Border>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <StackPanel Padding="20,16" Spacing="10">
+                    <TextBlock x:Uid="SettingsSubtitleFontLabel" Text="Font" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <VariableSizedWrapGrid x:Name="FontChips" Orientation="Horizontal" ItemWidth="132" ItemHeight="40" />
+                </StackPanel>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <StackPanel Padding="20,16" Spacing="10">
+                    <TextBlock x:Uid="SettingsSubtitleTextColorLabel" Text="Text Color" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <VariableSizedWrapGrid x:Name="TextColorChips" Orientation="Horizontal" ItemWidth="132" ItemHeight="40" />
+                </StackPanel>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <StackPanel Padding="20,16" Spacing="10">
+                    <TextBlock x:Uid="SettingsSubtitleBoxColorLabel" Text="Box Color" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <VariableSizedWrapGrid x:Name="BoxColorChips" Orientation="Horizontal" ItemWidth="132" ItemHeight="40" />
+                </StackPanel>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <Grid Style="{StaticResource SettingsRowGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="SettingsSubtitleOpacityLabel" Text="Box Opacity" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <Slider
+                        x:Uid="SettingsSubtitleOpacitySlider"
+                        x:Name="OpacitySlider"
+                        Grid.Column="1"
+                        Minimum="0"
+                        Maximum="100"
+                        StepFrequency="1"
+                        SmallChange="10"
+                        LargeChange="10"
+                        IsThumbToolTipEnabled="False"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="Box opacity"
+                        ValueChanged="OpacitySlider_ValueChanged" />
+                    <TextBlock x:Name="OpacityValue" Grid.Column="2" MinWidth="44" Style="{StaticResource SettingsRowValueTextStyle}" />
+                </Grid>
+
+                <Border x:Name="ResetRow" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
+                    <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                        <Button
+                            x:Uid="SettingsSubtitleResetButton"
+                            Style="{StaticResource ArchiveGhostButtonStyle}"
+                            Content="RESET SUBTITLE STYLE"
+                            Click="Reset_Click" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <TextBlock
+                    x:Uid="SettingsSubtitleDescription"
+                    Text="Applies to text subtitles from the next file you open, and follows Windows’ text size. Picture-based subtitles (Blu-ray and DVD) keep their own look."
+                    Style="{StaticResource SettingsBodyRowTextStyle}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Saved subtitles (Windows-only): online downloads kept per title on
+             this device, and removed after a month unused while the switch
+             is on. -->
+        <Border Style="{StaticResource SettingsGroupBorderStyle}" Margin="0,12,0,0">
+            <StackPanel>
+                <Grid Style="{StaticResource SettingsRowGridStyle}" ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Uid="SettingsSavedSubtitlesLabel" Text="Saved Subtitles" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
+                    <TextBlock x:Name="SavedSummary" Grid.Column="1" Style="{StaticResource SettingsRowValueTextStyle}" VerticalAlignment="Center" />
+                    <Button
+                        x:Uid="SettingsSavedSubtitlesRemoveButton"
+                        x:Name="RemoveSavedButton"
+                        Grid.Column="2"
+                        Style="{StaticResource ArchiveGhostButtonStyle}"
+                        Content="REMOVE ALL"
+                        Click="RemoveSaved_Click" />
+                </Grid>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <Grid Style="{StaticResource SettingsRowGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        x:Uid="SettingsSavedSubtitlesAutoRemoveLabel"
+                        Text="Remove After a Month Unused"
+                        Style="{StaticResource SettingsRowLabelTextStyle}"
+                        Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <ToggleSwitch
+                        x:Uid="SettingsSavedSubtitlesAutoRemoveToggle"
+                        x:Name="RemoveUnusedToggle"
+                        Grid.Column="1"
+                        OnContent=""
+                        OffContent=""
+                        MinWidth="0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="Remove saved subtitles after a month unused"
+                        Toggled="RemoveUnusedToggle_Toggled" />
+                </Grid>
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <TextBlock
+                    x:Uid="SettingsSavedSubtitlesDescription"
+                    Text="Subtitles you download stay on this device and come back when you play the same title again. While the switch is on, one you haven’t turned on for a month is removed."
+                    Style="{StaticResource SettingsBodyRowTextStyle}" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

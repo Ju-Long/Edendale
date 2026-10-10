@@ -28,14 +28,32 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <!-- Required by the linked SubtitleService (legacy subtitle code pages). -->
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <!-- Required by the linked SftpConnector. -->
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
   </ItemGroup>
 
   <!-- Source under test, linked rather than referenced. -->
   <ItemGroup>
     <Compile Include="..\Edendale.Windows\Services\AppPaths.cs" Link="App\Services\AppPaths.cs" />
     <Compile Include="..\Edendale.Windows\Services\AppRoute.cs" Link="App\Services\AppRoute.cs" />
+    <Compile Include="..\Edendale.Windows\Services\IntroDbClient.cs" Link="App\Services\IntroDbClient.cs" />
     <Compile Include="..\Edendale.Windows\Services\LibraryModels.cs" Link="App\Services\LibraryModels.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSession.cs" Link="App\Services\PlayerSession.cs" />
+    <Compile Include="..\Edendale.Windows\Services\PlayerContext.cs" Link="App\Services\PlayerContext.cs" />
+    <Compile Include="..\Edendale.Windows\Services\PlayerSettingsStore.cs" Link="App\Services\PlayerSettingsStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SavedSubtitleStore.cs" Link="App\Services\SavedSubtitleStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SecretStores.cs" Link="App\Services\SecretStores.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\BufferedByteSource.cs" Link="App\Services\Remote\BufferedByteSource.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\CloudConnectors.cs" Link="App\Services\Remote\CloudConnectors.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\ConnectorFactory.cs" Link="App\Services\Remote\ConnectorFactory.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\GoogleDriveConnector.cs" Link="App\Services\Remote\GoogleDriveConnector.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\OAuth.cs" Link="App\Services\Remote\OAuth.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\ProviderHttp.cs" Link="App\Services\Remote\ProviderHttp.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\RemoteByteSource.cs" Link="App\Services\Remote\RemoteByteSource.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\S3Connector.cs" Link="App\Services\Remote\S3Connector.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\SftpConnector.cs" Link="App\Services\Remote\SftpConnector.cs" />
+    <Compile Include="..\Edendale.Windows\Services\Remote\WebDavConnector.cs" Link="App\Services\Remote\WebDavConnector.cs" />
+    <Compile Include="..\Edendale.Windows\Services\SegmentPrompts.cs" Link="App\Services\SegmentPrompts.cs" />
     <Compile Include="..\Edendale.Windows\Services\SmbCredentialsStore.cs" Link="App\Services\SmbCredentialsStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\SubtitleService.cs" Link="App\Services\SubtitleService.cs" />
     <Compile Include="..\Edendale.Windows\Services\WyzieClient.cs" Link="App\Services\WyzieClient.cs" />
@@ -44,7 +62,28 @@
     <Compile Include="..\Edendale.Windows\Services\WatchlistStore.cs" Link="App\Services\WatchlistStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\YoungAudienceFilter.cs" Link="App\Services\YoungAudienceFilter.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
+    <Compile Include="..\Edendale.Windows\Core\AudioEnhancement.cs" Link="App\Core\AudioEnhancement.cs" />
+    <Compile Include="..\Edendale.Windows\Core\GamepadInterpreter.cs" Link="App\Core\GamepadInterpreter.cs" />
+    <Compile Include="..\Edendale.Windows\Core\RefreshRateMatching.cs" Link="App\Core\RefreshRateMatching.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SshFingerprint.cs" Link="App\Core\SshFingerprint.cs" />
+    <Compile Include="..\Edendale.Windows\Core\LibrarySections.cs" Link="App\Core\LibrarySections.cs" />
+    <Compile Include="..\Edendale.Windows\Core\MediaConnectors.cs" Link="App\Core\MediaConnectors.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlaybackSources.cs" Link="App\Core\PlaybackSources.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SourceUrls.cs" Link="App\Core\SourceUrls.cs" />
+    <Compile Include="..\Edendale.Windows\Core\VideoFiles.cs" Link="App\Core\VideoFiles.cs" />
+    <Compile Include="..\Edendale.Windows\Core\EpisodeProgression.cs" Link="App\Core\EpisodeProgression.cs" />
+    <Compile Include="..\Edendale.Windows\Core\GpuCapabilities.cs" Link="App\Core\GpuCapabilities.cs" />
+    <Compile Include="..\Edendale.Windows\Core\FrameGeneration.cs" Link="App\Core\FrameGeneration.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaParser.cs" Link="App\Core\MediaParser.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlaybackTransitions.cs" Link="App\Core\PlaybackTransitions.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerControlPreferences.cs" Link="App\Core\PlayerControlPreferences.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerLogic.cs" Link="App\Core\PlayerLogic.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerPreferences.cs" Link="App\Core\PlayerPreferences.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlayerTracks.cs" Link="App\Core\PlayerTracks.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SavedSubtitles.cs" Link="App\Core\SavedSubtitles.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SubtitleAppearance.cs" Link="App\Core\SubtitleAppearance.cs" />
+    <Compile Include="..\Edendale.Windows\Core\VideoAdjustments.cs" Link="App\Core\VideoAdjustments.cs" />
+    <Compile Include="..\Edendale.Windows\Core\VideoEnhancementOptions.cs" Link="App\Core\VideoEnhancementOptions.cs" />
     <Compile Include="..\Edendale.Windows\Core\ReleaseCalendar.cs" Link="App\Core\ReleaseCalendar.cs" />
     <Compile Include="..\Edendale.Windows\Core\SearchQuery.cs" Link="App\Core\SearchQuery.cs" />
     <Compile Include="..\Edendale.Windows\Core\SubtitleMatching.cs" Link="App\Core\SubtitleMatching.cs" />

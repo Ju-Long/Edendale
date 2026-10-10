@@ -67,10 +67,10 @@ TMDB access, persistence, playback, SMB integration, routing, and tests are
 implemented natively in this branch; no shared runtime or generated bridge is
 required.
 
-The current feature build includes sidebar navigation, a custom title bar,
-full-window playback with progress writes, movie and show shelves, folder
-import with background metadata enrichment, search, detail and person pages,
-online subtitle search, and settings.
+The current feature build includes sidebar navigation with section rows, a
+custom title bar, a full-featured player (below), movie and show shelves,
+folder and network-source import with background metadata enrichment, search,
+detail and person pages with Play From, online subtitle search, and settings.
 
 Playback is powered by the official LibVLCSharp WinUI control and the bundled
 LibVLC 3 engine. It does not require a separate VLC installation and gives the
@@ -134,7 +134,10 @@ printf '%s\n' "$WYZIE_KEY" | dotnet run --project tools/Edendale.Secrets -- --wy
 ```
 
 The tool writes the gitignored root `secrets.json` with
-`TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, and `WYZIE_API_KEY`. It serializes
+`TMDB_READ_ACCESS_TOKEN`, `TMDB_API_KEY`, `WYZIE_API_KEY`, and the optional
+`GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`,
+and `DROPBOX_APP_KEY` ([secrets.example.json](secrets.example.json) lists
+them). It serializes
 the file rather than concatenating it, writes through a sibling temporary file
 that is restricted to the current Windows user before any secret reaches it,
 renames that over the destination, and verifies the resulting ACL. It never
@@ -145,7 +148,7 @@ processes. CI runs without credentials; do not commit the file or distribute a
 locally built binary containing personal credentials.
 
 For Visual Studio Debug launches, **Manage User Secrets** or the local Secrets
-connected service can hold the same three flat keys. Debug startup loads those
+connected service can hold the same flat keys. Debug startup loads those
 values into the current process before Edendale creates its services. Existing
 environment variables take priority, and User Secrets then override the
 embedded root `secrets.json`. This is development-only: .NET User Secrets are
@@ -157,6 +160,34 @@ The Wyzie key is optional. Get one at
 [store.wyzie.io/redeem](https://store.wyzie.io/redeem); leave the prompt empty
 to build without it, and the player hides the online subtitle search rather
 than offering a dead entry.
+
+The Google Drive, OneDrive, and Dropbox IDs are optional too, and an empty
+client ID hides that provider from Link Source. All three sign in with OAuth
+and PKCE through the system browser and a loopback redirect on `127.0.0.1`.
+OneDrive and Dropbox are public clients with no secret. Google's Desktop
+client type also issues a client secret its token endpoint expects; Google
+documents it as not confidential, because every copy of a desktop app carries
+it (D9). It stays in the gitignored `secrets.json` like the TMDB token.
+
+- **Google Drive:** in Google Cloud, enable the Google Drive API, set up the
+  OAuth consent screen with the `openid`, `email`, and
+  `https://www.googleapis.com/auth/drive.readonly` scopes, and create an OAuth
+  client of type **Desktop app**. Its client ID and secret are the two Google
+  values. Desktop clients accept any loopback port, so no redirect URI is
+  registered. `drive.readonly` is a restricted scope: while the consent
+  screen is in Testing, only listed test users can sign in and their sign-in
+  lasts 7 days; publishing to everyone needs Google's verification and
+  security assessment.
+- **OneDrive:** register a Microsoft Entra application for personal and work
+  or school accounts, with the delegated `Files.Read` and `User.Read`
+  permissions and **Allow public client flows** on. Add `http://127.0.0.1` to
+  `publicClient.redirectUris` in its Manifest: the portal's Redirect URI box
+  refuses http loopback addresses, and a registered `http://localhost` doesn't
+  match `127.0.0.1`. Microsoft ignores the port of a loopback redirect, so
+  Edendale listens on any free one.
+- **Dropbox:** create a scoped app with Full Dropbox access, the redirect URI
+  `http://127.0.0.1:49735/`, and the `files.metadata.read`,
+  `files.content.read`, and `account_info.read` scopes.
 
 > Windows PowerShell 5.1 mangles multi-line strings piped into a native
 > program. Use a file redirect or `cmd /c` when feeding several values at once,
@@ -225,16 +256,175 @@ bounds sent to TMDB — stay on `CultureInfo.InvariantCulture` so a Buddhist or
 Hijri regional calendar cannot reach the wire, mirroring the Gregorian
 `HeatmapCalendar` the Apple branch pins.
 
+### Player
+
+The player follows DIFF.md §3.1–3.11 and §3.18 natively:
+
+- **App Controls:** Settings sets the skip lengths (10, 15, or 30 s each way),
+  used by ←/→, the skip buttons, double taps on touch, the media keys, and a
+  controller's bumpers. Holding either half of the video for 0.4 s plays at
+  that side's speed until it is released.
+- **Keyboard:** Space plays or pauses, ↑/↓ change the volume in 5 % steps,
+  Ctrl+↑/↓ change brightness, M mutes, F or F11 toggles full screen, S takes
+  a skip prompt, and Esc backs out one layer at a time (a panel, full screen
+  or Picture in Picture, then the player). A HUD confirms each change and
+  screen readers hear it.
+- **Player Adjustments,** docked beside the video: video, audio, and subtitle
+  tracks; picture adjustments with Show Original; video enhancement; speed on
+  a 0.05 grid from 0.25× to 3×; Audio Booster; Headphone Surround; skip
+  prompts; Loop; Fit or Fill; audio and subtitle delay; and a chapter list.
+  Chapter starts are also marked on the timeline.
+- **Remembered state:** per title, the speed and the audio, subtitle, and
+  video tracks; device-wide, Loop, Fit or Fill, and the audio, picture,
+  subtitle, and enhancement settings. All of it stays in
+  `%LOCALAPPDATA%\Edendale\player-settings.json` and never replicates.
+- **Episodes:** at the end of an episode the next one plays, and an Up Next
+  card appears for the last 30 s. Continue Watching suggests the episode
+  after the last one finished.
+- **Skip prompts,** off by default: TheIntroDB marks intros, recaps, and
+  credits, and a button skips them only when pressed.
+- **Audio Enhancement and Subtitles** in Settings: equalizer profiles with a
+  preamp and ten bands, and subtitle font, size, color, background, and
+  outline presets. Rounded is not offered on Windows, which ships no rounded
+  family.
+- **Saved subtitles:** a subtitle downloaded from the online search is kept
+  for that movie or episode. Playing the title again, from any copy, attaches
+  it without a search, and the one that was on last time is on again. One not
+  turned on for 30 days is deleted; Settings → Subtitles can switch that off
+  or remove them all.
+- **Play From:** a title imported from several sources plays the first
+  reachable copy; the detail page lists every copy.
+- **Windows integration:** the media flyout, media keys, and headset buttons;
+  previous, play/pause, and next buttons on the taskbar thumbnail; a
+  Continue Watching jump list; an audio output picker; the display kept awake
+  during playback; an Xbox controller (A plays or pauses, the bumpers skip,
+  the D-pad seeks and sets the volume, the triggers drive the hold speeds, B
+  backs out); and in full screen, the display switches to a whole multiple
+  of the video's frame rate when the monitor offers one.
+
+### Video enhancement
+
+Player Adjustments → Enhancement uses only what the bundled LibVLC 3 ships
+(ENHANCEMENT.md "Option A"):
+
+| Preset | What it does |
+|---|---|
+| Off | Bilinear scaling |
+| Balanced (default) | GPU super resolution where supported (NVIDIA RTX with driver 530 or later, Intel Xe or Arc, AMD in x64 builds), otherwise the graphics driver's video-processor scaler |
+| High Quality | Balanced plus AMD's denoise and artifact removal; offered only where that exists (AMD, x64) |
+
+- Super resolution applies only while the video is smaller than the window;
+  the label under the preset reads, for example, "1280×720 → 3840×2160".
+- **Motion Smoothing** (AMD's frame-rate doubler) shows only on AMD GPUs in
+  x64 builds, for sources at 30 fps or less, and doubles the rate ("24 fps →
+  48 fps"). It is smoothest on high-refresh displays.
+- Changing an option reopens the video at the same position, which takes
+  about a second. Show Original compares against the unprocessed picture the
+  same way.
+- AMD's denoiser and Motion Smoothing work only on hardware-decoded video.
+  For a file LibVLC decodes in software they do nothing, and the labels
+  still describe what was requested.
+- Enhancement applies on battery too, as on Apple, and the choices are
+  remembered on this device.
+- On a laptop with two GPUs running Edendale on the integrated one, super
+  resolution needs Edendale set to **High performance** in Windows Settings →
+  System → Display → Graphics; the panel says so.
+- HDR video stays tone-mapped to SDR, because LibVLCSharp's video surface is
+  8-bit.
+
+**Frame Generation** (Player Adjustments → Enhancement, off by default) is
+Edendale's own, on NVIDIA, Intel, and AMD GPUs. It doubles 30 fps and slower
+video by motion-compensated interpolation, and upscales to the window's
+physical pixels with Lanczos-3. NVIDIA runs it as CUDA kernels through the
+driver (`nvcuda.dll`, no CUDA runtime ships), and Intel and AMD run the same
+algorithm as Direct3D 11 compute shaders. On AMD it is the alternative to
+Motion Smoothing: turning either on turns the other off. While it's on:
+
+- Edendale draws LibVLC's frames on its own swap chain, about half a frame
+  late, and delays the audio to match.
+- Scene cuts hold the previous frame, and poorly matched areas blend the two
+  frames instead of warping them.
+- 10-bit and HDR sources, speeds above 1.5×, and any GPU failure fall back to
+  normal playback.
+- The picture comes from Edendale's own swap chain, so the driver's super
+  resolution (Balanced) doesn't apply on top; Lanczos-3 does the upscaling.
+- After changing `FrameGeneration.cu`, rebuild the PTX with
+  `python3 tools/build-frame-generation-ptx.py` (NVRTC from
+  `pip install nvidia-cuda-nvrtc-cu12`) and commit it.
+
+### Storage providers
+
+Settings → Sources and the Downloaded page link these, through one Link
+Source form (DIFF.md §3.12):
+
+| Kind | How Edendale reaches it |
+|---|---|
+| Local folder | The file system |
+| SMB | UNC paths through Windows' own SMB client |
+| SFTP | SSH.NET, password login, curve25519/ECDH key exchange, Ed25519/ECDSA host keys, AES-GCM; SHA-1, CBC, 3DES, and DSA are refused |
+| WebDAV | PROPFIND with Basic or Digest login (Nextcloud, ownCloud, Synology, QNAP, `rclone serve webdav`) |
+| S3-compatible | Signature Version 4 (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) |
+| NFS | LibVLC's bundled NFS client; the export needs the `insecure` option |
+| Google Drive | Drive API v3, read-only: My Drive, Shared with me, and shared drives |
+| OneDrive | Microsoft Graph, personal and work or school accounts |
+| Dropbox | Dropbox API v2 |
+
+- **Cloud accounts** appear in Link Source only when this build has their
+  client ID (see [API credentials](#api-credentials)). Google Drive follows
+  shortcuts, skips Docs, Sheets, and other Google formats, and refuses files
+  Google flags as harmful rather than overriding the warning.
+- **TLS:** HTTPS sources need a certificate Windows trusts; self-signed
+  certificates are refused (D10). Plain HTTP reaches only local addresses
+  (`.local` and unqualified names, private and Tailscale IP ranges).
+- **SFTP host keys** are trusted on first use: Edendale shows the SHA-256
+  fingerprint and key type, pins it, and refuses a changed key until it is
+  approved again.
+- **Streaming:** HTTP sources play through 4 MiB range reads with read-ahead
+  and an 8-chunk cache; SFTP through a 1 MiB-chunk buffer that reads up to
+  48 MiB ahead and reconnects with backoff. LibVLC never sees a token or a
+  signed link.
+- A source that is offline or needs signing in says so on its own row. The
+  automatic rescan skips remote sources scanned in the last 15 minutes;
+  Rescan, Ctrl+R, and F5 always scan.
+- Removing a source keeps its login. Settings → Accounts lists every saved
+  login and account with the sources using it, and forgets or signs out.
+
 ### Data and privacy
 
-Library, watch-progress, and user-media JSON live under
+Library, watch-progress, user-media, and player-settings JSON live under
 `%LOCALAPPDATA%\Edendale`. When the user has configured OneDrive, watch and
-user-media state can replicate through their OneDrive. The TMDB session and SMB
-credentials remain device-local and are protected with DPAPI.
+user-media state can replicate through their OneDrive folder.
 
-Network access is limited to TMDB, user-selected SMB and OneDrive resources,
-and a user-initiated YouTube trailer action. Import classifies and persists
-local filenames before optional TMDB enrichment begins.
+Subtitles downloaded from Wyzie Subs are kept in
+`%LOCALAPPDATA%\Edendale\Subtitles`, indexed by title in
+`saved-subtitles.json`, and never replicate. Each is deleted after 30 days
+without being turned on, unless that's switched off in Settings → Subtitles.
+
+Every login stays on this device (D11). The TMDB session, SMB, SFTP, WebDAV,
+and S3 logins, and Google Drive, OneDrive, and Dropbox refresh tokens are protected with DPAPI
+for the current Windows user and never enter the OneDrive replica. Access
+tokens exist only in memory. Pinned SSH host keys are stored beside them. A
+OneDrive account linked as a storage source is separate from the OneDrive
+folder used for replication (D12): signing it out leaves replication alone,
+and turning replication off leaves the source alone.
+
+Network access is limited to:
+
+- TMDB, for metadata and artwork;
+- the sources the user links (SMB, NFS, SFTP, WebDAV, S3-compatible,
+  Google Drive through `accounts.google.com`, `oauth2.googleapis.com`, and
+  `www.googleapis.com`,
+  OneDrive through `graph.microsoft.com` and `login.microsoftonline.com`,
+  and Dropbox through `api.dropboxapi.com`, `www.dropbox.com`, and
+  `dl.dropboxusercontent.com`), to list and play the user's files;
+- Wyzie Subs, only when the user opens the online subtitle search;
+- TheIntroDB, only while skip prompts are switched on: it receives the
+  title's TMDB id, the season and episode numbers, the video's duration, and
+  the user's IP address;
+- a user-initiated YouTube trailer action.
+
+Import classifies and persists local filenames before optional TMDB
+enrichment begins. Edendale never logs URLs, tokens, or request headers.
 
 ### CI and release
 

@@ -164,7 +164,7 @@
     <value>Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>De enige netwerkverzoeken van Edendale zijn naar TMDB voor illustraties en metagegevens, plus door de gebruiker gestarte trailers via de privacyvriendelijke YouTube-insluiting. Nooit enige vorm van analytics.</value>
+    <value>Edendale maakt verbinding met TMDB voor artwork en metadata, met de bronnen die je koppelt om je bestanden te tonen en af te spelen, met Wyzie Subs als je ondertitels zoekt, met TheIntroDB alleen zolang overslaan voorstellen aanstaat, en met de privacyvriendelijke YouTube-embed als je een trailer afspeelt. Nooit analytics.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>HET ARCHIEF LADEN</value>
@@ -305,23 +305,8 @@ IS STIL</value>
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>WEERGEVEN IN ZOEKEN</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>10s terugspringen</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>10s vooruitspringen</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>PASSEND</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Herhalen</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Ondertiteling &amp; audio</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Beeld in beeld</value>
+    <value>Ondertitels</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>Vandaag populair</value>
@@ -383,35 +368,14 @@ IS STIL</value>
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>Beeld in beeld</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>Herhalen stoppen</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>Herhalen</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>VULLEN</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>PASSEND</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>Geen tracks beschikbaar</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>AUDIO</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>Audio</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>ONDERTITELING</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>Uit</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Ondertiteling</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>Dit bestand bevat er geen</value>
@@ -551,9 +515,6 @@ IS STIL</value>
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Bron verwijderen</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” wordt uit je bibliotheek verwijderd en de opgeslagen aanmeldingsgegevens voor {1} worden vergeten, tenzij een andere bron deze server nog gebruikt. Er wordt niets van de server verwijderd.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” wordt uit je bibliotheek verwijderd. Er wordt niets van je schijf verwijderd.</value>
   </data>
@@ -575,14 +536,8 @@ IS STIL</value>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Kan geen toegang krijgen tot het netwerkpad: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Netwerkbronfout</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Kan geen verbinding maken met {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Verbinding mislukt</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows kon de verbinding met de netwerkshare niet starten.</value>
@@ -597,7 +552,7 @@ IS STIL</value>
     <value>Ontworpen voor privacy</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Je bibliotheekindex en kijkvoortgang blijven op dit apparaat. De enige netwerkverzoeken die Edendale doet, zijn naar TMDB voor illustraties en metagegevens — er wordt verder niets verzonden.</value>
+    <value>Je bibliotheekindex en kijkvoortgang blijven op dit apparaat. Edendale neemt contact op met TMDB voor artwork en metadata, en verder alleen met wat jij kiest: de bronnen die je koppelt, ondertitelzoekopdrachten, overslaan voorstellen als dat aanstaat en trailers die je afspeelt. Verder wordt niets verstuurd.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Kies een dag en vervolgens een tweede dag om het bereik te sluiten.</value>
@@ -892,5 +847,794 @@ IS STIL</value>
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>Deze titel is niet geverifieerd als PG of PG-13.</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Terug</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Terug</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Spelerinstellingen</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Spelerinstellingen</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Afspeellijst</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Afspeellijst</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Audio-uitvoer</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Audio-uitvoer</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ondertitels</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Tijdlijn</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>Toepassen…</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>Afspelen</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>Pauzeren</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>Dempen</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>Dempen opheffen</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>Volledig scherm</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>Volledig scherm sluiten</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>{0} seconden terug</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>{0} seconden vooruit</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>Systeemstandaard</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>Volume {0}%</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>Gedempt</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>Geluid aan</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>Helderheid {0}%</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>{0} seconden terug</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>{0} seconden vooruit</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>HIERNA</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>Hierna: {0}, {1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>INTRO OVERSLAAN</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>SAMENVATTING OVERSLAAN</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>AFTITELING OVERSLAAN</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>Slaat dit deel over en speelt verder. Druk op S.</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>AANPASSINGEN</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>VIDEOSPOOR</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Videospoor</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>AUDIOSPOOR</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Audiospoor</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>BEELD</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>Origineel tonen</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>HERSTELLEN</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>VERBETERING</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>Voorinstelling</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>Bewegingsvloeiing</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>Origineel tonen</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>AFSPELEN</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>Snelheid</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Langzamer</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sneller</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>Snelheid {0}, terug naar normaal</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>Overslaan voorstellen</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>Gebruikt TheIntroDB. Overslaan gebeurt alleen na een druk.</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>Audioversterker</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>Surround via koptelefoon</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>Herhalen</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>Venster vullen</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>SYNCHRONISATIE</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>Audiovertraging</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>Ondertitelvertraging</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}: eerder</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}: later</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>HOOFDSTUKKEN</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>Hoofdstuk {0}</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>Mono</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>Stereo</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0} kan.</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>Spoor {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>Helderheid</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>Contrast</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>Gamma</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>Verzadiging</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>Tint</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>Uit</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>Gebalanceerd</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>Hoge kwaliteit</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>Videoverbetering vereist een hardwarematige grafische adapter, dus het beeld wordt ongewijzigd afgespeeld.</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>Superresolutie vereist dat Edendale op de dedicated videokaart draait. Stel Edendale in via Windows-instellingen › Systeem › Beeldscherm › Grafische instellingen op Hoge prestaties.</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>APPBEDIENING</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>Terugspringen</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>Vooruitspringen</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>Links ingedrukt houden</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>Rechts ingedrukt houden</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Snelheid bij links ingedrukt houden</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Snelheid bij rechts ingedrukt houden</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>Sprongen gelden voor de pijltoetsen, de springknoppen, dubbeltikken en mediatoetsen. Houd een helft van de video ingedrukt om op de snelheid van die kant af te spelen tot je loslaat.</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>Terugspringen, {0} seconden</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>Vooruitspringen, {0} seconden</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>OVERSLAAN VOORSTELLEN</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>Overslaan van intro, samenvatting en aftiteling voorstellen</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Overslaan voorstellen</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>Indien ingeschakeld ontvangt TheIntroDB de TMDB-ID van de titel, afleveringsnummers, de videoduur en je IP-adres. Overslaan gebeurt altijd pas na een druk op de knop.</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>AUDIOVERBETERING</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>Profiel</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>EQUALIZER HERSTELLEN</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>Geldt voor elk bestand. Nachtmodus brengt dialoog en effecten in balans; er wordt niet gecomprimeerd. De audioversterker in de speler voegt 10 dB toe.</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>Voorversterking</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0} Hz</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>Equalizer tonen</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>Equalizer verbergen</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>Vlak</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>Films</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>Muziek</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>Dialoog</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>Nachtmodus</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>ONDERTITELS</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>Zo zien ondertitels eruit.</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Voorbeeld van ondertitels</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>Lettertype</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>Tekstkleur</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>Kleur van het vak</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>Dekking van het vak</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Dekking van het vak</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>ONDERTITELSTIJL HERSTELLEN</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>Geldt voor tekstondertitels vanaf het volgende bestand dat je opent en volgt de tekstgrootte van Windows. Beeldondertitels (Blu-ray en dvd) behouden hun eigen uiterlijk.</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>Systeem</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>Schreef</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>Vaste breedte</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>Perkament</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>Wit</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>Geel</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>Cyaan</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>Groen</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>Zwart</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>Inkt</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>Antraciet</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>Marineblauw</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Videospeler</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>Hierna · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>{0}% bekeken</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>Speelt nu</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Lokale map</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-compatibele opslag</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Niet beschikbaar</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Gast</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Dat serveradres lijkt niet te kloppen. Voer een hostnaam zoals nas.local of een IP-adres in.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>{0} is niet bereikbaar. Controleer of de server aanstaat en in hetzelfde netwerk zit, en of de naam of login klopt.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>De map {0} kon niet worden gelezen. Mogelijk is een andere login of toestemming nodig.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Log opnieuw in bij {0} om deze bron te bereiken.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} is niet ingesteld in deze build van Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} heeft de toegang tot dit item geweigerd.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Dit bestand staat niet meer in {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} beperkt op dit moment het aantal verzoeken. Probeer het over een minuut opnieuw.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} gaf een fout terug (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Gebruik HTTPS voor servers buiten je lokale netwerk. Gewoon HTTP werkt alleen voor lokale adressen zoals nas.local of 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} gaf geen geldig HTTPS-certificaat. Edendale maakt alleen verbinding met servers met een vertrouwd certificaat.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} ondersteunt geen spoelen in dit bestand.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>De SSH-hostsleutel van {0} is gewijzigd. Edendale maakt pas weer verbinding als je de nieuwe sleutel goedkeurt door de server opnieuw te koppelen.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>De SSH-hostsleutel van {0} is nog niet goedgekeurd.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} accepteerde de gebruikersnaam en het wachtwoord niet.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Kon geen beveiligde verbinding met {0} opzetten. De SSH-server biedt alleen oudere versleuteling, die Edendale niet ondersteunt.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} accepteert geen inloggen met wachtwoord. Sta wachtwoordverificatie toe in de SSH-instellingen om de server te koppelen.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} biedt geen SFTP voor dit account.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Deze bucket staat in de regio {0}. Wijzig de regio en maak opnieuw verbinding.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Deze bucket staat in een andere regio. Controleer de regio en maak opnieuw verbinding.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>VERGETEN</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>AFMELDEN</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Login vergeten</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Afmelden</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale vergeet de login voor {0}. Er wordt niets van de server of het account verwijderd.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale vergeet de login voor {0}. De bronnen die hem gebruiken ({1}) vragen je opnieuw in te loggen. Er wordt niets van de server of het account verwijderd.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} bron</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} bronnen</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Gebruikersnaam</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Wachtwoord</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Verbinden</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Verbinden als gast</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Scrollpositie van {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” wordt uit je bibliotheek verwijderd. De bewaarde login blijft staan onder Instellingen → Accounts. Er wordt niets van de server verwijderd.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Inloggen vereist: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>INLOGGEN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>INLOGGEN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Afspelen vanaf</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Afspelen vanaf</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Afspelen vanaf</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Verder kijken</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Films</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Tv-series</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Films</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Tv-series</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>ACCOUNTS</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Geen bewaarde logins</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Logins worden versleuteld voor je Windows-account en blijven op deze pc. Als je een bron verwijdert, blijft de login bewaard.</value>
+  </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Kon de NFS-export op {0} niet openen. Windows maakt verbinding vanaf een niet-geprivilegieerde poort, dus de export heeft de optie ‘insecure’ nodig.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Kies een map</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Deze map toevoegen</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>OMHOOG</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video in deze map</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} video’s in deze map</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Deze server vertrouwen?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} gaf deze hostsleutel ({1}). Edendale heeft nog nooit verbinding met deze server gemaakt.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Hostsleutel gewijzigd</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>De hostsleutel die {0} gaf ({1}) komt niet overeen met de sleutel die Edendale eerder vertrouwde. Dat gebeurt na een herinstallatie van de server, maar het kan ook betekenen dat iemand de verbinding onderschept. Vertrouw de nieuwe sleutel alleen als je de wijziging verwachtte.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Vergelijk de vingerafdruk eerst met die van de server zelf, bijvoorbeeld met ssh-keygen -lf op het hostsleutelbestand.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Vertrouwen</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Nieuwe sleutel vertrouwen</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Soort bron</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows-bestandsdeling)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Eindpunt</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Regio</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Toegangssleutel-ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Geheime toegangssleutel</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Ander account…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Voer de server, eventueel een poort en de startmap in. Edendale logt in met een wachtwoord en toont de hostsleutel van de server voordat het die vertrouwt.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Voer het WebDAV-adres in, zoals een Nextcloud-bestanden-URL of rclone serve webdav, waarmee je ook Google Drive bereikt. Gewoon HTTP werkt alleen in je lokale netwerk.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Werkt met AWS, Backblaze B2, Cloudflare R2, Wasabi en MinIO. Een alleen-lezen sleutel is genoeg; die wordt op deze pc versleuteld.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Voer de server en export in, bijvoorbeeld nas.local/export/video. De export moet verbindingen vanaf niet-geprivilegieerde poorten toestaan (de optie ‘insecure’).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Je browser opent om bij Microsoft in te loggen. Edendale vraagt alleen om je bestanden te lezen en houdt dit account gescheiden van de OneDrive-map waarnaar het je kijkgeschiedenis kopieert.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Je browser opent om bij Dropbox in te loggen. Edendale vraagt alleen om je bestanden en accountnaam te lezen.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Inloggen</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Opnieuw inloggen</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Ingelogd</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Je kunt dit tabblad sluiten en teruggaan naar Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Voer de gebruikersnaam voor deze server in.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Rond het inloggen bij {0} af in je browser.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Kon de bron niet koppelen: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Inloggen is geannuleerd.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Het inlogantwoord kon niet worden gecontroleerd. Probeer het opnieuw.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Toegang tot {0} is niet toegestaan.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Je aanmelding bij {0} is verlopen of ingetrokken. Log opnieuw in.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} kon het inloggen niet voltooien ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} kon het inloggen niet voltooien ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} stuurde een antwoord dat Edendale niet kon lezen.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>{0} is niet bereikbaar. Controleer je verbinding en probeer het opnieuw.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Kon dit bestand niet lezen van {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Kon geen verbinding maken met {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Verbinding met {0} verbroken: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Verbinding met {0} verbroken.</value>
+  </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Vorige aflevering</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Afspelen</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pauzeren</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Volgende aflevering</value>
+  </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Bewaarde ondertitels</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>ALLES VERWIJDEREN</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Verwijderen na een maand ongebruikt</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bewaarde ondertitels verwijderen na een maand ongebruikt</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Ondertitels die je downloadt blijven op dit apparaat en komen terug als je dezelfde titel opnieuw afspeelt. Zolang de schakelaar aanstaat, wordt een ondertitel die je een maand niet hebt aangezet verwijderd.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Geen</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} ondertitel · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} ondertitels · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Bewaarde ondertitels verwijderen</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Alle ondertitels die op dit apparaat zijn bewaard, worden verwijderd. Je kunt ze opnieuw downloaden via online zoeken.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Bewaard</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} kB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Framegeneratie</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Framegeneratie kon voor dit bestand niet starten op deze videokaart, dus het speelt op de gewone manier af.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Start zodra de framerate van de video bekend is.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
+  </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Je browser opent om bij Google in te loggen. Edendale vraagt Google om alleen-lezentoegang tot je Drive. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Mijn Drive</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Gedeeld met mij</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Gedeelde drives</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale heeft toestemming nodig om je Google Drive-bestanden te zien. Log opnieuw in en laat de toegang tot Drive geselecteerd.</value>
   </data>
 </root>

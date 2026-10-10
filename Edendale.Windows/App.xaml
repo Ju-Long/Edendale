@@ -33,6 +33,9 @@
             <Color x:Key="EdendaleHeatLowColor">#4A3A1D</Color>
             <Color x:Key="EdendaleHeatMidColor">#8A672B</Color>
             <Color x:Key="EdendaleQrCodeBackgroundColor">#FFFFFF</Color>
+            <!-- Current or focused playlist row (DESIGN.md PlaylistActive*). -->
+            <Color x:Key="EdendalePlaylistActiveBackgroundColor">#FFFFFF</Color>
+            <Color x:Key="EdendalePlaylistActiveTextColor">#000000</Color>
 
             <SolidColorBrush x:Key="EdendaleBackgroundBrush" Color="{StaticResource EdendaleBackgroundColor}" />
             <SolidColorBrush x:Key="EdendaleSurfaceBrush" Color="{StaticResource EdendaleSurfaceColor}" />
@@ -50,6 +53,8 @@
             <SolidColorBrush x:Key="EdendaleHeatLowBrush" Color="{StaticResource EdendaleHeatLowColor}" />
             <SolidColorBrush x:Key="EdendaleHeatMidBrush" Color="{StaticResource EdendaleHeatMidColor}" />
             <SolidColorBrush x:Key="EdendaleQrCodeBackgroundBrush" Color="{StaticResource EdendaleQrCodeBackgroundColor}" />
+            <SolidColorBrush x:Key="EdendalePlaylistActiveBackgroundBrush" Color="{StaticResource EdendalePlaylistActiveBackgroundColor}" />
+            <SolidColorBrush x:Key="EdendalePlaylistActiveTextBrush" Color="{StaticResource EdendalePlaylistActiveTextColor}" />
 
             <!-- Projection Gold as the system accent so focus visuals,
                  progress rings, and selection chrome stay on-palette. -->

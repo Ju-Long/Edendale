@@ -183,14 +183,31 @@ public sealed class SubtitleService
     }
 
     /// <summary>Stable per-file name, so the cache hits on a second selection.</summary>
-    private static string CachePath(SubtitleCandidate candidate)
+    private static string CachePath(SubtitleCandidate candidate) =>
+        Path.Combine(AppPaths.SubtitleCacheDirectory, CacheFileName(candidate));
+
+    /// <summary>
+    /// The cached file's name for <paramref name="candidate"/>. Stable across
+    /// launches, so saved subtitles (SavedSubtitleStore) find their files again.
+    /// </summary>
+    internal static string CacheFileName(SubtitleCandidate candidate)
     {
         var name = Sanitize(candidate.Id);
-        if (name.Length == 0) name = Math.Abs(candidate.Url.GetHashCode()).ToString(CultureInfo.InvariantCulture);
+        if (name.Length == 0) name = StableHash(candidate.Url);
 
         var language = Sanitize(candidate.Language);
-        var leaf = language.Length == 0 ? $"{name}.srt" : $"{name}.{language}.srt";
-        return Path.Combine(AppPaths.SubtitleCacheDirectory, leaf);
+        return language.Length == 0 ? $"{name}.srt" : $"{name}.{language}.srt";
+    }
+
+    /// <summary>
+    /// A short hash that is the same in every process. string.GetHashCode is
+    /// randomized per launch, which would give an id-less result a new file
+    /// name every session.
+    /// </summary>
+    private static string StableHash(string value)
+    {
+        var digest = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(digest, 0, 8).ToLowerInvariant();
     }
 
     private static string Sanitize(string value)

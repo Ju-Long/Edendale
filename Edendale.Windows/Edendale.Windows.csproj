@@ -51,6 +51,7 @@
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+    <AppxPackageDir>D:\Codes\Edendale\output\</AppxPackageDir>
   </PropertyGroup>
 
   <!-- A manifest makes this a standard single-project MSIX app for Visual
@@ -71,8 +72,12 @@
     <!-- Legacy code pages for subtitle files, which are rarely UTF-8. -->
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
+    <!-- SFTP sources (DIFF.md §3.12): curve25519/ECDH key exchange,
+         Ed25519/ECDSA host keys, and AES-GCM. MIT, as is its BouncyCastle
+         dependency. -->
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
     <!-- Native VLC engine and LGPL codec plug-ins for x86, x64, and ARM64. -->
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
   </ItemGroup>
 
   <!-- Import libraries are build-time artifacts and do not belong in the
@@ -106,6 +111,10 @@
     </Content>
     <!-- MSIX tile, app list, and splash imagery, generated from icon.ico. -->
     <Content Include="Assets\*.png" />
+    <!-- X.2: taskbar thumbnail buttons need ICO files (HICONs), not SVG. -->
+    <Content Include="Assets\Taskbar\*.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Icons\*.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -117,5 +126,16 @@
        is a duplicate item to the SDK regardless of LogicalName (NETSDK1022). -->
   <ItemGroup Condition="Exists('..\secrets.json')">
     <EmbeddedResource Include="..\secrets.json" LogicalName="Edendale.LocalSecrets" />
+  </ItemGroup>
+
+  <!-- Frame generation (ENHANCEMENT.md G): the NVIDIA kernels as PTX, which
+       the driver compiles for the installed GPU, and the Intel compute
+       shaders, compiled at run time by Windows' d3dcompiler_47.dll.
+       FrameGeneration.cu is the source of the PTX
+       (tools/build-frame-generation-ptx.py) and is not built here. -->
+  <ItemGroup>
+    <EmbeddedResource Include="FrameGeneration\FrameGeneration.ptx" LogicalName="Edendale.FrameGeneration.ptx" />
+    <EmbeddedResource Include="FrameGeneration\FrameGeneration.hlsl" LogicalName="Edendale.FrameGeneration.hlsl" />
+    <None Include="FrameGeneration\FrameGeneration.cu" />
   </ItemGroup>
 </Project>

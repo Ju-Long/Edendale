@@ -1,0 +1,25 @@
+<UserControl
+    x:Class="Edendale.Windows.Controls.AccountsSettings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ACCOUNTS (AccountsSection.swift, DIFF.md §3.12): every saved login
+         and linked account, with the sources using each. Logins live on this
+         device only (D11). Removing a source keeps its login; forgetting a
+         login here is the one way to drop it. -->
+    <StackPanel>
+        <TextBlock x:Uid="SettingsAccountsHeader" Text="ACCOUNTS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+        <Border Style="{StaticResource SettingsGroupBorderStyle}">
+            <StackPanel>
+                <Border x:Name="NoAccountsRow">
+                    <TextBlock x:Uid="SettingsNoAccountsText" Text="No saved logins" Style="{StaticResource SettingsBodyRowTextStyle}" />
+                </Border>
+                <StackPanel x:Name="AccountsList" />
+                <TextBlock
+                    x:Uid="SettingsAccountsNote"
+                    Text="Logins are encrypted for your Windows account and stay on this PC. Removing a source keeps its login."
+                    Style="{StaticResource SettingsBodyRowTextStyle}" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

@@ -62,3 +62,4 @@ Web/dist/
 /.vs
 /.astro
 /dist
+/output

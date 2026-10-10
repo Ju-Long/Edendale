@@ -164,7 +164,7 @@
     <value>本產品使用 TMDB API，但未經 TMDB 認可或認證。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale 唯一的網路呼叫，是向 TMDB 取得圖本與中繼資料，以及使用者透過隱私權強化的 YouTube 內嵌播放器播放預告片。絕無任何分析追蹤。</value>
+    <value>Edendale 會連線到 TMDB 取得圖片和中繼資料、連線到你連結的來源以列出和播放檔案、在你搜尋字幕時連線到 Wyzie Subs、僅在略過提示開啟時連線到 TheIntroDB，並在你播放預告片時使用 YouTube 隱私強化嵌入。絕無分析統計。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>正在載入典藏</value>
@@ -305,23 +305,8 @@
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>在搜尋中顯示</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>倒轉 10 秒</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>快轉 10 秒</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>適應</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>循環播放</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>字幕與音訊</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>子母畫面</value>
+    <value>字幕</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>今日熱門</value>
@@ -383,35 +368,14 @@
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>子母畫面</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>停止循環播放</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>循環播放</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>填滿</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>符合</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>沒有可用的軌道</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>音訊</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>音訊</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>字幕</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>關閉</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>字幕</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>此檔案未包含任何軌道</value>
@@ -551,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>移除來源</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}”將從您的媒體櫃中移除，且會忘記 {1} 的儲存登入資訊，除非有其他來源仍在使用該伺服器。伺服器上的任何內容都不會被刪除。</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}”將從您的媒體櫃中移除。磁碟上的任何內容都不會被刪除。</value>
   </data>
@@ -575,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>無法存取網路路徑：{0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>網路來源錯誤</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>無法連線至 {0}：{1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>連線失敗</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows 無法啟動網路共用連接器。</value>
@@ -597,7 +552,7 @@
     <value>隱私保護源於設計</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>您的媒體櫃索引與觀看進度會保留在此裝置上。Edendale 唯一的網路呼叫，是向 TMDB 取得圖本與中繼資料 — 絕不會將其他任何資料傳送到任何地方。</value>
+    <value>你的媒體櫃索引和觀看進度會保留在此裝置上。Edendale 會連線到 TMDB 取得圖片和中繼資料，除此之外只連線到你選擇的內容：你連結的來源、字幕搜尋、開啟時的略過提示以及你播放的預告片。不會傳送到其他任何地方。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>挑選一天，接著挑選第二天以關閉範圍。</value>
@@ -892,5 +847,794 @@
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>此作品未確認為 PG 或 PG-13 分級。</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>播放器調整</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>播放器調整</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>播放清單</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>播放清單</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>音訊輸出</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>音訊輸出</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>時間軸</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>音量</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>正在套用…</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>暫停</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>靜音</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>取消靜音</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>全螢幕</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>結束全螢幕</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>倒轉 {0} 秒</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>快轉 {0} 秒</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>系統預設</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>音量 {0}%</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>已靜音</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>已取消靜音</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>亮度 {0}%</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>倒轉 {0} 秒</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>快轉 {0} 秒</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>接下來</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>接下來：{0}，{1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>略過片頭</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>略過前情提要</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>略過片尾</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>略過這一段並繼續播放。按 S 鍵。</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>調整</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>視訊軌道</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>視訊軌道</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>音訊軌道</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>音訊軌道</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>畫面</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>顯示原始畫面</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>重設</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>畫質增強</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>預設組合</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>動態平滑</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>顯示原始畫面</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>速度</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>更慢</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>更快</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>速度 {0}，恢復正常</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>略過提示</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>使用 TheIntroDB。略過一律需要手動按下。</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>音訊增強</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>耳機環繞音效</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>循環播放</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>填滿視窗</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>同步</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>音訊延遲</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>字幕延遲</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}：提前</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}：延後</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>章節</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>第 {0} 章</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>單聲道</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>立體聲</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0} 聲道</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>軌道 {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>亮度</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>對比</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>伽瑪</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>飽和度</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>色調</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>均衡</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>高畫質</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>視訊增強需要硬體圖形介面卡，因此畫面依原樣播放。</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>超解析度需要 Edendale 在獨立顯示卡上執行。請在 Windows 設定 › 系統 › 顯示器 › 圖形中，將 Edendale 設為「高效能」。</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>App 控制</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>倒轉</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>快轉</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>按住左側</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>按住右側</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>按住左側時的速度</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>按住右側時的速度</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>跳轉適用於方向鍵、跳轉按鈕、點兩下和媒體鍵。按住影片任一半邊，即可依該側的速度播放，放開後恢復。</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>倒轉，{0} 秒</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>快轉，{0} 秒</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>略過提示</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>提供略過片頭、前情提要和片尾</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>略過提示</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>啟用後，TheIntroDB 會收到該作品的 TMDB ID、集數編號、影片長度及你的 IP 位址。略過一律需要按下按鈕。</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>音訊增強</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>設定檔</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>重設等化器</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>適用於所有檔案。夜間模式會平衡對白與音效，但不做壓縮。播放器中的音訊增強可提高 10 dB。</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>前級放大</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0} Hz</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>顯示等化器</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>隱藏等化器</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>平直</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>電影</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>音樂</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>對白</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>夜間模式</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>字幕將如此顯示。</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>字幕預覽</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>字型</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>文字顏色</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>背景框顏色</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>背景框不透明度</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>背景框不透明度</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>重設字幕樣式</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>從下一個開啟的檔案起套用於文字字幕，並依循 Windows 的文字大小。影像字幕（藍光和 DVD）保持原樣。</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>系統</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>襯線</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>等寬</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>羊皮紙</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>白色</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>黃色</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>青色</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>綠色</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>黑色</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>墨色</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>炭灰色</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>藏青色</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>影片播放器</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>接下來 · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>已觀看 {0}%</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>正在播放</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} 分鐘</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>本機資料夾</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3 相容儲存空間</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>無法使用</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>訪客</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>此伺服器位址似乎不正確。請輸入 nas.local 這類主機名稱或 IP 位址。</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>無法連線到 {0}。請確認伺服器已開啟、位於同一網路，且名稱或登入資訊正確。</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>無法讀取資料夾 {0}。可能需要其他登入資訊或權限。</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>請重新登入 {0} 以存取此來源。</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>此 Edendale 版本未設定 {0}。</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} 拒絕存取此項目。</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>此檔案已不在 {0} 中。</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} 目前正在限制要求。請一分鐘後再試。</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} 傳回錯誤 (HTTP {1})。</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>區域網路以外的伺服器請使用 HTTPS。未加密的 HTTP 僅適用於 nas.local 或 192.168.1.10 這類本機位址。</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} 未提供有效的 HTTPS 憑證。Edendale 只會連線到具有受信任憑證的伺服器。</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} 不支援在此檔案中跳轉。</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>{0} 的 SSH 主機金鑰已變更。在你重新連結伺服器並核准新金鑰之前，Edendale 不會連線。</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>{0} 的 SSH 主機金鑰尚未核准。</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} 未接受此使用者名稱和密碼。</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>無法與 {0} 建立安全連線。其 SSH 伺服器僅提供 Edendale 不支援的舊式加密。</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} 不接受密碼登入。請在其 SSH 設定中允許密碼驗證後再連結。</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} 未為此帳號提供 SFTP。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>此儲存貯體位於 {0} 區域。請變更區域後重新連線。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>此儲存貯體位於其他區域。請檢查區域後重新連線。</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>忘記</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>登出</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>忘記登入資訊</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>登出</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale 將忘記 {0} 的登入資訊。伺服器或帳號中的任何內容都不會被刪除。</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale 將忘記 {0} 的登入資訊。使用它的來源（{1}）將要求你重新登入。伺服器或帳號中的任何內容都不會被刪除。</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} 個來源</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} 個來源</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>位址</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>使用者名稱</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>密碼</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>連線</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>以訪客身分連線</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>{0}捲動位置</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}”將從您的媒體櫃中移除。已儲存的登入資訊仍保留在「設定」→「帳號」中。伺服器上的任何內容都不會被刪除。</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>離線：{0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>需要登入：{0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>登入</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>登入</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>播放來源</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>播放來源</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>播放來源</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>繼續觀看</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>電影</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>電視節目</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>電影</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>電視節目</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>帳號</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>沒有已儲存的登入資訊</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>登入資訊會針對你的 Windows 帳號加密，並只保存在這台電腦上。移除來源不會刪除其登入資訊。</value>
+  </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>無法開啟 {0} 上的 NFS 匯出。Windows 從非特權連接埠連線，因此該匯出需要「insecure」選項。</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>選擇資料夾</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>加入此資料夾</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>上一層</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>此資料夾中有 {0} 部影片</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>此資料夾中有 {0} 部影片</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>信任此伺服器?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} 提供了此主機金鑰（{1}）。Edendale 之前從未連線過此伺服器。</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>主機金鑰已變更</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>{0} 提供的主機金鑰（{1}）與 Edendale 之前信任的不一致。重新安裝伺服器後會出現這種情況，但也可能表示有人正在攔截連線。只有在你預期到此變更時才信任新金鑰。</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>信任之前，請將指紋與伺服器本身的指紋比對，例如對其主機金鑰檔執行 ssh-keygen -lf。</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>信任</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>信任新金鑰</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>來源類型</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB（Windows 檔案共用）</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>端點</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>區域</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>儲存貯體</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>存取金鑰 ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>秘密存取金鑰</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>帳號</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>其他帳號…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>輸入伺服器、選填的連接埠和起始資料夾。Edendale 會以密碼登入，並在信任前顯示伺服器的主機金鑰。</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>輸入 WebDAV 位址，例如 Nextcloud 檔案 URL，或也能存取 Google 雲端硬碟的 rclone serve webdav。未加密的 HTTP 僅在區域網路中可用。</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>適用於 AWS、Backblaze B2、Cloudflare R2、Wasabi 和 MinIO。唯讀金鑰即可；金鑰會在這台電腦上加密保存。</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>輸入伺服器和匯出路徑，例如 nas.local/export/video。該匯出必須允許來自非特權連接埠的連線（「insecure」選項）。</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>瀏覽器會開啟以登入 Microsoft。Edendale 只要求讀取你的檔案，並將此帳號與其複製觀看紀錄的 OneDrive 資料夾分開管理。</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>瀏覽器會開啟以登入 Dropbox。Edendale 只要求讀取你的檔案和帳號名稱。</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>登入</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>重新登入</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>已登入</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>你可以關閉此分頁並返回 Edendale。</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>請輸入此伺服器的使用者名稱。</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>請在瀏覽器中完成 {0} 的登入。</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>無法連結來源：{0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>登入已取消。</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>無法驗證登入回應。請再試一次。</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>未允許存取 {0}。</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>你的 {0} 登入已過期或被撤銷。請重新登入。</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} 無法完成登入（{1}）。</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} 無法完成登入（{1}）：{2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} 傳送了 Edendale 無法讀取的回應。</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>無法連線到 {0}。請檢查網路連線後再試一次。</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>無法從 {0} 讀取此檔案。</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>無法連線到 {0}。</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>與 {0} 的連線已中斷：{1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>與 {0} 的連線已中斷。</value>
+  </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>上一集</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>暫停</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>下一集</value>
+  </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>已儲存的字幕</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>全部移除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>一個月未使用後移除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>已儲存的字幕一個月未使用後移除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>你下載的字幕會保留在此裝置上，再次播放同一作品時會重新出現。開關開啟時，一個月未開啟過的字幕會被移除。</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>無</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} 個字幕 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} 個字幕 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>移除已儲存的字幕</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>此裝置上儲存的所有字幕都會被刪除。你可以透過線上搜尋重新下載。</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>已儲存</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>影格生成</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>無法在此顯示卡上為此檔案啟動影格生成，因此以一般方式播放。</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>得知影片影格率後開始。</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>適用於 30 fps 以下、最高 4K 的影片。</value>
+  </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>瀏覽器會開啟以登入 Google。Edendale 會向 Google 請求你雲端硬碟的唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>我的雲端硬碟</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>與我共用</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>共用雲端硬碟</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale 需要權限才能查看你的 Google 雲端硬碟檔案。請重新登入，並保持選取雲端硬碟存取權限。</value>
   </data>
 </root>

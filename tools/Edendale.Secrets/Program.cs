@@ -26,7 +26,8 @@ internal static class Program
         string Pattern,
         string Guidance,
         bool Required,
-        string Source);
+        string Source,
+        string? UnsetEffect = null);
 
     private static readonly SecretDefinition[] Definitions =
     [
@@ -53,7 +54,48 @@ internal static class Program
             Pattern: @"\A[A-Za-z0-9._-]+\z",
             Guidance: "The Wyzie key is letters, digits, dots, dashes, and underscores.",
             Required: false,
-            Source: "https://store.wyzie.io/redeem"),
+            Source: "https://store.wyzie.io/redeem",
+            UnsetEffect: "online subtitles disabled"),
+        // Public-client IDs for Google Drive, OneDrive, and Dropbox sources
+        // (PKCE). Leaving one empty hides that provider in the build. Google's
+        // Desktop client type also issues a secret its token endpoint expects;
+        // Google documents it as not confidential (ENHANCEMENT.md D9).
+        new(
+            Name: "GOOGLE_DRIVE_CLIENT_ID",
+            Flag: "--google-drive-client-id",
+            Label: "Google Drive client ID (Desktop app OAuth client)",
+            Pattern: @"\A[0-9]+-[0-9a-z]+\.apps\.googleusercontent\.com\z",
+            Guidance: "The client ID ends in .apps.googleusercontent.com. Create an OAuth client of type Desktop app in a project with the Google Drive API enabled, and add the drive.readonly scope to its consent screen.",
+            Required: false,
+            Source: "https://console.cloud.google.com/apis/credentials",
+            UnsetEffect: "Google Drive sources hidden"),
+        new(
+            Name: "GOOGLE_DRIVE_CLIENT_SECRET",
+            Flag: "--google-drive-client-secret",
+            Label: "Google Drive client secret (from the same Desktop app client)",
+            Pattern: @"\A[A-Za-z0-9_-]{20,64}\z",
+            Guidance: "The client secret is letters, digits, dashes, and underscores, usually starting with GOCSPX-.",
+            Required: false,
+            Source: "https://console.cloud.google.com/apis/credentials",
+            UnsetEffect: "Google Drive sign-in fails at the token step"),
+        new(
+            Name: "ONEDRIVE_CLIENT_ID",
+            Flag: "--onedrive-client-id",
+            Label: "OneDrive client ID (Microsoft Entra public client)",
+            Pattern: @"\A[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\z",
+            Guidance: "The application (client) ID is a GUID. Register an app for personal and work or school accounts with the Files.Read and User.Read permissions, turn on Allow public client flows, and add http://127.0.0.1 to publicClient.redirectUris in its Manifest (the portal's Redirect URI box refuses it, and http://localhost doesn't match).",
+            Required: false,
+            Source: "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
+            UnsetEffect: "OneDrive sources hidden"),
+        new(
+            Name: "DROPBOX_APP_KEY",
+            Flag: "--dropbox-app-key",
+            Label: "Dropbox app key",
+            Pattern: @"\A[a-z0-9]{10,32}\z",
+            Guidance: "The app key is lowercase letters and digits. Use a scoped app with the redirect URI http://127.0.0.1:49735/ and the files.metadata.read, files.content.read, and account_info.read scopes.",
+            Required: false,
+            Source: "https://www.dropbox.com/developers/apps",
+            UnsetEffect: "Dropbox sources hidden"),
     ];
 
     private static int Main(string[] arguments)
@@ -309,7 +351,7 @@ internal static class Program
             var value = values.GetValueOrDefault(definition.Name, "");
             var state = value.Length > 0
                 ? $"set ({value.Length} characters)"
-                : definition.Required ? "not set" : "not set (online subtitles disabled)";
+                : definition.UnsetEffect is { } effect ? $"not set ({effect})" : "not set";
             Console.WriteLine($"  {definition.Name,-24} {state}");
         }
     }

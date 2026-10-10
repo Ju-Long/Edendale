@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -11,24 +11,46 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using LibVLCSharp.Shared;
+using LibVLCSharp.Shared.Structures;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Edendale.Windows.Core;
 using Edendale.Windows.Services;
 
 namespace Edendale.Windows.Controls;
 
+/// <summary>
+/// The player chrome over the video: title, transport, timeline, volume,
+/// skips that follow Settings → App Controls, the HUD, Up Next, skip prompts,
+/// press-and-hold speed, and the online subtitle browser. Gestures and the
+/// HUD live in the partial files beside this one.
+/// </summary>
 public sealed partial class PlayerControlsOverlay : UserControl
 {
     private MediaPlayer? _mediaPlayer;
     private DispatcherQueueTimer _hideTimer;
     private DispatcherQueueTimer _progressTimer;
     private bool _isSliderManipulating;
-    private bool _aspectFill;
+    private bool _isPictureInPicture;
 
     /// <summary>What is playing, for the online subtitle search. Null for a bare file.</summary>
     private PlaybackRequest? _playback;
+
+    /// <summary>The library context behind the item: Up Next and attached subtitles.</summary>
+    private PlayerContext? _context;
+
+    /// <summary>The speed the reader chose; a hold overrides it until release.</summary>
+    private double _baseRate = 1.0;
+
+    /// <summary>W.2: the level carries over from file to file within the session.</summary>
+    private int _volume = 100;
+    private bool _muted;
+    private bool _suppressVolumeSlider;
+
+    /// <summary>3.18: the chosen output device; null follows Windows' default.</summary>
+    private string? _audioDevice;
+
+    private bool _audioApplied;
 
     private CancellationTokenSource? _subtitleWork;
 
@@ -39,17 +61,24 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
     public event RoutedEventHandler? CloseRequested;
     public event RoutedEventHandler? PlaylistRequested;
+    public event RoutedEventHandler? AdjustmentsRequested;
     public event RoutedEventHandler? PictureInPictureRequested;
 
-    /// <summary>True when the frame should be cropped to fill the window.</summary>
-    public event EventHandler<bool>? AspectFillChanged;
+    /// <summary>The full-screen button, or a mouse double click on the video.</summary>
+    public event RoutedEventHandler? FullScreenRequested;
+
+    /// <summary>The Up Next card was chosen.</summary>
+    public event EventHandler<PlaybackRequest>? PlayNextRequested;
+
+    /// <summary>A credits skip that runs to the end of the file finishes the item.</summary>
+    public event RoutedEventHandler? EndReachedBySkip;
+
+    /// <summary>The base speed changed (per-title memory, a reopen, or the panel).</summary>
+    public event EventHandler<double>? BaseRateChanged;
 
     public PlayerControlsOverlay()
     {
         this.InitializeComponent();
-
-        // The XAML default is design-time only; the reader's decimal mark wins.
-        SpeedButton.Content = RateLabel(1.0);
 
         _hideTimer = DispatcherQueue.CreateTimer();
         _hideTimer.Interval = TimeSpan.FromSeconds(3);
@@ -59,19 +88,37 @@ public sealed partial class PlayerControlsOverlay : UserControl
         _progressTimer.Interval = TimeSpan.FromMilliseconds(250);
         _progressTimer.Tick += (s, e) => UpdateProgress();
 
+        InitializeGestures();
+        InitializeHud();
+
         TimelineSlider.AddHandler(PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
         TimelineSlider.AddHandler(PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
         TimelineSlider.AddHandler(PointerCanceledEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
         TimelineSlider.AddHandler(PointerCaptureLostEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
+
+        RefreshSkipLabels();
+        UpdateVolumeUi();
+        SetFullScreenActive(false);
+        SetPictureInPictureActive(false);
+        UpdatePlayPauseLabels(isPlaying: false);
+
+        // Skip lengths are read at every gesture; the labels follow live.
+        AppServices.PlayerSettings.Changed += (_, key) =>
+        {
+            if (key is PlayerControlPreferences.SkipBackwardKey or PlayerControlPreferences.SkipForwardKey)
+            {
+                DispatcherQueue.TryEnqueue(RefreshSkipLabels);
+            }
+        };
     }
 
     /// <summary>
     /// Binds the overlay to a player. <paramref name="request"/> is what the
-    /// online subtitle search matches on; without it the browser still opens
-    /// but can only search by the file's own hash.
+    /// online subtitle search matches on; <paramref name="context"/> feeds Up
+    /// Next and records attached subtitles.
     /// </summary>
     public void SetMediaPlayer(
-        MediaPlayer? player, string title, string? subtitle, PlaybackRequest? request = null)
+        MediaPlayer? player, string title, string? subtitle, PlaybackRequest? request, PlayerContext? context)
     {
         if (_mediaPlayer != null)
         {
@@ -83,14 +130,27 @@ public sealed partial class PlayerControlsOverlay : UserControl
             _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
         }
 
-        // A different item invalidates any in-flight search and its results.
-        CloseSubtitleBrowser();
+        // A different item invalidates any in-flight search, the speed, and Up Next.
+        if (!ReferenceEquals(request, _playback))
+        {
+            CloseSubtitleBrowser();
+            _baseRate = 1.0;
+            BaseRateChanged?.Invoke(this, _baseRate);
+        }
         _playback = request;
+        _context = context;
+        CancelHold();
+        HideUpNext();
+        RefreshSegmentPrompt();
 
         _mediaPlayer = player;
-        TitleText.Text = title;
-        SubtitleText.Text = subtitle ?? "";
-        SubtitleText.Visibility = string.IsNullOrEmpty(subtitle) ? Visibility.Collapsed : Visibility.Visible;
+        _audioApplied = false;
+        if (title.Length > 0 || player is null)
+        {
+            TitleText.Text = title;
+            SubtitleText.Text = subtitle ?? "";
+            SubtitleText.Visibility = string.IsNullOrEmpty(subtitle) ? Visibility.Collapsed : Visibility.Visible;
+        }
 
         if (_mediaPlayer != null)
         {
@@ -101,6 +161,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
             _mediaPlayer.EncounteredError += MediaPlayer_StateChanged;
             _mediaPlayer.LengthChanged += MediaPlayer_LengthChanged;
 
+            _mediaPlayer.SetRate((float)_baseRate);
             UpdatePlayPauseIcon();
             UpdateDuration();
             UpdateProgress();
@@ -111,6 +172,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         else
         {
             _progressTimer.Stop();
+            RefreshChapterMarks();
         }
     }
 
@@ -133,8 +195,11 @@ public sealed partial class PlayerControlsOverlay : UserControl
         _hideTimer.Start();
     }
 
+    private bool AreControlsShown => OverlayContainer.IsHitTestVisible;
+
     private void UserControl_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
+        TrackPointerDrag(e);
         ShowControls();
     }
 
@@ -143,25 +208,24 @@ public sealed partial class PlayerControlsOverlay : UserControl
         HideControls();
     }
 
-    private void UserControl_Tapped(object sender, TappedRoutedEventArgs e)
+    /// <summary>Esc closes the online subtitle browser before anything else.</summary>
+    public bool DismissTransient()
     {
-        ShowControls();
+        if (SubtitleBrowser.Visibility != Visibility.Visible) return false;
+        CloseSubtitleBrowser();
+        Focus(FocusState.Programmatic);
+        return true;
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e)
-    {
-        CloseRequested?.Invoke(this, new RoutedEventArgs());
-    }
+    private void BackButton_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke(this, new RoutedEventArgs());
 
-    private void SidebarButton_Click(object sender, RoutedEventArgs e)
-    {
-        PlaylistRequested?.Invoke(this, new RoutedEventArgs());
-    }
+    private void SidebarButton_Click(object sender, RoutedEventArgs e) => PlaylistRequested?.Invoke(this, new RoutedEventArgs());
 
-    private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
-    {
-        TogglePlayPause();
-    }
+    private void AdjustmentsButton_Click(object sender, RoutedEventArgs e) => AdjustmentsRequested?.Invoke(this, new RoutedEventArgs());
+
+    private void FullScreenButton_Click(object sender, RoutedEventArgs e) => FullScreenRequested?.Invoke(this, new RoutedEventArgs());
+
+    private void PlayPauseButton_Click(object sender, RoutedEventArgs e) => TogglePlayPause();
 
     public void TogglePlayPause()
     {
@@ -170,30 +234,149 @@ public sealed partial class PlayerControlsOverlay : UserControl
         if (_mediaPlayer.IsPlaying)
         {
             _mediaPlayer.Pause();
-            ShowControls();
         }
         else
         {
             _mediaPlayer.Play();
-            ShowControls();
+            // Reapply the rate after resuming so rapid toggles never stall it (26.1 fix).
+            _mediaPlayer.SetRate((float)(_holdSide is { } side ? AppServices.Controls.HoldRate(side) : _baseRate));
         }
-    }
-
-    public void Skip(double seconds)
-    {
-        if (_mediaPlayer == null) return;
-        var newPosition = _mediaPlayer.Time + (long)(seconds * 1000);
-        newPosition = Math.Max(0, Math.Min(newPosition, _mediaPlayer.Length));
-        _mediaPlayer.Time = newPosition;
         ShowControls();
     }
 
-    private void SkipBack_Click(object sender, RoutedEventArgs e) => Skip(-10);
-    private void SkipForward_Click(object sender, RoutedEventArgs e) => Skip(10);
+    // ------------------------------------------------------------------
+    // Skips (3.1): one length per direction drives every skip
+    // ------------------------------------------------------------------
+
+    public void Skip(SkipDirection direction)
+    {
+        if (_mediaPlayer == null) return;
+        var offset = AppServices.Controls.SkipOffset(direction);
+        _mediaPlayer.Time = PlayerLogic.SkipTarget(_mediaPlayer.Time, offset, _mediaPlayer.Length);
+        var seconds = Math.Abs(offset);
+        ShowHud(
+            Loc.Format(direction == SkipDirection.Backward ? "Hud_SkipBack" : "Hud_SkipForward", seconds),
+            SkipIcon(direction, seconds));
+    }
+
+    /// <summary>X.1: the D-pad's fine seek, shown as the new time.</summary>
+    public void SeekBy(int seconds)
+    {
+        if (_mediaPlayer == null) return;
+        var target = PlayerLogic.SkipTarget(_mediaPlayer.Time, seconds, _mediaPlayer.Length);
+        _mediaPlayer.Time = target;
+        ShowHud(PlayerLogic.Timestamp(target / 1000.0), null);
+    }
+
+    /// <summary>X.1: a trigger held past its threshold plays at that side's hold speed.</summary>
+    public void SetControllerHold(HoldSide? side)
+    {
+        if (side is { } held) BeginHold(held);
+        else EndHold();
+    }
+
+    private void SkipBack_Click(object sender, RoutedEventArgs e) => Skip(SkipDirection.Backward);
+    private void SkipForward_Click(object sender, RoutedEventArgs e) => Skip(SkipDirection.Forward);
+
+    private static string SkipIcon(SkipDirection direction, int seconds) =>
+        $"ms-appx:///Assets/Icons/arrow-rotate-{(direction == SkipDirection.Backward ? "left" : "right")}-{seconds}.svg";
+
+    /// <summary>The skip buttons' glyphs, tooltips, and names show the current lengths.</summary>
+    private void RefreshSkipLabels()
+    {
+        var back = (int)AppServices.Controls.SkipBackwardInterval;
+        var forward = (int)AppServices.Controls.SkipForwardInterval;
+        SkipBackIcon.UriSource = new Uri(SkipIcon(SkipDirection.Backward, back));
+        SkipForwardIcon.UriSource = new Uri(SkipIcon(SkipDirection.Forward, forward));
+        var backLabel = Loc.Format("Player_SkipBackSeconds", back);
+        var forwardLabel = Loc.Format("Player_SkipForwardSeconds", forward);
+        ToolTipService.SetToolTip(SkipBackButton, backLabel);
+        ToolTipService.SetToolTip(SkipForwardButton, forwardLabel);
+        AutomationProperties.SetName(SkipBackButton, backLabel);
+        AutomationProperties.SetName(SkipForwardButton, forwardLabel);
+    }
+
+    // ------------------------------------------------------------------
+    // Speed (F.4): the panel sets the base rate on the 0.05 grid
+    // ------------------------------------------------------------------
+
+    public double BaseRate => _baseRate;
+
+    public void SetBaseRate(double rate)
+    {
+        _baseRate = PlayerLogic.NormalizedRate(rate);
+        if (_holdSide is null) _mediaPlayer?.SetRate((float)_baseRate);
+        BaseRateChanged?.Invoke(this, _baseRate);
+    }
+
+    // ------------------------------------------------------------------
+    // Volume and mute (W.2)
+    // ------------------------------------------------------------------
+
+    /// <summary>↑/↓ and the mouse wheel: 5 % steps. Any volume change unmutes.</summary>
+    public void ChangeVolume(int steps)
+    {
+        var level = PlayerLogic.AdjustedLevel(_volume / 100.0, steps * PlayerLogic.LevelStep);
+        SetVolume((int)Math.Round(level * 100));
+    }
+
+    private void SetVolume(int volume)
+    {
+        _volume = Math.Clamp(volume, 0, 100);
+        _muted = false;
+        ApplyAudioLevels();
+        UpdateVolumeUi();
+        ShowHud(Loc.Format("Hud_Volume", _volume), "ms-appx:///Assets/Icons/volume-high.svg");
+    }
+
+    public void ToggleMute()
+    {
+        _muted = !_muted;
+        ApplyAudioLevels();
+        UpdateVolumeUi();
+        ShowHud(
+            Loc.Get(_muted ? "Hud_Muted" : "Hud_Unmuted"),
+            _muted ? "ms-appx:///Assets/Icons/volume-xmark.svg" : "ms-appx:///Assets/Icons/volume-high.svg");
+    }
+
+    private void MuteButton_Click(object sender, RoutedEventArgs e) => ToggleMute();
+
+    private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (_suppressVolumeSlider) return;
+        var value = (int)Math.Round(e.NewValue);
+        if (value == _volume && !_muted) return;
+        SetVolume(value);
+    }
+
+    private void ApplyAudioLevels()
+    {
+        if (_mediaPlayer is not { } player) return;
+        player.Volume = _volume;
+        player.Mute = _muted;
+    }
+
+    private void UpdateVolumeUi()
+    {
+        _suppressVolumeSlider = true;
+        VolumeSlider.Value = _volume;
+        _suppressVolumeSlider = false;
+        MuteIcon.UriSource = new Uri(_muted || _volume == 0
+            ? "ms-appx:///Assets/Icons/volume-xmark.svg"
+            : "ms-appx:///Assets/Icons/volume-high.svg");
+        var label = Loc.Get(_muted ? "Player_Unmute" : "Player_Mute");
+        ToolTipService.SetToolTip(MuteButton, label);
+        AutomationProperties.SetName(MuteButton, label);
+    }
+
+    // ------------------------------------------------------------------
+    // Timeline
+    // ------------------------------------------------------------------
 
     private void TimelineSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isSliderManipulating = true;
+        RefreshSegmentPrompt();
     }
 
     private void TimelineSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -210,28 +393,12 @@ public sealed partial class PlayerControlsOverlay : UserControl
         if (!_isSliderManipulating || _mediaPlayer == null) return;
         var duration = Math.Max(0, _mediaPlayer.Length);
         var pos = TimeSpan.FromMilliseconds(e.NewValue * duration / 100);
-        CurrentTimeText.Text = FormatTime(pos);
+        CurrentTimeText.Text = PlayerLogic.Timestamp(pos.TotalSeconds);
     }
 
-    private void SpeedButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_mediaPlayer == null) return;
-        var currentRate = (double)_mediaPlayer.Rate;
-        double nextRate = currentRate switch
-        {
-            1.0 => 1.25,
-            1.25 => 1.5,
-            1.5 => 2.0,
-            2.0 => 0.5,
-            _ => 1.0
-        };
-        _mediaPlayer.SetRate((float)nextRate);
-        SpeedButton.Content = RateLabel(nextRate);
-    }
-
-    /// <summary>Playback rate with the reader's decimal mark — "1,5x" in German.</summary>
-    private static string RateLabel(double rate) =>
-        string.Format(CultureInfo.CurrentCulture, "{0:0.0}x", rate);
+    // ------------------------------------------------------------------
+    // Window modes
+    // ------------------------------------------------------------------
 
     private void PictureInPictureButton_Click(object sender, RoutedEventArgs e)
     {
@@ -241,24 +408,92 @@ public sealed partial class PlayerControlsOverlay : UserControl
     /// <summary>Same button restores the full window while floating.</summary>
     public void SetPictureInPictureActive(bool active)
     {
-        ToolTipService.SetToolTip(
-            PictureInPictureButton,
-            Loc.Get(active ? "Player_ExitPictureInPicture" : "Player_PictureInPicture"));
+        _isPictureInPicture = active;
+        var label = Loc.Get(active ? "Player_ExitPictureInPicture" : "Player_PictureInPicture");
+        ToolTipService.SetToolTip(PictureInPictureButton, label);
+        AutomationProperties.SetName(PictureInPictureButton, label);
     }
 
-    /// <summary>
-    /// Fit letterboxes the whole frame; fill crops it to the window. The
-    /// element lives in the shell, so the choice is raised rather than applied.
-    /// </summary>
-    private void AspectButton_Click(object sender, RoutedEventArgs e)
+    public void SetFullScreenActive(bool active)
     {
-        _aspectFill = !_aspectFill;
-        AspectButton.Content = Loc.Get(_aspectFill ? "Player_AspectFill" : "Player_AspectFit");
-        AspectFillChanged?.Invoke(this, _aspectFill);
-        ShowControls();
+        FullScreenIcon.UriSource = new Uri(active ? "ms-appx:///Assets/Icons/compress.svg" : "ms-appx:///Assets/Icons/expand.svg");
+        var label = Loc.Get(active ? "Player_ExitFullScreen" : "Player_FullScreen");
+        ToolTipService.SetToolTip(FullScreenButton, label);
+        AutomationProperties.SetName(FullScreenButton, label);
     }
 
-    /// <summary>Audio and subtitle tracks discovered by LibVLC.</summary>
+    // ------------------------------------------------------------------
+    // Audio output (3.18)
+    // ------------------------------------------------------------------
+
+    private void AudioOutputButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowControls();
+        var flyout = new MenuFlyout { Placement = FlyoutPlacementMode.Top };
+
+        var systemDefault = new ToggleMenuFlyoutItem
+        {
+            Text = Loc.Get("Player_AudioOutputDefault"),
+            IsChecked = _audioDevice is null,
+        };
+        systemDefault.Click += (_, _) => SelectAudioDevice(null);
+        flyout.Items.Add(systemDefault);
+
+        if (_mediaPlayer is { } player)
+        {
+            AudioOutputDevice[] devices;
+            try
+            {
+                devices = player.AudioOutputDeviceEnum;
+            }
+            catch (VLCException)
+            {
+                devices = [];
+            }
+
+            if (devices.Length > 0) flyout.Items.Add(new MenuFlyoutSeparator());
+            foreach (var device in devices)
+            {
+                if (string.IsNullOrEmpty(device.DeviceIdentifier)) continue;
+                var id = device.DeviceIdentifier;
+                var entry = new ToggleMenuFlyoutItem
+                {
+                    Text = string.IsNullOrWhiteSpace(device.Description) ? id : device.Description,
+                    IsChecked = id == _audioDevice,
+                };
+                entry.Click += (_, _) => SelectAudioDevice(id);
+                flyout.Items.Add(entry);
+            }
+        }
+
+        flyout.ShowAt(AudioOutputButton);
+    }
+
+    /// <summary>Null follows Windows' default device again.</summary>
+    private void SelectAudioDevice(string? deviceId)
+    {
+        _audioDevice = deviceId;
+        ApplyAudioDevice();
+    }
+
+    private void ApplyAudioDevice()
+    {
+        if (_mediaPlayer is not { } player) return;
+        try
+        {
+            player.SetOutputDevice(_audioDevice!);
+        }
+        catch (VLCException)
+        {
+            // An unplugged device leaves output where it was.
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Subtitles flyout: tracks in the file plus the online search. Audio
+    // tracks moved to Player Adjustments (3.9).
+    // ------------------------------------------------------------------
+
     private void SubtitlesButton_Click(object sender, RoutedEventArgs e)
     {
         ShowControls();
@@ -272,33 +507,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
             return;
         }
 
-        // LibVLC includes a synthetic "disable" entry on some outputs. The
-        // Edendale menu presents playable audio streams only.
-        var audioTracks = player.AudioTrackDescription
-            .Where(track => track.Id >= 0)
-            .ToArray();
-        if (audioTracks.Length > 1)
-        {
-            flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_AudioHeader"), IsEnabled = false });
-            for (var index = 0; index < audioTracks.Length; index++)
-            {
-                var track = audioTracks[index];
-                var trackId = track.Id;
-                var entry = new ToggleMenuFlyoutItem
-                {
-                    Text = TrackLabel(track.Name, null, index, Loc.Get("Player_AudioTrack")),
-                    IsChecked = player.AudioTrack == trackId,
-                };
-                entry.Click += (_, _) => player.SetAudioTrack(trackId);
-                flyout.Items.Add(entry);
-            }
-            flyout.Items.Add(new MenuFlyoutSeparator());
-        }
-
         flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_SubtitlesHeader"), IsEnabled = false });
-        var subtitleTracks = player.SpuDescription
-            .Where(track => track.Id >= 0)
-            .ToArray();
+        var subtitleTracks = PlayerEffects.Tracks(player, _context).Subtitles;
 
         var off = new ToggleMenuFlyoutItem
         {
@@ -308,26 +518,52 @@ public sealed partial class PlayerControlsOverlay : UserControl
         off.Click += (_, _) => player.SetSpu(-1);
         flyout.Items.Add(off);
 
-        for (var index = 0; index < subtitleTracks.Length; index++)
+        var saved = SavedSubtitlesOn(subtitleTracks);
+        for (var index = 0; index < subtitleTracks.Count; index++)
         {
             var track = subtitleTracks[index];
             var trackId = track.Id;
+            var savedSubtitle = saved.GetValueOrDefault(trackId);
             var entry = new ToggleMenuFlyoutItem
             {
-                Text = TrackLabel(track.Name, null, index, Loc.Get("Player_SubtitleTrack")),
+                Text = savedSubtitle is null
+                    ? TrackLabels.BaseLabel(track, index)
+                    : SavedSubtitleRules.Label(savedSubtitle, Loc.Get("Subtitles_Saved"),
+                        includeRelease: saved.Values.Count(other => other.Language == savedSubtitle.Language) > 1),
                 IsChecked = player.Spu == trackId,
             };
-            entry.Click += (_, _) => player.SetSpu(trackId);
+            entry.Click += (_, _) =>
+            {
+                player.SetSpu(trackId);
+                // Turning a saved subtitle on uses it: its 30 days start again.
+                if (_context is { } context && context.ExternalSubtitleTracks.TryGetValue(trackId, out var uri))
+                {
+                    AppServices.SavedSubtitles.MarkUsed(context.Request, uri);
+                }
+            };
             flyout.Items.Add(entry);
         }
 
-        if (subtitleTracks.Length == 0)
+        if (subtitleTracks.Count == 0)
         {
             flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Player_NoTracksInFile"), IsEnabled = false });
         }
 
         AddOnlineSearchItem(flyout);
         flyout.ShowAt(SubtitlesButton);
+    }
+
+    /// <summary>Track id → saved subtitle, for the attached tracks that are saved downloads.</summary>
+    private Dictionary<int, SavedSubtitle> SavedSubtitlesOn(IReadOnlyList<PlayerTrack> tracks)
+    {
+        var saved = new Dictionary<int, SavedSubtitle>();
+        if (_context is not { } context) return saved;
+        foreach (var track in tracks)
+        {
+            if (!track.IsExternal || !context.ExternalSubtitleTracks.TryGetValue(track.Id, out var uri)) continue;
+            if (AppServices.SavedSubtitles.Find(context.Request, uri) is { } subtitle) saved[track.Id] = subtitle;
+        }
+        return saved;
     }
 
     /// <summary>
@@ -344,20 +580,22 @@ public sealed partial class PlayerControlsOverlay : UserControl
         flyout.Items.Add(online);
     }
 
-    private static string TrackLabel(string? label, string? language, int index, string fallback)
-    {
-        if (!string.IsNullOrWhiteSpace(label)) return label;
-        if (!string.IsNullOrWhiteSpace(language)) return language;
-        return $"{fallback} {index + 1}";
-    }
-
     private void MediaPlayer_StateChanged(object? sender, EventArgs args)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
+            if (!ReferenceEquals(sender, _mediaPlayer)) return;
             UpdatePlayPauseIcon();
             if (_mediaPlayer?.IsPlaying == true)
             {
+                if (!_audioApplied)
+                {
+                    // LibVLC creates its audio output only once playback
+                    // starts, so the session's level and device go on here.
+                    _audioApplied = true;
+                    ApplyAudioLevels();
+                    if (_audioDevice is not null) ApplyAudioDevice();
+                }
                 _hideTimer.Start();
             }
             else
@@ -379,33 +617,89 @@ public sealed partial class PlayerControlsOverlay : UserControl
         var iconUri = isPlaying ? "ms-appx:///Assets/Icons/pause.svg" : "ms-appx:///Assets/Icons/play.svg";
         CenterPlayPauseIcon.UriSource = new Uri(iconUri);
         BottomPlayPauseIcon.UriSource = new Uri(iconUri);
+        UpdatePlayPauseLabels(isPlaying);
+    }
+
+    private void UpdatePlayPauseLabels(bool isPlaying)
+    {
+        var label = Loc.Get(isPlaying ? "Player_Pause" : "Player_Play");
+        foreach (var button in new[] { CenterPlayPauseButton, BottomPlayPauseButton })
+        {
+            ToolTipService.SetToolTip(button, label);
+            AutomationProperties.SetName(button, label);
+        }
     }
 
     private void UpdateDuration()
     {
         if (_mediaPlayer == null) return;
-        TotalTimeText.Text = FormatTime(TimeSpan.FromMilliseconds(Math.Max(0, _mediaPlayer.Length)));
+        TotalTimeText.Text = PlayerLogic.Timestamp(Math.Max(0, _mediaPlayer.Length) / 1000.0);
+        RefreshChapterMarks();
+    }
+
+    // ------------------------------------------------------------------
+    // Chapter marks (X.7)
+    // ------------------------------------------------------------------
+
+    /// <summary>Half the slider thumb's width: its centre travels from here to the far end less this.</summary>
+    private const double TimelineThumbInset = 9;
+    private const double ChapterMarkHeight = 6;
+    private IReadOnlyList<double> _chapterMarks = [];
+
+    /// <summary>Reads the file's chapters again; called once its duration or tracks are known.</summary>
+    public void RefreshChapterMarks()
+    {
+        IReadOnlyList<double> marks = [];
+        if (_mediaPlayer is { } player)
+        {
+            try
+            {
+                marks = PlayerLogic.ChapterMarks(player.FullChapterDescriptions().Select(chapter => chapter.TimeOffset), player.Length);
+            }
+            catch (VLCException)
+            {
+                // A file without chapters draws no marks.
+            }
+        }
+        if (marks.SequenceEqual(_chapterMarks)) return;
+        _chapterMarks = marks;
+        DrawChapterMarks();
+    }
+
+    private void ChapterMarksCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChapterMarks();
+
+    /// <summary>Each chapter start cuts a narrow ink gap into the track.</summary>
+    private void DrawChapterMarks()
+    {
+        ChapterMarksCanvas.Children.Clear();
+        var track = ChapterMarksCanvas.ActualWidth - 2 * TimelineThumbInset;
+        if (track <= 0) return;
+        var brush = (Brush)Application.Current.Resources["EdendaleBackgroundBrush"];
+        foreach (var mark in _chapterMarks)
+        {
+            var tick = new Microsoft.UI.Xaml.Shapes.Rectangle { Width = 2, Height = ChapterMarkHeight, Fill = brush };
+            Canvas.SetLeft(tick, TimelineThumbInset + mark * track - 1);
+            Canvas.SetTop(tick, (ChapterMarksCanvas.ActualHeight - ChapterMarkHeight) / 2);
+            ChapterMarksCanvas.Children.Add(tick);
+        }
     }
 
     private void UpdateProgress()
     {
-        if (_mediaPlayer == null || _isSliderManipulating) return;
+        if (_mediaPlayer == null) return;
         var duration = _mediaPlayer.Length;
         var position = Math.Max(0, _mediaPlayer.Time);
-        if (duration > 0)
+        if (!_isSliderManipulating)
         {
-            TimelineSlider.Value = (double)position / duration * 100;
+            if (duration > 0)
+            {
+                TimelineSlider.Value = (double)position / duration * 100;
+            }
+            CurrentTimeText.Text = PlayerLogic.Timestamp(position / 1000.0);
         }
-        CurrentTimeText.Text = FormatTime(TimeSpan.FromMilliseconds(position));
-    }
 
-    private string FormatTime(TimeSpan time)
-    {
-        if (time.TotalHours >= 1)
-        {
-            return $"{(int)time.TotalHours}:{time.Minutes:D2}:{time.Seconds:D2}";
-        }
-        return $"{time.Minutes}:{time.Seconds:D2}";
+        UpdateUpNext(position, duration);
+        UpdateSegmentPrompt(position, duration);
     }
 
     // ------------------------------------------------------------------
@@ -589,9 +883,11 @@ public sealed partial class PlayerControlsOverlay : UserControl
     /// The detail line: the language as the provider labels it, then the
     /// qualities worth choosing between, then where it came from.
     /// </summary>
-    private static string DescribeCandidate(SubtitleCandidate candidate)
+    private string DescribeCandidate(SubtitleCandidate candidate)
     {
         var parts = new List<string> { candidate.LanguageLabel };
+        // Already on this device for this title: choosing it needs no download.
+        if (AppServices.SavedSubtitles.IsSaved(_playback, candidate.Id)) parts.Add(Loc.Get("Subtitles_Saved"));
         if (candidate.IsHearingImpaired) parts.Add(Loc.Get("Subtitles_HearingImpaired"));
         if (candidate.IsAiTranslated) parts.Add(Loc.Get("Subtitles_AutoTranslated"));
         if (!string.IsNullOrWhiteSpace(candidate.Origin)) parts.Add(candidate.Origin);
@@ -620,7 +916,18 @@ public sealed partial class PlayerControlsOverlay : UserControl
                 return;
             }
 
-            var attached = AttachSubtitle(player, downloaded);
+            // A file attached already (saved for this title, or chosen
+            // earlier) is turned on rather than added a second time.
+            var uri = new Uri(downloaded.FilePath).AbsoluteUri;
+            bool attached;
+            if (_context?.TrackFor(uri) is int existing)
+            {
+                attached = player.SetSpu(existing);
+            }
+            else
+            {
+                attached = AttachSubtitle(player, downloaded);
+            }
             if (work.IsCancellationRequested) return;
 
             if (!attached)
@@ -629,6 +936,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
                 return;
             }
 
+            // Kept for this title, so its next playback has it without a search.
+            if (_playback is not null) AppServices.SavedSubtitles.Record(_playback, downloaded);
             CloseSubtitleBrowser();
         }
         catch (OperationCanceledException)
@@ -650,12 +959,17 @@ public sealed partial class PlayerControlsOverlay : UserControl
         }
     }
 
-    /// <summary>Adds the downloaded file as LibVLC's selected subtitle slave.</summary>
-    private static bool AttachSubtitle(MediaPlayer player, DownloadedSubtitle downloaded) =>
-        player.AddSlave(
-            MediaSlaveType.Subtitle,
-            new Uri(downloaded.FilePath).AbsoluteUri,
-            select: true);
+    /// <summary>
+    /// Adds the downloaded file as LibVLC's selected subtitle slave. The
+    /// context records it, so it is reattached after a reopen and never
+    /// stored in the per-title memory.
+    /// </summary>
+    private bool AttachSubtitle(MediaPlayer player, DownloadedSubtitle downloaded)
+    {
+        var uri = new Uri(downloaded.FilePath).AbsoluteUri;
+        _context?.ExternalSubtitleAttaching(uri);
+        return player.AddSlave(MediaSlaveType.Subtitle, uri, select: true);
+    }
 
     /// <summary>
     /// Busy shows the ring, a message replaces the list, and null restores the
@@ -674,5 +988,4 @@ public sealed partial class PlayerControlsOverlay : UserControl
         SubtitleStateText.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
         SubtitleRefreshButton.IsEnabled = !busy;
     }
-
 }

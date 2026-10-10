@@ -160,6 +160,17 @@
                     </ScrollViewer>
                 </StackPanel>
 
+                <!-- The Continue Watching page (DIFF.md §3.15): every
+                     resumable title, where the shelf above stops at 12. -->
+                <StackPanel x:Name="ContinueGridSection" Spacing="18" Visibility="Collapsed">
+                    <controls:SectionHeader TitleKey="Section_ContinueWatching" />
+                    <muxc:ItemsRepeater x:Name="ResumeGridRepeater" ItemTemplate="{StaticResource ResumeTemplate}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:UniformGridLayout MinItemWidth="320" MinRowSpacing="20" MinColumnSpacing="20" />
+                        </muxc:ItemsRepeater.Layout>
+                    </muxc:ItemsRepeater>
+                </StackPanel>
+
                 <StackPanel x:Name="MoviesSection" Spacing="18" Visibility="Collapsed">
                     <controls:SectionHeader TitleKey="Section_Movies" />
                     <muxc:ItemsRepeater x:Name="MoviesRepeater" ItemTemplate="{StaticResource LibraryMovieTemplate}">

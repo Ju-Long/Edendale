@@ -2,22 +2,41 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Edendale.Windows.Services;
-using Edendale.Windows.Models;
 
 namespace Edendale.Windows.Controls;
 
+/// <summary>
+/// The playlist beside the video (PlayerPlaylistPanel.swift, DIFF.md §3.10):
+/// a show's episodes or the files in the same folder. The current or focused
+/// row takes the white PlaylistActive fill with black text and a larger
+/// title; a playing indicator marks the current file. Identified episodes
+/// (and the current identified movie) show landscape artwork with the title
+/// and play time stacked; unidentified files keep their file name.
+/// </summary>
 public sealed partial class PlayerPlaylistPanel : UserControl
 {
+    private const double TitleSize = 15;
+    private const double ActiveTitleSize = 18;
+
     public event RoutedEventHandler? CloseRequested;
     public event EventHandler<PlaybackRequest>? PlayRequested;
+
+    private Button? _currentRow;
 
     public PlayerPlaylistPanel()
     {
         this.InitializeComponent();
+    }
+
+    /// <summary>Moves keyboard focus to the current file's row when the panel opens.</summary>
+    public void FocusCurrent()
+    {
+        _currentRow?.Focus(FocusState.Programmatic);
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -28,6 +47,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
     public void Load(PlaybackRequest request)
     {
         ItemsPanel.Children.Clear();
+        _currentRow = null;
 
         bool isEpisode = request.MediaType == "episode" || request.EpisodeNumber.HasValue;
 
@@ -43,12 +63,25 @@ public sealed partial class PlayerPlaylistPanel : UserControl
             {
                 HeaderText.Text = Loc.Get("Playlist_Episodes");
                 PopulateShow(show, request.FilePath);
+                ScrollToCurrent();
                 return;
             }
         }
 
         HeaderText.Text = Loc.Get("Playlist_InThisFolder");
-        PopulateFolder(request.FilePath);
+        PopulateFolder(request);
+        ScrollToCurrent();
+    }
+
+    /// <summary>The panel opens scrolled to the file that is playing.</summary>
+    private void ScrollToCurrent()
+    {
+        if (_currentRow is not { } row) return;
+        DispatcherQueue.TryEnqueue(() => row.StartBringIntoView(new BringIntoViewOptions
+        {
+            VerticalAlignmentRatio = 0.3,
+            AnimationDesired = false,
+        }));
     }
 
     private void PopulateShow(LibraryShow show, string currentFilePath)
@@ -59,53 +92,86 @@ public sealed partial class PlayerPlaylistPanel : UserControl
             seasonStack.Children.Add(new TextBlock
             {
                 Text = Loc.Format("Playlist_Season", season),
-                Style = (Style)Application.Current.Resources["LabelCapsStyle"]
+                Style = (Style)Application.Current.Resources["LabelCapsTextStyle"]
             });
 
             foreach (var episode in show.EpisodesFor(season))
             {
                 var isCurrent = episode.FilePath.Equals(currentFilePath, StringComparison.OrdinalIgnoreCase);
+                var identified = episode.TmdbId is not null;
+                var detail = episode.RuntimeMinutes is int minutes && minutes > 0
+                    ? $"{episode.EpisodeCode} · {Loc.Format("Playlist_Runtime", minutes)}"
+                    : episode.EpisodeCode;
                 seasonStack.Children.Add(CreateRow(
                     title: episode.DisplayTitle,
-                    detail: episode.EpisodeCode,
+                    detail: detail,
+                    artwork: identified ? episode.StillUrl ?? show.BackdropUrl : null,
+                    showArtwork: identified,
                     isCurrent: isCurrent,
                     action: () =>
                     {
                         if (isCurrent) return;
-                        PlayRequested?.Invoke(this, new PlaybackRequest
-                        {
-                            FilePath = episode.FilePath,
-                            Title = show.Name,
-                            Subtitle = episode.DisplayTitle,
-                            TmdbId = episode.TmdbId,
-                            MediaType = "episode",
-                            ShowTmdbId = show.TmdbId,
-                            SeasonNumber = episode.Season,
-                            EpisodeNumber = episode.Episode
-                        });
+                        PlayRequested?.Invoke(this, PlayerSession.RequestFor(show, episode));
                     }));
             }
             ItemsPanel.Children.Add(seasonStack);
         }
     }
 
-    private void PopulateFolder(string currentFilePath)
+    /// <summary>
+    /// The videos beside the current file. A remote item's folder isn't
+    /// listed again over the network: its siblings come from the library.
+    /// </summary>
+    private static List<string> FolderFiles(string path)
     {
-        var folder = Path.GetDirectoryName(currentFilePath);
-        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return;
-
-        var files = Directory.EnumerateFiles(folder)
+        if (Core.SourceUrl.IsUrl(path))
+        {
+            var parent = Core.SourceUrl.Parent(path);
+            var library = AppServices.Library;
+            return library.Movies.Select(movie => movie.FilePath)
+                .Concat(library.Shows.SelectMany(show => show.Episodes).Select(episode => episode.FilePath))
+                .Where(file => Core.SourceUrl.Parent(file) == parent)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(Core.SourceUrl.FileName, Core.NaturalStringComparer.Instance)
+                .ToList();
+        }
+        var folder = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return [];
+        return Directory.EnumerateFiles(folder)
             .Where(LibraryService.IsSupportedVideoFile)
             .OrderBy(f => f)
             .ToList();
+    }
+
+    private void PopulateFolder(PlaybackRequest current)
+    {
+        var files = FolderFiles(current.FilePath);
+        if (files.Count == 0) return;
 
         var stack = new StackPanel { Spacing = 6 };
         foreach (var file in files)
         {
-            var isCurrent = file.Equals(currentFilePath, StringComparison.OrdinalIgnoreCase);
+            var isCurrent = file.Equals(current.FilePath, StringComparison.OrdinalIgnoreCase);
+
+            // The current identified movie shows its artwork and play time;
+            // sibling files keep the file-name fallback.
+            var movie = isCurrent && current.MediaType == "movie" && current.TmdbId is int id
+                ? AppServices.Library.MovieByTmdbId(id)
+                : null;
+            string? detail = null;
+            if (movie is not null)
+            {
+                var parts = new List<string>();
+                if (movie.Year is int year) parts.Add(year.ToString(System.Globalization.CultureInfo.CurrentCulture));
+                if (movie.RuntimeMinutes is int minutes && minutes > 0) parts.Add(Loc.Format("Playlist_Runtime", minutes));
+                detail = parts.Count > 0 ? string.Join(" · ", parts) : null;
+            }
+
             stack.Children.Add(CreateRow(
-                title: Path.GetFileName(file),
-                detail: null,
+                title: movie?.Title ?? Core.SourceUrl.FileName(file),
+                detail: detail,
+                artwork: movie?.BackdropUrl ?? movie?.PosterUrl,
+                showArtwork: movie is not null,
                 isCurrent: isCurrent,
                 action: () =>
                 {
@@ -113,7 +179,7 @@ public sealed partial class PlayerPlaylistPanel : UserControl
                     PlayRequested?.Invoke(this, new PlaybackRequest
                     {
                         FilePath = file,
-                        Title = Path.GetFileName(file),
+                        Title = Core.SourceUrl.FileName(file),
                         Subtitle = null,
                         TmdbId = null,
                         MediaType = "movie",
@@ -126,66 +192,121 @@ public sealed partial class PlayerPlaylistPanel : UserControl
         ItemsPanel.Children.Add(stack);
     }
 
-    private UIElement CreateRow(string title, string? detail, bool isCurrent, Action action)
+    private Button CreateRow(string title, string? detail, string? artwork, bool showArtwork, bool isCurrent, Action action)
     {
-        var button = new Button
+        var resources = Application.Current.Resources;
+        var surface = new Border
         {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Padding = new Thickness(12, 10, 12, 10),
-            Background = isCurrent ? (Brush)Application.Current.Resources["EdendaleSurfaceBrush"] : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            CornerRadius = new CornerRadius(12)
+            Padding = new Thickness(10),
+            CornerRadius = new CornerRadius(8),
         };
 
-        button.Style = (Style)Application.Current.Resources["ArchiveGhostButtonStyle"];
+        var grid = new Grid { ColumnSpacing = 12 };
+        if (showArtwork)
+        {
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        }
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var hStack = new Grid();
-        hStack.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        hStack.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var column = 0;
+        if (showArtwork)
+        {
+            var frame = new Grid
+            {
+                Width = 112,
+                Height = 63,
+                CornerRadius = new CornerRadius(4),
+                Background = (Brush)resources["EdendaleSurfaceHighBrush"],
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            frame.Children.Add(new SvgIcon
+            {
+                UriSource = new Uri("ms-appx:///Assets/Icons/tv.svg"),
+                Width = 22,
+                Height = 22,
+                Foreground = (Brush)resources["EdendaleOutlineBrush"],
+            });
+            if (Uri.TryCreate(artwork, UriKind.Absolute, out var uri))
+            {
+                frame.Children.Add(new Image { Source = new BitmapImage(uri), Stretch = Stretch.UniformToFill });
+            }
+            grid.Children.Add(frame);
+            Grid.SetColumn(frame, column++);
+        }
 
-        var vStack = new StackPanel { Spacing = 2 };
-
+        var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         var titleText = new TextBlock
         {
             Text = title,
-            Style = (Style)Application.Current.Resources["BodyLGTextStyle"],
-            Foreground = isCurrent ? (Brush)Application.Current.Resources["EdendaleGoldBrush"] : (Brush)Application.Current.Resources["EdendaleTextPrimaryBrush"],
+            FontFamily = (FontFamily)resources["TextFontFamily"],
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             TextWrapping = TextWrapping.NoWrap,
-            TextTrimming = TextTrimming.CharacterEllipsis
+            TextTrimming = TextTrimming.CharacterEllipsis,
         };
-        vStack.Children.Add(titleText);
-
+        text.Children.Add(titleText);
+        TextBlock? detailText = null;
         if (!string.IsNullOrEmpty(detail))
         {
-            var detailText = new TextBlock
+            detailText = new TextBlock
             {
                 Text = detail,
-                Style = (Style)Application.Current.Resources["BodySMTextStyle"],
-                Foreground = (Brush)Application.Current.Resources["EdendaleTextSecondaryBrush"]
+                Style = (Style)resources["BodySMTextStyle"],
+                TextWrapping = TextWrapping.NoWrap,
+                TextTrimming = TextTrimming.CharacterEllipsis,
             };
-            vStack.Children.Add(detailText);
+            text.Children.Add(detailText);
         }
+        grid.Children.Add(text);
+        Grid.SetColumn(text, column++);
 
-        hStack.Children.Add(vStack);
-        Grid.SetColumn(vStack, 0);
-
+        SvgIcon? indicator = null;
         if (isCurrent)
         {
-            var icon = new SvgIcon
+            indicator = new SvgIcon
             {
                 UriSource = new Uri("ms-appx:///Assets/Icons/play.svg"),
-                Width = 11,
-                Height = 11,
-                Foreground = (Brush)Application.Current.Resources["EdendaleGoldBrush"],
+                Width = 12,
+                Height = 12,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(10,0,0,0)
             };
-            hStack.Children.Add(icon);
-            Grid.SetColumn(icon, 1);
+            grid.Children.Add(indicator);
+            Grid.SetColumn(indicator, column);
         }
 
-        button.Content = hStack;
+        surface.Child = grid;
+        var button = new Button
+        {
+            Style = (Style)resources["CardButtonStyle"],
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Content = surface,
+        };
+        AutomationProperties.SetName(button, string.Join(", ", new[] { title, detail, isCurrent ? Loc.Get("Playlist_NowPlaying") : null }
+            .Where(part => !string.IsNullOrEmpty(part))));
+
+        void SetActive(bool active)
+        {
+            surface.Background = active
+                ? (Brush)resources["EdendalePlaylistActiveBackgroundBrush"]
+                : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            var primary = active ? (Brush)resources["EdendalePlaylistActiveTextBrush"] : (Brush)resources["EdendaleTextPrimaryBrush"];
+            titleText.Foreground = primary;
+            titleText.FontSize = active ? ActiveTitleSize : TitleSize;
+            if (detailText is not null)
+            {
+                detailText.Foreground = active ? primary : (Brush)resources["EdendaleTextSecondaryBrush"];
+            }
+            if (indicator is not null)
+            {
+                indicator.Foreground = active ? primary : (Brush)resources["EdendaleGoldBrush"];
+            }
+        }
+
+        SetActive(isCurrent);
+        button.GotFocus += (_, _) => SetActive(true);
+        button.LostFocus += (_, _) => SetActive(isCurrent);
         button.Click += (s, e) => action();
+        if (isCurrent) _currentRow = button;
         return button;
     }
 }

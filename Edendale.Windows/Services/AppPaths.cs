@@ -30,16 +30,44 @@ public static class AppPaths
     /// <summary>The Young Audience preference; device-local, never replicated.</summary>
     public static string AudiencePreferenceFile => Path.Combine(DataDirectory, "audience.json");
 
+    /// <summary>
+    /// Player, audio, picture, and subtitle preferences plus the per-title
+    /// track memory. Device-local like the audience preference and outside
+    /// the OneDrive replica (Apple keeps the same keys out of iCloud).
+    /// </summary>
+    public static string PlayerSettingsFile => Path.Combine(DataDirectory, "player-settings.json");
+
     /// <summary>DPAPI-protected TMDB session; never leaves this device.</summary>
     public static string TmdbSessionFile => Path.Combine(DataDirectory, "tmdb-session.bin");
 
     /// <summary>DPAPI-protected SMB credentials; never leaves this device.</summary>
     public static string SmbCredentialsFile => Path.Combine(DataDirectory, "smb-credentials.bin");
 
+    /// <summary>DPAPI-protected SFTP, WebDAV, and S3 logins; never leaves this device (D11).</summary>
+    public static string ServerLoginsFile => Path.Combine(DataDirectory, "server-logins.bin");
+
+    /// <summary>
+    /// DPAPI-protected OneDrive and Dropbox accounts (refresh tokens only;
+    /// access tokens stay in memory). Never leaves this device (D11), and kept
+    /// apart from the OneDrive watch-state replica (D12).
+    /// </summary>
+    public static string CloudAccountsFile => Path.Combine(DataDirectory, "cloud-accounts.bin");
+
+    /// <summary>Pinned SSH host keys (trust on first use). Public keys, device-local.</summary>
+    public static string HostKeysFile => Path.Combine(DataDirectory, "ssh-host-keys.json");
+
+    /// <summary>
+    /// Which downloaded subtitle belongs to which title, and when each was
+    /// last used (SavedSubtitleStore). Device-local and outside the replica,
+    /// like the files it describes.
+    /// </summary>
+    public static string SavedSubtitlesFile => Path.Combine(DataDirectory, "saved-subtitles.json");
+
     /// <summary>
     /// Downloaded subtitle files, kept so re-selecting one costs nothing
-    /// against the daily quota. Device-local, like the library itself, and
-    /// deliberately outside the cloud replica.
+    /// against the daily quota and the title plays with it again next time.
+    /// Device-local, like the library itself, and deliberately outside the
+    /// cloud replica. Files unused for 30 days are removed.
     /// </summary>
     public static string SubtitleCacheDirectory
     {

@@ -164,7 +164,7 @@
     <value>この製品はTMDB APIを使用していますが、TMDBによる承認や認定は受けていません。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale のネットワーク通信は、アートワークとメタデータのための TMDB への呼び出しと、プライバシーが強化された YouTube 埋め込みを通じたユーザー主導の予告編再生のみです。分析は一切行われません。</value>
+    <value>Edendale が接続するのは、アートワークとメタデータのための TMDB、ファイルの一覧と再生のためにリンクしたソース、字幕を検索するときの Wyzie Subs、スキップの提案がオンのときだけの TheIntroDB、そして予告編を再生するときの YouTube のプライバシー強化埋め込みです。分析は一切ありません。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>アーカイブを読み込み中</value>
@@ -305,23 +305,8 @@
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>検索結果に表示</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>10秒戻る</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>10秒進む</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>合わせる</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>ループ</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>字幕と音声</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>ピクチャインピクチャ</value>
+    <value>字幕</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>今日のトレンド</value>
@@ -383,35 +368,14 @@
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>ピクチャインピクチャ</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>ループを停止</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>ループ</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>塗りつぶし</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>合わせる</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>利用可能なトラックがありません</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>音声</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>オーディオ</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>字幕</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>オフ</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>字幕</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>このファイルには含まれていません</value>
@@ -551,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>ソースを削除</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>別のソースが引き続きそのサーバーを使用していない限り、“{0}” はライブラリから削除され、{1} の保存されたログインは忘れられます。サーバー上のデータは削除されません。</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” はライブラリから削除されます。ディスク上のデータは削除されません。</value>
   </data>
@@ -575,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>ネットワーク パスにアクセスできませんでした: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>ネットワーク ソース エラー</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>{0} に接続できませんでした: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>接続に失敗しました</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows はネットワーク共有コネクターを開始できませんでした。</value>
@@ -597,7 +552,7 @@
     <value>プライバシーを重視した設計</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>ライブラリのインデックスと視聴状況はこのデバイスに保持されます。Edendale のネットワーク通信は、アートワークとメタデータのための TMDB への呼び出しのみです — 他のデータがどこかに送信されることはありません。</value>
+    <value>ライブラリのインデックスと視聴の進捗はこのデバイスに残ります。Edendale が接続するのはアートワークとメタデータのための TMDB と、あなたが選んだもの (リンクしたソース、字幕検索、オンのときのスキップの提案、再生した予告編) だけです。それ以外は何も送信されません。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>1日目を選択し、次に2日目を選択して範囲を指定します。</value>
@@ -892,5 +847,794 @@
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>この作品はPGまたはPG-13として確認されていません。</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>プレーヤーの調整</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>プレーヤーの調整</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>プレイリスト</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>プレイリスト</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>オーディオ出力</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>オーディオ出力</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>タイムライン</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>音量</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>適用中…</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>一時停止</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>ミュート</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>ミュート解除</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>全画面表示</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>全画面表示を終了</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>{0}秒戻る</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>{0}秒進む</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>システムの既定値</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>音量 {0}%</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>ミュート</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>ミュート解除</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>明るさ {0}%</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>{0}秒戻る</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>{0}秒進む</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>次のエピソード</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>次のエピソード：{0}、{1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>イントロをスキップ</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>これまでのあらすじをスキップ</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>クレジットをスキップ</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>この部分をスキップして再生を続けます。S キーでも操作できます。</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>調整</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>ビデオトラック</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>ビデオトラック</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>オーディオトラック</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>オーディオトラック</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>画質</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>オリジナルを表示</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>リセット</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>高画質化</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>プリセット</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>モーションスムージング</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>オリジナルを表示</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>速度</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>遅く</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>速く</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>速度 {0}、標準に戻す</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>スキップの提案</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>TheIntroDB を使用します。スキップは必ず操作したときだけ行われます。</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>オーディオブースター</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>ヘッドフォンサラウンド</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>ループ再生</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>ウインドウに合わせて拡大</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>同期</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>音声の遅延</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>字幕の遅延</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}：早める</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}：遅らせる</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>チャプター</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>チャプター {0}</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>モノラル</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>ステレオ</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0}ch</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>トラック {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>明るさ</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>コントラスト</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>ガンマ</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>彩度</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>色相</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>バランス</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>高品質</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>高画質化にはハードウェアのグラフィックアダプターが必要なため、映像はそのまま再生されます。</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>超解像には、Edendale を専用グラフィックスカードで実行する必要があります。Windows の設定 › システム › ディスプレイ › グラフィックで、Edendale を「高パフォーマンス」に設定してください。</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>アプリの操作</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>進む</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>左側を長押し</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>右側を長押し</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>左側を長押ししたときの速度</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>右側を長押ししたときの速度</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>スキップは矢印キー、スキップボタン、ダブルタップ、メディアキーに適用されます。映像の左右どちらかを長押しすると、離すまでその側の速度で再生します。</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>戻る、{0}秒</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>進む、{0}秒</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>スキップの提案</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>イントロ、あらすじ、クレジットのスキップを提案</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>スキップの提案</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>有効にすると、TheIntroDB にタイトルの TMDB ID、エピソード番号、動画の長さ、お使いの IP アドレスが送信されます。スキップは必ずボタンを押したときだけ行われます。</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>音質向上</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>プロファイル</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>イコライザをリセット</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>すべてのファイルに適用されます。ナイトモードはセリフと効果音のバランスを整えますが、圧縮はしません。プレーヤーのオーディオブースターは 10 dB 上げます。</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>プリアンプ</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0} Hz</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>イコライザを表示</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>イコライザを隠す</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>フラット</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>音楽</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>セリフ</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>ナイトモード</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>字幕はこのように表示されます。</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>字幕のプレビュー</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>フォント</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>文字の色</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>背景の色</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>背景の不透明度</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>背景の不透明度</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>字幕のスタイルをリセット</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>次に開くファイルからテキスト字幕に適用され、Windows の文字サイズに従います。画像字幕（Blu-ray や DVD）は元の見た目のままです。</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>システム</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>セリフ体</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>等幅</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>パーチメント</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>白</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>黄</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>シアン</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>緑</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>黒</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>インク</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>チャコール</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>ネイビー</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>ビデオプレーヤー</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>次のエピソード · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>{0}% 視聴済み</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>再生中</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0}分</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>ローカルフォルダ</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3 互換ストレージ</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>利用不可</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>ゲスト</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>サーバーのアドレスが正しくないようです。nas.local のようなホスト名か IP アドレスを入力してください。</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>{0} に接続できません。サーバーの電源が入っていて同じネットワーク上にあるか、名前やログイン情報が正しいかを確認してください。</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>フォルダ {0} を読み取れませんでした。別のログインや権限が必要な可能性があります。</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>このソースにアクセスするには、{0} にもう一度サインインしてください。</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>この Edendale のビルドでは {0} が設定されていません。</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} がこの項目へのアクセスを拒否しました。</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>このファイルは {0} にもうありません。</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} は現在リクエストを制限しています。1 分後にもう一度お試しください。</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} がエラーを返しました (HTTP {1})。</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>ローカルネットワーク外のサーバーには HTTPS を使用してください。暗号化なしの HTTP は nas.local や 192.168.1.10 のようなローカルアドレスでのみ使えます。</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} から有効な HTTPS 証明書が提示されませんでした。Edendale は信頼された証明書を持つサーバーにのみ接続します。</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} はこのファイル内のシークに対応していません。</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>{0} の SSH ホストキーが変更されました。サーバーをもう一度リンクして新しいキーを承認するまで、Edendale は接続しません。</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>{0} の SSH ホストキーはまだ承認されていません。</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} でユーザー名とパスワードが受け付けられませんでした。</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>{0} との安全な接続を確立できませんでした。この SSH サーバーは Edendale が対応していない古い暗号方式しか提供していません。</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} はパスワードでのログインを受け付けていません。リンクするには SSH 設定でパスワード認証を許可してください。</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} はこのアカウントで SFTP を提供していません。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>このバケットは {0} リージョンにあります。リージョンを変更してもう一度接続してください。</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>このバケットは別のリージョンにあります。リージョンを確認してもう一度接続してください。</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>サインアウト</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>ログイン情報を削除</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>サインアウト</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale は {0} のログイン情報を削除します。サーバーやアカウント上のデータは削除されません。</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale は {0} のログイン情報を削除します。これを使っているソース ({1}) は再度サインインを求めます。サーバーやアカウント上のデータは削除されません。</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} 件のソース</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} 件のソース</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>アドレス</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>ユーザー名</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>パスワード</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>接続</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>ゲストとして接続</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>{0} のスクロール位置</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” はライブラリから削除されます。保存したログイン情報は「設定」→「アカウント」に残ります。サーバー上のデータは削除されません。</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>オフライン: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>サインインが必要: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>サインイン</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>サインイン</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>再生元</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>再生元</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>再生元</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>視聴を続ける</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>テレビ番組</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>テレビ番組</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>保存されたログイン情報はありません</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>ログイン情報は Windows アカウント用に暗号化され、この PC に保存されます。ソースを削除してもログイン情報は残ります。</value>
+  </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>{0} の NFS エクスポートを開けませんでした。Windows は非特権ポートから接続するため、エクスポートに “insecure” オプションが必要です。</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>フォルダを選択</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>このフォルダを追加</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>上へ</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>このフォルダの動画: {0} 本</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>このフォルダの動画: {0} 本</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>このサーバーを信頼しますか?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} がこのホストキー ({1}) を提示しました。Edendale はこのサーバーに接続したことがありません。</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>ホストキーが変更されました</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>{0} が提示したホストキー ({1}) は、Edendale が以前に信頼したものと一致しません。サーバーを再インストールした場合に起こりますが、誰かが接続を傍受している可能性もあります。変更を予期していた場合にのみ新しいキーを信頼してください。</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>信頼する前に、サーバー側のフィンガープリントと比較してください。たとえばホストキーファイルに ssh-keygen -lf を実行します。</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>信頼</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>新しいキーを信頼</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>ソースの種類</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows ファイル共有)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>エンドポイント</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>リージョン</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>バケット</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>アクセスキー ID</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>シークレットアクセスキー</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>別のアカウント…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>サーバー、任意のポート、開始フォルダを入力してください。Edendale はパスワードでサインインし、信頼する前にサーバーのホストキーを表示します。</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>WebDAV のアドレスを入力してください。Nextcloud のファイル URL や、Google ドライブにも接続できる rclone serve webdav などです。暗号化なしの HTTP はローカルネットワークでのみ使えます。</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>AWS、Backblaze B2、Cloudflare R2、Wasabi、MinIO で使えます。読み取り専用キーで十分です。キーはこの PC 上で暗号化されます。</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>サーバーとエクスポートを入力してください (例: nas.local/export/video)。エクスポートは非特権ポートからの接続を許可する必要があります (“insecure” オプション)。</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>ブラウザが開き、Microsoft にサインインします。Edendale はファイルの読み取りのみを求め、このアカウントは視聴履歴をコピーする OneDrive フォルダとは別に扱います。</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>ブラウザが開き、Dropbox にサインインします。Edendale はファイルとアカウント名の読み取りのみを求めます。</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>サインイン</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>もう一度サインイン</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>サインインしました</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>このタブを閉じて Edendale に戻ってください。</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>このサーバーのユーザー名を入力してください。</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>ブラウザで {0} へのサインインを完了してください。</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>ソースをリンクできませんでした: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>サインインはキャンセルされました。</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>サインインの応答を確認できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>{0} へのアクセスは許可されませんでした。</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>{0} のサインインは期限切れか取り消されました。もう一度サインインしてください。</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} はサインインを完了できませんでした ({1})。</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} はサインインを完了できませんでした ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} から Edendale が読み取れない応答が返されました。</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>{0} に接続できませんでした。接続を確認してもう一度お試しください。</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>{0} からこのファイルを読み取れませんでした。</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>{0} に接続できませんでした。</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>{0} との接続が切れました: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>{0} との接続が切れました。</value>
+  </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>前のエピソード</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>一時停止</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>次のエピソード</value>
+  </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>保存された字幕</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>すべて削除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>1か月使われなければ削除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存された字幕を1か月使われなければ削除</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>ダウンロードした字幕はこのデバイスに残り、同じタイトルをもう一度再生すると戻ってきます。スイッチがオンの間は、1か月オンにしなかった字幕が削除されます。</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>字幕 {0} 件 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>字幕 {0} 件 · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>保存された字幕を削除</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>このデバイスに保存されたすべての字幕が削除されます。オンライン検索からもう一度ダウンロードできます。</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>保存済み</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>フレーム生成</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>このグラフィックスカードではこのファイルのフレーム生成を開始できなかったため、通常どおり再生します。</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>動画のフレームレートがわかると開始します。</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>30 fps 以下、4K までの動画で使えます。</value>
+  </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>ブラウザが開き、Google にサインインします。EdendaleはGoogleにドライブへの読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>マイドライブ</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>共有アイテム</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>共有ドライブ</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Googleドライブによってこのファイルは有害な可能性があると判断されたため、ストリーミングできません。</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>EdendaleがGoogleドライブのファイルを表示するには許可が必要です。もう一度サインインして、ドライブへのアクセスを選択したままにしてください。</value>
   </data>
 </root>

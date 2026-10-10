@@ -1,11 +1,12 @@
+using Edendale.Windows.Core;
 using Edendale.Windows.Pages;
 using Edendale.Windows.Services;
-using LibVLCSharp.Platforms.Windows;
-using LibVLCSharp.Shared;
 using Microsoft.UI.Dispatching;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using VirtualKey = Windows.System.VirtualKey;
+using VirtualKeyModifiers = Windows.System.VirtualKeyModifiers;
 
 namespace Edendale.Windows;
 
@@ -16,14 +17,6 @@ namespace Edendale.Windows;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
-    private LibVLC? _libVlc;
-    private MediaPlayer? _mediaPlayer;
-    private PlaybackRequest? _currentPlayback;
-    private DispatcherQueueTimer? _progressTimer;
-    private bool _isCompactOverlay;
-    private bool _resumePending;
-    private bool _aspectFill;
-
     public MainWindow()
     {
         InitializeComponent();
@@ -42,13 +35,24 @@ public sealed partial class MainWindow : Window
         NavigationService.Frame = RootFrame;
         RootFrame.Navigate(typeof(MoviesShowsPage));
 
+        InitializePlayer();
         AppServices.Player.PlaybackRequested += (_, request) =>
             DispatcherQueue.TryEnqueue(() => OpenPlayer(request));
 
-        // The Watchlist tab appears only when a visible item is saved.
+        // The Watchlist tab appears only when a visible item is saved, and
+        // each section row only while its section has titles.
         AppServices.Watchlist.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchlistTab);
-        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchlistTab);
+        AppServices.YoungAudience.Changed += (_, _) => DispatcherQueue.TryEnqueue(() =>
+        {
+            UpdateWatchlistTab();
+            UpdateDownloadedSections();
+        });
+        AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateDownloadedSections);
+        AppServices.WatchProgress.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateDownloadedSections);
         UpdateWatchlistTab();
+        UpdateDownloadedSections();
+
+        AddShortcuts();
     }
 
     // ------------------------------------------------------------------
@@ -64,16 +68,89 @@ public sealed partial class MainWindow : Window
             await filter.VerifyAsync(items.Select(item => item.Ref));
         }
 
-        var hasVisible = items.Any(item => filter.Allows(item.Ref));
+        var visible = items.Where(item => filter.Allows(item.Ref)).ToList();
+        var hasVisible = visible.Count > 0;
         WatchlistNavItem.Visibility = hasVisible ? Visibility.Visible : Visibility.Collapsed;
+        _watchlistSections = LibrarySections.AvailableWatchlist(visible.Select(item => item.MediaType));
+        WatchlistMoviesNavItem.Visibility = Shown(_watchlistSections.Contains(WatchlistSection.Movies));
+        WatchlistShowsNavItem.Visibility = Shown(_watchlistSections.Contains(WatchlistSection.Shows));
 
         // The audience filter can empty the watchlist while it is open; fall
         // back to Movies & Shows so the reader is never stranded on a dead tab.
-        if (!hasVisible && (Nav.SelectedItem as NavigationViewItem)?.Tag as string == "watchlist")
+        if (!hasVisible && SelectedSidebarItem?.Tab == "watchlist")
         {
             SelectSidebar("movies");
             NavigateRoot(typeof(MoviesShowsPage));
+            return;
         }
+        ResolveSelectedSection();
+    }
+
+    // ------------------------------------------------------------------
+    // Section rows (DIFF.md §3.15)
+    // ------------------------------------------------------------------
+
+    private IReadOnlyList<WatchlistSection> _watchlistSections = [];
+    private IReadOnlyList<DownloadedSection> _downloadedSections = [];
+
+    private static Visibility Shown(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Downloaded's rows: Continue Watching, Movies, and TV Shows, for the current audience.</summary>
+    private void UpdateDownloadedSections()
+    {
+        var library = AppServices.Library;
+        var movies = library.Movies.Where(movie => DownloadedPage.AudienceAllows(movie.TmdbId, "movie")).ToList();
+        var shows = library.Shows.Count(show => DownloadedPage.AudienceAllows(show.TmdbId, "tv"));
+        var hasResume = DownloadedPage.ContinueWatchingEntries(library, movies, limit: 1).Count > 0;
+        _downloadedSections = LibrarySections.AvailableDownloaded(hasResume, movies.Count, shows);
+
+        DownloadedContinueNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.ContinueWatching));
+        DownloadedMoviesNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Movies));
+        DownloadedShowsNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Shows));
+        ResolveSelectedSection();
+        ScheduleJumpListUpdate();
+    }
+
+    private DispatcherQueueTimer? _jumpListTimer;
+
+    /// <summary>X.2: the jump list follows Continue Watching, saved at most every few seconds.</summary>
+    private void ScheduleJumpListUpdate()
+    {
+        if (_jumpListTimer is null)
+        {
+            _jumpListTimer = DispatcherQueue.CreateTimer();
+            _jumpListTimer.Interval = TimeSpan.FromSeconds(3);
+            _jumpListTimer.IsRepeating = false;
+            _jumpListTimer.Tick += (_, _) =>
+            {
+                var library = AppServices.Library;
+                var movies = library.Movies.Where(movie => DownloadedPage.AudienceAllows(movie.TmdbId, "movie")).ToList();
+                var entries = DownloadedPage.ContinueWatchingEntries(library, movies, ContinueWatchingJumpList.Limit)
+                    .Select(entry => entry.Movie is { } movie
+                        ? new ContinueWatchingJumpList.Entry(entry.Title, entry.Subtitle, $"{AppRoute.Scheme}://play/local-movie/{movie.Id}")
+                        : entry.Episode is { } episode
+                            ? new ContinueWatchingJumpList.Entry(entry.Title, entry.Subtitle, $"{AppRoute.Scheme}://play/local-episode/{episode.Id}")
+                            : null)
+                    .OfType<ContinueWatchingJumpList.Entry>()
+                    .ToList();
+                _ = ContinueWatchingJumpList.UpdateAsync(entries);
+            };
+        }
+        _jumpListTimer.Stop();
+        _jumpListTimer.Start();
+    }
+
+    private SidebarItem? SelectedSidebarItem =>
+        (Nav.SelectedItem as NavigationViewItem)?.Tag is string tag ? SidebarItem.Parse(tag) : null;
+
+    /// <summary>If the open section emptied, the sidebar returns to its parent page.</summary>
+    private void ResolveSelectedSection()
+    {
+        if (SelectedSidebarItem is not { Section: not null } selected) return;
+        var resolved = selected.Resolved(_watchlistSections, _downloadedSections);
+        if (resolved == selected) return;
+        SelectSidebar(resolved.NavTag);
+        NavigateTo(resolved);
     }
 
     // ------------------------------------------------------------------
@@ -90,23 +167,93 @@ public sealed partial class MainWindow : Window
             NavigateRoot(typeof(SettingsPage));
             return;
         }
-        switch ((args.SelectedItem as NavigationViewItem)?.Tag as string)
+        if ((args.SelectedItem as NavigationViewItem)?.Tag is string tag) NavigateTo(SidebarItem.Parse(tag));
+    }
+
+    /// <summary>
+    /// Choosing the row that is already selected raises no SelectionChanged,
+    /// so a detail page on top of it returns to the page's root here.
+    /// </summary>
+    private void Nav_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+    {
+        if (args.IsSettingsInvoked || args.InvokedItemContainer?.Tag is not string tag) return;
+        if (SelectedSidebarItem?.NavTag == tag) NavigateTo(SidebarItem.Parse(tag));
+    }
+
+    /// <summary>Choosing a row opens that page at its root.</summary>
+    private void NavigateTo(SidebarItem item)
+    {
+        switch (item.Tab)
         {
             case "movies": NavigateRoot(typeof(MoviesShowsPage)); break;
-            case "watchlist": NavigateRoot(typeof(WatchlistPage)); break;
-            case "downloaded": NavigateRoot(typeof(DownloadedPage)); break;
+            case "watchlist": NavigateRoot(typeof(WatchlistPage), item.WatchlistSection); break;
+            case "downloaded": NavigateRoot(typeof(DownloadedPage), item.DownloadedSection); break;
             case "search": NavigateRoot(typeof(SearchPage)); break;
         }
     }
 
-    private void NavigateRoot(Type pageType)
+    private object? _rootParameter;
+
+    private void NavigateRoot(Type pageType, object? parameter = null)
     {
-        if (RootFrame.CurrentSourcePageType != pageType)
+        // A detail page on top, or another section of the same page, both
+        // navigate; re-choosing the page already shown does nothing.
+        if (RootFrame.CurrentSourcePageType != pageType || !Equals(_rootParameter, parameter))
         {
-            RootFrame.Navigate(pageType);
+            _rootParameter = parameter;
+            RootFrame.Navigate(pageType, parameter);
             // Tab switches start fresh; only detail pushes stack up.
             RootFrame.BackStack.Clear();
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Shortcuts (DIFF.md §3.15)
+    // ------------------------------------------------------------------
+
+    private void AddShortcuts()
+    {
+        Nav.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
+        AddShortcut(VirtualKey.B, VirtualKeyModifiers.Control, ToggleSidebar);
+        AddShortcut(VirtualKey.N, VirtualKeyModifiers.Control, () => WithDownloadedPage(page => page.AddFolderAsync()));
+        AddShortcut(VirtualKey.N, VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu, () => WithDownloadedPage(page => page.LinkSourceAsync()));
+        AddShortcut(VirtualKey.R, VirtualKeyModifiers.Control, Rescan);
+        AddShortcut(VirtualKey.F5, VirtualKeyModifiers.None, Rescan);
+    }
+
+    private void AddShortcut(VirtualKey key, VirtualKeyModifiers modifiers, Func<bool> action)
+    {
+        var accelerator = new KeyboardAccelerator { Key = key, Modifiers = modifiers };
+        accelerator.Invoked += (_, args) =>
+        {
+            // The player keeps its own keys; library shortcuts wait until it closes.
+            if (PlayerOverlay.Visibility == Visibility.Visible) return;
+            args.Handled = action();
+        };
+        Nav.KeyboardAccelerators.Add(accelerator);
+    }
+
+    /// <summary>Ctrl+B: the sidebar folds to its icons and back.</summary>
+    private bool ToggleSidebar()
+    {
+        Nav.IsPaneOpen = !Nav.IsPaneOpen;
+        return true;
+    }
+
+    /// <summary>Ctrl+N and Ctrl+Alt+N act on the Downloaded pages only.</summary>
+    private bool WithDownloadedPage(Func<DownloadedPage, Task> action)
+    {
+        if (RootFrame.Content is not DownloadedPage page) return false;
+        _ = action(page);
+        return true;
+    }
+
+    /// <summary>Ctrl+R or F5 rescans every source, ignoring the 15-minute throttle, once one is linked.</summary>
+    private bool Rescan()
+    {
+        if (AppServices.Library.Folders.Count == 0) return false;
+        _ = AppServices.Library.RescanAllFoldersAsync(force: true);
+        return true;
     }
 
     /// <summary>
@@ -207,6 +354,7 @@ public sealed partial class MainWindow : Window
     {
         _suppressNavSelection = true;
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>()
+            .SelectMany(item => item.MenuItems.OfType<NavigationViewItem>().Prepend(item))
             .FirstOrDefault(item => item.Tag as string == tag);
         _suppressNavSelection = false;
     }
@@ -249,348 +397,5 @@ public sealed partial class MainWindow : Window
         if (!filter.IsEnabled) return true;
         await filter.VerifyAsync([reference]);
         return filter.Allows(reference);
-    }
-
-    // ------------------------------------------------------------------
-    // Player lifecycle + watch-progress loop
-    // ------------------------------------------------------------------
-
-    private void OpenPlayer(PlaybackRequest request)
-    {
-        ClosePlayerCore();
-
-        PlaylistPanel.Visibility = Visibility.Collapsed;
-        _currentPlayback = request;
-        _resumePending = true;
-
-        PlayerOverlay.Visibility = Visibility.Visible;
-        ControlsOverlay.SetMediaPlayer(
-            null, request.Title.ToUpperInvariant(), request.Subtitle, request);
-        ControlsOverlay.Focus(FocusState.Programmatic);
-
-        // The WinUI VideoView creates its Direct3D swap chain only after it is
-        // visible. The first playback request therefore waits for Initialized;
-        // later requests can start immediately on the existing LibVLC engine.
-        if (_libVlc is not null) StartPlayback(request);
-    }
-
-    private void PlayerElement_Initialized(object sender, InitializedEventArgs e)
-    {
-        if (_libVlc is not null) return;
-
-        try
-        {
-            _libVlc = new LibVLC(e.SwapChainOptions);
-            if (_currentPlayback is not null) StartPlayback(_currentPlayback);
-        }
-        catch (VLCException)
-        {
-            ClosePlayer();
-            ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
-        }
-    }
-
-    private void StartPlayback(PlaybackRequest request)
-    {
-        if (_libVlc is null || !ReferenceEquals(request, _currentPlayback)) return;
-
-        try
-        {
-            var player = new MediaPlayer(_libVlc);
-            player.Playing += MediaPlayer_Playing;
-            player.LengthChanged += MediaPlayer_LengthChanged;
-            player.EndReached += MediaPlayer_EndReached;
-            player.EncounteredError += MediaPlayer_EncounteredError;
-
-            _mediaPlayer = player;
-            PlayerElement.MediaPlayer = player;
-            ControlsOverlay.SetMediaPlayer(
-                player, request.Title.ToUpperInvariant(), request.Subtitle, request);
-
-            using var media = new Media(_libVlc, new Uri(request.FilePath));
-            if (!player.Play(media))
-            {
-                ClosePlayer();
-                ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
-                return;
-            }
-
-            _progressTimer = DispatcherQueue.CreateTimer();
-            _progressTimer.Interval = TimeSpan.FromSeconds(5);
-            _progressTimer.Tick += (_, _) => WriteProgress();
-            _progressTimer.Start();
-        }
-        catch (VLCException)
-        {
-            ClosePlayer();
-            ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
-        }
-    }
-
-    private void MediaPlayer_Playing(object? sender, EventArgs e)
-    {
-        if (sender is not MediaPlayer player) return;
-        DispatcherQueue.TryEnqueue(() =>
-        {
-            if (!ReferenceEquals(player, _mediaPlayer)) return;
-            ResumeIfNeeded(player);
-            ApplyAspectMode();
-        });
-    }
-
-    private void MediaPlayer_LengthChanged(object? sender, EventArgs e)
-    {
-        if (sender is not MediaPlayer player) return;
-        DispatcherQueue.TryEnqueue(() =>
-        {
-            if (ReferenceEquals(player, _mediaPlayer)) ResumeIfNeeded(player);
-        });
-    }
-
-    private void MediaPlayer_EndReached(object? sender, EventArgs e)
-    {
-        if (sender is not MediaPlayer player) return;
-        DispatcherQueue.TryEnqueue(() =>
-        {
-            if (!ReferenceEquals(player, _mediaPlayer)) return;
-            CompleteCurrent();
-            ClosePlayer();
-        });
-    }
-
-    private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
-    {
-        if (sender is not MediaPlayer player) return;
-        DispatcherQueue.TryEnqueue(() =>
-        {
-            if (!ReferenceEquals(player, _mediaPlayer)) return;
-            ClosePlayer();
-            ShowActivationMessage(Loc.Get("Activation_UnsupportedFile"));
-        });
-    }
-
-    /// <summary>Resume from the stored position when half-watched (Apple parity).</summary>
-    private void ResumeIfNeeded(MediaPlayer player)
-    {
-        if (!_resumePending) return;
-        if (_currentPlayback?.TmdbId is not int tmdbId)
-        {
-            _resumePending = false;
-            return;
-        }
-        var progress = AppServices.WatchProgress.Get(tmdbId, _currentPlayback.MediaType);
-        if (progress is null || progress.IsCompleted || progress.Position <= 0.005)
-        {
-            _resumePending = false;
-            return;
-        }
-
-        if (player.Length > 0)
-        {
-            player.Time = (long)(player.Length * progress.Position);
-            _resumePending = false;
-        }
-    }
-
-    private void WriteProgress()
-    {
-        if (_mediaPlayer is null || _currentPlayback?.TmdbId is not int tmdbId) return;
-        var durationMilliseconds = _mediaPlayer.Length;
-        if (durationMilliseconds <= 0) return;
-        var positionMilliseconds = Math.Max(0, _mediaPlayer.Time);
-
-        AppServices.WatchProgress.Update(
-            tmdbId,
-            _currentPlayback.MediaType,
-            (double)positionMilliseconds / durationMilliseconds,
-            positionMilliseconds / 1000.0,
-            _currentPlayback.ShowTmdbId,
-            _currentPlayback.SeasonNumber,
-            _currentPlayback.EpisodeNumber);
-    }
-
-    private void CompleteCurrent()
-    {
-        if (_currentPlayback?.TmdbId is int tmdbId)
-        {
-            AppServices.WatchProgress.MarkCompleted(tmdbId, _currentPlayback.MediaType);
-        }
-    }
-
-    private void ClosePlayer_Click(object sender, RoutedEventArgs e) => ClosePlayer();
-
-    private void ControlsOverlay_PlaylistRequested(object sender, RoutedEventArgs e)
-    {
-        if (_currentPlayback == null) return;
-        PlaylistPanel.Load(_currentPlayback);
-        PlaylistPanel.Visibility = Visibility.Visible;
-    }
-
-    /// <summary>Fit letterboxes the frame; fill crops it to the window.</summary>
-    private void ControlsOverlay_AspectFillChanged(object? sender, bool fill)
-    {
-        _aspectFill = fill;
-        ApplyAspectMode();
-    }
-
-    private void PlayerElement_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (_aspectFill) ApplyAspectMode();
-    }
-
-    private void ApplyAspectMode()
-    {
-        if (_mediaPlayer is null) return;
-
-        if (!_aspectFill)
-        {
-            _mediaPlayer.CropGeometry = null;
-            _mediaPlayer.Scale = 0;
-            return;
-        }
-
-        var width = Math.Max(1, (int)Math.Round(PlayerElement.ActualWidth));
-        var height = Math.Max(1, (int)Math.Round(PlayerElement.ActualHeight));
-        var divisor = GreatestCommonDivisor(width, height);
-        _mediaPlayer.CropGeometry = $"{width / divisor}:{height / divisor}";
-    }
-
-    private static int GreatestCommonDivisor(int left, int right)
-    {
-        while (right != 0)
-        {
-            (left, right) = (right, left % right);
-        }
-        return left;
-    }
-
-    private void PlaylistPanel_CloseRequested(object sender, RoutedEventArgs e)
-    {
-        PlaylistPanel.Visibility = Visibility.Collapsed;
-    }
-
-    private void PlaylistPanel_PlayRequested(object sender, PlaybackRequest e)
-    {
-        PlaylistPanel.Visibility = Visibility.Collapsed;
-        OpenPlayer(e);
-    }
-
-    // ------------------------------------------------------------------
-    // Picture in Picture (compact overlay)
-    // ------------------------------------------------------------------
-
-    private void ControlsOverlay_PictureInPictureRequested(object sender, RoutedEventArgs e)
-        => SetCompactOverlay(!_isCompactOverlay);
-
-    /// <summary>
-    /// Windows' Picture in Picture: the shell window itself switches to the
-    /// compact-overlay presenter — a small always-on-top window showing just
-    /// the player. The auto-hiding controls stay (they are how the floating
-    /// window is paused, restored, and closed, and they keep keyboard focus
-    /// inside the player); the playlist panel goes, having no room. A double
-    /// tap or Escape restores the full window.
-    /// </summary>
-    private void SetCompactOverlay(bool compact)
-    {
-        if (compact == _isCompactOverlay) return;
-        if (compact && PlayerOverlay.Visibility != Visibility.Visible) return;
-
-        try
-        {
-            if (compact)
-            {
-                var presenter = CompactOverlayPresenter.Create();
-                presenter.InitialSize = CompactOverlaySize.Medium;
-                AppWindow.SetPresenter(presenter);
-            }
-            else
-            {
-                AppWindow.SetPresenter(AppWindowPresenterKind.Default);
-            }
-        }
-        catch (Exception)
-        {
-            // The compact-overlay presenter needs Windows 10 1903 or newer;
-            // on anything older the player just stays full window.
-            ShowActivationMessage(Loc.Get("Player_PipUnavailable"));
-            return;
-        }
-
-        _isCompactOverlay = compact;
-        PlaylistPanel.Visibility = Visibility.Collapsed;
-        ControlsOverlay.SetPictureInPictureActive(compact);
-        ControlsOverlay.Focus(FocusState.Programmatic);
-    }
-
-    private void PlayerOverlay_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
-    {
-        if (_isCompactOverlay) SetCompactOverlay(false);
-    }
-
-    private void PlayerOverlay_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-    {
-        if (e.Key == global::Windows.System.VirtualKey.Escape)
-        {
-            // Escape leaves the floating window first, then closes the player.
-            if (_isCompactOverlay)
-            {
-                SetCompactOverlay(false);
-            }
-            else
-            {
-                ClosePlayer();
-            }
-            e.Handled = true;
-        }
-        else if (e.Key == global::Windows.System.VirtualKey.Space)
-        {
-            ControlsOverlay.TogglePlayPause();
-            e.Handled = true;
-        }
-        else if (e.Key == global::Windows.System.VirtualKey.Left)
-        {
-            ControlsOverlay.Skip(-10);
-            e.Handled = true;
-        }
-        else if (e.Key == global::Windows.System.VirtualKey.Right)
-        {
-            ControlsOverlay.Skip(10);
-            e.Handled = true;
-        }
-    }
-
-    private void ClosePlayer()
-    {
-        WriteProgress();
-        ClosePlayerCore();
-        SetCompactOverlay(false);
-        PlayerOverlay.Visibility = Visibility.Collapsed;
-    }
-
-    private void ClosePlayerCore()
-    {
-        _progressTimer?.Stop();
-        _progressTimer = null;
-        if (_mediaPlayer is not null)
-        {
-            ControlsOverlay.SetMediaPlayer(null, "", "");
-            PlayerElement.MediaPlayer = null;
-            _mediaPlayer.Playing -= MediaPlayer_Playing;
-            _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
-            _mediaPlayer.EndReached -= MediaPlayer_EndReached;
-            _mediaPlayer.EncounteredError -= MediaPlayer_EncounteredError;
-            _mediaPlayer.Stop();
-            _mediaPlayer.Dispose();
-            _mediaPlayer = null;
-        }
-        _resumePending = false;
-        _currentPlayback = null;
-    }
-
-    private void MainWindow_Closed(object sender, WindowEventArgs args)
-    {
-        ClosePlayerCore();
-        _libVlc?.Dispose();
-        _libVlc = null;
     }
 }

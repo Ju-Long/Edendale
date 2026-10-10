@@ -164,7 +164,7 @@
     <value>Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendales enda nätverksanrop är till TMDB för omslag och metadata, plus användarinitierad traileruppspelning via den integritetsförbättrade inbäddningen av YouTube. Inga analyser, någonsin.</value>
+    <value>Edendale ansluter till TMDB för bilder och metadata, till källorna du länkar för att lista och spela upp dina filer, till Wyzie Subs när du söker undertexter, till TheIntroDB bara medan hoppa över-förslag är på och till YouTubes integritetsförbättrade inbäddning när du spelar en trailer. Aldrig analys.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>LÄSER IN ARKIVET</value>
@@ -305,23 +305,8 @@
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>VISA I SÖK</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Hoppa bakåt 10 s</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Hoppa framåt 10 s</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>ANPASSA</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Upprepa</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Undertexter &amp; ljud</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Bild-i-bild</value>
+    <value>Undertexter</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>Trendar idag</value>
@@ -383,35 +368,14 @@
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>Bild-i-bild</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>Sluta upprepa</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>Upprepa</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>FYLL</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>ANPASSA</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>Inga spår tillgängliga</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>LJUD</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>Ljud</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>UNDERTEXTER</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>Av</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Undertext</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>Den här filen har inga</value>
@@ -551,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Ta bort källa</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” tas bort från ditt bibliotek och den sparade inloggningen för {1} glöms bort, om inte en annan källa fortfarande använder den servern. Inget på servern raderas.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” tas bort från ditt bibliotek. Inget på din disk raderas.</value>
   </data>
@@ -575,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Kunde inte komma åt nätverkssökvägen: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Fel med nätverkskälla</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Kunde inte ansluta till {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Anslutning misslyckades</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows kunde inte starta anslutningen för nätverksdelning.</value>
@@ -597,7 +552,7 @@
     <value>Designad för integritet</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Ditt biblioteksindex och visningsförlopp stannar på den här enheten. De enda nätverksanrop Edendale gör är till TMDB för omslag och metadata — inget annat skickas någonstans.</value>
+    <value>Ditt biblioteksindex och ditt visningsförlopp stannar på den här enheten. Edendale kontaktar TMDB för bilder och metadata, och i övrigt bara det du väljer: källorna du länkar, undertextsökningar, hoppa över-förslag när de är på och trailers du spelar upp. Inget annat skickas någonstans.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Välj en dag, och sedan en andra dag för att stänga intervallet.</value>
@@ -892,5 +847,794 @@
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>Den här titeln är inte verifierad som PG eller PG-13.</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Tillbaka</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Tillbaka</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Spelarinställningar</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Spelarinställningar</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Spellista</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Spellista</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ljudutgång</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ljudutgång</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Undertexter</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Tidslinje</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Volym</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>Tillämpar …</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>Spela</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>Pausa</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>Ljud av</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>Ljud på</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>Helskärm</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>Avsluta helskärm</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>Hoppa bakåt {0} sekunder</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>Hoppa framåt {0} sekunder</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>Systemstandard</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>Volym {0} %</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>Ljud av</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>Ljud på</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>Ljusstyrka {0} %</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>Bakåt {0} sekunder</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>Framåt {0} sekunder</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>HÄRNÄST</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>Härnäst: {0}, {1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>HOPPA ÖVER INTRO</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>HOPPA ÖVER SAMMANFATTNING</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>HOPPA ÖVER EFTERTEXTER</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>Hoppar över den här delen och fortsätter spela. Tryck på S.</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>JUSTERINGAR</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>VIDEOSPÅR</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Videospår</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>LJUDSPÅR</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ljudspår</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>BILD</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>Visa original</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>ÅTERSTÄLL</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>FÖRBÄTTRING</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>Förinställning</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>Rörelseutjämning</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>Visa original</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>UPPSPELNING</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>Hastighet</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Långsammare</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Snabbare</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>Hastighet {0}, återställ till normal</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>Hoppa över-förslag</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>Använder TheIntroDB. Att hoppa över kräver alltid ett tryck.</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>Ljudförstärkare</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>Surround i hörlurar</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>Upprepa</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>Fyll fönstret</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>SYNK</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>Ljudfördröjning</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>Undertextfördröjning</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}: tidigare</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}: senare</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>KAPITEL</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>Kapitel {0}</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>Mono</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>Stereo</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0} kan.</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>Spår {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>Ljusstyrka</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>Kontrast</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>Gamma</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>Mättnad</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>Nyans</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>Av</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>Balanserad</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>Hög kvalitet</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>Videoförbättring kräver ett grafikkort i hårdvara, så bilden spelas upp som den är.</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>Superupplösning kräver att Edendale körs på det dedikerade grafikkortet. Ställ in Edendale på Hög prestanda under Windows-inställningar › System › Bildskärm › Grafik.</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>APPKONTROLLER</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>Hoppa bakåt</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>Hoppa framåt</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>Håll vänster sida</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>Håll höger sida</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Hastighet när vänster sida hålls</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Hastighet när höger sida hålls</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>Hoppen gäller piltangenterna, hoppknapparna, dubbeltryck och mediatangenter. Håll ned någon halva av videon för att spela upp i den sidans hastighet tills du släpper.</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>Hoppa bakåt, {0} sekunder</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>Hoppa framåt, {0} sekunder</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>HOPPA ÖVER-FÖRSLAG</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>Erbjud att hoppa över intro, sammanfattning och eftertexter</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Hoppa över-förslag</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>När det är på får TheIntroDB titelns TMDB-id, avsnittsnummer, videons längd och din IP-adress. Att hoppa över kräver alltid ett knapptryck.</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>LJUDFÖRBÄTTRING</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>ÅTERSTÄLL EQUALIZER</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>Gäller alla filer. Nattläge jämnar ut balansen mellan dialog och effekter; det komprimerar inte. Ljudförstärkaren i spelaren lägger till 10 dB.</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>Förförstärkning</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0} Hz</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>Visa equalizer</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>Dölj equalizer</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>Platt</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>Film</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>Musik</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>Dialog</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>Nattläge</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>UNDERTEXTER</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>Så här kommer undertexterna att se ut.</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Förhandsvisning av undertexter</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>Typsnitt</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>Textfärg</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>Rutans färg</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>Rutans opacitet</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Rutans opacitet</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>ÅTERSTÄLL UNDERTEXTSTIL</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>Gäller textundertexter från nästa fil du öppnar och följer textstorleken i Windows. Bildbaserade undertexter (Blu-ray och dvd) behåller sitt eget utseende.</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>Serif</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>Fast bredd</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>Pergament</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>Vit</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>Gul</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>Cyan</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>Grön</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>Svart</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>Bläck</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>Kol</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>Marinblå</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Videospelare</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>Härnäst · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>{0} % sett</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>Spelas nu</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Lokal mapp</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-kompatibel lagring</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Inte tillgänglig</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Gäst</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Serveradressen verkar inte stämma. Ange ett värdnamn som nas.local eller en IP-adress.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Det går inte att nå {0}. Kontrollera att servern är på, i samma nätverk och att namnet eller inloggningen stämmer.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Det gick inte att läsa mappen {0}. Den kan kräva en annan inloggning eller behörighet.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Logga in på {0} igen för att nå den här källan.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} är inte konfigurerat i den här versionen av Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} nekade åtkomst till objektet.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Filen finns inte längre i {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} begränsar förfrågningar just nu. Försök igen om en minut.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} returnerade ett fel (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Använd HTTPS för servrar utanför ditt lokala nätverk. Vanlig HTTP fungerar bara för lokala adresser som nas.local eller 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} visade inget giltigt HTTPS-certifikat. Edendale ansluter bara till servrar med ett betrott certifikat.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} stöder inte spolning i den här filen.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>SSH-värdnyckeln för {0} har ändrats. Edendale ansluter inte förrän du godkänner den nya nyckeln genom att länka servern igen.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>SSH-värdnyckeln för {0} har inte godkänts ännu.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} godtog inte användarnamnet och lösenordet.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Det gick inte att upprätta en säker anslutning till {0}. SSH-servern erbjuder bara äldre kryptering, som Edendale inte stöder.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} godtar inte inloggning med lösenord. Tillåt lösenordsautentisering i SSH-inställningarna för att länka den.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} erbjuder inte SFTP för det här kontot.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Den här bucketen finns i regionen {0}. Ändra region och anslut igen.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Den här bucketen finns i en annan region. Kontrollera regionen och anslut igen.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>GLÖM</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>LOGGA UT</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Glöm inloggning</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Logga ut</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale glömmer inloggningen för {0}. Inget på servern eller i kontot raderas.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale glömmer inloggningen för {0}. Källorna som använder den ({1}) ber dig logga in igen. Inget på servern eller i kontot raderas.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} källa</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} källor</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Adress</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Användarnamn</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Lösenord</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Anslut</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Anslut som gäst</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Rullningsposition för {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>”{0}” tas bort från ditt bibliotek. Den sparade inloggningen finns kvar under Inställningar → Konton. Inget på servern raderas.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Inloggning krävs: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>LOGGA IN</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>LOGGA IN</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Spela upp från</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Spela upp från</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Spela upp från</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Fortsätt titta</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Filmer</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>TV-serier</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Filmer</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>TV-serier</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>KONTON</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Inga sparade inloggningar</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Inloggningar krypteras för ditt Windows-konto och stannar på den här datorn. Om du tar bort en källa sparas dess inloggning.</value>
+  </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Det gick inte att öppna NFS-exporten på {0}. Windows ansluter från en oprivilegierad port, så exporten behöver alternativet ”insecure”.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Välj en mapp</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Lägg till den här mappen</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>UPP</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} video i den här mappen</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} videor i den här mappen</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Lita på den här servern?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} visade den här värdnyckeln ({1}). Edendale har inte anslutit till servern tidigare.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Värdnyckeln har ändrats</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>Värdnyckeln som {0} visade ({1}) stämmer inte med den Edendale litade på tidigare. Det händer när en server installeras om, men det kan också betyda att någon avlyssnar anslutningen. Lita bara på den nya nyckeln om du väntade dig ändringen.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Jämför fingeravtrycket med serverns eget innan du litar på det, till exempel med ssh-keygen -lf på värdnyckelfilen.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Lita på</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Lita på den nya nyckeln</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Typ av källa</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (Windows-fildelning)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Slutpunkt</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Åtkomstnyckel-id</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Hemlig åtkomstnyckel</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Ett annat konto …</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Ange servern, en valfri port och mappen att börja i. Edendale loggar in med ett lösenord och visar serverns värdnyckel innan den litar på den.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Ange WebDAV-adressen, till exempel en Nextcloud-fil-URL eller rclone serve webdav, som också når Google Drive. Vanlig HTTP fungerar bara i ditt lokala nätverk.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Fungerar med AWS, Backblaze B2, Cloudflare R2, Wasabi och MinIO. En skrivskyddad nyckel räcker; den krypteras på den här datorn.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Ange server och export, till exempel nas.local/export/video. Exporten måste tillåta anslutningar från oprivilegierade portar (alternativet ”insecure”).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Webbläsaren öppnas så att du kan logga in hos Microsoft. Edendale ber bara om att läsa dina filer och håller kontot åtskilt från OneDrive-mappen som visningshistoriken kopieras till.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Webbläsaren öppnas så att du kan logga in hos Dropbox. Edendale ber bara om att läsa dina filer och ditt kontonamn.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Logga in</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Logga in igen</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Inloggad</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Du kan stänga fliken och gå tillbaka till Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Ange användarnamnet för den här servern.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Slutför inloggningen hos {0} i webbläsaren.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Det gick inte att länka källan: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Inloggningen avbröts.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Inloggningssvaret kunde inte verifieras. Försök igen.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Åtkomst till {0} tilläts inte.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Din inloggning hos {0} har upphört eller återkallats. Logga in igen.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} kunde inte slutföra inloggningen ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} kunde inte slutföra inloggningen ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} skickade ett svar som Edendale inte kunde läsa.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Det gick inte att nå {0}. Kontrollera anslutningen och försök igen.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Det gick inte att läsa filen från {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Det gick inte att ansluta till {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Anslutningen till {0} bröts: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Anslutningen till {0} bröts.</value>
+  </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Föregående avsnitt</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Spela upp</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pausa</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Nästa avsnitt</value>
+  </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Sparade undertexter</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>TA BORT ALLA</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Ta bort efter en månad utan användning</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ta bort sparade undertexter efter en månad utan användning</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Undertexter du hämtar stannar på den här enheten och kommer tillbaka när du spelar samma titel igen. Medan reglaget är på tas en undertext som du inte har slagit på på en månad bort.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Inga</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} undertext · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} undertexter · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Ta bort sparade undertexter</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Alla undertexter som sparats på den här enheten raderas. Du kan hämta dem igen via sökningen online.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Sparad</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} kB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Bildrutegenerering</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Bildrutegenerering kunde inte starta för den här filen på det här grafikkortet, så den spelas upp som vanligt.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Startar när videons bildfrekvens är känd.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Fungerar med video på högst 30 bilder/s, upp till 4K.</value>
+  </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Webbläsaren öppnas så att du kan logga in hos Google. Edendale ber Google om skrivskyddad åtkomst till din Drive. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Min enhet</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Delade med mig</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Delade enheter</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale behöver tillstånd att se dina Google Drive-filer. Logga in igen och låt Drive-åtkomsten vara markerad.</value>
   </data>
 </root>

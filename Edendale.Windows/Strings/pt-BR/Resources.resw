@@ -164,7 +164,7 @@
     <value>Este produto usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>As únicas chamadas de rede que o Edendale faz são para o TMDB para capas e metadados, além da reprodução de trailers iniciada pelo usuário através da incorporação do YouTube com privacidade aprimorada. Nenhuma análise, nunca.</value>
+    <value>O Edendale acessa o TMDB para artes e metadados, as fontes que você vincula para listar e reproduzir seus arquivos, o Wyzie Subs quando você busca legendas, o TheIntroDB só enquanto as sugestões para pular estão ativadas e a incorporação do YouTube com privacidade aprimorada quando você reproduz um trailer. Nunca há análises.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>CARREGANDO O ARQUIVO</value>
@@ -305,23 +305,8 @@ ESTÁ SILENCIOSA</value>
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>MOSTRAR NA BUSCA</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Retroceder 10s</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Avançar 10s</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>AJUSTAR</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Repetir</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Legendas e Áudio</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Picture in Picture</value>
+    <value>Legendas</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>Em Alta Hoje</value>
@@ -383,35 +368,14 @@ ESTÁ SILENCIOSA</value>
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>Picture in Picture</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>Parar repetição</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>Repetir</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>PREENCHER</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>AJUSTAR</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>Nenhuma faixa disponível</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>ÁUDIO</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>Áudio</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>LEGENDAS</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>Desativado</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Legenda</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>Este arquivo não contém nenhuma</value>
@@ -551,9 +515,6 @@ ESTÁ SILENCIOSA</value>
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Remover Fonte</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” foi removido da sua biblioteca e o login salvo para {1} foi esquecido, a menos que outra fonte ainda use esse servidor. Nada no servidor foi excluído.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” foi removido da sua biblioteca. Nada no seu disco foi excluído.</value>
   </data>
@@ -575,14 +536,8 @@ ESTÁ SILENCIOSA</value>
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Não foi possível acessar o caminho de rede: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Erro na Fonte de Rede</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Não foi possível conectar a {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Falha na Conexão</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>O Windows não pôde iniciar o conector de compartilhamento de rede.</value>
@@ -597,7 +552,7 @@ ESTÁ SILENCIOSA</value>
     <value>Privacidade desde a concepção</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>O índice da sua biblioteca e o progresso de exibição permanecem neste dispositivo. As únicas chamadas de rede que o Edendale faz são para o TMDB para capas e metadados — nada mais é enviado para lugar nenhum.</value>
+    <value>O índice da sua biblioteca e o progresso de exibição ficam neste dispositivo. O Edendale contata o TMDB para artes e metadados e, fora isso, só o que você escolher: as fontes que vincular, buscas de legendas, sugestões para pular quando ativadas e trailers que você reproduzir. Nada mais é enviado.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Escolha um dia e depois um segundo dia para fechar o intervalo.</value>
@@ -892,5 +847,794 @@ ESTÁ SILENCIOSA</value>
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>Este título não foi verificado como PG ou PG-13.</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Voltar</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Voltar</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ajustes do player</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ajustes do player</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Playlist</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Playlist</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Saída de áudio</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Saída de áudio</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Legendas</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Linha do tempo</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>Aplicando…</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>Reproduzir</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>Pausar</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>Silenciar</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>Ativar som</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>Tela cheia</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>Sair da tela cheia</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>Voltar {0} segundos</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>Avançar {0} segundos</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>Padrão do sistema</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>Volume {0}%</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>Sem som</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>Som ativado</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>Brilho {0}%</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>Voltou {0} segundos</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>Avançou {0} segundos</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>A SEGUIR</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>A seguir: {0}, {1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>PULAR ABERTURA</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>PULAR RECAPITULAÇÃO</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>PULAR CRÉDITOS</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>Pula esta parte e continua a reprodução. Pressione S.</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>AJUSTES</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>FAIXA DE VÍDEO</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Faixa de vídeo</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>FAIXA DE ÁUDIO</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Faixa de áudio</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>IMAGEM</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>Mostrar original</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>REDEFINIR</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>APRIMORAMENTO</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>Predefinição</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>Suavização de movimento</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>Mostrar original</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>REPRODUÇÃO</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>Velocidade</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mais lento</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mais rápido</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>Velocidade {0}, redefinir para normal</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>Sugestões para pular</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>Usa o TheIntroDB. Pular sempre exige um toque.</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>Amplificador de áudio</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>Surround nos fones</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>Repetir</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>Preencher janela</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>SINCRONIA</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>Atraso do áudio</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>Atraso das legendas</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}: antes</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}: depois</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>CAPÍTULOS</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>Capítulo {0}</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>Mono</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>Estéreo</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0} canais</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>Faixa {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>Brilho</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>Contraste</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>Gama</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>Saturação</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>Matiz</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>Desativado</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>Equilibrado</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>Alta qualidade</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>O aprimoramento de vídeo exige um adaptador gráfico de hardware, então a imagem é reproduzida como está.</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>A super-resolução exige que o Edendale use a placa de vídeo dedicada. Em Configurações do Windows › Sistema › Tela › Gráficos, defina o Edendale como Alto desempenho.</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>CONTROLES DO APP</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>Voltar</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>Avançar</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>Segurar lado esquerdo</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>Segurar lado direito</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Velocidade ao segurar o lado esquerdo</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Velocidade ao segurar o lado direito</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>Os saltos valem para as setas, os botões de salto, o toque duplo e as teclas de mídia. Segure qualquer metade do vídeo para reproduzir na velocidade daquele lado até soltar.</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>Voltar, {0} segundos</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>Avançar, {0} segundos</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>SUGESTÕES PARA PULAR</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>Oferecer pular abertura, recapitulação e créditos</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sugestões para pular</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>Quando ativado, o TheIntroDB recebe o ID do TMDB do título, os números dos episódios, a duração do vídeo e seu endereço IP. Pular sempre exige tocar em um botão.</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>APRIMORAMENTO DE ÁUDIO</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>REDEFINIR EQUALIZADOR</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>Vale para todos os arquivos. O Modo noturno equilibra diálogos e efeitos; não comprime. O amplificador de áudio do player adiciona 10 dB.</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>Pré-amplificador</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0} Hz</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>Mostrar equalizador</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>Ocultar equalizador</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>Plano</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>Filmes</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>Música</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>Diálogo</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>Modo noturno</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>LEGENDAS</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>As legendas vão ficar assim.</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Prévia das legendas</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>Fonte</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>Cor do texto</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>Cor da caixa</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>Opacidade da caixa</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Opacidade da caixa</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>REDEFINIR ESTILO DAS LEGENDAS</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>Vale para legendas de texto a partir do próximo arquivo aberto e segue o tamanho de texto do Windows. Legendas em imagem (Blu-ray e DVD) mantêm a aparência original.</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>Serifada</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>Monoespaçada</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>Pergaminho</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>Branco</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>Amarelo</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>Ciano</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>Verde</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>Preto</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>Tinta</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>Carvão</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>Azul-marinho</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Player de vídeo</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>A seguir · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>{0}% assistido</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>Reproduzindo</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Pasta local</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>Armazenamento compatível com S3</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Indisponível</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Convidado</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Esse endereço de servidor não parece correto. Digite um nome de host como nas.local ou um endereço IP.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Não foi possível acessar {0}. Verifique se o servidor está ligado, na mesma rede, e se o nome ou o login estão corretos.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Não foi possível ler a pasta {0}. Pode ser preciso outro login ou outras permissões.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Entre novamente em {0} para acessar esta fonte.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} não está configurado nesta versão do Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} negou o acesso a este item.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Este arquivo não está mais em {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} está limitando as solicitações agora. Tente novamente em um minuto.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} retornou um erro (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Use HTTPS para servidores fora da sua rede local. HTTP simples só funciona para endereços locais como nas.local ou 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} não apresentou um certificado HTTPS válido. O Edendale só se conecta a servidores com um certificado confiável.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} não permite avançar ou retroceder neste arquivo.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>A chave de host SSH de {0} mudou. O Edendale não vai se conectar até você aprovar a nova chave vinculando o servidor novamente.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>A chave de host SSH de {0} ainda não foi aprovada.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} não aceitou o nome de usuário e a senha.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Não foi possível estabelecer uma conexão segura com {0}. O servidor SSH oferece apenas criptografia antiga, que o Edendale não suporta.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} não aceita login com senha. Permita a autenticação por senha nas configurações SSH para vinculá-lo.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} não oferece SFTP para esta conta.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Este bucket está na região {0}. Altere a região e conecte-se novamente.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Este bucket está em outra região. Verifique a região e conecte-se novamente.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>ESQUECER</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>SAIR</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Esquecer login</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Sair</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>O Edendale vai esquecer o login de {0}. Nada no servidor ou na conta é excluído.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>O Edendale vai esquecer o login de {0}. As fontes que o usam ({1}) vão pedir que você entre novamente. Nada no servidor ou na conta é excluído.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} fonte</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>{0} fontes</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Endereço</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Nome de usuário</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Senha</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Conectar</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Conectar como convidado</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Posição de rolagem de {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>“{0}” foi removido da sua biblioteca. O login salvo continua em Configurações → Contas. Nada no servidor é excluído.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Offline: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Requer login: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>ENTRAR</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>ENTRAR</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Reproduzir de</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Reproduzir de</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reproduzir de</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Continuar assistindo</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Filmes</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Séries de TV</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Filmes</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Séries de TV</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>CONTAS</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Nenhum login salvo</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Os logins são criptografados para sua conta do Windows e ficam neste PC. Remover uma fonte mantém o login dela.</value>
+  </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Não foi possível abrir a exportação NFS em {0}. O Windows se conecta por uma porta não privilegiada, então a exportação precisa da opção “insecure”.</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Escolher uma pasta</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Adicionar esta pasta</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>ACIMA</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>{0} vídeo nesta pasta</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>{0} vídeos nesta pasta</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Confiar neste servidor?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} apresentou esta chave de host ({1}). O Edendale nunca se conectou a este servidor.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Chave de host alterada</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>A chave de host que {0} apresentou ({1}) não corresponde à que o Edendale aprovou antes. Isso acontece depois de reinstalar um servidor, mas também pode significar que alguém está interceptando a conexão. Confie na nova chave só se você esperava a mudança.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Antes de confiar, compare a impressão digital com a do próprio servidor, por exemplo executando ssh-keygen -lf no arquivo de chave de host.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Confiar</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Confiar na nova chave</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Tipo de fonte</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (compartilhamento de arquivos do Windows)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Região</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>ID da chave de acesso</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Chave de acesso secreta</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Conta</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Outra conta…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Digite o servidor, uma porta opcional e a pasta inicial. O Edendale entra com uma senha e mostra a chave de host do servidor antes de confiar nela.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Digite o endereço WebDAV, como a URL de arquivos do Nextcloud ou rclone serve webdav, que também alcança o Google Drive. HTTP simples só funciona na sua rede local.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Funciona com AWS, Backblaze B2, Cloudflare R2, Wasabi e MinIO. Uma chave somente leitura basta; ela é criptografada neste PC.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Digite o servidor e a exportação, por exemplo nas.local/export/video. A exportação deve permitir conexões de portas não privilegiadas (a opção “insecure”).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Seu navegador abre para entrar na Microsoft. O Edendale pede só para ler seus arquivos e mantém esta conta separada da pasta do OneDrive para onde copia seu histórico de exibição.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Seu navegador abre para entrar no Dropbox. O Edendale pede só para ler seus arquivos e o nome da conta.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Entrar</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Entrar novamente</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Conectado</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Você pode fechar esta guia e voltar ao Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Digite o nome de usuário deste servidor.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Conclua a entrada no {0} pelo navegador.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Não foi possível vincular a fonte: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>A entrada foi cancelada.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Não foi possível verificar a resposta de entrada. Tente novamente.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>O acesso ao {0} não foi permitido.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Sua entrada no {0} expirou ou foi revogada. Entre novamente.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} não conseguiu concluir a entrada ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} não conseguiu concluir a entrada ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} enviou uma resposta que o Edendale não conseguiu ler.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Não foi possível acessar {0}. Verifique a conexão e tente novamente.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Não foi possível ler este arquivo de {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Não foi possível conectar a {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>A conexão com {0} foi perdida: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>A conexão com {0} foi perdida.</value>
+  </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Episódio anterior</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Reproduzir</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Pausar</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Próximo episódio</value>
+  </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Legendas salvas</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>REMOVER TODAS</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Remover após um mês sem uso</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Remover legendas salvas após um mês sem uso</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>As legendas que você baixa ficam neste dispositivo e voltam quando você reproduz o mesmo título de novo. Enquanto a opção estiver ativada, uma legenda que você não ativou por um mês é removida.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Nenhuma</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>{0} legenda · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>{0} legendas · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Remover legendas salvas</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Todas as legendas salvas neste dispositivo são apagadas. Você pode baixá-las de novo pela busca online.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Salva</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Geração de quadros</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Não foi possível iniciar a geração de quadros para este arquivo nesta placa de vídeo, então ele é reproduzido normalmente.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Começa assim que a taxa de quadros do vídeo for conhecida.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Funciona com vídeos de até 30 fps e até 4K.</value>
+  </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Seu navegador abre para entrar no Google. O Edendale pede ao Google acesso somente leitura ao seu Drive. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Meu Drive</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Compartilhados comigo</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Drives compartilhados</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>O Google Drive marcou este arquivo como potencialmente nocivo, então ele não pode ser transmitido.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>O Edendale precisa de permissão para ver seus arquivos do Google Drive. Inicie a sessão novamente e deixe o acesso ao Drive selecionado.</value>
   </data>
 </root>

@@ -79,4 +79,19 @@
   <data name="Library_CataloguingNewFiles" xml:space="preserve">
     <value>CATALOGUING NEW FILES</value>
   </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>RESET EQUALISER</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>Show equaliser</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>Hide equaliser</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>Text Colour</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>Box Colour</value>
+  </data>
 </root>

@@ -164,7 +164,7 @@
     <value>Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Единственные сетевые запросы Edendale — это обращения к TMDB за обложками и метаданными, а также инициированное пользователем воспроизведение трейлеров через встроенный плеер YouTube с повышенной конфиденциальностью. Никакой аналитики, никогда.</value>
+    <value>Edendale обращается к TMDB за обложками и метаданными, к привязанным источникам, чтобы показывать и воспроизводить ваши файлы, к Wyzie Subs при поиске субтитров, к TheIntroDB только при включённых предложениях пропуска и к YouTube с усиленной конфиденциальностью, когда вы смотрите трейлер. Никакой аналитики.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>ЗАГРУЗКА АРХИВА</value>
@@ -305,23 +305,8 @@
   <data name="ShowInSearchLabel.Text" xml:space="preserve">
     <value>ПОКАЗАТЬ В ПОИСКЕ</value>
   </data>
-  <data name="SkipBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Назад на 10 с</value>
-  </data>
-  <data name="SkipForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Вперед на 10 с</value>
-  </data>
-  <data name="AspectButton.Content" xml:space="preserve">
-    <value>ВПИСАТЬ</value>
-  </data>
-  <data name="LoopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Зациклить</value>
-  </data>
   <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Субтитры и аудио</value>
-  </data>
-  <data name="PictureInPictureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Картинка в картинке</value>
+    <value>Субтитры</value>
   </data>
   <data name="Section_TrendingToday" xml:space="preserve">
     <value>В тренде сегодня</value>
@@ -383,35 +368,14 @@
   <data name="Player_PictureInPicture" xml:space="preserve">
     <value>Картинка в картинке</value>
   </data>
-  <data name="Player_StopLooping" xml:space="preserve">
-    <value>Остановить зацикливание</value>
-  </data>
-  <data name="Player_Loop" xml:space="preserve">
-    <value>Зациклить</value>
-  </data>
-  <data name="Player_AspectFill" xml:space="preserve">
-    <value>ЗАПОЛНИТЬ</value>
-  </data>
-  <data name="Player_AspectFit" xml:space="preserve">
-    <value>ВПИСАТЬ</value>
-  </data>
   <data name="Player_NoTracks" xml:space="preserve">
     <value>Нет доступных дорожек</value>
-  </data>
-  <data name="Player_AudioHeader" xml:space="preserve">
-    <value>АУДИО</value>
-  </data>
-  <data name="Player_AudioTrack" xml:space="preserve">
-    <value>Аудио</value>
   </data>
   <data name="Player_SubtitlesHeader" xml:space="preserve">
     <value>СУБТИТРЫ</value>
   </data>
   <data name="Player_SubtitlesOff" xml:space="preserve">
     <value>Выкл.</value>
-  </data>
-  <data name="Player_SubtitleTrack" xml:space="preserve">
-    <value>Субтитры</value>
   </data>
   <data name="Player_NoTracksInFile" xml:space="preserve">
     <value>В этом файле их нет</value>
@@ -551,9 +515,6 @@
   <data name="Source_RemoveTitle" xml:space="preserve">
     <value>Удалить источник</value>
   </data>
-  <data name="Source_RemoveMessageSmb" xml:space="preserve">
-    <value>“{0}” удален из вашей библиотеки, а сохраненный логин для {1} забыт, если только другой источник все еще не использует этот сервер. На сервере ничего не удаляется.</value>
-  </data>
   <data name="Source_RemoveMessageLocal" xml:space="preserve">
     <value>“{0}” удален из вашей библиотеки. На вашем диске ничего не удаляется.</value>
   </data>
@@ -575,14 +536,8 @@
   <data name="Smb_CouldNotAccess" xml:space="preserve">
     <value>Не удалось получить доступ к сетевому пути: {0}</value>
   </data>
-  <data name="Smb_ErrorTitle" xml:space="preserve">
-    <value>Ошибка сетевого источника</value>
-  </data>
   <data name="Smb_ConnectFailed" xml:space="preserve">
     <value>Не удалось подключиться к {0}: {1}</value>
-  </data>
-  <data name="Smb_ConnectionFailedTitle" xml:space="preserve">
-    <value>Сбой подключения</value>
   </data>
   <data name="Smb_ConnectorFailed" xml:space="preserve">
     <value>Windows не удалось запустить коннектор сетевых ресурсов.</value>
@@ -597,7 +552,7 @@
     <value>Конфиденциальность в основе</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Индекс вашей библиотеки и прогресс просмотра остаются на этом устройстве. Единственные сетевые запросы Edendale — это обращения к TMDB за обложками и метаданными — больше ничего никуда не отправляется.</value>
+    <value>Индекс библиотеки и прогресс просмотра остаются на этом устройстве. Edendale обращается к TMDB за обложками и метаданными, а в остальном — только к тому, что выберете вы: к привязанным источникам, поиску субтитров, предложениям пропуска (если они включены) и трейлерам, которые вы запускаете. Больше ничего никуда не отправляется.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Выберите день, затем второй, чтобы закрыть диапазон.</value>
@@ -892,5 +847,794 @@
   </data>
   <data name="DetailAudienceRestrictedMessage.Text" xml:space="preserve">
     <value>Этот тайтл не подтверждён как PG или PG-13.</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="PlayerBackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Настройки плеера</value>
+  </data>
+  <data name="PlayerAdjustmentsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Настройки плеера</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Плейлист</value>
+  </data>
+  <data name="PlayerPlaylistButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Плейлист</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Аудиовыход</value>
+  </data>
+  <data name="AudioOutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Аудиовыход</value>
+  </data>
+  <data name="SubtitlesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Субтитры</value>
+  </data>
+  <data name="PlayerTimeline.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Шкала времени</value>
+  </data>
+  <data name="PlayerVolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Громкость</value>
+  </data>
+  <data name="PlayerApplyingText.Text" xml:space="preserve">
+    <value>Применение…</value>
+  </data>
+  <data name="Player_Play" xml:space="preserve">
+    <value>Воспроизвести</value>
+  </data>
+  <data name="Player_Pause" xml:space="preserve">
+    <value>Пауза</value>
+  </data>
+  <data name="Player_Mute" xml:space="preserve">
+    <value>Выключить звук</value>
+  </data>
+  <data name="Player_Unmute" xml:space="preserve">
+    <value>Включить звук</value>
+  </data>
+  <data name="Player_FullScreen" xml:space="preserve">
+    <value>Полноэкранный режим</value>
+  </data>
+  <data name="Player_ExitFullScreen" xml:space="preserve">
+    <value>Выйти из полноэкранного режима</value>
+  </data>
+  <data name="Player_SkipBackSeconds" xml:space="preserve">
+    <value>Назад на {0} с</value>
+  </data>
+  <data name="Player_SkipForwardSeconds" xml:space="preserve">
+    <value>Вперёд на {0} с</value>
+  </data>
+  <data name="Player_AudioOutputDefault" xml:space="preserve">
+    <value>По умолчанию в системе</value>
+  </data>
+  <data name="Hud_Volume" xml:space="preserve">
+    <value>Громкость {0} %</value>
+  </data>
+  <data name="Hud_Muted" xml:space="preserve">
+    <value>Звук выключен</value>
+  </data>
+  <data name="Hud_Unmuted" xml:space="preserve">
+    <value>Звук включён</value>
+  </data>
+  <data name="Hud_Brightness" xml:space="preserve">
+    <value>Яркость {0} %</value>
+  </data>
+  <data name="Hud_SkipBack" xml:space="preserve">
+    <value>Назад на {0} с</value>
+  </data>
+  <data name="Hud_SkipForward" xml:space="preserve">
+    <value>Вперёд на {0} с</value>
+  </data>
+  <data name="UpNextLabel.Text" xml:space="preserve">
+    <value>ДАЛЕЕ</value>
+  </data>
+  <data name="UpNext_Name" xml:space="preserve">
+    <value>Далее: {0}, {1}</value>
+  </data>
+  <data name="Segment_SkipIntro" xml:space="preserve">
+    <value>ПРОПУСТИТЬ ЗАСТАВКУ</value>
+  </data>
+  <data name="Segment_SkipRecap" xml:space="preserve">
+    <value>ПРОПУСТИТЬ КРАТКОЕ СОДЕРЖАНИЕ</value>
+  </data>
+  <data name="Segment_SkipCredits" xml:space="preserve">
+    <value>ПРОПУСТИТЬ ТИТРЫ</value>
+  </data>
+  <data name="Segment_SkipHelp" xml:space="preserve">
+    <value>Пропускает этот фрагмент и продолжает воспроизведение. Нажмите S.</value>
+  </data>
+  <data name="AdjustmentsHeader.Text" xml:space="preserve">
+    <value>НАСТРОЙКИ</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="AdjustmentsCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="AdjustmentsVideoTrackHeader.Text" xml:space="preserve">
+    <value>ВИДЕОДОРОЖКА</value>
+  </data>
+  <data name="AdjustmentsVideoTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Видеодорожка</value>
+  </data>
+  <data name="AdjustmentsAudioTrackHeader.Text" xml:space="preserve">
+    <value>АУДИОДОРОЖКА</value>
+  </data>
+  <data name="AdjustmentsAudioTrackBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Аудиодорожка</value>
+  </data>
+  <data name="AdjustmentsPictureHeader.Text" xml:space="preserve">
+    <value>ИЗОБРАЖЕНИЕ</value>
+  </data>
+  <data name="AdjustmentsPictureOriginalToggle.Header" xml:space="preserve">
+    <value>Показать оригинал</value>
+  </data>
+  <data name="AdjustmentsPictureResetButton.Content" xml:space="preserve">
+    <value>СБРОСИТЬ</value>
+  </data>
+  <data name="AdjustmentsEnhancementHeader.Text" xml:space="preserve">
+    <value>УЛУЧШЕНИЕ</value>
+  </data>
+  <data name="AdjustmentsPresetBox.Header" xml:space="preserve">
+    <value>Набор настроек</value>
+  </data>
+  <data name="AdjustmentsMotionSmoothingToggle.Header" xml:space="preserve">
+    <value>Сглаживание движения</value>
+  </data>
+  <data name="AdjustmentsEnhancementOriginalToggle.Header" xml:space="preserve">
+    <value>Показать оригинал</value>
+  </data>
+  <data name="AdjustmentsPlaybackHeader.Text" xml:space="preserve">
+    <value>ВОСПРОИЗВЕДЕНИЕ</value>
+  </data>
+  <data name="AdjustmentsSpeedLabel.Text" xml:space="preserve">
+    <value>Скорость</value>
+  </data>
+  <data name="AdjustmentsSpeedDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Медленнее</value>
+  </data>
+  <data name="AdjustmentsSpeedUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Быстрее</value>
+  </data>
+  <data name="Adjustments_SpeedValue" xml:space="preserve">
+    <value>Скорость {0}, сбросить до обычной</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsToggle.Header" xml:space="preserve">
+    <value>Предложения пропуска</value>
+  </data>
+  <data name="AdjustmentsSkipPromptsNote.Text" xml:space="preserve">
+    <value>Использует TheIntroDB. Пропуск всегда требует нажатия.</value>
+  </data>
+  <data name="AdjustmentsBoosterToggle.Header" xml:space="preserve">
+    <value>Усилитель звука</value>
+  </data>
+  <data name="AdjustmentsSurroundToggle.Header" xml:space="preserve">
+    <value>Объёмный звук в наушниках</value>
+  </data>
+  <data name="AdjustmentsLoopToggle.Header" xml:space="preserve">
+    <value>Повтор</value>
+  </data>
+  <data name="AdjustmentsFillToggle.Header" xml:space="preserve">
+    <value>Заполнить окно</value>
+  </data>
+  <data name="AdjustmentsSyncHeader.Text" xml:space="preserve">
+    <value>СИНХРОНИЗАЦИЯ</value>
+  </data>
+  <data name="Adjustments_AudioDelay" xml:space="preserve">
+    <value>Задержка звука</value>
+  </data>
+  <data name="Adjustments_SubtitleDelay" xml:space="preserve">
+    <value>Задержка субтитров</value>
+  </data>
+  <data name="Adjustments_DelayEarlier" xml:space="preserve">
+    <value>{0}: раньше</value>
+  </data>
+  <data name="Adjustments_DelayLater" xml:space="preserve">
+    <value>{0}: позже</value>
+  </data>
+  <data name="AdjustmentsChaptersHeader.Text" xml:space="preserve">
+    <value>ГЛАВЫ</value>
+  </data>
+  <data name="Adjustments_ChapterNumbered" xml:space="preserve">
+    <value>Глава {0}</value>
+  </data>
+  <data name="Track_Mono" xml:space="preserve">
+    <value>Моно</value>
+  </data>
+  <data name="Track_Stereo" xml:space="preserve">
+    <value>Стерео</value>
+  </data>
+  <data name="Track_Channels" xml:space="preserve">
+    <value>{0} кан.</value>
+  </data>
+  <data name="Track_Numbered" xml:space="preserve">
+    <value>Дорожка {0}</value>
+  </data>
+  <data name="Picture_Brightness" xml:space="preserve">
+    <value>Яркость</value>
+  </data>
+  <data name="Picture_Contrast" xml:space="preserve">
+    <value>Контраст</value>
+  </data>
+  <data name="Picture_Gamma" xml:space="preserve">
+    <value>Гамма</value>
+  </data>
+  <data name="Picture_Saturation" xml:space="preserve">
+    <value>Насыщенность</value>
+  </data>
+  <data name="Picture_Hue" xml:space="preserve">
+    <value>Оттенок</value>
+  </data>
+  <data name="Enhancement_PresetOff" xml:space="preserve">
+    <value>Выкл.</value>
+  </data>
+  <data name="Enhancement_PresetBalanced" xml:space="preserve">
+    <value>Сбалансированный</value>
+  </data>
+  <data name="Enhancement_PresetHighQuality" xml:space="preserve">
+    <value>Высокое качество</value>
+  </data>
+  <data name="Enhancement_SoftwareAdapter" xml:space="preserve">
+    <value>Для улучшения видео нужен аппаратный графический адаптер, поэтому изображение воспроизводится как есть.</value>
+  </data>
+  <data name="Enhancement_HybridLaptop" xml:space="preserve">
+    <value>Для суперразрешения Edendale должен работать на дискретной видеокарте. В разделе «Параметры Windows › Система › Дисплей › Графика» выберите для Edendale «Высокая производительность».</value>
+  </data>
+  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
+    <value>УПРАВЛЕНИЕ</value>
+  </data>
+  <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
+    <value>Перемотка назад</value>
+  </data>
+  <data name="SettingsSkipForwardLabel.Text" xml:space="preserve">
+    <value>Перемотка вперёд</value>
+  </data>
+  <data name="SettingsHoldLeftLabel.Text" xml:space="preserve">
+    <value>Удержание слева</value>
+  </data>
+  <data name="SettingsHoldRightLabel.Text" xml:space="preserve">
+    <value>Удержание справа</value>
+  </data>
+  <data name="SettingsHoldLeftBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Скорость при удержании слева</value>
+  </data>
+  <data name="SettingsHoldRightBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Скорость при удержании справа</value>
+  </data>
+  <data name="SettingsAppControlsDescription.Text" xml:space="preserve">
+    <value>Перемотка работает для клавиш со стрелками, кнопок перемотки, двойного касания и мультимедийных клавиш. Удерживайте левую или правую половину видео, чтобы смотреть со скоростью этой стороны, пока не отпустите.</value>
+  </data>
+  <data name="Settings_SkipBackSeconds" xml:space="preserve">
+    <value>Назад, {0} с</value>
+  </data>
+  <data name="Settings_SkipForwardSeconds" xml:space="preserve">
+    <value>Вперёд, {0} с</value>
+  </data>
+  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
+    <value>ПРЕДЛОЖЕНИЯ ПРОПУСКА</value>
+  </data>
+  <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
+    <value>Предлагать пропуск заставки, краткого содержания и титров</value>
+  </data>
+  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Предложения пропуска</value>
+  </data>
+  <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
+    <value>Если функция включена, TheIntroDB получает TMDB ID произведения, номера серий, длительность видео и ваш IP-адрес. Пропуск всегда выполняется только по нажатию кнопки.</value>
+  </data>
+  <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
+    <value>УЛУЧШЕНИЕ ЗВУКА</value>
+  </data>
+  <data name="SettingsAudioProfileLabel.Text" xml:space="preserve">
+    <value>Профиль</value>
+  </data>
+  <data name="SettingsAudioResetButton.Content" xml:space="preserve">
+    <value>СБРОСИТЬ ЭКВАЛАЙЗЕР</value>
+  </data>
+  <data name="SettingsAudioEnhancementDescription.Text" xml:space="preserve">
+    <value>Применяется ко всем файлам. Ночной режим выравнивает баланс речи и эффектов, но не сжимает динамику. Усилитель звука в плеере добавляет 10 дБ.</value>
+  </data>
+  <data name="Audio_Preamp" xml:space="preserve">
+    <value>Предусилитель</value>
+  </data>
+  <data name="Audio_BandHertz" xml:space="preserve">
+    <value>{0} Гц</value>
+  </data>
+  <data name="Audio_ShowEqualizer" xml:space="preserve">
+    <value>Показать эквалайзер</value>
+  </data>
+  <data name="Audio_HideEqualizer" xml:space="preserve">
+    <value>Скрыть эквалайзер</value>
+  </data>
+  <data name="Audio_ProfileFlat" xml:space="preserve">
+    <value>Ровный</value>
+  </data>
+  <data name="Audio_ProfileMovies" xml:space="preserve">
+    <value>Фильмы</value>
+  </data>
+  <data name="Audio_ProfileMusic" xml:space="preserve">
+    <value>Музыка</value>
+  </data>
+  <data name="Audio_ProfileDialogue" xml:space="preserve">
+    <value>Диалоги</value>
+  </data>
+  <data name="Audio_ProfileNightMode" xml:space="preserve">
+    <value>Ночной режим</value>
+  </data>
+  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
+    <value>СУБТИТРЫ</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
+    <value>Так будут выглядеть субтитры.</value>
+  </data>
+  <data name="SettingsSubtitlePreviewText.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Предпросмотр субтитров</value>
+  </data>
+  <data name="SettingsSubtitleFontLabel.Text" xml:space="preserve">
+    <value>Шрифт</value>
+  </data>
+  <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
+    <value>Цвет текста</value>
+  </data>
+  <data name="SettingsSubtitleBoxColorLabel.Text" xml:space="preserve">
+    <value>Цвет подложки</value>
+  </data>
+  <data name="SettingsSubtitleOpacityLabel.Text" xml:space="preserve">
+    <value>Непрозрачность подложки</value>
+  </data>
+  <data name="SettingsSubtitleOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Непрозрачность подложки</value>
+  </data>
+  <data name="SettingsSubtitleResetButton.Content" xml:space="preserve">
+    <value>СБРОСИТЬ СТИЛЬ СУБТИТРОВ</value>
+  </data>
+  <data name="SettingsSubtitleDescription.Text" xml:space="preserve">
+    <value>Применяется к текстовым субтитрам начиная со следующего открытого файла и учитывает размер текста Windows. Графические субтитры (Blu-ray и DVD) сохраняют свой вид.</value>
+  </data>
+  <data name="SubtitleFont_System" xml:space="preserve">
+    <value>Системный</value>
+  </data>
+  <data name="SubtitleFont_Serif" xml:space="preserve">
+    <value>С засечками</value>
+  </data>
+  <data name="SubtitleFont_Monospaced" xml:space="preserve">
+    <value>Моноширинный</value>
+  </data>
+  <data name="SubtitleColor_Parchment" xml:space="preserve">
+    <value>Пергамент</value>
+  </data>
+  <data name="SubtitleColor_White" xml:space="preserve">
+    <value>Белый</value>
+  </data>
+  <data name="SubtitleColor_Yellow" xml:space="preserve">
+    <value>Жёлтый</value>
+  </data>
+  <data name="SubtitleColor_Cyan" xml:space="preserve">
+    <value>Голубой</value>
+  </data>
+  <data name="SubtitleColor_Green" xml:space="preserve">
+    <value>Зелёный</value>
+  </data>
+  <data name="SubtitleColor_Black" xml:space="preserve">
+    <value>Чёрный</value>
+  </data>
+  <data name="SubtitleColor_Ink" xml:space="preserve">
+    <value>Чернила</value>
+  </data>
+  <data name="SubtitleColor_Charcoal" xml:space="preserve">
+    <value>Графитовый</value>
+  </data>
+  <data name="SubtitleColor_Navy" xml:space="preserve">
+    <value>Тёмно-синий</value>
+  </data>
+  <data name="PlayerSurface.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Видеоплеер</value>
+  </data>
+  <data name="Library_UpNext" xml:space="preserve">
+    <value>Далее · {0}</value>
+  </data>
+  <data name="Library_PercentWatched" xml:space="preserve">
+    <value>Просмотрено {0} %</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="PlaylistCloseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="Playlist_NowPlaying" xml:space="preserve">
+    <value>Сейчас воспроизводится</value>
+  </data>
+  <data name="Playlist_Runtime" xml:space="preserve">
+    <value>{0} мин</value>
+  </data>
+  <data name="SourceKind_Local" xml:space="preserve">
+    <value>Локальная папка</value>
+  </data>
+  <data name="SourceKind_S3" xml:space="preserve">
+    <value>S3-совместимое хранилище</value>
+  </data>
+  <data name="Source_Unavailable" xml:space="preserve">
+    <value>Недоступно</value>
+  </data>
+  <data name="Account_Guest" xml:space="preserve">
+    <value>Гость</value>
+  </data>
+  <data name="Connector_InvalidAddress" xml:space="preserve">
+    <value>Похоже, адрес сервера указан неверно. Введите имя хоста, например nas.local, или IP-адрес.</value>
+  </data>
+  <data name="Connector_Unreachable" xml:space="preserve">
+    <value>Не удаётся подключиться к {0}. Убедитесь, что сервер включён и находится в той же сети, а имя и данные для входа указаны верно.</value>
+  </data>
+  <data name="Connector_ListingFailed" xml:space="preserve">
+    <value>Не удалось прочитать папку {0}. Возможно, нужны другие данные для входа или права доступа.</value>
+  </data>
+  <data name="Connector_SignInRequired" xml:space="preserve">
+    <value>Войдите в {0} ещё раз, чтобы открыть этот источник.</value>
+  </data>
+  <data name="Connector_NotConfigured" xml:space="preserve">
+    <value>{0} не настроен в этой сборке Edendale.</value>
+  </data>
+  <data name="Connector_AccessDenied" xml:space="preserve">
+    <value>{0} запретил доступ к этому объекту.</value>
+  </data>
+  <data name="Connector_NotFound" xml:space="preserve">
+    <value>Этого файла больше нет в {0}.</value>
+  </data>
+  <data name="Connector_RateLimited" xml:space="preserve">
+    <value>{0} сейчас ограничивает число запросов. Повторите попытку через минуту.</value>
+  </data>
+  <data name="Connector_ServerError" xml:space="preserve">
+    <value>{0} вернул ошибку (HTTP {1}).</value>
+  </data>
+  <data name="Connector_InsecureConnection" xml:space="preserve">
+    <value>Для серверов за пределами локальной сети используйте HTTPS. Обычный HTTP работает только с локальными адресами, например nas.local или 192.168.1.10.</value>
+  </data>
+  <data name="Connector_CertificateInvalid" xml:space="preserve">
+    <value>{0} не предоставил действительный HTTPS-сертификат. Edendale подключается только к серверам с доверенным сертификатом.</value>
+  </data>
+  <data name="Connector_RangeUnsupported" xml:space="preserve">
+    <value>{0} не поддерживает перемотку в этом файле.</value>
+  </data>
+  <data name="Connector_HostKeyMismatch" xml:space="preserve">
+    <value>SSH-ключ хоста {0} изменился. Edendale не будет подключаться, пока вы не одобрите новый ключ, привязав сервер заново.</value>
+  </data>
+  <data name="Connector_HostKeyUnverified" xml:space="preserve">
+    <value>SSH-ключ хоста {0} ещё не одобрен.</value>
+  </data>
+  <data name="Connector_AuthenticationFailed" xml:space="preserve">
+    <value>{0} не принял имя пользователя и пароль.</value>
+  </data>
+  <data name="Connector_SecureConnectionFailed" xml:space="preserve">
+    <value>Не удалось установить защищённое соединение с {0}. Его SSH-сервер предлагает только устаревшее шифрование, которое Edendale не поддерживает.</value>
+  </data>
+  <data name="Connector_PasswordLoginUnavailable" xml:space="preserve">
+    <value>{0} не принимает вход по паролю. Разрешите аутентификацию по паролю в настройках SSH, чтобы привязать его.</value>
+  </data>
+  <data name="Connector_SftpUnavailable" xml:space="preserve">
+    <value>{0} не предоставляет SFTP для этой учётной записи.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegion" xml:space="preserve">
+    <value>Этот бакет находится в регионе {0}. Измените регион и подключитесь снова.</value>
+  </data>
+  <data name="Connector_BucketInAnotherRegionUnknown" xml:space="preserve">
+    <value>Этот бакет находится в другом регионе. Проверьте регион и подключитесь снова.</value>
+  </data>
+  <data name="Account_Forget" xml:space="preserve">
+    <value>ЗАБЫТЬ</value>
+  </data>
+  <data name="Account_SignOut" xml:space="preserve">
+    <value>ВЫЙТИ</value>
+  </data>
+  <data name="Account_ForgetTitle" xml:space="preserve">
+    <value>Забыть данные для входа</value>
+  </data>
+  <data name="Account_SignOutTitle" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="Account_ForgetMessage" xml:space="preserve">
+    <value>Edendale забудет данные для входа в {0}. На сервере и в учётной записи ничего не удаляется.</value>
+  </data>
+  <data name="Account_ForgetMessageInUse" xml:space="preserve">
+    <value>Edendale забудет данные для входа в {0}. Источники, которые их используют ({1}), попросят войти снова. На сервере и в учётной записи ничего не удаляется.</value>
+  </data>
+  <data name="Plural_SourceOne" xml:space="preserve">
+    <value>{0} источник</value>
+  </data>
+  <data name="Plural_SourceOther" xml:space="preserve">
+    <value>источников: {0}</value>
+  </data>
+  <data name="LinkSource_Address" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="LinkSource_Username" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="LinkSource_Password" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="LinkSource_Connect" xml:space="preserve">
+    <value>Подключиться</value>
+  </data>
+  <data name="LinkSource_ConnectAsGuest" xml:space="preserve">
+    <value>Подключиться как гость</value>
+  </data>
+  <data name="Shelf_ScrollPosition" xml:space="preserve">
+    <value>Позиция прокрутки: {0}</value>
+  </data>
+  <data name="Source_RemoveMessageRemote" xml:space="preserve">
+    <value>«{0}» удалён из вашей библиотеки. Сохранённые данные для входа остаются в разделе «Настройки» → «Учётные записи». На сервере ничего не удаляется.</value>
+  </data>
+  <data name="Source_StateOffline" xml:space="preserve">
+    <value>Нет связи: {0}</value>
+  </data>
+  <data name="Source_StateNeedsSignIn" xml:space="preserve">
+    <value>Нужен вход: {0}</value>
+  </data>
+  <data name="Source_SignIn" xml:space="preserve">
+    <value>ВОЙТИ</value>
+  </data>
+  <data name="SourceSignInLabel.Text" xml:space="preserve">
+    <value>ВОЙТИ</value>
+  </data>
+  <data name="Detail_PlayFrom" xml:space="preserve">
+    <value>Воспроизвести из</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Воспроизвести из</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Воспроизвести из</value>
+  </data>
+  <data name="DownloadedContinueNavItem.Content" xml:space="preserve">
+    <value>Продолжить просмотр</value>
+  </data>
+  <data name="DownloadedMoviesNavItem.Content" xml:space="preserve">
+    <value>Фильмы</value>
+  </data>
+  <data name="DownloadedShowsNavItem.Content" xml:space="preserve">
+    <value>Сериалы</value>
+  </data>
+  <data name="WatchlistMoviesNavItem.Content" xml:space="preserve">
+    <value>Фильмы</value>
+  </data>
+  <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
+    <value>Сериалы</value>
+  </data>
+  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
+    <value>УЧЁТНЫЕ ЗАПИСИ</value>
+  </data>
+  <data name="SettingsNoAccountsText.Text" xml:space="preserve">
+    <value>Нет сохранённых данных для входа</value>
+  </data>
+  <data name="SettingsAccountsNote.Text" xml:space="preserve">
+    <value>Данные для входа шифруются для вашей учётной записи Windows и остаются на этом ПК. При удалении источника они сохраняются.</value>
+  </data>
+  <data name="Connector_NfsMountFailed" xml:space="preserve">
+    <value>Не удалось открыть NFS-экспорт на {0}. Windows подключается с непривилегированного порта, поэтому для экспорта нужен параметр «insecure».</value>
+  </data>
+  <data name="FolderPicker_Title" xml:space="preserve">
+    <value>Выбор папки</value>
+  </data>
+  <data name="FolderPicker_Add" xml:space="preserve">
+    <value>Добавить эту папку</value>
+  </data>
+  <data name="FolderPicker_Up" xml:space="preserve">
+    <value>ВВЕРХ</value>
+  </data>
+  <data name="FolderPicker_VideosOne" xml:space="preserve">
+    <value>Видео в этой папке: {0}</value>
+  </data>
+  <data name="FolderPicker_VideosOther" xml:space="preserve">
+    <value>Видео в этой папке: {0}</value>
+  </data>
+  <data name="HostKey_FirstUseTitle" xml:space="preserve">
+    <value>Доверять этому серверу?</value>
+  </data>
+  <data name="HostKey_FirstUseMessage" xml:space="preserve">
+    <value>{0} предъявил этот ключ хоста ({1}). Edendale ещё не подключался к этому серверу.</value>
+  </data>
+  <data name="HostKey_ChangedTitle" xml:space="preserve">
+    <value>Ключ хоста изменился</value>
+  </data>
+  <data name="HostKey_ChangedMessage" xml:space="preserve">
+    <value>Ключ хоста, предъявленный {0} ({1}), не совпадает с ключом, которому Edendale доверял раньше. Так бывает после переустановки сервера, но это может означать и перехват соединения. Доверяйте новому ключу, только если ожидали это изменение.</value>
+  </data>
+  <data name="HostKey_CompareHint" xml:space="preserve">
+    <value>Перед этим сравните отпечаток с отпечатком на самом сервере, например выполнив ssh-keygen -lf для файла ключа хоста.</value>
+  </data>
+  <data name="HostKey_Trust" xml:space="preserve">
+    <value>Доверять</value>
+  </data>
+  <data name="HostKey_TrustNew" xml:space="preserve">
+    <value>Доверять новому ключу</value>
+  </data>
+  <data name="LinkSource_Kind" xml:space="preserve">
+    <value>Тип источника</value>
+  </data>
+  <data name="LinkSource_KindSmb" xml:space="preserve">
+    <value>SMB (общий доступ к файлам Windows)</value>
+  </data>
+  <data name="LinkSource_Endpoint" xml:space="preserve">
+    <value>Конечная точка</value>
+  </data>
+  <data name="LinkSource_Region" xml:space="preserve">
+    <value>Регион</value>
+  </data>
+  <data name="LinkSource_Bucket" xml:space="preserve">
+    <value>Бакет</value>
+  </data>
+  <data name="LinkSource_AccessKey" xml:space="preserve">
+    <value>Идентификатор ключа доступа</value>
+  </data>
+  <data name="LinkSource_SecretKey" xml:space="preserve">
+    <value>Секретный ключ доступа</value>
+  </data>
+  <data name="LinkSource_Account" xml:space="preserve">
+    <value>Учётная запись</value>
+  </data>
+  <data name="LinkSource_AnotherAccount" xml:space="preserve">
+    <value>Другая учётная запись…</value>
+  </data>
+  <data name="LinkSource_SftpNote" xml:space="preserve">
+    <value>Введите сервер, порт (необязательно) и начальную папку. Edendale входит по паролю и показывает ключ хоста сервера, прежде чем доверять ему.</value>
+  </data>
+  <data name="LinkSource_WebDavNote" xml:space="preserve">
+    <value>Введите адрес WebDAV, например URL файлов Nextcloud или rclone serve webdav, через который можно открыть и Google Диск. Обычный HTTP работает только в локальной сети.</value>
+  </data>
+  <data name="LinkSource_S3Note" xml:space="preserve">
+    <value>Работает с AWS, Backblaze B2, Cloudflare R2, Wasabi и MinIO. Достаточно ключа только для чтения; он шифруется на этом ПК.</value>
+  </data>
+  <data name="LinkSource_NfsNote" xml:space="preserve">
+    <value>Введите сервер и экспорт, например nas.local/export/video. Экспорт должен разрешать подключения с непривилегированных портов (параметр «insecure»).</value>
+  </data>
+  <data name="LinkSource_OneDriveNote" xml:space="preserve">
+    <value>Откроется браузер для входа в Microsoft. Edendale запрашивает только чтение файлов и держит эту учётную запись отдельно от папки OneDrive, в которую копирует историю просмотра.</value>
+  </data>
+  <data name="LinkSource_DropboxNote" xml:space="preserve">
+    <value>Откроется браузер для входа в Dropbox. Edendale запрашивает только чтение файлов и имени учётной записи.</value>
+  </data>
+  <data name="LinkSource_SignIn" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="LinkSource_SignInAgainTitle" xml:space="preserve">
+    <value>Повторный вход</value>
+  </data>
+  <data name="LinkSource_SignedInHeading" xml:space="preserve">
+    <value>Вход выполнен</value>
+  </data>
+  <data name="LinkSource_SignedInBody" xml:space="preserve">
+    <value>Можно закрыть эту вкладку и вернуться в Edendale.</value>
+  </data>
+  <data name="LinkSource_UsernameRequired" xml:space="preserve">
+    <value>Введите имя пользователя для этого сервера.</value>
+  </data>
+  <data name="LinkSource_Waiting" xml:space="preserve">
+    <value>Завершите вход в {0} в браузере.</value>
+  </data>
+  <data name="LinkSource_Failed" xml:space="preserve">
+    <value>Не удалось привязать источник: {0}</value>
+  </data>
+  <data name="OAuth_Cancelled" xml:space="preserve">
+    <value>Вход отменён.</value>
+  </data>
+  <data name="OAuth_Unverified" xml:space="preserve">
+    <value>Не удалось проверить ответ на вход. Повторите попытку.</value>
+  </data>
+  <data name="OAuth_Denied" xml:space="preserve">
+    <value>Доступ к {0} не разрешён.</value>
+  </data>
+  <data name="OAuth_InvalidGrant" xml:space="preserve">
+    <value>Срок входа в {0} истёк, или доступ отозван. Войдите снова.</value>
+  </data>
+  <data name="OAuth_Server" xml:space="preserve">
+    <value>{0} не удалось завершить вход ({1}).</value>
+  </data>
+  <data name="OAuth_ServerDetail" xml:space="preserve">
+    <value>{0} не удалось завершить вход ({1}): {2}</value>
+  </data>
+  <data name="OAuth_Malformed" xml:space="preserve">
+    <value>{0} прислал ответ, который Edendale не смог прочитать.</value>
+  </data>
+  <data name="Remote_Unreachable" xml:space="preserve">
+    <value>Не удаётся подключиться к {0}. Проверьте соединение и повторите попытку.</value>
+  </data>
+  <data name="Remote_ReadFailed" xml:space="preserve">
+    <value>Не удалось прочитать этот файл из {0}.</value>
+  </data>
+  <data name="Remote_CouldNotConnect" xml:space="preserve">
+    <value>Не удалось подключиться к {0}.</value>
+  </data>
+  <data name="Remote_ConnectionLost" xml:space="preserve">
+    <value>Соединение с {0} потеряно: {1}</value>
+  </data>
+  <data name="Remote_ConnectionLostPlain" xml:space="preserve">
+    <value>Соединение с {0} потеряно.</value>
+  </data>
+  <data name="Taskbar_Previous" xml:space="preserve">
+    <value>Предыдущая серия</value>
+  </data>
+  <data name="Taskbar_Play" xml:space="preserve">
+    <value>Воспроизвести</value>
+  </data>
+  <data name="Taskbar_Pause" xml:space="preserve">
+    <value>Пауза</value>
+  </data>
+  <data name="Taskbar_Next" xml:space="preserve">
+    <value>Следующая серия</value>
+  </data>
+  <data name="SettingsSavedSubtitlesLabel.Text" xml:space="preserve">
+    <value>Сохранённые субтитры</value>
+  </data>
+  <data name="SettingsSavedSubtitlesRemoveButton.Content" xml:space="preserve">
+    <value>УДАЛИТЬ ВСЕ</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveLabel.Text" xml:space="preserve">
+    <value>Удалять через месяц без использования</value>
+  </data>
+  <data name="SettingsSavedSubtitlesAutoRemoveToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Удалять сохранённые субтитры через месяц без использования</value>
+  </data>
+  <data name="SettingsSavedSubtitlesDescription.Text" xml:space="preserve">
+    <value>Скачанные субтитры остаются на этом устройстве и снова появляются, когда вы опять воспроизводите тот же фильм или серию. Пока переключатель включён, субтитры, которые вы не включали месяц, удаляются.</value>
+  </data>
+  <data name="SavedSubtitles_None" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOne" xml:space="preserve">
+    <value>Субтитры: {0} · {1}</value>
+  </data>
+  <data name="SavedSubtitles_SummaryOther" xml:space="preserve">
+    <value>Субтитры: {0} · {1}</value>
+  </data>
+  <data name="SavedSubtitles_RemoveTitle" xml:space="preserve">
+    <value>Удалить сохранённые субтитры</value>
+  </data>
+  <data name="SavedSubtitles_RemoveMessage" xml:space="preserve">
+    <value>Все субтитры, сохранённые на этом устройстве, будут удалены. Их можно снова скачать через поиск в сети.</value>
+  </data>
+  <data name="Subtitles_Saved" xml:space="preserve">
+    <value>Сохранено</value>
+  </data>
+  <data name="Size_Kilobytes" xml:space="preserve">
+    <value>{0} КБ</value>
+  </data>
+  <data name="Size_Megabytes" xml:space="preserve">
+    <value>{0} МБ</value>
+  </data>
+  <data name="AdjustmentsFrameGenerationToggle.Header" xml:space="preserve">
+    <value>Генерация кадров</value>
+  </data>
+  <data name="FrameGeneration_Unavailable" xml:space="preserve">
+    <value>Не удалось запустить генерацию кадров для этого файла на этой видеокарте, поэтому он воспроизводится обычным способом.</value>
+  </data>
+  <data name="FrameGeneration_WaitingForRate" xml:space="preserve">
+    <value>Включится, как только станет известна частота кадров видео.</value>
+  </data>
+  <data name="FrameGeneration_NotThisFile" xml:space="preserve">
+    <value>Работает с видео до 30 кадров/с и разрешением до 4K.</value>
+  </data>
+  <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
+    <value>Откроется браузер для входа в Google. Edendale запрашивает у Google доступ только для чтения к вашему Диску. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет.</value>
+  </data>
+  <data name="GoogleDrive_MyDrive" xml:space="preserve">
+    <value>Мой диск</value>
+  </data>
+  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
+    <value>Доступные мне</value>
+  </data>
+  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
+    <value>Общие диски</value>
+  </data>
+  <data name="Connector_AbusiveFile" xml:space="preserve">
+    <value>Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</value>
+  </data>
+  <data name="OAuth_DriveAccessMissing" xml:space="preserve">
+    <value>Edendale нужно разрешение на просмотр ваших файлов Google Диска. Войдите снова и оставьте доступ к Диску выбранным.</value>
   </data>
 </root>

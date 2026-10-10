@@ -6,11 +6,29 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    x:Uid="PlayerSurface"
+    IsTabStop="True"
+    UseSystemFocusVisuals="False"
+    AutomationProperties.Name="Video player"
     PointerMoved="UserControl_PointerMoved"
-    PointerExited="UserControl_PointerExited"
-    Tapped="UserControl_Tapped">
+    PointerExited="UserControl_PointerExited">
 
-    <Grid x:Name="RootGrid" Background="Transparent">
+    <!--
+        The pointer surface is the transparent root: a short click shows or
+        hides the controls, a 0.4 s press on either half holds that side's
+        speed, a mouse double click toggles full screen, and a touch double
+        tap skips (left and right thirds) or plays and pauses (center).
+        Buttons and sliders handle their own presses, so those never reach it.
+    -->
+    <Grid
+        x:Name="RootGrid"
+        Background="Transparent"
+        PointerPressed="Surface_PointerPressed"
+        PointerReleased="Surface_PointerReleased"
+        PointerCanceled="Surface_PointerCanceled"
+        PointerCaptureLost="Surface_PointerCanceled"
+        DoubleTapped="Surface_DoubleTapped"
+        PointerWheelChanged="Surface_PointerWheelChanged">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ControlVisibilityStates">
                 <VisualState x:Name="ControlsVisible">
@@ -38,7 +56,7 @@
                     </LinearGradientBrush>
                 </Grid.Background>
                 <StackPanel Orientation="Horizontal" Spacing="16">
-                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="BackButton_Click" Padding="10">
+                    <Button x:Uid="PlayerBackButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="BackButton_Click" Padding="10" ToolTipService.ToolTip="Back" AutomationProperties.Name="Back">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/chevron-left.svg" Width="18" Height="18" />
                     </Button>
                     <StackPanel Spacing="2" VerticalAlignment="Center">
@@ -46,9 +64,14 @@
                         <TextBlock x:Name="SubtitleText" Style="{StaticResource BodySMTextStyle}" Visibility="Collapsed" />
                     </StackPanel>
                 </StackPanel>
-                <Button Style="{StaticResource ArchiveGhostButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Click="SidebarButton_Click" Padding="10">
-                    <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sidebar-right.svg" Width="18" Height="18" />
-                </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Spacing="8">
+                    <Button x:Uid="PlayerAdjustmentsButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="AdjustmentsButton_Click" Padding="10" ToolTipService.ToolTip="Player Adjustments" AutomationProperties.Name="Player Adjustments">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sliders.svg" Width="18" Height="18" />
+                    </Button>
+                    <Button x:Uid="PlayerPlaylistButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SidebarButton_Click" Padding="10" ToolTipService.ToolTip="Playlist" AutomationProperties.Name="Playlist">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sidebar-right.svg" Width="18" Height="18" />
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- Center Play/Pause -->
@@ -76,37 +99,132 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="CurrentTimeText" Grid.Column="0" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="0,0,16,0" MinWidth="45" TextAlignment="Right" />
-                    <Slider x:Name="TimelineSlider" Grid.Column="1" VerticalAlignment="Center" ValueChanged="TimelineSlider_ValueChanged"/>
+                    <Grid Grid.Column="1" VerticalAlignment="Center">
+                        <Slider x:Uid="PlayerTimeline" x:Name="TimelineSlider" VerticalAlignment="Center" ValueChanged="TimelineSlider_ValueChanged" AutomationProperties.Name="Timeline"/>
+                        <!-- X.7: chapter marks over the track. They ignore input, so the slider keeps every press. -->
+                        <Canvas x:Name="ChapterMarksCanvas" IsHitTestVisible="False" SizeChanged="ChapterMarksCanvas_SizeChanged" />
+                    </Grid>
                     <TextBlock x:Name="TotalTimeText" Grid.Column="2" Text="0:00" Style="{StaticResource BodySMTextStyle}" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="45" />
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="8">
-                    <!-- Controls -->
-                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipBack_Click" x:Uid="SkipBackButton" ToolTipService.ToolTip="Skip Back 10s">
-                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-left-10.svg" Width="20" Height="20" />
+                    <!-- The skip glyphs, tooltips, and names follow Settings → App Controls. -->
+                    <Button x:Name="SkipBackButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipBack_Click">
+                        <controls:SvgIcon x:Name="SkipBackIcon" UriSource="ms-appx:///Assets/Icons/arrow-rotate-left-10.svg" Width="20" Height="20" />
                     </Button>
-                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="PlayPauseButton_Click">
+                    <Button x:Name="BottomPlayPauseButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="PlayPauseButton_Click">
                         <controls:SvgIcon x:Name="BottomPlayPauseIcon" UriSource="ms-appx:///Assets/Icons/pause.svg" Width="20" Height="20" />
                     </Button>
-                    <Button Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipForward_Click" x:Uid="SkipForwardButton" ToolTipService.ToolTip="Skip Forward 10s">
-                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/arrow-rotate-right-10.svg" Width="20" Height="20" />
+                    <Button x:Name="SkipForwardButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipForward_Click">
+                        <controls:SvgIcon x:Name="SkipForwardIcon" UriSource="ms-appx:///Assets/Icons/arrow-rotate-right-10.svg" Width="20" Height="20" />
                     </Button>
+                    <Button x:Name="MuteButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="MuteButton_Click" Margin="8,0,0,0">
+                        <controls:SvgIcon x:Name="MuteIcon" UriSource="ms-appx:///Assets/Icons/volume-high.svg" Width="20" Height="20" />
+                    </Button>
+                    <Slider
+                        x:Uid="PlayerVolumeSlider"
+                        x:Name="VolumeSlider"
+                        Width="110"
+                        Minimum="0"
+                        Maximum="100"
+                        StepFrequency="5"
+                        SmallChange="5"
+                        LargeChange="10"
+                        Value="100"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="Volume"
+                        ValueChanged="VolumeSlider_ValueChanged" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-                    <Button x:Name="SpeedButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="1.0x" Click="SpeedButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14"/>
-                    <!-- Text label rather than a new glyph: FIT/FILL reads at a
-                         glance and needs no icon import. -->
-                    <Button x:Uid="AspectButton" x:Name="AspectButton" Style="{StaticResource ArchiveGhostButtonStyle}" Content="FIT" Click="AspectButton_Click" FontFamily="{StaticResource TextFontFamily}" FontWeight="Bold" FontSize="14" ToolTipService.ToolTip="Fit or fill the window"/>
-                    <Button x:Name="SubtitlesButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SubtitlesButton_Click" x:Uid="SubtitlesButton" ToolTipService.ToolTip="Subtitles &amp; Audio">
+                    <Button x:Name="SubtitlesButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SubtitlesButton_Click" x:Uid="SubtitlesButton" ToolTipService.ToolTip="Subtitles" AutomationProperties.Name="Subtitles">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/subtitles.svg" Width="20" Height="20" />
                     </Button>
-                    <Button x:Name="PictureInPictureButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="PictureInPictureButton_Click" x:Uid="PictureInPictureButton" ToolTipService.ToolTip="Picture in Picture">
+                    <Button x:Name="AudioOutputButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="AudioOutputButton_Click" x:Uid="AudioOutputButton" ToolTipService.ToolTip="Audio Output" AutomationProperties.Name="Audio Output">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/speaker.svg" Width="20" Height="20" />
+                    </Button>
+                    <Button x:Name="PictureInPictureButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="PictureInPictureButton_Click">
                         <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/picture-in-picture.svg" Width="20" Height="20" />
+                    </Button>
+                    <Button x:Name="FullScreenButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="FullScreenButton_Click">
+                        <controls:SvgIcon x:Name="FullScreenIcon" UriSource="ms-appx:///Assets/Icons/expand.svg" Width="20" Height="20" />
                     </Button>
                 </StackPanel>
             </Grid>
         </Grid>
+
+        <!-- F.5: a pill near the top for volume, mute, brightness, speed while
+             holding, and skips. It never takes input; screen readers hear the
+             same text through the live region. -->
+        <Border
+            x:Name="HudPill"
+            IsHitTestVisible="False"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Margin="0,72,0,0"
+            Padding="18,8"
+            CornerRadius="18"
+            Opacity="0"
+            Background="{StaticResource EdendaleSurfaceLowBrush}"
+            BorderBrush="{StaticResource EdendaleHairlineBorderBrush}"
+            BorderThickness="1">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <controls:SvgIcon x:Name="HudIcon" Width="16" Height="16" VerticalAlignment="Center" Foreground="{StaticResource EdendaleGoldBrush}" />
+                <TextBlock
+                    x:Name="HudText"
+                    Style="{StaticResource BodySMTextStyle}"
+                    Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                    VerticalAlignment="Center"
+                    AutomationProperties.LiveSetting="Assertive" />
+            </StackPanel>
+        </Border>
+
+        <!-- 3.4: Up Next, during the last 30 s of an episode with a stored
+             successor. A sibling of the controls, so it stays while they hide. -->
+        <Button
+            x:Name="UpNextCard"
+            Visibility="Collapsed"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Margin="0,96,24,0"
+            Style="{StaticResource CardButtonStyle}"
+            Click="UpNextCard_Click">
+            <Border
+                Width="300"
+                CornerRadius="8"
+                Background="{StaticResource EdendaleSurfaceBrush}"
+                BorderBrush="{StaticResource EdendaleHairlineBorderBrush}"
+                BorderThickness="1">
+                <StackPanel>
+                    <Grid Height="169" Background="{StaticResource EdendaleSurfaceHighBrush}" CornerRadius="8,8,0,0">
+                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/tv.svg" Width="40" Height="40" Foreground="{StaticResource EdendaleOutlineBrush}" />
+                        <Image x:Name="UpNextImage" Stretch="UniformToFill" />
+                    </Grid>
+                    <StackPanel Padding="14,10,14,12" Spacing="2">
+                        <TextBlock x:Uid="UpNextLabel" Text="UP NEXT" Style="{StaticResource LabelCapsTextStyle}" Foreground="{StaticResource EdendaleGoldBrush}" />
+                        <TextBlock x:Name="UpNextCode" Style="{StaticResource BodySMTextStyle}" />
+                        <TextBlock
+                            x:Name="UpNextTitle"
+                            Style="{StaticResource BodyLGTextStyle}"
+                            Foreground="{StaticResource EdendaleTextPrimaryBrush}"
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Button>
+
+        <!-- 3.5: Skip Intro / Recap / Credits, bottom trailing, even while the
+             controls are hidden. Never skips on its own; S presses it. -->
+        <Button
+            x:Name="SkipSegmentButton"
+            Visibility="Collapsed"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,24,148"
+            Padding="20,12"
+            Style="{StaticResource ArchivePrimaryButtonStyle}"
+            Click="SkipSegmentButton_Click" />
 
         <!-- Online subtitle browser. A sibling of OverlayContainer rather than
              a child, so the auto-hide that fades the controls never takes the
