@@ -96,19 +96,166 @@ public sealed class OAuthTests
         CollectionAssert.AreEqual(new[] { "files.metadata.read", "files.content.read", "account_info.read" }, dropbox.Scopes.ToArray());
 
         var google = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "123-abc.apps.googleusercontent.com", "GOCSPX-secret")!;
-        CollectionAssert.AreEqual(new[] { "openid", "email", "https://www.googleapis.com/auth/drive.readonly" }, google.Scopes.ToArray());
         Assert.IsNull(google.LoopbackPort);
         Assert.IsFalse(google.SendsScopeToTokenEndpoint);
         var googleUri = new Uri(new OAuthClient(google).AuthorizationUrl("http://127.0.0.1:50123/", "s", "c"));
         var googleQuery = OAuthClient.ParseQuery(googleUri.Query);
         Assert.AreEqual("accounts.google.com", googleUri.Host);
         Assert.AreEqual("/o/oauth2/v2/auth", googleUri.AbsolutePath);
-        Assert.AreEqual("offline", googleQuery["access_type"]);
-        Assert.AreEqual("select_account consent", googleQuery["prompt"]);
         Assert.AreEqual("S256", googleQuery["code_challenge_method"]);
         // The Desktop client's secret goes to the token endpoint only (D9).
         Assert.IsFalse(googleQuery.ContainsKey("client_secret"));
         Assert.AreEqual("https://oauth2.googleapis.com/token", google.TokenEndpoint);
+    }
+
+    // ------------------------------------------------------------------
+    // Google Drive: drive.file and Google's picker (ENHANCEMENT.md 3.20)
+    // ------------------------------------------------------------------
+
+    private static Dictionary<string, string> GoogleQuery(IReadOnlyDictionary<string, string>? parameters = null)
+    {
+        var google = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "123-abc.apps.googleusercontent.com")!;
+        var url = new OAuthClient(google).AuthorizationUrl("http://127.0.0.1:50123/", "s", "c", parameters);
+        return OAuthClient.ParseQuery(new Uri(url).Query);
+    }
+
+    [TestMethod]
+    public void GoogleAsksOnlyForDriveFileAndOpensThePicker()
+    {
+        var google = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "id")!;
+        CollectionAssert.AreEqual(new[] { "https://www.googleapis.com/auth/drive.file" }, google.Scopes.ToArray());
+
+        var query = GoogleQuery();
+        // The picker flow allows no scope next to drive.file: no openid or email.
+        Assert.AreEqual("https://www.googleapis.com/auth/drive.file", query["scope"]);
+        Assert.AreEqual("offline", query["access_type"]);
+        Assert.AreEqual("consent select_account", query["prompt"]);
+        Assert.AreEqual("true", query["trigger_onepick"]);
+        Assert.AreEqual("true", query["allow_multiple"]);
+        // An explicit list: video/* empties the picker (3.20 S6).
+        Assert.AreEqual(
+            "video/mp4,video/x-matroska,video/quicktime,video/x-msvideo,video/webm,video/mp2t,video/mpeg,video/x-m4v,video/x-ms-wmv,video/3gpp",
+            query["mimetypes"]);
+        Assert.IsFalse(query["mimetypes"].Contains('*'));
+        // Files only: a picked folder never grants its contents (3.20 S5).
+        Assert.IsFalse(query.ContainsKey("allow_folder_selection"));
+        Assert.IsFalse(query.ContainsKey("login_hint"));
+    }
+
+    [TestMethod]
+    public void ChooseMoreVideosSkipsTheAccountChooserWithALoginHint()
+    {
+        var query = GoogleQuery(CloudProviders.GoogleChooseMoreParameters("me@example.com"));
+        Assert.AreEqual("consent", query["prompt"]);
+        Assert.AreEqual("me@example.com", query["login_hint"]);
+        // Everything else still opens the same picker.
+        Assert.AreEqual("true", query["trigger_onepick"]);
+        Assert.AreEqual("true", query["allow_multiple"]);
+        Assert.AreEqual("offline", query["access_type"]);
+        Assert.AreEqual("https://www.googleapis.com/auth/drive.file", query["scope"]);
+        Assert.IsFalse(query.ContainsKey("allow_folder_selection"));
+
+        // An account without an email gets no hint.
+        Assert.IsFalse(GoogleQuery(CloudProviders.GoogleChooseMoreParameters(null)).ContainsKey("login_hint"));
+        Assert.IsFalse(GoogleQuery(CloudProviders.GoogleChooseMoreParameters("")).ContainsKey("login_hint"));
+    }
+
+    [TestMethod]
+    public void ReadsTheFilesPickedInGooglesPicker()
+    {
+        var picked = OAuthClient.AuthorizationResponse(
+            "code=abc&state=s1&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive.file&iss=https%3A%2F%2Faccounts.google.com&picked_file_ids=1aB-c_2%2C3dE,%204fG%2C",
+            "s1", "Google Drive");
+        Assert.AreEqual("abc", picked.Code);
+        CollectionAssert.AreEqual(new[] { "1aB-c_2", "3dE", "4fG" }, picked.PickedFileIds.ToArray());
+
+        // Confirmed without a pick, or another provider: none.
+        Assert.AreEqual(0, OAuthClient.AuthorizationResponse("code=abc&state=s1&picked_file_ids=", "s1", "Google Drive").PickedFileIds.Count);
+        Assert.AreEqual(0, OAuthClient.AuthorizationResponse("code=abc&state=s1", "s1", "OneDrive").PickedFileIds.Count);
+        // A cancelled picker is a denial, and changes nothing.
+        Assert.AreEqual(OAuthFailure.AuthorizationDenied, Assert.ThrowsException<OAuthException>(() =>
+            OAuthClient.AuthorizationResponse("error=access_denied&state=s1", "s1", "Google Drive")).Failure);
+    }
+
+    [TestMethod]
+    public async Task GoogleIdentityComesFromAboutGet()
+    {
+        var stub = new HttpStub(_ => HttpStub.Json(new
+        {
+            user = new { permissionId = "08174361937620587386", emailAddress = "me@example.com", displayName = "Me" },
+        }));
+        var identity = await CloudProviders.IdentityAsync(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "token" }, stub.Client, CancellationToken.None);
+        Assert.AreEqual("08174361937620587386", identity.Subject);
+        Assert.AreEqual("me@example.com", identity.Email);
+        Assert.AreEqual("Me", identity.DisplayName);
+
+        var request = stub.Requests.Single();
+        Assert.AreEqual("www.googleapis.com", request.Uri.Host);
+        Assert.AreEqual("/drive/v3/about", request.Uri.AbsolutePath);
+        Assert.AreEqual("user(permissionId,emailAddress,displayName)", request.Query("fields"));
+        Assert.AreEqual("Bearer token", request.Header("Authorization"));
+
+        var missing = await Assert.ThrowsExceptionAsync<OAuthException>(() => CloudProviders.IdentityAsync(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "token" }, new HttpStub(_ => HttpStub.Json(new { user = new { emailAddress = "me@example.com" } })).Client,
+            CancellationToken.None));
+        Assert.AreEqual(OAuthFailure.MalformedResponse, missing.Failure);
+    }
+
+    private static CloudAccount GoogleAccount(string refreshToken = "refresh-old") => new()
+    {
+        Kind = "gdrive",
+        Subject = "08174361937620587386",
+        Email = "me@example.com",
+        RefreshToken = refreshToken,
+        Scopes = [CloudProviders.GoogleDriveScope],
+    };
+
+    [TestMethod]
+    public void ASignInKeepsTheGrantedScopesAndOnlyTheRefreshToken()
+    {
+        var identity = new CloudProviders.Identity("08174361937620587386", "me@example.com", "Me");
+        var account = CloudProviders.NewAccount(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "a", RefreshToken = "r", Scope = "https://www.googleapis.com/auth/drive.file" }, identity);
+        Assert.AreEqual("gdrive", account.Kind);
+        Assert.AreEqual("08174361937620587386", account.Subject);
+        Assert.AreEqual("r", account.RefreshToken);
+        CollectionAssert.AreEqual(new[] { CloudProviders.GoogleDriveScope }, account.Scopes!.ToArray());
+        Assert.IsFalse(account.IsFromBeforeDriveFile);
+        Assert.AreEqual(SourceUrl.AccountKey(MediaSourceKind.GoogleDrive, "08174361937620587386"), account.Key);
+
+        // A response that lists no scopes stores the ones asked for.
+        var unlisted = CloudProviders.NewAccount(MediaSourceKind.Dropbox, new OAuthTokenResponse { AccessToken = "a", RefreshToken = "r" }, identity);
+        CollectionAssert.AreEqual(CloudProviders.DropboxScopes.ToArray(), unlisted.Scopes!.ToArray());
+
+        var noRefresh = Assert.ThrowsException<OAuthException>(() =>
+            CloudProviders.NewAccount(MediaSourceKind.GoogleDrive, new OAuthTokenResponse { AccessToken = "a" }, identity));
+        Assert.AreEqual(OAuthFailure.MalformedResponse, noRefresh.Failure);
+    }
+
+    [TestMethod]
+    public void ChooseMoreVideosKeepsTheNewestRefreshToken()
+    {
+        var identity = new CloudProviders.Identity("08174361937620587386", "renamed@example.com", "Me");
+        var updated = CloudProviders.ChosenVideosAccount(GoogleAccount(),
+            new OAuthTokenResponse { AccessToken = "a", RefreshToken = "refresh-new", Scope = CloudProviders.GoogleDriveScope }, identity);
+        Assert.AreEqual("refresh-new", updated.RefreshToken);
+        Assert.AreEqual("renamed@example.com", updated.Email);
+        Assert.AreEqual(GoogleAccount().Key, updated.Key);
+
+        // No new refresh token in the response: the stored one stays.
+        var kept = CloudProviders.ChosenVideosAccount(GoogleAccount(), new OAuthTokenResponse { AccessToken = "a" }, identity);
+        Assert.AreEqual("refresh-old", kept.RefreshToken);
+    }
+
+    [TestMethod]
+    public void ChooseMoreVideosAsAnotherGoogleAccountIsRefused()
+    {
+        var other = new CloudProviders.Identity("99999999999999999999", "other@example.com", "Other");
+        var error = Assert.ThrowsException<OAuthException>(() => CloudProviders.ChosenVideosAccount(GoogleAccount(),
+            new OAuthTokenResponse { AccessToken = "a", RefreshToken = "refresh-new" }, other));
+        Assert.AreEqual(OAuthFailure.DifferentAccount, error.Failure);
+        Assert.AreEqual("Those videos were chosen as other@example.com. Choose More Videos again and use me@example.com.", error.Message);
     }
 
     [TestMethod]
@@ -156,34 +303,18 @@ public sealed class OAuthTests
     }
 
     [TestMethod]
-    public async Task GoogleIdentityComesFromTheIdToken()
-    {
-        static string Segment(string json) => Pkce.Base64Url(System.Text.Encoding.UTF8.GetBytes(json));
-        var idToken = $"{Segment("""{"alg":"RS256"}""")}.{Segment("""{"sub":"110169484474386276334","email":"me@example.com","name":"Me"}""")}.signature";
-        var identity = await CloudProviders.IdentityAsync(MediaSourceKind.GoogleDrive,
-            new OAuthTokenResponse { AccessToken = "a", IdToken = idToken }, null, CancellationToken.None);
-        Assert.AreEqual("110169484474386276334", identity.Subject);
-        Assert.AreEqual("me@example.com", identity.Email);
-        Assert.AreEqual("Me", identity.DisplayName);
-        Assert.AreEqual("fc33299258dcfba4155a09b5ec6ea6c9", SourceUrl.AccountKey(MediaSourceKind.GoogleDrive, identity.Subject));
-
-        var missing = await Assert.ThrowsExceptionAsync<OAuthException>(() => CloudProviders.IdentityAsync(MediaSourceKind.GoogleDrive,
-            new OAuthTokenResponse { AccessToken = "a" }, null, CancellationToken.None));
-        Assert.AreEqual(OAuthFailure.MalformedResponse, missing.Failure);
-        Assert.IsNull(CloudProviders.DecodeJwtClaims("not-a-jwt"));
-        Assert.IsNull(CloudProviders.DecodeJwtClaims("a.!!!.c"));
-    }
-
-    [TestMethod]
     public void AGoogleSignInWithoutDriveAccessIsRefused()
     {
         var withoutDrive = new OAuthTokenResponse { AccessToken = "a", Scope = "openid https://www.googleapis.com/auth/userinfo.email" };
         var error = Assert.ThrowsException<OAuthException>(() => CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive, withoutDrive));
         Assert.AreEqual(OAuthFailure.DriveAccessMissing, error.Failure);
-        StringAssert.Contains(error.Message, "leave Drive access selected");
+        StringAssert.Contains(error.Message, "leave that access selected");
+        // drive.readonly alone isn't drive.file.
+        Assert.ThrowsException<OAuthException>(() => CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive,
+            new OAuthTokenResponse { AccessToken = "a", Scope = "https://www.googleapis.com/auth/drive.readonly" }));
 
         CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive,
-            new OAuthTokenResponse { AccessToken = "a", Scope = "openid https://www.googleapis.com/auth/drive.readonly" });
+            new OAuthTokenResponse { AccessToken = "a", Scope = "https://www.googleapis.com/auth/drive.file" });
         // Other providers, and a response that lists no scopes, aren't checked.
         CloudProviders.CheckGrantedScopes(MediaSourceKind.OneDrive, withoutDrive);
         CloudProviders.CheckGrantedScopes(MediaSourceKind.GoogleDrive, new OAuthTokenResponse { AccessToken = "a" });
@@ -209,13 +340,13 @@ public sealed class OAuthTests
     [TestMethod]
     public void ReadsTheAuthorizationCodeOnlyWithTheMatchingState()
     {
-        Assert.AreEqual("abc", OAuthClient.AuthorizationCode("?code=abc&state=s1", "s1", "OneDrive"));
+        Assert.AreEqual("abc", OAuthClient.AuthorizationResponse("?code=abc&state=s1", "s1", "OneDrive").Code);
         Assert.AreEqual(OAuthFailure.StateMismatch,
-            Assert.ThrowsException<OAuthException>(() => OAuthClient.AuthorizationCode("code=abc&state=s1", "other", "OneDrive")).Failure);
+            Assert.ThrowsException<OAuthException>(() => OAuthClient.AuthorizationResponse("code=abc&state=s1", "other", "OneDrive")).Failure);
         Assert.AreEqual(OAuthFailure.AuthorizationDenied,
-            Assert.ThrowsException<OAuthException>(() => OAuthClient.AuthorizationCode("error=access_denied&state=s1", "s1", "OneDrive")).Failure);
+            Assert.ThrowsException<OAuthException>(() => OAuthClient.AuthorizationResponse("error=access_denied&state=s1", "s1", "OneDrive")).Failure);
         Assert.AreEqual(OAuthFailure.MissingAuthorizationCode,
-            Assert.ThrowsException<OAuthException>(() => OAuthClient.AuthorizationCode("state=s1", "s1", "OneDrive")).Failure);
+            Assert.ThrowsException<OAuthException>(() => OAuthClient.AuthorizationResponse("state=s1", "s1", "OneDrive")).Failure);
     }
 
     [TestMethod]
@@ -283,9 +414,11 @@ public sealed class OAuthTests
         // A stray request (a favicon) is answered and ignored.
         var favicon = await http.GetAsync($"{redirect.RedirectUri}favicon.ico");
         Assert.AreEqual(System.Net.HttpStatusCode.NotFound, favicon.StatusCode);
-        var page = await http.GetStringAsync($"{redirect.RedirectUri}?code=abc&state=s1");
+        var page = await http.GetStringAsync($"{redirect.RedirectUri}?code=abc&state=s1&picked_file_ids=v1%2Cv2");
         Assert.AreEqual("<p>Done</p>", page);
-        Assert.AreEqual("abc", OAuthClient.AuthorizationCode(await waiting, "s1", "OneDrive"));
+        var authorization = OAuthClient.AuthorizationResponse(await waiting, "s1", "Google Drive");
+        Assert.AreEqual("abc", authorization.Code);
+        CollectionAssert.AreEqual(new[] { "v1", "v2" }, authorization.PickedFileIds.ToArray());
     }
 
     // ------------------------------------------------------------------

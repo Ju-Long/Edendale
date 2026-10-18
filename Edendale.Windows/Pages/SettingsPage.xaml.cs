@@ -32,6 +32,7 @@ public sealed partial class SettingsPage : Page
             StateText = Controls.SourceActions.StateText(folder) ?? "";
             StateVisibility = StateText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             SignInVisibility = Controls.SourceActions.NeedsSignIn(folder) ? Visibility.Visible : Visibility.Collapsed;
+            ChooseMoreVisibility = Controls.SourceActions.CanChooseMoreVideos(folder) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public LibraryFolder Folder { get; }
@@ -43,6 +44,8 @@ public sealed partial class SettingsPage : Page
         public string StateText { get; }
         public Visibility StateVisibility { get; }
         public Visibility SignInVisibility { get; }
+        /// <summary>Google Drive sources whose account is signed in here (3.20 R7).</summary>
+        public Visibility ChooseMoreVisibility { get; }
     }
 
     public SettingsPage()
@@ -236,6 +239,14 @@ public sealed partial class SettingsPage : Page
         if ((sender as Button)?.Tag is LibraryFolder folder)
         {
             await AppServices.Library.RescanFolderAsync(folder);
+        }
+    }
+
+    private async void ChooseMoreVideos_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is LibraryFolder folder)
+        {
+            await Controls.SourceActions.ChooseMoreVideosAsync(XamlRoot, folder);
         }
     }
 

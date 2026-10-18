@@ -226,6 +226,17 @@
                                                     Visibility="{Binding SignInVisibility}">
                                                     <TextBlock x:Uid="SourceSignInLabel" Text="SIGN IN" />
                                                 </Button>
+                                                <!-- Google Drive: reopen Google's picker (3.20 R7). -->
+                                                <Button
+                                                    Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    Click="ChooseMoreVideos_Click"
+                                                    Tag="{Binding Folder}"
+                                                    Visibility="{Binding ChooseMoreVisibility}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/plus.svg" Width="12" Height="12" />
+                                                        <TextBlock x:Uid="SourceChooseMoreLabel" Text="CHOOSE MORE VIDEOS" />
+                                                    </StackPanel>
+                                                </Button>
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
                                                     Click="RescanFolder_Click"

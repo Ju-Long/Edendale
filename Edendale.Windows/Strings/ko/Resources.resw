@@ -1620,21 +1620,42 @@
     <value>30fps 이하, 최대 4K 동영상에서 작동합니다.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>브라우저가 열리고 Google에 로그인합니다. Edendale은 Google에 드라이브에 대한 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>내 드라이브</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>공유 문서함</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>공유 드라이브</value>
+    <value>브라우저가 열리고 Google에 로그인합니다. 로그인하면 Google 선택 도구가 열립니다. Edendale에서 재생할 비디오를 선택하세요. Edendale은 선택한 비디오만 볼 수 있으며, 이 기기에서만 연결하고, 아무것도 업로드하거나 변경하지 않습니다.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google 드라이브에서 이 파일을 잠재적으로 유해한 파일로 표시했으므로 스트리밍할 수 없습니다.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale이 Google 드라이브 파일을 보려면 권한이 필요합니다. 다시 로그인하고 드라이브 접근을 선택된 상태로 두십시오.</value>
+    <value>Edendale이 선택한 Google 드라이브 파일에 접근하려면 권한이 필요합니다. 다시 로그인하고 해당 접근 권한을 선택된 상태로 두십시오.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>선택한 비디오</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>비디오 더 선택하기</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>비디오 더 선택하기</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>비디오 더 선택하기</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>비디오 {0}개를 추가했습니다.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>비디오 {0}개를 추가했습니다.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>선택한 비디오는 이미 보관함에 있습니다.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Google 드라이브 다시 연결</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>이제 Edendale은 선택한 Google 드라이브 비디오만 볼 수 있으므로, 이전 Google 드라이브 소스가 제거되었습니다. 네트워크 소스 추가 → Google Drive를 열고 로그인한 다음 비디오를 선택하세요.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>이 비디오는 {0} 계정으로 선택되었습니다. {1} 계정으로 '비디오 더 선택하기'를 다시 사용하세요.</value>
   </data>
 </root>

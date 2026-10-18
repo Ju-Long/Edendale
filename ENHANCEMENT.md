@@ -18,6 +18,10 @@ Windows, plus Windows gaps found while comparing the branches.
   It was requested after the tracker started.
 - **Last reviewed:** 2026-10-01, against apple-27.0 `4f8383a`. The branch
   now bundles LibVLC 3.0.24 (F.1).
+- **Amended 2026-10-17:** Google Drive no longer uses `drive.readonly` or a
+  folder browser. It asks only for `drive.file` and opens Google's picker
+  during sign-in; see [3.20](#320-google-drive-with-drivefile). Where 3.12
+  and D9 describe Google Drive's scopes or folder roots, 3.20 replaces them.
 
 ## How to use this file
 
@@ -96,6 +100,7 @@ Priority follows DIFF.md: **P1** parity, **P2** worthwhile, **P3** optional.
 - [ ] [3.13 Buffered remote reads](#313-buffered-remote-reads) (P1, with 3.12)
 - [x] [3.15 Desktop navigation and shortcuts](#315-desktop-navigation-and-shortcuts) (P2)
 - [x] [3.19 Settings layout](#319-settings-layout) (P3)
+- [ ] [3.20 Google Drive with drive.file](#320-google-drive-with-drivefile) (P1; code and tests done, Windows checks open)
 
 **Video enhancement, Option A** (DIFF.md §3.16–3.17)
 
@@ -169,6 +174,9 @@ still open needs Windows hardware or a change on another branch.
   app registrations and their IDs in `secrets.json` (README "API
   credentials"), and SFTP, WebDAV, and S3 against
   real servers. The tests use stub handlers only.
+- 3.20: the Desktop client's loopback sign-in with Google's picker (spike
+  S3), Choose More Videos, and the relink notice, on a Windows PC with the
+  owner's account. See the checklist in 3.20.
 
 **Changes on other branches** (AGENTS.md hard constraint 7)
 
@@ -178,7 +186,8 @@ still open needs Windows hardware or a change on another branch.
 - `main` DESIGN.md: the `PlaylistActiveBackground` and `PlaylistActiveText`
   rows (3.10).
 - `web`: the privacy text for linked storage providers (DIFF.md J.12),
-  now including Google Drive, which Google's verification requires.
+  now including Google Drive, which Google's verification requires. Since
+  3.20 it must describe `drive.file` and the picker; the list is in 3.20.
 - `apple-27.0`: X.1–X.8 are new behavior. Apple can adopt them or record them
   as Windows-only. X.8 matters most: Apple also caches downloads by file
   without tying them to a title.
@@ -234,7 +243,8 @@ decision once its outcome is written into the section, and into DIFF.md on
   Desktop OAuth client. Its client secret, which Google documents as not
   confidential, comes from the gitignored `secrets.json` like the TMDB
   token and is sent only to Google's token endpoint. WebDAV still works.
-  DIFF.md §6.2 answer pending on `main`.
+  DIFF.md §6.2 answer pending on `main`. Since 2026-10-17 the same client
+  asks only for `drive.file` and opens Google's picker (3.20).
 - [ ] **D10 Home-server TLS** (3.12). DIFF.md §6.4: self-signed certificates
   with per-host pinning, or valid HTTPS only.
   **Outcome:** valid HTTPS only. A certificate Windows doesn't trust fails
@@ -685,13 +695,14 @@ Google Drive after D9.
   system browser and a loopback redirect (`http://127.0.0.1:<port>`).
   - Refresh tokens are stored with DPAPI; access tokens stay in memory.
   - A single refresh serves every waiting request.
-- [x] Google Drive: Drive API v3 with `drive.readonly` through a Desktop
-  OAuth client and the loopback redirect (D9, revised). The picker's root
-  is My Drive, Shared with me, and Shared drives; shortcuts are followed,
-  Google formats skipped, and files streamed with `alt=media`. A file
-  Google flags as abusive fails with its own message, and a sign-in with
-  Drive access unticked is refused. WebDAV through `rclone serve webdav`
-  still works.
+- [x] Google Drive: Drive API v3 through a Desktop OAuth client and the
+  loopback redirect (D9, revised). Shortcuts are followed, Google formats
+  skipped, and files streamed with `alt=media`. A file Google flags as
+  abusive fails with its own message, and a sign-in with Drive access
+  unticked is refused. WebDAV through `rclone serve webdav` still works.
+  First built on `drive.readonly` with My Drive, Shared with me, and Shared
+  drives to browse; 3.20 replaced both with `drive.file` and Google's
+  picker.
 - [x] NFS: through LibVLC (X.5).
 
 **Stage 4: docs and secrets**
@@ -767,6 +778,185 @@ DIFF.md §3.19.
 - [x] Order: About, Audience, Startup, Audio Enhancement, Subtitles, Skip
   Prompts, App Controls, Sources, Accounts, TMDB Account, then the
   Windows-only Your Archive and Attribution.
+
+### 3.20 Google Drive with drive.file
+
+**Decided 2026-10-17.** Google's Third-Party Data Safety team refused
+`drive.readonly` four times: restricted Drive scopes are only for sync,
+backup, productivity, or security apps, not a video player. Every platform
+moves to the non-sensitive `https://www.googleapis.com/auth/drive.file`.
+People choose the videos Edendale may play in Google's own picker, which
+opens inside the sign-in page (`trigger_onepick=true`), and Edendale reads
+only those files. `drive.file` needs no scope verification, demo video, or
+yearly CASA assessment. Google documents this flow for desktop apps with a
+loopback redirect, which is how Windows already signs in. apple-27.0 built it
+first (its ENHANCEMENT.md J.14); android, meta-horizon, and web follow on
+their own branches. The rules and decisions below are copied from the
+owner's plan so every branch reads the same.
+
+**What changes for people**
+
+| Moment | Before (`drive.readonly`) | After (`drive.file`) |
+|---|---|---|
+| Add Network Source → Google Drive | Sign in, browse My Drive, Shared with me, or Shared drives, pick a folder | Sign in; Google's picker opens on the same page; tick one or more videos |
+| The source | A folder, scanned with its subfolders | One source per account, "Videos you chose", listing every video chosen so far on any device |
+| New episodes | Appear at the next scan | Someone uses **Choose More Videos** and picks them |
+| Removing a video | It comes back at the next scan | It stays hidden on this PC until it's picked again |
+| Consent screen | "See and download all your Google Drive files", unverified-app warning | Access limited to the files the person picks; no warning |
+
+**Spike, 2026-10-17** (a throwaway Mac probe against the real iOS and
+Android clients, with the owner signing in; nothing committed, no code or
+token printed):
+- S1 and S2 pass: the picker opens for the iOS and Android clients. The
+  callback carries `code`, `state`, `scope`, `iss`, and `picked_file_ids`
+  (comma-separated), and the refresh token's scope is `drive.file` alone.
+- S3 open: the Windows Desktop client wasn't on the Mac. It needs a run on
+  Windows (checklist below).
+- S4 pass: grants belong to the Google account and Cloud project, not to
+  one client or token. An older refresh token and other platforms' clients
+  see every later pick.
+- S5 fail: a picked folder grants only itself, never its contents. Files
+  only (D3).
+- S6 partial: `mimetypes=video/*` empties the picker; an explicit list
+  works. Drive's MIME types for `.srt` and `.ass` are still unknown.
+- S8 pass: `about.get` works under `drive.file`, and `permissionId` is the
+  same for every client.
+- S9 pass: `alt=media` with `Range` returns 206.
+
+**Decisions** (all settled by the owner, 2026-10-17; "3.20 D1" in code, to
+tell them from this file's D1–D12)
+- D1, clean break: on the first launch of a `drive.file` build, remove every
+  Google Drive account whose stored scopes lack `drive.file`, with its
+  sources, and say once that Google Drive needs linking again.
+- D2, a per-source hidden-ID list kept on this PC: removing a Drive video
+  from the library adds its file ID; scans skip hidden IDs. Google can't
+  unshare one file with an app. Device-specific library data, never synced.
+- D3, files only (S5).
+- D4 (android only), keep the Custom Tab URL flow.
+- D5, keep `openid` and `email` in the Cloud Console's Data Access until no
+  shipped build requests them.
+
+**Shared rules** (AGENTS.md hard constraint 7: implemented natively here)
+- R1 scope: only `drive.file`. `openid` and `email` go, because the picker
+  flow allows no other scope next to `drive.file`.
+- R2 sign-in URL: the code request with PKCE plus `access_type=offline`,
+  `prompt=consent` (`consent select_account` on a first sign-in),
+  `trigger_onepick=true`, `allow_multiple=true`, and `mimetypes` as an
+  explicit list (`video/mp4,video/x-matroska,video/quicktime,video/x-msvideo,`
+  `video/webm,video/mp2t,video/mpeg,video/x-m4v,video/x-ms-wmv,video/3gpp`).
+  `login_hint=<email>` when choosing more videos. Never `video/*`, never
+  `allow_folder_selection`.
+- R3 callback: read `code`, `state`, `error`, `scope`, and `picked_file_ids`.
+  A cancel changes nothing. A granted scope without `drive.file` shows the
+  "Drive access" error.
+- R4 identity: `about.get?fields=user(permissionId,emailAddress,displayName)`;
+  `permissionId` is the account subject, replacing the ID token's `sub`.
+- R5 tokens: each picker run returns a new refresh token; keep the newest and
+  never revoke the old one. Google's revoke can end the whole grant.
+- R6 source: one Google Drive source per account, rooted at a virtual
+  folder, "Videos you chose": `files.list` with `q=trashed = false`, the
+  same fields and paging, `supportsAllDrives`, `includeItemsFromAllDrives`.
+  Videos are still recognized by extension; folders are skipped.
+- R7 Choose More Videos: on the Google Drive source and in Settings →
+  Accounts. Reruns R2 with `login_hint`, then rescans. Picked IDs only say
+  how many videos were added.
+- R8 no browsing: the My Drive, Shared with me, and Shared drives folders and
+  the folder-picker step go.
+- R9 playback unchanged: `files/<id>?alt=media` with `Range` and
+  `supportsAllDrives`.
+- R10 TVs: no Windows counterpart.
+- R11 existing accounts: D1. R12 removing one video: D2.
+- R13 words: the Link Source note, the errors, and Settings → Accounts in
+  every locale, plus the web privacy policy.
+
+**Windows specifics** (decided while building)
+- The source's URL is `gdrive://<account>/~chosen/Google%20Drive`, the same
+  as Apple's. D1 removes any Google Drive source whose URL isn't that, even
+  when its account is already gone.
+- D1 runs at every launch (`AppServices.MigrateGoogleDriveToFileAccess`),
+  before the window opens. Accounts from older builds stored no scopes, so
+  they count as lacking `drive.file`. Nothing is revoked: the grant is
+  shared with Edendale on other devices (S4). The notice appears in the main
+  window's info bar, only on a launch that removed something.
+- Linking Google Drive for an account that already has a source rescans it
+  instead of adding a second one. Picking an existing account in Add
+  Network Source links what was already chosen, with no picker; Choose
+  More Videos adds to it.
+- Choose More Videos opens the picker in the browser while a small dialog
+  waits; Cancel stops waiting. The source's row then says how many videos
+  were added, until its next scan. If the person switches to another Google
+  account in the picker, nothing is stored and the dialog says which
+  account to use.
+- Choosing a hidden video again unhides it. Hidden IDs live in
+  `library.json` (`hiddenItemIds`) and never enter the OneDrive replica.
+- The browser step's timeout is 10 minutes, up from 5, because choosing
+  videos happens inside it.
+- Signing out in Settings → Accounts still revokes the refresh token at
+  Google (best effort), as before. It's the only path that revokes.
+- Google Drive streams through `MediaInput`, so LibVLC can't see a subtitle
+  file next to the video. Picking `.srt` or `.ass` files (S6) wouldn't load
+  them on Windows yet.
+
+**Tasks**
+
+- [x] `Services/Remote/OAuth.cs`: R1, R2 (per-request parameters for
+  `login_hint`), R3 (`OAuthClient.AuthorizationResponse`), R4, the
+  `drive.file` scope check, and the account a Choose More Videos run leaves
+  (R5).
+- [x] `Services/Remote/CloudSignIn.cs`: sign-in returns the picked IDs;
+  `ChooseMoreVideosAsync` keeps the newest refresh token.
+- [x] `Services/SecretStores.cs`: stored scopes on `CloudAccount`, and D1's
+  account removal.
+- [x] `Services/Remote/GoogleDriveConnector.cs`: R6, R8.
+- [x] `Services/LibraryModels.cs`, `Services/LibraryService.cs`: D2, one
+  source per account, D1's source removal, and the row note.
+- [x] `Controls/LinkSourceDialog.cs`, `Controls/RemoteFolderPicker.cs`,
+  `Controls/SourceActions.cs`, `Controls/AccountsSettings.xaml.cs`,
+  `Pages/DownloadedPage.xaml.cs`, `Pages/SettingsPage.xaml(.cs)`: no folder
+  step for Google Drive; Choose More Videos on both source rows and in
+  Settings → Accounts.
+- [x] `App.xaml.cs`, `MainWindow.xaml(.cs)`, `Services/AppServices.cs`: D1 at
+  launch and the notice.
+- [x] `Core/AppText.cs` and `Strings/*/Resources.resw`: R13 in all 15
+  locales, with apple-27.0's translations of the same copy.
+- [x] `tools/Edendale.Secrets/Program.cs` and the README: `drive.file` plus
+  the Google Picker API. `secrets.example.json` is unchanged: it lists only
+  key names, and the two Google keys stay.
+- [x] Tests: `OAuthTests` (scope, picker URL, Choose More Videos parameters,
+  `picked_file_ids`, `about.get`, token replacement, another account),
+  `CloudListingTests` (the chosen listing, no browsing), `SourceUrlTests`
+  (the root URL, file IDs), and the new `GoogleDriveMigrationTests` (D1, D2).
+- [ ] On a Windows PC with the owner's account (S3):
+  - Add Network Source → Google Drive opens the picker after sign-in, only
+    video files are offered, and the chosen videos appear as "Videos you
+    chose" with no folder step.
+  - Choose More Videos from the Downloaded row, the Settings row, and
+    Settings → Accounts: the picker skips the account chooser, new picks
+    appear, the row says how many, and the source keeps working afterwards
+    (the old refresh token isn't revoked).
+  - Choose More Videos as another Google account is refused with its
+    message, and Cancel in the waiting dialog stops the browser wait.
+  - Remove a Drive movie, rescan, and it stays gone; pick it again and it
+    comes back.
+  - With a `cloud-accounts.bin` and `library.json` from an older build that
+    linked a Drive folder: the account and source go at launch, the notice
+    shows once, and not on the next launch.
+  - Every language: the new strings fit the dialog, rows, and info bar.
+- [ ] `web` privacy policy (not edited here; one new `updated` date in
+  `src/content/privacy/en.md` and its 7 translations):
+  - Google sign-in asks only for `drive.file`; `openid`, `email`, and
+    `drive.readonly` are gone from the apps.
+  - Edendale can see only the files the person picks in Google's picker,
+    opened during sign-in and from Choose More Videos. For those it reads
+    names, sizes, dates, and video durations to list them, and the file
+    bytes to play them. It never uploads, changes, or deletes anything.
+  - Account identity comes from Drive's `about.get` (permission ID, email,
+    display name), not an ID token.
+  - Removing a Drive video from the library keeps its file ID on that
+    device only, so a rescan skips it; it's never synced.
+  - Revoking access at myaccount.google.com/connections, or signing out in
+    Edendale, ends the grant, and Google forgets the picks.
+  - Keep the Limited Use and no-AI-training sentences.
 
 ## Video enhancement (Option A)
 
@@ -1232,6 +1422,8 @@ From DIFF.md §5. Tick a line when its cases are ported to
 - [x] `LibrarySectionsTests` (3.15)
 - [x] `ConnectorTests`, `CloudListingTests`, `OAuthTests`, and
   `RemoteByteSourceTests` (3.12)
+- [x] `GoogleDriveMigrationTests`, plus the `drive.file` cases in
+  `OAuthTests`, `CloudListingTests`, and `SourceUrlTests` (3.20)
 - [x] `SFTPProtocolTests`: fingerprint cases only (3.12)
 - [x] `BufferedByteSourceTests` (3.13)
 - [x] Windows only: `GpuCapabilitiesTests` and `VideoEnhancementOptionsTests`

@@ -57,18 +57,18 @@ public sealed class CloudListingTests
     // ------------------------------------------------------------------
 
     [TestMethod]
-    public async Task ListsDriveFoldersFollowingShortcutsAndPages()
+    public async Task ListsTheVideosYouChoseFollowingShortcutsAndPages()
     {
-        var pages = 0;
-        var stub = new HttpStub(_ =>
+        var stub = new HttpStub(request =>
         {
-            if (Interlocked.Increment(ref pages) == 1)
+            if (!request.RequestUri!.Query.Contains("pageToken=", StringComparison.Ordinal))
             {
                 return HttpStub.Json(new Dictionary<string, object>
                 {
                     ["nextPageToken"] = "page-2",
                     ["files"] = new object[]
                     {
+                        // A picked folder grants only itself (3.20 S5), so it is skipped.
                         new { id = "f1", name = "Movies", mimeType = GoogleDriveConnector.FolderMimeType },
                         new { id = "v1", name = "The.Matrix.1999.mkv", mimeType = "video/x-matroska", size = "123456",
                               modifiedTime = "2024-05-01T12:34:56.789Z", videoMediaMetadata = new { durationMillis = "8160000" } },
@@ -85,84 +85,64 @@ public sealed class CloudListingTests
         var account = Account(MediaSourceKind.GoogleDrive);
         var connector = new GoogleDriveConnector(account, Tokens(account), stub.Client);
 
-        var entries = await connector.ListAsync(connector.FolderUrl("f0", "Films"), CancellationToken.None);
+        var entries = await connector.ListAsync(connector.Root, CancellationToken.None);
 
-        CollectionAssert.AreEqual(new[] { "Movies", "Shows", "Alien.1979.mp4", "Heat.1995.mkv", "The.Matrix.1999.mkv" },
-            entries.Select(e => e.Name).ToArray());
-        var shows = entries.Single(e => e.Name == "Shows");
-        Assert.IsTrue(shows.IsDirectory);
-        CollectionAssert.AreEqual(new[] { "f2" }, SourceUrl.ParseAccountItem(shows.Url)!.Ids.ToArray());
+        CollectionAssert.AreEqual(new[] { "Alien.1979.mp4", "Heat.1995.mkv", "The.Matrix.1999.mkv" }, entries.Select(e => e.Name).ToArray());
+        Assert.IsTrue(entries.All(e => !e.IsDirectory && e.IsVideo));
         CollectionAssert.AreEqual(new[] { "v2" }, SourceUrl.ParseAccountItem(entries.Single(e => e.Name == "Alien.1979.mp4").Url)!.Ids.ToArray());
         var matrix = entries.Single(e => e.Name == "The.Matrix.1999.mkv");
         Assert.AreEqual(123_456, matrix.Size);
         Assert.AreEqual(8160, matrix.Duration);
         Assert.AreEqual(new DateTimeOffset(2024, 5, 1, 12, 34, 56, 789, TimeSpan.Zero), matrix.Modified);
         Assert.AreEqual($"gdrive://{account.Key}/v1/The.Matrix.1999.mkv", matrix.Url);
-        Assert.IsTrue(matrix.IsVideo);
 
-        var requests = stub.Requests;
+        var requests = stub.Requests.ToList();
         Assert.AreEqual(2, requests.Count);
         Assert.AreEqual("www.googleapis.com", requests[0].Uri.Host);
         Assert.AreEqual("/drive/v3/files", requests[0].Uri.AbsolutePath);
-        Assert.AreEqual("'f0' in parents and trashed = false", requests[0].Query("q"));
+        // drive.file limits the listing to the picked files, wherever they live.
+        Assert.AreEqual("trashed = false", requests[0].Query("q"));
         Assert.AreEqual("true", requests[0].Query("supportsAllDrives"));
         Assert.AreEqual("true", requests[0].Query("includeItemsFromAllDrives"));
+        Assert.AreEqual("1000", requests[0].Query("pageSize"));
         StringAssert.Contains(requests[0].Query("fields"), "videoMediaMetadata(durationMillis)");
+        StringAssert.Contains(requests[0].Query("fields"), "shortcutDetails(targetId,targetMimeType)");
         Assert.IsNull(requests[0].Query("corpora"));
+        Assert.IsNull(requests[0].Query("driveId"));
         Assert.AreEqual("page-2", requests[1].Query("pageToken"));
+        Assert.AreEqual("trashed = false", requests[1].Query("q"));
         Assert.IsTrue(requests.All(r => r.Header("Authorization") == "Bearer token"));
+
+        // The scan walk finds the same videos.
+        var videos = await connector.EnumerateVideosAsync(connector.Root, CancellationToken.None);
+        CollectionAssert.AreEquivalent(entries.Select(e => e.Url).ToArray(), videos.Select(e => e.Url).ToArray());
     }
 
     [TestMethod]
-    public async Task DriveRootsAndSharedDrives()
+    public async Task VideosYouChoseIsTheOnlyFolder()
     {
-        var stub = new HttpStub(request => request.RequestUri!.AbsolutePath == "/drive/v3/drives"
-            ? HttpStub.Json(new { drives = new object[] { new { id = "team1", name = "Team Films" } } })
-            : HttpStub.Json(new { files = new object[] { new { id = "sub", name = "Season 1", mimeType = GoogleDriveConnector.FolderMimeType } } }));
+        var stub = new HttpStub(_ => HttpStub.Json(new { files = Array.Empty<object>() }));
         var account = Account(MediaSourceKind.GoogleDrive);
         var connector = new GoogleDriveConnector(account, Tokens(account), stub.Client);
 
-        // The picker's root needs no request and can't itself be linked.
-        var roots = await connector.ListAsync(connector.Root, CancellationToken.None);
-        CollectionAssert.AreEqual(new[] { "My Drive", "Shared with me", "Shared drives" }, roots.Select(e => e.Name).ToArray());
-        Assert.AreEqual(0, stub.Requests.Count);
-        Assert.IsFalse(connector.CanIndex(connector.Root));
-        Assert.IsFalse(connector.CanIndex(roots[2].Url));
-        Assert.IsTrue(connector.CanIndex(roots[0].Url));
-        Assert.IsTrue(connector.CanIndex(roots[1].Url));
-        CollectionAssert.AreEqual(new[] { "root" }, SourceUrl.ParseAccountItem(roots[0].Url)!.Ids.ToArray());
+        // One source per account, whose URL is the same in every language.
+        Assert.AreEqual($"gdrive://{account.Key}/~chosen/Google%20Drive", connector.Root);
+        Assert.AreEqual(GoogleDriveConnector.ChosenFolderUrl(account.Key), connector.Root);
+        Assert.IsTrue(connector.CanIndex(connector.Root));
+        Assert.AreEqual("Videos you chose", GoogleDriveConnector.ChosenFolderName);
+        Assert.AreEqual("Google Drive › Videos you chose", GoogleDriveConnector.ChosenFolderDisplayPath);
 
-        var drives = await connector.ListAsync(roots[2].Url, CancellationToken.None);
-        var team = drives.Single();
-        Assert.AreEqual("Team Films", team.Name);
-        Assert.AreEqual("team1", SourceUrl.ParseAccountItem(team.Url)!.QueryValue("drive"));
-
-        // Listing inside a shared drive names it, and its folders keep it.
-        var inside = await connector.ListAsync(team.Url, CancellationToken.None);
-        var request = stub.Requests[^1];
-        Assert.AreEqual("drive", request.Query("corpora"));
-        Assert.AreEqual("team1", request.Query("driveId"));
-        Assert.AreEqual("team1", SourceUrl.ParseAccountItem(inside.Single().Url)!.QueryValue("drive"));
-
-        _ = await connector.ListAsync(roots[1].Url, CancellationToken.None);
-        Assert.AreEqual("sharedWithMe = true and trashed = false", stub.Requests[^1].Query("q"));
-    }
-
-    [TestMethod]
-    public async Task DriveFoldersKeepTheSharedDriveTheyReportAndQueriesAreEscaped()
-    {
-        var stub = new HttpStub(_ => HttpStub.Json(new
+        // Nothing else can be browsed or linked: no My Drive, Shared with me,
+        // Shared drives, or folders (3.20 R8).
+        foreach (var id in new[] { "root", "~roots", "~shared", "~drives", "folder-1" })
         {
-            files = new object[] { new { id = "t1", name = "Team", mimeType = GoogleDriveConnector.FolderMimeType, driveId = "team9" } },
-        }));
-        var account = Account(MediaSourceKind.GoogleDrive);
-        var connector = new GoogleDriveConnector(account, Tokens(account), stub.Client);
-
-        // "Shared with me" names no drive, but a folder in a shared drive says which.
-        var entries = await connector.ListAsync(connector.FolderUrl(GoogleDriveConnector.VirtualFolder.SharedWithMe, "Shared with me"), CancellationToken.None);
-        Assert.AreEqual("team9", SourceUrl.ParseAccountItem(entries.Single().Url)!.QueryValue("drive"));
-
-        Assert.AreEqual(@"it\'s a \\ test", GoogleDriveConnector.QueryLiteral(@"it's a \ test"));
+            var folder = SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, account.Key, [id], "Films");
+            Assert.IsFalse(connector.CanIndex(folder));
+            var error = await Assert.ThrowsExceptionAsync<ConnectorException>(() => connector.ListAsync(folder, CancellationToken.None));
+            Assert.AreEqual(ConnectorFailure.InvalidAddress, error.Failure);
+        }
+        Assert.AreEqual(0, stub.Requests.Count);
+        Assert.AreEqual(0, (await connector.ListAsync(connector.Root, CancellationToken.None)).Count);
     }
 
     [TestMethod]

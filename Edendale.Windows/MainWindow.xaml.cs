@@ -361,6 +361,17 @@ public sealed partial class MainWindow : Window
 
     public void ShowActivationMessage(string message)
     {
+        ActivationBar.Title = "";
+        ActivationBar.Severity = InfoBarSeverity.Warning;
+        ActivationBar.Message = message;
+        ActivationBar.IsOpen = true;
+    }
+
+    /// <summary>A one-time notice in the same bar, such as the Google Drive relink after 3.20 D1.</summary>
+    public void ShowNotice(string title, string message)
+    {
+        ActivationBar.Title = title;
+        ActivationBar.Severity = InfoBarSeverity.Informational;
         ActivationBar.Message = message;
         ActivationBar.IsOpen = true;
     }

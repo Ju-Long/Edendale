@@ -8,7 +8,7 @@ public static class AppServices
     /// <summary>SFTP, WebDAV, and S3 logins (DPAPI, device-local).</summary>
     public static ServerLoginStore ServerLogins { get; } = new(AppPaths.ServerLoginsFile, DpapiProtector.CurrentUser);
 
-    /// <summary>OneDrive and Dropbox accounts (DPAPI refresh tokens, device-local).</summary>
+    /// <summary>Google Drive, OneDrive, and Dropbox accounts (DPAPI refresh tokens, device-local).</summary>
     public static CloudAccountVault CloudAccounts { get; } = new(AppPaths.CloudAccountsFile, DpapiProtector.CurrentUser);
 
     /// <summary>Pinned SSH host keys for SFTP sources.</summary>
@@ -75,6 +75,18 @@ public static class AppServices
         new(PlayerSettings, (request, cancellation) => IntroDb.SegmentsAsync(request, cancellation));
 
     private static bool _accountConnected;
+
+    /// <summary>
+    /// 3.20 D1 at launch: Google Drive accounts and sources
+    /// from before drive.file go. Runs at every launch, and returns whether
+    /// anything went, which happens once, so the notice shows once.
+    /// </summary>
+    public static bool MigrateGoogleDriveToFileAccess()
+    {
+        var accounts = CloudAccounts.RemoveGoogleAccountsWithoutDriveFile();
+        var sources = Library.RemoveGoogleDriveSourcesFromBeforeDriveFile();
+        return accounts + sources > 0;
+    }
 
     /// <summary>Launch-time side effects: OneDrive merge + TMDB account sync.</summary>
     public static void StartBackgroundSync()

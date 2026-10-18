@@ -5,8 +5,10 @@
 // the gitignored secrets.json (tools/Edendale.Secrets), and an empty value
 // hides that provider. The one client secret is Google's (D9): its Desktop
 // client type issues one that Google documents as not confidential, and it
-// comes from the same gitignored file. Nothing here logs tokens or secrets or
-// puts them into error messages.
+// comes from the same gitignored file. Google Drive's sign-in also opens
+// Google's picker (trigger_onepick), and the redirect names the files picked
+// (ENHANCEMENT.md 3.20). Nothing here logs tokens or secrets or puts them
+// into error messages.
 
 using System.Net;
 using System.Net.Sockets;
@@ -73,8 +75,6 @@ public sealed record OAuthTokenResponse
     [JsonPropertyName("scope")] public string? Scope { get; init; }
     /// <summary>Dropbox returns the account with the token.</summary>
     [JsonPropertyName("account_id")] public string? AccountId { get; init; }
-    /// <summary>Google's OpenID Connect ID token, which names the account.</summary>
-    [JsonPropertyName("id_token")] public string? IdToken { get; init; }
 
     public IReadOnlyList<string>? GrantedScopes => Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 }
@@ -91,6 +91,8 @@ public enum OAuthFailure
     InvalidGrant,
     /// <summary>Google's consent page let the user untick Drive access.</summary>
     DriveAccessMissing,
+    /// <summary>Choose More Videos came back signed in as another Google account.</summary>
+    DifferentAccount,
     Server,
     Http,
     MalformedResponse,
@@ -101,6 +103,10 @@ public sealed class OAuthException(OAuthFailure failure, string provider, string
 {
     public OAuthFailure Failure { get; } = failure;
 
+    /// <summary>Choose More Videos picked as <paramref name="chosen"/> for the account <paramref name="expected"/>.</summary>
+    public static OAuthException DifferentAccount(string provider, string chosen, string expected) =>
+        new(OAuthFailure.DifferentAccount, provider, chosen, expected);
+
     private static string Describe(OAuthFailure failure, string provider, string? code, string? description, int? status) => failure switch
     {
         OAuthFailure.NotConfigured => AppText.Format("Connector_NotConfigured", provider),
@@ -109,12 +115,17 @@ public sealed class OAuthException(OAuthFailure failure, string provider, string
         OAuthFailure.AuthorizationDenied => AppText.Format("OAuth_Denied", provider),
         OAuthFailure.InvalidGrant => AppText.Format("OAuth_InvalidGrant", provider),
         OAuthFailure.DriveAccessMissing => AppText.Get("OAuth_DriveAccessMissing"),
+        OAuthFailure.DifferentAccount => AppText.Format("OAuth_DifferentAccount", code, description),
         OAuthFailure.Server when !string.IsNullOrEmpty(description) => AppText.Format("OAuth_ServerDetail", provider, code, description),
         OAuthFailure.Server => AppText.Format("OAuth_Server", provider, code),
         OAuthFailure.Http => AppText.Format("Connector_ServerError", provider, status),
         _ => AppText.Format("OAuth_Malformed", provider),
     };
 }
+
+/// <summary>What the loopback redirect carried back.</summary>
+/// <param name="PickedFileIds">Google's picker: the files chosen this time, which may be none.</param>
+public sealed record OAuthAuthorization(string Code, IReadOnlyList<string> PickedFileIds);
 
 public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInvoker? client = null)
 {
@@ -123,10 +134,15 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
 
     public OAuthConfiguration Configuration => configuration;
 
-    /// <summary>The consent page's address. No client secret, ever.</summary>
-    public string AuthorizationUrl(string redirectUri, string state, string codeChallenge)
+    /// <summary>
+    /// The consent page's address. No client secret, ever.
+    /// <paramref name="parameters"/> apply to this request only and win over
+    /// the configuration's (Google's login_hint when choosing more videos).
+    /// </summary>
+    public string AuthorizationUrl(string redirectUri, string state, string codeChallenge,
+        IReadOnlyDictionary<string, string>? parameters = null)
     {
-        var parameters = new List<(string, string)>
+        var query = new List<(string, string)>
         {
             ("client_id", configuration.ClientId),
             ("response_type", "code"),
@@ -136,14 +152,19 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
             ("code_challenge", codeChallenge),
             ("code_challenge_method", "S256"),
         };
-        parameters.AddRange(configuration.AdditionalAuthorizationParameters
+        var extra = new Dictionary<string, string>(configuration.AdditionalAuthorizationParameters, StringComparer.Ordinal);
+        foreach (var (name, value) in parameters ?? new Dictionary<string, string>()) extra[name] = value;
+        query.AddRange(extra
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
             .Select(pair => (pair.Key, pair.Value)));
-        return $"{configuration.AuthorizationEndpoint}?{FormEncode(parameters)}";
+        return $"{configuration.AuthorizationEndpoint}?{FormEncode(query)}";
     }
 
-    /// <summary>The authorization code from the redirect's query, after checking state and any error.</summary>
-    public static string AuthorizationCode(string query, string expectedState, string provider)
+    /// <summary>
+    /// The authorization code, and the files picked in Google's picker, from
+    /// the redirect's query, after checking state and any error.
+    /// </summary>
+    public static OAuthAuthorization AuthorizationResponse(string query, string expectedState, string provider)
     {
         var values = ParseQuery(query);
         string? Value(string name) => values.TryGetValue(name, out var value) ? value : null;
@@ -154,7 +175,10 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
         }
         if (Value("state") != expectedState) throw new OAuthException(OAuthFailure.StateMismatch, provider);
         if (Value("code") is not { Length: > 0 } code) throw new OAuthException(OAuthFailure.MissingAuthorizationCode, provider);
-        return code;
+        // Comma-separated; none when the picker was confirmed without a pick.
+        var picked = (Value("picked_file_ids") ?? "")
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return new OAuthAuthorization(code, picked);
     }
 
     public Task<OAuthTokenResponse> ExchangeAsync(string code, string verifier, string redirectUri, CancellationToken cancellation)
@@ -270,8 +294,48 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
 /// </summary>
 public static class CloudProviders
 {
-    public const string GoogleDriveScope = "https://www.googleapis.com/auth/drive.readonly";
-    public static readonly IReadOnlyList<string> GoogleScopes = ["openid", "email", GoogleDriveScope];
+    /// <summary>
+    /// Only the files the user picks in Google's picker (ENHANCEMENT.md
+    /// 3.20). The picker flow allows no other scope next to it.
+    /// </summary>
+    public const string GoogleDriveScope = "https://www.googleapis.com/auth/drive.file";
+    public static readonly IReadOnlyList<string> GoogleScopes = [GoogleDriveScope];
+
+    /// <summary>
+    /// What Google's picker offers: the video types Drive assigns, one by
+    /// one, because video/* leaves the picker empty.
+    /// </summary>
+    public static readonly IReadOnlyList<string> GooglePickerMimeTypes =
+    [
+        "video/mp4", "video/x-matroska", "video/quicktime", "video/x-msvideo",
+        "video/webm", "video/mp2t", "video/mpeg", "video/x-m4v", "video/x-ms-wmv",
+        "video/3gpp",
+    ];
+
+    /// <summary>
+    /// Opens Google's picker inside the sign-in page. Files only: a picked
+    /// folder never grants what's inside it, so allow_folder_selection is
+    /// never sent. The picker needs prompt to include consent, which also
+    /// makes Google issue a refresh token for an account that granted
+    /// access before.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> GooglePickerParameters = new Dictionary<string, string>
+    {
+        ["access_type"] = "offline",
+        ["prompt"] = "consent select_account",
+        ["trigger_onepick"] = "true",
+        ["allow_multiple"] = "true",
+        ["mimetypes"] = string.Join(',', GooglePickerMimeTypes),
+    };
+
+    /// <summary>Reruns the picker for a linked account: no account chooser, with its email as the hint.</summary>
+    public static IReadOnlyDictionary<string, string> GoogleChooseMoreParameters(string? loginHint)
+    {
+        var parameters = new Dictionary<string, string> { ["prompt"] = "consent" };
+        if (!string.IsNullOrEmpty(loginHint)) parameters["login_hint"] = loginHint;
+        return parameters;
+    }
+
     public static readonly IReadOnlyList<string> OneDriveScopes = ["Files.Read", "User.Read", "offline_access"];
     public static readonly IReadOnlyList<string> DropboxScopes = ["files.metadata.read", "files.content.read", "account_info.read"];
 
@@ -297,13 +361,7 @@ public static class CloudProviders
             AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
             TokenEndpoint = "https://oauth2.googleapis.com/token",
             Scopes = GoogleScopes,
-            // "consent" makes Google issue a refresh token even when this
-            // account already granted access (relinking after a sign-out).
-            AdditionalAuthorizationParameters = new Dictionary<string, string>
-            {
-                ["access_type"] = "offline",
-                ["prompt"] = "select_account consent",
-            },
+            AdditionalAuthorizationParameters = GooglePickerParameters,
         },
         MediaSourceKind.OneDrive => new OAuthConfiguration
         {
@@ -328,8 +386,57 @@ public static class CloudProviders
         _ => null,
     };
 
+    /// <summary>The scopes each provider is asked for.</summary>
+    public static IReadOnlyList<string> ScopesFor(MediaSourceKind kind) => kind switch
+    {
+        MediaSourceKind.GoogleDrive => GoogleScopes,
+        MediaSourceKind.OneDrive => OneDriveScopes,
+        MediaSourceKind.Dropbox => DropboxScopes,
+        _ => [],
+    };
+
     /// <summary>Who a fresh token belongs to.</summary>
     public sealed record Identity(string Subject, string? Email, string? DisplayName, string? DriveId = null);
+
+    /// <summary>
+    /// The account a sign-in produced, with the scopes it granted (or, when
+    /// the response lists none, the ones asked for). Only the refresh token
+    /// is kept.
+    /// </summary>
+    public static CloudAccount NewAccount(MediaSourceKind kind, OAuthTokenResponse tokens, Identity identity) => new()
+    {
+        Kind = kind.RawValue(),
+        Subject = identity.Subject,
+        Email = identity.Email,
+        DisplayName = identity.DisplayName,
+        RefreshToken = tokens.RefreshToken is { Length: > 0 } refreshToken
+            ? refreshToken
+            : throw new OAuthException(OAuthFailure.MalformedResponse, kind.DisplayName()),
+        DriveId = identity.DriveId,
+        Scopes = [.. tokens.GrantedScopes ?? ScopesFor(kind)],
+    };
+
+    /// <summary>
+    /// <paramref name="account"/> after a Choose More Videos run: the newest
+    /// refresh token replaces the stored one, which is never revoked, because
+    /// Google's revoke ends the whole grant and with it the new token. Fails
+    /// when the picker was used as another Google account.
+    /// </summary>
+    public static CloudAccount ChosenVideosAccount(CloudAccount account, OAuthTokenResponse tokens, Identity identity)
+    {
+        var provider = account.SourceKind.DisplayName();
+        if (identity.Subject != account.Subject)
+        {
+            throw OAuthException.DifferentAccount(provider, identity.Email ?? identity.DisplayName ?? provider, account.Label);
+        }
+        return account with
+        {
+            RefreshToken = tokens.RefreshToken is { Length: > 0 } refreshToken ? refreshToken : account.RefreshToken,
+            Scopes = [.. tokens.GrantedScopes ?? ScopesFor(account.SourceKind)],
+            Email = identity.Email ?? account.Email,
+            DisplayName = identity.DisplayName ?? account.DisplayName,
+        };
+    }
 
     /// <summary>
     /// Fails when Google's consent page had Drive access unticked: the
@@ -344,7 +451,11 @@ public static class CloudProviders
         }
     }
 
-    /// <summary>Google's ID token, Microsoft Graph /me and /me/drive, or Dropbox get_current_account.</summary>
+    /// <summary>
+    /// Drive about.get (its permissionId is the same for every Edendale
+    /// client), Microsoft Graph /me and /me/drive, or Dropbox
+    /// get_current_account.
+    /// </summary>
     public static async Task<Identity> IdentityAsync(MediaSourceKind kind, OAuthTokenResponse tokens, HttpMessageInvoker? client, CancellationToken cancellation)
     {
         client ??= RemoteHttp.Shared;
@@ -354,10 +465,11 @@ public static class CloudProviders
         {
             case MediaSourceKind.GoogleDrive:
             {
-                using var claims = tokens.IdToken is { } idToken ? DecodeJwtClaims(idToken) : null;
-                var root = claims?.RootElement;
-                if (root?.String("sub") is not { Length: > 0 } subject) throw new OAuthException(OAuthFailure.MalformedResponse, provider);
-                return new Identity(subject, root.Value.String("email"), root.Value.String("name"));
+                var url = GoogleDriveConnector.Url("about", [("fields", "user(permissionId,emailAddress,displayName)")]);
+                using var about = await GetJsonAsync(url, accessToken, provider, client, cancellation);
+                var user = about.RootElement.Property("user");
+                if (user?.String("permissionId") is not { Length: > 0 } subject) throw new OAuthException(OAuthFailure.MalformedResponse, provider);
+                return new Identity(subject, user.Value.String("emailAddress"), user.Value.String("displayName"));
             }
             case MediaSourceKind.OneDrive:
             {
@@ -385,34 +497,12 @@ public static class CloudProviders
     }
 
     /// <summary>
-    /// The payload of a JWT. Its signature isn't checked: the ID token came
-    /// straight from Google's token endpoint over TLS (OpenID Connect Core
-    /// §3.1.3.7). Null when it isn't a JWT.
-    /// </summary>
-    public static JsonDocument? DecodeJwtClaims(string jwt)
-    {
-        var parts = jwt.Split('.');
-        if (parts.Length < 2) return null;
-        var payload = parts[1].Replace('-', '+').Replace('_', '/');
-        payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
-        try
-        {
-            var document = JsonDocument.Parse(Convert.FromBase64String(payload));
-            if (document.RootElement.ValueKind == JsonValueKind.Object) return document;
-            document.Dispose();
-            return null;
-        }
-        catch (Exception error) when (error is FormatException or JsonException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
     /// Best effort: ends the grant at the provider. Google revokes the
     /// refresh token; Dropbox revokes the access token, which disables its
     /// refresh token too. A Microsoft grant is removed from the account's
-    /// app permissions page.
+    /// app permissions page. Only an explicit sign-out revokes: Google ends
+    /// the whole grant, so revoking a token Choose More Videos replaced
+    /// would cut off the new one too.
     /// </summary>
     public static async Task RevokeAsync(MediaSourceKind kind, string? refreshToken, string? accessToken, HttpMessageInvoker? client = null)
     {

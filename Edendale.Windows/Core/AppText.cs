@@ -123,9 +123,7 @@ internal static class AppText
         ["Connector_NfsMountFailed"] = "Couldn’t open the NFS export on {0}. Windows connects from an unprivileged port, so the export needs the “insecure” option.",
         ["Connector_AbusiveFile"] = "Google Drive flagged this file as potentially harmful, so it can’t be streamed.",
 
-        ["GoogleDrive_MyDrive"] = "My Drive",
-        ["GoogleDrive_SharedWithMe"] = "Shared with me",
-        ["GoogleDrive_SharedDrives"] = "Shared drives",
+        ["GoogleDrive_ChosenFolder"] = "Videos you chose",
 
         ["Remote_Unreachable"] = "Couldn’t reach {0}. Check your connection and try again.",
         ["Remote_ReadFailed"] = "Couldn’t read this file from {0}.",
@@ -137,7 +135,8 @@ internal static class AppText
         ["OAuth_Unverified"] = "The sign-in response couldn’t be verified. Try again.",
         ["OAuth_Denied"] = "Access to {0} wasn’t allowed.",
         ["OAuth_InvalidGrant"] = "Your {0} sign-in has expired or was revoked. Sign in again.",
-        ["OAuth_DriveAccessMissing"] = "Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected.",
+        ["OAuth_DriveAccessMissing"] = "Edendale needs access to the Google Drive files you choose. Sign in again and leave that access selected.",
+        ["OAuth_DifferentAccount"] = "Those videos were chosen as {0}. Choose More Videos again and use {1}.",
         ["OAuth_Server"] = "{0} couldn’t complete sign-in ({1}).",
         ["OAuth_ServerDetail"] = "{0} couldn’t complete sign-in ({1}): {2}",
         ["OAuth_Malformed"] = "{0} sent a response Edendale couldn’t read.",

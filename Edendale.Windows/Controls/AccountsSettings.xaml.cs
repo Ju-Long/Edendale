@@ -7,7 +7,11 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Edendale.Windows.Controls;
 
-/// <summary>Settings → Accounts (DIFF.md §3.12).</summary>
+/// <summary>
+/// Settings → Accounts (DIFF.md §3.12). A Google account also offers Choose
+/// More Videos, which reopens Google's picker and rescans (or adds) that
+/// account's source on this PC (ENHANCEMENT.md 3.20 R7).
+/// </summary>
 public sealed partial class AccountsSettings : UserControl
 {
     public AccountsSettings()
@@ -72,16 +76,29 @@ public sealed partial class AccountsSettings : UserControl
             Grid.SetColumn(text, 1);
             row.Children.Add(text);
 
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+            if (login.Kind == MediaSourceKind.GoogleDrive && AppServices.CloudAccounts.Account(login.Kind, login.Key) is { } google)
+            {
+                var chooseMore = new Button
+                {
+                    Style = (Style)resources["ArchiveGhostButtonStyle"],
+                    Content = Loc.Get("Account_ChooseMoreVideos"),
+                };
+                AutomationProperties.SetName(chooseMore, $"{Loc.Get("GoogleDrive_ChooseMoreTitle")}, {login.Title}");
+                chooseMore.Click += async (_, _) => await LinkSourceDialog.ChooseMoreVideosAsync(XamlRoot, google);
+                actions.Children.Add(chooseMore);
+            }
+
             var forget = new Button
             {
                 Style = (Style)resources["ArchiveGhostButtonStyle"],
                 Content = Loc.Get(login.Kind.IsCloudAccount() ? "Account_SignOut" : "Account_Forget"),
-                VerticalAlignment = VerticalAlignment.Center,
             };
             AutomationProperties.SetName(forget, $"{forget.Content}, {login.Title}");
             forget.Click += async (_, _) => await ForgetAsync(login, sources);
-            Grid.SetColumn(forget, 2);
-            row.Children.Add(forget);
+            actions.Children.Add(forget);
+            Grid.SetColumn(actions, 2);
+            row.Children.Add(actions);
 
             var container = new StackPanel();
             container.Children.Add(row);

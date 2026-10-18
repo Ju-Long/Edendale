@@ -1620,21 +1620,42 @@ ESTÁ SILENCIOSA</value>
     <value>Funciona com vídeos de até 30 fps e até 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Seu navegador abre para entrar no Google. O Edendale pede ao Google acesso somente leitura ao seu Drive. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Meu Drive</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Compartilhados comigo</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Drives compartilhados</value>
+    <value>Seu navegador abre para entrar no Google. Depois de entrar, o seletor do Google é aberto: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses vídeos, se conecta apenas a partir deste dispositivo e nunca envia nem altera nada.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>O Google Drive marcou este arquivo como potencialmente nocivo, então ele não pode ser transmitido.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>O Edendale precisa de permissão para ver seus arquivos do Google Drive. Inicie a sessão novamente e deixe o acesso ao Drive selecionado.</value>
+    <value>O Edendale precisa de acesso aos arquivos do Google Drive que você escolher. Inicie a sessão novamente e deixe esse acesso selecionado.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Vídeos que você escolheu</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Escolher Mais Vídeos</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>ESCOLHER MAIS VÍDEOS</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>ESCOLHER MAIS VÍDEOS</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>{0} vídeo adicionado.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>{0} vídeos adicionados.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>Os vídeos que você escolheu já estavam na sua biblioteca.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Vincular o Google Drive Novamente</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Agora o Edendale vê apenas os vídeos do Google Drive que você escolher, então suas fontes anteriores do Google Drive foram removidas. Abra Adicionar Fonte de Rede → Google Drive, entre e escolha seus vídeos.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>Esses vídeos foram escolhidos com {0}. Use Escolher Mais Vídeos novamente com {1}.</value>
   </data>
 </root>

@@ -1620,21 +1620,42 @@
     <value>Fungerar med video på högst 30 bilder/s, upp till 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Google. Edendale ber Google om skrivskyddad åtkomst till din Drive. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Min enhet</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Delade med mig</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Delade enheter</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Google. När du har loggat in öppnas Googles väljare: välj de videor som Edendale får spela upp. Edendale ser bara dem, ansluter bara från den här enheten och laddar aldrig upp eller ändrar något.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale behöver tillstånd att se dina Google Drive-filer. Logga in igen och låt Drive-åtkomsten vara markerad.</value>
+    <value>Edendale behöver åtkomst till de Google Drive-filer du väljer. Logga in igen och låt den åtkomsten vara markerad.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Videor du har valt</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Välj fler videor</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>VÄLJ FLER VIDEOR</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>VÄLJ FLER VIDEOR</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>{0} video har lagts till.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>{0} videor har lagts till.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>De videor du valde fanns redan i ditt bibliotek.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Länka Google Drive igen</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Edendale ser nu bara de Google Drive-videor som du väljer, så dina tidigare Google Drive-källor har tagits bort. Öppna Lägg till nätverkskälla → Google Drive, logga in och välj dina videor.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>De videorna valdes som {0}. Använd Välj fler videor igen med {1}.</value>
   </data>
 </root>

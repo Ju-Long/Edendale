@@ -1620,21 +1620,42 @@
     <value>Работает с видео до 30 кадров/с и разрешением до 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Откроется браузер для входа в Google. Edendale запрашивает у Google доступ только для чтения к вашему Диску. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Мой диск</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Доступные мне</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Общие диски</value>
+    <value>Откроется браузер для входа в Google. После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их, подключается только с этого устройства и никогда ничего не загружает и не изменяет.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale нужно разрешение на просмотр ваших файлов Google Диска. Войдите снова и оставьте доступ к Диску выбранным.</value>
+    <value>Edendale нужен доступ к выбранным вами файлам Google Диска. Войдите снова и оставьте этот доступ выбранным.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Выбранные вами видео</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Выбрать ещё видео</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>ВЫБРАТЬ ЕЩЁ ВИДЕО</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>ВЫБРАТЬ ЕЩЁ ВИДЕО</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>Добавлено видео: {0}.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>Добавлено видео: {0}.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>Выбранные видео уже есть в медиатеке.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Снова подключите Google Диск</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Теперь Edendale видит только выбранные вами видео на Google Диске, поэтому ваши прежние источники Google Диска удалены. Откройте «Добавить сетевой источник» → Google Drive, войдите и выберите видео.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>Эти видео выбраны в аккаунте {0}. Снова нажмите «Выбрать ещё видео» и используйте {1}.</value>
   </data>
 </root>

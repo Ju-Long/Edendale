@@ -24,10 +24,16 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         ActivationService.Register();
+        var googleDriveRemoved = AppServices.MigrateGoogleDriveToFileAccess();
 
-        MainWindow = new MainWindow();
-        MainWindow.Activate();
+        var shell = new MainWindow();
+        MainWindow = shell;
+        shell.Activate();
         AppServices.StartBackgroundSync();
+        if (googleDriveRemoved)
+        {
+            shell.ShowNotice(Loc.Get("GoogleDrive_RelinkTitle"), Loc.Get("GoogleDrive_RelinkMessage"));
+        }
 
         // A protocol/file launch lands once the shell exists; later
         // activations arrive redirected from short-lived second processes.

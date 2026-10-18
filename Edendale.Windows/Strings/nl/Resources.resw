@@ -1620,21 +1620,42 @@ IS STIL</value>
     <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Je browser opent om bij Google in te loggen. Edendale vraagt Google om alleen-lezentoegang tot je Drive. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Mijn Drive</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Gedeeld met mij</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Gedeelde drives</value>
+    <value>Je browser opent om bij Google in te loggen. Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale heeft toestemming nodig om je Google Drive-bestanden te zien. Log opnieuw in en laat de toegang tot Drive geselecteerd.</value>
+    <value>Edendale heeft toegang nodig tot de Google Drive-bestanden die je kiest. Log opnieuw in en laat die toegang geselecteerd.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Door jou gekozen video’s</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Kies meer video’s</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>KIES MEER VIDEO’S</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>KIES MEER VIDEO’S</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>{0} video toegevoegd.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>{0} video’s toegevoegd.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>De video’s die je hebt gekozen stonden al in je bibliotheek.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Koppel Google Drive opnieuw</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Edendale ziet nu alleen de Google Drive-video’s die je kiest, dus je eerdere Google Drive-bronnen zijn verwijderd. Open Netwerkbron toevoegen → Google Drive, log in en kies je video’s.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>Die video’s zijn gekozen als {0}. Gebruik Kies meer video’s opnieuw met {1}.</value>
   </data>
 </root>

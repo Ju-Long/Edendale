@@ -14,7 +14,9 @@ internal sealed record RemoteFolderChoice(string Url, string Name, string Displa
 /// Browses a connected source and picks the folder to import
 /// (NetworkFolderPickerView.swift): folders open on click, Up goes back, and
 /// the trail reads like "OneDrive › Films". Videos in the open folder are
-/// counted so the reader knows they picked the right one.
+/// counted so the reader knows they picked the right one. Google Drive never
+/// comes here: under drive.file there are no folders to browse, and its
+/// videos are chosen in Google's own picker (ENHANCEMENT.md 3.20 R8).
 /// </summary>
 internal sealed class RemoteFolderPicker
 {
@@ -90,7 +92,7 @@ internal sealed class RemoteFolderPicker
     /// <summary>The root as the trail starts: the provider, the bucket, or the server and its path.</summary>
     private static string RootName(IMediaConnector connector) => connector.Kind switch
     {
-        MediaSourceKind.GoogleDrive or MediaSourceKind.OneDrive or MediaSourceKind.Dropbox => connector.Kind.DisplayName(),
+        MediaSourceKind.OneDrive or MediaSourceKind.Dropbox => connector.Kind.DisplayName(),
         MediaSourceKind.S3 => connector.AccountLabel ?? connector.Kind.DisplayName(),
         _ => string.Join(" › ", new[] { SourceUrl.CredentialHost(connector.Root) ?? connector.Kind.DisplayName() }
             .Concat(SourceUrl.PathSegments(connector.Root))),

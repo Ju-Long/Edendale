@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Edendale.Windows.Core;
 using Edendale.Windows.Services;
+using Edendale.Windows.Services.Remote;
 
 namespace Edendale.Windows.Tests;
 
@@ -83,6 +84,38 @@ public sealed class SourceUrlTests
         Assert.AreEqual("Team Films", parsed.Name);
         Assert.AreEqual("0AB", parsed.QueryValue("drive"));
         Assert.IsNull(parsed.QueryValue("missing"));
+    }
+
+    [TestMethod]
+    public void GoogleDriveSourcesAreVideosYouChose()
+    {
+        // Apple stores the same URL (GoogleDriveConnector.swift), keyed by
+        // Drive's permissionId rather than the ID token's sub.
+        var key = SourceUrl.AccountKey(MediaSourceKind.GoogleDrive, "08174361937620587386");
+        var root = GoogleDriveConnector.ChosenFolderUrl(key);
+        Assert.AreEqual($"gdrive://{key}/~chosen/Google%20Drive", root);
+        Assert.AreEqual(key, SourceUrl.CredentialHost(root));
+        Assert.IsTrue(GoogleDriveConnector.IsChosenFolder(root));
+
+        // Folders a build before drive.file linked aren't.
+        Assert.IsFalse(GoogleDriveConnector.IsChosenFolder(SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, key, ["root"], "My Drive")));
+        Assert.IsFalse(GoogleDriveConnector.IsChosenFolder(SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, key, ["folder1"], "Team Films",
+            [new KeyValuePair<string, string>("drive", "0AB")])));
+        Assert.IsFalse(GoogleDriveConnector.IsChosenFolder(SourceUrl.AccountItem(MediaSourceKind.Dropbox, key, ["~chosen"], "Google Drive")));
+        Assert.IsFalse(GoogleDriveConnector.IsChosenFolder(@"C:\Movies"));
+    }
+
+    [TestMethod]
+    public void DriveFileIdsComeFromItemUrlsOnly()
+    {
+        var item = SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, "abc", ["1aB-c_3"], "Heat.1995.mkv");
+        Assert.AreEqual("1aB-c_3", GoogleDriveConnector.FileId(item));
+        // A renamed file keeps its id.
+        Assert.AreEqual("1aB-c_3", GoogleDriveConnector.FileId(SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, "abc", ["1aB-c_3"], "Heat.mkv")));
+        Assert.IsNull(GoogleDriveConnector.FileId(GoogleDriveConnector.ChosenFolderUrl("abc")));
+        Assert.IsNull(GoogleDriveConnector.FileId(SourceUrl.AccountItem(MediaSourceKind.Dropbox, "abc", ["id:1"], "Heat.mkv")));
+        Assert.IsNull(GoogleDriveConnector.FileId(SourceUrl.AccountItem(MediaSourceKind.OneDrive, "abc", ["d", "i"], "Heat.mkv")));
+        Assert.IsNull(GoogleDriveConnector.FileId(@"\\nas\share\Heat.mkv"));
     }
 
     [TestMethod]

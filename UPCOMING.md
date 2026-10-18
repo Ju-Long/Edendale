@@ -225,8 +225,9 @@ case.
 - [ ] `Directory.Build.props` still has `VersionPrefix` 26.0.0 while the
   manifest is 27.0.1.0.
 - [ ] Confirm before advertising: the release build has client IDs for
-  Google Drive, OneDrive, and Dropbox and a Wyzie key. Google Drive needs
-  Google's app verification before anyone other than listed test users can
-  sign in.
+  Google Drive, OneDrive, and Dropbox and a Wyzie key. Google Drive now
+  asks only for the non-sensitive `drive.file` (ENHANCEMENT.md 3.20), so it
+  needs no scope verification, but the consent screen must be in
+  production before anyone other than listed test users can sign in.
 - [ ] Screenshots: replace the Store screenshot of the old player with the
   27.0 player.

@@ -169,15 +169,16 @@ client type also issues a client secret its token endpoint expects; Google
 documents it as not confidential, because every copy of a desktop app carries
 it (D9). It stays in the gitignored `secrets.json` like the TMDB token.
 
-- **Google Drive:** in Google Cloud, enable the Google Drive API, set up the
-  OAuth consent screen with the `openid`, `email`, and
-  `https://www.googleapis.com/auth/drive.readonly` scopes, and create an OAuth
-  client of type **Desktop app**. Its client ID and secret are the two Google
-  values. Desktop clients accept any loopback port, so no redirect URI is
-  registered. `drive.readonly` is a restricted scope: while the consent
-  screen is in Testing, only listed test users can sign in and their sign-in
-  lasts 7 days; publishing to everyone needs Google's verification and
-  security assessment.
+- **Google Drive:** in Google Cloud, enable the Google Drive API and the
+  Google Picker API, add only `https://www.googleapis.com/auth/drive.file` on
+  the Google Auth Platform's Data Access page, and create an OAuth client of
+  type **Desktop app**. Its client ID and secret are the two Google values.
+  Desktop clients accept any loopback port, so no redirect URI is
+  registered. Edendale asks for `drive.file` alone and opens Google's picker
+  inside the sign-in page, so it sees only the files the user picks.
+  `drive.file` is non-sensitive: publishing needs no scope verification or
+  security assessment. While the consent screen is in Testing, only listed
+  test users can sign in and their sign-in lasts 7 days.
 - **OneDrive:** register a Microsoft Entra application for personal and work
   or school accounts, with the delegated `Files.Read` and `User.Read`
   permissions and **Allow public client flows** on. Add `http://127.0.0.1` to
@@ -365,14 +366,22 @@ Source form (DIFF.md §3.12):
 | WebDAV | PROPFIND with Basic or Digest login (Nextcloud, ownCloud, Synology, QNAP, `rclone serve webdav`) |
 | S3-compatible | Signature Version 4 (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) |
 | NFS | LibVLC's bundled NFS client; the export needs the `insecure` option |
-| Google Drive | Drive API v3, read-only: My Drive, Shared with me, and shared drives |
+| Google Drive | Drive API v3 with `drive.file`: only the videos chosen in Google's picker |
 | OneDrive | Microsoft Graph, personal and work or school accounts |
 | Dropbox | Dropbox API v2 |
 
 - **Cloud accounts** appear in Link Source only when this build has their
-  client ID (see [API credentials](#api-credentials)). Google Drive follows
-  shortcuts, skips Docs, Sheets, and other Google formats, and refuses files
-  Google flags as harmful rather than overriding the warning.
+  client ID (see [API credentials](#api-credentials)).
+- **Google Drive** has nothing to browse. Google's picker opens during
+  sign-in, files only (a picked folder grants nothing inside it), and each
+  account gets one source, "Videos you chose", listing every video picked on
+  any device. **Choose More Videos** on the source's row or in Settings →
+  Accounts reopens the picker. A video removed from the library stays hidden
+  on this PC until it's picked again. Google Drive follows shortcuts, skips
+  Docs, Sheets, and other Google formats, and refuses files Google flags as
+  harmful rather than overriding the warning. Google accounts and folder
+  sources from builds before `drive.file` are removed at launch, with a
+  notice to link Google Drive again.
 - **TLS:** HTTPS sources need a certificate Windows trusts; self-signed
   certificates are refused (D10). Plain HTTP reaches only local addresses
   (`.local` and unqualified names, private and Tailscale IP ranges).
@@ -393,7 +402,8 @@ Source form (DIFF.md §3.12):
 
 Library, watch-progress, user-media, and player-settings JSON live under
 `%LOCALAPPDATA%\Edendale`. When the user has configured OneDrive, watch and
-user-media state can replicate through their OneDrive folder.
+user-media state can replicate through their OneDrive folder. The library,
+including the IDs of Google Drive videos removed from it, never replicates.
 
 Subtitles downloaded from Wyzie Subs are kept in
 `%LOCALAPPDATA%\Edendale\Subtitles`, indexed by title in

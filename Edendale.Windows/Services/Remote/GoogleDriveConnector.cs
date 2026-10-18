@@ -1,12 +1,15 @@
-// Google Drive (Drive v3 REST API, drive.readonly scope) connector and its
+// Google Drive (Drive v3 REST API, drive.file scope) connector and its
 // streaming resolver (GoogleDriveConnector.swift).
 //
-// Item URLs are gdrive://<account>/<fileId>/<Name.ext>; folders use the
-// folder's id the same way, plus ?drive=<driveId> inside a shared drive,
-// whose listings must name it. The picker's root holds My Drive, Shared with
-// me, and Shared drives.
+// Under drive.file Edendale sees only the files the user picked in Google's
+// picker, which opens during sign-in and from Choose More Videos
+// (ENHANCEMENT.md 3.20), so there is nothing to browse. Each account has one
+// virtual folder, "Videos you chose", listing every file picked so far on
+// any device or platform, because Google grants picks per account, not per
+// token. Item URLs are gdrive://<account>/<fileId>/<Name.ext>.
 //
-// Shortcuts are followed to their targets, other Google formats (Docs,
+// Folders are skipped (a picked folder never grants what's inside it),
+// shortcuts are followed to their targets, other Google formats (Docs,
 // Sheets) are skipped, and videos are recognized by file extension rather
 // than MIME type. Files stream from files/<id>?alt=media with a Bearer token
 // and Range. acknowledgeAbuse is never sent: a file Google flags as abusive
@@ -27,16 +30,13 @@ public sealed class GoogleDriveConnector : IMediaConnector
     private const string GoogleFormatPrefix = "application/vnd.google-apps.";
 
     private const string FileFields =
-        "nextPageToken,files(id,name,mimeType,size,modifiedTime,driveId,videoMediaMetadata(durationMillis),shortcutDetails(targetId,targetMimeType))";
+        "nextPageToken,files(id,name,mimeType,size,modifiedTime,videoMediaMetadata(durationMillis),shortcutDetails(targetId,targetMimeType))";
 
-    /// <summary>Ids of the picker's virtual folders; real Drive ids never start with "~".</summary>
-    public static class VirtualFolder
-    {
-        public const string Roots = "~roots";
-        public const string SharedWithMe = "~shared";
-        public const string SharedDrives = "~drives";
-        public const string MyDrive = "root";
-    }
+    /// <summary>The id of the "Videos you chose" folder; real Drive ids never start with "~".</summary>
+    public const string ChosenFolderId = "~chosen";
+
+    /// <summary>The name in its URL, fixed so a source's stored URL is the same in every language.</summary>
+    public const string ChosenFolderUrlName = "Google Drive";
 
     private readonly CloudAccount _account;
     private readonly ProviderHttp _http;
@@ -48,8 +48,29 @@ public sealed class GoogleDriveConnector : IMediaConnector
     }
 
     public MediaSourceKind Kind => MediaSourceKind.GoogleDrive;
-    public string Root => FolderUrl(VirtualFolder.Roots, "Google Drive");
+    public string Root => ChosenFolderUrl(_account.Key);
     public string? AccountLabel => _account.Label;
+
+    /// <summary>The account's one Google Drive source.</summary>
+    public static string ChosenFolderUrl(string accountKey) =>
+        SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, accountKey, [ChosenFolderId], ChosenFolderUrlName);
+
+    /// <summary>
+    /// Whether a stored source is this build's "Videos you chose". Builds
+    /// before drive.file linked Drive folders, which can't be listed now.
+    /// </summary>
+    public static bool IsChosenFolder(string url) =>
+        SourceUrl.ParseAccountItem(url) is { Kind: MediaSourceKind.GoogleDrive, Ids: [ChosenFolderId] };
+
+    /// <summary>What the source is called in the library.</summary>
+    public static string ChosenFolderName => AppText.Get("GoogleDrive_ChosenFolder");
+
+    /// <summary>The source row's location: "Google Drive › Videos you chose".</summary>
+    public static string ChosenFolderDisplayPath => $"{MediaSourceKind.GoogleDrive.DisplayName()} › {ChosenFolderName}";
+
+    /// <summary>The Drive file id in a stored item path; null for anything else.</summary>
+    public static string? FileId(string itemPath) =>
+        SourceUrl.ParseAccountItem(itemPath) is { Kind: MediaSourceKind.GoogleDrive, Ids: [var id] } && id != ChosenFolderId ? id : null;
 
     public async Task ValidateAsync(CancellationToken cancellation)
     {
@@ -60,40 +81,28 @@ public sealed class GoogleDriveConnector : IMediaConnector
     public Task<IReadOnlyList<ConnectorEntry>> EnumerateVideosAsync(string folder, CancellationToken cancellation) =>
         ConnectorWalk.VideosAsync(folder, ListAsync, cancellation);
 
-    /// <summary>
-    /// The picker's root and the list of shared drives only gather other
-    /// folders; linking either would scan all of Drive.
-    /// </summary>
-    public bool CanIndex(string directory) =>
-        SourceUrl.ParseAccountItem(directory) is { Kind: MediaSourceKind.GoogleDrive } item
-        && item.Ids[0] is not (VirtualFolder.Roots or VirtualFolder.SharedDrives);
+    /// <summary>Only "Videos you chose" lists, so only it can be linked.</summary>
+    public bool CanIndex(string directory) => IsChosenFolder(directory);
 
-    public async Task<IReadOnlyList<ConnectorEntry>> ListAsync(string directory, CancellationToken cancellation)
+    /// <summary>
+    /// Only the "Videos you chose" folder lists: it holds every file the
+    /// user picked, and no folder's contents are ever granted.
+    /// </summary>
+    public Task<IReadOnlyList<ConnectorEntry>> ListAsync(string directory, CancellationToken cancellation)
     {
-        if (SourceUrl.ParseAccountItem(directory) is not { Kind: MediaSourceKind.GoogleDrive } item)
-        {
-            throw new ConnectorException(ConnectorFailure.InvalidAddress);
-        }
-        var id = item.Ids[0];
-        return id switch
-        {
-            VirtualFolder.Roots =>
-            [
-                new ConnectorEntry(AppText.Get("GoogleDrive_MyDrive"), FolderUrl(VirtualFolder.MyDrive, AppText.Get("GoogleDrive_MyDrive")), true),
-                new ConnectorEntry(AppText.Get("GoogleDrive_SharedWithMe"), FolderUrl(VirtualFolder.SharedWithMe, AppText.Get("GoogleDrive_SharedWithMe")), true),
-                new ConnectorEntry(AppText.Get("GoogleDrive_SharedDrives"), FolderUrl(VirtualFolder.SharedDrives, AppText.Get("GoogleDrive_SharedDrives")), true),
-            ],
-            VirtualFolder.SharedDrives => await ListSharedDrivesAsync(cancellation).ConfigureAwait(false),
-            VirtualFolder.SharedWithMe => await ListFilesAsync("sharedWithMe = true and trashed = false", null, cancellation).ConfigureAwait(false),
-            _ => await ListFilesAsync($"'{QueryLiteral(id)}' in parents and trashed = false", item.QueryValue("drive"), cancellation).ConfigureAwait(false),
-        };
+        if (!IsChosenFolder(directory)) throw new ConnectorException(ConnectorFailure.InvalidAddress);
+        return ListChosenFilesAsync(cancellation);
     }
 
     // ------------------------------------------------------------------
     // Listing
     // ------------------------------------------------------------------
 
-    private async Task<IReadOnlyList<ConnectorEntry>> ListFilesAsync(string query, string? driveId, CancellationToken cancellation)
+    /// <summary>
+    /// Every file the user picked, across pages. drive.file limits files.list
+    /// to those, whether in My Drive, shared with them, or in shared drives.
+    /// </summary>
+    private async Task<IReadOnlyList<ConnectorEntry>> ListChosenFilesAsync(CancellationToken cancellation)
     {
         var entries = new List<ConnectorEntry>();
         string? pageToken = null;
@@ -101,17 +110,12 @@ public sealed class GoogleDriveConnector : IMediaConnector
         {
             var parameters = new List<(string, string)>
             {
-                ("q", query),
+                ("q", "trashed = false"),
                 ("fields", FileFields),
                 ("pageSize", "1000"),
                 ("supportsAllDrives", "true"),
                 ("includeItemsFromAllDrives", "true"),
             };
-            if (driveId is not null)
-            {
-                parameters.Add(("corpora", "drive"));
-                parameters.Add(("driveId", driveId));
-            }
             if (pageToken is not null) parameters.Add(("pageToken", pageToken));
             var url = Url("files", parameters);
             using var page = await _http.JsonAsync(() => new HttpRequestMessage(HttpMethod.Get, url), cancellation).ConfigureAwait(false);
@@ -119,7 +123,7 @@ public sealed class GoogleDriveConnector : IMediaConnector
             {
                 foreach (var file in files.EnumerateArray())
                 {
-                    if (Entry(file, driveId) is { } entry) entries.Add(entry);
+                    if (Entry(file) is { } entry) entries.Add(entry);
                 }
             }
             pageToken = page.RootElement.String("nextPageToken");
@@ -128,60 +132,23 @@ public sealed class GoogleDriveConnector : IMediaConnector
         return ConnectorWalk.Sorted(entries);
     }
 
-    private async Task<IReadOnlyList<ConnectorEntry>> ListSharedDrivesAsync(CancellationToken cancellation)
-    {
-        var entries = new List<ConnectorEntry>();
-        string? pageToken = null;
-        do
-        {
-            var parameters = new List<(string, string)> { ("pageSize", "100"), ("fields", "nextPageToken,drives(id,name)") };
-            if (pageToken is not null) parameters.Add(("pageToken", pageToken));
-            var url = Url("drives", parameters);
-            using var page = await _http.JsonAsync(() => new HttpRequestMessage(HttpMethod.Get, url), cancellation).ConfigureAwait(false);
-            if (page.RootElement.Property("drives") is { ValueKind: JsonValueKind.Array } drives)
-            {
-                foreach (var drive in drives.EnumerateArray())
-                {
-                    if (drive.String("id") is not { } id || drive.String("name") is not { } name) continue;
-                    // A shared drive's root folder has the drive's id.
-                    entries.Add(new ConnectorEntry(name, FolderUrl(id, name, driveId: id), true));
-                }
-            }
-            pageToken = page.RootElement.String("nextPageToken");
-        }
-        while (pageToken is not null);
-        return ConnectorWalk.Sorted(entries);
-    }
-
-    /// <summary>
-    /// Folders and folder shortcuts become directories; other Google formats
-    /// are skipped. A folder keeps the shared drive it lives in, which its
-    /// listing must name.
-    /// </summary>
-    private ConnectorEntry? Entry(JsonElement file, string? driveId)
+    /// <summary>A picked file as an entry. Folders, folder shortcuts, and other Google formats are skipped.</summary>
+    private ConnectorEntry? Entry(JsonElement file)
     {
         if (file.String("id") is not { } id || file.String("name") is not { } name) return null;
         var mimeType = file.String("mimeType") ?? "";
         if (mimeType == ShortcutMimeType)
         {
-            // The shortcut doesn't say which drive its target is in, so it
-            // keeps the listing's.
             if (file.Property("shortcutDetails") is not { } shortcut || shortcut.String("targetId") is not { } target) return null;
             id = target;
             mimeType = shortcut.String("targetMimeType") ?? "";
         }
-        else
-        {
-            driveId = file.String("driveId") ?? driveId;
-        }
+        // Folders go with the other Google formats: a picked folder grants
+        // only itself, never the videos inside it.
+        if (mimeType.StartsWith(GoogleFormatPrefix, StringComparison.Ordinal)) return null;
 
         DateTimeOffset? modified = DateTimeOffset.TryParse(file.String("modifiedTime"), CultureInfo.InvariantCulture,
             DateTimeStyles.AssumeUniversal, out var date) ? date : null;
-        if (mimeType == FolderMimeType)
-        {
-            return new ConnectorEntry(name, FolderUrl(id, name, driveId), true) { Modified = modified };
-        }
-        if (mimeType.StartsWith(GoogleFormatPrefix, StringComparison.Ordinal)) return null;
 
         // Drive encodes 64-bit numbers as strings; the duration is missing
         // until Drive finishes processing a video.
@@ -200,10 +167,6 @@ public sealed class GoogleDriveConnector : IMediaConnector
     // URLs
     // ------------------------------------------------------------------
 
-    public string FolderUrl(string id, string name, string? driveId = null) =>
-        SourceUrl.AccountItem(MediaSourceKind.GoogleDrive, _account.Key, [id], name,
-            driveId is null ? null : [new KeyValuePair<string, string>("drive", driveId)]);
-
     public static string Url(string path, IEnumerable<(string Name, string Value)> query) =>
         $"{ApiBase}{path}?{OAuthClient.FormEncode(query)}";
 
@@ -211,8 +174,6 @@ public sealed class GoogleDriveConnector : IMediaConnector
     public static string ContentUrl(string fileId) =>
         Url($"files/{Uri.EscapeDataString(fileId)}", [("alt", "media"), ("supportsAllDrives", "true")]);
 
-    /// <summary>A string literal for a Drive query: backslashes and quotes escaped.</summary>
-    public static string QueryLiteral(string value) => value.Replace(@"\", @"\\").Replace("'", @"\'");
 }
 
 /// <summary>Streams a Drive file with a Bearer token; a refresh gets a new token.</summary>

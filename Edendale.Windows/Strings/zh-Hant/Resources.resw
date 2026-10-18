@@ -1620,21 +1620,42 @@
     <value>適用於 30 fps 以下、最高 4K 的影片。</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>瀏覽器會開啟以登入 Google。Edendale 會向 Google 請求你雲端硬碟的唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>我的雲端硬碟</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>與我共用</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>共用雲端硬碟</value>
+    <value>瀏覽器會開啟以登入 Google。登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片，只會從此裝置連線，絕不會上傳或更改任何內容。</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale 需要權限才能查看你的 Google 雲端硬碟檔案。請重新登入，並保持選取雲端硬碟存取權限。</value>
+    <value>Edendale 需要存取你選擇的 Google 雲端硬碟檔案。請重新登入，並保持選取該存取權限。</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>你選擇的影片</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>選擇更多影片</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>選擇更多影片</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>選擇更多影片</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>已加入 {0} 部影片。</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>已加入 {0} 部影片。</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>你選擇的影片已在你的資料庫中。</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>重新連結 Google 雲端硬碟</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Edendale 現在只能看到你選擇的 Google 雲端硬碟影片，因此你先前的 Google 雲端硬碟來源已被移除。請開啟「新增網路來源」→「Google Drive」，登入並選擇你的影片。</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>這些影片是以 {0} 選擇的。請再次使用「選擇更多影片」，並使用 {1}。</value>
   </data>
 </root>

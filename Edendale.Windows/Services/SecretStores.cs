@@ -206,7 +206,11 @@ public sealed record CloudAccount
     /// <summary><see cref="MediaSourceKind"/> raw value.</summary>
     public required string Kind { get; init; }
 
-    /// <summary>The provider's stable user id (Google sub, Microsoft user id, Dropbox account_id).</summary>
+    /// <summary>
+    /// The provider's stable user id: Drive's permissionId (builds before
+    /// drive.file stored Google's sub), the Microsoft user id, or Dropbox's
+    /// account_id.
+    /// </summary>
     public required string Subject { get; init; }
 
     public string? Email { get; init; }
@@ -215,6 +219,22 @@ public sealed record CloudAccount
 
     /// <summary>OneDrive: the user's default drive id.</summary>
     public string? DriveId { get; init; }
+
+    /// <summary>
+    /// The scopes the sign-in granted. Accounts from builds before
+    /// drive.file have none stored.
+    /// </summary>
+    public IReadOnlyList<string>? Scopes { get; init; }
+
+    /// <summary>
+    /// A Google account from before drive.file (ENHANCEMENT.md 3.20 D1):
+    /// its token can't open Google's picker, and the folder sources it
+    /// served can't be listed any more.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsFromBeforeDriveFile =>
+        SourceKind == MediaSourceKind.GoogleDrive
+        && Scopes?.Contains(Remote.CloudProviders.GoogleDriveScope, StringComparer.Ordinal) != true;
 
     [JsonIgnore]
     public MediaSourceKind SourceKind => MediaSourceKinds.FromRawValue(Kind) ?? MediaSourceKind.OneDrive;
@@ -297,6 +317,23 @@ public sealed class CloudAccountVault
             _file.Save(_accounts);
         }
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 3.20 D1: forgets every Google account from before drive.file, without
+    /// revoking it (Google's revoke would end the grant other devices share).
+    /// Returns how many went.
+    /// </summary>
+    public int RemoveGoogleAccountsWithoutDriveFile()
+    {
+        int removed;
+        lock (_gate)
+        {
+            removed = _accounts.RemoveAll(account => account.IsFromBeforeDriveFile);
+            if (removed > 0) _file.Save(_accounts);
+        }
+        if (removed > 0) Changed?.Invoke(this, EventArgs.Empty);
+        return removed;
     }
 
     public IReadOnlyList<SavedLogin> Logins =>
