@@ -199,7 +199,10 @@ nonisolated struct OAuthClient: Sendable {
 
     // MARK: Authorization code + PKCE
 
-    func authorizationURL(state: String, codeChallenge: String) -> URL {
+    /// The provider's sign-in page. `parameters` are added for this request
+    /// only and win over the configuration's (e.g. Google's `login_hint`
+    /// when choosing more Drive videos).
+    func authorizationURL(state: String, codeChallenge: String, parameters: [String: String] = [:]) -> URL {
         var components = URLComponents(url: configuration.authorizationEndpoint, resolvingAgainstBaseURL: false)!
         var items = [
             URLQueryItem(name: "client_id", value: configuration.clientID),
@@ -210,7 +213,8 @@ nonisolated struct OAuthClient: Sendable {
             URLQueryItem(name: "code_challenge", value: codeChallenge),
             URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
-        for (name, value) in configuration.additionalAuthorizationParameters.sorted(by: { $0.key < $1.key }) {
+        let extra = configuration.additionalAuthorizationParameters.merging(parameters) { _, request in request }
+        for (name, value) in extra.sorted(by: { $0.key < $1.key }) {
             items.append(URLQueryItem(name: name, value: value))
         }
         components.queryItems = items
@@ -221,13 +225,22 @@ nonisolated struct OAuthClient: Sendable {
         return components.url!
     }
 
-    /// The authorization code from the redirect, after checking `state`
-    /// and any error the provider reported.
-    static func authorizationCode(
+    /// What the redirect carried back.
+    struct AuthorizationResponse: Equatable, Sendable {
+        let code: String
+        /// Google's picker: the files the user chose this time (none when
+        /// they confirmed without picking).
+        let pickedFileIDs: [String]
+    }
+
+    /// The authorization code (and any files picked with Google's picker)
+    /// from the redirect, after checking `state` and any error the provider
+    /// reported.
+    static func authorizationResponse(
         from callback: URL,
         expectedState: String,
         provider: String
-    ) throws -> String {
+    ) throws -> AuthorizationResponse {
         let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
         func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
 
@@ -237,7 +250,11 @@ nonisolated struct OAuthClient: Sendable {
         }
         guard value("state") == expectedState else { throw OAuthError.stateMismatch }
         guard let code = value("code"), !code.isEmpty else { throw OAuthError.missingAuthorizationCode }
-        return code
+        let picked = (value("picked_file_ids") ?? "")
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return AuthorizationResponse(code: code, pickedFileIDs: picked)
     }
 
     func exchange(code: String, verifier: String) async throws -> OAuthTokenResponse {

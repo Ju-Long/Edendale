@@ -43,6 +43,11 @@ final class LibraryController {
         }
     }
 
+    /// What the last Choose More Videos did to a Google Drive source, by
+    /// `VideoFolder.id`, shown on its row until the source's next scan.
+    /// Unlike `sourceStates`, never a problem.
+    var sourceNotes: [UUID: String] = [:]
+
     /// Remote sources scanned more recently than this are skipped by the
     /// automatic sweep on every library visit; ⌘R and Rescan still scan.
     nonisolated static let automaticRescanInterval: TimeInterval = 15 * 60
@@ -56,9 +61,19 @@ final class LibraryController {
 
     private let modelContext: ModelContext
     private let tmdb = TMDBService.shared
+    /// Where a stored source's login or account comes from on rescans.
+    private let connectors: ConnectorFactory.Environment
+    private let enrichesMetadata: Bool
 
-    init(modelContext: ModelContext) {
+    /// Tests pass in-memory stores and turn TMDB enrichment off.
+    init(
+        modelContext: ModelContext,
+        connectors: ConnectorFactory.Environment = .live,
+        enrichesMetadata: Bool = true
+    ) {
         self.modelContext = modelContext
+        self.connectors = connectors
+        self.enrichesMetadata = enrichesMetadata
         repairLegacyRemoteItems()
     }
 
@@ -105,13 +120,20 @@ final class LibraryController {
     /// credential-free.
     ///
     /// - Parameter displayPath: The readable location shown with the
-    ///   source, e.g. "Google Drive › My Drive › Movies".
+    ///   source, e.g. "OneDrive › Movies".
     func importRemoteFolder(
         connector: any MediaConnector,
         folderURL: URL,
         displayName: String,
         displayPath: String? = nil
     ) async {
+        // One Google Drive source per account (R6): linking it again rescans.
+        if connector.kind == .googleDrive,
+           let existing = source(kind: .googleDrive, folderPath: folderURL.absoluteString) {
+            await rescanRemoteFolder(existing)
+            return
+        }
+
         isImporting = true
         errorMessage = nil
         defer { isImporting = false }
@@ -155,7 +177,114 @@ final class LibraryController {
     /// login or account is gone.
     private func connector(for folder: VideoFolder) -> (any MediaConnector)? {
         guard let url = folder.remoteURL else { return nil }
-        return ConnectorFactory.connector(forSource: url, kind: folder.sourceKind)
+        return ConnectorFactory.connector(forSource: url, kind: folder.sourceKind, environment: connectors)
+    }
+
+    private func source(kind: MediaSourceKind, folderPath: String) -> VideoFolder? {
+        let folders = (try? modelContext.fetch(FetchDescriptor<VideoFolder>())) ?? []
+        return folders.first { $0.sourceKind == kind && $0.folderPath == folderPath }
+    }
+
+    // MARK: - Google Drive
+
+    /// Links an account's Google Drive source, "Videos you chose", or
+    /// rescans it when this device already has it. `signIn` carries the
+    /// files Google's picker just returned (none when an account already
+    /// linked was chosen, or one handed to Apple TV): picking a removed
+    /// video again brings it back. Returns how many of those picks are new
+    /// to the library, and says so on the source's row.
+    @discardableResult
+    func addChosenVideos(_ signIn: CloudAccountStore.SignIn) async -> Int {
+        let account = signIn.account
+        let picked = Set(signIn.pickedFileIDs)
+        let rootURL = GoogleDriveConnector.chosenFolderURL(accountKey: account.key)
+        let before: Set<String>
+        if let folder = source(kind: .googleDrive, folderPath: rootURL.absoluteString) {
+            folder.hiddenItemIDs = folder.hiddenItemIDs?.filter { !picked.contains($0) }
+            before = Self.driveFileIDs(in: folder)
+            await rescanRemoteFolder(folder)
+        } else {
+            guard let connector = ConnectorFactory.connector(for: account, environment: connectors) else { return 0 }
+            before = []
+            await importRemoteFolder(
+                connector: connector,
+                folderURL: rootURL,
+                displayName: GoogleDriveConnector.chosenFolderName,
+                displayPath: "\(MediaSourceKind.googleDrive.displayName) › \(GoogleDriveConnector.chosenFolderName)"
+            )
+        }
+        guard let folder = source(kind: .googleDrive, folderPath: rootURL.absoluteString) else { return 0 }
+        let added = picked.intersection(Self.driveFileIDs(in: folder).subtracting(before)).count
+        if !picked.isEmpty, sourceStates[folder.id] == nil {
+            sourceNotes[folder.id] = switch added {
+            case 0: String(localized: "The videos you chose were already in your library.")
+            case 1: String(localized: "Added 1 video.")
+            default: String(localized: "Added \(added) videos.")
+            }
+        }
+        return added
+    }
+
+    #if !os(tvOS)
+    /// Choose More Videos (R7): reruns Google's picker for `account`, then
+    /// rescans its source here, adding one if this device has none.
+    @discardableResult
+    func chooseMoreVideos(for account: CloudAccount, accounts: CloudAccountStore) async throws -> Int {
+        await addChosenVideos(try await accounts.chooseMoreVideos(for: account))
+    }
+    #endif
+
+    /// D1: removes Google Drive sources linked before `drive.file`, which
+    /// are Drive folders rather than "Videos you chose". CloudAccountStore
+    /// removes their accounts, unless another device's migration already
+    /// did through the iCloud Keychain. Returns how many went.
+    @discardableResult
+    func removeGoogleDriveSourcesFromBeforeDriveFile() -> Int {
+        let folders = (try? modelContext.fetch(FetchDescriptor<VideoFolder>())) ?? []
+        let outdated = folders.filter { folder in
+            folder.sourceKind == .googleDrive
+                && !(folder.remoteURL.map(GoogleDriveConnector.isChosenFolder) ?? false)
+        }
+        for folder in outdated {
+            sourceStates[folder.id] = nil
+            sourceNotes[folder.id] = nil
+            modelContext.delete(folder)
+        }
+        if !outdated.isEmpty { save() }
+        return outdated.count
+    }
+
+    /// The Drive file ID in a stored item path; `nil` for other kinds.
+    nonisolated static func driveFileID(fromPath path: String) -> String? {
+        guard let url = URL(string: path),
+              let item = SourceURL.parseAccountItem(url), item.kind == .googleDrive
+        else { return nil }
+        return item.ids.first
+    }
+
+    /// Entries a scan of `folder` adds: none of its hidden Drive files (D2).
+    nonisolated static func visibleEntries(_ entries: [ConnectorEntry], hiding hidden: [String]?) -> [ConnectorEntry] {
+        guard let hidden, !hidden.isEmpty else { return entries }
+        let ids = Set(hidden)
+        return entries.filter { entry in
+            guard let id = driveFileID(fromPath: entry.url.absoluteString) else { return true }
+            return !ids.contains(id)
+        }
+    }
+
+    private static func driveFileIDs(in folder: VideoFolder) -> Set<String> {
+        let paths = folder.movies.map(\.filePath) + folder.tvShows.flatMap(\.episodes).map(\.filePath)
+        return Set(paths.compactMap(driveFileID(fromPath:)))
+    }
+
+    /// Remembers removed Drive files on their source, so rescans skip them.
+    private func hideDriveItems(_ paths: [String], in folder: VideoFolder?) {
+        guard let folder, folder.sourceKind == .googleDrive else { return }
+        let ids = paths.compactMap(Self.driveFileID(fromPath:))
+        guard !ids.isEmpty else { return }
+        var hidden = folder.hiddenItemIDs ?? []
+        hidden += ids.filter { !hidden.contains($0) }
+        folder.hiddenItemIDs = hidden
     }
 
     // MARK: - Rescan
@@ -220,6 +349,7 @@ final class LibraryController {
     /// as a library-wide error.
     private func rescanRemoteFolder(_ folder: VideoFolder) async {
         guard let rootURL = folder.remoteURL else { return }
+        sourceNotes[folder.id] = nil
         guard let connector = connector(for: folder) else {
             sourceStates[folder.id] = .needsSignIn(
                 ConnectorError.signInRequired(provider: folder.sourceKind.displayName).localizedDescription
@@ -245,7 +375,8 @@ final class LibraryController {
         sourceStates[folder.id] = nil
         folder.lastScannedAt = Date()
 
-        let newEntries = entries.filter { !knownPaths.contains($0.url.absoluteString) }
+        let newEntries = Self.visibleEntries(entries, hiding: folder.hiddenItemIDs)
+            .filter { !knownPaths.contains($0.url.absoluteString) }
         guard !newEntries.isEmpty else {
             save()
             return
@@ -454,16 +585,20 @@ final class LibraryController {
     /// user's other devices out. Settings → Accounts forgets them.
     func removeFolder(_ folder: VideoFolder) {
         sourceStates[folder.id] = nil
+        sourceNotes[folder.id] = nil
         modelContext.delete(folder)
         save()
     }
 
+    /// A removed Google Drive video stays hidden from later scans (D2).
     func removeMovie(_ movie: Movie) {
+        hideDriveItems([movie.filePath], in: movie.folder)
         modelContext.delete(movie)
         save()
     }
 
     func removeTVShow(_ show: TVShow) {
+        hideDriveItems(show.episodes.map(\.filePath), in: show.folder)
         modelContext.delete(show)
         save()
     }
@@ -581,6 +716,7 @@ final class LibraryController {
     // MARK: - TMDB Enrichment
 
     private func enrichFolder(_ folder: VideoFolder) async {
+        guard enrichesMetadata else { return }
         isEnriching = true
         defer { isEnriching = false }
 

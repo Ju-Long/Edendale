@@ -23,7 +23,7 @@ final class VideoFolder {
     /// and `CloudAccountVault`).
     var username: String?
     /// A readable location for the source's row, e.g.
-    /// "Google Drive › My Drive › Movies". Provider URLs hold IDs, not names.
+    /// "OneDrive › Movies › Classics". Provider URLs hold IDs, not names.
     /// Optional attributes like this one migrate existing rows as `nil`.
     var displayPath: String?
     /// The account key of a cloud or S3 source (also its URL host).
@@ -35,6 +35,11 @@ final class VideoFolder {
     /// `list_folder/continue`, OneDrive `delta`, Drive `changes.list`).
     /// Reserved: rescans still list the whole source.
     var changeCursor: String?
+    /// Google Drive: IDs of picked files removed from the library on this
+    /// device. Google can't unshare one file with an app, so rescans skip
+    /// these instead (ENHANCEMENT.md J.14, D2). Library data, so it never
+    /// leaves the device.
+    var hiddenItemIDs: [String]?
 
     @Relationship(deleteRule: .cascade, inverse: \Movie.folder)
     var movies: [Movie]

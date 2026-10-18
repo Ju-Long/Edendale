@@ -1087,6 +1087,11 @@ GPU-estimated motion vectors into Apple's `MTLFXFrameInterpolator`:
 
 ## Section J — Storage Providers
 
+> **Amended 2026-10-17:** Google Drive no longer uses `drive.readonly` or a
+> folder browser. It asks only for `drive.file` and opens Google's picker
+> during sign-in; see J.14. Where J.6, J.7, J.9, and J.13 describe Google
+> Drive's scopes, folder roots, or verification, J.14 replaces them.
+
 **Depends on:** B (FFmpeg reader), G (session integration). Independent of the
 rendering work in C–F and I.
 
@@ -1666,6 +1671,199 @@ shared.
 - Hardware only: the Apple TV handoff and real-account playback on each
   provider. README records the manual steps.
 
+### J.14 — Amendment: Google Drive on `drive.file` with Google's picker
+
+**Decided 2026-10-17.** Google's Third-Party Data Safety team refused
+`drive.readonly` four times: restricted Drive scopes are only for sync,
+backup, productivity, or security apps, not a video player. Every platform
+moves to the non-sensitive `https://www.googleapis.com/auth/drive.file`. People
+choose the videos Edendale may play in Google's own picker, which opens inside
+the sign-in page (`trigger_onepick=true`), and Edendale reads only those
+files. `drive.file` needs no scope verification, demo video, or yearly CASA
+assessment. Apple goes first because its iOS OAuth client is the one Google
+reviewed; android, windows, meta-horizon, and web follow on their own
+branches.
+
+**What changes for people**
+
+| Moment | Before (`drive.readonly`) | After (`drive.file`) |
+|---|---|---|
+| Link Source → Google Drive | Sign in, browse My Drive, Shared with me, or Shared drives, pick a folder | Sign in; Google's picker opens on the same page; tick one or more videos |
+| The source | A folder, scanned with its subfolders | One source per account, "Videos you chose", listing every video chosen so far |
+| New episodes | Appear at the next scan | Someone uses **Choose More Videos** and picks them |
+| Apple TV | Gets the account from an iPhone or iPad, then browses folders | Gets the account the same way and lists every video chosen on any device; choosing happens on an iPhone, iPad, or Mac |
+| Consent screen | "See and download all your Google Drive files", unverified-app warning | Access limited to the files the person picks; no warning |
+
+**Spike, 2026-10-17** (a throwaway Mac probe driving
+`ASWebAuthenticationSession` against the real iOS and Android clients, with
+the owner signing in; nothing committed, no code or token printed):
+- S1 pass: the iOS client's reversed-client-ID scheme with
+  `trigger_onepick=true` opens the picker. The callback carries `code`,
+  `state`, `scope`, `iss`, and `picked_file_ids` (comma-separated). The
+  exchange returns a refresh token whose scope is `drive.file` alone.
+  Still to confirm on a real iPhone (below).
+- S4 pass: grants belong to the Google account and Cloud project, not to one
+  client or token. An older refresh token, a TV's handed-off token, and other
+  platforms' clients all see every later pick.
+- S5 fail: a picked folder grants only itself, never its contents. Files only
+  (D3); never send `allow_folder_selection`.
+- S6 partial: `mimetypes=video/*` empties the picker; an explicit list works
+  and shows a flat, video-only list. Drive's MIME types for `.srt` and `.ass`
+  are still unknown.
+- S7 pass: without a filter the picker also offers Shared with me, Shared
+  drives, and search.
+- S8 pass: `about.get` works under `drive.file`, and `permissionId` is the
+  same for every client.
+- S9 pass: `alt=media` with `Range` returns 206 at the start and deep into a
+  1.6 GB MKV.
+- S10 open: no screenshots of the consent and picker screens yet.
+
+**Decisions** (all settled by the owner, 2026-10-17)
+- D1, clean break: on the first launch of a `drive.file` build, remove every
+  Google Drive account whose stored scopes lack `drive.file`, and every
+  Google Drive source from before, and say once that Google Drive needs
+  linking again. Old keys (the ID token's `sub`) can't match the new
+  `permissionId` keys, and folder sources can't work under `drive.file`.
+- D2, a per-source hidden-ID list kept on the device: removing a Drive video
+  from the library adds its file ID; scans skip hidden IDs. Google can't
+  unshare one file with an app. Device-specific library data, never synced.
+- D3, files only (S5).
+- D4 (android only), keep the Custom Tab URL flow.
+- D5, keep `openid` and `email` in the Cloud Console's Data Access until no
+  shipped build requests them.
+
+**Shared rules** (AGENTS.md rule 7: every branch implements them natively)
+- R1 scope: only `drive.file`. `openid` and `email` go, because the picker
+  flow allows no other scope next to `drive.file`.
+- R2 sign-in URL: today's code request with PKCE plus `access_type=offline`,
+  `prompt=consent` (`consent select_account` on a first sign-in),
+  `trigger_onepick=true`, `allow_multiple=true`, and `mimetypes` as an
+  explicit list (`video/mp4,video/x-matroska,video/quicktime,video/x-msvideo,`
+  `video/webm,video/mp2t,video/mpeg,video/x-m4v,video/x-ms-wmv,video/3gpp`).
+  `login_hint=<email>` when choosing more videos. Never `video/*`, never
+  `allow_folder_selection`.
+- R3 callback: read `code`, `state`, `error`, `scope`, and `picked_file_ids`.
+  A cancel changes nothing. A granted scope without `drive.file` shows "Drive
+  access not granted".
+- R4 identity: `about.get?fields=user(permissionId,emailAddress,displayName)`;
+  `permissionId` is the account subject, replacing the ID token's `sub`.
+- R5 tokens: each picker run returns a new refresh token; keep the newest and
+  never revoke the old one. Google's revoke can end the whole grant, cutting
+  off the new token and every handed-off TV too.
+- R6 source: one Google Drive source per account, rooted at a virtual
+  folder, "Videos you chose": `files.list` with `q=trashed = false`, today's
+  fields and paging, `supportsAllDrives`, `includeItemsFromAllDrives`. Videos
+  are still recognized by extension; folders are skipped. The listing is the
+  source of truth (S4).
+- R7 Choose More Videos: on the Google Drive source and in Settings →
+  Accounts. Reruns R2 with `login_hint`, then rescans. Picked IDs only say
+  how many videos were chosen.
+- R8 no browsing: the My Drive, Shared with me, and Shared drives folders and
+  the folder-picker step go.
+- R9 playback unchanged: `files/<id>?alt=media` with `Range` and
+  `supportsAllDrives`.
+- R10 TVs: the handoff stays; TVs never open the picker. Their Google Drive
+  source says to choose videos on a phone, tablet, or computer, and offers a
+  rescan. (Google's device flow can grant `drive.file`, so a TV signing in on
+  its own is possible later; out of scope.)
+- R11 existing accounts: D1.
+- R12 removing one video: D2.
+- R13 words: the provider description, the Link Source footer, the errors,
+  and Settings → Accounts in every locale, plus the web privacy policy.
+
+**Apple specifics** (beyond the shared rules, decided while building)
+- The Google root URL is `gdrive://<account>/~chosen/Google%20Drive`. D1
+  removes any Google Drive source whose root isn't that, even when its account
+  is already gone: on a second device the synced account item may have been
+  deleted by the first device's migration before this one launches.
+- D1 runs at every launch on every platform, so an account an old build
+  syncs in later is removed too (its `drive.readonly` token would otherwise
+  list every file in Drive as "Videos you chose"). The notice appears only on
+  a launch that removed something. tvOS runs the same code against its own
+  Keychain.
+- Linking Google Drive for an account that already has a source on this
+  device rescans that source instead of adding a second one.
+- Choosing a hidden video again in the picker unhides it, so Choose More
+  Videos can bring back a video removed by mistake.
+- If the person switches to another Google account inside Choose More
+  Videos, nothing is stored and they are told to use the source's account.
+- Apple has no sidecar-subtitle loading for any source (subtitles come from
+  embedded tracks, an imported file, or Wyzie), so picking an `.srt` or
+  `.ass` file doesn't help playback on this branch yet.
+
+**Modify:**
+- `Shared/Controllers/Accounts/CloudProviders.swift`: R1, R2, R4.
+- `OAuthClient.swift`: per-request authorization parameters; the callback's
+  `picked_file_ids` (R3).
+- `CloudAccountStore.swift`: the `drive.file` check, `chooseMoreVideos(for:)`
+  (R5, R7), and the D1 migration.
+- `Shared/Controllers/Connectors/GoogleDriveConnector.swift`: R6, R8.
+- `LibraryController.swift`, `VideoFolder.swift`: hidden IDs (D2), one
+  source per account, D1 source removal.
+- `AddNetworkSourceView.swift`, `CloudAccountStep.swift`: no folder picker
+  for Google Drive; import the root after sign-in.
+- `SourceRow.swift`, `DownloadedView.swift`, `AccountsSection.swift`: Choose
+  More Videos; the tvOS note and rescan (R10).
+- `AccountHandoff.swift`: TV wording (R10).
+- `Shared/Localizable.xcstrings`: R13 in all 18 locales.
+- Docs: README "Storage providers", the `Example.xcconfig` comment, this
+  section.
+
+**Web branch follow-up** (not edited here): `src/content/privacy/en.md` and
+its 7 translations get one new `updated` date and say that Google sign-in
+asks only for `drive.file` (no `openid`, `email`, or `drive.readonly`), that
+Edendale can see only the files the person picks in Google's picker, that it
+reads their names, sizes, dates, and video durations to list them and their
+bytes to play them, that removing a Drive video keeps its file ID on that
+device so a rescan skips it, and that revoking access at
+myaccount.google.com/connections ends access on every device. Keep the
+Limited Use and no-AI-training sentences.
+
+**Acceptance:** the authorization URL carries exactly the R2 parameters and
+the `drive.file` scope; the callback yields the code and picked IDs, and
+`error=access_denied` maps to "not allowed"; a token without `drive.file` is
+refused; the Drive root lists picked files across pages, skips folders and
+Google formats, and needs no folder IDs; scans skip hidden IDs; D1 removes old
+accounts and sources once and leaves `drive.file` accounts, new sources, and
+other providers alone; the handoff carries a `drive.file` account.
+
+**Verification:** the all-platform build (macOS with tests, iOS, tvOS,
+visionOS) and the unit tests; then the owner signs in on an iPhone and the
+Mac, chooses more videos, plays one, removes one, and hands the account to
+Apple TV.
+
+#### J.14 — Tracking
+
+| Step | Description | Status |
+|------|-------------|--------|
+| R1, R2, R4 | Scope, picker URL, `about.get` identity | [x] |
+| R3 | Callback with `picked_file_ids` | [x] |
+| R5, R7 | Choose More Videos (newest token, no revoke) | [x] |
+| R6, R8 | "Videos you chose" root; browse folders removed | [x] |
+| R10 | Apple TV wording and rescan | [x] |
+| D1 | Remove old accounts and sources, one notice | [x] |
+| D2 | Hidden IDs per source, on the device | [x] |
+| R13 | Copy in all 18 locales | [x] |
+| — | README provider table, `Example.xcconfig` | [x] |
+| — | Tests: OAuth, listing, connector, handoff, D1 | [x] |
+| — | All-platform build and unit tests | [x] |
+| S1 | Picker inside the iOS sign-in sheet on a real iPhone | [ ] |
+| S6 | Drive's MIME types for `.srt` and `.ass` | [ ] |
+| S10 | Consent and picker screenshots | [ ] |
+| — | Owner's device run: iPhone, Mac, Apple TV handoff | [ ] |
+| — | Web privacy policy (web branch) | [ ] |
+
+References, checked 2026-10-17:
+- Picker in desktop and mobile apps (`trigger_onepick`, `picked_file_ids`,
+  `drive.file` only):
+  https://developers.google.com/workspace/drive/picker/guides/desktop-mobile-picker
+- Drive scope classes:
+  https://developers.google.com/workspace/drive/api/guides/api-specific-auth
+- Workspace API user data policy (restricted-scope uses, CASA):
+  https://developers.google.com/workspace/workspace-api-user-data-developer-policy
+- `about.get`:
+  https://developers.google.com/workspace/drive/api/reference/rest/v3/about/get
+
 ### Section J — Tracking
 
 | Step | Description                                  | Status |
@@ -1682,8 +1880,9 @@ shared.
 | J.9  | NFS, SFTP                                    | [ ]    |
 | J.9  | WebDAV, S3-compatible                        | [ ]    |
 | J.13 | Tests                                        | [ ]    |
-| —    | Google restricted-scope verification         | [ ]    |
+| —    | Google restricted-scope verification         | Dropped (J.14) |
 | —    | Files/Finder provider-folder check           | [ ]    |
+| J.14 | Google Drive on `drive.file` + picker        | See J.14 tracking |
 
 References, checked 2026-09-27. Provider rules change, so re-check them when
 registering:

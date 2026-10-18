@@ -2,13 +2,16 @@
 //  GoogleDriveConnector.swift
 //  Edendale
 //
-//  Google Drive through the Drive v3 REST API with the `drive.readonly`
-//  scope. Item URLs are `gdrive://<account>/<fileId>/<Name.ext>`; folders use
-//  the folder's ID the same way, plus `?drive=<driveId>` inside a shared
-//  drive, whose listings must name it. The picker's root holds My Drive,
-//  Shared with me, and Shared drives.
+//  Google Drive through the Drive v3 REST API with the `drive.file` scope:
+//  Edendale sees only the files the user picked in Google's picker, which
+//  opens during sign-in and from Choose More Videos (ENHANCEMENT.md J.14).
+//  So there is nothing to browse. Each account has one virtual folder,
+//  "Videos you chose", listing every file picked so far on any device or
+//  platform, because Google grants picks per account, not per token. Item
+//  URLs are `gdrive://<account>/<fileId>/<Name.ext>`.
 //
-//  Shortcuts are followed to their targets, other Google formats (Docs,
+//  Folders are skipped (a picked folder never grants what's inside it),
+//  shortcuts are followed to their targets, other Google formats (Docs,
 //  Sheets) are skipped, and videos are recognized by file extension rather
 //  than MIME type. Files stream from `files/<id>?alt=media` with a Bearer
 //  token and `Range`. `acknowledgeAbuse` is never sent: a file Google flags
@@ -19,16 +22,13 @@ import Foundation
 
 nonisolated struct GoogleDriveConnector: MediaConnector {
     static let apiBase = URL(string: "https://www.googleapis.com/drive/v3/")!
-    static let folderMimeType = "application/vnd.google-apps.folder"
     static let shortcutMimeType = "application/vnd.google-apps.shortcut"
 
-    /// IDs of the picker's virtual folders; real Drive IDs never start with `~`.
-    enum VirtualFolder {
-        static let roots = "~roots"
-        static let sharedWithMe = "~shared"
-        static let sharedDrives = "~drives"
-        static let myDrive = "root"
-    }
+    /// The ID of the "Videos you chose" folder; real Drive IDs never start
+    /// with `~`. The name in its URL is fixed, so a source's stored URL is
+    /// the same in every language.
+    static let chosenFolderID = "~chosen"
+    static let chosenFolderURLName = "Google Drive"
 
     let kind: MediaSourceKind = .googleDrive
     let account: CloudAccount
@@ -40,17 +40,30 @@ nonisolated struct GoogleDriveConnector: MediaConnector {
     }
 
     var root: URL {
-        folderURL(id: VirtualFolder.roots, name: "Google Drive")
+        Self.chosenFolderURL(accountKey: account.key)
+    }
+
+    /// The account's Google Drive source URL.
+    static func chosenFolderURL(accountKey: String) -> URL {
+        SourceURL.accountItem(kind: .googleDrive, account: accountKey, ids: [chosenFolderID], name: chosenFolderURLName)
+    }
+
+    /// Whether `url` is a Google Drive source from this build: older builds
+    /// linked Drive folders, which `drive.file` can't list.
+    static func isChosenFolder(_ url: URL) -> Bool {
+        guard let item = SourceURL.parseAccountItem(url), item.kind == .googleDrive else { return false }
+        return item.ids == [chosenFolderID]
+    }
+
+    /// What the source is called in the library.
+    static var chosenFolderName: String { String(localized: "Videos you chose") }
+
+    /// Apple TV never opens Google's picker (R10).
+    static var chooseOnAnotherDeviceNote: String {
+        String(localized: "Choose videos for this source in Edendale on an iPhone, iPad, or Mac, then rescan here.")
     }
 
     var accountLabel: String? { account.label }
-
-    /// The picker's root and the list of shared drives only gather other
-    /// folders; linking either would scan all of Drive.
-    func canIndex(_ directory: URL) -> Bool {
-        guard let id = SourceURL.parseAccountItem(directory)?.ids.first else { return false }
-        return id != VirtualFolder.roots && id != VirtualFolder.sharedDrives
-    }
 
     func validate() async throws {
         struct About: Decodable { let user: User?; struct User: Decodable { let emailAddress: String? } }
@@ -59,26 +72,13 @@ nonisolated struct GoogleDriveConnector: MediaConnector {
         }
     }
 
+    /// Only the "Videos you chose" folder lists: it holds every file the
+    /// user picked, and no folder's contents are ever granted.
     func list(directory: URL) async throws -> [ConnectorEntry] {
         guard let item = SourceURL.parseAccountItem(directory), item.kind == .googleDrive,
-              let id = item.ids.first
+              item.ids == [Self.chosenFolderID]
         else { throw ConnectorError.invalidAddress }
-
-        switch id {
-        case VirtualFolder.roots:
-            return [
-                ConnectorEntry(name: String(localized: "My Drive"), url: folderURL(id: VirtualFolder.myDrive, name: String(localized: "My Drive")), isDirectory: true),
-                ConnectorEntry(name: String(localized: "Shared with me"), url: folderURL(id: VirtualFolder.sharedWithMe, name: String(localized: "Shared with me")), isDirectory: true),
-                ConnectorEntry(name: String(localized: "Shared drives"), url: folderURL(id: VirtualFolder.sharedDrives, name: String(localized: "Shared drives")), isDirectory: true)
-            ]
-        case VirtualFolder.sharedDrives:
-            return try await listSharedDrives()
-        case VirtualFolder.sharedWithMe:
-            return try await listFiles(query: "sharedWithMe = true and trashed = false", driveID: nil)
-        default:
-            let driveID = item.queryValue("drive")
-            return try await listFiles(query: "'\(id)' in parents and trashed = false", driveID: driveID)
-        }
+        return try await listChosenFiles()
     }
 
     // MARK: - Listing
@@ -109,80 +109,40 @@ nonisolated struct GoogleDriveConnector: MediaConnector {
         }
     }
 
-    private func listFiles(query: String, driveID: String?) async throws -> [ConnectorEntry] {
+    /// Every file the user picked, across pages. `drive.file` limits
+    /// `files.list` to those, in My Drive, shared with them, or in shared
+    /// drives alike.
+    private func listChosenFiles() async throws -> [ConnectorEntry] {
         var entries: [ConnectorEntry] = []
         var pageToken: String?
         repeat {
             var items = [
-                URLQueryItem(name: "q", value: query),
+                URLQueryItem(name: "q", value: "trashed = false"),
                 URLQueryItem(name: "fields", value: "nextPageToken,files(id,name,mimeType,size,modifiedTime,videoMediaMetadata(durationMillis),shortcutDetails(targetId,targetMimeType))"),
                 URLQueryItem(name: "pageSize", value: "1000"),
                 URLQueryItem(name: "supportsAllDrives", value: "true"),
                 URLQueryItem(name: "includeItemsFromAllDrives", value: "true")
             ]
-            if let driveID {
-                items.append(URLQueryItem(name: "corpora", value: "drive"))
-                items.append(URLQueryItem(name: "driveId", value: driveID))
-            }
             if let pageToken {
                 items.append(URLQueryItem(name: "pageToken", value: pageToken))
             }
             let request = URLRequest(url: Self.url("files", query: items))
             let page = try await http.json(FileList.self) { _ in request }
-            entries += page.files.compactMap { entry(for: $0, driveID: driveID) }
+            entries += page.files.compactMap(entry(for:))
             pageToken = page.nextPageToken
         } while pageToken != nil
         return ConnectorWalk.sorted(entries)
     }
 
-    private func listSharedDrives() async throws -> [ConnectorEntry] {
-        struct DriveList: Decodable {
-            let nextPageToken: String?
-            let drives: [Drive]
-            struct Drive: Decodable { let id: String; let name: String }
-        }
-        var entries: [ConnectorEntry] = []
-        var pageToken: String?
-        repeat {
-            var items = [
-                URLQueryItem(name: "pageSize", value: "100"),
-                URLQueryItem(name: "fields", value: "nextPageToken,drives(id,name)")
-            ]
-            if let pageToken {
-                items.append(URLQueryItem(name: "pageToken", value: pageToken))
-            }
-            let request = URLRequest(url: Self.url("drives", query: items))
-            let page = try await http.json(DriveList.self) { _ in request }
-            entries += page.drives.map { drive in
-                ConnectorEntry(
-                    name: drive.name,
-                    // A shared drive's root folder has the drive's ID.
-                    url: folderURL(id: drive.id, name: drive.name, driveID: drive.id),
-                    isDirectory: true
-                )
-            }
-            pageToken = page.nextPageToken
-        } while pageToken != nil
-        return ConnectorWalk.sorted(entries)
-    }
-
-    /// Maps a Drive file to an entry: folders and folder shortcuts are
-    /// directories; other Google formats are skipped.
-    func entry(for file: File, driveID: String?) -> ConnectorEntry? {
+    /// Maps a picked Drive file to an entry. Folders, folder shortcuts, and
+    /// other Google formats are skipped.
+    func entry(for file: File) -> ConnectorEntry? {
         var id = file.id
         var mimeType = file.mimeType ?? ""
         if mimeType == Self.shortcutMimeType {
             guard let target = file.shortcutDetails?.targetId else { return nil }
             id = target
             mimeType = file.shortcutDetails?.targetMimeType ?? ""
-        }
-        if mimeType == Self.folderMimeType {
-            return ConnectorEntry(
-                name: file.name,
-                url: folderURL(id: id, name: file.name, driveID: driveID),
-                isDirectory: true,
-                modified: file.modifiedTime
-            )
         }
         if mimeType.hasPrefix("application/vnd.google-apps.") { return nil }
         return ConnectorEntry(
@@ -196,16 +156,6 @@ nonisolated struct GoogleDriveConnector: MediaConnector {
     }
 
     // MARK: - URLs
-
-    func folderURL(id: String, name: String, driveID: String? = nil) -> URL {
-        SourceURL.accountItem(
-            kind: .googleDrive,
-            account: account.key,
-            ids: [id],
-            name: name,
-            query: driveID.map { [URLQueryItem(name: "drive", value: $0)] } ?? []
-        )
-    }
 
     static func url(_ path: String, query: [URLQueryItem]) -> URL {
         var components = URLComponents(url: apiBase.appendingPathComponent(path), resolvingAgainstBaseURL: false)!

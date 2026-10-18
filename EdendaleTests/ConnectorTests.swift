@@ -13,6 +13,7 @@
 
 import Testing
 import Foundation
+import SwiftData
 @testable import Edendale
 
 struct ConnectorURLTests {
@@ -184,6 +185,83 @@ struct SourceURLTests {
     }
 }
 
+// MARK: - Hidden Google Drive videos (D2)
+
+/// A Google Drive account's "Videos you chose" with a fixed listing.
+private struct FixedDriveConnector: MediaConnector {
+    let kind: MediaSourceKind = .googleDrive
+    let accountKey: String
+    let names: [String: String]
+
+    var root: URL { GoogleDriveConnector.chosenFolderURL(accountKey: accountKey) }
+
+    func list(directory: URL) async throws -> [ConnectorEntry] {
+        names.map { id, name in
+            ConnectorEntry(
+                name: name,
+                url: SourceURL.accountItem(kind: .googleDrive, account: accountKey, ids: [id], name: name),
+                isDirectory: false
+            )
+        }
+    }
+}
+
+@MainActor
+struct HiddenDriveItemTests {
+
+    private func library() throws -> (LibraryController, ModelContainer) {
+        let schema = Schema([VideoFolder.self, Movie.self, TVShow.self, Episode.self])
+        let container = try ModelContainer(
+            for: schema,
+            configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
+        )
+        return (LibraryController(modelContext: container.mainContext, enrichesMetadata: false), container)
+    }
+
+    @Test func removingADriveVideoHidesItsFileID() async throws {
+        let (library, container) = try library()
+        let key = SourceURL.accountKey(kind: .googleDrive, subject: "permission-1")
+        let connector = FixedDriveConnector(accountKey: key, names: [
+            "m1": "The.Matrix.1999.mkv",
+            "e1": "Show.Name.S01E01.mkv",
+            "e2": "Show.Name.S01E02.mkv"
+        ])
+        await library.importRemoteFolder(
+            connector: connector, folderURL: connector.root, displayName: GoogleDriveConnector.chosenFolderName
+        )
+        let folder = try #require(try container.mainContext.fetch(FetchDescriptor<VideoFolder>()).first)
+        #expect(folder.accountKey == key)
+        #expect(folder.totalItemCount == 3)
+        #expect(folder.hiddenItemIDs == nil)
+
+        library.removeMovie(try #require(folder.movies.first))
+        #expect(folder.hiddenItemIDs == ["m1"])
+        library.removeTVShow(try #require(folder.tvShows.first))
+        #expect(Set(folder.hiddenItemIDs ?? []) == ["m1", "e1", "e2"])
+
+        // Scans skip them; other files and other kinds pass.
+        let entries = try await connector.list(directory: connector.root) + [
+            ConnectorEntry(name: "Heat.1995.mkv", url: SourceURL.accountItem(kind: .googleDrive, account: key, ids: ["n1"], name: "Heat.1995.mkv"), isDirectory: false),
+            ConnectorEntry(name: "m1.mkv", url: URL(string: "smb://nas/Films/m1.mkv")!, isDirectory: false)
+        ]
+        let visible = LibraryController.visibleEntries(entries, hiding: folder.hiddenItemIDs)
+        #expect(Set(visible.map(\.name)) == ["Heat.1995.mkv", "m1.mkv"])
+        #expect(LibraryController.visibleEntries(entries, hiding: nil).count == entries.count)
+    }
+
+    @Test func otherSourcesKeepNoHiddenList() async throws {
+        let (library, container) = try library()
+        let folder = VideoFolder(name: "Films", folderPath: "smb://nas/Films/", sourceKind: .smb)
+        container.mainContext.insert(folder)
+        let movie = Movie(localTitle: "Heat", filePath: "smb://nas/Films/Heat.1995.mkv", bookmarkData: nil, releaseYear: 1995, isICloudItem: false)
+        folder.movies.append(movie)
+        library.removeMovie(movie)
+        #expect(folder.hiddenItemIDs == nil)
+        #expect(LibraryController.driveFileID(fromPath: "gdrive://abc/1AbC/Heat.1995.mkv") == "1AbC")
+        #expect(LibraryController.driveFileID(fromPath: "/Users/me/Movies/Heat.1995.mkv") == nil)
+    }
+}
+
 // MARK: - Factory and stores
 
 struct ConnectorFactoryTests {
@@ -218,6 +296,26 @@ struct ConnectorFactoryTests {
         #expect(ConnectorFactory.connector(forSource: URL(string: "s3://acct/films/")!, kind: .s3, environment: environment) == nil)
         #expect(ConnectorFactory.connector(forSource: URL(string: "nfs://nas/export/")!, kind: .nfs, environment: environment) != nil)
         #expect(ConnectorFactory.connector(forSource: URL(fileURLWithPath: "/tmp"), kind: .local, environment: environment) == nil)
+    }
+
+    @Test func googleDriveSourcesAreTheChosenVideosFolder() throws {
+        let key = SourceURL.accountKey(kind: .googleDrive, subject: "permission-1")
+        let root = GoogleDriveConnector.chosenFolderURL(accountKey: key)
+        // Stable in every language: the folder's name isn't in its URL.
+        #expect(root.absoluteString == "gdrive://\(key)/~chosen/Google%20Drive")
+        #expect(GoogleDriveConnector.isChosenFolder(root))
+        // Sources from before drive.file were Drive folders.
+        let oldFolder = SourceURL.accountItem(kind: .googleDrive, account: key, ids: ["root"], name: "My Drive")
+        #expect(!GoogleDriveConnector.isChosenFolder(oldFolder))
+        #expect(!GoogleDriveConnector.isChosenFolder(SourceURL.accountItem(kind: .dropbox, account: key, ids: ["~chosen"], name: "x")))
+
+        let account = CloudAccount(
+            kind: .googleDrive, subject: "permission-1", email: "me@example.com", displayName: nil,
+            refreshToken: "r", scopes: CloudProviders.googleScopes, driveID: nil
+        )
+        let connector = GoogleDriveConnector(account: account)
+        #expect(connector.root == root)
+        #expect(connector.canIndex(connector.root))
     }
 
     @Test func rebuildsCloudConnectorsOnlyWithTheirAccount() throws {

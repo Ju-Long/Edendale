@@ -9841,6 +9841,230 @@
         }
       }
     },
+    "Added %lld videos." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Videos hinzugefügt."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added %lld videos."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added %lld videos."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added %lld videos."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added %lld videos."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se añadieron %lld vídeos."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se agregaron %lld videos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vidéos ajoutées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiunti %lld video."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld本のビデオを追加しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비디오 %lld개를 추가했습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld video’s toegevoegd."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vídeos adicionados."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vídeos adicionados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавлено видео: %lld."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld videor har lagts till."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已添加 %lld 个视频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已加入 %lld 部影片。"
+          }
+        }
+      }
+    },
+    "Added 1 video." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Video hinzugefügt."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added 1 video."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added 1 video."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added 1 video."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added 1 video."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se añadió 1 vídeo."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se agregó 1 video."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 vidéo ajoutée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiunto 1 video."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1本のビデオを追加しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비디오 1개를 추가했습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 video toegevoegd."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 vídeo adicionado."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 vídeo adicionado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавлено видео: 1."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 video har lagts till."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已添加 1 个视频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已加入 1 部影片。"
+          }
+        }
+      }
+    },
     "Address" : {
       "localizations" : {
         "de" : {
@@ -10185,6 +10409,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "調整"
+          }
+        }
+      }
+    },
+    "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach der Anmeldung öffnet sich die Auswahl von Google: Wähle die Videos aus, die Edendale wiedergeben darf. Edendale sieht nur diese, verbindet sich nur von diesem Gerät aus und lädt niemals etwas hoch oder ändert etwas."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Después de iniciar sesión, se abre el selector de Google: elige los vídeos que Edendale puede reproducir. Edendale solo ve esos, se conecta únicamente desde este dispositivo y nunca sube ni cambia nada."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Después de iniciar sesión, se abre el selector de Google: elige los videos que Edendale puede reproducir. Edendale solo ve esos, se conecta únicamente desde este dispositivo y nunca sube ni cambia nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après la connexion, le sélecteur de Google s’ouvre : choisissez les vidéos qu’Edendale peut lire. Edendale ne voit que celles-ci, se connecte uniquement depuis cet appareil, et n’envoie ni ne modifie jamais rien."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo l’accesso si apre il selettore di Google: scegli i video che Edendale può riprodurre. Edendale vede solo quelli, si connette solo da questo dispositivo e non carica né modifica mai nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サインインすると、Googleの選択画面が開きます。Edendaleで再生するビデオを選択してください。Edendaleが見られるのは選択したビデオだけです。このデバイスからのみ接続し、何かをアップロードしたり変更したりすることはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인하면 Google 선택 도구가 열립니다. Edendale에서 재생할 비디오를 선택하세요. Edendale은 선택한 비디오만 볼 수 있으며, 이 기기에서만 연결하고, 아무것도 업로드하거나 변경하지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Depois de iniciar a sessão, o seletor do Google é aberto: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses vídeos, se conecta apenas a partir deste dispositivo e nunca envia nem altera nada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale só vê esses vídeos, liga-se apenas a partir deste dispositivo e nunca envia nem altera nada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их, подключается только с этого устройства и никогда ничего не загружает и не изменяет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du har loggat in öppnas Googles väljare: välj de videor som Edendale får spela upp. Edendale ser bara dem, ansluter bara från den här enheten och laddar aldrig upp eller ändrar något."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录后会打开 Google 的选择器：请选择 Edendale 可以播放的视频。Edendale 只能看到这些视频，仅从此设备连接，绝不会上传或更改任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片，只會從此裝置連線，絕不會上傳或更改任何內容。"
           }
         }
       }
@@ -11329,6 +11665,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App 控制"
+          }
+        }
+      }
+    },
+    "Apple TV lists every video chosen with this Google account, here or on your other devices. Signing in opens Google's picker so you can choose some now." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Apple TV listet alle Videos auf, die mit diesem Google-Account ausgewählt wurden, hier oder auf deinen anderen Geräten. Bei der Anmeldung öffnet sich die Auswahl von Google, damit du jetzt welche auswählen kannst."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV lists every video chosen with this Google account, here or on your other devices. Signing in opens Google's picker so you can choose some now."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV lists every video chosen with this Google account, here or on your other devices. Signing in opens Google's picker so you can choose some now."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV lists every video chosen with this Google account, here or on your other devices. Signing in opens Google's picker so you can choose some now."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV lists every video chosen with this Google account, here or on your other devices. Signing in opens Google's picker so you can choose some now."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Apple TV muestra todos los vídeos elegidos con esta cuenta de Google, aquí o en tus otros dispositivos. Al iniciar sesión se abre el selector de Google para que puedas elegir algunos ahora."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Apple TV muestra todos los videos elegidos con esta cuenta de Google, aquí o en tus otros dispositivos. Al iniciar sesión se abre el selector de Google para que puedas elegir algunos ahora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’Apple TV affiche toutes les vidéos choisies avec ce compte Google, ici ou sur vos autres appareils. La connexion ouvre le sélecteur de Google pour que vous puissiez en choisir maintenant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV elenca tutti i video scelti con questo account Google, qui o sugli altri tuoi dispositivi. L’accesso apre il selettore di Google, così puoi sceglierne alcuni ora."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TVには、このデバイスやほかのデバイスでこのGoogleアカウントを使って選択したすべてのビデオが表示されます。サインインするとGoogleの選択画面が開くので、今すぐ選択することもできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV에는 이 기기나 다른 기기에서 이 Google 계정으로 선택한 모든 비디오가 표시됩니다. 로그인하면 Google 선택 도구가 열리므로 지금 비디오를 선택할 수 있습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Apple TV toont alle video’s die met dit Google-account zijn gekozen, hier of op je andere apparaten. Bij het inloggen opent de kiezer van Google, zodat je er nu een paar kunt kiezen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple TV lista todos os vídeos escolhidos com esta conta do Google, aqui ou nos seus outros dispositivos. Ao iniciar a sessão, o seletor do Google é aberto para você escolher alguns agora."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple TV lista todos os vídeos escolhidos com esta conta Google, aqui ou nos seus outros dispositivos. Ao iniciar sessão, abre-se o seletor da Google para poder escolher alguns agora."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV показывает все видео, выбранные в этом аккаунте Google — здесь или на других ваших устройствах. При входе откроется окно выбора Google, чтобы вы могли выбрать видео прямо сейчас."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV listar alla videor som valts med det här Google-kontot, här eller på dina andra enheter. När du loggar in öppnas Googles väljare så att du kan välja några nu."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 会列出使用此 Google 帐户选择的所有视频，无论是在这里还是在你的其他设备上选择的。登录时会打开 Google 的选择器，你现在就可以选择一些视频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 會列出使用此 Google 帳號選擇的所有影片，無論是在這裡還是在你的其他裝置上選擇的。登入時會開啟 Google 的選擇器，你現在就可以選擇一些影片。"
           }
         }
       }
@@ -16422,6 +16870,342 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "中文"
+          }
+        }
+      }
+    },
+    "Choose More Videos" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Videos auswählen"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose More Videos"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose More Videos"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose More Videos"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose More Videos"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir más vídeos"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir más videos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir d’autres vidéos"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli altri video"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほかのビデオを選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비디오 더 선택하기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies meer video’s"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher Mais Vídeos"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher Mais Vídeos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать ещё видео"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj fler videor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择更多视频"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇更多影片"
+          }
+        }
+      }
+    },
+    "Choose videos for this source in Edendale on an iPhone, iPad, or Mac, then rescan here." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle Videos für diese Quelle in Edendale auf einem iPhone, iPad oder Mac aus und scanne dann hier erneut."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose videos for this source in Edendale on an iPhone, iPad, or Mac, then rescan here."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose videos for this source in Edendale on an iPhone, iPad, or Mac, then rescan here."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose videos for this source in Edendale on an iPhone, iPad, or Mac, then rescan here."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose videos for this source in Edendale on an iPhone, iPad, or Mac, then rescan here."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige vídeos para esta fuente en Edendale en un iPhone, iPad o Mac y vuelve a analizar aquí."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige videos para este origen en Edendale en un iPhone, iPad o Mac y vuelve a escanear aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez des vidéos pour cette source dans Edendale sur un iPhone, un iPad ou un Mac, puis réanalysez ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli i video per questa sorgente in Edendale su un iPhone, un iPad o un Mac, poi scansiona di nuovo qui."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このソースのビデオはiPhone、iPad、またはMacのEdendaleで選択し、ここで再スキャンしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone, iPad 또는 Mac의 Edendale에서 이 소스의 비디오를 선택한 다음, 여기에서 다시 스캔하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies video’s voor deze bron in Edendale op een iPhone, iPad of Mac en scan hier daarna opnieuw."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha vídeos para esta origem no Edendale em um iPhone, iPad ou Mac e depois reescaneie aqui."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha vídeos para esta fonte no Edendale num iPhone, iPad ou Mac e depois volte a analisar aqui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите видео для этого источника в Edendale на iPhone, iPad или Mac, а затем просканируйте его здесь заново."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj videor för den här källan i Edendale på en iPhone, iPad eller Mac och skanna sedan om här."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在 iPhone、iPad 或 Mac 上的 Edendale 中为此来源选择视频，然后在此处重新扫描。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在 iPhone、iPad 或 Mac 上的 Edendale 中為此來源選擇影片，然後在此處重新掃描。"
+          }
+        }
+      }
+    },
+    "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle deine Videos in Edendale auf einem iPhone, iPad oder Mac aus. Das Apple TV erhält den Account von deinem iPhone oder iPad und listet alle Videos auf, die du ausgewählt hast. Edendale sieht nur diese Videos und lädt niemals etwas hoch oder ändert etwas."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige tus vídeos en Edendale en un iPhone, iPad o Mac. El Apple TV recibe la cuenta de tu iPhone o iPad y muestra todos los vídeos que elegiste. Edendale solo ve esos vídeos y nunca sube ni cambia nada."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige tus videos en Edendale en un iPhone, iPad o Mac. El Apple TV recibe la cuenta de tu iPhone o iPad y muestra todos los videos que elegiste. Edendale solo ve esos videos y nunca sube ni cambia nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez vos vidéos dans Edendale sur un iPhone, un iPad ou un Mac. L’Apple TV reçoit le compte de votre iPhone ou iPad et affiche toutes les vidéos que vous avez choisies. Edendale ne voit que ces vidéos et n’envoie ni ne modifie jamais rien."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli i tuoi video in Edendale su un iPhone, un iPad o un Mac. Apple TV riceve l’account dal tuo iPhone o iPad ed elenca tutti i video che hai scelto. Edendale vede solo quei video e non carica né modifica mai nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ビデオはiPhone、iPad、またはMacのEdendaleで選択します。Apple TVはiPhoneまたはiPadからアカウントを受け取り、選択したすべてのビデオを一覧表示します。Edendaleが見られるのはそれらのビデオだけで、何かをアップロードしたり変更したりすることはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone, iPad 또는 Mac의 Edendale에서 비디오를 선택하세요. Apple TV는 iPhone 또는 iPad에서 계정을 받아 선택한 모든 비디오를 표시합니다. Edendale은 해당 비디오만 볼 수 있으며, 아무것도 업로드하거나 변경하지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies je video’s in Edendale op een iPhone, iPad of Mac. De Apple TV krijgt het account van je iPhone of iPad en toont alle video’s die je hebt gekozen. Edendale ziet alleen die video’s en uploadt of wijzigt nooit iets."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha seus vídeos no Edendale em um iPhone, iPad ou Mac. A Apple TV recebe a conta do seu iPhone ou iPad e lista todos os vídeos que você escolheu. O Edendale vê apenas esses vídeos e nunca envia nem altera nada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha os seus vídeos no Edendale num iPhone, iPad ou Mac. A Apple TV recebe a conta do seu iPhone ou iPad e lista todos os vídeos que escolheu. O Edendale só vê esses vídeos e nunca envia nem altera nada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбирайте видео в Edendale на iPhone, iPad или Mac. Apple TV получает аккаунт с вашего iPhone или iPad и показывает все выбранные вами видео. Edendale видит только эти видео и никогда ничего не загружает и не изменяет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj dina videor i Edendale på en iPhone, iPad eller Mac. Apple TV får kontot från din iPhone eller iPad och listar alla videor du har valt. Edendale ser bara de videorna och laddar aldrig upp eller ändrar något."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在 iPhone、iPad 或 Mac 上的 Edendale 中选择视频。Apple TV 会从你的 iPhone 或 iPad 获取帐户，并列出你选择的所有视频。Edendale 只能看到这些视频，绝不会上传或更改任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在 iPhone、iPad 或 Mac 上的 Edendale 中選擇影片。Apple TV 會從你的 iPhone 或 iPad 取得帳號，並列出你選擇的所有影片。Edendale 只能看到這些影片，絕不會上傳或更改任何內容。"
           }
         }
       }
@@ -24750,118 +25534,6 @@
         }
       }
     },
-    "Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale bittet Google um Lesezugriff auf dein Drive. Die Verbindung erfolgt nur von diesem Gerät aus. Edendale liest Ordnerlisten und die Videos, die du wiedergibst, und lädt niemals etwas hoch oder ändert etwas."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale solicita a Google acceso de solo lectura a tu Drive. Se conecta únicamente desde este dispositivo, lee los listados de carpetas y los vídeos que reproduces, y nunca sube ni cambia nada."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale solicita a Google acceso de solo lectura a tu Drive. Se conecta únicamente desde este dispositivo, lee los listados de carpetas y los videos que reproduces, y nunca sube ni cambia nada."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale demande à Google un accès en lecture seule à votre Drive. Il se connecte uniquement depuis cet appareil, lit les listes de dossiers et les vidéos que vous regardez, et n’envoie ni ne modifie jamais rien."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale chiede a Google l’accesso in sola lettura al tuo Drive. Si connette solo da questo dispositivo, legge gli elenchi delle cartelle e i video che riproduci, e non carica né modifica mai nulla."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "EdendaleはGoogleにドライブへの読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale은 Google에 드라이브에 대한 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale vraagt Google om alleen-lezentoegang tot je Drive. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Edendale pede ao Google acesso somente leitura ao seu Drive. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Edendale pede à Google acesso só de leitura ao seu Drive. Liga-se apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que reproduz, e nunca envia nem altera nada."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale запрашивает у Google доступ только для чтения к вашему Диску. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale ber Google om skrivskyddad åtkomst till din Drive. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale 向 Google 请求对你的云端硬盘的只读访问权限。它仅从此设备连接，读取文件夹列表和你播放的视频，绝不会上传或更改任何内容。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale 會向 Google 請求你雲端硬碟的唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。"
-          }
-        }
-      }
-    },
     "Edendale can only open local video files." : {
       "localizations" : {
         "de" : {
@@ -25210,114 +25882,114 @@
         }
       }
     },
-    "Edendale connects to these services directly from this device. It reads folder listings and the files you play, and never changes anything." : {
+    "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale verbindet sich direkt von diesem Gerät aus mit diesen Diensten. Es liest Ordnerlisten und die Dateien, die du wiedergibst, und ändert niemals etwas."
+            "value" : "Edendale verbindet sich direkt von diesem Gerät aus mit diesen Diensten und ändert niemals etwas. Es liest Ordnerlisten und die Dateien, die du wiedergibst; aus Google Drive nur die Videos, die du auswählst."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play, and never changes anything."
+            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play, and never changes anything."
+            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play, and never changes anything."
+            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play, and never changes anything."
+            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo. Lee los listados de carpetas y los archivos que reproduces, y nunca cambia nada."
+            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo y nunca cambia nada. Lee los listados de carpetas y los archivos que reproduces; de Google Drive, solo los vídeos que elijas."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo. Lee los listados de carpetas y los archivos que reproduces, y nunca cambia nada."
+            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo y nunca cambia nada. Lee los listados de carpetas y los archivos que reproduces; de Google Drive, solo los videos que elijas."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se connecte à ces services directement depuis cet appareil. Il lit les listes de dossiers et les fichiers que vous lisez, et ne modifie jamais rien."
+            "value" : "Edendale se connecte à ces services directement depuis cet appareil et ne modifie jamais rien. Il lit les listes de dossiers et les fichiers que vous lisez ; dans Google Drive, uniquement les vidéos que vous choisissez."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale si connette a questi servizi direttamente da questo dispositivo. Legge gli elenchi delle cartelle e i file che riproduci, e non modifica mai nulla."
+            "value" : "Edendale si connette a questi servizi direttamente da questo dispositivo e non modifica mai nulla. Legge gli elenchi delle cartelle e i file che riproduci; da Google Drive, solo i video che scegli."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendaleはこのデバイスからこれらのサービスに直接接続します。フォルダの一覧と再生するファイルを読み取り、何かを変更することはありません。"
+            "value" : "Edendaleはこのデバイスからこれらのサービスに直接接続し、何かを変更することはありません。フォルダの一覧と再生するファイルを読み取ります。Googleドライブでは、選択したビデオだけを読み取ります。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale은 이 기기에서 해당 서비스에 직접 연결합니다. 폴더 목록과 재생하는 파일만 읽으며, 아무것도 변경하지 않습니다."
+            "value" : "Edendale은 이 기기에서 해당 서비스에 직접 연결하며, 아무것도 변경하지 않습니다. 폴더 목록과 재생하는 파일을 읽으며, Google 드라이브에서는 선택한 비디오만 읽습니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale maakt rechtstreeks vanaf dit apparaat verbinding met deze diensten. Het leest mappenlijsten en de bestanden die je afspeelt, en wijzigt nooit iets."
+            "value" : "Edendale maakt rechtstreeks vanaf dit apparaat verbinding met deze diensten en wijzigt nooit iets. Het leest mappenlijsten en de bestanden die je afspeelt; uit Google Drive alleen de video’s die je kiest."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale se conecta a estes serviços diretamente a partir deste dispositivo. Ele lê as listas de pastas e os arquivos que você reproduz, e nunca altera nada."
+            "value" : "O Edendale se conecta a estes serviços diretamente a partir deste dispositivo e nunca altera nada. Ele lê as listas de pastas e os arquivos que você reproduz; do Google Drive, apenas os vídeos que você escolher."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale liga-se a estes serviços diretamente a partir deste dispositivo. Lê as listas de pastas e os ficheiros que reproduz, e nunca altera nada."
+            "value" : "O Edendale liga-se a estes serviços diretamente a partir deste dispositivo e nunca altera nada. Lê as listas de pastas e os ficheiros que reproduz; do Google Drive, apenas os vídeos que escolher."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale подключается к этим сервисам напрямую с этого устройства. Приложение читает списки папок и воспроизводимые файлы и никогда ничего не изменяет."
+            "value" : "Edendale подключается к этим сервисам напрямую с этого устройства и никогда ничего не изменяет. Приложение читает списки папок и воспроизводимые файлы, а на Google Диске — только выбранные вами видео."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale ansluter till de här tjänsterna direkt från den här enheten. Appen läser mapplistor och de filer du spelar upp, och ändrar aldrig något."
+            "value" : "Edendale ansluter till de här tjänsterna direkt från den här enheten och ändrar aldrig något. Appen läser mapplistor och de filer du spelar upp, och från Google Drive bara de videor du väljer."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 直接从此设备连接到这些服务。它读取文件夹列表和你播放的文件，绝不会更改任何内容。"
+            "value" : "Edendale 直接从此设备连接到这些服务，绝不会更改任何内容。它读取文件夹列表和你播放的文件；在 Google 云端硬盘中，只读取你选择的视频。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 會直接從此裝置連線至這些服務。它會讀取檔案夾列表和你播放的檔案，絕不會更改任何內容。"
+            "value" : "Edendale 會直接從此裝置連線至這些服務，絕不會更改任何內容。它會讀取檔案夾列表和你播放的檔案；在 Google 雲端硬碟中，只會讀取你選擇的影片。"
           }
         }
       }
@@ -25440,114 +26112,338 @@
         }
       }
     },
-    "Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected." : {
+    "Edendale needs access to the Google Drive files you choose. Sign in again and leave that access selected." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale benötigt die Berechtigung, deine Google Drive-Dateien zu sehen. Melde dich erneut an und lass den Drive-Zugriff ausgewählt."
+            "value" : "Edendale benötigt Zugriff auf die Google Drive-Dateien, die du auswählst. Melde dich erneut an und lass diesen Zugriff ausgewählt."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected."
+            "value" : "Edendale needs access to the Google Drive files you choose. Sign in again and leave that access selected."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected."
+            "value" : "Edendale needs access to the Google Drive files you choose. Sign in again and leave that access selected."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected."
+            "value" : "Edendale needs access to the Google Drive files you choose. Sign in again and leave that access selected."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale needs permission to see your Google Drive files. Sign in again and leave Drive access selected."
+            "value" : "Edendale needs access to the Google Drive files you choose. Sign in again and leave that access selected."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale necesita permiso para ver tus archivos de Google Drive. Vuelve a iniciar sesión y deja seleccionado el acceso a Drive."
+            "value" : "Edendale necesita acceso a los archivos de Google Drive que elijas. Vuelve a iniciar sesión y deja seleccionado ese acceso."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale necesita permiso para ver tus archivos de Google Drive. Vuelve a iniciar sesión y deja seleccionado el acceso a Drive."
+            "value" : "Edendale necesita acceso a los archivos de Google Drive que elijas. Vuelve a iniciar sesión y deja seleccionado ese acceso."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale a besoin d’une autorisation pour voir vos fichiers Google Drive. Reconnectez-vous en laissant l’accès à Drive sélectionné."
+            "value" : "Edendale a besoin d’accéder aux fichiers Google Drive que vous choisissez. Reconnectez-vous en laissant cet accès sélectionné."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale ha bisogno dell’autorizzazione per vedere i file di Google Drive. Accedi di nuovo e lascia selezionato l’accesso a Drive."
+            "value" : "Edendale ha bisogno di accedere ai file di Google Drive che scegli. Accedi di nuovo e lascia selezionato questo accesso."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EdendaleがGoogleドライブのファイルを表示するには許可が必要です。もう一度サインインして、ドライブへのアクセスを選択したままにしてください。"
+            "value" : "Edendaleには、選択したGoogleドライブのファイルへのアクセスが必要です。もう一度サインインして、そのアクセスを選択したままにしてください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale이 Google 드라이브 파일을 보려면 권한이 필요합니다. 다시 로그인하고 드라이브 접근을 선택된 상태로 두십시오."
+            "value" : "Edendale이 선택한 Google 드라이브 파일에 접근하려면 권한이 필요합니다. 다시 로그인하고 해당 접근 권한을 선택된 상태로 두십시오."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale heeft toestemming nodig om je Google Drive-bestanden te zien. Log opnieuw in en laat de toegang tot Drive geselecteerd."
+            "value" : "Edendale heeft toegang nodig tot de Google Drive-bestanden die je kiest. Log opnieuw in en laat die toegang geselecteerd."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale precisa de permissão para ver seus arquivos do Google Drive. Inicie a sessão novamente e deixe o acesso ao Drive selecionado."
+            "value" : "O Edendale precisa de acesso aos arquivos do Google Drive que você escolher. Inicie a sessão novamente e deixe esse acesso selecionado."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale precisa de autorização para ver os seus ficheiros do Google Drive. Inicie sessão novamente e mantenha o acesso ao Drive selecionado."
+            "value" : "O Edendale precisa de acesso aos ficheiros do Google Drive que escolher. Inicie sessão novamente e mantenha esse acesso selecionado."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale нужно разрешение на просмотр ваших файлов Google Диска. Войдите снова и оставьте доступ к Диску выбранным."
+            "value" : "Edendale нужен доступ к выбранным вами файлам Google Диска. Войдите снова и оставьте этот доступ выбранным."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale behöver tillstånd att se dina Google Drive-filer. Logga in igen och låt Drive-åtkomsten vara markerad."
+            "value" : "Edendale behöver åtkomst till de Google Drive-filer du väljer. Logga in igen och låt den åtkomsten vara markerad."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 需要权限才能查看你的 Google 云端硬盘文件。请重新登录，并保持选中云端硬盘访问权限。"
+            "value" : "Edendale 需要访问你选择的 Google 云端硬盘文件。请重新登录，并保持选中该访问权限。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 需要權限才能查看你的 Google 雲端硬碟檔案。請重新登入，並保持選取雲端硬碟存取權限。"
+            "value" : "Edendale 需要存取你選擇的 Google 雲端硬碟檔案。請重新登入，並保持選取該存取權限。"
+          }
+        }
+      }
+    },
+    "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Choose your videos on an iPhone, iPad, or Mac, then link Google Drive here from Link Source." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale sieht jetzt nur noch die Google Drive-Videos, die du auswählst. Deshalb wurden deine bisherigen Google Drive-Quellen entfernt. Wähle deine Videos auf einem iPhone, iPad oder Mac aus und verknüpfe Google Drive dann hier über „Quelle verknüpfen“."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Choose your videos on an iPhone, iPad, or Mac, then link Google Drive here from Link Source."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Choose your videos on an iPhone, iPad, or Mac, then link Google Drive here from Link Source."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Choose your videos on an iPhone, iPad, or Mac, then link Google Drive here from Link Source."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Choose your videos on an iPhone, iPad, or Mac, then link Google Drive here from Link Source."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora Edendale solo ve los vídeos de Google Drive que elijas, así que se han eliminado tus fuentes anteriores de Google Drive. Elige tus vídeos en un iPhone, iPad o Mac y luego vincula Google Drive aquí desde Vincular fuente."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora Edendale solo ve los videos de Google Drive que elijas, así que se quitaron tus orígenes anteriores de Google Drive. Elige tus videos en un iPhone, iPad o Mac y luego vincula Google Drive aquí desde Vincular origen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale ne voit désormais que les vidéos Google Drive que vous choisissez : vos anciennes sources Google Drive ont donc été retirées. Choisissez vos vidéos sur un iPhone, un iPad ou un Mac, puis liez Google Drive ici depuis Lier une source."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora Edendale vede solo i video di Google Drive che scegli, quindi le tue sorgenti Google Drive precedenti sono state rimosse. Scegli i tuoi video su un iPhone, un iPad o un Mac, poi collega Google Drive qui da Collega sorgente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EdendaleはGoogleドライブで選択したビデオだけを表示するようになったため、以前のGoogleドライブのソースは削除されました。iPhone、iPad、またはMacでビデオを選択してから、ここで「ソースをリンク」からGoogleドライブをリンクしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이제 Edendale은 선택한 Google 드라이브 비디오만 볼 수 있으므로, 이전 Google 드라이브 소스가 제거되었습니다. iPhone, iPad 또는 Mac에서 비디오를 선택한 다음, 여기에서 소스 연결로 Google 드라이브를 연결하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale ziet nu alleen de Google Drive-video’s die je kiest, dus je eerdere Google Drive-bronnen zijn verwijderd. Kies je video’s op een iPhone, iPad of Mac en koppel Google Drive daarna hier via Koppel bron."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora o Edendale vê apenas os vídeos do Google Drive que você escolher, então suas origens anteriores do Google Drive foram removidas. Escolha seus vídeos em um iPhone, iPad ou Mac e depois vincule o Google Drive aqui em Vincular Origem."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale passou a ver apenas os vídeos do Google Drive que escolher, por isso as suas fontes anteriores do Google Drive foram removidas. Escolha os seus vídeos num iPhone, iPad ou Mac e depois ligue o Google Drive aqui em Ligar Fonte."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Теперь Edendale видит только выбранные вами видео на Google Диске, поэтому ваши прежние источники Google Диска удалены. Выберите видео на iPhone, iPad или Mac, а затем подключите Google Диск здесь через «Добавить источник»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale ser nu bara de Google Drive-videor som du väljer, så dina tidigare Google Drive-källor har tagits bort. Välj dina videor på en iPhone, iPad eller Mac och länka sedan Google Drive här via Länka källa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 现在只能看到你选择的 Google 云端硬盘视频，因此你之前的 Google 云端硬盘来源已被移除。请在 iPhone、iPad 或 Mac 上选择你的视频，然后在此处通过“链接来源”链接 Google 云端硬盘。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 現在只能看到你選擇的 Google 雲端硬碟影片，因此你先前的 Google 雲端硬碟來源已被移除。請在 iPhone、iPad 或 Mac 上選擇你的影片，然後在此處透過「連結來源」連結 Google 雲端硬碟。"
+          }
+        }
+      }
+    },
+    "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Open Link Source → Google Drive, sign in, and choose your videos." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale sieht jetzt nur noch die Google Drive-Videos, die du auswählst. Deshalb wurden deine bisherigen Google Drive-Quellen entfernt. Öffne „Quelle verknüpfen“ → Google Drive, melde dich an und wähle deine Videos aus."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Open Link Source → Google Drive, sign in, and choose your videos."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Open Link Source → Google Drive, sign in, and choose your videos."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Open Link Source → Google Drive, sign in, and choose your videos."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Open Link Source → Google Drive, sign in, and choose your videos."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora Edendale solo ve los vídeos de Google Drive que elijas, así que se han eliminado tus fuentes anteriores de Google Drive. Abre Vincular fuente → Google Drive, inicia sesión y elige tus vídeos."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora Edendale solo ve los videos de Google Drive que elijas, así que se quitaron tus orígenes anteriores de Google Drive. Abre Vincular origen → Google Drive, inicia sesión y elige tus videos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale ne voit désormais que les vidéos Google Drive que vous choisissez : vos anciennes sources Google Drive ont donc été retirées. Ouvrez Lier une source → Google Drive, connectez-vous et choisissez vos vidéos."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora Edendale vede solo i video di Google Drive che scegli, quindi le tue sorgenti Google Drive precedenti sono state rimosse. Apri Collega sorgente → Google Drive, accedi e scegli i tuoi video."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EdendaleはGoogleドライブで選択したビデオだけを表示するようになったため、以前のGoogleドライブのソースは削除されました。「ソースをリンク」→「Googleドライブ」を開いてサインインし、ビデオを選択してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이제 Edendale은 선택한 Google 드라이브 비디오만 볼 수 있으므로, 이전 Google 드라이브 소스가 제거되었습니다. 소스 연결 → Google 드라이브를 열고 로그인한 다음 비디오를 선택하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale ziet nu alleen de Google Drive-video’s die je kiest, dus je eerdere Google Drive-bronnen zijn verwijderd. Open Koppel bron → Google Drive, log in en kies je video’s."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora o Edendale vê apenas os vídeos do Google Drive que você escolher, então suas origens anteriores do Google Drive foram removidas. Abra Vincular Origem → Google Drive, inicie a sessão e escolha seus vídeos."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale passou a ver apenas os vídeos do Google Drive que escolher, por isso as suas fontes anteriores do Google Drive foram removidas. Abra Ligar Fonte → Google Drive, inicie sessão e escolha os seus vídeos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Теперь Edendale видит только выбранные вами видео на Google Диске, поэтому ваши прежние источники Google Диска удалены. Откройте «Добавить источник» → Google Диск, войдите и выберите видео."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale ser nu bara de Google Drive-videor som du väljer, så dina tidigare Google Drive-källor har tagits bort. Öppna Länka källa → Google Drive, logga in och välj dina videor."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 现在只能看到你选择的 Google 云端硬盘视频，因此你之前的 Google 云端硬盘来源已被移除。请打开“链接来源”→“Google 云端硬盘”，登录并选择你的视频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 現在只能看到你選擇的 Google 雲端硬碟影片，因此你先前的 Google 雲端硬碟來源已被移除。請開啟「連結來源」→「Google 雲端硬碟」，登入並選擇你的影片。"
           }
         }
       }
@@ -36737,6 +37633,118 @@
         }
       }
     },
+    "Link Google Drive Again" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Drive erneut verknüpfen"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link Google Drive Again"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link Google Drive Again"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link Google Drive Again"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link Google Drive Again"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a vincular Google Drive"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a vincular Google Drive"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lier à nouveau Google Drive"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega di nuovo Google Drive"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Googleドライブをもう一度リンク"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 드라이브 다시 연결"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel Google Drive opnieuw"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincular o Google Drive Novamente"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ligar o Google Drive Novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снова подключите Google Диск"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Länka Google Drive igen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新链接 Google 云端硬盘"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新連結 Google 雲端硬碟"
+          }
+        }
+      }
+    },
     "Link Network Source" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -41118,230 +42126,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已靜音"
-          }
-        }
-      }
-    },
-    "My Drive" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meine Ablage"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive"
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive"
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mi unidad"
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mi unidad"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mon Drive"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il mio Drive"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マイドライブ"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내 드라이브"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mijn Drive"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meu Drive"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O meu disco"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Мой диск"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Min enhet"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的云端硬盘"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的雲端硬碟"
-          }
-        }
-      }
-    },
-    "My Drive, files shared with you, and shared drives." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meine Ablage, für dich freigegebene Dateien und geteilte Ablagen."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive, files shared with you, and shared drives."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive, files shared with you, and shared drives."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive, files shared with you, and shared drives."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Drive, files shared with you, and shared drives."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mi unidad, archivos compartidos contigo y unidades compartidas."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mi unidad, archivos compartidos contigo y unidades compartidas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mon Drive, fichiers partagés avec vous et Drive partagés."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il mio Drive, file condivisi con te e Drive condivisi."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マイドライブ、共有アイテム、共有ドライブ。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내 드라이브, 나와 공유된 파일 및 공유 드라이브."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mijn Drive, bestanden die met je zijn gedeeld en gedeelde drives."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meu Drive, arquivos compartilhados com você e drives compartilhados."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O meu disco, ficheiros partilhados consigo e discos partilhados."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Мой диск, файлы, к которым вам открыли доступ, и общие диски."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Min enhet, filer som delats med dig och delade enheter."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的云端硬盘、与你共享的文件和共享云端硬盘。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的雲端硬碟、與你共用的檔案和共用雲端硬碟。"
           }
         }
       }
@@ -55914,6 +56698,118 @@
         }
       }
     },
+    "Revoking access also signs out any Apple TV you linked it to, and Google forgets the videos you chose." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durch das Widerrufen des Zugriffs werden auch alle Apple TV-Geräte abgemeldet, mit denen du ihn verknüpft hast, und Google vergisst die ausgewählten Videos."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoking access also signs out any Apple TV you linked it to, and Google forgets the videos you chose."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoking access also signs out any Apple TV you linked it to, and Google forgets the videos you chose."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoking access also signs out any Apple TV you linked it to, and Google forgets the videos you chose."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoking access also signs out any Apple TV you linked it to, and Google forgets the videos you chose."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al revocar el acceso también se cierra la sesión en los Apple TV que hayas vinculado, y Google olvida los vídeos que elegiste."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al revocar el acceso también se cierra la sesión en los Apple TV que hayas vinculado, y Google olvida los videos que elegiste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La révocation de l’accès déconnecte aussi toutes les Apple TV auxquelles vous l’avez lié, et Google oublie les vidéos que vous avez choisies."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revocando l’accesso esci anche da tutte le Apple TV a cui l’hai collegato, e Google dimentica i video che hai scelto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセスを取り消すと、リンクしたApple TVからもサインアウトされ、選択したビデオもGoogleで解除されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "접근 권한을 취소하면 연결한 모든 Apple TV에서도 로그아웃되며, 선택한 비디오에 대한 접근 권한도 Google에서 해제됩니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je de toegang intrekt, word je ook uitgelogd op elke Apple TV waaraan je deze hebt gekoppeld, en vergeet Google de video’s die je hebt gekozen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revogar o acesso também finaliza a sessão em qualquer Apple TV que você tenha vinculado, e o Google esquece os vídeos que você escolheu."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revogar o acesso também termina a sessão em qualquer Apple TV a que o tenha ligado, e a Google esquece os vídeos que escolheu."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При отзыве доступа также выполняется выход на всех Apple TV, к которым вы его подключили, а Google забывает выбранные вами видео."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du återkallar åtkomsten loggas även de Apple TV-enheter som du har länkat den till ut, och Google glömmer de videor du har valt."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤销访问权限还会退出你链接到的所有 Apple TV，并且 Google 会忘记你选择的视频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤銷存取權限也會登出你連結的所有 Apple TV，而且 Google 會忘記你選擇的影片。"
+          }
+        }
+      }
+    },
     "Revoking access also signs out any Apple TV you linked it to." : {
       "localizations" : {
         "de" : {
@@ -59939,118 +60835,6 @@
         }
       }
     },
-    "Shared drives" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geteilte Ablagen"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared drives"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared drives"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared drives"
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared drives"
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unidades compartidas"
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unidades compartidas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drive partagés"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drive condivisi"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共有ドライブ"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "공유 드라이브"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gedeelde drives"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drives compartilhados"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discos partilhados"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Общие диски"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delade enheter"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共享云端硬盘"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共用雲端硬碟"
-          }
-        }
-      }
-    },
     "Shared folders on a Mac, PC, or NAS." : {
       "localizations" : {
         "de" : {
@@ -60159,118 +60943,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mac、PC 或 NAS 上的共享檔案夾。"
-          }
-        }
-      }
-    },
-    "Shared with me" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Für mich freigegeben"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared with me"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared with me"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared with me"
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shared with me"
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compartido conmigo"
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compartido conmigo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Partagés avec moi"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Condivisi con me"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共有アイテム"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "공유 문서함"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gedeeld met mij"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compartilhados comigo"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Partilhados comigo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Доступные мне"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delade med mig"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "与我共享"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "與我共用"
           }
         }
       }
@@ -72362,6 +73034,118 @@
         }
       }
     },
+    "The videos you chose were already in your library." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die ausgewählten Videos waren bereits in deiner Mediathek."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The videos you chose were already in your library."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The videos you chose were already in your library."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The videos you chose were already in your library."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The videos you chose were already in your library."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los vídeos que elegiste ya estaban en tu biblioteca."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los videos que elegiste ya estaban en tu biblioteca."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les vidéos que vous avez choisies étaient déjà dans votre bibliothèque."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I video che hai scelto erano già nella libreria."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したビデオはすでにライブラリにあります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택한 비디오는 이미 보관함에 있습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De video’s die je hebt gekozen stonden al in je bibliotheek."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os vídeos que você escolheu já estavam na sua biblioteca."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os vídeos que escolheu já estavam na sua biblioteca."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранные видео уже есть в медиатеке."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De videor du valde fanns redan i ditt bibliotek."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你选择的视频已在你的资料库中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你選擇的影片已在你的資料庫中。"
+          }
+        }
+      }
+    },
     "TheIntroDB Privacy Policy" : {
       "comment" : "A link to TheIntroDB's privacy policy.",
       "isCommentAutoGenerated" : true,
@@ -73828,6 +74612,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此影片未確認為 PG 或 PG-13 級。"
+          }
+        }
+      }
+    },
+    "Those videos were chosen as %@. Choose More Videos again and use %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Videos wurden als %@ ausgewählt. Verwende „Weitere Videos auswählen“ erneut mit %@."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Those videos were chosen as %@. Choose More Videos again and use %@."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Those videos were chosen as %@. Choose More Videos again and use %@."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Those videos were chosen as %@. Choose More Videos again and use %@."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Those videos were chosen as %@. Choose More Videos again and use %@."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esos vídeos se eligieron con %@. Vuelve a usar Elegir más vídeos con %@."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esos videos se eligieron con %@. Vuelve a usar Elegir más videos con %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ces vidéos ont été choisies avec %@. Utilisez à nouveau Choisir d’autres vidéos avec %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questi video sono stati scelti con %@. Usa di nuovo Scegli altri video con %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これらのビデオは%@で選択されました。%@で、もう一度「ほかのビデオを選択」を使ってください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 비디오는 %@ 계정으로 선택되었습니다. %@ 계정으로 '비디오 더 선택하기'를 다시 사용하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die video’s zijn gekozen als %@. Gebruik Kies meer video’s opnieuw met %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esses vídeos foram escolhidos com %@. Use Escolher Mais Vídeos novamente com %@."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esses vídeos foram escolhidos com %@. Use novamente Escolher Mais Vídeos com %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эти видео выбраны в аккаунте %@. Снова нажмите «Выбрать ещё видео» и используйте %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De videorna valdes som %@. Använd Välj fler videor igen med %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些视频是以 %@ 选择的。请再次使用“选择更多视频”，并使用 %@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這些影片是以 %@ 選擇的。請再次使用「選擇更多影片」，並使用 %@。"
           }
         }
       }
@@ -79896,6 +80792,230 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "影片軌道"
+          }
+        }
+      }
+    },
+    "Videos you choose from Google Drive." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos, die du in Google Drive auswählst."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you choose from Google Drive."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you choose from Google Drive."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you choose from Google Drive."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you choose from Google Drive."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los vídeos que elijas de Google Drive."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los videos que elijas de Google Drive."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les vidéos que vous choisissez dans Google Drive."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I video che scegli da Google Drive."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Googleドライブから選択したビデオ。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 드라이브에서 선택한 비디오."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video’s die je kiest uit Google Drive."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeos que você escolhe no Google Drive."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeos que escolhe no Google Drive."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видео, которые вы выберете на Google Диске."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videor som du väljer från Google Drive."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你从 Google 云端硬盘中选择的视频。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你從 Google 雲端硬碟中選擇的影片。"
+          }
+        }
+      }
+    },
+    "Videos you chose" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von dir ausgewählte Videos"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you chose"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you chose"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you chose"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos you chose"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeos que elegiste"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos que elegiste"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vidéos que vous avez choisies"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video che hai scelto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したビデオ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택한 비디오"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Door jou gekozen video’s"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeos que você escolheu"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeos que escolheu"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранные вами видео"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videor du har valt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你选择的视频"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你選擇的影片"
           }
         }
       }

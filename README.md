@@ -609,6 +609,54 @@ click the rule to move through the season.
 These are macOS presentation changes; other platform branches require no rule
 change.
 
+### Storage providers
+
+Settings → Link Source adds network and cloud sources. Each connects straight
+from the device to the provider. Edendale has no server or account of its own,
+logins and refresh tokens stay in the Keychain, and nothing is ever uploaded or
+changed. Accounts and logins sync through iCloud Keychain, except to Apple TV,
+which gets them from a nearby iPhone or iPad (Continue on iPhone or iPad).
+
+| Source | How it links | What Edendale reads |
+|---|---|---|
+| SMB, SFTP, WebDAV | A server login | Folder listings and the files you play |
+| NFS | No login (AUTH_SYS) | Folder listings and the files you play |
+| S3-compatible storage | An access key | Object listings and the files you play |
+| Google Drive | Google sign-in with only the `drive.file` scope; Google's picker opens during sign-in | Only the files you pick: their names, sizes, dates, and video durations, and the bytes you play |
+| OneDrive | Microsoft sign-in (`Files.Read User.Read offline_access`); a code on Apple TV | Folder listings and the files you play |
+| Dropbox | Dropbox sign-in (`files.metadata.read files.content.read account_info.read`) | Folder listings and the files you play |
+
+Google Drive has nothing to browse. Each account has one source, "Videos you
+chose", listing every file picked with that Google account on any device or
+platform (Google grants picks per account, not per sign-in). Choose More Videos
+on the source or in Settings → Accounts reopens the picker; Apple TV never
+opens it and lists what was chosen elsewhere after a rescan. Removing a Drive
+video keeps its file ID on that device so rescans skip it; picking it again
+brings it back. A picked folder grants only the folder, so the picker offers
+files only. Builds from before `drive.file` used `drive.readonly` folder
+sources: the first launch of this build removes those accounts and sources and
+asks once to link Google Drive again (ENHANCEMENT.md J.14).
+
+Client IDs go in `.secret/Secrets.xcconfig` (see `Shared/Example.xcconfig`).
+They aren't secrets for these PKCE clients, and no client secret ships:
+
+- **Google:** in one Google Cloud project, enable the Google Drive API and the
+  Google Picker API, create an OAuth client of type iOS for
+  `com.BaBaSaMa.Edendale` (Google uses it for macOS too), and list only
+  `https://www.googleapis.com/auth/drive.file` under Data Access. It is
+  non-sensitive, so it needs no scope verification, demo video, or security
+  assessment. While the app is in Testing, add test users; their refresh
+  tokens expire after 7 days. Set `GOOGLE_DRIVE_CLIENT_ID`.
+- **Microsoft:** an Entra public client app for personal and work or school
+  accounts, with the redirect `msauth.com.BaBaSaMa.Edendale://auth` and public
+  client flows on (Apple TV's device code). Set `ONEDRIVE_CLIENT_ID`.
+- **Dropbox:** a scoped app with Full Dropbox access; it redirects to
+  `db-<app key>://2/token`. Set `DROPBOX_APP_KEY`.
+
+Checks that need hardware and a real account: the picker inside the sign-in
+sheet on an iPhone, Choose More Videos, playback, removing a video, and handing
+the account to Apple TV (DeviceDiscoveryUI lists no devices in Simulator).
+
 ### Xcode Cloud
 
 Xcode Cloud automatically runs the executable

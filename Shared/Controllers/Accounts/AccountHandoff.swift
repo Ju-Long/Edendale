@@ -3,10 +3,10 @@
 //  Edendale
 //
 //  Brings a linked account or saved server login from an iPhone or iPad to
-//  Apple TV, which never receives iCloud Keychain items. Google's device
-//  sign-in can't grant `drive.readonly` and Dropbox has none, so Apple TV
-//  asks a nearby iPhone or iPad instead, the way YouTube is approved on a
-//  phone:
+//  Apple TV, which never receives iCloud Keychain items. Google Drive videos
+//  are chosen in Google's picker, which Apple TV never opens, and Dropbox
+//  has no device sign-in, so Apple TV asks a nearby iPhone or iPad instead,
+//  the way YouTube is approved on a phone:
 //
 //    1. Apple TV: Link Source → provider → Continue on iPhone or iPad opens
 //       DeviceDiscoveryUI's DevicePicker, listing iPhones and iPads on the
@@ -20,11 +20,14 @@
 //    4. It answers with a versioned Response carrying the account (or
 //       login) and closes the connection.
 //    5. Apple TV refreshes a token to validate it, stores the account in
-//       its own Keychain, and continues to the folder picker.
+//       its own Keychain, and continues to the folder picker, or for Google
+//       Drive links "Videos you chose" straight away.
 //
 //  Messages are JSON behind a 4-byte big-endian length. Google allows 100
 //  refresh tokens per account per client, so the TV reuses the phone's
-//  token rather than minting another.
+//  token rather than minting another. Google grants Drive picks per account,
+//  not per token, so a TV's token keeps seeing videos chosen later on any
+//  device; a rescan on the TV lists them.
 //
 
 import Foundation

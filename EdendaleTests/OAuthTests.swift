@@ -3,10 +3,12 @@
 //  EdendaleTests
 //
 //  The dependency-free OAuth client: the RFC 7636 PKCE vector, each
-//  provider's authorization URL, token and device-code responses (RFC
-//  8628: pending, slow_down, declined, expired), and CloudTokenProvider's
-//  single-flight refresh. Token endpoints are URLProtocol stubs; no real
-//  credential is used anywhere.
+//  provider's authorization URL (Google's with the picker parameters of
+//  ENHANCEMENT.md J.14), the redirect with Google's `picked_file_ids`, token
+//  and device-code responses (RFC 8628: pending, slow_down, declined,
+//  expired), the `drive.file` check, and CloudTokenProvider's single-flight
+//  refresh. Token endpoints are URLProtocol stubs; no real credential is
+//  used anywhere.
 //
 
 import Foundation
@@ -27,14 +29,6 @@ import Testing
         #expect(verifier.unicodeScalars.allSatisfy { unreserved.contains($0) })
         #expect(PKCE.makeVerifier() != verifier)
         #expect(PKCE.makeState() != PKCE.makeState())
-    }
-
-    @Test func decodesJWTClaims() throws {
-        let payload = PKCE.base64URL(Data(#"{"sub":"110169484474386276334","email":"me@example.com"}"#.utf8))
-        let claims = try #require(CloudProviders.decodeJWTClaims("eyJhbGciOiJSUzI1NiJ9.\(payload).signature"))
-        #expect(claims["sub"] as? String == "110169484474386276334")
-        #expect(claims["email"] as? String == "me@example.com")
-        #expect(CloudProviders.decodeJWTClaims("not-a-jwt") == nil)
     }
 }
 
@@ -60,7 +54,8 @@ import Testing
         #expect(google.callbackScheme == "com.googleusercontent.apps.1234-abc")
         #expect(google.redirectURI == "com.googleusercontent.apps.1234-abc:/oauth2redirect")
         #expect(google.deviceAuthorizationEndpoint == nil)
-        #expect(google.scopes.contains("https://www.googleapis.com/auth/drive.readonly"))
+        // drive.file and nothing else: the picker flow refuses other scopes.
+        #expect(google.scopes == ["https://www.googleapis.com/auth/drive.file"])
 
         let url = OAuthClient(configuration: google).authorizationURL(state: "state-1", codeChallenge: "challenge-1")
         let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
@@ -69,11 +64,10 @@ import Testing
         #expect(value("client_id") == "1234-abc.apps.googleusercontent.com")
         #expect(value("response_type") == "code")
         #expect(value("redirect_uri") == google.redirectURI)
-        #expect(value("scope") == "openid email https://www.googleapis.com/auth/drive.readonly")
+        #expect(value("scope") == "https://www.googleapis.com/auth/drive.file")
         #expect(value("state") == "state-1")
         #expect(value("code_challenge") == "challenge-1")
         #expect(value("code_challenge_method") == "S256")
-        #expect(value("prompt") == "select_account")
         // No client secret, ever.
         #expect(value("client_secret") == nil)
 
@@ -89,20 +83,105 @@ import Testing
         #expect(!CloudProviders.supportsDeviceCode(.googleDrive))
     }
 
+    @Test func googleSignInOpensThePickerForFilesOnly() throws {
+        let google = try #require(CloudProviders.configuration(for: .googleDrive, clientID: "1234-abc.apps.googleusercontent.com"))
+        let url = OAuthClient(configuration: google).authorizationURL(state: "s", codeChallenge: "c")
+        let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
+
+        #expect(value("access_type") == "offline")
+        #expect(value("prompt") == "consent select_account")
+        #expect(value("trigger_onepick") == "true")
+        #expect(value("allow_multiple") == "true")
+        // An explicit list: video/* leaves Google's picker empty.
+        let mimeTypes = try #require(value("mimetypes")).split(separator: ",").map(String.init)
+        #expect(mimeTypes == CloudProviders.googlePickerMimeTypes)
+        #expect(mimeTypes.contains("video/x-matroska"))
+        #expect(mimeTypes.contains("video/mp4"))
+        #expect(!mimeTypes.contains { $0.hasSuffix("/*") })
+        // A picked folder never grants its videos.
+        #expect(value("allow_folder_selection") == nil)
+        #expect(value("login_hint") == nil)
+        // The space in `prompt` is %20, never a literal +.
+        #expect(url.absoluteString.contains("prompt=consent%20select_account"))
+    }
+
+    @Test func choosingMoreVideosHintsTheLinkedAccount() throws {
+        let google = try #require(CloudProviders.configuration(for: .googleDrive, clientID: "1234-abc.apps.googleusercontent.com"))
+        let client = OAuthClient(configuration: google)
+        let url = client.authorizationURL(
+            state: "s", codeChallenge: "c",
+            parameters: CloudProviders.googleChooseMoreParameters(loginHint: "me+films@example.com")
+        )
+        let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
+        // The request's own parameters win; the picker ones stay.
+        #expect(value("prompt") == "consent")
+        #expect(value("login_hint") == "me+films@example.com")
+        #expect(url.absoluteString.contains("login_hint=me%2Bfilms@example.com"))
+        #expect(value("trigger_onepick") == "true")
+        #expect(value("mimetypes") == CloudProviders.googlePickerMimeTypes.joined(separator: ","))
+        #expect(items.filter { $0.name == "prompt" }.count == 1)
+
+        let noHint = client.authorizationURL(
+            state: "s", codeChallenge: "c",
+            parameters: CloudProviders.googleChooseMoreParameters(loginHint: nil)
+        )
+        #expect(!noHint.absoluteString.contains("login_hint"))
+    }
+
     @Test func readsTheAuthorizationCodeOnlyWithTheMatchingState() throws {
         let callback = try #require(URL(string: "test.edendale://auth?code=abc&state=s1"))
-        #expect(try OAuthClient.authorizationCode(from: callback, expectedState: "s1", provider: "OneDrive") == "abc")
+        let response = try OAuthClient.authorizationResponse(from: callback, expectedState: "s1", provider: "OneDrive")
+        #expect(response.code == "abc")
+        #expect(response.pickedFileIDs.isEmpty)
         #expect(throws: OAuthError.stateMismatch) {
-            try OAuthClient.authorizationCode(from: callback, expectedState: "other", provider: "OneDrive")
+            try OAuthClient.authorizationResponse(from: callback, expectedState: "other", provider: "OneDrive")
         }
         let denied = try #require(URL(string: "test.edendale://auth?error=access_denied&state=s1"))
         #expect(throws: OAuthError.authorizationDenied(provider: "OneDrive")) {
-            try OAuthClient.authorizationCode(from: denied, expectedState: "s1", provider: "OneDrive")
+            try OAuthClient.authorizationResponse(from: denied, expectedState: "s1", provider: "OneDrive")
         }
         let empty = try #require(URL(string: "test.edendale://auth?state=s1"))
         #expect(throws: OAuthError.missingAuthorizationCode) {
-            try OAuthClient.authorizationCode(from: empty, expectedState: "s1", provider: "OneDrive")
+            try OAuthClient.authorizationResponse(from: empty, expectedState: "s1", provider: "OneDrive")
         }
+    }
+
+    @Test func readsTheFilesPickedInGooglesPicker() throws {
+        // The shape the spike saw: code, state, scope, iss, picked_file_ids.
+        let callback = try #require(URL(string:
+            "com.googleusercontent.apps.1234-abc:/oauth2redirect?state=s1&code=4/0Ab-x&scope=https://www.googleapis.com/auth/drive.file"
+            + "&iss=https://accounts.google.com&picked_file_ids=1AbC-d_E,2fGh%2C3iJk,"
+        ))
+        let response = try OAuthClient.authorizationResponse(from: callback, expectedState: "s1", provider: "Google Drive")
+        #expect(response.code == "4/0Ab-x")
+        #expect(response.pickedFileIDs == ["1AbC-d_E", "2fGh", "3iJk"])
+
+        // Closing the picker or the consent page reports access_denied and
+        // changes nothing.
+        let cancelled = try #require(URL(string: "com.googleusercontent.apps.1234-abc:/oauth2redirect?error=access_denied&state=s1"))
+        #expect(throws: OAuthError.authorizationDenied(provider: "Google Drive")) {
+            try OAuthClient.authorizationResponse(from: cancelled, expectedState: "s1", provider: "Google Drive")
+        }
+    }
+
+    @MainActor
+    @Test func refusesAGoogleTokenWithoutDriveFile() async throws {
+        let secrets = InMemorySecretStore()
+        let vault = CloudAccountVault(store: secrets)
+        let tokens = CloudTokenProvider(vault: vault, session: HTTPStub.session(), configuration: { _ in nil })
+        let store = CloudAccountStore(vault: vault, secrets: secrets, tokens: tokens, session: HTTPStub.session())
+        // An old-style grant, and a consent page with Drive access unticked.
+        for scope in ["openid email https://www.googleapis.com/auth/drive.readonly", ""] {
+            await #expect(throws: CloudAccountStore.SignInError.driveAccessNotGranted) {
+                _ = try await store.completeSignIn(
+                    kind: .googleDrive,
+                    tokens: OAuthTokenResponse(accessToken: "a", refreshToken: "r", scope: scope)
+                )
+            }
+        }
+        #expect(vault.all().isEmpty)
     }
 
     @Test func exchangesTheCodeWithTheVerifier() async throws {

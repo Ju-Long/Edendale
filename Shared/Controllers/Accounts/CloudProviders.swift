@@ -42,11 +42,39 @@ nonisolated enum CloudProviders {
 
     // MARK: - OAuth configurations
 
-    static let googleScopes = [
-        "openid",
-        "email",
-        "https://www.googleapis.com/auth/drive.readonly"
+    /// Only the files the user picks in Google's picker (ENHANCEMENT.md
+    /// J.14). The picker flow allows no other scope next to it.
+    static let googleDriveFileScope = "https://www.googleapis.com/auth/drive.file"
+    static let googleScopes = [googleDriveFileScope]
+
+    /// What Google's picker offers: the video types Drive assigns, listed
+    /// one by one because `video/*` leaves the picker empty.
+    static let googlePickerMimeTypes = [
+        "video/mp4", "video/x-matroska", "video/quicktime", "video/x-msvideo",
+        "video/webm", "video/mp2t", "video/mpeg", "video/x-m4v", "video/x-ms-wmv",
+        "video/3gpp"
     ]
+
+    /// Opens Google's picker inside the sign-in page. Files only: a picked
+    /// folder never grants what's inside it, so `allow_folder_selection`
+    /// is never sent. `prompt` must include `consent` for the picker.
+    static let googlePickerParameters = [
+        "access_type": "offline",
+        "prompt": "consent select_account",
+        "trigger_onepick": "true",
+        "allow_multiple": "true",
+        "mimetypes": googlePickerMimeTypes.joined(separator: ",")
+    ]
+
+    /// Reruns the picker for an account already linked: no account chooser,
+    /// with the account's email as the hint.
+    static func googleChooseMoreParameters(loginHint: String?) -> [String: String] {
+        var parameters = ["prompt": "consent"]
+        if let loginHint, !loginHint.isEmpty {
+            parameters["login_hint"] = loginHint
+        }
+        return parameters
+    }
     static let oneDriveScopes = ["Files.Read", "User.Read", "offline_access"]
     static let dropboxScopes = ["files.metadata.read", "files.content.read", "account_info.read"]
 
@@ -73,7 +101,7 @@ nonisolated enum CloudProviders {
                 redirectURI: "\(scheme):/oauth2redirect",
                 callbackScheme: scheme,
                 scopes: googleScopes,
-                additionalAuthorizationParameters: ["prompt": "select_account"]
+                additionalAuthorizationParameters: googlePickerParameters
             )
         case .oneDrive:
             let scheme = "msauth.com.BaBaSaMa.Edendale"
@@ -116,9 +144,10 @@ nonisolated enum CloudProviders {
         return "com.googleusercontent.apps.\(id)"
     }
 
-    /// How Apple TV can sign in to a provider on its own. Google limits its
-    /// device flow to scopes that can't browse a movie folder, and Dropbox
-    /// has none, so both come to the TV through AccountHandoff.
+    /// How Apple TV can sign in to a provider on its own. Choosing Drive
+    /// videos needs Google's picker, which only a phone, tablet, or computer
+    /// opens, and Dropbox has no device flow, so both come to the TV through
+    /// AccountHandoff.
     static func supportsDeviceCode(_ kind: MediaSourceKind) -> Bool {
         kind == .oneDrive
     }
@@ -132,8 +161,9 @@ nonisolated enum CloudProviders {
         var driveID: String? = nil
     }
 
-    /// Who a fresh token belongs to: Google's ID token, Microsoft Graph
-    /// `/me` and `/me/drive`, or Dropbox `get_current_account`.
+    /// Who a fresh token belongs to: Drive `about.get` (its `permissionId`
+    /// is the same for every Edendale client), Microsoft Graph `/me` and
+    /// `/me/drive`, or Dropbox `get_current_account`.
     static func identity(
         for kind: MediaSourceKind,
         tokens: OAuthTokenResponse,
@@ -141,14 +171,24 @@ nonisolated enum CloudProviders {
     ) async throws -> Identity {
         switch kind {
         case .googleDrive:
-            guard let idToken = tokens.idToken, let claims = decodeJWTClaims(idToken),
-                  let subject = claims["sub"] as? String
-            else { throw OAuthError.malformedResponse(provider: kind.displayName) }
-            return Identity(
-                subject: subject,
-                email: claims["email"] as? String,
-                displayName: claims["name"] as? String
+            struct About: Decodable {
+                struct User: Decodable {
+                    let permissionId: String?
+                    let emailAddress: String?
+                    let displayName: String?
+                }
+                let user: User?
+            }
+            let about: About = try await getJSON(
+                GoogleDriveConnector.url("about", query: [
+                    URLQueryItem(name: "fields", value: "user(permissionId,emailAddress,displayName)")
+                ]),
+                token: tokens.accessToken, provider: kind, session: session
             )
+            guard let user = about.user, let subject = user.permissionId, !subject.isEmpty else {
+                throw OAuthError.malformedResponse(provider: kind.displayName)
+            }
+            return Identity(subject: subject, email: user.emailAddress, displayName: user.displayName)
 
         case .oneDrive:
             struct Me: Decodable {
@@ -198,20 +238,13 @@ nonisolated enum CloudProviders {
         }
     }
 
-    /// The payload of a JWT. Signature checks are unnecessary here: the ID
-    /// token came straight from Google's token endpoint over TLS (OpenID
-    /// Connect Core §3.1.3.7).
-    static func decodeJWTClaims(_ jwt: String) -> [String: Any]? {
-        let parts = jwt.split(separator: ".")
-        guard parts.count >= 2, let data = PKCE.decodeBase64URL(String(parts[1])) else { return nil }
-        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-    }
-
     // MARK: - Revocation
 
     /// Whether Edendale can end its own access at the provider: Google and
     /// Dropbox have revocation endpoints; a Microsoft grant is removed from
-    /// the account's app permissions page.
+    /// the account's app permissions page. Only an explicit sign-out
+    /// revokes: Google ends the whole grant, so revoking a replaced refresh
+    /// token after Choose More Videos would also cut off the new one.
     static func supportsRevocation(_ kind: MediaSourceKind) -> Bool {
         kind == .googleDrive || kind == .dropbox
     }

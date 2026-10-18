@@ -88,6 +88,12 @@ struct AccountHandoffRequestView: View {
             }
         } header: {
             Text("Account").labelCaps()
+        } footer: {
+            if kind == .googleDrive {
+                Text("Apple TV lists every video chosen with this Google account, here or on your other devices. Signing in opens Google's picker so you can choose some now.")
+                    .font(Typography.bodySM)
+                    .foregroundStyle(Theme.textSecondary)
+            }
         }
     }
 
@@ -117,8 +123,8 @@ struct AccountHandoffRequestView: View {
         errorMessage = nil
         Task {
             do {
-                let account = try await store.signIn(kind: kind)
-                await center.approve(account: account)
+                let signIn = try await store.signIn(kind: kind)
+                await center.approve(account: signIn.account)
             } catch OAuthError.cancelled {
             } catch {
                 errorMessage = error.localizedDescription

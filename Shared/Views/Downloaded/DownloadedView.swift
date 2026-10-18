@@ -56,6 +56,7 @@ struct DownloadedView: View {
     var section: DownloadedSection? = nil
 
     @Environment(LibraryController.self) private var library
+    @Environment(CloudAccountStore.self) private var cloudAccounts
     @Environment(WatchProgressStore.self) private var watchStore
     @Environment(PlayerSession.self) private var playerSession
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
@@ -516,6 +517,15 @@ struct DownloadedView: View {
                     ForEach(folders) { folder in
                         FolderRow(folder: folder)
                             .contextMenu {
+                                #if !os(tvOS)
+                                if let account = googleAccount(for: folder) {
+                                    Button {
+                                        chooseMoreVideos(account)
+                                    } label: {
+                                        Label("Choose More Videos", image: .plus)
+                                    }
+                                }
+                                #endif
                                 Button {
                                     Task { await library.rescanFolder(folder) }
                                 } label: {
@@ -541,6 +551,26 @@ struct DownloadedView: View {
             .accessibilityLabel("Sources")
         }
     }
+
+    /// The linked account behind a Google Drive source, if it's still here.
+    private func googleAccount(for folder: VideoFolder) -> CloudAccount? {
+        guard folder.sourceKind == .googleDrive, let key = folder.accountKey else { return nil }
+        return cloudAccounts.accounts(of: .googleDrive).first { $0.key == key }
+    }
+
+    #if !os(tvOS)
+    /// Google's picker again; the source's row then says what was added.
+    private func chooseMoreVideos(_ account: CloudAccount) {
+        Task {
+            do {
+                try await library.chooseMoreVideos(for: account, accounts: cloudAccounts)
+            } catch OAuthError.cancelled {
+            } catch {
+                library.errorMessage = error.localizedDescription
+            }
+        }
+    }
+    #endif
 
     // MARK: - Layout metrics
 
@@ -758,12 +788,20 @@ private struct FolderRow: View {
                 Text(subtitle)
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
-                if let state = library.sourceStates[folder.id] {
-                    Text(state.message)
+                if let status {
+                    Text(status)
                         .font(Typography.bodySM)
                         .foregroundStyle(Theme.gold)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                #if os(tvOS)
+                if folder.sourceKind == .googleDrive {
+                    Text(GoogleDriveConnector.chooseOnAnotherDeviceNote)
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                #endif
             }
             Spacer()
         }
@@ -772,9 +810,12 @@ private struct FolderRow: View {
         // custom actions from the context menu attached by the caller.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(folder.name)
-        .accessibilityValue(
-            [subtitle, library.sourceStates[folder.id]?.message].compactMap(\.self).joined(separator: ", ")
-        )
+        .accessibilityValue([subtitle, status].compactMap(\.self).joined(separator: ", "))
+    }
+
+    /// Why the source couldn't be scanned, or what Choose More Videos did.
+    private var status: String? {
+        library.sourceStates[folder.id]?.message ?? library.sourceNotes[folder.id]
     }
 
     private var subtitle: String {
