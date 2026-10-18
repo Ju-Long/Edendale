@@ -1,29 +1,24 @@
 package com.babasama.edendale.connectors
 
 import com.babasama.edendale.oauth.CloudAccount
+import com.babasama.edendale.oauth.CloudProviders
 import com.babasama.edendale.oauth.CloudTokenProvider
 import com.babasama.edendale.remote.RemoteContentResolver
 import com.babasama.edendale.remote.RemoteRequest
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 
-/** The names of Drive's virtual folders, which the app localizes; the connector itself has no resources. */
-data class GoogleDriveLabels(
-    val root: String = "Google Drive",
-    val myDrive: String = "My Drive",
-    val sharedWithMe: String = "Shared with me",
-    val sharedDrives: String = "Shared drives",
-)
-
 /**
- * Google Drive through the Drive v3 REST API with `drive.readonly` (H.9.2,
- * Apple's `GoogleDriveConnector`). Item URLs are
- * `gdrive://<account>/<fileId>/<Name.ext>`; folders use the folder's ID the
- * same way, plus `?drive=<driveId>` inside a shared drive, whose listings
- * must name it. The picker's root holds My Drive, Shared with me, and Shared
- * drives.
+ * Google Drive through the Drive v3 REST API with `drive.file` (H.9.4,
+ * Apple's `GoogleDriveConnector`): Edendale sees only the files the viewer
+ * picked in Google's picker, which opens during sign-in and from Choose More
+ * Videos. So there is nothing to browse. Each account has one virtual
+ * folder, "Videos you chose", listing every file picked so far on any device
+ * or platform, because Google grants picks per account and Cloud project,
+ * not per token. Item URLs are `gdrive://<account>/<fileId>/<Name.ext>`.
  *
- * Shortcuts are followed to their targets, other Google formats (Docs,
+ * Folders are skipped (a picked folder never grants what's inside it),
+ * shortcuts are followed to their targets, other Google formats (Docs,
  * Sheets) are skipped, and videos are recognized by file extension rather
  * than MIME type. Files stream from `files/<id>?alt=media` with a Bearer
  * token and `Range`. `acknowledgeAbuse` is never sent: a file Google flags
@@ -32,94 +27,55 @@ data class GoogleDriveLabels(
 class GoogleDriveConnector(
     val account: CloudAccount,
     private val provider: ProviderHttp,
-    private val labels: GoogleDriveLabels = GoogleDriveLabels(),
 ) : MediaConnector {
     override val kind = MediaSourceKind.GOOGLE_DRIVE
-    override val root: String = folderUrl(VirtualFolder.ROOTS, labels.root)
+    override val root: String = chosenFolderUrl(account.key)
     override val accountLabel: String = account.label
 
-    /** IDs of the picker's virtual folders; real Drive IDs never start with `~`. */
-    object VirtualFolder {
-        const val ROOTS = "~roots"
-        const val SHARED_WITH_ME = "~shared"
-        const val SHARED_DRIVES = "~drives"
-        const val MY_DRIVE = "root"
-    }
-
-    /** The picker's root and the list of shared drives only gather other folders; linking either would scan all of Drive. */
-    override fun canIndex(directory: String): Boolean {
-        val id = SourceUrl.parseAccountItem(directory)?.takeIf { it.kind == kind }?.ids?.firstOrNull() ?: return false
-        return id != VirtualFolder.ROOTS && id != VirtualFolder.SHARED_DRIVES
-    }
+    /** Only "Videos you chose" can become a source; nothing else lists. */
+    override fun canIndex(directory: String): Boolean = isChosenFolder(directory)
 
     /** `about` with the account's own email: the lightest call that proves the token works. */
     override suspend fun validate() {
         provider.json { RemoteRequest(url("about", listOf("fields" to "user(emailAddress)"))) }
     }
 
+    /** Only "Videos you chose" lists: it holds every file the viewer picked, and no folder's contents are ever granted. */
     override suspend fun list(directory: String): List<ConnectorEntry> {
-        val item = SourceUrl.parseAccountItem(directory)?.takeIf { it.kind == kind }
-            ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
-        return when (val id = item.ids.first()) {
-            VirtualFolder.ROOTS -> listOf(
-                ConnectorEntry(labels.myDrive, folderUrl(VirtualFolder.MY_DRIVE, labels.myDrive), isDirectory = true),
-                ConnectorEntry(labels.sharedWithMe, folderUrl(VirtualFolder.SHARED_WITH_ME, labels.sharedWithMe), isDirectory = true),
-                ConnectorEntry(labels.sharedDrives, folderUrl(VirtualFolder.SHARED_DRIVES, labels.sharedDrives), isDirectory = true),
-            )
-            VirtualFolder.SHARED_DRIVES -> listSharedDrives()
-            VirtualFolder.SHARED_WITH_ME -> listFiles("sharedWithMe = true and trashed = false", driveId = null)
-            else -> listFiles("'$id' in parents and trashed = false", driveId = item.queryValue("drive"))
+        if (!isChosenFolder(directory) || SourceUrl.parseAccountItem(directory)?.account != account.key) {
+            throw ConnectorException(ConnectorFailure.InvalidAddress)
         }
+        return listChosenFiles()
     }
 
     // MARK: - Listing
 
-    private suspend fun listFiles(query: String, driveId: String?): List<ConnectorEntry> {
+    /**
+     * Every file the viewer picked, across pages. `drive.file` limits
+     * `files.list` to those, whether they're in My Drive, shared with the
+     * viewer, or in a shared drive.
+     */
+    private suspend fun listChosenFiles(): List<ConnectorEntry> {
         val entries = mutableListOf<ConnectorEntry>()
         var pageToken: String? = null
         do {
             val parameters = buildList {
-                add("q" to query)
+                add("q" to "trashed = false")
                 add("fields" to FILE_FIELDS)
                 add("pageSize" to "1000")
                 add("supportsAllDrives" to "true")
                 add("includeItemsFromAllDrives" to "true")
-                if (driveId != null) {
-                    add("corpora" to "drive")
-                    add("driveId" to driveId)
-                }
                 pageToken?.let { add("pageToken" to it) }
             }
             val page = provider.json { RemoteRequest(url("files", parameters)) }
-            entries += page.array("files").mapNotNull { entry(it, driveId) }
+            entries += page.array("files").mapNotNull(::entry)
             pageToken = page.text("nextPageToken")
         } while (pageToken != null)
         return entries.sortedWith(WebDavConnector.FOLDERS_FIRST)
     }
 
-    private suspend fun listSharedDrives(): List<ConnectorEntry> {
-        val entries = mutableListOf<ConnectorEntry>()
-        var pageToken: String? = null
-        do {
-            val parameters = buildList {
-                add("pageSize" to "100")
-                add("fields" to "nextPageToken,drives(id,name)")
-                pageToken?.let { add("pageToken" to it) }
-            }
-            val page = provider.json { RemoteRequest(url("drives", parameters)) }
-            entries += page.array("drives").mapNotNull { drive ->
-                val id = drive.text("id") ?: return@mapNotNull null
-                val name = drive.text("name") ?: return@mapNotNull null
-                // A shared drive's root folder has the drive's ID.
-                ConnectorEntry(name, folderUrl(id, name, driveId = id), isDirectory = true)
-            }
-            pageToken = page.text("nextPageToken")
-        } while (pageToken != null)
-        return entries.sortedWith(WebDavConnector.FOLDERS_FIRST)
-    }
-
-    /** Maps a Drive file to an entry: folders and folder shortcuts are directories; other Google formats are skipped. */
-    internal fun entry(file: JsonObject, driveId: String?): ConnectorEntry? {
+    /** Maps a picked Drive file to an entry. Folders, folder shortcuts, and other Google formats are skipped. */
+    internal fun entry(file: JsonObject): ConnectorEntry? {
         var id = file.text("id") ?: return null
         val name = file.text("name") ?: return null
         var mimeType = file.text("mimeType").orEmpty()
@@ -128,10 +84,7 @@ class GoogleDriveConnector(
             id = details?.text("targetId") ?: return null
             mimeType = details.text("targetMimeType").orEmpty()
         }
-        val modified = parseInstant(file.text("modifiedTime"))
-        if (mimeType == FOLDER_MIME_TYPE) {
-            return ConnectorEntry(name, folderUrl(id, name, driveId), isDirectory = true, modifiedEpochMillis = modified)
-        }
+        // Folders are Google formats too.
         if (mimeType.startsWith(GOOGLE_APPS_PREFIX)) return null
         return ConnectorEntry(
             name = name,
@@ -141,32 +94,84 @@ class GoogleDriveConnector(
             size = file.number("size"),
             // Missing until Drive finishes processing a video.
             durationSeconds = file.obj("videoMediaMetadata")?.number("durationMillis")?.let { it / 1_000.0 },
-            modifiedEpochMillis = modified,
+            modifiedEpochMillis = parseInstant(file.text("modifiedTime")),
         )
     }
 
-    // MARK: - URLs
-
-    fun folderUrl(id: String, name: String, driveId: String? = null): String = SourceUrl.accountItem(
-        kind,
-        account.key,
-        listOf(id),
-        name,
-        query = driveId?.let { listOf("drive" to it) }.orEmpty(),
-    )
-
     companion object {
         const val API_BASE = "https://www.googleapis.com/drive/v3/"
-        const val FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
         const val SHORTCUT_MIME_TYPE = "application/vnd.google-apps.shortcut"
         private const val GOOGLE_APPS_PREFIX = "application/vnd.google-apps."
         private const val FILE_FIELDS =
             "nextPageToken,files(id,name,mimeType,size,modifiedTime,videoMediaMetadata(durationMillis),shortcutDetails(targetId,targetMimeType))"
 
+        /** The ID of the "Videos you chose" folder; real Drive IDs never start with `~`. */
+        const val CHOSEN_FOLDER_ID = "~chosen"
+
+        /** The name in its URL, fixed so a source's stored URL is the same in every language. */
+        const val CHOSEN_FOLDER_URL_NAME = "Google Drive"
+
+        /** The account's Google Drive source URL. */
+        fun chosenFolderUrl(accountKey: String): String =
+            SourceUrl.accountItem(MediaSourceKind.GOOGLE_DRIVE, accountKey, listOf(CHOSEN_FOLDER_ID), CHOSEN_FOLDER_URL_NAME)
+
+        /** Whether [url] is a Google Drive source from a `drive.file` build: older builds linked Drive folders, which `drive.file` can't list. */
+        fun isChosenFolder(url: String): Boolean {
+            val item = SourceUrl.parseAccountItem(url) ?: return false
+            return item.kind == MediaSourceKind.GOOGLE_DRIVE && item.ids == listOf(CHOSEN_FOLDER_ID)
+        }
+
+        /** The Drive file ID in an item URL; null for other kinds and for "Videos you chose" itself. */
+        fun fileId(itemUrl: String): String? {
+            val item = SourceUrl.parseAccountItem(itemUrl)?.takeIf { it.kind == MediaSourceKind.GOOGLE_DRIVE } ?: return null
+            return item.ids.single().takeIf { it != CHOSEN_FOLDER_ID }
+        }
+
         /** `API_BASE/path?query`, with each value encoded the way Google expects (spaces and quotes escaped). */
         fun url(path: String, query: List<Pair<String, String>>): String =
             API_BASE + path + "?" + query.joinToString("&") { "${S3Signer.uriEncode(it.first)}=${S3Signer.uriEncode(it.second)}" }
     }
+}
+
+/**
+ * The move to `drive.file` (H.9.4, D20: a clean break). An older build's
+ * Google accounts hold `drive.readonly` tokens, under which "Videos you
+ * chose" would list every file in Drive, and its sources are Drive folders,
+ * which `drive.file` can't list. Both go at launch, and the viewer is told
+ * once to link Google Drive again. Old tokens aren't revoked: Google would
+ * end the whole grant, including a newer sign-in on another device.
+ */
+object GoogleDriveMigration {
+    /** Google accounts from before `drive.file`. */
+    fun outdatedAccounts(accounts: List<CloudAccount>): List<CloudAccount> =
+        accounts.filter { it.kind == MediaSourceKind.GOOGLE_DRIVE && !CloudProviders.hasDriveFileAccess(it.scopes) }
+
+    /**
+     * Whether a source must go: a Google Drive source that isn't "Videos you
+     * chose", or one read through an account in [outdatedKeys].
+     */
+    fun isOutdatedSource(kind: MediaSourceKind?, url: String, accountKey: String?, outdatedKeys: Set<String>): Boolean =
+        kind == MediaSourceKind.GOOGLE_DRIVE && (!GoogleDriveConnector.isChosenFolder(url) || accountKey in outdatedKeys)
+}
+
+/**
+ * Removing a picked Drive video from the library (H.9.4, D21). Google can't
+ * unshare one file with an app, so the source keeps the file IDs removed on
+ * this device and its scans skip them. Picking a removed video again brings
+ * it back.
+ */
+object GoogleDriveHiddenItems {
+    /** [entries] without the files in [hidden]; entries of other kinds pass. */
+    fun visible(entries: List<ConnectorEntry>, hidden: Set<String>): List<ConnectorEntry> {
+        if (hidden.isEmpty()) return entries
+        return entries.filter { entry -> GoogleDriveConnector.fileId(entry.url)?.let { it !in hidden } ?: true }
+    }
+
+    /** [hidden] with the IDs of the removed [itemUrls] added. */
+    fun hiding(hidden: Set<String>, itemUrls: List<String>): Set<String> = hidden + itemUrls.mapNotNull(GoogleDriveConnector::fileId)
+
+    /** [hidden] without the files just picked again. */
+    fun unhiding(hidden: Set<String>, picked: List<String>): Set<String> = hidden - picked.toSet()
 }
 
 /**

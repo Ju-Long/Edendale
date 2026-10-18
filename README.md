@@ -163,7 +163,7 @@ straight to the service; nothing passes through an Edendale server.
 | S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
 | OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
 | Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
-| Google Drive | Google sign-in, read-only (`drive.readonly`) | The sign-in, folder listings (My Drive, Shared with me, shared drives), and byte ranges of the files that play |
+| Google Drive | Google sign-in with Google's picker, limited to the files you choose (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play |
 
 Logins, key pairs, and account tokens are stored encrypted on the device,
 excluded from backup and device transfer, and listed in **Settings →
@@ -229,20 +229,42 @@ listed in Settings → Accounts. Use a key that can only read that bucket.
 Google Drive, OneDrive, and Dropbox accounts sign in in a Custom Tab with
 OAuth 2.0 and PKCE. On Android TV, OneDrive signs in with a code: the TV shows
 the code, the address to enter it at, and a QR code for that address, and
-waits while you approve on a phone or computer. Dropbox and Google don't offer
-TV sign-in. Edendale uses no provider SDK and ships no client secret. Google
-Drive's picker starts with My Drive, Shared with me, and Shared drives; link a
-folder inside one of them (the root and the list of shared drives can't be
-linked, since that would scan all of Drive). Shortcuts are followed, Google
-Docs and other Google formats are skipped, and videos are recognized by file
-extension. Each provider receives the sign-in, folder listings, and the byte
-ranges of what plays.
+waits while you approve on a phone or computer. Dropbox and Google Drive come
+to a TV from a phone (see Phone-to-TV handoff). Edendale uses no provider SDK
+and ships no client secret. OneDrive and Dropbox receive the sign-in, folder
+listings, and the byte ranges of what plays.
+
+Google Drive asks only for `drive.file`, so Edendale sees only the files you
+choose. Signing in opens Google's picker in the same Custom Tab: tick the
+videos to add, from My Drive, Shared with me, or a shared drive. There are no
+folders to browse, and a picked folder never shares what's inside it, so the
+picker offers video files only. Each account gets one source, **Videos you
+chose**, which lists every video picked with that Google account on any
+device. New episodes don't appear on
+their own: **Choose More Videos** on the source's row (or on the account in
+Settings → Accounts) opens the picker again and rescans. **Remove from
+Library** (a long press on a movie or an episode, or the Menu key on a TV)
+keeps the video's Drive file ID on this device, never backed up, so a rescan
+skips it; picking it again brings it back. The action is offered only for
+Drive videos and files added on their own, because any other source's next
+scan would bring the file back. Shortcuts are followed,
+Google formats are skipped, videos are recognized by file extension, and
+subtitles beside a video load only if they were picked too. Google receives
+the sign-in, the file listing (`files.list`), the account's name and email
+(`about`), and the byte ranges of what plays.
+
+Accounts linked by a build that asked for `drive.readonly` can't open the
+picker, and their folder sources can't be listed under `drive.file`. The
+first launch of this build removes them, without revoking anything, and says
+once to link Google Drive again.
+
 Nothing passes through an Edendale server, because there isn't one. The
 refresh token for each account is stored encrypted on the device, excluded
 from backup and device transfer. Access tokens are kept in memory only.
 **Settings → Accounts** lists each account with its sources and Sign Out.
-For Dropbox, **Sign Out and Revoke Access** also ends Edendale's access at
-the provider.
+For Google Drive and Dropbox, **Sign Out and Revoke Access** also ends
+Edendale's access at the provider; for Google Drive that signs out every TV
+you handed the account to and forgets the videos you chose.
 
 To build with a provider, add its client ID to `secrets.json`. An empty value
 hides that provider:
@@ -251,21 +273,26 @@ hides that provider:
 |---|---|---|
 | `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
 | `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
-| `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on, a consent screen requesting `openid email https://www.googleapis.com/auth/drive.readonly`, and Google's restricted-scope verification (D9) | `com.babasama.edendale:/oauth2redirect` |
+| `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on (Advanced settings), in a Cloud project with the Google Picker API enabled and `https://www.googleapis.com/auth/drive.file` on the consent screen's Data Access page. `drive.file` is non-sensitive, so no scope verification is needed (D9, H.9.4) | `com.babasama.edendale:/oauth2redirect` |
 
 ### Phone-to-TV handoff
 
-Google's device sign-in can't grant `drive.readonly` and Dropbox has no
-device flow, so an Android TV asks a phone instead. On the TV, **Link Source →
+Google Drive videos are chosen in Google's picker, which a TV never opens,
+and Dropbox has no device flow, so an Android TV asks a phone instead. On the TV, **Link Source →
 provider → Continue on a Phone** shows a six-digit code; on a phone running
 Edendale on the same network, **Settings → Accounts → Link to a TV** lists the
 TVs found, takes the code, and then asks "Link Google Drive on Living Room?",
 offering an account already linked on the phone, a fresh sign-in, or (for
 SMB, SFTP, WebDAV, and S3) a saved login. Nothing is sent until you choose.
 The TV checks what it received (it refreshes the token, or tests the login),
-stores it in its own encrypted storage, and goes on to the folder picker. The
-phone's refresh token is reused rather than exchanged for another, because
-Google allows 100 per account per client. A saved login travels with the
+stores it in its own encrypted storage, and goes on to the folder picker; a
+Google Drive account links **Videos you chose** straight away. The phone's
+refresh token is reused rather than exchanged for another, because Google
+allows 100 per account per client. Google grants picked files to the account,
+not to one token, so the TV keeps seeing videos chosen later on any device:
+its Google Drive source says to choose them on a phone or tablet, and a
+rescan lists them. A TV refuses a Google account from a phone whose Edendale
+still asks for `drive.readonly`. A saved login travels with the
 server's pinned SSH host key or certificate, so the TV trusts the server the
 way the phone does.
 
@@ -495,13 +522,19 @@ tests. Before a release, check on:
   trusted certificate, then a self-signed one: the fingerprint prompt, a changed
   certificate refused, and plain `http://` on the LAN but not to a public
   address), an S3 bucket (AWS or R2), OneDrive (a personal and a work or school
-  account), Dropbox, and Google Drive (a folder in My Drive, one shared with
-  you, and one in a shared drive). Then sign out in Settings → Accounts and check that the sources ask to
-  sign in again. On a TV, sign in to OneDrive with the code from a phone, and
-  hand over a Google Drive account and, separately, an SMB login from a phone
-  (Link Source → Continue on a Phone; Settings → Accounts → Link to a TV on the
-  phone): a wrong code is refused, the right one links the account, and the TV
-  then browses the folders.
+  account), and Dropbox. For Google Drive: sign in, pick videos from My Drive,
+  Shared with me, and a shared drive in Google's picker, play and seek one,
+  remove one and rescan (it stays gone), use Choose More Videos (the source
+  says how many were added, and a removed video picked again comes back), and
+  check that a build with an older `drive.readonly` account removes it with
+  the one-time notice. Then sign out in Settings → Accounts and check that the
+  sources ask to sign in again. On a TV, sign in to OneDrive with the code
+  from a phone, and hand over a Google Drive account and, separately, an SMB
+  login from a phone (Link Source → Continue on a Phone; Settings → Accounts
+  → Link to a TV on the phone): a wrong code is refused, the right one links
+  the account, the TV then browses the folders (Google Drive links Videos you
+  chose and lists what the phone picked), and a rescan on the TV lists videos
+  picked on the phone afterwards.
 
 ### DTS and TrueHD
 

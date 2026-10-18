@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryActivity
+import com.babasama.edendale.android.data.SourceScanRules
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
@@ -181,6 +182,9 @@ private fun DownloadedScreenContent(
     val progressList by library.watchProgress.collectAsState(initial = emptyList())
     val activity by library.activity.collectAsState(initial = LibraryActivity())
     val scanError = activity.errorMessage
+    // Google Drive sources (H.9.4): what Choose More Videos added, and the picker itself.
+    val sourceNotes by library.sourceNotes.collectAsState()
+    val chooseMoreVideos = rememberChooseMoreVideos()
 
     // Young Audience filter: see visibleLibrary.
     val audienceRefs = remember(allMovies, allShows) { libraryAudienceRefs(allMovies, allShows) }
@@ -420,27 +424,46 @@ private fun DownloadedScreenContent(
                         key = { it.uri },
                     ) { movie ->
                         val progress = progressByKey.forMovie(movie.tmdbId)
-                        LibraryPosterCard(
-                            title = movie.title,
-                            subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes, runtimeFormat),
-                            posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
-                            width = cellWidth,
-                            isTelevision = isTelevision,
-                            isWatched = progress?.isCompleted == true,
-                            progress = progress.partialFraction(),
-                            mediaType = MediaType.MOVIE,
-                            onClick = {
-                                // This copy, unless its source is unreachable and another isn't (D.5).
-                                val copy = preferredMovie(movie, allMovies, foldersByUri)
-                                PlayerActivity.play(
-                                    context = context,
-                                    uri = copy.uri,
-                                    title = copy.title,
-                                    tmdbId = copy.tmdbId,
-                                    isEpisode = false,
+                        // Remove from Library, where it lasts: a Google Drive copy stays hidden from
+                        // rescans (D21) and a file added on its own is never rescanned.
+                        val removable = SourceScanRules.removalLasts(movie.folderUri)
+                        val removeLabel = stringResource(R.string.remove_from_library)
+                        var menuOpen by remember(movie.uri) { mutableStateOf(false) }
+                        Box {
+                            LibraryPosterCard(
+                                title = movie.title,
+                                subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes, runtimeFormat),
+                                posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
+                                width = cellWidth,
+                                isTelevision = isTelevision,
+                                isWatched = progress?.isCompleted == true,
+                                progress = progress.partialFraction(),
+                                mediaType = MediaType.MOVIE,
+                                onLongClick = if (removable) ({ menuOpen = true }) else null,
+                                onLongClickLabel = if (removable) removeLabel else null,
+                                onClick = {
+                                    // This copy, unless its source is unreachable and another isn't (D.5).
+                                    val copy = preferredMovie(movie, allMovies, foldersByUri)
+                                    PlayerActivity.play(
+                                        context = context,
+                                        uri = copy.uri,
+                                        title = copy.title,
+                                        tmdbId = copy.tmdbId,
+                                        isEpisode = false,
+                                    )
+                                },
+                            )
+                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(removeLabel) },
+                                    leadingIcon = { Icon(painterResource(id = R.drawable.ic_trash_can), contentDescription = null) },
+                                    onClick = {
+                                        menuOpen = false
+                                        library.removeMovie(movie.uri)
+                                    },
                                 )
-                            },
-                        )
+                            }
+                        }
                     }
                 }
 
@@ -494,6 +517,8 @@ private fun DownloadedScreenContent(
                             isTelevision = isTelevision,
                             onRescan = { library.rescanFolder(folder.treeUri) },
                             onRemove = { pendingRemoval = folder.treeUri },
+                            note = sourceNotes[folder.treeUri],
+                            chooseMoreVideos = chooseMoreVideos,
                         )
                     }
                 }

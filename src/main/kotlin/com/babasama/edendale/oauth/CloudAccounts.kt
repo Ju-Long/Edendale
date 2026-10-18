@@ -2,6 +2,7 @@ package com.babasama.edendale.oauth
 
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
+import com.babasama.edendale.connectors.GoogleDriveConnector
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.oauth.OAuthClient.Companion.string
@@ -30,7 +31,49 @@ import java.util.concurrent.ConcurrentHashMap
  * clients; they come from `secrets.json` and an empty one hides the provider.
  */
 object CloudProviders {
-    val GOOGLE_SCOPES = listOf("openid", "email", "https://www.googleapis.com/auth/drive.readonly")
+    /**
+     * Only the files the viewer picks in Google's picker (H.9.4). The picker
+     * flow allows no other scope next to it, so `openid` and `email` are
+     * gone too.
+     */
+    const val GOOGLE_DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+    val GOOGLE_SCOPES = listOf(GOOGLE_DRIVE_FILE_SCOPE)
+
+    /**
+     * What Google's picker offers: the video types Drive assigns, listed one
+     * by one because the `video/` wildcard leaves the picker empty. Without
+     * a filter the picker shows folders but every file type too, which the
+     * owner turned down (2026-10-18).
+     */
+    val GOOGLE_PICKER_MIME_TYPES = listOf(
+        "video/mp4", "video/x-matroska", "video/quicktime", "video/x-msvideo",
+        "video/webm", "video/mp2t", "video/mpeg", "video/x-m4v", "video/x-ms-wmv",
+        "video/3gpp",
+    )
+
+    /**
+     * Opens Google's picker inside the sign-in page. Files only: a picked
+     * folder never grants what's inside it, so `allow_folder_selection` is
+     * never sent. `prompt` must include `consent` for the picker, and
+     * `consent` also makes every run return a refresh token.
+     */
+    val GOOGLE_PICKER_PARAMETERS = mapOf(
+        "access_type" to "offline",
+        "prompt" to "consent select_account",
+        "trigger_onepick" to "true",
+        "allow_multiple" to "true",
+        "mimetypes" to GOOGLE_PICKER_MIME_TYPES.joinToString(","),
+    )
+
+    /** Reruns the picker for an account already linked: no account chooser, with the account's email as the hint. */
+    fun googleChooseMoreParameters(loginHint: String?): Map<String, String> = buildMap {
+        put("prompt", "consent")
+        loginHint?.takeIf { it.isNotBlank() }?.let { put("login_hint", it) }
+    }
+
+    /** Whether [scopes] let Edendale read picked Drive files; an older build's Google accounts had `drive.readonly` (D20). */
+    fun hasDriveFileAccess(scopes: List<String>): Boolean = GOOGLE_DRIVE_FILE_SCOPE in scopes
+
     val ONE_DRIVE_SCOPES = listOf("Files.Read", "User.Read", "offline_access")
     val DROPBOX_SCOPES = listOf("files.metadata.read", "files.content.read", "account_info.read")
 
@@ -64,7 +107,7 @@ object CloudProviders {
                 redirectUri = GOOGLE_REDIRECT_URI,
                 callbackScheme = GOOGLE_REDIRECT_SCHEME,
                 scopes = GOOGLE_SCOPES,
-                additionalAuthorizationParameters = mapOf("prompt" to "select_account"),
+                additionalAuthorizationParameters = GOOGLE_PICKER_PARAMETERS,
             )
             MediaSourceKind.ONE_DRIVE -> OAuthConfiguration(
                 kind = kind,
@@ -97,19 +140,28 @@ object CloudProviders {
         }
     }
 
-    /** Whether a TV can sign in on its own: Google limits its device flow to scopes that can't browse a folder, and Dropbox has none. */
+    /**
+     * Whether a TV can sign in on its own. Choosing Drive videos needs
+     * Google's picker, which only a phone or tablet opens, and Dropbox has
+     * no device flow, so both come to the TV through the handoff (I.2).
+     */
     fun supportsDeviceCode(kind: MediaSourceKind): Boolean = kind == MediaSourceKind.ONE_DRIVE
 
     /** Who a fresh token belongs to. */
     data class Identity(val subject: String, val email: String?, val displayName: String?, val driveId: String? = null)
 
-    /** Google's ID token, Microsoft Graph `/me` and `/me/drive`, or Dropbox `get_current_account`. */
+    /**
+     * Drive `about.get` (its `permissionId` is the same for every Edendale
+     * client, and `drive.file` may read it), Microsoft Graph `/me` and
+     * `/me/drive`, or Dropbox `get_current_account`.
+     */
     suspend fun identity(kind: MediaSourceKind, tokens: OAuthTokens, http: RemoteHttp): Identity = withContext(Dispatchers.IO) {
         when (kind) {
             MediaSourceKind.GOOGLE_DRIVE -> {
-                val claims = tokens.idToken?.let(::decodeJwtClaims) ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
-                val subject = claims.claim("sub") ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
-                Identity(subject, claims.claim("email"), claims.claim("name"))
+                val about = getJson(http, kind, GoogleDriveConnector.url("about", listOf("fields" to "user(permissionId,emailAddress,displayName)")), tokens.accessToken)
+                val user = about["user"] as? JsonObject ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
+                val subject = user.string("permissionId")?.takeIf { it.isNotEmpty() } ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
+                Identity(subject, user.string("emailAddress"), user.string("displayName"))
             }
             MediaSourceKind.ONE_DRIVE -> {
                 val me = getJson(http, kind, "https://graph.microsoft.com/v1.0/me?\$select=id,displayName,mail,userPrincipalName", tokens.accessToken)
@@ -140,7 +192,13 @@ object CloudProviders {
         }
     }
 
-    /** Whether Edendale can end its own access: Google and Dropbox can; a Microsoft grant is removed on the account's app permissions page. */
+    /**
+     * Whether Edendale can end its own access: Google and Dropbox can; a
+     * Microsoft grant is removed on the account's app permissions page. Only
+     * an explicit sign-out revokes: Google ends the whole grant, so revoking a
+     * replaced refresh token after Choose More Videos would cut off the new
+     * one and every TV's too.
+     */
     fun supportsRevocation(kind: MediaSourceKind) = kind == MediaSourceKind.GOOGLE_DRIVE || kind == MediaSourceKind.DROPBOX
 
     /** Where the viewer manages app access themselves. */
@@ -193,7 +251,7 @@ object CloudProviders {
  */
 data class CloudAccount(
     val kind: MediaSourceKind,
-    /** Google's `sub`, the Microsoft user `id`, or Dropbox's `account_id`. */
+    /** Drive's `permissionId` (an older build stored Google's `sub`; D20), the Microsoft user `id`, or Dropbox's `account_id`. */
     val subject: String,
     val email: String?,
     val displayName: String?,
@@ -209,6 +267,87 @@ data class CloudAccount(
     val label: String get() = email ?: displayName ?: kind.raw
 
     override fun toString() = "CloudAccount(${kind.raw}, $label)"
+}
+
+/**
+ * A finished sign-in (H.6), with the Drive files picked in Google's picker
+ * along the way (empty for other providers, and when the viewer picked
+ * nothing).
+ */
+data class CloudSignIn(val account: CloudAccount, val pickedFileIds: List<String> = emptyList()) {
+    companion object {
+        /**
+         * Stores the account a sign-in produced: checks the granted scopes,
+         * asks who the token belongs to, and saves the account with its
+         * refresh token. Blocking vault access runs on the IO dispatcher.
+         */
+        suspend fun store(
+            kind: MediaSourceKind,
+            configuration: OAuthConfiguration,
+            response: OAuthTokens,
+            http: RemoteHttp,
+            vault: CloudAccountVault,
+            tokens: CloudTokenProvider,
+        ): CloudAccount {
+            val scopes = grantedScopes(kind, configuration, response)
+            val refreshToken = response.refreshToken?.takeIf { it.isNotEmpty() } ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
+            val identity = CloudProviders.identity(kind, response, http)
+            val account = CloudAccount(
+                kind = kind,
+                subject = identity.subject,
+                email = identity.email,
+                displayName = identity.displayName,
+                refreshToken = refreshToken,
+                scopes = scopes,
+                driveId = identity.driveId,
+            )
+            withContext(Dispatchers.IO) { vault.save(account) }
+            tokens.store(response, account)
+            return account
+        }
+
+        /**
+         * Keeps the tokens a Choose More Videos run returned for [account]
+         * (H.9.6): the newest refresh token replaces the stored one, which is
+         * never revoked, because Google would end the whole grant. Throws if
+         * they belong to another Google account; nothing is stored then.
+         */
+        suspend fun storeChosenVideos(
+            account: CloudAccount,
+            configuration: OAuthConfiguration,
+            response: OAuthTokens,
+            http: RemoteHttp,
+            vault: CloudAccountVault,
+            tokens: CloudTokenProvider,
+        ): CloudAccount {
+            val kind = account.kind
+            val scopes = grantedScopes(kind, configuration, response)
+            val identity = CloudProviders.identity(kind, response, http)
+            if (identity.subject != account.subject) {
+                throw OAuthException(kind, OAuthFailure.DifferentAccount(identity.email ?: identity.displayName ?: kind.raw, account.label))
+            }
+            val updated = withContext(Dispatchers.IO) {
+                val current = vault.account(kind, account.key) ?: account
+                current.copy(
+                    refreshToken = response.refreshToken?.takeIf { it.isNotEmpty() } ?: current.refreshToken,
+                    scopes = scopes,
+                    email = identity.email ?: current.email,
+                    displayName = identity.displayName ?: current.displayName,
+                ).also(vault::save)
+            }
+            tokens.store(response, updated)
+            return updated
+        }
+
+        /** The scopes a token response granted. Google's consent page can leave Drive access unticked. */
+        fun grantedScopes(kind: MediaSourceKind, configuration: OAuthConfiguration, response: OAuthTokens): List<String> {
+            val scopes = response.grantedScopes ?: configuration.scopes
+            if (kind == MediaSourceKind.GOOGLE_DRIVE && !CloudProviders.hasDriveFileAccess(scopes)) {
+                throw OAuthException(kind, OAuthFailure.DriveAccessNotGranted)
+            }
+            return scopes
+        }
+    }
 }
 
 /** Somewhere to keep secrets: an encrypted store on Android, memory in tests. */

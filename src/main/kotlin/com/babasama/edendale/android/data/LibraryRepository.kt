@@ -16,6 +16,8 @@ import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.DropboxConnector
 import com.babasama.edendale.connectors.GoogleDriveConnector
+import com.babasama.edendale.connectors.GoogleDriveHiddenItems
+import com.babasama.edendale.connectors.GoogleDriveMigration
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.OneDriveConnector
 import com.babasama.edendale.connectors.ProviderHttp
@@ -29,6 +31,7 @@ import com.babasama.edendale.connectors.VideoFiles
 import com.babasama.edendale.connectors.WebDav
 import com.babasama.edendale.connectors.WebDavConnector
 import com.babasama.edendale.handoff.AccountHandoff
+import com.babasama.edendale.oauth.CloudSignIn
 import com.babasama.edendale.remote.OkHttpRemoteHttp
 import com.babasama.edendale.remote.ServerLogin
 import com.babasama.edendale.domain.MediaParser
@@ -40,11 +43,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -82,9 +87,25 @@ class LibraryRepository(
     private val http = OkHttpRemoteHttp()
     private val cloud by lazy { (context.applicationContext as EdendaleApplication).cloudAccounts }
     private val tlsPins by lazy { (context.applicationContext as EdendaleApplication).tlsPins }
+    private val googleDrive = GoogleDriveStore(context)
 
     private val _activity = MutableStateFlow(LibraryActivity())
     val activity: StateFlow<LibraryActivity> = _activity.asStateFlow()
+
+    /**
+     * What the last Choose More Videos did to a Google Drive source, by
+     * `treeUri`, shown on its row until the source's next scan (H.9.6).
+     * Unlike a scan status, never a problem.
+     */
+    private val _sourceNotes = MutableStateFlow<Map<String, String>>(emptyMap())
+    val sourceNotes: StateFlow<Map<String, String>> = _sourceNotes.asStateFlow()
+
+    /** Whether the one-time "Link Google Drive Again" notice is due (D20). */
+    private val _needsGoogleDriveRelinkNotice = MutableStateFlow(false)
+    val needsGoogleDriveRelinkNotice: StateFlow<Boolean> = _needsGoogleDriveRelinkNotice.asStateFlow()
+
+    /** D20 (H.9.4), once per process before anything scans. */
+    private val googleDriveMigration = scope.async { migrateGoogleDriveToFileAccess() }
 
     val folders: Flow<List<LibraryFolderEntity>> = dao.observeFolders()
     val movies: Flow<List<LibraryMovieEntity>> = dao.observeMovies()
@@ -329,6 +350,8 @@ class LibraryRepository(
     fun removeFolder(treeUri: String) {
         scope.launch {
             dao.removeFolderTree(treeUri)
+            googleDrive.clear(treeUri)
+            _sourceNotes.update { it - treeUri }
             if (treeUri.startsWith("content://")) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
@@ -340,19 +363,34 @@ class LibraryRepository(
         }
     }
 
+    /** A removed Google Drive video stays hidden from later scans on this device (D21). */
     fun removeMovie(uri: String) {
-        scope.launch { dao.deleteMovie(uri) }
+        scope.launch {
+            dao.movieByUri(uri)?.folderUri?.let { hideGoogleDriveItems(it, listOf(uri)) }
+            dao.deleteMovie(uri)
+        }
     }
 
     fun removeEpisode(uri: String) {
         scope.launch {
+            dao.episodeByUri(uri)?.folderUri?.let { hideGoogleDriveItems(it, listOf(uri)) }
             dao.deleteEpisode(uri)
             dao.pruneOrphanShows()
         }
     }
 
+    private fun hideGoogleDriveItems(folderUri: String, uris: List<String>) {
+        if (!GoogleDriveConnector.isChosenFolder(folderUri)) return
+        googleDrive.updateHidden(folderUri) { GoogleDriveHiddenItems.hiding(it, uris) }
+    }
+
     fun clearError() {
         _activity.value = _activity.value.copy(errorMessage = null)
+    }
+
+    /** A library-wide message, such as a failed Choose More Videos (H.9.6). */
+    fun showError(message: String) {
+        _activity.value = _activity.value.copy(errorMessage = message)
     }
 
     /**
@@ -419,6 +457,8 @@ class LibraryRepository(
     )
 
     private suspend fun scan(folder: LibraryFolderEntity) {
+        googleDriveMigration.await()
+        _sourceNotes.update { it - folder.treeUri }
         _activity.value = _activity.value.copy(
             scanningFolder = folder.displayName,
             errorMessage = null,
@@ -516,7 +556,7 @@ class LibraryRepository(
         val connector = when (kind) {
             MediaSourceKind.ONE_DRIVE -> OneDriveConnector.create(account, provider)
             MediaSourceKind.DROPBOX -> DropboxConnector(account, provider)
-            MediaSourceKind.GOOGLE_DRIVE -> GoogleDriveConnector(account, provider, strings.googleDriveLabels)
+            MediaSourceKind.GOOGLE_DRIVE -> GoogleDriveConnector(account, provider)
             else -> null
         }
         return connector ?: throw ConnectorException(ConnectorFailure.SignInRequired(kind))
@@ -527,7 +567,7 @@ class LibraryRepository(
         val folder: String,
         /** The subfolders, every one of them browsable. */
         val entries: List<ConnectorEntry>,
-        /** Whether [folder] itself can be linked; Drive's root and its list of shared drives only gather others (H.9). */
+        /** Whether [folder] itself can be linked. */
         val canIndex: Boolean,
     )
 
@@ -545,7 +585,7 @@ class LibraryRepository(
             }
         }
 
-    /** Links a folder of a linked cloud account (H.11), then scans it. */
+    /** Links a folder of a linked cloud account (H.11), then scans it. Google Drive links through [addChosenVideos] instead. */
     fun importAccountFolder(kind: MediaSourceKind, accountKey: String, folderUrl: String, trail: List<String>) {
         scope.launch {
             val folder = LibraryFolderEntity(
@@ -559,6 +599,79 @@ class LibraryRepository(
             dao.upsertFolder(folder)
             scan(folder)
         }
+    }
+
+    // MARK: - Google Drive (H.9.4)
+
+    /**
+     * Links an account's Google Drive source, "Videos you chose", or
+     * rescans it when this device already has it: one source per account
+     * (R6). [signIn] carries the files Google's picker just returned (none
+     * when an account already linked was chosen, or one a phone handed to
+     * a TV); picking a removed video again brings it back. When something
+     * was picked, the source's row then says how many of those videos are
+     * new to the library.
+     */
+    fun addChosenVideos(signIn: CloudSignIn) {
+        scope.launch {
+            googleDriveMigration.await()
+            val account = signIn.account
+            val treeUri = GoogleDriveConnector.chosenFolderUrl(account.key)
+            val picked = signIn.pickedFileIds
+            googleDrive.updateHidden(treeUri) { GoogleDriveHiddenItems.unhiding(it, picked) }
+            val existing = dao.folders().firstOrNull { it.treeUri == treeUri }
+            val before = if (existing == null) emptySet() else googleDriveFileIds(treeUri)
+            val folder = existing ?: LibraryFolderEntity(
+                treeUri = treeUri,
+                displayName = strings.googleDriveChosenFolder,
+                addedAtEpochMillis = System.currentTimeMillis(),
+                kind = MediaSourceKind.GOOGLE_DRIVE.raw,
+                // The account, as other cloud sources' paths start with it.
+                displayPath = "${account.label} › ${strings.googleDriveChosenFolder}",
+                accountKey = account.key,
+            ).also { dao.upsertFolder(it) }
+            scan(folder)
+            if (picked.isEmpty() || dao.folders().firstOrNull { it.treeUri == treeUri }?.status != null) return@launch
+            val added = picked.toSet().intersect(googleDriveFileIds(treeUri) - before).size
+            _sourceNotes.update { it + (treeUri to strings.googleDriveAdded(added)) }
+        }
+    }
+
+    /** The Drive file IDs the library holds from the source at [treeUri]. */
+    private suspend fun googleDriveFileIds(treeUri: String): Set<String> =
+        (dao.moviesInFolder(treeUri).map { it.uri } + dao.episodesInFolder(treeUri).map { it.uri })
+            .mapNotNullTo(HashSet(), GoogleDriveConnector::fileId)
+
+    /**
+     * D20, the move to `drive.file`: removes Google accounts from before it
+     * (their `drive.readonly` tokens would list all of Drive) and every
+     * Google Drive source that isn't "Videos you chose" or that one of them
+     * read, without revoking anything. Runs at each launch, so an account a
+     * restore brings back goes too; whenever something went, the viewer is
+     * told once. Returns whether anything was removed.
+     */
+    private suspend fun migrateGoogleDriveToFileAccess(): Boolean {
+        // An unreadable vault still lets the old sources go.
+        val outdated = runCatching {
+            GoogleDriveMigration.outdatedAccounts(cloud.vault.accounts(MediaSourceKind.GOOGLE_DRIVE))
+        }.getOrDefault(emptyList())
+        outdated.forEach { runCatching { cloud.signOut(it, revoke = false) } }
+        val keys = outdated.mapTo(HashSet()) { it.key }
+        val sources = SourceScanRules.outdatedGoogleDriveSources(dao.folders(), keys)
+        sources.forEach {
+            dao.removeFolderTree(it.treeUri)
+            googleDrive.clear(it.treeUri)
+        }
+        val removed = outdated.isNotEmpty() || sources.isNotEmpty()
+        if (removed) googleDrive.needsRelinkNotice = true
+        _needsGoogleDriveRelinkNotice.value = googleDrive.needsRelinkNotice
+        return removed
+    }
+
+    /** The viewer saw the notice. */
+    fun dismissGoogleDriveRelinkNotice() {
+        _needsGoogleDriveRelinkNotice.value = false
+        scope.launch { googleDrive.needsRelinkNotice = false }
     }
 
     // MARK: - Phone-to-TV handoff (I.2)
@@ -663,9 +776,9 @@ class LibraryRepository(
         return host.lowercase() to (port ?: if (scheme == "http") 80 else 443)
     }
 
-    /** Validates the source, then walks it; a partial walk deletes nothing. */
+    /** Validates the source, then walks it; a partial walk deletes nothing. Hidden Drive videos stay out (D21). */
     private suspend fun listConnector(connector: MediaConnector, folder: LibraryFolderEntity): Listing {
-        val enumeration = SourceScanRules.enumerate(connector, folder)
+        val enumeration = SourceScanRules.enumerate(connector, folder, googleDrive.hidden(folder.treeUri))
         return Listing(enumeration.videos.map { it.url to it.name }, enumeration.complete)
     }
 

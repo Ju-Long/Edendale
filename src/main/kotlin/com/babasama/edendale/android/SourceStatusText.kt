@@ -88,6 +88,8 @@ internal fun oauthFailureMessage(context: Context, error: OAuthException): Strin
             context.getString(R.string.player_error_server, provider, failure.status)
         }
         OAuthFailure.MalformedResponse -> context.getString(R.string.oauth_malformed, provider)
+        OAuthFailure.DriveAccessNotGranted -> context.getString(R.string.oauth_drive_access_not_granted)
+        is OAuthFailure.DifferentAccount -> context.getString(R.string.oauth_different_account, failure.chosen, failure.expected)
     }
 }
 

@@ -66,6 +66,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.oauth.CloudAccount
+import com.babasama.edendale.oauth.CloudSignIn
 import com.babasama.edendale.oauth.DeviceAuthorization
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -100,7 +101,9 @@ fun rememberLibrary(): LibraryRepository {
  * server's folders and import the one you actually want. Importing a whole
  * server dragged in every share on it, so the browse step is where the
  * choice is made. Linking imports through the library and then calls
- * [onLinked].
+ * [onLinked]. Google Drive has nothing to browse (H.9.4): its videos are
+ * chosen in Google's picker during sign-in, so the account's one source,
+ * "Videos you chose", is linked as soon as the account is ready.
  */
 @Composable
 fun LinkSourceDialog(
@@ -143,7 +146,7 @@ fun LinkSourceDialog(
     var cloudAccountKey by remember { mutableStateOf<String?>(null) }
     var cloudTrail by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
     var cloudFolders by remember { mutableStateOf(emptyList<ConnectorEntry>()) }
-    // Whether the cloud folder being browsed can be linked (Drive's root only gathers others, H.9).
+    // Whether the cloud folder being browsed can be linked.
     var cloudCanIndex by remember { mutableStateOf(true) }
     var signIn by remember { mutableStateOf<Job?>(null) }
     // A TV sign-in's code while it waits for approval (I.1).
@@ -289,21 +292,33 @@ fun LinkSourceDialog(
         }
     }
 
+    /** Google Drive (H.9.4): links or rescans the account's "Videos you chose" in the background and closes the flow. */
+    fun linkGoogleDrive(signIn: CloudSignIn) {
+        library.addChosenVideos(signIn)
+        onLinked()
+    }
+
+    /** A linked account is ready: Google Drive links straight away; other providers browse to a folder. */
+    fun useCloud(account: CloudAccount) {
+        if (kind == MediaSourceKind.GOOGLE_DRIVE) linkGoogleDrive(CloudSignIn(account)) else openCloud(account, emptyList())
+    }
+
     fun signInToCloud() {
         val activity = context.findActivity() ?: return
         error = null
         signIn = scope.launch {
             try {
-                val account = if (isTelevision) {
+                val result = if (isTelevision) {
                     // A remote can't drive a browser: approve on a phone or computer instead.
                     val authorization = cloud.startDeviceSignIn(kind)
                     deviceAuthorization = authorization
-                    cloud.finishDeviceSignIn(kind, authorization)
+                    CloudSignIn(cloud.finishDeviceSignIn(kind, authorization))
                 } else {
+                    // Google Drive's page also opens Google's picker.
                     cloud.signIn(activity, kind)
                 }
                 cloudAccounts = withContext(Dispatchers.IO) { cloud.vault.accounts(kind) }
-                openCloud(account, emptyList())
+                if (kind == MediaSourceKind.GOOGLE_DRIVE) linkGoogleDrive(result) else openCloud(result.account, emptyList())
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -393,15 +408,18 @@ fun LinkSourceDialog(
             }
         }
     }
-    // A finished handoff (I.2): an account opens its folder browser; a login fills the form and connects.
+    // A finished handoff (I.2): an account opens its folder browser (Google Drive links "Videos you chose");
+    // a login fills the form and connects.
     val handoffState = handoffHost?.state?.collectAsState()?.value
     LaunchedEffect(handoffState?.status) {
         val done = handoffState?.status as? HandoffHost.Status.Done ?: return@LaunchedEffect
-        stopHandoff()
-        done.response.account?.let { account ->
+        // Read the accounts before stopping: stopping clears handoffHost, which changes this effect's
+        // key, so any later suspension would cancel it and the account would never be used.
+        if (done.response.account != null) {
             cloudAccounts = withContext(Dispatchers.IO) { runCatching { cloud.vault.accounts(kind) }.getOrDefault(emptyList()) }
-            openCloud(account.cloudAccount, emptyList())
         }
+        stopHandoff()
+        done.response.account?.let { account -> useCloud(account.cloudAccount) }
         done.response.login?.let { login ->
             val first = login.addresses.firstOrNull()
             when (login.kind) {
@@ -637,7 +655,7 @@ fun LinkSourceDialog(
                                 onCancelSignIn = { signIn?.cancel() },
                                 loading = loading,
                                 isTelevision = isTelevision,
-                                onUse = { openCloud(it, emptyList()) },
+                                onUse = ::useCloud,
                                 onSignIn = ::signInToCloud,
                                 onContinueOnPhone = if (isTelevision) ::startHandoff else null,
                             )
@@ -767,8 +785,7 @@ fun LinkSourceDialog(
                         }
                         onLinked()
                     },
-                    // An SMB server's top level lists shares, which are the smallest thing to import;
-                    // Drive's root and its list of shared drives would import all of Drive.
+                    // An SMB server's top level lists shares, which are the smallest thing to import.
                     enabled = !loading && ((isCloud && cloudCanIndex) || isDav || path.isNotEmpty()),
                     kind = ArchiveButtonKind.Primary,
                     isTelevision = isTelevision,
@@ -808,7 +825,9 @@ fun LinkSourceDialog(
 /**
  * A cloud provider's step in Link Source (H.11, Apple's `CloudAccountStep`):
  * the accounts already linked, then signing in to one more. Sign-in opens a
- * Custom Tab and comes back here.
+ * Custom Tab and comes back here. Google Drive's sign-in also opens Google's
+ * picker, where the viewer ticks the videos Edendale may play; a TV never
+ * opens it and lists what was chosen on other devices (H.9.4).
  */
 @Composable
 private fun CloudAccountStep(
@@ -827,7 +846,11 @@ private fun CloudAccountStep(
     val provider = sourceKindLabel(kind)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = stringResource(R.string.link_source_cloud_privacy, provider),
+            text = when {
+                kind != MediaSourceKind.GOOGLE_DRIVE -> stringResource(R.string.link_source_cloud_privacy, provider)
+                isTelevision -> stringResource(R.string.link_source_gdrive_privacy_tv)
+                else -> stringResource(R.string.link_source_gdrive_privacy)
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1032,7 +1055,7 @@ private fun CertificateReviewBlock(
 }
 
 /** The activity a Compose context belongs to, for starting a Custom Tab. */
-private fun Context.findActivity(): Activity? {
+internal fun Context.findActivity(): Activity? {
     var current: Context? = this
     while (current is ContextWrapper) {
         if (current is Activity) return current

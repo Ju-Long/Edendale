@@ -1,12 +1,15 @@
 package com.babasama.edendale.handoff
 
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
+import com.babasama.edendale.oauth.CloudProviders
 import com.babasama.edendale.oauth.CloudTokenProvider
 import com.babasama.edendale.oauth.OAuthClient
 import com.babasama.edendale.oauth.OAuthConfiguration
 import com.babasama.edendale.oauth.OAuthException
+import com.babasama.edendale.oauth.OAuthFailure
 import com.babasama.edendale.remote.RemoteHttp
 import java.io.DataInputStream
 import java.io.EOFException
@@ -137,6 +140,8 @@ object HandoffProtocol {
  * `adoptHandedOffAccount`): refreshes the phone's token to prove it works,
  * then stores the account; a token the provider refuses is rejected rather
  * than stored. The phone's refresh token is reused, not exchanged for another.
+ * A Google account from a build before `drive.file` is refused too (D20): its
+ * `drive.readonly` token would list all of Drive.
  */
 suspend fun adoptHandedOffAccount(
     account: CloudAccount,
@@ -147,6 +152,9 @@ suspend fun adoptHandedOffAccount(
     rejectedMessage: (OAuthException) -> String? = { it.message },
 ): CloudAccount {
     val settings = configuration ?: throw HandoffException.Rejected(null)
+    if (account.kind == MediaSourceKind.GOOGLE_DRIVE && !CloudProviders.hasDriveFileAccess(account.scopes)) {
+        throw HandoffException.Rejected(rejectedMessage(OAuthException(account.kind, OAuthFailure.DriveAccessNotGranted)))
+    }
     val response = try {
         OAuthClient(settings, http).refresh(account.refreshToken)
     } catch (error: OAuthException) {

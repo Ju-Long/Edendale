@@ -48,12 +48,15 @@ import kotlinx.coroutines.withContext
  * Settings → Accounts (D.4): every saved login, with how many linked sources
  * use it. This is the only place a login is removed — removing a source keeps
  * it — and its sources then show "needs sign-in" at their next scan. Logins are
- * device-local and excluded from backup (D8). Section H adds cloud accounts.
+ * device-local and excluded from backup (D8). Section H adds cloud accounts;
+ * a Google account also offers Choose More Videos on handhelds, which reopens
+ * Google's picker and rescans (or adds) that account's source here (H.9.6).
  */
 @Composable
 internal fun AccountsSettingsSection(
     folders: List<LibraryFolderEntity>,
     isTelevision: Boolean,
+    chooseMoreVideos: ChooseMoreVideosState,
 ) {
     val context = LocalContext.current
     val store = remember(context) { SmbCredentialsStore(context) }
@@ -140,6 +143,7 @@ internal fun AccountsSettingsSection(
                         val account = login.cloudAccount
                         if (account != null) pendingSignOut = account else pendingForget = login
                     },
+                    chooseMoreVideos = chooseMoreVideos.takeIf { !isTelevision && login.kind == MediaSourceKind.GOOGLE_DRIVE },
                 )
             }
         }
@@ -168,7 +172,12 @@ internal fun AccountsSettingsSection(
             },
             text = {
                 Text(
-                    text = stringResource(R.string.accounts_sign_out_message, label),
+                    text = if (account.kind == MediaSourceKind.GOOGLE_DRIVE) {
+                        // Revoking ends Google's whole grant: every TV's copy, and the picks themselves (H.9.4).
+                        stringResource(R.string.accounts_sign_out_message, label) + " " + stringResource(R.string.accounts_revoke_gdrive_note)
+                    } else {
+                        stringResource(R.string.accounts_sign_out_message, label)
+                    },
                     style = BodyCopyStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -279,6 +288,8 @@ private fun LoginRow(
     login: SavedLoginRow,
     isTelevision: Boolean,
     onForget: () -> Unit,
+    /** A Google account on a handheld: Choose More Videos (H.9.6). */
+    chooseMoreVideos: ChooseMoreVideosState? = null,
 ) {
     val sourceCount = login.sourceCount
     Row(
@@ -314,6 +325,23 @@ private fun LoginRow(
                 style = BodyCopyStyle(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val accountKey = login.cloudAccount?.key
+            if (chooseMoreVideos != null && accountKey != null) {
+                val choosing = chooseMoreVideos.choosingFor == accountKey
+                if (choosing) {
+                    Text(
+                        text = stringResource(R.string.link_source_waiting, sourceKindLabel(login.kind)),
+                        style = BodyCopyStyle(),
+                        color = EdendaleColors.Gold,
+                    )
+                }
+                ArchiveButton(
+                    label = stringResource(if (choosing) R.string.action_cancel else R.string.gdrive_choose_more),
+                    iconRes = if (choosing) null else R.drawable.ic_plus,
+                    enabled = choosing || chooseMoreVideos.choosingFor == null,
+                    onClick = { if (choosing) chooseMoreVideos.cancel() else chooseMoreVideos.start(accountKey) },
+                )
+            }
         }
         Spacer(Modifier.width(16.dp))
         ArchiveButton(
