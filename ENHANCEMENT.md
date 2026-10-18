@@ -1701,7 +1701,7 @@ the owner signing in; nothing committed, no code or token printed):
   `trigger_onepick=true` opens the picker. The callback carries `code`,
   `state`, `scope`, `iss`, and `picked_file_ids` (comma-separated). The
   exchange returns a refresh token whose scope is `drive.file` alone.
-  Still to confirm on a real iPhone (below).
+  Confirmed on a real iPhone on 2026-10-18 (see the device run below).
 - S4 pass: grants belong to the Google account and Cloud project, not to one
   client or token. An older refresh token, a TV's handed-off token, and other
   platforms' clients all see every later pick.
@@ -1716,7 +1716,11 @@ the owner signing in; nothing committed, no code or token printed):
   same for every client.
 - S9 pass: `alt=media` with `Range` returns 206 at the start and deep into a
   1.6 GB MKV.
-- S10 open: no screenshots of the consent and picker screens yet.
+- S10 done 2026-10-18: iPhone screenshots of the consent screen ("For the
+  files you're about to pick…", "only the specific Google Drive files you
+  use with this app", no unverified-app warning) and the picker (Recent and
+  File type filters, video files only). They show the owner's account and
+  file names, so they stay out of the repository.
 
 **Decisions** (all settled by the owner, 2026-10-17)
 - D1, clean break: on the first launch of a `drive.file` build, remove every
@@ -1832,6 +1836,36 @@ visionOS) and the unit tests; then the owner signs in on an iPhone and the
 Mac, chooses more videos, plays one, removes one, and hands the account to
 Apple TV.
 
+**Results, 2026-10-17/18:**
+- Builds: macOS with tests, iOS, tvOS, and visionOS all succeed. 520 unit
+  tests pass. One fails,
+  `PlayerSessionTransitionTests.terminalCreditsSkipHonorsLoopWithoutAdvancingEpisode()`,
+  and it fails the same way on an untouched `apple` checkout (pre-existing;
+  it passes when run alone).
+- Every localization key the four platforms extract is in the catalog.
+- iPhone 15 Pro (iOS 27.0), signed Debug build, the owner signing in:
+  - D1: the first launch showed "Link Google Drive Again"; the old account
+    and sources were gone.
+  - S1: Link Source → Google Drive → Sign In opened Google's consent page and
+    then the picker inside the sign-in sheet, listing only videos.
+  - Linking added "Videos you chose" with the 2 new picks plus the files
+    picked during the 17 October spike (S4), and said "Added 2 videos.".
+    Drive durations and TMDB posters showed; a video played and seeked.
+  - D2: removing Blade Runner put its file ID in the source's hidden list
+    (read back from the device's store); a rescan left it out. Choose More
+    Videos with videos already present said "The videos you chose were
+    already in your library."; picking the removed video again brought it
+    back with the expected note.
+- Mac (signed Debug build): the owner reports sign-in and playback work as
+  intended.
+- Not run: the Apple TV handoff on hardware (the build is installed on the
+  owner's Apple TV), and S6. The owner ended device testing on 2026-10-18.
+- S6 on apple: not added. This branch loads no sidecar subtitle files from
+  any source (only embedded tracks, an imported file, or Wyzie), so subtitle
+  types in the picker would offer files the app then ignores. Revisit when
+  remote sidecar loading exists; android and windows can learn the types if
+  they load sidecars.
+
 #### J.14 — Tracking
 
 | Step | Description | Status |
@@ -1847,10 +1881,11 @@ Apple TV.
 | — | README provider table, `Example.xcconfig` | [x] |
 | — | Tests: OAuth, listing, connector, handoff, D1 | [x] |
 | — | All-platform build and unit tests | [x] |
-| S1 | Picker inside the iOS sign-in sheet on a real iPhone | [ ] |
-| S6 | Drive's MIME types for `.srt` and `.ass` | [ ] |
-| S10 | Consent and picker screenshots | [ ] |
-| — | Owner's device run: iPhone, Mac, Apple TV handoff | [ ] |
+| S1 | Picker inside the iOS sign-in sheet on a real iPhone | [x] |
+| S6 | Drive's MIME types for `.srt` and `.ass` | Not on apple (no sidecar loading) |
+| S10 | Consent and picker screenshots | [x] |
+| — | Owner's device run: iPhone, Mac | [x] |
+| — | Apple TV handoff on hardware | [ ] |
 | — | Web privacy policy (web branch) | [ ] |
 
 References, checked 2026-10-17:
