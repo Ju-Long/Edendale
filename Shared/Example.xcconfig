@@ -27,7 +27,9 @@ WYZIE_API_KEY =
 // the other credentials. An empty value hides that provider in the build.
 // See README.md → "Storage providers" for registering each app.
 //   Google: an OAuth client of type iOS for bundle ID com.BaBaSaMa.Edendale,
-//     e.g. 1234567890-abc123.apps.googleusercontent.com
+//     e.g. 1234567890-abc123.apps.googleusercontent.com, in a project with
+//     the Drive API and the Google Picker API enabled and only the drive.file
+//     scope under Data Access (people pick the videos Edendale may read)
 //   Microsoft: the Application (client) ID of an Entra public client app
 //   Dropbox: the App key of a scoped app with Full Dropbox access
 GOOGLE_DRIVE_CLIENT_ID =

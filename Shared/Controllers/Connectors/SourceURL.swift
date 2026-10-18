@@ -31,9 +31,10 @@ nonisolated enum SourceURL {
     // MARK: - Account keys
 
     /// The first 32 hex digits of SHA-256(`kind:subject`), where the subject
-    /// is Google's `sub`, the Microsoft user `id`, Dropbox's `account_id`, or
-    /// for S3 the endpoint, bucket, and access key ID. Hostname-safe,
-    /// identical on every device, and it doesn't expose an email address.
+    /// is Drive's `permissionId`, the Microsoft user `id`, Dropbox's
+    /// `account_id`, or for S3 the endpoint, bucket, and access key ID.
+    /// Hostname-safe, identical on every device, and it doesn't expose an
+    /// email address.
     static func accountKey(kind: MediaSourceKind, subject: String) -> String {
         let digest = SHA256.hash(data: Data("\(kind.rawValue):\(subject)".utf8))
         return digest.prefix(16).map { String(format: "%02x", $0) }.joined()

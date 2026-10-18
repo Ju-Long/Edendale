@@ -4,12 +4,15 @@
 //
 //  Recorded-shape Google Drive, Microsoft Graph, Dropbox, WebDAV, and S3
 //  responses served by a URLProtocol stub: pagination, shortcuts, folders,
-//  shared items, filtering, and how each provider's files are fetched. The
+//  shared items, filtering, and how each provider's files are fetched. For
+//  Google Drive also `about.get` identity, Choose More Videos' tokens, and a
+//  source's hidden videos (ENHANCEMENT.md J.14). The
 //  provider API hosts are stubbed per test, so this suite runs serially.
 //  No real credentials appear anywhere.
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import Edendale
 
@@ -36,14 +39,14 @@ struct CloudListingTests {
 
     // MARK: - Google Drive
 
-    @Test func listsDriveFoldersFollowingShortcutsAndPages() async throws {
+    @Test func listsTheChosenDriveFilesSkippingFoldersAcrossPages() async throws {
         let host = "www.googleapis.com"
-        let pages = Counter()
-        HTTPStub.register(host: host) { _ in
-            if pages.increment() == 1 {
+        HTTPStub.register(host: host) { request in
+            if request.queryValue("pageToken") == nil {
                 return StubResponse.json([
                     "nextPageToken": "page-2",
                     "files": [
+                        // A picked folder is granted by itself only: skipped.
                         ["id": "f1", "name": "Movies", "mimeType": "application/vnd.google-apps.folder"],
                         ["id": "v1", "name": "The.Matrix.1999.mkv", "mimeType": "video/x-matroska",
                          "size": "123456", "modifiedTime": "2024-05-01T12:34:56.789Z",
@@ -62,67 +65,212 @@ struct CloudListingTests {
         let account = account(.googleDrive)
         let connector = GoogleDriveConnector(account: account, tokens: await tokens(for: account), session: HTTPStub.session())
 
-        let folder = connector.folderURL(id: "f0", name: "Films")
-        let entries = try await connector.list(directory: folder)
+        let entries = try await connector.list(directory: connector.root)
 
-        #expect(entries.map(\.name) == ["Movies", "Shows", "Alien.1979.mp4", "Heat.1995.mkv", "The.Matrix.1999.mkv"])
-        let shows = try #require(entries.first { $0.name == "Shows" })
-        #expect(shows.isDirectory)
-        #expect(SourceURL.parseAccountItem(shows.url)?.ids == ["f2"])
+        #expect(entries.map(\.name) == ["Alien.1979.mp4", "Heat.1995.mkv", "The.Matrix.1999.mkv"])
+        #expect(entries.allSatisfy { !$0.isDirectory && $0.isVideo })
         let alien = try #require(entries.first { $0.name == "Alien.1979.mp4" })
         #expect(SourceURL.parseAccountItem(alien.url)?.ids == ["v2"])
         let matrix = try #require(entries.first { $0.name == "The.Matrix.1999.mkv" })
         #expect(matrix.size == 123_456)
         #expect(matrix.duration == 8160)
         #expect(matrix.url.absoluteString == "gdrive://\(account.key)/v1/The.Matrix.1999.mkv")
-        #expect(matrix.isVideo)
 
         let requests = HTTPStub.requests(to: host)
         #expect(requests.count == 2)
         #expect(requests[0].url.path() == "/drive/v3/files")
-        #expect(requests[0].queryValue("q") == "'f0' in parents and trashed = false")
+        // drive.file limits the listing to picked files; no parent query.
+        #expect(requests[0].queryValue("q") == "trashed = false")
         #expect(requests[0].queryValue("supportsAllDrives") == "true")
         #expect(requests[0].queryValue("includeItemsFromAllDrives") == "true")
         #expect(requests[0].queryValue("fields")?.contains("videoMediaMetadata(durationMillis)") == true)
         #expect(requests[0].queryValue("corpora") == nil)
         #expect(requests[1].queryValue("pageToken") == "page-2")
         #expect(requests.allSatisfy { $0.header("Authorization") == "Bearer token" })
+
+        // Enumerating the source is the same listing, with no folder walk.
+        let videos = try await connector.enumerateVideos(under: connector.root)
+        #expect(videos.count == 3)
+        #expect(HTTPStub.requests(to: host).count == 4)
     }
 
-    @Test func driveRootsAndSharedDrives() async throws {
+    @Test func driveHasOneRootAndNothingToBrowse() async throws {
         let host = "www.googleapis.com"
-        HTTPStub.register(host: host) { request in
-            if request.url.path() == "/drive/v3/drives" {
-                return StubResponse.json(["drives": [["id": "team1", "name": "Team Films"]]])
-            }
-            return StubResponse.json(["files": [
-                ["id": "sub", "name": "Season 1", "mimeType": "application/vnd.google-apps.folder"]
-            ]])
-        }
+        HTTPStub.register(host: host) { _ in StubResponse.json(["files": []]) }
         defer { HTTPStub.unregister(host: host) }
         let account = account(.googleDrive)
         let connector = GoogleDriveConnector(account: account, tokens: await tokens(for: account), session: HTTPStub.session())
 
-        // The picker's root needs no request and can't itself be linked.
-        let roots = try await connector.list(directory: connector.root)
-        #expect(roots.map(\.name) == ["My Drive", "Shared with me", "Shared drives"])
-        #expect(HTTPStub.requests(to: host).isEmpty)
-        #expect(!connector.canIndex(connector.root))
-        let sharedDrives = try #require(roots.last)
-        #expect(!connector.canIndex(sharedDrives.url))
-        #expect(connector.canIndex(roots[0].url))
+        #expect(connector.canIndex(connector.root))
+        #expect(try await connector.list(directory: connector.root).isEmpty)
+        // My Drive, Shared with me, and Shared drives are gone, and so is
+        // listing any folder: drive.file never grants a folder's contents.
+        for id in ["root", "~roots", "~shared", "~drives", "folder-1"] {
+            let folder = SourceURL.accountItem(kind: .googleDrive, account: account.key, ids: [id], name: "Folder")
+            await #expect(throws: ConnectorError.invalidAddress) {
+                _ = try await connector.list(directory: folder)
+            }
+        }
+        #expect(HTTPStub.requests(to: host).count == 1)
+        #expect(HTTPStub.requests(to: host).allSatisfy { $0.url.path() != "/drive/v3/drives" })
+    }
 
-        let drives = try await connector.list(directory: sharedDrives.url)
-        let team = try #require(drives.first)
-        #expect(team.name == "Team Films")
-        #expect(SourceURL.parseAccountItem(team.url)?.queryValue("drive") == "team1")
+    @Test func driveIdentityComesFromAboutGet() async throws {
+        let host = "www.googleapis.com"
+        let missing = Counter()
+        HTTPStub.register(host: host) { _ in
+            if missing.value > 0 { return StubResponse.json(["user": ["emailAddress": "me@example.com"]]) }
+            return StubResponse.json(["user": [
+                "kind": "drive#user", "permissionId": "01234567890123456789",
+                "emailAddress": "me@example.com", "displayName": "Me"
+            ]])
+        }
+        defer { HTTPStub.unregister(host: host) }
 
-        // Listing inside a shared drive names it, and its folders keep it.
-        let inside = try await connector.list(directory: team.url)
-        let request = try #require(HTTPStub.requests(to: host).last)
-        #expect(request.queryValue("corpora") == "drive")
-        #expect(request.queryValue("driveId") == "team1")
-        #expect(SourceURL.parseAccountItem(try #require(inside.first).url)?.queryValue("drive") == "team1")
+        let identity = try await CloudProviders.identity(
+            for: .googleDrive, tokens: OAuthTokenResponse(accessToken: "fresh"), session: HTTPStub.session()
+        )
+        #expect(identity == CloudProviders.Identity(subject: "01234567890123456789", email: "me@example.com", displayName: "Me"))
+        let request = try #require(HTTPStub.requests(to: host).first)
+        #expect(request.url.path() == "/drive/v3/about")
+        #expect(request.queryValue("fields") == "user(permissionId,emailAddress,displayName)")
+        #expect(request.header("Authorization") == "Bearer fresh")
+
+        _ = missing.increment()
+        await #expect(throws: OAuthError.malformedResponse(provider: "Google Drive")) {
+            _ = try await CloudProviders.identity(
+                for: .googleDrive, tokens: OAuthTokenResponse(accessToken: "fresh"), session: HTTPStub.session()
+            )
+        }
+    }
+
+    @MainActor
+    @Test func choosingMoreVideosKeepsTheNewestTokenWithoutRevoking() async throws {
+        let host = "www.googleapis.com"
+        let permission = Counter()
+        HTTPStub.register(host: host) { _ in
+            StubResponse.json(["user": [
+                "permissionId": permission.value == 0 ? "permission-1" : "permission-2",
+                "emailAddress": permission.value == 0 ? "me@example.com" : "other@example.com"
+            ]])
+        }
+        defer { HTTPStub.unregister(host: host) }
+        let secrets = InMemorySecretStore()
+        let vault = CloudAccountVault(store: secrets)
+        let tokens = CloudTokenProvider(vault: vault, session: HTTPStub.session(), configuration: { _ in nil })
+        let store = CloudAccountStore(vault: vault, secrets: secrets, tokens: tokens, session: HTTPStub.session())
+        let scope = CloudProviders.googleDriveFileScope
+
+        // Signing in keys the account by Drive's permissionId.
+        let account = try await store.completeSignIn(
+            kind: .googleDrive,
+            tokens: OAuthTokenResponse(accessToken: "access-1", refreshToken: "refresh-1", scope: scope)
+        )
+        #expect(account.subject == "permission-1")
+        #expect(account.key == SourceURL.accountKey(kind: .googleDrive, subject: "permission-1"))
+        #expect(account.scopes == [scope])
+
+        // Another picker run: its refresh token replaces the first.
+        let updated = try await store.storeChosenVideosTokens(
+            OAuthTokenResponse(accessToken: "access-2", refreshToken: "refresh-2", scope: scope),
+            for: account
+        )
+        #expect(updated.key == account.key)
+        #expect(vault.accounts(of: .googleDrive).map(\.refreshToken) == ["refresh-2"])
+        #expect(try await tokens.accessToken(kind: .googleDrive, accountKey: account.key) == "access-2")
+        // A response without a new refresh token keeps the stored one.
+        _ = try await store.storeChosenVideosTokens(
+            OAuthTokenResponse(accessToken: "access-3", scope: scope), for: account
+        )
+        #expect(vault.account(kind: .googleDrive, key: account.key)?.refreshToken == "refresh-2")
+        // Only about.get was called: nothing was revoked.
+        #expect(HTTPStub.requests(to: host).allSatisfy { $0.url.path() == "/drive/v3/about" })
+
+        // Choosing as someone else stores nothing.
+        _ = permission.increment()
+        await #expect(throws: CloudAccountStore.SignInError.differentAccount(chosen: "other@example.com", expected: "me@example.com")) {
+            _ = try await store.storeChosenVideosTokens(
+                OAuthTokenResponse(accessToken: "access-4", refreshToken: "refresh-4", scope: scope), for: account
+            )
+        }
+        #expect(vault.all().map(\.refreshToken) == ["refresh-2"])
+    }
+
+    @MainActor
+    @Test func driveSourceSkipsHiddenVideosUntilTheyArePickedAgain() async throws {
+        let host = "www.googleapis.com"
+        let listing = Counter()
+        HTTPStub.register(host: host) { _ in
+            var files: [[String: Any]] = [
+                ["id": "m1", "name": "The.Matrix.1999.mkv", "mimeType": "video/x-matroska"],
+                ["id": "e1", "name": "Show.Name.S01E01.mkv", "mimeType": "video/x-matroska"],
+                ["id": "f1", "name": "Season 2", "mimeType": "application/vnd.google-apps.folder"]
+            ]
+            if listing.value > 0 {
+                files.append(["id": "n1", "name": "Heat.1995.mkv", "mimeType": "video/x-matroska"])
+            }
+            return StubResponse.json(["files": files])
+        }
+        defer { HTTPStub.unregister(host: host) }
+
+        let account = CloudAccount(
+            kind: .googleDrive, subject: "permission-1", email: "me@example.com", displayName: nil,
+            refreshToken: "refresh", scopes: CloudProviders.googleScopes, driveID: nil
+        )
+        let vault = CloudAccountVault(store: InMemorySecretStore())
+        try vault.save(account)
+        let tokens = CloudTokenProvider(vault: vault, session: HTTPStub.session(), configuration: { _ in nil })
+        await tokens.store(OAuthTokenResponse(accessToken: "token", expiresIn: 3600), for: account)
+        let schema = Schema([VideoFolder.self, Movie.self, TVShow.self, Episode.self])
+        let container = try ModelContainer(
+            for: schema,
+            configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
+        )
+        let library = LibraryController(
+            modelContext: container.mainContext,
+            connectors: ConnectorFactory.Environment(
+                secrets: InMemorySecretStore(), accounts: vault, tokens: tokens, session: HTTPStub.session()
+            ),
+            enrichesMetadata: false
+        )
+        func folders() throws -> [VideoFolder] { try container.mainContext.fetch(FetchDescriptor<VideoFolder>()) }
+        func signIn(_ picked: [String]) -> CloudAccountStore.SignIn {
+            CloudAccountStore.SignIn(account: account, pickedFileIDs: picked)
+        }
+
+        // Linking an account adds its one source, "Videos you chose".
+        #expect(await library.addChosenVideos(signIn([])) == 0)
+        let folder = try #require(try folders().first)
+        #expect(folder.name == GoogleDriveConnector.chosenFolderName)
+        #expect(folder.folderPath == GoogleDriveConnector.chosenFolderURL(accountKey: account.key).absoluteString)
+        #expect(folder.accountKey == account.key)
+        #expect(folder.username == "me@example.com")
+        #expect(folder.totalItemCount == 2)
+        #expect(library.sourceNotes[folder.id] == nil)
+
+        // A removed video stays out of later scans.
+        library.removeMovie(try #require(folder.movies.first))
+        #expect(folder.hiddenItemIDs == ["m1"])
+        _ = listing.increment()
+        #expect(await library.addChosenVideos(signIn(["n1"])) == 1)
+        #expect(try folders().count == 1)
+        #expect(folder.movies.compactMap { LibraryController.driveFileID(fromPath: $0.filePath) } == ["n1"])
+        #expect(library.sourceNotes[folder.id] == String(localized: "Added 1 video."))
+
+        await library.rescanFolder(folder)
+        #expect(folder.movies.count == 1)
+        #expect(library.sourceNotes[folder.id] == nil)
+
+        // Picking it again brings it back.
+        #expect(await library.addChosenVideos(signIn(["m1"])) == 1)
+        #expect(folder.hiddenItemIDs == [])
+        #expect(folder.movies.count == 2)
+
+        // Picks already in the library add nothing, and say so.
+        #expect(await library.addChosenVideos(signIn(["e1"])) == 0)
+        #expect(library.sourceNotes[folder.id] == String(localized: "The videos you chose were already in your library."))
+        #expect(try folders().count == 1)
+        #expect(folder.totalItemCount == 3)
     }
 
     @Test func driveStreamsWithABearerTokenAndAltMedia() async throws {

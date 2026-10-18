@@ -4,7 +4,9 @@
 //
 //  The Apple TV handoff's messages: length-prefixed frames round-trip,
 //  unknown versions and malformed bodies are rejected, and an account whose
-//  token fails to refresh is refused rather than stored. The picker and the
+//  token fails to refresh is refused rather than stored. A Google account
+//  travels with its `drive.file` grant, and Apple TV links its "Videos you
+//  chose" source from it (ENHANCEMENT.md J.14). The device picker and the
 //  encrypted connection itself need hardware (see README).
 //
 
@@ -14,8 +16,9 @@ import Testing
 
 @Suite struct AccountHandoffTests {
 
+    /// Keyed by Drive's `permissionId`, as `about.get` reports it.
     private let account = CloudAccount(
-        kind: .googleDrive, subject: "110169484474386276334", email: "me@example.com",
+        kind: .googleDrive, subject: "01234567890123456789", email: "me@example.com",
         displayName: "Me", refreshToken: "refresh-token", scopes: CloudProviders.googleScopes, driveID: nil
     )
 
@@ -40,8 +43,38 @@ import Testing
         let handedOver = try #require(decoded.account?.cloudAccount)
         #expect(handedOver.key == account.key)
         #expect(handedOver.refreshToken == "refresh-token")
-        #expect(handedOver.scopes == CloudProviders.googleScopes)
+        #expect(handedOver.scopes == ["https://www.googleapis.com/auth/drive.file"])
         #expect(handedOver.email == "me@example.com")
+        // Apple TV links the same source URL the phone would.
+        #expect(ConnectorFactory.connector(for: handedOver)?.root
+            == GoogleDriveConnector.chosenFolderURL(accountKey: account.key))
+    }
+
+    @MainActor
+    @Test func appleTVKeepsAHandedOffDriveFileAccountAtLaunch() async throws {
+        let host = HTTPStub.uniqueHost("handoff")
+        HTTPStub.register(host: host) { _ in StubResponse.json(["access_token": "a", "expires_in": 3600]) }
+        defer { HTTPStub.unregister(host: host) }
+        let secrets = InMemorySecretStore()
+        let vault = CloudAccountVault(store: secrets)
+        let configuration = OAuthConfiguration(
+            kind: .googleDrive, clientID: "client", authorizationEndpoint: URL(string: "https://\(host)/auth")!,
+            tokenEndpoint: URL(string: "https://\(host)/token")!, deviceAuthorizationEndpoint: nil,
+            redirectURI: "x:/y", callbackScheme: "x", scopes: []
+        )
+        let tokens = CloudTokenProvider(vault: vault, session: HTTPStub.session(), configuration: { _ in configuration })
+        let store = CloudAccountStore(vault: vault, secrets: secrets, tokens: tokens, session: HTTPStub.session())
+
+        // The TV's own Keychain: one account handed over before drive.file,
+        // one after. The launch migration keeps only the new one.
+        try vault.save(CloudAccount(
+            kind: .googleDrive, subject: "110169484474386276334", email: "me@example.com", displayName: nil,
+            refreshToken: "old", scopes: ["openid", "email", "https://www.googleapis.com/auth/drive.readonly"], driveID: nil
+        ))
+        _ = try await store.adoptHandedOffAccount(account)
+        #expect(store.removeGoogleAccountsWithoutDriveFile())
+        #expect(store.accounts.map(\.key) == [account.key])
+        #expect(!store.removeGoogleAccountsWithoutDriveFile())
     }
 
     @Test func loginsRoundTripWithTheirHostKey() throws {

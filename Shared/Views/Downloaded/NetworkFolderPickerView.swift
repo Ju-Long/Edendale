@@ -5,9 +5,9 @@
 //  One level of a remote source: subfolders navigate deeper (the view
 //  recurses via BrowseLocation pushes), video files preview what an index
 //  would pick up, and "Select" hands the current folder back to the Link
-//  Source flow. At an SMB server's root the entries are its shares, at an
-//  NFS server's its exports, and at a Google Drive account's My Drive,
-//  Shared with me, and Shared drives.
+//  Source flow. At an SMB server's root the entries are its shares, and at
+//  an NFS server's its exports. Google Drive never comes here: its videos
+//  are chosen in Google's picker (see CloudAccountStep).
 //
 
 import SwiftUI
@@ -19,7 +19,7 @@ struct BrowseLocation: Hashable {
     let url: URL
     let name: String
     /// Folder names from the source's top down to this one, for the
-    /// readable location a linked source shows ("Google Drive › My Drive").
+    /// readable location a linked source shows ("OneDrive › Movies").
     let trail: [String]
 
     init(connector: any MediaConnector, url: URL, name: String, trail: [String]? = nil) {

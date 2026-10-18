@@ -5,9 +5,11 @@
 //  The "Link Source" flow: choose where the videos live, then either fill in
 //  a server form (SMB, NFS, SFTP, WebDAV, S3-compatible storage) or sign in
 //  to an account (Google Drive, OneDrive, Dropbox), then browse to the folder
-//  to index in NetworkFolderPickerView. The only entry point for network
-//  sources on every platform, and the only library entry point at all on
-//  tvOS (no local file access there).
+//  to index in NetworkFolderPickerView. Google Drive has nothing to browse:
+//  its videos are chosen in Google's picker during sign-in, so its one
+//  source per account is linked as soon as the account is ready. The only
+//  entry point for network sources on every platform, and the only library
+//  entry point at all on tvOS (no local file access there).
 //
 //  Presented as a sheet on every platform, wrapping its own NavigationStack
 //  so the steps push inside the sheet. tvOS shows sheets full screen and
@@ -15,8 +17,9 @@
 //  exactly the flow this needs — only the usual tvOS trims (no navigation
 //  title, no toolbar).
 //
-//  Nothing is saved until a folder is picked: then the login (if any) goes
-//  to the Keychain and indexing starts in the background.
+//  Nothing is saved until a folder is picked (or a Google Drive account is
+//  ready): then the login (if any) goes to the Keychain and indexing starts
+//  in the background.
 //
 
 import SwiftUI
@@ -70,6 +73,8 @@ struct AddNetworkSourceView: View {
                     CloudAccountStep(kind: kind) { location in
                         pendingLogin = nil
                         path.append(location)
+                    } onGoogleDriveReady: { signIn in
+                        linkGoogleDrive(signIn)
                     }
                 }
             }
@@ -84,6 +89,13 @@ struct AddNetworkSourceView: View {
         #if os(macOS)
         .frame(minWidth: 640, minHeight: 560)
         #endif
+    }
+
+    /// Links the account's "Videos you chose" source (or rescans it) in the
+    /// background and closes the flow.
+    private func linkGoogleDrive(_ signIn: CloudAccountStore.SignIn) {
+        Task { await library.addChosenVideos(signIn) }
+        dismiss()
     }
 
     /// Saves the login, kicks off indexing in the background, and closes the
@@ -139,7 +151,7 @@ private struct LinkSourceProviderList: View {
             } header: {
                 Text("Cloud Storage").labelCaps()
             } footer: {
-                Text("Edendale connects to these services directly from this device. It reads folder listings and the files you play, and never changes anything.")
+                Text("Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose.")
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -192,7 +204,7 @@ extension MediaSourceKind {
         case .sftp: String(localized: "Any server you can reach over SSH.")
         case .webdav: String(localized: "Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, or rclone.")
         case .s3: String(localized: "AWS, Backblaze B2, Cloudflare R2, Wasabi, or MinIO.")
-        case .googleDrive: String(localized: "My Drive, files shared with you, and shared drives.")
+        case .googleDrive: String(localized: "Videos you choose from Google Drive.")
         case .oneDrive: String(localized: "Personal, work, or school OneDrive.")
         case .dropbox: String(localized: "Your Dropbox folders.")
         }

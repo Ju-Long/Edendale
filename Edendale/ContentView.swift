@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(PlayerSession.self) private var session
     @Environment(AppRouter.self) private var appRouter
+    @Environment(CloudAccountStore.self) private var cloudAccounts
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
     #endif
@@ -20,6 +21,13 @@ struct ContentView: View {
     var body: some View {
         RootView()
             .onOpenURL(perform: handleIncomingURL)
+            // Once, after the move to drive.file removed old Google Drive
+            // sources (ENHANCEMENT.md J.14, D1).
+            .alert("Link Google Drive Again", isPresented: googleDriveRelinkNotice) {
+                Button("OK") {}
+            } message: {
+                Text(googleDriveRelinkMessage)
+            }
         #if os(iOS)
             // An Apple TV asked for an account or login (AccountHandoff).
             .sheet(item: Binding(get: { accountHandoff.pending }, set: { _ in })) { pending in
@@ -52,6 +60,21 @@ struct ContentView: View {
                     openWindow(id: PlayerSceneID.window)
                 }
             }
+        #endif
+    }
+
+    private var googleDriveRelinkNotice: Binding<Bool> {
+        Binding(
+            get: { cloudAccounts.needsGoogleDriveRelinkNotice },
+            set: { if !$0 { cloudAccounts.needsGoogleDriveRelinkNotice = false } }
+        )
+    }
+
+    private var googleDriveRelinkMessage: String {
+        #if os(tvOS)
+        String(localized: "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Choose your videos on an iPhone, iPad, or Mac, then link Google Drive here from Link Source.")
+        #else
+        String(localized: "Edendale now sees only the Google Drive videos you choose, so your earlier Google Drive sources were removed. Open Link Source → Google Drive, sign in, and choose your videos.")
         #endif
     }
 

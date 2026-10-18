@@ -22,8 +22,9 @@ nonisolated struct CloudAccount: Codable, Hashable, Sendable, Identifiable {
 
     var version: Int = CloudAccount.currentVersion
     let kind: MediaSourceKind
-    /// The provider's stable user ID: Google's `sub`, the Microsoft user
-    /// `id`, Dropbox's `account_id`.
+    /// The provider's stable user ID: Drive's `permissionId` (an older
+    /// build stored Google's `sub`; see ENHANCEMENT.md J.14, D1), the
+    /// Microsoft user `id`, Dropbox's `account_id`.
     let subject: String
     var email: String?
     var displayName: String?

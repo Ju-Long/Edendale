@@ -8,7 +8,9 @@
 //  never signs anything out. Items sync through the iCloud Keychain, so
 //  signing out applies to the user's other devices too (Apple TV keeps its
 //  own copies). Google and Dropbox grants can also be revoked at the
-//  provider, which ends access everywhere, Apple TV included.
+//  provider, which ends access everywhere, Apple TV included. A Google
+//  account also offers Choose More Videos, which reopens Google's picker and
+//  rescans (or adds) that account's source on this device.
 //
 
 import SwiftUI
@@ -16,10 +18,14 @@ import SwiftData
 
 struct AccountsSection: View {
     @Environment(CloudAccountStore.self) private var store
+    @Environment(LibraryController.self) private var library
     @Query private var folders: [VideoFolder]
 
     @State private var accountToSignOut: CloudAccount?
     @State private var loginToForget: SavedServerLogin?
+    /// The account whose picker is open.
+    @State private var choosingFor: CloudAccount?
+    @State private var chooseError: String?
 
     var body: some View {
         SettingsSection(String(localized: "Accounts")) {
@@ -33,6 +39,23 @@ struct AccountsSection: View {
                     value: account.kind.displayName,
                     detail: sourcesDetail(kind: account.kind, host: account.key)
                 ) {
+                    // Separate controls: side by side on a page, their own
+                    // rows in the grouped List.
+                    #if !os(tvOS)
+                    if account.kind == .googleDrive {
+                        Button {
+                            chooseMoreVideos(account)
+                        } label: {
+                            if choosingFor == account {
+                                Text("Waiting for \(account.kind.displayName)…")
+                            } else {
+                                Text("Choose More Videos")
+                            }
+                        }
+                        .archiveButtonStyle(.ghost)
+                        .disabled(choosingFor != nil)
+                    }
+                    #endif
                     Button("Sign Out", role: .destructive) {
                         accountToSignOut = account
                     }
@@ -83,7 +106,32 @@ struct AccountsSection: View {
         } message: { login in
             Text(forgetMessage(login))
         }
+        .alert(
+            "Choose More Videos",
+            isPresented: Binding(get: { chooseError != nil }, set: { if !$0 { chooseError = nil } })
+        ) {
+            Button("OK") {}
+        } message: {
+            Text(chooseError ?? "")
+        }
     }
+
+    #if !os(tvOS)
+    /// Google's picker for this account, then its source here is rescanned,
+    /// or added if this device has none; Settings → Sources shows the result.
+    private func chooseMoreVideos(_ account: CloudAccount) {
+        choosingFor = account
+        Task {
+            do {
+                try await library.chooseMoreVideos(for: account, accounts: store)
+            } catch OAuthError.cancelled {
+            } catch {
+                chooseError = error.localizedDescription
+            }
+            choosingFor = nil
+        }
+    }
+    #endif
 
     // MARK: - Copy
 
@@ -121,6 +169,9 @@ struct AccountsSection: View {
         let base = String(localized: "Sources from \(account.label) stop working on this device and your other devices that share your iCloud Keychain, until you sign in again.")
         #endif
         guard CloudProviders.supportsRevocation(account.kind) else { return base }
+        if account.kind == .googleDrive {
+            return base + " " + String(localized: "Revoking access also signs out any Apple TV you linked it to, and Google forgets the videos you chose.")
+        }
         return base + " " + String(localized: "Revoking access also signs out any Apple TV you linked it to.")
     }
 

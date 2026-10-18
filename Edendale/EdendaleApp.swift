@@ -15,7 +15,7 @@ struct EdendaleApp: App {
     @State private var watchlistStore: WatchlistStore
     @State private var userMediaStore: UserMediaStore
     @State private var tmdbAccount = TMDBAccountStore()
-    @State private var cloudAccounts = CloudAccountStore()
+    @State private var cloudAccounts: CloudAccountStore
     #if os(iOS)
     /// Listens for Apple TVs asking for an account (AccountHandoff).
     @State private var accountHandoff = AccountHandoffCenter()
@@ -42,6 +42,14 @@ struct EdendaleApp: App {
             modelContext: Persistence.watchlistModelContainer.mainContext
         )
         _library = State(initialValue: library)
+        let cloudAccounts = CloudAccountStore()
+        // Google Drive moved to drive.file (ENHANCEMENT.md J.14, D1): older
+        // Google accounts and sources go, with a notice. The unit-test host
+        // leaves the Keychain and library alone.
+        if !Persistence.isRunningUnitTests {
+            cloudAccounts.migrateGoogleDriveToFileAccess(library: library)
+        }
+        _cloudAccounts = State(initialValue: cloudAccounts)
         _watchStore = State(initialValue: ws)
         _watchlistStore = State(initialValue: watchlistStore)
         _userMediaStore = State(initialValue: UserMediaStore())

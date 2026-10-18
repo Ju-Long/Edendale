@@ -14,12 +14,13 @@ import Foundation
 
 nonisolated enum ConnectorFactory {
 
-    /// Where logins, accounts, and tokens come from. Tests substitute
-    /// in-memory stores.
+    /// Where logins, accounts, and tokens come from, and the session cloud
+    /// listings use. Tests substitute in-memory stores and a stub session.
     struct Environment: Sendable {
         var secrets: any SecretStore
         var accounts: CloudAccountVault
         var tokens: CloudTokenProvider
+        var session: URLSession = .shared
 
         static let live = Environment(
             secrets: KeychainStore.shared,
@@ -59,9 +60,9 @@ nonisolated enum ConnectorFactory {
     /// The connector at the root of a linked cloud account.
     static func connector(for account: CloudAccount, environment: Environment = .live) -> (any MediaConnector)? {
         switch account.kind {
-        case .googleDrive: GoogleDriveConnector(account: account, tokens: environment.tokens)
-        case .oneDrive: OneDriveConnector(account: account, tokens: environment.tokens)
-        case .dropbox: DropboxConnector(account: account, tokens: environment.tokens)
+        case .googleDrive: GoogleDriveConnector(account: account, tokens: environment.tokens, session: environment.session)
+        case .oneDrive: OneDriveConnector(account: account, tokens: environment.tokens, session: environment.session)
+        case .dropbox: DropboxConnector(account: account, tokens: environment.tokens, session: environment.session)
         default: nil
         }
     }

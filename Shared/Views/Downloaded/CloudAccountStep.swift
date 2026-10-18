@@ -10,6 +10,11 @@
 //  iPad (AccountHandoff), or for OneDrive also from a code approved on any
 //  other device.
 //
+//  Google Drive's sign-in also opens Google's picker, where the user ticks
+//  the videos Edendale may play. There is no folder to browse afterwards:
+//  the account's "Videos you chose" source is linked straight away. Apple
+//  TV never opens the picker; it lists what was chosen on other devices.
+//
 
 import SwiftUI
 #if os(tvOS)
@@ -21,6 +26,9 @@ struct CloudAccountStep: View {
     let kind: MediaSourceKind
     /// The account's top folder, to browse from.
     let onReady: (BrowseLocation) -> Void
+    /// Google Drive: the account to link "Videos you chose" for, with any
+    /// files just picked.
+    let onGoogleDriveReady: (CloudAccountStore.SignIn) -> Void
 
     @Environment(CloudAccountStore.self) private var store
     @State private var isSigningIn = false
@@ -142,13 +150,22 @@ struct CloudAccountStep: View {
     private var privacyNote: String {
         switch kind {
         case .googleDrive:
-            String(localized: "Edendale asks Google for read-only access to your Drive. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything.")
+            #if os(tvOS)
+            String(localized: "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything.")
+            #else
+            String(localized: "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything.")
+            #endif
         default:
             String(localized: "Edendale asks \(kind.displayName) for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything.")
         }
     }
 
-    private func open(_ account: CloudAccount) {
+    private func open(_ account: CloudAccount, pickedFileIDs: [String] = []) {
+        if kind == .googleDrive {
+            errorMessage = nil
+            onGoogleDriveReady(CloudAccountStore.SignIn(account: account, pickedFileIDs: pickedFileIDs))
+            return
+        }
         guard let connector = ConnectorFactory.connector(for: account) else {
             errorMessage = ConnectorError.signInRequired(provider: kind.displayName).localizedDescription
             return
@@ -163,7 +180,8 @@ struct CloudAccountStep: View {
         errorMessage = nil
         Task {
             do {
-                open(try await store.signIn(kind: kind))
+                let signIn = try await store.signIn(kind: kind)
+                open(signIn.account, pickedFileIDs: signIn.pickedFileIDs)
             } catch OAuthError.cancelled {
             } catch {
                 errorMessage = error.localizedDescription

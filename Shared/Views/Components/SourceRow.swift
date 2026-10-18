@@ -7,13 +7,16 @@
 //  so both read identically. A source that couldn't be scanned says why
 //  (offline, or sign in again). Remove always confirms first: the copy says
 //  files are left alone and that a saved login or account stays in
-//  Settings → Accounts.
+//  Settings → Accounts. A Google Drive source also offers Choose More
+//  Videos, which reopens Google's picker; Apple TV, which never opens the
+//  picker, says where to choose them instead.
 //
 
 import SwiftUI
 
 struct SourceRow: View {
     @Environment(LibraryController.self) private var library
+    @Environment(CloudAccountStore.self) private var accounts
     let folder: VideoFolder
     /// Settings shows tappable Rescan/Remove buttons; Downloaded keeps the
     /// row clean and leaves them to the context menu.
@@ -22,9 +25,18 @@ struct SourceRow: View {
     let onRemove: () -> Void
 
     @State private var isConfirmingRemove = false
+    @State private var isChoosingVideos = false
+    @State private var chooseError: String?
 
     var body: some View {
         Menu {
+            #if !os(tvOS)
+            if let account = googleAccount {
+                Button("Choose More Videos", image: .plus) { chooseMoreVideos(account) }
+                    .archiveButtonStyle(.secondary)
+                    .disabled(isChoosingVideos)
+            }
+            #endif
             Button("Rescan", image: .arrowRotateRight, action: onRescan)
                 .archiveButtonStyle(.secondary)
                 .accessibilityLabel("Rescan")
@@ -65,7 +77,36 @@ struct SourceRow: View {
         } message: {
             Text(removeMessage)
         }
+        .alert(
+            "Choose More Videos",
+            isPresented: Binding(get: { chooseError != nil }, set: { if !$0 { chooseError = nil } })
+        ) {
+            Button("OK") {}
+        } message: {
+            Text(chooseError ?? "")
+        }
     }
+
+    /// The linked account behind a Google Drive source, if it's still here.
+    private var googleAccount: CloudAccount? {
+        guard folder.sourceKind == .googleDrive, let key = folder.accountKey else { return nil }
+        return accounts.accounts(of: .googleDrive).first { $0.key == key }
+    }
+
+    #if !os(tvOS)
+    private func chooseMoreVideos(_ account: CloudAccount) {
+        isChoosingVideos = true
+        Task {
+            do {
+                try await library.chooseMoreVideos(for: account, accounts: accounts)
+            } catch OAuthError.cancelled {
+            } catch {
+                chooseError = error.localizedDescription
+            }
+            isChoosingVideos = false
+        }
+    }
+    #endif
 
     private func requestRemoveConfirmation() {
         isConfirmingRemove = true
@@ -95,12 +136,20 @@ struct SourceRow: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                     .truncationMode(.middle)
-                if let state {
-                    Text(state.message)
+                if let status {
+                    Text(status)
                         .font(Typography.bodySM)
                         .foregroundStyle(Theme.gold)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                #if os(tvOS)
+                if folder.sourceKind == .googleDrive {
+                    Text(GoogleDriveConnector.chooseOnAnotherDeviceNote)
+                        .font(Typography.bodySM)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                #endif
             }
             
             Spacer()
@@ -113,12 +162,14 @@ struct SourceRow: View {
         .accessibilityValue(accessibilityValue)
     }
 
-    private var state: LibraryController.SourceState? {
-        library.sourceStates[folder.id]
+    /// Why the source couldn't be scanned, or what Choose More Videos did.
+    private var status: String? {
+        if isChoosingVideos { return String(localized: "Waiting for \(MediaSourceKind.googleDrive.displayName)…") }
+        return library.sourceStates[folder.id]?.message ?? library.sourceNotes[folder.id]
     }
 
     private var accessibilityValue: String {
-        [subtitle, folder.locationDescription, state?.message].compactMap(\.self).joined(separator: ", ")
+        [subtitle, folder.locationDescription, status].compactMap(\.self).joined(separator: ", ")
     }
 
     /// The grouped List spaces sources 12 points apart. On the Settings page
