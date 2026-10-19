@@ -7,9 +7,9 @@ against.
 
 | | |
 |---|---|
-| Baseline | `android` at `88d699d` (2026-10-10), which is also where `meta-horizon` starts |
+| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19 |
 | Store | Meta Horizon Store, 2D Android app on Horizon OS |
-| Work branch | `meta-horizon` (decision D0) |
+| Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
 | Written | 2026-10-10 |
 
@@ -37,32 +37,33 @@ Play Billing, or Google Sign-In SDK in `build.gradle.kts`. The work is:
 
 ### Before you start
 
-- [ ] **S.1** `git fetch origin`. Confirm you're on `meta-horizon` and that it
+- [x] **S.1** `git fetch origin`. Confirm you're on `meta-horizon` and that it
   contains `origin/android` (`git merge-base --is-ancestor origin/android HEAD`).
-- [ ] **S.2** Read this branch's `README.md`, `AGENTS.md`, `CLAUDE.md`, and
+- [x] **S.2** Read this branch's `README.md`, `AGENTS.md`, `CLAUDE.md`, and
   `DESIGN.md`, and skim `ENHANCEMENT.md` (Android 27.0) for the conventions
   this plan reuses.
-- [ ] **S.3** Read Section 0 and stop if any decision your step depends on is
+- [x] **S.3** Read Section 0 and stop if any decision your step depends on is
   still **Open**.
-- [ ] **S.4** Toolchain: JDK 17
+- [x] **S.4** Toolchain: JDK 17
   (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`
   on the owner's Mac) and the Android SDK through `local.properties`.
   `secrets.json` is optional.
-- [ ] **S.5** Run `./gradlew testDebugUnitTest assembleDebug` before changing
+- [x] **S.5** Run `./gradlew testDebugUnitTest assembleDebug` before changing
   anything and record the result in the Handoff log.
 
 ### Commands
 
-Before A.1 the tasks have no flavor in their names. After A.1:
+The one flavor is `horizon` (A.1); this branch has no `play` flavor, since
+Play ships from `android`.
 
 | Purpose | Command |
 |---|---|
-| JVM tests, both stores | `./gradlew testPlayDebugUnitTest testHorizonDebugUnitTest` |
-| Debug APKs | `./gradlew assemblePlayDebug assembleHorizonDebug` |
-| Horizon release APK | `./gradlew assembleHorizonRelease` (signed when the signing properties from A.3 exist) |
+| JVM tests | `./gradlew testHorizonDebugUnitTest` |
+| Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
+| Release APK | `./gradlew assembleHorizonRelease` (signed when the A.3 properties exist; `…-unsigned.apk` otherwise) |
 | Store-rule check | `./gradlew verifyHorizonRelease` (E.1) |
-| Play bundle (unchanged flow) | `./gradlew bundlePlayRelease` |
-| Simulator | `metavr ssim start`, then `metavr app install <apk>` and `metavr app launch com.babasama.edendale` (`metavr` is in Meta Quest Developer Hub's `Contents/Resources/bin`) |
+| Bring in android's work | `git merge android` (and resolve, rebuild, retest) |
+| Simulator | `metavr ssim start`, then `adb -s emulator-5554 install -r <apk>` and `adb -s emulator-5554 shell am start -n com.babasama.edendale/com.babasama.edendale.android.MainActivity` (`metavr` is in Meta Quest Developer Hub's `Contents/Resources/bin`) |
 | Upload to a test channel (by hand) | `metavr store dist upload --app-id <id> --channel ALPHA --apk <apk> --notes "<notes>"` (a draft unless `--publish`; uses `metavr auth login`) |
 | Upload from CI (E.3) | `ovr-platform-util upload-quest-build --age-group TEENS_AND_ADULTS --app-id <id> --app-secret <secret> --apk <apk> --channel ALPHA` |
 
@@ -70,9 +71,12 @@ Before A.1 the tasks have no flavor in their names. After A.1:
 
 These restate AGENTS.md and CLAUDE.md for this work. Breaking one fails review.
 
-1. **The Play build doesn't change.** Every step leaves the `play` flavor's
-   merged manifest, permissions, and behavior as they were, apart from moving
-   TV-only entries into its own manifest. A.1 records the before/after diff.
+1. **The `android` branch doesn't change from here.** This branch takes
+   android's work by merge and sends nothing back. A fix that isn't specific
+   to a headset (the trailer `Referer`, for one) goes to `android` as its own
+   change, with the owner's go-ahead, and returns by merge. Keep `src/main` as
+   android has it wherever a hook into `src/horizon` will do, so the merges
+   stay small; `git diff android -- src/main` lists the hooks.
 2. **No Meta Platform SDK, analytics, or account.** Horizon-specific behavior
    comes from Android APIs and a build-time flag. Any Meta library (D.5) needs
    an owner decision first.
@@ -110,7 +114,7 @@ on a device goes in Findings.
 
 | ID | Question | Proposal | Status |
 |---|---|---|---|
-| D0 | Where does the Horizon build live? | **A `horizon` product flavor in the Android project.** `meta-horizon` is the work branch, merged into `android` by PR like `android-27.0` was. One codebase builds both stores, and Meta's credentials sit in their own workflow and protected environment. No branch table changes. | **Decided 2026-10-10** (owner): flavor |
+| D0 | Where does the Horizon build live? | **`meta-horizon` is a platform branch downstream of `android`**, like the repository's other platform branches: `android` merges into it (`git merge android`) and nothing merges back, so a fix that isn't headset-specific goes to `android` first. The branch carries one `horizon` flavor whose manifest overlay, code, and tests live in `src/horizon` and `src/testHorizon`, so the merges touch `src/main` only where `DevicePolicy` hooks in. Meta's credentials stay in their own workflow and protected environment. The branch tables on `main` need a row (Hard rule 6). | **Decided 2026-10-19** (owner): separate branch, kept current from `android`; replaces the 2026-10-10 choice of a flavor on `android` |
 | D1 | Application ID | Keep `com.babasama.edendale`. The Google and Microsoft redirects and the App Links are built on it, and the Meta store only requires uniqueness within its own catalogue. | Open |
 | D2 | SDK levels for `horizon` | minSdk **32**, Meta's recommendation for Quest-only apps (allowed range 29–34). targetSdk: keep **36** if the P.6 upload probe accepts it. Meta's table allows 32–36 for 2D apps, but its 2026-03-01 rule says apps created after that date "must set targetSdkVersion to 34". Otherwise use 34 for `horizon` only. | Open |
 | D3 | Signing key | **Reuse the Play upload key** `~/Documents/Edendale/New.jks`, alias `key0`. Its certificate (`CN=Long Ju`, expires 2051-10-03) has SHA-1 `E9:BF:A7:55:DE:A6:92:0B:9F:24:C6:B5:15:51:DB:B2:C1:46:1F:32`, SHA-256 `F2:CE:0D:97:57:66:4C:1C:BB:C0:4E:2B:0F:B8:E6:9A:4D:79:4A:40:7A:C5:16:73:D0:F8:68:23:87:7E:FF:65`, and Base64 SHA-1 `6b+nVd6mkgufJMa1FVHbssFGHzI=`. Meta distributes the APK as signed, so every Quest update must be signed with this key, even if Play's upload key is ever reset. Keep `New.jks` and its password backed up. | **Decided 2026-10-10** (owner): reuse `New.jks` |
@@ -223,6 +227,11 @@ restructuring in A starts.
   results are in Findings. Not yet run on the headset: linking the folder,
   playback, the trailer, controllers, hands, and B/Y. When P.5 is done,
   remove the test videos and uninstall the spike from the headset.
+
+  *2026-10-19:* the real `horizon` flavor build (`4ad9712`, debug) replaced
+  the spike on the simulator and passed the same run (Findings): launch,
+  folder link and scan, playback, no PiP, Back, saved progress. The headset
+  run is scheduled for 2026-10-20; see "Headset run" below.
 - [ ] **P.6** Upload the spike APK to the **ALPHA** channel (private), then
   read Manage Builds → Test Status. Record what the validator says about
   targetSdk 36, minSdk, permissions, ABIs, and `excludeFromRecents`. This
@@ -231,18 +240,47 @@ restructuring in A starts.
   can't return to the app, upload refused), update this plan and Section 0
   before Section A starts.
 
+### Headset run, 2026-10-20
+
+The owner wears the Quest 3 (serial `2G97C5ZJ2B023W`, already authorized for
+USB debugging); `adb` is `~/Library/Android/sdk/platform-tools/adb`.
+
+1. Fresh build: `./gradlew assembleHorizonDebug` (JDK 17). Then
+   `adb uninstall com.babasama.edendale` (the 2026-10-10 spike is still
+   installed) and `adb install -r build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk`.
+   The 2026-10-10 test videos are still in `/sdcard/Movies/EdendaleTest`.
+2. **P.5 on the headset:** launch; panel size and resizing; Add Local Folder
+   → Movies → EdendaleTest; the MP4 and the MKV with subtitles; double-tap
+   skip, press-and-hold speed, scrubbing; B/Y as Back out of a panel, then
+   the player; controllers, hands, and switching between them; the trailer
+   (picture and sound); "Open with Edendale" from the Files app; Settings →
+   Accounts → Google Drive (the picker flow from `android-27.0.1`).
+3. **B.2** access survives a restart; **B.4** headset off and on
+   mid-playback (does it resume?); **B.5** hit targets and labels; **B.6**
+   the brightness control; **B.9** stereo and E-AC-3; **B.11** one network
+   source over Wi-Fi (the Mac Studio's SMB share, or WebDAV).
+4. **B.7** with real media over SMB: HEVC 10-bit, AV1, HDR10, and Dolby
+   Vision profile 8 (`/Volumes/Extra` on the Mac has Atmos DD+ titles).
+5. Owner, after the run: copy `horizon-signing.example.properties` to
+   `.secret/horizon-signing.properties` with `New.jks`'s passwords, run
+   `./gradlew assembleHorizonRelease verifyHorizonRelease` (now with the
+   signature checks), create the app in the dashboard (P.2), and upload to
+   ALPHA (P.6) to settle D2.
+6. Record everything in Findings, tick the B steps that passed, and clean up
+   the test videos and the debug build from the headset at the end.
+
 ---
 
 ## Section A — The `horizon` build variant
 
-- [ ] **A.1** Add a `store` flavor dimension with `play` (the default; its
+- [x] **A.1** Add a `store` flavor dimension with `play` (the default; its
   output stays the same) and `horizon`. For `horizon`: minSdk and targetSdk
   per D2, `ndk { abiFilters += "arm64-v8a" }`, and a
   `BuildConfig.HORIZON_OS` boolean (false for `play`). The application ID
   stays shared (D1). Before and after this step, save `aapt2 dump badging` and
   the merged manifest of the Play debug and release builds. Put the diff in
   the Handoff log: it may show only the A.2 moves.
-- [ ] **A.2** Split the manifest:
+- [x] **A.2** Split the manifest:
   - `src/main/AndroidManifest.xml` keeps what both stores share.
   - `src/play/AndroidManifest.xml` takes the TV-only entries:
     `WRITE_EPG_DATA`, `<uses-feature android.software.leanback>`, the
@@ -254,20 +292,20 @@ restructuring in A starts.
     `android:supportsPictureInPicture="false"` on `PlayerActivity` if P.5 or
     B.3 shows PiP misbehaving.
   - Leave the `<layout>` sizes as they are until B.5 says otherwise.
-- [ ] **A.3** Release signing for `horizon` only, read from a gitignored
+- [x] **A.3** Release signing for `horizon` only, read from a gitignored
   properties file (`.secret/horizon-signing.properties`: store path
   `~/Documents/Edendale/New.jks`, store password, alias `key0`, key password)
   or from environment variables in CI. Play keeps its current manual signing. With
   neither present, the build stays unsigned, as it is today. Keep v2 signing
   on (AGP's default) and `debuggable` false.
-- [ ] **A.4** Versioning: one `versionCode`/`versionName` in `defaultConfig`
+- [x] **A.4** Versioning: one `versionCode`/`versionName` in `defaultConfig`
   for both stores. Every upload to either store needs a higher `versionCode`
   than that store's last upload. Write this rule into the README's release
   section.
-- [ ] **A.5** Rename the tasks everywhere: `ci.yml` and `instrumented.yml`
+- [x] **A.5** Rename the tasks everywhere: `ci.yml` and `instrumented.yml`
   (`testPlayDebugUnitTest`, `connectedPlayDebugAndroidTest`, …), the README's
   commands, and the APK paths (`build/outputs/apk/<flavor>/<type>/Edendale-<flavor>-<type>.apk`).
-- [ ] **A.T1** JVM test for a pure `DevicePolicy` function from
+- [x] **A.T1** JVM test for a pure `DevicePolicy` function from
   (`isTelevision`, `isHorizonOs`) to the shell (TV or handheld/large-screen),
   Watch Next on or off, handoff receiver on or off, PiP offered or not, and the
   enhancement default. B.1 introduces it; the test covers every combination.
@@ -279,7 +317,7 @@ restructuring in A starts.
 Each step is a device check first. Change code only where the check fails,
 and record the result in Findings either way.
 
-- [ ] **B.1** Add `DevicePolicy` (A.T1) and route through it everything that
+- [x] **B.1** Add `DevicePolicy` (A.T1) and route through it everything that
   currently reads `isTelevisionDevice()` and that Horizon needs to differ in:
   Watch Next publishing (`EdendaleApplication`), the PiP offer, and the
   enhancement default (`VideoEffectsController`). A Quest isn't a TV; check
@@ -290,7 +328,7 @@ and record the result in Findings either way.
   persisted URI survives a restart. If not, implement D7 behind
   `DevicePolicy`. Also check "Open with Edendale" from the headset's file
   manager (`PlayerActivity`'s `video/*` filter).
-- [ ] **B.3** PiP: `PlayerActivity` already gates on
+- [x] **B.3** PiP: `PlayerActivity` already gates on
   `FEATURE_PICTURE_IN_PICTURE`. Check that the Auto PiP setting and the PiP
   button disappear when the feature is absent. If the feature is present but
   PiP behaves badly in a panel, turn it off for `horizon` (A.2).
@@ -401,7 +439,7 @@ and record the result in Findings either way.
 
 ## Section E — Delivery
 
-- [ ] **E.1** `verifyHorizonRelease` Gradle task, run on the merged manifest
+- [x] **E.1** `verifyHorizonRelease` Gradle task, run on the merged manifest
   and the built APK. It fails the build when any of these is wrong:
   - minSdk and targetSdk (D2);
   - `installLocation="auto"`;
@@ -414,7 +452,7 @@ and record the result in Findings either way.
   - the APK is under 1 GB;
   - when signed, `apksigner verify --verbose --print-certs` shows the v2
     scheme and the P.3 SHA-256.
-- [ ] **E.2** CI (`ci.yml`): build and test both flavors, and run
+- [x] **E.2** CI (`ci.yml`): build and test both flavors, and run
   `verifyHorizonRelease` on the unsigned Horizon release, without signature
   checks. Triggers: `android`, plus `meta-horizon` until it merges. No secrets.
 - [ ] **E.3** (After D10.) `horizon-release.yml`:
@@ -426,12 +464,12 @@ and record the result in Findings either way.
   - Steps: build, verify, then upload to **ALPHA** only, with a pinned
     `ovr-platform-util` checked against a SHA-256. Promotion stays manual.
     Play credentials never enter this environment.
-- [ ] **E.4** README: a "Meta Quest" section covering the flavor, its
+- [x] **E.4** README: a "Meta Quest" section covering the flavor, its
   commands, signing, the simulator, `am instrument` on a headset (never
   `connected…AndroidTest` on the owner's device, since it uninstalls the app),
   release channels, the versioning rule, and a "Manual device checks" entry
   for a headset.
-- [ ] **E.5** Release procedure in the README: bump the version, build, run
+- [x] **E.5** Release procedure in the README: bump the version, build, run
   `verifyHorizonRelease`, upload to ALPHA, install from the channel on the
   headset, check, then promote.
 
@@ -439,7 +477,7 @@ and record the result in Findings either way.
 
 ## Section F — Store listing and review
 
-- [ ] **F.1** Listing text *(owner approves)*:
+- [ ] **F.1** Listing text *(owner approves; drafted 2026-10-19 in `Horizon Store/27.0/source-en-GB.md`, with F.4–F.7's answers)*:
   - name "Edendale";
   - short and long descriptions (honest about needing your own videos or
     storage);
@@ -510,9 +548,10 @@ and record the result in Findings either way.
 For whoever reviews the implementation:
 
 1. Compare the ticked boxes with `git log android..meta-horizon`.
-2. Run `./gradlew testPlayDebugUnitTest testHorizonDebugUnitTest assemblePlayDebug assembleHorizonDebug verifyHorizonRelease`.
-3. Diff the Play build's merged manifest and `aapt2 dump badging` against
-   A.1's baseline. Only the A.2 moves may differ.
+2. Run `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`.
+3. `git diff android -- src/main`: only the `DevicePolicy` hooks and fixes
+   bound for `android` may differ, and `git diff android -- src/main/AndroidManifest.xml`
+   must be empty.
 4. Grep every new string across the 19 locale files.
 5. Check that no secret, keystore, or `secrets.json` is staged, and that E.3
    holds no Play credentials.
@@ -534,11 +573,21 @@ For whoever reviews the implementation:
 | 2026-10-10 | Simulator, spike | Add Network Source: the Google Drive chip sits past the right edge of the horizontally scrolling chip row, and nothing shows that the row scrolls. | B.5: wrap the chips (`FlowRow`) or add a scroll cue; this applies to every large screen. |
 | 2026-10-10 | Owner's Quest 3 (`eureka`, Horizon OS v207, Android 14, API 34), read-only probe | 4128×2208 at 200 dpi; `uiMode` NORMAL (`0x21`). **No `android.software.picture_in_picture`**, unlike the simulator, so the existing feature check already hides PiP on the headset; B.3 still turns it off explicitly. No `android.hardware.touchscreen` (Edendale declares it `required="false"`). Has `horizonos.software.horizon_os`, `oculus.software.handtracking`, and `horizonos.software.emulated_gamepad`. Hardware decoders: `c2.qti` AV1, AVC, HEVC, VP9, and MV-HEVC; `c2.dolby.decoder.hevc` (Dolby Vision); `c2.dolby.eac3.decoder`. DocumentsUI handles `OPEN_DOCUMENT_TREE`; `com.oculus.browser` provides Custom Tabs; the Google redirect resolves to `OAuthRedirectActivity`. WebView 149. | B.7: test the hardware decoders, Dolby Vision, and E-AC-3 on the headset. D.6 (later): MV-HEVC means spatial video is decodable. |
 | 2026-10-10 | Spike APKs | The merged manifest gains `WAKE_LOCK` (on Meta's review-required list) and `ACCESS_NETWORK_STATE` from `media3-exoplayer`. Edendale never calls `setWakeMode`. Badging: minSdk 32, targetSdk 36, `installLocation` auto, `arm64-v8a` only, supported-devices tag present. Release APK 70.5 MB unsigned; debug 91.6 MB. | A.2: remove `WAKE_LOCK` with `tools:node="remove"` in the Horizon manifest if P.6 flags it. |
+| 2026-10-19 | `horizon` flavor, release `91c29d1`+`4ad9712` (unsigned) | Merged manifest: `installLocation` auto, minSdk 32, targetSdk 36, permissions `INTERNET`, `ACCESS_NETWORK_STATE`, and AndroidX's `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` only (`WAKE_LOCK` and `WRITE_EPG_DATA` gone), no leanback feature, no `LEANBACK_LAUNCHER`, no banner, `supportsPictureInPicture="false"`, supported devices `quest2\|questpro\|quest3\|quest3s`. `src/main/AndroidManifest.xml` is byte-identical to android's. Release APK 70.6 MB, `lib/arm64-v8a` only; debug 96.2 MB with every ABI. `aapt2` badging also shows an implied `android.hardware.screen.landscape` feature (required) from `PlayerActivity`'s `sensorLandscape`. | P.6: watch whether Meta's validator objects to the implied landscape feature; if so, declare it `required="false"` in the Horizon manifest. |
+| 2026-10-19 | Spatial Simulator 207.0.0.83.331, `4ad9712` debug | Install and launch as a panel; `am start -W` reported 28 s to the first frame on this cold start (software rendering; the simulator says nothing about headset timing). The wide navigation shows and TMDB loads. Downloaded → Add Local Folder opened DocumentsUI in the last folder; Use this folder → Allow linked `Movies/EdendaleTest`: 7 items, five movies and *Severance* with two episodes matched. Play on episode 1 opened `PlayerActivity` in the same task (`mode=multi-window`, never pinned); the chrome has no PiP button and Adjustments → Playback has no Auto PiP row, although the simulator reports `android.software.picture_in_picture`, so `DevicePolicy` is in effect. Back closed the Adjustments panel, then the player; the episode row shows the saved progress. | B.3 done on the simulator; repeat the run on the Quest 3 (Headset run, 2026-10-20). |
 
 ## Deviations log
 
 | Date | Step | Deviation | Why |
 |---|---|---|---|
+| 2026-10-19 | D0, A.1 | `meta-horizon` is a platform branch downstream of `android`, with one `horizon` flavor and no `play` flavor; android isn't touched, so A.1's before/after badging diff of the Play build doesn't apply. The `android` task names (`testDebugUnitTest`) no longer exist on this branch. | Owner's decision on 2026-10-19: keep a separate branch and pull android's work into it. |
+| 2026-10-19 | S.1, baseline | `android-27.0.1` (`7f7ff09`, `9df06dd`: Google Drive on `drive.file` with Google's picker, version 0.27.0.1) was merged into `meta-horizon` although it isn't on `android` yet. | Google refused `drive.readonly`, so a Quest build on the old flow would lose Google Drive; android will carry the same commits, so the later `git merge android` is trivial. |
+| 2026-10-19 | A.1 | `abiFilters arm64-v8a` sits on the release build type, not the flavor; the debug APK keeps every ABI. | The x86_64 CI emulator and any Intel emulator still need the FFmpeg decoder's native library; Meta's 64-bit rule is about the uploaded APK. |
+| 2026-10-19 | A.2 | `WAKE_LOCK` (declared by `media3-exoplayer`) is removed in the Horizon manifest before the P.6 probe flags it. | It's on Meta's review-required list, and Edendale never sets a wake mode: the player keeps the panel on with `FLAG_KEEP_SCREEN_ON`. One fewer thing to justify in review. |
+| 2026-10-19 | A.2 | The TV-only entries aren't moved into a `play` manifest; `src/horizon/AndroidManifest.xml` removes them with `tools:node="remove"`, `tools:remove`, and `tools:replace`, and `src/main/AndroidManifest.xml` stays byte-identical to android's. | Keeps `git merge android` conflict-free. |
+| 2026-10-19 | B.1, A.T1 | `DevicePolicy` and its test live in `src/horizon` and `src/testHorizon`; `src/main` only gains the four hooks (`MainActivity`, `EdendaleApplication`, `PlayerActivity`, and an `enhancementDefault` parameter on `VideoEffectsController`). The handoff receiver isn't in the policy: it's TV-shell-only already, and D.1 is deferred by D11. | Smallest possible `src/main` diff for the merges. |
+| 2026-10-19 | E.1 | `verifyHorizonRelease` is defined at the end of `build.gradle.kts`, not in an applied `horizon-verify.gradle.kts`. | An applied Kotlin script can't resolve the Android Gradle plugin's classes (`com.android.build.api.*`); tried and failed on AGP 8.10.1. |
+| 2026-10-19 | E.2 | `ci.yml` triggers on `meta-horizon` only, and `instrumented.yml` likewise. | Nothing here ships from `android`. |
 
 ## Handoff log
 
@@ -546,6 +595,9 @@ For whoever reviews the implementation:
 |---|---|---|---|
 | 2026-10-10 | P.5 (simulator) | Claude | Spike = `88d699d` + minSdk 32, `abiFilters arm64-v8a`, TV entries removed, `installLocation`, head-tracking feature, supported devices. `./gradlew assembleDebug assembleRelease` (JDK 17) passed. `metavr ssim start`; `adb install -r`; driven with `metavr ui tap/list`, `adb shell cmd package resolve-activity`, and `dumpsys`. No headset was connected. |
 | 2026-10-10 | D0, D3, D8, P.3 | Owner, Claude | Owner chose the flavor, reusing `New.jks`, and their Quest 3. Fingerprints read with `openssl x509 -in ~/Desktop/upload_certificate.pem -noout -fingerprint -sha1/-sha256`. |
+| 2026-10-19 | D0 (revised), S.1–S.5 | Owner, Claude | Owner: keep `meta-horizon` as a separate branch and pull android's work into it. Claude removed the stale worktrees and merged local branches, moved the checkout to `meta-horizon`, restored the stashed HORIZON.md and trailer fix (`f04259b`), merged `android-27.0.1` (`695f375`), and ran the baseline `./gradlew testDebugUnitTest assembleDebug` (JDK 17): 480 tests pass, 42 s. |
+| 2026-10-19 | A.1–A.5, A.T1, B.1, B.3, E.1, E.2, E.4, E.5 | Claude | `91c29d1` (flavor, manifest overlay, signing, verification, CI, README) and `4ad9712` (`DevicePolicy`). `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease assembleHorizonDebugAndroidTest`: 485 tests pass (the five `DevicePolicyTest` cases included), BUILD SUCCESSFUL in 1m 20s; `verifyHorizonRelease` passed and reported the unsigned APK (signature checks skipped). Simulator run in Findings. Not done: the headset run, signing (the owner's keystore passwords), P.2, P.6, E.3 (D10), and the cross-branch rows on `main` and the privacy policy on `web` (Hard rule 6). |
+| 2026-10-19 | F.1, F.4–F.7 | Claude | Draft `f8225e9` in `Horizon Store/27.0/`; the owner approves the text and answers. F.2 art and F.3 (`web`) are untouched. |
 
 ## Sources
 
