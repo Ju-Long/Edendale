@@ -19,8 +19,9 @@ import androidx.media3.exoplayer.ExoPlayer
 /**
  * Enhancement settings for the app process (D11): Apple starts each playback
  * at Balanced, Sharpness 0.5, Denoise 0.5, and never saves changes. Android
- * starts at Off where the capability check failed, and on TV until F.1.6
- * passes on a real set.
+ * starts at Off where the capability check failed, on TV until F.1.6
+ * passes on a real set, and on Horizon OS (HORIZON.md D6); DevicePolicy
+ * decides.
  */
 object EnhancementSession {
     @Volatile var settings: EnhancementSettings? = null
@@ -40,6 +41,8 @@ object EnhancementSession {
 class VideoEffectsController(
     private val context: Context,
     private val isTelevision: Boolean,
+    /** Enhancement before the viewer chooses (DevicePolicy); Off wherever the capability check failed. */
+    private val enhancementDefault: EnhancementPreset,
     /** Stops and prepares the current item again at its position (the effects pipeline is set up at prepare). */
     private val reprepare: () -> Unit,
     /** Saves picture adjustments (device-local, `video.adjustments`). */
@@ -94,7 +97,7 @@ class VideoEffectsController(
         adjustments = storedAdjustments
         holder.adjustments = storedAdjustments
         val capable = EnhancementCapability.cachedResult(context) == true
-        val defaultPreset = if (isTelevision || !capable) EnhancementPreset.OFF else EnhancementPreset.BALANCED
+        val defaultPreset = if (capable) enhancementDefault else EnhancementPreset.OFF
         enhancement = EnhancementSession.current(defaultPreset)
         holder.enhancement = enhancement
     }

@@ -144,6 +144,7 @@ class VideoEffectsPipelineInstrumentedTest {
         val reprepared = CountDownLatch(1)
         val run = start { player ->
             controller = VideoEffectsController(
+                enhancementDefault = EnhancementPreset.BALANCED,
                 context = context,
                 isTelevision = false,
                 reprepare = {

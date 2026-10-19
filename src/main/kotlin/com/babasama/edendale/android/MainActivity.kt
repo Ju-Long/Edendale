@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
-        isTelevision = isTelevisionDevice()
+        isTelevision = DevicePolicy.current(this).usesTelevisionShell
         applyTelevisionWindow(isTelevision)
 
         enableEdgeToEdge()

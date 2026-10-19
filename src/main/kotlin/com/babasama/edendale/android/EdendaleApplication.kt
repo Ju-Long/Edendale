@@ -42,8 +42,8 @@ class EdendaleApplication : Application() {
             .addMigrations(EdendaleDatabase.MIGRATION_1_2, EdendaleDatabase.MIGRATION_2_3)
             .build()
         libraryRepository = LibraryRepository(this, database)
-        // Only a TV has the home screen's Watch Next row; it stays empty until the setting is on.
-        if (isTelevisionDevice()) {
+        // Only a TV has the home screen's Watch Next row (a headset never does); it stays empty until the setting is on.
+        if (DevicePolicy.current(this).publishesWatchNext) {
             watchNextPublisher = WatchNextPublisher(this, libraryRepository, watchNextSettings).also { it.start() }
         }
     }

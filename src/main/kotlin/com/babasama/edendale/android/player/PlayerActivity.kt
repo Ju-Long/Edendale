@@ -52,7 +52,7 @@ import com.babasama.edendale.android.PlayerKeyCommand
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
-import com.babasama.edendale.android.isTelevisionDevice
+import com.babasama.edendale.android.DevicePolicy
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.introdb.IntroDbMedia
@@ -158,9 +158,16 @@ class PlayerActivity : ComponentActivity() {
     private var mediaKeyHoldActive = false
     private var activeHoldKeyCode: Int? = null
 
-    /** Absent on handhelds where the OEM dropped PiP; present on TV from API 34. */
+    /** What this device gets (HORIZON.md B.1): the TV shell, PiP, and the enhancement default. */
+    private val devicePolicy: DevicePolicy by lazy { DevicePolicy.current(this) }
+
+    /**
+     * Absent on handhelds where the OEM dropped PiP; present on TV from API 34;
+     * never offered on Horizon OS, whose panels can't float it (B.3).
+     */
     private val supportsPip: Boolean by lazy {
-        packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+        devicePolicy.offersPictureInPicture &&
+            packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     }
 
     /** Drives the play/pause and skip buttons drawn inside the PiP window. */
@@ -204,7 +211,7 @@ class PlayerActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        isTelevision = isTelevisionDevice()
+        isTelevision = devicePolicy.usesTelevisionShell
         val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
         val contentPreferences = getSharedPreferences(ContentPlayerPreferencesRules.PREFS_NAME, MODE_PRIVATE)
         contentPreferencesStore = SharedPreferencesContentStore(contentPreferences)
@@ -336,6 +343,7 @@ class PlayerActivity : ComponentActivity() {
         videoEffects = VideoEffectsController(
             context = this,
             isTelevision = isTelevision,
+            enhancementDefault = devicePolicy.enhancementDefault,
             reprepare = ::reprepareAtCurrentPosition,
             saveAdjustments = { chrome.preferences.videoAdjustments = it },
         )
