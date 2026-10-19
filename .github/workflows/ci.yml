@@ -1,20 +1,27 @@
-name: Android CI
+name: Horizon CI
+
+# meta-horizon is the Meta Quest branch (HORIZON.md E.2): the hermetic JVM
+# tests, the debug and unsigned release APKs, and the store-rule check on the
+# release APK (E.1, without the signature checks). It uses no secrets: without
+# .secret/horizon-signing.properties the release stays unsigned, and without
+# secrets.json the build only disables the TMDB-, Wyzie-, and storage-provider
+# features.
 
 on:
   push:
-    branches: [android]
+    branches: [meta-horizon]
   pull_request:
-    branches: [android]
+    branches: [meta-horizon]
 
 permissions: {}
 
 concurrency:
-  group: android-ci-${{ github.ref }}
+  group: horizon-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-test:
-    name: Test and build Android
+    name: Test, build, and verify the Horizon APKs
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -33,5 +40,5 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Run hermetic tests and build debug APK
-        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug
+      - name: Run hermetic tests, build the APKs, and check Meta's store rules
+        run: ./gradlew --no-daemon testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease

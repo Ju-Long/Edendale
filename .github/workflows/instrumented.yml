@@ -1,22 +1,24 @@
 name: Android instrumented tests
 
-# Runs the androidTest suite on an emulator (ENHANCEMENT.md A.5.4). It lives
-# apart from ci.yml so the hermetic build-and-test job keeps its own triggers
-# and commands. It uses no secrets: the instrumented tests need neither network
-# access nor credentials, and without secrets.json the build only disables the
-# TMDB- and Wyzie-backed features.
+# Runs the androidTest suite on an emulator (ENHANCEMENT.md A.5.4, kept for
+# the Meta Quest branch by HORIZON.md A.5). It lives apart from ci.yml so the
+# hermetic build-and-test job keeps its own triggers and commands. It uses no
+# secrets: the instrumented tests need neither network access nor credentials,
+# and without secrets.json the build only disables the TMDB- and Wyzie-backed
+# features. The debug build keeps every ABI (only the release is arm64-only),
+# so the x86_64 emulator image still has the FFmpeg decoder.
 
 on:
   push:
-    branches: [android, android-27.0]
+    branches: [meta-horizon]
   pull_request:
-    branches: [android, android-27.0]
+    branches: [meta-horizon]
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: android-instrumented-${{ github.ref }}
+  group: horizon-instrumented-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -49,7 +51,7 @@ jobs:
 
       # Build before the emulator starts so it isn't idling through compilation.
       - name: Build the app and test APKs
-        run: ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest
+        run: ./gradlew --no-daemon assembleHorizonDebug assembleHorizonDebugAndroidTest
 
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
@@ -58,7 +60,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: ./gradlew --no-daemon connectedDebugAndroidTest
+          script: ./gradlew --no-daemon connectedHorizonDebugAndroidTest
 
       - name: Upload test reports
         if: failure()

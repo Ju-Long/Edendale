@@ -1,0 +1,24 @@
+# Permissions the Meta Horizon Store allows only after review, copied from
+# https://developers.meta.com/horizon/resources/permissions-review-required/
+# on 2026-10-19 (the page says it was last updated 2025-11-26). Same format
+# as meta-prohibited-permissions.txt; verifyHorizonRelease only reports these.
+ACCESS_MEDIA_LOCATION
+BLUETOOTH_CONNECT
+BLUETOOTH_SCAN
+BLUETOOTH_ADVERTISE
+CAMERA
+CHANGE_WIFI_STATE
+HEADSET_CAMERA
+MANAGE_EXTERNAL_STORAGE
+MODIFY_AUDIO_SETTINGS
+POST_NOTIFICATIONS
+READ_EXTERNAL_STORAGE
+READ_MEDIA_AUDIO
+READ_MEDIA_IMAGES
+READ_MEDIA_VIDEO
+READ_PHONE_STATE
+RECEIVE_BOOT_COMPLETED
+RECORD_AUDIO
+AVATAR_CAMERA
+WAKE_LOCK
+WRITE_EXTERNAL_STORAGE

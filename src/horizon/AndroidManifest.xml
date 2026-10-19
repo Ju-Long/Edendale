@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Horizon OS overlay (HORIZON.md A.2), merged over src/main's manifest.
+     Meta's packaging rules ask for installLocation, the supported-devices
+     tag, and nothing a headset lacks; the TV-only entries (Watch Next's EPG
+     permission, Leanback, the TV launcher and its banner) come out here, so
+     src/main stays as the android branch has it and merges from android stay
+     clean. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:installLocation="auto">
+
+    <!-- Only a TV has the provider that grants it. -->
+    <uses-permission
+        android:name="com.android.providers.tv.permission.WRITE_EPG_DATA"
+        tools:node="remove" />
+    <!-- media3-exoplayer declares it, and Meta reviews it. Edendale never sets
+         a wake mode; the player keeps the panel on with FLAG_KEEP_SCREEN_ON. -->
+    <uses-permission
+        android:name="android.permission.WAKE_LOCK"
+        tools:node="remove" />
+
+    <uses-feature
+        android:name="android.software.leanback"
+        tools:node="remove" />
+    <!-- Meta's marker for an app that runs on its headsets as a 2D panel. -->
+    <uses-feature
+        android:name="android.hardware.vr.headtracking"
+        android:required="false"
+        android:version="1" />
+
+    <application tools:remove="android:banner">
+        <!-- D4. Quest 2 and Pro have no AV1 hardware decoder and the app has no
+             software one; Findings records what each headset was tested on. -->
+        <meta-data
+            android:name="com.oculus.supportedDevices"
+            android:value="quest2|questpro|quest3|quest3s" />
+
+        <activity android:name=".MainActivity">
+            <intent-filter tools:node="remove">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- B.3: Horizon OS reports the PiP feature on the simulator but pins
+             the window at nearly panel size (Findings, 2026-10-10), and the
+             Quest 3 doesn't report it at all. DevicePolicy hides the button
+             and the Auto PiP setting; this keeps the system from trying. -->
+        <activity
+            android:name=".player.PlayerActivity"
+            android:supportsPictureInPicture="false"
+            tools:replace="android:supportsPictureInPicture" />
+    </application>
+
+</manifest>

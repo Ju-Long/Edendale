@@ -34,6 +34,7 @@ platform's implementation.
 | `android` | Android application and Android-specific delivery |
 | `windows` | Windows application and Windows-specific delivery |
 | `web` | Static website and Web-specific delivery |
+| `meta-horizon` | The Android app packaged for Meta Quest headsets (Horizon OS) and its Meta Horizon Store delivery; downstream of `android` |
 
 The platform branches begin with the same universal Markdown files:
 
@@ -45,6 +46,90 @@ The platform branches begin with the same universal Markdown files:
 
 `TASKS.md` is intentionally not part of the new repository. Work is tracked
 through the platform branch's issue and pull-request workflow.
+
+## Meta Quest (Horizon OS)
+
+The `meta-horizon` branch is the Android app packaged for Meta Quest headsets,
+where it runs as a 2D panel on Horizon OS and ships through the Meta Horizon
+Store. It is a platform branch downstream of `android`: android's work arrives
+by merging `android` into `meta-horizon` (`git merge android`), and nothing
+merges back. A fix found here that isn't specific to a headset goes to
+`android` as its own change first. [HORIZON.md](HORIZON.md) is the plan, with
+its decisions, device findings, and logs.
+
+The build has one product flavor, `horizon`. Everything Horizon-specific lives
+in `src/horizon` (the manifest overlay and `DevicePolicy`) and
+`src/testHorizon`, so merges from `android` touch `src/main` alone. On a
+headset the app is a handheld app, never the TV shell: `DevicePolicy` turns
+off Picture-in-Picture (Horizon OS can't float it), Watch Next, and the Video
+Enhancement default. The release APK is arm64-only, as Meta requires; the
+debug APK keeps every ABI for emulators. Both still need JDK 17 and the
+Android SDK, as below.
+
+| Purpose | Command |
+|---|---|
+| Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
+| Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
+| Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, and the v2 signature and certificate when signed |
+| Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
+
+### Signing
+
+Meta distributes the APK as signed, so every Quest build uses the same key:
+the Play upload key `New.jks`, alias `key0` (HORIZON.md D3). Copy
+`horizon-signing.example.properties` to the gitignored
+`.secret/horizon-signing.properties` and fill in the passwords, or export
+`HORIZON_STORE_FILE`, `HORIZON_STORE_PASSWORD`, `HORIZON_KEY_ALIAS`, and
+`HORIZON_KEY_PASSWORD`. Without either, `assembleHorizonRelease` writes an
+unsigned APK and `verifyHorizonRelease` skips the signature checks. The key
+and its passwords never enter the repository or a CI log.
+
+### Versioning
+
+`versionCode` and `versionName` in `defaultConfig` are `android`'s and arrive
+with its merges. Every upload to the Meta Horizon Store needs a higher
+`versionCode` than the store's last upload, and Play has the same rule, so the
+code is bumped on `android` and merged here, never on this branch alone.
+
+### The Spatial Simulator
+
+Meta Quest Developer Hub bundles the `metavr` CLI at
+`/Applications/Meta Quest Developer Hub.app/Contents/Resources/bin/metavr`
+(not on `PATH`). `metavr tools install spatialsim` installs the Meta Spatial
+Simulator, `metavr ssim start` boots it as `emulator-5554`, and then:
+
+```sh
+adb -s emulator-5554 install -r build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk
+adb -s emulator-5554 shell am start -n com.babasama.edendale/com.babasama.edendale.android.MainActivity
+```
+
+`metavr ui list` and `metavr ui tap --coords X,Y` (pixels of
+`adb exec-out screencap -p`) drive the panel. The simulator decodes with
+software codecs, so codec and performance results come only from a headset.
+
+### Release
+
+1. Merge `android` with the version bump, then run the commands above.
+2. `./gradlew assembleHorizonRelease verifyHorizonRelease` with the signing
+   properties in place.
+3. Upload to the ALPHA channel:
+   `metavr store dist upload --app-id <app id> --channel ALPHA --apk build/outputs/apk/horizon/release/Edendale-horizon-release.apk --notes "<notes>"`
+   (a draft; `--publish` releases it to the channel's testers).
+4. Install the build from the channel on a headset, run the headset checks
+   below, then promote the build in the Meta Horizon Developer Dashboard.
+
+### Manual checks on a headset
+
+Before a release, on a Quest 3 (and a Quest 2 while the listing keeps it):
+install, launch, the panel's size and resizing; Touch controllers and hands,
+with B or Y as Back; Add Folder through the system picker, and the folder
+surviving a restart; "Open with Edendale" from the Files app; H.264, HEVC, VP9,
+and AV1 at 1080p and 4K, and HDR on the panel; the audio formats and the
+equalizer; Google Drive, OneDrive, Dropbox, and TMDB sign-in from the panel's
+browser and their return to the app; the trailer; the headset off and on
+mid-playback; a second account on the headset; and, offline, each source
+failing on its own while the app stays usable.
 
 ## Android development
 

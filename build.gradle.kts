@@ -1,3 +1,10 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import java.util.Properties
+import java.util.zip.ZipFile
+import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Element
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -97,6 +104,23 @@ kotlin {
     }
 }
 
+// HORIZON.md A.3: the Meta Quest release key, from the gitignored
+// .secret/horizon-signing.properties or the HORIZON_* environment variables
+// (see horizon-signing.example.properties). Absent, the release stays unsigned.
+fun horizonSigning(): Map<String, String>? {
+    val file = rootProject.file(".secret/horizon-signing.properties")
+    val fromFile = if (file.exists()) Properties().apply { file.inputStream().use { load(it) } } else null
+    fun value(key: String, env: String): String? =
+        (fromFile?.getProperty(key) ?: System.getenv(env))?.trim()?.takeIf { it.isNotEmpty() }
+    val storeFile = value("storeFile", "HORIZON_STORE_FILE") ?: return null
+    return mapOf(
+        "storeFile" to storeFile.replaceFirst(Regex("^~"), System.getProperty("user.home")),
+        "storePassword" to (value("storePassword", "HORIZON_STORE_PASSWORD") ?: return null),
+        "keyAlias" to (value("keyAlias", "HORIZON_KEY_ALIAS") ?: return null),
+        "keyPassword" to (value("keyPassword", "HORIZON_KEY_PASSWORD") ?: return null),
+    )
+}
+
 android {
     namespace = "com.babasama.edendale.android"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -120,9 +144,41 @@ android {
         manifestPlaceholders["dropboxRedirectScheme"] = "db-" + dropboxAppKey.ifEmpty { "unset" }
     }
 
+    // HORIZON.md A.1: this branch builds for Meta Quest only. Its one flavor
+    // keeps the Horizon manifest, code, and tests under src/horizon and
+    // src/testHorizon, so merges from android touch src/main alone.
+    flavorDimensions += "store"
+    productFlavors {
+        create("horizon") {
+            dimension = "store"
+            // D2: Meta's recommended minimum for Quest-only apps (the allowed
+            // range is 29–34). targetSdk stays android's until the ALPHA
+            // upload probe (P.6) says otherwise.
+            minSdk = 32
+            buildConfigField("boolean", "HORIZON_OS", "true")
+        }
+    }
+
+    signingConfigs {
+        horizonSigning()?.let { keys ->
+            create("horizon") {
+                storeFile = file(keys.getValue("storeFile"))
+                storePassword = keys.getValue("storePassword")
+                keyAlias = keys.getValue("keyAlias")
+                keyPassword = keys.getValue("keyPassword")
+                enableV2Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Meta takes a 64-bit APK (Packaging.5); the debug build keeps every
+            // ABI so x86_64 emulators still get the FFmpeg decoder.
+            ndk { abiFilters += "arm64-v8a" }
+            // null (unsigned) until the A.3 properties exist.
+            signingConfig = signingConfigs.findByName("horizon")
         }
     }
 
@@ -190,4 +246,141 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.room.testing)
+}
+
+// HORIZON.md E.1: verifyHorizonRelease fails the build when the Horizon
+// release APK breaks one of Meta's packaging or permission rules. It reads the
+// merged manifest and the packaged APK of the release variant, and the
+// permission lists in gradle/. It sits at the end of this file, apart from
+// android's configuration above, so merges from the android branch stay small.
+
+/** The Quest release key's certificate (decision D3); not a secret. */
+val horizonCertificateSha256 = "F2:CE:0D:97:57:66:4C:1C:BB:C0:4E:2B:0F:B8:E6:9A:4D:79:4A:40:7A:C5:16:73:D0:F8:68:23:87:7E:FF:65"
+
+abstract class VerifyHorizonRelease : DefaultTask() {
+    @get:InputFile abstract val mergedManifest: RegularFileProperty
+    @get:InputDirectory abstract val apkDirectory: DirectoryProperty
+    @get:InputFile abstract val prohibitedPermissions: RegularFileProperty
+    @get:InputFile abstract val reviewRequiredPermissions: RegularFileProperty
+    @get:Input abstract val expectedCertificateSha256: Property<String>
+    @get:Internal abstract val sdkDirectory: DirectoryProperty
+
+    private val androidNs = "http://schemas.android.com/apk/res/android"
+
+    @TaskAction
+    fun verify() {
+        val failures = mutableListOf<String>()
+        val notes = mutableListOf<String>()
+
+        // The manifest as merged: flavor overlay, libraries, and placeholders applied.
+        val manifest = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
+            .newDocumentBuilder().parse(mergedManifest.get().asFile).documentElement
+        fun Element.attr(name: String): String? = getAttributeNS(androidNs, name).takeIf { it.isNotEmpty() }
+        fun Element.elements(tag: String): List<Element> {
+            val nodes = getElementsByTagName(tag)
+            return (0 until nodes.length).map { nodes.item(it) as Element }
+        }
+
+        if (manifest.attr("installLocation") != "auto") failures += "installLocation is not \"auto\" (VRC Packaging.1)"
+
+        val usesSdk = manifest.elements("uses-sdk").firstOrNull()
+        val minSdk = usesSdk?.attr("minSdkVersion")?.toIntOrNull()
+        val targetSdk = usesSdk?.attr("targetSdkVersion")?.toIntOrNull()
+        if (minSdk == null || minSdk !in 29..34) failures += "minSdkVersion $minSdk is outside Meta's 29–34 (VRC Packaging.4)"
+        if (targetSdk == null || targetSdk !in 32..36) failures += "targetSdkVersion $targetSdk is outside 32–36 for 2D apps (VRC Packaging.4)"
+        notes += "minSdkVersion $minSdk, targetSdkVersion $targetSdk (decision D2: the ALPHA upload probe settles targetSdk)"
+
+        val application = manifest.elements("application").firstOrNull()
+        if (application == null) failures += "no <application>"
+        if (application?.attr("debuggable") == "true") failures += "the release is debuggable"
+        val supportedDevices = application?.elements("meta-data")
+            ?.firstOrNull { it.attr("name") == "com.oculus.supportedDevices" }?.attr("value")
+        if (supportedDevices.isNullOrBlank()) failures += "com.oculus.supportedDevices is missing (VRC Packaging.1)"
+        else notes += "supportedDevices: $supportedDevices"
+        if (application?.attr("banner") != null) failures += "android:banner (TV) is still set"
+
+        val permissions = manifest.elements("uses-permission").mapNotNull { it.attr("name") }
+        fun loadList(file: RegularFileProperty): Set<String> =
+            file.get().asFile.readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.toSet()
+        val prohibited = loadList(prohibitedPermissions)
+        val reviewRequired = loadList(reviewRequiredPermissions)
+        for (permission in permissions) {
+            val simple = permission.substringAfterLast('.')
+            if (simple in prohibited) failures += "prohibited permission $permission (VRC Security.2)"
+            if (simple in reviewRequired) notes += "permission $permission needs Meta's review; justify it in the submission"
+        }
+        if (permissions.any { it.endsWith("WRITE_EPG_DATA") }) failures += "WRITE_EPG_DATA (TV Watch Next) is still declared"
+        notes += "permissions: ${permissions.joinToString()}"
+
+        val features = manifest.elements("uses-feature")
+        if (features.any { it.attr("name") == "android.software.leanback" }) failures += "the leanback feature is still declared"
+        if (features.none { it.attr("name") == "android.hardware.vr.headtracking" }) failures += "android.hardware.vr.headtracking is missing"
+        if (features.any { it.attr("name") == "android.hardware.touchscreen" && it.attr("required") != "false" }) {
+            failures += "the touchscreen feature is required; a headset has none"
+        }
+
+        val leanbackLaunchers = manifest.elements("category").filter { it.attr("name") == "android.intent.category.LEANBACK_LAUNCHER" }
+        if (leanbackLaunchers.isNotEmpty()) failures += "a LEANBACK_LAUNCHER intent filter is still present"
+        val launcher = manifest.elements("activity").firstOrNull { activity ->
+            activity.elements("category").any { it.attr("name") == "android.intent.category.LAUNCHER" }
+        }
+        if (launcher == null) failures += "no LAUNCHER activity"
+        else if (launcher.attr("exported") != "true") failures += "the launcher activity isn't exported"
+
+        // The APK.
+        val apks = apkDirectory.get().asFile.listFiles { f -> f.extension == "apk" }.orEmpty()
+        val apk = apks.singleOrNull() ?: run {
+            failures += "expected one APK in ${apkDirectory.get().asFile}, found ${apks.map { it.name }}"
+            null
+        }
+        if (apk != null) {
+            val size = apk.length()
+            notes += "${apk.name}: ${"%.1f".format(size / 1_000_000.0)} MB"
+            if (size > 1L shl 30) failures += "the APK is over 1 GB (VRC Packaging.6)"
+            val abis = ZipFile(apk).use { zip ->
+                zip.entries().asSequence().map { it.name }.filter { it.startsWith("lib/") }
+                    .map { it.split('/')[1] }.toSet()
+            }
+            if (abis != setOf("arm64-v8a")) failures += "lib/ holds $abis; Meta wants arm64-v8a only (VRC Packaging.5)"
+
+            if (apk.name.contains("unsigned")) {
+                notes += "unsigned (no .secret/horizon-signing.properties): the v2 signature and certificate checks were skipped"
+            } else {
+                val apksigner = sdkDirectory.get().asFile.resolve("build-tools").listFiles()
+                    ?.filter { it.resolve("apksigner").exists() }?.maxByOrNull { it.name }?.resolve("apksigner")
+                if (apksigner == null) {
+                    failures += "apksigner not found under ${sdkDirectory.get().asFile}/build-tools"
+                } else {
+                    val process = ProcessBuilder(apksigner.path, "verify", "--verbose", "--print-certs", apk.path)
+                        .redirectErrorStream(true).start()
+                    val output = process.inputStream.bufferedReader().readText()
+                    if (process.waitFor() != 0) failures += "apksigner verify failed:\n$output"
+                    if (!output.contains("Verified using v2 scheme (APK Signature Scheme v2): true")) failures += "no APK Signature Scheme v2 (VRC Packaging.2)"
+                    val digest = Regex("certificate SHA-256 digest: ([0-9a-f]+)").find(output)?.groupValues?.get(1)
+                    val expected = expectedCertificateSha256.get().replace(":", "").lowercase()
+                    if (digest != expected) failures += "signed with certificate SHA-256 $digest, not the Quest release key (D3)"
+                    else notes += "signed with the Quest release key, APK Signature Scheme v2"
+                }
+            }
+        }
+
+        notes.forEach { logger.lifecycle("verifyHorizonRelease: $it") }
+        if (failures.isNotEmpty()) {
+            throw GradleException("The Horizon release breaks Meta's store rules:\n" + failures.joinToString("\n") { "  - $it" })
+        }
+    }
+}
+
+val androidComponents = extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
+    tasks.register("verify${variant.name.replaceFirstChar { it.uppercase() }}", VerifyHorizonRelease::class.java) {
+        group = "verification"
+        description = "Checks the ${variant.name} APK against Meta's Horizon Store rules (HORIZON.md E.1)."
+        mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+        apkDirectory.set(variant.artifacts.get(SingleArtifact.APK))
+        prohibitedPermissions.set(layout.projectDirectory.file("gradle/meta-prohibited-permissions.txt"))
+        reviewRequiredPermissions.set(layout.projectDirectory.file("gradle/meta-review-required-permissions.txt"))
+        expectedCertificateSha256.set(horizonCertificateSha256)
+        sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
+    }
 }
