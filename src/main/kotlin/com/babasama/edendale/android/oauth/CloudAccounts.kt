@@ -17,6 +17,7 @@ import com.babasama.edendale.handoff.adoptHandedOffAccount as adoptAccount
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
 import com.babasama.edendale.oauth.CloudProviders
+import com.babasama.edendale.oauth.CloudSignIn
 import com.babasama.edendale.oauth.CloudTokenProvider
 import com.babasama.edendale.oauth.DeviceAuthorization
 import com.babasama.edendale.oauth.OAuthClient
@@ -65,20 +66,47 @@ class CloudAccounts(context: Context) {
 
     /**
      * Signs in through a Custom Tab (the authorization code with PKCE),
-     * then stores the account. Throws [OAuthException]; cancelling the
-     * calling coroutine abandons the sign-in.
+     * then stores the account. For Google Drive the page also opens Google's
+     * picker, and the result carries the files picked there (H.9.4). Throws
+     * [OAuthException]; cancelling the calling coroutine abandons the
+     * sign-in and changes nothing.
      */
-    suspend fun signIn(activity: Activity, kind: MediaSourceKind): CloudAccount {
+    suspend fun signIn(activity: Activity, kind: MediaSourceKind): CloudSignIn {
         val configuration = configuration(kind) ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
+        val (response, picked) = authorize(activity, configuration)
+        return CloudSignIn(CloudSignIn.store(kind, configuration, response, http, vault, tokens), picked)
+    }
+
+    /**
+     * Choose More Videos (H.9.6): reruns Google's picker for a linked
+     * account, with its email as the hint. Every run returns a new refresh
+     * token; the newest is kept and the old one is left alone, because
+     * Google's revoke would end the whole grant, the new token and any TV's
+     * included. Throws if the viewer switched to another Google account.
+     */
+    suspend fun chooseMoreVideos(activity: Activity, account: CloudAccount): CloudSignIn {
+        val kind = account.kind
+        val configuration = configuration(kind)?.takeIf { kind == MediaSourceKind.GOOGLE_DRIVE }
+            ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
+        val (response, picked) = authorize(activity, configuration, CloudProviders.googleChooseMoreParameters(account.email))
+        return CloudSignIn(CloudSignIn.storeChosenVideos(account, configuration, response, http, vault, tokens), picked)
+    }
+
+    /** The provider's page in a Custom Tab, then the code exchange; the picked Drive file IDs come with the tokens. */
+    private suspend fun authorize(
+        activity: Activity,
+        configuration: OAuthConfiguration,
+        parameters: Map<String, String> = emptyMap(),
+    ): Pair<OAuthTokens, List<String>> {
         val client = OAuthClient(configuration, http)
         val verifier = Pkce.makeVerifier()
         val state = Pkce.makeState()
         val callback = OAuthRedirects.await(state) {
             CustomTabsIntent.Builder().setShowTitle(true).build()
-                .launchUrl(activity, Uri.parse(client.authorizationUrl(state, Pkce.challenge(verifier))))
+                .launchUrl(activity, Uri.parse(client.authorizationUrl(state, Pkce.challenge(verifier), parameters)))
         }
-        val code = OAuthClient.authorizationCode(callback, state, kind)
-        return store(kind, configuration, client.exchange(code, verifier))
+        val authorization = OAuthClient.authorizationResponse(callback, state, configuration.kind)
+        return client.exchange(authorization.code, verifier) to authorization.pickedFileIds
     }
 
     /** Starts a TV sign-in with a code to enter on another device (I.1; RFC 8628, OneDrive only). */
@@ -92,24 +120,7 @@ class CloudAccounts(context: Context) {
     suspend fun finishDeviceSignIn(kind: MediaSourceKind, authorization: DeviceAuthorization): CloudAccount {
         val configuration = configuration(kind) ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
         val response = OAuthClient(configuration, http).waitForDeviceAuthorization(authorization)
-        return store(kind, configuration, response)
-    }
-
-    private suspend fun store(kind: MediaSourceKind, configuration: OAuthConfiguration, response: OAuthTokens): CloudAccount {
-        val identity = CloudProviders.identity(kind, response, http)
-        val refreshToken = response.refreshToken ?: throw OAuthException(kind, OAuthFailure.MalformedResponse)
-        val account = CloudAccount(
-            kind = kind,
-            subject = identity.subject,
-            email = identity.email,
-            displayName = identity.displayName,
-            refreshToken = refreshToken,
-            scopes = response.grantedScopes ?: configuration.scopes,
-            driveId = identity.driveId,
-        )
-        withContext(Dispatchers.IO) { vault.save(account) }
-        tokens.store(response, account)
-        return account
+        return CloudSignIn.store(kind, configuration, response, http, vault, tokens)
     }
 
     /**

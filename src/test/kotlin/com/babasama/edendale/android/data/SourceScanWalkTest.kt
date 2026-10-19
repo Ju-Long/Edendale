@@ -2,6 +2,7 @@ package com.babasama.edendale.android.data
 
 import com.babasama.edendale.connectors.ConnectorEntry
 import com.babasama.edendale.connectors.GoogleDriveConnector
+import com.babasama.edendale.connectors.GoogleDriveHiddenItems
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.ProviderHttp
@@ -17,9 +18,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * A scan walks the linked folder, not the connector's root: for a cloud
- * account or an S3 bucket the root is everything the account holds, and
- * linking one Drive folder used to import all of Drive.
+ * A scan walks the linked folder, not the connector's root: for an S3
+ * bucket the root is everything the account holds, and linking one folder
+ * used to import all of it. A Google Drive source is "Videos you chose"
+ * (H.9.4): one listing of the picked files, without the ones removed on this
+ * device (D21).
  */
 class SourceScanWalkTest {
 
@@ -33,29 +36,24 @@ class SourceScanWalkTest {
 
     private val account = CloudAccount(
         kind = MediaSourceKind.GOOGLE_DRIVE,
-        subject = "110169484474386276334",
+        subject = "01234567890123456789",
         email = "me@example.com",
         displayName = "Me",
         refreshToken = "refresh",
-        scopes = emptyList(),
+        scopes = listOf("https://www.googleapis.com/auth/drive.file"),
     )
 
     @Test
-    fun `a linked Drive folder imports only what is inside it`() = runBlocking {
+    fun `a Google Drive source scans the picked files once and skips the hidden ones`() = runBlocking {
         val server = LocalHttpServer({ request: LocalHttpServer.Request ->
             when (request.path) {
                 "/drive/v3/about" -> json("""{"user":{"emailAddress":"me@example.com"}}""")
-                "/drive/v3/files" -> when (request.queryValue("q")?.let(SourceUrl::decode)) {
-                    "'films' in parents and trashed = false" -> json(
-                        """{"files":[{"id":"s1","name":"Sequels","mimeType":"application/vnd.google-apps.folder"},
-                        {"id":"h1","name":"Heat (1995).mkv","mimeType":"video/x-matroska","size":"7"}]}""",
-                    )
-                    "'s1' in parents and trashed = false" -> json(
-                        """{"files":[{"id":"t2","name":"Terminator 2 (1991).mp4","mimeType":"video/mp4","size":"9"}]}""",
-                    )
-                    // Anything else (My Drive, Shared with me) holds a video that mustn't be imported.
-                    else -> json("""{"files":[{"id":"x1","name":"Elsewhere (2001).mkv","mimeType":"video/x-matroska","size":"1"}]}""")
-                }
+                "/drive/v3/files" -> json(
+                    """{"files":[{"id":"s1","name":"Sequels","mimeType":"application/vnd.google-apps.folder"},
+                    {"id":"h1","name":"Heat (1995).mkv","mimeType":"video/x-matroska","size":"7"},
+                    {"id":"t2","name":"Terminator 2 (1991).mp4","mimeType":"video/mp4","size":"9"},
+                    {"id":"a3","name":"Alien (1979).mkv","mimeType":"video/x-matroska","size":"3"}]}""",
+                )
                 else -> LocalHttpServer.Response(404)
             }
         }).also { servers += it }
@@ -63,19 +61,60 @@ class SourceScanWalkTest {
         val provider = ProviderHttp(MediaSourceKind.GOOGLE_DRIVE, account.key, seededTokens(account, http), http, listOf(10, 10, 10))
         val connector = GoogleDriveConnector(account, provider)
         val folder = LibraryFolderEntity(
-            treeUri = connector.folderUrl("films", "Films"),
-            displayName = "Films",
+            treeUri = GoogleDriveConnector.chosenFolderUrl(account.key),
+            displayName = "Videos you chose",
             addedAtEpochMillis = 0,
             kind = MediaSourceKind.GOOGLE_DRIVE.raw,
             accountKey = account.key,
         )
 
-        val enumeration = SourceScanRules.enumerate(connector, folder)
+        // Terminator 2 was removed from the library on this device.
+        val enumeration = SourceScanRules.enumerate(connector, folder, hidden = setOf("t2"))
 
         assertTrue(enumeration.complete)
-        assertEquals(listOf("Heat (1995).mkv", "Terminator 2 (1991).mp4"), enumeration.videos.map { it.name })
+        assertEquals(listOf("Alien (1979).mkv", "Heat (1995).mkv"), enumeration.videos.map { it.name })
+        // One listing of everything picked; the picked folder isn't walked, since its contents were never granted.
         val queries = server.requests.filter { it.path == "/drive/v3/files" }.map { it.queryValue("q")?.let(SourceUrl::decode) }
-        assertEquals(listOf("'films' in parents and trashed = false", "'s1' in parents and trashed = false"), queries)
+        assertEquals(listOf("trashed = false"), queries)
+
+        // With nothing hidden, every picked video comes back.
+        assertEquals(3, SourceScanRules.enumerate(connector, folder).videos.size)
+    }
+
+    @Test
+    fun `hidden Drive IDs come from removed items and go when picked again`() {
+        val source = GoogleDriveConnector.chosenFolderUrl(account.key)
+        val heat = SourceUrl.accountItem(MediaSourceKind.GOOGLE_DRIVE, account.key, listOf("h1"), "Heat (1995).mkv")
+        val alien = SourceUrl.accountItem(MediaSourceKind.GOOGLE_DRIVE, account.key, listOf("a3"), "Alien (1979).mkv")
+        // Only Drive item URLs hide anything; the source's own URL and other kinds don't.
+        val hidden = GoogleDriveHiddenItems.hiding(emptySet(), listOf(heat, source, "smb://nas/films/Heat.mkv"))
+        assertEquals(setOf("h1"), hidden)
+        assertEquals(setOf("h1", "a3"), GoogleDriveHiddenItems.hiding(hidden, listOf(alien, heat)))
+        // Picking a removed video again brings it back.
+        assertEquals(setOf("a3"), GoogleDriveHiddenItems.unhiding(setOf("h1", "a3"), listOf("h1", "new")))
+
+        val entries = listOf(
+            ConnectorEntry("Heat (1995).mkv", heat, isDirectory = false),
+            ConnectorEntry("Alien (1979).mkv", alien, isDirectory = false),
+            ConnectorEntry("Heat.mkv", "smb://nas/films/Heat.mkv", isDirectory = false),
+        )
+        assertEquals(listOf("Alien (1979).mkv", "Heat.mkv"), GoogleDriveHiddenItems.visible(entries, setOf("h1")).map { it.name })
+        assertEquals(entries, GoogleDriveHiddenItems.visible(entries, emptySet()))
+    }
+
+    @Test
+    fun `Remove from Library is offered only where removing lasts`() {
+        // A Drive source's scans skip hidden IDs, and a file added on its own is never rescanned.
+        assertTrue(SourceScanRules.removalLasts(GoogleDriveConnector.chosenFolderUrl(account.key)))
+        assertTrue(SourceScanRules.removalLasts(null))
+        // Every other source's next scan would bring the file straight back.
+        listOf(
+            "content://com.android.externalstorage.documents/tree/primary%3AMovies",
+            "smb://nas/films/",
+            "davs://cloud.example.com/remote.php/dav/files/me/Films/",
+            SourceUrl.accountItem(MediaSourceKind.GOOGLE_DRIVE, account.key, listOf("m0"), "Movies"),
+            SourceUrl.accountItem(MediaSourceKind.ONE_DRIVE, "acct", listOf("drive", "item"), "Films"),
+        ).forEach { assertTrue(!SourceScanRules.removalLasts(it), it) }
     }
 
     @Test

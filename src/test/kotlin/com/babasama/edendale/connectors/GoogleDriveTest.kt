@@ -20,10 +20,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * H.9.T1 (Apple's CloudListingTests Drive cases): recorded Drive v3
- * responses for paging, shortcuts, shared drives, and filtering; the picker's
- * virtual folders; and streaming with the Bearer token, refreshed once after
- * a 401.
+ * H.9.T1 and H.9.T2 (Apple's CloudListingTests Drive cases): under
+ * `drive.file` each account has one virtual folder, "Videos you chose",
+ * listed with `files.list` across pages, with folders, folder shortcuts, and
+ * Google formats skipped and shortcuts to files followed; nothing else lists;
+ * and streaming with the Bearer token, refreshed once after a 401.
  */
 class GoogleDriveTest {
 
@@ -40,11 +41,11 @@ class GoogleDriveTest {
 
     private val account = CloudAccount(
         kind = MediaSourceKind.GOOGLE_DRIVE,
-        subject = "110169484474386276334",
+        subject = "01234567890123456789",
         email = "me@example.com",
         displayName = "Me",
         refreshToken = "refresh",
-        scopes = emptyList(),
+        scopes = listOf("https://www.googleapis.com/auth/drive.file"),
     )
 
     /** The provider's HTTP, with the token endpoint on the same local server (`/token`) for the refresh cases. */
@@ -57,30 +58,38 @@ class GoogleDriveTest {
     private fun connector(server: LocalHttpServer) = GoogleDriveConnector(account, provider(server))
 
     @Test
-    fun `the root gathers My Drive, Shared with me, and Shared drives, and can't be linked itself`() = runBlocking {
+    fun `the root is the account's Videos you chose, the only folder that lists or links`() {
         val server = server { json("{}") }
-        val labels = GoogleDriveLabels(myDrive = "Meine Ablage", sharedWithMe = "Für mich freigegeben", sharedDrives = "Geteilte Ablagen")
-        val connector = GoogleDriveConnector(account, provider(server), labels)
-        assertEquals("gdrive://${account.key}/~roots/Google%20Drive", connector.root)
+        val connector = connector(server)
+        // The name in the URL is fixed, so a source's stored URL is the same in every language.
+        assertEquals("gdrive://${account.key}/~chosen/Google%20Drive", connector.root)
+        assertEquals(connector.root, GoogleDriveConnector.chosenFolderUrl(account.key))
+        assertTrue(GoogleDriveConnector.isChosenFolder(connector.root))
+        assertTrue(connector.canIndex(connector.root))
 
-        val roots = connector.list(connector.root)
-        assertEquals(listOf("Meine Ablage", "Für mich freigegeben", "Geteilte Ablagen"), roots.map { it.name })
-        assertTrue(roots.all { it.isDirectory })
-        assertEquals("gdrive://${account.key}/root/Meine%20Ablage", roots[0].url)
-        assertEquals("gdrive://${account.key}/~shared/F%C3%BCr%20mich%20freigegeben", roots[1].url)
-        assertEquals("gdrive://${account.key}/~drives/Geteilte%20Ablagen", roots[2].url)
-        // Nothing was asked of the server for the virtual root.
+        // An older build's folder sources, the old virtual roots, and other providers aren't "Videos you chose".
+        val older = listOf(
+            "gdrive://${account.key}/m0/Films",
+            "gdrive://${account.key}/root/My%20Drive",
+            "gdrive://${account.key}/~roots/Google%20Drive",
+            "gdrive://${account.key}/d2/Team%20Films?drive=d2",
+            "onedrive://${account.key}/drive/~chosen/Google%20Drive",
+        )
+        older.forEach { url ->
+            assertFalse(GoogleDriveConnector.isChosenFolder(url), url)
+            assertFalse(connector.canIndex(url), url)
+        }
+        // None of them lists, and neither does another account's.
+        for (url in older + GoogleDriveConnector.chosenFolderUrl("another-account")) {
+            val error = assertFailsWith<ConnectorException>(url) { runBlocking { connector.list(url) } }
+            assertEquals(ConnectorFailure.InvalidAddress, error.failure)
+        }
+        // Nothing was asked of the server.
         assertTrue(server.requests.isEmpty())
-
-        assertFalse(connector.canIndex(connector.root))
-        assertTrue(connector.canIndex(roots[0].url))
-        assertTrue(connector.canIndex(roots[1].url))
-        assertFalse(connector.canIndex(roots[2].url))
-        assertFalse(connector.canIndex("dropbox://x/root/Dropbox"))
     }
 
     @Test
-    fun `lists a folder across pages, following shortcuts and skipping Google formats`() = runBlocking {
+    fun `lists every picked file across pages, following shortcuts and skipping folders and Google formats`() = runBlocking {
         val server = server { request ->
             assertEquals("/drive/v3/files", request.path)
             if (request.queryValue("pageToken") == "page2") {
@@ -104,33 +113,33 @@ class GoogleDriveTest {
             }
         }
         val connector = connector(server)
-        val folder = connector.folderUrl("m0", "Films")
-        val entries = connector.list(folder)
+        val entries = connector.list(connector.root)
 
-        // Folders first (a folder shortcut counts), then files by name; the broken shortcut and the Doc are gone.
-        assertEquals(listOf("Movies", "Season 1", "Alien.1979.mp4", "Heat (1995).mkv", "notes.txt", "still.mkv", "Zulu.mkv"), entries.map { it.name })
-        val movies = entries[0]
-        assertTrue(movies.isDirectory)
-        assertEquals("gdrive://${account.key}/m1/Movies", movies.url)
-        assertEquals(1_704_164_645_000L, movies.modifiedEpochMillis)
+        // A picked folder never grants what's inside it, so folders and folder shortcuts are gone, as are the
+        // broken shortcut and the Doc; files are sorted by name.
+        assertEquals(listOf("Alien.1979.mp4", "Heat (1995).mkv", "notes.txt", "still.mkv", "Zulu.mkv"), entries.map { it.name })
+        assertTrue(entries.none { it.isDirectory })
         // A shortcut's entry carries its target's ID.
-        assertEquals("gdrive://${account.key}/t2/Season%201", entries[1].url)
-        assertEquals("gdrive://${account.key}/t1/Alien.1979.mp4", entries[2].url)
-        val heat = entries[3]
+        assertEquals("gdrive://${account.key}/t1/Alien.1979.mp4", entries[0].url)
+        val heat = entries[1]
         assertEquals(1000L, heat.size)
         assertEquals(6000.0, heat.durationSeconds)
+        assertEquals(1_704_164_645_000L, heat.modifiedEpochMillis)
         assertEquals("gdrive://${account.key}/h1/Heat%20(1995).mkv", heat.url)
+        assertEquals("h1", GoogleDriveConnector.fileId(heat.url))
         // Videos are recognized by extension: the .txt with a video MIME type isn't one, the .mkv with none is.
-        assertFalse(entries[4].isVideo)
-        assertTrue(entries[6].isVideo)
-        assertNull(entries[5].durationSeconds)
+        assertFalse(entries[2].isVideo)
+        assertTrue(entries[4].isVideo)
+        assertNull(entries[3].durationSeconds)
 
+        // drive.file limits files.list to the picked files, wherever they live.
         val first = server.requests.first()
-        assertEquals("'m0' in parents and trashed = false", first.queryValue("q")?.let(SourceUrl::decode))
+        assertEquals("trashed = false", first.queryValue("q")?.let(SourceUrl::decode))
         assertEquals("true", first.queryValue("supportsAllDrives"))
         assertEquals("true", first.queryValue("includeItemsFromAllDrives"))
         assertEquals("1000", first.queryValue("pageSize"))
         assertNull(first.queryValue("corpora"))
+        assertNull(first.queryValue("driveId"))
         assertTrue(first.queryValue("fields")!!.let(SourceUrl::decode).contains("shortcutDetails(targetId,targetMimeType)"))
         assertEquals("Bearer token", first.header("Authorization"))
         assertEquals(2, server.requests.size)
@@ -138,42 +147,12 @@ class GoogleDriveTest {
     }
 
     @Test
-    fun `shared drives list by name and their folders name the drive`() = runBlocking {
-        val server = server { request ->
-            when (request.path) {
-                "/drive/v3/drives" -> if (request.queryValue("pageToken") == null) {
-                    json("""{"nextPageToken":"more","drives":[{"id":"d2","name":"Team Films"}]}""")
-                } else {
-                    json("""{"drives":[{"id":"d1","name":"Archive"}]}""")
-                }
-                "/drive/v3/files" -> json("""{"files":[{"id":"x1","name":"Docs","mimeType":"application/vnd.google-apps.folder"},
-                    {"id":"x2","name":"Heat.mkv","mimeType":"video/x-matroska","size":"7"}]}""")
-                else -> LocalHttpServer.Response(404)
-            }
-        }
-        val connector = connector(server)
-        val drives = connector.list(connector.folderUrl(GoogleDriveConnector.VirtualFolder.SHARED_DRIVES, "Shared drives"))
-        assertEquals(listOf("Archive", "Team Films"), drives.map { it.name })
-        // A shared drive's root folder has the drive's ID, and remembers the drive for its listings.
-        assertEquals("gdrive://${account.key}/d2/Team%20Films?drive=d2", drives[1].url)
-
-        val inside = connector.list(drives[1].url)
-        assertEquals(listOf("Docs", "Heat.mkv"), inside.map { it.name })
-        assertEquals("gdrive://${account.key}/x1/Docs?drive=d2", inside[0].url)
-        // Files don't carry the drive: their ID is enough to stream.
-        assertEquals("gdrive://${account.key}/x2/Heat.mkv", inside[1].url)
-        val listing = server.requests.last()
-        assertEquals("drive", listing.queryValue("corpora"))
-        assertEquals("d2", listing.queryValue("driveId"))
-        assertEquals("'d2' in parents and trashed = false", listing.queryValue("q")?.let(SourceUrl::decode))
-    }
-
-    @Test
-    fun `Shared with me queries sharedWithMe and validate asks about`() = runBlocking {
+    fun `a scan lists the picked files once and validate asks about`() = runBlocking {
         val server = server { request ->
             when (request.path) {
                 "/drive/v3/about" -> json("""{"user":{"emailAddress":"me@example.com"}}""")
-                else -> json("""{"files":[{"id":"w1","name":"From Ana","mimeType":"application/vnd.google-apps.folder"}]}""")
+                else -> json("""{"files":[{"id":"w1","name":"From Ana","mimeType":"application/vnd.google-apps.folder"},
+                    {"id":"w2","name":"Severance S01E01.mkv","mimeType":"video/x-matroska"}]}""")
             }
         }
         val connector = connector(server)
@@ -181,9 +160,11 @@ class GoogleDriveTest {
         assertEquals("/drive/v3/about", server.requests.first().path)
         assertEquals("user(emailAddress)", server.requests.first().queryValue("fields")?.let(SourceUrl::decode))
 
-        val shared = connector.list(connector.folderUrl(GoogleDriveConnector.VirtualFolder.SHARED_WITH_ME, "Shared with me"))
-        assertEquals(listOf("From Ana"), shared.map { it.name })
-        assertEquals("sharedWithMe = true and trashed = false", server.requests.last().queryValue("q")?.let(SourceUrl::decode))
+        val enumeration = connector.enumerateVideos(connector.root)
+        assertTrue(enumeration.complete)
+        assertEquals(listOf("Severance S01E01.mkv"), enumeration.videos.map { it.name })
+        // The picked folder isn't walked: its contents were never granted.
+        assertEquals(1, server.requests.count { it.path == "/drive/v3/files" })
     }
 
     @Test
@@ -197,12 +178,12 @@ class GoogleDriveTest {
             }
         }
         val connector = connector(server)
-        val error = assertFailsWith<ConnectorException> { runBlocking { connector.list(connector.folderUrl("m0", "Films")) } }
+        val error = assertFailsWith<ConnectorException> { runBlocking { connector.list(connector.root) } }
         assertEquals(ConnectorFailure.SignInRequired(MediaSourceKind.GOOGLE_DRIVE), error.failure)
         assertTrue(server.requests.any { it.path == "/token" })
 
-        val notFound = server { json("""{"error":{"code":404,"message":"File not found"}}""", 404) }
-        val missing = assertFailsWith<RemoteSourceException> { runBlocking { connector(notFound).list(connector.folderUrl("gone", "Gone")) } }
+        val unavailable = server { json("""{"error":{"code":404,"message":"File not found"}}""", 404) }
+        val missing = assertFailsWith<RemoteSourceException> { runBlocking { connector(unavailable).list(connector.root) } }
         assertEquals(RemoteFailure.NotFound, missing.failure)
     }
 

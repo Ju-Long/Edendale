@@ -75,6 +75,7 @@ import com.babasama.edendale.android.player.SkipInterval
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.android.data.SourceScanRules
 
@@ -91,6 +92,9 @@ fun SettingsScreen(
     val movies by library.movies.collectAsState(initial = emptyList())
     val episodes by library.episodes.collectAsState(initial = emptyList())
     val activity by library.activity.collectAsState()
+    // Google Drive sources (H.9.4): what Choose More Videos added, and the picker itself.
+    val sourceNotes by library.sourceNotes.collectAsState()
+    val chooseMoreVideos = rememberChooseMoreVideos()
 
     var showSmbDialog by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<LibraryFolderEntity?>(null) }
@@ -365,6 +369,8 @@ fun SettingsScreen(
                             isTelevision = isTelevision,
                             onRescan = { library.rescanFolder(folder.treeUri) },
                             onRemove = { pendingRemoval = folder },
+                            note = sourceNotes[folder.treeUri],
+                            chooseMoreVideos = chooseMoreVideos,
                         )
                     }
                 }
@@ -372,7 +378,7 @@ fun SettingsScreen(
         }
 
         item {
-            AccountsSettingsSection(folders = folders, isTelevision = isTelevision)
+            AccountsSettingsSection(folders = folders, isTelevision = isTelevision, chooseMoreVideos = chooseMoreVideos)
         }
 
         item {
@@ -892,6 +898,10 @@ internal fun InfoRow(text: String) {
     )
 }
 
+/**
+ * A source in Settings → Sources. A Google Drive source also offers Choose
+ * More Videos on handhelds, and on a TV says where to choose them (H.9.4).
+ */
 @Composable
 private fun SourceRow(
     folder: LibraryFolderEntity,
@@ -900,11 +910,17 @@ private fun SourceRow(
     isTelevision: Boolean,
     onRescan: () -> Unit,
     onRemove: () -> Unit,
+    /** What the last Choose More Videos did, until the next scan. */
+    note: String?,
+    chooseMoreVideos: ChooseMoreVideosState,
 ) {
     val kind = SourceScanRules.kindOf(folder)
     val isRemote = kind?.isRemote == true
     val kindLabel = sourceKindLabel(kind)
     val statusMessage = if (isScanning) null else sourceStatusMessage(folder)
+    val isGoogleDrive = kind == MediaSourceKind.GOOGLE_DRIVE
+    val accountKey = folder.accountKey
+    val choosing = accountKey != null && chooseMoreVideos.choosingFor == accountKey
     val detail = if (isScanning) {
         stringResource(R.string.scanning)
     } else {
@@ -954,8 +970,24 @@ private fun SourceRow(
                 style = BodyCopyStyle(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            statusMessage?.let {
+            val status = if (choosing) stringResource(R.string.link_source_waiting, kindLabel) else statusMessage ?: note
+            status?.let {
                 Text(text = it, style = BodyCopyStyle(), color = EdendaleColors.Gold)
+            }
+            if (isGoogleDrive && isTelevision) {
+                Text(
+                    text = stringResource(R.string.gdrive_choose_on_another_device),
+                    style = BodyCopyStyle(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (isGoogleDrive && !isTelevision && accountKey != null) {
+                ArchiveButton(
+                    label = stringResource(if (choosing) R.string.action_cancel else R.string.gdrive_choose_more),
+                    iconRes = if (choosing) null else R.drawable.ic_plus,
+                    enabled = choosing || chooseMoreVideos.choosingFor == null,
+                    onClick = { if (choosing) chooseMoreVideos.cancel() else chooseMoreVideos.start(accountKey) },
+                )
             }
         }
         Spacer(Modifier.width(16.dp))

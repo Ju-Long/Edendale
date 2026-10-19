@@ -19,9 +19,10 @@ import java.io.IOException
 
 /**
  * Brings a linked account or saved server login from a phone to an Android
- * TV (I.2, Apple's `AccountHandoff`). Google's device sign-in can't grant
- * `drive.readonly` and Dropbox has none, so the TV asks a phone running
- * Edendale on the same network instead, device to device:
+ * TV (I.2, Apple's `AccountHandoff`). Google Drive videos are chosen in
+ * Google's picker, which a TV never opens, and Dropbox has no device
+ * sign-in, so the TV asks a phone running Edendale on the same network
+ * instead, device to device:
  *
  *    1. TV: Link Source → provider → Continue on a Phone registers
  *       `_edendale-handoff._tcp` with Network Service Discovery and shows a
@@ -38,7 +39,10 @@ import java.io.IOException
  * Messages are JSON behind a 4-byte big-endian length, at most 64 KiB, with
  * `"v": 1`; unknown versions and oversized frames close the connection.
  * Google allows 100 refresh tokens per account per client, so the TV reuses
- * the phone's token rather than minting another. Pure Kotlin.
+ * the phone's token rather than minting another. Google grants Drive picks
+ * per account, not per token, so a TV's token keeps seeing videos chosen
+ * later on any device; the TV links "Videos you chose" straight away, and a
+ * rescan there lists new picks. Pure Kotlin.
  */
 object AccountHandoff {
     /** The DNS-SD service type the TV registers. */

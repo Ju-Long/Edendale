@@ -3,6 +3,7 @@ package com.babasama.edendale.oauth
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.remote.LocalHttpServer
 import com.babasama.edendale.remote.OkHttpRemoteHttp
 import kotlinx.coroutines.async
@@ -18,11 +19,13 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * H.6.T1, Apple's `OAuthTests`: the RFC 7636 PKCE vector, each provider's
- * authorization URL, token and device-code responses (RFC 8628: pending,
- * slow_down, declined, expired), the single-flight refresh, and no token in
- * any string that could reach a log or URL. Token endpoints are a local
- * server; no real credential is used.
+ * H.6.T1 and H.9.T2, Apple's `OAuthTests`: the RFC 7636 PKCE vector, each
+ * provider's authorization URL (Google's with its picker), the redirect's
+ * code and picked files, token and device-code responses (RFC 8628: pending,
+ * slow_down, declined, expired), the single-flight refresh, Google's identity
+ * and scope checks, Choose More Videos keeping the newest refresh token, and
+ * no token in any string that could reach a log or URL. Token endpoints are a
+ * local server; no real credential is used.
  */
 class OAuthTest {
 
@@ -40,15 +43,6 @@ class OAuthTest {
         assertTrue(verifier.all { it.isLetterOrDigit() || it in "-._~" }, verifier)
         assertNotEquals(verifier, Pkce.makeVerifier())
         assertNotEquals(Pkce.makeState(), Pkce.makeState())
-    }
-
-    @Test
-    fun `decodes JWT claims`() {
-        val payload = Pkce.base64Url("""{"sub":"110169484474386276334","email":"me@example.com"}""".toByteArray())
-        val claims = decodeJwtClaims("eyJhbGciOiJSUzI1NiJ9.$payload.signature")!!
-        assertEquals("110169484474386276334", claims.claim("sub"))
-        assertEquals("me@example.com", claims.claim("email"))
-        assertNull(decodeJwtClaims("not-a-jwt"))
     }
 
     // MARK: - Authorization URLs
@@ -70,11 +64,11 @@ class OAuthTest {
         assertEquals("1234-abc.apps.googleusercontent.com", values["client_id"])
         assertEquals("code", values["response_type"])
         assertEquals(google.redirectUri, values["redirect_uri"])
-        assertEquals("openid email https://www.googleapis.com/auth/drive.readonly", values["scope"])
+        // drive.file alone: the picker flow allows no other scope (R1).
+        assertEquals("https://www.googleapis.com/auth/drive.file", values["scope"])
         assertEquals("state-1", values["state"])
         assertEquals("challenge-1", values["code_challenge"])
         assertEquals("S256", values["code_challenge_method"])
-        assertEquals("select_account", values["prompt"])
         // No client secret, ever.
         assertNull(values["client_secret"])
 
@@ -96,21 +90,85 @@ class OAuthTest {
     }
 
     @Test
+    fun `Google's sign-in opens the picker for videos, files only`() {
+        val google = CloudProviders.configuration(MediaSourceKind.GOOGLE_DRIVE, "1234-abc.apps.googleusercontent.com")!!
+        val values = query(OAuthClient(google, OkHttpRemoteHttp()).authorizationUrl("state-1", "challenge-1"))
+        // R2: offline access, consent with the account chooser on a first sign-in, and the picker.
+        assertEquals("offline", values["access_type"])
+        assertEquals("consent select_account", values["prompt"])
+        assertEquals("true", values["trigger_onepick"])
+        assertEquals("true", values["allow_multiple"])
+        // An explicit list: video/* leaves the picker empty (S6), and no filter lists every file type (S7).
+        assertEquals(
+            "video/mp4,video/x-matroska,video/quicktime,video/x-msvideo,video/webm,video/mp2t,video/mpeg,video/x-m4v,video/x-ms-wmv,video/3gpp",
+            values["mimetypes"],
+        )
+        assertTrue(values.getValue("mimetypes").split(',').none { it.endsWith("/*") })
+        // A picked folder never grants its contents (S5), so folders can't be picked.
+        assertNull(values["allow_folder_selection"])
+        assertNull(values["login_hint"])
+
+        // Choose More Videos: the same picker for the linked account, without the account chooser.
+        val more = query(
+            OAuthClient(google, OkHttpRemoteHttp()).authorizationUrl("state-2", "challenge-2", CloudProviders.googleChooseMoreParameters("me@example.com")),
+        )
+        assertEquals("consent", more["prompt"])
+        assertEquals("me@example.com", more["login_hint"])
+        assertEquals("true", more["trigger_onepick"])
+        assertEquals("true", more["allow_multiple"])
+        assertEquals("offline", more["access_type"])
+        assertEquals(values["mimetypes"], more["mimetypes"])
+        assertEquals("https://www.googleapis.com/auth/drive.file", more["scope"])
+        assertNull(more["allow_folder_selection"])
+        // An account without an email gets no hint.
+        assertEquals(mapOf("prompt" to "consent"), CloudProviders.googleChooseMoreParameters(null))
+        assertEquals(mapOf("prompt" to "consent"), CloudProviders.googleChooseMoreParameters(" "))
+
+        assertTrue(CloudProviders.hasDriveFileAccess(CloudProviders.GOOGLE_SCOPES))
+        assertTrue(!CloudProviders.hasDriveFileAccess(listOf("openid", "email", "https://www.googleapis.com/auth/drive.readonly")))
+    }
+
+    @Test
     fun `reads the authorization code only with the matching state`() {
         val kind = MediaSourceKind.ONE_DRIVE
-        assertEquals("abc", OAuthClient.authorizationCode("test.edendale://auth?code=abc&state=s1", "s1", kind))
+        assertEquals(
+            OAuthClient.AuthorizationResponse("abc"),
+            OAuthClient.authorizationResponse("test.edendale://auth?code=abc&state=s1", "s1", kind),
+        )
         assertEquals(OAuthFailure.StateMismatch, assertFailsWith<OAuthException> {
-            OAuthClient.authorizationCode("test.edendale://auth?code=abc&state=s1", "other", kind)
+            OAuthClient.authorizationResponse("test.edendale://auth?code=abc&state=s1", "other", kind)
         }.failure)
         assertEquals(OAuthFailure.AuthorizationDenied, assertFailsWith<OAuthException> {
-            OAuthClient.authorizationCode("test.edendale://auth?error=access_denied&state=s1", "s1", kind)
+            OAuthClient.authorizationResponse("test.edendale://auth?error=access_denied&state=s1", "s1", kind)
         }.failure)
         assertEquals(OAuthFailure.MissingAuthorizationCode, assertFailsWith<OAuthException> {
-            OAuthClient.authorizationCode("test.edendale://auth?state=s1", "s1", kind)
+            OAuthClient.authorizationResponse("test.edendale://auth?state=s1", "s1", kind)
         }.failure)
         assertEquals(OAuthFailure.Server("server_error", "Try later"), assertFailsWith<OAuthException> {
-            OAuthClient.authorizationCode("test.edendale://auth?error=server_error&error_description=Try+later&state=s1", "s1", kind)
+            OAuthClient.authorizationResponse("test.edendale://auth?error=server_error&error_description=Try+later&state=s1", "s1", kind)
         }.failure)
+    }
+
+    @Test
+    fun `reads the files picked in Google's picker from the redirect`() {
+        val kind = MediaSourceKind.GOOGLE_DRIVE
+        val base = "com.babasama.edendale:/oauth2redirect?state=s1&code=4%2F0Ab-x&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive.file" +
+            "&iss=https%3A%2F%2Faccounts.google.com"
+        // The comma arrives encoded, and the code is decoded too.
+        val picked = OAuthClient.authorizationResponse("$base&picked_file_ids=1AbC_d-9%2C2XyZ", "s1", kind)
+        assertEquals("4/0Ab-x", picked.code)
+        assertEquals(listOf("1AbC_d-9", "2XyZ"), picked.pickedFileIds)
+        assertEquals(listOf("1AbC_d-9", "2XyZ"), OAuthClient.authorizationResponse("$base&picked_file_ids=1AbC_d-9,2XyZ", "s1", kind).pickedFileIds)
+        assertEquals(listOf("only"), OAuthClient.authorizationResponse("$base&picked_file_ids=only", "s1", kind).pickedFileIds)
+        // Confirming without picking anything, or another provider's redirect, carries none.
+        assertEquals(emptyList<String>(), OAuthClient.authorizationResponse("$base&picked_file_ids=", "s1", kind).pickedFileIds)
+        assertEquals(emptyList<String>(), OAuthClient.authorizationResponse(base, "s1", kind).pickedFileIds)
+        // Cancelling in the picker or on the consent page changes nothing: it's a denial, before any code.
+        assertEquals(OAuthFailure.AuthorizationDenied, assertFailsWith<OAuthException> {
+            OAuthClient.authorizationResponse("com.babasama.edendale:/oauth2redirect?error=access_denied&state=s1", "s1", kind)
+        }.failure)
+        // The code never reaches a string that could be logged.
+        assertTrue("4/0Ab-x" !in picked.toString())
     }
 
     @Test
@@ -412,10 +470,106 @@ class OAuthTest {
         assertEquals(CloudProviders.Identity("user-9", "me@contoso.com", "Me", "drive-9"), identity)
         assertTrue(server.requests.all { it.header("Authorization") == "Bearer t" })
 
-        val payload = Pkce.base64Url("""{"sub":"g-1","email":"g@example.com","name":"G"}""".toByteArray())
-        assertEquals(
-            CloudProviders.Identity("g-1", "g@example.com", "G"),
-            CloudProviders.identity(MediaSourceKind.GOOGLE_DRIVE, OAuthTokens("t", idToken = "h.$payload.s"), http),
-        )
+    }
+
+    // MARK: - Google Drive (H.9.4)
+
+    /** Drive's API on a local server, answering `about.get` for [permissionId]. */
+    private fun googleServer(permissionId: String? = "perm-1", email: String = "g@example.com") = server { request ->
+        when (request.path) {
+            "/drive/v3/about" -> json(
+                if (permissionId == null) """{"user":{"emailAddress":"$email"}}"""
+                else """{"user":{"permissionId":"$permissionId","emailAddress":"$email","displayName":"G"}}""",
+            )
+            else -> LocalHttpServer.Response(404)
+        }
+    }
+
+    private fun googleHttp(server: LocalHttpServer) = com.babasama.edendale.connectors.RewritingHttp("www.googleapis.com", server.port)
+
+    private val googleConfiguration = CloudProviders.configuration(MediaSourceKind.GOOGLE_DRIVE, "client-123")!!
+
+    private fun googleTokens(scope: String? = "https://www.googleapis.com/auth/drive.file", refresh: String? = "refresh-new") =
+        OAuthTokens("access-new", 3600, refresh, scope = scope)
+
+    @Test
+    fun `Google's identity is Drive's permissionId from about`() = runBlocking {
+        val server = googleServer()
+        val identity = CloudProviders.identity(MediaSourceKind.GOOGLE_DRIVE, OAuthTokens("t"), googleHttp(server))
+        assertEquals(CloudProviders.Identity("perm-1", "g@example.com", "G"), identity)
+        val about = server.requests.single()
+        assertEquals("user(permissionId,emailAddress,displayName)", about.queryValue("fields")?.let(com.babasama.edendale.connectors.SourceUrl::decode))
+        assertEquals("Bearer t", about.header("Authorization"))
+
+        val noId = googleServer(permissionId = null)
+        assertEquals(OAuthFailure.MalformedResponse, assertFailsWith<OAuthException> {
+            runBlocking { CloudProviders.identity(MediaSourceKind.GOOGLE_DRIVE, OAuthTokens("t"), googleHttp(noId)) }
+        }.failure)
+    }
+
+    @Test
+    fun `a Google sign-in is stored only with drive file access`() = runBlocking {
+        val server = googleServer()
+        val http = googleHttp(server)
+        val vault = CloudAccountVault(com.babasama.edendale.connectors.MemorySecretStore())
+        val tokens = CloudTokenProvider(vault, http, { googleConfiguration })
+
+        val account = CloudSignIn.store(MediaSourceKind.GOOGLE_DRIVE, googleConfiguration, googleTokens(), http, vault, tokens)
+        assertEquals("perm-1", account.subject)
+        assertEquals(SourceUrl.accountKey(MediaSourceKind.GOOGLE_DRIVE, "perm-1"), account.key)
+        assertEquals("g@example.com", account.email)
+        assertEquals(listOf("https://www.googleapis.com/auth/drive.file"), account.scopes)
+        assertEquals(account, vault.account(MediaSourceKind.GOOGLE_DRIVE, account.key))
+        assertEquals("access-new", tokens.cachedToken(MediaSourceKind.GOOGLE_DRIVE, account.key))
+
+        // The consent page let the viewer untick Drive access: nothing is stored, and Google isn't asked who it is.
+        val fresh = CloudAccountVault(com.babasama.edendale.connectors.MemorySecretStore())
+        val before = server.requests.size
+        assertEquals(OAuthFailure.DriveAccessNotGranted, assertFailsWith<OAuthException> {
+            runBlocking { CloudSignIn.store(MediaSourceKind.GOOGLE_DRIVE, googleConfiguration, googleTokens(scope = "openid email"), http, fresh, tokens) }
+        }.failure)
+        assertTrue(fresh.all().isEmpty())
+        assertEquals(before, server.requests.size)
+        // No refresh token means no lasting access.
+        assertEquals(OAuthFailure.MalformedResponse, assertFailsWith<OAuthException> {
+            runBlocking { CloudSignIn.store(MediaSourceKind.GOOGLE_DRIVE, googleConfiguration, googleTokens(refresh = null), http, fresh, tokens) }
+        }.failure)
+        assertTrue(fresh.all().isEmpty())
+    }
+
+    @Test
+    fun `Choose More Videos keeps the newest refresh token and revokes nothing`() = runBlocking {
+        val server = googleServer()
+        val http = googleHttp(server)
+        val vault = CloudAccountVault(com.babasama.edendale.connectors.MemorySecretStore())
+        val tokens = CloudTokenProvider(vault, http, { googleConfiguration })
+        val linked = CloudAccount(MediaSourceKind.GOOGLE_DRIVE, "perm-1", "old@example.com", "Old", "refresh-old", CloudProviders.GOOGLE_SCOPES)
+        vault.save(linked)
+
+        val updated = CloudSignIn.storeChosenVideos(linked, googleConfiguration, googleTokens(), http, vault, tokens)
+        assertEquals("refresh-new", updated.refreshToken)
+        assertEquals("g@example.com", updated.email)
+        assertEquals(linked.key, updated.key)
+        assertEquals("refresh-new", vault.account(MediaSourceKind.GOOGLE_DRIVE, linked.key)?.refreshToken)
+        assertEquals("access-new", tokens.cachedToken(MediaSourceKind.GOOGLE_DRIVE, linked.key))
+        // Google's revoke would end the whole grant, the new token and every TV's included.
+        assertTrue(server.requests.none { it.path.contains("revoke") })
+
+        // A run without a refresh token keeps the one stored.
+        val kept = CloudSignIn.storeChosenVideos(updated, googleConfiguration, googleTokens(refresh = null), http, vault, tokens)
+        assertEquals("refresh-new", kept.refreshToken)
+
+        // Choosing as another Google account stores nothing and says which account to use.
+        val other = googleServer(permissionId = "perm-2", email = "other@example.com")
+        val failure = assertFailsWith<OAuthException> {
+            runBlocking { CloudSignIn.storeChosenVideos(kept, googleConfiguration, googleTokens(), googleHttp(other), vault, tokens) }
+        }.failure
+        assertEquals(OAuthFailure.DifferentAccount("other@example.com", "g@example.com"), failure)
+        assertEquals(listOf(kept), vault.all())
+        // Unticking Drive access stores nothing either.
+        assertEquals(OAuthFailure.DriveAccessNotGranted, assertFailsWith<OAuthException> {
+            runBlocking { CloudSignIn.storeChosenVideos(kept, googleConfiguration, googleTokens(scope = "openid"), http, vault, tokens) }
+        }.failure)
+        assertEquals(listOf(kept), vault.all())
     }
 }

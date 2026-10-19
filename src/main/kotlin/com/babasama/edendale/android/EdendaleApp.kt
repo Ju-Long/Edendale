@@ -114,6 +114,8 @@ fun EdendaleApp(
         navigationItem = NavigationItem.of(tab)
     }
     val context = LocalContext.current
+    // Once, after the move to drive.file removed old Google Drive accounts or sources (H.9.4, D20).
+    GoogleDriveRelinkNotice(isTelevision = isTelevision)
 
     // The Watchlist tab appears only while the list holds a title. Its refs are
     // verified here (not just on the tab) so a fully filtered-out watchlist can

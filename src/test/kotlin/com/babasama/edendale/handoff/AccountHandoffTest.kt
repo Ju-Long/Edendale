@@ -36,13 +36,15 @@ import kotlin.test.assertTrue
  * J-PAKE handshake agrees a key and fails on a wrong code before any payload,
  * the AES-GCM channel refuses tampering and replay, a whole exchange runs over
  * a loopback socket, and an account whose token fails to refresh is refused
- * rather than stored.
+ * rather than stored, as is a Google account from before `drive.file`
+ * (H.9.4, D20).
  */
 class AccountHandoffTest {
 
+    // A drive.file account: its subject is Drive's permissionId (H.9.4).
     private val account = CloudAccount(
         kind = MediaSourceKind.GOOGLE_DRIVE,
-        subject = "110169484474386276334",
+        subject = "01234567890123456789",
         email = "me@example.com",
         displayName = "Me",
         refreshToken = "refresh-token",
@@ -391,5 +393,39 @@ class AccountHandoffTest {
         // The access token the refresh produced is cached: the next listing needs no second refresh.
         assertEquals("a", tokens.cachedToken(MediaSourceKind.GOOGLE_DRIVE, account.key))
         assertIs<CloudAccount>(adopted)
+    }
+
+    @Test
+    fun `refuses a Google account from a phone that still has drive readonly`() {
+        // The token would still refresh, but "Videos you chose" would then list all of Drive (D20).
+        val server = tokenServer { LocalHttpServer.Response(200, mapOf("Content-Type" to "application/json"), """{"access_token":"a","expires_in":3600}""".toByteArray()) }
+        val vault = CloudAccountVault(MemoryStore())
+        val http = OkHttpRemoteHttp()
+        val tokens = CloudTokenProvider(vault, http, { configuration(server) })
+        val old = account.copy(subject = "110169484474386276334", scopes = listOf("openid", "email", "https://www.googleapis.com/auth/drive.readonly"))
+        val rejected = assertFailsWith<HandoffException.Rejected> {
+            runBlocking {
+                adoptHandedOffAccount(old, configuration(server), http, vault, tokens) {
+                    if (it.failure == com.babasama.edendale.oauth.OAuthFailure.DriveAccessNotGranted) "needs drive.file" else "other"
+                }
+            }
+        }
+        assertEquals("needs drive.file", rejected.reason)
+        assertTrue(vault.all().isEmpty())
+        // Refused before the token is tried, so nothing reached Google.
+        assertTrue(server.requests.isEmpty())
+        // Other providers' accounts don't carry Drive scopes and aren't affected.
+        val oneDrive = old.copy(kind = MediaSourceKind.ONE_DRIVE, scopes = CloudProviders.ONE_DRIVE_SCOPES)
+        val oneDriveConfiguration = configuration(server).copy(kind = MediaSourceKind.ONE_DRIVE)
+        runBlocking { adoptHandedOffAccount(oneDrive, oneDriveConfiguration, http, vault, tokens) }
+        assertEquals(listOf(MediaSourceKind.ONE_DRIVE), vault.all().map { it.kind })
+    }
+
+    @Test
+    fun `a TV can't sign in to Google Drive on its own`() {
+        // Choosing videos needs Google's picker, which a TV never opens; the account comes from a phone (R10).
+        assertFalse(CloudProviders.supportsDeviceCode(MediaSourceKind.GOOGLE_DRIVE))
+        assertNull(CloudProviders.configuration(MediaSourceKind.GOOGLE_DRIVE, "client")?.deviceAuthorizationEndpoint)
+        assertTrue(CloudProviders.supportsDeviceCode(MediaSourceKind.ONE_DRIVE))
     }
 }

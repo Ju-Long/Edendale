@@ -7,5 +7,6 @@
     <exclude domain="sharedpref" path="edendale_ssh_host_keys.xml" />
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
     <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
+    <exclude domain="sharedpref" path="edendale_google_drive.xml" />
     <exclude domain="sharedpref" path="edendale_wyzie.xml" />
 </full-backup-content>

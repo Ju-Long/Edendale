@@ -7,6 +7,7 @@
         <exclude domain="sharedpref" path="edendale_ssh_host_keys.xml" />
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
         <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
+        <exclude domain="sharedpref" path="edendale_google_drive.xml" />
         <exclude domain="sharedpref" path="edendale_wyzie.xml" />
     </cloud-backup>
     <device-transfer>
@@ -16,6 +17,7 @@
         <exclude domain="sharedpref" path="edendale_ssh_host_keys.xml" />
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
         <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
+        <exclude domain="sharedpref" path="edendale_google_drive.xml" />
         <exclude domain="sharedpref" path="edendale_wyzie.xml" />
     </device-transfer>
 </data-extraction-rules>
