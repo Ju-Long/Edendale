@@ -15,6 +15,7 @@ Read [README.md](README.md) for the product and branch model, and
 | `main` | Universal documentation and repository metadata |
 | `apple` | Apple implementation and delivery |
 | `android` | Android implementation and delivery |
+| `meta-horizon` | The Android app packaged for Meta Quest headsets (Horizon OS) and its Meta Horizon Store delivery; downstream of `android` |
 | `windows` | Windows implementation and delivery |
 | `web` | Static Web implementation and delivery |
 

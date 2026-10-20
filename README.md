@@ -32,6 +32,7 @@ platform's implementation.
 | `main` | Universal documentation and repository metadata only |
 | `apple` | Apple application and Apple-specific delivery |
 | `android` | Android application and Android-specific delivery |
+| `meta-horizon` | The Android app packaged for Meta Quest headsets (Horizon OS) and its Meta Horizon Store delivery; downstream of `android` |
 | `windows` | Windows application and Windows-specific delivery |
 | `web` | Static website and Web-specific delivery |
 
