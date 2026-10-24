@@ -8,6 +8,8 @@ import {
   type LocalePath,
   type UIKey,
 } from "../../i18n/utils.ts";
+import appStoreBadge from "../../assets/badges/app-store-black.svg";
+import microsoftStoreIcon from "../../assets/badges/microsoft-store.png";
 
 /**
  * One source file, one page per language, plus the automatic entry point.
@@ -45,6 +47,44 @@ const closingTitle = lines(t("closing.title"));
 const networkSources = ["SMB", "NFS", "SFTP", "WebDAV"];
 const cloudSources = ["Google Drive", "OneDrive", "Dropbox", "S3"];
 
+// Store pages, without the share-link campaign parameters, so the site never
+// tags a visitor on the way out. The App Store URL names no storefront, so
+// Apple sends each visitor to their own country's store.
+const stores = {
+  appStore: "https://apps.apple.com/app/edendale/id6789041949",
+  microsoftStore: "https://apps.microsoft.com/detail/9nnr79q8bztn",
+  // Android is in closed testing: a Google account joins the tester group,
+  // opts in on the testing page, and only then can see the Play listing.
+  testerGroup: "https://groups.google.com/g/edendale-closed-testers",
+  testerGroupAddress: "edendale-closed-testers@googlegroups.com",
+  playTesting: "https://play.google.com/apps/testing/com.babasama.edendale",
+  playListing: "https://play.google.com/store/apps/details?id=com.babasama.edendale",
+};
+
+const betaSteps: readonly { title: UIKey; body: UIKey; cta: UIKey; href: string; icon: string }[] = [
+  {
+    title: "beta.groupTitle",
+    body: "beta.groupBody",
+    cta: "beta.groupCta",
+    href: stores.testerGroup,
+    icon: "fa-solid fa-users",
+  },
+  {
+    title: "beta.optInTitle",
+    body: "beta.optInBody",
+    cta: "beta.optInCta",
+    href: stores.playTesting,
+    icon: "fa-solid fa-user-check",
+  },
+  {
+    title: "beta.installTitle",
+    body: "beta.installBody",
+    cta: "beta.installCta",
+    href: stores.playListing,
+    icon: "fa-brands fa-google-play",
+  },
+];
+
 const playerFeatures: readonly { icon: string; title: UIKey; body: UIKey }[] = [
   { icon: "fa-forward", title: "player.skipTitle", body: "player.skipBody" },
   { icon: "fa-forward-step", title: "player.nextTitle", body: "player.nextBody" },
@@ -75,14 +115,14 @@ const playerFeatures: readonly { icon: string; title: UIKey; body: UIKey }[] = [
         </h1>
         <p class="hero-lede">{t("hero.lede")}</p>
         <div class="button-row">
-          <a class="button button-primary" href="https://github.com/Ju-Long/Edendale">
+          <a class="button button-primary" href="#download">
+            {t("hero.ctaDownload")}
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </a>
+          <a class="button button-secondary" href="https://github.com/Ju-Long/Edendale">
             <i class="fa-brands fa-github" aria-hidden="true"></i>
             {t("hero.ctaSource")}
             <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
-          </a>
-          <a class="button button-secondary" href="#platforms">
-            {t("hero.ctaExplore")}
-            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           </a>
         </div>
         <ul class="trust-list" aria-label={t("hero.trustAria")}>
@@ -263,11 +303,11 @@ const playerFeatures: readonly { icon: string; title: UIKey; body: UIKey }[] = [
       </div>
     </section>
 
-    <section class="native-section" id="platforms" aria-labelledby="platforms-title">
+    <section class="native-section" id="download" aria-labelledby="download-title">
       <div class="section-shell native-grid">
         <div class="section-intro">
           <p class="eyebrow"><span></span> {t("platforms.eyebrow")}</p>
-          <h2 id="platforms-title">
+          <h2 id="download-title">
             {platformsTitle.map((line, index) => (
               <Fragment>{index > 0 && <br />}{line}</Fragment>
             ))}
@@ -279,25 +319,92 @@ const playerFeatures: readonly { icon: string; title: UIKey; body: UIKey }[] = [
             <span class="platform-monogram" aria-hidden="true">
               <i class="fa-brands fa-apple"></i>
             </span>
-            <div><h3>Apple</h3><p>{t("platforms.appleDevices")}</p></div>
-            <span class="platform-tech">SwiftUI</span>
+            <div>
+              <h3>Apple</h3>
+              <p>{t("platforms.appleDevices")}</p>
+              <p class="platform-tech">SwiftUI</p>
+            </div>
+            <a class="store-link" href={stores.appStore}>
+              <img
+                class="store-badge-image"
+                src={appStoreBadge.src}
+                width={appStoreBadge.width}
+                height={appStoreBadge.height}
+                alt={t("platforms.appStoreAlt")}
+              />
+            </a>
           </article>
           <article>
             <span class="platform-monogram" aria-hidden="true">
               <i class="fa-brands fa-android"></i>
             </span>
-            <div><h3>Android</h3><p>{t("platforms.androidDevices")}</p></div>
-            <span class="platform-tech">Jetpack Compose</span>
+            <div>
+              <div class="platform-name">
+                <h3>Android</h3>
+                <span class="platform-status">{t("platforms.betaBadge")}</span>
+              </div>
+              <p>{t("platforms.androidDevices")}</p>
+              <p class="platform-tech">Jetpack Compose</p>
+            </div>
+            <a class="button button-secondary store-link" href="#android-beta">
+              {t("platforms.betaCta")}
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </a>
           </article>
           <article>
             <span class="platform-monogram" aria-hidden="true">
               <i class="fa-brands fa-windows"></i>
             </span>
-            <div><h3>Windows</h3><p>{t("platforms.windowsDevices")}</p></div>
-            <span class="platform-tech">C# · WinUI</span>
+            <div>
+              <h3>Windows</h3>
+              <p>{t("platforms.windowsDevices")}</p>
+              <p class="platform-tech">C# · WinUI</p>
+            </div>
+            <a class="store-link store-badge" href={stores.microsoftStore}>
+              <img src={microsoftStoreIcon.src} alt="" width="28" height="28" />
+              <span>
+                <small>{t("platforms.microsoftStoreLead")}</small>{" "}
+                <strong>Microsoft Store</strong>
+              </span>
+            </a>
           </article>
         </div>
       </div>
+
+      <section
+        class="section-shell beta-panel"
+        id="android-beta"
+        aria-labelledby="android-beta-title"
+      >
+        <div class="beta-intro">
+          <span class="platform-monogram" aria-hidden="true">
+            <i class="fa-brands fa-android"></i>
+          </span>
+          <div>
+            <h3 id="android-beta-title">{t("beta.title")}</h3>
+            <p>{t("beta.lede")}</p>
+          </div>
+        </div>
+        <ol class="beta-steps">
+          {
+            betaSteps.map((step, index) => (
+              <li class="beta-step">
+                <span class="feature-number" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h4>{t(step.title)}</h4>
+                <p>{t(step.body)}</p>
+                {index === 0 && <p class="beta-address">{stores.testerGroupAddress}</p>}
+                <a class="button button-secondary" href={step.href}>
+                  <i class={step.icon} aria-hidden="true"></i>
+                  {t(step.cta)}
+                  <i class="fa-solid fa-arrow-up-right-from-square icon-external" aria-hidden="true"></i>
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
     </section>
 
     <section class="section-shell closing-section" aria-labelledby="closing-title">

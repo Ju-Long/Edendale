@@ -140,6 +140,14 @@
   --fa: "\f1de";
 }
 
+.fa-user-check {
+  --fa: "\f4fc";
+}
+
+.fa-users {
+  --fa: "\f0c0";
+}
+
 .fa-wand-magic-sparkles {
   --fa: "\e2ca";
 }
@@ -154,6 +162,10 @@
 
 .fa-github {
   --fa: "\f09b";
+}
+
+.fa-google-play {
+  --fa: "\f3ab";
 }
 
 .fa-windows {
@@ -174,6 +186,11 @@
   --line: rgb(255 255 255 / 9%);
   --line-gold: rgb(244 190 93 / 28%);
   --glow: rgb(244 190 93 / 16%);
+  /* Store badges keep the stores' own artwork colors, not the site palette:
+     Apple's badge is a black field inside a grey hairline with white type. */
+  --badge-ink: #000;
+  --badge-edge: #a6a6a6;
+  --badge-text: #fff;
   --page: min(1180px, calc(100vw - 40px));
   --display: "Bebas Neue", Impact, sans-serif;
   --display-scale: 1;
@@ -948,9 +965,10 @@ h2 {
 .platform-list article {
   display: grid;
   min-height: 106px;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 20px;
   align-items: center;
+  padding-block: 18px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -985,10 +1003,174 @@ h2 {
   font-size: 21px;
 }
 
-.platform-tech {
-  justify-self: end;
+.platform-list .platform-tech {
+  margin-top: 6px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.platform-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.platform-status {
+  padding: 3px 9px;
+  border: 1px solid var(--line-gold);
+  border-radius: 999px;
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+/* Store actions ---------------------------------------------------------- */
+
+.store-link {
+  justify-self: end;
+  transition: transform 160ms ease;
+}
+
+.store-link:hover {
+  transform: translateY(-2px);
+}
+
+.store-badge-image {
+  width: auto;
+  height: 48px;
+}
+
+/* Drawn to sit beside Apple's badge: same height, field, edge, and corner. */
+.store-badge {
+  display: inline-flex;
+  height: 48px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 0 11px;
+  border: 1px solid var(--badge-edge);
+  border-radius: 10px;
+  background: var(--badge-ink);
+  color: var(--badge-text);
+  white-space: nowrap;
+}
+
+.store-badge img {
+  width: 28px;
+  height: 28px;
+}
+
+.store-badge > span {
+  display: grid;
+  line-height: 1.08;
+}
+
+.store-badge small {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.store-badge strong {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Android closed beta ---------------------------------------------------- */
+
+.beta-panel {
+  margin-top: clamp(56px, 7vw, 84px);
+  padding: clamp(24px, 3vw, 36px);
+  border: 1px solid var(--line-gold);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0% 0%, rgb(244 190 93 / 10%), transparent 24rem),
+    var(--ink-raised);
+}
+
+.beta-intro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.beta-intro h3 {
+  margin: 4px 0 10px;
+  font-family: var(--display);
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.beta-intro p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.beta-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.beta-step {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(20px, 2.4vw, 26px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 2%);
+}
+
+.beta-step h4 {
+  margin: 14px 0 8px;
+  font-family: var(--display);
+  font-size: clamp(22px, 2vw, 26px);
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.beta-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.beta-step .beta-address {
+  max-width: 100%;
+  margin-top: 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 3%);
+  color: var(--cream);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.beta-step .button {
+  margin-top: auto;
+}
+
+.beta-step > p:last-of-type {
+  margin-bottom: 24px;
 }
 
 .closing-section {
@@ -1534,6 +1716,10 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .beta-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .source-grid,
   .player-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1702,11 +1888,16 @@ h2 {
   }
 
   .platform-list article {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .platform-tech {
-    display: none;
+  .store-link {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .beta-intro {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .closing-section {
@@ -1742,6 +1933,7 @@ h2 {
   }
 
   .button,
+  .store-link,
   .site-header nav a,
   .policy-toc a,
   :is(.policy-translation, .prose) a {
@@ -1846,7 +2038,9 @@ html[data-typeface="cjk"]
     .feature-card h3,
     .source-card h3,
     .player-card h3,
-    .source-access h3
+    .source-access h3,
+    .beta-intro h3,
+    .beta-step h4
   ) {
   font-family: var(--display-cjk);
   font-weight: 700;
@@ -1863,12 +2057,21 @@ html[data-typeface="cjk"] :is(.source-card h3, .player-card h3, .source-access h
   font-size: clamp(18px, 1.8vw, 22px);
 }
 
+html[data-typeface="cjk"] .beta-intro h3 {
+  font-size: clamp(20px, 2.2vw, 26px);
+}
+
+html[data-typeface="cjk"] .beta-step h4 {
+  font-size: clamp(17px, 1.6vw, 20px);
+}
+
 html[data-typeface="cjk"]
   :is(
     .brand small,
     .eyebrow,
     .window-status,
     .window-heading strong,
+    .platform-status,
     .feature-caption p,
     .policy-meta,
     .policy-toc > p

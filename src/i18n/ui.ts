@@ -31,7 +31,7 @@ const en = {
   "chrome.brandTagline": "Personal cinema",
   "chrome.navAria": "Primary navigation",
   "chrome.navFeatures": "Features",
-  "chrome.navPlatforms": "Platforms",
+  "chrome.navDownload": "Download",
   "chrome.navPrivacy": "Privacy",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Your stories stay yours.",
@@ -47,7 +47,7 @@ const en = {
   "hero.lede":
     "Edendale turns the movies and shows you already own into a beautiful personal archive—without turning your viewing habits into somebody else’s data.",
   "hero.ctaSource": "View on GitHub",
-  "hero.ctaExplore": "Explore the apps",
+  "hero.ctaDownload": "Get Edendale",
   "hero.trustAria": "Edendale principles",
   "hero.trustLocal": "Local-first library",
   "hero.trustAnalytics": "No analytics",
@@ -130,13 +130,33 @@ const en = {
   "player.controlsBody":
     "Set how far skips jump and how fast a press-and-hold plays, with touch, keyboard, mouse, or remote.",
 
-  "platforms.eyebrow": "Native where it matters",
+  "platforms.eyebrow": "Free on every platform",
   "platforms.title": "At home on\nevery screen.",
   "platforms.lede":
-    "Each Edendale app is built in the language and interface toolkit of its platform. Familiar controls, thoughtful performance, no shared web shell.",
+    "Each Edendale app is built in the language and interface toolkit of its platform. Familiar controls, thoughtful performance, no shared web shell. Get it free from your platform’s store.",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "Phones · tablets · large screens",
   "platforms.windowsDevices": "A focused desktop archive",
+  "platforms.appStoreAlt": "Download on the App Store",
+  "platforms.microsoftStoreLead": "Get it from",
+  "platforms.betaBadge": "Closed beta",
+  "platforms.betaCta": "Join the beta",
+
+  "beta.title": "Join the Android beta",
+  "beta.lede":
+    "Edendale for Android is in closed testing on Google Play. Use the same Google account for every step: the one signed in to Google Play on your phone or tablet.",
+  "beta.groupTitle": "Join the tester group",
+  "beta.groupBody":
+    "Joining this Google Group is what gives your account access to the test.",
+  "beta.groupCta": "Join the group",
+  "beta.optInTitle": "Become a tester",
+  "beta.optInBody":
+    "Open Edendale’s testing page on Google Play and accept the invitation.",
+  "beta.optInCta": "Open the testing page",
+  "beta.installTitle": "Install from Google Play",
+  "beta.installBody":
+    "Edendale then appears in Google Play on your Android devices. Access can take a few minutes to arrive.",
+  "beta.installCta": "Open Google Play",
 
   "closing.eyebrow": "The lights are coming up",
   "closing.title": "Make your collection\nfeel like yours again.",
@@ -188,7 +208,7 @@ const es: Dictionary = {
   "chrome.brandTagline": "Cine personal",
   "chrome.navAria": "Navegación principal",
   "chrome.navFeatures": "Funciones",
-  "chrome.navPlatforms": "Plataformas",
+  "chrome.navDownload": "Descargar",
   "chrome.navPrivacy": "Privacidad",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Tus historias siguen siendo tuyas.",
@@ -205,7 +225,7 @@ const es: Dictionary = {
   "hero.lede":
     "Edendale convierte las películas y series que ya tienes en un archivo personal precioso, sin convertir lo que ves en los datos de otra persona.",
   "hero.ctaSource": "Ver en GitHub",
-  "hero.ctaExplore": "Explorar las apps",
+  "hero.ctaDownload": "Consigue Edendale",
   "hero.trustAria": "Principios de Edendale",
   "hero.trustLocal": "Biblioteca local primero",
   "hero.trustAnalytics": "Sin analíticas",
@@ -289,13 +309,33 @@ const es: Dictionary = {
   "player.controlsBody":
     "Decide cuánto avanza cada salto y a qué velocidad se reproduce al mantener pulsado, con pantalla táctil, teclado, ratón o mando.",
 
-  "platforms.eyebrow": "Nativa donde importa",
+  "platforms.eyebrow": "Gratis en cada plataforma",
   "platforms.title": "Como en casa en\ncada pantalla.",
   "platforms.lede":
-    "Cada app de Edendale se crea con el lenguaje y el kit de interfaz de su plataforma. Controles familiares, buen rendimiento y ninguna capa web compartida.",
+    "Cada app de Edendale se crea con el lenguaje y el kit de interfaz de su plataforma. Controles familiares, buen rendimiento y ninguna capa web compartida. Descárgala gratis en la tienda de tu plataforma.",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "Móviles · tablets · pantallas grandes",
   "platforms.windowsDevices": "Un archivo de escritorio enfocado",
+  "platforms.appStoreAlt": "Descárgalo en el App Store",
+  "platforms.microsoftStoreLead": "Consíguelo en",
+  "platforms.betaBadge": "Beta cerrada",
+  "platforms.betaCta": "Únete a la beta",
+
+  "beta.title": "Únete a la beta de Android",
+  "beta.lede":
+    "Edendale para Android está en pruebas cerradas en Google Play. Usa la misma cuenta de Google en cada paso: la que tienes iniciada en Google Play en tu móvil o tablet.",
+  "beta.groupTitle": "Únete al grupo de pruebas",
+  "beta.groupBody":
+    "Unirte a este grupo de Google es lo que da a tu cuenta acceso a la prueba.",
+  "beta.groupCta": "Unirme al grupo",
+  "beta.optInTitle": "Conviértete en tester",
+  "beta.optInBody":
+    "Abre la página de pruebas de Edendale en Google Play y acepta la invitación.",
+  "beta.optInCta": "Abrir la página de pruebas",
+  "beta.installTitle": "Instala desde Google Play",
+  "beta.installBody":
+    "Después, Edendale aparecerá en Google Play en tus dispositivos Android. El acceso puede tardar unos minutos.",
+  "beta.installCta": "Abrir Google Play",
 
   "closing.eyebrow": "Se encienden las luces",
   "closing.title": "Haz que tu colección\nvuelva a sentirse tuya.",
@@ -344,7 +384,7 @@ const fr: Dictionary = {
   "chrome.brandTagline": "Cinéma personnel",
   "chrome.navAria": "Navigation principale",
   "chrome.navFeatures": "Fonctionnalités",
-  "chrome.navPlatforms": "Plateformes",
+  "chrome.navDownload": "Télécharger",
   "chrome.navPrivacy": "Confidentialité",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Vos histoires restent les vôtres.",
@@ -361,7 +401,7 @@ const fr: Dictionary = {
   "hero.lede":
     "Edendale transforme les films et séries que vous possédez déjà en une superbe archive personnelle, sans transformer vos habitudes de visionnage en données pour quelqu’un d’autre.",
   "hero.ctaSource": "Voir sur GitHub",
-  "hero.ctaExplore": "Découvrir les apps",
+  "hero.ctaDownload": "Obtenir Edendale",
   "hero.trustAria": "Principes d’Edendale",
   "hero.trustLocal": "Bibliothèque locale d’abord",
   "hero.trustAnalytics": "Aucune analyse",
@@ -445,13 +485,33 @@ const fr: Dictionary = {
   "player.controlsBody":
     "Réglez la durée des sauts et la vitesse d’un appui prolongé, au toucher, au clavier, à la souris ou à la télécommande.",
 
-  "platforms.eyebrow": "Native là où ça compte",
+  "platforms.eyebrow": "Gratuit sur chaque plateforme",
   "platforms.title": "À l’aise sur\nchaque écran.",
   "platforms.lede":
-    "Chaque app Edendale est écrite dans le langage et la boîte à outils d’interface de sa plateforme. Des commandes familières, des performances soignées, aucune coque web partagée.",
+    "Chaque app Edendale est écrite dans le langage et la boîte à outils d’interface de sa plateforme. Des commandes familières, des performances soignées, aucune coque web partagée. Téléchargez-la gratuitement sur la boutique de votre plateforme.",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "Téléphones · tablettes · grands écrans",
   "platforms.windowsDevices": "Une archive de bureau épurée",
+  "platforms.appStoreAlt": "Télécharger dans l’App Store",
+  "platforms.microsoftStoreLead": "Disponible sur",
+  "platforms.betaBadge": "Bêta fermée",
+  "platforms.betaCta": "Rejoindre la bêta",
+
+  "beta.title": "Rejoindre la bêta Android",
+  "beta.lede":
+    "Edendale pour Android est en test fermé sur Google Play. Utilisez le même compte Google à chaque étape : celui connecté à Google Play sur votre téléphone ou votre tablette.",
+  "beta.groupTitle": "Rejoindre le groupe de testeurs",
+  "beta.groupBody":
+    "C’est l’adhésion à ce groupe Google qui donne à votre compte l’accès au test.",
+  "beta.groupCta": "Rejoindre le groupe",
+  "beta.optInTitle": "Devenir testeur",
+  "beta.optInBody":
+    "Ouvrez la page de test d’Edendale sur Google Play et acceptez l’invitation.",
+  "beta.optInCta": "Ouvrir la page de test",
+  "beta.installTitle": "Installer depuis Google Play",
+  "beta.installBody":
+    "Edendale apparaît ensuite dans Google Play sur vos appareils Android. L’accès peut prendre quelques minutes.",
+  "beta.installCta": "Ouvrir Google Play",
 
   "closing.eyebrow": "Les lumières se rallument",
   "closing.title": "Que votre collection\nredevienne la vôtre.",
@@ -501,7 +561,7 @@ const de: Dictionary = {
   "chrome.brandTagline": "Persönliches Kino",
   "chrome.navAria": "Hauptnavigation",
   "chrome.navFeatures": "Funktionen",
-  "chrome.navPlatforms": "Plattformen",
+  "chrome.navDownload": "Download",
   "chrome.navPrivacy": "Datenschutz",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Deine Geschichten bleiben deine.",
@@ -518,7 +578,7 @@ const de: Dictionary = {
   "hero.lede":
     "Edendale macht aus den Filmen und Serien, die du bereits besitzt, ein schönes persönliches Archiv – ohne dein Sehverhalten zu den Daten anderer zu machen.",
   "hero.ctaSource": "Auf GitHub ansehen",
-  "hero.ctaExplore": "Apps entdecken",
+  "hero.ctaDownload": "Edendale laden",
   "hero.trustAria": "Grundsätze von Edendale",
   "hero.trustLocal": "Lokale Mediathek zuerst",
   "hero.trustAnalytics": "Keine Analysen",
@@ -603,13 +663,33 @@ const de: Dictionary = {
   "player.controlsBody":
     "Lege fest, wie weit Sprünge reichen und wie schnell langes Drücken abspielt – per Touch, Tastatur, Maus oder Fernbedienung.",
 
-  "platforms.eyebrow": "Nativ, wo es zählt",
+  "platforms.eyebrow": "Kostenlos auf jeder Plattform",
   "platforms.title": "Zu Hause auf\njedem Bildschirm.",
   "platforms.lede":
-    "Jede Edendale-App entsteht in der Sprache und dem Oberflächen-Toolkit ihrer Plattform. Vertraute Bedienung, durchdachte Leistung, keine gemeinsame Web-Hülle.",
+    "Jede Edendale-App entsteht in der Sprache und dem Oberflächen-Toolkit ihrer Plattform. Vertraute Bedienung, durchdachte Leistung, keine gemeinsame Web-Hülle. Lade sie kostenlos im Store deiner Plattform.",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "Smartphones · Tablets · große Bildschirme",
   "platforms.windowsDevices": "Ein fokussiertes Desktop-Archiv",
+  "platforms.appStoreAlt": "Laden im App Store",
+  "platforms.microsoftStoreLead": "Erhältlich im",
+  "platforms.betaBadge": "Geschlossene Beta",
+  "platforms.betaCta": "Zur Beta",
+
+  "beta.title": "An der Android-Beta teilnehmen",
+  "beta.lede":
+    "Edendale für Android ist bei Google Play im geschlossenen Test. Verwende bei jedem Schritt dasselbe Google-Konto – das, mit dem du auf deinem Smartphone oder Tablet bei Google Play angemeldet bist.",
+  "beta.groupTitle": "Der Testgruppe beitreten",
+  "beta.groupBody":
+    "Erst die Mitgliedschaft in dieser Google-Gruppe gibt deinem Konto Zugang zum Test.",
+  "beta.groupCta": "Gruppe beitreten",
+  "beta.optInTitle": "Tester werden",
+  "beta.optInBody":
+    "Öffne die Testseite von Edendale bei Google Play und nimm die Einladung an.",
+  "beta.optInCta": "Testseite öffnen",
+  "beta.installTitle": "Über Google Play installieren",
+  "beta.installBody":
+    "Danach erscheint Edendale in Google Play auf deinen Android-Geräten. Bis der Zugang ankommt, kann es einige Minuten dauern.",
+  "beta.installCta": "Google Play öffnen",
 
   "closing.eyebrow": "Das Licht geht an",
   "closing.title": "Lass deine Sammlung\nwieder wie deine wirken.",
@@ -659,7 +739,7 @@ const ptBR: Dictionary = {
   "chrome.brandTagline": "Cinema pessoal",
   "chrome.navAria": "Navegação principal",
   "chrome.navFeatures": "Recursos",
-  "chrome.navPlatforms": "Plataformas",
+  "chrome.navDownload": "Baixar",
   "chrome.navPrivacy": "Privacidade",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "Suas histórias continuam suas.",
@@ -676,7 +756,7 @@ const ptBR: Dictionary = {
   "hero.lede":
     "O Edendale transforma os filmes e séries que você já tem em um belo acervo pessoal — sem transformar o que você assiste em dado de outra pessoa.",
   "hero.ctaSource": "Ver no GitHub",
-  "hero.ctaExplore": "Conhecer os apps",
+  "hero.ctaDownload": "Baixe o Edendale",
   "hero.trustAria": "Princípios do Edendale",
   "hero.trustLocal": "Biblioteca local primeiro",
   "hero.trustAnalytics": "Sem analytics",
@@ -760,13 +840,33 @@ const ptBR: Dictionary = {
   "player.controlsBody":
     "Defina quanto cada salto avança e a velocidade ao manter pressionado, no toque, no teclado, no mouse ou no controle remoto.",
 
-  "platforms.eyebrow": "Nativo onde importa",
+  "platforms.eyebrow": "Grátis em todas as plataformas",
   "platforms.title": "Em casa em\ncada tela.",
   "platforms.lede":
-    "Cada app do Edendale é escrito na linguagem e no kit de interface da sua plataforma. Controles familiares, desempenho cuidadoso, nenhuma casca web compartilhada.",
+    "Cada app do Edendale é escrito na linguagem e no kit de interface da sua plataforma. Controles familiares, desempenho cuidadoso, nenhuma casca web compartilhada. Baixe grátis na loja da sua plataforma.",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "Celulares · tablets · telas grandes",
   "platforms.windowsDevices": "Um acervo de desktop enxuto",
+  "platforms.appStoreAlt": "Baixar na App Store",
+  "platforms.microsoftStoreLead": "Disponível na",
+  "platforms.betaBadge": "Beta fechado",
+  "platforms.betaCta": "Participar do beta",
+
+  "beta.title": "Participe do beta para Android",
+  "beta.lede":
+    "O Edendale para Android está em teste fechado no Google Play. Use a mesma Conta do Google em todas as etapas: a que está conectada ao Google Play no seu celular ou tablet.",
+  "beta.groupTitle": "Entre no grupo de testadores",
+  "beta.groupBody":
+    "É a participação neste Grupo do Google que dá à sua conta acesso ao teste.",
+  "beta.groupCta": "Entrar no grupo",
+  "beta.optInTitle": "Torne-se testador",
+  "beta.optInBody":
+    "Abra a página de testes do Edendale no Google Play e aceite o convite.",
+  "beta.optInCta": "Abrir a página de testes",
+  "beta.installTitle": "Instale pelo Google Play",
+  "beta.installBody":
+    "Depois disso, o Edendale aparece no Google Play nos seus dispositivos Android. O acesso pode levar alguns minutos para ser liberado.",
+  "beta.installCta": "Abrir o Google Play",
 
   "closing.eyebrow": "As luzes estão acendendo",
   "closing.title": "Faça sua coleção\nparecer sua de novo.",
@@ -816,7 +916,7 @@ const ja: Dictionary = {
   "chrome.brandTagline": "パーソナルシネマ",
   "chrome.navAria": "メインナビゲーション",
   "chrome.navFeatures": "機能",
-  "chrome.navPlatforms": "対応プラットフォーム",
+  "chrome.navDownload": "ダウンロード",
   "chrome.navPrivacy": "プライバシー",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "あなたの物語は、あなたのもの。",
@@ -832,7 +932,7 @@ const ja: Dictionary = {
   "hero.lede":
     "Edendale は、すでに手元にある映画やドラマを美しい個人アーカイブに変えます。あなたの視聴傾向を、誰かのデータに変えることはありません。",
   "hero.ctaSource": "GitHub で見る",
-  "hero.ctaExplore": "アプリを見る",
+  "hero.ctaDownload": "Edendale を入手",
   "hero.trustAria": "Edendale の原則",
   "hero.trustLocal": "ローカル優先のライブラリ",
   "hero.trustAnalytics": "解析なし",
@@ -910,13 +1010,31 @@ const ja: Dictionary = {
   "player.controlsTitle": "操作",
   "player.controlsBody": "スキップの秒数や長押し中の再生速度を、タッチ、キーボード、マウス、リモコンに合わせて設定できます。",
 
-  "platforms.eyebrow": "必要なところはネイティブで",
+  "platforms.eyebrow": "すべてのプラットフォームで無料",
   "platforms.title": "どの画面でも、\n自分の家のように。",
   "platforms.lede":
-    "Edendale の各アプリは、そのプラットフォームの言語と UI ツールキットで作られています。慣れた操作、行き届いたパフォーマンス、共通の Web シェルはありません。",
+    "Edendale の各アプリは、そのプラットフォームの言語と UI ツールキットで作られています。慣れた操作、行き届いたパフォーマンス、共通の Web シェルはありません。お使いのプラットフォームのストアから無料でダウンロードできます。",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "スマートフォン · タブレット · 大画面",
   "platforms.windowsDevices": "目的に集中したデスクトップアーカイブ",
+  "platforms.appStoreAlt": "App Storeからダウンロード",
+  "platforms.microsoftStoreLead": "今すぐ入手",
+  "platforms.betaBadge": "クローズドベータ",
+  "platforms.betaCta": "ベータに参加",
+
+  "beta.title": "Android ベータに参加する",
+  "beta.lede":
+    "Android 版 Edendale は Google Play でクローズドテスト中です。すべての手順で同じ Google アカウントを使ってください。スマートフォンやタブレットの Google Play にログインしているアカウントです。",
+  "beta.groupTitle": "テスターグループに参加",
+  "beta.groupBody": "この Google グループに参加すると、そのアカウントでテストにアクセスできるようになります。",
+  "beta.groupCta": "グループに参加",
+  "beta.optInTitle": "テスターになる",
+  "beta.optInBody": "Google Play で Edendale のテストページを開き、招待を承認します。",
+  "beta.optInCta": "テストページを開く",
+  "beta.installTitle": "Google Play からインストール",
+  "beta.installBody":
+    "その後、お使いの Android デバイスの Google Play に Edendale が表示されます。アクセスが有効になるまで数分かかることがあります。",
+  "beta.installCta": "Google Play を開く",
 
   "closing.eyebrow": "客席の照明がついていきます",
   "closing.title": "コレクションを、\nもう一度あなたのものに。",
@@ -964,7 +1082,7 @@ const ko: Dictionary = {
   "chrome.brandTagline": "개인 영화관",
   "chrome.navAria": "기본 탐색",
   "chrome.navFeatures": "기능",
-  "chrome.navPlatforms": "플랫폼",
+  "chrome.navDownload": "다운로드",
   "chrome.navPrivacy": "개인정보",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "당신의 이야기는 당신의 것으로.",
@@ -980,7 +1098,7 @@ const ko: Dictionary = {
   "hero.lede":
     "Edendale은 이미 가지고 있는 영화와 시리즈를 아름다운 개인 아카이브로 만듭니다. 무엇을 보는지가 다른 누군가의 데이터가 되는 일 없이.",
   "hero.ctaSource": "GitHub에서 보기",
-  "hero.ctaExplore": "앱 살펴보기",
+  "hero.ctaDownload": "Edendale 받기",
   "hero.trustAria": "Edendale의 원칙",
   "hero.trustLocal": "로컬 우선 라이브러리",
   "hero.trustAnalytics": "분석 없음",
@@ -1060,13 +1178,31 @@ const ko: Dictionary = {
   "player.controlsBody":
     "건너뛰는 시간과 길게 누를 때의 재생 속도를 터치, 키보드, 마우스, 리모컨에 맞게 설정하세요.",
 
-  "platforms.eyebrow": "중요한 곳은 네이티브로",
+  "platforms.eyebrow": "모든 플랫폼에서 무료",
   "platforms.title": "어느 화면에서나\n제자리처럼.",
   "platforms.lede":
-    "모든 Edendale 앱은 해당 플랫폼의 언어와 인터페이스 툴킷으로 만들어집니다. 익숙한 조작, 세심한 성능, 공용 웹 껍데기는 없습니다.",
+    "모든 Edendale 앱은 해당 플랫폼의 언어와 인터페이스 툴킷으로 만들어집니다. 익숙한 조작, 세심한 성능, 공용 웹 껍데기는 없습니다. 사용하는 플랫폼의 스토어에서 무료로 받으세요.",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "스마트폰 · 태블릿 · 큰 화면",
   "platforms.windowsDevices": "군더더기 없는 데스크톱 아카이브",
+  "platforms.appStoreAlt": "App Store에서 다운로드",
+  "platforms.microsoftStoreLead": "다운로드하기",
+  "platforms.betaBadge": "비공개 베타",
+  "platforms.betaCta": "베타 참여하기",
+
+  "beta.title": "Android 베타에 참여하기",
+  "beta.lede":
+    "Android용 Edendale은 Google Play에서 비공개 테스트 중입니다. 모든 단계에서 같은 Google 계정을 사용하세요. 휴대전화나 태블릿의 Google Play에 로그인된 계정입니다.",
+  "beta.groupTitle": "테스터 그룹 가입",
+  "beta.groupBody": "이 Google 그룹에 가입해야 해당 계정으로 테스트에 참여할 수 있습니다.",
+  "beta.groupCta": "그룹 가입하기",
+  "beta.optInTitle": "테스터 되기",
+  "beta.optInBody": "Google Play에서 Edendale 테스트 페이지를 열고 초대를 수락하세요.",
+  "beta.optInCta": "테스트 페이지 열기",
+  "beta.installTitle": "Google Play에서 설치",
+  "beta.installBody":
+    "이후 Android 기기의 Google Play에 Edendale이 표시됩니다. 접근 권한이 적용되기까지 몇 분 정도 걸릴 수 있습니다.",
+  "beta.installCta": "Google Play 열기",
 
   "closing.eyebrow": "객석에 불이 들어옵니다",
   "closing.title": "내 컬렉션을\n다시 내 것처럼.",
@@ -1115,7 +1251,7 @@ const zhHans: Dictionary = {
   "chrome.brandTagline": "私人影院",
   "chrome.navAria": "主导航",
   "chrome.navFeatures": "功能",
-  "chrome.navPlatforms": "平台",
+  "chrome.navDownload": "下载",
   "chrome.navPrivacy": "隐私",
   "chrome.navGithub": "GitHub",
   "chrome.footerTagline": "你的故事，始终属于你。",
@@ -1131,7 +1267,7 @@ const zhHans: Dictionary = {
   "hero.lede":
     "Edendale 把你已经拥有的电影和剧集变成一座漂亮的私人影库，而不会把你的观看习惯变成别人的数据。",
   "hero.ctaSource": "在 GitHub 上查看",
-  "hero.ctaExplore": "了解各平台应用",
+  "hero.ctaDownload": "获取 Edendale",
   "hero.trustAria": "Edendale 的原则",
   "hero.trustLocal": "本地优先的片库",
   "hero.trustAnalytics": "无分析统计",
@@ -1205,13 +1341,31 @@ const zhHans: Dictionary = {
   "player.controlsTitle": "操控",
   "player.controlsBody": "按触控、键盘、鼠标或遥控器，设定每次跳转的秒数和长按时的播放速度。",
 
-  "platforms.eyebrow": "在要紧之处保持原生",
+  "platforms.eyebrow": "全平台免费",
   "platforms.title": "在每块屏幕上\n都自在如家。",
   "platforms.lede":
-    "每个 Edendale 应用都用所在平台的语言和界面工具包编写。熟悉的操作、用心的性能，没有共用的网页外壳。",
+    "每个 Edendale 应用都用所在平台的语言和界面工具包编写。熟悉的操作、用心的性能，没有共用的网页外壳。可从你所用平台的应用商店免费下载。",
   "platforms.appleDevices": "iPhone · iPad · Mac · Vision Pro · Apple TV",
   "platforms.androidDevices": "手机 · 平板 · 大屏设备",
   "platforms.windowsDevices": "专注的桌面影库",
+  "platforms.appStoreAlt": "在 App Store 下载",
+  "platforms.microsoftStoreLead": "立即获取",
+  "platforms.betaBadge": "封闭测试版",
+  "platforms.betaCta": "加入测试",
+
+  "beta.title": "加入 Android 测试版",
+  "beta.lede":
+    "Android 版 Edendale 正在 Google Play 上进行封闭测试。每一步都请使用同一个 Google 账号，也就是你手机或平板上登录 Google Play 的那个账号。",
+  "beta.groupTitle": "加入测试者群组",
+  "beta.groupBody": "加入这个 Google 群组后，你的账号才能获得测试资格。",
+  "beta.groupCta": "加入群组",
+  "beta.optInTitle": "成为测试者",
+  "beta.optInBody": "在 Google Play 上打开 Edendale 的测试页面，并接受邀请。",
+  "beta.optInCta": "打开测试页面",
+  "beta.installTitle": "从 Google Play 安装",
+  "beta.installBody":
+    "之后，Edendale 就会出现在你 Android 设备的 Google Play 中。权限生效可能需要几分钟。",
+  "beta.installCta": "打开 Google Play",
 
   "closing.eyebrow": "灯光渐渐亮起",
   "closing.title": "让你的收藏\n重新像你自己的。",

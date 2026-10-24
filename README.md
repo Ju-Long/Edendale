@@ -81,7 +81,8 @@ and verified-link site. It has no browser player, media library, watch tracker,
 TMDB proxy, server runtime, account system, analytics, application persistence,
 or runtime credentials. It is published in eight languages and matches the
 visitor's browser language automatically; see [Languages](#languages). It also
-publishes the apps' privacy policy; see [Privacy policy](#privacy-policy).
+publishes the apps' privacy policy; see [Privacy policy](#privacy-policy),
+and links to each app store; see [Store links](#store-links).
 
 ### Requirements and local commands
 
@@ -204,6 +205,38 @@ Every locale is currently left-to-right. `dir` is already wired from the locale
 registry to `<html>`, but the stylesheet still uses some physical properties
 (the skip link, the picker's alignment), so adding a right-to-left language
 needs a pass over those first.
+
+### Store links
+
+The home page's download section, `/#download`, sends visitors to each
+platform's store:
+
+| Platform | Destination |
+|---|---|
+| Apple | App Store: `https://apps.apple.com/app/edendale/id6789041949` |
+| Android | Closed testing on Google Play, in three steps (below) |
+| Windows | Microsoft Store: `https://apps.microsoft.com/detail/9nnr79q8bztn` |
+
+Android is in closed testing, so the Play listing only exists for a Google
+account that has already joined the `edendale-closed-testers@googlegroups.com`
+Google Group and opted in at
+`https://play.google.com/apps/testing/com.babasama.edendale`. The page's
+Android beta panel walks through those steps in order and ends at
+`https://play.google.com/store/apps/details?id=com.babasama.edendale`.
+
+Every URL lives in the `stores` table at the top of
+[`src/pages/[...locale]/index.astro`](src/pages/%5B...locale%5D/index.astro).
+They carry no campaign or share-link parameters, which would tag visitors on
+their way out, and the App Store URL names no storefront, so Apple sends each
+visitor to their own country's store.
+
+The App Store badge in [`src/assets/badges/`](src/assets/badges) is Apple's
+unmodified US-English artwork; its `alt` text is localized. The Microsoft Store
+badge is drawn in HTML and CSS around Microsoft's Store icon so that it matches
+Apple's badge in height, field, edge, and corner, and its label is localized.
+
+When Android leaves closed testing, point its action at the Play listing and
+remove the beta panel along with its `beta.*` and `platforms.beta*` strings.
 
 ### Privacy policy
 
