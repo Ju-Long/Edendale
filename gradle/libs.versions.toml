@@ -11,8 +11,12 @@ compose-bom = "2025.06.00"
 room = "2.7.1"
 media3 = "1.9.0"
 mediarouter = "1.8.1"
-# Jellyfin's build of Media3's FFmpeg audio decoder (GPL-3.0, decision D5); its version tracks Media3.
-jellyfin-ffmpeg = "1.9.0+1"
+# HORIZON.md G.1 (D13): Media3's own FFmpeg decoder classes live under src/horizon/java and import
+# the Checker Framework's annotations; the native library comes from tools/horizon/build-ffmpeg-decoder.sh.
+checker-qual = "3.13.0"
+# HORIZON.md G.4 (D12): Meta's Spatial SDK for the immersive theater, horizon flavor only. 0.14.0 was
+# released on 2026-09-11. No Spatial Gradle plugin, no Platform SDK.
+spatialsdk = "0.14.0"
 ksp = "2.2.0-2.0.2"
 jcifs = "2.1.10"
 # SFTP (H.4, decision D16), with the full Bouncy Castle provider sshj needs on Android.
@@ -47,7 +51,12 @@ media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
 mediarouter = { module = "androidx.mediarouter:mediarouter", version.ref = "mediarouter" }
-jellyfin-media3-ffmpeg-decoder = { module = "org.jellyfin.media3:media3-ffmpeg-decoder", version.ref = "jellyfin-ffmpeg" }
+media3-decoder = { module = "androidx.media3:media3-decoder", version.ref = "media3" }
+checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checker-qual" }
+meta-spatial-sdk = { module = "com.meta.spatial:meta-spatial-sdk", version.ref = "spatialsdk" }
+meta-spatial-sdk-toolkit = { module = "com.meta.spatial:meta-spatial-sdk-toolkit", version.ref = "spatialsdk" }
+meta-spatial-sdk-vr = { module = "com.meta.spatial:meta-spatial-sdk-vr", version.ref = "spatialsdk" }
+meta-spatial-sdk-compose = { module = "com.meta.spatial:meta-spatial-sdk-compose", version.ref = "spatialsdk" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }

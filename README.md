@@ -68,12 +68,32 @@ instead of the inline player, which shows no picture in a panel. The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 
+The player's Theater button opens the **immersive theater** (HORIZON.md
+Section G): the video on a large screen inside an environment, through
+Meta's Spatial SDK, which makes the app a hybrid app. The theater is its own
+activity (`src/horizon/.../theater/`) with its own ExoPlayer, built with the
+same renderers and data source as the panel player, so local, SMB, WebDAV,
+SFTP, S3, and cloud sources play unchanged. A trigger press or a pinch shows
+its controls (play and pause, skip, the timeline, audio and subtitle tracks,
+Exit); B or Y, or Exit, returns to the panel; progress is saved as in the
+player. Its environment is `src/horizon/assets/theater.glb` when the
+`scenes` branch has exported one (the activity reads the `Screen` and `Seat`
+nodes), else a generated starfield (`tools/horizon/make_skybox.py`). The SDK
+is used without the Meta Platform SDK, without an account, and without the
+Spatial Gradle plugin, whose usage-data switch the build never turns on.
+
+Because Meta's SDK licence forbids a GPL-3.0 APK, this branch doesn't use
+Jellyfin's FFmpeg package: `tools/horizon/build-ffmpeg-decoder.sh` builds
+Media3's FFmpeg decoder library over an LGPL-2.1 FFmpeg, and the build fails
+its store-rule check without it (see DTS and TrueHD, and Licence, below).
+
 | Purpose | Command |
 |---|---|
+| FFmpeg decoder library (once, and after a pin changes) | `tools/horizon/build-ffmpeg-decoder.sh` → `src/horizon/jniLibs/<abi>/libffmpegJNI.so` (gitignored; needs `sdkmanager "ndk;26.1.10909125" "cmake;3.22.1"`) |
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, and the v2 signature and certificate when signed |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, and the v2 signature and certificate when signed |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
 
 ### Signing
@@ -131,7 +151,12 @@ and AV1 at 1080p and 4K, and HDR on the panel; the audio formats and the
 equalizer; Google Drive, OneDrive, Dropbox, and TMDB sign-in from the panel's
 browser and their return to the app; the trailer opening outside the app; the
 headset off and on mid-playback; a second account on the headset; and,
-offline, each source failing on its own while the app stays usable.
+offline, each source failing on its own while the app stays usable. For the
+theater (HORIZON.md G.10): entering and leaving it from every source type;
+the screen's placement, a recenter, and the headset off and on; controllers
+and hands on the controls panel; DTS-HD MA, TrueHD, and E-AC-3; 30 minutes of
+playback against VrApi's FPS line; and `dumpsys netstats` showing nothing
+from the app's UID.
 
 ## Android development
 
@@ -626,25 +651,46 @@ tests. Before a release, check on:
 ### DTS and TrueHD
 
 Media3 plays DTS, DTS-HD, and Dolby TrueHD through the device's own decoders
-when it has them, or sends them undecoded to a receiver or TV that accepts
-them. Everywhere else, Jellyfin's build of Media3's FFmpeg audio decoder
-(`org.jellyfin.media3:media3-ffmpeg-decoder`, one native library per ABI)
-decodes them, and the result goes through Audio Enhancement like any other
-decoded audio.
+when it has them, or sends them undecoded to a receiver that accepts them.
+Everywhere else, Media3's own FFmpeg audio decoder decodes them, and the
+result goes through Audio Enhancement like any other decoded audio. On this
+branch the decoder's classes (`androidx.media3.decoder.ffmpeg`, Apache-2.0)
+live under `src/horizon/java`, copied from the Media3 tag the version catalog
+names, and its native library is built, never committed:
+`tools/horizon/build-ffmpeg-decoder.sh` runs Media3's own `build_ffmpeg.sh`
+over FFmpeg 6.0.2 (`release/6.0` at `831958d`, Jellyfin's pin) with
+Jellyfin's decoder list, for all four ABIs, with NDK r26b and the SDK's CMake
+3.22.1, and refuses to continue unless FFmpeg's `config.h` reports "LGPL
+version 2.1 or later". The `android` branch keeps Jellyfin's GPL-3.0 package;
+this one can't, because the Spatial SDK's licence forbids use that would put
+the SDK under an open-source licence (HORIZON.md D12, D13).
 
 ### Licence
 
-That FFmpeg decoder is licensed under the GNU General Public License v3.0, so
-the Android app built from this branch, as a whole, is distributed under the
-GPL-3.0. Its source is this branch plus the libraries it names; the decoder's
-own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
+The Meta Quest app built from this branch is not GPL-3.0 as a whole:
+
+- Edendale's own code is under the repository's licence (MPL-2.0 on `main`).
+- FFmpeg 6.0.2 is under the GNU Lesser General Public License v2.1 or later.
+  Its corresponding source is the FFmpeg commit, the Media3 tag, and the
+  script named above, and the app can be relinked with a modified FFmpeg by
+  running that script. The licence text and an FFmpeg notice ship in the
+  APK under `assets/licenses/` (`src/horizon/assets/licenses/`), and the
+  About section of Settings names them.
+- Media3's FFmpeg decoder classes are Apache-2.0.
+- The Meta Spatial SDK is under the
+  [Meta Platform Technologies SDK License Agreement](https://developers.meta.com/vr/licenses/oculussdk/),
+  licensed for Meta's headsets, which is where this flavor runs. Edendale
+  isn't affiliated with or endorsed by Meta.
 
 ### Dependencies and licences
 
 | Dependency | Use | Licence |
 |---|---|---|
-| AndroidX Media3 1.9.0 (`media3-exoplayer`, `media3-ui`, `media3-session`, `media3-effect`) | Playback, system media controls, video effects | Apache-2.0 |
-| `org.jellyfin.media3:media3-ffmpeg-decoder` 1.9.0+1 | DTS and TrueHD decoding | GPL-3.0 |
+| AndroidX Media3 1.9.0 (`media3-exoplayer`, `media3-ui`, `media3-session`, `media3-effect`, `media3-decoder`) | Playback, system media controls, video effects, the decoder base | Apache-2.0 |
+| Media3 1.9.0 `decoder_ffmpeg` classes (vendored under `src/horizon/java`) | DTS, DTS-HD, and TrueHD decoding | Apache-2.0 |
+| FFmpeg 6.0.2 (`libffmpegJNI.so`, built by `tools/horizon/build-ffmpeg-decoder.sh`) | The decoders behind them | LGPL-2.1-or-later |
+| Meta Spatial SDK 0.14.0 (`meta-spatial-sdk`, `-toolkit`, `-vr`, `-compose`) | The immersive theater | Meta Platform Technologies SDK License |
+| Checker Framework `checker-qual` (compile only) | Annotations the decoder classes import | MIT |
 | AndroidX MediaRouter | Audio output switcher | Apache-2.0 |
 | Jetpack Compose, Room, Activity, Lifecycle, DocumentFile, Security Crypto | UI, local records, encrypted settings | Apache-2.0 |
 | jcifs-ng | SMB | LGPL-2.1 |

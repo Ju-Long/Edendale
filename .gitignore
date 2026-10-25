@@ -32,6 +32,8 @@ AuthKey_*.p8
 
 # Gradle / Android Kotlin
 .gradle/
+# HORIZON.md G.1 (D14): built by tools/horizon/build-ffmpeg-decoder.sh, never committed
+/src/horizon/jniLibs/
 .kotlin/
 local.properties
 *.iml

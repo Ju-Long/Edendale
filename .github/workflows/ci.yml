@@ -5,7 +5,9 @@ name: Horizon CI
 # release APK (E.1, without the signature checks). It uses no secrets: without
 # .secret/horizon-signing.properties the release stays unsigned, and without
 # secrets.json the build only disables the TMDB-, Wyzie-, and storage-provider
-# features.
+# features. Before Gradle, tools/horizon/build-ffmpeg-decoder.sh builds the
+# LGPL-2.1 FFmpeg decoder library that the branch never commits (G.1, D14);
+# verifyHorizonRelease fails without it.
 
 on:
   push:
@@ -39,6 +41,26 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+
+      # The FFmpeg build is deterministic for a given script, so its output is
+      # cached on the script's hash; a change to the pins rebuilds it.
+      - name: Restore the LGPL FFmpeg decoder build
+        id: decoder-cache
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: |
+            build/ffmpeg-decoder/ffmpeg/android-libs
+            build/ffmpeg-decoder/ffmpeg/config.h
+            src/horizon/jniLibs
+          key: ffmpeg-decoder-${{ runner.os }}-${{ hashFiles('tools/horizon/build-ffmpeg-decoder.sh', 'src/horizon/java/androidx/media3/decoder/ffmpeg/*.java') }}
+
+      - name: Install NDK r26b and CMake 3.22.1
+        if: steps.decoder-cache.outputs.cache-hit != 'true'
+        run: sudo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" "cmake;3.22.1" > /dev/null
+
+      - name: Build the LGPL FFmpeg decoder library (HORIZON.md G.1)
+        if: steps.decoder-cache.outputs.cache-hit != 'true'
+        run: tools/horizon/build-ffmpeg-decoder.sh
 
       - name: Run hermetic tests, build the APKs, and check Meta's store rules
         run: ./gradlew --no-daemon testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease

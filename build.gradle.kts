@@ -221,7 +221,18 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.effect)
     implementation(libs.mediarouter)
-    implementation(libs.jellyfin.media3.ffmpeg.decoder)
+    // HORIZON.md G.1 (D13, D14): Media3's own FFmpeg decoder classes (Apache-2.0)
+    // live under src/horizon/java and load libffmpegJNI.so from src/horizon/jniLibs,
+    // which tools/horizon/build-ffmpeg-decoder.sh builds over an LGPL-2.1 FFmpeg.
+    // android's Jellyfin package (GPL-3.0) is not used on this branch.
+    horizonImplementation(libs.media3.decoder)
+    horizonCompileOnly(libs.checker.qual)
+    // HORIZON.md G.4 (D12): the Spatial SDK for the immersive theater. The
+    // -compose module draws the theater's controls and subtitle panels (G.8).
+    horizonImplementation(libs.meta.spatial.sdk)
+    horizonImplementation(libs.meta.spatial.sdk.toolkit)
+    horizonImplementation(libs.meta.spatial.sdk.vr)
+    horizonImplementation(libs.meta.spatial.sdk.compose)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
@@ -263,6 +274,8 @@ abstract class VerifyHorizonRelease : DefaultTask() {
     @get:InputFile abstract val prohibitedPermissions: RegularFileProperty
     @get:InputFile abstract val reviewRequiredPermissions: RegularFileProperty
     @get:Input abstract val expectedCertificateSha256: Property<String>
+    /** The release runtime classpath's component IDs (HORIZON.md G.1): no org.jellyfin artifact may remain. */
+    @get:Input abstract val runtimeComponents: ListProperty<String>
     @get:Internal abstract val sdkDirectory: DirectoryProperty
 
     private val androidNs = "http://schemas.android.com/apk/res/android"
@@ -337,11 +350,18 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             val size = apk.length()
             notes += "${apk.name}: ${"%.1f".format(size / 1_000_000.0)} MB"
             if (size > 1L shl 30) failures += "the APK is over 1 GB (VRC Packaging.6)"
-            val abis = ZipFile(apk).use { zip ->
-                zip.entries().asSequence().map { it.name }.filter { it.startsWith("lib/") }
-                    .map { it.split('/')[1] }.toSet()
+            val libraries = ZipFile(apk).use { zip ->
+                zip.entries().asSequence().map { it.name }.filter { it.startsWith("lib/") }.toList()
             }
+            val abis = libraries.map { it.split('/')[1] }.toSet()
             if (abis != setOf("arm64-v8a")) failures += "lib/ holds $abis; Meta wants arm64-v8a only (VRC Packaging.5)"
+            // G.1: the LGPL decoder's library is built, not committed, so a build that
+            // skipped tools/horizon/build-ffmpeg-decoder.sh would silently lose DTS and TrueHD.
+            if ("lib/arm64-v8a/libffmpegJNI.so" !in libraries) {
+                failures += "lib/arm64-v8a/libffmpegJNI.so is missing: run tools/horizon/build-ffmpeg-decoder.sh before the build (HORIZON.md G.1)"
+            } else {
+                notes += "libffmpegJNI.so present (the LGPL-2.1 FFmpeg decoder, G.1)"
+            }
 
             if (apk.name.contains("unsigned")) {
                 notes += "unsigned (no .secret/horizon-signing.properties): the v2 signature and certificate checks were skipped"
@@ -364,6 +384,11 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             }
         }
 
+        // G.1: Jellyfin's decoder is GPL-3.0; the Spatial SDK's licence rules it out (D13).
+        val jellyfin = runtimeComponents.get().filter { it.startsWith("org.jellyfin") }
+        if (jellyfin.isNotEmpty()) failures += "GPL-3.0 artifacts in the release runtime classpath: ${jellyfin.joinToString()} (HORIZON.md G.1)"
+        else notes += "no org.jellyfin artifact in the release runtime classpath"
+
         notes.forEach { logger.lifecycle("verifyHorizonRelease: $it") }
         if (failures.isNotEmpty()) {
             throw GradleException("The Horizon release breaks Meta's store rules:\n" + failures.joinToString("\n") { "  - $it" })
@@ -381,6 +406,10 @@ androidComponents.onVariants(androidComponents.selector().withBuildType("release
         prohibitedPermissions.set(layout.projectDirectory.file("gradle/meta-prohibited-permissions.txt"))
         reviewRequiredPermissions.set(layout.projectDirectory.file("gradle/meta-review-required-permissions.txt"))
         expectedCertificateSha256.set(horizonCertificateSha256)
+        runtimeComponents.set(
+            variant.runtimeConfiguration.incoming.artifacts.resolvedArtifacts
+                .map { artifacts -> artifacts.map { it.id.componentIdentifier.displayName }.sorted() },
+        )
         sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
     }
 }

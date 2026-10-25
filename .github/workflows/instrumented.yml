@@ -6,7 +6,8 @@ name: Android instrumented tests
 # secrets: the instrumented tests need neither network access nor credentials,
 # and without secrets.json the build only disables the TMDB- and Wyzie-backed
 # features. The debug build keeps every ABI (only the release is arm64-only),
-# so the x86_64 emulator image still has the FFmpeg decoder.
+# so the x86_64 emulator image still has the FFmpeg decoder, which
+# tools/horizon/build-ffmpeg-decoder.sh builds for all four ABIs first (G.1).
 
 on:
   push:
@@ -48,6 +49,24 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      - name: Restore the LGPL FFmpeg decoder build
+        id: decoder-cache
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: |
+            build/ffmpeg-decoder/ffmpeg/android-libs
+            build/ffmpeg-decoder/ffmpeg/config.h
+            src/horizon/jniLibs
+          key: ffmpeg-decoder-${{ runner.os }}-${{ hashFiles('tools/horizon/build-ffmpeg-decoder.sh', 'src/horizon/java/androidx/media3/decoder/ffmpeg/*.java') }}
+
+      - name: Install NDK r26b and CMake 3.22.1
+        if: steps.decoder-cache.outputs.cache-hit != 'true'
+        run: sudo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" "cmake;3.22.1" > /dev/null
+
+      - name: Build the LGPL FFmpeg decoder library (HORIZON.md G.1)
+        if: steps.decoder-cache.outputs.cache-hit != 'true'
+        run: tools/horizon/build-ffmpeg-decoder.sh
 
       # Build before the emulator starts so it isn't idling through compilation.
       - name: Build the app and test APKs

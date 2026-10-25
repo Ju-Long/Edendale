@@ -1,0 +1,31 @@
+FFmpeg notice for the Edendale Meta Quest build (HORIZON.md G.1, G.2)
+
+This app plays DTS, DTS-HD, and Dolby TrueHD audio through the FFmpeg
+decoder module of AndroidX Media3 (androidx.media3.decoder.ffmpeg,
+Apache License 2.0) over a build of FFmpeg 6.0.2 that is licensed under
+the GNU Lesser General Public License, version 2.1 or later. The licence
+text is beside this file, in LGPL-2.1.txt.
+
+FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.
+This software uses code of FFmpeg (https://ffmpeg.org) licensed under the
+LGPLv2.1 and its source can be downloaded from the links below.
+
+The FFmpeg in this app is built from the release/6.0 branch at commit
+831958d0b1f000cfd297847561071c5e43903331 with these decoders enabled:
+flac alac pcm_mulaw pcm_alaw mp3 aac ac3 eac3 dca mlp truehd, and with
+no GPL, non-free, or version-3 components (FFmpeg's configure reports
+"LGPL version 2.1 or later").
+
+Corresponding source:
+  FFmpeg          https://git.ffmpeg.org/ffmpeg.git (release/6.0, commit above)
+  Media3 1.9.0    https://github.com/androidx/media/tree/1.9.0/libraries/decoder_ffmpeg
+  Build script    https://github.com/Ju-Long/Edendale (branch meta-horizon,
+                  tools/horizon/build-ffmpeg-decoder.sh)
+
+Relinking (LGPL-2.1 section 6): Edendale is open source, and the script
+above rebuilds the FFmpeg library (libffmpegJNI.so) from these sources, so
+the app can be relinked with a modified FFmpeg.
+
+The immersive theater uses the Meta Spatial SDK under the Meta Platform
+Technologies SDK License Agreement (https://developers.meta.com/vr/licenses/oculussdk/).
+Edendale is not affiliated with or endorsed by Meta.
