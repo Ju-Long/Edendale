@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">%1$s 동기화 완료 — %2$d개 푸시됨, %3$d개 가져옴</string>
     <string name="player_close">플레이어 닫기</string>
     <string name="player_picture_in_picture">화면 속 화면</string>
+    <string name="player_theater">극장</string>
     <string name="player_back_10">10초 뒤로</string>
     <string name="player_forward_10">10초 앞으로</string>
     <string name="player_adjustments">조정</string>

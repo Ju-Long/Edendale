@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">Синхронизировано %1$s — %2$d отправлено, %3$d получено</string>
     <string name="player_close">Закрыть плеер</string>
     <string name="player_picture_in_picture">Картинка в картинке</string>
+    <string name="player_theater">Кинозал</string>
     <string name="player_back_10">Назад на 10 секунд</string>
     <string name="player_forward_10">Вперед на 10 секунд</string>
     <string name="player_adjustments">Коррекция</string>

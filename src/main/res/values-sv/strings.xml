@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">Synkroniserade %1$s — %2$d skickades, %3$d hämtades</string>
     <string name="player_close">Stäng spelare</string>
     <string name="player_picture_in_picture">Bild-i-bild</string>
+    <string name="player_theater">Biograf</string>
     <string name="player_back_10">Bakåt 10 sekunder</string>
     <string name="player_forward_10">Framåt 10 sekunder</string>
     <string name="player_adjustments">Justeringar</string>

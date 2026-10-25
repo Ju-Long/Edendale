@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">Sincronizzato %1$s — %2$d inviati, %3$d ricevuti</string>
     <string name="player_close">Chiudi lettore</string>
     <string name="player_picture_in_picture">Picture in Picture</string>
+    <string name="player_theater">Cinema</string>
     <string name="player_back_10">Indietro di 10 secondi</string>
     <string name="player_forward_10">Avanti di 10 secondi</string>
     <string name="player_adjustments">Regolazioni</string>

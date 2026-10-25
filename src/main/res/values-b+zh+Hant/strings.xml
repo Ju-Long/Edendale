@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">已同步 %1$s — 已上傳 %2$d 筆，已下載 %3$d 筆</string>
     <string name="player_close">關閉播放器</string>
     <string name="player_picture_in_picture">子母畫面</string>
+    <string name="player_theater">影院</string>
     <string name="player_back_10">倒退 10 秒</string>
     <string name="player_forward_10">前進 10 秒</string>
     <string name="player_adjustments">調整</string>

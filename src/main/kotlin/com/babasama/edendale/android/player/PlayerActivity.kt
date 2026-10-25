@@ -53,6 +53,7 @@ import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.DevicePolicy
+import com.babasama.edendale.android.theater.TheaterHandover
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.introdb.IntroDbMedia
@@ -387,6 +388,7 @@ class PlayerActivity : ComponentActivity() {
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
+                    onEnterTheater = if (devicePolicy.offersImmersiveTheater) ::enterTheater else null,
                     onAutoPipChanged = ::updatePipParams,
                     onSelectEntry = ::switchTo,
                     onSearchOnlineSubtitles = ::searchOnlineSubtitles,
@@ -1025,6 +1027,45 @@ class PlayerActivity : ComponentActivity() {
         if (!pipReceiverRegistered) return
         runCatching { unregisterReceiver(pipActionReceiver) }
         pipReceiverRegistered = false
+    }
+
+    // ------------------------------------------------------------------
+    // Immersive theater (HORIZON.md G.5)
+    // ------------------------------------------------------------------
+
+    /**
+     * Hands playback to the theater: the item, its position, the speed and
+     * the audio and subtitle choices, and the episode context, then closes
+     * this player. The theater saves progress itself (G.6); the write here
+     * only covers the handover failing before it starts.
+     */
+    private fun enterTheater() {
+        val exoPlayer = player ?: return
+        saveContentPreferences()
+        writeProgress()
+        val tracks = exoPlayer.currentTracks
+        val audio = audioTrackOptions(tracks).firstOrNull { it.isSelected }
+        val text = textTrackOptions(tracks).firstOrNull { it.isSelected }
+        val handover = TheaterHandover(
+            uri = currentUriState.value,
+            title = titleState.value,
+            subtitle = subtitleState.value,
+            positionMillis = exoPlayer.currentPosition.coerceAtLeast(0),
+            playWhenReady = exoPlayer.playWhenReady,
+            tmdbId = currentTmdbId,
+            isEpisode = currentIsEpisode,
+            showTmdbId = currentShowTmdbId,
+            season = progressKey?.season,
+            episode = progressKey?.episode,
+            audioTrackId = audio?.id,
+            audioLanguage = audio?.language,
+            subtitlesOff = text == null,
+            textTrackId = text?.id,
+            textLanguage = text?.language,
+            speed = chrome.baseRate,
+        )
+        startActivity(handover.intent(this))
+        finish()
     }
 
     // ------------------------------------------------------------------

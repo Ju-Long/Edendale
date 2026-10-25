@@ -153,6 +153,8 @@ internal fun PlayerScreen(
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
+    /** Hands playback to the immersive theater (HORIZON.md G.5); null where there is none. */
+    onEnterTheater: (() -> Unit)? = null,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
@@ -405,6 +407,7 @@ internal fun PlayerScreen(
                     timelineFocus = timelineFocus,
                     upNextFocus = upNextFocus.takeIf { visibleUpNext != null },
                     onEnterPip = onEnterPip,
+                    onEnterTheater = onEnterTheater,
                     onClose = onClose,
                 )
             }
@@ -838,6 +841,7 @@ private fun PlayerControlsOverlay(
     /** Set while the Up Next card shows; it sits just below the top row. */
     upNextFocus: FocusRequester?,
     onEnterPip: (() -> Unit)?,
+    onEnterTheater: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
     val edgeMargin = if (isTelevision) 48.dp else 20.dp
@@ -909,6 +913,17 @@ private fun PlayerControlsOverlay(
                     canFocus = controlsFocusable,
                     onFocus = chipDidFocus,
                     onClick = onEnterPip,
+                )
+            }
+            // HORIZON.md G.5: only a headset offers the theater, and only while a video is loaded.
+            if (onEnterTheater != null) {
+                PlayerChip(
+                    iconRes = R.drawable.ic_theater,
+                    contentDescription = stringResource(R.string.player_theater),
+                    isTelevision = isTelevision,
+                    canFocus = controlsFocusable,
+                    onFocus = chipDidFocus,
+                    onClick = onEnterTheater,
                 )
             }
             if (hasPlaylist) {

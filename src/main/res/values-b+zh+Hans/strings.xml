@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">已同步 %1$s — %2$d 项推送，%3$d 项拉取</string>
     <string name="player_close">关闭播放器</string>
     <string name="player_picture_in_picture">画中画</string>
+    <string name="player_theater">影院</string>
     <string name="player_back_10">后退 10 秒</string>
     <string name="player_forward_10">前进 10 秒</string>
     <string name="player_adjustments">调整</string>

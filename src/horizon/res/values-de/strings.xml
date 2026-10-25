@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The immersive theater's strings (HORIZON.md G.6, G.8). The theater reuses
+     the player's transport, audio, and subtitle strings from src/main. -->
+<resources>
+    <string name="theater_exit">Kino verlassen</string>
+    <string name="theater_position">Position</string>
+    <string name="theater_playback_failed">Das Video konnte hier nicht abgespielt werden. Verlasse das Kino, um zum Player zurückzukehren.</string>
+    <!-- G.2: overrides src/main's About line. This build isn't GPL-3.0: Edendale is MPL-2.0,
+         FFmpeg is LGPL-2.1 (assets/licenses), and the Spatial SDK is under Meta's licence. -->
+    <string name="settings_open_source">Edendale · Frei und quelloffen (MPL-2.0). DTS und TrueHD werden mit FFmpeg 6.0.2 (LGPL-2.1) wiedergegeben; das Kino nutzt das Meta Spatial SDK unter Metas Lizenz. Die Lizenztexte liegen in der App (assets/licenses) und auf github.com/Ju-Long/Edendale.</string>
+</resources>

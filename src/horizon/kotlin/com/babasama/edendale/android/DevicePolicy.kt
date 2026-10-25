@@ -30,6 +30,12 @@ data class DevicePolicy(
     val playsTrailersInline: Boolean,
     /** The library scrolls what the ray points at with a thumbstick ([ThumbstickScroller], B.5). */
     val scrollsWithThumbstick: Boolean,
+    /**
+     * The player offers the immersive theater (HORIZON.md Section G): a Theater
+     * button in its chrome while a video is loaded, which hands playback to
+     * `TheaterActivity`. Only a headset can show it.
+     */
+    val offersImmersiveTheater: Boolean,
 ) {
     companion object {
         fun resolve(isTelevision: Boolean, isHorizonOs: Boolean): DevicePolicy {
@@ -48,6 +54,8 @@ data class DevicePolicy(
                 playsTrailersInline = !isHorizonOs,
                 // B.5: Horizon sends the sticks as joystick axes that nothing else reads.
                 scrollsWithThumbstick = isHorizonOs,
+                // G.5: the theater is a Spatial SDK activity; it exists in the horizon flavor only.
+                offersImmersiveTheater = isHorizonOs,
             )
         }
 

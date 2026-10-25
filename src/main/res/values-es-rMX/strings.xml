@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">Sincronizado %1$s — %2$d subidos, %3$d descargados</string>
     <string name="player_close">Cerrar reproductor</string>
     <string name="player_picture_in_picture">Imagen dentro de imagen</string>
+    <string name="player_theater">Cine</string>
     <string name="player_back_10">Retroceder 10 segundos</string>
     <string name="player_forward_10">Adelantar 10 segundos</string>
     <string name="player_adjustments">Ajustes</string>

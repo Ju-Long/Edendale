@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">%1$s 同期完了 — %2$d プッシュ、%3$d プル</string>
     <string name="player_close">プレイヤーを閉じる</string>
     <string name="player_picture_in_picture">ピクチャインピクチャ</string>
+    <string name="player_theater">シアター</string>
     <string name="player_back_10">10秒戻る</string>
     <string name="player_forward_10">10秒進む</string>
     <string name="player_adjustments">調整</string>

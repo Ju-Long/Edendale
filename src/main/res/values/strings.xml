@@ -235,6 +235,7 @@
     <!-- Player -->
     <string name="player_close">Close player</string>
     <string name="player_picture_in_picture">Picture in Picture</string>
+    <string name="player_theater">Theater</string>
     <string name="player_back_10">Back 10 seconds</string>
     <string name="player_forward_10">Forward 10 seconds</string>
     <string name="player_adjustments">Adjustments</string>

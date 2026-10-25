@@ -196,6 +196,7 @@
     <string name="tmdb_sync_status">%1$s synchronisiert — %2$d hochgeladen, %3$d heruntergeladen</string>
     <string name="player_close">Player schließen</string>
     <string name="player_picture_in_picture">Bild-in-Bild</string>
+    <string name="player_theater">Kino</string>
     <string name="player_back_10">10 Sekunden zurück</string>
     <string name="player_forward_10">10 Sekunden vor</string>
     <string name="player_adjustments">Anpassungen</string>
