@@ -35,6 +35,13 @@ platform's implementation.
 | `meta-horizon` | The Android app packaged for Meta Quest headsets (Horizon OS) and its Meta Horizon Store delivery; downstream of `android` |
 | `windows` | Windows application and Windows-specific delivery |
 | `web` | Static website and Web-specific delivery |
+| `scenes` | Scene sources for the immersive theater: `.blend` files, textures, and export scripts; no executable code |
+
+`scenes` is not a platform branch. It holds the sources of the immersive
+theater's environments and the headless Blender scripts that export them. A
+platform branch commits only the export it needs (a GLB on `meta-horizon`, a
+USDZ on `apple`), naming the `scenes` commit it came from, and no build or CI
+ever checks `scenes` out.
 
 The platform branches begin with the same universal Markdown files:
 

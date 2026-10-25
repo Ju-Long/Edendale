@@ -18,6 +18,12 @@ Read [README.md](README.md) for the product and branch model, and
 | `meta-horizon` | The Android app packaged for Meta Quest headsets (Horizon OS) and its Meta Horizon Store delivery; downstream of `android` |
 | `windows` | Windows implementation and delivery |
 | `web` | Static Web implementation and delivery |
+| `scenes` | Scene sources for the immersive theater (`.blend` files, textures, export scripts); no executable code, no CI |
+
+`scenes` is data, not a platform: it has no build, tests, or CI. A platform
+branch commits only the export it needs and names the `scenes` commit in the
+commit message. An export copied in this way is that branch's own file; the
+dependency rules below are about builds that reach into another branch.
 
 Before changing files, identify the active branch and inspect its manifests,
 toolchain files, and README. Never assume that commands or directory layouts
