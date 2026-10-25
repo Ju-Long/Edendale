@@ -18,6 +18,11 @@ class TrailerEmbedTest {
     }
 
     @Test
+    fun opensTheWatchPageOutsideTheApp() {
+        assertEquals("https://www.youtube.com/watch?v=xEQP4VVuyrY", TrailerEmbed.watchUrl("xEQP4VVuyrY"))
+    }
+
+    @Test
     fun identifiesTheAppByItsApplicationId() {
         assertEquals(
             mapOf("Referer" to "https://com.babasama.edendale/"),

@@ -258,6 +258,8 @@ private fun DetailContent(
     // Without remember this reset to false on the next recomposition, so the
     // trailer closed itself the moment anything else in the screen changed.
     var showTrailer by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val playsTrailersInline = androidx.compose.runtime.remember(context) { DevicePolicy.current(context).playsTrailersInline }
     val windowSize = currentWindowSizeDp()
     val edgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
     val heroHeight = when {
@@ -361,7 +363,15 @@ private fun DetailContent(
                         )
                     }
                     if (!isTelevision && state.trailer != null) {
-                        androidx.compose.material3.OutlinedButton(onClick = { showTrailer = !showTrailer }) {
+                        androidx.compose.material3.OutlinedButton(onClick = {
+                            if (playsTrailersInline) {
+                                showTrailer = !showTrailer
+                            } else {
+                                // The YouTube app or the browser, still only on this tap (B.10).
+                                val watch = android.net.Uri.parse(TrailerEmbed.watchUrl(state.trailer.key))
+                                runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, watch)) }
+                            }
+                        }) {
                             Icon(painterResource(id = if (showTrailer) R.drawable.ic_eye_slash else R.drawable.ic_play), contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(if (showTrailer) R.string.detail_hide_trailer else R.string.detail_watch_trailer))

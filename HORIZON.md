@@ -269,6 +269,15 @@ USB debugging); `adb` is `~/Library/Android/sdk/platform-tools/adb`.
 6. Record everything in Findings, tick the B steps that passed, and clean up
    the test videos and the debug build from the headset at the end.
 
+*Status 2026-10-25:* the run happened on 10-25 instead (the owner wore the
+headset; Claude drove `adb` from the Mac). Done: step 1; from step 2,
+everything except "Open with"; from step 3, B.2's restart, B.4, B.6, and the
+E-AC-3 half of B.9. B.4, B.6, and B.10 changed the build (Deviations,
+2026-10-25). Still to do: "Open with Edendale", the thumbstick and hand-pinch
+findings (B.5), B.7 beyond H.264 and 8-bit HEVC, B.8, the rest of B.9, B.11,
+steps 4–6, and the cleanup. The headset keeps the 10-25 debug build, the
+linked `EdendaleTest` folder, and the owner's Google Drive link.
+
 ---
 
 ## Section A — The `horizon` build variant
@@ -328,16 +337,23 @@ and record the result in Findings either way.
   persisted URI survives a restart. If not, implement D7 behind
   `DevicePolicy`. Also check "Open with Edendale" from the headset's file
   manager (`PlayerActivity`'s `video/*` filter).
+
+  *2026-10-25, Quest 3:* the picker and the persisted URI pass (Findings), so
+  D7 isn't needed. "Open with Edendale" is still to check.
 - [x] **B.3** PiP: `PlayerActivity` already gates on
   `FEATURE_PICTURE_IN_PICTURE`. Check that the Auto PiP setting and the PiP
   button disappear when the feature is absent. If the feature is present but
   PiP behaves badly in a panel, turn it off for `horizon` (A.2).
-- [ ] **B.4** Lifecycle: playback keeps going while another panel has focus;
+- [x] **B.4** Lifecycle: playback keeps going while another panel has focus;
   it pauses when the panel closes or the headset comes off (`onStop`). Today
   `onStart` sets `playWhenReady = true`, so putting the headset back on
   resumes playback by itself. Decide with the owner whether Horizon should stay
   paused instead, and log any change as a Deviation. Progress is saved on stop
   (VRC Functional.4).
+
+  *2026-10-25, Quest 3:* taking the headset off paused playback, and putting
+  it back on resumed it by itself. The owner keeps the auto-resume, so nothing
+  changes. *Obsession* then showed in Continue Watching with its time left.
 - [ ] **B.5** Input:
   - Run the player and library with Touch controllers (ray and trigger),
     hands (pinch), and Look and Pinch in the simulator: double-tap skip,
@@ -349,16 +365,33 @@ and record the result in Findings either way.
   - Check the panel's default size: whether 1280×800 dp opens at a comfortable
     size and keeps the wide navigation (≥ 1100 dp), and whether resizing works.
     Tune the `horizon` `<layout>` only if needed.
-- [ ] **B.6** Brightness: the player's brightness control writes
+
+  *2026-10-25, Quest 3:* with controllers, double-tap skip, press-and-hold
+  speed, the seek bar, and B/Y (Adjustments, then the player) all work, and
+  resizing the panel works. Two problems remain: a double pinch with hands is
+  hard to land as a double-tap, and the thumbstick doesn't scroll the home
+  rows. The hit-target audit and Look and Pinch are still to do.
+- [x] **B.6** Brightness: the player's brightness control writes
   `window.attributes.screenBrightness` (`PlayerActivity`). If that has no
   effect in a panel, hide the control on Horizon. Picture → Brightness, done in
   the shader, stays.
+
+  *2026-10-25:* neither the left swipe (window brightness) nor the right swipe
+  (player volume) made a visible or audible change on the Quest 3, so the owner
+  had both taken off the headset: `DevicePolicy.offersSwipeAdjustments` is
+  false on Horizon, and the gesture layer ignores vertical swipes there.
+  Picture → Brightness and the Audio section stay.
 - [ ] **B.7** Video, on a Quest 3/3S, and on a Quest 2 if D4 keeps it: H.264,
   HEVC 10-bit, VP9, and AV1 (Quest 3 only) at 1080p and 4K; 4K60; and the
   time to first frame. HDR10 and Dolby Vision profile 8 on the SDR LCD panel:
   if they look washed out, file a follow-up step (Media3 tone mapping) rather
   than shipping it silently. Unsupported codecs should get the existing
   localized error.
+
+  *2026-10-25, Quest 3:* H.264 (`c2.qti.avc.decoder`, including a 4K `.mov`
+  from Google Drive) and 8-bit HEVC (`c2.qti.hevc.decoder`, a 1080p x265 MKV
+  from Drive) play on the hardware decoders; the player opened in 0.6 s.
+  Still to do: HEVC 10-bit, VP9, AV1, 4K60, HDR10, and Dolby Vision.
 - [ ] **B.8** Enhancement (D6): run the one-time GPU check and the governor at
   720p and 1080p for ten minutes, watching dropped frames and thermal
   stepping. Set the Horizon default from the result.
@@ -367,8 +400,20 @@ and record the result in Findings either way.
   equalizer, and Audio Booster. Player Adjustments → Audio Output: if
   `SystemOutputSwitcherDialogController.showDialog` returns false on Horizon,
   hide the row there. Don't add system-volume control; Meta prohibits it.
+
+  *2026-10-25, Quest 3:* 5.1 AAC (`c2.android.aac.decoder`) sounded right to
+  the owner, and `decoder-eac3.mkv` played through `c2.dolby.eac3.decoder`.
+  Still to do: Atmos, 7.1, DTS and TrueHD through FFmpeg, the equalizer,
+  Audio Booster, and the Audio Output row.
 - [ ] **B.10** Trailers: the `youtube-nocookie.com` embed plays in the
   headset's WebView and still starts only on an explicit action.
+
+  *2026-10-25:* in a panel on the Quest 3, the embed played sound but no
+  picture. At the owner's request, Watch Trailer on Horizon now opens
+  `https://www.youtube.com/watch?v=<key>` with `ACTION_VIEW`
+  (`DevicePolicy.playsTrailersInline` is false), still only on that tap. The
+  Quest hands the link to the Meta Quest Browser, although YouTube VR is
+  installed. Still to check: that the browser shows the picture.
 - [ ] **B.11** Network sources over Wi-Fi: SMB, WebDAV over HTTPS with a
   self-signed certificate, SFTP, and S3. Note how long typing a login takes on
   the headset keyboard (input for D11). Also check plain `http://` on the LAN
@@ -575,6 +620,13 @@ For whoever reviews the implementation:
 | 2026-10-10 | Spike APKs | The merged manifest gains `WAKE_LOCK` (on Meta's review-required list) and `ACCESS_NETWORK_STATE` from `media3-exoplayer`. Edendale never calls `setWakeMode`. Badging: minSdk 32, targetSdk 36, `installLocation` auto, `arm64-v8a` only, supported-devices tag present. Release APK 70.5 MB unsigned; debug 91.6 MB. | A.2: remove `WAKE_LOCK` with `tools:node="remove"` in the Horizon manifest if P.6 flags it. |
 | 2026-10-19 | `horizon` flavor, release `91c29d1`+`4ad9712` (unsigned) | Merged manifest: `installLocation` auto, minSdk 32, targetSdk 36, permissions `INTERNET`, `ACCESS_NETWORK_STATE`, and AndroidX's `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` only (`WAKE_LOCK` and `WRITE_EPG_DATA` gone), no leanback feature, no `LEANBACK_LAUNCHER`, no banner, `supportsPictureInPicture="false"`, supported devices `quest2\|questpro\|quest3\|quest3s`. `src/main/AndroidManifest.xml` is byte-identical to android's. Release APK 70.6 MB, `lib/arm64-v8a` only; debug 96.2 MB with every ABI. `aapt2` badging also shows an implied `android.hardware.screen.landscape` feature (required) from `PlayerActivity`'s `sensorLandscape`. | P.6: watch whether Meta's validator objects to the implied landscape feature; if so, declare it `required="false"` in the Horizon manifest. |
 | 2026-10-19 | Spatial Simulator 207.0.0.83.331, `4ad9712` debug | Install and launch as a panel; `am start -W` reported 28 s to the first frame on this cold start (software rendering; the simulator says nothing about headset timing). The wide navigation shows and TMDB loads. Downloaded → Add Local Folder opened DocumentsUI in the last folder; Use this folder → Allow linked `Movies/EdendaleTest`: 7 items, five movies and *Severance* with two episodes matched. Play on episode 1 opened `PlayerActivity` in the same task (`mode=multi-window`, never pinned); the chrome has no PiP button and Adjustments → Playback has no Auto PiP row, although the simulator reports `android.software.picture_in_picture`, so `DevicePolicy` is in effect. Back closed the Adjustments panel, then the player; the episode row shows the saved progress. | B.3 done on the simulator; repeat the run on the Quest 3 (Headset run, 2026-10-20). |
+| 2026-10-25 | Owner's Quest 3 (Horizon OS v207, Android 14), `667149c` debug (0.27.0.1, versionCode 3) | Replaced the 10-10 spike (uninstalled first). Cold start to the first frame took 1.9 s (`am start -W`); the panel opens at 1600×1000 px (1280×800 dp), the wide navigation shows, TMDB loads, and resizing works (owner). `adb exec-out screencap` returns both eyes of the composited view (4128×2208, passthrough included), and `uiautomator dump` plus `input tap`/`input swipe` in panel pixels drive the app from the Mac. | Recipe for later headset runs. |
+| 2026-10-25 | Quest 3, `667149c` debug | **Google Drive sign-in works on the headset.** The account page opened in `com.oculus.browser`'s Custom Tab, `com.babasama.edendale:/oauth2redirect` returned to `OAuthRedirectActivity`, and Google's picker linked "Videos you chose": five movies, four matched to TMDB (*ToS-4k-1920.mov* names no film). The 10-10 "Custom URI scheme is not enabled" refusal is gone. Downloaded → Add Local Folder → `Movies/EdendaleTest` linked and scanned too. After `am force-stop` and a relaunch, a *Severance* episode opened from the persisted tree URI in 0.6 s, with no permission error. | B.2 passes apart from "Open with"; C.1's Google part works on the headset. |
+| 2026-10-25 | Quest 3, `667149c` debug | Playback: hardware `c2.qti.avc.decoder` (H.264, including the 4K ToS `.mov` streamed from Drive) and `c2.qti.hevc.decoder` (1080p x265), `c2.android.aac.decoder` for 5.1 AAC, and `c2.dolby.eac3.decoder` for E-AC-3. Subtitles show. Picking an Enhancement preset for the first time installed the effects pipeline and re-prepared the player (2.7 s over Drive); the default stayed Off (D6). | B.7, B.9 partly done (see the steps). |
+| 2026-10-25 | Quest 3, `667149c` debug | Input with controllers: double-tap skip, press-and-hold speed, the seek bar, and B/Y work. With hands, a double pinch rarely lands as a double-tap. **The thumbstick doesn't scroll the home rows.** The vertical swipes for brightness and volume changed nothing the owner could see or hear. Headset off paused playback and headset on resumed it. | B.5: thumbstick scrolling and the double-pinch are open. B.6 and B.4: see the steps. |
+| 2026-10-25 | Quest 3, `667149c` debug | **The inline trailer plays sound but no picture.** Edendale's process created `c2.qti.av1.decoder` for each try, so the WebView decoded the video but the panel never showed it (the simulator's 10-10 result, now on hardware). With the change, Watch Trailer's `ACTION_VIEW` resolved to `com.oculus.browser` (`BrowserActivity`) without a chooser, although `com.google.android.apps.youtube.vr.oculus` is installed. | B.10: the owner checks that the browser shows the picture. |
+| 2026-10-25 | Quest 3, `667149c` debug | **Media3 1.9 asks for a wake lock by default.** `ExoPlayerImpl` uses `C.WAKE_MODE_LOCAL` when the app never calls `setWakeMode`, and Edendale doesn't, so each playback logs `WakeLockManager: WAKE_LOCK permission not granted, can't acquire wake lock for playback`. It's only a warning: the panel pauses when the headset comes off, and `FLAG_KEEP_SCREEN_ON` keeps it awake while playing. The 10-19 A.2 Deviation's reason ("Edendale never sets a wake mode") is wrong on this point. | Leave `WAKE_LOCK` removed; if the warning should go, set `C.WAKE_MODE_NONE` on Horizon through `DevicePolicy`. |
+| 2026-10-25 | Quest 3, `667149c`+the 10-25 change, debug | Installed over the old build (library and Drive link kept). With `adb shell input swipe`, vertical swipes on either half of the player left the AudioFlinger track at 0 dB and set no `sbrt` on the player window, while a tap still showed the controls and a hold still gave `speed=2.0`. Watch Trailer opened the Meta Quest Browser. | B.6 verified on the headset; B.10 waits for the owner. |
 
 ## Deviations log
 
@@ -588,6 +640,10 @@ For whoever reviews the implementation:
 | 2026-10-19 | B.1, A.T1 | `DevicePolicy` and its test live in `src/horizon` and `src/testHorizon`; `src/main` only gains the four hooks (`MainActivity`, `EdendaleApplication`, `PlayerActivity`, and an `enhancementDefault` parameter on `VideoEffectsController`). The handoff receiver isn't in the policy: it's TV-shell-only already, and D.1 is deferred by D11. | Smallest possible `src/main` diff for the merges. |
 | 2026-10-19 | E.1 | `verifyHorizonRelease` is defined at the end of `build.gradle.kts`, not in an applied `horizon-verify.gradle.kts`. | An applied Kotlin script can't resolve the Android Gradle plugin's classes (`com.android.build.api.*`); tried and failed on AGP 8.10.1. |
 | 2026-10-19 | E.2 | `ci.yml` triggers on `meta-horizon` only, and `instrumented.yml` likewise. | Nothing here ships from `android`. |
+| 2026-10-25 | A.2 | Correction to the 10-19 `WAKE_LOCK` row: Media3 1.9 does request a local wake lock by default (Findings, 2026-10-25). `WAKE_LOCK` stays removed. | The request fails with a warning only, and the player pauses when the headset comes off. |
+| 2026-10-25 | B.4 | Horizon keeps the handheld lifecycle: the headset off pauses, and the headset back on resumes by itself. | Owner's choice after trying it on the Quest 3. |
+| 2026-10-25 | B.6 | Both vertical swipes are off on Horizon, not only the brightness one B.6 named: `DevicePolicy.offersSwipeAdjustments`, read by `PlayerScreen`'s gesture layer through `PlayerActivity.devicePolicy` (now `internal`). So Horizon has no app-level volume control in the player; D.4 would add it back. | Owner's choice: neither swipe made a visible or audible change in a panel. |
+| 2026-10-25 | B.10 | Watch Trailer opens YouTube's watch page outside the app (`ACTION_VIEW`, `TrailerEmbed.watchUrl`) instead of the inline embed, through `DevicePolicy.playsTrailersInline` in `MediaDetailScreen`. | Owner's choice: the inline embed played sound with no picture on the Quest 3. |
 
 ## Handoff log
 
@@ -598,6 +654,7 @@ For whoever reviews the implementation:
 | 2026-10-19 | D0 (revised), S.1–S.5 | Owner, Claude | Owner: keep `meta-horizon` as a separate branch and pull android's work into it. Claude removed the stale worktrees and merged local branches, moved the checkout to `meta-horizon`, restored the stashed HORIZON.md and trailer fix (`f04259b`), merged `android-27.0.1` (`695f375`), and ran the baseline `./gradlew testDebugUnitTest assembleDebug` (JDK 17): 480 tests pass, 42 s. |
 | 2026-10-19 | A.1–A.5, A.T1, B.1, B.3, E.1, E.2, E.4, E.5 | Claude | `91c29d1` (flavor, manifest overlay, signing, verification, CI, README) and `4ad9712` (`DevicePolicy`). `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease assembleHorizonDebugAndroidTest`: 485 tests pass (the five `DevicePolicyTest` cases included), BUILD SUCCESSFUL in 1m 20s; `verifyHorizonRelease` passed and reported the unsigned APK (signature checks skipped). Simulator run in Findings. Not done: the headset run, signing (the owner's keystore passwords), P.2, P.6, E.3 (D10), and the cross-branch rows on `main` and the privacy policy on `web` (Hard rule 6). |
 | 2026-10-19 | F.1, F.4–F.7 | Claude | Draft `f8225e9` in `Horizon Store/27.0/`; the owner approves the text and answers. F.2 art and F.3 (`web`) are untouched. |
+| 2026-10-25 | Headset run: B.2, B.4, B.6, B.10 | Owner, Claude | Owner wore the Quest 3 (`2G97C5ZJ2B023W`, re-authorized for USB debugging) and ran the input, playback, Drive, folder, headset-off, and trailer checks. Claude installed `667149c` debug (`adb uninstall` then `install -r`), recorded `adb logcat`, read `dumpsys`, the UI tree, and the app's database, and ran B.2's restart. On the owner's decisions Claude added `offersSwipeAdjustments` and `playsTrailersInline` to `DevicePolicy` and their hooks in `PlayerScreen` and `MediaDetailScreen`. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): 486 tests pass. The new debug build is installed on the headset and checked there (Findings). |
 
 ## Sources
 

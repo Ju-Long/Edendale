@@ -158,8 +158,8 @@ class PlayerActivity : ComponentActivity() {
     private var mediaKeyHoldActive = false
     private var activeHoldKeyCode: Int? = null
 
-    /** What this device gets (HORIZON.md B.1): the TV shell, PiP, and the enhancement default. */
-    private val devicePolicy: DevicePolicy by lazy { DevicePolicy.current(this) }
+    /** What this device gets (HORIZON.md B.1): the TV shell, PiP, the enhancement default, and the swipes. */
+    internal val devicePolicy: DevicePolicy by lazy { DevicePolicy.current(this) }
 
     /**
      * Absent on handhelds where the OEM dropped PiP; present on TV from API 34;

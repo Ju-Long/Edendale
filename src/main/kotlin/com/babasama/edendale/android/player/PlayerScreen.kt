@@ -2109,7 +2109,8 @@ private const val HOLD_DWELL_MILLIS = 400L
  *  - single tap             show/hide the controls
  *  - double tap L / C / R   skip back / play-pause / skip forward, by the
  *                           App Controls lengths (10, 15, or 30 s)
- *  - vertical swipe L / R   screen brightness / player volume
+ *  - vertical swipe L / R   screen brightness / player volume, where the
+ *                           device policy offers them (not on Horizon OS)
  *  - press-and-hold L / R   the App Controls hold speeds (0.5× / 2.0× by
  *                           default) until released
  *  - hold + horizontal drag scrub the timeline (full width = 5 minutes)
@@ -2121,6 +2122,7 @@ private fun BoxScope.PlayerGestureLayer(
     activity: PlayerActivity?,
 ) {
     val haptics = LocalHapticFeedback.current
+    val swipeAdjusts = activity?.devicePolicy?.offersSwipeAdjustments != false
     Box(
         Modifier
             .matchParentSize()
@@ -2191,7 +2193,9 @@ private fun BoxScope.PlayerGestureLayer(
                             GestureMode.PENDING -> {
                                 if (translation.getDistance() > swipeSlop) {
                                     mode = if (kotlin.math.abs(translation.y) > kotlin.math.abs(translation.x)) {
-                                        if (down.position.x < size.width / 2f) {
+                                        if (!swipeAdjusts) {
+                                            GestureMode.IGNORED
+                                        } else if (down.position.x < size.width / 2f) {
                                             baseline = activity?.windowBrightnessBaseline() ?: 0.5f
                                             GestureMode.ADJUST_LEFT
                                         } else {

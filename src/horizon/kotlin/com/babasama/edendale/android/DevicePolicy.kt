@@ -8,7 +8,9 @@ import com.babasama.edendale.android.player.video.EnhancementPreset
  * decides these from "is this a TV?" alone; Horizon OS is the second input.
  * A Quest reports the handheld `uiMode`, so without this it would get a
  * phone's choices: Picture-in-Picture, which Horizon OS can't float
- * (Findings, 2026-10-10), and an enhancement default measured on phones.
+ * (Findings, 2026-10-10), an enhancement default measured on phones, swipe
+ * controls a panel ignores, and a trailer whose picture a panel doesn't show
+ * (Findings, 2026-10-25).
  *
  * [resolve] is pure, so [DevicePolicyTest] covers every combination;
  * [current] reads the device and the build flag.
@@ -22,6 +24,10 @@ data class DevicePolicy(
     val offersPictureInPicture: Boolean,
     /** Video Enhancement before the viewer chooses; the capability check may still lower it to Off. */
     val enhancementDefault: EnhancementPreset,
+    /** The player's vertical swipes: window brightness on the left, player volume on the right (B.6). */
+    val offersSwipeAdjustments: Boolean,
+    /** Play the trailer in the detail hero; otherwise Watch Trailer hands it to YouTube or the browser (B.10). */
+    val playsTrailersInline: Boolean,
 ) {
     companion object {
         fun resolve(isTelevision: Boolean, isHorizonOs: Boolean): DevicePolicy {
@@ -34,6 +40,10 @@ data class DevicePolicy(
                 // D6: Off on Horizon until B.8 measures the panel; the compositor
                 // already resamples it, and the GPU also draws the headset's view.
                 enhancementDefault = if (television || isHorizonOs) EnhancementPreset.OFF else EnhancementPreset.BALANCED,
+                // B.6: neither swipe made a visible or audible change in a panel on the Quest 3.
+                offersSwipeAdjustments = !isHorizonOs,
+                // B.10: the embed played sound but no picture in a panel on the Quest 3.
+                playsTrailersInline = !isHorizonOs,
             )
         }
 

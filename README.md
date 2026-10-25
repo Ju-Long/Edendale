@@ -61,10 +61,12 @@ The build has one product flavor, `horizon`. Everything Horizon-specific lives
 in `src/horizon` (the manifest overlay and `DevicePolicy`) and
 `src/testHorizon`, so merges from `android` touch `src/main` alone. On a
 headset the app is a handheld app, never the TV shell: `DevicePolicy` turns
-off Picture-in-Picture (Horizon OS can't float it), Watch Next, and the Video
-Enhancement default. The release APK is arm64-only, as Meta requires; the
-debug APK keeps every ABI for emulators. Both still need JDK 17 and the
-Android SDK, as below.
+off Picture-in-Picture (Horizon OS can't float it), Watch Next, the Video
+Enhancement default, and the player's brightness and volume swipes (a panel
+ignores both). Watch Trailer opens YouTube in the browser or the YouTube app
+instead of the inline player, which shows no picture in a panel. The release
+APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
+emulators. Both still need JDK 17 and the Android SDK, as below.
 
 | Purpose | Command |
 |---|---|
@@ -127,9 +129,9 @@ with B or Y as Back; Add Folder through the system picker, and the folder
 surviving a restart; "Open with Edendale" from the Files app; H.264, HEVC, VP9,
 and AV1 at 1080p and 4K, and HDR on the panel; the audio formats and the
 equalizer; Google Drive, OneDrive, Dropbox, and TMDB sign-in from the panel's
-browser and their return to the app; the trailer; the headset off and on
-mid-playback; a second account on the headset; and, offline, each source
-failing on its own while the app stays usable.
+browser and their return to the app; the trailer opening outside the app; the
+headset off and on mid-playback; a second account on the headset; and,
+offline, each source failing on its own while the app stays usable.
 
 ## Android development
 
