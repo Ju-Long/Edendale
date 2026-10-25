@@ -11,7 +11,7 @@ against.
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
-| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25 |
+| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day |
 
 **Why this is mostly packaging.** Horizon OS runs ordinary Android apps in a
 floating panel. Touch maps to controller rays, hand pinches, and (on Meta's VR
@@ -32,7 +32,7 @@ Play Billing, or Google Sign-In SDK in `build.gradle.kts`. The work is:
 5. **Delivery:** a release path with its own protected credentials.
 
 Section G is separate: an optional immersive theater that would make Edendale
-a hybrid app, with its own decisions (D12–D16).
+a hybrid app, with its own decisions (D12–D17).
 
 ---
 
@@ -117,7 +117,7 @@ on a device goes in Findings.
 
 | ID | Question | Proposal | Status |
 |---|---|---|---|
-| D0 | Where does the Horizon build live? | **`meta-horizon` is a platform branch downstream of `android`**, like the repository's other platform branches: `android` merges into it (`git merge android`) and nothing merges back, so a fix that isn't headset-specific goes to `android` first. The branch carries one `horizon` flavor whose manifest overlay, code, and tests live in `src/horizon` and `src/testHorizon`, so the merges touch `src/main` only where `DevicePolicy` hooks in. Meta's credentials stay in their own workflow and protected environment. The branch tables on `main` need a row (Hard rule 6). | **Decided 2026-10-19** (owner): separate branch, kept current from `android`; replaces the 2026-10-10 choice of a flavor on `android` |
+| D0 | Where does the Horizon build live? | **`meta-horizon` is a platform branch downstream of `android`**, like the repository's other platform branches: `android` merges into it (`git merge android`) and nothing merges back, so a fix that isn't headset-specific goes to `android` first. The branch carries one `horizon` flavor whose manifest overlay, code, and tests live in `src/horizon` and `src/testHorizon`, so the merges touch `src/main` only where `DevicePolicy` hooks in. Meta's credentials stay in their own workflow and protected environment. The branch tables on `main` need a row (Hard rule 6); added 2026-10-25 (`b221902`). | **Decided 2026-10-19** (owner): separate branch, kept current from `android`; replaces the 2026-10-10 choice of a flavor on `android` |
 | D1 | Application ID | Keep `com.babasama.edendale`. The Google and Microsoft redirects and the App Links are built on it, and the Meta store only requires uniqueness within its own catalogue. | Open |
 | D2 | SDK levels for `horizon` | minSdk **32**, Meta's recommendation for Quest-only apps (allowed range 29–34). targetSdk: keep **36** if the P.6 upload probe accepts it. Meta's table allows 32–36 for 2D apps, but its 2026-03-01 rule says apps created after that date "must set targetSdkVersion to 34". Otherwise use 34 for `horizon` only. | Open |
 | D3 | Signing key | **Reuse the Play upload key** `~/Documents/Edendale/New.jks`, alias `key0`. Its certificate (`CN=Long Ju`, expires 2051-10-03) has SHA-1 `E9:BF:A7:55:DE:A6:92:0B:9F:24:C6:B5:15:51:DB:B2:C1:46:1F:32`, SHA-256 `F2:CE:0D:97:57:66:4C:1C:BB:C0:4E:2B:0F:B8:E6:9A:4D:79:4A:40:7A:C5:16:73:D0:F8:68:23:87:7E:FF:65`, and Base64 SHA-1 `6b+nVd6mkgufJMa1FVHbssFGHzI=`. Meta distributes the APK as signed, so every Quest update must be signed with this key, even if Play's upload key is ever reset. Keep `New.jks` and its password backed up. | **Decided 2026-10-10** (owner): reuse `New.jks` |
@@ -134,6 +134,7 @@ on a device goes in Findings.
 | D14 | How the decoder gets into a build | **Build it; don't commit the binary.** Commit Media3's decoder classes (Apache-2.0, headers kept) under `src/horizon/java`. Keep `src/horizon/jniLibs/` gitignored, with the script run before Gradle, locally and in CI: NDK r26b, about 75 s, as `apple` does with `Vendor/FFmpeg`. The alternative is to commit the stripped library (1.4 MB per ABI) and have CI rebuild it and compare; rebuilds differ only in the ELF build ID. | Open |
 | D15 | When the theater ships | **After the 2D release.** Sections A–F ship first, and the theater follows as an update, provided G.0 confirms that an app created as 2D can add an immersive activity later. | Open |
 | D16 | APK size with the SDK | **Accept AGP's default**, which stores native libraries uncompressed and page-aligned: 130.1 MB against 70.6 MB, far under Meta's 1 GB limit, and the libraries load without extraction. The alternative is `packaging.jniLibs.useLegacyPackaging = true` for `horizon`. It shrinks the download (the SDK's 47.8 MB library compresses to about 19 MB) but extracts the libraries at install. | Open |
+| D17 | The scenes: tool and where the sources live | **Blender, not Unity, with the sources on a `scenes` branch** (G.7, G.13). Blender produces data: glTF for this branch and USD for a visionOS counterpart on `apple`. Unity would be a second runtime inside each app, which the repository's no-shared-runtime rule forbids, and a theater has no game loop, physics, or scripting to justify one. The `scenes` branch holds the `.blend` files, their textures, and the export scripts, and nothing executable. Each platform branch commits only its exported artifact (here a GLB under `src/horizon/assets/`) and no build or CI checks `scenes` out, so AGENTS.md's hard constraints 1 and 2 hold. `scenes` needs a row in `main`'s branch tables (Hard rule 6). The alternative was keeping the sources under `tools/horizon/scenes/` here. | **Decided 2026-10-25** (owner) |
 
 ---
 
@@ -173,7 +174,7 @@ it unless the P.6 probe flags it.
 | 4. Delivery | E | A; D10 |
 | 5. Store listing and review | F | B, C, and E passed; owner dashboard work |
 | Later | D | D11 |
-| Later | G (immersive theater) | D12–D16; G.0 before P.2 |
+| Later | G (immersive theater) | D12–D17; G.0 before P.2 |
 
 ---
 
@@ -494,7 +495,7 @@ and record the result in Findings either way.
   This adds a Meta dependency, so check its licence and network behavior with
   the owner first.
 - [ ] **D.6** Immersive theater: now Section G, with its own decisions
-  (D12–D16). 3D, 180°, and 360° playback is G.12.
+  (D12–D17). 3D, 180°, and 360° playback is G.12.
 
 ---
 
@@ -745,6 +746,32 @@ doesn't need any of G (D15).
     That's the headset's resolution, not a bug. A readable panel with mipmaps
     would soften it, at a performance cost, so only try it if the owner
     minds.
+  - **Authoring (D17):** make the environment in Blender and export glTF; no
+    Unity. Blender is the modelling, texturing, and baking tool, the Spatial
+    SDK loads GLB directly, and Unity would be a second engine in the APK.
+    - Sources live on the `scenes` branch (D17, G.13). This branch commits
+      only `src/horizon/assets/<scene>.glb`, and the commit that adds or
+      updates a GLB names the `scenes` commit it was exported from.
+    - One `.blend` per scene at real-world scale: the seat at the origin and
+      the screen straight ahead. Name the screen quad `Screen` and the seat
+      empty `Seat`, so the activity places `VideoSurfacePanelRegistration`
+      from the GLB rather than from constants, and a visionOS counterpart
+      finds the same two nodes.
+    - Bake all lighting to textures with Cycles and export unlit (emissive or
+      base-colour) materials; the theater has no real-time lights. Keep the
+      surfaces around the screen dark and neutral so they don't wash out the
+      picture.
+    - Export GLB with Blender's glTF exporter (it converts Blender's Z-up to
+      glTF's Y-up; apply modifiers; power-of-two textures). Compose in Meta
+      Spatial Editor, from the Meta Quest Developer Hub, only if a scene needs
+      more than one asset. The spike's `mesh://skybox` becomes a GLB loaded
+      from assets.
+    - The same `.blend` exports USD for an `apple` visionOS theater, where
+      Reality Composer Pro adds the docking region. That is apple's plan, not
+      this branch's; here the source only has to stay exportable to both.
+    - Budget: the spike's skybox and quad took 2.5 ms of the 11.1 ms frame at
+      90 fps, so a room may spend the rest on draw calls and overdraw. Measure
+      with G.10's VrApi line rather than against a triangle count.
 - [ ] **G.8** Controls and subtitles in the theater.
   - A small controls panel under the screen: play and pause, seek, audio and
     subtitle tracks, and Exit. Show it on trigger or pinch and hide it after a
@@ -793,6 +820,32 @@ doesn't need any of G (D15).
   over-under, 180°, and 360° video, and MV-HEVC spatial video, through the
   surface panel's stereo modes and equirectangular shapes. The Quest 3 has an
   MV-HEVC decoder (Findings, 2026-10-10).
+- [x] **G.13** *(Before G.7's first scene; Hard rule 6 for the `main` rows.)*
+  The `scenes` branch (D17).
+  - Create it from `main` (`git switch -c scenes main`), so it carries the
+    universal documents and nothing from any platform. It holds
+    `scenes/<name>/<name>.blend` with that scene's textures beside it,
+    `tools/` with the export scripts, and a README that says what the branch
+    is, how to export, and the licence of every piece of art (made in house,
+    or under a licence that fits the repository, as G.7 requires). No app
+    code, no platform CI, no credentials.
+  - The export scripts run Blender headless, so an export is reproducible:
+    `Blender --background scenes/<name>/<name>.blend --python
+    tools/export_gltf.py -- out/<name>.glb`, and `tools/export_usd.py` for
+    `apple`. A script applies modifiers, exports the baked textures saved
+    with the `.blend` (it bakes nothing itself), and fails if `Screen` or
+    `Seat` is missing.
+  - A platform branch commits the export only: here
+    `src/horizon/assets/<name>.glb`, with the `scenes` commit it came from in
+    the commit message. No build or CI checks `scenes` out (AGENTS.md hard
+    constraints 1 and 2).
+  - Size: commit `.blend` files and textures as plain files. If one passes
+    about 50 MB, raise Git LFS with the owner before adding it; GitHub
+    refuses files over 100 MB.
+  - On `main`, as its own change with the owner's go-ahead: add `scenes` to
+    the branch tables in `README.md` and `AGENTS.md` ("Scene sources:
+    `.blend` files, textures, and export scripts; no executable code"). The
+    `meta-horizon` row that D0 asks for can go in the same change.
 
 ---
 
@@ -899,6 +952,9 @@ For whoever reviews the implementation:
 | 2026-10-25 | Headset run: B.2, B.4, B.6, B.10 | Owner, Claude | Owner wore the Quest 3 (`2G97C5ZJ2B023W`, re-authorized for USB debugging) and ran the input, playback, Drive, folder, headset-off, and trailer checks. Claude installed `667149c` debug (`adb uninstall` then `install -r`), recorded `adb logcat`, read `dumpsys`, the UI tree, and the app's database, and ran B.2's restart. On the owner's decisions Claude added `offersSwipeAdjustments` and `playsTrailersInline` to `DevicePolicy` and their hooks in `PlayerScreen` and `MediaDetailScreen`. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): 486 tests pass. The new debug build is installed on the headset and checked there (Findings). |
 | 2026-10-25 | B.5 (thumbstick), B.10 | Owner, Claude | Owner confirmed the browser trailer (`c25a463`) and pushed both sticks while Claude recorded `getevent -lt` (Findings). Claude added `ThumbstickScroller` and `DevicePolicy.scrollsWithThumbstick` in `src/horizon`, with `MainActivity` gaining the hook (`dispatchGenericMotionEvent`, `dispatchTouchEvent`), plus `ThumbstickScrollTest`. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): 490 tests pass. Installed on the Quest and checked with injected joystick input (Findings). |
 | 2026-10-25 | D.6 → Section G (spike and plan) | Owner, Claude | The spike worktree was cut from `7ab7624` in Claude's scratchpad and committed to the local branch `horizon-immersive-spike` (`37ef2bd`, not pushed). It was installed on the Quest 3 as `com.babasama.edendale.spike`, beside the real build; the owner's build and data weren't touched. NDK r26b (owner's go-ahead) and the SDK's CMake 3.22.1, which the JNI build needs, were installed with `sdkmanager`. `tools/horizon/build-ffmpeg-decoder.sh` rebuilt the library in 74 s, and the result differs from the tested build only in its 20-byte ELF build ID. `./gradlew assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease` (JDK 17) passed. Before the headset run, an LGPL host build on the Mac round-tripped TrueHD bit-exact and decoded DTS. Still on the headset: the spike app and its test files (`adb uninstall com.babasama.edendale.spike` removes both). Not done: everything in Section G, and decisions D12–D16. |
+| 2026-10-25 | G.7, D17 (scene authoring) | Owner, Claude | The owner asked whether to build the theater scenes in Unity or Blender: Blender (D17), because both headsets load exported data natively and Unity would be a shared runtime. The pipeline is G.7's Authoring bullet; where the `.blend` sources live is still the owner's call. Tooling on the Mac, outside the repository: Blender Lab's `blender_mcp` (clone at `~/Codes/blender_mcp`; its add-on was already installed and listening in Blender 5.2.3) was registered with Claude Code at user scope with `claude mcp add -s user blender -e BLENDER_PATH=/Applications/Blender.app/Contents/MacOS/Blender -- uv --directory ~/Codes/blender_mcp/mcp run --python 3.14 blender-mcp`, pinned to Python 3.14 (uv-managed) because the Mac's default Python is 3.15. A stdio client listed its 26 tools and read the open file's path info from the running Blender; the `*_for_cli` tools, which start a background Blender, weren't exercised. |
+| 2026-10-25 | D17 (decided) | Owner | The owner chose the `scenes` branch: `.blend` sources and export scripts there, and each platform branch commits only its export. Recorded in D17, G.7's Authoring bullet, and the new G.13. The branch itself and the `main` rows (Hard rule 6) aren't created yet. |
+| 2026-10-25 | G.13 | Owner, Claude | Owner's go-ahead under Hard rule 6. Done in two worktrees in Claude's scratchpad, so this checkout stayed on `meta-horizon`: `main` was fast-forwarded to the already prepared `main-meta-horizon` (`b221902`, the `meta-horizon` rows) and got `9a9162f`, the `scenes` rows plus a paragraph in `README.md` and `AGENTS.md`; `scenes` was cut from that `main` and got `0b0ea32`: its README, `.gitignore` (`/out/`, `*.blend1`), `tools/export_gltf.py`, `tools/export_usd.py`, and `tools/_theater_scene.py`. Checked with Blender 5.2.3 LTS headless on a generated scene (Seat, a 4 m Screen 5 m ahead, a floor with an unapplied array modifier and a packed texture): the GLB keeps `Screen` at (0, 1.5, -5) and `Seat` at the origin, 6 triangles (modifier applied), 1 image; the USDZ holds `theater.usdc` plus the texture, `upAxis = "Y"`, the conversion as a rotation on `/root`; a scene without `Seat` exits 1 and writes nothing. Both worktrees were removed. Nothing is pushed: `main` is two commits ahead of `origin/main` and `scenes` exists only locally. |
 
 ## Sources
 
