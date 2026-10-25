@@ -9,8 +9,8 @@ import com.babasama.edendale.android.player.video.EnhancementPreset
  * A Quest reports the handheld `uiMode`, so without this it would get a
  * phone's choices: Picture-in-Picture, which Horizon OS can't float
  * (Findings, 2026-10-10), an enhancement default measured on phones, swipe
- * controls a panel ignores, and a trailer whose picture a panel doesn't show
- * (Findings, 2026-10-25).
+ * controls a panel ignores, a trailer whose picture a panel doesn't show, and
+ * no use for the thumbsticks (Findings, 2026-10-25).
  *
  * [resolve] is pure, so [DevicePolicyTest] covers every combination;
  * [current] reads the device and the build flag.
@@ -28,6 +28,8 @@ data class DevicePolicy(
     val offersSwipeAdjustments: Boolean,
     /** Play the trailer in the detail hero; otherwise Watch Trailer hands it to YouTube or the browser (B.10). */
     val playsTrailersInline: Boolean,
+    /** The library scrolls what the ray points at with a thumbstick ([ThumbstickScroller], B.5). */
+    val scrollsWithThumbstick: Boolean,
 ) {
     companion object {
         fun resolve(isTelevision: Boolean, isHorizonOs: Boolean): DevicePolicy {
@@ -44,6 +46,8 @@ data class DevicePolicy(
                 offersSwipeAdjustments = !isHorizonOs,
                 // B.10: the embed played sound but no picture in a panel on the Quest 3.
                 playsTrailersInline = !isHorizonOs,
+                // B.5: Horizon sends the sticks as joystick axes that nothing else reads.
+                scrollsWithThumbstick = isHorizonOs,
             )
         }
 

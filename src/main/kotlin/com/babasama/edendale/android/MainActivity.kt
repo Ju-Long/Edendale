@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
 import android.view.Menu
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +25,9 @@ class MainActivity : ComponentActivity() {
     private val pendingRoute = MutableStateFlow<AppRoute?>(null)
     private val keyboard = LibraryKeyboard()
     private var isTelevision = false
+
+    /** A headset's thumbsticks scroll what the ray points at (HORIZON.md B.5); null elsewhere. */
+    private var thumbstick: ThumbstickScroller? = null
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -43,7 +47,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
-        isTelevision = DevicePolicy.current(this).usesTelevisionShell
+        val devicePolicy = DevicePolicy.current(this)
+        isTelevision = devicePolicy.usesTelevisionShell
+        if (devicePolicy.scrollsWithThumbstick) thumbstick = ThumbstickScroller(window.decorView)
         applyTelevisionWindow(isTelevision)
 
         enableEdgeToEdge()
@@ -76,6 +82,14 @@ class MainActivity : ComponentActivity() {
             }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean =
+        thumbstick?.onGenericMotion(event) == true || super.dispatchGenericMotionEvent(event)
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        thumbstick?.trackPointer(event)
+        return super.dispatchTouchEvent(event)
     }
 
     /** Lists the library shortcuts in the system's keyboard shortcuts list (Meta+/). */

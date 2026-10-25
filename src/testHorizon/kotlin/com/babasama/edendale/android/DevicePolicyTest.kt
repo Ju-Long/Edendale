@@ -17,6 +17,7 @@ class DevicePolicyTest {
                 enhancementDefault = EnhancementPreset.BALANCED,
                 offersSwipeAdjustments = true,
                 playsTrailersInline = true,
+                scrollsWithThumbstick = false,
             ),
             DevicePolicy.resolve(isTelevision = false, isHorizonOs = false),
         )
@@ -32,13 +33,14 @@ class DevicePolicyTest {
                 enhancementDefault = EnhancementPreset.OFF,
                 offersSwipeAdjustments = true,
                 playsTrailersInline = true,
+                scrollsWithThumbstick = false,
             ),
             DevicePolicy.resolve(isTelevision = true, isHorizonOs = false),
         )
     }
 
     @Test
-    fun horizonIsHandheldWithoutPipEnhancementSwipesOrInlineTrailers() {
+    fun horizonIsHandheldWithThumbstickScrollAndWithoutPipEnhancementSwipesOrInlineTrailers() {
         assertEquals(
             DevicePolicy(
                 usesTelevisionShell = false,
@@ -47,6 +49,7 @@ class DevicePolicyTest {
                 enhancementDefault = EnhancementPreset.OFF,
                 offersSwipeAdjustments = false,
                 playsTrailersInline = false,
+                scrollsWithThumbstick = true,
             ),
             DevicePolicy.resolve(isTelevision = false, isHorizonOs = true),
         )
