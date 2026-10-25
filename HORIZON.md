@@ -11,7 +11,7 @@ against.
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
-| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day |
+| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff) |
 
 **Why this is mostly packaging.** Horizon OS runs ordinary Android apps in a
 floating panel. Touch maps to controller rays, hand pinches, and (on Meta's VR
@@ -61,6 +61,7 @@ Play ships from `android`.
 
 | Purpose | Command |
 |---|---|
+| FFmpeg decoder library (G.1; once, and after a pin changes) | `tools/horizon/build-ffmpeg-decoder.sh` → `src/horizon/jniLibs/<abi>/libffmpegJNI.so`, gitignored; needs `sdkmanager "ndk;26.1.10909125" "cmake;3.22.1"` |
 | JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` (signed when the A.3 properties exist; `…-unsigned.apk` otherwise) |
@@ -122,18 +123,18 @@ on a device goes in Findings.
 | D2 | SDK levels for `horizon` | minSdk **32**, Meta's recommendation for Quest-only apps (allowed range 29–34). targetSdk: keep **36** if the P.6 upload probe accepts it. Meta's table allows 32–36 for 2D apps, but its 2026-03-01 rule says apps created after that date "must set targetSdkVersion to 34". Otherwise use 34 for `horizon` only. | Open |
 | D3 | Signing key | **Reuse the Play upload key** `~/Documents/Edendale/New.jks`, alias `key0`. Its certificate (`CN=Long Ju`, expires 2051-10-03) has SHA-1 `E9:BF:A7:55:DE:A6:92:0B:9F:24:C6:B5:15:51:DB:B2:C1:46:1F:32`, SHA-256 `F2:CE:0D:97:57:66:4C:1C:BB:C0:4E:2B:0F:B8:E6:9A:4D:79:4A:40:7A:C5:16:73:D0:F8:68:23:87:7E:FF:65`, and Base64 SHA-1 `6b+nVd6mkgufJMa1FVHbssFGHzI=`. Meta distributes the APK as signed, so every Quest update must be signed with this key, even if Play's upload key is ever reset. Keep `New.jks` and its password backed up. | **Decided 2026-10-10** (owner): reuse `New.jks` |
 | D4 | Supported devices (`com.oculus.supportedDevices`) | `quest2\|questpro\|quest3\|quest3s`, plus `vrglasses` if Look and Pinch passes in the Spatial Simulator (B.5). Quest 2 and Pro have no AV1 hardware decoder, and the app has no software AV1 decoder. | Open |
-| D5 | Entitlement check | **Skip.** It's only recommended for 2D apps (VRC.Quest.Security.1), the app is free and GPL-3.0, and it would need the Meta Platform SDK and a network call to Meta. | Open |
+| D5 | Entitlement check | **Skip.** It's only recommended for 2D apps (VRC.Quest.Security.1), the app is free and open source (MPL-2.0, over an LGPL-2.1 FFmpeg since G.1), and it would need the Meta Platform SDK and a network call to Meta. | Open |
 | D6 | Video Enhancement default on Horizon | **Off** (as on TV) until B.8 measures it. The compositor already resamples the panel, and the GPU is shared with rendering the headset's view. | Open |
 | D7 | Local files if the system folder picker is missing on Quest | Use MediaStore video queries with `READ_MEDIA_VIDEO`, which Meta allows after review, with the justification "media player for the user's own videos". Only if B.2 fails. | Open |
 | D8 | Test hardware | The owner's **Quest 3** for every hardware check; the Spatial Simulator for Look and Pinch and quick UI runs. Quest 2, Pro, and 3S stay untested unless someone lends one; record that in Findings if D4 lists them. | **Decided 2026-10-10** (owner): Quest 3 |
 | D9 | Price and regions | Free, no in-app purchases, every region the store offers. | Open |
 | D10 | Release automation | Upload by hand (dashboard or a local `ovr-platform-util`) until the first approval, then add E.3's workflow. | Open |
 | D11 | Scope of Section D (Quest-only improvements) for the first release | None of Section D for the first release. D.1 (handoff to the headset) moves up if typing logins on the headset proves painful in B.11. | Open |
-| D12 | Meta Spatial SDK for the theater (Section G) | **Allow** `com.meta.spatial` (`meta-spatial-sdk`, `-toolkit`, `-vr`, a release at least two weeks old) in the `horizon` flavor only, as an exception to Hard rule 2. It's closed source under Meta's SDK licence. No Meta Platform SDK, no account, and no Spatial Gradle plugin. It can't ship before D13. | Open |
-| D13 | FFmpeg decoder on this branch | **Replace Jellyfin's GPL-3.0 package with Media3's own decoder over an LGPL-2.1 FFmpeg**, built by `tools/horizon/build-ffmpeg-decoder.sh` (G.1). Jellyfin publishes this same configuration under GPL-3.0. It decodes the same formats: DTS, DTS-HD MA, and TrueHD were verified on the Quest 3 on 2026-10-25. `android` keeps its own D5. Meta's licence forbids use that would subject the SDK to an open-source licence (§1.2.8), and a GPL-3.0 APK would, so D12 needs this first. It also stands alone if the owner wants the Quest APK off GPL-3.0. | Open |
-| D14 | How the decoder gets into a build | **Build it; don't commit the binary.** Commit Media3's decoder classes (Apache-2.0, headers kept) under `src/horizon/java`. Keep `src/horizon/jniLibs/` gitignored, with the script run before Gradle, locally and in CI: NDK r26b, about 75 s, as `apple` does with `Vendor/FFmpeg`. The alternative is to commit the stripped library (1.4 MB per ABI) and have CI rebuild it and compare; rebuilds differ only in the ELF build ID. | Open |
-| D15 | When the theater ships | **After the 2D release.** Sections A–F ship first, and the theater follows as an update, provided G.0 confirms that an app created as 2D can add an immersive activity later. | Open |
-| D16 | APK size with the SDK | **Accept AGP's default**, which stores native libraries uncompressed and page-aligned: 130.1 MB against 70.6 MB, far under Meta's 1 GB limit, and the libraries load without extraction. The alternative is `packaging.jniLibs.useLegacyPackaging = true` for `horizon`. It shrinks the download (the SDK's 47.8 MB library compresses to about 19 MB) but extracts the libraries at install. | Open |
+| D12 | Meta Spatial SDK for the theater (Section G) | **Allow** `com.meta.spatial` (`meta-spatial-sdk`, `-toolkit`, `-vr`, a release at least two weeks old) in the `horizon` flavor only, as an exception to Hard rule 2. It's closed source under Meta's SDK licence. No Meta Platform SDK, no account, and no Spatial Gradle plugin. It can't ship before D13. | Open; **built under this proposal on 2026-10-25** (G.4–G.8), the owner's decision still needed before release |
+| D13 | FFmpeg decoder on this branch | **Replace Jellyfin's GPL-3.0 package with Media3's own decoder over an LGPL-2.1 FFmpeg**, built by `tools/horizon/build-ffmpeg-decoder.sh` (G.1). Jellyfin publishes this same configuration under GPL-3.0. It decodes the same formats: DTS, DTS-HD MA, and TrueHD were verified on the Quest 3 on 2026-10-25. `android` keeps its own D5. Meta's licence forbids use that would subject the SDK to an open-source licence (§1.2.8), and a GPL-3.0 APK would, so D12 needs this first. It also stands alone if the owner wants the Quest APK off GPL-3.0. | Open; **built under this proposal on 2026-10-25** (G.1, G.2) |
+| D14 | How the decoder gets into a build | **Build it; don't commit the binary.** Commit Media3's decoder classes (Apache-2.0, headers kept) under `src/horizon/java`. Keep `src/horizon/jniLibs/` gitignored, with the script run before Gradle, locally and in CI: NDK r26b, about 75 s, as `apple` does with `Vendor/FFmpeg`. The alternative is to commit the stripped library (1.4 MB per ABI) and have CI rebuild it and compare; rebuilds differ only in the ELF build ID. | Open; **built under this proposal on 2026-10-25** (the script, the gitignore, and CI, G.1) |
+| D15 | When the theater ships | **After the 2D release.** Sections A–F ship first, and the theater follows as an update, provided G.0 confirms that an app created as 2D can add an immersive activity later. | Open; the code is on the branch, so the first 2D release would carry the theater unless it's held back |
+| D16 | APK size with the SDK | **Accept AGP's default**, which stores native libraries uncompressed and page-aligned: 130.1 MB against 70.6 MB, far under Meta's 1 GB limit, and the libraries load without extraction. The alternative is `packaging.jniLibs.useLegacyPackaging = true` for `horizon`. It shrinks the download (the SDK's 47.8 MB library compresses to about 19 MB) but extracts the libraries at install. | Open; the build keeps AGP's default (nothing set) |
 | D17 | The scenes: tool and where the sources live | **Blender, not Unity, with the sources on a `scenes` branch** (G.7, G.13). Blender produces data: glTF for this branch and USD for a visionOS counterpart on `apple`. Unity would be a second runtime inside each app, which the repository's no-shared-runtime rule forbids, and a theater has no game loop, physics, or scripting to justify one. The `scenes` branch holds the `.blend` files, their textures, and the export scripts, and nothing executable. Each platform branch commits only its exported artifact (here a GLB under `src/horizon/assets/`) and no build or CI checks `scenes` out, so AGENTS.md's hard constraints 1 and 2 hold. `scenes` needs a row in `main`'s branch tables (Hard rule 6). The alternative was keeping the sources under `tools/horizon/scenes/` here. | **Decided 2026-10-25** (owner) |
 
 ---
@@ -154,7 +155,16 @@ on a device goes in Findings.
 | Functional.1, .3, .4, .12 | no crashes or stuck states, no data loss, works for every user account on the headset | — | Appendix 1 |
 | Privacy.1–.5 | a policy URL covering what's collected, how it's used, and how to delete it | `/privacy/` on `web` names "Android" but not Quest | F.3 |
 | Assets (Asset.1–.7) | transparent logo, clean cover art, 5 screenshots, no other VR platforms' hardware | none yet | F.2 |
-| Immersive requirements (hybrid apps) | the immersive VRCs apply to the immersive activity | none until Section G | G.9 |
+| Immersive requirements (hybrid apps) | the immersive VRCs apply to the immersive activity (the rows below; G.9, from Meta's per-VRC pages on 2026-10-25, since the VRC table itself wasn't reachable from the build container, so the owner checks the Comfort, Boundary, and Input rows against it) | the theater, Section G | G.9 |
+| Performance.1 (immersive: required) | an interactive app renders at 72 Hz or more (60 fps at least); a media app may use 60 Hz where the device offers it | the spike ran at 90/90 fps with 2.5 ms of an 11.1 ms frame; the theater draws one unlit environment, the video layer, and two panels | G.10 measures the real build with VrApi's FPS line |
+| Functional.1 | no crashes, freezes, or stuck states over 45 minutes | the theater is one activity with no network of its own; a playback error shows a message and Exit | G.10 (30 minutes of playback) |
+| Functional.2 | a single-player app pauses when the system asks: the headset off, the Universal Menu (Meta button) | `onHMDUnmounted`, `onVRPause`, and `SessionState.VISIBLE` pause; mounted, ready, and `FOCUSED` resume | G.6, G.10 |
+| Functional.3, .4 | no stuck state; no data loss | Exit, B/Y, and the Meta button all leave; progress is written every five seconds, on pause, on stop, and on exit | G.6 |
+| Functional.5 | responds to positional tracking, not only orientation | the SDK's head pose places the screen (6DOF); the viewer can lean and look around it | G.7 |
+| Functional.12 | works for every entitled user on the headset | the theater reads the same per-user app data as the panel; no account | G.10 (second account) |
+| Input (controllers and hands; the system gesture reserved) | both controllers and hands drive the app; the Meta button is the system's | `TheaterInputSystem` reads triggers, A/X, B/Y, and hand pinches; the SDK's ray clicks the controls panel; nothing reads the Meta button | G.8, G.10 |
+| Comfort (seated, no locomotion) | no artificial locomotion or camera motion that isn't the viewer's | the `LocomotionSystem` is unregistered; nothing moves but the video; a recenter re-places the room | G.6, G.7 |
+| Boundary | the app respects the boundary (Guardian); a seated app doesn't disable it | nothing is set; the SDK keeps the system's boundary | G.10 confirms with the boundary drawn |
 
 **Unclear in Meta's docs.** Their release-manifest page also says the launcher
 activity's `excludeFromRecents` "must be `true`", without saying whether that
@@ -578,11 +588,13 @@ and record the result in Findings either way.
 
   Also explain the TMDB metadata, and that there's no account and no
   purchases.
-- [ ] **F.8** Licence: the APK is GPL-3.0 (the FFmpeg decoder, android D5).
-  Read Meta's developer distribution agreement and its end-user terms for
-  anything that adds restrictions, and link the source from the listing.
-  Raise anything doubtful with the owner before submitting. If D13 is taken,
-  the APK is no longer GPL-3.0 as a whole, and G.2 rewrites this step.
+- [ ] **F.8** Licence: with G.1 and G.2 the APK is no longer GPL-3.0 as a
+  whole: Edendale's code is MPL-2.0, FFmpeg is LGPL-2.1 (its notice and
+  licence text ship in the APK, and the README names the corresponding
+  source), Media3's decoder is Apache-2.0, and the Spatial SDK is under Meta's
+  SDK licence. Read Meta's developer distribution agreement and its end-user
+  terms for anything that adds restrictions, and link the source from the
+  listing. Raise anything doubtful with the owner before submitting.
 - [ ] **F.9** Submit from ALPHA, at least two weeks before the target date
   (Meta's guidance). Record each review response in Findings, fix, resubmit,
   and release to LIVE when approved.
@@ -620,9 +632,12 @@ doesn't need any of G (D15).
   app (P.2) can later ship an update that adds an immersive activity, or
   whether the app type is fixed when the app is created. Ask Meta if the docs
   don't say. If it's fixed, raise it with the owner before P.2, since it
-  decides D15.
-- [ ] **G.1** The LGPL decoder (D13, D14). Take
-  `tools/horizon/build-ffmpeg-decoder.sh` from the spike branch:
+  decides D15. *2026-10-25: a web search found Meta's hybrid-app pages but no
+  statement either way; Meta's developer site wasn't reachable from the
+  build container. Still the owner's question to Meta.*
+- [x] **G.1** The LGPL decoder (D13, D14). Take
+  `tools/horizon/build-ffmpeg-decoder.sh` from the spike branch (written
+  again from this list on 2026-10-25; the spike branch isn't pushed):
   - It runs Media3's `build_ffmpeg.sh` unmodified, from the Media3 tag that
     matches `libs.versions.toml` (1.9.0). The FFmpeg is `release/6.0` at
     `831958d` (6.0.2), Jellyfin's pin.
@@ -645,8 +660,20 @@ doesn't need any of G (D15).
     missing or an `org.jellyfin` artifact is in the release runtime classpath.
 
   G.1 doesn't depend on the theater. If the owner takes only D13, it moves the
-  Quest APK off GPL-3.0 on its own.
-- [ ] **G.2** Licence and notices (after G.1).
+  Quest APK off GPL-3.0 on its own. *Done 2026-10-25: the script also checks
+  the vendored classes against the Media3 tag, refuses `CONFIG_GPL`,
+  `CONFIG_NONFREE`, and `CONFIG_VERSION3`, and writes
+  `src/horizon/jniLibs/BUILD-INFO.txt`; `horizonImplementation
+  media3-decoder` supplies the decoder base classes; CI caches the FFmpeg
+  build on the script's hash. Not run here (no NDK in the container): the
+  owner's first run is in the Handoff.*
+- [x] **G.2** Licence and notices (after G.1). *Done 2026-10-25 apart from the
+  owner's reading of the agreement: README, `src/horizon/assets/licenses/`
+  (`LGPL-2.1.txt`, `FFMPEG-NOTICE.txt`), the About line overridden in the
+  `horizon` flavor's 19 locales (the app has no licence screen; About holds
+  the TMDB, Nunito, and project lines), D5, and F.8. The SDK packages'
+  notice files (§1.3) couldn't be inspected here, since Google's Maven
+  repository was unreachable; check the AARs' `META-INF` on the first build.*
   - **README:** rewrite the Licence section and the dependency table. The
     Horizon build is no longer GPL-3.0 as a whole:
     - Edendale's own code is under the repository's licence (MPL-2.0 on
@@ -678,7 +705,9 @@ doesn't need any of G (D15).
     source.
 - [ ] **G.3** Privacy *(the owner approves a `web` change)*. Meta's licence
   (§1.4.1) requires a prominent notice that third parties, Meta included, may
-  collect or receive information from the app.
+  collect or receive information from the app. *2026-10-25: F.4's draft
+  answer names the SDK (Horizon Store/27.0); the `web` paragraph and the
+  release-candidate measurement remain.*
   - Extend F.3: name the Spatial SDK and say what it may send under Meta's
     terms. Mention that the spike measured nothing from the app's UID, which
     can't show anything the OS collects itself.
@@ -687,7 +716,9 @@ doesn't need any of G (D15).
   - Don't use Meta's Spatial Gradle plugin, which has its own usage-data
     switch (`allowUsageDataCollection` in Meta's samples). If it's ever
     needed, set that switch to false.
-- [ ] **G.4** The Spatial SDK and the manifest (D12).
+- [x] **G.4** The Spatial SDK and the manifest (D12). *Done 2026-10-25, with
+  `-compose` added for G.8's panels and `exported="true"` as in Meta's
+  sample (G.10 tries `false`).*
   - Add `spatialsdk` to `libs.versions.toml`, and `horizonImplementation`
     dependencies on `meta-spatial-sdk`, `-toolkit`, and `-vr`. 0.14.0 was
     released on 2026-09-11. Add no other Spatial SDK module unless a step needs
@@ -707,7 +738,11 @@ doesn't need any of G (D15).
     - **`<uses-native-library android:name="libossdk.oculus.so" android:required="false" />`.**
   - Keep `android.hardware.vr.headtracking` at `required="false"`, so the panel
     app installs as before. Run P.6's validator on a hybrid build (G.0).
-- [ ] **G.5** Entering the theater: a Theater button in the player's chrome.
+- [x] **G.5** Entering the theater: a Theater button in the player's chrome.
+  *Done 2026-10-25: `DevicePolicy.offersImmersiveTheater`, the chip in
+  `PlayerControlsOverlay`, `PlayerActivity.enterTheater()`, and
+  `TheaterHandover` (the item, position, speed, the audio and subtitle
+  choices, and the episode context).*
   - A new `DevicePolicy.offersImmersiveTheater` (true on Horizon only) shows
     it, and only while a video is loaded. It's an explicit action.
   - The `src/main` hook is the button and a callback, like PiP's.
@@ -717,7 +752,9 @@ doesn't need any of G (D15).
     and `EdendaleDataSource` as in the spike, so local, SMB, WebDAV, SFTP, S3,
     and cloud sources work unchanged.
   - New strings go into all 19 locales.
-- [ ] **G.6** Leaving the theater, and its lifecycle.
+- [x] **G.6** Leaving the theater, and its lifecycle. *Done 2026-10-25 in
+  `TheaterActivity`; the exit path and the pause/resume hooks follow Meta's
+  hybrid and media samples and need the G.10 run.*
   - The theater needs its own exit. In the spike, `KEYCODE_BACK` sent by
     `adb` didn't close it. Give the controls panel (G.8) an Exit button, and
     handle the controllers' B/Y where the SDK reports them.
@@ -729,7 +766,15 @@ doesn't need any of G (D15).
     (Functional.4), so Continue Watching picks up where the theater left off.
   - Taking the headset off pauses, and putting it on resumes (B.4's choice).
     The Meta button, Quit, and a recenter must leave no stuck state.
-- [ ] **G.7** The scene.
+- [x] **G.7** The scene. *Done 2026-10-25 for the code: `TheaterScene` reads
+  `Screen` and `Seat` from `theater.glb` (JVM-tested), `TheaterLayout` places
+  the room and the screen from the head pose and the video's aspect ratio
+  (JVM-tested), the activity re-places after a recenter, and the sky is a
+  generated starfield (`tools/horizon/make_skybox.py`). No GLB ships yet:
+  `scenes` has no scene, and the container has no Blender. Two conventions
+  are a first-run check (G.10): that the SDK imports glTF's -Z as its own
+  forward, and that `Quaternion.lookRotationAroundY(viewer − panel)` faces a
+  panel at the viewer, as Meta's samples use it.*
   - **Environment:** an equirectangular skybox (`mesh://skybox`), unlit so it
     costs little, and optionally a floor or room model. Art must be made in
     house or carry a licence that fits the repository. The spike's starfield
@@ -772,7 +817,11 @@ doesn't need any of G (D15).
     - Budget: the spike's skybox and quad took 2.5 ms of the 11.1 ms frame at
       90 fps, so a room may spend the rest on draw calls and overdraw. Measure
       with G.10's VrApi line rather than against a triangle count.
-- [ ] **G.8** Controls and subtitles in the theater.
+- [x] **G.8** Controls and subtitles in the theater. *Done 2026-10-25:
+  `TheaterPanels.kt` (a controls card under the screen; the subtitle overlay
+  reused in a panel 2 cm in front of it) and `TheaterInputSystem`. The theater
+  builds no `VideoEffectsController`, so Enhancement is off there by
+  construction.*
   - A small controls panel under the screen: play and pause, seek, audio and
     subtitle tracks, and Exit. Show it on trigger or pinch and hide it after a
     few seconds. Use `ComposeViewPanelRegistration`, or the SDK's `-compose`
@@ -783,7 +832,9 @@ doesn't need any of G (D15).
   - Controllers and hands both work (Input.7).
   - Video Enhancement is off in the theater, through `DevicePolicy`, because
     its pipeline renders into a `SurfaceView`.
-- [ ] **G.9** Immersive store requirements. Read the immersive column of
+- [x] **G.9** Immersive store requirements. *Done 2026-10-25 from Meta's
+  per-VRC pages (the table page wasn't reachable); the owner checks the
+  Comfort, Boundary, and Input rows against it.* Read the immersive column of
   Meta's VRC page (Sources). In Section 1, list which requirements apply to a
   seated theater with no locomotion (frame rate, comfort, the boundary,
   input, the Meta button, performance) and how G meets each. Then update:
@@ -805,7 +856,9 @@ doesn't need any of G (D15).
   - cold and warm entry times.
 
   Also check whether the Spatial Simulator runs the theater at all.
-- [ ] **G.T1** Tests:
+- [x] **G.T1** Tests (*written 2026-10-25; the JVM ones passed in a scratch
+  JVM project, since the container has no Android SDK; the instrumented one
+  hasn't run*):
   - JVM: the screen's size and pose as a pure function of the video's aspect
     ratio and the head pose, and the new `DevicePolicy` flag.
   - Instrumented: `FfmpegLibrary.isAvailable()` is true, and
@@ -939,6 +992,14 @@ For whoever reviews the implementation:
 | 2026-10-25 | B.6 | Both vertical swipes are off on Horizon, not only the brightness one B.6 named: `DevicePolicy.offersSwipeAdjustments`, read by `PlayerScreen`'s gesture layer through `PlayerActivity.devicePolicy` (now `internal`). So Horizon has no app-level volume control in the player; D.4 would add it back. | Owner's choice: neither swipe made a visible or audible change in a panel. |
 | 2026-10-25 | B.10 | Watch Trailer opens YouTube's watch page outside the app (`ACTION_VIEW`, `TrailerEmbed.watchUrl`) instead of the inline embed, through `DevicePolicy.playsTrailersInline` in `MediaDetailScreen`. | Owner's choice: the inline embed played sound with no picture on the Quest 3. |
 | 2026-10-25 | D.6 | The immersive theater is planned in this document, as Section G with decisions D12–D16, instead of in a separate plan. | Owner's request, after the spike. |
+| 2026-10-25 | D12–D16, G | Section G was built while D12–D16 are still Open, under each decision's proposal. | The owner asked for Section G to be built; the table records the state, and release waits on the decisions. |
+| 2026-10-25 | G.1 | `tools/horizon/build-ffmpeg-decoder.sh` was written from G.1's list, not taken from `horizon-immersive-spike`, and builds at API 32 (the flavor's minSdk) where Jellyfin builds at 23. | The spike branch isn't pushed; the library never runs below the flavor's minSdk. |
+| 2026-10-25 | G.1 | The decoder's Java classes live under `src/horizon/java`; `ExperimentalFfmpegVideoRenderer` is vendored with them although nothing uses it. | The script checks every class against the Media3 tag, so the set stays whole. |
+| 2026-10-25 | G.2 | The in-app notice is the `horizon` flavor overriding `settings_open_source` in 19 locales, not a new row in Settings. | The app has no licence screen, and a resource override keeps `src/main` as android has it (Hard rule 1). |
+| 2026-10-25 | G.4, G.8 | `meta-spatial-sdk-compose` is a fourth Spatial SDK module. | G.8's panels are `ComposeViewPanelRegistration`, which that module provides; nothing else from the SDK is added. |
+| 2026-10-25 | G.5 | `src/main` gains the Theater chip, the callback, `enterTheater()`, `ic_theater.xml`, and `player_theater` in 19 locales. | The hook G.5 allows; Appendix 2 item 7 lists it. |
+| 2026-10-25 | G.7 | No `theater.glb` ships; the sky is a starfield from `tools/horizon/make_skybox.py` (Python, where the spike used Swift). | `scenes` holds no scene yet, and Blender isn't in the build container; the activity loads the GLB when it exists. |
+| 2026-10-25 | G.T1 | The JVM tests ran in a scratch JVM project (Kotlin 2.2.0, kotlinx.serialization 1.8.1, JUnit 4), not through `testHorizonDebugUnitTest`. | The container has no Android SDK, and `dl.google.com` is blocked by its proxy, so Gradle can't configure the Android build there. |
 
 ## Handoff log
 
@@ -954,6 +1015,7 @@ For whoever reviews the implementation:
 | 2026-10-25 | D.6 → Section G (spike and plan) | Owner, Claude | The spike worktree was cut from `7ab7624` in Claude's scratchpad and committed to the local branch `horizon-immersive-spike` (`37ef2bd`, not pushed). It was installed on the Quest 3 as `com.babasama.edendale.spike`, beside the real build; the owner's build and data weren't touched. NDK r26b (owner's go-ahead) and the SDK's CMake 3.22.1, which the JNI build needs, were installed with `sdkmanager`. `tools/horizon/build-ffmpeg-decoder.sh` rebuilt the library in 74 s, and the result differs from the tested build only in its 20-byte ELF build ID. `./gradlew assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease` (JDK 17) passed. Before the headset run, an LGPL host build on the Mac round-tripped TrueHD bit-exact and decoded DTS. Still on the headset: the spike app and its test files (`adb uninstall com.babasama.edendale.spike` removes both). Not done: everything in Section G, and decisions D12–D16. |
 | 2026-10-25 | G.7, D17 (scene authoring) | Owner, Claude | The owner asked whether to build the theater scenes in Unity or Blender: Blender (D17), because both headsets load exported data natively and Unity would be a shared runtime. The pipeline is G.7's Authoring bullet; where the `.blend` sources live is still the owner's call. Tooling on the Mac, outside the repository: Blender Lab's `blender_mcp` (clone at `~/Codes/blender_mcp`; its add-on was already installed and listening in Blender 5.2.3) was registered with Claude Code at user scope with `claude mcp add -s user blender -e BLENDER_PATH=/Applications/Blender.app/Contents/MacOS/Blender -- uv --directory ~/Codes/blender_mcp/mcp run --python 3.14 blender-mcp`, pinned to Python 3.14 (uv-managed) because the Mac's default Python is 3.15. A stdio client listed its 26 tools and read the open file's path info from the running Blender; the `*_for_cli` tools, which start a background Blender, weren't exercised. |
 | 2026-10-25 | D17 (decided) | Owner | The owner chose the `scenes` branch: `.blend` sources and export scripts there, and each platform branch commits only its export. Recorded in D17, G.7's Authoring bullet, and the new G.13. The branch itself and the `main` rows (Hard rule 6) aren't created yet. |
+| 2026-10-25 | G.1–G.9, G.T1 | Claude (cloud session, no headset, no Android SDK) | Built Section G on `meta-horizon` from the plan, under D12–D16's proposals (Deviations). Sources read: Media3 `1.9.0` (`7cc1056`), Meta's Spatial SDK samples (0.14.0: Hybrid, MediaPlayer, PremiumMedia), Jellyfin's build (`ffmpeg` at `831958d`, `media` at `7cc1056`), and `origin/scenes`. Ran: `bash -n` on the script; `python3 -I tools/horizon/make_skybox.py`; a scratch JVM project with `TheaterLayout`, `TheaterScene`, and their tests: 16 tests pass. **Not run:** the script itself, any Gradle task, the instrumented test, and every device check: the container has no NDK or Android SDK and can't reach `dl.google.com` or `developers.meta.com`. **Owner, in order:** 1. decide D12–D16 and ask Meta G.0; 2. `sdkmanager "ndk;26.1.10909125" "cmake;3.22.1"`, then `tools/horizon/build-ffmpeg-decoder.sh` (expect four `libffmpegJNI.so` and "LGPL version 2.1 or later"); 3. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease` (JDK 17) and fix what the Spatial SDK's 0.14.0 API rejects, since nothing here was compiled against it; 4. `installHorizonDebug installHorizonDebugAndroidTest` and `am instrument` for `FfmpegLibraryInstrumentedTest`; 5. G.10 on the Quest 3, first checking the room's orientation, the screen facing the seat, the controls card under it, `exported="false"`, and the Exit return (G.7's two conventions); 6. G.3's `web` paragraph and G.11's installed size. |
 | 2026-10-25 | G.13 | Owner, Claude | Owner's go-ahead under Hard rule 6. Done in two worktrees in Claude's scratchpad, so this checkout stayed on `meta-horizon`: `main` was fast-forwarded to the already prepared `main-meta-horizon` (`b221902`, the `meta-horizon` rows) and got `9a9162f`, the `scenes` rows plus a paragraph in `README.md` and `AGENTS.md`; `scenes` was cut from that `main` and got `0b0ea32`: its README, `.gitignore` (`/out/`, `*.blend1`), `tools/export_gltf.py`, `tools/export_usd.py`, and `tools/_theater_scene.py`. Checked with Blender 5.2.3 LTS headless on a generated scene (Seat, a 4 m Screen 5 m ahead, a floor with an unapplied array modifier and a packed texture): the GLB keeps `Screen` at (0, 1.5, -5) and `Seat` at the origin, 6 triangles (modifier applied), 1 image; the USDZ holds `theater.usdc` plus the texture, `upAxis = "Y"`, the conversion as a rotation on `/root`; a scene without `Seat` exits 1 and writes nothing. Both worktrees were removed. Nothing is pushed: `main` is two commits ahead of `origin/main` and `scenes` exists only locally. |
 
 ## Sources

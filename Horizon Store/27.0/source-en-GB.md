@@ -61,11 +61,19 @@ movies, TV shows, library, watch tracker, open source.
 | Support | https://github.com/Ju-Long/Edendale/issues |
 | Source | https://github.com/Ju-Long/Edendale (branch `meta-horizon`) |
 
+## Screenshots (F.2)
+
+Five screenshots; theater screenshots are allowed and are likely the best
+(G.9): capture them on the Quest 3 with `metavr capture screenshot`, since
+`adb screencap` is black in the theater. Mix in the library panel and the
+player so the 2D half shows too. No other platform's hardware in any image.
+
 ## Input modes (F.6)
 
 Select only what the headset checks passed (HORIZON.md Appendix 1): Touch
-controllers and hand tracking. Look and Pinch only if the Spatial Simulator
-run under B.5 passes.
+controllers and hand tracking, in the panel and in the theater (G.10 checks
+both there). Look and Pinch only if the Spatial Simulator run under B.5
+passes; the theater doesn't offer it.
 
 ## Price and regions (D9, owner)
 
@@ -78,6 +86,14 @@ has no server. The services it talks to, each only after the viewer's own
 action: TMDB (metadata), TheIntroDB (skip prompts, off by default), Wyzie
 (subtitle search, with the viewer's own key), YouTube (trailers), and the
 storage services the viewer links. The privacy policy lists them.
+
+If the checkup asks about SDKs (G.3): the immersive theater uses the Meta
+Spatial SDK 0.14.0 (`meta-spatial-sdk`, `-toolkit`, `-vr`, `-compose`) under
+Meta's SDK licence, with no Platform SDK, no entitlement check, and no
+Spatial Gradle plugin. On the Quest 3 the app's UID sent and received
+nothing while the theater ran (HORIZON.md Findings, 2026-10-25; repeated on
+the release candidate under G.10); what the OS collects itself isn't visible
+that way, and Meta's terms for the SDK apply to it.
 
 ## Age rating (F.5, owner)
 
@@ -96,7 +112,9 @@ Alternatively, Downloaded → Link Source accepts a WebDAV, SFTP, SMB, or S3 ser
 
 Sign-in to Google Drive, OneDrive, and Dropbox is optional and opens the system browser; the app ships no client secret and stores tokens only on the headset. Trailers (YouTube) play only after pressing Play on a title's page.
 
-The app is free, open-source (GPL-3.0), and collects no analytics. Privacy policy: https://edendale.babasama.com/privacy/
+Immersive theater: while a video plays, press the Theater button at the top of the player. The video moves to a large screen in a dark environment. Press a trigger (or pinch) to show the controls under the screen: play and pause, skip, the timeline, audio and subtitle tracks, and Exit. Exit, or B/Y on a controller, returns to the app's panel. Taking the headset off pauses the video.
+
+The app is free, open-source (MPL-2.0, with an LGPL-2.1 FFmpeg decoder and the Meta Spatial SDK under Meta's licence), and collects no analytics. Privacy policy: https://edendale.babasama.com/privacy/
 ```
 
 If the owner wants reviewers to have media without copying files, add a
