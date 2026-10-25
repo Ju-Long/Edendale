@@ -405,7 +405,7 @@ and record the result in Findings either way.
   the owner, and `decoder-eac3.mkv` played through `c2.dolby.eac3.decoder`.
   Still to do: Atmos, 7.1, DTS and TrueHD through FFmpeg, the equalizer,
   Audio Booster, and the Audio Output row.
-- [ ] **B.10** Trailers: the `youtube-nocookie.com` embed plays in the
+- [x] **B.10** Trailers: the `youtube-nocookie.com` embed plays in the
   headset's WebView and still starts only on an explicit action.
 
   *2026-10-25:* in a panel on the Quest 3, the embed played sound but no
@@ -413,7 +413,8 @@ and record the result in Findings either way.
   `https://www.youtube.com/watch?v=<key>` with `ACTION_VIEW`
   (`DevicePolicy.playsTrailersInline` is false), still only on that tap. The
   Quest hands the link to the Meta Quest Browser, although YouTube VR is
-  installed. Still to check: that the browser shows the picture.
+  installed. The owner confirmed picture and sound there, and the browser's
+  media process decoded the trailer with `c2.qti.av1.decoder`.
 - [ ] **B.11** Network sources over Wi-Fi: SMB, WebDAV over HTTPS with a
   self-signed certificate, SFTP, and S3. Note how long typing a login takes on
   the headset keyboard (input for D11). Also check plain `http://` on the LAN
@@ -624,9 +625,9 @@ For whoever reviews the implementation:
 | 2026-10-25 | Quest 3, `667149c` debug | **Google Drive sign-in works on the headset.** The account page opened in `com.oculus.browser`'s Custom Tab, `com.babasama.edendale:/oauth2redirect` returned to `OAuthRedirectActivity`, and Google's picker linked "Videos you chose": five movies, four matched to TMDB (*ToS-4k-1920.mov* names no film). The 10-10 "Custom URI scheme is not enabled" refusal is gone. Downloaded → Add Local Folder → `Movies/EdendaleTest` linked and scanned too. After `am force-stop` and a relaunch, a *Severance* episode opened from the persisted tree URI in 0.6 s, with no permission error. | B.2 passes apart from "Open with"; C.1's Google part works on the headset. |
 | 2026-10-25 | Quest 3, `667149c` debug | Playback: hardware `c2.qti.avc.decoder` (H.264, including the 4K ToS `.mov` streamed from Drive) and `c2.qti.hevc.decoder` (1080p x265), `c2.android.aac.decoder` for 5.1 AAC, and `c2.dolby.eac3.decoder` for E-AC-3. Subtitles show. Picking an Enhancement preset for the first time installed the effects pipeline and re-prepared the player (2.7 s over Drive); the default stayed Off (D6). | B.7, B.9 partly done (see the steps). |
 | 2026-10-25 | Quest 3, `667149c` debug | Input with controllers: double-tap skip, press-and-hold speed, the seek bar, and B/Y work. With hands, a double pinch rarely lands as a double-tap. **The thumbstick doesn't scroll the home rows.** The vertical swipes for brightness and volume changed nothing the owner could see or hear. Headset off paused playback and headset on resumed it. | B.5: thumbstick scrolling and the double-pinch are open. B.6 and B.4: see the steps. |
-| 2026-10-25 | Quest 3, `667149c` debug | **The inline trailer plays sound but no picture.** Edendale's process created `c2.qti.av1.decoder` for each try, so the WebView decoded the video but the panel never showed it (the simulator's 10-10 result, now on hardware). With the change, Watch Trailer's `ACTION_VIEW` resolved to `com.oculus.browser` (`BrowserActivity`) without a chooser, although `com.google.android.apps.youtube.vr.oculus` is installed. | B.10: the owner checks that the browser shows the picture. |
+| 2026-10-25 | Quest 3, `667149c` debug | **The inline trailer plays sound but no picture.** Edendale's process created `c2.qti.av1.decoder` for each try, so the WebView decoded the video but the panel never showed it (the simulator's 10-10 result, now on hardware). With the change, Watch Trailer's `ACTION_VIEW` resolved to `com.oculus.browser` (`BrowserActivity`) without a chooser, although `com.google.android.apps.youtube.vr.oculus` is installed. There the trailer plays with picture and sound (owner), decoded by `c2.qti.av1.decoder` in `com.oculus.browser:privileged_process0`. | B.10 done. |
 | 2026-10-25 | Quest 3, `667149c` debug | **Media3 1.9 asks for a wake lock by default.** `ExoPlayerImpl` uses `C.WAKE_MODE_LOCAL` when the app never calls `setWakeMode`, and Edendale doesn't, so each playback logs `WakeLockManager: WAKE_LOCK permission not granted, can't acquire wake lock for playback`. It's only a warning: the panel pauses when the headset comes off, and `FLAG_KEEP_SCREEN_ON` keeps it awake while playing. The 10-19 A.2 Deviation's reason ("Edendale never sets a wake mode") is wrong on this point. | Leave `WAKE_LOCK` removed; if the warning should go, set `C.WAKE_MODE_NONE` on Horizon through `DevicePolicy`. |
-| 2026-10-25 | Quest 3, `667149c`+the 10-25 change, debug | Installed over the old build (library and Drive link kept). With `adb shell input swipe`, vertical swipes on either half of the player left the AudioFlinger track at 0 dB and set no `sbrt` on the player window, while a tap still showed the controls and a hold still gave `speed=2.0`. Watch Trailer opened the Meta Quest Browser. | B.6 verified on the headset; B.10 waits for the owner. |
+| 2026-10-25 | Quest 3, `667149c`+the 10-25 change, debug | Installed over the old build (library and Drive link kept). With `adb shell input swipe`, vertical swipes on either half of the player left the AudioFlinger track at 0 dB and set no `sbrt` on the player window, while a tap still showed the controls and a hold still gave `speed=2.0`. Watch Trailer opened the Meta Quest Browser. | B.6 and B.10 verified on the headset. |
 
 ## Deviations log
 
