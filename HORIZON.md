@@ -283,9 +283,9 @@ USB debugging); `adb` is `~/Library/Android/sdk/platform-tools/adb`.
 headset; Claude drove `adb` from the Mac). Done: step 1; from step 2,
 everything except "Open with"; from step 3, B.2's restart, B.4, B.6, and the
 E-AC-3 half of B.9. B.4, B.6, and B.10 changed the build (Deviations,
-2026-10-25). Thumbstick scrolling was fixed the same day (B.5). Still to do:
-"Open with Edendale", the owner's try of the thumbstick fix and the
-hand-pinch finding (B.5), B.7 beyond H.264 and 8-bit HEVC, B.8, the rest of B.9, B.11,
+2026-10-25). Thumbstick scrolling was fixed the same day, and the owner
+confirmed it with the real sticks (B.5). Still to do: "Open with Edendale",
+the hand-pinch finding (B.5), B.7 beyond H.264 and 8-bit HEVC, B.8, the rest of B.9, B.11,
 steps 4–6, and the cleanup. The headset keeps the 10-25 debug build, the
 linked `EdendaleTest` folder, and the owner's Google Drive link.
 
@@ -384,8 +384,9 @@ and record the result in Findings either way.
   sticks as joystick RX/RY axes, which nothing read, so on Horizon
   `ThumbstickScroller` (through `DevicePolicy.scrollsWithThumbstick`) turns a
   held stick into a scroll wheel where the ray last pointed: rows scroll
-  sideways and the page up and down. The hit-target audit and Look and Pinch
-  are still to do.
+  sideways and the page up and down. The owner confirmed it with both real
+  sticks; the speed feels right. The hit-target audit and Look and Pinch are
+  still to do.
 - [x] **B.6** Brightness: the player's brightness control writes
   `window.attributes.screenBrightness` (`PlayerActivity`). If that has no
   effect in a panel, hide the control on Horizon. Picture → Brightness, done in
@@ -859,7 +860,7 @@ For whoever reviews the implementation:
 | 2026-10-25 | Quest 3, `667149c` debug | **Media3 1.9 asks for a wake lock by default.** `ExoPlayerImpl` uses `C.WAKE_MODE_LOCAL` when the app never calls `setWakeMode`, and Edendale doesn't, so each playback logs `WakeLockManager: WAKE_LOCK permission not granted, can't acquire wake lock for playback`. It's only a warning: the panel pauses when the headset comes off, and `FLAG_KEEP_SCREEN_ON` keeps it awake while playing. The 10-19 A.2 Deviation's reason ("Edendale never sets a wake mode") is wrong on this point. | Leave `WAKE_LOCK` removed; if the warning should go, set `C.WAKE_MODE_NONE` on Horizon through `DevicePolicy`. |
 | 2026-10-25 | Quest 3, `667149c`+the 10-25 change, debug | Installed over the old build (library and Drive link kept). With `adb shell input swipe`, vertical swipes on either half of the player left the AudioFlinger track at 0 dB and set no `sbrt` on the player window, while a tap still showed the controls and a hold still gave `speed=2.0`. Watch Trailer opened the Meta Quest Browser. | B.6 and B.10 verified on the headset. |
 | 2026-10-25 | Quest 3, `c25a463`, `getevent -lt` | **Both thumbsticks reach a panel as one joystick's RX/RY.** Pointing at a home row, the owner pushed each stick left, right, up, and down: every push came through `/dev/input/event5` (`KEYBOARD \| GAMEPAD \| JOYSTICK`) as `ABS_RX`/`ABS_RY` (Android `AXIS_RX`/`AXIS_RY`, flat 0.125), never `ABS_X`/`ABS_Y` or the hat. Android turns only X/Y and the hat into D-pad keys, and Compose reads no joystick, so nothing scrolled. The trigger arrives as `BTN_TR2` plus `BTN_TR`, the grip as `KEY_RIGHTSHIFT`. Android 14's `input` has no wheel injection, but `input joystick motionevent MOVE x y` injects X/Y. | B.5: `ThumbstickScroller` (next row). |
-| 2026-10-25 | Quest 3, `c25a463`+`ThumbstickScroller`, debug | With the pointer set on the Trending row (a touch-down that was then cancelled, so nothing opened) and `input joystick motionevent MOVE 0.9 0` held for 1 s, the row scrolled about 1,280 px and stick-left scrolled it back. Stick down over the hero scrolled the page (Trending from y 817 to 165), and up scrolled it back. Down with the pointer on a row scrolled the page, not the row. No errors in the log. | B.5: the owner tries the real sticks with the ray. |
+| 2026-10-25 | Quest 3, `c25a463`+`ThumbstickScroller`, debug | With the pointer set on the Trending row (a touch-down that was then cancelled, so nothing opened) and `input joystick motionevent MOVE 0.9 0` held for 1 s, the row scrolled about 1,280 px and stick-left scrolled it back. Stick down over the hero scrolled the page (Trending from y 817 to 165), and up scrolled it back. Down with the pointer on a row scrolled the page, not the row. No errors in the log. | B.5: the owner then tried the real sticks with the ray: rows and the page scroll, and the speed feels right. |
 | 2026-10-25 | Owner's Quest 3 (Horizon OS v207); immersive spike, debug, application ID `com.babasama.edendale.spike` beside the real build (commit `37ef2bd`) | **The Spatial SDK theater works.** It's an `AppSystemActivity` with a skybox and a `VideoSurfacePanelRegistration` screen, playing through `EdendaleRenderersFactory`. 4K and 1080p HEVC used `c2.qti.hevc.decoder`, H.264 with AAC played, and E-AC-3 used `c2.dolby.eac3.decoder`. VrApi reported 90/90 fps, no stale frames, GPU about 22%, CPU and GPU 2.5 ms per frame, and 46 °C. Cold launch into the theater took 1.7–2.5 s, and 0.65 s from the panel. `adb screencap` is black in the theater, but `metavr capture screenshot` (metacam) captures the eye view. The SDK starts its own stereo OpenSL ES player when the scene loads. | G.10 repeats this on the real build. |
 | 2026-10-25 | Quest 3, immersive spike | Network: after `dumpsys netstats --poll`, the spike's UID had no entry under "UID stats", and `/proc/net/{tcp,udp}{,6}` showed no sockets, across several runs. The SDK logged "Analytics module not available" and "analytics: disabled". Its native library does contain Meta's analytics and QPL code. Anything the OS collects itself can't be seen this way. | G.3. |
 | 2026-10-25 | Quest 3, immersive spike | Manifest and launch: without `horizonos:uses-horizonos-sdk`, `VrosSystemServiceRegistry` logged that the app retrieves an HzOS SDK manager without declaring a minimum HzOS SDK version and "must fix this to continue to access this SDK in the future"; declaring 69 silenced it. With the controllers asleep, launching the theater stopped at vrshell's `LaunchCheckControllerRequiredDialogActivity`; declaring hand-tracking support removed it. | G.4. |
