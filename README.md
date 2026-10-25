@@ -1,110 +1,117 @@
-# Edendale
+# Edendale — scenes
 
 Edendale is a free, open-source video player and personal watch/review tracker.
 It plays a user's own movies and shows, enriches them with TMDB metadata, and
 keeps library and watch data under the user's control.
 
-## Features
+This branch holds the sources of the immersive theater's environments: the
+rooms a viewer sits in while a video plays on a large screen, on Meta Quest
+headsets (the `meta-horizon` branch) and on Apple Vision Pro (the `apple`
+branch). It is data, plus the scripts that export it. There is no application
+code, build, test suite, CI, or credential here, and no build or CI of another
+branch ever checks this branch out.
 
-- Play local video from individual files, imported folders, and supported
-  network sources.
-- Build a private library from device-local records and file access.
-- Classify files locally before starting optional TMDB enrichment.
-- Browse metadata for movies, shows, people, seasons, episodes, trailers, and
-  release dates.
-- Track progress, ratings, reviews, and user-media state without an Edendale
-  account.
-- Use the navigation, accessibility, input, storage, and media capabilities
-  native to each supported platform.
+The universal documents (`AGENTS.md`, `CLAUDE.md`, `DESIGN.md`, `MODEL.md`) are
+`main`'s. This README replaces `main`'s.
 
-Trailers open only after an explicit user action. Edendale contains no
-analytics.
+## Layout
 
-## Repository model
-
-Edendale uses one long-lived branch per platform. Each branch owns its source,
-tests, dependencies, CI workflow, release configuration, and documentation.
-There is no shared executable runtime and no platform consumes another
-platform's implementation.
-
-| Branch | Responsibility |
+| Path | What it is |
 |---|---|
-| `main` | Universal documentation and repository metadata only |
-| `apple` | Apple application and Apple-specific delivery |
-| `android` | Android application and Android-specific delivery |
-| `meta-horizon` | The Android app packaged for Meta Quest headsets (Horizon OS) and its Meta Horizon Store delivery; downstream of `android` |
-| `windows` | Windows application and Windows-specific delivery |
-| `web` | Static website and Web-specific delivery |
-| `scenes` | Scene sources for the immersive theater: `.blend` files, textures, and export scripts; no executable code |
+| `scenes/<name>/<name>.blend` | One scene per folder, saved with Blender 5.2 LTS |
+| `scenes/<name>/textures/` | The scene's baked textures, referenced from the `.blend` by relative path |
+| `scenes/<name>/README.md` | What the scene is, who made the art, and under which licence |
+| `tools/export_gltf.py` | Headless export to GLB, for `meta-horizon` |
+| `tools/export_usd.py` | Headless export to USDZ, for `apple` |
+| `tools/_theater_scene.py` | The checks and helpers both scripts share |
+| `out/` | Export output; ignored by git |
 
-`scenes` is not a platform branch. It holds the sources of the immersive
-theater's environments and the headless Blender scripts that export them. A
-platform branch commits only the export it needs (a GLB on `meta-horizon`, a
-USDZ on `apple`), naming the `scenes` commit it came from, and no build or CI
-ever checks `scenes` out.
+## Authoring rules
 
-The platform branches begin with the same universal Markdown files:
+Every scene is made in Blender, not in a game engine, so the apps gain no
+second runtime: the Meta Spatial SDK loads GLB directly and RealityKit loads
+USDZ directly.
 
-- `README.md` — product and repository overview.
-- `AGENTS.md` — rules for automated contributors.
-- `CLAUDE.md` — concise agent entry point.
-- `DESIGN.md` — shared visual and interaction language.
-- `MODEL.md` — optional propose-first task protocol.
+- **Scale and frame.** Real-world metres, Z up, as Blender has it. The viewer
+  sits at the world origin and looks along +Y. The exporters turn that into Y
+  up with -Z ahead, which is the forward axis of glTF, the Spatial SDK, and
+  RealityKit, so the apps rotate nothing.
+- **Two named objects.** `Seat`, an empty at the origin, and `Screen`, a mesh
+  quad facing the seat and sized for a 16:9 picture. The Quest 3 spike used a
+  screen 4 m wide, 5 m ahead, with its centre 1.5 m up. The apps find both by
+  name and place the video surface and the viewer from them; an export fails
+  if either is missing.
+- **Lighting is baked.** Bake with Cycles to textures saved under `textures/`,
+  and give each material its baked image as base colour or emission. The
+  theaters have no real-time lights; lights and cameras are not exported.
+- **Dark around the screen.** Keep the surfaces near the screen dark and
+  neutral so they don't wash out the picture.
+- **Textures.** Power-of-two sizes, PNG or JPEG. Compressing them for a
+  headset (ASTC, KTX2) is the platform branch's business.
+- **Keep it cheap.** Few draw calls, modest triangle counts, no avoidable
+  overdraw. The Quest 3 spike spent 2.5 ms of an 11.1 ms frame at 90 fps on a
+  skybox and one quad; a room spends the rest. Measure on the device.
+- **Licence of the art.** Made in house, or under a licence that fits the
+  repository (the scripts are MPL-2.0; see `LICENSE`). Each scene's README
+  names the author and the licence of every piece.
 
-`TASKS.md` is intentionally not part of the new repository. Work is tracked
-through the platform branch's issue and pull-request workflow.
+## Exporting
 
-### Branch contract
+From the repository root, with Blender 5.2 LTS. On macOS the binary is
+`/Applications/Blender.app/Contents/MacOS/Blender`.
 
-- `main` remains free of application source, build systems, generated output,
-  deployment workflows, and platform secrets.
-- A platform branch contains only the files needed to build, test, package, and
-  deploy that platform.
-- CI triggers only for its owning branch and uses only that platform's
-  toolchain, credentials, and protected deployment environment.
-- Product behavior is kept aligned through documentation and native parity
-  tests, not a shared library, generated bridge, or copied build output.
-- Universal documentation changes land on `main` first and are then propagated
-  to platform branches without bringing platform code back into `main`.
+```bash
+Blender --background scenes/<name>/<name>.blend --python tools/export_gltf.py -- out/<name>.glb
+```
 
-## CI/CD isolation
+```bash
+Blender --background scenes/<name>/<name>.blend --python tools/export_usd.py -- out/<name>.usdz
+```
 
-Every platform branch must be independently buildable and deployable. Its
-workflow should:
+Both scripts:
 
-1. Trigger only for that branch and its pull requests.
-2. Restore only the platform's dependencies.
-3. Run that platform's checks and tests.
-4. Produce only that platform's artifacts.
-5. Gate credential-bearing release steps behind a protected environment.
+- fail with exit code 1 and a message, writing nothing, when `Screen` or
+  `Seat` is missing from the scene or the output path has the wrong
+  extension;
+- apply modifiers (the USD export also tessellates subdivision surfaces and
+  triangulates), export the baked textures with the file, and skip lights,
+  cameras, and animation;
+- print what the export holds: node, image, and triangle counts for the GLB,
+  the archive's members for the USDZ.
 
-Build commands, prerequisites, artifact names, and release procedures belong in
-the `README.md` of the relevant platform branch after its implementation is
-added.
+The GLB has the converted (Y-up) coordinates on its nodes. The USD export
+keeps Blender's coordinates on every prim and puts the conversion on the
+`/root` prim as a rotation, so an app reads `Screen` and `Seat` through their
+world transforms, not their local translation. `tools/export_usd.py` also
+writes `.usda` (text) or `.usdc` when the output path says so, for inspection.
 
-## Design
+Both scripts were checked with Blender 5.2.3 LTS. Options a different Blender
+lacks are dropped with a note, and its defaults apply.
 
-All platforms follow the Cinematic Minimalism system in
-[DESIGN.md](DESIGN.md). Implementations use native UI, navigation,
-accessibility, and input conventions while preserving Edendale's shared
-hierarchy, color semantics, typography, and privacy principles.
+## Taking an export into a platform branch
 
-## Principles
+The platform branch commits the export only, in its own tree:
 
-- **Native first:** every platform is understandable, testable, and buildable
-  without another platform's toolchain.
-- **Private by design:** no Edendale account, telemetry, or analytics.
-- **Your data stays yours:** local libraries remain local; any documented sync
-  uses a user-controlled platform service.
-- **Performance first:** classify and persist quickly, then enrich in the
-  background.
-- **Isolated delivery:** a platform can change, test, and release without
-  affecting another platform's pipeline.
+- `meta-horizon`: `src/horizon/assets/<name>.glb`;
+- `apple`: wherever its visionOS target keeps USDZ resources.
+
+The commit message names the `scenes` commit the file was exported from
+(`git rev-parse --short HEAD` here), so an export can be traced and
+reproduced. Nothing in a platform build or CI checks this branch out
+(AGENTS.md, hard constraints 1 and 2).
+
+## Size
+
+Commit `.blend` files and textures as plain files. Before adding a file that
+passes about 50 MB, raise Git LFS with the owner; GitHub refuses files over
+100 MB. Blender's `.blend1` backups are ignored.
+
+## Scenes
+
+None yet. Each scene's folder carries a README naming its art and licence, and
+this section lists the scenes as they arrive.
 
 ## License
 
-Edendale is licensed under the [Mozilla Public License 2.0](LICENSE).
-
----
-
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+Edendale is licensed under the [Mozilla Public License 2.0](LICENSE). The
+licence of each scene's art is stated in that scene's README.

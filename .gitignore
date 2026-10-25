@@ -49,3 +49,9 @@ Web/dist/
 /.vs
 /.secret
 /Vendor
+
+# Scenes branch: export output and Blender backups
+/out/
+*.blend1
+*.blend2
+*.blend@
