@@ -11,44 +11,41 @@ the dashboard before pasting; Meta doesn't publish them all.
 Edendale
 ```
 
-## Short description
+## Short description (at most 500 characters)
 
 ```
-Play your own movies and shows on your headset. Track what you watch. Free and open-source.
+Edendale is a free, open-source video player and watch tracker for the movies and shows you already own. Add a folder on your Quest or link your own storage (SMB, SFTP, WebDAV, S3, Google Drive, OneDrive, or Dropbox) and Edendale builds a private library with posters, cast, and episode details from TMDB. Pick up where you left off, rate and review what you watch, and keep it all on your headset. No account, no subscription, no ads, no analytics.
 ```
 
-## Description
+## Description (Markdown, at most 1,500 characters)
 
+```markdown
+Edendale turns the videos you already own into a private cinema on your Meta Quest. There's no streaming catalogue, no subscription, and no Edendale account: bring your own movies and shows, and keep your own data.
+
+**Bring your own library**
+- Add folders from your headset's storage.
+- Link storage you control: SMB, SFTP, WebDAV, S3, OneDrive, Dropbox, and the Google Drive videos you choose.
+- Filenames are recognised on the headset first; posters, cast, seasons, and episodes then arrive from TMDB.
+
+**A player made for the panel**
+- A large, resizable panel you drive with Touch controllers or your hands. Thumbsticks scroll whatever you point at.
+- H.264, HEVC, VP9, and AV1 (Quest 3 and later), with surround sound including DTS and Dolby TrueHD.
+- Subtitles, an equalizer, picture controls, and optional Skip Intro and Skip Credits prompts.
+
+**Track what you watch**
+- Resume every title where you left off.
+- Rate, review, and keep a watchlist.
+- Browse cast, crew, and upcoming release dates.
+
+**Private by design**
+- No ads, no analytics, no tracking.
+- Your library and watch history stay on your headset.
+- Metadata, subtitle search, and trailers run only when you ask, and a trailer plays only after you press Play.
+
+Edendale is free and open source: https://github.com/Ju-Long/Edendale
 ```
-Edendale is a free, open-source video player and personal watch tracker for the movies and shows you already own. Point it at a folder on your headset or at your own storage, and Edendale builds a private library you control — no streaming catalogue, no subscription, and no Edendale account.
 
-PLAY YOUR OWN VIDEO
-• Open individual files, whole folders, or your own network storage: SMB shares, SFTP, WebDAV, S3 buckets, OneDrive, Dropbox, and the Google Drive videos you choose.
-• A large, resizable panel with controller, hand, and keyboard input, powered by Media3.
-• Pick up where you left off with saved progress for every title.
-
-A LIBRARY THAT STAYS YOURS
-• Edendale reads your files and keeps library and watch data on your headset.
-• Filenames are classified locally before any optional metadata lookup.
-• There is no Edendale account to create and nothing to sign in to.
-
-RICH METADATA, ON YOUR TERMS
-• Optionally enrich your library with details from TMDB: movies, shows, people, seasons, episodes, and release dates.
-• Browse cast and crew, artwork, and release calendars.
-• Trailers open only after you choose to play them.
-
-TRACK WHAT YOU WATCH
-• Record progress, ratings, and written reviews.
-• Keep watch state and personal notes to yourself.
-• Sort your library with watchlists and filters, including a young-audience filter.
-
-PRIVATE BY DESIGN
-• No analytics. No tracking. No ads.
-• Library data stays on the headset, separate from portable watch state.
-• Optional features — metadata, subtitles, trailers — never run until you ask.
-
-Edendale is open-source software (GPL-3.0; source at https://github.com/Ju-Long/Edendale). Bring your own media; keep your own data.
-```
+The video line depends on B.7 passing on the headset; drop a codec from it if B.7 does.
 
 ## Category and tags
 
