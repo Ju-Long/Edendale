@@ -988,6 +988,8 @@ private fun PlayerControlsOverlay(
                     else MaterialTheme.colorScheme.onBackground,
                 )
             }
+            // The label sits on the button, so it stays while the spinner replaces the icon (HORIZON.md B.5).
+            val playPauseLabel = stringResource(if (isPlaying) R.string.action_pause else R.string.action_play)
             Surface(
                 onClick = {
                     if (player.isPlaying) player.pause() else player.play()
@@ -995,6 +997,7 @@ private fun PlayerControlsOverlay(
                 },
                 modifier = Modifier
                     .size(76.dp)
+                    .semantics { contentDescription = playPauseLabel }
                     .focusRequester(centerFocus)
                     .focusProperties { canFocus = controlsFocusable }
                     .onFocusChanged { if (it.isFocused) chipDidFocus() }
@@ -1015,9 +1018,7 @@ private fun PlayerControlsOverlay(
                             painter = painterResource(
                                 id = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play,
                             ),
-                            contentDescription = stringResource(
-                                if (isPlaying) R.string.action_pause else R.string.action_play,
-                            ),
+                            contentDescription = null,
                             modifier = Modifier.size(30.dp),
                         )
                     }

@@ -262,6 +262,12 @@ restructuring in A starts.
   no theater) is staged in the gitignored `release/horizon/0.27.0.1-alpha/`
   with its SHA-256 (Handoff). P.2 (the app and its App ID) and the upload
   are the owner's.
+  *2026-10-26, evening:* the 27.0 store candidate was rebuilt from `04fc499`
+  (D.3 sticks) into `release/horizon/27.0/`: still `0.27.0.1`, versionCode 3,
+  2D (`verifyHorizonRelease`; no `com.meta.spatial` class, no Spatial SDK
+  library, two activities), New.jks v2, SHA-256 `71b299f9…0251fc`. It
+  replaces `0.27.0.1-alpha`, which has the same versionCode, so upload only
+  one of them. The store draft no longer mentions the theater.
 - [ ] **P.7** If P.5 or P.6 turns up a blocker (no folder picker, sign-in
   can't return to the app, upload refused), update this plan and Section 0
   before Section A starts.
@@ -313,8 +319,8 @@ controllers showed that the thumbstick seek and the Menu button only worked
 by injection: the sticks arrive as wheel events at the ray, now read by
 `ThumbstickSeeker`, and Horizon OS keeps the Menu button, so D.7 is dropped
 (Findings, Deviations). The owner tested the network sources and media
-(round 6) themselves. Still to do: the three unlabeled clickables (B.5), the
-hand-pinch finding, B.7's HDR and Dolby Vision judgement in the Findings,
+(round 6) themselves. Still to do: the hand-pinch finding, B.7's HDR
+and Dolby Vision judgement in the Findings,
 B.8, and the cleanup. The headset keeps the 10-26 debug build (D.3 fix, no
 Menu shortcut).
 
@@ -429,12 +435,16 @@ and record the result in Findings either way.
   every 2–3 s while the owner walked the home page, all of Settings, a series'
   details page, search, and the player with Adjustments open. Every control is
   at least 48 dp once it isn't clipped by a scroll edge (Settings' steppers,
-  the rating stars, Fit/Fill, Audio Output, Clear date). Three clickables have
-  no label, which Look and Pinch and TalkBack would need: the home hero's
-  artwork (417×520 dp), a 56 dp strip at the right edge of the details page's
-  rows, and the player's centre button while it shows the loading spinner
-  (76 dp). The Adjustments subtitle row "Off" read 46 dp tall in its one dump,
-  next to the panel's edge. The real sticks and Menu button: D.3, D.7.
+  the rating stars, Fit/Fill, Audio Output, Clear date). Three clickables
+  showed no label. Two were caught mid-motion: the home hero's outgoing card
+  while the carousel rotated, and the seventh cast card at the right edge of
+  its row, whose text lay beyond the visible part; settled cards carry their
+  text. The third was real: while buffering, the player's centre Play/Pause
+  button holds only the spinner, so it had no label. `PlayerScreen` now puts
+  the Play/Pause label on the button itself (the icon has none), which also
+  helps TalkBack on every Android device. The Adjustments subtitle row "Off"
+  read 46 dp tall in its one dump, next to the panel's edge. The real sticks
+  and Menu button: D.3, D.7.
 - [x] **B.6** Brightness: the player's brightness control writes
   `window.attributes.screenBrightness` (`PlayerActivity`). If that has no
   effect in a panel, hide the control on Horizon. Picture → Brightness, done in
@@ -1094,11 +1104,13 @@ For whoever reviews the implementation:
 | 2026-10-26 | D15, G.4 | The theater's Spatial SDK code (`TheaterActivity`, `TheaterInputSystem`, `TheaterPanels`), its manifest entries (the activity, `uses-horizonos-sdk`, hand tracking, `libossdk.oculus.so`), and its resources (ids, the panel theme, the sky, the `theater_*` strings) moved to `src/horizonTheater/`, which Gradle adds to the `horizon` source sets only with `horizon.theater=true`; `gradle.properties` sets it to `false`. The Spatial SDK dependencies are conditional too. `TheaterHandover` names the activity by class name, and `DevicePolicy.resolve` takes `hasTheater` (`BuildConfig.HORIZON_THEATER`). The 2D About line (`settings_open_source`, 19 locales) drops the Spatial SDK clause; `src/horizonTheater` overrides it with the 10-25 text. `verifyHorizonRelease` fails a 2D build that carries any of the theater, and a theater build whose manifest entry and class don't agree; CI builds both. | The owner chose a 2D-only first ALPHA build. Off by default so a release can't carry the SDK by accident while D12 and D15 are open. The layer's code and resources join the flavor and variant source sets in the android DSL: AGP 8.10.1's variant API (`sources.kotlin`/`res.addStaticSourceDirectory`) was tried first and silently applied only the manifest, which gave a theater APK declaring `TheaterActivity` without its class. |
 | 2026-10-26 | D.3 | A push does more than D.3's "skip": a held stick plays at the hold speeds, a D-pad's left and right get the same press-and-hold on Horizon (where the handheld keyboard code repeats seeks), and with a panel open the sticks scroll its list (natively for the controllers' wheel events, through `ThumbstickScroller` for a gamepad's joystick). `src/main` gains `dispatchGenericMotionEvent`, `dispatchTouchEvent`, `onWindowFocusChanged`, the listener, and the D-pad branch in `PlayerActivity`; `handleFastForwardRewindKey` takes an `isForward` parameter. *2026-10-26 (real controllers):* `ThumbstickSeeker` also reads the wheel runs Horizon sends for the Touch controllers' sticks (`ACTION_SCROLL`, D.3). | Owner's request (2026-10-26): push skips, hold changes speed, for the stick and the D-pad alike. The hooks follow B.1's pattern, so android stays untouched. |
 | 2026-10-26 | D.7 (new, then dropped) | The Menu button toggled Adjustments in the player; the step wasn't in Section D. The same day the real controllers showed that Horizon OS keeps the Menu button in 2D apps, and the owner had the shortcut removed: `DevicePolicy.menuButtonOpensAdjustments` and the `KEYCODE_MENU`/`BUTTON_START` branch in `PlayerActivity` are gone, so Menu keys fall back to the handheld handling. | Owner's request (2026-10-26), and Meta's VRC.Quest.Input.1 asks that in-app menus open from the left controller's Menu button; removed on the owner's decision once `SystemButtonHandler` was seen taking it (Findings). |
+| 2026-10-26 | B.5 | `src/main`'s `PlayerScreen` puts the centre button's Play/Pause label on the button (`Modifier.semantics`) instead of its icon, so the button keeps a label while the buffering spinner replaces the icon. | Found by the headset audit, but it isn't a headset fix: it belongs on `android` too, as its own change (branch model), with the owner's go-ahead. |
 
 ## Handoff log
 
 | Date | Step | Who | Result / commands run |
 |---|---|---|---|
+| 2026-10-26 | B.5 labels | Claude | Of the audit's three unlabeled clickables, two were mid-motion dumps (the rotating hero's outgoing card, a half-visible cast card); the player's centre button while buffering was real and now carries its label on the button (Deviations). `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonDebugAndroidTest` (JDK 17): 517 tests, one failure in `BufferedByteSourceTest.evictsChunksFarBehindTheReadPositionAndStaysWithinTheCache` (`ConcurrentModificationException`, untouched code), which passed on three `--rerun`s; installed with `adb install -r`. Not checked on the headset: it was asleep, and keeping it awake with the `prox_close` broadcast only brought up Guardian's tracking-lost dialog. |
 | 2026-10-26 | Full app run; D.3 fix, D.7 dropped, B.2, B.5 | Owner, Claude | The owner wore the Quest 3 through six rounds; Claude read `logcat`, `getevent`, `uiautomator dump`, and `dumpsys` from the Mac. The installed build matched the checkout (SHA-256). The real controllers broke D.3 and D.7 (Findings); on the owner's decisions `ThumbstickSeeker` gained the wheel path (`WHEEL_ENGAGE`, `WHEEL_GAP_MILLIS`, 2 new tests) and D.7 was removed. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): 517 tests pass; installed with `adb install -r` (data kept) and confirmed by the owner with the real sticks. 255 `metavr` screenshots from this run were deleted from `/sdcard/Oculus/Screenshots` on the owner's go-ahead; two from 14:08 and 14:14 were left. Not done: labels for the three clickables (B.5), round 6 (network and media; the owner tested it), uncommitted. |
 | 2026-10-26 | D.3, D.7 (owner's request: Menu opens the sidebar; stick and D-pad left/right skip, hold for 2×/0.5×) | Owner, Claude | Uncommitted in the main checkout. `ThumbstickSeeker.kt` (+ `ThumbstickSeekTest`, 6 cases), `DevicePolicy.seeksWithThumbstick`/`menuButtonOpensAdjustments` (+ 1 test), `ThumbstickScroller.scrolling`, and the `PlayerActivity` hooks. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): BUILD SUCCESSFUL, the Horizon tests pass. Installed `Edendale-horizon-debug.apk` on the Quest 3 (`adb install -r`, 14:10) over the 10-25 build and drove the player by injection (Findings). Meta Casting access on the Mac was declined, so the eye view came from `metavr capture screenshot`. Not verified: the physical Menu button's key code, and the owner's report of the panel flashing while browsing in "focus view" (no repro recipe yet; `screencap`/`screenrecord` are black while casting and `metavr` video saves nothing). |
 | 2026-10-10 | P.5 (simulator) | Claude | Spike = `88d699d` + minSdk 32, `abiFilters arm64-v8a`, TV entries removed, `installLocation`, head-tracking feature, supported devices. `./gradlew assembleDebug assembleRelease` (JDK 17) passed. `metavr ssim start`; `adb install -r`; driven with `metavr ui tap/list`, `adb shell cmd package resolve-activity`, and `dumpsys`. No headset was connected. |
