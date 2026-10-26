@@ -58,3 +58,5 @@ Web/dist/
 /release
 /.secret
 /Vendor
+/out
+/scenes

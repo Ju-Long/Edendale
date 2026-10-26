@@ -63,17 +63,19 @@ movies, TV shows, library, watch tracker, open source.
 
 ## Screenshots (F.2)
 
-Five screenshots; theater screenshots are allowed and are likely the best
-(G.9): capture them on the Quest 3 with `metavr capture screenshot`, since
-`adb screencap` is black in the theater. Mix in the library panel and the
-player so the 2D half shows too. No other platform's hardware in any image.
+Five distinct 2560×1440 (16:9) 24-bit PNGs of the app running on the Quest:
+the home screen, a title's details, the library, the player, and Settings or
+a linked source. 27.0 is the 2D panel app (D15), so no theater screenshots.
+Don't reuse `android`'s Play screenshots: they're phone and TV layouts, at
+other sizes. Use art you have rights to (F.2) and no other platform's
+hardware, text, or badges. Fill the frame: no letterboxing or pillarboxing
+(Asset.5).
 
 ## Input modes (F.6)
 
 Select only what the headset checks passed (HORIZON.md Appendix 1): Touch
-controllers and hand tracking, in the panel and in the theater (G.10 checks
-both there). Look and Pinch only if the Spatial Simulator run under B.5
-passes; the theater doesn't offer it.
+controllers and hand tracking. Look and Pinch only if the Spatial Simulator
+run under B.5 passes.
 
 ## Price and regions (D9, owner)
 
@@ -87,13 +89,10 @@ action: TMDB (metadata), TheIntroDB (skip prompts, off by default), Wyzie
 (subtitle search, with the viewer's own key), YouTube (trailers), and the
 storage services the viewer links. The privacy policy lists them.
 
-If the checkup asks about SDKs (G.3): the immersive theater uses the Meta
-Spatial SDK 0.14.0 (`meta-spatial-sdk`, `-toolkit`, `-vr`, `-compose`) under
-Meta's SDK licence, with no Platform SDK, no entitlement check, and no
-Spatial Gradle plugin. On the Quest 3 the app's UID sent and received
-nothing while the theater ran (HORIZON.md Findings, 2026-10-25; repeated on
-the release candidate under G.10); what the OS collects itself isn't visible
-that way, and Meta's terms for the SDK apply to it.
+If the checkup asks about SDKs: 27.0 is the 2D panel app and carries no Meta
+SDK at all: no Platform SDK, no Spatial SDK, and no entitlement check
+(`verifyHorizonRelease` fails a 2D build that has any of the theater, D15).
+The theater update (Section G) brings the Spatial SDK and its own answer.
 
 ## Age rating (F.5, owner)
 
@@ -110,11 +109,11 @@ To play something, copy any MP4 or MKV into the headset's Movies folder (for exa
 
 Alternatively, Downloaded → Link Source accepts a WebDAV, SFTP, SMB, or S3 server you control.
 
-Sign-in to Google Drive, OneDrive, and Dropbox is optional and opens the system browser; the app ships no client secret and stores tokens only on the headset. Trailers (YouTube) play only after pressing Play on a title's page.
+Sign-in to Google Drive, OneDrive, and Dropbox is optional and opens the system browser; the app ships no client secret and stores tokens only on the headset. Nothing plays a trailer by itself: Watch Trailer on a title's page opens it on YouTube, outside the app.
 
-Immersive theater: while a video plays, press the Theater button at the top of the player. The video moves to a large screen in a dark environment. Press a trigger (or pinch) to show the controls under the screen: play and pause, skip, the timeline, audio and subtitle tracks, and Exit. Exit, or B/Y on a controller, returns to the app's panel. Taking the headset off pauses the video.
+In the player, B or Y goes back, the thumbsticks skip back and forward (hold for faster or slower playback), and taking the headset off pauses the video until it's back on.
 
-The app is free, open-source (MPL-2.0, with an LGPL-2.1 FFmpeg decoder and the Meta Spatial SDK under Meta's licence), and collects no analytics. Privacy policy: https://edendale.babasama.com/privacy/
+The app is free, open-source (MPL-2.0, with an LGPL-2.1 FFmpeg decoder), and collects no analytics. Privacy policy: https://edendale.babasama.com/privacy/
 ```
 
 If the owner wants reviewers to have media without copying files, add a

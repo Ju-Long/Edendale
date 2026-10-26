@@ -263,11 +263,16 @@ restructuring in A starts.
   with its SHA-256 (Handoff). P.2 (the app and its App ID) and the upload
   are the owner's.
   *2026-10-26, evening:* the 27.0 store candidate was rebuilt from `04fc499`
-  (D.3 sticks) into `release/horizon/27.0/`: still `0.27.0.1`, versionCode 3,
-  2D (`verifyHorizonRelease`; no `com.meta.spatial` class, no Spatial SDK
-  library, two activities), New.jks v2, SHA-256 `71b299f9…0251fc`. It
+  (D.3 sticks) with the flavor's `versionName` `27.0` (Deviations) into
+  `release/horizon/27.0/Edendale-horizon-27.0-3.apk`: versionCode 3, 2D
+  (`verifyHorizonRelease`; no `com.meta.spatial` class, no Spatial SDK
+  library, two activities), New.jks v2, SHA-256 `9c9ada05…c081280284`. It
   replaces `0.27.0.1-alpha`, which has the same versionCode, so upload only
   one of them. The store draft no longer mentions the theater.
+  *2026-10-26, later:* the flavor's `versionCode` is now 4 (Deviations), and
+  `Edendale-horizon-27.0-4.apk` was built from `d99ff4a` (B.5 label) beside
+  it: `27.0`, versionCode 4, 70.7 MB, 2D, New.jks v2, `verifyHorizonRelease`
+  passed, SHA-256 `2d9de4ac…09e65753`.
 - [ ] **P.7** If P.5 or P.6 turns up a blocker (no folder picker, sign-in
   can't return to the app, upload refused), update this plan and Section 0
   before Section A starts.
@@ -1105,6 +1110,7 @@ For whoever reviews the implementation:
 | 2026-10-26 | D.3 | A push does more than D.3's "skip": a held stick plays at the hold speeds, a D-pad's left and right get the same press-and-hold on Horizon (where the handheld keyboard code repeats seeks), and with a panel open the sticks scroll its list (natively for the controllers' wheel events, through `ThumbstickScroller` for a gamepad's joystick). `src/main` gains `dispatchGenericMotionEvent`, `dispatchTouchEvent`, `onWindowFocusChanged`, the listener, and the D-pad branch in `PlayerActivity`; `handleFastForwardRewindKey` takes an `isForward` parameter. *2026-10-26 (real controllers):* `ThumbstickSeeker` also reads the wheel runs Horizon sends for the Touch controllers' sticks (`ACTION_SCROLL`, D.3). | Owner's request (2026-10-26): push skips, hold changes speed, for the stick and the D-pad alike. The hooks follow B.1's pattern, so android stays untouched. |
 | 2026-10-26 | D.7 (new, then dropped) | The Menu button toggled Adjustments in the player; the step wasn't in Section D. The same day the real controllers showed that Horizon OS keeps the Menu button in 2D apps, and the owner had the shortcut removed: `DevicePolicy.menuButtonOpensAdjustments` and the `KEYCODE_MENU`/`BUTTON_START` branch in `PlayerActivity` are gone, so Menu keys fall back to the handheld handling. | Owner's request (2026-10-26), and Meta's VRC.Quest.Input.1 asks that in-app menus open from the left controller's Menu button; removed on the owner's decision once `SystemButtonHandler` was seen taking it (Findings). |
 | 2026-10-26 | B.5 | `src/main`'s `PlayerScreen` puts the centre button's Play/Pause label on the button (`Modifier.semantics`) instead of its icon, so the button keeps a label while the buffering spinner replaces the icon. | Found by the headset audit, but it isn't a headset fix: it belongs on `android` too, as its own change (branch model), with the owner's go-ahead. |
+| 2026-10-26 | A.4 | The `horizon` flavor sets its own `versionName`, `27.0`, over android's `0.27.0.1`, and, later the same day, its own `versionCode`, 4, over android's 3. | Owner's requests: Settings (which shows `versionName`) and the Horizon Store should read 27.0, and the next Horizon build is 4. Each store only compares a code with its own last upload, so the code no longer waits for a bump on `android`. Set both again for each Horizon release. |
 
 ## Handoff log
 

@@ -118,9 +118,10 @@ and its passwords never enter the repository or a CI log.
 ### Versioning
 
 `versionCode` and `versionName` in `defaultConfig` are `android`'s and arrive
-with its merges. Every upload to the Meta Horizon Store needs a higher
-`versionCode` than the store's last upload, and Play has the same rule, so the
-code is bumped on `android` and merged here, never on this branch alone.
+with its merges, but the `horizon` flavor overrides both: `versionName` is the
+Horizon release's own (`27.0`, not android's `0.27.0.1`), which Settings and
+the store show, and `versionCode` (4) only has to be higher than the Meta
+Horizon Store's last upload. Set both in the flavor for each release.
 
 ### The Spatial Simulator
 
@@ -140,7 +141,8 @@ software codecs, so codec and performance results come only from a headset.
 
 ### Release
 
-1. Merge `android` with the version bump, then run the commands above.
+1. Raise the `horizon` flavor's `versionCode` (and `versionName` for a new
+   release) in `build.gradle.kts`, then run the commands above.
 2. `./gradlew assembleHorizonRelease verifyHorizonRelease` with the signing
    properties in place. It builds the 2D app unless `-Phorizon.theater=true`
    is passed, and the check says which one it built.

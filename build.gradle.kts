@@ -161,6 +161,12 @@ android {
             // range is 29–34). targetSdk stays android's until the ALPHA
             // upload probe (P.6) says otherwise.
             minSdk = 32
+            // The Horizon Store release's own name and code (owner, 2026-10-26),
+            // shown in Settings and the store: "27.0" rather than android's
+            // "0.27.0.1". The code only has to beat the store's last upload, so
+            // it moves with Horizon releases, not with android's (A.4).
+            versionCode = 4
+            versionName = "27.0"
             buildConfigField("boolean", "HORIZON_OS", "true")
             buildConfigField("boolean", "HORIZON_THEATER", horizonTheater.toString())
         }
