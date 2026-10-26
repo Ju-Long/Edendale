@@ -21,6 +21,7 @@ The universal documents (`AGENTS.md`, `CLAUDE.md`, `DESIGN.md`, `MODEL.md`) are
 | `scenes/<name>/<name>.blend` | One scene per folder, saved with Blender 5.2 LTS |
 | `scenes/<name>/textures/` | The scene's baked textures, referenced from the `.blend` by relative path |
 | `scenes/<name>/README.md` | What the scene is, who made the art, and under which licence |
+| `tools/bake_lighting.py` | Headless bake of a scene's lighting into its textures and exported meshes |
 | `tools/export_gltf.py` | Headless export to GLB, for `meta-horizon` |
 | `tools/export_usd.py` | Headless export to USDZ, for `apple` |
 | `tools/_theater_scene.py` | The checks and helpers both scripts share |
@@ -44,21 +45,55 @@ USDZ directly.
 - **Lighting is baked.** Bake with Cycles to textures saved under `textures/`,
   and give each material its baked image as base colour or emission. The
   theaters have no real-time lights; lights and cameras are not exported.
+  `tools/bake_lighting.py` does this for a scene laid out as below, and
+  writes emission-only materials (black base colour, the baked image as
+  emission, back faces culled), so a headset's environment lighting adds
+  next to nothing.
+- **Source and Theater.** The editable scene lives in a `Source` collection,
+  excluded from the view layer so the exporters skip it: meshes with
+  procedural materials, each tagged with a `bake_group` custom property, and
+  the bake lights. A `Theater` collection holds what is exported: `Screen`,
+  `Seat`, one baked mesh per group, and anything deliberately unbaked.
 - **Dark around the screen.** Keep the surfaces near the screen dark and
   neutral so they don't wash out the picture.
 - **Textures.** Power-of-two sizes, PNG or JPEG. Compressing them for a
   headset (ASTC, KTX2) is the platform branch's business.
 - **Keep it cheap.** Few draw calls, modest triangle counts, no avoidable
-  overdraw. The Quest 3 spike spent 2.5 ms of an 11.1 ms frame at 90 fps on a
-  skybox and one quad; a room spends the rest. Measure on the device.
+  overdraw. A baked group is one mesh with one material, so one draw call.
+  Transparency only where it earns its place, in its own unbaked mesh. The
+  Quest 3 spike spent 2.5 ms of an 11.1 ms frame at 90 fps on a skybox and
+  one quad; a room spends the rest. Measure on the device.
 - **Licence of the art.** Made in house, or under a licence that fits the
   repository (the scripts are MPL-2.0; see `LICENSE`). Each scene's README
   names the author and the licence of every piece.
 
-## Exporting
+## Baking
 
 From the repository root, with Blender 5.2 LTS. On macOS the binary is
-`/Applications/Blender.app/Contents/MacOS/Blender`.
+`/Applications/Blender.app/Contents/MacOS/Blender`. Use the GPU: run it
+without `--factory-startup`, so Cycles keeps the Metal (or CUDA, OptiX)
+device from the preferences.
+
+```bash
+Blender --background scenes/<name>/<name>.blend --python tools/bake_lighting.py
+```
+
+Naming groups after `--` (`-- seats`) rebakes only those. For each group the
+script copies the members with modifiers and scale applied, packs them into
+one square lightmap atlas (objects nearer the seat get more texels), and
+bakes diffuse colour, diffuse light, and emission with Cycles. It denoises
+the light with OpenImageDenoise, writes `colour × light + emission`, exposed
+and gently compressed above 0.8, to `textures/<group>.jpg` (or `.png`), and
+joins the group into one mesh in `Theater`. It saves the `.blend` in place.
+
+The scene's `bake_settings` custom property sets the groups (name, atlas
+size, and optionally format, exposure, samples, and margin) and the defaults
+(1024 samples, JPEG, exposure 1.0). Its docstring lists every key. On an
+Apple M4 Max a scene takes two to three minutes.
+
+## Exporting
+
+From the repository root, with Blender 5.2 LTS.
 
 ```bash
 Blender --background scenes/<name>/<name>.blend --python tools/export_gltf.py -- out/<name>.glb
@@ -108,8 +143,18 @@ passes about 50 MB, raise Git LFS with the owner; GitHub refuses files over
 
 ## Scenes
 
-None yet. Each scene's folder carries a README naming its art and licence, and
-this section lists the scenes as they arrive.
+Each scene's folder carries a README describing it and naming its art and
+licence. All three were made in house and are MPL-2.0.
+
+| Scene | What it is | Screen from the seat | Triangles | GLB |
+|---|---|---|---|---|
+| [`movie-theatre`](scenes/movie-theatre/README.md) | A stadium-seated cinema, the viewer in its centre seat | 12 m wide, 14 m ahead (46°) | 93,322 | 7.2 MB |
+| [`projector-room`](scenes/projector-room/README.md) | A 1920s picture hall: wooden chairs, a reel projector behind, its beam overhead | 5.6 m wide, 7.4 m ahead (42°) | 35,220 | 4.1 MB |
+| [`performance-theatre`](scenes/performance-theatre/README.md) | A proscenium playhouse, red curtains tied back around the screen on the stage | 11 m wide, 14 m ahead (43°) | 149,432 | 11.4 MB |
+
+All three are lit as if the film has started. Every baked material carries
+its light as emission, so an app can dim a room further by scaling the
+emission down.
 
 ## License
 
