@@ -55,3 +55,7 @@ Web/dist/
 *.blend1
 *.blend2
 *.blend@
+/.astro
+/dist
+/release
+/src
