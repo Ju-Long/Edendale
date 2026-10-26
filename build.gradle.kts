@@ -225,14 +225,14 @@ dependencies {
     // live under src/horizon/java and load libffmpegJNI.so from src/horizon/jniLibs,
     // which tools/horizon/build-ffmpeg-decoder.sh builds over an LGPL-2.1 FFmpeg.
     // android's Jellyfin package (GPL-3.0) is not used on this branch.
-    horizonImplementation(libs.media3.decoder)
-    horizonCompileOnly(libs.checker.qual)
+    "horizonImplementation"(libs.media3.decoder)
+    "horizonCompileOnly"(libs.checker.qual)
     // HORIZON.md G.4 (D12): the Spatial SDK for the immersive theater. The
     // -compose module draws the theater's controls and subtitle panels (G.8).
-    horizonImplementation(libs.meta.spatial.sdk)
-    horizonImplementation(libs.meta.spatial.sdk.toolkit)
-    horizonImplementation(libs.meta.spatial.sdk.vr)
-    horizonImplementation(libs.meta.spatial.sdk.compose)
+    "horizonImplementation"(libs.meta.spatial.sdk)
+    "horizonImplementation"(libs.meta.spatial.sdk.toolkit)
+    "horizonImplementation"(libs.meta.spatial.sdk.vr)
+    "horizonImplementation"(libs.meta.spatial.sdk.compose)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)

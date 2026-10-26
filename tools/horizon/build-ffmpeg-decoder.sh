@@ -171,6 +171,7 @@ mkdir -p "$OUT"
 for abi in "${ABIS[@]}"; do
     log "Building libffmpegJNI.so for $abi"
     build_dir="$WORK/jni-build/$abi"
+    mkdir -p "$build_dir"
     "$CMAKE_BIN/cmake" -S "$MODULE/jni" -B "$build_dir" -G Ninja \
         -DCMAKE_MAKE_PROGRAM="$CMAKE_BIN/ninja" \
         -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
