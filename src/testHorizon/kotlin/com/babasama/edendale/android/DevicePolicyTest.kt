@@ -18,6 +18,7 @@ class DevicePolicyTest {
                 offersSwipeAdjustments = true,
                 playsTrailersInline = true,
                 scrollsWithThumbstick = false,
+                seeksWithThumbstick = false,
                 offersImmersiveTheater = false,
             ),
             DevicePolicy.resolve(isTelevision = false, isHorizonOs = false, hasTheater = true),
@@ -35,6 +36,7 @@ class DevicePolicyTest {
                 offersSwipeAdjustments = true,
                 playsTrailersInline = true,
                 scrollsWithThumbstick = false,
+                seeksWithThumbstick = false,
                 offersImmersiveTheater = false,
             ),
             DevicePolicy.resolve(isTelevision = true, isHorizonOs = false, hasTheater = true),
@@ -52,10 +54,22 @@ class DevicePolicyTest {
                 offersSwipeAdjustments = false,
                 playsTrailersInline = false,
                 scrollsWithThumbstick = true,
+                seeksWithThumbstick = true,
                 offersImmersiveTheater = true,
             ),
             DevicePolicy.resolve(isTelevision = false, isHorizonOs = true, hasTheater = true),
         )
+    }
+
+    /** D.3: only a headset's player reads the sticks and the D-pad's hold this way. */
+    @Test
+    fun onlyHorizonSeeksWithTheThumbstick() {
+        for (isTelevision in listOf(false, true)) {
+            val policy = DevicePolicy.resolve(isTelevision, isHorizonOs = false, hasTheater = false)
+            assertEquals(false, policy.seeksWithThumbstick)
+        }
+        val horizon = DevicePolicy.resolve(isTelevision = false, isHorizonOs = true, hasTheater = false)
+        assertEquals(true, horizon.seeksWithThumbstick)
     }
 
     @Test

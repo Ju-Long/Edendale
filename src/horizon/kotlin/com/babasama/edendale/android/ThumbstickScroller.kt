@@ -30,6 +30,9 @@ internal class ThumbstickScroller(private val view: View) : Choreographer.FrameC
     private var lastFrameNanos = 0L
     private var downTime = 0L
 
+    /** Whether a held stick is scrolling, so the caller keeps feeding it the release. */
+    val scrolling: Boolean get() = running
+
     /** Where the ray or a touch last was; the wheel goes there. */
     fun trackPointer(event: MotionEvent) {
         if (event.isFromSource(InputDevice.SOURCE_CLASS_POINTER) && event.pointerCount > 0) {

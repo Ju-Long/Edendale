@@ -31,6 +31,12 @@ data class DevicePolicy(
     /** The library scrolls what the ray points at with a thumbstick ([ThumbstickScroller], B.5). */
     val scrollsWithThumbstick: Boolean,
     /**
+     * In the player, a thumbstick or D-pad push left or right skips by the
+     * App Controls lengths and a hold plays at the hold speeds
+     * ([ThumbstickSeeker], D.3); an open panel's list scrolls instead.
+     */
+    val seeksWithThumbstick: Boolean,
+    /**
      * The player offers the immersive theater (HORIZON.md Section G): a Theater
      * button in its chrome while a video is loaded, which hands playback to
      * `TheaterActivity`. Only a headset can show it, and only a build with
@@ -55,6 +61,9 @@ data class DevicePolicy(
                 playsTrailersInline = !isHorizonOs,
                 // B.5: Horizon sends the sticks as joystick axes that nothing else reads.
                 scrollsWithThumbstick = isHorizonOs,
+                // D.3: the sticks reach the panel under the ray as wheel events,
+                // which the player otherwise has nothing to scroll with.
+                seeksWithThumbstick = isHorizonOs,
                 // G.5: the theater is a Spatial SDK activity in src/horizonTheater, built on request.
                 offersImmersiveTheater = isHorizonOs && hasTheater,
             )

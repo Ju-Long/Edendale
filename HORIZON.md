@@ -305,6 +305,19 @@ the hand-pinch finding (B.5), B.7 beyond H.264 and 8-bit HEVC, B.8, the rest of 
 steps 4–6, and the cleanup. The headset keeps the 10-25 debug build, the
 linked `EdendaleTest` folder, and the owner's Google Drive link.
 
+*Status 2026-10-26:* a second full run on the D.3 build (the owner wore the
+headset; Claude read `adb` from the Mac). Launch, the library, Settings,
+details, search, the player's taps and holds, E-AC-3, and headset off and on
+pass; "Open with Edendale" from the Files app passes (B.2). The real Touch
+controllers showed that the thumbstick seek and the Menu button only worked
+by injection: the sticks arrive as wheel events at the ray, now read by
+`ThumbstickSeeker`, and Horizon OS keeps the Menu button, so D.7 is dropped
+(Findings, Deviations). The owner tested the network sources and media
+(round 6) themselves. Still to do: the three unlabeled clickables (B.5), the
+hand-pinch finding, B.7's HDR and Dolby Vision judgement in the Findings,
+B.8, and the cleanup. The headset keeps the 10-26 debug build (D.3 fix, no
+Menu shortcut).
+
 ---
 
 ## Section A — The `horizon` build variant
@@ -359,7 +372,7 @@ and record the result in Findings either way.
   enhancement default (`VideoEffectsController`). A Quest isn't a TV; check
   that its `uiMode` type (likely `UI_MODE_TYPE_VR_HEADSET`) never selects the
   TV shell.
-- [ ] **B.2** Local folders: Downloaded → Add Folder and Settings → Sources use
+- [x] **B.2** Local folders: Downloaded → Add Folder and Settings → Sources use
   `OpenDocumentTree`. Check that the picker exists on Horizon OS and that the
   persisted URI survives a restart. If not, implement D7 behind
   `DevicePolicy`. Also check "Open with Edendale" from the headset's file
@@ -367,6 +380,14 @@ and record the result in Findings either way.
 
   *2026-10-25, Quest 3:* the picker and the persisted URI pass (Findings), so
   D7 isn't needed. "Open with Edendale" is still to check.
+
+  *2026-10-26, Quest 3:* "Open with Edendale" passes. Opening
+  `video_640x360.mp4` and `decoder-eac3.mkv` in the Files app
+  (`com.oculus.systemutilities`) sent `ACTION_VIEW` with a
+  `content://com.oculus.systemutilities.fileprovider/…` URI straight to
+  `PlayerActivity`, with no chooser. It opened in Edendale's own task in 0.6 s
+  (2.2 s from a cold start) and played (`c2.qti.avc.decoder`,
+  `c2.dolby.eac3.decoder`); B returned to the library.
 - [x] **B.3** PiP: `PlayerActivity` already gates on
   `FEATURE_PICTURE_IN_PICTURE`. Check that the Auto PiP setting and the PiP
   button disappear when the feature is absent. If the feature is present but
@@ -403,6 +424,17 @@ and record the result in Findings either way.
   sideways and the page up and down. The owner confirmed it with both real
   sticks; the speed feels right. The hit-target audit and Look and Pinch are
   still to do.
+
+  *2026-10-26, Quest 3:* hit-target and label audit from `uiautomator dump`
+  every 2–3 s while the owner walked the home page, all of Settings, a series'
+  details page, search, and the player with Adjustments open. Every control is
+  at least 48 dp once it isn't clipped by a scroll edge (Settings' steppers,
+  the rating stars, Fit/Fill, Audio Output, Clear date). Three clickables have
+  no label, which Look and Pinch and TalkBack would need: the home hero's
+  artwork (417×520 dp), a 56 dp strip at the right edge of the details page's
+  rows, and the player's centre button while it shows the loading spinner
+  (76 dp). The Adjustments subtitle row "Off" read 46 dp tall in its one dump,
+  next to the panel's edge. The real sticks and Menu button: D.3, D.7.
 - [x] **B.6** Brightness: the player's brightness control writes
   `window.attributes.screenBrightness` (`PlayerActivity`). If that has no
   effect in a panel, hide the control on Horizon. Picture → Brightness, done in
@@ -502,8 +534,33 @@ and record the result in Findings either way.
   `FLAG_ACTIVITY_LAUNCH_ADJACENT | FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_MULTIPLE_TASK`
   so the library and the video sit side by side. This is Horizon's equivalent
   of PiP.
-- [ ] **D.3** Thumbstick left and right in the player skip by the App Controls
+- [x] **D.3** Thumbstick left and right in the player skip by the App Controls
   lengths (`onGenericMotionEvent`).
+
+  *2026-10-26:* done as a push-and-hold, the split the remote's rewind and
+  fast-forward keys already had: a push past 60% of the stick's travel that
+  springs back skips by the App Controls lengths; one held past 400 ms plays
+  at the hold speeds until the stick comes back. Up, down, and diagonal pushes
+  do nothing. A D-pad's left and right (a gamepad, or the virtual device's
+  hat) get the same press-and-hold on Horizon instead of the keyboard's
+  repeating seeks. While a panel is open the sticks scroll its list where the
+  ray points, as the library does (B.5). `ThumbstickSeeker` and
+  `ThumbstickSeekTest` in `src/horizon` and `src/testHorizon`;
+  `DevicePolicy.seeksWithThumbstick`; `PlayerActivity` gains
+  `dispatchGenericMotionEvent`, `dispatchTouchEvent`, and the D-pad branch in
+  `dispatchKeyEvent`.
+
+  *2026-10-26, real controllers:* the build above only worked by injection.
+  The Touch controllers' sticks reach a 2D panel as wheel events at the ray,
+  as Meta's Android input guide says (`ACTION_SCROLL`, `AXIS_HSCROLL` and
+  `AXIS_VSCROLL`, only while the ray is over the panel), never as the joystick
+  axes `adb shell input joystick` injects (Findings). `ThumbstickSeeker` now
+  reads them too: a run of mostly sideways wheel events past
+  `WHEEL_ENGAGE` (0.15, about half a push) is a push, and the run stopping for
+  150 ms is the stick springing back. The joystick path stays for gamepads.
+  With an open panel the wheel events pass through and scroll its list
+  natively. The owner confirmed flicks (skip) and holds (2×, 0.5×) with the
+  real sticks; 517 JVM tests pass.
 - [ ] **D.4** App-level volume and mute in the player through
   `player.volume`, which Meta's media guidance recommends.
 - [ ] **D.5** Hover highlights under gaze through Meta's Gaze SDK for Compose.
@@ -511,6 +568,29 @@ and record the result in Findings either way.
   the owner first.
 - [ ] **D.6** Immersive theater: now Section G, with its own decisions
   (D12–D17). 3D, 180°, and 360° playback is G.12.
+- [ ] ~~**D.7**~~ *Dropped 2026-10-26.* The left Touch controller's Menu button opens and closes the
+  player's Adjustments, as Meta's input guidance asks of in-app menus
+  (VRC.Quest.Input.1). *2026-10-26:* `DevicePolicy.menuButtonOpensAdjustments`;
+  `PlayerActivity.dispatchKeyEvent` toggles `PlayerPanel.SETTINGS` on
+  `KEYCODE_MENU` and `KEYCODE_BUTTON_START` (Findings: the controller's key
+  layout can't be read, so both codes the Menu button could carry are taken),
+  where the handheld player treated Menu as Back. The library keeps its
+  keyboard toggle (Ctrl+B) only. Injected on the headset, `KEYCODE_MENU` is
+  taken by Horizon OS before the app (Findings, 2026-10-26); `BUTTON_START`
+  and `BUTTON_SELECT` reach the player and toggle Adjustments. Whether the
+  controller's Menu button is one of those is the owner's check: if pressing
+  it in the player opens the system menu instead, the button is the OS's in
+  2D apps and this step becomes a gamepad-only nicety.
+
+  *2026-10-26, real controllers:* the Menu button is the OS's. Each press
+  reached the controller's virtual device as `BTN_START`, and vrshell's
+  `SystemButtonHandler` took it (`handleKeyEvent: 108`, "standalone menu
+  short press") before any window; the player never saw it. Injected keys
+  skip that handler, which is why the earlier check passed. The owner chose to
+  remove the shortcut: `menuButtonOpensAdjustments` and the
+  `KEYCODE_MENU`/`BUTTON_START` branch are gone, and the Adjustments button in
+  the chrome is the way in. VRC.Quest.Input.1's Menu-button rule can only
+  apply to immersive apps (Section G).
 
 ---
 
@@ -975,6 +1055,11 @@ For whoever reviews the implementation:
 | 2026-10-25 | Owner's Quest 3 (Horizon OS v207); immersive spike, debug, application ID `com.babasama.edendale.spike` beside the real build (commit `37ef2bd`) | **The Spatial SDK theater works.** It's an `AppSystemActivity` with a skybox and a `VideoSurfacePanelRegistration` screen, playing through `EdendaleRenderersFactory`. 4K and 1080p HEVC used `c2.qti.hevc.decoder`, H.264 with AAC played, and E-AC-3 used `c2.dolby.eac3.decoder`. VrApi reported 90/90 fps, no stale frames, GPU about 22%, CPU and GPU 2.5 ms per frame, and 46 °C. Cold launch into the theater took 1.7–2.5 s, and 0.65 s from the panel. `adb screencap` is black in the theater, but `metavr capture screenshot` (metacam) captures the eye view. The SDK starts its own stereo OpenSL ES player when the scene loads. | G.10 repeats this on the real build. |
 | 2026-10-25 | Quest 3, immersive spike | Network: after `dumpsys netstats --poll`, the spike's UID had no entry under "UID stats", and `/proc/net/{tcp,udp}{,6}` showed no sockets, across several runs. The SDK logged "Analytics module not available" and "analytics: disabled". Its native library does contain Meta's analytics and QPL code. Anything the OS collects itself can't be seen this way. | G.3. |
 | 2026-10-25 | Quest 3, immersive spike | Manifest and launch: without `horizonos:uses-horizonos-sdk`, `VrosSystemServiceRegistry` logged that the app retrieves an HzOS SDK manager without declaring a minimum HzOS SDK version and "must fix this to continue to access this SDK in the future"; declaring 69 silenced it. With the controllers asleep, launching the theater stopped at vrshell's `LaunchCheckControllerRequiredDialogActivity`; declaring hand-tracking support removed it. | G.4. |
+| 2026-10-26 | Quest 3 (vrshell 209.0.0.454.433), `dumpsys input`, `/system/usr/keychars/Generic.kcm` | The controllers' virtual device is vendor `0x2833` product `0x0160` with `/odm/usr/keylayout/oculus-device.kl`, which adb can't read (permission denied), so the Menu button's Android key code isn't known from the device. Its scan codes are a gamepad's: `BTN_START`, `BTN_SELECT`, and `BTN_MODE` are all declared. The device uses `Generic.kcm`, whose fallbacks apply when an app leaves a gamepad key unhandled: `BUTTON_START` → `DPAD_CENTER`, `BUTTON_SELECT` → `MENU`, `BUTTON_MODE` → `HOME`, `BUTTON_A` → `DPAD_CENTER`, `BUTTON_B` → `BACK`. Meta's 2D-app input page names only B/Y (Back) and the joystick (`AXIS_HSCROLL`/`AXIS_VSCROLL` scroll by default). With Meta Casting running on the Mac, `adb exec-out screencap` and `screenrecord` return black; `metavr capture screenshot` still gives the eye view, and `metavr capture video start`/`stop` (hidden commands) save nothing. | D.7 takes `KEYCODE_MENU` and `KEYCODE_BUTTON_START`; a `BUTTON_SELECT` Menu would arrive as the `MENU` fallback. The owner's press settles which. |
+| 2026-10-26 | Quest 3, D.3/D.7 build (debug), `adb shell input`, `dumpsys media_session`, `uiautomator dump` | In the player with *Obsession* playing: `input keyevent KEYCODE_MENU` never reached the app; the system's `KeyboardShortcutHandler` (vrshell) logged `dispatchAction: menu_button keyCode=82` and the player's chrome stayed hidden. `KEYCODE_BUTTON_START` and `KEYCODE_BUTTON_SELECT` (whose `Generic.kcm` fallback is `MENU`, raised inside the app's own window) both toggled Adjustments. `input joystick motionevent MOVE 0.9 0` then `MOVE 0 0` skipped +10 s, `-0.9` skipped −10 s; held for 1.2 s the session reported `speed=2.0` (right) and `speed=0.5` (left) and `1.0` again on release, with no skip; a vertical push changed nothing. `KEYCODE_DPAD_RIGHT` skipped +10 s; `--longpress KEYCODE_DPAD_LEFT` slowed briefly and did not skip. | So a keyboard's Menu key belongs to Horizon OS in a 2D app; D.7 works if the controller's Menu button arrives as `BUTTON_START` or `BUTTON_SELECT`, which the owner's press on this build shows (Adjustments opens, or the system menu does). A `uiautomator dump` with no labelled nodes means the player's chrome is hidden, not a failed dump. |
+| 2026-10-26 | Owner's Quest 3 (Horizon OS v207, vrshell 209), D.3/D.7 build with the real Touch controllers; `getevent -lt`, `logcat`, and a temporary log in `PlayerActivity.dispatchGenericMotionEvent`/`dispatchKeyEvent` (removed afterwards) | **Injected input misled the D.3/D.7 checks.** The Menu button reached the controller's virtual device as `BTN_START`, and vrshell's `SystemButtonHandler` took every press (`handleKeyEvent: 108` → "standalone menu short press") before any window; the player never saw it. The trigger and grip pass through the same handler (103, 105) and reach the virtual device as `BTN_TR`/`BTN_TR2`. No thumbstick motion appeared on the virtual devices (no `EV_ABS` in two recordings). In the player, the stick came as `ACTION_SCROLL` from source `0x2` (`SOURCE_CLASS_POINTER`) at the ray: `AXIS_HSCROLL` about ±0.27–0.34 a frame at a full push, every 13–16 ms (72 Hz), rising from about 0.05 over two or three frames and tailing off, `AXIS_VSCROLL` 0 on a sideways push, positive to the right, and no event at all on release. Alongside came `ACTION_HOVER_MOVE` from source `0x1002`. `adb shell input joystick` sends joystick X/Y instead, which is why the injected run passed. | D.3 reads the wheel runs; D.7 dropped (Deviations). Meta's Android input guide says this: the stick scrolls scrollable views by default and arrives as `AXIS_HSCROLL`/`AXIS_VSCROLL`, one controller at a time, only while its ray is over the panel. The 10-25 RX/RY reading (B.5) wasn't seen again; whether RX/RY ever reach the home page wasn't re-checked. |
+| 2026-10-26 | Quest 3, the full run on the D.3 build | Cold start to MainActivity's first frame took 2.3 s; the home page, Settings, a series' details page, search, and the player passed (B.5's audit, B.2). Settings → Accounts → Google Drive → Choose More Videos opened the Google page in a Custom Tab (`com.oculus.browser`'s `CustomTabActivity`). Closing it without finishing left the account row on "Waiting for Google Drive…" with Cancel until Cancel was tapped: `ChooseMoreVideosState` waits for the redirect, the same on every Android device. Taking the headset off paused playback and putting it on resumed it (owner; B.4 unchanged). | The Drive wait is an android-branch question, not Horizon's. |
+| 2026-10-26 | Quest 3, `metavr capture screenshot` | Each `metavr capture screenshot` is a MetaCam `TAKE_SCREENSHOT`: it saves `/sdcard/Oculus/Screenshots/com.oculus.vrshell-<date>-<time>.jpg` in the headset's gallery, plays the shutter sound (the `c2.android.vorbis.decoder` lines every few seconds), and queues an upload to the owner's Meta camera roll (`VR_AUTO_SYNC`). A 3 s capture loop left 255 files, deleted from the headset afterwards; uploaded copies stay in the Meta Horizon app. `adb exec-out screencap -p` saves nothing (black while Meta Casting runs). | Don't loop `metavr capture`; use `screencap`, `uiautomator dump`, and logs, and take single `metavr` shots only with the owner's go-ahead. |
 | 2026-10-25 | Quest 3, immersive spike | Placement and exit: the head entity's pose reads (0, 0, 0) on the first query after `onSceneReady`, so the screen first landed at floor level; waiting for a nonzero pose (two or three tries at 100 ms) fixed it. `adb shell input keyevent KEYCODE_BACK` didn't close the theater. `finish()` returned to Home with the Edendale panel open but unfocused; the `HOME` intent with `extra_launch_in_home_pending_intent` returned with the panel focused. | G.6, G.7. |
 | 2026-10-25 | Quest 3, immersive spike with the LGPL decoder (G.1) | **Media3 1.9.0's FFmpeg decoder over an LGPL-2.1 FFmpeg 6.0.2 plays DTS, DTS-HD MA, and TrueHD.** It replaced Jellyfin's package; the arm64 `libffmpegJNI.so` is 1,462,264 bytes, against Jellyfin's 1,462,200. Results in the theater and in the 2D player: DTS 5.1 through `ffmpegLavc60.3.100-dca` to a 5.1 track; DTS-HD MA 7.1 24-bit (FATE `dts/master_audio_7.1_24bit.dts`) as `audio/vnd.dts.hd`, 8 channels, to a 7.1 track (`0x18fc`); Dolby TrueHD 5.1 (FATE `lossless-audio/truehd_5.1.raw`) through `-truehd` to a 5.1 track. No `ffmpeg_jni` errors. In a control run, Jellyfin's package played the same DTS 5.1 file in the 2D player. | G.1. B.9: DTS through FFmpeg passes with either decoder. |
 | 2026-10-25 | Quest 3 and the Mac, both decoders | **TrueHD from FFmpeg's own experimental encoder doesn't decode in Media3.** Every packet fails with "Assignment of matrix channel 0 to invalid output channel -22" and "Invalid data found when processing input". That happens with Jellyfin's decoder and the LGPL build alike, and on the Mac when libavcodec runs without a parser first. Media3's JNI doesn't preset a channel layout for TrueHD. Dolby-encoded TrueHD decodes. | Test TrueHD (B.9, G.10) with Dolby-encoded samples only. |
@@ -1007,11 +1092,15 @@ For whoever reviews the implementation:
 | 2026-10-25 | G.7 | No `theater.glb` ships; the sky is a starfield from `tools/horizon/make_skybox.py` (Python, where the spike used Swift). | `scenes` holds no scene yet, and Blender isn't in the build container; the activity loads the GLB when it exists. |
 | 2026-10-25 | G.T1 | The JVM tests ran in a scratch JVM project (Kotlin 2.2.0, kotlinx.serialization 1.8.1, JUnit 4), not through `testHorizonDebugUnitTest`. | The container has no Android SDK, and `dl.google.com` is blocked by its proxy, so Gradle can't configure the Android build there. |
 | 2026-10-26 | D15, G.4 | The theater's Spatial SDK code (`TheaterActivity`, `TheaterInputSystem`, `TheaterPanels`), its manifest entries (the activity, `uses-horizonos-sdk`, hand tracking, `libossdk.oculus.so`), and its resources (ids, the panel theme, the sky, the `theater_*` strings) moved to `src/horizonTheater/`, which Gradle adds to the `horizon` source sets only with `horizon.theater=true`; `gradle.properties` sets it to `false`. The Spatial SDK dependencies are conditional too. `TheaterHandover` names the activity by class name, and `DevicePolicy.resolve` takes `hasTheater` (`BuildConfig.HORIZON_THEATER`). The 2D About line (`settings_open_source`, 19 locales) drops the Spatial SDK clause; `src/horizonTheater` overrides it with the 10-25 text. `verifyHorizonRelease` fails a 2D build that carries any of the theater, and a theater build whose manifest entry and class don't agree; CI builds both. | The owner chose a 2D-only first ALPHA build. Off by default so a release can't carry the SDK by accident while D12 and D15 are open. The layer's code and resources join the flavor and variant source sets in the android DSL: AGP 8.10.1's variant API (`sources.kotlin`/`res.addStaticSourceDirectory`) was tried first and silently applied only the manifest, which gave a theater APK declaring `TheaterActivity` without its class. |
+| 2026-10-26 | D.3 | A push does more than D.3's "skip": a held stick plays at the hold speeds, a D-pad's left and right get the same press-and-hold on Horizon (where the handheld keyboard code repeats seeks), and with a panel open the sticks scroll its list (natively for the controllers' wheel events, through `ThumbstickScroller` for a gamepad's joystick). `src/main` gains `dispatchGenericMotionEvent`, `dispatchTouchEvent`, `onWindowFocusChanged`, the listener, and the D-pad branch in `PlayerActivity`; `handleFastForwardRewindKey` takes an `isForward` parameter. *2026-10-26 (real controllers):* `ThumbstickSeeker` also reads the wheel runs Horizon sends for the Touch controllers' sticks (`ACTION_SCROLL`, D.3). | Owner's request (2026-10-26): push skips, hold changes speed, for the stick and the D-pad alike. The hooks follow B.1's pattern, so android stays untouched. |
+| 2026-10-26 | D.7 (new, then dropped) | The Menu button toggled Adjustments in the player; the step wasn't in Section D. The same day the real controllers showed that Horizon OS keeps the Menu button in 2D apps, and the owner had the shortcut removed: `DevicePolicy.menuButtonOpensAdjustments` and the `KEYCODE_MENU`/`BUTTON_START` branch in `PlayerActivity` are gone, so Menu keys fall back to the handheld handling. | Owner's request (2026-10-26), and Meta's VRC.Quest.Input.1 asks that in-app menus open from the left controller's Menu button; removed on the owner's decision once `SystemButtonHandler` was seen taking it (Findings). |
 
 ## Handoff log
 
 | Date | Step | Who | Result / commands run |
 |---|---|---|---|
+| 2026-10-26 | Full app run; D.3 fix, D.7 dropped, B.2, B.5 | Owner, Claude | The owner wore the Quest 3 through six rounds; Claude read `logcat`, `getevent`, `uiautomator dump`, and `dumpsys` from the Mac. The installed build matched the checkout (SHA-256). The real controllers broke D.3 and D.7 (Findings); on the owner's decisions `ThumbstickSeeker` gained the wheel path (`WHEEL_ENGAGE`, `WHEEL_GAP_MILLIS`, 2 new tests) and D.7 was removed. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): 517 tests pass; installed with `adb install -r` (data kept) and confirmed by the owner with the real sticks. 255 `metavr` screenshots from this run were deleted from `/sdcard/Oculus/Screenshots` on the owner's go-ahead; two from 14:08 and 14:14 were left. Not done: labels for the three clickables (B.5), round 6 (network and media; the owner tested it), uncommitted. |
+| 2026-10-26 | D.3, D.7 (owner's request: Menu opens the sidebar; stick and D-pad left/right skip, hold for 2×/0.5×) | Owner, Claude | Uncommitted in the main checkout. `ThumbstickSeeker.kt` (+ `ThumbstickSeekTest`, 6 cases), `DevicePolicy.seeksWithThumbstick`/`menuButtonOpensAdjustments` (+ 1 test), `ThumbstickScroller.scrolling`, and the `PlayerActivity` hooks. `./gradlew testHorizonDebugUnitTest assembleHorizonDebug` (JDK 17): BUILD SUCCESSFUL, the Horizon tests pass. Installed `Edendale-horizon-debug.apk` on the Quest 3 (`adb install -r`, 14:10) over the 10-25 build and drove the player by injection (Findings). Meta Casting access on the Mac was declined, so the eye view came from `metavr capture screenshot`. Not verified: the physical Menu button's key code, and the owner's report of the panel flashing while browsing in "focus view" (no repro recipe yet; `screencap`/`screenrecord` are black while casting and `metavr` video saves nothing). |
 | 2026-10-10 | P.5 (simulator) | Claude | Spike = `88d699d` + minSdk 32, `abiFilters arm64-v8a`, TV entries removed, `installLocation`, head-tracking feature, supported devices. `./gradlew assembleDebug assembleRelease` (JDK 17) passed. `metavr ssim start`; `adb install -r`; driven with `metavr ui tap/list`, `adb shell cmd package resolve-activity`, and `dumpsys`. No headset was connected. |
 | 2026-10-10 | D0, D3, D8, P.3 | Owner, Claude | Owner chose the flavor, reusing `New.jks`, and their Quest 3. Fingerprints read with `openssl x509 -in ~/Desktop/upload_certificate.pem -noout -fingerprint -sha1/-sha256`. |
 | 2026-10-19 | D0 (revised), S.1–S.5 | Owner, Claude | Owner: keep `meta-horizon` as a separate branch and pull android's work into it. Claude removed the stale worktrees and merged local branches, moved the checkout to `meta-horizon`, restored the stashed HORIZON.md and trailer fix (`f04259b`), merged `android-27.0.1` (`695f375`), and ran the baseline `./gradlew testDebugUnitTest assembleDebug` (JDK 17): 480 tests pass, 42 s. |

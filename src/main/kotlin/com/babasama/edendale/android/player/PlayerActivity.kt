@@ -21,6 +21,7 @@ import android.util.Rational
 import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
 import android.view.Menu
+import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -53,6 +54,8 @@ import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.DevicePolicy
+import com.babasama.edendale.android.ThumbstickScroller
+import com.babasama.edendale.android.ThumbstickSeeker
 import com.babasama.edendale.android.theater.TheaterHandover
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
@@ -159,6 +162,28 @@ class PlayerActivity : ComponentActivity() {
     private var mediaKeyHoldActive = false
     private var activeHoldKeyCode: Int? = null
 
+    /** A headset's sticks in the player: a push skips, a hold changes speed (HORIZON.md D.3); null elsewhere. */
+    private var thumbstickSeeker: ThumbstickSeeker? = null
+
+    /** The same sticks scroll an open panel's list where the ray points (B.5); null elsewhere. */
+    private var panelThumbstick: ThumbstickScroller? = null
+
+    private val thumbstickSeekListener = object : ThumbstickSeeker.Listener {
+        override fun onSkip(forward: Boolean) {
+            val exoPlayer = player ?: return
+            seekBy(exoPlayer, chrome, if (forward) chrome.skipForwardInterval.millis else -chrome.skipBackwardInterval.millis)
+        }
+
+        override fun onHoldBegin(forward: Boolean) {
+            val exoPlayer = player ?: return
+            chrome.beginHoldRate(exoPlayer, if (forward) chrome.holdRightRate else chrome.holdLeftRate)
+        }
+
+        override fun onHoldEnd() {
+            player?.let { chrome.endHoldRate(it) }
+        }
+    }
+
     /** What this device gets (HORIZON.md B.1): the TV shell, PiP, the enhancement default, and the swipes. */
     internal val devicePolicy: DevicePolicy by lazy { DevicePolicy.current(this) }
 
@@ -219,6 +244,10 @@ class PlayerActivity : ComponentActivity() {
         chrome = PlayerChromeState(playerPreferences)
         chrome.onSpeedChanged = {
             saveContentPreferences()
+        }
+        if (devicePolicy.seeksWithThumbstick) {
+            thumbstickSeeker = ThumbstickSeeker(mainHandler, thumbstickSeekListener)
+            panelThumbstick = ThumbstickScroller(window.decorView)
         }
         equalizer.update(chrome.preferences.audioEnhancement)
         prefsSubscription = chrome.preferences.addChangeListener {
@@ -827,8 +856,15 @@ class PlayerActivity : ComponentActivity() {
         if (::wyzieKeyStore.isInitialized) refreshWyzieConfigured()
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Joystick events follow window focus, so a stick held as it goes never reports its release.
+        if (!hasFocus) thumbstickSeeker?.cancel()
+    }
+
     override fun onStop() {
         cancelMediaKeyHold()
+        thumbstickSeeker?.cancel()
         saveContentPreferences()
         writeProgress()
         player?.playWhenReady = false
@@ -1072,6 +1108,33 @@ class PlayerActivity : ComponentActivity() {
     // Key routing
     // ------------------------------------------------------------------
 
+    /**
+     * A headset's sticks (D.3): they seek while the video has the panel, and
+     * scroll a panel's list once one is open. Whichever of the two a push
+     * started keeps it until the stick comes back, so neither is left running.
+     */
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        val seeker = thumbstickSeeker
+        if (seeker != null && ::chrome.isInitialized) {
+            val scroller = panelThumbstick
+            scroller?.trackPointer(event)
+            var handled = false
+            if (chrome.activePanel != null || scroller?.scrolling == true) {
+                handled = scroller?.onGenericMotion(event) == true
+            }
+            if (chrome.activePanel == null || seeker.engaged) {
+                handled = seeker.onGenericMotion(event) || handled
+            }
+            if (handled) return true
+        }
+        return super.dispatchGenericMotionEvent(event)
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        panelThumbstick?.trackPointer(event)
+        return super.dispatchTouchEvent(event)
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // Never intercept volume keys — the system (or the TV/AVR) owns them.
         when (event.keyCode) {
@@ -1108,6 +1171,16 @@ class PlayerActivity : ComponentActivity() {
                     return true
                 }
             }
+        }
+
+        // A headset (HORIZON.md D.3): the D-pad's left and right follow the
+        // sticks: a press skips, a hold changes the speed.
+        if (devicePolicy.seeksWithThumbstick && exoPlayer != null && chrome.activePanel == null &&
+            event.hasNoModifiers() &&
+            (event.keyCode == KeyEvent.KEYCODE_DPAD_LEFT || event.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT)
+        ) {
+            handleFastForwardRewindKey(exoPlayer, event, isForward = event.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT)
+            return true
         }
 
         // Keyboard keys on handhelds (J.3): Space, ← and → while no panel is
@@ -1184,8 +1257,12 @@ class PlayerActivity : ComponentActivity() {
         }
     }
 
-    private fun handleFastForwardRewindKey(exoPlayer: ExoPlayer, event: KeyEvent) {
-        val isForward = event.keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+    /** A press skips; a hold past 400 ms plays at the hold speed until the key is released. */
+    private fun handleFastForwardRewindKey(
+        exoPlayer: ExoPlayer,
+        event: KeyEvent,
+        isForward: Boolean = event.keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+    ) {
         when (event.action) {
             KeyEvent.ACTION_DOWN -> {
                 if (event.repeatCount == 0) {
