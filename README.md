@@ -68,10 +68,17 @@ instead of the inline player, which shows no picture in a panel. The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 
-The player's Theater button opens the **immersive theater** (HORIZON.md
-Section G): the video on a large screen inside an environment, through
-Meta's Spatial SDK, which makes the app a hybrid app. The theater is its own
-activity (`src/horizon/.../theater/`) with its own ExoPlayer, built with the
+A build with `-Phorizon.theater=true` adds the **immersive theater**
+(HORIZON.md Section G): a Theater button in the player that puts the video on
+a large screen inside an environment, through Meta's Spatial SDK, which makes
+the app a hybrid app. The store's first release is the 2D panel app without
+it (HORIZON.md D15), so `gradle.properties` sets `horizon.theater=false`: the
+APK then has no Spatial SDK, no immersive activity, no hand-tracking
+permission, and no Theater button, and is about 71 MB instead of 130 MB. The
+theater's Spatial SDK code, manifest, and resources live in
+`src/horizonTheater/`, which Gradle adds only to a theater build; its pure
+layout and scene code stays in `src/horizon/.../theater/` with its tests.
+The theater is its own activity with its own ExoPlayer, built with the
 same renderers and data source as the panel player, so local, SMB, WebDAV,
 SFTP, S3, and cloud sources play unchanged. A trigger press or a pinch shows
 its controls (play and pause, skip, the timeline, audio and subtitle tracks,
@@ -93,7 +100,8 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, and the v2 signature and certificate when signed |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry and class together in a theater build |
+| With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
 
 ### Signing
@@ -134,7 +142,8 @@ software codecs, so codec and performance results come only from a headset.
 
 1. Merge `android` with the version bump, then run the commands above.
 2. `./gradlew assembleHorizonRelease verifyHorizonRelease` with the signing
-   properties in place.
+   properties in place. It builds the 2D app unless `-Phorizon.theater=true`
+   is passed, and the check says which one it built.
 3. Upload to the ALPHA channel:
    `metavr store dist upload --app-id <app id> --channel ALPHA --apk build/outputs/apk/horizon/release/Edendale-horizon-release.apk --notes "<notes>"`
    (a draft; `--publish` releases it to the channel's testers).
@@ -677,7 +686,7 @@ The Meta Quest app built from this branch is not GPL-3.0 as a whole:
   APK under `assets/licenses/` (`src/horizon/assets/licenses/`), and the
   About section of Settings names them.
 - Media3's FFmpeg decoder classes are Apache-2.0.
-- The Meta Spatial SDK is under the
+- The Meta Spatial SDK, in theater builds only, is under the
   [Meta Platform Technologies SDK License Agreement](https://developers.meta.com/vr/licenses/oculussdk/),
   licensed for Meta's headsets, which is where this flavor runs. Edendale
   isn't affiliated with or endorsed by Meta.
@@ -689,7 +698,7 @@ The Meta Quest app built from this branch is not GPL-3.0 as a whole:
 | AndroidX Media3 1.9.0 (`media3-exoplayer`, `media3-ui`, `media3-session`, `media3-effect`, `media3-decoder`) | Playback, system media controls, video effects, the decoder base | Apache-2.0 |
 | Media3 1.9.0 `decoder_ffmpeg` classes (vendored under `src/horizon/java`) | DTS, DTS-HD, and TrueHD decoding | Apache-2.0 |
 | FFmpeg 6.0.2 (`libffmpegJNI.so`, built by `tools/horizon/build-ffmpeg-decoder.sh`) | The decoders behind them | LGPL-2.1-or-later |
-| Meta Spatial SDK 0.14.0 (`meta-spatial-sdk`, `-toolkit`, `-vr`, `-compose`) | The immersive theater | Meta Platform Technologies SDK License |
+| Meta Spatial SDK 0.14.0 (`meta-spatial-sdk`, `-toolkit`, `-vr`, `-compose`) | The immersive theater (`-Phorizon.theater=true` builds only) | Meta Platform Technologies SDK License |
 | Checker Framework `checker-qual` (compile only) | Annotations the decoder classes import | MIT |
 | AndroidX MediaRouter | Audio output switcher | Apache-2.0 |
 | Jetpack Compose, Room, Activity, Lifecycle, DocumentFile, Security Crypto | UI, local records, encrypted settings | Apache-2.0 |

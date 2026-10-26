@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The immersive theater's strings (HORIZON.md G.6, G.8). The theater reuses
-     the player's transport, audio, and subtitle strings from src/main. -->
 <resources>
-    <string name="theater_exit">극장 나가기</string>
-    <string name="theater_position">재생 위치</string>
-    <string name="theater_playback_failed">여기에서 동영상을 재생할 수 없습니다. 극장에서 나가 플레이어로 돌아가세요.</string>
-    <!-- G.2: overrides src/main's About line. This build isn't GPL-3.0: Edendale is MPL-2.0,
-         FFmpeg is LGPL-2.1 (assets/licenses), and the Spatial SDK is under Meta's licence. -->
-    <string name="settings_open_source">Edendale · 무료 오픈 소스(MPL-2.0). DTS와 TrueHD는 FFmpeg 6.0.2(LGPL-2.1)로 재생하며, 극장은 Meta의 라이선스에 따라 Meta Spatial SDK를 사용합니다. 라이선스 전문은 앱 안(assets/licenses)과 github.com/Ju-Long/Edendale에 있습니다.</string>
+    <!-- G.2: overrides src/main's About line. This build isn't GPL-3.0: Edendale is
+         MPL-2.0 and FFmpeg is LGPL-2.1 (assets/licenses). With the theater built,
+         src/horizonTheater overrides it again to name the Spatial SDK. -->
+    <string name="settings_open_source">Edendale · 무료 오픈 소스(MPL-2.0). DTS와 TrueHD는 FFmpeg 6.0.2(LGPL-2.1)로 재생합니다. 라이선스 전문은 앱 안(assets/licenses)과 github.com/Ju-Long/Edendale에 있습니다.</string>
 </resources>

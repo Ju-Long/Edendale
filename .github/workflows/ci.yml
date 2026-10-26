@@ -64,3 +64,8 @@ jobs:
 
       - name: Run hermetic tests, build the APKs, and check Meta's store rules
         run: ./gradlew --no-daemon testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease
+
+      # D15: the store release is 2D; the theater (src/horizonTheater) is built on
+      # request, so build and check it too, or it stops compiling unnoticed.
+      - name: Build and check the APKs with the immersive theater (HORIZON.md Section G)
+        run: ./gradlew --no-daemon -Phorizon.theater=true assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease

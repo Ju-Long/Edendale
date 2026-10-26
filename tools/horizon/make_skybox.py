@@ -6,7 +6,7 @@ starfield, made in house so it carries the repository's licence, for the
 
     python3 tools/horizon/make_skybox.py [out.png]
 
-Writes src/horizon/res/drawable-nodpi/theater_sky.png by default: 2048×1024,
+Writes src/horizonTheater/res/drawable-nodpi/theater_sky.png by default: 2048×1024,
 deterministic (seed 20261025), a near-black sky with a faint band of
 galaxy and a dark floor below the horizon so nothing washes out the
 picture. Needs numpy and Pillow.
@@ -76,5 +76,5 @@ def main(out: Path) -> None:
 
 
 if __name__ == "__main__":
-    default = Path(__file__).resolve().parents[2] / "src/horizon/res/drawable-nodpi/theater_sky.png"
+    default = Path(__file__).resolve().parents[2] / "src/horizonTheater/res/drawable-nodpi/theater_sky.png"
     main(Path(sys.argv[1]) if len(sys.argv) > 1 else default)

@@ -29,8 +29,13 @@ data class TheaterHandover(
     val textLanguage: String?,
     val speed: Float,
 ) {
-    /** The explicit request for [TheaterActivity]; the VR category marks it immersive for Horizon OS. */
-    fun intent(context: Context): Intent = Intent(context, TheaterActivity::class.java).apply {
+    /**
+     * The explicit request for `TheaterActivity`; the VR category marks it
+     * immersive for Horizon OS. The class is named rather than referenced
+     * because it lives in src/horizonTheater, which a 2D build leaves out
+     * (D15); the player sends it only when `DevicePolicy.offersImmersiveTheater` is true.
+     */
+    fun intent(context: Context): Intent = Intent().setClassName(context, THEATER_ACTIVITY).apply {
         action = Intent.ACTION_MAIN
         addCategory(CATEGORY_VR)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -54,6 +59,7 @@ data class TheaterHandover(
 
     companion object {
         const val CATEGORY_VR = "com.oculus.intent.category.VR"
+        private const val THEATER_ACTIVITY = "com.babasama.edendale.android.theater.TheaterActivity"
 
         private const val EXTRA_URI = "edendale.theater.uri"
         private const val EXTRA_TITLE = "edendale.theater.title"

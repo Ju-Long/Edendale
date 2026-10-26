@@ -13,7 +13,7 @@ import com.babasama.edendale.android.player.video.EnhancementPreset
  * no use for the thumbsticks (Findings, 2026-10-25).
  *
  * [resolve] is pure, so [DevicePolicyTest] covers every combination;
- * [current] reads the device and the build flag.
+ * [current] reads the device and the build flags.
  */
 data class DevicePolicy(
     /** Drive the app with a remote: the TV shell, its layouts, and the TV-only flows. */
@@ -33,12 +33,13 @@ data class DevicePolicy(
     /**
      * The player offers the immersive theater (HORIZON.md Section G): a Theater
      * button in its chrome while a video is loaded, which hands playback to
-     * `TheaterActivity`. Only a headset can show it.
+     * `TheaterActivity`. Only a headset can show it, and only a build with
+     * `horizon.theater=true` has it (D15).
      */
     val offersImmersiveTheater: Boolean,
 ) {
     companion object {
-        fun resolve(isTelevision: Boolean, isHorizonOs: Boolean): DevicePolicy {
+        fun resolve(isTelevision: Boolean, isHorizonOs: Boolean, hasTheater: Boolean): DevicePolicy {
             // A headset is never a TV, whatever its uiMode says.
             val television = isTelevision && !isHorizonOs
             return DevicePolicy(
@@ -54,12 +55,16 @@ data class DevicePolicy(
                 playsTrailersInline = !isHorizonOs,
                 // B.5: Horizon sends the sticks as joystick axes that nothing else reads.
                 scrollsWithThumbstick = isHorizonOs,
-                // G.5: the theater is a Spatial SDK activity; it exists in the horizon flavor only.
-                offersImmersiveTheater = isHorizonOs,
+                // G.5: the theater is a Spatial SDK activity in src/horizonTheater, built on request.
+                offersImmersiveTheater = isHorizonOs && hasTheater,
             )
         }
 
         fun current(context: Context): DevicePolicy =
-            resolve(isTelevision = context.isTelevisionDevice(), isHorizonOs = BuildConfig.HORIZON_OS)
+            resolve(
+                isTelevision = context.isTelevisionDevice(),
+                isHorizonOs = BuildConfig.HORIZON_OS,
+                hasTheater = BuildConfig.HORIZON_THEATER,
+            )
     }
 }

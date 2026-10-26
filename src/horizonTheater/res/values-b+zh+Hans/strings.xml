@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The immersive theater's strings (HORIZON.md G.6, G.8), built only with
+     horizon.theater=true. The theater reuses the player's transport, audio,
+     and subtitle strings from src/main. -->
+<resources>
+    <string name="theater_exit">退出影院</string>
+    <string name="theater_position">播放位置</string>
+    <string name="theater_playback_failed">无法在此播放视频。请退出影院以返回播放器。</string>
+    <!-- G.2: overrides src/horizon's About line, which leaves the Spatial SDK out:
+         Edendale is MPL-2.0, FFmpeg is LGPL-2.1 (assets/licenses), and the
+         Spatial SDK is under Meta's licence. -->
+    <string name="settings_open_source">Edendale · 免费开源（MPL-2.0）。DTS 和 TrueHD 通过 FFmpeg 6.0.2（LGPL-2.1）播放；影院使用 Meta 许可下的 Meta Spatial SDK。许可全文随应用提供（assets/licenses），也见 github.com/Ju-Long/Edendale。</string>
+</resources>

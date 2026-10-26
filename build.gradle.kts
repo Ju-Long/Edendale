@@ -104,6 +104,12 @@ kotlin {
     }
 }
 
+// HORIZON.md D15: the immersive theater (Section G) is built only on request,
+// so the 2D store release carries no Spatial SDK, no immersive activity, and no
+// hand-tracking permission. horizon.theater=true (gradle.properties or -P) adds
+// src/horizonTheater and the SDK to every variant.
+val horizonTheater = providers.gradleProperty("horizon.theater").map(String::toBoolean).getOrElse(false)
+
 // HORIZON.md A.3: the Meta Quest release key, from the gitignored
 // .secret/horizon-signing.properties or the HORIZON_* environment variables
 // (see horizon-signing.example.properties). Absent, the release stays unsigned.
@@ -156,6 +162,7 @@ android {
             // upload probe (P.6) says otherwise.
             minSdk = 32
             buildConfigField("boolean", "HORIZON_OS", "true")
+            buildConfigField("boolean", "HORIZON_THEATER", horizonTheater.toString())
         }
     }
 
@@ -194,6 +201,16 @@ android {
 
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
+        // HORIZON.md D15: the theater layer, only with horizon.theater=true. Its code
+        // joins the flavor; its resources and manifest join the variant source sets,
+        // which outrank src/horizon, so its About line (naming the Spatial SDK) wins.
+        if (horizonTheater) {
+            getByName("horizon").kotlin.srcDir("src/horizonTheater/kotlin")
+            for (variant in listOf("horizonDebug", "horizonRelease")) {
+                maybeCreate(variant).res.srcDir("src/horizonTheater/res")
+                maybeCreate(variant).manifest.srcFile("src/horizonTheater/AndroidManifest.xml")
+            }
+        }
     }
 
     packaging {
@@ -227,12 +244,15 @@ dependencies {
     // android's Jellyfin package (GPL-3.0) is not used on this branch.
     "horizonImplementation"(libs.media3.decoder)
     "horizonCompileOnly"(libs.checker.qual)
-    // HORIZON.md G.4 (D12): the Spatial SDK for the immersive theater. The
-    // -compose module draws the theater's controls and subtitle panels (G.8).
-    "horizonImplementation"(libs.meta.spatial.sdk)
-    "horizonImplementation"(libs.meta.spatial.sdk.toolkit)
-    "horizonImplementation"(libs.meta.spatial.sdk.vr)
-    "horizonImplementation"(libs.meta.spatial.sdk.compose)
+    // HORIZON.md G.4 (D12): the Spatial SDK for the immersive theater, only in
+    // a theater build (D15). The -compose module draws the theater's controls
+    // and subtitle panels (G.8).
+    if (horizonTheater) {
+        "horizonImplementation"(libs.meta.spatial.sdk)
+        "horizonImplementation"(libs.meta.spatial.sdk.toolkit)
+        "horizonImplementation"(libs.meta.spatial.sdk.vr)
+        "horizonImplementation"(libs.meta.spatial.sdk.compose)
+    }
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
@@ -276,6 +296,8 @@ abstract class VerifyHorizonRelease : DefaultTask() {
     @get:Input abstract val expectedCertificateSha256: Property<String>
     /** The release runtime classpath's component IDs (HORIZON.md G.1): no org.jellyfin artifact may remain. */
     @get:Input abstract val runtimeComponents: ListProperty<String>
+    /** Whether this build carries the immersive theater (horizon.theater, HORIZON.md D15). */
+    @get:Input abstract val theaterBuilt: Property<Boolean>
     @get:Internal abstract val sdkDirectory: DirectoryProperty
 
     private val androidNs = "http://schemas.android.com/apk/res/android"
@@ -389,6 +411,35 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         if (jellyfin.isNotEmpty()) failures += "GPL-3.0 artifacts in the release runtime classpath: ${jellyfin.joinToString()} (HORIZON.md G.1)"
         else notes += "no org.jellyfin artifact in the release runtime classpath"
 
+        // D15: a 2D build carries nothing of the theater. A theater build says so, since
+        // shipping the Spatial SDK (D12) and the theater (D15) are the owner's decisions,
+        // and its manifest and code must agree: a declared activity without its class
+        // crashes the Theater button.
+        val theaterDeclared = manifest.elements("activity").any { it.attr("name")?.endsWith(".TheaterActivity") == true }
+        val theaterCompiled = apk != null && ZipFile(apk).use { zip ->
+            zip.entries().asSequence().filter { it.name.endsWith(".dex") }.any { entry ->
+                String(zip.getInputStream(entry).use { it.readBytes() }, Charsets.ISO_8859_1)
+                    .contains("Lcom/babasama/edendale/android/theater/TheaterActivity;")
+            }
+        }
+        if (theaterBuilt.get()) {
+            if (!theaterDeclared || !theaterCompiled) {
+                failures += "a theater build (horizon.theater=true) lacks TheaterActivity's " +
+                    listOfNotNull("manifest entry".takeIf { !theaterDeclared }, "class".takeIf { !theaterCompiled }).joinToString(" and ")
+            } else {
+                notes += "the immersive theater is built in (horizon.theater=true): TheaterActivity and the Spatial SDK ship (D12, D15)"
+            }
+        } else {
+            val theaterLeft = buildList {
+                if (theaterDeclared) add("TheaterActivity's manifest entry")
+                if (theaterCompiled) add("TheaterActivity's class")
+                if (permissions.any { it.endsWith(".HAND_TRACKING") }) add("the HAND_TRACKING permission")
+                addAll(runtimeComponents.get().filter { it.startsWith("com.meta.spatial") })
+            }
+            if (theaterLeft.isNotEmpty()) failures += "a 2D build (horizon.theater=false) still carries ${theaterLeft.joinToString()}"
+            else notes += "2D panel app: no immersive theater, no Spatial SDK (horizon.theater=false, D15)"
+        }
+
         notes.forEach { logger.lifecycle("verifyHorizonRelease: $it") }
         if (failures.isNotEmpty()) {
             throw GradleException("The Horizon release breaks Meta's store rules:\n" + failures.joinToString("\n") { "  - $it" })
@@ -411,5 +462,6 @@ androidComponents.onVariants(androidComponents.selector().withBuildType("release
                 .map { artifacts -> artifacts.map { it.id.componentIdentifier.displayName }.sorted() },
         )
         sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
+        theaterBuilt.set(horizonTheater)
     }
 }

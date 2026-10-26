@@ -6,7 +6,6 @@
      src/main stays as the android branch has it and merges from android stay
      clean. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:horizonos="http://schemas.horizonos/sdk"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
 
@@ -24,28 +23,12 @@
         android:name="android.software.leanback"
         tools:node="remove" />
     <!-- Meta's marker for an app that runs on its headsets as a 2D panel. It
-         stays optional with the theater (G.4): the panel app installs and runs
-         as before, and the theater is an extra activity. -->
+         stays optional with the theater (G.4, src/horizonTheater): the panel
+         app installs and runs as before, and the theater is an extra activity. -->
     <uses-feature
         android:name="android.hardware.vr.headtracking"
         android:required="false"
         android:version="1" />
-
-    <!-- G.4: the immersive theater (Section G) uses the Spatial SDK. Without
-         this declaration Horizon OS logs that the app retrieves an HzOS SDK
-         manager without a minimum version and "must fix this to continue"
-         (Findings, 2026-10-25). -->
-    <horizonos:uses-horizonos-sdk
-        horizonos:minSdkVersion="69"
-        horizonos:targetSdkVersion="69" />
-    <!-- Hands and controllers both drive the theater (Input.7). Without the
-         feature and permission, vrshell's "controllers required" launch check
-         blocks the theater while the controllers are asleep (Findings,
-         2026-10-25). The permission is on neither of Meta's lists in gradle/. -->
-    <uses-feature
-        android:name="oculus.software.handtracking"
-        android:required="false" />
-    <uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
 
     <application tools:remove="android:banner">
         <!-- D4. Quest 2 and Pro have no AV1 hardware decoder and the app has no
@@ -53,36 +36,6 @@
         <meta-data
             android:name="com.oculus.supportedDevices"
             android:value="quest2|questpro|quest3|quest3s" />
-        <!-- G.4: hand tracking's API version, as Meta's hybrid sample declares it. -->
-        <meta-data
-            android:name="com.oculus.handtracking.version"
-            android:value="V2.0" />
-        <!-- The Spatial SDK's runtime library on the headset; optional so the
-             manifest still installs where it's absent (the simulator, phones). -->
-        <uses-native-library
-            android:name="libossdk.oculus.so"
-            android:required="false" />
-
-        <!-- G.4–G.6: the immersive theater, opened only from the player's
-             Theater button (G.5) with an explicit intent. The VR category tells
-             Horizon OS to run it immersively rather than in a panel; MAIN
-             without LAUNCHER adds no icon, so the library still opens the
-             panel. singleTask, the fullscreen theme, and the configuration
-             changes follow Meta's hybrid sample. Exported, as in the sample;
-             G.10 checks whether exported="false" also works. -->
-        <activity
-            android:name=".theater.TheaterActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:excludeFromRecents="false"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
-            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="com.oculus.intent.category.VR" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
 
         <activity android:name=".MainActivity">
             <intent-filter tools:node="remove">

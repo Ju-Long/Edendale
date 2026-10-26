@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The immersive theater's strings (HORIZON.md G.6, G.8). The theater reuses
-     the player's transport, audio, and subtitle strings from src/main. -->
 <resources>
-    <string name="theater_exit">Bioscoop verlaten</string>
-    <string name="theater_position">Positie</string>
-    <string name="theater_playback_failed">De video kon hier niet worden afgespeeld. Verlaat de bioscoop om terug te gaan naar de speler.</string>
-    <!-- G.2: overrides src/main's About line. This build isn't GPL-3.0: Edendale is MPL-2.0,
-         FFmpeg is LGPL-2.1 (assets/licenses), and the Spatial SDK is under Meta's licence. -->
-    <string name="settings_open_source">Edendale · Gratis en open source (MPL-2.0). DTS en TrueHD worden afgespeeld met FFmpeg 6.0.2 (LGPL-2.1); de bioscoop gebruikt de Meta Spatial SDK onder de licentie van Meta. De licentieteksten zitten in de app (assets/licenses) en staan op github.com/Ju-Long/Edendale.</string>
+    <!-- G.2: overrides src/main's About line. This build isn't GPL-3.0: Edendale is
+         MPL-2.0 and FFmpeg is LGPL-2.1 (assets/licenses). With the theater built,
+         src/horizonTheater overrides it again to name the Spatial SDK. -->
+    <string name="settings_open_source">Edendale · Gratis en open source (MPL-2.0). DTS en TrueHD worden afgespeeld met FFmpeg 6.0.2 (LGPL-2.1). De licentieteksten zitten in de app (assets/licenses) en staan op github.com/Ju-Long/Edendale.</string>
 </resources>
