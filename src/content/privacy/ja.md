@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale にはアカウントの仕組みも独自のサーバーもありません。アプリに解析、広告、トラッキングは含まれていません。
   - ライブラリ、設定、保存したログイン情報はデバイスに残ります。同期されるものは、iCloud やあなた自身の OneDrive など、あなたが管理するサービスを経由します。
@@ -9,13 +9,13 @@ summary:
 
 ## このポリシーの対象
 
-このポリシーは、Apple デバイス（iPhone、iPad、Mac、Apple TV、Apple Vision Pro）、Android、Windows 向けの Edendale アプリと、このウェブサイト（edendale.babasama.com）を対象とします。Edendale は無料のオープンソースプロジェクトで、[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale) で公開して開発しています。「私たち」とは、Edendale を開発している人々を指します。
+このポリシーは、Apple デバイス（iPhone、iPad、Mac、Apple TV、Apple Vision Pro）、Android（Meta Quest ヘッドセットを含む）、Windows 向けの Edendale アプリと、このウェブサイト（edendale.babasama.com）を対象とします。Edendale は無料のオープンソースプロジェクトで、[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale) で公開して開発しています。「私たち」とは、Edendale を開発している人々を指します。
 
 ## 私たちはあなたのデータを収集しません
 
 Edendale にはアカウントの仕組みがなく、アプリから情報を受け取るサーバーも運用していません。アプリには解析、広告、トラッキング、クラッシュレポートのためのコードは含まれていません。あなたの情報が私たちに届くことはないため、販売、貸与、共有するものは何もありません。
 
-デバイスで App 開発者との診断データの共有を許可している場合、Edendale を入手したストア（Apple、Google、Microsoft）が、それぞれのプライバシーポリシーに基づいて、クラッシュレポートや集計された利用統計を私たちに提供することがあります。これらは問題の修正にのみ使います。
+デバイスで App 開発者との診断データの共有を許可している場合、Edendale を入手したストア（Apple、Google、Meta、Microsoft）が、それぞれのプライバシーポリシーに基づいて、クラッシュレポートや集計された利用統計を私たちに提供することがあります。これらは問題の修正にのみ使います。
 
 ## デバイスに残るもの
 
@@ -42,7 +42,7 @@ Edendale は、あなたが管理するサービスを通じて、あなたが�
 - **[TMDB](https://www.themoviedb.org/privacy-policy)**（The Movie Database）：映画やドラマの情報と画像のため。Edendale がファイル名から読み取ったタイトルと年（完全なファイル名、フォルダ、ファイルそのものは送りません）と、閲覧した作品の TMDB ID。サインインしている場合は TMDB のセッションも送られます。
 - **[Wyzie Subs](https://wyzie.io/privacy)**：オンラインで字幕を検索したときだけ。作品の TMDB ID、シーズン番号とエピソード番号、希望する言語、あなたの API キー。
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**：スキップボタンがオンのときだけ（初期設定はオフ）。作品の TMDB ID、シーズン番号とエピソード番号、動画の長さ。
-- **[YouTube](https://policies.google.com/privacy)**：予告編の再生を選んだときだけ。Apple デバイスと Android デバイスでは、YouTube のプライバシー強化モード（youtube-nocookie.com）で再生します。Windows では、ブラウザで youtube.com の予告編を開きます。
+- **[YouTube](https://policies.google.com/privacy)**：予告編の再生を選んだときだけ。Apple デバイスと、Meta Quest 以外の Android デバイスでは、YouTube のプライバシー強化モード（youtube-nocookie.com）で再生します。Windows ではブラウザで youtube.com の予告編を開き、Meta Quest ではブラウザまたは YouTube アプリで開きます。
 - **リンクしたストレージ**：次のセクションで説明します。
 
 ## リンクしたストレージ

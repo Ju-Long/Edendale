@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale no tiene sistema de cuentas ni servidores propios. Las apps no contienen analíticas, publicidad ni rastreo.
   - Tu biblioteca, tus ajustes y tus credenciales guardadas se quedan en tu dispositivo. Lo que se sincroniza pasa por un servicio que controlas tú, como iCloud o tu propio OneDrive.
@@ -10,11 +10,11 @@ summary:
 ## A quién se aplica esta política
 
 Esta política cubre las apps de Edendale para dispositivos Apple (iPhone, iPad,
-Mac, Apple TV y Apple Vision Pro), Android y Windows, y este sitio web,
-edendale.babasama.com. Edendale es un proyecto libre y de código abierto que se
-desarrolla en público en
-[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale).
-«Nosotros» se refiere a las personas que lo desarrollan.
+Mac, Apple TV y Apple Vision Pro), Android (incluidos los visores Meta Quest) y
+Windows, y este sitio web, edendale.babasama.com. Edendale es un proyecto libre
+y de código abierto que se desarrolla en público en
+[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale). «Nosotros»
+se refiere a las personas que lo desarrollan.
 
 ## No recopilamos tus datos
 
@@ -23,10 +23,11 @@ información de las apps. Las apps no contienen código de analíticas,
 publicidad, rastreo ni informes de fallos. Tu información nunca nos llega, así
 que no tenemos nada que vender, alquilar ni compartir.
 
-Si permites que tu dispositivo comparta diagnósticos con los desarrolladores
-de apps, la tienda desde la que instalaste Edendale (Apple, Google o Microsoft)
-puede facilitarnos informes de fallos y estadísticas de uso agregadas según su
-propia política de privacidad. Solo los usamos para corregir problemas.
+Si permites que tu dispositivo comparta diagnósticos con los desarrolladores de
+apps, la tienda desde la que instalaste Edendale (Apple, Google, Meta o
+Microsoft) puede facilitarnos informes de fallos y estadísticas de uso
+agregadas según su propia política de privacidad. Solo los usamos para corregir
+problemas.
 
 ## Lo que se queda en tu dispositivo
 
@@ -85,10 +86,11 @@ cualquier conexión a internet, además de lo siguiente:
   para omitir esté activado (viene desactivado): el ID de TMDB del título, los
   números de temporada y episodio, y la duración del vídeo.
 - **[YouTube](https://policies.google.com/privacy)**, solo cuando eliges
-  reproducir un tráiler. En los dispositivos Apple y Android, Edendale lo
-  reproduce en el modo de privacidad mejorada de YouTube
-  (youtube-nocookie.com). En Windows, abre el tráiler en youtube.com en tu
-  navegador.
+  reproducir un tráiler. En los dispositivos Apple, y en los dispositivos
+  Android que no sean Meta Quest, Edendale lo reproduce en el modo de
+  privacidad mejorada de YouTube (youtube-nocookie.com). En Windows, abre el
+  tráiler en youtube.com en tu navegador, y en Meta Quest, en el navegador o en
+  la app de YouTube.
 - **El almacenamiento que vinculas**, descrito en la sección siguiente.
 
 ## El almacenamiento que vinculas

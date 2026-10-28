@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale has no account system and no servers of its own. The apps contain no analytics, advertising, or tracking.
   - Your library, settings, and saved logins stay on your device. Anything that syncs goes through a service you control, such as iCloud or your own OneDrive.
@@ -10,10 +10,11 @@ summary:
 ## Who this policy covers
 
 This policy covers the Edendale apps for Apple devices (iPhone, iPad, Mac,
-Apple TV, and Apple Vision Pro), Android, and Windows, and this website,
-edendale.babasama.com. Edendale is a free, open-source project developed in
-public at [github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale).
-"We" and "us" mean the people who develop it.
+Apple TV, and Apple Vision Pro), Android (including Meta Quest headsets), and
+Windows, and this website, edendale.babasama.com. Edendale is a free,
+open-source project developed in public at
+[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale). "We" and
+"us" mean the people who develop it.
 
 ## We don't collect your data
 
@@ -23,9 +24,9 @@ crash-reporting code. Your information never reaches us, so we have nothing to
 sell, rent, or share.
 
 If you let your device share diagnostics with app developers, the store you
-installed Edendale from (Apple, Google, or Microsoft) may give us crash reports
-and aggregate usage statistics under its own privacy policy. We use them only
-to fix problems.
+installed Edendale from (Apple, Google, Meta, or Microsoft) may give us crash
+reports and aggregate usage statistics under its own privacy policy. We use
+them only to fix problems.
 
 ## What stays on your device
 
@@ -79,9 +80,10 @@ connection does, along with the following:
   Prompts is on (it is off by default): the title's TMDB ID, the season and
   episode numbers, and the video's duration.
 - **[YouTube](https://policies.google.com/privacy)**, only when you choose to
-  play a trailer. On Apple and Android devices, Edendale plays it in YouTube's
-  privacy-enhanced mode (youtube-nocookie.com). On Windows, it opens the
-  trailer on youtube.com in your browser.
+  play a trailer. On Apple devices, and on Android devices other than Meta
+  Quest, Edendale plays it in YouTube's privacy-enhanced mode
+  (youtube-nocookie.com). On Windows, it opens the trailer on youtube.com in
+  your browser, and on Meta Quest, in the browser or the YouTube app.
 - **The storage you link**, described in the next section.
 
 ## Storage you link

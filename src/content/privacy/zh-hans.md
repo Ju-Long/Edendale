@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale 没有账号系统，也没有自己的服务器。应用中没有分析统计、广告或跟踪。
   - 你的片库、设置和保存的登录信息都留在你的设备上。需要同步的内容只经过你掌控的服务，例如 iCloud 或你自己的 OneDrive。
@@ -9,13 +9,13 @@ summary:
 
 ## 本政策的适用范围
 
-本政策适用于 Apple 设备（iPhone、iPad、Mac、Apple TV 和 Apple Vision Pro）、Android 和 Windows 上的 Edendale 应用，以及本网站 edendale.babasama.com。Edendale 是一个自由开源项目，在 [github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale) 上公开开发。“我们”指开发它的人。
+本政策适用于 Apple 设备（iPhone、iPad、Mac、Apple TV 和 Apple Vision Pro）、Android（包括 Meta Quest 头显）和 Windows 上的 Edendale 应用，以及本网站 edendale.babasama.com。Edendale 是一个自由开源项目，在 [github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale) 上公开开发。“我们”指开发它的人。
 
 ## 我们不收集你的数据
 
 Edendale 没有账号系统，也不运营任何接收应用信息的服务器。应用中不含分析统计、广告、跟踪或崩溃报告代码。你的信息从不会到达我们这里，所以我们没有任何可出售、出租或分享的东西。
 
-如果你允许设备与应用开发者共享诊断数据，你安装 Edendale 所用的应用商店（Apple、Google 或 Microsoft）可能会依照其自身的隐私政策，向我们提供崩溃报告和汇总的使用统计。我们只用它们来修复问题。
+如果你允许设备与应用开发者共享诊断数据，你安装 Edendale 所用的应用商店（Apple、Google、Meta 或 Microsoft）可能会依照其自身的隐私政策，向我们提供崩溃报告和汇总的使用统计。我们只用它们来修复问题。
 
 ## 留在你设备上的内容
 
@@ -42,7 +42,7 @@ Edendale 只通过你掌控的服务进行同步，并且只在你开启后才�
 - **[TMDB](https://www.themoviedb.org/privacy-policy)**（The Movie Database），用于获取电影和剧集的信息与图片：Edendale 从文件名中读取的标题和年份（从不发送完整文件名、所在文件夹或文件本身），以及你浏览的作品的 TMDB ID。如果你已登录，还包括你的 TMDB 会话。
 - **[Wyzie Subs](https://wyzie.io/privacy)**，仅在你在线搜索字幕时：作品的 TMDB ID、季数和集数、你请求的语言，以及你的 API 密钥。
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**，仅在跳过按钮开启时（默认关闭）：作品的 TMDB ID、季数和集数，以及视频时长。
-- **[YouTube](https://policies.google.com/privacy)**，仅在你选择播放预告片时。在 Apple 和 Android 设备上，Edendale 会以 YouTube 的隐私增强模式（youtube-nocookie.com）播放；在 Windows 上，它会在你的浏览器中打开 youtube.com 上的预告片。
+- **[YouTube](https://policies.google.com/privacy)**，仅在你选择播放预告片时。在 Apple 设备以及 Meta Quest 以外的 Android 设备上，Edendale 会以 YouTube 的隐私增强模式（youtube-nocookie.com）播放；在 Windows 上，它会在你的浏览器中打开 youtube.com 上的预告片；在 Meta Quest 上，则会在浏览器或 YouTube 应用中打开。
 - **你关联的存储**，见下一节。
 
 ## 你关联的存储

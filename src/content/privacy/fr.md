@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale n’a ni système de compte ni serveurs à lui. Les apps ne contiennent ni analyse, ni publicité, ni pistage.
   - Votre bibliothèque, vos réglages et vos identifiants enregistrés restent sur votre appareil. Ce qui se synchronise passe par un service que vous contrôlez, comme iCloud ou votre propre OneDrive.
@@ -10,11 +10,11 @@ summary:
 ## Champ d’application
 
 Cette politique couvre les apps Edendale pour les appareils Apple (iPhone,
-iPad, Mac, Apple TV et Apple Vision Pro), Android et Windows, ainsi que ce
-site web, edendale.babasama.com. Edendale est un projet libre et open source,
-développé publiquement sur
-[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale).
-« Nous » désigne les personnes qui le développent.
+iPad, Mac, Apple TV et Apple Vision Pro), Android (y compris les casques Meta
+Quest) et Windows, ainsi que ce site web, edendale.babasama.com. Edendale est
+un projet libre et open source, développé publiquement sur
+[github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale). « Nous »
+désigne les personnes qui le développent.
 
 ## Nous ne collectons pas vos données
 
@@ -25,8 +25,8 @@ informations ne nous parviennent jamais : nous n’avons donc rien à vendre, à
 louer ni à partager.
 
 Si vous autorisez votre appareil à partager des diagnostics avec les
-développeurs d’apps, la boutique où vous avez installé Edendale (Apple, Google
-ou Microsoft) peut nous transmettre des rapports de plantage et des
+développeurs d’apps, la boutique où vous avez installé Edendale (Apple, Google,
+Meta ou Microsoft) peut nous transmettre des rapports de plantage et des
 statistiques d’utilisation agrégées, selon sa propre politique de
 confidentialité. Nous ne les utilisons que pour corriger des problèmes.
 
@@ -88,10 +88,11 @@ toute connexion à Internet, ainsi que ce qui suit :
   l’identifiant TMDB du titre, les numéros de saison et d’épisode, et la durée
   de la vidéo.
 - **[YouTube](https://policies.google.com/privacy)**, uniquement lorsque vous
-  choisissez de lire une bande-annonce. Sur les appareils Apple et Android,
-  Edendale la lit dans le mode de confidentialité renforcée de YouTube
-  (youtube-nocookie.com). Sous Windows, il ouvre la bande-annonce sur
-  youtube.com dans votre navigateur.
+  choisissez de lire une bande-annonce. Sur les appareils Apple, et sur les
+  appareils Android autres que les Meta Quest, Edendale la lit dans le mode de
+  confidentialité renforcée de YouTube (youtube-nocookie.com). Sous Windows, il
+  ouvre la bande-annonce sur youtube.com dans votre navigateur, et sur Meta
+  Quest, dans le navigateur ou l’app YouTube.
 - **Les stockages que vous associez**, décrits dans la section suivante.
 
 ## Les stockages que vous associez

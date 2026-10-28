@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale hat kein Kontosystem und keine eigenen Server. Die Apps enthalten keine Analysen, keine Werbung und kein Tracking.
   - Deine Mediathek, deine Einstellungen und gespeicherte Anmeldedaten bleiben auf deinem Gerät. Was synchronisiert wird, läuft über einen Dienst, den du kontrollierst, etwa iCloud oder dein eigenes OneDrive.
@@ -9,10 +9,11 @@ summary:
 
 ## Geltungsbereich
 
-Diese Datenschutzerklärung gilt für die Edendale-Apps für Apple-Geräte
-(iPhone, iPad, Mac, Apple TV und Apple Vision Pro), Android und Windows sowie
-für diese Website, edendale.babasama.com. Edendale ist ein freies,
-quelloffenes Projekt, das öffentlich auf
+Diese Datenschutzerklärung gilt für die Edendale-Apps für Apple-Geräte (iPhone,
+iPad, Mac, Apple TV und Apple Vision Pro), Android (einschließlich
+Meta-Quest-Headsets) und Windows sowie für diese Website,
+edendale.babasama.com. Edendale ist ein freies, quelloffenes Projekt, das
+öffentlich auf
 [github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale) entwickelt
 wird. „Wir“ und „uns“ meint die Menschen, die es entwickeln.
 
@@ -24,8 +25,8 @@ Tracking oder Absturzberichte. Deine Informationen erreichen uns nie, also
 haben wir nichts zu verkaufen, zu vermieten oder weiterzugeben.
 
 Wenn du deinem Gerät erlaubst, Diagnosedaten mit App-Entwicklern zu teilen,
-kann uns der Store, aus dem du Edendale installiert hast (Apple, Google oder
-Microsoft), Absturzberichte und zusammengefasste Nutzungsstatistiken gemäß
+kann uns der Store, aus dem du Edendale installiert hast (Apple, Google, Meta
+oder Microsoft), Absturzberichte und zusammengefasste Nutzungsstatistiken gemäß
 seiner eigenen Datenschutzerklärung bereitstellen. Wir nutzen sie nur, um
 Fehler zu beheben.
 
@@ -85,10 +86,11 @@ jeder Internetverbindung, und außerdem Folgendes:
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**, nur solange
   „Hinweise zum Überspringen“ eingeschaltet ist (standardmäßig aus): die
   TMDB-ID des Titels, Staffel- und Folgennummer und die Laufzeit des Videos.
-- **[YouTube](https://policies.google.com/privacy)**, nur wenn du einen
-  Trailer abspielen möchtest. Auf Apple- und Android-Geräten spielt Edendale
-  ihn im erweiterten Datenschutzmodus von YouTube ab (youtube-nocookie.com).
-  Unter Windows öffnet es den Trailer auf youtube.com in deinem Browser.
+- **[YouTube](https://policies.google.com/privacy)**, nur wenn du einen Trailer
+  abspielen möchtest. Auf Apple-Geräten und auf Android-Geräten außer Meta
+  Quest spielt Edendale ihn im erweiterten Datenschutzmodus von YouTube ab
+  (youtube-nocookie.com). Unter Windows öffnet es den Trailer auf youtube.com
+  in deinem Browser, auf Meta Quest im Browser oder in der YouTube-App.
 - **Die Speicher, die du verknüpfst**, beschrieben im nächsten Abschnitt.
 
 ## Speicher, die du verknüpfst

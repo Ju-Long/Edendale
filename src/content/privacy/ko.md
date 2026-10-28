@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-06
+updated: 2026-10-28
 summary:
   - Edendale에는 계정 시스템도, 자체 서버도 없습니다. 앱에는 분석, 광고, 추적 기능이 없습니다.
   - 라이브러리, 설정, 저장된 로그인 정보는 기기에 남습니다. 동기화되는 것은 iCloud나 내 OneDrive처럼 당신이 관리하는 서비스를 거칩니다.
@@ -9,13 +9,13 @@ summary:
 
 ## 이 방침의 적용 대상
 
-이 방침은 Apple 기기(iPhone, iPad, Mac, Apple TV, Apple Vision Pro), Android, Windows용 Edendale 앱과 이 웹사이트(edendale.babasama.com)에 적용됩니다. Edendale은 [github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale)에서 공개적으로 개발하는 무료 오픈 소스 프로젝트입니다. ‘우리’는 Edendale을 개발하는 사람들을 뜻합니다.
+이 방침은 Apple 기기(iPhone, iPad, Mac, Apple TV, Apple Vision Pro), Android(Meta Quest 헤드셋 포함), Windows용 Edendale 앱과 이 웹사이트(edendale.babasama.com)에 적용됩니다. Edendale은 [github.com/Ju-Long/Edendale](https://github.com/Ju-Long/Edendale)에서 공개적으로 개발하는 무료 오픈 소스 프로젝트입니다. ‘우리’는 Edendale을 개발하는 사람들을 뜻합니다.
 
 ## 우리는 당신의 데이터를 수집하지 않습니다
 
 Edendale에는 계정 시스템이 없으며, 앱에서 정보를 받는 서버도 운영하지 않습니다. 앱에는 분석, 광고, 추적, 충돌 보고를 위한 코드가 없습니다. 당신의 정보는 우리에게 전달되지 않으므로, 판매하거나 대여하거나 공유할 것이 없습니다.
 
-기기에서 앱 개발자와 진단 정보를 공유하도록 허용한 경우, Edendale을 설치한 스토어(Apple, Google, Microsoft)가 자체 개인정보 처리방침에 따라 충돌 보고서와 집계된 사용 통계를 우리에게 제공할 수 있습니다. 우리는 이를 문제 해결에만 사용합니다.
+기기에서 앱 개발자와 진단 정보를 공유하도록 허용한 경우, Edendale을 설치한 스토어(Apple, Google, Meta, Microsoft)가 자체 개인정보 처리방침에 따라 충돌 보고서와 집계된 사용 통계를 우리에게 제공할 수 있습니다. 우리는 이를 문제 해결에만 사용합니다.
 
 ## 기기에 남는 것
 
@@ -42,7 +42,7 @@ Edendale은 당신이 관리하는 서비스를 통해서만, 그리고 당신�
 - **[TMDB](https://www.themoviedb.org/privacy-policy)**(The Movie Database): 영화와 시리즈의 정보 및 이미지를 위해. Edendale이 파일 이름에서 읽은 제목과 연도(전체 파일 이름, 폴더, 파일 자체는 보내지 않습니다)와 살펴본 작품의 TMDB ID. 로그인한 경우 TMDB 세션도 함께 보냅니다.
 - **[Wyzie Subs](https://wyzie.io/privacy)**: 온라인에서 자막을 검색할 때만. 작품의 TMDB ID, 시즌과 에피소드 번호, 요청한 언어, 당신의 API 키.
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**: 건너뛰기 버튼이 켜져 있을 때만(기본값은 꺼짐). 작품의 TMDB ID, 시즌과 에피소드 번호, 동영상 길이.
-- **[YouTube](https://policies.google.com/privacy)**: 예고편 재생을 선택했을 때만. Apple 기기와 Android 기기에서는 YouTube의 개인정보 보호 강화 모드(youtube-nocookie.com)로 재생합니다. Windows에서는 브라우저에서 youtube.com의 예고편을 엽니다.
+- **[YouTube](https://policies.google.com/privacy)**: 예고편 재생을 선택했을 때만. Apple 기기와 Meta Quest를 제외한 Android 기기에서는 YouTube의 개인정보 보호 강화 모드(youtube-nocookie.com)로 재생합니다. Windows에서는 브라우저에서 youtube.com의 예고편을 열고, Meta Quest에서는 브라우저나 YouTube 앱에서 엽니다.
 - **연결한 저장소:** 다음 섹션에서 설명합니다.
 
 ## 연결한 저장소
