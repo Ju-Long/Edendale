@@ -168,6 +168,10 @@
   --fa: "\f3ab";
 }
 
+.fa-meta {
+  --fa: "\e49b";
+}
+
 .fa-windows {
   --fa: "\f17a";
 }
@@ -1062,6 +1066,11 @@ h2 {
 .store-badge img {
   width: 28px;
   height: 28px;
+}
+
+/* Meta's logo comes from the brands font, drawn in the badge's own white. */
+.store-badge .fa-brands {
+  font-size: 22px;
 }
 
 .store-badge > span {

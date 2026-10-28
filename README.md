@@ -216,6 +216,7 @@ platform's store:
 | Apple | App Store: `https://apps.apple.com/app/edendale/id6789041949` |
 | Android | Closed testing on Google Play, in three steps (below) |
 | Windows | Microsoft Store: `https://apps.microsoft.com/detail/9nnr79q8bztn` |
+| Meta Quest | Meta Horizon Store: `https://www.meta.com/experiences/app/1413693368490384/` |
 
 Android is in closed testing, so the Play listing only exists for a Google
 account that has already joined the `edendale-closed-testers@googlegroups.com`
@@ -227,13 +228,17 @@ Android beta panel walks through those steps in order and ends at
 Every URL lives in the `stores` table at the top of
 [`src/pages/[...locale]/index.astro`](src/pages/%5B...locale%5D/index.astro).
 They carry no campaign or share-link parameters, which would tag visitors on
-their way out, and the App Store URL names no storefront, so Apple sends each
-visitor to their own country's store.
+their way out: the Meta Horizon Store link shared from Meta's app arrives with
+`hwsh` and `utm_*` parameters, and only the path above is kept. The App Store
+URL names no storefront, so Apple sends each visitor to their own country's
+store.
 
 The App Store badge in [`src/assets/badges/`](src/assets/badges) is Apple's
 unmodified US-English artwork; its `alt` text is localized. The Microsoft Store
 badge is drawn in HTML and CSS around Microsoft's Store icon so that it matches
 Apple's badge in height, field, edge, and corner, and its label is localized.
+The Meta Horizon Store badge is the same drawn badge around the Meta logo from
+the self-hosted Font Awesome brands font.
 
 When Android leaves closed testing, point its action at the Play listing and
 remove the beta panel along with its `beta.*` and `platforms.beta*` strings.

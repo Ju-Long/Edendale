@@ -53,6 +53,7 @@ const cloudSources = ["Google Drive", "OneDrive", "Dropbox", "S3"];
 const stores = {
   appStore: "https://apps.apple.com/app/edendale/id6789041949",
   microsoftStore: "https://apps.microsoft.com/detail/9nnr79q8bztn",
+  metaHorizonStore: "https://www.meta.com/experiences/app/1413693368490384/",
   // Android is in closed testing: a Google account joins the tester group,
   // opts in on the testing page, and only then can see the Play listing.
   testerGroup: "https://groups.google.com/g/edendale-closed-testers",
@@ -365,6 +366,23 @@ const playerFeatures: readonly { icon: string; title: UIKey; body: UIKey }[] = [
               <span>
                 <small>{t("platforms.microsoftStoreLead")}</small>{" "}
                 <strong>Microsoft Store</strong>
+              </span>
+            </a>
+          </article>
+          <article>
+            <span class="platform-monogram" aria-hidden="true">
+              <i class="fa-brands fa-meta"></i>
+            </span>
+            <div>
+              <h3>Meta Quest</h3>
+              <p>{t("platforms.questDevices")}</p>
+              <p class="platform-tech">Jetpack Compose · Horizon OS</p>
+            </div>
+            <a class="store-link store-badge" href={stores.metaHorizonStore}>
+              <i class="fa-brands fa-meta" aria-hidden="true"></i>
+              <span>
+                <small>{t("platforms.metaStoreLead")}</small>{" "}
+                <strong>Meta Horizon Store</strong>
               </span>
             </a>
           </article>
