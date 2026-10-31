@@ -49,3 +49,9 @@ Web/dist/
 /.vs
 /.secret
 /Vendor
+/.astro
+/dist
+/out
+/release
+/scenes
+/src
