@@ -19,11 +19,18 @@ Read [README.md](README.md) for the product and branch model, and
 | `windows` | Windows implementation and delivery |
 | `web` | Static Web implementation and delivery |
 | `scenes` | Scene sources for the immersive theater (`.blend` files, textures, export scripts); no executable code, no CI |
+| `sync` | The optional end-to-end encrypted sync relay (planned for 27.1): its source, tests, CI, and deployment; no client code |
 
 `scenes` is data, not a platform: it has no build, tests, or CI. A platform
 branch commits only the export it needs and names the `scenes` commit in the
 commit message. An export copied in this way is that branch's own file; the
 dependency rules below are about builds that reach into another branch.
+
+`sync` is a service, not a platform. It holds only the relay, which stores
+end-to-end encrypted watch state for the apps; the relay must never receive
+readable watch data or a device's private keys. Apps reach it only over the
+protocol documented on `main`. No platform build or CI checks `sync` out, and
+`sync` checks out no platform branch.
 
 Before changing files, identify the active branch and inspect its manifests,
 toolchain files, and README. Never assume that commands or directory layouts
@@ -53,14 +60,17 @@ from another branch apply.
 3. **Secrets stay private.** Never hardcode, commit, log, publish, or expose
    credentials. Use gitignored local configuration and protected CI
    environments.
-4. **Privacy.** Do not add analytics or an Edendale account. Network access is
-   limited to documented metadata, playback, and user-controlled sync/storage
-   services. Trailer playback requires an explicit user action.
+4. **Privacy.** Do not add analytics or an Edendale account (a sign-in
+   identity such as an email address or password). Network access is limited
+   to documented metadata, playback, user-controlled sync/storage services,
+   and the optional Edendale sync relay, which stores only end-to-end
+   encrypted data. Trailer playback requires an explicit user action.
 5. **Classify before network.** Native applications parse filenames locally;
    metadata enrichment stays off the import fast path.
 6. **Separate local and portable data.** Device-specific library paths and
    access grants stay local. If watch state is synced, keep it independent from
-   the local library and use a documented user-controlled service.
+   the local library and use a documented user-controlled service or the
+   end-to-end encrypted sync relay.
 7. **Behavioral parity is explicit, not shared.** A product-rule change must
    identify the other affected platform branches. Implement and test the rule
    natively on each branch rather than sharing executable code.

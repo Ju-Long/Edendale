@@ -36,12 +36,18 @@ platform's implementation.
 | `windows` | Windows application and Windows-specific delivery |
 | `web` | Static website and Web-specific delivery |
 | `scenes` | Scene sources for the immersive theater: `.blend` files, textures, and export scripts; no executable code |
+| `sync` | The optional end-to-end encrypted sync relay (planned for 27.1) and its deployment; no client code |
 
 `scenes` is not a platform branch. It holds the sources of the immersive
 theater's environments and the headless Blender scripts that export them. A
 platform branch commits only the export it needs (a GLB on `meta-horizon`, a
 USDZ on `apple`), naming the `scenes` commit it came from, and no build or CI
 ever checks `scenes` out.
+
+`sync` is not a platform branch either. It will hold the optional sync relay, a
+small service that stores watch state only in end-to-end encrypted form, so it
+cannot read what it stores. Apps reach it over a protocol documented on `main`,
+and no platform build or CI ever checks `sync` out.
 
 The platform branches begin with the same universal Markdown files:
 
@@ -94,8 +100,9 @@ hierarchy, color semantics, typography, and privacy principles.
 - **Native first:** every platform is understandable, testable, and buildable
   without another platform's toolchain.
 - **Private by design:** no Edendale account, telemetry, or analytics.
-- **Your data stays yours:** local libraries remain local; any documented sync
-  uses a user-controlled platform service.
+- **Your data stays yours:** local libraries remain local; sync uses a
+  user-controlled platform service or the end-to-end encrypted Edendale relay,
+  which cannot read what it stores.
 - **Performance first:** classify and persist quickly, then enrich in the
   background.
 - **Isolated delivery:** a platform can change, test, and release without
