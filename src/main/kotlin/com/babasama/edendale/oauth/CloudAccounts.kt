@@ -74,8 +74,30 @@ object CloudProviders {
     /** Whether [scopes] let Edendale read picked Drive files; an older build's Google accounts had `drive.readonly` (D20). */
     fun hasDriveFileAccess(scopes: List<String>): Boolean = GOOGLE_DRIVE_FILE_SCOPE in scopes
 
-    val ONE_DRIVE_SCOPES = listOf("Files.Read", "User.Read", "offline_access")
-    val DROPBOX_SCOPES = listOf("files.metadata.read", "files.content.read", "account_info.read")
+    /**
+     * OneDrive: the library reads with `Files.Read`; 27.1 sync writes the
+     * app folder (`Apps/Edendale/`) with `Files.ReadWrite.AppFolder`
+     * (FEATURES-27.1.md §10 decision 1). An account signed in before the
+     * second scope must consent again before it can be a sync location.
+     */
+    const val ONE_DRIVE_APP_FOLDER_SCOPE = "Files.ReadWrite.AppFolder"
+    val ONE_DRIVE_SCOPES = listOf("Files.Read", ONE_DRIVE_APP_FOLDER_SCOPE, "User.Read", "offline_access")
+
+    /** Dropbox: 27.1 sync writes `/Edendale/` with `files.content.write`; an older sign-in must authorize again. */
+    const val DROPBOX_WRITE_SCOPE = "files.content.write"
+    val DROPBOX_SCOPES = listOf("files.metadata.read", "files.content.read", DROPBOX_WRITE_SCOPE, "account_info.read")
+
+    /**
+     * Whether a linked account's granted [scopes] let 27.1 sync write its
+     * files: Google's `drive.file` already covers the app's own files;
+     * OneDrive needs the app-folder scope and Dropbox the write scope.
+     */
+    fun hasSyncWriteAccess(kind: MediaSourceKind, scopes: List<String>): Boolean = when (kind) {
+        MediaSourceKind.GOOGLE_DRIVE -> hasDriveFileAccess(scopes)
+        MediaSourceKind.ONE_DRIVE -> scopes.any { it.equals(ONE_DRIVE_APP_FOLDER_SCOPE, ignoreCase = true) || it.equals("Files.ReadWrite", ignoreCase = true) || it.equals("Files.ReadWrite.All", ignoreCase = true) }
+        MediaSourceKind.DROPBOX -> DROPBOX_WRITE_SCOPE in scopes
+        else -> true
+    }
 
     /** Personal and work or school Microsoft accounts both sign in through the `common` authority. */
     const val MICROSOFT_AUTHORITY = "https://login.microsoftonline.com/common/oauth2/v2.0/"

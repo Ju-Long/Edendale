@@ -4,9 +4,12 @@ import android.app.Application
 import androidx.room.Room
 import com.babasama.edendale.android.data.EdendaleDatabase
 import com.babasama.edendale.android.data.LibraryRepository
+import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.TlsPinStore
 import com.babasama.edendale.android.oauth.CloudAccounts
+import com.babasama.edendale.android.sync.SyncCoordinator
 import com.babasama.edendale.remote.RemoteTls
+import com.babasama.edendale.sync.SyncLog
 
 class EdendaleApplication : Application() {
     lateinit var database: EdendaleDatabase
@@ -31,6 +34,9 @@ class EdendaleApplication : Application() {
     /** Server certificates the viewer approved (D10); the HTTP clients consult it on every handshake. */
     val tlsPins: TlsPinStore by lazy { TlsPinStore(this) }
 
+    /** 27.1 sync on this device: the location, the triggers, and the device's portable records. */
+    val sync: SyncCoordinator by lazy { SyncCoordinator(this) }
+
     override fun onCreate() {
         super.onCreate()
         RemoteTls.pins = tlsPins
@@ -39,9 +45,13 @@ class EdendaleApplication : Application() {
             EdendaleDatabase::class.java,
             "edendale.db"
         )
-            .addMigrations(EdendaleDatabase.MIGRATION_1_2, EdendaleDatabase.MIGRATION_2_3)
+            .addMigrations(EdendaleDatabase.MIGRATION_1_2, EdendaleDatabase.MIGRATION_2_3, EdendaleDatabase.MIGRATION_3_4)
             .build()
         libraryRepository = LibraryRepository(this, database)
+        // Sync logs carry counts and error classes only (SYNC-PROTOCOL.md §8.5), and only in debug builds.
+        if (BuildConfig.DEBUG) SyncLog.sink = SyncLog.Sink { tag, message -> android.util.Log.d(tag, message) }
+        LocalDataStore.syncRecorder = sync.recorder
+        sync.start()
         // Only a TV has the home screen's Watch Next row; it stays empty until the setting is on.
         if (isTelevisionDevice()) {
             watchNextPublisher = WatchNextPublisher(this, libraryRepository, watchNextSettings).also { it.start() }

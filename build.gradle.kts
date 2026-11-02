@@ -176,6 +176,7 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.work.runtime.ktx)
     debugImplementation(libs.compose.ui.tooling)
 
     // JVM unit tests only (src/test): the suite is hermetic — no emulator or

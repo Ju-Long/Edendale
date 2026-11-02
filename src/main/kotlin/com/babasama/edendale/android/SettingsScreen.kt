@@ -382,6 +382,11 @@ fun SettingsScreen(
         }
 
         item {
+            // 27.1: file-based sync on storage the viewer owns (FEATURES-27.1.md §5).
+            com.babasama.edendale.android.sync.SyncSettingsSection(isTelevision = isTelevision)
+        }
+
+        item {
             TmdbAccountSettingsSection(
                 state = tmdbAccount.state,
                 isTelevision = isTelevision,
