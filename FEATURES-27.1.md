@@ -703,8 +703,8 @@ the `main` commit, as platform branches already do with `scenes` exports.
    Store privacy label treat user-initiated transfers to the user's own cloud
    account. This document does not provide legal advice.
 8. **Cleanup of the relay work** (owner): done on 2026-11-02 for the Worker
-   (`edendale-sync` deleted), the `sync` and protocol-draft branches and
-   worktrees (the `sync` branch was never on the remote). Still to do: revoke
+   (`edendale-sync` deleted), the `sync` and protocol-draft branches, locally
+   and on the remote, and their worktrees. Still to do: revoke
    the Cloudflare API token and delete the GitHub `sync-production`
    environment that holds a copy of it.
 9. **F3:** Choose the Xbox playback and UI stack, or defer F3 to 27.2.
