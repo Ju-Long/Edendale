@@ -2,9 +2,8 @@
 
 Edendale is a free, open-source video player and personal watch/review tracker.
 Every platform lives on an independent branch and owns its complete native
-implementation and delivery pipeline. There is no shared executable runtime or
-generated runtime bridge. The only backend is the optional sync relay on
-`sync`, which stores only ciphertext and which no platform builds against.
+implementation and delivery pipeline. There is no shared executable backend or
+generated runtime bridge.
 
 Use [README.md](README.md) for project context, [AGENTS.md](AGENTS.md) for the
 complete branch, architecture, privacy, secret-handling, and verification

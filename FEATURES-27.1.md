@@ -8,16 +8,18 @@ before implementation starts.
 - **Location:** `main`, documentation only. Nothing in this document adds
   platform source, build files, or CI.
 - **Status:** Proposal. No feature here is implemented.
-- **Revised 2026-11-01:** cross-device sync moves from Bluetooth P2P to an
-  end-to-end encrypted relay (§2, §5, §6, §8), and the project rules were
-  amended the same day to allow it. The original request and its security
-  review are kept for reference.
+- **Revised 2026-11-02:** cross-device sync moves from the end-to-end
+  encrypted relay chosen on 2026-11-01 to plain JSON files on storage the user
+  already owns (§5), and the project-rule amendments of 2026-11-01 are
+  reverted (§2). The device-to-device handoff stays, and now carries the sync
+  location's login to a new device so it needs no second setup (§6). The
+  original request and both earlier designs are summarized in §5.7.
 - **Basis:** [AGENTS.md](AGENTS.md) (hard constraints 1–8),
   [README.md](README.md) (branch model), and [DESIGN.md](DESIGN.md).
 
-> Read **§1** first. The sync relay changed the project's privacy rules (§2),
-> and the sync design differs from the original request for security reasons
-> (§5, §6). Section §10 lists the decisions still needed.
+> Read **§1** first. The sync design differs from the original request for
+> security reasons (§5, §6), and §10 lists the decisions still needed and the
+> cleanup the 2026-11-01 design left behind.
 
 ---
 
@@ -28,12 +30,12 @@ before implementation starts.
 | F1 | VR immersive space with Blender environments | `scenes` (sources), `meta-horizon` (Quest), `apple` (visionOS, if scoped) | None; exports are committed per platform | Feasible; needs performance budget |
 | F2 | Parental control API | Each platform, native, local-only | None if kept device-local | Feasible; legal review needed |
 | F3 | Expansion to Xbox | New `xbox` branch | Adds a branch; needs a new branch table entry | Needs a decision on the stack |
-| F4 | Cross-device history sync through an end-to-end encrypted relay (requested over Bluetooth P2P) | Each platform (native client); new `sync` branch (relay) | Constraints 4 and 6, CLAUDE.md, DESIGN.md, and README amended 2026-11-01 (§2) | Model and rules decided 2026-11-01; hosting pending (§5, §10) |
-| F5 | Timestamp-priority merge | Each platform, native | Touches constraint 7 (parity) | **Redesign required** (§5.3); existing merge code needs changes |
-| F6 | Pairing code and keys (requested: PIN-derived key, rotated by time of day) | Each platform, native | Touches constraint 3 (secrets) | **Redesign required** (§6) |
-| F7 | Security review of the method | Documented here | — | Done; revised for the relay (§6) |
-| F8 | Account sign-in across ecosystem via the same method | Each platform | Resolved without an Edendale account: joining a sync space (§2) | Decided 2026-11-01 (§6.4) |
-| F9 | Background services that pass data while locked | Each platform, native | OS-limited | Simpler with a relay; best-effort (§8) |
+| F4 | Cross-device history sync through JSON files on the user's own storage (requested over Bluetooth P2P; a relay was considered on 2026-11-01) | Each platform, native; no new branch | None: constraints 4 and 6 already allow a documented user-controlled service (§2) | Model decided 2026-11-02 (§5); layout and scopes in §5.2, §10 |
+| F5 | Timestamp-priority merge | Each platform, native | Touches constraint 7 (parity) | Decided 2026-11-02: one `updateTime` field, newest wins (§5.3); existing merge code needs changes |
+| F6 | Pairing code and keys (requested: PIN-derived key, rotated by time of day) | Each platform, native | Touches constraint 3 (secrets) | **Redesigned** (§6): keys protect only the handoff channel; Edendale encrypts nothing at rest |
+| F7 | Security review of the method | Documented here | — | Done; revised for files and the handoff (§6.5) |
+| F8 | Account sign-in across ecosystem via the same method | Each platform | Resolved without an Edendale account: the handoff carries the storage login (§6.3) | Decided 2026-11-02; Google Drive needs a sign-in across ecosystems (§6.4) |
+| F9 | Background services that pass data while locked | Each platform, native | OS-limited | Best-effort (§8) |
 
 ---
 
@@ -42,62 +44,47 @@ before implementation starts.
 These must be resolved before implementation. They are not implementation
 details.
 
-1. **The sync relay needed rule changes (applied 2026-11-01).** On 2026-11-01
-   the plan moved sync from Bluetooth to an Edendale-operated relay that
-   stores only end-to-end encrypted data (§5, §6). The relay has no sign-in
-   and cannot read what it stores, but it is still an Edendale service that
-   receives data from the apps, which the earlier rules excluded. The wording
-   now on `main`:
-   - **AGENTS.md constraint 4:** "Do not add analytics or an Edendale account
-     (a sign-in identity such as an email address or password). Network access
-     is limited to documented metadata, playback, user-controlled sync/storage
-     services, and the optional Edendale sync relay, which stores only
-     end-to-end encrypted data."
-   - **AGENTS.md constraint 6:** "...use a documented user-controlled service
-     or the end-to-end encrypted sync relay."
-   - **DESIGN.md product behavior:** portable watch state "syncs only through
-     a documented user-controlled service or the end-to-end encrypted sync
-     relay."
-   - **CLAUDE.md:** "There is no shared executable runtime or generated runtime
-     bridge. The only backend is the optional sync relay on `sync`, which
-     stores only ciphertext and which no platform builds against."
-   - **README.md principles:** "Private by design" is unchanged. "Your data
-     stays yours" becomes "local libraries remain local; sync uses a
-     user-controlled platform service or the end-to-end encrypted Edendale
-     relay, which cannot read what it stores."
-   - **Branch tables** in AGENTS.md and README.md list `sync`, each with a
-     short note that it is a service, not a platform.
+1. **No rule change is needed (amendments reverted 2026-11-02).** Constraint 4
+   limits network access to "documented metadata, playback, and
+   user-controlled sync/storage services", and constraint 6 says synced watch
+   state must "use a documented user-controlled service". The user's own
+   Google Drive, OneDrive, Dropbox, iCloud Drive, WebDAV, SMB, or SFTP server,
+   or a folder they pick, is exactly that. The 2026-11-01 amendments (the
+   relay exception in constraints 4 and 6, the `sync` row in the branch tables
+   of AGENTS.md and README.md, CLAUDE.md's "only backend" sentence, README's
+   "Your data stays yours" principle, and DESIGN.md's portable-watch-state
+   line) are reverted on `main` in this revision.
 
    Still to do:
-   - **Platform branches:** carry the amended universal files to each
-     platform branch, as with any universal documentation change.
-   - **Privacy policy** (`web`, 8 languages): it says Edendale "has no account
-     system and no servers of its own". It must describe the relay and what
-     the relay can see (§6.6), in the release that first offers sync.
-   - **Store disclosures**, in that same release: the App Store privacy label,
-     Google Play Data safety, the Meta Horizon Store, and the Microsoft Store.
+   - **Platform branches:** none of them received the 2026-11-01 wording, so
+     nothing propagates. If one did, revert it there the same way.
+   - **Privacy policy** (`web`, 8 languages): "no account system and no
+     servers of its own" stays true. In the release that first offers sync it
+     gains a paragraph on the sync files and the handoff (§6.6).
+   - **Store disclosures**, in that same release: watch state leaves the
+     device only to storage the user chose, on the user's own account, at the
+     user's request. Confirm how Google Play's Data safety form and the App
+     Store privacy label treat user-initiated transfers to the user's own
+     cloud account during store review (§10).
+   - **Cleanup** of the relay work: the `sync` branch, its worktree, the
+     deployed Worker, and the protocol draft from 2026-11-01 (§10).
 
-   Constraints 1, 2, 5, and 8 need no change. Apps talk to the relay over a
-   documented protocol, as they already do with TMDB; no platform links relay
-   code or a generated client; no CI checks out another branch; sync stays off
-   the import path; and the relay is a separate deployment, not part of the
-   static website.
+2. **F8 is resolved as the handoff (decided 2026-11-02).** A new device
+   receives the sync location and its login from a device the user already set
+   up, over an encrypted connection on the local network (§6). There is no
+   Edendale account, no email address, no password, and no Edendale server.
 
-2. **F8 is resolved as sync spaces (decided 2026-11-01).** A sync space is a
-   set of devices that share a random key. Joining one is the only sign-in,
-   and the relay holds nothing it can read (§6.4). Accounts that keep readable
-   data on a server were considered and rejected: a breach would expose every
-   user's viewing history, and they need email sign-in, password resets, and
-   an identity held by Edendale.
+3. **F3 adds a branch.** `xbox` must be added to the branch tables in
+   [AGENTS.md](AGENTS.md) and [README.md](README.md), on `main`, before that
+   branch is created. `sync` is removed from them in this revision.
 
-3. **F3 and the relay add branches.** `sync` was added to the branch tables in
-   [AGENTS.md](AGENTS.md) and [README.md](README.md) on 2026-11-01. `xbox` must
-   be added the same way, on `main`, before that branch is created.
-
-4. **F4 and F6 touch constraint 6** ("separate local and portable data"). Synced
-   watch state must stay independent of the local library. The sync design in
-   §5 keeps that separation: only watch records move, never file paths or
-   library records.
+4. **F4 and F6 touch constraint 6** ("separate local and portable data"). Only
+   watch records go into the sync files: never file paths, library records,
+   access grants, TMDB sessions, storage logins, or parental settings. Logins
+   move only device to device over the handoff's encrypted channel, as the
+   shipped Apple TV and Android TV handoff already does; they never pass
+   through the sync location. Constraint 6's "access grants stay local" is
+   read as "never through a service", which is how the handoff was built.
 
 ---
 
@@ -146,9 +133,9 @@ whether visionOS is in 27.1 or deferred.
 
 **Product rules**
 
-- Controls are **device-local** and are not synced. The sync space (§5)
-  carries watch state only; syncing controls would let any device in the
-  space change them. A parent configures each device.
+- Controls are **device-local** and are not synced. Sync (§5) carries watch
+  state only; syncing controls would let any synced device change them. A
+  parent configures each device.
 - Rules the API can express:
   - Maximum content rating, from TMDB certification data already fetched by
     the user's enrichment. Titles without a certification are treated as
@@ -158,8 +145,8 @@ whether visionOS is in 27.1 or deferred.
 - The API is a native interface on each platform (for example a Kotlin
   interface on Android, a Swift protocol on Apple, a C# interface on Windows).
   It is not a shared library.
-- The parental PIN is **separate** from sync pairing codes and the recovery
-  key (§6). None is derived from another.
+- The parental PIN is **separate** from the handoff pairing code (§6). Neither
+  is derived from the other.
 - The PIN is stored as a salted, slow hash (Argon2id, or PBKDF2 where Argon2id
   is unavailable), never in plaintext, and never logged.
 
@@ -177,380 +164,375 @@ document does not provide legal advice.
 
 ---
 
-## 5. Features F4 and F5 — Encrypted relay sync and timestamp priority
+## 5. Features F4 and F5 — File sync on the user's storage, and timestamp priority
 
 **Requested:** sync watch history between devices over Bluetooth P2P, with an
 8-digit PIN that yields a symmetric key, and priority by the higher Unix
 timestamp.
 
-**Revised 2026-11-01:** devices sync through a small relay run by Edendale that
-stores only end-to-end encrypted data. Bluetooth is dropped from 27.1. The
-timestamp priority (§5.3), the short pairing code, and the security review (§6)
-carry over.
+**Revised 2026-11-02:** each device writes its watch state as a JSON file into
+a folder on storage the user already owns, and reads the other devices' files
+from the same folder. Edendale runs nothing. The timestamp priority is kept
+and made exact (§5.3). The device-to-device transfer is kept for the one thing
+a new device cannot get from the folder: the login that reaches it (§6).
 
-Why a relay rather than Bluetooth:
+Why files on the user's storage rather than a relay or Bluetooth:
 
-- Bluetooth sync needs both devices near each other and awake at the same
-  time, which iOS does not allow reliably in the background (§8). The relay
-  holds changes until each device next connects: watch on the phone on Monday,
-  and the TV picks up the position on Friday.
-- TVs, Quest headsets, and PCs differ widely in Bluetooth support. All of them
-  have a network connection.
-- It fills the real gap. Today watch progress syncs only inside one ecosystem
-  (iCloud on Apple, a OneDrive folder on Windows, and nothing live on
-  Android); only TMDB favourites, watchlist, and ratings cross ecosystems.
+- **Nothing to host, pay for, protect, or disclose.** Edendale never holds
+  anyone's history, so no breach, outage, or legal request at Edendale can
+  touch it, and the privacy policy's "no servers of its own" stays true.
+- **It fills the same gap.** Today watch progress syncs only inside one
+  ecosystem (iCloud on Apple, a OneDrive folder on Windows, nothing live on
+  Android). Google Drive, OneDrive, Dropbox, and WebDAV, SMB, and SFTP servers
+  are reachable from every platform.
+- **Most of it exists.** `windows` already replicates `user-media.json` and
+  `watch-progress.json` into `%OneDrive%\Apps\Edendale\`. `apple` and
+  `android` already have the connectors for every provider above and a
+  phone-to-TV handoff that carries a cloud account or a server login.
+- **Unlike Bluetooth,** the two devices never need to be near each other or
+  awake at the same time: the folder holds the files in between.
+- **What is given up:** the relay's end-to-end encryption (the storage
+  provider, and anyone with access to the folder, can read the files: §6.5),
+  and the ability to cut off a removed device (§6.5, H6).
 
 ### 5.1 Product rules
 
-- Sync moves **watch state only**: progress, completion, last-watched time,
-  favourite, watchlist, rating, and review text once a platform has reviews.
-  File paths, library records, access grants, TMDB sessions, server and
-  cloud-storage logins, and parental settings never leave the device
-  (constraint 6).
-- Records are keyed by media type and TMDB ID, as every platform's store
-  already is, so they never depend on local files.
-- Sync is **opt-in and off by default**. Turning it on creates a sync space or
-  joins one (§6.1). There is no email address, password, or profile.
-- A sync space holds one person's watch state, and every device in it sees the
-  same history. Several spaces on one shared device (profiles) are out of scope
-  for 27.1.
-- The relay stores and returns ciphertext only. It never reads, validates, or
-  merges records; each device merges for itself (§5.3).
+- Sync moves **watch state only**: progress, completion, favourite, watchlist,
+  rating, and review text once a platform has reviews. File paths, library
+  records, access grants, TMDB sessions, server and cloud-storage logins, and
+  parental settings never go into the sync files (constraint 6).
+- Records are keyed by media type and TMDB ID (plus season and episode for
+  progress), as every platform's store already is, so they never depend on
+  local files.
+- Sync is **opt-in and off by default**. Turning it on means choosing a sync
+  location and a space name (§5.2), or receiving both from another device
+  (§6). There is no email address, password, or profile.
+- **One sync location per device at a time.** Choosing another replaces it.
+  The local copy is untouched; the files in the old location stay until the
+  user deletes them, and the app offers to.
+- **A space is a folder.** Two devices pointing at the same location and space
+  name are in the same space. One location can hold several spaces (one per
+  person in a household, for example); switching spaces on a shared device is
+  out of scope for 27.1 beyond choosing a different name.
 - Every device keeps a full local copy. Sync never blocks playback, import, or
-  classification (constraint 5). Offline, or with the relay down, the app
-  works as it does today and uploads later.
-- The UI shows when the device last synced and never claims instant sync.
+  classification (constraint 5). Offline, or with the location unreachable,
+  the app works as it does today and syncs later.
+- The UI shows the location, the space name, and when the device last synced,
+  and never claims instant sync.
+- **The files are readable JSON.** When a location is chosen, the app says so
+  in one sentence: anyone who can open this folder can read your watch
+  history. A shared family account or a shared NAS folder is the user's
+  choice.
 
-### 5.2 Relay protocol
+### 5.2 Sync locations and layout
 
-For each sync space, the relay keeps an append-only log of encrypted batches
-and the latest encrypted snapshot. It also runs short-lived pairing mailboxes.
+| Location | `apple` (iOS, iPadOS, macOS, visionOS) | `apple` (tvOS) | `android`, `meta-horizon` | `windows` | Access |
+|---|---|---|---|---|---|
+| **A folder** the user picks. On a phone or computer this includes iCloud Drive and any folder another cloud app exposes (the Google Drive, Dropbox, and OneDrive apps through Files on Apple, document providers on Android, their desktop clients on Windows and macOS) | Files picker; security-scoped bookmark | **No.** tvOS has no file picker and no iCloud Drive ([Apple QA1935](https://developer.apple.com/library/archive/qa/qa1935/_index.html)) | Storage Access Framework folder picker with a persisted permission; most TVs and the Quest have no picker UI, so they use the API providers | Folder picker; `%OneDrive%` and `%USERPROFILE%\iCloudDrive` offered as presets when present | Filesystem |
+| **iCloud Drive, the app's own folder** (`iCloud Drive/Edendale`): the app's ubiquity container with public document scope, visible in Files and Finder | Yes (needs the iCloud Documents capability, §10) | No (see above) | No. Apple offers no iCloud Drive client or API for Android | Through iCloud for Windows, which syncs iCloud Drive to a local folder; the app treats it as a folder location. Verify on a PC before release (§11) | Filesystem |
+| **Google Drive** | API, `drive.file` | API; login by handoff only, same ecosystem (§6.4) | API, `drive.file` | API, `drive.file` (`windows-27.0.2`; the `windows` branch still asks `drive.readonly`) | OAuth |
+| **OneDrive** | Microsoft Graph API | API; device-code sign-in or handoff | API | API | OAuth |
+| **Dropbox** | API | API; login by handoff | API | API | OAuth |
+| **WebDAV, SMB, SFTP** (and any other server connector a branch gives write support) | Yes | Yes; login by handoff | Yes | Yes | Saved login |
 
-| Operation | Purpose |
-|---|---|
-| Create space | Registers a space with its first device's public keys and the recovery public key (§6.4). Rate-limited per network address. |
-| Append | Adds one encrypted batch to the log and returns its sequence number. |
-| Read | Returns the batches after the device's cursor, preceded by the latest snapshot if the cursor is older than it. |
-| Snapshot | Stores an encrypted snapshot of the merged state at a sequence number, so the relay can drop older batches. |
-| Devices | Adds a device (a member does this during pairing), removes one, and stores key envelopes for a new key epoch (§6.3). |
-| Delete space | Deletes the space and everything stored for it. |
-| Pairing mailbox | Carries the joining exchange (§6.1). Expires after 2 minutes or one attempt. |
+Reading media from iCloud Drive follows the same table: on Windows the iCloud
+for Windows folder is a folder like any other, and `windows` can list it as an
+"iCloud Drive" preset next to OneDrive; on tvOS and Android there is nothing to
+read from.
 
-- **Device authentication.** Each device creates its own signing key pair, and
-  the relay stores only public keys. A device signs a fresh challenge from the
-  relay to get a short-lived session token. There are no passwords and no
-  long-lived tokens.
-- **Batching.** Local changes are debounced (for example 10 seconds after the
-  last change) and sent at once when playback stops or the app goes to the
-  background. Progress during playback is coalesced: only the latest position
-  is uploaded.
-- **When devices sync.** On launch, on return to the foreground, after local
-  changes, and in the background where the OS allows (§8). Continue Watching
-  shows local data at once and updates in place when the pull returns.
-- **No push notifications in 27.1.** Push would need the relay to hold Apple
-  and Google push tokens and credentials. Live updates while two devices have
-  the app open (for example over a WebSocket) are a later option.
-- **Limits.** A maximum batch size (for example 64 KB), a maximum space size
-  (for example 10 MB, far more than years of history), and per-device request
-  rates. A device that reaches the space limit writes a snapshot and retries.
-- **Specification.** The wire format, envelopes, and test vectors go in a
-  `SYNC-PROTOCOL.md` on `main` before any branch implements them. Each branch
-  copies the test vectors into its own native tests and names the `main`
-  commit, as platform branches already do with `scenes` exports
-  (constraint 7).
+**Layout.** At the root of the location:
 
-### 5.3 Priority by timestamp — and its risk
+```
+Edendale/
+  <space-name>/
+    <device-id>.json      one file per device, written only by that device
+```
 
-The requested rule is: the higher the Unix timestamp, the higher the priority,
-so the newest write wins. This is last-writer-wins (LWW). It is simple, but it
-has two problems:
+On OneDrive through the API the folder is the app's own folder,
+`Apps/Edendale/<space-name>/`, which is where `windows` already keeps its
+replica (§10, decision 1). The space name is a folder name: 1–64 characters,
+no path separators, trimmed. The device ID is a random UUID made when sync is
+first turned on, kept out of backups (§5.5).
 
-1. **It trusts the clock.** A device with a clock set far in the future wins
-   every conflict, and its values overwrite everyone else's progress until the
-   clock catches up. A device with a clock set to 1970 loses every conflict.
-2. **It loses information.** LWW on a whole record discards the other device's
-   change. For example, Device A sets a rating while Device B updates progress;
-   under whole-record LWW, one of those edits is lost.
+**One file per device, not one file per space.** Two devices writing the same
+file race each other: Google Drive's API has no conditional update, and the
+desktop clients of iCloud Drive, OneDrive, and Dropbox resolve a race by
+creating a "conflicted copy". With one file per device there is nothing to
+lock and nothing to lose: each device writes only its own file, reads all the
+others, and merges locally (§5.3). Removing a device from a space is deleting
+its file; its records already live in every other file. The exact file
+format, limits, and validation are in [SYNC-PROTOCOL.md](SYNC-PROTOCOL.md).
 
-**Recommended rule (replaces the plain rule):**
+### 5.3 Priority by timestamp
 
-- Each value carries `(timestamp, device_id)`. The higher timestamp wins; equal
-  timestamps tie-break on `device_id`, so every device picks the same winner.
-- The timestamp is a **hybrid logical clock (HLC)**: the device's UTC clock in
-  milliseconds, never lower than any timestamp the device has already seen,
-  plus a counter for writes in the same millisecond. It keeps the requested
-  rule and fixes the common handoff: a TV whose clock runs a few minutes slow
-  still orders the position it writes after the phone's position it just
-  received.
-- **Merge per register, not per record.** Progress (position, watched seconds,
-  completion, and last-watched time) is one register, because those values
-  describe one viewing. Favourite, watchlist, rating, and review are each their
-  own register. Two devices can change different registers without losing
-  either change.
-- **Hold, don't drop.** A write stamped more than 5 minutes ahead of the
-  receiving device's clock is held, and applied once that clock catches up;
-  the device does not advance its own clock from it. Dropping it would leave
-  devices with different results, because each judges "ahead" by its own
-  clock. Held writes travel inside snapshots, so compaction never loses them.
-  Timestamps before 2000-01-01 are invalid on every device. The earlier rule
-  about a title's first-release date is dropped: devices can hold different
-  TMDB data, so they would not reject the same writes.
+**Decided 2026-11-02:** one standard field, `updateTime`, on every record and
+at the top of every device file: UTC milliseconds since 1970 in a 64-bit
+integer. For each record key, the copy with the highest `updateTime` replaces
+the others, as a whole. That is the requested rule, higher timestamp wins,
+with four small rules so it stays safe without a second field:
+
+- **Ties.** Equal `updateTime` values are broken by the lexically smaller
+  device ID, so every device picks the same winner.
+- **Monotonic stamping.** A device stamps a write with
+  `max(now, highest updateTime it has applied + 1)`. A TV whose clock runs a
+  few minutes slow still orders the position it writes after the phone's
+  position it just applied, instead of losing to it.
+- **Far-future guard.** A record stamped more than 24 hours ahead of the
+  device's own clock is not applied and does not raise the device's
+  high-water mark, and the app shows a sync warning naming the device whose
+  file carries it. A missing `updateTime`, or one before 2000-01-01, counts
+  as 0 and loses to anything.
 - **Clearing is a write.** Removing a rating, a favourite, or progress writes
-  an empty value with a new timestamp. The empty value is kept (a few bytes),
-  so an older copy on another device cannot bring the old value back.
-- A device never re-stamps a value it received, by any path (§5.5), so one
-  write that arrives twice is still one write.
-- Store timestamps as **UTC milliseconds in a 64-bit integer**, plus the HLC
-  counter. Seconds in a 32-bit integer overflow in 2038.
+  the record with the value cleared and a new `updateTime` (a tombstone), so
+  an older copy on another device cannot bring the old value back. A device
+  may drop tombstones older than a year when it writes its file.
 
-This keeps the user's requested priority (higher timestamp wins) and removes
-the two defects above. The merge is idempotent and independent of order, so
-devices converge whatever order batches arrive in, and a snapshot is simply
-the merged state.
+Whole-record wins means that when two devices change different fields of the
+same record inside one sync interval (a rating on the phone and the watchlist
+flag on the TV, within seconds), only the newer record survives. That is
+accepted for simplicity. Progress and user media are separate records, so the
+common case, rating a title on the phone while the TV plays it, loses nothing.
+A device never re-stamps a value it received, by any path (§5.5), so one write
+that arrives by two routes is still one write.
 
 **Existing merge code to change.** The current merges were written for two
 replicas and a pending push. Each branch changes its own:
 
 | Branch | Code today | Change |
 |---|---|---|
-| `android` | `mergeUserMedia` and `mergeWatchProgress` in `src/main/kotlin/com/babasama/edendale/domain/UserMediaMerge.kt` | On a timestamp tie, the side with a pending push (its dirty flag) wins, otherwise the first argument. Dirty flags are local, so two devices can pick different winners: tie-break on device ID instead. Records with nothing set are pruned (`hasState`), which discards the time of the clear: keep them. |
-| `windows` | `UserMediaMerger` in `Edendale.Windows/Core/UserMediaMerger.cs` | The same tie and pruning behavior (`Winner`, `HasState`), and the same change. |
-| `apple` | `CDUserMedia` in `Shared/WatchProgress.xcdatamodeld` | One `updatedAt` covers favourite, watchlist, and rating. Add a timestamp per register; the change is additive and CloudKit-compatible. |
-| Every client | Watch-progress and user-media stores | Store the HLC and the writing device's ID with every register. |
+| `android` | `mergeUserMedia` and `mergeWatchProgress` in `src/main/kotlin/com/babasama/edendale/domain/UserMediaMerge.kt` | On a timestamp tie, the side with a pending push (its dirty flag) wins, otherwise the first argument. Dirty flags are local, so two devices can pick different winners: tie-break on device ID instead. Records with nothing set are pruned (`hasState`), which discards the time of the clear: keep them as tombstones. |
+| `windows` | `UserMediaMerger` in `Edendale.Windows/Core/UserMediaMerger.cs` | The same tie and pruning behavior (`Winner`, `HasState`), and the same change. `CloudSyncService` moves from the two shared replica files to the per-device layout (§5.5). |
+| `apple` | `CDUserMedia` in `Shared/WatchProgress.xcdatamodeld` | Already one `updatedAt` per record, which matches the one-field rule. Add the writing device's ID, keep cleared records as tombstones, and store the stamp as milliseconds. Additive and CloudKit-compatible. |
+| Every client | Watch-progress and user-media stores | Store `updateTime` and the writing device's ID with every record. |
 
 ### 5.4 Sync flow (summary)
 
-1. A device uploads its pending writes as one encrypted batch and records the
-   sequence number it gets back.
-2. It reads every batch after its cursor (or the latest snapshot, if it has
-   fallen behind), decrypts them, and merges per register (§5.3).
-3. It advances its cursor. Sync is idempotent: a batch read twice or replayed
-   changes nothing.
-4. From time to time (for example every 500 batches, and after every key
-   change), a device writes a snapshot of the merged state, and the relay
-   drops the batches it covers.
-5. Each device checks that its own acknowledged batches are still in the log
-   or covered by a snapshot. If they are not, it shows a sync warning and
-   uploads them again (S2 in §6).
+1. **Read.** List `Edendale/<space-name>/`. For every other device's file
+   whose modification time or ETag changed since the last read, download it,
+   validate it, and merge its records into the local store (§5.3).
+2. **Write.** After local changes, write the device's whole merged state to
+   its own file: debounced 10 seconds after the last change, and at once when
+   playback stops or the app goes to the background. Progress during playback
+   is coalesced into the latest position. Writes replace the file in one step
+   (upload and replace on the APIs; write a temporary file and rename on a
+   filesystem).
+3. **When.** On launch, on return to the foreground, after local changes,
+   every 5 minutes while the app is in the foreground, and in the background
+   where the OS allows (§8). Continue Watching shows local data at once and
+   updates in place when a read returns.
+4. **Idempotent.** Reading a file twice changes nothing; a file that fails
+   validation is skipped with a warning and never deletes local data.
+5. **Change detection per provider.** Drive: `files.list` on the space folder
+   with `modifiedTime`. OneDrive: a delta query, or `lastModifiedDateTime`.
+   Dropbox: `list_folder` (its long-poll endpoint is a later option). WebDAV:
+   `PROPFIND` with `getetag` or `getlastmodified`. Folders: modification
+   dates, and a file watcher while the app runs.
 
 ### 5.5 Coexistence with today's sync
 
-- **iCloud (Apple) and the OneDrive folder (Windows)** keep working. They carry
-  the same timestamps and device IDs as the relay, which needs the HLC and
-  device-ID fields in CloudKit records and in the OneDrive JSON files (an
-  additive change). A device uploads every change it applies that did not come
-  from the relay, with its original stamp; duplicates are harmless because the
-  merge is idempotent. An iPad that is not in the space still reaches it
-  through an iPhone that is.
+- **iCloud (Apple) keeps working.** CloudKit records gain the device ID and
+  the millisecond stamp (additive). A device in both iCloud and a sync space
+  bridges them: it writes to its device file everything it applied from
+  iCloud with the original stamp, and the merge is idempotent, so duplicates
+  are harmless. An iPad that is not in the space still reaches it through an
+  iPhone that is.
+- **The OneDrive replica on Windows** (`%OneDrive%\Apps\Edendale\` with
+  `user-media.json` and `watch-progress.json`) is superseded by the layout in
+  §5.2. On first launch after the update, `windows` reads the old files once
+  into local state and offers the OneDrive folder as the default location.
+  Whether the old files are then deleted is decision 3 in §10.
 - **TMDB account sync** (favourites, watchlist, and ratings) stays a separate,
   optional service. TMDB keeps no per-field times, so a value pulled from TMDB
   that differs from local state becomes a new local write, stamped when it is
   pulled.
-- **Backups and device transfer.** The device ID, device keys, and space key
-  must never be restored onto another device: two devices with one identity
-  break the tie-break and the key epochs. Android adds them to the
-  `cloud-backup` and `device-transfer` exclusions in `data_extraction_rules.xml`
-  and to `backup_rules.xml`; Apple stores them as this-device-only Keychain
-  items; Windows keeps them out of the OneDrive folder. A restored device joins
-  the space again.
+- **Backups and device transfer.** The device ID must never be restored onto
+  another device: two devices with one ID break the tie-break and overwrite
+  each other's file. Android adds it to the `cloud-backup` and
+  `device-transfer` exclusions in `data_extraction_rules.xml` and to
+  `backup_rules.xml`; Apple stores it as a this-device-only Keychain item;
+  Windows keeps it outside every synced folder. A restored device makes a new
+  ID and re-reads the space; its old records are already in the other files.
 
-### 5.6 The relay (`sync` branch)
+### 5.6 What the 2026-11-02 revision removes
 
-- **Branch.** A new `sync` branch holds the relay's source, tests, CI, and
-  deployment. No client code lives there, and no platform branch builds against
-  it (constraints 1 and 2). It is already listed in the branch tables on
-  `main` (§2).
-- **Hosting (recommended): Cloudflare Workers, with one Durable Object per
-  sync space.** Each space's log is a small SQLite database inside its own
-  Durable Object, so spaces are isolated and there is no shared database to
-  breach. There are no servers to patch, and TLS and DDoS protection are
-  included. Watch data is small (a heavy viewer's encrypted history is a few
-  MB); a rough estimate is close to $0 during a beta and tens of US dollars a
-  month at tens of thousands of devices. Check the provider's current pricing
-  before committing.
-- **Alternative:** one small binary with SQLite on a VPS. It is easier for
-  others to self-host, but the operator patches the server and manages TLS and
-  backups.
-- **Self-hosting.** The relay is open source like the apps. Letting a user
-  point the app at their own relay is a later option (§10).
-- **Deployment secrets.** The hosting API token lives only in the `sync`
-  branch's protected CI environment, with the least privilege the provider
-  allows (constraint 3). The apps hold no relay secret: the relay URL is
-  public, and devices authenticate with their own keys.
-- **Retention and deletion.** "Delete sync data" in the app deletes the space
-  and everything stored for it at once. "Remove this device" revokes only that
-  device. Spaces untouched for 12 months are deleted automatically; a device
-  that returns afterwards can start a new space from its local copy.
-- **No request logging.** The relay logs no request bodies and stores no
-  network addresses. It uses addresses only in flight, for rate limits, and
-  keeps aggregate counters (requests, errors, storage) for operations.
-- **Operations.** Uptime monitoring, a spending cap or alert on the hosting
-  account, an abuse contact, and a written process for legal requests. The
-  relay can hand over only ciphertext and the metadata in §6.6.
+- No `sync` branch, no relay, no Worker, no hosting account or deployment
+  token, and no relay row in the branch tables. The `sync` branch (pushed to
+  the remote as `59ff3b0`) and the Worker deployed on 2026-11-01 are deleted
+  by the owner (§10, decision 8).
+- No space key, key epochs, recovery key, pairing mailbox, or envelope format.
+  The only secret Edendale handles for sync is the location's login, which
+  stays in platform-protected storage and moves only through the handoff.
+- The 2026-11-01 protocol draft (relay API, device authentication, encrypted
+  envelopes) is replaced by [SYNC-PROTOCOL.md](SYNC-PROTOCOL.md) on `main`,
+  which now specifies the file format, the merge, and the handoff.
+
+### 5.7 History of this feature
+
+| Date | Design | Why it changed |
+|---|---|---|
+| Request | Bluetooth P2P, 8-digit PIN that yields a symmetric key rotated by time of day, higher timestamp wins | Both devices must be near each other and awake at once, which iOS does not allow reliably in the background; TVs, headsets, and PCs differ widely in Bluetooth support; a PIN-derived key is guessable offline (§6.5, H3) |
+| 2026-11-01 | End-to-end encrypted sync spaces on an Edendale-run relay (Cloudflare Workers, one Durable Object per space), CPace pairing, random space key with epochs, recovery key | An Edendale service to host, fund, defend against abuse, and disclose in the privacy policy and every store; a protocol of its own to specify and implement on five platforms |
+| 2026-11-02 | JSON files on the user's own storage, one per device, `updateTime` wins; handoff carries the login | This revision |
 
 ---
 
-## 6. Feature F6 — Pairing and keys: security review
+## 6. Feature F6 — Handoff, pairing, and security review
 
 **Requested:** one party generates an 8-digit PIN; the PIN generates a
 symmetric key that is saved permanently and rotated by time of day.
 
-The security review is the reason §5 and this section differ from the request.
-Since the 2026-11-01 revision, pairing messages and the encrypted history pass
-through the relay, so the relay is treated as untrusted throughout. Severity
-assumes an attacker who can observe or alter traffic between devices and the
-relay, including the relay's operator, and who may run a malicious device.
+**What stays and what changes.** Edendale no longer encrypts anything it
+stores: the sync files are plain JSON, protected by the user's storage
+provider the way everything else in that account is. Cryptography is used in
+one place, the **handoff**: a direct connection between two of the user's
+devices on the local network that carries the sync location's login (and, if
+the user chooses, other linked accounts and server logins) to a device that
+has not been set up. The threat model for the handoff is an attacker on the
+same network who may run a malicious device. The threat model for the files
+is the storage provider and anyone else who can open the folder.
+
+### 6.1 What the handoff carries
+
+- **The sync location**: provider, space name, and its login. For a cloud
+  account that is the provider's stable user ID, email, display name, refresh
+  token, granted scopes, and (OneDrive) drive ID; for a server it is host,
+  port, credential, and for SFTP the approved host-key fingerprint. These are
+  exactly the `Account` and `Login` payloads the shipped Apple and Android
+  handoff sends today. A folder location cannot be transferred: the receiving
+  device picks its own folder, and the space name is enough once it points at
+  the same storage.
+- **Other linked sources**, each ticked by the user on the sending device:
+  the cloud accounts and saved server logins the receiving device would
+  otherwise have to link one at a time, as the TV handoff does now.
+- **Never:** the local library, file paths, the TMDB session, parental
+  settings, or the sending device's device ID.
+
+The receiving device validates what it gets (refreshes a token, or connects
+to the server), stores it in the platform's protected storage (Keychain,
+Android Keystore-encrypted storage, DPAPI), makes its own device ID, and
+starts syncing. The sending device shows what it is about to send ("Send the
+Google Drive login and the space 'Family' to Living Room TV?") and the result.
+
+### 6.2 Pairing
+
+**What ships today.** Apple: the TV finds iPhones and iPads with
+DeviceDiscoveryUI and connects over an application service, which the system
+encrypts; same iCloud account, Apple devices only. Android: the TV advertises
+`_edendale-handoff._tcp` with DNS-SD and shows a 6-digit code; both sides run
+J-PAKE over P-256 keyed by the code (Bouncy Castle), confirm the key, and talk
+over AES-256-GCM. Both stay as they are for their own ecosystems.
+
+**For every other pair** (iPhone to Android TV, Android phone to Apple TV,
+Mac to Windows, Quest to anything), every platform implements one protocol,
+version 2 of the Android one, specified in [SYNC-PROTOCOL.md](SYNC-PROTOCOL.md):
+
+- **Discovery.** The device that will *receive* advertises
+  `_edendale-handoff._tcp` while its pairing screen is open (Bonjour on Apple,
+  `NsdManager` on Android, DNS-SD on Windows). A QR code can also carry the
+  host and port so no discovery is needed.
+- **Pairing by QR code (preferred).** The device without a camera shows a QR
+  code holding its ephemeral X25519 public key and a random 128-bit secret;
+  the device with a camera scans it. The scanner proves it saw the secret, the
+  displayer's key came from the QR, and both derive one session key, so
+  neither side can be impersonated by someone else on the network. Which side
+  sends the login is independent of which side showed the code: the user
+  picked the direction on the first screen. A phone can therefore set up a
+  TV, a PC, or a headset, and a PC can set up a phone, with the phone always
+  doing the scanning. The primitives (X25519, HKDF-SHA256, HMAC-SHA256,
+  AES-256-GCM) exist natively on every platform.
+- **Pairing by typed code.** The 6-digit code with J-PAKE over P-256, as
+  Android ships. It is offered where a vetted J-PAKE exists: Bouncy Castle on
+  Android, Quest, and Windows (.NET). CryptoKit has no PAKE, so Apple devices
+  do not offer the typed code to non-Apple devices in 27.1; between two Apple
+  devices the existing handoff applies, and a pair with no camera on either
+  side (a Windows PC and an Apple TV) is bridged with a phone (decision 2,
+  §10).
+- A code or QR code is valid for 2 minutes and one attempt. A wrong code
+  fails the key confirmation before anything is sent; both devices show the
+  failure. After 5 failed codes in a row the receiving device waits longer
+  before offering another.
+
+### 6.3 F8 — one setup across the ecosystem
+
+Joining a space on a new device is either receiving the location and login
+through the handoff (§6.1), or choosing the same location and typing the same
+space name by hand. Nothing else exists: no account, no recovery key.
+
+### 6.4 Google Drive across ecosystems
+
+Edendale uses three Google OAuth clients: an iOS-type client shared by iOS,
+iPadOS, macOS, tvOS, and visionOS; an Android-type client; and a Desktop-type
+client, with Google's non-secret "client secret", on Windows. Google binds a
+refresh token to the client that obtained it, so a token moved from an iPhone
+to an Android TV or a PC is refused. OneDrive uses one Entra app registration
+and Dropbox one app key on every platform, so their tokens transfer, and
+server logins are plain credentials. Hence:
+
+- Within one ecosystem (iPhone to Apple TV or Mac, Android phone to Android
+  TV or Quest), the handoff carries the Google refresh token, as it does
+  today.
+- Across ecosystems, the handoff carries the Google account's email, the space
+  name, and the space folder's Drive ID instead. The receiving device opens
+  Google sign-in with that email as the login hint and, once signed in, uses
+  the folder. `drive.file` access is granted to the Cloud project, not to one
+  client, so the folder the iPhone created is visible to the Android or
+  Windows client of the same project without the picker; this is confirmed by
+  the probe in §11 before implementation.
+- Apple TV and Android TV cannot sign in to Google themselves (Google's device
+  flow does not grant `drive.file` with the picker), so for Google Drive they
+  need a phone from the same ecosystem. The UI says so when the location is
+  Google Drive.
+
+### 6.5 Security review
+
+Severity assumes an attacker on the user's local network who may run a
+malicious device, plus a storage provider or household member who can open
+the sync folder.
 
 | # | Risk | Why it matters | Severity | Mitigation |
 |---|---|---|---|---|
-| R1 | **Low-entropy secret.** 8 digits is about 26.6 bits (10⁸ values). | An attacker who captures any verifier or ciphertext tied only to the code can test every code offline in minutes to hours. Argon2id slows this but does not remove it. | Critical | Never use the code as a key or a verifier. Use a password-authenticated key exchange (PAKE, §6.1): an attacker then gets **one guess per code**. Joining by QR code avoids the short secret entirely. |
-| R2 | **Offline guessing from a transcript.** | The relay sees every pairing transcript, so R1 would apply to anything it records. | Critical | Same as R1: PAKE makes the transcript useless for offline guessing. |
-| R3 | **Active man-in-the-middle during pairing.** | The relay, or anyone between a device and the relay, can try to sit between the two devices. | High | CPace with explicit key confirmation, bound to the mailbox and both devices' public keys. The QR code carries the new device's public key, so the relay cannot swap it. |
-| R4 | **Rotation adds no secret.** Rotation by time of day uses a public input (the date and hour). | An attacker who knows the PIN can compute every future and past key. Rotation does not protect against PIN compromise. | High | The space key is random (256-bit) and never derived from the code. Time-of-day rotation is dropped; the key moves to a new **epoch** when a device is removed (§6.3). |
-| R5 | **"Saved permanently" plus PIN-derived means one compromise is total.** | If the PIN or the stored key leaks, every past and future sync is readable. | High | The stored space key is the only long-lived shared secret, and it is random. Removing a device starts a new epoch. The code is discarded after pairing and never stored. |
-| R6 | **Clock dependence.** Time-of-day rotation needs both devices to agree on the window. | Clock skew or time-zone differences cause sync failures. | Resolved | Keys no longer depend on time. Clocks only order merges, within the bounds in §5.3. |
-| R7 | **Nonce reuse.** A time-window counter that resets reuses AES-GCM nonces. | Nonce reuse under AES-GCM leaks plaintext and the authentication key. | Critical | XChaCha20-Poly1305 with a random 192-bit nonce per batch. Never a counter that can reset. |
-| R8 | **No authentication of the payload.** | Without an AEAD tag, the relay could alter records (for example, mark a title complete). | High | AEAD with associated data that binds the space ID, key epoch, uploading device ID, and batch ID (§6.2). |
-| R9 | **Replay.** | The relay can replay, reorder, or duplicate batches. | Medium | Batch IDs are unique, and the per-register merge is idempotent, so a replayed batch changes nothing. |
-| R10 | **Timestamp forgery under LWW.** Any member device can write a huge timestamp and win every conflict. | Combined with §5.3's concern, a malicious *member* can overwrite the whole space. | High | Timestamp bounds (§5.3) and per-device rate limits at the relay. Members are trusted by design; the rule protects against accidents and buggy clocks, not a malicious member. Document that. |
-| R11 | **Presence tracking over BLE.** | Bluetooth advertisements let observers follow a device. | Resolved | No Bluetooth. Network metadata at the relay takes its place (S1). |
-| R12 | **Shoulder-surfing the pairing code.** | The code is shown on one screen and typed or scanned on another. | Medium | Show the code and QR code only on the pairing screen; they expire in 2 minutes and allow one attempt. |
-| R13 | **Denial of service.** | Floods drain battery or run up hosting costs. | Medium | Moves to the relay (S4, S5). Devices back off after failures. |
-| R14 | **Plaintext exposure at rest.** Background sync may write decrypted history to unprotected storage. | Watch history is personal data. | High | Keep decrypted data only in the platform's protected storage (iOS Data Protection; Android credential-encrypted storage). Never write plaintext to caches or logs. Background sync on a locked iPhone needs "until first unlock" protection (§8). |
-| R15 | **Secrets in logs or crash reports.** | Pairing codes, recovery keys, space keys, and device keys must never be logged (constraint 3). | High | Redact at the logging layer. Add a test that asserts no key material reaches the log sink. The relay logs no request bodies. |
-| R16 | **Custom cryptography.** | Hand-written protocols and primitives are a common source of failure, and open source makes review easier but does not make a design safe. | High | Use audited native libraries: libsodium on every platform, or CryptoKit where it has the primitive. Build CPace from libsodium's ristretto255 functions and check it against the CFRG specification's test vectors. Keep the protocol small and published on `main`. |
-| R17 | **Open-source assumption.** | Because the code is public, relay included, the only secrets are the random keys and the pairing code. | — | Design principle: assume the protocol and the relay are fully known to the attacker. Security rests on the mitigations above, not on secrecy of the design. |
+| H1 | **Plaintext watch history at the storage provider.** | The provider, and anyone who can open the account or the folder, can read titles, progress, ratings, and reviews. | Medium | Accepted by design: it is the user's own storage, chosen by the user. Say so when a location is chosen. Never put logins, tokens, or file paths in the files. The folder is the user's to delete. |
+| H2 | **Tampering with files** by the provider or a co-user of the folder. | Records could be altered (a title marked complete, a rating changed). | Low | Accepted. Files are validated on read (types, ranges, timestamps); malformed files are skipped with a warning and never remove local data. Per-device signatures are a later option. |
+| H3 | **Low-entropy pairing code.** 6 digits is about 20 bits. | Anything derived from the code alone can be guessed offline. | Critical if misused | The code is never a key or a verifier. J-PAKE gives an attacker one guess per attempt; the QR code carries a 128-bit random secret instead; 2-minute expiry and one attempt. |
+| H4 | **Active man-in-the-middle on the network during the handoff.** | Steals the refresh token or server password in transit. | High | J-PAKE key confirmation, or the QR code's key and secret, bind the session to the two devices; AES-256-GCM with direction-and-counter nonces afterwards. |
+| H5 | **Refresh tokens and passwords** in transit and on the receiving device. | Long-lived credentials to the user's storage. | High | Sent only inside the authenticated channel; stored in Keychain, Keystore-encrypted storage, or DPAPI; never written to sync files, logs, caches, or backups. |
+| H6 | **A stolen or removed device keeps access.** | There is no key to rotate: the device keeps the storage login and its local copy. | Medium | Revoke Edendale at the provider (Google, Microsoft, and Dropbox account security pages) or change the server password, and delete the device's file. The app links to the provider's page from "Remove device". The device keeps what it already has. |
+| H7 | **Far-future timestamp** from a buggy clock or a malicious member. | Wins every conflict. | Medium | The 24-hour guard and monotonic stamping (§5.3). Members of a space are trusted by design; the rule protects against accidents, not a malicious member. Document that. |
+| H8 | **Shoulder-surfing the code or QR code.** | Shown on one screen and typed or scanned on another. | Medium | Shown only on the pairing screen; 2 minutes; one attempt; the sending device confirms the receiving device's name before sending. |
+| H9 | **Plaintext exposure at rest on devices.** Background sync may write history to unprotected storage. | Watch history is personal data. | High | Keep it only in the platform's protected storage (iOS Data Protection, Android credential-encrypted storage). Never write to caches or logs. Background sync on a locked iPhone needs "until first unlock" protection (§8). |
+| H10 | **Secrets in logs or crash reports.** | Codes, QR secrets, session keys, tokens, passwords (constraint 3). | High | Redact at the logging layer. A test asserts no key material or token reaches the log sink. |
+| H11 | **Custom cryptography.** | Hand-written protocols fail. | High | Only native or audited primitives: CryptoKit, Android Keystore and JCA, .NET, Bouncy Castle's J-PAKE checked against RFC 8236's test vectors. The handoff composes them in the smallest way and is published on `main` with test vectors. |
+| H12 | **Shared storage accounts** (a family OneDrive, a shared NAS folder). | Others in the household can read and alter history. | Low | Say so when choosing a location, and suggest a folder only the user can open. |
+| H13 | **Presence over DNS-SD.** | A device advertising a service can be noticed on the network. | Low | Advertise only while the pairing screen is open. |
+| H14 | **Open-source assumption.** | The code, the file format, and the handoff are public. | — | Design principle: assume everything but the random values and the login is known to the attacker. |
 
-**Risks the relay adds**
+**What the requested design gets right.** A short, human-enterable code is
+practical and stays for devices that cannot scan. "Saved permanently" is fine
+for what is actually long-lived here, the storage login, because it is stored
+in platform-protected storage and never derived from the code. Rotation by
+time of day is dropped: it adds no secret.
 
-| # | Risk | Why it matters | Severity | Mitigation |
-|---|---|---|---|---|
-| S1 | **Metadata at the relay.** | The relay sees space IDs, random device IDs, batch sizes and times, and network addresses. Upload times show roughly when someone watches. | Medium | Store no network addresses and log no requests. Pad batches to fixed size buckets and debounce uploads. Disclose what remains (§6.6). |
-| S2 | **Compromised or malicious relay.** | It holds every space's ciphertext. | Medium | It cannot read or forge records (R8). It can withhold, delay, or roll back batches; each device checks that its own acknowledged batches are still there and warns if not (§5.4). A rollback only delays convergence, and local copies are never lost. |
-| S3 | **Relay adds a device of its own.** | A relay that registers its own key could try to obtain the space key. | High | The space key reaches a new device only through the pairing exchange (§6.1), which the relay cannot complete alone. The member list lives inside the encrypted state, so every device can show it, and a device the relay added appears in no member's list. |
-| S4 | **Abuse as free anonymous storage.** | Anyone can create a space and store ciphertext. | Medium | A small per-space limit (§5.2), rate-limited space creation, no public read access, expiry after 12 months unused, and an abuse contact. |
-| S5 | **Denial of service and cost.** | Floods can take the relay down or run up the hosting bill. | Medium | The provider's DDoS protection, per-address and per-device rate limits, and a spending cap or alert. When the relay is down, apps keep working locally. |
-| S6 | **Leaked deployment credential.** | A stolen hosting token lets an attacker deploy a modified relay that records metadata or breaks sync. It still cannot read history. | High | The token lives only in the `sync` branch's protected environment, with least privilege, and the hosting account uses two-factor sign-in. |
-| S7 | **Losing every device.** | No one, Edendale included, can decrypt the space. | Medium | The recovery key (§6.4). The app says plainly that without it the history is gone. |
-| S8 | **Stolen device.** | An unlocked stolen device can read the space. | Medium | Remove it from another device: the relay revokes it and the space moves to a new epoch (§6.3). It keeps what it had already downloaded. |
-| S9 | **Legal requests.** | The operator can be compelled to hand over what it holds. | Low | It holds only ciphertext and the metadata in §6.6. The privacy policy says so. |
+### 6.6 What the privacy policy says
 
-### 6.1 Creating and joining a sync space
-
-**Creating.** The first device generates a random space ID, a random 256-bit
-space key (epoch 1), its own device key pairs, and a recovery key (§6.4). It
-registers the space with its public keys and shows the recovery key once.
-
-**Joining by QR code (preferred).**
-
-1. The new device generates its key pairs, opens a pairing mailbox on the
-   relay, and shows a QR code that holds the mailbox ID and its public keys.
-2. A member device scans the code and asks the user to confirm ("Add Living
-   room TV?").
-3. The member registers the new device's signing key with the relay and posts
-   the space ID, current epoch, and space key to the mailbox, encrypted to the
-   public key from the QR code.
-4. The new device decrypts it and syncs. The relay sees only ciphertext and
-   cannot substitute its own key, because the key came from the QR code.
-
-**Joining by code (no camera).** The same flow, with a typed code in place of
-the QR code:
-
-1. The new device shows a code such as `52-4821-7730`: a short mailbox number
-   from the relay, then an 8-digit secret the relay never sees.
-2. The user types it on a member device. Both devices run **CPace** through the
-   mailbox, with the 8-digit secret as the password, bound to the mailbox
-   number and both devices' public keys, and exchange key-confirmation MACs.
-3. On success, the member registers the new device and sends the space key
-   encrypted under the CPace session key. A wrong code produces a mismatch,
-   not a leak.
-4. Each code allows one attempt and expires after 2 minutes. A failure is
-   shown on both devices. After 5 failed codes in a row, the new device waits
-   longer before it offers another.
-
-In both flows the member device decides who joins, and the code is discarded
-after use. The relay rate-limits mailbox creation per network address.
-
-### 6.2 Encryption and keys
-
-- Device signing keys are Ed25519; device encryption keys are X25519. Each
-  device creates its own and never exports the private halves.
-- Subkeys for batches, snapshots, and the member list =
-  HKDF-SHA256(the epoch's space key, salt = space ID, info = purpose ‖ epoch).
-- Batches and snapshots use XChaCha20-Poly1305 with a random 192-bit nonce.
-  AAD = space ID ‖ epoch ‖ uploading device ID ‖ batch ID. Batches are padded
-  to fixed size buckets (S1).
-- Keys stay on the device and out of backups (§5.5): Keychain items available
-  after first unlock, this device only (Apple); encrypted with an Android
-  Keystore key (Android); DPAPI-protected local app data, outside the OneDrive
-  folder (Windows).
-
-### 6.3 Removing a device: key epochs
-
-- Any member device can remove another, for example a lost phone. The relay
-  revokes the removed device at once, so it can no longer read or append.
-- The removing device then generates the next epoch's space key, encrypts it
-  to each remaining device's public key and to the recovery public key, stores
-  those envelopes at the relay, and writes a fresh snapshot under the new
-  epoch. The other devices pick up their envelopes on their next sync.
-- The relay accepts one new epoch at a time. A device that loses that race
-  fetches the new envelope and retries.
-- Batches from older epochs are dropped once the new snapshot exists, so a
-  device that joins later needs only the current key.
-- This replaces the requested time-of-day rotation. A user can also start a
-  new epoch on demand ("Reset sync keys").
-
-### 6.4 Recovery and sign-in (F8)
-
-- Joining a sync space is the only "sign-in" (F8). There is no Edendale
-  account: no email address, password, or profile, and the relay holds nothing
-  it can read (§2).
-- When the space is created, the app shows a **recovery key** once: 128 random
-  bits, shown as 26 letters and digits in groups, to write down or keep in a
-  password manager. Neither the app nor the relay stores it.
-- The recovery key derives a recovery key pair. Devices keep only the public
-  half, and every new epoch's key is also encrypted to it (§6.3). The relay
-  finds the space by a value derived from the recovery key, so the user needs
-  nothing else. With it, a new device can authenticate, open the latest
-  envelope, and join, even when every other device is gone.
-- Any member device can replace the recovery key; the old one stops working.
-- Losing every device **and** the recovery key loses the space. The app states
-  this when sync is turned on, before the user can skip saving the key.
-
-### 6.5 What the requested design gets right
-
-- A short, human-enterable code for pairing is practical. It remains for
-  devices that cannot scan a QR code.
-- Changing keys over time is good hygiene once the key is secret. Key epochs
-  keep the idea and tie it to the event that matters: a device leaving.
-- "Saved permanently" is acceptable once the stored secret is random and
-  device-bound, not derived from the code.
-
-### 6.6 What the relay can see
-
-- **Can see:** that a space exists and its random ID; the number of devices
-  and their random IDs; when each device syncs; padded batch sizes and total
-  stored size; and network addresses while a request is in flight.
-- **Cannot see:** titles, TMDB IDs, progress, ratings, reviews, device names,
-  the member list, or anything else inside batches, snapshots, and envelopes.
-
-This is the summary the privacy policy and store disclosures draw on (§2).
-Google Play's Data safety rules do not count end-to-end encrypted data as
-collected; how the metadata above is declared, and how Apple's privacy label
-treats it, is part of the review in §10.
+- Edendale has no account system and no servers of its own (unchanged).
+- When the user turns on sync, Edendale writes their watch records (titles by
+  TMDB ID, progress, ratings, watchlist, favourites, and reviews) as readable
+  JSON files into a folder on storage the user chose, under the user's own
+  account with that provider. Edendale never receives them.
+- When the user sets up another device, Edendale can send the storage login
+  to it directly over the local network, encrypted; nothing is sent to
+  Edendale or to any other party.
+- The user removes the data by deleting the folder.
 
 ### 6.7 Residual risks the design accepts
 
-- A member of a sync space is trusted. A malicious member can forge records
-  within the space (R10).
-- If a device is stolen **unlocked**, its keys and history are exposed until
-  another device removes it, and it keeps what it has already downloaded.
-- The relay learns the metadata in §6.6.
-- A device whose clock ran far ahead keeps a future timestamp after its clock
-  is fixed, so other devices hold its writes until real time catches up
-  (§5.3). The app shows a sync warning when its own clock is more than 5
-  minutes behind its last timestamp.
-- If the relay stops running, sync stops. Local data is unaffected.
+- The storage provider and anyone with access to the folder can read and
+  alter the files (H1, H2).
+- A member device is trusted; a removed device keeps what it downloaded and
+  its login until the user revokes it at the provider (H6, H7).
+- A device whose clock ran far ahead keeps winning until other devices' clocks
+  pass its stamps; the 24-hour guard keeps the damage to a day (§5.3).
+- If the location is unreachable, sync stops. Local data is unaffected.
 
 ---
 
@@ -586,10 +568,10 @@ treats it, is part of the review in §10.
 
 **Requested:** background services that pass data while the device is locked.
 
-With a relay, two devices no longer need to be awake at the same time. Each
-device uploads and fetches whenever its operating system gives it time, and
-the relay holds changes in between. What remains is each system's rule for
-background network work:
+With files in a folder, two devices never need to be awake at the same time.
+Each device writes and reads whenever its operating system gives it time, and
+the folder holds the files in between. What remains is each system's rule for
+background work:
 
 - **Android (and `meta-horizon`).** A periodic WorkManager job with a network
   constraint (15 minutes is the shortest interval), plus a one-off job after
@@ -599,22 +581,24 @@ background network work:
   so sync waits until then.
 - **iOS and iPadOS.** A BackgroundTasks app-refresh task, which the system
   schedules based on how the app is used, plus a short background task that
-  uploads pending changes when the app leaves the foreground. The user's
+  writes pending changes when the app leaves the foreground. The user's
   Background App Refresh setting and Low Power Mode can stop it. To work on a
-  locked device, the sync store and keys must be readable after first unlock
-  (`NSFileProtectionCompleteUntilFirstUserAuthentication`, and Keychain items
-  with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), not only while
-  unlocked.
+  locked device, the sync store and the location's login must be readable
+  after first unlock (`NSFileProtectionCompleteUntilFirstUserAuthentication`,
+  and Keychain items with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`),
+  not only while unlocked.
 - **tvOS and visionOS.** Sync on launch and on return to the foreground, and
   background refresh where the system grants it, to be confirmed on hardware.
-- **macOS and Windows.** Sync while the app runs. Background sync while it is
-  closed is a later option.
+- **macOS and Windows.** Sync while the app runs. For folder locations the
+  provider's own client (OneDrive, iCloud for Windows, Dropbox) uploads the
+  file after the app wrote it, so a write before quitting is enough.
+  Background sync while the app is closed is a later option.
 
 **Product rules**
 
 - Background sync is best-effort. Opening the app always syncs, and the UI
   shows the last-synced time.
-- No data is written to unprotected storage while locked (R14).
+- No data is written to unprotected storage while locked (H9).
 
 **Acceptance criteria**
 
@@ -630,91 +614,140 @@ background network work:
 ## 9. Shared product rule changes and parity
 
 Changes that affect more than one platform must name every affected branch
-(constraint 7). The rules in §5 (sync protocol and merge), §6 (pairing and
-keys), and §4 (parental API) affect every platform that syncs or enforces
-controls. Each branch implements and tests them natively:
+(constraint 7). The rules in §5 (locations, file format, and merge), §6
+(handoff and pairing), and §4 (parental API) affect every platform that syncs
+or enforces controls. Each branch implements and tests them natively:
 
-| Rule | apple | android | meta-horizon | windows | web | xbox | sync |
-|---|---|---|---|---|---|---|---|
-| Relay protocol (§5.2) | Implement | Implement | Inherit from android | Implement | N/A (no sync) | Implement | Implement the relay side |
-| Per-register merge (§5.3) | Implement | Implement | Inherit from android | Implement | N/A | Implement | N/A (cannot read data) |
-| Pairing, keys, recovery (§6) | Implement | Implement | Inherit from android | Implement | N/A | Implement | Mailbox and envelope storage only |
-| Parental controls (§4) | Implement | Implement | Implement | Implement | N/A | Implement | N/A |
-| Privacy disclosures (§2) | App Store label | Play Data safety | Horizon Store | Microsoft Store | Privacy policy, 8 languages | Microsoft Store | Document retention and logging |
+| Rule | apple | android | meta-horizon | windows | web | xbox |
+|---|---|---|---|---|---|---|
+| Sync locations and file layout (§5.2) | Implement | Implement | Inherit from android | Implement (replaces the OneDrive replica) | N/A (no sync) | Implement |
+| `updateTime` merge (§5.3) | Implement | Implement | Inherit from android | Implement | N/A | Implement |
+| Handoff v2 and pairing (§6.2) | Implement (QR; keep the Apple-only handoff) | Implement (QR and code; keep v1 for Android TV) | Inherit from android | Implement (QR and code) | N/A | Implement |
+| Google Drive across ecosystems (§6.4) | Implement | Implement | Inherit from android | Implement | N/A | Implement |
+| Parental controls (§4) | Implement | Implement | Implement | Implement | N/A | Implement |
+| Privacy disclosures (§6.6) | App Store label | Play Data safety | Horizon Store | Microsoft Store | Privacy policy, 8 languages | Microsoft Store |
 
 `meta-horizon` is downstream of `android`, so it inherits android changes; it
 does not duplicate them by hand. The Web branch remains static and
 credential-free (constraint 8): it never syncs or stores history, and only
-publishes the updated privacy policy. `sync` is the relay, not a client: it
-never sees plaintext and shares no code with any client (constraint 1). The
-protocol and its test vectors are specified once on `main` (§5.2) and
-implemented natively everywhere.
+publishes the updated privacy policy. The file format, the merge rule, and the
+handoff are specified once on `main` ([SYNC-PROTOCOL.md](SYNC-PROTOCOL.md))
+with test vectors that every branch copies into its own native tests, naming
+the `main` commit, as platform branches already do with `scenes` exports.
 
 ---
 
 ## 10. Decisions needed before implementation
 
-1. **Sync model — decided 2026-11-01:** end-to-end encrypted sync spaces on an
-   Edendale-operated relay, not accounts with readable data on a server (§2,
-   §5, §6).
-2. **Rules — decided 2026-11-01:** the §2 wording is applied to AGENTS.md,
-   CLAUDE.md, DESIGN.md, and README.md on `main`, and `sync` is in the branch
-   tables. It still has to reach the platform branches.
-3. **Bluetooth:** drop it from 27.1 (recommended), and revisit only if offline
-   device-to-device sync is wanted later.
-4. **Hosting:** Cloudflare Workers with Durable Objects (recommended) or a VPS;
-   and who owns the hosting account and the relay's domain.
-5. **F4/F6:** approve QR and CPace pairing through the relay, random space keys
-   with epochs, and the recovery key (§6.1–§6.4) in place of the PIN-derived
-   key.
-6. **F5:** approve the per-register HLC merge with a device-ID tie-break, and
-   the changes to existing merge code (§5.3).
-7. **Recovery key:** required before sync turns on, or skippable after a
-   warning.
-8. **Rollout order:** Android first, since it has no live sync today, then
-   Apple and Windows; `meta-horizon` inherits Android.
-9. **Self-hosting:** whether 27.1 lets a user enter their own relay address, or
-   that waits for a later release.
-10. **Legal and store review** of the relay: the metadata it processes
-    (network addresses are personal data in some jurisdictions), retention,
-    the hosting provider's data-processing terms, and each store's disclosure.
-    This document does not provide legal advice.
-11. **F3:** Choose the Xbox playback and UI stack, or defer F3 to 27.2.
-12. **F1:** Choose whether visionOS is in 27.1.
-13. **F2:** Commission a legal review for age-rating and kids-category rules.
-14. **F9:** Accept best-effort background sync and set the locked-device test
-    matrix (§8).
+**Decided 2026-11-02**
 
-Items 3, 5, and 6 change the request, so they need an explicit yes before any
-branch implements them.
+- **Sync model:** JSON files on storage the user owns; no Edendale service of
+  any kind. The 2026-11-01 relay and the 2026-11-01 rule amendments are
+  withdrawn (§2, §5).
+- **Merge:** one `updateTime` field per record and per file; the newest
+  record wins as a whole, with the tie-break, stamping, and guard rules of
+  §5.3.
+- **One sync location per device** at a time (§5.1).
+- **One file per device** inside each space folder, never one shared file
+  per space (§5.2).
+- **Google Drive across ecosystems:** the handoff carries the login only
+  within an ecosystem; across ecosystems the new device signs in to Google
+  again, with the account pre-filled (§6.4). Every other provider's login
+  transfers.
+- **iCloud Drive as a location:** yes on iPhone, iPad, Mac, and Vision Pro
+  (the app's own iCloud Drive folder, or any folder picked in Files), and on
+  Windows through iCloud for Windows as a folder. Not on Apple TV, Android, or
+  Quest, which have no iCloud Drive at all; Apple TV keeps its CloudKit sync
+  with other Apple devices.
+- **Bluetooth:** dropped from 27.1.
+
+**Still open**
+
+1. **OneDrive path:** the app folder (`Apps/Edendale/`, scope
+   `Files.ReadWrite.AppFolder`, where the Windows replica already lives) or
+   any path (`Files.ReadWrite`). Recommended: the app folder.
+2. **Typed-code pairing on Apple** to non-Apple devices: skip for 27.1 and
+   rely on QR plus a phone as the bridge (recommended), or adopt a PAKE
+   library on Apple.
+3. **Windows migration:** delete the old `user-media.json` and
+   `watch-progress.json` after importing them, or leave them.
+4. **Tombstone retention:** one year (proposed).
+5. **Scopes and capabilities to change** (owner actions in each provider's
+   console, then each branch):
+   - Google: none. `drive.file` already allows creating and reading the
+     app's own folder and files. `windows` still asks `drive.readonly` on its
+     release branch; `windows-27.0.2` has `drive.file`.
+   - OneDrive: add `Files.ReadWrite.AppFolder` (decision 1) as a delegated
+     permission on the Entra app registration and in every client's scope
+     list. Existing sign-ins must consent again; the apps prompt when the
+     refresh returns the old scopes.
+   - Dropbox: enable `files.content.write` on the app in the Dropbox App
+     Console and add it to every client's scope list; existing sign-ins must
+     authorize again.
+   - iCloud Drive (`apple`): add iCloud Documents to the iCloud capability
+     (`com.apple.developer.icloud-services` gains `CloudDocuments`, with
+     `com.apple.developer.ubiquity-container-identifiers`), and
+     `NSUbiquitousContainers` in Info.plist with
+     `NSUbiquitousContainerIsDocumentScopePublic` set, so the folder appears in
+     Files, Finder, and iCloud for Windows. The folder stays hidden until the
+     first file is written.
+   - Folders: Android needs a persisted Storage Access Framework permission
+     for the picked tree; Windows keeps the picked folder in its future-access
+     list; Apple keeps a security-scoped bookmark.
+   - Servers: no scopes; the WebDAV, SMB, and SFTP connectors need write
+     support (`PUT` and `MKCOL`, SMB create and write, SFTP write) on every
+     branch that offers them as locations.
+6. **Rollout order:** Android first, since it has no live sync today, then
+   Apple and Windows; `meta-horizon` inherits Android.
+7. **Legal and store review:** how Google Play's Data safety form and the App
+   Store privacy label treat user-initiated transfers to the user's own cloud
+   account. This document does not provide legal advice.
+8. **Cleanup of the relay work** (owner): done on 2026-11-02 for the Worker
+   (`edendale-sync` deleted), the `sync` and protocol-draft branches and
+   worktrees (the `sync` branch was never on the remote). Still to do: revoke
+   the Cloudflare API token and delete the GitHub `sync-production`
+   environment that holds a copy of it.
+9. **F3:** Choose the Xbox playback and UI stack, or defer F3 to 27.2.
+10. **F1:** Choose whether visionOS is in 27.1.
+11. **F2:** Commission a legal review for age-rating and kids-category rules.
+12. **F9:** Accept best-effort background sync and set the locked-device test
+    matrix (§8).
 
 ---
 
 ## 11. Verification (for the eventual implementation)
 
-- Each platform branch, and `sync`, documents its exact native build and test
-  commands in its own README when its implementation lands.
-- Protocol: test vectors in `SYNC-PROTOCOL.md` for CPace transcripts, HKDF
-  subkeys, batch encryption with tampered AAD and tampered ciphertext (both
-  must fail), key envelopes, and recovery-key derivation. Every client and the
-  relay pass the same vectors.
-- Merge: property tests that any number of replicas converge regardless of
-  batch order, duplicates, and snapshots, including ties, clock skew, held
-  future timestamps, and cleared values.
-- Clients: each branch tests its sync client against an in-memory fake relay
-  written natively in its own tests, so no CI checks out `sync` (constraint 2).
-- Relay: tests that a non-member cannot read or append, that a removed device
-  is refused at once, that limits hold, that deleting a space removes
-  everything, and that no request body or network address is logged.
-- End to end, before release: a manual run across Android, iPhone, Apple TV,
-  Windows, and Quest against a staging relay. Pair by QR code and by typed
-  code, watch on one device and resume on another, remove a device, and
-  recover with the recovery key.
-- Log hygiene: an automated test that no pairing code, recovery key, space key,
-  or device key appears in log output (R15).
-- Parity: each affected branch runs the same rule test cases, implemented
+- Each platform branch documents its exact native build and test commands in
+  its own README when its implementation lands.
+- **File format and merge:** the test vectors in
+  [SYNC-PROTOCOL.md](SYNC-PROTOCOL.md) (device files in, merged state out,
+  covering ties, tombstones, the far-future guard, monotonic stamping, and
+  malformed files) pass on every client. Property tests that any number of
+  devices converge regardless of the order files are read.
+- **Handoff:** the key-schedule vectors in SYNC-PROTOCOL.md (HKDF and HMAC
+  outputs for the published X25519 vectors), the QR payload vector, RFC 8236's
+  J-PAKE vectors where J-PAKE is used, and a wrong-code and a wrong-secret
+  case that must both fail before any payload is sent.
+- **Connectors:** writes against local servers in each branch's tests (a
+  WebDAV server, an SMB share, an SFTP server), and the API providers against
+  recorded responses.
+- **Probes before implementation:** (1) a folder created under `drive.file` by
+  the iOS client is listed by the Android and Windows clients of the same
+  Cloud project; (2) the app's iCloud Drive folder appears in iCloud for
+  Windows on a PC; (3) OneDrive's app folder works for a personal Microsoft
+  account with `Files.ReadWrite.AppFolder`.
+- **End to end, before release:** a manual run across Android, iPhone, Apple
+  TV, Windows, and Quest, with Google Drive, OneDrive, Dropbox, a WebDAV
+  share, and a picked folder as locations. Pair by QR code and by typed code,
+  watch on one device and resume on another, remove a device, switch
+  locations, and set up a device with a Google Drive location across
+  ecosystems.
+- **Log hygiene:** an automated test that no pairing code, QR secret, session
+  key, refresh token, or password appears in log output (H10).
+- **Parity:** each affected branch runs the same rule test cases, implemented
   natively.
 
-This revision is documentation only. The code references in §5.3 and §5.5
-were checked against the `android`, `apple`, and `windows` branches on
-2026-11-01; no platform build applies.
+This revision is documentation only. The code references in §5.3, §5.5, §6.2,
+and §6.4 were checked against the `android`, `android-27.0.1`, `apple`,
+`windows`, and `windows-27.0.2` branches on 2026-11-02; no platform build
+applies.

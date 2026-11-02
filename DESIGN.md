@@ -97,8 +97,7 @@ untracked opacity changes; add a named token when a new role is needed.
 
 - Local libraries store device-specific paths and access grants on the device.
 - Portable watch state, when supported, is stored separately and syncs only
-  through a documented user-controlled service or the end-to-end encrypted
-  sync relay.
+  through a documented user-controlled service.
 - Filename classification is local and precedes metadata enrichment.
 - Network work must not block the initial import experience.
 - Web remains a static information and verified-link surface; it stores no
