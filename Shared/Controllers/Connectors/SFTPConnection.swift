@@ -319,6 +319,103 @@ nonisolated final class SFTPConnection: @unchecked Sendable {
         return total
     }
 
+    /// Closes the file `openFile(atPath:)` opened, if any.
+    func closeFile() {
+        guard let sftp = try? activeSFTP() else { return }
+        let handle = lock.withLock { () -> Data? in
+            defer { file = nil }
+            return file
+        }
+        if let handle {
+            _ = try? wait(sftp.request { SFTPProtocol.close(id: $0, handle: handle) })
+        }
+    }
+
+    /// The whole file at `path`: for small files, such as sync files.
+    func readFile(atPath path: String, limit: Int) throws -> Data {
+        let size = try openFile(atPath: path)
+        defer { closeFile() }
+        if size > limit { throw SFTPFileTooLarge() }
+        var data = Data()
+        let chunk = 256 * 1024
+        var buffer = [UInt8](repeating: 0, count: chunk)
+        while true {
+            let count = try buffer.withUnsafeMutableBufferPointer { pointer in
+                try read(atOffset: Int64(data.count), into: pointer.baseAddress!, length: chunk)
+            }
+            if count <= 0 { break }
+            data.append(buffer, count: count)
+            if data.count > limit { throw SFTPFileTooLarge() }
+        }
+        return data
+    }
+
+    // MARK: - Writing
+
+    /// Writes `data` as a new file at `path`, replacing one already there.
+    func writeFile(atPath path: String, data: Data) throws {
+        let sftp = try activeSFTP()
+        let opened = try wait(sftp.request {
+            SFTPProtocol.open(id: $0, path: path, flags: [.write, .create, .truncate])
+        })
+        guard case .handle(_, let handle) = opened else { throw failure(opened, path: path, isFolder: false) }
+        defer { _ = try? wait(sftp.request { SFTPProtocol.close(id: $0, handle: handle) }) }
+
+        var offset = 0
+        while offset < data.count {
+            let end = min(offset + Self.readChunkSize, data.count)
+            let piece = data.subdata(in: offset..<end)
+            let position = UInt64(offset)
+            let response = try wait(sftp.request {
+                SFTPProtocol.write(id: $0, handle: handle, offset: position, data: piece)
+            })
+            guard case .status(_, let code, _) = response, code == SFTPProtocol.Status.ok.rawValue else {
+                throw failure(response, path: path, isFolder: false)
+            }
+            offset = end
+        }
+    }
+
+    func createDirectory(atPath path: String) throws {
+        let sftp = try activeSFTP()
+        let response = try wait(sftp.request { SFTPProtocol.mkdir(id: $0, path: path) })
+        guard case .status(_, let code, _) = response, code == SFTPProtocol.Status.ok.rawValue else {
+            throw failure(response, path: path, isFolder: true)
+        }
+    }
+
+    func removeFile(atPath path: String) throws {
+        let sftp = try activeSFTP()
+        let response = try wait(sftp.request { SFTPProtocol.remove(id: $0, path: path) })
+        guard case .status(_, let code, _) = response, code == SFTPProtocol.Status.ok.rawValue else {
+            throw failure(response, path: path, isFolder: false)
+        }
+    }
+
+    /// Version 3's rename, which fails on many servers when `newPath`
+    /// exists: callers remove the target first.
+    func renameFile(atPath path: String, toPath newPath: String) throws {
+        let sftp = try activeSFTP()
+        let response = try wait(sftp.request { SFTPProtocol.rename(id: $0, oldPath: path, newPath: newPath) })
+        guard case .status(_, let code, _) = response, code == SFTPProtocol.Status.ok.rawValue else {
+            throw failure(response, path: path, isFolder: false)
+        }
+    }
+
+    /// Whether `path` names a directory, a file, or nothing.
+    func attributes(atPath path: String) throws -> SFTPProtocol.Attributes? {
+        let sftp = try activeSFTP()
+        let response = try wait(sftp.request { SFTPProtocol.stat(id: $0, path: path) })
+        switch response {
+        case .attributes(_, let attributes):
+            return attributes
+        case .status(_, let code, _) where code == SFTPProtocol.Status.noSuchFile.rawValue:
+            return nil
+        default:
+            throw failure(response, path: path, isFolder: false)
+        }
+    }
+
     // MARK: - Stopping
 
     func abort() {
@@ -420,6 +517,8 @@ private nonisolated final class OncePromise<Value: Sendable>: @unchecked Sendabl
 
 private nonisolated struct TimedOut: Error {}
 private nonisolated struct SessionClosed: Error {}
+/// A file past the size a whole-file read accepts.
+nonisolated struct SFTPFileTooLarge: Error {}
 
 /// The server refused every login offered; `acceptedMethods` are the ones it
 /// said it would take.

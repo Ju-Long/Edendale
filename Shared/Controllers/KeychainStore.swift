@@ -32,6 +32,13 @@ nonisolated struct KeychainStore: SecretStore {
     /// The app's single store, namespaced by `AppIdentifiers.keychainService`.
     static let shared = KeychainStore(service: AppIdentifiers.keychainService)
 
+    /// Items that never leave this device: not synchronizable, and not
+    /// restored from a backup onto another device
+    /// (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`). The sync
+    /// device ID lives here (SYNC-PROTOCOL.md §3, FEATURES-27.1.md §5.5):
+    /// two devices sharing one ID would overwrite each other's file.
+    static let local = KeychainStore(service: AppIdentifiers.keychainService, synchronizable: false)
+
     /// Every stored item is declared here so account names stay unique and greppable.
     enum Key: String {
         case tmdbUserSession = "tmdb-user-session"
@@ -40,6 +47,9 @@ nonisolated struct KeychainStore: SecretStore {
     }
 
     let service: String
+    /// Whether items ride iCloud Keychain. The two stores never see each
+    /// other's items, even under the same account name.
+    var synchronizable = true
 
     // MARK: - Read
 
@@ -65,7 +75,7 @@ nonisolated struct KeychainStore: SecretStore {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+            kSecAttrSynchronizable as String: synchronizableQueryValue,
             kSecUseDataProtectionKeychain as String: true,
             kSecMatchLimit as String: kSecMatchLimitAll,
             kSecReturnAttributes as String: true
@@ -89,10 +99,13 @@ nonisolated struct KeychainStore: SecretStore {
         SecItemDelete(baseQuery(account: account) as CFDictionary)
         var attributes = baseQuery(account: account)
         attributes[kSecValueData as String] = value
-        // Adds must say exactly `true` (the Any wildcard is query-only), and
-        // synchronizable items cannot use a ThisDeviceOnly accessibility class.
-        attributes[kSecAttrSynchronizable as String] = true
-        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        // Adds must say exactly `true` or `false` (the Any wildcard is
+        // query-only), and synchronizable items cannot use a ThisDeviceOnly
+        // accessibility class.
+        attributes[kSecAttrSynchronizable as String] = synchronizable
+        attributes[kSecAttrAccessible as String] = synchronizable
+            ? kSecAttrAccessibleAfterFirstUnlock
+            : kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         let status = SecItemAdd(attributes as CFDictionary, nil)
         guard status == errSecSuccess else { throw KeychainError(status: status) }
     }
@@ -112,12 +125,17 @@ nonisolated struct KeychainStore: SecretStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            // Match synced and local copies alike when reading or deleting.
-            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+            // The synced store matches synced and local copies alike when
+            // reading or deleting; the local store only its own items.
+            kSecAttrSynchronizable as String: synchronizableQueryValue,
             // Without this, macOS targets the legacy file-based keychain,
             // which cannot hold synchronizable items.
             kSecUseDataProtectionKeychain as String: true
         ]
+    }
+
+    private var synchronizableQueryValue: Any {
+        synchronizable ? kSecAttrSynchronizableAny : false
     }
 }
 

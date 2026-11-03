@@ -441,6 +441,8 @@ final class PlayerSession {
         stopAndRetirePlayer()
         chrome = nil
         item = nil
+        // Playback stopped: the sync file is written at once (SYNC-PROTOCOL.md §8.1).
+        NotificationCenter.default.post(name: SyncCoordinator.flushRequested, object: nil)
         reattachedSubtitleIDs = []
         isHiddenForPictureInPicture = false
         surfaceReady = false

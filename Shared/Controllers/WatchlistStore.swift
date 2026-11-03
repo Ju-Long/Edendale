@@ -31,6 +31,14 @@ final class WatchlistStore {
     private(set) var isSyncing = false
     private(set) var lastSyncError: String?
 
+    /// Called when a change made here, or confirmed from TMDB, flips a
+    /// title's watchlist flag, so UserMediaStore can stamp the portable
+    /// record (SYNC-PROTOCOL.md §6.2). Not called for mirrored changes.
+    @ObservationIgnored var onLocalChange: ((MediaRef, Bool) -> Void)?
+    /// Fetches a title's card metadata for a watchlist add that arrived
+    /// from another device. Best effort.
+    @ObservationIgnored var metadataLoader: (@Sendable (MediaRef) async throws -> WatchlistMetadata)?
+
     @ObservationIgnored private var isRunningRemoteWork = false
     @ObservationIgnored private var pendingPushRequested = false
     @ObservationIgnored private var fullSyncRequested = false
@@ -54,6 +62,7 @@ final class WatchlistStore {
         self.modelContext = modelContext
         self.account = account
         self.isAuthenticated = isAuthenticated
+        metadataLoader = { ref in WatchlistMetadata(try await TMDBService.shared.mediaDetail(ref)) }
         migrateLegacyWatchlist(from: legacyContext)
         reloadIndex()
     }
@@ -75,6 +84,23 @@ final class WatchlistStore {
         for ref: MediaRef,
         metadata: WatchlistMetadata? = nil
     ) {
+        apply(inWatchlist, for: ref, metadata: metadata, mirrored: false)
+    }
+
+    /// A watchlist flag from another device (a sync file, or a CloudKit
+    /// row): applied like a local change and pushed to TMDB, but not
+    /// re-stamped. The card's metadata is fetched afterwards when missing.
+    func mirror(_ inWatchlist: Bool, for ref: MediaRef) {
+        guard isInWatchlist(ref) != inWatchlist else { return }
+        apply(inWatchlist, for: ref, metadata: nil, mirrored: true)
+        guard inWatchlist, let metadataLoader else { return }
+        Task { [weak self] in
+            guard let metadata = try? await metadataLoader(ref) else { return }
+            self?.updateMetadata(metadata, for: ref)
+        }
+    }
+
+    private func apply(_ inWatchlist: Bool, for ref: MediaRef, metadata: WatchlistMetadata?, mirrored: Bool) {
         do {
             let existing = try item(for: ref)
             guard existing != nil || inWatchlist else { return }
@@ -93,7 +119,22 @@ final class WatchlistStore {
 
             try modelContext.save()
             reloadIndex()
-            if stateChanged || existing == nil { requestPendingPush() }
+            if stateChanged || existing == nil {
+                requestPendingPush()
+                if !mirrored { onLocalChange?(ref, inWatchlist) }
+            }
+        } catch {
+            lastSyncError = error.localizedDescription
+        }
+    }
+
+    /// Fills in a card's metadata once it is known.
+    private func updateMetadata(_ metadata: WatchlistMetadata, for ref: MediaRef) {
+        do {
+            guard let item = try item(for: ref) else { return }
+            item.apply(metadata)
+            try modelContext.save()
+            reloadIndex()
         } catch {
             lastSyncError = error.localizedDescription
         }
@@ -207,6 +248,7 @@ final class WatchlistStore {
             uniqueKeysWithValues: localItems.map { ($0.storageKey, $0) }
         )
         let remoteKeys = Set(remoteItems.map { WatchlistItem.key(for: $0.ref) })
+        var flipped: [(MediaRef, Bool)] = []
 
         for remote in remoteItems {
             let key = WatchlistItem.key(for: remote.ref)
@@ -229,6 +271,8 @@ final class WatchlistStore {
                 // A local removal has not appeared on TMDB yet.
                 local.isInWatchlist = false
             case .add, .none:
+                // A title added on TMDB's site is a new local write (§5.5).
+                if !local.isInWatchlist { flipped.append((local.ref, true)) }
                 local.isInWatchlist = true
                 local.pendingAction = .none
             }
@@ -242,12 +286,14 @@ final class WatchlistStore {
             case .remove, .none:
                 // A pending removal is now confirmed; a confirmed row absent
                 // remotely was removed outside Edendale.
+                if local.pendingAction == .none, local.isInWatchlist { flipped.append((local.ref, false)) }
                 modelContext.delete(local)
             }
         }
 
         try modelContext.save()
         reloadIndex()
+        for (ref, flag) in flipped { onLocalChange?(ref, flag) }
     }
 
     // MARK: - Persistence helpers

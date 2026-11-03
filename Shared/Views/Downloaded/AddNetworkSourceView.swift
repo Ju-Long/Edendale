@@ -33,7 +33,7 @@ enum LinkSourceStep: Hashable {
 }
 
 /// A server login to save once a folder is picked.
-struct PendingLogin: Equatable {
+struct PendingLogin: Hashable {
     let kind: MediaSourceKind
     /// The server host, or the account key for S3.
     let host: String
@@ -151,7 +151,7 @@ private struct LinkSourceProviderList: View {
             } header: {
                 Text("Cloud Storage").labelCaps()
             } footer: {
-                Text("Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose.")
+                Text("Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync.")
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
             }

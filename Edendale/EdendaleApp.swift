@@ -16,6 +16,8 @@ struct EdendaleApp: App {
     @State private var userMediaStore: UserMediaStore
     @State private var tmdbAccount = TMDBAccountStore()
     @State private var cloudAccounts: CloudAccountStore
+    /// File-based sync with the user's other devices (FEATURES-27.1.md §5).
+    @State private var sync: SyncCoordinator
     #if os(iOS)
     /// Listens for Apple TVs asking for an account (AccountHandoff).
     @State private var accountHandoff = AccountHandoffCenter()
@@ -52,7 +54,36 @@ struct EdendaleApp: App {
         _cloudAccounts = State(initialValue: cloudAccounts)
         _watchStore = State(initialValue: ws)
         _watchlistStore = State(initialValue: watchlistStore)
-        _userMediaStore = State(initialValue: UserMediaStore())
+        let userMediaStore = UserMediaStore()
+        _userMediaStore = State(initialValue: userMediaStore)
+        // The watchlist flag travels in the user-media sync record: a change
+        // made here stamps that record, and one that arrives (from a file
+        // or through CloudKit) reaches the watchlist's cards and TMDB mirror.
+        watchlistStore.onLocalChange = { [userMediaStore] ref, inWatchlist in
+            userMediaStore.setWatchlistFlag(inWatchlist, for: ref)
+        }
+        userMediaStore.onWatchlistSynced = { [watchlistStore] ref, inWatchlist in
+            watchlistStore.mirror(inWatchlist, for: ref)
+        }
+        // Before the first sync can write the flag out: rows from before
+        // 27.1 take it from the local watchlist, and the watchlist follows
+        // rows another device changed while nothing was listening.
+        let listed = watchlistStore.items.filter(\.isInWatchlist)
+        let mirrors = userMediaStore.reconcileWatchlist(
+            listed: Set(listed.map(\.ref)),
+            dates: Dictionary(listed.map { ($0.ref, $0.updatedAt) }, uniquingKeysWith: { first, _ in first })
+        )
+        for (ref, inWatchlist) in mirrors {
+            watchlistStore.mirror(inWatchlist, for: ref)
+        }
+        let sync = SyncCoordinator(watchStore: ws, userMediaStore: userMediaStore)
+        _sync = State(initialValue: sync)
+        if !Persistence.isRunningUnitTests {
+            sync.start()
+            #if os(iOS)
+            SyncBackgroundRefresh.coordinator = sync
+            #endif
+        }
         let audioEnhancement = AudioEnhancementController()
         let videoAdjustment = VideoAdjustmentController()
         _audioEnhancement = State(initialValue: audioEnhancement)
@@ -86,6 +117,7 @@ struct EdendaleApp: App {
                 .environment(userMediaStore)
                 .environment(tmdbAccount)
                 .environment(cloudAccounts)
+                .environment(sync)
                 #if os(iOS)
                 .environment(accountHandoff)
                 #endif
@@ -132,6 +164,7 @@ struct EdendaleApp: App {
                 .environment(userMediaStore)
                 .environment(tmdbAccount)
                 .environment(cloudAccounts)
+                .environment(sync)
                 .environment(wyzieKeys)
                 .environment(youngAudienceFilter)
                 .environment(audioEnhancement)
@@ -147,6 +180,18 @@ struct EdendaleApp: App {
 
 #if os(iOS)
 final class EdendaleAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        // Background app refresh for sync (FEATURES-27.1.md §8); the
+        // handler must be registered before launching finishes.
+        if !Persistence.isRunningUnitTests {
+            SyncBackgroundRefresh.register()
+        }
+        return true
+    }
+
     func application(
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?

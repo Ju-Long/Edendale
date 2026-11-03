@@ -87,7 +87,8 @@ struct SettingsView: View {
             SettingsRow(String(localized: "Version"), value: appVersion)
             SettingsRow(
                 String(localized: "Watch Progress"),
-                value: String(localized: "Synced via your iCloud")
+                value: String(localized: "Synced via your iCloud"),
+                detail: String(localized: "Settings → Sync adds your own storage, for devices outside iCloud.")
             )
             #if os(macOS) || os(tvOS)
             // Kept at the top of the page: tvOS scrolls by focus, so text
@@ -143,6 +144,8 @@ struct SettingsView: View {
             showImporter: $showImporter,
             showLinkSource: $showLinkSource
         )
+
+        SyncSection()
 
         AccountsSection()
 

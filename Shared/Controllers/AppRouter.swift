@@ -19,6 +19,8 @@ enum AppRoute: Equatable, Sendable {
     case playEpisode(tmdbId: Int)
     case playLocalMovie(UUID)
     case playLocalEpisode(UUID)
+    /// `edendale://handoff?…`: a version-2 handoff code opened as a link.
+    case handoff(HandoffV2.QRPayload)
 
     private static let scheme = "edendale"
 
@@ -117,6 +119,8 @@ enum AppRoute: Equatable, Sendable {
         case .playLocalEpisode(let id):
             components.host = "play"
             components.path = "/local-episode/\(id.uuidString.lowercased())"
+        case .handoff(let payload):
+            return payload.url
         }
         return components.url
     }

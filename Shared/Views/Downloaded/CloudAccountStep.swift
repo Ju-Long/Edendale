@@ -147,16 +147,23 @@ struct CloudAccountStep: View {
         #endif
     }
 
+    /// What Edendale may do with the account. Since 27.1 the grant also
+    /// covers the sync files (FEATURES-27.1.md §10), which are written only
+    /// once the account is chosen as the sync location.
     private var privacyNote: String {
         switch kind {
         case .googleDrive:
             #if os(tvOS)
-            String(localized: "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything.")
+            String(localized: "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else.")
             #else
-            String(localized: "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything.")
+            String(localized: "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else.")
             #endif
+        case .oneDrive:
+            String(localized: "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there.")
+        case .dropbox:
+            String(localized: "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there.")
         default:
-            String(localized: "Edendale asks \(kind.displayName) for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything.")
+            String(localized: "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing.")
         }
     }
 

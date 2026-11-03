@@ -72,6 +72,10 @@ final class HTTPStub: URLProtocol, @unchecked Sendable {
         lock.withLock { log[host] ?? [] }
     }
 
+    static func registeredHandler(for host: String) -> Handler? {
+        lock.withLock { handlers[host] }
+    }
+
     static func configuration() -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [HTTPStub.self]

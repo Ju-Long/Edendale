@@ -39,8 +39,12 @@
 	<array>
 		<string>youtube</string>
 	</array>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_edendale-handoff._tcp</string>
+	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.</string>
+	<string>Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

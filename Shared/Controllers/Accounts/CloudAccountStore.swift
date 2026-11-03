@@ -66,9 +66,13 @@ final class CloudAccountStore {
 
     #if !os(tvOS)
     /// The provider's sign-in page, then the account it produced. For
-    /// Google Drive the page also opens Google's picker.
-    func signIn(kind: MediaSourceKind) async throws -> SignIn {
-        let (response, picked) = try await authorize(kind: kind)
+    /// Google Drive the page also opens Google's picker. A `loginHint`
+    /// pre-fills the account (a sync location handed over from another
+    /// ecosystem, FEATURES-27.1.md §6.4).
+    func signIn(kind: MediaSourceKind, loginHint: String? = nil) async throws -> SignIn {
+        var parameters: [String: String] = [:]
+        if let loginHint, !loginHint.isEmpty { parameters["login_hint"] = loginHint }
+        let (response, picked) = try await authorize(kind: kind, parameters: parameters)
         return SignIn(account: try await completeSignIn(kind: kind, tokens: response), pickedFileIDs: picked)
     }
 
