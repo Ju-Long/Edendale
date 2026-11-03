@@ -8,6 +8,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
 namespace Edendale.Windows.Controls;
@@ -532,6 +533,28 @@ internal sealed class HandoffFlow
     {
         _dialog.PrimaryButtonText = primaryKey is null ? "" : Loc.Get(primaryKey);
         _dialog.CloseButtonText = Loc.Get(closeKey);
+        if (primaryKey is not null) RefocusPrimaryButton();
+        // Set last, and afresh, so the dialog works out its default button
+        // again with focus where it now is.
+        _dialog.DefaultButton = primaryKey is null ? ContentDialogButton.None : ContentDialogButton.Primary;
+    }
+
+    /// <summary>
+    /// Hiding the primary button while it has focus leaves focus on Cancel,
+    /// and ContentDialog accents its default button, and lets Enter press it,
+    /// only while focus is outside its button row or on that button. So when
+    /// the primary button returns, focus goes back to it, as when the dialog opens.
+    /// </summary>
+    private void RefocusPrimaryButton()
+    {
+        // CommandSpace and PrimaryButton are the template's names for that row and button.
+        if (FocusManager.GetFocusedElement(_root) is Button focused
+            && VisualTreeHelper.GetParent(focused) is Panel { Name: "CommandSpace" } row
+            && row.Children.OfType<Button>().FirstOrDefault(button => button.Name == "PrimaryButton") is { } primary
+            && primary != focused)
+        {
+            primary.Focus(FocusState.Programmatic);
+        }
     }
 
     private void Enqueue(Action action) => _dispatcher.TryEnqueue(() => action());

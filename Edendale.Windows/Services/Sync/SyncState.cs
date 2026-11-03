@@ -7,6 +7,8 @@
 // cloud location names its account key, a server location its saved login's
 // host, and the credentials stay in their DPAPI stores.
 
+using System.Net;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Edendale.Windows.Core;
@@ -188,7 +190,7 @@ public sealed class SyncState
             lock (_gate)
             {
                 var name = _data.DeviceName;
-                if (string.IsNullOrWhiteSpace(name)) name = Environment.MachineName;
+                if (string.IsNullOrWhiteSpace(name)) name = HostName();
                 return Truncate(name);
             }
         }
@@ -201,6 +203,24 @@ public sealed class SyncState
             }
             Changed?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    /// <summary>
+    /// The PC's name as the person set it. MachineName is only the fallback:
+    /// it is the NetBIOS name, upper-cased and cut to 15 characters.
+    /// </summary>
+    private static string HostName()
+    {
+        try
+        {
+            var host = Dns.GetHostName();
+            if (!string.IsNullOrWhiteSpace(host)) return host;
+        }
+        catch (SocketException)
+        {
+            // No name from the network stack; the NetBIOS name will do.
+        }
+        return Environment.MachineName;
     }
 
     private static string Truncate(string name)
