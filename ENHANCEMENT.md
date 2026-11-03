@@ -1028,6 +1028,6 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | M.4 | Triggers, backoff, background job | Complete (device check not run) | 0cb6569 |
 | M.5 | Handoff version 2 and pairing UI | Complete (device check not run; no in-app camera scanner) | 0cb6569 |
 | M.T1 | JVM tests: vectors, convergence, storages, handoff, log hygiene | Complete | 0cb6569 |
-| M.6 | README and this file | Complete | |
+| M.6 | README and this file | Complete | 32d04ca |
 | M.D1 | Two-device checks | Not run | |
 | M.7 | Owner's console changes and probes | Open | |
