@@ -14,6 +14,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -78,7 +79,13 @@ class OAuthTest {
 
         val microsoft = CloudProviders.configuration(MediaSourceKind.ONE_DRIVE, "guid")!!
         assertEquals("https://login.microsoftonline.com/common/oauth2/v2.0/devicecode", microsoft.deviceAuthorizationEndpoint)
-        assertEquals(listOf("Files.Read", "User.Read", "offline_access"), microsoft.scopes)
+        // 27.1 sync writes the OneDrive app folder (FEATURES-27.1.md §10 decision 1).
+        assertEquals(listOf("Files.Read", "Files.ReadWrite.AppFolder", "User.Read", "offline_access"), microsoft.scopes)
+        assertTrue("files.content.write" in CloudProviders.DROPBOX_SCOPES)
+        assertTrue(CloudProviders.hasSyncWriteAccess(MediaSourceKind.ONE_DRIVE, microsoft.scopes))
+        assertFalse(CloudProviders.hasSyncWriteAccess(MediaSourceKind.ONE_DRIVE, listOf("Files.Read", "User.Read", "offline_access")))
+        assertFalse(CloudProviders.hasSyncWriteAccess(MediaSourceKind.DROPBOX, listOf("files.metadata.read", "files.content.read", "account_info.read")))
+        assertTrue(CloudProviders.hasSyncWriteAccess(MediaSourceKind.GOOGLE_DRIVE, CloudProviders.GOOGLE_SCOPES))
         assertEquals("msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D", microsoft.redirectUri)
         // The registered redirect already holds %2B and %3D; they must reach Entra encoded again.
         assertEquals(microsoft.redirectUri, query(OAuthClient(microsoft, OkHttpRemoteHttp()).authorizationUrl("s", "c"))["redirect_uri"])

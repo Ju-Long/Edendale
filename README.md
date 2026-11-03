@@ -271,8 +271,8 @@ hides that provider:
 
 | Key | Registration | Redirect URI |
 |---|---|---|
-| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
-| `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
+| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read Files.ReadWrite.AppFolder User.Read offline_access`; the app-folder scope is new in 27.1 for sync and must be added as a delegated permission), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
+| `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read files.content.write account_info.read`; `files.content.write` is new in 27.1 for sync and must be enabled on the app) | `db-<app key>://2/token` |
 | `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on (Advanced settings), in a Cloud project with the Google Picker API enabled and `https://www.googleapis.com/auth/drive.file` on the consent screen's Data Access page. `drive.file` is non-sensitive, so no scope verification is needed (D9, H.9.4) | `com.babasama.edendale:/oauth2redirect` |
 
 ### Phone-to-TV handoff
@@ -310,6 +310,82 @@ guess per handshake. The code and keys last only for the session, and nothing
 about it is logged. The TV offers the handoff for every provider it has a
 client ID for and for every server kind; OneDrive can also sign in with a code
 on its own.
+
+### Sync between devices
+
+**Settings → Sync** keeps watch progress, favourites, watchlist, and ratings
+the same on every device you own, through storage you already own
+(FEATURES-27.1.md §5 and SYNC-PROTOCOL.md on `main`). Edendale runs no
+server. Sync is off until you choose a **location** and a **space name**:
+
+| Location | How |
+|---|---|
+| A folder on this device | The system folder picker, with a persisted read and write permission (phones and tablets; TVs have no picker) |
+| Google Drive | A linked account; the folders are created under `drive.file`, so Edendale sees only what it made |
+| OneDrive | A linked account; the files live in the app folder, `Apps/Edendale/`, with `Files.ReadWrite.AppFolder` |
+| Dropbox | A linked account, with `files.content.write` |
+| WebDAV, SMB, SFTP | A saved login and the folder inside the server; the connectors create folders and write files (`MKCOL` and `PUT`, SMB create and rename, SFTP write and rename) |
+
+Inside the location every device writes one file,
+`Edendale/<space name>/<device id>.json`: its whole watch state as readable
+JSON, with one `updateTime` (UTC milliseconds) and the writing device's ID on
+every record. It reads the other devices' files and merges them locally: for
+each title the newest record wins as a whole; equal times go to the lexically
+smaller device ID; a device never stamps a write below the highest time it
+has applied, so a slow clock still orders its own write after what it just
+received; a record stamped more than a day ahead is not applied and the
+device is named in a warning; and clearing a rating or progress writes a
+tombstone so an older copy can't bring it back (kept a year). Files that fail
+validation are skipped with a warning naming the device, and never remove
+local data. Nothing but watch records is written there: no library, file
+paths, logins, or TMDB session. When you choose a location the app says so in
+one sentence: anyone who can open the folder can read your watch history.
+
+Sync runs on launch, on return to the foreground, ten seconds after the last
+change (at once when playback stops or the app goes to the background), every
+five minutes in the foreground, and in the background through a periodic
+WorkManager job with a network constraint, which Doze defers. A failed sync
+backs off 1, 2, 4, 8 minutes up to an hour. **Sync Now** ignores the backoff.
+**Turn Off** keeps the local copy and offers to delete this device's file;
+**Remove a Device** deletes another device's file and links to the provider's
+page where you revoke Edendale's access, because a removed device keeps its
+login until you do. Episodes are keyed by show, season, and episode number;
+one received from another device appears here once the library knows the
+episode, and travels on to other devices either way. Values pulled from a
+TMDB account become new local writes stamped when they are pulled.
+
+The device ID and the location settings live in `edendale_sync.xml`, excluded
+from backup and device transfer like the logins, so a restored device makes a
+new ID. The sync tables are in the Room database (schema 4). Sync logs carry
+counts, file names, stamps, and error classes only, in debug builds only; a
+JVM test runs a whole pairing and sync through the log sink and checks that no
+code, QR secret, key, token, or password reaches it.
+
+**Set Up Another Device** and **Pair with Another Device** move the location
+and its login to a new device over the local network (handoff version 2,
+SYNC-PROTOCOL.md §9), so the second device needs no second sign-in. Either
+side may send; you pick the direction first. The host shows a QR code (an
+ephemeral X25519 key and a 128-bit secret) and a six-digit code, and
+advertises `_edendale-handoff._tcp` with `v=2` while the screen is open. The
+other device scans the QR code with its camera and opens the link (Edendale
+registers `edendale://handoff`), pastes the link, or picks the host from the
+list and types the code; the typed code runs J-PAKE over P-256 as the
+phone-to-TV handoff does. Both sides derive one AES-256-GCM key (HKDF-SHA256
+over the transcript, HMAC proofs both ways; the nonce is the direction and a
+counter, and the label is authenticated data). A wrong code or QR code fails
+before anything is sent; a code lasts two minutes and one attempt, and five
+wrong codes in a row pause new codes for a minute. The sender confirms what
+to send with the other device's name on screen: the location, and any other
+linked accounts and saved logins it ticks. A folder location travels as its
+space name only; the receiver picks its own folder. Google Drive logins move
+only within an ecosystem (Android phone to Android TV or Quest): to an
+iPhone, Mac, or PC the handoff sends the account's email and the space
+folder's Drive ID instead, and that device signs in to Google with the email
+pre-filled. The phone-to-TV handoff for library sources (version 1) is
+unchanged; a Link Source host tells a version-2 guest to use the Sync screen.
+
+OneDrive and Dropbox accounts linked before 27.1 lack the write scopes: the
+Sync screen says to sign in again before such an account can be a location.
 
 ### Sources and accounts
 
@@ -535,6 +611,18 @@ tests. Before a release, check on:
   the account, the TV then browses the folders (Google Drive links Videos you
   chose and lists what the phone picked), and a rescan on the TV lists videos
   picked on the phone afterwards.
+- **Sync (27.1):** on two devices, choose the same location and space name
+  (a picked folder on a phone, then Google Drive, OneDrive, Dropbox, a WebDAV
+  share, an SMB share, and an SFTP server), watch on one and resume on the
+  other after a sync; rate and un-rate a title and check the other device
+  follows; set one device's clock a day ahead and check the warning names it;
+  pair a second device both ways (QR code through the camera and the typed
+  code), send the location with an account and with a saved login, and check
+  that a wrong code and a stale QR code fail before anything is sent; remove
+  a device's file and turn sync off with and without deleting the file. On a
+  TV, host the pairing from the Sync screen and receive a location from a
+  phone. Check that an OneDrive or Dropbox account from a build before 27.1
+  is asked to sign in again before it can be a location.
 
 ### DTS and TrueHD
 
@@ -564,9 +652,10 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | OkHttp | Storage providers' HTTP | Apache-2.0 |
 | AndroidX Browser | Custom Tabs for cloud sign-in | Apache-2.0 |
 | sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
-| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE for the phone-to-TV handoff | MIT (Bouncy Castle Licence) |
+| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE, X25519, and HKDF for the device handoffs | MIT (Bouncy Castle Licence) |
+| AndroidX WorkManager | Background sync | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
-| ZXing core | TMDB sign-in QR code | Apache-2.0 |
+| ZXing core | TMDB sign-in and pairing QR codes | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
 | AMD FidelityFX Super Resolution 1.0 (EASU, ported to GLSL) | Upscaling | MIT |
 | Nunito | The Rounded subtitle font | SIL OFL 1.1 |
