@@ -187,23 +187,37 @@ public sealed class SyncEngine : IDisposable
         {
             _writeDebounce?.Dispose();
             _writeDebounce = null;
-            if (!_dirty) return Task.CompletedTask;
         }
+        if (!_state.IsOn || !NeedsWrite()) return Task.CompletedTask;
         return SyncAsync("write-now", userRequested: false);
     }
 
     /// <summary>Settings → Sync now: ignores the backoff.</summary>
     public Task SyncNowAsync() => SyncAsync("user", userRequested: true);
 
+    /// <summary>
+    /// A store changed: sync 10 seconds after the last change (§8.1). Whether
+    /// the file is rewritten depends on the stamps: every local write raises
+    /// the high-water mark, so a change that stamped nothing (an episode id
+    /// matched to the library) costs a read and no write.
+    /// </summary>
     private void OnStoreChanged()
     {
         if (_applying) return;
         lock (_gate)
         {
-            _dirty = true;
             if (!_started || !_state.IsOn) return;
             _writeDebounce?.Dispose();
             _writeDebounce = new Timer(_ => Trigger("local-change"), null, WriteDebounce, Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    /// <summary>Whether this device's file is behind its store: never written, a merge applied, or a stamp since the last write.</summary>
+    private bool NeedsWrite()
+    {
+        lock (_gate)
+        {
+            return _dirty || _state.LastWriteMillis == 0 || _clock.HighWater > _state.WrittenHighWater;
         }
     }
 
@@ -403,10 +417,9 @@ public sealed class SyncEngine : IDisposable
 
             // 3. Write this device's file when anything changed since the last write:
             //    a local edit, a merge above, a first sync, or stamps applied since.
-            bool dirty;
-            lock (_gate) dirty = _dirty || _state.LastWriteMillis == 0 || _clock.HighWater > _state.WrittenHighWater;
-            if (dirty)
+            if (NeedsWrite())
             {
+                var builtAt = _clock.HighWater;
                 var file = BuildOwnFile(location.Space);
                 var bytes = SyncDeviceFileCodec.Encode(file);
                 try
@@ -414,7 +427,7 @@ public sealed class SyncEngine : IDisposable
                     await target.WriteAsync(location.Space, ownFile, bytes, cancellation).ConfigureAwait(false);
                     wrote = true;
                     lock (_gate) _dirty = false;
-                    _state.WrittenHighWater = file.UpdateTime;
+                    _state.WrittenHighWater = Math.Max(builtAt, file.UpdateTime);
                     SyncLog.Info("sync", $"wrote own file: {file.WatchProgress.Count} progress, {file.UserMedia.Count} user-media records, {bytes.Length} bytes, stamp {file.UpdateTime}");
                 }
                 catch (Exception error) when (error is not OperationCanceledException || cancellation.IsCancellationRequested)

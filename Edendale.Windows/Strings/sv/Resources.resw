@@ -149,7 +149,7 @@
     <value>DITT ARKIV</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>Bibliotekets index stannar på den här enheten. Visningsförlopp, favoriter och betyg lagras också här och replikeras till ditt eget OneDrive när det är konfigurerat – ingen tredjepartsserver är någonsin inblandad. Din visningslista lagras här och synkroniseras med ditt TMDB-konto när du ansluter ett.</value>
+    <value>Bibliotekets index stannar på den här enheten. Visningsförlopp, favoriter, din visningslista och betyg lagras också här och, när du slår på synkning, förs de genom en mapp eller ett konto som du väljer – Edendale har ingen server. Din visningslista synkroniseras också med ditt TMDB-konto när du ansluter ett.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Datamapp</value>
@@ -1657,5 +1657,308 @@
   </data>
   <data name="OAuth_DifferentAccount" xml:space="preserve">
     <value>De videorna valdes som {0}. Använd Välj fler videor igen med {1}.</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>SYNKRONISERING</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>Håll tittarförlopp, favoriter, bevakningslista och betyg lika på alla dina enheter via en mapp eller ett konto du äger. Edendale kör ingen server: varje enhet skriver en läsbar fil.</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>VÄLJ EN PLATS…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>PARA IHOP MED EN ANNAN ENHET…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>KONFIGURERA EN ANNAN ENHET…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>Konfigurera en annan enhet</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>Para ihop med en annan enhet</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>Plats</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>Utrymme</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>Den här enheten</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>Senast synkroniserad {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>Inte synkroniserad ännu</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>Synkroniserar…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>SYNKRONISERA NU</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>STÄNG AV</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>Ta bort en enhet</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>Logga in på {0} igen så att Edendale kan skriva sina synkroniseringsfiler där.</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>Inloggningen för den här platsen finns inte längre på den här enheten. Välj platsen igen.</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>Uppdatera Edendale för att synkronisera med {0}.</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>Klockan på {0} går mer än en dag före; de senaste ändringarna tillämpades inte.</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>Den senaste synkroniseringen misslyckades: {0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>Alla som kan öppna den här mappen kan läsa din tittarhistorik. Filerna innehåller titlar som TMDB-ID, förlopp, betyg, bevakningslista, favoriter och recensioner; aldrig ditt bibliotek, filsökvägar eller inloggningar.</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>Välj en plats</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>Utrymmets namn</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>Enheter som pekar på samma plats och samma utrymmesnamn synkroniseras med varandra. Upp till 64 tecken, utan / \ : * ? " &lt; &gt; |.</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>En mapp på den här enheten</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>Välj mapp</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>Mapp på {0}</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>Stänga av synkroniseringen?</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>Din tittarhistorik stannar på den här enheten. Filerna i {0} stannar också, om du inte tar bort den här enhetens fil.</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>Stäng av och ta bort min fil</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>Stäng av, behåll filen</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>Ta bort en enhet</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>Att ta bort en enhets fil hindrar dess historik från att nå de andra. Den enheten behåller sin inloggning och sin lokala kopia tills du återkallar Edendales åtkomst hos leverantören eller byter serverlösenordet.</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>Hantera åtkomst hos {0}</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>Ingen annan enhet har skrivit till det här utrymmet ännu.</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>Välj mappen som den här enheten ska använda för utrymmet ”{0}”.</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>Logga in på Google som {0} för att använda utrymmet ”{1}”.</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>Åt vilket håll ska inloggningarna gå?</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>Skicka från den här enheten</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>Ta emot på den här enheten</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>Öppna Inställningar → Synkronisering → Para ihop med en annan enhet på den andra enheten, skanna sedan den här koden med dess kamera eller ange numret.</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>Eller ange den här koden på den andra enheten</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>Väntar på den andra enheten…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>Ansluten till {0}…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>För många fel koder. En ny kod visas om en minut.</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>QR-kod för att para ihop en annan Edendale-enhet</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>Hittade enheter</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>Letar efter enheter i det här nätverket…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>Eller ange adressen som visas där</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>Skicka till {0}?</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>Synkroniseringsplats: {0}, utrymmet ”{1}”</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>Utrymmet ”{0}” (den andra enheten väljer sin egen mapp)</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>Konton</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>Sparade inloggningar</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>Inget att skicka ännu: slå på synkronisering eller länka ett konto först.</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>Skicka</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>Skickat till {0}.</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>Mottaget från {0}.</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>QR-koden har gått ut eller var fel. Visa en ny och försök igen.</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>Båda enheterna valde att skicka. Välj vem som skickar på en av dem.</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>Den andra enheten är upptagen med en annan ihopparning.</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>{0} objekt sparat.</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>{0} objekt sparade.</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0} objekt kunde inte användas.</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0} objekt kunde inte användas.</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>OneDrive-mappen på den här datorn</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>iCloud Drive-mappen på den här datorn</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>en annan enhet</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>Annan enhet</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>Synkfilen från {0} kunde inte läsas och hoppades över.</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>Synkfilen från {0} är för stor och hoppades över.</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>Länka den här servern under Källor först, så att inloggningen och, för SFTP, värdnyckeln sparas på den här datorn.</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>Länka ett molnkonto eller en server under Källor först för att synka genom det.</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>Radera den här datorns gamla synkfil?</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>Den här datorn synkar nu någon annanstans. Dess fil i {0}, utrymmet ”{1}”, ligger kvar om du inte raderar den.</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>Radera den</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>Behåll den</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>Synka med din OneDrive-mapp</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>Edendale synkar nu tittarhistoriken genom en mapp eller ett konto som du väljer. Det som fanns i OneDrive finns redan på den här datorn. Välj din OneDrive-mapp så håller dina datorer sig i takt.</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>Välj OneDrive</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>Synkas genom {0}</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>Hur ska enheterna paras ihop?</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>Visa en QR-kod och en kod på den här datorn</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>Ange koden eller länken från den andra enheten</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>Fortsätt</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>Välj den andra enheten nedan och ange koden den visar, eller klistra in länken från dess QR-kod.</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>Kod eller länk</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>Ange den sexsiffriga koden eller klistra in länken från QR-koden.</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>Välj den andra enheten i listan eller ange adressen den visar.</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>Den här datorns adress: {0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>Ansluter…</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>Koden stämde inte. Kontrollera den på den andra enheten och försök igen.</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>Den andra enheten svarade inte i tid.</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>Den andra enheten avböjde.</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>Det gick inte att ansluta till den andra enheten. Se till att båda är på samma nätverk.</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>Den andra enheten behöver en nyare version av Edendale.</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>Ihopparningen slutfördes inte. Försök igen.</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0} loggar in på Google själv: Google-inloggningar flyttas inte mellan olika sorters enheter.</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>TA BORT</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>LOGGA IN</value>
   </data>
 </root>

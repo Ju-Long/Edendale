@@ -61,9 +61,8 @@ public sealed partial class SettingsPage : Page
         DataPathText.Text = AppPaths.DataDirectory;
         // Apple's equivalent row reads "Synced via your iCloud"; say what
         // Windows actually does instead of borrowing the claim.
-        CloudSyncText.Text = AppPaths.CloudReplicaDirectory is string replica
-            ? Loc.Format("Settings_ReplicatedTo", replica)
-            : Loc.Get("Settings_StoredOnThisDevice");
+        UpdateWatchProgressRow();
+        AppServices.FileSync.StatusChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchProgressRow);
 
         _suppressStartupToggle = true;
         StartupToggle.IsOn = StartupService.IsEnabled;
@@ -78,6 +77,15 @@ public sealed partial class SettingsPage : Page
         AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateSourcesUi);
         UpdateAccountUi();
         UpdateSourcesUi();
+    }
+
+    /// <summary>"Syncs through the OneDrive folder on this PC", or "Stored on this device" while sync is off.</summary>
+    private void UpdateWatchProgressRow()
+    {
+        var status = AppServices.FileSync.Status;
+        CloudSyncText.Text = status is { IsOn: true, LocationDescription: { } location }
+            ? Loc.Format("Settings_SyncsThrough", location)
+            : Loc.Get("Settings_StoredOnThisDevice");
     }
 
     private bool _suppressStartupToggle;

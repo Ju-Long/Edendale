@@ -92,6 +92,9 @@ public sealed class HandoffParty
 
     /// <summary>Progress for the UI: "paired", "role", "offer", "result".</summary>
     public Action<string>? Progress { get; init; }
+
+    /// <summary>The other device's role and name, once the roles are exchanged.</summary>
+    public Action<HandoffRoleMessage>? PeerKnown { get; init; }
 }
 
 /// <summary>What a finished handoff produced.</summary>
@@ -267,6 +270,7 @@ public static class HandoffSession
             await TrySendSealedAsync(stream, channel, HandoffFrames.ErrorFrame(HandoffError.Role), cancellation).ConfigureAwait(false);
             throw new HandoffException(HandoffError.Role);
         }
+        party.PeerKnown?.Invoke(peer);
         party.Progress?.Invoke("role");
 
         if (party.Role == HandoffRole.Sender)

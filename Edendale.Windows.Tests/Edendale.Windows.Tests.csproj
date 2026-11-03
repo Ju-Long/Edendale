@@ -97,6 +97,7 @@
     <Compile Include="..\Edendale.Windows\Core\Sync\*.cs" Link="App\Core\Sync\%(Filename)%(Extension)" />
     <Compile Include="..\Edendale.Windows\Core\Handoff\*.cs" Link="App\Core\Handoff\%(Filename)%(Extension)" />
     <Compile Include="..\Edendale.Windows\Services\Sync\*.cs" Link="App\Services\Sync\%(Filename)%(Extension)" />
+    <Compile Include="..\Edendale.Windows\Services\Handoff\HandoffOffers.cs" Link="App\Services\Handoff\HandoffOffers.cs" />
     <Compile Include="..\Edendale.Windows\Services\WatchProgressStore.cs" Link="App\Services\WatchProgressStore.cs" />
     <Compile Include="..\Edendale.Windows\Services\UserMediaStore.cs" Link="App\Services\UserMediaStore.cs" />
     <Compile Include="..\Edendale.Windows\Models\MediaModels.cs" Link="App\Models\MediaModels.cs" />

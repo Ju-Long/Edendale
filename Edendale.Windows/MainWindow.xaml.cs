@@ -26,6 +26,12 @@ public sealed partial class MainWindow : Window
         AppWindow.Resize(new global::Windows.Graphics.SizeInt32(1440, 900));
         AppWindow.SetIcon("Assets\\icon.ico");
         Closed += MainWindow_Closed;
+        // §8.1: sync on return to the foreground; write at once on leaving it.
+        Activated += (sender, args) =>
+        {
+            if (args.WindowActivationState == WindowActivationState.Deactivated) _ = AppServices.FileSync.OnBackgroundAsync();
+            else AppServices.FileSync.OnForeground();
+        };
 
         MoviesNavItem.Icon = Controls.SvgIcon.CreateIcon("film");
         WatchlistNavItem.Icon = Controls.SvgIcon.CreateIcon("film-stack");
@@ -361,6 +367,7 @@ public sealed partial class MainWindow : Window
 
     public void ShowActivationMessage(string message)
     {
+        ActivationBar.ActionButton = null;
         ActivationBar.Title = "";
         ActivationBar.Severity = InfoBarSeverity.Warning;
         ActivationBar.Message = message;
@@ -370,9 +377,26 @@ public sealed partial class MainWindow : Window
     /// <summary>A one-time notice in the same bar, such as the Google Drive relink after 3.20 D1.</summary>
     public void ShowNotice(string title, string message)
     {
+        ActivationBar.ActionButton = null;
         ActivationBar.Title = title;
         ActivationBar.Severity = InfoBarSeverity.Informational;
         ActivationBar.Message = message;
+        ActivationBar.IsOpen = true;
+    }
+
+    /// <summary>A one-time notice with one action, such as the 27.1 offer to sync through the OneDrive folder.</summary>
+    public void ShowOffer(string title, string message, string actionLabel, Func<Task> action)
+    {
+        var button = new Button { Content = actionLabel };
+        button.Click += async (sender, args) =>
+        {
+            ActivationBar.IsOpen = false;
+            await action();
+        };
+        ActivationBar.Title = title;
+        ActivationBar.Severity = InfoBarSeverity.Informational;
+        ActivationBar.Message = message;
+        ActivationBar.ActionButton = button;
         ActivationBar.IsOpen = true;
     }
 

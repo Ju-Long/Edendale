@@ -76,6 +76,10 @@
          Ed25519/ECDSA host keys, and AES-GCM. MIT, as is its BouncyCastle
          dependency. -->
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <!-- 27.1 handoff (FEATURES-27.1.md §6.2): X25519 and the elliptic-curve
+         arithmetic under the J-PAKE over P-256 the typed code runs. The same
+         version SSH.NET already brings; MIT. -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
     <!-- Native VLC engine and LGPL codec plug-ins for x86, x64, and ARM64. -->
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
   </ItemGroup>

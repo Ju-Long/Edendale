@@ -127,11 +127,11 @@ internal static class AppText
 
         ["Sync_AnotherDevice"] = "another device",
         ["Sync_WarningNewerFormat"] = "Update Edendale to sync with {0}.",
-        ["Sync_WarningTooLarge"] = "The sync file from {0} is too large and was skipped.",
-        ["Sync_WarningSkipped"] = "The sync file from {0} couldn’t be read and was skipped.",
-        ["Sync_WarningClockAhead"] = "The clock on {0} is more than a day ahead, so its newest changes were skipped.",
-        ["Sync_FolderOneDrive"] = "OneDrive folder",
-        ["Sync_FolderICloud"] = "iCloud Drive folder",
+        ["Sync_WarningTooLarge"] = "The sync file from {0} is too large, so it was skipped.",
+        ["Sync_WarningSkipped"] = "The sync file from {0} couldn’t be read, so it was skipped.",
+        ["Sync_WarningClockAhead"] = "The clock on {0} is more than a day ahead; its latest changes were not applied.",
+        ["Sync_FolderOneDrive"] = "OneDrive folder on this PC",
+        ["Sync_FolderICloud"] = "iCloud Drive folder on this PC",
 
         ["Remote_Unreachable"] = "Couldn’t reach {0}. Check your connection and try again.",
         ["Remote_ReadFailed"] = "Couldn’t read this file from {0}.",

@@ -149,7 +149,7 @@
     <value>あなたのアーカイブ</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>ライブラリのインデックスはこのデバイスに残ります。再生の進行状況、お気に入り、評価もここに保存され、設定されている場合はご自身の OneDrive に複製されます。第三者のサーバーが関与することは一切ありません。ウォッチリストはこのデバイスに保存され、TMDB アカウントを接続するとそのアカウントと同期されます。</value>
+    <value>ライブラリのインデックスはこのデバイスに残ります。再生の進行状況、お気に入り、ウォッチリスト、評価もここに保存され、同期をオンにすると、選択したフォルダーまたはアカウントを通じて受け渡されます。Edendale はサーバーを運用していません。ウォッチリストは、TMDB アカウントを接続するとそのアカウントとも同期されます。</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>データ フォルダー</value>
@@ -1657,5 +1657,308 @@
   </data>
   <data name="OAuth_DifferentAccount" xml:space="preserve">
     <value>これらのビデオは{0}で選択されました。{1}で、もう一度「ほかのビデオを選択」を使ってください。</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>同期</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>自分が所有するフォルダーやアカウントを通じて、視聴の進み具合・お気に入り・ウォッチリスト・評価をすべての端末で同じに保ちます。Edendale はサーバーを持たず、各端末が読める形式のファイルを 1 つ書き込みます。</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>保存先を選ぶ…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>別の端末とペアリング…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>別の端末を設定…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>別の端末を設定</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>別の端末とペアリング</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>保存先</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>スペース</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>この端末</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>最終同期 {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>まだ同期していません</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>同期中…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>今すぐ同期</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>オフにする</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>端末を削除</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>Edendale が同期ファイルを書き込めるよう、{0} にもう一度サインインしてください。</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>この保存先のログイン情報がこの端末にありません。保存先をもう一度選んでください。</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>{0} と同期するには Edendale を更新してください。</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>{0} の時計が 1 日以上進んでいます。最新の変更は適用されませんでした。</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>前回の同期に失敗しました: {0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>このフォルダーを開ける人は誰でも視聴履歴を読めます。ファイルには TMDB ID による作品、進み具合、評価、ウォッチリスト、お気に入り、レビューが含まれます。ライブラリ、ファイルパス、ログイン情報は含まれません。</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>保存先を選ぶ</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>スペース名</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>同じ保存先と同じスペース名を指す端末同士が同期します。64 文字以内で、/ \ : * ? " &lt; &gt; | は使えません。</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>この端末のフォルダー</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>フォルダーを選ぶ</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>{0} 上のフォルダー</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>同期をオフにしますか？</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>視聴履歴はこの端末に残ります。{0} のファイルも、この端末のファイルを削除しない限り残ります。</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>オフにして自分のファイルを削除</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>オフにしてファイルを残す</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>端末を削除</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>端末のファイルを削除すると、その履歴は他の端末に届かなくなります。その端末は、プロバイダーで Edendale のアクセスを取り消すかサーバーのパスワードを変えるまで、ログイン情報とローカルのコピーを保持します。</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>{0} でアクセスを管理</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>このスペースに書き込んだ他の端末はまだありません。</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>スペース「{0}」にこの端末が使うフォルダーを選んでください。</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>スペース「{1}」を使うには {0} として Google にサインインしてください。</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>ログイン情報をどちらに送りますか？</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>この端末から送る</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>この端末で受け取る</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>もう一方の端末で 設定 → 同期 → 別の端末とペアリング を開き、そのカメラでこのコードを読み取るか、番号を入力してください。</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>または、もう一方の端末でこのコードを入力</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>もう一方の端末を待っています…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>{0} に接続しました…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>間違ったコードが多すぎます。1 分後に新しいコードが表示されます。</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>別の Edendale 端末とペアリングするための QR コード</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>見つかった端末</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>このネットワークで端末を探しています…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>または、そこに表示されたアドレスを入力</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>{0} に送りますか？</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>同期の保存先: {0}、スペース「{1}」</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>スペース「{0}」（フォルダーはもう一方の端末が選びます）</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>保存済みのログイン</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>送るものがまだありません。先に同期をオンにするかアカウントをリンクしてください。</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>送信</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>{0} に送りました。</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>{0} から受け取りました。</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>QR コードが期限切れか間違っています。新しいコードを表示してもう一度試してください。</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>両方の端末が送る側を選びました。どちらか一方で送る側を決めてください。</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>もう一方の端末は別のペアリング中です。</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>{0} 件を保存しました。</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>{0} 件を保存しました。</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0} 件は使えませんでした。</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0} 件は使えませんでした。</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>この PC の OneDrive フォルダー</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>この PC の iCloud Drive フォルダー</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>別のデバイス</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>別のデバイス</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>{0} の同期ファイルを読み取れなかったため、スキップしました。</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>{0} の同期ファイルが大きすぎるため、スキップしました。</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>まず「ソース」でこのサーバーをリンクして、ログイン情報（SFTP の場合はホスト キーも）をこの PC に保存してください。</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>クラウド アカウントやサーバーで同期するには、まず「ソース」でリンクしてください。</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>この PC の古い同期ファイルを削除しますか?</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>この PC は別の場所で同期するようになりました。{0} のスペース「{1}」にあるこの PC のファイルは、削除しない限りそのまま残ります。</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>削除する</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>残す</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>OneDrive フォルダーで同期</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>Edendale は視聴履歴を、選択したフォルダーまたはアカウントを通じて同期するようになりました。OneDrive に保存していた内容はすでにこの PC にあります。OneDrive フォルダーを選ぶと、お使いの PC 同士を同期し続けられます。</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>OneDrive を選択</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>{0} で同期</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>どの方法でペアリングしますか?</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>この PC に QR コードとコードを表示する</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>もう一方のデバイスのコードまたはリンクを入力する</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>続行</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>下でもう一方のデバイスを選んで表示されているコードを入力するか、その QR コードのリンクを貼り付けてください。</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>コードまたはリンク</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>6 桁のコードを入力するか、QR コードのリンクを貼り付けてください。</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>一覧からもう一方のデバイスを選ぶか、そこに表示されているアドレスを入力してください。</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>この PC のアドレス: {0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>接続しています…</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>コードが一致しませんでした。もう一方のデバイスでコードを確認して、もう一度試してください。</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>もう一方のデバイスが時間内に応答しませんでした。</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>もう一方のデバイスで拒否されました。</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>もう一方のデバイスに接続できませんでした。両方が同じネットワークにあることを確認してください。</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>もう一方のデバイスには新しいバージョンの Edendale が必要です。</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>ペアリングを完了できませんでした。もう一度試してください。</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0} は自分で Google にサインインします。Google のサインインは種類の異なるデバイス間では移せません。</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>サインイン</value>
   </data>
 </root>
