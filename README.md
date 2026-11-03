@@ -335,7 +335,8 @@ smaller device ID; a device never stamps a write below the highest time it
 has applied, so a slow clock still orders its own write after what it just
 received; a record stamped more than a day ahead is not applied and the
 device is named in a warning; and clearing a rating or progress writes a
-tombstone so an older copy can't bring it back (kept a year). Files that fail
+tombstone so an older copy can't bring it back (written for a year and a
+day). Files that fail
 validation are skipped with a warning naming the device, and never remove
 local data. Nothing but watch records is written there: no library, file
 paths, logins, or TMDB session. When you choose a location the app says so in

@@ -250,8 +250,10 @@ object HandoffV2 {
 
     /**
      * The sync location as the offer carries it (§9.6): for a folder only the
-     * provider and space; for a server the login and the folder inside it
-     * (`path`, an Edendale addition other clients may ignore); for a cloud
+     * provider and space; for a server the login and the credential-free root
+     * URL of the folder that holds `Edendale/` (`url`: `davs://host[:port]/path/`,
+     * `smb://host/share/path/`, `sftp://host[:port]/path/`, the spelling the
+     * Apple branch chose, since the spec's example omits it); for a cloud
      * account the account, or across Google ecosystems the hint and folder ID.
      */
     data class LocationPayload(
@@ -308,7 +310,7 @@ object HandoffV2 {
                     put("space", JsonPrimitive(location.space))
                     location.account?.let { put("account", AccountHandoff.accountJson(it)) }
                     location.login?.let { put("login", AccountHandoff.loginJson(it)) }
-                    location.path?.let { put("path", JsonPrimitive(it)) }
+                    location.path?.let { put("url", JsonPrimitive(it)) }
                     location.googleAccountHint?.let { put("googleAccountHint", JsonPrimitive(it)) }
                     location.googleFolderId?.let { put("googleFolderId", JsonPrimitive(it)) }
                 },
@@ -334,7 +336,7 @@ object HandoffV2 {
                 space = space,
                 account = (json["account"] as? JsonObject)?.let(AccountHandoff::decodeAccount),
                 login = (json["login"] as? JsonObject)?.let(AccountHandoff::decodeLogin),
-                path = json.string("path"),
+                path = json.string("url") ?: json.string("path"),
                 googleAccountHint = json.string("googleAccountHint"),
                 googleFolderId = json.string("googleFolderId"),
             )

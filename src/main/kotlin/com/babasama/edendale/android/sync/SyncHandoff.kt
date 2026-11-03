@@ -56,7 +56,9 @@ class SyncHandoff(private val app: EdendaleApplication) {
                     hostKeyFingerprint = if (kind == MediaSourceKind.SFTP) app.libraryRepository.sshHostKeys.pinned(host, port ?: Sftp.DEFAULT_PORT) else null,
                     certificateFingerprint = if (kind == MediaSourceKind.WEBDAV) app.tlsPins.pinned(host, location.port ?: 443) else null,
                 )
-                HandoffV2.LocationPayload(location.provider, location.space, login = login, path = location.path)
+                // On the wire the folder is a credential-free URL (Apple's spelling): the SFTP path becomes `sftp://host[:port]/path/`.
+                val url = if (kind == MediaSourceKind.SFTP) Sftp.url(host, port ?: Sftp.DEFAULT_PORT, location.path ?: "/", isDirectory = true) else location.path
+                HandoffV2.LocationPayload(location.provider, location.space, login = login, path = url)
             }
         }
     }
@@ -149,7 +151,9 @@ class SyncHandoff(private val app: EdendaleApplication) {
                     val adopted = if (login.user.isEmpty() && login.password.isEmpty() && login.kind == MediaSourceKind.SMB) true else storeLogin(login)
                     if (adopted) {
                         val port = login.port ?: if (login.kind == MediaSourceKind.SFTP) Sftp.DEFAULT_PORT else SourceUrl.port(path)
-                        app.sync.enable(SyncLocation(payload.provider, space, host = login.host, port = port, path = path))
+                        // An SFTP folder arrives as `sftp://host[:port]/path/`; the storage wants the absolute path.
+                        val folder = if (login.kind == MediaSourceKind.SFTP && path.startsWith("sftp://", ignoreCase = true)) Sftp.path(path) else path
+                        app.sync.enable(SyncLocation(payload.provider, space, host = login.host, port = port, path = folder))
                         stored += "location"
                     } else {
                         failed += HandoffV2.ResultMessage.Failure("location", "login")

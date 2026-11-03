@@ -57,12 +57,11 @@ class SyncVectorsTest {
         val merged = ledgerWith(media = listOf(rated)).merge(emptyList(), listOf(tombstone), now)
         assertEquals(tombstone, merged.ledger.userMedia["tv:1399"])
         val device = SyncDeviceInfo(a, "Phone", "android", "27.1")
-        // The key is present, not removed, and the file written out carries the tombstone.
-        val written = DeviceFileCodec.encode(merged.ledger.file("Family", device), now = 1_762_000_005_000)
+        // The key is present, not removed, and the file written out at the vector's clock carries the tombstone
+        // (365.5 days old: inside the 366-day retention both Apple and Android chose).
+        val written = DeviceFileCodec.encode(merged.ledger.file("Family", device), now)
         val back = assertIs<DeviceFileCodec.Decoded.Valid>(DeviceFileCodec.decode(written, "Family", DeviceFile.fileName(a)))
         assertEquals(listOf(tombstone), back.file.userMedia)
-        // A year on, the store still holds it; only the written file may leave it out (§6.3).
-        assertEquals(tombstone, merged.ledger.merge(emptyList(), emptyList(), now).ledger.userMedia["tv:1399"])
     }
 
     @Test
@@ -216,9 +215,9 @@ class SyncVectorsTest {
             file(progress = """{"type":"tv","tmdbId":603,"episode":1,"position":1,"duration":2,"completed":false,"device":"$a","updateTime":1762000000000}"""),
             file(progress = """{"type":"movie","tmdbId":603,"position":-1,"duration":2,"completed":false,"device":"$a","updateTime":1762000000000}"""),
             file(progress = """{"type":"movie","tmdbId":603,"position":1,"duration":0,"completed":false,"device":"$a","updateTime":1762000000000}"""),
-            // A tombstone with a position; 0 and 1 as booleans; a missing device.
-            file(progress = """{"type":"movie","tmdbId":603,"cleared":true,"position":1,"device":"$a","updateTime":1762000000000}"""),
+            // 0 and 1 as booleans; a missing device; `603.0` is not an integer literal (as on Apple).
             file(progress = """{"type":"movie","tmdbId":603,"position":1,"duration":2,"completed":1,"device":"$a","updateTime":1762000000000}"""),
+            file(progress = """{"type":"movie","tmdbId":603.0,"position":1,"duration":2,"completed":false,"device":"$a","updateTime":1762000000000}"""),
             file(progress = """{"type":"movie","tmdbId":603,"position":1,"duration":2,"completed":false,"updateTime":1762000000000}"""),
             // A rating off the half-step grid, a rating of 0, a review too long, a duplicate key.
             file(media = """{"type":"movie","tmdbId":603,"favourite":false,"watchlist":false,"rating":7.3,"review":null,"device":"$a","updateTime":1}"""),
@@ -229,6 +228,10 @@ class SyncVectorsTest {
         cases.forEachIndexed { index, bytes ->
             assertIs<DeviceFileCodec.Decoded.Skipped>(DeviceFileCodec.decode(bytes, "Family", DeviceFile.fileName(a)), "case $index")
         }
+        // A tombstone that still carries a position, duration, or completed is read, and they are ignored.
+        val lenient = assertIs<DeviceFileCodec.Decoded.Valid>(DeviceFileCodec.decode(file(progress = """{"type":"movie","tmdbId":603,"cleared":true,"position":1,"duration":2,"completed":true,"device":"$a","updateTime":1762000000000}"""), "Family", DeviceFile.fileName(a)))
+        assertTrue(lenient.file.watchProgress.single().isTombstone)
+        assertNull(lenient.file.watchProgress.single().position)
         // Valid ratings are 0.5 … 10.0 in half steps.
         assertTrue(DeviceFileCodec.isValidRating(0.5))
         assertTrue(DeviceFileCodec.isValidRating(10.0))

@@ -172,10 +172,14 @@ class HandoffV2Test {
     fun `roles, offers, and results round-trip, and declines carry nothing`() {
         val role = HandoffV2.RoleMessage(HandoffV2.Role.SENDER, "Phone", "android")
         assertEquals(role, HandoffV2.decodeRole(HandoffV2.encodeRole(role)))
-        val location = HandoffV2.LocationPayload(SyncProvider.SFTP, "Family", login = login, path = "/home/me")
+        val location = HandoffV2.LocationPayload(SyncProvider.SFTP, "Family", login = login, path = "sftp://nas.local/home/me/")
         val offer = HandoffV2.Offer(true, location, listOf(account), listOf(login))
-        val back = HandoffV2.decodeOffer(HandoffV2.encodeOffer(offer))
+        val encoded = HandoffV2.encodeOffer(offer)
+        val back = HandoffV2.decodeOffer(encoded)
         assertEquals(offer, back)
+        // The folder travels as `url` (the Apple branch's spelling); an older `path` is still read.
+        assertTrue("\"url\":\"sftp://nas.local/home/me/\"" in encoded.decodeToString())
+        assertEquals("sftp://nas.local/home/me/", HandoffV2.decodeOffer(encoded.decodeToString().replace("\"url\":", "\"path\":").toByteArray()).location?.path)
         assertEquals(HandoffV2.Offer.DECLINED, HandoffV2.decodeOffer(HandoffV2.encodeOffer(HandoffV2.Offer.DECLINED)))
         assertFalse(HandoffV2.encodeOffer(HandoffV2.Offer.DECLINED).decodeToString().contains("pw"))
         val result = HandoffV2.ResultMessage(listOf("location", "login:sftp:nas.local"), listOf(HandoffV2.ResultMessage.Failure("account:gdrive:subject", "refused")))

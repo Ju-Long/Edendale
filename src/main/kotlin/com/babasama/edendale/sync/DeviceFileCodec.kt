@@ -76,8 +76,13 @@ object DeviceFileCodec {
         return body.toString().toByteArray(Charsets.UTF_8)
     }
 
-    /** A device may omit tombstones older than this when it writes its file (§6.3; decision 4). */
-    const val TOMBSTONE_RETENTION_MILLIS = 365L * 24 * 60 * 60 * 1_000
+    /**
+     * A device may omit tombstones older than this when it writes its file
+     * (§6.3; decision 4): a year plus the far-future day, as the Apple
+     * branch chose, so Appendix A.1's M3 tombstone is still written at the
+     * vector's clock.
+     */
+    const val TOMBSTONE_RETENTION_MILLIS = 366L * 24 * 60 * 60 * 1_000
 
     private fun encode(record: ProgressRecord): JsonObject = buildJsonObject {
         put("type", JsonPrimitive(record.type.raw))
@@ -165,7 +170,7 @@ object DeviceFileCodec {
         val device = record.string("device") ?: return null
         val updateTime = record.stamp()
         if (cleared) {
-            if (record.containsValue("position") || record.containsValue("duration") || record.containsValue("completed")) return null
+            // §6.1 says a tombstone carries no position, duration, or completed; a writer that sends them anyway is read, and they are ignored (as on Apple).
             return ProgressRecord(type, tmdbId, season?.toInt(), episode?.toInt(), cleared = true, device = device, updateTime = updateTime)
         }
         val position = record.number("position")?.takeIf { it.isFinite() && it >= 0 } ?: return null
@@ -206,12 +211,11 @@ object DeviceFileCodec {
 
     private fun JsonObject.string(name: String): String? = (this[name] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
 
-    /** An integer field; a fraction or a non-number reads as null (§1.2). */
+    /** An integer field; a fraction (`603.5`, and `603.0` too, as on Apple), an exponent, or a non-number reads as null (§1.2). */
     private fun JsonObject.integer(name: String): Long? {
         val primitive = this[name] as? JsonPrimitive ?: return null
         if (primitive.isString) return null
-        val text = primitive.content
-        return text.toLongOrNull() ?: text.toDoubleOrNull()?.takeIf { it.isFinite() && it == Math.floor(it) && Math.abs(it) < 9.007199254740992E15 }?.toLong()
+        return primitive.content.toLongOrNull()
     }
 
     private fun JsonObject.number(name: String): Double? {
