@@ -117,6 +117,7 @@ class SyncHandoff(private val app: EdendaleApplication) {
 
         offer.accounts.forEach { storeAccount(it) }
         offer.logins.forEach { storeLogin(it) }
+        offer.unsupportedLocationProvider?.let { failed += HandoffV2.ResultMessage.Failure("location", "provider:$it") }
 
         offer.location?.let { payload ->
             val space = SpaceName.normalize(payload.space)

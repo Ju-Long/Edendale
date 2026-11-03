@@ -274,6 +274,8 @@ object HandoffV2 {
         val location: LocationPayload? = null,
         val accounts: List<AccountHandoff.Account> = emptyList(),
         val logins: List<AccountHandoff.Login> = emptyList(),
+        /** A location whose `provider` this platform doesn't have (Apple's `icloudDrive` here): the rest of the offer still counts, and the result names the item as failed. */
+        val unsupportedLocationProvider: String? = null,
     ) {
         companion object {
             val DECLINED = Offer(approved = false)
@@ -328,8 +330,12 @@ object HandoffV2 {
             else -> throw HandoffException.MalformedMessage
         }
         if (!approved) return Offer.DECLINED
+        var unsupported: String? = null
         val location = (fields["location"] as? JsonObject)?.let { json ->
-            val provider = SyncProvider.fromRaw(json.string("provider")) ?: throw HandoffException.MalformedMessage
+            val provider = SyncProvider.fromRaw(json.string("provider")) ?: run {
+                unsupported = json.string("provider") ?: throw HandoffException.MalformedMessage
+                return@let null
+            }
             val space = json.string("space")?.let(SpaceName::normalize) ?: throw HandoffException.MalformedMessage
             LocationPayload(
                 provider = provider,
@@ -343,7 +349,7 @@ object HandoffV2 {
         }
         val accounts = (fields["accounts"] as? JsonArray)?.map { AccountHandoff.decodeAccount(it as? JsonObject ?: throw HandoffException.MalformedMessage) }.orEmpty()
         val logins = (fields["logins"] as? JsonArray)?.map { AccountHandoff.decodeLogin(it as? JsonObject ?: throw HandoffException.MalformedMessage) }.orEmpty()
-        return Offer(true, location, accounts, logins)
+        return Offer(true, location, accounts, logins, unsupported)
     }
 
     fun encodeResult(result: ResultMessage): ByteArray = channelFrame("result") {

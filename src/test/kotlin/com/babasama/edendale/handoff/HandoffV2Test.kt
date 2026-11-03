@@ -190,8 +190,12 @@ class HandoffV2Test {
         // Nothing prints a token or password.
         assertFalse(location.toString().contains("pw"))
         assertFalse(offer.toString().contains("refresh-token"))
-        // Malformed: an unknown provider, an invalid space, a bad status.
-        assertFailsWith<HandoffException.MalformedMessage> { HandoffV2.decodeOffer("""{"type":"offer","status":"approved","location":{"provider":"ftp","space":"x"}}""".toByteArray()) }
+        // A provider this platform doesn't have (Apple's iCloud Drive) keeps the rest of the offer and is reported as failed.
+        val icloud = HandoffV2.decodeOffer("""{"type":"offer","status":"approved","location":{"provider":"icloudDrive","space":"Family"},"accounts":[],"logins":[${AccountHandoff.loginJson(login)}]}""".toByteArray())
+        assertNull(icloud.location)
+        assertEquals("icloudDrive", icloud.unsupportedLocationProvider)
+        assertEquals(listOf(login), icloud.logins)
+        // Malformed: an invalid space, a bad status.
         assertFailsWith<HandoffException.MalformedMessage> { HandoffV2.decodeOffer("""{"type":"offer","status":"approved","location":{"provider":"folder","space":"a/b"}}""".toByteArray()) }
         assertFailsWith<HandoffException.MalformedMessage> { HandoffV2.decodeOffer("""{"type":"offer","status":"maybe"}""".toByteArray()) }
         // Errors inside the channel surface as their exception.
