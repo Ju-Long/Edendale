@@ -1,12 +1,15 @@
 package com.babasama.edendale.handoff
 
+import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudAccountVault
+import com.babasama.edendale.oauth.CloudProviders
 import com.babasama.edendale.oauth.CloudTokenProvider
 import com.babasama.edendale.oauth.OAuthClient
 import com.babasama.edendale.oauth.OAuthConfiguration
 import com.babasama.edendale.oauth.OAuthException
+import com.babasama.edendale.oauth.OAuthFailure
 import com.babasama.edendale.remote.RemoteHttp
 import java.io.DataInputStream
 import java.io.EOFException
@@ -60,12 +63,19 @@ object HandoffProtocol {
      * [HandoffException.Declined] when the viewer said no, and
      * [HandoffException.TimedOut] when the phone never answered.
      */
-    fun receive(socket: Socket, code: String, request: AccountHandoff.Request, store: (AccountHandoff.Response) -> AccountHandoff.Result): AccountHandoff.Response {
-        val frames = FrameStream(socket.getInputStream(), socket.getOutputStream())
+    fun receive(
+        socket: Socket,
+        code: String,
+        request: AccountHandoff.Request,
+        /** The phone's first frame when the host already read it to tell version 1 from 2 ([HandoffProtocolV2]). */
+        frames: FrameStream = FrameStream(socket.getInputStream(), socket.getOutputStream()),
+        firstFrame: ByteArray? = null,
+        store: (AccountHandoff.Response) -> AccountHandoff.Result,
+    ): AccountHandoff.Response {
         val pake = HandoffCrypto.Pake(HandoffCrypto.TV, code)
         socket.soTimeout = HANDSHAKE_TIMEOUT_MILLIS
         timed {
-            pake.receiveRound1(frames.read())
+            pake.receiveRound1(firstFrame ?: frames.read())
             frames.write(pake.round1())
             pake.receiveRound2(frames.read())
             frames.write(pake.round2())
@@ -137,6 +147,8 @@ object HandoffProtocol {
  * `adoptHandedOffAccount`): refreshes the phone's token to prove it works,
  * then stores the account; a token the provider refuses is rejected rather
  * than stored. The phone's refresh token is reused, not exchanged for another.
+ * A Google account from a build before `drive.file` is refused too (D20): its
+ * `drive.readonly` token would list all of Drive.
  */
 suspend fun adoptHandedOffAccount(
     account: CloudAccount,
@@ -147,6 +159,9 @@ suspend fun adoptHandedOffAccount(
     rejectedMessage: (OAuthException) -> String? = { it.message },
 ): CloudAccount {
     val settings = configuration ?: throw HandoffException.Rejected(null)
+    if (account.kind == MediaSourceKind.GOOGLE_DRIVE && !CloudProviders.hasDriveFileAccess(account.scopes)) {
+        throw HandoffException.Rejected(rejectedMessage(OAuthException(account.kind, OAuthFailure.DriveAccessNotGranted)))
+    }
     val response = try {
         OAuthClient(settings, http).refresh(account.refreshToken)
     } catch (error: OAuthException) {

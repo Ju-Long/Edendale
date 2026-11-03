@@ -105,8 +105,8 @@ android {
         applicationId = "com.babasama.edendale"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "0.27"
+        versionCode = 3
+        versionName = "0.27.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Dropbox redirects to db-<app key>://, so the redirect activity's
@@ -176,6 +176,7 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.work.runtime.ktx)
     debugImplementation(libs.compose.ui.tooling)
 
     // JVM unit tests only (src/test): the suite is hermetic — no emulator or

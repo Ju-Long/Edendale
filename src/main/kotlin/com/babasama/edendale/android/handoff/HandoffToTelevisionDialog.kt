@@ -241,7 +241,8 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
         error = null
         scope.launch {
             try {
-                val account = cloud.signIn(activity, kind)
+                // Google Drive's page also opens Google's picker; the TV lists the picks itself.
+                val account = cloud.signIn(activity, kind).account
                 answer(AccountHandoff.Response(AccountHandoff.Status.APPROVED, account = AccountHandoff.Account(account)))
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -353,6 +354,14 @@ fun HandoffToTelevisionDialog(onDismiss: () -> Unit) {
                                     kind = if (accounts.isEmpty()) ArchiveButtonKind.Primary else ArchiveButtonKind.Secondary,
                                     iconRes = R.drawable.ic_link,
                                 )
+                                // A TV never opens Google's picker (H.9.4).
+                                if (kind == MediaSourceKind.GOOGLE_DRIVE) {
+                                    Text(
+                                        text = stringResource(R.string.handoff_gdrive_note),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                             logins.isEmpty() -> Text(
                                 text = stringResource(R.string.handoff_no_saved_logins, provider),

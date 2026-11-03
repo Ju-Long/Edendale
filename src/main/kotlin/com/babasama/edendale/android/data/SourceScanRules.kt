@@ -2,6 +2,9 @@ package com.babasama.edendale.android.data
 
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.Enumeration
+import com.babasama.edendale.connectors.GoogleDriveConnector
+import com.babasama.edendale.connectors.GoogleDriveHiddenItems
+import com.babasama.edendale.connectors.GoogleDriveMigration
 import com.babasama.edendale.connectors.MediaConnector
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.connectors.SourceStatus
@@ -39,12 +42,31 @@ internal object SourceScanRules {
      * Every video in the linked [folder], after checking the source still
      * answers. The walk starts at the folder itself, not the connector's
      * root: a cloud account's or S3 bucket's root is the whole account, so
-     * starting there imported everything the account holds.
+     * starting there imported everything the account holds. Google Drive
+     * files removed from the library on this device ([hidden], D21) stay out.
      */
-    suspend fun enumerate(connector: MediaConnector, folder: LibraryFolderEntity): Enumeration {
+    suspend fun enumerate(connector: MediaConnector, folder: LibraryFolderEntity, hidden: Set<String> = emptySet()): Enumeration {
         connector.validate()
-        return connector.enumerateVideos(folder.treeUri)
+        val enumeration = connector.enumerateVideos(folder.treeUri)
+        return enumeration.copy(videos = GoogleDriveHiddenItems.visible(enumeration.videos, hidden))
     }
+
+    /**
+     * D20 (H.9.4): the Google Drive sources among [folders] from before
+     * `drive.file`, which go at launch: Drive folders rather than "Videos
+     * you chose", and anything read through an account in
+     * [outdatedAccountKeys].
+     */
+    fun outdatedGoogleDriveSources(folders: List<LibraryFolderEntity>, outdatedAccountKeys: Set<String>): List<LibraryFolderEntity> =
+        folders.filter { GoogleDriveMigration.isOutdatedSource(kindOf(it), it.treeUri, it.accountKey, outdatedAccountKeys) }
+
+    /**
+     * Whether removing a video from the library lasts, so Remove from
+     * Library is offered for it: a file added on its own is never rescanned,
+     * and a Google Drive source's scans skip the IDs removed on this device
+     * (D21). Any other source's next scan would bring the file straight back.
+     */
+    fun removalLasts(folderUri: String?): Boolean = folderUri == null || GoogleDriveConnector.isChosenFolder(folderUri)
 
     /** NT status codes that mean the server refused the login rather than the network failing. */
     private val authenticationStatuses = setOf(

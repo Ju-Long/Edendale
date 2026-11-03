@@ -27,6 +27,8 @@ data class ConnectorEntry(
     /** Seconds, when the provider reports it (Drive `videoMediaMetadata`, the Graph `video` facet). */
     val durationSeconds: Double? = null,
     val modifiedEpochMillis: Long? = null,
+    /** The server's change tag for the file (WebDAV `getetag`, Drive `modifiedTime`, Graph `eTag`, Dropbox `rev`), when it reports one (27.1 sync). */
+    val changeTag: String? = null,
 ) {
     /** A file with one of the video extensions the library imports. */
     val isVideo: Boolean get() = !isDirectory && VideoFiles.isVideoName(name)

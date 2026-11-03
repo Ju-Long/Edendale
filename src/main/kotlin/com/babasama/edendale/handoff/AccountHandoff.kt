@@ -19,9 +19,10 @@ import java.io.IOException
 
 /**
  * Brings a linked account or saved server login from a phone to an Android
- * TV (I.2, Apple's `AccountHandoff`). Google's device sign-in can't grant
- * `drive.readonly` and Dropbox has none, so the TV asks a phone running
- * Edendale on the same network instead, device to device:
+ * TV (I.2, Apple's `AccountHandoff`). Google Drive videos are chosen in
+ * Google's picker, which a TV never opens, and Dropbox has no device
+ * sign-in, so the TV asks a phone running Edendale on the same network
+ * instead, device to device:
  *
  *    1. TV: Link Source → provider → Continue on a Phone registers
  *       `_edendale-handoff._tcp` with Network Service Discovery and shows a
@@ -38,7 +39,10 @@ import java.io.IOException
  * Messages are JSON behind a 4-byte big-endian length, at most 64 KiB, with
  * `"v": 1`; unknown versions and oversized frames close the connection.
  * Google allows 100 refresh tokens per account per client, so the TV reuses
- * the phone's token rather than minting another. Pure Kotlin.
+ * the phone's token rather than minting another. Google grants Drive picks
+ * per account, not per token, so a TV's token keeps seeing videos chosen
+ * later on any device; the TV links "Videos you chose" straight away, and a
+ * rescan there lists new picks. Pure Kotlin.
  */
 object AccountHandoff {
     /** The DNS-SD service type the TV registers. */
@@ -119,6 +123,15 @@ object AccountHandoff {
         object MessageTooLarge : HandoffException("Handoff message too large")
         object Declined : HandoffException("Declined on the other device")
         object WrongCode : HandoffException("The code didn't match")
+
+        /** Version 2: the QR code's proof didn't verify, or the code expired or was used already. */
+        object WrongSecret : HandoffException("The QR code has expired or was wrong")
+
+        /** Version 2: both devices chose to send (or both to receive). */
+        object SameRole : HandoffException("Choose who sends on one device")
+
+        /** Version 2: the host already has a handoff in progress. */
+        object Busy : HandoffException("The other device is busy with another handoff")
         object WrongKind : HandoffException("The other device answered for another provider")
         object TimedOut : HandoffException("The other device didn't answer in time")
         object ConnectionFailed : HandoffException("Couldn't connect to the other device")
@@ -153,46 +166,42 @@ object AccountHandoff {
 
     fun encodeResponse(response: Response): ByteArray = envelope("response") {
         put("status", JsonPrimitive(response.status.raw))
-        response.account?.let { account ->
+        response.account?.let { account -> put("account", accountJson(account)) }
+        response.login?.let { login -> put("login", loginJson(login)) }
+    }
+
+    /** An [Account] as both versions carry it (§9.7: unchanged in version 2). */
+    fun accountJson(account: Account): JsonObject = buildJsonObject {
+        put("kind", JsonPrimitive(account.kind.raw))
+        put("subject", JsonPrimitive(account.subject))
+        put("email", account.email?.let(::JsonPrimitive) ?: JsonNull)
+        put("displayName", account.displayName?.let(::JsonPrimitive) ?: JsonNull)
+        put("refreshToken", JsonPrimitive(account.refreshToken))
+        put("scopes", JsonArray(account.scopes.map(::JsonPrimitive)))
+        put("driveId", account.driveId?.let(::JsonPrimitive) ?: JsonNull)
+    }
+
+    /** A [Login] as both versions carry it. */
+    fun loginJson(login: Login): JsonObject = buildJsonObject {
+        put("kind", JsonPrimitive(login.kind.raw))
+        put("host", JsonPrimitive(login.host))
+        put("port", login.port?.let(::JsonPrimitive) ?: JsonNull)
+        put("user", JsonPrimitive(login.user))
+        put("password", JsonPrimitive(login.password))
+        put("hostKeyFingerprint", login.hostKeyFingerprint?.let(::JsonPrimitive) ?: JsonNull)
+        put("certificateFingerprint", login.certificateFingerprint?.let(::JsonPrimitive) ?: JsonNull)
+        login.s3?.let { s3 ->
             put(
-                "account",
+                "s3",
                 buildJsonObject {
-                    put("kind", JsonPrimitive(account.kind.raw))
-                    put("subject", JsonPrimitive(account.subject))
-                    put("email", account.email?.let(::JsonPrimitive) ?: JsonNull)
-                    put("displayName", account.displayName?.let(::JsonPrimitive) ?: JsonNull)
-                    put("refreshToken", JsonPrimitive(account.refreshToken))
-                    put("scopes", JsonArray(account.scopes.map(::JsonPrimitive)))
-                    put("driveId", account.driveId?.let(::JsonPrimitive) ?: JsonNull)
+                    put("endpoint", JsonPrimitive(s3.endpoint))
+                    put("region", JsonPrimitive(s3.region))
+                    put("bucket", JsonPrimitive(s3.bucket))
+                    put("pathStyle", JsonPrimitive(s3.usesPathStyle))
                 },
             )
         }
-        response.login?.let { login ->
-            put(
-                "login",
-                buildJsonObject {
-                    put("kind", JsonPrimitive(login.kind.raw))
-                    put("host", JsonPrimitive(login.host))
-                    put("port", login.port?.let(::JsonPrimitive) ?: JsonNull)
-                    put("user", JsonPrimitive(login.user))
-                    put("password", JsonPrimitive(login.password))
-                    put("hostKeyFingerprint", login.hostKeyFingerprint?.let(::JsonPrimitive) ?: JsonNull)
-                    put("certificateFingerprint", login.certificateFingerprint?.let(::JsonPrimitive) ?: JsonNull)
-                    login.s3?.let { s3 ->
-                        put(
-                            "s3",
-                            buildJsonObject {
-                                put("endpoint", JsonPrimitive(s3.endpoint))
-                                put("region", JsonPrimitive(s3.region))
-                                put("bucket", JsonPrimitive(s3.bucket))
-                                put("pathStyle", JsonPrimitive(s3.usesPathStyle))
-                            },
-                        )
-                    }
-                    put("addresses", JsonArray(login.addresses.map(::JsonPrimitive)))
-                },
-            )
-        }
+        put("addresses", JsonArray(login.addresses.map(::JsonPrimitive)))
     }
 
     fun encodeResult(result: Result): ByteArray = envelope("result") {
@@ -214,41 +223,47 @@ object AccountHandoff {
         val fields = open(body, "response")
         val status = Status.fromRaw(fields.string("status")) ?: throw HandoffException.MalformedMessage
         val account = fields["account"]?.takeUnless { it is JsonNull }?.let { element ->
-            val json = element as? JsonObject ?: throw HandoffException.MalformedMessage
-            Account(
-                kind = json.kind("kind")?.takeIf { it.isCloudAccount } ?: throw HandoffException.MalformedMessage,
-                subject = json.string("subject") ?: throw HandoffException.MalformedMessage,
-                email = json.string("email"),
-                displayName = json.string("displayName"),
-                refreshToken = json.string("refreshToken") ?: throw HandoffException.MalformedMessage,
-                scopes = (json["scopes"] as? JsonArray)?.map { it.jsonPrimitive.content }.orEmpty(),
-                driveId = json.string("driveId"),
-            )
+            decodeAccount(element as? JsonObject ?: throw HandoffException.MalformedMessage)
         }
         val login = fields["login"]?.takeUnless { it is JsonNull }?.let { element ->
-            val json = element as? JsonObject ?: throw HandoffException.MalformedMessage
-            val s3 = (json["s3"] as? JsonObject)?.let { s3 ->
-                S3Configuration(
-                    endpoint = s3.string("endpoint") ?: throw HandoffException.MalformedMessage,
-                    region = s3.string("region") ?: throw HandoffException.MalformedMessage,
-                    bucket = s3.string("bucket") ?: throw HandoffException.MalformedMessage,
-                    usesPathStyle = s3["pathStyle"]?.jsonPrimitive?.content == "true",
-                )
-            }
-            Login(
-                kind = json.kind("kind")?.takeIf { it.usesServerLogin } ?: throw HandoffException.MalformedMessage,
-                host = json.string("host") ?: throw HandoffException.MalformedMessage,
-                port = (json["port"] as? JsonPrimitive)?.intOrNull,
-                user = json.string("user") ?: throw HandoffException.MalformedMessage,
-                password = json.string("password") ?: throw HandoffException.MalformedMessage,
-                hostKeyFingerprint = json.string("hostKeyFingerprint"),
-                certificateFingerprint = json.string("certificateFingerprint"),
-                s3 = s3,
-                addresses = (json["addresses"] as? JsonArray)?.map { it.jsonPrimitive.content }.orEmpty(),
-            )
+            decodeLogin(element as? JsonObject ?: throw HandoffException.MalformedMessage)
         }
         if (status == Status.APPROVED && account == null && login == null) throw HandoffException.MalformedMessage
         return Response(status, account, login)
+    }
+
+    /** An [Account] from its JSON; the kind must be a cloud account's. */
+    fun decodeAccount(json: JsonObject): Account = Account(
+        kind = json.kind("kind")?.takeIf { it.isCloudAccount } ?: throw HandoffException.MalformedMessage,
+        subject = json.string("subject") ?: throw HandoffException.MalformedMessage,
+        email = json.string("email"),
+        displayName = json.string("displayName"),
+        refreshToken = json.string("refreshToken") ?: throw HandoffException.MalformedMessage,
+        scopes = (json["scopes"] as? JsonArray)?.map { it.jsonPrimitive.content }.orEmpty(),
+        driveId = json.string("driveId"),
+    )
+
+    /** A [Login] from its JSON; the kind must use a server login. */
+    fun decodeLogin(json: JsonObject): Login {
+        val s3 = (json["s3"] as? JsonObject)?.let { s3 ->
+            S3Configuration(
+                endpoint = s3.string("endpoint") ?: throw HandoffException.MalformedMessage,
+                region = s3.string("region") ?: throw HandoffException.MalformedMessage,
+                bucket = s3.string("bucket") ?: throw HandoffException.MalformedMessage,
+                usesPathStyle = s3["pathStyle"]?.jsonPrimitive?.content == "true",
+            )
+        }
+        return Login(
+            kind = json.kind("kind")?.takeIf { it.usesServerLogin } ?: throw HandoffException.MalformedMessage,
+            host = json.string("host") ?: throw HandoffException.MalformedMessage,
+            port = (json["port"] as? JsonPrimitive)?.intOrNull,
+            user = json.string("user") ?: throw HandoffException.MalformedMessage,
+            password = json.string("password") ?: throw HandoffException.MalformedMessage,
+            hostKeyFingerprint = json.string("hostKeyFingerprint"),
+            certificateFingerprint = json.string("certificateFingerprint"),
+            s3 = s3,
+            addresses = (json["addresses"] as? JsonArray)?.map { it.jsonPrimitive.content }.orEmpty(),
+        )
     }
 
     fun decodeResult(body: ByteArray): Result {

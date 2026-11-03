@@ -7,7 +7,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -71,6 +73,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
@@ -260,6 +263,7 @@ fun PosterCard(
  * overlaid on the TV layout). Only the artwork and caption differ between the
  * TMDB-backed and library-backed cards, so they arrive as slots.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PosterCardShell(
     width: Dp,
@@ -269,18 +273,15 @@ private fun PosterCardShell(
     onClick: () -> Unit,
     semanticsLabel: String,
     modifier: Modifier = Modifier,
+    /** A long press, or the Menu key on TV, when the card has a menu. */
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     artwork: @Composable (Modifier) -> Unit,
     caption: @Composable (Modifier) -> Unit,
 ) {
-    Card(
-        onClick = onClick,
-        modifier = modifier
-            .width(width)
-            .tvFocusLift(isTelevision)
-            .semantics { contentDescription = semanticsLabel },
-        shape = RoundedCornerShape(EdendaleRadii.Card.dp),
-        colors = CardDefaults.cardColors(containerColor = EdendaleColors.SurfaceLow),
-    ) {
+    val shape = RoundedCornerShape(EdendaleRadii.Card.dp)
+    val colors = CardDefaults.cardColors(containerColor = EdendaleColors.SurfaceLow)
+    val content: @Composable () -> Unit = {
         if (isTelevision) {
             Box {
                 artwork(Modifier.fillMaxWidth().aspectRatio(2f / 3f))
@@ -306,6 +307,36 @@ private fun PosterCardShell(
                 caption(Modifier.padding(horizontal = 10.dp, vertical = 10.dp))
             }
         }
+    }
+    if (onLongClick == null) {
+        Card(
+            onClick = onClick,
+            modifier = modifier
+                .width(width)
+                .tvFocusLift(isTelevision)
+                .semantics { contentDescription = semanticsLabel },
+            shape = shape,
+            colors = colors,
+        ) { content() }
+    } else {
+        Card(
+            modifier = modifier
+                .width(width)
+                .tvFocusLift(isTelevision)
+                .clip(shape)
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = onLongClickLabel)
+                .onKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyUp && event.key == Key.Menu) {
+                        onLongClick()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                .semantics { contentDescription = semanticsLabel },
+            shape = shape,
+            colors = colors,
+        ) { content() }
     }
 }
 
@@ -359,6 +390,9 @@ fun LibraryPosterCard(
     isWatched: Boolean = false,
     progress: Float? = null,
     mediaType: MediaType? = null,
+    /** Opens the card's menu: a long press, or the Menu key on TV. */
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     onClick: () -> Unit,
 ) {
     PosterCardShell(
@@ -368,6 +402,8 @@ fun LibraryPosterCard(
         progress = progress,
         onClick = onClick,
         semanticsLabel = title,
+        onLongClick = onLongClick,
+        onLongClickLabel = onLongClickLabel,
         artwork = { m ->
             if (posterUrl != null) {
                 AsyncImage(

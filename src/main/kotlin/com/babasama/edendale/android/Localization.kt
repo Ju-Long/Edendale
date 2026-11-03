@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.babasama.edendale.connectors.GoogleDriveLabels
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.tmdb.CollectionFilter
 import com.babasama.edendale.wyzie.WyzieException
@@ -63,13 +62,16 @@ class AppStrings(private val context: Context) {
     val folderUnopenable: String get() = context.getString(R.string.error_folder_unopenable)
     val shareUnreachable: String get() = context.getString(R.string.error_share_unreachable)
 
-    /** The names of Google Drive's virtual folders in the Link Source browser (H.9). */
-    val googleDriveLabels: GoogleDriveLabels
-        get() = GoogleDriveLabels(
-            myDrive = context.getString(R.string.gdrive_my_drive),
-            sharedWithMe = context.getString(R.string.gdrive_shared_with_me),
-            sharedDrives = context.getString(R.string.gdrive_shared_drives),
-        )
+    /** A Google Drive source's name in the library (H.9.4). */
+    val googleDriveChosenFolder: String get() = context.getString(R.string.gdrive_chosen_folder)
+
+    /** What Choose More Videos did to a Google Drive source, shown on its row until the next scan (H.9.6). */
+    fun googleDriveAdded(count: Int): String =
+        if (count == 0) {
+            context.getString(R.string.gdrive_added_none)
+        } else {
+            context.resources.getQuantityString(R.plurals.gdrive_added_count, count, count)
+        }
     val addressIsFile: String get() = context.getString(R.string.error_address_is_file)
 
     fun notShareAddress(input: String): String =

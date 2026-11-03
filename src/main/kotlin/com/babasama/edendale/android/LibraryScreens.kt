@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -60,19 +61,28 @@ import com.babasama.edendale.android.data.SourceScanRules
 /**
  * One linked source: local folder or network share, its item count, and the
  * credential-free path. Passwords live in the credential store and are never
- * part of the URL shown here.
+ * part of the URL shown here. A Google Drive source also offers Choose More
+ * Videos, which reopens Google's picker; a TV, which never opens the picker,
+ * says where to choose them instead (H.9.4).
  */
 @Composable
-fun SourceRow(
+internal fun SourceRow(
     folder: LibraryFolderEntity,
     itemCount: Int,
     isTelevision: Boolean,
     onRescan: () -> Unit,
     onRemove: () -> Unit,
+    /** What the last Choose More Videos did, until the next scan. */
+    note: String? = null,
+    chooseMoreVideos: ChooseMoreVideosState? = null,
 ) {
     val kind = SourceScanRules.kindOf(folder)
     val isNetwork = kind?.isRemote == true
     val statusMessage = sourceStatusMessage(folder)
+    val isGoogleDrive = kind == MediaSourceKind.GOOGLE_DRIVE
+    val accountKey = folder.accountKey
+    val chooser = chooseMoreVideos?.takeIf { isGoogleDrive && !isTelevision && accountKey != null }
+    val choosing = chooser != null && chooser.choosingFor == accountKey
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,8 +136,28 @@ fun SourceRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
-                statusMessage?.let {
+                val status = if (choosing) stringResource(R.string.link_source_waiting, sourceKindLabel(kind)) else statusMessage ?: note
+                status?.let {
                     Text(text = it, style = MaterialTheme.typography.bodySmall, color = EdendaleColors.Gold)
+                }
+                if (isGoogleDrive && isTelevision) {
+                    Text(
+                        text = stringResource(R.string.gdrive_choose_on_another_device),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (chooser != null && accountKey != null) {
+                ArchiveIconButton(
+                    onClick = { if (choosing) chooser.cancel() else chooser.start(accountKey) },
+                    enabled = choosing || chooser.choosingFor == null,
+                    isTelevision = isTelevision,
+                ) { _ ->
+                    Icon(
+                        painter = painterResource(id = if (choosing) R.drawable.ic_circle_xmark else R.drawable.ic_plus),
+                        contentDescription = stringResource(if (choosing) R.string.action_cancel else R.string.gdrive_choose_more),
+                    )
                 }
             }
             ArchiveIconButton(onClick = onRescan, isTelevision = isTelevision) { _ ->
@@ -233,6 +263,7 @@ fun LocalShowHost(
             val watched = progressByKey.forEpisode(episode.tmdbId)?.isCompleted == true
             library.setEpisodeWatched(episode, show.tmdbId, !watched)
         },
+        onRemove = { copies -> copies.forEach { library.removeEpisode(it.uri) } },
     )
 }
 
@@ -250,6 +281,8 @@ internal fun LocalShowScreen(
     isTelevision: Boolean,
     onBack: () -> Unit,
     onToggleWatched: (LibraryEpisodeEntity) -> Unit,
+    /** Remove from Library for an episode's copies whose removal lasts (D21). */
+    onRemove: (List<LibraryEpisodeEntity>) -> Unit,
 ) {
     BackHandler(onBack = onBack)
     val context = LocalContext.current
@@ -349,12 +382,15 @@ internal fun LocalShowScreen(
                             episode = copy.episode,
                         )
                     }
+                    // Only copies that stay removed: Google Drive videos (D21) and files added on their own.
+                    val removable = slot.copies.filter { SourceScanRules.removalLasts(it.folderUri) }
                     LocalEpisodeRow(
                         episode = episode,
                         copies = slot.copies,
                         foldersByUri = foldersByUri,
                         progress = progress,
                         isTelevision = isTelevision,
+                        onRemove = if (removable.isEmpty()) null else ({ onRemove(removable) }),
                         onPlay = {
                             // The first copy whose source is reachable (D.5).
                             val copy = PlaybackSources.preferred(slot.copies) {
@@ -374,7 +410,8 @@ internal fun LocalShowScreen(
 /**
  * One episode, merged across every copy of the show. A tap plays the first
  * reachable copy; with several copies, a long press (the menu key on TV)
- * opens Play From, and the subtitle counts the sources (D.5).
+ * opens Play From, and the subtitle counts the sources (D.5). The same menu
+ * offers Remove from Library where removing lasts (D21).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -387,10 +424,14 @@ private fun LocalEpisodeRow(
     onPlay: () -> Unit,
     onPlayCopy: (LibraryEpisodeEntity) -> Unit,
     onToggleWatched: () -> Unit,
+    /** Removes the episode's removable copies; null when none would stay removed. */
+    onRemove: (() -> Unit)? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val hasCopies = copies.size > 1
+    val hasMenu = hasCopies || onRemove != null
     val playFrom = stringResource(R.string.play_from)
+    val removeLabel = stringResource(R.string.remove_from_library)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -398,11 +439,11 @@ private fun LocalEpisodeRow(
             .clip(RoundedCornerShape(EdendaleRadii.Card.dp))
             .combinedClickable(
                 onClick = onPlay,
-                onLongClickLabel = if (hasCopies) playFrom else null,
-                onLongClick = if (hasCopies) ({ menuOpen = true }) else null,
+                onLongClickLabel = if (hasCopies) playFrom else if (onRemove != null) removeLabel else null,
+                onLongClick = if (hasMenu) ({ menuOpen = true }) else null,
             )
             .onKeyEvent { event ->
-                if (hasCopies && event.type == KeyEventType.KeyUp && event.key == Key.Menu) {
+                if (hasMenu && event.type == KeyEventType.KeyUp && event.key == Key.Menu) {
                     menuOpen = true
                     true
                 } else {
@@ -413,21 +454,33 @@ private fun LocalEpisodeRow(
         color = EdendaleColors.SurfaceLow,
     ) {
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            Text(
-                text = playFrom.uppercase(),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PlayFromItems(
-                copies = copies,
-                source = { foldersByUri.copySource(it.folderUri) },
-                path = { it.uri },
-                onPlay = {
-                    menuOpen = false
-                    onPlayCopy(it)
-                },
-            )
+            if (hasCopies) {
+                Text(
+                    text = playFrom.uppercase(),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                PlayFromItems(
+                    copies = copies,
+                    source = { foldersByUri.copySource(it.folderUri) },
+                    path = { it.uri },
+                    onPlay = {
+                        menuOpen = false
+                        onPlayCopy(it)
+                    },
+                )
+            }
+            onRemove?.let { remove ->
+                DropdownMenuItem(
+                    text = { Text(removeLabel) },
+                    leadingIcon = { Icon(painterResource(id = R.drawable.ic_trash_can), contentDescription = null) },
+                    onClick = {
+                        menuOpen = false
+                        remove()
+                    },
+                )
+            }
         }
         Column {
             Row(

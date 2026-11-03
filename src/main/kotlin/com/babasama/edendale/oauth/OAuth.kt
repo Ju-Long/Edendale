@@ -12,7 +12,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.io.IOException
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -100,6 +99,10 @@ sealed interface OAuthFailure {
     data object InvalidGrant : OAuthFailure
     data object DeviceCodeExpired : OAuthFailure
     data class Server(val code: String, val description: String?) : OAuthFailure
+    /** Google's consent page lets the viewer untick Drive access, leaving a token without `drive.file`. */
+    data object DriveAccessNotGranted : OAuthFailure
+    /** Choose More Videos came back signed in as [chosen] instead of [expected]. */
+    data class DifferentAccount(val chosen: String, val expected: String) : OAuthFailure
     data class Http(val status: Int) : OAuthFailure
     data object MalformedResponse : OAuthFailure
 }
@@ -115,8 +118,13 @@ class OAuthClient(
 
     // MARK: - Authorization code with PKCE
 
-    fun authorizationUrl(state: String, codeChallenge: String): String {
-        val parameters = listOf(
+    /**
+     * The provider's sign-in page. [parameters] are added for this request
+     * only and win over the configuration's (Google's `login_hint` when
+     * choosing more Drive videos).
+     */
+    fun authorizationUrl(state: String, codeChallenge: String, parameters: Map<String, String> = emptyMap()): String {
+        val query = listOf(
             "client_id" to configuration.clientId,
             "response_type" to "code",
             "redirect_uri" to configuration.redirectUri,
@@ -124,8 +132,8 @@ class OAuthClient(
             "state" to state,
             "code_challenge" to codeChallenge,
             "code_challenge_method" to "S256",
-        ) + configuration.additionalAuthorizationParameters.toSortedMap().toList()
-        return configuration.authorizationEndpoint + "?" + formEncode(parameters)
+        ) + (configuration.additionalAuthorizationParameters + parameters).toSortedMap().toList()
+        return configuration.authorizationEndpoint + "?" + formEncode(query)
     }
 
     suspend fun exchange(code: String, verifier: String): OAuthTokens = tokenRequest(
@@ -266,12 +274,22 @@ class OAuthClient(
         )
     }
 
+    /** What the redirect carried back. [toString] never shows the code. */
+    data class AuthorizationResponse(
+        val code: String,
+        /** Google's picker: the files chosen this time (none when the viewer confirmed without picking). */
+        val pickedFileIds: List<String> = emptyList(),
+    ) {
+        override fun toString() = "AuthorizationResponse(<redacted>, picked=${pickedFileIds.size})"
+    }
+
     companion object {
         /**
-         * The authorization code from the redirect [callbackUri], after checking
-         * `state` and any error the provider reported.
+         * The authorization code, and any files picked in Google's picker,
+         * from the redirect [callbackUri], after checking `state` and any
+         * error the provider reported.
          */
-        fun authorizationCode(callbackUri: String, expectedState: String, kind: MediaSourceKind): String {
+        fun authorizationResponse(callbackUri: String, expectedState: String, kind: MediaSourceKind): AuthorizationResponse {
             val query = callbackUri.substringAfter('?', "").substringBefore('#')
             val items = query.split('&').filter { it.isNotEmpty() }.associate {
                 formDecode(it.substringBefore('=')) to formDecode(it.substringAfter('=', ""))
@@ -281,7 +299,9 @@ class OAuthClient(
                 throw OAuthException(kind, OAuthFailure.Server(error, items["error_description"]))
             }
             if (items["state"] != expectedState) throw OAuthException(kind, OAuthFailure.StateMismatch)
-            return items["code"]?.takeIf { it.isNotEmpty() } ?: throw OAuthException(kind, OAuthFailure.MissingAuthorizationCode)
+            val code = items["code"]?.takeIf { it.isNotEmpty() } ?: throw OAuthException(kind, OAuthFailure.MissingAuthorizationCode)
+            val picked = items["picked_file_ids"].orEmpty().split(',').map(String::trim).filter(String::isNotEmpty)
+            return AuthorizationResponse(code, picked)
         }
 
         private const val UNRESERVED = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
@@ -307,13 +327,3 @@ class OAuthClient(
         internal fun JsonObject.int(name: String): Int? = (this[name] as? JsonPrimitive)?.let { it.intOrNull ?: it.contentOrNull?.toIntOrNull() }
     }
 }
-
-/** A JWT's payload. No signature check: the ID token came straight from Google's token endpoint over TLS (OIDC Core §3.1.3.7). */
-fun decodeJwtClaims(jwt: String): JsonObject? {
-    val parts = jwt.split('.')
-    if (parts.size < 2) return null
-    val payload = Pkce.decodeBase64Url(parts[1]) ?: return null
-    return runCatching { Json.parseToJsonElement(payload.decodeToString()).jsonObject }.getOrNull()
-}
-
-internal fun JsonObject.claim(name: String): String? = this[name]?.jsonPrimitive?.contentOrNull

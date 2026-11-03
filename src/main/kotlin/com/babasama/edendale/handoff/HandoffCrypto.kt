@@ -63,7 +63,13 @@ object HandoffCrypto {
      * confirms the key, so a wrong code fails there with [HandoffException.WrongCode]
      * before any account travels.
      */
-    class Pake(participantId: String, code: String, private val curve: ECJPAKECurve = ECJPAKECurves.NIST_P256) {
+    class Pake(
+        participantId: String,
+        code: String,
+        private val curve: ECJPAKECurve = ECJPAKECurves.NIST_P256,
+        /** The `v` the round frames carry: 1 for the phone-to-TV handoff, 2 for [HandoffV2]. */
+        private val version: Int = AccountHandoff.VERSION,
+    ) {
         private val participant = ECJPAKEParticipant(participantId, code.toCharArray(), curve)
         private var keyingMaterial: BigInteger? = null
 
@@ -151,11 +157,14 @@ object HandoffCrypto {
             }
         }
 
-        /** The 32-byte AES key, once both confirmations passed. */
-        fun sessionKey(): ByteArray {
+        /** The 32-byte AES key, once both confirmations passed (version 1's derivation). */
+        fun sessionKey(): ByteArray = hkdf(keyingMaterial(), KEY_INFO.toByteArray(), 32)
+
+        /** The J-PAKE keying material, once both confirmations passed; version 2 derives its key from it ([HandoffV2.codeKey]). */
+        fun keyingMaterial(): ByteArray {
             check(participant.state == ECJPAKEParticipant.STATE_ROUND_3_VALIDATED) { "Key confirmation hasn't completed" }
             val material = keyingMaterial ?: error("No keying material")
-            return hkdf(material.toByteArray(), KEY_INFO.toByteArray(), 32)
+            return material.toByteArray()
         }
 
         private inline fun validate(block: () -> Unit) {
@@ -172,14 +181,14 @@ object HandoffCrypto {
             val fields = runCatching { Json.parseToJsonElement(body.decodeToString()).jsonObject }.getOrNull()
                 ?: throw HandoffException.MalformedMessage
             val version = (fields["v"] as? JsonPrimitive)?.intOrNull ?: throw HandoffException.MalformedMessage
-            if (version != AccountHandoff.VERSION) throw HandoffException.UnsupportedVersion(version)
+            if (version != this.version) throw HandoffException.UnsupportedVersion(version)
             if (fields.string("type") != type) throw HandoffException.MalformedMessage
             return fields
         }
 
         private fun message(type: String, body: kotlinx.serialization.json.JsonObjectBuilder.() -> Unit): ByteArray =
             buildJsonObject {
-                put("v", JsonPrimitive(AccountHandoff.VERSION))
+                put("v", JsonPrimitive(version))
                 put("type", JsonPrimitive(type))
                 body()
             }.toString().toByteArray()

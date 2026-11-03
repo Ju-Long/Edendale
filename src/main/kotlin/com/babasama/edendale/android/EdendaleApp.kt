@@ -114,6 +114,8 @@ fun EdendaleApp(
         navigationItem = NavigationItem.of(tab)
     }
     val context = LocalContext.current
+    // Once, after the move to drive.file removed old Google Drive accounts or sources (H.9.4, D20).
+    GoogleDriveRelinkNotice(isTelevision = isTelevision)
 
     // The Watchlist tab appears only while the list holds a title. Its refs are
     // verified here (not just on the tab) so a fully filtered-out watchlist can
@@ -169,6 +171,17 @@ fun EdendaleApp(
             }
             onRouteConsumed()
         }
+    }
+
+    // A pairing link from the camera or another app (27.1 handoff): the guest side opens over whatever is showing.
+    val pendingPairingLink by com.babasama.edendale.android.sync.PendingPairing.link.collectAsState()
+    pendingPairingLink?.let { link ->
+        com.babasama.edendale.android.sync.PairingDialog(
+            isTelevision = isTelevision,
+            hosting = false,
+            initialLink = link,
+            onDismiss = { com.babasama.edendale.android.sync.PendingPairing.link.value = null },
+        )
     }
 
     openShowKey?.let { key ->

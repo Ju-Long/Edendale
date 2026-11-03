@@ -100,6 +100,25 @@ class ConnectorTest {
     }
 
     @Test
+    fun `a Google Drive source's URL is fixed and names no folder`() {
+        // Drive's permissionId keys the account since drive.file (H.9.4); the hash rule is unchanged.
+        val account = SourceUrl.accountKey(MediaSourceKind.GOOGLE_DRIVE, "01234567890123456789")
+        val url = GoogleDriveConnector.chosenFolderUrl(account)
+        assertEquals("gdrive://$account/~chosen/Google%20Drive", url)
+        assertEquals(listOf(GoogleDriveConnector.CHOSEN_FOLDER_ID), SourceUrl.parseAccountItem(url)!!.ids)
+        assertEquals("Google Drive", SourceUrl.fileName(url))
+        assertEquals(account, SourceUrl.credentialHost(url))
+        assertTrue(GoogleDriveConnector.isChosenFolder(url))
+        // A picked file's ID; none for the source itself, other providers, or malformed URLs.
+        val item = SourceUrl.accountItem(MediaSourceKind.GOOGLE_DRIVE, account, listOf("1AbC_d-9"), "Heat (1995).mkv")
+        assertEquals("1AbC_d-9", GoogleDriveConnector.fileId(item))
+        assertNull(GoogleDriveConnector.fileId(url))
+        assertNull(GoogleDriveConnector.fileId(SourceUrl.accountItem(MediaSourceKind.DROPBOX, account, listOf("id:x"), "Heat.mkv")))
+        assertNull(GoogleDriveConnector.fileId("gdrive://abc/onlyname.mkv"))
+        assertNull(GoogleDriveConnector.fileId("content://media/external/video/1"))
+    }
+
+    @Test
     fun `malformed account URLs are rejected`() {
         assertNull(SourceUrl.parseAccountItem("gdrive://abc/onlyname.mkv"))
         assertNull(SourceUrl.parseAccountItem("onedrive://abc/d/Name.mkv"))
