@@ -98,6 +98,11 @@ static NSError *EDSMBSyncError(EDRemoteFileError code, struct smb2_context *smb2
     BOOL _broken;
     /// A read buffer a failed request may still point at (see EDSMBFile.m).
     uint8_t *_pendingBuffer;
+    /// An smb2_close whose wait failed: libsmb2 6.1 has freed its callback
+    /// data but left the request queued, so destroying the context would
+    /// free it again (EDSMBFile.m never closes for this reason). The
+    /// context is leaked instead; nothing runs it again.
+    BOOL _leakContext;
 }
 
 @synthesize isBroken = _broken;
@@ -127,14 +132,26 @@ static NSError *EDSMBSyncError(EDRemoteFileError code, struct smb2_context *smb2
 }
 
 - (void)dealloc {
-    if (_smb2) {
+    if (_smb2 && !_leakContext) {
         // A healthy connection logs off; a failed one may still have a
         // request queued, so it only drops its socket (see EDSMBFile.m).
         if (!_broken) smb2_disconnect_share(_smb2);
         smb2_destroy_context(_smb2);
     }
-    // Only now can no queued request write here any more.
+    // Only now (or never, for a leaked context) can no queued request
+    // write here any more.
     free(_pendingBuffer);
+}
+
+/// Closes `fh` on a healthy connection. A close that fails marks the
+/// connection broken and its context leaked (see `_leakContext`).
+- (BOOL)closeHandle:(struct smb2fh *)fh {
+    if (smb2_close(_smb2, fh) < 0) {
+        _broken = YES;
+        _leakContext = YES;
+        return NO;
+    }
+    return YES;
 }
 
 - (BOOL)checkUsable:(NSError **)error {
@@ -211,14 +228,14 @@ static NSError *EDSMBSyncError(EDRemoteFileError code, struct smb2_context *smb2
         return nil;
     }
     if (st.smb2_size > limit) {
-        smb2_close(_smb2, fh);
+        [self closeHandle:fh];
         if (error) *error = EDSMBSyncError(EDRemoteFileErrorIO, NULL, -EFBIG);
         return nil;
     }
     NSMutableData *data = [NSMutableData dataWithCapacity:(NSUInteger)st.smb2_size];
     uint8_t *buffer = malloc(EDSMBSyncChunk);
     if (!buffer) {
-        smb2_close(_smb2, fh);
+        [self closeHandle:fh];
         if (error) *error = EDSMBSyncError(EDRemoteFileErrorIO, NULL, -ENOMEM);
         return nil;
     }
@@ -239,7 +256,8 @@ static NSError *EDSMBSyncError(EDRemoteFileError code, struct smb2_context *smb2
         offset += (uint64_t)n;
     }
     free(buffer);
-    if (smb2_close(_smb2, fh) < 0) _broken = YES;
+    // The data is read; a failed close only retires the connection.
+    [self closeHandle:fh];
     return data;
 }
 
@@ -266,8 +284,10 @@ static NSError *EDSMBSyncError(EDRemoteFileError code, struct smb2_context *smb2
         }
         offset += (uint64_t)n;
     }
-    if (smb2_close(_smb2, fh) < 0) {
-        if (error) *error = [self fail:-EIO operation:EDRemoteFileErrorIO];
+    // Closed before the rename: a server may refuse to rename a file
+    // that is still open.
+    if (![self closeHandle:fh]) {
+        if (error) *error = EDSMBSyncError(EDRemoteFileErrorIO, _smb2, -EIO);
         return NO;
     }
     return YES;

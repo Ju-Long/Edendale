@@ -207,11 +207,136 @@ struct SyncCoordinatorTests {
         let storage = MemorySyncStorage()
         let mac = SyncTestDevice(storage: storage)
         let movie = Int.random(in: 1_000_000...9_000_000)
-        mac.stamper.observe(4_000_000_000_000)
+        // An hour ahead (a peer whose clock runs fast): later writes order after it.
+        let ahead = SyncLedger.milliseconds(Date()) + 3_600_000
+        mac.stamper.observe(ahead)
         mac.watchStore.update(WatchProgress(tmdbId: movie, mediaType: .movie, position: 0.3, watchedSeconds: 10))
-        #expect(mac.watchStore.progress(for: movie, mediaType: .movie)?.updateTime == 4_000_000_000_001)
-        #expect(mac.stamper.highWater == 4_000_000_000_001)
+        #expect(mac.watchStore.progress(for: movie, mediaType: .movie)?.updateTime == ahead + 1)
+        #expect(mac.stamper.highWater == ahead + 1)
         #expect(mac.watchStore.progress(for: movie, mediaType: .movie)?.deviceID == mac.stamper.deviceID)
         #expect(SyncFileFormat.isDeviceID(mac.stamper.deviceID))
+
+        // Two days ahead (a bad clock, perhaps through CloudKit): ignored (§7.1),
+        // and it doesn't hide a sane stamp observed with it.
+        let twoDays = SyncLedger.milliseconds(Date()) + 2 * 86_400_000
+        mac.stamper.observe(twoDays)
+        #expect(mac.stamper.highWater == ahead + 1)
+        mac.stamper.observe(stamps: [twoDays, ahead + 10, 5])
+        #expect(mac.stamper.highWater == ahead + 10)
+    }
+
+    @Test func aSyncRequestedDuringASyncRunsAfterIt() async throws {
+        let storage = GatedSyncStorage()
+        let suite = "EdendaleSyncTest-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let container = SyncTestDevice.makeContainer()
+        let stamper = SyncStamper(defaults: defaults, secrets: InMemorySecretStore())
+        let coordinator = SyncCoordinator(
+            watchStore: WatchProgressStore(container: container, stamper: stamper),
+            userMediaStore: UserMediaStore(container: container, stamper: stamper),
+            stamper: stamper, defaults: defaults,
+            libraryEpisodeIndex: { [:] }, seasonEpisodeIDs: { _, _ in nil },
+            storageFactory: { _ in storage }
+        )
+        coordinator.setLocation(SyncLocation(provider: .folder, space: "Family", folderPath: "/memory"), startSync: false)
+
+        let first = Task { await coordinator.runSync(reason: "test") }
+        while await storage.listings < 1 { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(coordinator.status.isSyncing)
+        coordinator.syncNow()
+        await storage.release()
+        #expect(await first.value)
+        // The request made during the first sync is run once it has finished.
+        for _ in 0..<200 where await storage.listings < 2 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await storage.listings == 2)
+    }
+
+    @Test func episodesWaitForTMDBSeasonListsAFewSeasonsPerSync() async throws {
+        let storage = MemorySyncStorage()
+        let device = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b"
+        let show = Int.random(in: 1_000_000...9_000_000)
+        // 25 seasons, one watched episode each, from another platform.
+        let records = (1...25).map { season in
+            #"{"type":"tv","tmdbId":\#(show),"season":\#(season),"episode":3,"position":60,"duration":600,"completed":false,"device":"\#(device)","updateTime":\#(1_762_000_000_000 + season)}"#
+        }.joined(separator: ",")
+        await storage.plant("\(device).json", Data("""
+        {"format":1,"space":"Family","device":{"id":"\(device)","name":"Pixel","platform":"android","app":"27.1"},
+         "watchProgress":[\(records)],"userMedia":[]}
+        """.utf8))
+        let asked = StubCounter()
+        let tv = SyncTestDevice(storage: storage, seasons: { asked_show, season in
+            _ = asked.next()
+            return asked_show == show ? [3: show * 100 + season] : nil
+        })
+        #expect(await tv.sync())
+        #expect(asked.next() - 1 == SyncCoordinator.seasonLookupsPerSync)
+        #expect(tv.watchStore.progress(for: show * 100 + 1, mediaType: .episode)?.position == 0.1)
+        #expect(tv.watchStore.progress(for: show * 100 + 25, mediaType: .episode) == nil)
+        // The rest are still written out for other devices, and resolve next time.
+        let data = try #require(await storage.contents(tv.fileName))
+        let file = try SyncFileFormat.parse(data, fileName: tv.fileName, space: "Family")
+        #expect(file.watchProgress.count == 25)
+        #expect(await tv.sync())
+        #expect(tv.watchStore.progress(for: show * 100 + 25, mediaType: .episode)?.showTmdbId == show)
+    }
+
+    @Test func libraryEpisodesResolveWithoutTMDB() async throws {
+        let storage = MemorySyncStorage()
+        let phone = SyncTestDevice(storage: storage)
+        let show = Int.random(in: 1_000_000...9_000_000)
+        phone.watchStore.update(WatchProgress(
+            tmdbId: show + 7, mediaType: .episode, position: 0.5, watchedSeconds: 1000,
+            showTmdbId: show, seasonNumber: 2, episodeNumber: 4
+        ))
+        await phone.sync()
+        let tv = SyncTestDevice(storage: storage, library: [.episode(show: show, season: 2, episode: 4): show + 7], seasons: { _, _ in
+            Issue.record("TMDB asked for an episode the library knows")
+            return nil
+        })
+        await tv.sync()
+        #expect(tv.watchStore.progress(for: show + 7, mediaType: .episode)?.position == 0.5)
+    }
+
+    @Test func removedDevicesDisappearFromTheList() async throws {
+        let storage = MemorySyncStorage()
+        let phone = SyncTestDevice(storage: storage)
+        let tv = SyncTestDevice(storage: storage)
+        phone.userMediaStore.setFavorite(true, for: MediaRef(id: 603, mediaType: .movie))
+        await phone.sync()
+        await tv.sync()
+        #expect(tv.coordinator.knownDevices.map(\.fileName) == [phone.fileName])
+        try await tv.coordinator.removeDevice(fileName: phone.fileName)
+        #expect(tv.coordinator.knownDevices.isEmpty)
+        // Removed elsewhere (another device deleted it): gone at the next listing.
+        await phone.sync()
+        await tv.sync()
+        #expect(tv.coordinator.knownDevices.count == 1)
+        try await storage.delete(phone.fileName)
+        await tv.sync()
+        #expect(tv.coordinator.knownDevices.isEmpty)
+        #expect(tv.coordinator.status.devices.isEmpty)
+    }
+
+    @Test func farFutureRecordsFromCloudKitStayLocalUntilTheClockPassesThem() async throws {
+        let storage = MemorySyncStorage()
+        let mac = SyncTestDevice(storage: storage)
+        let movie = Int.random(in: 1_000_000...9_000_000)
+        // A row as CloudKit would deliver it from a device whose clock is a week ahead.
+        let week = SyncLedger.milliseconds(Date()) + 7 * 86_400_000
+        mac.watchStore.applySynced(WatchProgress(
+            tmdbId: movie, mediaType: .movie, position: 0.4, watchedSeconds: 100,
+            updateTime: week, deviceID: "0d0d0d0d-0d0d-4d0d-8d0d-0d0d0d0d0d0d"
+        ))
+        #expect(mac.stamper.highWater < week)
+        mac.userMediaStore.setFavorite(true, for: MediaRef(id: movie, mediaType: .movie))
+        await mac.sync()
+        let data = try #require(await storage.contents(mac.fileName))
+        let file = try SyncFileFormat.parse(data, fileName: mac.fileName, space: "Family")
+        #expect(file.watchProgress.isEmpty)
+        #expect(file.userMedia.count == 1)
+        #expect(mac.watchStore.progress(for: movie, mediaType: .movie)?.position == 0.4)
     }
 }

@@ -62,10 +62,24 @@ final class SyncStamper {
     }
 
     /// Records a stamp applied from another device (a file, or a CloudKit
-    /// record) so later local writes order after it.
-    func observe(_ updateTime: Int64) {
-        guard updateTime > highWater else { return }
+    /// record) so later local writes order after it. A stamp more than a
+    /// day ahead of this device's clock is ignored (§7.1): a CloudKit row
+    /// from a device with a bad clock must not drag this device's stamps
+    /// past the point every other device refuses them.
+    func observe(_ updateTime: Int64, now: Date = Date()) {
+        guard updateTime > highWater,
+              updateTime <= SyncLedger.milliseconds(now) + SyncLedger.farFutureAllowance
+        else { return }
         setHighWater(updateTime)
+    }
+
+    /// `observe` for the highest of `stamps` within a day of this device's
+    /// clock, so one far-future stamp doesn't hide the others.
+    func observe<S: Sequence<Int64>>(stamps: S, now: Date = Date()) {
+        let limit = SyncLedger.milliseconds(now) + SyncLedger.farFutureAllowance
+        if let highest = stamps.filter({ $0 <= limit }).max() {
+            observe(highest, now: now)
+        }
     }
 
     private func setHighWater(_ value: Int64) {

@@ -52,8 +52,10 @@ struct RootView: View {
     @State private var selectedTab: RootTab = .movies
     #endif
     @State private var externalDetail: RoutedMediaDetail?
-    /// A handoff code opened as a link: this device receives.
+    /// A handoff code opened as a link (the Camera app, a tap): the code
+    /// doesn't say which way the other device hands off, so the user picks.
     @State private var scannedHandoff: HandoffV2.QRPayload?
+    @State private var handoff: HandoffRequest?
 
     #if os(macOS)
     /// The sidebar row's root tab; routes that pick a tab open its whole page.
@@ -72,8 +74,20 @@ struct RootView: View {
                 MediaDetailView(source: destination.source)
             }
         }
-        .sheet(item: $scannedHandoff) { payload in
-            SyncHandoffView(role: .receiver, scanned: payload)
+        .confirmationDialog(
+            "Pair with \(scannedHandoff?.name ?? "")?",
+            isPresented: Binding(get: { scannedHandoff != nil }, set: { if !$0 { scannedHandoff = nil } }),
+            titleVisibility: .visible,
+            presenting: scannedHandoff
+        ) { payload in
+            Button("Send from This Device") { handoff = HandoffRequest(payload: payload, role: .sender) }
+            Button("Receive on This Device") { handoff = HandoffRequest(payload: payload, role: .receiver) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Send this device's sync location and logins to the other device, or receive the other device's.")
+        }
+        .sheet(item: $handoff) { request in
+            SyncHandoffView(role: request.role, scanned: request.payload)
         }
         // A cast tap anywhere sets `pendingPerson`; jump to the Search tab so
         // it can load that person's filmography.
@@ -408,6 +422,12 @@ struct RootView: View {
         }
         return hasher.finalize()
     }
+}
+
+private struct HandoffRequest: Identifiable {
+    let id = UUID()
+    let payload: HandoffV2.QRPayload
+    let role: HandoffV2.Role
 }
 
 private struct RoutedMediaDetail: Identifiable {

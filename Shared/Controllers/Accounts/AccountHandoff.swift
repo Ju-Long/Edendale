@@ -197,6 +197,74 @@ nonisolated enum AccountHandoff {
     }
 }
 
+// MARK: - Login on the wire
+
+/// The handoff's `Login` (SYNC-PROTOCOL.md §9.7) carries "the platform's
+/// NetworkCredential", and the platforms differ: Apple nests it as
+/// `credential` (`username`, `password`, `s3`, `port`), Android writes
+/// `user`, `password`, and `s3` (`endpoint`, `region`, `bucket`,
+/// `pathStyle`) at the top level. Apple writes both, so an Android
+/// receiver and an older Apple build each find their own fields, and reads
+/// either. Decoding lives in an extension so the memberwise initializer
+/// stays.
+nonisolated extension AccountHandoff.Login {
+    private enum CodingKeys: String, CodingKey {
+        case kind, host, credential, port, hostKeyFingerprint
+        case user, password, s3
+    }
+
+    private struct FlatS3: Codable {
+        let endpoint: String
+        let region: String
+        let bucket: String
+        let pathStyle: Bool?
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let kind = try container.decode(MediaSourceKind.self, forKey: .kind)
+        let host = try container.decode(String.self, forKey: .host)
+        let port = try container.decodeIfPresent(Int.self, forKey: .port)
+        let fingerprint = try container.decodeIfPresent(String.self, forKey: .hostKeyFingerprint)
+        var credential: NetworkCredential
+        if let nested = try container.decodeIfPresent(NetworkCredential.self, forKey: .credential) {
+            credential = nested
+        } else {
+            credential = NetworkCredential(
+                username: try container.decode(String.self, forKey: .user),
+                password: try container.decode(String.self, forKey: .password)
+            )
+            if let flat = try container.decodeIfPresent(FlatS3.self, forKey: .s3) {
+                guard let endpoint = URL(string: flat.endpoint) else {
+                    throw DecodingError.dataCorruptedError(forKey: .s3, in: container, debugDescription: "endpoint")
+                }
+                credential.s3 = S3Configuration(
+                    endpoint: endpoint, region: flat.region, bucket: flat.bucket, usesPathStyle: flat.pathStyle ?? false
+                )
+            }
+            if kind == .sftp { credential.port = port }
+        }
+        self.init(kind: kind, host: host, credential: credential, port: port, hostKeyFingerprint: fingerprint)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(host, forKey: .host)
+        try container.encode(credential, forKey: .credential)
+        try container.encodeIfPresent(port, forKey: .port)
+        try container.encodeIfPresent(hostKeyFingerprint, forKey: .hostKeyFingerprint)
+        try container.encode(credential.username, forKey: .user)
+        try container.encode(credential.password, forKey: .password)
+        if let s3 = credential.s3 {
+            try container.encode(
+                FlatS3(endpoint: s3.endpoint.absoluteString, region: s3.region, bucket: s3.bucket, pathStyle: s3.usesPathStyle),
+                forKey: .s3
+            )
+        }
+    }
+}
+
 // MARK: - Connection I/O
 
 nonisolated extension NWConnection {

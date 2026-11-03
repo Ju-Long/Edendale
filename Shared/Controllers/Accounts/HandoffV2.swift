@@ -45,12 +45,17 @@ nonisolated enum HandoffV2 {
     }
 
     /// The platforms sharing one Google OAuth client with this app (§9.8):
-    /// a Google refresh token moves only between them.
+    /// a Google refresh token moves only between them. They are also the
+    /// only ones that reach the app's own iCloud Drive folder directly.
     static let applePlatforms: Set<String> = ["ios", "ipados", "macos", "tvos", "visionos"]
 
-    static func sharesGoogleClient(withPlatform platform: String?) -> Bool {
+    static func isApplePlatform(_ platform: String?) -> Bool {
         guard let platform else { return false }
         return applePlatforms.contains(platform.lowercased())
+    }
+
+    static func sharesGoogleClient(withPlatform platform: String?) -> Bool {
+        isApplePlatform(platform)
     }
 
     // MARK: - Key schedule (§9.3)
@@ -513,7 +518,8 @@ nonisolated enum HandoffV2 {
     struct ResultMessage: Codable, Equatable, Sendable {
         struct Failure: Codable, Equatable, Sendable {
             let item: String
-            let reason: String
+            /// Android may send `null`.
+            let reason: String?
         }
 
         var type = "result"

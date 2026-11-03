@@ -613,9 +613,11 @@ change.
 
 Settings → Link Source adds network and cloud sources. Each connects straight
 from the device to the provider. Edendale has no server or account of its own,
-logins and refresh tokens stay in the Keychain, and nothing is ever uploaded or
-changed. Accounts and logins sync through iCloud Keychain, except to Apple TV,
-which gets them from a nearby iPhone or iPad (Continue on iPhone or iPad).
+logins and refresh tokens stay in the Keychain, and nothing in a source is
+uploaded or changed. The only files Edendale ever writes are its own sync
+files, and only to the location chosen in Settings → Sync (below). Accounts
+and logins sync through iCloud Keychain, except to Apple TV, which gets them
+from a nearby iPhone or iPad (Continue on iPhone or iPad).
 
 | Source | How it links | What Edendale reads |
 |---|---|---|
@@ -710,8 +712,20 @@ stamps. The device ID is a this-device-only Keychain item, never restored to
 another device; a restored device makes a new one. The watchlist flag now
 travels with the favourite and rating as one record, so a title added to the
 watchlist on one device reaches the others' watchlist cards and TMDB mirror.
+At launch, rows from before 27.1 take the flag from the local watchlist (and a
+listed title without a row gets one), so the first sync never tells other
+devices those titles left it; a stamped row that disagrees changed elsewhere,
+and the watchlist follows it. An episode from another device is matched to
+this device's rows and library first, then to TMDB one season list at a time
+(at most 20 per sync); until then it waits, and still travels on in this
+device's file. Rows that arrived through CloudKit stamped more than a day
+ahead stay local and are left out of the file until the clock passes them.
 Apple TV has no file picker and no iCloud Drive, so it offers the account and
-server locations and receives them from another device.
+server locations and receives them from another device; it signs with its own
+`Edendale-tvOS.entitlements`, without iCloud Documents. On macOS the sandbox
+allows incoming connections, so a Mac can show a pairing code, and read-write
+access to folders the user picks, so it can write sync files there; library
+folders are still only read.
 
 **Handing a location to another device** (Settings → Sync → Set Up Another
 Device, or Receive from Another Device) carries the location, its login, and
@@ -726,7 +740,13 @@ A code is valid for two minutes and one attempt. A Google Drive login moves
 only to another Apple device; other platforms receive the account's email and
 the folder ID and sign in to Google again with the account pre-filled. A
 folder location sends only the space name; the receiver picks its own folder.
-Apple-to-Apple account requests keep the DeviceDiscoveryUI handoff above.
+The app's iCloud Drive folder goes only to Apple devices: to a Windows PC it
+goes as a folder (iCloud for Windows shows it), and to Android or Quest not at
+all. Logins travel in both shapes the branches use (Apple's nested
+`credential`, Android's flat `user` and `password`), and either is read. A
+code opened as a link, from the Camera app for example, asks whether this
+device sends or receives. Apple-to-Apple account requests keep the
+DeviceDiscoveryUI handoff above.
 Typed-code pairing (J-PAKE) is not offered on Apple in 27.1; a pair with no
 camera on either side is bridged with a phone.
 
@@ -734,8 +754,9 @@ Run the sync and handoff tests, which carry SYNC-PROTOCOL.md's Appendix A
 vectors (merge cases M1–M8, the key schedule for RFC 7748's X25519 pair, the
 QR URI, the wrong-secret case, the channel nonces), a property test that
 devices converge regardless of read order, provider tests against recorded
-responses, a two-device sync in memory, and a log-hygiene test that no key,
-secret, token, or password reaches the log:
+responses, a two-device sync in memory, Android-shaped handoff messages, the
+migration of a store written by the shipped Core Data model, and a
+log-hygiene test that no key, secret, token, or password reaches the log:
 
 ```sh
 xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
@@ -746,13 +767,16 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
   -only-testing:EdendaleTests/SyncCoordinatorTests \
   -only-testing:EdendaleTests/SyncLogHygieneTests \
   -only-testing:EdendaleTests/HandoffV2Tests \
+  -only-testing:EdendaleTests/HandoffInteropTests \
+  -only-testing:EdendaleTests/WatchStateMigrationTests \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
 ```
 
 Checks that need hardware: the QR pairing between two devices (Bonjour and the
 camera do nothing in Simulator), iCloud Drive and a picked folder on a device,
-each provider with a real account, Background App Refresh timing, and the
-first launch's Core Data migration of an existing store. The iCloud Documents
+each provider with a real account, Background App Refresh timing, the
+first launch's Core Data migration of a real existing store (the test covers a
+synthetic one), and the macOS sandbox entitlements in a signed build. The iCloud Documents
 capability needs the container's schema deployed in the CloudKit dashboard for
 the new fields (`updateTime`, `deviceID`, `cleared`, `review`, `watchlist`)
 before a release build syncs them. Android and Windows implement the same

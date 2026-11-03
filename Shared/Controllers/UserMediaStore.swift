@@ -62,20 +62,22 @@ final class UserMediaStore {
     func rating(for ref: MediaRef) -> Double? { state(for: ref).rating }
 
     /// Every row, tombstones included, for this device's sync file. Rows
-    /// from before 27.1 are stamped once from their `updatedAt`.
+    /// from before 27.1 are stamped once from their `updatedAt`, in one save.
     func allRecords() -> [UserMediaState] {
         var records: [UserMediaState] = []
-        for record in states.values.sorted(by: { $0.updatedAt < $1.updatedAt }) + tombstones.values {
+        var legacy: [UserMediaState] = []
+        for record in Array(states.values) + Array(tombstones.values) {
             if record.updateTime == 0 || record.deviceID == nil {
                 var stamped = record
                 stamped.updateTime = max(SyncLedger.milliseconds(record.updatedAt), SyncFileFormat.minimumStamp)
                 stamped.deviceID = stamper.deviceID
-                persist(stamped, local: false)
+                legacy.append(stamped)
                 records.append(stamped)
             } else {
                 records.append(record)
             }
         }
+        if !legacy.isEmpty { persist(legacy, local: false) }
         return records
     }
 
@@ -109,17 +111,62 @@ final class UserMediaStore {
         save(s)
     }
 
+    // MARK: - Watchlist at launch
+
+    /// Brings the portable watchlist flag and the local watchlist into
+    /// step (27.1). The flag lived only in WatchlistStore before, so rows
+    /// never stamped take it from the local watchlist, and a title listed
+    /// there with no row gets one, both stamped like other rows from
+    /// before 27.1 at their first sync. Without this, the first sync would
+    /// tell other devices these titles left the watchlist. A stamped row
+    /// that disagrees changed on another device while nothing was
+    /// listening, so the watchlist follows it: the returned flags.
+    ///
+    /// - Parameters:
+    ///   - listed: titles the local watchlist shows.
+    ///   - dates: when each listed title was last changed there.
+    func reconcileWatchlist(listed: Set<MediaRef>, dates: [MediaRef: Date]) -> [(MediaRef, Bool)] {
+        var seeded: [UserMediaState] = []
+        var toMirror: [(MediaRef, Bool)] = []
+        var seen: Set<MediaRef> = []
+        for row in Array(states.values) + Array(tombstones.values) {
+            seen.insert(row.ref)
+            let isListed = listed.contains(row.ref)
+            guard row.isInWatchlist != isListed else { continue }
+            if row.updateTime == 0 || row.deviceID == nil {
+                var updated = row
+                updated.isInWatchlist = isListed
+                if let date = dates[row.ref], date > updated.updatedAt { updated.updatedAt = date }
+                seeded.append(updated)
+            } else {
+                toMirror.append((row.ref, row.isInWatchlist))
+            }
+        }
+        for ref in listed where !seen.contains(ref) {
+            seeded.append(UserMediaState(ref: ref, isInWatchlist: true, updatedAt: dates[ref] ?? Date()))
+        }
+        if !seeded.isEmpty { persist(seeded, local: false) }
+        return toMirror
+    }
+
     // MARK: - Sync
 
-    /// Stores a record another device wrote, verbatim, and tells the
-    /// watchlist when its flag changed.
-    func applySynced(_ state: UserMediaState) {
-        let before = self.state(for: state.ref).isInWatchlist
-        persist(state, local: false)
-        stamper.observe(state.updateTime)
-        if before != state.isInWatchlist {
-            onWatchlistSynced?(state.ref, state.isInWatchlist)
+    /// Stores records another device wrote, verbatim, in one save, and
+    /// tells the watchlist about each flag that changed.
+    func applySynced(_ records: [UserMediaState]) {
+        guard !records.isEmpty else { return }
+        let changedFlags = records.compactMap { record -> (MediaRef, Bool)? in
+            state(for: record.ref).isInWatchlist != record.isInWatchlist ? (record.ref, record.isInWatchlist) : nil
         }
+        persist(records, local: false)
+        stamper.observe(stamps: records.map(\.updateTime))
+        for (ref, flag) in changedFlags {
+            onWatchlistSynced?(ref, flag)
+        }
+    }
+
+    func applySynced(_ state: UserMediaState) {
+        applySynced([state])
     }
 
     // MARK: - TMDB sync
@@ -208,23 +255,32 @@ final class UserMediaStore {
         let stamp = stamper.stamp()
         state.updateTime = stamp.updateTime
         state.deviceID = stamp.device
-        persist(state, local: true)
+        persist([state], local: true)
     }
 
-    private func persist(_ state: UserMediaState, local: Bool) {
-        let key = cacheKey(state.ref)
-        if state.isEmpty {
-            states.removeValue(forKey: key)
-            tombstones[key] = state
-        } else {
-            tombstones.removeValue(forKey: key)
-            states[key] = state
+    private func persist(_ records: [UserMediaState], local: Bool) {
+        for state in records {
+            let key = cacheKey(state.ref)
+            if state.isEmpty {
+                states.removeValue(forKey: key)
+                tombstones[key] = state
+            } else {
+                tombstones.removeValue(forKey: key)
+                states[key] = state
+            }
+            let request = CDUserMedia.fetchRequest(ref: state.ref)
+            do {
+                let cd = try viewContext.fetch(request).first
+                    // By entity name: `CDUserMedia(context:)` asks the class for its
+                    // entity, which is ambiguous once another model version is loaded.
+                    ?? NSEntityDescription.insertNewObject(forEntityName: "CDUserMedia", into: viewContext) as! CDUserMedia
+                cd.apply(state)
+            } catch {
+                print("[UserMediaStore] Failed to fetch for saving: \(error)")
+            }
         }
-        let request = CDUserMedia.fetchRequest(ref: state.ref)
         do {
-            let cd = try viewContext.fetch(request).first ?? CDUserMedia(context: viewContext)
-            cd.apply(state)
-            try viewContext.save()
+            if viewContext.hasChanges { try viewContext.save() }
         } catch {
             print("[UserMediaStore] Failed to save: \(error)")
         }
@@ -247,7 +303,7 @@ final class UserMediaStore {
             let results = try viewContext.fetch(request)
             var rebuilt: [String: UserMediaState] = [:]
             var cleared: [String: UserMediaState] = [:]
-            var highest: Int64 = 0
+            var stamps: [Int64] = []
             var flagged: [(MediaRef, Bool)] = []
             for cd in results {
                 let dto = cd.toDTO()
@@ -257,14 +313,15 @@ final class UserMediaStore {
                 } else {
                     rebuilt[key] = dto
                 }
-                highest = max(highest, dto.updateTime)
-                if mirroringWatchlist, dto.isInWatchlist != (states[key]?.isInWatchlist ?? false) {
+                stamps.append(dto.updateTime)
+                let before = (states[key] ?? tombstones[key])?.isInWatchlist ?? false
+                if mirroringWatchlist, dto.isInWatchlist != before {
                     flagged.append((dto.ref, dto.isInWatchlist))
                 }
             }
             states = rebuilt
             tombstones = cleared
-            stamper.observe(highest)
+            stamper.observe(stamps: stamps)
             for (ref, flag) in flagged {
                 onWatchlistSynced?(ref, flag)
             }

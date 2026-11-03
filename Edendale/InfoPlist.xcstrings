@@ -357,121 +357,240 @@
         }
       }
     },
+    "NSCameraUsageDescription" : {
+      "comment" : "Privacy - Camera Usage Description",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scannt den Code, den ein anderes Gerät anzeigt, um dort die Synchronisierung einzurichten oder seinen Sync-Speicherort zu empfangen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scans the code another device shows to set up sync there or to receive its sync location."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scans the code another device shows to set up sync there or to receive its sync location."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scans the code another device shows to set up sync there or to receive its sync location."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scans the code another device shows to set up sync there or to receive its sync location."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scans the code another device shows to set up sync there or to receive its sync location."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale escanea el código que muestra otro dispositivo para configurar allí la sincronización o recibir su ubicación de sincronización."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale escanea el código que muestra otro dispositivo para configurar allí la sincronización o recibir su ubicación de sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scanne le code affiché par un autre appareil pour y configurer la synchronisation ou recevoir son emplacement de synchronisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scansiona il codice mostrato da un altro dispositivo per configurare lì la sincronizzazione o ricevere la sua posizione di sincronizzazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendaleは、他のデバイスに表示されたコードをスキャンして、そのデバイスで同期を設定したり、その同期の場所を受け取ったりします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale은 다른 기기에 표시된 코드를 스캔하여 그 기기에서 동기화를 설정하거나 그 기기의 동기화 위치를 받습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale scant de code die een ander apparaat toont om daar synchronisatie in te stellen of de synchronisatielocatie ervan te ontvangen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale escaneia o código exibido em outro dispositivo para configurar a sincronização nele ou receber o local de sincronização dele."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê o código apresentado noutro dispositivo para configurar aí a sincronização ou receber a localização de sincronização dele."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale сканирует код, показанный на другом устройстве, чтобы настроить на нём синхронизацию или получить его расположение синхронизации."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale skannar koden som en annan enhet visar för att ställa in synk där eller ta emot dess synkplats."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 会扫描另一台设备显示的代码，以便在那台设备上设置同步，或接收它的同步位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 會掃描另一台裝置顯示的代碼，以便在那台裝置上設定同步，或接收它的同步位置。"
+          }
+        }
+      }
+    },
     "NSLocalNetworkUsageDescription" : {
       "comment" : "Privacy - Local Network Usage Description",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale verbindet sich mit den von dir verknüpften Medienservern (wie SMB-Freigaben), um deine eigenen Videodateien zu durchsuchen und abzuspielen."
+            "value" : "Edendale verbindet sich mit den von dir verknüpften Servern wie SMB, NFS, SFTP oder WebDAV, um deine eigenen Videos abzuspielen, und mit deinen anderen Geräten in diesem Netzwerk, um die Synchronisierung zwischen ihnen einzurichten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to the media servers you link (such as SMB shares) to browse and play your own video files."
+            "value" : "Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to the media servers you link (such as SMB shares) to browse and play your own video files."
+            "value" : "Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to the media servers you link (such as SMB shares) to browse and play your own video files."
+            "value" : "Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to the media servers you link (such as SMB shares) to browse and play your own video files."
+            "value" : "Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to the media servers you link (such as SMB shares) to browse and play your own video files."
+            "value" : "Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se conecta a los servidores multimedia que vincules (como recursos compartidos SMB) para explorar y reproducir tus propios archivos de vídeo."
+            "value" : "Edendale se conecta a los servidores que vincules, como SMB, NFS, SFTP o WebDAV, para reproducir tus propios vídeos, y a tus otros dispositivos de esta red para configurar la sincronización entre ellos."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se conecta a los servidores multimedia que vincules (como recursos compartidos SMB) para explorar y reproducir tus propios archivos de video."
+            "value" : "Edendale se conecta a los servidores que vincules, como SMB, NFS, SFTP o WebDAV, para reproducir tus propios videos, y a tus otros dispositivos de esta red para configurar la sincronización entre ellos."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se connecte aux serveurs multimédias que vous associez (tels que les partages SMB) pour parcourir et lire vos propres fichiers vidéo."
+            "value" : "Edendale se connecte aux serveurs que vous associez, comme SMB, NFS, SFTP ou WebDAV, pour lire vos propres vidéos, et à vos autres appareils sur ce réseau pour configurer la synchronisation entre eux."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale si connette ai server multimediali che colleghi (come le condivisioni SMB) per sfogliare e riprodurre i tuoi file video."
+            "value" : "Edendale si connette ai server che colleghi, come SMB, NFS, SFTP o WebDAV, per riprodurre i tuoi video, e agli altri tuoi dispositivi su questa rete per configurare la sincronizzazione tra loro."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendaleは、自分のビデオファイルをブラウズして再生するため、リンクしたメディアサーバー（SMB共有など）に接続します。"
+            "value" : "Edendaleは、自分のビデオを再生するためにリンクしたサーバー（SMB、NFS、SFTP、WebDAVなど）に接続し、デバイス間の同期を設定するためにこのネットワーク上の他のデバイスに接続します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale은 사용자가 연결한 미디어 서버(SMB 공유 등)에 접속하여 사용자의 비디오 파일을 탐색하고 재생합니다."
+            "value" : "Edendale은 사용자의 비디오를 재생하기 위해 연결한 서버(SMB, NFS, SFTP, WebDAV 등)에 접속하고, 기기 간 동기화를 설정하기 위해 이 네트워크의 다른 기기에 접속합니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale maakt verbinding met de mediaservers die je koppelt (zoals SMB-shares) om door je eigen videobestanden te bladeren en deze af te spelen."
+            "value" : "Edendale maakt verbinding met de servers die je koppelt, zoals SMB, NFS, SFTP of WebDAV, om je eigen video's af te spelen, en met je andere apparaten op dit netwerk om synchronisatie tussen ze in te stellen."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale se conecta aos servidores de mídia que você vincular (como compartilhamentos SMB) para explorar e reproduzir seus próprios arquivos de vídeo."
+            "value" : "O Edendale se conecta aos servidores que você vincular, como SMB, NFS, SFTP ou WebDAV, para reproduzir seus próprios vídeos, e aos seus outros dispositivos nesta rede para configurar a sincronização entre eles."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale liga-se aos servidores multimédia que associar (como partilhas SMB) para explorar e reproduzir os seus próprios ficheiros de vídeo."
+            "value" : "O Edendale liga-se aos servidores que associar, como SMB, NFS, SFTP ou WebDAV, para reproduzir os seus próprios vídeos, e aos seus outros dispositivos nesta rede para configurar a sincronização entre eles."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale подключается к добавленным медиасерверам (например, SMB-ресурсам), чтобы просматривать и воспроизводить ваши видеофайлы."
+            "value" : "Edendale подключается к привязанным вами серверам, например SMB, NFS, SFTP или WebDAV, чтобы воспроизводить ваши видео, и к другим вашим устройствам в этой сети, чтобы настроить синхронизацию между ними."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale ansluter till mediaservrarna du länkar (som SMB-delningar) för att bläddra bland och spela upp dina egna videofiler."
+            "value" : "Edendale ansluter till servrarna du länkar, till exempel SMB, NFS, SFTP eller WebDAV, för att spela upp dina egna videor, och till dina andra enheter i det här nätverket för att ställa in synk mellan dem."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 连接到您关联的媒体服务器（如 SMB 共享）以浏览和播放您自己的视频文件。"
+            "value" : "Edendale 会连接你链接的服务器（如 SMB、NFS、SFTP 或 WebDAV）来播放你自己的视频，并连接此网络上的其他设备以设置它们之间的同步。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 會連線至你連結的媒體伺服器（例如 SMB 共享），以瀏覽並播放你自己的影片檔案。"
+            "value" : "Edendale 會連線你連結的伺服器（如 SMB、NFS、SFTP 或 WebDAV）來播放你自己的影片，並連線此網路上的其他裝置以設定它們之間的同步。"
           }
         }
       }

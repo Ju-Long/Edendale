@@ -125,8 +125,10 @@ final class HandoffV2Session {
             // One handoff at a time (§9.1): the second guest is told so.
             let queue = self.queue
             Task {
-                try? await incoming.startAndWaitUntilReady(queue: queue)
-                try? await incoming.sendFrame(try HandoffV2.frame(HandoffV2.Message.encode(HandoffV2.ErrorMessage(reason: "busy"))))
+                try? await Self.withDeadline(.seconds(5), expire: { incoming.cancel() }) {
+                    try await incoming.startAndWaitUntilReady(queue: queue)
+                    try await incoming.sendFrame(try HandoffV2.frame(HandoffV2.Message.encode(HandoffV2.ErrorMessage(reason: "busy"))))
+                }
                 incoming.cancel()
             }
             return
@@ -138,8 +140,13 @@ final class HandoffV2Session {
         task = Task { [weak self] in
             guard let self else { return }
             do {
-                try await incoming.startAndWaitUntilReady(queue: self.queue)
-                let helloBody = try await self.timed(HandoffV2.handshakeTimeout) { try await incoming.receiveFrame() }
+                let queue = self.queue
+                try await Self.withDeadline(HandoffV2.handshakeTimeout, expire: { incoming.cancel() }) {
+                    try await incoming.startAndWaitUntilReady(queue: queue)
+                }
+                let helloBody = try await Self.withDeadline(HandoffV2.handshakeTimeout, expire: { incoming.cancel() }) {
+                    try await incoming.receiveFrame()
+                }
                 let channel: HandoffV2.Channel
                 do {
                     guard var pairing = self.hostPairing else { throw HandoffV2.PairingError.codeSpent }
@@ -179,7 +186,9 @@ final class HandoffV2Session {
                 self.phase = .pairing
                 let pairing = HandoffV2.GuestPairing(payload: code)
                 try await connection.sendFrame(try HandoffV2.frame(try pairing.helloBody()))
-                let confirmBody = try await self.timed(HandoffV2.handshakeTimeout) { try await connection.receiveFrame() }
+                let confirmBody = try await Self.withDeadline(HandoffV2.handshakeTimeout, expire: { connection.cancel() }) {
+                    try await connection.receiveFrame()
+                }
                 let channel = try pairing.accept(confirmBody: confirmBody)
                 SyncLog.info("handoff guest: channel established")
                 try await self.exchange(over: connection, channel: channel)
@@ -190,31 +199,50 @@ final class HandoffV2Session {
     }
 
     private func connect(to code: HandoffV2.QRPayload) async throws -> NWConnection {
+        let queue = self.queue
         if let host = code.host, let port = code.port, let endpointPort = NWEndpoint.Port(rawValue: UInt16(clamping: port)) {
             let direct = NWConnection(host: NWEndpoint.Host(host), port: endpointPort, using: .tcp)
             do {
-                try await timed(.seconds(10)) { try await direct.startAndWaitUntilReady(queue: self.queue) }
+                // A host on another subnet leaves the connection waiting, not
+                // failed: the deadline cancels it so browsing can take over.
+                try await Self.withDeadline(.seconds(10), expire: { direct.cancel() }) {
+                    try await direct.startAndWaitUntilReady(queue: queue)
+                }
                 return direct
             } catch {
                 direct.cancel()
                 SyncLog.info("handoff guest: direct connection failed, browsing")
             }
         }
-        let endpoint = try await timed(.seconds(15)) { try await self.findService(named: code.name) }
+        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: HandoffV2.serviceType, domain: nil), using: .tcp)
+        self.browser = browser
+        let endpoint: NWEndpoint
+        do {
+            endpoint = try await Self.withDeadline(.seconds(15), expire: { browser.cancel() }) {
+                try await Self.findService(named: code.name, with: browser, queue: queue)
+            }
+        } catch {
+            browser.cancel()
+            self.browser = nil
+            throw error
+        }
+        browser.cancel()
+        self.browser = nil
         let connection = NWConnection(to: endpoint, using: .tcp)
-        try await timed(.seconds(15)) { try await connection.startAndWaitUntilReady(queue: self.queue) }
+        try await Self.withDeadline(.seconds(15), expire: { connection.cancel() }) {
+            try await connection.startAndWaitUntilReady(queue: queue)
+        }
         return connection
     }
 
     /// The host's service, by the instance name the code carries, or the
-    /// only version-2 host on the network.
-    private func findService(named name: String) async throws -> NWEndpoint {
-        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: HandoffV2.serviceType, domain: nil), using: .tcp)
-        self.browser = browser
-        defer {
-            browser.cancel()
-            self.browser = nil
-        }
+    /// only version-2 host on the network. Ends when found, or when the
+    /// browser fails or is cancelled.
+    private nonisolated static func findService(
+        named name: String,
+        with browser: NWBrowser,
+        queue: DispatchQueue
+    ) async throws -> NWEndpoint {
         let gate = ResumeOnce()
         return try await withCheckedThrowingContinuation { continuation in
             browser.browseResultsChangedHandler = { results, _ in
@@ -232,8 +260,11 @@ final class HandoffV2Session {
                 }
             }
             browser.stateUpdateHandler = { state in
-                if case .failed = state {
+                switch state {
+                case .failed, .cancelled:
                     gate.run { continuation.resume(throwing: HandoffV2.PairingError.cancelled) }
+                default:
+                    break
                 }
             }
             browser.start(queue: queue)
@@ -305,7 +336,10 @@ final class HandoffV2Session {
     private func receive<T: Decodable>(
         over connection: NWConnection, channel: inout HandoffV2.Channel, timeout: Duration
     ) async throws -> T {
-        let body = try channel.open(try await timed(timeout) { try await connection.receiveFrame() })
+        let frame = try await Self.withDeadline(timeout, expire: { connection.cancel() }) {
+            try await connection.receiveFrame()
+        }
+        let body = try channel.open(frame)
         let envelope = try HandoffV2.Message.envelope(from: body)
         if envelope.type == HandoffV2.Message.errorType {
             let error = try HandoffV2.Message.decode(HandoffV2.ErrorMessage.self, from: body)
@@ -355,16 +389,42 @@ final class HandoffV2Session {
         stop()
     }
 
-    private func timed<T: Sendable>(_ timeout: Duration, _ work: @escaping @Sendable () async throws -> T) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask { try await work() }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                throw HandoffV2.PairingError.timedOut
-            }
-            let result = try await group.next()!
-            group.cancelAll()
-            return result
+    /// Runs `work` and, if it hasn't finished after `timeout`, calls
+    /// `expire` and throws `.timedOut`. `expire` must cancel the connection
+    /// or browser `work` waits on: its callbacks are what resume `work`, so
+    /// a task group can't end it (the group waits for its child).
+    nonisolated static func withDeadline<T: Sendable>(
+        _ timeout: Duration,
+        expire: @escaping @Sendable () -> Void,
+        _ work: () async throws -> T
+    ) async throws -> T {
+        let gate = FirstClaim()
+        let watchdog = Task {
+            try? await Task.sleep(for: timeout)
+            guard !Task.isCancelled, gate.claim() else { return }
+            expire()
+        }
+        defer { watchdog.cancel() }
+        do {
+            let value = try await work()
+            guard gate.claim() else { throw HandoffV2.PairingError.timedOut }
+            return value
+        } catch {
+            guard gate.claim() else { throw HandoffV2.PairingError.timedOut }
+            throw error
+        }
+    }
+}
+
+/// Whichever of two racing paths claims first wins; the other learns it lost.
+nonisolated final class FirstClaim: @unchecked Sendable {
+    private let lock = NSLock()
+    private var claimed = false
+
+    func claim() -> Bool {
+        lock.withLock {
+            defer { claimed = true }
+            return !claimed
         }
     }
 }

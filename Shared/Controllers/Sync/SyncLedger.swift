@@ -113,15 +113,19 @@ nonisolated struct SyncLedger: Equatable, Sendable {
     // MARK: - Output
 
     /// The records this device writes (§5, §6.3): every record it holds,
-    /// minus tombstones older than `tombstoneRetention` milliseconds.
+    /// minus tombstones older than `tombstoneRetention` milliseconds, and
+    /// minus records it would itself refuse as more than a day ahead (one
+    /// that reached the local store through CloudKit from a device with a
+    /// bad clock), which go out once the clock passes them.
     func records(now: Int64, tombstoneRetention: Int64 = SyncLedger.tombstoneRetention)
         -> (progress: [SyncProgressRecord], userMedia: [SyncUserMediaRecord]) {
         let cutoff = now - tombstoneRetention
+        let limit = now + Self.farFutureAllowance
         let progressOut = progress.values
-            .filter { !$0.cleared || $0.updateTime >= cutoff }
+            .filter { (!$0.cleared || $0.updateTime >= cutoff) && $0.updateTime <= limit }
             .sorted { $0.key < $1.key }
         let userMediaOut = userMedia.values
-            .filter { !$0.isTombstone || $0.updateTime >= cutoff }
+            .filter { (!$0.isTombstone || $0.updateTime >= cutoff) && $0.updateTime <= limit }
             .sorted { $0.key < $1.key }
         return (progressOut, userMediaOut)
     }

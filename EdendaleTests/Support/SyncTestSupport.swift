@@ -70,6 +70,33 @@ actor MemorySyncStorage: SyncStorage {
     }
 }
 
+/// Holds every listing until `release()`, counting them.
+actor GatedSyncStorage: SyncStorage {
+    nonisolated let providerName = "gated"
+    private let inner = MemorySyncStorage()
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    private var open = false
+    private(set) var listings = 0
+
+    func listSpace() async throws -> [SyncFileEntry] {
+        listings += 1
+        if !open {
+            await withCheckedContinuation { waiting.append($0) }
+        }
+        return try await inner.listSpace()
+    }
+
+    func release() {
+        open = true
+        waiting.forEach { $0.resume() }
+        waiting = []
+    }
+
+    func read(_ name: String) async throws -> Data { try await inner.read(name) }
+    func write(_ name: String, data: Data) async throws { try await inner.write(name, data: data) }
+    func delete(_ name: String) async throws { try await inner.delete(name) }
+}
+
 @MainActor
 final class SyncTestDevice {
     let container: NSPersistentCloudKitContainer
@@ -80,7 +107,13 @@ final class SyncTestDevice {
     let userMediaStore: UserMediaStore
     let coordinator: SyncCoordinator
 
-    init(storage: MemorySyncStorage, space: String = "Family", now: @escaping () -> Date = { Date() }) {
+    init(
+        storage: MemorySyncStorage,
+        space: String = "Family",
+        library: [SyncRecordKey: Int] = [:],
+        seasons: (@MainActor (Int, Int) async -> [Int: Int]?)? = nil,
+        now: @escaping () -> Date = { Date() }
+    ) {
         suiteName = "EdendaleSyncTest-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
@@ -93,7 +126,8 @@ final class SyncTestDevice {
             userMediaStore: userMediaStore,
             stamper: stamper,
             defaults: defaults,
-            episodeResolver: { _, _, _ in nil },
+            libraryEpisodeIndex: { library },
+            seasonEpisodeIDs: seasons ?? { _, _ in nil },
             storageFactory: { _ in storage },
             now: now
         )

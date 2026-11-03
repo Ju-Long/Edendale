@@ -167,7 +167,11 @@ struct SyncHandoffView: View {
                 }
             }
             Section {
-                Button("Continue") { choosing = false }
+                Button("Continue") {
+                    choosing = false
+                    // A code scanned (or opened as a link) before choosing.
+                    if let scanned { session.startGuest(code: scanned) }
+                }
                     .archiveButtonStyle(.primary)
                     .disabled(!(selection.includeLocation && sync.location != nil) && selection.accountKeys.isEmpty && selection.loginIDs.isEmpty)
             } footer: {
@@ -214,7 +218,7 @@ struct SyncHandoffView: View {
                     Label("Show a Code for the Other Device to Scan", image: .link)
                 }
             } footer: {
-                Text("Open Edendale on the other device, choose \(role == .sender ? "Receive from Another Device" : "Set Up Another Device") in Settings → Sync, and pair the two by code. Both devices must be on the same network.")
+                Text("Open Edendale on the other device, choose \(otherDeviceAction) in Settings → Sync, and pair the two by code. Both devices must be on the same network.")
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -243,7 +247,7 @@ struct SyncHandoffView: View {
                 case .hosting(let qr, _):
                     QRCodeView(url: qr, accessibilityLabel: String(localized: "Handoff code"))
                         .frame(maxWidth: .infinity)
-                    Text("Scan this code with Edendale on the other device, from Settings → Sync → \(role == .sender ? "Receive from Another Device" : "Set Up Another Device"). A new code appears every two minutes.")
+                    Text("Scan this code with Edendale on the other device, from Settings → Sync → \(otherDeviceAction). A new code appears every two minutes.")
                         .font(Typography.bodySM)
                         .foregroundStyle(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -303,6 +307,11 @@ struct SyncHandoffView: View {
         #endif
     }
 
+    /// What the other device chooses: the opposite of this one's role.
+    private var otherDeviceAction: String {
+        role == .sender ? String(localized: "Receive from Another Device") : String(localized: "Set Up Another Device")
+    }
+
     private func progress(_ text: String) -> some View {
         HStack(spacing: 12) {
             ProgressView().tint(Theme.gold)
@@ -329,6 +338,9 @@ struct SyncHandoffView: View {
                        : location.account == nil && location.provider == .googleDrive
                        ? String(localized: "Google Drive, space \"\(location.space)\": \(peer) signs in to Google again with your account pre-filled")
                        : String(localized: "\(location.provider.displayName), space \"\(location.space)\", with its login"))
+            }
+            if selection.includeLocation, sync.location?.provider == .iCloudDrive, offer.location == nil {
+                bullet(String(localized: "Not the sync location: \(peer) can't open iCloud Drive."))
             }
             ForEach(offer.accounts ?? [], id: \.subject) { account in
                 bullet(String(localized: "\(account.kind.displayName) account \(account.email ?? account.displayName ?? "")"))
@@ -368,7 +380,11 @@ struct SyncHandoffView: View {
             bullet(describe(item))
         }
         ForEach(failed, id: \.item) { failure in
-            bullet(String(localized: "\(describe(failure.item)) couldn't be kept (\(failure.reason))"))
+            if let reason = failure.reason {
+                bullet(String(localized: "\(describe(failure.item)) couldn't be kept (\(reason))"))
+            } else {
+                bullet(String(localized: "\(describe(failure.item)) couldn't be kept."))
+            }
         }
         if role == .receiver, let followUp {
             followUpView(followUp)
@@ -399,9 +415,15 @@ struct SyncHandoffView: View {
             Button("Choose Folder…") { showFolderImporter = true }.archiveButtonStyle(.primary)
             #endif
         case .googleSignIn(let hint, let folderID, let space):
-            Text("Sign in to Google Drive\(hint.map { " as \($0)" } ?? "") to join the space \"\(space)\".")
-                .font(Typography.bodySM)
-                .foregroundStyle(Theme.textSecondary)
+            Group {
+                if let hint {
+                    Text("Sign in to Google Drive as \(hint) to join the space \"\(space)\".")
+                } else {
+                    Text("Sign in to Google Drive to join the space \"\(space)\".")
+                }
+            }
+            .font(Typography.bodySM)
+            .foregroundStyle(Theme.textSecondary)
             if let followUpError {
                 Text(followUpError)
                     .font(Typography.bodySM)

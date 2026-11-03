@@ -13,8 +13,10 @@
 //
 //  Records keyed by show, season, and episode name an episode the local
 //  store keys by its own TMDB ID, so an episode from another device is
-//  resolved through the library, then TMDB; one that cannot be resolved
-//  yet waits in `pending` and is still written out verbatim.
+//  resolved through the store and the library, then TMDB one season list
+//  at a time (a few per sync, each at most daily once it has answered);
+//  one that cannot be resolved yet waits in `pending` and is still written
+//  out verbatim. Records reach the stores in one save per file.
 //
 
 import CryptoKit
@@ -36,6 +38,10 @@ final class SyncCoordinator {
     /// §8.2: 1, 2, 4, 8 … minutes, capped at an hour.
     static let backoffBase: TimeInterval = 60
     static let backoffCap: TimeInterval = 3600
+    /// TMDB season lists fetched per sync to resolve episode records.
+    static let seasonLookupsPerSync = 20
+    /// A season that answered is asked again after this long.
+    static let seasonRetryInterval: TimeInterval = 86_400
 
     struct Status: Equatable, Sendable {
         var isSyncing = false
@@ -58,6 +64,8 @@ final class SyncCoordinator {
         /// SHA-256 of the file last written, so an unchanged store is not
         /// rewritten.
         var lastWrittenDigest: String?
+        /// `show:season` → when TMDB last answered for it.
+        var seasonAttempts: [String: Date]? = nil
     }
 
     private(set) var location: SyncLocation?
@@ -71,7 +79,8 @@ final class SyncCoordinator {
     @ObservationIgnored private let watchStore: WatchProgressStore
     @ObservationIgnored private let userMediaStore: UserMediaStore
     @ObservationIgnored private let environment: ConnectorFactory.Environment
-    @ObservationIgnored private let episodeResolver: @MainActor (Int, Int, Int) async -> Int?
+    @ObservationIgnored private let libraryEpisodeIndex: @MainActor () -> [SyncRecordKey: Int]
+    @ObservationIgnored private let seasonEpisodeIDs: @MainActor (Int, Int) async -> [Int: Int]?
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let storageFactory: (SyncLocation) async throws -> any SyncStorage
 
@@ -91,7 +100,8 @@ final class SyncCoordinator {
         stamper: SyncStamper = .shared,
         defaults: UserDefaults = AppIdentifiers.defaults,
         environment: ConnectorFactory.Environment = .live,
-        episodeResolver: (@MainActor (Int, Int, Int) async -> Int?)? = nil,
+        libraryEpisodeIndex: (@MainActor () -> [SyncRecordKey: Int])? = nil,
+        seasonEpisodeIDs: (@MainActor (Int, Int) async -> [Int: Int]?)? = nil,
         storageFactory: ((SyncLocation) async throws -> any SyncStorage)? = nil,
         now: @escaping () -> Date = { Date() }
     ) {
@@ -100,7 +110,8 @@ final class SyncCoordinator {
         self.stamper = stamper
         self.defaults = defaults
         self.environment = environment
-        self.episodeResolver = episodeResolver ?? Self.libraryThenTMDBEpisodeResolver
+        self.libraryEpisodeIndex = libraryEpisodeIndex ?? Self.libraryEpisodeIndex
+        self.seasonEpisodeIDs = seasonEpisodeIDs ?? Self.tmdbSeasonEpisodeIDs
         self.storageFactory = storageFactory ?? { try await SyncStorageFactory.make(for: $0, environment: environment) }
         self.now = now
         if let data = defaults.data(forKey: Self.locationKey) {
@@ -290,12 +301,18 @@ final class SyncCoordinator {
         do {
             let storage = try await storageFactory(location)
             currentStorage = storage
+            if let folder = storage as? FolderSyncStorage, let refreshed = folder.refreshedBookmark {
+                // The folder moved or was renamed; keep the bookmark current.
+                self.location?.folderBookmark = refreshed
+                persistLocation()
+            }
             let myFile = SyncFileFormat.fileName(deviceID: deviceID)
             let nowMilliseconds = SyncLedger.milliseconds(began)
 
             // 1. List.
             let entries = try await storage.listSpace()
             var ledger = buildLedger(now: nowMilliseconds)
+            var episodes = EpisodeIndex(store: watchStore.episodeIndex(), library: libraryEpisodeIndex)
             var warnings: [String] = []
             var applied = 0
             var readFiles = 0
@@ -337,16 +354,23 @@ final class SyncCoordinator {
                     SyncLog.warning("\(entry.name): \(outcome.farFutureSkipped) records past the far-future guard")
                 }
                 applied += outcome.applied
-                await apply(outcome, from: ledger)
+                apply(outcome, from: ledger, episodes: &episodes)
                 state.fileStamps[entry.name] = entry.stamp
                 SyncLog.info("merged \(entry.name): read=\(outcome.read) applied=\(outcome.applied) stamp=\(entry.stamp)")
             }
-            // Files that disappeared are forgotten; an empty listing clears nothing (§8.2).
+            // Files that disappeared are forgotten, with their devices' names
+            // (removed devices); an empty listing clears nothing (§8.2).
             let present = Set(entries.map(\.name))
             for name in state.fileStamps.keys where !present.contains(name) {
                 state.fileStamps[name] = nil
             }
-            await resolvePending(ledger: &ledger)
+            if !entries.isEmpty {
+                let presentIDs = Set(entries.compactMap(\.deviceID))
+                for id in state.deviceNames.keys where !presentIDs.contains(id) {
+                    state.deviceNames[id] = nil
+                }
+            }
+            await resolvePending(ledger: ledger, episodes: &episodes)
 
             // 3. Write this device's file when it would differ from the last
             // one written: by the user's changes, or by what step 2 applied.
@@ -370,7 +394,9 @@ final class SyncCoordinator {
             } else {
                 dirty = false
             }
-            stamper.observe(ledger.highWater)
+            // Every stamp read counts, applied or not (§7.1), but not one the
+            // device would refuse (a far-future row that came through CloudKit).
+            stamper.observe(stamps: ledger.progress.values.map(\.updateTime) + ledger.userMedia.values.map(\.updateTime))
 
             // 4. Record the sync.
             if let drive = storage as? GoogleDriveSyncStorage, let folderID = await drive.resolvedFolderID,
@@ -387,10 +413,12 @@ final class SyncCoordinator {
             failures = 0
             nextAttemptAt = nil
             retryTask?.cancel()
-            SyncLog.info("sync end files=\(entries.count) read=\(readFiles) applied=\(applied) warnings=\(warnings.count)")
+            SyncLog.info("sync end files=\(entries.count) read=\(readFiles) applied=\(applied) pending=\(state.pendingProgress.count) warnings=\(warnings.count)")
             if syncAgain {
                 syncAgain = false
-                requestSync(reason: "queued")
+                // After this sync has returned and cleared `isSyncing`; asking
+                // now would only queue the request again and lose it.
+                Task { [weak self] in self?.requestSync(reason: "queued") }
             }
             return true
         } catch {
@@ -447,46 +475,93 @@ final class SyncCoordinator {
         return ledger
     }
 
-    /// Applies the records a merge changed to the local stores.
-    private func apply(_ outcome: SyncLedger.Outcome, from ledger: SyncLedger) async {
-        for key in outcome.changedUserMedia {
-            guard let record = ledger.userMedia[key] else { continue }
-            userMediaStore.applySynced(Self.state(for: record))
-        }
+    /// Applies the records a merge changed to the local stores, one save
+    /// per store. Episodes the store and library can't place wait in
+    /// `pending` for TMDB.
+    private func apply(_ outcome: SyncLedger.Outcome, from ledger: SyncLedger, episodes: inout EpisodeIndex) {
+        let userMedia = outcome.changedUserMedia.compactMap { ledger.userMedia[$0] }.map(Self.state(for:))
+        userMediaStore.applySynced(userMedia)
+
+        var progress: [WatchProgress] = []
         for key in outcome.changedProgress {
             guard let record = ledger.progress[key] else { continue }
-            await applyProgress(record)
-        }
-    }
-
-    private func applyProgress(_ record: SyncProgressRecord) async {
-        switch record.type {
-        case .movie:
-            watchStore.applySynced(Self.progress(for: record, tmdbId: record.tmdbID))
-        case .tv:
-            guard let season = record.season, let episode = record.episode else { return }
-            var tmdbId = watchStore.episodeTmdbID(showTmdbId: record.tmdbID, season: season, episode: episode)
-            if tmdbId == nil { tmdbId = await episodeResolver(record.tmdbID, season, episode) }
-            if let tmdbId {
-                watchStore.applySynced(Self.progress(for: record, tmdbId: tmdbId))
-                state.pendingProgress.removeAll { $0.key == record.key }
-            } else {
-                state.pendingProgress.removeAll { $0.key == record.key }
-                state.pendingProgress.append(record)
+            state.pendingProgress.removeAll { $0.key == key }
+            switch record.type {
+            case .movie:
+                progress.append(Self.progress(for: record, tmdbId: record.tmdbID))
+            case .tv:
+                if let tmdbId = episodes.id(for: key) {
+                    progress.append(Self.progress(for: record, tmdbId: tmdbId))
+                } else {
+                    state.pendingProgress.append(record)
+                }
             }
         }
+        watchStore.applySynced(progress)
     }
 
-    /// Retries the episode records that could not be resolved earlier.
-    private func resolvePending(ledger: inout SyncLedger) async {
-        guard !state.pendingProgress.isEmpty else { return }
-        for record in state.pendingProgress.prefix(50) {
-            guard ledger.progress[record.key] == record else {
-                state.pendingProgress.removeAll { $0.key == record.key }
+    /// Places the episode records still waiting: first through the store
+    /// and library (an episode played or imported here since), then
+    /// through TMDB's season lists, a few per sync.
+    private func resolvePending(ledger: SyncLedger, episodes: inout EpisodeIndex) async {
+        // A record superseded since it was queued no longer waits.
+        state.pendingProgress.removeAll { ledger.progress[$0.key] != $0 }
+        guard !state.pendingProgress.isEmpty else {
+            state.seasonAttempts = nil
+            return
+        }
+        var resolved: [WatchProgress] = []
+        var waiting: [SyncProgressRecord] = []
+        for record in state.pendingProgress {
+            if let tmdbId = episodes.id(for: record.key) {
+                resolved.append(Self.progress(for: record, tmdbId: tmdbId))
+            } else {
+                waiting.append(record)
+            }
+        }
+
+        var attempts = state.seasonAttempts ?? [:]
+        var lookups = 0
+        var stillWaiting: [SyncProgressRecord] = []
+        let bySeason = Dictionary(grouping: waiting) { "\($0.tmdbID):\($0.season ?? 0)" }
+        // Shows, then seasons, in number order.
+        let ordered = bySeason.sorted { lhs, rhs in
+            let left = (lhs.value[0].tmdbID, lhs.value[0].season ?? 0)
+            let right = (rhs.value[0].tmdbID, rhs.value[0].season ?? 0)
+            return left < right
+        }
+        for (season, records) in ordered {
+            if let asked = attempts[season], now().timeIntervalSince(asked) < Self.seasonRetryInterval {
+                stillWaiting += records
                 continue
             }
-            await applyProgress(record)
+            guard lookups < Self.seasonLookupsPerSync,
+                  let show = records.first?.tmdbID, let number = records.first?.season
+            else {
+                stillWaiting += records
+                continue
+            }
+            lookups += 1
+            guard let ids = await seasonEpisodeIDs(show, number) else {
+                // Offline or no TMDB: try again next sync, not tomorrow.
+                stillWaiting += records
+                continue
+            }
+            attempts[season] = now()
+            for record in records {
+                if let episode = record.episode, let tmdbId = ids[episode] {
+                    episodes.learn(record.key, tmdbId)
+                    resolved.append(Self.progress(for: record, tmdbId: tmdbId))
+                } else {
+                    stillWaiting.append(record)
+                }
+            }
         }
+        let waitingSeasons = Set(stillWaiting.map { "\($0.tmdbID):\($0.season ?? 0)" })
+        attempts = attempts.filter { waitingSeasons.contains($0.key) }
+        state.seasonAttempts = attempts.isEmpty ? nil : attempts
+        state.pendingProgress = stillWaiting
+        watchStore.applySynced(resolved)
     }
 
     // MARK: - Record mapping
@@ -560,22 +635,50 @@ final class SyncCoordinator {
 
     // MARK: - Episode resolution
 
-    /// An episode's TMDB ID from the library, then from TMDB.
-    @MainActor
-    static func libraryThenTMDBEpisodeResolver(showTmdbId: Int, season: Int, episode: Int) async -> Int? {
-        if let id = libraryEpisodeID(showTmdbId: showTmdbId, season: season, episode: episode) { return id }
-        guard TMDBService.shared.isConfigured else { return nil }
-        return try? await TMDBService.shared.fetchEpisode(showId: showTmdbId, season: season, episode: episode).id
+    /// Episode IDs by the file's key: the store's rows, then the library,
+    /// fetched once per sync and only if needed.
+    struct EpisodeIndex {
+        private var known: [SyncRecordKey: Int]
+        private var library: [SyncRecordKey: Int]?
+        private let loadLibrary: @MainActor () -> [SyncRecordKey: Int]
+
+        init(store: [SyncRecordKey: Int], library: @escaping @MainActor () -> [SyncRecordKey: Int]) {
+            known = store
+            loadLibrary = library
+        }
+
+        @MainActor
+        mutating func id(for key: SyncRecordKey) -> Int? {
+            if let id = known[key] { return id }
+            if library == nil { library = loadLibrary() }
+            return library?[key]
+        }
+
+        mutating func learn(_ key: SyncRecordKey, _ id: Int) {
+            known[key] = id
+        }
     }
 
+    /// Every identified episode in the library, by show, season, and episode.
     @MainActor
-    static func libraryEpisodeID(showTmdbId: Int, season: Int, episode: Int) -> Int? {
+    static func libraryEpisodeIndex() -> [SyncRecordKey: Int] {
         let context = Persistence.sharedModelContainer.mainContext
-        var descriptor = FetchDescriptor<Episode>(
-            predicate: #Predicate { $0.seasonNumber == season && $0.episodeNumber == episode && $0.tmdbId != nil }
-        )
-        descriptor.fetchLimit = 200
-        let candidates = (try? context.fetch(descriptor)) ?? []
-        return candidates.first { $0.show?.tmdbId == showTmdbId }?.tmdbId
+        let descriptor = FetchDescriptor<Episode>(predicate: #Predicate { $0.tmdbId != nil })
+        var index: [SyncRecordKey: Int] = [:]
+        for episode in (try? context.fetch(descriptor)) ?? [] {
+            guard let id = episode.tmdbId, let show = episode.show?.tmdbId else { continue }
+            index[.episode(show: show, season: episode.seasonNumber, episode: episode.episodeNumber)] = id
+        }
+        return index
+    }
+
+    /// One TMDB season's episode IDs by episode number; nil when TMDB
+    /// can't be asked or didn't answer.
+    @MainActor
+    static func tmdbSeasonEpisodeIDs(showTmdbId: Int, season: Int) async -> [Int: Int]? {
+        guard TMDBService.shared.isConfigured,
+              let detail = try? await TMDBService.shared.tvSeason(showId: showTmdbId, seasonNumber: season)
+        else { return nil }
+        return Dictionary(detail.episodes.map { ($0.episodeNumber, $0.id) }, uniquingKeysWith: { first, _ in first })
     }
 }

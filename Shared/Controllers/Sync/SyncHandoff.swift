@@ -38,25 +38,37 @@ enum SyncHandoff {
         var offer = HandoffV2.Offer(status: .approved)
 
         if selection.includeLocation, let location {
-            var wire = HandoffV2.OfferLocation(provider: location.provider, space: location.space)
+            var wire: HandoffV2.OfferLocation? = HandoffV2.OfferLocation(provider: location.provider, space: location.space)
             switch location.provider {
-            case .folder, .iCloudDrive:
+            case .folder:
                 break
+            case .iCloudDrive:
+                // Only Apple devices reach the app's iCloud Drive folder; Windows
+                // reaches it as a folder through iCloud for Windows (FEATURES-27.1.md
+                // §5.2), and Android and Quest not at all, where `icloudDrive` would
+                // also be an unknown provider that fails the whole offer.
+                if HandoffV2.isApplePlatform(peerPlatform) {
+                    break
+                } else if peerPlatform?.lowercased() == "windows" {
+                    wire = HandoffV2.OfferLocation(provider: .folder, space: location.space)
+                } else {
+                    wire = nil
+                }
             case .googleDrive, .oneDrive, .dropbox:
                 if let kind = location.provider.mediaSourceKind, let key = location.accountKey,
                    let account = accounts.first(where: { $0.kind == kind && $0.key == key }) {
                     if location.provider == .googleDrive, !sameGoogleClient {
-                        wire.googleAccountHint = account.email
-                        wire.googleFolderId = location.googleFolderID
+                        wire?.googleAccountHint = account.email
+                        wire?.googleFolderId = location.googleFolderID
                     } else {
-                        wire.account = HandoffV2.Account(account)
+                        wire?.account = HandoffV2.Account(account)
                     }
                 }
             case .webdav, .smb, .sftp:
-                wire.url = location.serverURL?.absoluteString
+                wire?.url = location.serverURL?.absoluteString
                 if let kind = location.provider.mediaSourceKind, let host = location.serverHost,
                    let login = logins.first(where: { $0.kind == kind && $0.host.lowercased() == host.lowercased() }) {
-                    wire.login = AccountHandoff.Login.handing(login, store: secrets)
+                    wire?.login = AccountHandoff.Login.handing(login, store: secrets)
                 }
             }
             offer.location = wire
@@ -126,11 +138,17 @@ enum SyncHandoff {
                 case .googleDrive, .oneDrive, .dropbox:
                     if let account = location.account {
                         if let adopted = await adopt(account, accounts: accounts, stored: &stored, failed: &failed) {
-                            sync.setLocation(SyncLocation(
-                                provider: location.provider, space: space, accountKey: adopted.key,
-                                googleFolderID: location.googleFolderId
-                            ))
-                            stored.append(name)
+                            // An account from before 27.1's write scopes can't hold
+                            // sync files until it signs in again (FEATURES-27.1.md §10).
+                            if CloudProviders.grantsSyncWrites(adopted) {
+                                sync.setLocation(SyncLocation(
+                                    provider: location.provider, space: space, accountKey: adopted.key,
+                                    googleFolderID: location.googleFolderId
+                                ))
+                                stored.append(name)
+                            } else {
+                                failed.append(.init(item: name, reason: "scope"))
+                            }
                         } else {
                             failed.append(.init(item: name, reason: "account"))
                         }

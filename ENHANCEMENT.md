@@ -2026,8 +2026,11 @@ RFC 4231 1–4; a whole sender/receiver exchange in memory; the Google rule.
   and Windows interop once those branches land.
 
 **Results, 2026-11-03:**
-- Builds and tests: see the pull request. Unit tests ran on macOS; iOS,
-  tvOS, and visionOS compiled without signing.
+- Builds and tests (Xcode 27.2): macOS `EdendaleTests` all pass (see the
+  pull request for the count); iOS, tvOS, and visionOS compile without
+  signing. Entitlements are not processed in unsigned builds, so the
+  sandbox and tvOS entitlement changes were checked through the resolved
+  build settings only.
 - Wire choices beyond the specification (shared with the android and
   windows sessions): `offer.location.provider` raw values are `folder`,
   `icloudDrive`, `googleDrive`, `oneDrive`, `dropbox`, `webdav`, `smb`,
@@ -2036,6 +2039,48 @@ RFC 4231 1–4; a whole sender/receiver exchange in memory; the Google rule.
   `platform`; tombstone retention is 366 days.
 - `MARKETING_VERSION` stays 27.0.1 until the owner cuts 27.1; the device
   file's `app` field reads it.
+
+### K.7 — Review fixes, 2026-11-03
+
+A second pass, after reading the Android branch's handoff (Ju-Long/Edendale#9):
+
+- **macOS sandbox:** `ENABLE_INCOMING_NETWORK_CONNECTIONS = YES` (a Mac
+  hosts the pairing listener) and `ENABLE_USER_SELECTED_FILES = readwrite`
+  with `com.apple.security.files.user-selected.read-write` (sync files in a
+  picked folder). Both were read-only/off, so neither worked on a Mac.
+- **tvOS entitlements:** `Edendale/Edendale-tvOS.entitlements`, the
+  27.0.1 set, so iCloud Documents stays off tvOS.
+- **Privacy manifest:** `NSPrivacyAccessedAPICategoryFileTimestamp`
+  (3B52.1 picked folders, C617.1 the ubiquity container).
+- **Info.plist strings:** the local-network and camera prompts live in
+  `InfoPlist.xcstrings` (which overrides the plists), in all locales.
+- **Interop with Android:** `Login` written in both shapes and read in
+  either; `result.failed[].reason` may be `null`; `icloudDrive` goes only to
+  Apple peers (`folder` to Windows, omitted otherwise).
+- **Handoff timeouts:** a watchdog cancels the connection or browser a wait
+  depends on; a task-group timeout could never end those waits.
+- **Coordinator:** a sync requested during a sync now runs after it (it was
+  lost); records reach the stores in one save per file; episodes resolve
+  through an index of the store and library, then TMDB season lists (20 per
+  sync, a season asked again after a day once it answered); removed devices
+  leave the list; a stale folder bookmark is refreshed.
+- **Far-future stamps through CloudKit:** the stamper ignores them, and the
+  file omits records the device would itself refuse.
+- **Watchlist at launch:** `UserMediaStore.reconcileWatchlist` seeds the flag
+  from the local watchlist for rows from before 27.1 and mirrors stamped
+  rows the watchlist missed.
+- **Folders:** every read, write, and delete coordinated; `.icloud`
+  placeholders listed under their names; dataless files downloaded first.
+- **SMB:** a failed `smb2_close` leaks the context instead of letting
+  `smb2_destroy_context` free its request twice (as `EDSMBFile.m` notes).
+- **Copy:** the Link Source and sign-in notes no longer say Edendale never
+  writes; they say it writes only its sync files, where the user syncs.
+- **Tests:** `HandoffInteropTests` (Android-shaped login, offer, and result;
+  iCloud and Google rules in offers; deadlines; placeholders) and
+  `WatchStateMigrationTests` (a store written by the shipped model migrates
+  and keeps its values; the watchlist reconcile), plus coordinator cases for
+  the queued sync, season lookups, library matches, removed devices, and
+  far-future CloudKit rows.
 
 ### Section K — Tracking
 
@@ -2047,6 +2092,7 @@ RFC 4231 1–4; a whole sender/receiver exchange in memory; the Google rule.
 | K.4 | Handoff v2: QR pairing, channel, session, offer/receive | [x] |
 | K.5 | Settings → Sync, location setup, handoff screens | [x] |
 | K.6 | Unit tests and vectors; all-platform build | [x] |
+| K.7 | Review fixes: sandbox, tvOS entitlements, Android interop, timeouts, batching, watchlist | [x] |
 | — | Copy in all 18 locales (113 keys) | [x] |
 | — | Entra `Files.ReadWrite.AppFolder`, Dropbox `files.content.write` (owner) | [ ] |
 | — | CloudKit schema deployment (owner) | [ ] |

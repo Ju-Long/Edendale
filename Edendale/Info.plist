@@ -49,9 +49,9 @@
 		<string>_edendale-handoff._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Edendale scans the code shown on another device to set up sync there, or to receive its sync location.</string>
+	<string>Edendale scans the code another device shows to set up sync there or to receive its sync location.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Edendale connects to the servers you link and hands sync logins to your other devices over your local network.</string>
+	<string>Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them.</string>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.com.BaBaSaMa.Edendale</key>

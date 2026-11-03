@@ -66,11 +66,11 @@ final class WatchProgressStore {
 
     /// Every row, tombstones included, for this device's sync file. Rows
     /// from before 27.1 are stamped once from their last-watched time
-    /// (ties by this device's ID), so they can be written out.
+    /// (ties by this device's ID), in one save, so they can be written out.
     func allRecords() -> [WatchProgress] {
-        var legacy: [WatchProgress] = []
         var records: [WatchProgress] = []
-        for record in progressMap.values.sorted(by: { $0.lastWatchedAt < $1.lastWatchedAt }) + tombstones.values {
+        var legacy: [WatchProgress] = []
+        for record in Array(progressMap.values) + Array(tombstones.values) {
             if record.updateTime == 0 || record.deviceID == nil {
                 var stamped = record
                 stamped.updateTime = max(SyncLedger.milliseconds(record.lastWatchedAt), SyncFileFormat.minimumStamp)
@@ -81,19 +81,18 @@ final class WatchProgressStore {
                 records.append(record)
             }
         }
-        for record in legacy { persist(record, local: false) }
+        if !legacy.isEmpty { persist(legacy, local: false) }
         return records
     }
 
-    /// The row an episode of `showTmdbId` has, by season and episode:
-    /// how another device's file names it.
-    func episodeTmdbID(showTmdbId: Int, season: Int, episode: Int) -> Int? {
-        if let hit = (progressMap.values.first { $0.showTmdbId == showTmdbId && $0.seasonNumber == season && $0.episodeNumber == episode })
-            ?? (tombstones.values.first { $0.showTmdbId == showTmdbId && $0.seasonNumber == season && $0.episodeNumber == episode }) {
-            return hit.tmdbId
+    /// The local episode ID of every row that names its show, season, and
+    /// episode: how another device's file keys an episode.
+    func episodeIndex() -> [SyncRecordKey: Int] {
+        var index: [SyncRecordKey: Int] = [:]
+        for record in Array(progressMap.values) + Array(tombstones.values) where record.mediaType == .episode {
+            if let key = record.syncKey { index[key] = record.tmdbId }
         }
-        let request = CDWatchProgress.fetchRequest(showTmdbId: showTmdbId, season: season, episode: episode)
-        return (try? viewContext.fetch(request).first).map { Int($0.tmdbId) }
+        return index
     }
 
     // MARK: - Write
@@ -104,7 +103,7 @@ final class WatchProgressStore {
         stamped.updateTime = stamp.updateTime
         stamped.deviceID = stamp.device
         stamped.cleared = false
-        persist(stamped, local: true)
+        persist([stamped], local: true)
     }
 
     func markCompleted(tmdbId: Int, mediaType: WatchMediaType) {
@@ -130,38 +129,48 @@ final class WatchProgressStore {
         p.cleared = true
         p.updateTime = stamp.updateTime
         p.deviceID = stamp.device
-        persist(p, local: true)
+        persist([p], local: true)
     }
 
     // MARK: - Sync
 
-    /// Stores a record another device wrote, verbatim: its stamp and
-    /// device included, with no local-change notification.
+    /// Stores records another device wrote, verbatim (stamps and devices
+    /// included), in one save and with no local-change notification.
+    func applySynced(_ records: [WatchProgress]) {
+        guard !records.isEmpty else { return }
+        persist(records, local: false)
+        stamper.observe(stamps: records.map(\.updateTime))
+    }
+
     func applySynced(_ progress: WatchProgress) {
-        persist(progress, local: false)
-        stamper.observe(progress.updateTime)
+        applySynced([progress])
     }
 
     // MARK: - Private
 
-    private func persist(_ progress: WatchProgress, local: Bool) {
-        let key = cacheKey(progress.tmdbId, progress.mediaType)
-        if progress.cleared {
-            progressMap.removeValue(forKey: key)
-            tombstones[key] = progress
-        } else {
-            tombstones.removeValue(forKey: key)
-            progressMap[key] = progress
+    private func persist(_ records: [WatchProgress], local: Bool) {
+        for progress in records {
+            let key = cacheKey(progress.tmdbId, progress.mediaType)
+            if progress.cleared {
+                progressMap.removeValue(forKey: key)
+                tombstones[key] = progress
+            } else {
+                tombstones.removeValue(forKey: key)
+                progressMap[key] = progress
+            }
+            let request = CDWatchProgress.fetchRequest(tmdbId: progress.tmdbId, mediaType: progress.mediaType)
+            do {
+                let cd = try viewContext.fetch(request).first
+                    // By entity name: `CDWatchProgress(context:)` asks the class for its
+                    // entity, which is ambiguous once another model version is loaded.
+                    ?? NSEntityDescription.insertNewObject(forEntityName: "CDWatchProgress", into: viewContext) as! CDWatchProgress
+                cd.apply(progress)
+            } catch {
+                print("[WatchProgressStore] Failed to fetch for saving: \(error)")
+            }
         }
-
-        let request = CDWatchProgress.fetchRequest(
-            tmdbId: progress.tmdbId,
-            mediaType: progress.mediaType
-        )
         do {
-            let cd = try viewContext.fetch(request).first ?? CDWatchProgress(context: viewContext)
-            cd.apply(progress)
-            try viewContext.save()
+            if viewContext.hasChanges { try viewContext.save() }
         } catch {
             print("[WatchProgressStore] Failed to save: \(error)")
         }
@@ -182,7 +191,7 @@ final class WatchProgressStore {
             let results = try viewContext.fetch(request)
             var rebuilt: [String: WatchProgress] = [:]
             var cleared: [String: WatchProgress] = [:]
-            var highest: Int64 = 0
+            var stamps: [Int64] = []
             for cd in results {
                 let dto = cd.toDTO()
                 let key = cacheKey(dto.tmdbId, dto.mediaType)
@@ -191,13 +200,14 @@ final class WatchProgressStore {
                 } else {
                     rebuilt[key] = dto
                 }
-                highest = max(highest, dto.updateTime)
+                stamps.append(dto.updateTime)
             }
             progressMap = rebuilt
             tombstones = cleared
             // Stamps that arrived through CloudKit order this device's
-            // next writes after them (§7.2).
-            stamper.observe(highest)
+            // next writes after them (§7.2); the stamper ignores any more
+            // than a day ahead (§7.1).
+            stamper.observe(stamps: stamps)
         } catch {
             print("[WatchProgressStore] Failed to load: \(error)")
         }

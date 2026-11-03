@@ -2249,6 +2249,124 @@
         }
       }
     },
+    "%@ couldn't be kept." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ konnte nicht behalten werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ couldn't be kept."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ couldn't be kept."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ couldn't be kept."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ couldn't be kept."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ couldn't be kept."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conservar %@."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conservar %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ n'a pas pu être conservé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile conservare %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ を保存できませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@을(를) 저장할 수 없습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kon niet worden bewaard."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível manter %@."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível manter %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сохранить %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kunde inte behållas."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法保留 %@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法保留 %@。"
+          }
+        }
+      }
+    },
     "%@ couldn't complete sign-in (%@): %@" : {
       "localizations" : {
         "de" : {
@@ -12186,114 +12304,120 @@
         }
       }
     },
-    "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything." : {
+    "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nach der Anmeldung öffnet sich die Auswahl von Google: Wähle die Videos aus, die Edendale wiedergeben darf. Edendale sieht nur diese, verbindet sich nur von diesem Gerät aus und lädt niemals etwas hoch oder ändert etwas."
+            "value" : "Nach der Anmeldung öffnet sich Googles Auswahl: Wähle die Videos, die Edendale abspielen darf. Edendale sieht nur diese und die Sync-Dateien, die es selbst anlegt, verbindet sich nur von diesem Gerät aus und ändert nichts anderes."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything."
+            "value" : "After you sign in, Google's picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Después de iniciar sesión, se abre el selector de Google: elige los vídeos que Edendale puede reproducir. Edendale solo ve esos, se conecta únicamente desde este dispositivo y nunca sube ni cambia nada."
+            "value" : "Al iniciar sesión se abre el selector de Google: elige los vídeos que Edendale puede reproducir. Edendale solo ve esos y los archivos de sincronización que crea, se conecta solo desde este dispositivo y no cambia nada más."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Después de iniciar sesión, se abre el selector de Google: elige los videos que Edendale puede reproducir. Edendale solo ve esos, se conecta únicamente desde este dispositivo y nunca sube ni cambia nada."
+            "value" : "Al iniciar sesión se abre el selector de Google: elige los vídeos que Edendale puede reproducir. Edendale solo ve esos y los archivos de sincronización que crea, se conecta solo desde este dispositivo y no cambia nada más."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Après la connexion, le sélecteur de Google s’ouvre : choisissez les vidéos qu’Edendale peut lire. Edendale ne voit que celles-ci, se connecte uniquement depuis cet appareil, et n’envoie ni ne modifie jamais rien."
+            "value" : "Après la connexion, le sélecteur de Google s'ouvre : choisissez les vidéos qu'Edendale peut lire. Edendale ne voit que celles-ci et les fichiers de synchronisation qu'il crée, se connecte uniquement depuis cet appareil et ne modifie rien d'autre."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dopo l’accesso si apre il selettore di Google: scegli i video che Edendale può riprodurre. Edendale vede solo quelli, si connette solo da questo dispositivo e non carica né modifica mai nulla."
+            "value" : "Dopo l'accesso si apre il selettore di Google: scegli i video che Edendale può riprodurre. Edendale vede solo quelli e i file di sincronizzazione che crea, si connette solo da questo dispositivo e non modifica nient'altro."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "サインインすると、Googleの選択画面が開きます。Edendaleで再生するビデオを選択してください。Edendaleが見られるのは選択したビデオだけです。このデバイスからのみ接続し、何かをアップロードしたり変更したりすることはありません。"
+            "value" : "サインインすると Google のピッカーが開きます。Edendale で再生できるビデオを選んでください。Edendale が見られるのはそれらと自分で作成した同期ファイルだけで、このデバイスからのみ接続し、それ以外は何も変更しません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "로그인하면 Google 선택 도구가 열립니다. Edendale에서 재생할 비디오를 선택하세요. Edendale은 선택한 비디오만 볼 수 있으며, 이 기기에서만 연결하고, 아무것도 업로드하거나 변경하지 않습니다."
+            "value" : "로그인하면 Google 선택기가 열립니다. Edendale에서 재생할 비디오를 선택하세요. Edendale는 그 비디오와 직접 만든 동기화 파일만 볼 수 있고, 이 기기에서만 접속하며, 그 밖에는 아무것도 변경하지 않습니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets."
+            "value" : "Na het inloggen opent de kiezer van Google: kies de video's die Edendale mag afspelen. Edendale ziet alleen die en de synchronisatiebestanden die het zelf maakt, maakt alleen vanaf dit apparaat verbinding en verandert verder niets."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Depois de iniciar a sessão, o seletor do Google é aberto: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses vídeos, se conecta apenas a partir deste dispositivo e nunca envia nem altera nada."
+            "value" : "Depois de entrar, o seletor do Google abre: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses e os arquivos de sincronização que cria, conecta-se apenas deste dispositivo e não altera mais nada."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale só vê esses vídeos, liga-se apenas a partir deste dispositivo e nunca envia nem altera nada."
+            "value" : "Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses e os ficheiros de sincronização que cria, liga-se apenas a partir deste dispositivo e não altera mais nada."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их, подключается только с этого устройства и никогда ничего не загружает и не изменяет."
+            "value" : "После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их и созданные им файлы синхронизации, подключается только с этого устройства и больше ничего не меняет."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "När du har loggat in öppnas Googles väljare: välj de videor som Edendale får spela upp. Edendale ser bara dem, ansluter bara från den här enheten och laddar aldrig upp eller ändrar något."
+            "value" : "När du loggat in öppnas Googles väljare: välj de videor Edendale får spela upp. Edendale ser bara dem och synkfilerna som den själv skapar, ansluter bara från den här enheten och ändrar inget annat."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "登录后会打开 Google 的选择器：请选择 Edendale 可以播放的视频。Edendale 只能看到这些视频，仅从此设备连接，绝不会上传或更改任何内容。"
+            "value" : "登录后会打开 Google 选择器：选择 Edendale 可以播放的视频。Edendale 只能看到这些视频及其自己创建的同步文件，仅从此设备连接，不会更改其他任何内容。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片，只會從此裝置連線，絕不會上傳或更改任何內容。"
+            "value" : "登入後會開啟 Google 選擇器：選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片及其自己建立的同步檔案，僅從此裝置連線，不會更改其他任何內容。"
           }
         }
       }
@@ -20051,114 +20175,120 @@
         }
       }
     },
-    "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything." : {
+    "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wähle deine Videos in Edendale auf einem iPhone, iPad oder Mac aus. Das Apple TV erhält den Account von deinem iPhone oder iPad und listet alle Videos auf, die du ausgewählt hast. Edendale sieht nur diese Videos und lädt niemals etwas hoch oder ändert etwas."
+            "value" : "Wähle deine Videos in Edendale auf einem iPhone, iPad oder Mac. Apple TV erhält das Konto von deinem iPhone oder iPad und listet jedes gewählte Video auf. Edendale sieht nur diese Videos und die Sync-Dateien, die es selbst anlegt, und ändert nichts anderes."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and never uploads or changes anything."
+            "value" : "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elige tus vídeos en Edendale en un iPhone, iPad o Mac. El Apple TV recibe la cuenta de tu iPhone o iPad y muestra todos los vídeos que elegiste. Edendale solo ve esos vídeos y nunca sube ni cambia nada."
+            "value" : "Elige tus vídeos en Edendale en un iPhone, iPad o Mac. El Apple TV obtiene la cuenta de tu iPhone o iPad y muestra cada vídeo que elegiste. Edendale solo ve esos vídeos y los archivos de sincronización que crea, y no cambia nada más."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elige tus videos en Edendale en un iPhone, iPad o Mac. El Apple TV recibe la cuenta de tu iPhone o iPad y muestra todos los videos que elegiste. Edendale solo ve esos videos y nunca sube ni cambia nada."
+            "value" : "Elige tus vídeos en Edendale en un iPhone, iPad o Mac. El Apple TV obtiene la cuenta de tu iPhone o iPad y muestra cada vídeo que elegiste. Edendale solo ve esos vídeos y los archivos de sincronización que crea, y no cambia nada más."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choisissez vos vidéos dans Edendale sur un iPhone, un iPad ou un Mac. L’Apple TV reçoit le compte de votre iPhone ou iPad et affiche toutes les vidéos que vous avez choisies. Edendale ne voit que ces vidéos et n’envoie ni ne modifie jamais rien."
+            "value" : "Choisissez vos vidéos dans Edendale sur un iPhone, un iPad ou un Mac. L'Apple TV reçoit le compte de votre iPhone ou iPad et affiche chaque vidéo choisie. Edendale ne voit que ces vidéos et les fichiers de synchronisation qu'il crée, et ne modifie rien d'autre."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scegli i tuoi video in Edendale su un iPhone, un iPad o un Mac. Apple TV riceve l’account dal tuo iPhone o iPad ed elenca tutti i video che hai scelto. Edendale vede solo quei video e non carica né modifica mai nulla."
+            "value" : "Scegli i tuoi video in Edendale su un iPhone, iPad o Mac. Apple TV riceve l'account dal tuo iPhone o iPad ed elenca ogni video scelto. Edendale vede solo quei video e i file di sincronizzazione che crea, e non modifica nient'altro."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ビデオはiPhone、iPad、またはMacのEdendaleで選択します。Apple TVはiPhoneまたはiPadからアカウントを受け取り、選択したすべてのビデオを一覧表示します。Edendaleが見られるのはそれらのビデオだけで、何かをアップロードしたり変更したりすることはありません。"
+            "value" : "iPhone、iPad、または Mac の Edendale でビデオを選んでください。Apple TV は iPhone または iPad からアカウントを受け取り、選んだすべてのビデオを一覧表示します。Edendale が見られるのはそれらのビデオと自分で作成した同期ファイルだけで、それ以外は何も変更しません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iPhone, iPad 또는 Mac의 Edendale에서 비디오를 선택하세요. Apple TV는 iPhone 또는 iPad에서 계정을 받아 선택한 모든 비디오를 표시합니다. Edendale은 해당 비디오만 볼 수 있으며, 아무것도 업로드하거나 변경하지 않습니다."
+            "value" : "iPhone, iPad 또는 Mac의 Edendale에서 비디오를 선택하세요. Apple TV는 iPhone이나 iPad에서 계정을 받아 선택한 모든 비디오를 표시합니다. Edendale는 그 비디오와 직접 만든 동기화 파일만 볼 수 있으며 그 밖에는 아무것도 변경하지 않습니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kies je video’s in Edendale op een iPhone, iPad of Mac. De Apple TV krijgt het account van je iPhone of iPad en toont alle video’s die je hebt gekozen. Edendale ziet alleen die video’s en uploadt of wijzigt nooit iets."
+            "value" : "Kies je video's in Edendale op een iPhone, iPad of Mac. Apple TV krijgt het account van je iPhone of iPad en toont elke gekozen video. Edendale ziet alleen die video's en de synchronisatiebestanden die het zelf maakt, en verandert verder niets."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha seus vídeos no Edendale em um iPhone, iPad ou Mac. A Apple TV recebe a conta do seu iPhone ou iPad e lista todos os vídeos que você escolheu. O Edendale vê apenas esses vídeos e nunca envia nem altera nada."
+            "value" : "Escolha seus vídeos no Edendale em um iPhone, iPad ou Mac. A Apple TV recebe a conta do seu iPhone ou iPad e lista cada vídeo escolhido. O Edendale vê apenas esses vídeos e os arquivos de sincronização que cria, e não altera mais nada."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha os seus vídeos no Edendale num iPhone, iPad ou Mac. A Apple TV recebe a conta do seu iPhone ou iPad e lista todos os vídeos que escolheu. O Edendale só vê esses vídeos e nunca envia nem altera nada."
+            "value" : "Escolha os seus vídeos no Edendale num iPhone, iPad ou Mac. A Apple TV recebe a conta do seu iPhone ou iPad e lista cada vídeo escolhido. O Edendale vê apenas esses vídeos e os ficheiros de sincronização que cria, e não altera mais nada."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выбирайте видео в Edendale на iPhone, iPad или Mac. Apple TV получает аккаунт с вашего iPhone или iPad и показывает все выбранные вами видео. Edendale видит только эти видео и никогда ничего не загружает и не изменяет."
+            "value" : "Выберите видео в Edendale на iPhone, iPad или Mac. Apple TV получает аккаунт с iPhone или iPad и показывает каждое выбранное видео. Edendale видит только эти видео и созданные им файлы синхронизации и больше ничего не меняет."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Välj dina videor i Edendale på en iPhone, iPad eller Mac. Apple TV får kontot från din iPhone eller iPad och listar alla videor du har valt. Edendale ser bara de videorna och laddar aldrig upp eller ändrar något."
+            "value" : "Välj dina videor i Edendale på en iPhone, iPad eller Mac. Apple TV får kontot från din iPhone eller iPad och listar varje video du valt. Edendale ser bara de videorna och synkfilerna som den själv skapar, och ändrar inget annat."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请在 iPhone、iPad 或 Mac 上的 Edendale 中选择视频。Apple TV 会从你的 iPhone 或 iPad 获取帐户，并列出你选择的所有视频。Edendale 只能看到这些视频，绝不会上传或更改任何内容。"
+            "value" : "在 iPhone、iPad 或 Mac 上的 Edendale 中选择视频。Apple TV 会从你的 iPhone 或 iPad 获取账户并列出你选择的每个视频。Edendale 只能看到这些视频及其自己创建的同步文件，不会更改其他任何内容。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請在 iPhone、iPad 或 Mac 上的 Edendale 中選擇影片。Apple TV 會從你的 iPhone 或 iPad 取得帳號，並列出你選擇的所有影片。Edendale 只能看到這些影片，絕不會上傳或更改任何內容。"
+            "value" : "在 iPhone、iPad 或 Mac 上的 Edendale 中選擇影片。Apple TV 會從你的 iPhone 或 iPad 取得帳戶並列出你選擇的每部影片。Edendale 只能看到這些影片及其自己建立的同步檔案，不會更改其他任何內容。"
           }
         }
       }
@@ -29673,118 +29803,6 @@
         }
       }
     },
-    "Edendale asks %@ for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale bittet %@ um Lesezugriff. Die Verbindung erfolgt nur von diesem Gerät aus. Edendale liest Ordnerlisten und die Videos, die du wiedergibst, und lädt niemals etwas hoch oder ändert etwas."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks %@ for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks %@ for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks %@ for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale asks %@ for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale solicita a %@ acceso de solo lectura. Se conecta únicamente desde este dispositivo, lee los listados de carpetas y los vídeos que reproduces, y nunca sube ni cambia nada."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale solicita a %@ acceso de solo lectura. Se conecta únicamente desde este dispositivo, lee los listados de carpetas y los videos que reproduces, y nunca sube ni cambia nada."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale demande à %@ un accès en lecture seule. Il se connecte uniquement depuis cet appareil, lit les listes de dossiers et les vidéos que vous regardez, et n’envoie ni ne modifie jamais rien."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale chiede a %@ l’accesso in sola lettura. Si connette solo da questo dispositivo, legge gli elenchi delle cartelle e i video che riproduci, e non carica né modifica mai nulla."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendaleは%@に読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale은 %@에 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale vraagt %@ om alleen-lezentoegang. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Edendale pede a %@ acesso somente leitura. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Edendale pede a %@ acesso só de leitura. Liga-se apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que reproduz, e nunca envia nem altera nada."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale запрашивает у %@ доступ только для чтения. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale ber %@ om skrivskyddad åtkomst. Appen ansluter bara från den här enheten, läser mapplistor och de videor du spelar upp, och laddar aldrig upp eller ändrar något."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale 向 %@ 请求只读访问权限。它仅从此设备连接，读取文件夹列表和你播放的视频，绝不会上传或更改任何内容。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edendale 會向 %@ 請求唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。"
-          }
-        }
-      }
-    },
     "Edendale can only open local video files." : {
       "localizations" : {
         "de" : {
@@ -30133,114 +30151,120 @@
         }
       }
     },
-    "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose." : {
+    "Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale verbindet sich direkt von diesem Gerät aus mit diesen Diensten und ändert niemals etwas. Es liest Ordnerlisten und die Dateien, die du wiedergibst; aus Google Drive nur die Videos, die du auswählst."
+            "value" : "Edendale verbindet sich direkt von diesem Gerät mit diesen Diensten. Es liest Ordnerinhalte und die Dateien, die du abspielst, bei Google Drive nur die Videos, die du auswählst. Es schreibt nur seine eigenen Sync-Dateien, und nur an einen Speicherort, den du unter „Einstellungen → Synchronisierung“ wählst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
+            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
+            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
+            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale connects to these services directly from this device and never changes anything. It reads folder listings and the files you play; from Google Drive, only the videos you choose."
+            "value" : "Edendale connects to these services directly from this device. It reads folder listings and the files you play; from Google Drive, only the videos you choose. It writes nothing but its own sync files, and only to a location you choose in Settings → Sync."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo y nunca cambia nada. Lee los listados de carpetas y los archivos que reproduces; de Google Drive, solo los vídeos que elijas."
+            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo. Lee los listados de carpetas y los archivos que reproduces; de Google Drive, solo los vídeos que elijas. No escribe nada salvo sus propios archivos de sincronización, y solo en una ubicación que elijas en Ajustes → Sincronización."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo y nunca cambia nada. Lee los listados de carpetas y los archivos que reproduces; de Google Drive, solo los videos que elijas."
+            "value" : "Edendale se conecta a estos servicios directamente desde este dispositivo. Lee los listados de carpetas y los archivos que reproduces; de Google Drive, solo los vídeos que elijas. No escribe nada salvo sus propios archivos de sincronización, y solo en una ubicación que elijas en Ajustes → Sincronización."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale se connecte à ces services directement depuis cet appareil et ne modifie jamais rien. Il lit les listes de dossiers et les fichiers que vous lisez ; dans Google Drive, uniquement les vidéos que vous choisissez."
+            "value" : "Edendale se connecte à ces services directement depuis cet appareil. Il lit le contenu des dossiers et les fichiers que vous lisez ; pour Google Drive, uniquement les vidéos que vous choisissez. Il n'écrit que ses propres fichiers de synchronisation, et seulement à un emplacement que vous choisissez dans Réglages → Synchronisation."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale si connette a questi servizi direttamente da questo dispositivo e non modifica mai nulla. Legge gli elenchi delle cartelle e i file che riproduci; da Google Drive, solo i video che scegli."
+            "value" : "Edendale si connette a questi servizi direttamente da questo dispositivo. Legge gli elenchi delle cartelle e i file che riproduci; da Google Drive, solo i video che scegli. Non scrive nulla tranne i propri file di sincronizzazione, e solo in una posizione che scegli in Impostazioni → Sincronizzazione."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendaleはこのデバイスからこれらのサービスに直接接続し、何かを変更することはありません。フォルダの一覧と再生するファイルを読み取ります。Googleドライブでは、選択したビデオだけを読み取ります。"
+            "value" : "Edendale はこのデバイスからこれらのサービスに直接接続します。フォルダの一覧と再生するファイルを読み取り、Google ドライブでは選んだビデオだけを読み取ります。書き込むのは自分の同期ファイルだけで、それも「設定 → 同期」で選んだ場所に限られます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale은 이 기기에서 해당 서비스에 직접 연결하며, 아무것도 변경하지 않습니다. 폴더 목록과 재생하는 파일을 읽으며, Google 드라이브에서는 선택한 비디오만 읽습니다."
+            "value" : "Edendale는 이 기기에서 이 서비스에 직접 접속합니다. 폴더 목록과 재생하는 파일을 읽으며, Google 드라이브에서는 선택한 비디오만 읽습니다. 자체 동기화 파일 외에는 아무것도 쓰지 않으며, 그것도 설정 → 동기화에서 선택한 위치에만 씁니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale maakt rechtstreeks vanaf dit apparaat verbinding met deze diensten en wijzigt nooit iets. Het leest mappenlijsten en de bestanden die je afspeelt; uit Google Drive alleen de video’s die je kiest."
+            "value" : "Edendale maakt rechtstreeks vanaf dit apparaat verbinding met deze diensten. Het leest mapinhoud en de bestanden die je afspeelt; van Google Drive alleen de video's die je kiest. Het schrijft niets behalve zijn eigen synchronisatiebestanden, en alleen naar een locatie die je kiest in Instellingen → Synchronisatie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale se conecta a estes serviços diretamente a partir deste dispositivo e nunca altera nada. Ele lê as listas de pastas e os arquivos que você reproduz; do Google Drive, apenas os vídeos que você escolher."
+            "value" : "O Edendale se conecta a esses serviços diretamente deste dispositivo. Ele lê as listas de pastas e os arquivos que você reproduz; do Google Drive, apenas os vídeos que você escolher. Não grava nada além dos próprios arquivos de sincronização, e apenas em um local que você escolher em Ajustes → Sincronização."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Edendale liga-se a estes serviços diretamente a partir deste dispositivo e nunca altera nada. Lê as listas de pastas e os ficheiros que reproduz; do Google Drive, apenas os vídeos que escolher."
+            "value" : "O Edendale liga-se a estes serviços diretamente a partir deste dispositivo. Lê as listagens de pastas e os ficheiros que reproduz; do Google Drive, apenas os vídeos que escolher. Não escreve nada além dos seus próprios ficheiros de sincronização, e apenas numa localização que escolher em Definições → Sincronização."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale подключается к этим сервисам напрямую с этого устройства и никогда ничего не изменяет. Приложение читает списки папок и воспроизводимые файлы, а на Google Диске — только выбранные вами видео."
+            "value" : "Edendale подключается к этим службам напрямую с этого устройства. Он читает списки папок и воспроизводимые файлы, а в Google Диске — только выбранные вами видео. Он записывает только собственные файлы синхронизации и только в расположение, выбранное в «Настройки → Синхронизация»."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale ansluter till de här tjänsterna direkt från den här enheten och ändrar aldrig något. Appen läser mapplistor och de filer du spelar upp, och från Google Drive bara de videor du väljer."
+            "value" : "Edendale ansluter till de här tjänsterna direkt från den här enheten. Den läser mapplistor och filerna du spelar upp; från Google Drive bara de videor du väljer. Den skriver inget utom sina egna synkfiler, och bara till en plats du väljer i Inställningar → Synk."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 直接从此设备连接到这些服务，绝不会更改任何内容。它读取文件夹列表和你播放的文件；在 Google 云端硬盘中，只读取你选择的视频。"
+            "value" : "Edendale 会直接从此设备连接这些服务。它会读取文件夹列表和你播放的文件；对于 Google 云端硬盘，只读取你选择的视频。除了它自己的同步文件，它不会写入任何内容，而且只会写入你在“设置 → 同步”中选择的位置。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edendale 會直接從此裝置連線至這些服務，絕不會更改任何內容。它會讀取檔案夾列表和你播放的檔案；在 Google 雲端硬碟中，只會讀取你選擇的影片。"
+            "value" : "Edendale 會直接從此裝置連線這些服務。它會讀取資料夾列表和你播放的檔案；對於 Google 雲端硬碟，只讀取你選擇的影片。除了它自己的同步檔案，它不會寫入任何內容，而且只會寫入你在「設定 → 同步」中選擇的位置。"
           }
         }
       }
@@ -31049,6 +31073,360 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ 上的 Edendale 正在請求你的 %2$@ 存取權限。該權限會保留在那台 Apple TV 上，直到你在那裡登出。"
+          }
+        }
+      }
+    },
+    "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und ändert nichts."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and changes nothing."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y no cambia nada."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y no cambia nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lit le contenu des dossiers et les vidéos que vous lisez, se connecte uniquement depuis cet appareil et ne modifie rien."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale legge gli elenchi delle cartelle e i video che riproduci, si connette solo da questo dispositivo e non modifica nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale はフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、何も変更しません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale는 폴더 목록과 재생하는 비디오를 읽고, 이 기기에서만 접속하며, 아무것도 변경하지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale leest mapinhoud en de video's die je afspeelt, maakt alleen vanaf dit apparaat verbinding en verandert niets."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê as listas de pastas e os vídeos que você reproduz, conecta-se apenas deste dispositivo e não altera nada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e não altera nada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и ничего не меняет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och ändrar ingenting."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，不会更改任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，不會更改任何內容。"
+          }
+        }
+      }
+    },
+    "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und schreibt nur seine Sync-Dateien in den Ordner „Edendale“, wenn du dort synchronisierst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe sus archivos de sincronización, en la carpeta Edendale, cuando sincronizas allí."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe sus archivos de sincronización, en la carpeta Edendale, cuando sincronizas allí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lit le contenu des dossiers et les vidéos que vous lisez, se connecte uniquement depuis cet appareil et n'écrit que ses fichiers de synchronisation, dans le dossier Edendale, lorsque vous y synchronisez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale legge gli elenchi delle cartelle e i video che riproduci, si connette solo da questo dispositivo e scrive solo i suoi file di sincronizzazione, nella cartella Edendale, quando sincronizzi lì."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale はフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、そこで同期する場合にのみ Edendale フォルダに同期ファイルを書き込みます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale는 폴더 목록과 재생하는 비디오를 읽고, 이 기기에서만 접속하며, 그곳에서 동기화할 때만 Edendale 폴더에 동기화 파일을 씁니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale leest mapinhoud en de video's die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen zijn synchronisatiebestanden, in de map Edendale, als je daar synchroniseert."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê as listas de pastas e os vídeos que você reproduz, conecta-se apenas deste dispositivo e só grava seus arquivos de sincronização, na pasta Edendale, quando você sincroniza lá."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve os seus ficheiros de sincronização, na pasta Edendale, quando sincroniza aí."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только свои файлы синхронизации в папку Edendale, если вы синхронизируетесь туда."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara sina synkfiler, i mappen Edendale, när du synkar där."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时，将同步文件写入 Edendale 文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，並且只在你同步到該處時，將同步檔案寫入 Edendale 資料夾。"
+          }
+        }
+      }
+    },
+    "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und schreibt nur in seinen eigenen Ordner „Apps/Edendale“, wenn du dort synchronisierst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe en su propia carpeta Apps/Edendale, cuando sincronizas allí."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe en su propia carpeta Apps/Edendale, cuando sincronizas allí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale lit le contenu des dossiers et les vidéos que vous lisez, se connecte uniquement depuis cet appareil et n'écrit que dans son propre dossier Apps/Edendale, lorsque vous y synchronisez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale legge gli elenchi delle cartelle e i video che riproduci, si connette solo da questo dispositivo e scrive solo nella propria cartella Apps/Edendale, quando sincronizzi lì."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale はフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、そこで同期する場合にのみ専用の Apps/Edendale フォルダに書き込みます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale는 폴더 목록과 재생하는 비디오를 읽고, 이 기기에서만 접속하며, 그곳에서 동기화할 때만 전용 Apps/Edendale 폴더에 씁니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale leest mapinhoud en de video's die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen naar zijn eigen map Apps/Edendale, als je daar synchroniseert."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê as listas de pastas e os vídeos que você reproduz, conecta-se apenas deste dispositivo e só grava em sua própria pasta Apps/Edendale, quando você sincroniza lá."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve na sua própria pasta Apps/Edendale, quando sincroniza aí."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только в свою папку Apps/Edendale, если вы синхронизируетесь туда."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara till sin egen mapp Apps/Edendale, när du synkar där."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时写入它自己的 Apps/Edendale 文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，並且只在你同步到該處時寫入它自己的 Apps/Edendale 資料夾。"
           }
         }
       }
@@ -51026,6 +51404,124 @@
         }
       }
     },
+    "Not the sync location: %@ can't open iCloud Drive." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht den Sync-Speicherort: %@ kann iCloud Drive nicht öffnen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not the sync location: %@ can't open iCloud Drive."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not the sync location: %@ can't open iCloud Drive."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not the sync location: %@ can't open iCloud Drive."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not the sync location: %@ can't open iCloud Drive."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not the sync location: %@ can't open iCloud Drive."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No la ubicación de sincronización: %@ no puede abrir iCloud Drive."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No la ubicación de sincronización: %@ no puede abrir iCloud Drive."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas l'emplacement de synchronisation : %@ ne peut pas ouvrir iCloud Drive."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non la posizione di sincronizzazione: %@ non può aprire iCloud Drive."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同期の場所は送信しません: %@ では iCloud Drive を開けません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화 위치는 제외: %@에서는 iCloud Drive를 열 수 없습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet de synchronisatielocatie: %@ kan iCloud Drive niet openen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não o local de sincronização: %@ não consegue abrir o iCloud Drive."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não a localização de sincronização: %@ não consegue abrir o iCloud Drive."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без расположения синхронизации: %@ не может открыть iCloud Drive."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inte synkplatsen: %@ kan inte öppna iCloud Drive."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不包括同步位置：%@ 无法打开 iCloud 云盘。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不包括同步位置：%@ 無法開啟 iCloud 雲碟。"
+          }
+        }
+      }
+    },
     "Nothing" : {
       "localizations" : {
         "de" : {
@@ -54848,6 +55344,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "播放影格封裝的空間影片需要 visionOS 26 或以上版本。"
+          }
+        }
+      }
+    },
+    "Pair with %@?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit %@ koppeln?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair with %@?"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair with %@?"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair with %@?"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair with %@?"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair with %@?"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Vincular con %@?"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Vincular con %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jumeler avec %@ ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbinare con %@?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ とペアリングしますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@와(과) 연결할까요?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppelen met %@?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parear com %@?"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emparelhar com %@?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Связать с %@?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para ihop med %@?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与 %@ 配对？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與 %@ 配對？"
           }
         }
       }
@@ -61014,6 +61628,124 @@
         }
       }
     },
+    "read the sync folder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "den Sync-Ordner lesen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "read the sync folder"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "read the sync folder"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "read the sync folder"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "read the sync folder"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "read the sync folder"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leer la carpeta de sincronización"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leer la carpeta de sincronización"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lire le dossier de synchronisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leggere la cartella di sincronizzazione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同期フォルダの読み取り"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동기화 폴더를 읽기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de synchronisatiemap lezen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ler a pasta de sincronização"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ler a pasta de sincronização"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "прочитать папку синхронизации"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "läsa synkmappen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取同步文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取同步資料夾"
+          }
+        }
+      }
+    },
     "Reading folder…" : {
       "localizations" : {
         "de" : {
@@ -61364,6 +62096,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從其他裝置接收…"
+          }
+        }
+      }
+    },
+    "Receive on This Device" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf diesem Gerät empfangen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive on This Device"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive on This Device"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive on This Device"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive on This Device"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive on This Device"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir en este dispositivo"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevoir sur cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevi su questo dispositivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスで受信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기에서 받기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontvangen op dit apparaat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receber neste dispositivo"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receber neste dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получить на этом устройстве"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta emot på den här enheten"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在此设备上接收"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在此裝置上接收"
           }
         }
       }
@@ -68281,6 +69131,242 @@
         }
       }
     },
+    "Send from This Device" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von diesem Gerät senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send from This Device"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send from This Device"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send from This Device"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send from This Device"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send from This Device"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar desde este dispositivo"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar desde este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer depuis cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia da questo dispositivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスから送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기에서 보내기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versturen vanaf dit apparaat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar deste dispositivo"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar deste dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить с этого устройства"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka från den här enheten"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从此设备发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從此裝置傳送"
+          }
+        }
+      }
+    },
+    "Send this device's sync location and logins to the other device, or receive the other device's." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sende den Sync-Speicherort und die Anmeldungen dieses Geräts an das andere Gerät, oder empfange die des anderen Geräts."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send this device's sync location and logins to the other device, or receive the other device's."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send this device's sync location and logins to the other device, or receive the other device's."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send this device's sync location and logins to the other device, or receive the other device's."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send this device's sync location and logins to the other device, or receive the other device's."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send this device's sync location and logins to the other device, or receive the other device's."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía la ubicación de sincronización y los inicios de sesión de este dispositivo al otro, o recibe los del otro dispositivo."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía la ubicación de sincronización y los inicios de sesión de este dispositivo al otro, o recibe los del otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyez l'emplacement de synchronisation et les identifiants de cet appareil à l'autre appareil, ou recevez ceux de l'autre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia la posizione di sincronizzazione e gli accessi di questo dispositivo all'altro, oppure ricevi quelli dell'altro dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスの同期の場所とログインをもう一方のデバイスに送信するか、もう一方のデバイスのものを受信します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기의 동기화 위치와 로그인 정보를 다른 기기로 보내거나, 다른 기기의 정보를 받습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstuur de synchronisatielocatie en logins van dit apparaat naar het andere apparaat, of ontvang die van het andere apparaat."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envie o local de sincronização e os logins deste dispositivo para o outro, ou receba os do outro dispositivo."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envie a localização de sincronização e os inícios de sessão deste dispositivo para o outro, ou receba os do outro dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправьте расположение синхронизации и данные входа этого устройства на другое устройство или получите их с другого устройства."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka den här enhetens synkplats och inloggningar till den andra enheten, eller ta emot den andra enhetens."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此设备的同步位置和登录信息发送到另一台设备，或接收另一台设备的。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將此裝置的同步位置和登入資訊傳送到另一台裝置，或接收另一台裝置的。"
+          }
+        }
+      }
+    },
     "Send to %@?" : {
       "localizations" : {
         "de" : {
@@ -72202,120 +73288,238 @@
         }
       }
     },
-    "Sign in to Google Drive%@ to join the space \"%@\"." : {
+    "Sign in to Google Drive as %@ to join the space \"%@\"." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Melde dich bei Google Drive%@ an, um dem Bereich „%@“ beizutreten."
+            "value" : "Melde dich als %@ bei Google Drive an, um dem Bereich „%@“ beizutreten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to Google Drive%@ to join the space \"%@\"."
+            "value" : "Sign in to Google Drive as %@ to join the space \"%@\"."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to Google Drive%@ to join the space \"%@\"."
+            "value" : "Sign in to Google Drive as %@ to join the space \"%@\"."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to Google Drive%@ to join the space \"%@\"."
+            "value" : "Sign in to Google Drive as %@ to join the space \"%@\"."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to Google Drive%@ to join the space \"%@\"."
+            "value" : "Sign in to Google Drive as %@ to join the space \"%@\"."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to Google Drive%@ to join the space \"%@\"."
+            "value" : "Sign in to Google Drive as %@ to join the space \"%@\"."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inicia sesión en Google Drive%@ para unirte al espacio «%@»."
+            "value" : "Inicia sesión en Google Drive como %@ para unirte al espacio «%@»."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inicia sesión en Google Drive%@ para unirte al espacio «%@»."
+            "value" : "Inicia sesión en Google Drive como %@ para unirte al espacio «%@»."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connectez-vous à Google Drive%@ pour rejoindre l'espace « %@ »."
+            "value" : "Connectez-vous à Google Drive en tant que %@ pour rejoindre l'espace « %@ »."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accedi a Google Drive%@ per unirti allo spazio “%@”."
+            "value" : "Accedi a Google Drive come %@ per unirti allo spazio “%@”."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "スペース「%2$@」に参加するには、Google ドライブ%1$@ にサインインしてください。"
+            "value" : "スペース「%2$@」に参加するには、%1$@ として Google ドライブにサインインしてください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "공간 \"%2$@\"에 참여하려면 Google 드라이브%1$@에 로그인하세요."
+            "value" : "공간 \"%2$@\"에 참여하려면 %1$@(으)로 Google 드라이브에 로그인하세요."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Log in bij Google Drive%@ om deel te nemen aan de ruimte “%@”."
+            "value" : "Log in bij Google Drive als %@ om deel te nemen aan de ruimte “%@”."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Entre no Google Drive%@ para participar do espaço “%@”."
+            "value" : "Entre no Google Drive como %@ para participar do espaço “%@”."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inicie sessão no Google Drive%@ para se juntar ao espaço “%@”."
+            "value" : "Inicie sessão no Google Drive como %@ para se juntar ao espaço “%@”."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Войдите в Google Диск%@, чтобы присоединиться к пространству «%@»."
+            "value" : "Войдите в Google Диск как %@, чтобы присоединиться к пространству «%@»."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Logga in på Google Drive%@ för att gå med i utrymmet ”%@”."
+            "value" : "Logga in på Google Drive som %@ för att gå med i utrymmet ”%@”."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "登录 Google 云端硬盘%@ 以加入空间“%@”。"
+            "value" : "以 %@ 登录 Google 云端硬盘以加入空间“%@”。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "登入 Google 雲端硬碟%@ 以加入空間「%@」。"
+            "value" : "以 %@ 登入 Google 雲端硬碟以加入空間「%@」。"
+          }
+        }
+      }
+    },
+    "Sign in to Google Drive to join the space \"%@\"." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melde dich bei Google Drive an, um dem Bereich „%@“ beizutreten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to Google Drive to join the space \"%@\"."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to Google Drive to join the space \"%@\"."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to Google Drive to join the space \"%@\"."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to Google Drive to join the space \"%@\"."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to Google Drive to join the space \"%@\"."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión en Google Drive para unirte al espacio «%@»."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión en Google Drive para unirte al espacio «%@»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez-vous à Google Drive pour rejoindre l'espace « %@ »."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi a Google Drive per unirti allo spazio “%@”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スペース「%@」に参加するには、Google ドライブにサインインしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "공간 \"%@\"에 참여하려면 Google 드라이브에 로그인하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log in bij Google Drive om deel te nemen aan de ruimte “%@”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre no Google Drive para participar do espaço “%@”."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicie sessão no Google Drive para se juntar ao espaço “%@”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите в Google Диск, чтобы присоединиться к пространству «%@»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logga in på Google Drive för att gå med i utrymmet ”%@”."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录 Google 云端硬盘以加入空间“%@”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登入 Google 雲端硬碟以加入空間「%@」。"
           }
         }
       }

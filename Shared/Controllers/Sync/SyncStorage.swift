@@ -66,20 +66,23 @@ nonisolated enum SyncStorageError: Error, LocalizedError, Equatable {
 
 /// A picked folder (any folder, iCloud Drive and other cloud apps' folders
 /// included) or, with `coordinated`, the app's own iCloud Drive folder.
-/// Writes go to `<name>.tmp` and are renamed over the target; the iCloud
-/// folder uses a coordinated atomic replacement instead, so the container
-/// never uploads a half-written file.
+/// Every read, write, and delete is coordinated (NSFileCoordinator), as
+/// file providers and iCloud expect; a write replaces the file atomically
+/// (written beside it, then renamed over it), so no device ever reads half
+/// a file. A file that is only in iCloud is downloaded before it is read.
 nonisolated struct FolderSyncStorage: SyncStorage {
     let root: URL
     let space: String
     /// The root came from a security-scoped bookmark.
     let securityScoped: Bool
-    /// The root is the ubiquity container: coordinate reads and writes
-    /// and download files that are only in the cloud.
+    /// The root is the app's ubiquity container.
     let coordinated: Bool
+    /// A fresh bookmark when the stored one resolved as stale (the folder
+    /// moved or was renamed); the coordinator keeps it.
+    var refreshedBookmark: Data? = nil
 
     /// How long a read waits for iCloud to download a file.
-    static let downloadWait: Duration = .seconds(20)
+    static let downloadWait: TimeInterval = 20
 
     var providerName: String { coordinated ? "icloudDrive" : "folder" }
 
@@ -93,41 +96,35 @@ nonisolated struct FolderSyncStorage: SyncStorage {
             let fileManager = FileManager.default
             let folder = spaceFolder
             if !fileManager.fileExists(atPath: folder.path) {
-                try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
+                try Self.coordinate(writing: folder, options: []) { url in
+                    try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+                }
             }
-            let keys: Set<URLResourceKey> = [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey]
-            let urls = try fileManager.contentsOfDirectory(
-                at: folder, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]
-            )
-            return urls.compactMap { url -> SyncFileEntry? in
-                let name = url.lastPathComponent
-                guard SyncFileFormat.deviceID(ofFileName: name) != nil,
-                      let values = try? url.resourceValues(forKeys: keys),
+            let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey]
+            let urls = try fileManager.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys, options: [])
+            var entries: [String: SyncFileEntry] = [:]
+            for url in urls {
+                // An iCloud file not yet downloaded may show as `.<name>.icloud`.
+                guard let name = Self.syncFileName(forListedName: url.lastPathComponent),
+                      let values = try? url.resourceValues(forKeys: Set(keys)),
                       values.isRegularFile != false
-                else { return nil }
-                let size = values.fileSize.map(Int64.init)
+                else { continue }
+                let size = url.lastPathComponent == name ? values.fileSize.map(Int64.init) : nil
                 let modified = values.contentModificationDate?.timeIntervalSince1970 ?? 0
-                return SyncFileEntry(name: name, stamp: "\(modified):\(size ?? -1)", size: size)
+                let entry = SyncFileEntry(name: name, stamp: "\(modified):\(size ?? -1)", size: size)
+                // The downloaded file wins over its placeholder.
+                if entries[name] == nil || url.lastPathComponent == name { entries[name] = entry }
             }
-            .sorted { $0.name < $1.name }
+            return entries.values.sorted { $0.name < $1.name }
         }
     }
 
     func read(_ name: String) async throws -> Data {
         try await scoped {
             let url = spaceFolder.appendingPathComponent(name)
-            if coordinated {
-                try Self.ensureDownloaded(url)
-                var coordinationError: NSError?
-                var result: Result<Data, Error> = .failure(SyncStorageError.notFound(name))
-                NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { readURL in
-                    result = Result { try Data(contentsOf: readURL) }
-                }
-                if let coordinationError { throw coordinationError }
-                return try result.get()
-            }
+            try Self.ensureDownloaded(url)
             do {
-                return try Data(contentsOf: url)
+                return try Self.coordinate(reading: url) { try Data(contentsOf: $0) }
             } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
                 throw SyncStorageError.notFound(name)
             }
@@ -139,27 +136,12 @@ nonisolated struct FolderSyncStorage: SyncStorage {
             let fileManager = FileManager.default
             let folder = spaceFolder
             if !fileManager.fileExists(atPath: folder.path) {
-                try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
-            }
-            let target = folder.appendingPathComponent(name)
-            if coordinated {
-                var coordinationError: NSError?
-                var result: Result<Void, Error> = .success(())
-                NSFileCoordinator().coordinate(
-                    writingItemAt: target, options: .forReplacing, error: &coordinationError
-                ) { writeURL in
-                    result = Result { try data.write(to: writeURL, options: .atomic) }
+                try Self.coordinate(writing: folder, options: []) { url in
+                    try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
                 }
-                if let coordinationError { throw coordinationError }
-                try result.get()
-                return
             }
-            let temporary = folder.appendingPathComponent(name + ".tmp")
-            try data.write(to: temporary)
-            if fileManager.fileExists(atPath: target.path) {
-                _ = try fileManager.replaceItemAt(target, withItemAt: temporary)
-            } else {
-                try fileManager.moveItem(at: temporary, to: target)
+            try Self.coordinate(writing: folder.appendingPathComponent(name), options: .forReplacing) { url in
+                try data.write(to: url, options: .atomic)
             }
         }
     }
@@ -168,18 +150,19 @@ nonisolated struct FolderSyncStorage: SyncStorage {
         try await scoped {
             let url = spaceFolder.appendingPathComponent(name)
             guard FileManager.default.fileExists(atPath: url.path) else { return }
-            if coordinated {
-                var coordinationError: NSError?
-                var result: Result<Void, Error> = .success(())
-                NSFileCoordinator().coordinate(writingItemAt: url, options: .forDeleting, error: &coordinationError) { deleteURL in
-                    result = Result { try FileManager.default.removeItem(at: deleteURL) }
-                }
-                if let coordinationError { throw coordinationError }
-                try result.get()
-            } else {
-                try FileManager.default.removeItem(at: url)
-            }
+            try Self.coordinate(writing: url, options: .forDeleting) { try FileManager.default.removeItem(at: $0) }
         }
+    }
+
+    /// `<uuid>.json`, also from an iCloud placeholder's `.<uuid>.json.icloud`;
+    /// nil for anything else.
+    static func syncFileName(forListedName listed: String) -> String? {
+        var name = listed
+        if name.hasPrefix("."), name.hasSuffix(".icloud") {
+            name = String(name.dropFirst().dropLast(".icloud".count))
+        }
+        guard !name.hasPrefix("."), SyncFileFormat.deviceID(ofFileName: name) != nil else { return nil }
+        return name
     }
 
     /// Runs file work off the main actor, inside the folder's security
@@ -194,18 +177,48 @@ nonisolated struct FolderSyncStorage: SyncStorage {
         }
     }
 
-    /// Asks iCloud for a file that is only in the cloud and waits, briefly,
-    /// for it to arrive. A file still missing is read on a later sync.
+    private static func coordinate<T>(reading url: URL, _ body: (URL) throws -> T) throws -> T {
+        var coordinationError: NSError?
+        var result: Result<T, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { readURL in
+            result = Result { try body(readURL) }
+        }
+        if let coordinationError { throw coordinationError }
+        guard let result else { throw SyncStorageError.failed(String(localized: "read the sync folder")) }
+        return try result.get()
+    }
+
+    private static func coordinate(
+        writing url: URL,
+        options: NSFileCoordinator.WritingOptions,
+        _ body: (URL) throws -> Void
+    ) throws {
+        var coordinationError: NSError?
+        var result: Result<Void, Error>?
+        NSFileCoordinator().coordinate(writingItemAt: url, options: options, error: &coordinationError) { writeURL in
+            result = Result { try body(writeURL) }
+        }
+        if let coordinationError { throw coordinationError }
+        try result?.get()
+    }
+
+    /// Asks iCloud for a file that is only in the cloud (a dataless file,
+    /// or only its `.icloud` placeholder) and waits, briefly, for it to
+    /// arrive. One still missing is read at a later sync.
     private static func ensureDownloaded(_ url: URL) throws {
-        let keys: Set<URLResourceKey> = [.ubiquitousItemDownloadingStatusKey, .isUbiquitousItemKey]
-        guard let values = try? url.resourceValues(forKeys: keys), values.isUbiquitousItem == true else { return }
-        if values.ubiquitousItemDownloadingStatus == .current { return }
-        try FileManager.default.startDownloadingUbiquitousItem(at: url)
-        let deadline = Date().addingTimeInterval(TimeInterval(downloadWait.components.seconds))
+        let fileManager = FileManager.default
+        let placeholder = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).icloud")
+        let hasPlaceholder = fileManager.fileExists(atPath: placeholder.path)
+        let values = try? url.resourceValues(forKeys: [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey])
+        guard hasPlaceholder || values?.isUbiquitousItem == true else { return }
+        if values?.ubiquitousItemDownloadingStatus == .current { return }
+        try? fileManager.startDownloadingUbiquitousItem(at: url)
+        let deadline = Date().addingTimeInterval(downloadWait)
         while Date() < deadline {
             Thread.sleep(forTimeInterval: 0.25)
+            guard fileManager.fileExists(atPath: url.path) else { continue }
             let status = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]).ubiquitousItemDownloadingStatus
-            if status == .current || status == .downloaded { return }
+            if status == nil || status == .current || status == .downloaded { return }
         }
         throw SyncStorageError.failed(String(localized: "download a file from iCloud Drive in time"))
     }
@@ -225,14 +238,19 @@ nonisolated enum SyncStorageFactory {
         switch location.provider {
         case .folder:
             guard let bookmark = location.folderBookmark else { throw SyncStorageError.folderUnavailable }
-            let root = try await Blocking.run {
+            let (root, refreshed) = try await Blocking.run { () -> (URL, Data?) in
                 var stale = false
                 guard let url = try? URL(
                     resolvingBookmarkData: bookmark, options: .securityScoped, relativeTo: nil, bookmarkDataIsStale: &stale
                 ) else { throw SyncStorageError.folderUnavailable }
-                return url
+                guard stale else { return (url, nil) }
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                return (url, try? url.bookmarkData(options: .securityScoped, includingResourceValuesForKeys: nil, relativeTo: nil))
             }
-            return FolderSyncStorage(root: root, space: location.space, securityScoped: true, coordinated: false)
+            return FolderSyncStorage(
+                root: root, space: location.space, securityScoped: true, coordinated: false, refreshedBookmark: refreshed
+            )
 
         case .iCloudDrive:
             let root = try await Blocking.run { () -> URL in

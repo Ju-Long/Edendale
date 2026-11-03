@@ -67,7 +67,7 @@ struct SyncLogHygieneTests {
         let failing = SyncCoordinator(
             watchStore: device.watchStore, userMediaStore: device.userMediaStore, stamper: device.stamper,
             defaults: device.defaults, environment: environment,
-            episodeResolver: { _, _, _ in nil }, storageFactory: { _ in broken }
+            libraryEpisodeIndex: { [:] }, seasonEpisodeIDs: { _, _ in nil }, storageFactory: { _ in broken }
         )
         failing.setLocation(SyncLocation(provider: .dropbox, space: "Family", accountKey: account.key), startSync: false)
         let password = "hunter2-" + UUID().uuidString

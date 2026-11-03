@@ -65,6 +65,17 @@ struct EdendaleApp: App {
         userMediaStore.onWatchlistSynced = { [watchlistStore] ref, inWatchlist in
             watchlistStore.mirror(inWatchlist, for: ref)
         }
+        // Before the first sync can write the flag out: rows from before
+        // 27.1 take it from the local watchlist, and the watchlist follows
+        // rows another device changed while nothing was listening.
+        let listed = watchlistStore.items.filter(\.isInWatchlist)
+        let mirrors = userMediaStore.reconcileWatchlist(
+            listed: Set(listed.map(\.ref)),
+            dates: Dictionary(listed.map { ($0.ref, $0.updatedAt) }, uniquingKeysWith: { first, _ in first })
+        )
+        for (ref, inWatchlist) in mirrors {
+            watchlistStore.mirror(inWatchlist, for: ref)
+        }
         let sync = SyncCoordinator(watchStore: ws, userMediaStore: userMediaStore)
         _sync = State(initialValue: sync)
         if !Persistence.isRunningUnitTests {
