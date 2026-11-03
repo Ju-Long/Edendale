@@ -210,7 +210,7 @@ public static class EcJPakeUtil
     public static void ValidateMacTag(string participantId, string partnerParticipantId, ECPoint gx1, ECPoint gx2, ECPoint gx3, ECPoint gx4, BigInteger keyingMaterial, IDigest digest, BigInteger partnerMacTag)
     {
         var expected = CalculateMacTag(partnerParticipantId, participantId, gx3, gx4, gx1, gx2, keyingMaterial, digest);
-        if (!Arrays.ConstantTimeAreEqual(expected.ToByteArray(), partnerMacTag.ToByteArray()))
+        if (!Arrays.FixedTimeEquals(expected.ToByteArray(), partnerMacTag.ToByteArray()))
         {
             throw new EcJPakeException("Partner MacTag validation failed. Therefore, the password, MAC, or digest algorithm of each participant does not match.");
         }

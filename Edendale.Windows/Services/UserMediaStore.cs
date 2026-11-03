@@ -130,11 +130,17 @@ public sealed class UserMediaStore
         return true;
     }
 
-    /// <summary>Replaces the whole collection with the sync engine's merged one; stamps are kept verbatim.</summary>
+    /// <summary>
+    /// Replaces the whole collection with the sync engine's merged one;
+    /// stamps are kept verbatim. Values the merge changed carry a pending
+    /// TMDB push, so the account learns them too.
+    /// </summary>
     public void ApplyMerged(IEnumerable<UserMediaRecord> records)
     {
+        bool needsPush;
         lock (_gate)
         {
+            var before = _records.Values.Count(record => record.FavouriteDirty || record.RatingDirty);
             _records.Clear();
             foreach (var record in records)
             {
@@ -142,9 +148,11 @@ public sealed class UserMediaStore
                 _records[record.StorageKey] = record;
             }
             foreach (var record in _records.Values) _clock.Observe(record.UpdateTime);
+            needsPush = _records.Values.Count(record => record.FavouriteDirty || record.RatingDirty) > before;
         }
         Save();
         Changed?.Invoke(this, EventArgs.Empty);
+        if (needsPush) EditedLocally?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>The import of the OneDrive replica (§8.4): the merged collection, as given.</summary>

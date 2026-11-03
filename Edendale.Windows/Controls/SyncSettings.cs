@@ -33,7 +33,7 @@ public sealed partial class SyncSettings : UserControl
         Render();
     }
 
-    private static ResourceDictionary Resources => Application.Current.Resources;
+    private static ResourceDictionary AppResources => Application.Current.Resources;
 
     private void Render()
     {
@@ -104,29 +104,29 @@ public sealed partial class SyncSettings : UserControl
     // ------------------------------------------------------------------
 
     private void AddBody(string text) =>
-        _rows.Children.Add(new TextBlock { Text = text, Style = (Style)Resources["SettingsBodyRowTextStyle"] });
+        _rows.Children.Add(new TextBlock { Text = text, Style = (Style)AppResources["SettingsBodyRowTextStyle"] });
 
     private void AddWarning(string text)
     {
         var block = new TextBlock
         {
             Text = text,
-            Style = (Style)Resources["SettingsBodyRowTextStyle"],
-            Foreground = (Brush)Resources["EdendaleGoldBrush"],
+            Style = (Style)AppResources["SettingsBodyRowTextStyle"],
+            Foreground = (Brush)AppResources["EdendaleGoldBrush"],
         };
         AutomationProperties.SetLiveSetting(block, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
         _rows.Children.Add(block);
     }
 
-    private void AddSeparator() => _rows.Children.Add(new Border { Style = (Style)Resources["SettingsRowSeparatorStyle"] });
+    private void AddSeparator() => _rows.Children.Add(new Border { Style = (Style)AppResources["SettingsRowSeparatorStyle"] });
 
     private void AddValueRow(string label, string value)
     {
-        var row = new Grid { Style = (Style)Resources["SettingsRowGridStyle"] };
+        var row = new Grid { Style = (Style)AppResources["SettingsRowGridStyle"] };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row.Children.Add(new TextBlock { Text = label, Style = (Style)Resources["SettingsRowLabelTextStyle"] });
-        var valueText = new TextBlock { Text = value, Style = (Style)Resources["SettingsRowValueTextStyle"], IsTextSelectionEnabled = true };
+        row.Children.Add(new TextBlock { Text = label, Style = (Style)AppResources["SettingsRowLabelTextStyle"] });
+        var valueText = new TextBlock { Text = value, Style = (Style)AppResources["SettingsRowValueTextStyle"], IsTextSelectionEnabled = true };
         Grid.SetColumn(valueText, 1);
         row.Children.Add(valueText);
         _rows.Children.Add(row);
@@ -134,7 +134,7 @@ public sealed partial class SyncSettings : UserControl
 
     private void AddActions(params Button[] buttons)
     {
-        var panel = new StackPanel { Style = (Style)Resources["SettingsActionRowPanelStyle"] };
+        var panel = new StackPanel { Style = (Style)AppResources["SettingsActionRowPanelStyle"] };
         foreach (var button in buttons) panel.Children.Add(button);
         _rows.Children.Add(panel);
     }
@@ -144,7 +144,7 @@ public sealed partial class SyncSettings : UserControl
         var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         content.Children.Add(new SvgIcon { UriSource = new Uri($"ms-appx:///Assets/Icons/{icon}.svg"), Width = 12, Height = 12 });
         content.Children.Add(new TextBlock { Text = Loc.Get(key) });
-        var button = new Button { Style = (Style)Resources["ArchiveGhostButtonStyle"], Content = content };
+        var button = new Button { Style = (Style)AppResources["ArchiveGhostButtonStyle"], Content = content };
         button.Click += async (_, _) =>
         {
             button.IsEnabled = false;
@@ -172,7 +172,7 @@ public sealed partial class SyncSettings : UserControl
             UriSource = new Uri(peer.Platform is "tvos" or "androidtv" ? "ms-appx:///Assets/Icons/tv.svg" : "ms-appx:///Assets/Icons/link.svg"),
             Width = 18,
             Height = 18,
-            Foreground = (Brush)Resources["EdendaleTextSecondaryBrush"],
+            Foreground = (Brush)AppResources["EdendaleTextSecondaryBrush"],
             VerticalAlignment = VerticalAlignment.Center,
         });
         var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
@@ -180,17 +180,17 @@ public sealed partial class SyncSettings : UserControl
         text.Children.Add(new TextBlock
         {
             Text = name,
-            FontFamily = (FontFamily)Resources["TextFontFamily"],
+            FontFamily = (FontFamily)AppResources["TextFontFamily"],
             FontSize = 15,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = (Brush)Resources["EdendaleTextPrimaryBrush"],
+            Foreground = (Brush)AppResources["EdendaleTextPrimaryBrush"],
             TextTrimming = TextTrimming.CharacterEllipsis,
         });
-        text.Children.Add(new TextBlock { Text = PlatformName(peer.Platform), Style = (Style)Resources["BodySMTextStyle"] });
+        text.Children.Add(new TextBlock { Text = PlatformName(peer.Platform), Style = (Style)AppResources["BodySMTextStyle"] });
         Grid.SetColumn(text, 1);
         row.Children.Add(text);
 
-        var remove = new Button { Style = (Style)Resources["ArchiveGhostButtonStyle"], Content = Loc.Get("Sync_RemoveDeviceButton") };
+        var remove = new Button { Style = (Style)AppResources["ArchiveGhostButtonStyle"], Content = Loc.Get("Sync_RemoveDeviceButton") };
         AutomationProperties.SetName(remove, $"{Loc.Get("Sync_RemoveDevice")}, {name}");
         remove.Click += async (_, _) => await RemoveDeviceAsync(peer, name);
         Grid.SetColumn(remove, 2);

@@ -109,7 +109,10 @@ public static class SyncRecordMapping
 
     /// <summary>
     /// The local record for a sync record. Title and poster are presentation
-    /// data this device may already hold; <paramref name="existing"/> keeps them.
+    /// data this device may already hold; <paramref name="existing"/> keeps
+    /// them. A favourite or rating the merge changed is marked for the TMDB
+    /// push, like a local edit: otherwise this device's next TMDB pull would
+    /// put the old value back and stamp it newer than the change (§5.5).
     /// </summary>
     public static UserMediaRecord FromSync(SyncUserMediaRecord record, UserMediaRecord? existing) => new()
     {
@@ -120,10 +123,10 @@ public static class SyncRecordMapping
         PosterUrl = existing?.PosterUrl,
         Favourite = record.Favourite,
         FavouriteUpdatedAt = record.UpdateTime,
-        FavouriteDirty = existing?.FavouriteDirty == true && existing.Favourite == record.Favourite,
+        FavouriteDirty = (existing?.Favourite ?? false) != record.Favourite || existing?.FavouriteDirty == true,
         Rating = record.Rating,
         RatingUpdatedAt = record.UpdateTime,
-        RatingDirty = existing?.RatingDirty == true && existing.Rating == record.Rating,
+        RatingDirty = existing?.Rating != record.Rating || existing?.RatingDirty == true,
         Watchlist = record.Watchlist,
         Review = record.Review,
         UpdateTime = record.UpdateTime,

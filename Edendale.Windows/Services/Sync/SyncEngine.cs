@@ -135,8 +135,17 @@ public sealed class SyncEngine : IDisposable
     public SyncState State => _state;
 
     /// <summary>The location's one-line description for Settings; never a credential.</summary>
-    public string Describe(SyncLocationSettings location) =>
-        _locationFactory(location)?.Description ?? location.Kind.ToString();
+    public string Describe(SyncLocationSettings location)
+    {
+        lock (_gate)
+        {
+            if (_cachedLocation is not null && _cachedSettings == location) return _cachedLocation.Description;
+        }
+        var target = _locationFactory(location);
+        var description = target?.Description ?? location.Kind.ToString();
+        (target as IDisposable)?.Dispose();
+        return description;
+    }
 
     // ------------------------------------------------------------------
     // Triggers (§8.1)

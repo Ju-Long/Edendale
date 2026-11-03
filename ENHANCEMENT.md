@@ -22,6 +22,11 @@ Windows, plus Windows gaps found while comparing the branches.
   folder browser. It asks only for `drive.file` and opens Google's picker
   during sign-in; see [3.20](#320-google-drive-with-drivefile). Where 3.12
   and D9 describe Google Drive's scopes or folder roots, 3.20 replaces them.
+- **Amended 2026-11-03:** 27.1 file sync on the user's own storage and
+  handoff version 2 replace the OneDrive watch-state replica; see
+  [27.1 file sync and handoff version 2](#271-file-sync-and-handoff-version-2).
+  Where this file mentions the replica (D12, "Windows today"), that section
+  replaces it.
 
 ## How to use this file
 
@@ -102,6 +107,10 @@ Priority follows DIFF.md: **P1** parity, **P2** worthwhile, **P3** optional.
 - [x] [3.19 Settings layout](#319-settings-layout) (P3)
 - [ ] [3.20 Google Drive with drive.file](#320-google-drive-with-drivefile) (P1; code and tests done, Windows checks open)
 
+**27.1 sync and handoff** (FEATURES-27.1.md §5, §6; SYNC-PROTOCOL.md)
+
+- [ ] [27.1 file sync and handoff version 2](#271-file-sync-and-handoff-version-2) (P1; code and tests done, Windows checks and the owner's console changes open)
+
 **Video enhancement, Option A** (DIFF.md §3.16–3.17)
 
 - [x] [E.1 GPU capability probe](#e1-gpu-capability-probe) (P2)
@@ -177,6 +186,8 @@ still open needs Windows hardware or a change on another branch.
 - 3.20: the Desktop client's loopback sign-in with Google's picker (spike
   S3), Choose More Videos, and the relink notice, on a Windows PC with the
   owner's account. See the checklist in 3.20.
+- 27.1 sync and handoff: S.D1 (every location, two PCs, pairing both ways),
+  and the owner's console changes and probes in S.9.
 
 **Changes on other branches** (AGENTS.md hard constraint 7)
 
@@ -191,6 +202,10 @@ still open needs Windows hardware or a change on another branch.
 - `apple-27.0`: X.1–X.8 are new behavior. Apple can adopt them or record them
   as Windows-only. X.8 matters most: Apple also caches downloads by file
   without tying them to a title.
+- `main` SYNC-PROTOCOL.md: write down the `url`, `platform`, and camelCase
+  `provider` choices the three branches share, and the OneDrive preset's
+  `Apps` root (27.1 section). `web`: the privacy policy's sync and handoff
+  text (FEATURES-27.1.md §6.6), which now applies to Windows too.
 
 ## Decisions
 
@@ -258,6 +273,9 @@ decision once its outcome is written into the section, and into DIFF.md on
   from the existing OneDrive watch-state replica, or link them in the UI.
   **Outcome:** kept separate. Signing the storage account out leaves
   replication alone, and turning replication off leaves the source alone.
+  **Since 27.1** the replica is gone; a linked OneDrive account can itself
+  be the sync location (its app folder), and signing it out stops sync until
+  a location is chosen again.
 
 ## Foundation
 
@@ -958,6 +976,142 @@ tell them from this file's D1–D12)
     Edendale, ends the grant, and Google forgets the picks.
   - Keep the Limited Use and no-AI-training sentences.
 
+## 27.1 file sync and handoff version 2
+
+FEATURES-27.1.md §5, §6, and §8 and SYNC-PROTOCOL.md on `main` (vectors
+copied from `915b40d`). **Decided by the owner on 2026-11-02:** no Edendale
+server of any kind. Each device writes one JSON file,
+`Edendale/<space-name>/<device-id>.json`, to storage the user owns, reads the
+other devices' files, and merges them locally; the newest `updateTime` wins as
+a whole record. A handoff (version 2 of the Android phone-to-TV one) gives a
+new device the sync location and its login. Open decisions take the
+recommended answers: OneDrive's app folder with `Files.ReadWrite.AppFolder`
+(decision 1), tombstones kept a year (4), and the old replica files left in
+place after the import (3). Work branch: `claude/epic-heyrovsky-291930` from
+`windows-27.0.2`, PR against `windows`. The Apple and Android sessions'
+wire choices are matched (below).
+
+- [x] **S.1 Connector writes:** WebDAV `MKCOL`, `PUT`, `GET`, `DELETE`, and
+  `getetag` in the listing (`WebDavConnector`); SFTP folders made as needed,
+  `<name>.tmp` renamed over the target with posix-rename and a plain-rename
+  fallback, read, and delete (`SftpConnector`); SMB through UNC paths with
+  `System.IO`, after `NetworkShare.TryConnect` with the saved login. Library
+  sources stay read-only.
+- [x] **S.2 Sync location** (`Services/Sync/SyncState.cs`,
+  `SyncLocations.cs`, `Controls/SyncLocationDialog.cs`): one per PC; the
+  OneDrive folder on this PC (root `%OneDrive%\Apps`, see the decisions), the
+  iCloud for Windows folder (`%USERPROFILE%\iCloudDrive`), a picked folder
+  kept in the future-access list, Google Drive under `drive.file`
+  (`files.list`, multipart `files.create`, `files.update` with
+  `uploadType=media`; the handed-over folder ID used as is), OneDrive's app
+  folder (`/me/drive/special/approot`, `PUT …:/content` under 4 MiB, an
+  upload session above, `eTag` stamps), Dropbox (`/Edendale/`, `files/upload`
+  with `mode: overwrite`, `rev` stamps), and saved WebDAV, SMB, and SFTP
+  logins. `OAuth.cs` adds `Files.ReadWrite.AppFolder` and
+  `files.content.write`; `CloudSignIn.SignInForSyncAsync` signs in for the
+  location (Google without the picker, with a `login_hint` from a handoff).
+- [x] **S.3 Device file and merge** (`Core/Sync`): §5 and §6 validation
+  (format, space, device ID against the file name, 8 MiB and 100,000
+  records, integers without fractions, booleans never 0/1, half-step
+  ratings, 10,000-scalar reviews, unique keys), §7 merge with the device
+  tie-break, monotonic stamping, the 24-hour guard, invalid stamps as 0,
+  and tombstones written for 366 days. `UserMediaMerger` follows the §5.3
+  table: whole-record wins on one stamp, ties to the smaller device ID, and
+  cleared records kept as tombstones instead of pruned (`HasState`). Every
+  write in `WatchProgressStore` and `UserMediaStore` takes a stamp from the
+  shared `SyncClock` and this PC's ID; a TMDB pull that changes a value is a
+  new local write (§5.5). Positions travel in seconds (`DurationSeconds` is
+  new on `WatchProgress`), and episodes by show, season, and episode.
+- [x] **S.4 Migration** (`ReplicaMigration`, `App.xaml.cs`): the first launch
+  imports `%OneDrive%\Apps\Edendale\user-media.json` and
+  `watch-progress.json` once, stamped with their own times and this PC's ID,
+  and leaves both files in place. A PC with OneDrive is offered its OneDrive
+  folder once in the info bar. `CloudSyncService` is gone.
+- [x] **S.5 Triggers** (`SyncEngine`): launch, return to the foreground
+  (window activated, at most every 30 s), 10 s after the last change, at once
+  when playback stops or the window is deactivated or closed, and every 5
+  minutes in the foreground. A file whose stamp hasn't changed isn't read
+  again; a read that applies nothing new changes nothing; this PC's file is
+  rewritten only when a stamp or a merge moved. Failures back off 1, 2, 4, 8
+  minutes up to an hour, and a failed listing leaves the stores alone.
+- [x] **S.6 Handoff version 2** (`Core/Handoff`, `Services/Handoff`,
+  `Controls/HandoffDialog.cs`): DNS-SD `_edendale-handoff._tcp` (TXT `v=2`,
+  `name`, `platform`) only while the pairing screen is open; the PC as host
+  with a QR code and a 6-digit code, each 2 minutes and one attempt, and a
+  60-second lockout after 5 failures; the PC as guest with a typed code or a
+  pasted QR link; J-PAKE over P-256 with `edendale-host` and
+  `edendale-guest`; the AES-256-GCM channel with the §9.5 nonce and AAD;
+  `hello`, `confirm`, `role`, `offer`, `result`, and `error`; the Google
+  ecosystem rule; and validation of every received item before it is kept.
+- [x] **S.7 Settings → Sync** (`Controls/SyncSettings.cs`) with the
+  location, space, this PC's name, last sync, warnings, the other devices
+  (Remove, linking the provider's account page for H6), Sync Now, Turn Off
+  (keep or delete this PC's file), and the two handoff entries. Every new
+  string in all 18 `Resources.resw` files; copy shared with the Android
+  branch uses its translations.
+- [x] **S.T1 Tests:** `SyncMergeTests` (Appendix A.1 M1–M8, a convergence
+  property over random devices and read orders, space names, retention),
+  `SyncDeviceFileTests`, `SyncEngineTests` (two devices over a folder,
+  tombstones, episodes, the watchlist flag, backoff, skipped files),
+  `SyncLocationsTests` (Google Drive, OneDrive, Dropbox, and WebDAV against
+  recorded responses; handoff URLs; the scope rules), `ReplicaMigrationTests`,
+  `HandoffCryptoTests` (RFC 7748 §6.1, RFC 5869 A.1, RFC 4231 1–4, A.2 key
+  schedule and QR URI, A.3 nonces), `EcJPakeTests`, `HandoffSessionTests`
+  (whole exchanges over loopback both ways, wrong secret and wrong code before
+  any payload, same role, decline, version, expiry), `HandoffOffersTests`
+  (the offer, the Google rule, validation before storing, a whole PC-to-PC
+  handoff), and `LogHygieneTests` (H10).
+- [x] **S.8 Docs:** README ("Sync between devices", the scopes, privacy), this
+  section, and UPCOMING.md.
+- [ ] **S.D1 On Windows PCs:** every location kind with two PCs (and with an
+  Android or Apple device where one is to hand), resume across devices, the
+  far-future warning, Remove a Device, Turn Off both ways, the OneDrive
+  migration and its one-time offer, an older OneDrive or Dropbox account
+  asked to consent again, the picked folder in a packaged build after a
+  restart (future-access list), and pairing by QR link and by code in both
+  directions, including a wrong code, a stale QR code, the lockout, and
+  Windows Firewall's prompt for the listener. Not run: this branch was
+  written on a Mac (see the PR).
+- [ ] **S.9 Owner:** add `Files.ReadWrite.AppFolder` as a delegated permission
+  on the Entra app registration, and enable `files.content.write` on the
+  Dropbox app. Until then a OneDrive sign-in that asks for the new scope can
+  fail, and every Dropbox sign-in fails (Dropbox refuses unknown scopes).
+  Then the §11 probes: a `drive.file` folder made by another client is listed
+  by the Windows client of the same Cloud project; OneDrive's app folder
+  works for a personal account; the Apple app's iCloud Drive folder appears
+  in iCloud for Windows where the iCloud preset expects it.
+
+**Windows decisions** (made while building; tell the other branches)
+
+- The OneDrive preset's root is `%OneDrive%\Apps`, not `%OneDrive%`, so its
+  files land in `Apps\Edendale\<space>\`: the same folder the OneDrive API
+  location uses on every platform and the one the replica lived in. A plain
+  `%OneDrive%` root would put them in `Edendale\<space>\`, where API devices
+  never look.
+- Google Drive as a location signs in for `drive.file` without the picker:
+  the app's own `Edendale/` folder needs no pick (FEATURES-27.1.md §6.4). An
+  account linked for media is reused as is.
+- The watchlist store stays the watchlist's source of truth; its flag is
+  mirrored into the user-media records (stamped when it changes) so the sync
+  record is whole, and a merged flag flows back into the watchlist store,
+  whose TMDB push carries it on.
+- A device ID is made the first time sync needs one (turning sync on, or the
+  replica import, which §8.4 stamps with this PC's ID). Records written
+  before that carry no device and are signed when the file is written.
+- The migration offer suggests the space `Family` so PCs that all accept it
+  meet; the location dialog otherwise starts empty, as on Apple and Android.
+- Wire details the spec leaves open follow the Apple and Android branches:
+  camelCase `provider` values (`folder`, `googleDrive`, `oneDrive`,
+  `dropbox`, `webdav`, `smb`, `sftp`; Apple's `icloudDrive` is a folder
+  here), `offer.location.url` for a server's root (an SMB location's UNC
+  path travels as `smb://host/share/path/`), and `platform` in the `role`
+  message.
+- Bouncy Castle C# has no elliptic-curve J-PAKE, so `Core/Handoff/EcJPake.cs`
+  ports Bouncy Castle Java's (what Android runs) onto its EC arithmetic.
+  RFC 8236 has no test vectors; the tests check agreement, the round-3
+  failure, forgeries, and Android's wire shape. A test against a real
+  Android device is part of S.D1.
+
 ## Video enhancement (Option A)
 
 DIFF.md §3.16–3.17, built only from what LibVLC 3 ships. Confirmed in LibVLC
@@ -1430,3 +1584,7 @@ From DIFF.md §5. Tick a line when its cases are ported to
   (E.1, E.2)
 - [x] Windows only: `SavedSubtitlesTests` (X.8)
 - [x] Windows only: `FrameGenerationTests` (G.1)
+- [x] 27.1, every branch: `SyncMergeTests` (Appendix A.1), `SyncDeviceFileTests`,
+  `SyncEngineTests`, `SyncLocationsTests`, `ReplicaMigrationTests` (Windows
+  only), `HandoffCryptoTests` (Appendix A.2–A.4), `EcJPakeTests`,
+  `HandoffSessionTests`, `HandoffOffersTests`, and `LogHygieneTests`

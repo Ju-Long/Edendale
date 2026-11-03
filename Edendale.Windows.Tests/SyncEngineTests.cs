@@ -155,6 +155,32 @@ public sealed class SyncEngineTests
     }
 
     [TestMethod]
+    public async Task AMergedChange_IsQueuedForTheTmdbPush()
+    {
+        var location = Path.Combine(_root, "location");
+        using var a = new Device(_root, "A", T0, location);
+        using var b = new Device(_root, "B", T0 + 1000, location);
+        a.Media.SetFavourite(603, "movie", true);
+        await a.SyncAsync();
+        var pushes = 0;
+        b.Media.EditedLocally += (_, _) => pushes++;
+        await b.SyncAsync();
+        Assert.IsTrue(b.Media.Get(603, "movie")!.FavouriteDirty, "B's TMDB account learns the favourite");
+        Assert.AreEqual(1, pushes);
+
+        // A favourite cleared elsewhere is pushed too, so a TMDB pull can't bring it back.
+        a.Now += 10_000;
+        a.Media.SetFavourite(603, "movie", false);
+        await a.SyncAsync();
+        var settled = b.Media.Get(603, "movie")!;
+        settled.FavouriteDirty = false;
+        b.Now += 20_000;
+        await b.SyncAsync();
+        Assert.IsFalse(b.Media.IsFavourite(603, "movie"));
+        Assert.IsTrue(b.Media.Get(603, "movie")!.FavouriteDirty);
+    }
+
+    [TestMethod]
     public async Task EpisodesMapByShowSeasonEpisode_AndResolveToLocalIds()
     {
         var location = Path.Combine(_root, "location");
