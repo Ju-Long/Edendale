@@ -8,6 +8,10 @@
 // Listing is PROPFIND with Depth: 1 (most servers disable infinity), so
 // enumeration walks breadth-first. Basic and Digest logins answer the
 // server's challenge; the login lives in the DPAPI server-login store.
+//
+// Write support (27.1 sync, FEATURES-27.1.md §10.5): MKCOL creates a folder,
+// PUT replaces a file as a whole, GET reads one, DELETE removes one. Only the
+// sync location writes; library sources stay read-only.
 
 using System.Globalization;
 using System.Net;
@@ -21,7 +25,7 @@ public sealed class WebDavConnector : IMediaConnector
 {
     public const string PropfindBody =
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-        "<d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:getlastmodified/><d:displayname/></d:prop></d:propfind>";
+        "<d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:getlastmodified/><d:getetag/><d:displayname/></d:prop></d:propfind>";
 
     private WebDavConnector(string root, ServerLogin? login, HttpMessageInvoker client)
     {
@@ -111,6 +115,105 @@ public sealed class WebDavConnector : IMediaConnector
         return ConnectorWalk.Sorted(entries.Where(entry => !entry.IsHidden));
     }
 
+    // ------------------------------------------------------------------
+    // Writing (the sync location)
+    // ------------------------------------------------------------------
+
+    /// <summary>The canonical URL of <paramref name="name"/> inside the folder <paramref name="directoryUrl"/>.</summary>
+    public static string ChildUrl(string directoryUrl, string name, bool isDirectory)
+    {
+        if (!SourceUrl.TrySplit(directoryUrl, out var parts)) throw new ConnectorException(ConnectorFailure.InvalidAddress);
+        return SourceUrl.Server(parts.Scheme, parts.Host, parts.Port, SourceUrl.PathSegments(directoryUrl).Append(name), isDirectory)
+            ?? throw new ConnectorException(ConnectorFailure.InvalidAddress);
+    }
+
+    /// <summary>MKCOL: creates the folder; one that already exists is fine.</summary>
+    public async Task CreateCollectionAsync(string directoryUrl, CancellationToken cancellation)
+    {
+        using var request = new HttpRequestMessage(new HttpMethod("MKCOL"), CheckedHttpUrl(DirectoryUrl(directoryUrl)));
+        var (status, _) = await SendAsync(request, cancellation).ConfigureAwait(false);
+        switch (status)
+        {
+            case 201 or 200 or 204:
+                return;
+            case 405 or 301 or 302:
+                // 405: it exists already. A redirect means the server knows it under another form.
+                return;
+            case 401 or 403:
+                throw new ConnectorException(ConnectorFailure.AuthenticationFailed, Host);
+            case 409:
+                // A parent folder is missing.
+                throw new ConnectorException(ConnectorFailure.NotFound, Host);
+            default:
+                throw new ConnectorException(ConnectorFailure.ServerError, Host, status);
+        }
+    }
+
+    /// <summary>GET: the whole file.</summary>
+    public async Task<byte[]> ReadFileAsync(string fileUrl, CancellationToken cancellation)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, CheckedHttpUrl(fileUrl));
+        var (status, body) = await SendAsync(request, cancellation).ConfigureAwait(false);
+        return status switch
+        {
+            >= 200 and < 300 => body,
+            404 => throw new ConnectorException(ConnectorFailure.NotFound, Host),
+            401 or 403 => throw new ConnectorException(ConnectorFailure.AuthenticationFailed, Host),
+            _ => throw new ConnectorException(ConnectorFailure.ServerError, Host, status),
+        };
+    }
+
+    /// <summary>PUT: replaces the file as a whole in one request.</summary>
+    public async Task WriteFileAsync(string fileUrl, ReadOnlyMemory<byte> bytes, string contentType, CancellationToken cancellation)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, CheckedHttpUrl(fileUrl)) { Content = new ReadOnlyMemoryContent(bytes) };
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        var (status, _) = await SendAsync(request, cancellation).ConfigureAwait(false);
+        if (status is >= 200 and < 300) return;
+        throw status is 401 or 403
+            ? new ConnectorException(ConnectorFailure.AuthenticationFailed, Host)
+            : new ConnectorException(ConnectorFailure.ServerError, Host, status);
+    }
+
+    /// <summary>DELETE: a file that is already gone is fine.</summary>
+    public async Task DeleteFileAsync(string fileUrl, CancellationToken cancellation)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, CheckedHttpUrl(fileUrl));
+        var (status, _) = await SendAsync(request, cancellation).ConfigureAwait(false);
+        if (status is >= 200 and < 300 or 404) return;
+        throw status is 401 or 403
+            ? new ConnectorException(ConnectorFailure.AuthenticationFailed, Host)
+            : new ConnectorException(ConnectorFailure.ServerError, Host, status);
+    }
+
+    /// <summary>The HTTP address of a canonical URL, refusing plain HTTP outside the local network.</summary>
+    private string CheckedHttpUrl(string url)
+    {
+        var httpUrl = HttpUrl(url) ?? throw new ConnectorException(ConnectorFailure.InvalidAddress);
+        var host = SourceUrl.TrySplit(url, out var parts) ? parts.Host : url;
+        if (httpUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !LocalNetwork.IsLocalHost(host))
+        {
+            throw new ConnectorException(ConnectorFailure.InsecureConnection);
+        }
+        return httpUrl;
+    }
+
+    private async Task<(int Status, byte[] Body)> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        try
+        {
+            using var response = await Client.SendAsync(request, timeout.Token).ConfigureAwait(false);
+            var body = await response.Content.ReadAsByteArrayAsync(timeout.Token).ConfigureAwait(false);
+            return ((int)response.StatusCode, body);
+        }
+        catch (Exception error) when (!cancellation.IsCancellationRequested)
+        {
+            throw ConnectorError(error, Host);
+        }
+    }
+
     /// <summary>Entries of a multistatus response, without the listed folder itself.</summary>
     public static List<ConnectorEntry>? ParseMultistatus(byte[] data, string requestUrl, string canonicalDirectory)
     {
@@ -146,6 +249,7 @@ public sealed class WebDavConnector : IMediaConnector
             var modified = props.Select(prop => Value(prop, "getlastmodified"))
                 .Select(ParseHttpDate)
                 .FirstOrDefault(value => value is not null);
+            var etag = props.Select(prop => Value(prop, "getetag")).FirstOrDefault(value => !string.IsNullOrEmpty(value));
 
             var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (segments.Length == 0) continue;
@@ -155,6 +259,7 @@ public sealed class WebDavConnector : IMediaConnector
             {
                 Size = isCollection ? null : size,
                 Modified = modified,
+                ETag = etag,
             });
         }
         return entries;

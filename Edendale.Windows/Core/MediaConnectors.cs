@@ -14,6 +14,9 @@ public sealed record ConnectorEntry(string Name, string Url, bool IsDirectory)
     /// <summary>Seconds, when the provider reports it (the Graph video facet).</summary>
     public double? Duration { get; init; }
 
+    /// <summary>The server's entity tag, when it reports one (WebDAV getetag); what sync compares to skip unchanged files.</summary>
+    public string? ETag { get; init; }
+
     /// <summary>A file with one of the video extensions the library imports.</summary>
     public bool IsVideo => !IsDirectory && VideoFiles.IsVideoName(Name);
 

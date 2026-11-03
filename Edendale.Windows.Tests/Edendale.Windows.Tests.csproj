@@ -30,6 +30,8 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <!-- Required by the linked SftpConnector. -->
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <!-- Handoff v2 (FEATURES-27.1.md §6.2): X25519 and the EC J-PAKE over P-256, through Bouncy Castle's EC math. -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
   </ItemGroup>
 
   <!-- Source under test, linked rather than referenced. -->
@@ -91,6 +93,12 @@
     <Compile Include="..\Edendale.Windows\Core\WatchlistReconciler.cs" Link="App\Core\WatchlistReconciler.cs" />
     <Compile Include="..\Edendale.Windows\Core\YoungAudienceCertification.cs" Link="App\Core\YoungAudienceCertification.cs" />
     <Compile Include="..\Edendale.Windows\Core\WindowsCore.cs" Link="App\Core\WindowsCore.cs" />
+    <!-- 27.1 sync and handoff (FEATURES-27.1.md §5 and §6, SYNC-PROTOCOL.md). -->
+    <Compile Include="..\Edendale.Windows\Core\Sync\*.cs" Link="App\Core\Sync\%(Filename)%(Extension)" />
+    <Compile Include="..\Edendale.Windows\Core\Handoff\*.cs" Link="App\Core\Handoff\%(Filename)%(Extension)" />
+    <Compile Include="..\Edendale.Windows\Services\Sync\*.cs" Link="App\Services\Sync\%(Filename)%(Extension)" />
+    <Compile Include="..\Edendale.Windows\Services\WatchProgressStore.cs" Link="App\Services\WatchProgressStore.cs" />
+    <Compile Include="..\Edendale.Windows\Services\UserMediaStore.cs" Link="App\Services\UserMediaStore.cs" />
     <Compile Include="..\Edendale.Windows\Models\MediaModels.cs" Link="App\Models\MediaModels.cs" />
     <Compile Include="..\Edendale.Windows\Models\UserMediaModels.cs" Link="App\Models\UserMediaModels.cs" />
     <Compile Include="..\Edendale.Windows\Models\WatchlistModels.cs" Link="App\Models\WatchlistModels.cs" />

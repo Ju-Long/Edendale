@@ -1,3 +1,10 @@
+// The merge of two record sets, as FEATURES-27.1.md §5.3 and
+// SYNC-PROTOCOL.md §7.1 define it: per key, the newest record wins as a
+// whole; equal stamps go to the lexically smaller device ID; cleared records
+// are tombstones and are kept. Used by the one-time import of the OneDrive
+// replica (§8.4) and by the tests; the live sync applies the same rule
+// through Core/Sync/SyncMerge.
+
 using Edendale.Windows.Models;
 
 namespace Edendale.Windows.Core;
@@ -12,14 +19,15 @@ internal static class UserMediaMerger
         var order = new List<string>();
         foreach (var record in first.Concat(second))
         {
-            if (!byKey.TryGetValue(record.StorageKey, out var current))
+            var key = record.SyncKey;
+            if (!byKey.TryGetValue(key, out var current))
             {
-                order.Add(record.StorageKey);
-                byKey[record.StorageKey] = record;
+                order.Add(key);
+                byKey[key] = record;
             }
-            else if (record.LastWatchedEpochMillis > current.LastWatchedEpochMillis)
+            else if (Wins(record.LastWatchedEpochMillis, record.Device, current.LastWatchedEpochMillis, current.Device))
             {
-                byKey[record.StorageKey] = record;
+                byKey[key] = record;
             }
         }
         return order.Select(key => byKey[key]).ToList();
@@ -31,63 +39,27 @@ internal static class UserMediaMerger
     {
         var byKey = new Dictionary<string, UserMediaRecord>(StringComparer.Ordinal);
         var order = new List<string>();
-        foreach (var record in first)
+        foreach (var record in first.Concat(second))
         {
-            if (!byKey.ContainsKey(record.StorageKey)) order.Add(record.StorageKey);
-            byKey[record.StorageKey] = record;
-        }
-        foreach (var record in second)
-        {
-            if (byKey.TryGetValue(record.StorageKey, out var current))
+            var key = record.StorageKey;
+            if (!byKey.TryGetValue(key, out var current))
             {
-                byKey[record.StorageKey] = MergeRecord(current, record);
+                order.Add(key);
+                byKey[key] = record;
             }
-            else
+            else if (Wins(record.EffectiveUpdateTime, record.Device, current.EffectiveUpdateTime, current.Device))
             {
-                order.Add(record.StorageKey);
-                byKey[record.StorageKey] = record;
+                byKey[key] = record;
             }
         }
-        return order.Select(key => byKey[key]).Where(record => record.HasState).ToList();
+        // Tombstones stay: dropping one would discard the time of the clear.
+        return order.Select(key => byKey[key]).ToList();
     }
 
-    private static UserMediaRecord MergeRecord(UserMediaRecord own, UserMediaRecord other)
+    /// <summary>§7.1: newer wins; on a tie the lexically smaller device; the same write never replaces itself.</summary>
+    internal static bool Wins(long incomingTime, string? incomingDevice, long currentTime, string? currentDevice)
     {
-        var favourite = Winner(
-            own, other,
-            own.FavouriteUpdatedAt, own.FavouriteDirty,
-            other.FavouriteUpdatedAt, other.FavouriteDirty);
-        var rating = Winner(
-            own, other,
-            own.RatingUpdatedAt, own.RatingDirty,
-            other.RatingUpdatedAt, other.RatingDirty);
-
-        return new UserMediaRecord
-        {
-            TmdbId = own.TmdbId,
-            MediaType = own.MediaType,
-            Title = own.Title ?? other.Title,
-            PosterPath = own.PosterPath ?? other.PosterPath,
-            PosterUrl = own.PosterUrl ?? other.PosterUrl,
-            Favourite = favourite.Favourite,
-            FavouriteUpdatedAt = favourite.FavouriteUpdatedAt,
-            FavouriteDirty = favourite.FavouriteDirty,
-            Rating = rating.Rating,
-            RatingUpdatedAt = rating.RatingUpdatedAt,
-            RatingDirty = rating.RatingDirty,
-        };
-    }
-
-    private static UserMediaRecord Winner(
-        UserMediaRecord own,
-        UserMediaRecord other,
-        long ownUpdatedAt,
-        bool ownDirty,
-        long otherUpdatedAt,
-        bool otherDirty)
-    {
-        if (ownUpdatedAt > otherUpdatedAt) return own;
-        if (ownUpdatedAt < otherUpdatedAt) return other;
-        return otherDirty && !ownDirty ? other : own;
+        if (incomingTime != currentTime) return incomingTime > currentTime;
+        return string.CompareOrdinal(incomingDevice ?? "", currentDevice ?? "") < 0;
     }
 }

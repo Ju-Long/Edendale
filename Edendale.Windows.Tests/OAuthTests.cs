@@ -70,7 +70,7 @@ public sealed class OAuthTests
     public void BuildsEachProvidersAuthorizationUrl()
     {
         var microsoft = CloudProviders.Configuration(MediaSourceKind.OneDrive, "guid")!;
-        CollectionAssert.AreEqual(new[] { "Files.Read", "User.Read", "offline_access" }, microsoft.Scopes.ToArray());
+        CollectionAssert.AreEqual(new[] { "Files.Read", "Files.ReadWrite.AppFolder", "User.Read", "offline_access" }, microsoft.Scopes.ToArray());
         Assert.IsTrue(microsoft.SendsScopeToTokenEndpoint);
         Assert.IsNull(microsoft.LoopbackPort);
 
@@ -82,7 +82,7 @@ public sealed class OAuthTests
         Assert.AreEqual("guid", query["client_id"]);
         Assert.AreEqual("code", query["response_type"]);
         Assert.AreEqual("http://127.0.0.1:50123/", query["redirect_uri"]);
-        Assert.AreEqual("Files.Read User.Read offline_access", query["scope"]);
+        Assert.AreEqual("Files.Read Files.ReadWrite.AppFolder User.Read offline_access", query["scope"]);
         Assert.AreEqual("state-1", query["state"]);
         Assert.AreEqual("challenge-1", query["code_challenge"]);
         Assert.AreEqual("S256", query["code_challenge_method"]);
@@ -93,7 +93,7 @@ public sealed class OAuthTests
         var dropbox = CloudProviders.Configuration(MediaSourceKind.Dropbox, "appkey")!;
         StringAssert.Contains(new OAuthClient(dropbox).AuthorizationUrl("http://127.0.0.1:49735/", "s", "c"), "token_access_type=offline");
         Assert.AreEqual(CloudProviders.DropboxLoopbackPort, dropbox.LoopbackPort);
-        CollectionAssert.AreEqual(new[] { "files.metadata.read", "files.content.read", "account_info.read" }, dropbox.Scopes.ToArray());
+        CollectionAssert.AreEqual(new[] { "files.metadata.read", "files.content.read", "files.content.write", "account_info.read" }, dropbox.Scopes.ToArray());
 
         var google = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "123-abc.apps.googleusercontent.com", "GOCSPX-secret")!;
         Assert.IsNull(google.LoopbackPort);

@@ -196,7 +196,13 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
         return TokenRequestAsync(parameters, cancellation);
     }
 
-    public Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellation)
+    /// <summary>
+    /// Refreshes an access token. <paramref name="scopes"/> replaces the
+    /// configuration's scopes where the provider wants them repeated
+    /// (Microsoft): a refresh may only ask for scopes the user consented to,
+    /// so a token from before the sync scope is refreshed with what it has.
+    /// </summary>
+    public Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellation, IReadOnlyList<string>? scopes = null)
     {
         var parameters = new List<(string, string)>
         {
@@ -205,7 +211,7 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
             ("client_id", configuration.ClientId),
         };
         AddClientSecret(parameters);
-        if (configuration.SendsScopeToTokenEndpoint) parameters.Add(("scope", string.Join(' ', configuration.Scopes)));
+        if (configuration.SendsScopeToTokenEndpoint) parameters.Add(("scope", string.Join(' ', scopes ?? configuration.Scopes)));
         return TokenRequestAsync(parameters, cancellation);
     }
 
@@ -336,8 +342,77 @@ public static class CloudProviders
         return parameters;
     }
 
-    public static readonly IReadOnlyList<string> OneDriveScopes = ["Files.Read", "User.Read", "offline_access"];
-    public static readonly IReadOnlyList<string> DropboxScopes = ["files.metadata.read", "files.content.read", "account_info.read"];
+    /// <summary>
+    /// OneDrive's app folder, Apps/Edendale/, where the sync files live
+    /// (FEATURES-27.1.md §10, decision 1). Delegated, so the Entra app
+    /// registration must list it; until it does, consent fails.
+    /// </summary>
+    public const string OneDriveAppFolderScope = "Files.ReadWrite.AppFolder";
+
+    /// <summary>Dropbox's write scope for the sync files in /Edendale/; the App Console must enable it.</summary>
+    public const string DropboxWriteScope = "files.content.write";
+
+    public static readonly IReadOnlyList<string> OneDriveScopes = ["Files.Read", OneDriveAppFolderScope, "User.Read", "offline_access"];
+
+    /// <summary>What builds before 27.1 asked OneDrive for; their refresh tokens are refreshed with exactly these.</summary>
+    public static readonly IReadOnlyList<string> OneDriveLegacyScopes = ["Files.Read", "User.Read", "offline_access"];
+
+    public static readonly IReadOnlyList<string> DropboxScopes = ["files.metadata.read", "files.content.read", DropboxWriteScope, "account_info.read"];
+
+    /// <summary>The scope an account needs before it can hold the sync files; null when reading access already covers it.</summary>
+    public static string? SyncWriteScope(MediaSourceKind kind) => kind switch
+    {
+        MediaSourceKind.OneDrive => OneDriveAppFolderScope,
+        MediaSourceKind.Dropbox => DropboxWriteScope,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Whether a granted scope list holds <paramref name="scope"/>. Microsoft
+    /// may report Graph scopes with the resource in front
+    /// (https://graph.microsoft.com/Files.Read), and casing varies.
+    /// </summary>
+    public static bool HasScope(IReadOnlyList<string>? granted, string scope) =>
+        granted?.Any(item => item.Equals(scope, StringComparison.OrdinalIgnoreCase)
+            || item.EndsWith("/" + scope, StringComparison.OrdinalIgnoreCase)) == true;
+
+    /// <summary>
+    /// Whether a linked account may write the sync files (FEATURES-27.1.md
+    /// §10.5): Google's drive.file already allows the app's own folder;
+    /// OneDrive and Dropbox accounts from before 27.1 must consent again.
+    /// </summary>
+    public static bool CanWriteSyncFiles(CloudAccount account) => account.SourceKind switch
+    {
+        MediaSourceKind.GoogleDrive => !account.IsFromBeforeDriveFile,
+        _ => SyncWriteScope(account.SourceKind) is not { } scope || HasScope(account.Scopes, scope),
+    };
+
+    /// <summary>
+    /// The scopes a refresh sends for <paramref name="account"/>, or null for
+    /// the configuration's. A Microsoft refresh may not ask for scopes the
+    /// user never granted, so an account from before the app-folder scope
+    /// keeps refreshing with the old set and its sources keep working.
+    /// </summary>
+    public static IReadOnlyList<string>? RefreshScopes(CloudAccount account) =>
+        account.SourceKind == MediaSourceKind.OneDrive && !HasScope(account.Scopes, OneDriveAppFolderScope)
+            ? OneDriveLegacyScopes
+            : null;
+
+    /// <summary>
+    /// Google sign-in for a sync location: drive.file consent without the
+    /// picker, since the app's own Edendale folder needs no pick (FEATURES-27.1.md
+    /// §6.4). <paramref name="loginHint"/> pre-fills the account a handoff named.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> GoogleSyncParameters(string? loginHint)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            ["access_type"] = "offline",
+            ["prompt"] = string.IsNullOrEmpty(loginHint) ? "consent select_account" : "consent",
+        };
+        if (!string.IsNullOrEmpty(loginHint)) parameters["login_hint"] = loginHint;
+        return parameters;
+    }
 
     /// <summary>Personal and work/school Microsoft accounts both sign in through the common authority.</summary>
     public const string MicrosoftAuthority = "https://login.microsoftonline.com/common/oauth2/v2.0/";
@@ -722,7 +797,8 @@ public sealed class CloudTokenProvider
         OAuthTokenResponse response;
         try
         {
-            response = await new OAuthClient(configuration, _client).RefreshAsync(account.RefreshToken, CancellationToken.None).ConfigureAwait(false);
+            response = await new OAuthClient(configuration, _client)
+                .RefreshAsync(account.RefreshToken, CancellationToken.None, CloudProviders.RefreshScopes(account)).ConfigureAwait(false);
         }
         catch (OAuthException error) when (error.Failure == OAuthFailure.InvalidGrant)
         {

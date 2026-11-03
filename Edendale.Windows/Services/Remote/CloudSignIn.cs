@@ -53,12 +53,43 @@ public static class CloudSignIn
         return new CloudSignInResult(updated, picked);
     }
 
+    /// <summary>
+    /// Signs in an account for the sync location (FEATURES-27.1.md §5.2):
+    /// OneDrive and Dropbox with their write scopes, Google Drive with
+    /// drive.file but without the picker. <paramref name="loginHint"/> is the
+    /// email a handoff from another ecosystem names (§6.4). An account that
+    /// is already linked is replaced with the new grant, so its sources keep
+    /// working.
+    /// </summary>
+    public static async Task<CloudAccount> SignInForSyncAsync(MediaSourceKind kind, string? loginHint, string completedPage, CancellationToken cancellation)
+    {
+        IReadOnlyDictionary<string, string>? parameters = null;
+        Func<OAuthConfiguration, OAuthConfiguration>? adjust = null;
+        if (kind == MediaSourceKind.GoogleDrive)
+        {
+            adjust = configuration => configuration with { AdditionalAuthorizationParameters = CloudProviders.GoogleSyncParameters(loginHint) };
+        }
+        else if (!string.IsNullOrEmpty(loginHint))
+        {
+            parameters = new Dictionary<string, string> { ["login_hint"] = loginHint };
+        }
+        var (tokens, _) = await AuthorizeAsync(kind, parameters, completedPage, cancellation, adjust).ConfigureAwait(false);
+        CloudProviders.CheckGrantedScopes(kind, tokens);
+        var identity = await CloudProviders.IdentityAsync(kind, tokens, null, cancellation).ConfigureAwait(false);
+        var account = CloudProviders.NewAccount(kind, tokens, identity);
+        AppServices.CloudAccounts.Save(account);
+        AppServices.CloudTokens.Store(tokens, account);
+        return account;
+    }
+
     /// <summary>The provider's page in the system browser, then the code exchange.</summary>
     private static async Task<(OAuthTokenResponse Tokens, IReadOnlyList<string> PickedFileIds)> AuthorizeAsync(
-        MediaSourceKind kind, IReadOnlyDictionary<string, string>? parameters, string completedPage, CancellationToken cancellation)
+        MediaSourceKind kind, IReadOnlyDictionary<string, string>? parameters, string completedPage, CancellationToken cancellation,
+        Func<OAuthConfiguration, OAuthConfiguration>? adjust = null)
     {
         var provider = kind.DisplayName();
         var configuration = CloudProviders.Configuration(kind) ?? throw new OAuthException(OAuthFailure.NotConfigured, provider);
+        if (adjust is not null) configuration = adjust(configuration);
         var client = new OAuthClient(configuration);
         var verifier = Pkce.MakeVerifier();
         var state = Pkce.MakeState();
