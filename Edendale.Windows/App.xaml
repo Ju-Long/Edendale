@@ -360,16 +360,10 @@
                 <Setter Property="Margin" Value="20,16" />
             </Style>
 
-            <!-- Action row: archive buttons left-aligned inside the group. -->
-            <Style x:Key="SettingsActionRowPanelStyle" TargetType="StackPanel">
-                <Setter Property="Orientation" Value="Horizontal" />
-                <Setter Property="Spacing" Value="12" />
-                <Setter Property="Margin" Value="20,10" />
-            </Style>
-
-            <!-- The same row for actions that can outgrow one line (Sync's in
-                 a narrow window or a long locale): they wrap instead of clipping. -->
-            <Style x:Key="SettingsWrappingActionRowPanelStyle" TargetType="controls:WrapPanel">
+            <!-- Action row: archive buttons left-aligned inside the group,
+                 wrapping onto more lines instead of clipping in a narrow
+                 window or a long locale. -->
+            <Style x:Key="SettingsActionRowPanelStyle" TargetType="controls:WrapPanel">
                 <Setter Property="Spacing" Value="12" />
                 <Setter Property="LineSpacing" Value="8" />
                 <Setter Property="Margin" Value="20,10" />

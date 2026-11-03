@@ -138,7 +138,7 @@ public sealed partial class SyncSettings : UserControl
     /// <summary>A row of actions that wraps: the translated labels outgrow one line.</summary>
     private void AddActions(params Button[] buttons)
     {
-        var panel = new WrapPanel { Style = (Style)AppResources["SettingsWrappingActionRowPanelStyle"] };
+        var panel = new WrapPanel { Style = (Style)AppResources["SettingsActionRowPanelStyle"] };
         foreach (var button in buttons) panel.Children.Add(button);
         _rows.Children.Add(panel);
     }

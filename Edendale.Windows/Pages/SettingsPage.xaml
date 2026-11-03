@@ -218,9 +218,12 @@
                                                     Foreground="{StaticResource EdendaleGoldBrush}"
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
+                                            <!-- Each button names its source, as on the Downloaded
+                                                 page, so a screen reader can tell the rows apart. -->
                                             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    AutomationProperties.Name="{Binding SignInName}"
                                                     Click="SignInFolder_Click"
                                                     Tag="{Binding Folder}"
                                                     Visibility="{Binding SignInVisibility}">
@@ -229,6 +232,7 @@
                                                 <!-- Google Drive: reopen Google's picker (3.20 R7). -->
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    AutomationProperties.Name="{Binding ChooseMoreName}"
                                                     Click="ChooseMoreVideos_Click"
                                                     Tag="{Binding Folder}"
                                                     Visibility="{Binding ChooseMoreVisibility}">
@@ -239,6 +243,7 @@
                                                 </Button>
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    AutomationProperties.Name="{Binding RescanName}"
                                                     Click="RescanFolder_Click"
                                                     Tag="{Binding Folder}">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -248,6 +253,7 @@
                                                 </Button>
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    AutomationProperties.Name="{Binding RemoveName}"
                                                     Click="RemoveFolder_Click"
                                                     Tag="{Binding Folder}">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -263,26 +269,39 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                        <!-- An icon and a label give a button no name of its own,
+                             so each takes its label's; the label wraps in a line
+                             narrower than the button. -->
+                        <controls:WrapPanel Style="{StaticResource SettingsActionRowPanelStyle}">
                             <Button
                                 x:Name="AddLocalFolderButton"
                                 Style="{StaticResource ArchiveGhostButtonStyle}"
+                                AutomationProperties.Name="{x:Bind AddLocalFolderLabel.Text}"
                                 Click="AddFolder_Click">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
                                     <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-circle-plus.svg" Width="12" Height="12" />
-                                    <TextBlock x:Uid="AddLocalFolderEllipsisLabel" Text="ADD LOCAL FOLDER…" />
-                                </StackPanel>
+                                    <TextBlock x:Uid="AddLocalFolderEllipsisLabel" x:Name="AddLocalFolderLabel" Grid.Column="1" Text="ADD LOCAL FOLDER…" TextWrapping="Wrap" />
+                                </Grid>
                             </Button>
                             <Button
                                 x:Name="AddNetworkFolderButton"
                                 Style="{StaticResource ArchiveGhostButtonStyle}"
+                                AutomationProperties.Name="{x:Bind AddNetworkFolderLabel.Text}"
                                 Click="AddNetworkFolder_Click">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
                                     <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/link.svg" Width="12" Height="12" />
-                                    <TextBlock x:Uid="LinkNetworkSourceEllipsisLabel" Text="LINK NETWORK SOURCE…" />
-                                </StackPanel>
+                                    <TextBlock x:Uid="LinkNetworkSourceEllipsisLabel" x:Name="AddNetworkFolderLabel" Grid.Column="1" Text="LINK NETWORK SOURCE…" TextWrapping="Wrap" />
+                                </Grid>
                             </Button>
-                        </StackPanel>
+                        </controls:WrapPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -356,7 +375,7 @@
 
                         <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
 
-                        <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                        <controls:WrapPanel Style="{StaticResource SettingsActionRowPanelStyle}">
                             <Button
                                 x:Uid="ConnectButton"
                                 x:Name="ConnectButton"
@@ -391,7 +410,7 @@
                                 Style="{StaticResource ArchiveGhostButtonStyle}"
                                 Click="Disconnect_Click"
                                 Visibility="Collapsed" />
-                        </StackPanel>
+                        </controls:WrapPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -424,16 +443,21 @@
 
                         <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
 
-                        <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                        <controls:WrapPanel Style="{StaticResource SettingsActionRowPanelStyle}">
                             <Button
                                 Style="{StaticResource ArchiveGhostButtonStyle}"
+                                AutomationProperties.Name="{x:Bind OpenDataFolderLabel.Text}"
                                 Click="OpenDataFolder_Click">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
                                     <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/folder-open.svg" Width="12" Height="12" />
-                                    <TextBlock x:Uid="OpenDataFolderLabel" Text="OPEN DATA FOLDER" />
-                                </StackPanel>
+                                    <TextBlock x:Uid="OpenDataFolderLabel" x:Name="OpenDataFolderLabel" Grid.Column="1" Text="OPEN DATA FOLDER" TextWrapping="Wrap" />
+                                </Grid>
                             </Button>
-                        </StackPanel>
+                        </controls:WrapPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>

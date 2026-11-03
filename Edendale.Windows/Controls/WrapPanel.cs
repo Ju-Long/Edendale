@@ -39,29 +39,50 @@ public sealed partial class WrapPanel : Panel
         return finalSize;
     }
 
-    /// <summary>Places the children in order, wrapping at <paramref name="width"/>; returns the size the lines take.</summary>
+    /// <summary>
+    /// Places the children in order, wrapping at <paramref name="width"/>, each
+    /// in the full height of its line so it keeps its own vertical alignment, as
+    /// in a horizontal StackPanel; returns the size the lines take.
+    /// </summary>
     private Size Flow(double width, bool arrange)
     {
-        double x = 0, y = 0, lineHeight = 0, widest = 0;
-        var lineEmpty = true;
-        foreach (var child in Children)
+        var children = Children;
+        double y = 0, widest = 0;
+        var lines = 0;
+        var next = 0;
+        while (next < children.Count)
         {
-            if (child.Visibility == Visibility.Collapsed) continue;
-            var size = child.DesiredSize;
-            if (!lineEmpty && x + Spacing + size.Width > width)
+            // The line is children[start..next), collapsed ones skipped.
+            var start = next;
+            double lineWidth = 0, lineHeight = 0;
+            var placed = 0;
+            for (; next < children.Count; next++)
             {
-                y += lineHeight + LineSpacing;
-                x = 0;
-                lineHeight = 0;
-                lineEmpty = true;
+                var child = children[next];
+                if (child.Visibility == Visibility.Collapsed) continue;
+                var size = child.DesiredSize;
+                var extent = placed == 0 ? size.Width : lineWidth + Spacing + size.Width;
+                if (placed > 0 && extent > width) break;
+                lineWidth = extent;
+                lineHeight = Math.Max(lineHeight, size.Height);
+                placed++;
             }
-            if (!lineEmpty) x += Spacing;
-            if (arrange) child.Arrange(new Rect(x, y, size.Width, size.Height));
-            x += size.Width;
-            widest = Math.Max(widest, x);
-            lineHeight = Math.Max(lineHeight, size.Height);
-            lineEmpty = false;
+            if (placed == 0) break;
+            if (lines++ > 0) y += LineSpacing;
+            if (arrange)
+            {
+                double x = 0;
+                for (var index = start; index < next; index++)
+                {
+                    var child = children[index];
+                    if (child.Visibility == Visibility.Collapsed) continue;
+                    child.Arrange(new Rect(x, y, child.DesiredSize.Width, lineHeight));
+                    x += child.DesiredSize.Width + Spacing;
+                }
+            }
+            widest = Math.Max(widest, lineWidth);
+            y += lineHeight;
         }
-        return new Size(widest, y + lineHeight);
+        return new Size(widest, y);
     }
 }

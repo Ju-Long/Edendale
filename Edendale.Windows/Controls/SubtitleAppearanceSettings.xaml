@@ -1,7 +1,8 @@
 <UserControl
     x:Class="Edendale.Windows.Controls.SubtitleAppearanceSettings"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls">
 
     <!-- SUBTITLES (SubtitleAppearanceSection.swift): named presets, not a
          color picker, with a preview. LibVLC draws the text, so a change
@@ -76,13 +77,13 @@
                 </Grid>
 
                 <Border x:Name="ResetRow" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
-                    <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                    <controls:WrapPanel Style="{StaticResource SettingsActionRowPanelStyle}">
                         <Button
                             x:Uid="SettingsSubtitleResetButton"
                             Style="{StaticResource ArchiveGhostButtonStyle}"
                             Content="RESET SUBTITLE STYLE"
                             Click="Reset_Click" />
-                    </StackPanel>
+                    </controls:WrapPanel>
                 </Border>
 
                 <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
