@@ -9,7 +9,13 @@ specification that [FEATURES-27.1.md](FEATURES-27.1.md) §5 and §6 refer to.
   this natively and copies the test vectors in Appendix A into its own tests,
   naming the `main` commit they came from.
 - **Status:** Draft, 2026-11-02. It replaces the relay protocol draft of
-  2026-11-01, which was never implemented.
+  2026-11-01, which was never implemented. Clarified on 2026-11-03 from the
+  first two implementations, `apple` PR
+  [#10](https://github.com/Ju-Long/Edendale/pull/10) at `1f3a4bc` and
+  `android` PR [#9](https://github.com/Ju-Long/Edendale/pull/9) at
+  `7f6bf0e`: one `Login` shape for every platform (§9.7) and the handoff
+  details they settled on (§9.1, §9.6, §9.8). A clarification, not a new
+  version.
 - **Rules:** [AGENTS.md](AGENTS.md) constraints 3 (secrets), 4 (privacy),
   6 (separate local and portable data), and 7 (parity).
 
@@ -331,10 +337,10 @@ the other side only speaks 1.
 ### 9.1 Discovery
 
 The **host** advertises `_edendale-handoff._tcp` with DNS-SD while its pairing
-screen is open, with TXT records `v=2` and `name=<device name>`, and stops
-when the screen closes. The **guest** browses for it. A QR code may carry the
-host's address and port so the guest connects without browsing. One handoff
-at a time per host.
+screen is open, with TXT records `v=2`, `name=<device name>`, and
+`platform=<platform>` (§3), and stops when the screen closes. The **guest**
+browses for it. A QR code may carry the host's address and port so the guest
+connects without browsing. One handoff at a time per host.
 
 ### 9.2 Framing
 
@@ -412,9 +418,15 @@ host → guest frame uses `00000002 0000000000000002`.
 
 ### 9.6 Messages after the channel is up
 
-1. Each side sends `{"type":"role","role":"sender"|"receiver","name":"<device name>"}`.
-   If both chose the same role, both show "choose who sends on one device"
-   and close.
+Plaintexts inside the channel, errors included, carry `"type"` and may omit
+`"v"`: the additional authenticated data (§9.5) already binds every frame to
+version 2. A receiver accepts them with or without `"v": 2`.
+
+1. Each side sends `{"type":"role","role":"sender"|"receiver","name":"<device name>","platform":"<platform>"}`,
+   where `platform` is the device's §3 platform name, which the Google rule
+   (§9.8) reads; the host's TXT record carries it too (§9.1). A peer that
+   omits `platform` is treated as using another Google client. If both chose
+   the same role, both show "choose who sends on one device" and close.
 2. The sender shows what it is about to send, with the receiver's name, and
    waits for the user. On decline it sends `{"type":"offer","status":"declined"}`.
 3. Sender → receiver, on approval:
@@ -428,6 +440,7 @@ host → guest frame uses `00000002 0000000000000002`.
     "space": "Family",
     "account": { "...": "an Account (§9.7), or absent" },
     "login": { "...": "a Login (§9.7), or absent" },
+    "url": "a server location's root URL, or absent",
     "googleAccountHint": "person@example.com",
     "googleFolderId": "1AbC..."
   },
@@ -437,42 +450,88 @@ host → guest frame uses `00000002 0000000000000002`.
 ```
 
    `location` is absent when the sender has no sync location or the user
-   unticked it. For a folder location only `provider: "folder"` and `space`
-   are sent; the receiver picks its own folder. `accounts` and `logins` are
-   the other linked sources the user ticked.
+   unticked it. `provider` is one of `folder`, `icloudDrive`, `googleDrive`,
+   `oneDrive`, `dropbox`, `webdav`, `smb`, or `sftp`. For a folder location
+   only `provider: "folder"` and `space` are sent; the receiver picks its own
+   folder. A server location (`webdav`, `smb`, `sftp`) carries its `login`
+   and, in `url`, the credential-free root URL of the folder that holds
+   `Edendale/`: `davs://host[:port]/path/` (`dav://` for plain HTTP),
+   `smb://host/share/path/`, or `sftp://host[:port]/path/`. `icloudDrive` is
+   sent only to Apple platforms; to `windows` the sender sends
+   `provider: "folder"` instead, since iCloud for Windows exposes the folder,
+   and to any other peer no `location`. `accounts` and `logins` are the other
+   linked sources the user ticked.
 4. The receiver validates each item (refreshes a token, or connects to the
    server with the saved credential and, for SFTP, checks the host key
    fingerprint), stores what validates in platform-protected storage, and
    answers `{"type":"result","stored":["location","account:<kind>:<subject>", …],"failed":[{"item":"…","reason":"…"}]}`.
+   `reason` may be `null`. A `provider` the receiver does not know is
+   reported as a failed `location`; the rest of the offer still counts.
 5. Both close. The sender shows the result.
 
 ### 9.7 Payloads
 
-`Account` and `Login` are the version-1 shapes, unchanged:
+`Account` is the version-1 shape, unchanged:
 
 ```json
-{ "kind": "googleDrive", "subject": "…", "email": "…", "displayName": "…",
+{ "kind": "gdrive", "subject": "…", "email": "…", "displayName": "…",
   "refreshToken": "…", "scopes": ["…"], "driveId": null }
-
-{ "kind": "sftp", "host": "nas.local", "port": 22,
-  "credential": { "…": "as the platform's NetworkCredential" },
-  "hostKeyFingerprint": "SHA256:…" }
 ```
 
+`Login` has one shape on every platform, the flat one Android's version-1
+handoff sends:
+
+```json
+{ "kind": "sftp", "host": "nas.local", "port": 22,
+  "user": "…", "password": "…",
+  "hostKeyFingerprint": "SHA256:…", "certificateFingerprint": null,
+  "addresses": ["sftp://nas.local/volume1/Movies/"] }
+
+{ "kind": "s3", "host": "…", "port": null, "user": "…", "password": "…",
+  "hostKeyFingerprint": null, "certificateFingerprint": null,
+  "s3": { "endpoint": "https://s3.us-east-1.amazonaws.com",
+          "region": "us-east-1", "bucket": "…", "pathStyle": false },
+  "addresses": [] }
+```
+
+| Field | Type | Rule |
+|---|---|---|
+| `kind` | string | `smb`, `sftp`, `webdav`, or `s3`. |
+| `host` | string | The server's host name or address. For S3, the account key the login is saved under: the host of its `s3://` source URLs. |
+| `port` | integer or null | SFTP: the port the host key was approved on, always sent. Other kinds may send `null`; the port then comes from the URL the receiver connects to. |
+| `user`, `password` | string | The user name and password, both empty for a guest login. For S3, the access key ID and the secret access key. |
+| `hostKeyFingerprint` | string or null | SFTP: the approved host key as `ssh-keygen -l` prints it, `SHA256:` and the unpadded base64 of the SHA-256 of the public key blob. |
+| `s3` | object | S3 only: `endpoint` (a URL), `region`, `bucket`, and `pathStyle` (`true` for path-style addressing). |
+| `certificateFingerprint` | string or null | Optional. A server certificate the sender trusts by pin (WebDAV, or the S3 endpoint's): the SHA-256 of its DER encoding as uppercase hex pairs joined by `:`. |
+| `addresses` | array of strings | Optional. The credential-free URLs of the sender's linked sources on this login, so the receiver can start browsing from one. |
+
+During 27.1 a reader also accepts the nested shape that Apple builds before
+27.1 send: `kind`, `host`, `port`, and `hostKeyFingerprint` as above, and
+`credential: {username, password, s3: {endpoint, region, bucket,
+usesPathStyle}, port}` instead of the flat `user`, `password`, and `s3`, with
+`credential.s3` and `credential.port` absent when unused. A `Login` without
+`user` is read from `credential`. Apple writes both shapes in one object, the
+flat fields and a `credential` holding the same login, so those older Apple
+builds still read what it sends; the other platforms write only the flat
+shape.
+
 `kind` values are the platform's `MediaSourceKind` raw values, which the
-branches already keep identical for the version-1 handoff.
+branches already keep identical for the version-1 handoff; in an `Account`
+they are `gdrive`, `onedrive`, or `dropbox`. They are not the `provider`
+values of §9.6.
 
 ### 9.8 Google Drive rule
 
 The sender includes a Google `Account` only when the receiver's platform
-(from the `role` message's name, and the DNS-SD TXT record `platform` the
-host advertises) uses the same Google OAuth client: `ios`, `ipados`, `macos`,
-`tvos`, and `visionos` share one; `android`, `androidtv`, and `horizon` share
-one; `windows` has its own. Otherwise it sends `googleAccountHint` and
-`googleFolderId` and no `Account`, and the receiver opens Google sign-in with
-`login_hint` set to the hint, then uses the folder ID. A receiver that cannot
-sign in to Google at all (`tvos`, `androidtv`) shows "set up Google Drive
-from an iPhone or iPad" or "from an Android phone" instead.
+(from the `role` message's `platform`, §9.6, and the DNS-SD TXT record
+`platform` the host advertises, §9.1) uses the same Google OAuth client:
+`ios`, `ipados`, `macos`, `tvos`, and `visionos` share one; `android`,
+`androidtv`, and `horizon` share one; `windows` has its own. Otherwise it
+sends `googleAccountHint` and `googleFolderId` and no `Account`, and the
+receiver opens Google sign-in with `login_hint` set to the hint, then uses the
+folder ID. A receiver that cannot sign in to Google at all (`tvos`,
+`androidtv`) shows "set up Google Drive from an iPhone or iPad" or "from an
+Android phone" instead.
 
 ### 9.9 Errors
 
