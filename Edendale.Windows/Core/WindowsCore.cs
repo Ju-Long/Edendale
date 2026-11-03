@@ -39,6 +39,10 @@ public static class WindowsCore
     public static Task<HomeCatalog> LoadHomeCatalogAsync(IReadOnlyList<WatchProgress> progress) =>
         Tmdb.LoadHomeAsync(progress);
 
+    /// <summary>Home's Continue Watching scene; an unchanged title reuses <paramref name="known"/> without a request.</summary>
+    public static Task<HeroScene?> LoadContinueSceneAsync(IReadOnlyList<WatchProgress> progress, MediaDetail? known) =>
+        Tmdb.ContinueSceneAsync(progress, known);
+
     public static Task<List<MediaItem>> LoadCollectionAsync(string filter) =>
         Tmdb.LoadCollectionAsync(filter);
 
