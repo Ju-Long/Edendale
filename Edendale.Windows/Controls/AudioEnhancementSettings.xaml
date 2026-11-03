@@ -42,13 +42,13 @@
                 </Border>
 
                 <Border x:Name="ResetRow" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
-                    <StackPanel Style="{StaticResource SettingsActionRowPanelStyle}">
+                    <controls:WrapPanel Style="{StaticResource SettingsActionRowPanelStyle}">
                         <Button
                             x:Uid="SettingsAudioResetButton"
                             Style="{StaticResource ArchiveGhostButtonStyle}"
                             Content="RESET EQUALIZER"
                             Click="Reset_Click" />
-                    </StackPanel>
+                    </controls:WrapPanel>
                 </Border>
 
                 <Border Style="{StaticResource SettingsRowSeparatorStyle}" />

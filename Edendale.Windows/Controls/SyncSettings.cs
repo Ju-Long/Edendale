@@ -90,13 +90,16 @@ public sealed partial class SyncSettings : UserControl
             AddPeer(peer);
         }
 
+        // This device's sync, then the handoff, as Apple's section splits them.
         AddSeparator();
         AddActions(
             GhostButton("Sync_NowButton", "arrow-rotate-right", () => AppServices.FileSync.SyncNowAsync()),
             GhostButton("Sync_ChooseLocationButton", "folder-circle-plus", async () => await SyncLocationDialog.ShowAsync(XamlRoot)),
-            GhostButton("Sync_SetUpButton", "link", async () => await HandoffDialog.ShowAsync(XamlRoot, sending: true)),
-            GhostButton("Sync_PairButton", "link", async () => await HandoffDialog.ShowAsync(XamlRoot, sending: false)),
             GhostButton("Sync_TurnOffButton", "cloud-slash", TurnOffAsync));
+        AddSeparator();
+        AddActions(
+            GhostButton("Sync_SetUpButton", "link", async () => await HandoffDialog.ShowAsync(XamlRoot, sending: true)),
+            GhostButton("Sync_PairButton", "link", async () => await HandoffDialog.ShowAsync(XamlRoot, sending: false)));
     }
 
     // ------------------------------------------------------------------
@@ -132,19 +135,29 @@ public sealed partial class SyncSettings : UserControl
         _rows.Children.Add(row);
     }
 
+    /// <summary>A row of actions that wraps: the translated labels outgrow one line.</summary>
     private void AddActions(params Button[] buttons)
     {
-        var panel = new StackPanel { Style = (Style)AppResources["SettingsActionRowPanelStyle"] };
+        var panel = new WrapPanel { Style = (Style)AppResources["SettingsActionRowPanelStyle"] };
         foreach (var button in buttons) panel.Children.Add(button);
         _rows.Children.Add(panel);
     }
 
     private static Button GhostButton(string key, string icon, Func<Task> action)
     {
-        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var label = Loc.Get(key);
+        // A grid rather than a horizontal stack, which would measure the label
+        // unbounded: in a line narrower than the button, the label wraps.
+        var content = new Grid { ColumnSpacing = 8 };
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         content.Children.Add(new SvgIcon { UriSource = new Uri($"ms-appx:///Assets/Icons/{icon}.svg"), Width = 12, Height = 12 });
-        content.Children.Add(new TextBlock { Text = Loc.Get(key) });
+        var text = new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap };
+        Grid.SetColumn(text, 1);
+        content.Children.Add(text);
         var button = new Button { Style = (Style)AppResources["ArchiveGhostButtonStyle"], Content = content };
+        // An icon-and-text content gives the button no name of its own.
+        AutomationProperties.SetName(button, label);
         button.Click += async (_, _) =>
         {
             button.IsEnabled = false;

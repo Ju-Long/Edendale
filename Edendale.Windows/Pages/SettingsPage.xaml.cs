@@ -46,6 +46,12 @@ public sealed partial class SettingsPage : Page
         public Visibility SignInVisibility { get; }
         /// <summary>Google Drive sources whose account is signed in here (3.20 R7).</summary>
         public Visibility ChooseMoreVisibility { get; }
+
+        // What a screen reader calls the row's buttons: the action and the source, as on the Downloaded page.
+        public string SignInName => $"{Loc.Get("LinkSource_SignIn")}, {Name}";
+        public string ChooseMoreName => $"{Loc.Get("GoogleDrive_ChooseMoreTitle")}, {Name}";
+        public string RescanName => $"{Loc.Get("Source_Rescan")}, {Name}";
+        public string RemoveName => $"{Loc.Get("Source_Remove")}, {Name}";
     }
 
     public SettingsPage()

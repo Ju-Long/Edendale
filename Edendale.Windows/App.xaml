@@ -2,6 +2,7 @@
     x:Class="Edendale.Windows.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Edendale.Windows.Controls"
     RequestedTheme="Dark">
     <Application.Resources>
         <ResourceDictionary>
@@ -359,10 +360,12 @@
                 <Setter Property="Margin" Value="20,16" />
             </Style>
 
-            <!-- Action row: archive buttons left-aligned inside the group. -->
-            <Style x:Key="SettingsActionRowPanelStyle" TargetType="StackPanel">
-                <Setter Property="Orientation" Value="Horizontal" />
+            <!-- Action row: archive buttons left-aligned inside the group,
+                 wrapping onto more lines instead of clipping in a narrow
+                 window or a long locale. -->
+            <Style x:Key="SettingsActionRowPanelStyle" TargetType="controls:WrapPanel">
                 <Setter Property="Spacing" Value="12" />
+                <Setter Property="LineSpacing" Value="8" />
                 <Setter Property="Margin" Value="20,10" />
             </Style>
 
