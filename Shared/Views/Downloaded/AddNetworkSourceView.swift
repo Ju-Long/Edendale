@@ -33,7 +33,7 @@ enum LinkSourceStep: Hashable {
 }
 
 /// A server login to save once a folder is picked.
-struct PendingLogin: Equatable {
+struct PendingLogin: Hashable {
     let kind: MediaSourceKind
     /// The server host, or the account key for S3.
     let host: String

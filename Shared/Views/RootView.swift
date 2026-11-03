@@ -30,6 +30,7 @@ struct RootView: View {
     @Environment(PlayerSession.self) private var playerSession
     @Environment(AppRouter.self) private var appRouter
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
+    @Environment(SyncCoordinator.self) private var sync
     @Environment(\.scenePhase) private var scenePhase
 
     @Query private var libraryMovies: [Movie]
@@ -51,6 +52,8 @@ struct RootView: View {
     @State private var selectedTab: RootTab = .movies
     #endif
     @State private var externalDetail: RoutedMediaDetail?
+    /// A handoff code opened as a link: this device receives.
+    @State private var scannedHandoff: HandoffV2.QRPayload?
 
     #if os(macOS)
     /// The sidebar row's root tab; routes that pick a tab open its whole page.
@@ -68,6 +71,9 @@ struct RootView: View {
             NavigationStack {
                 MediaDetailView(source: destination.source)
             }
+        }
+        .sheet(item: $scannedHandoff) { payload in
+            SyncHandoffView(role: .receiver, scanned: payload)
         }
         // A cast tap anywhere sets `pendingPerson`; jump to the Search tab so
         // it can load that person's filmography.
@@ -111,6 +117,11 @@ struct RootView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active: sync.sceneDidBecomeActive()
+            case .background: sync.sceneDidEnterBackground()
+            default: break
+            }
             guard phase == .active, tmdbAccount.isSignedIn else { return }
             Task { await syncAccountStateFromTMDB() }
         }
@@ -329,6 +340,9 @@ struct RootView: View {
             guard let episode = libraryEpisodes.first(where: { $0.id == id }),
                   await isVisibleToSelectedAudience(episode) else { return }
             await playerSession.play(episode: episode)
+
+        case .handoff(let payload):
+            scannedHandoff = payload
         }
     }
 

@@ -23,9 +23,20 @@ nonisolated enum SFTPProtocol {
 
     /// `SSH_FXP_*` packet types.
     enum PacketType: UInt8 {
-        case initialize = 1, version = 2, open = 3, close = 4, read = 5, fstat = 8
-        case opendir = 11, readdir = 12, realpath = 16, stat = 17
+        case initialize = 1, version = 2, open = 3, close = 4, read = 5, write = 6, fstat = 8
+        case opendir = 11, readdir = 12, remove = 13, mkdir = 14, realpath = 16, stat = 17, rename = 18
         case status = 101, handle = 102, data = 103, name = 104, attributes = 105
+    }
+
+    /// `SSH_FXF_*` open flags.
+    struct OpenFlags: OptionSet, Sendable {
+        let rawValue: UInt32
+        static let read = OpenFlags(rawValue: 0x1)
+        static let write = OpenFlags(rawValue: 0x2)
+        static let append = OpenFlags(rawValue: 0x4)
+        static let create = OpenFlags(rawValue: 0x8)
+        static let truncate = OpenFlags(rawValue: 0x10)
+        static let exclusive = OpenFlags(rawValue: 0x20)
     }
 
     /// `SSH_FX_*` status codes.
@@ -101,7 +112,29 @@ nonisolated enum SFTPProtocol {
 
     /// Opens a file for reading (`SSH_FXF_READ`, no attributes).
     static func open(id: UInt32, path: String) -> Data {
-        packet(.open) { $0.uint32(id); $0.string(path); $0.uint32(0x1); $0.uint32(0) }
+        open(id: id, path: path, flags: .read)
+    }
+
+    /// Opens a file with `flags`, no attributes.
+    static func open(id: UInt32, path: String, flags: OpenFlags) -> Data {
+        packet(.open) { $0.uint32(id); $0.string(path); $0.uint32(flags.rawValue); $0.uint32(0) }
+    }
+
+    static func write(id: UInt32, handle: Data, offset: UInt64, data: Data) -> Data {
+        packet(.write) { $0.uint32(id); $0.string(handle); $0.uint64(offset); $0.string(data) }
+    }
+
+    /// Makes a directory with no attributes (the server's defaults).
+    static func mkdir(id: UInt32, path: String) -> Data {
+        packet(.mkdir) { $0.uint32(id); $0.string(path); $0.uint32(0) }
+    }
+
+    static func remove(id: UInt32, path: String) -> Data {
+        packet(.remove) { $0.uint32(id); $0.string(path) }
+    }
+
+    static func rename(id: UInt32, oldPath: String, newPath: String) -> Data {
+        packet(.rename) { $0.uint32(id); $0.string(oldPath); $0.string(newPath) }
     }
 
     static func fstat(id: UInt32, handle: Data) -> Data {

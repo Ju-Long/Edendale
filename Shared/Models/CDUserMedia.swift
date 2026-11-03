@@ -3,7 +3,10 @@
 //  Edendale
 //
 //  CoreData managed object for iCloud-synced favourite/rating state, keyed by
-//  TMDB id + media type. `inWatchlist` remains only to migrate older stores.
+//  TMDB id + media type. `inWatchlist` remains only to migrate older stores;
+//  `watchlist` is the 27.1 portable flag. Each row carries its sync stamp
+//  and writing device (SYNC-PROTOCOL.md §6.2), and an all-empty row is a
+//  tombstone rather than a deletion.
 //
 
 import CoreData
@@ -18,6 +21,10 @@ public class CDUserMedia: NSManagedObject {
     /// and TMDB's own scale starts at 0.5, so 0 is safely out of band.
     @NSManaged public var rating: Double
     @NSManaged public var updatedAt: Date?
+    @NSManaged public var updateTime: Int64
+    @NSManaged public var deviceID: String?
+    @NSManaged public var review: String?
+    @NSManaged public var watchlist: Bool
 }
 
 // MARK: - DTO Conversion
@@ -32,8 +39,12 @@ extension CDUserMedia {
                 mediaType: TMDBMediaType(rawValue: mediaType) ?? .movie
             ),
             isFavorite: isFavorite,
+            isInWatchlist: watchlist,
             rating: rating > 0 ? rating : nil,
-            updatedAt: updatedAt ?? Date()
+            review: review,
+            updatedAt: updatedAt ?? Date(),
+            updateTime: updateTime,
+            deviceID: deviceID
         )
     }
 
@@ -45,6 +56,10 @@ extension CDUserMedia {
         inWatchlist = false
         rating = dto.rating ?? 0
         updatedAt = dto.updatedAt
+        updateTime = dto.updateTime
+        deviceID = dto.deviceID
+        review = dto.review
+        watchlist = dto.isInWatchlist
     }
 
     /// Fetch request matching a specific title.

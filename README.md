@@ -623,8 +623,8 @@ which gets them from a nearby iPhone or iPad (Continue on iPhone or iPad).
 | NFS | No login (AUTH_SYS) | Folder listings and the files you play |
 | S3-compatible storage | An access key | Object listings and the files you play |
 | Google Drive | Google sign-in with only the `drive.file` scope; Google's picker opens during sign-in | Only the files you pick: their names, sizes, dates, and video durations, and the bytes you play |
-| OneDrive | Microsoft sign-in (`Files.Read User.Read offline_access`); a code on Apple TV | Folder listings and the files you play |
-| Dropbox | Dropbox sign-in (`files.metadata.read files.content.read account_info.read`) | Folder listings and the files you play |
+| OneDrive | Microsoft sign-in (`Files.Read Files.ReadWrite.AppFolder User.Read offline_access`); a code on Apple TV | Folder listings and the files you play; sync files in `Apps/Edendale/` |
+| Dropbox | Dropbox sign-in (`files.metadata.read files.content.read files.content.write account_info.read`) | Folder listings and the files you play; sync files in `/Edendale/` |
 
 Google Drive has nothing to browse. Each account has one source, "Videos you
 chose", listing every file picked with that Google account on any device or
@@ -656,6 +656,108 @@ They aren't secrets for these PKCE clients, and no client secret ships:
 Checks that need hardware and a real account: the picker inside the sign-in
 sheet on an iPhone, Choose More Videos, playback, removing a video, and handing
 the account to Apple TV (DeviceDiscoveryUI lists no devices in Simulator).
+
+The `Files.ReadWrite.AppFolder` and `files.content.write` scopes arrived with
+27.1's sync (below). Until the Entra app registration lists the first as a
+delegated permission and the Dropbox App Console enables the second, consent
+fails for new OneDrive and Dropbox sign-ins; accounts signed in before 27.1
+keep working as sources but must sign in again before they can hold sync
+files (Settings → Sync says so).
+
+### Sync across devices
+
+Settings → Sync keeps watch state in step with the user's other devices, on
+every platform, through storage the user owns, as
+[FEATURES-27.1.md](https://github.com/Ju-Long/Edendale/blob/main/FEATURES-27.1.md)
+§5–§6 and
+[SYNC-PROTOCOL.md](https://github.com/Ju-Long/Edendale/blob/main/SYNC-PROTOCOL.md)
+on `main` (commit `915b40d`) specify. Off by default. Each device writes one
+readable JSON file, `Edendale/<space name>/<device-id>.json`, holding its whole
+merged watch state, reads the other devices' files, and merges them locally.
+Only watch records travel: progress, completion, favourite, watchlist, rating,
+and review text; never file paths, library records, logins, or TMDB sessions.
+Anyone who can open the folder can read the files, and the app says so when a
+location is chosen.
+
+| Location | On | How |
+|---|---|---|
+| A folder picked in Files or Finder (iCloud Drive and other cloud apps' folders included) | iOS, iPadOS, macOS, visionOS | Security-scoped bookmark; `<id>.json.tmp` renamed over the file |
+| The app's own iCloud Drive folder (`iCloud Drive/Edendale`) | iOS, iPadOS, macOS, visionOS | The ubiquity container's `Documents`, coordinated writes, files downloaded on read |
+| Google Drive | All (Apple TV by handoff only) | `drive.file`; the app's `Edendale/<space>` folder in My Drive |
+| OneDrive | All | `Files.ReadWrite.AppFolder`; `Apps/Edendale/<space>/` |
+| Dropbox | All | `files.content.write`; `/Edendale/<space>/` |
+| WebDAV, SMB, SFTP | All | A folder picked on the server with its saved login; the connectors gained `MKCOL`/`PUT`, libsmb2 writes, and SFTP write, mkdir, remove, and rename |
+
+Every record carries one `updateTime` (UTC milliseconds) and the ID of the
+device that wrote it. The newest record wins as a whole; equal stamps go to
+the lexically smaller device ID; a local write is stamped
+`max(now, highest stamp applied + 1)`; a stamp more than a day ahead of the
+device's clock is ignored with a warning naming the device; a stamp before
+2000 or missing counts as 0; a removal is a tombstone that stays, and
+tombstones older than a year are omitted when writing. Sync runs at launch,
+on return to the foreground, ten seconds after the last local change (at once
+when playback stops or the app goes to the background), every five minutes
+while active, and on iOS through Background App Refresh when the system
+allows. Failures back off 1, 2, 4, 8 … minutes up to an hour. A file whose
+stamp (modification time, ETag, Drive `modifiedTime`, Graph `eTag`, or
+Dropbox `rev`) has not changed is not read again, and reading a file twice
+changes nothing.
+
+iCloud keeps syncing watch state between Apple devices as before: the
+CloudKit rows gained the stamp, the writing device, and the tombstone flag,
+so a device in both iCloud and a sync space bridges them with the original
+stamps. The device ID is a this-device-only Keychain item, never restored to
+another device; a restored device makes a new one. The watchlist flag now
+travels with the favourite and rating as one record, so a title added to the
+watchlist on one device reaches the others' watchlist cards and TMDB mirror.
+Apple TV has no file picker and no iCloud Drive, so it offers the account and
+server locations and receives them from another device.
+
+**Handing a location to another device** (Settings → Sync → Set Up Another
+Device, or Receive from Another Device) carries the location, its login, and
+any ticked accounts and saved logins over the local network, encrypted, to a
+device on any platform. The host advertises `_edendale-handoff._tcp` while its
+pairing screen is open and shows a QR code holding an ephemeral X25519 key and
+a 16-byte secret; an iPhone or iPad scans it (a Mac, Apple TV, or Vision Pro
+shows one), both derive one AES-256-GCM key (HKDF-SHA256, HMAC-SHA256 over the
+transcript), and the sender confirms the receiver's name before anything is
+sent. Which side sends is chosen first, independently of who shows the code.
+A code is valid for two minutes and one attempt. A Google Drive login moves
+only to another Apple device; other platforms receive the account's email and
+the folder ID and sign in to Google again with the account pre-filled. A
+folder location sends only the space name; the receiver picks its own folder.
+Apple-to-Apple account requests keep the DeviceDiscoveryUI handoff above.
+Typed-code pairing (J-PAKE) is not offered on Apple in 27.1; a pair with no
+camera on either side is bridged with a phone.
+
+Run the sync and handoff tests, which carry SYNC-PROTOCOL.md's Appendix A
+vectors (merge cases M1–M8, the key schedule for RFC 7748's X25519 pair, the
+QR URI, the wrong-secret case, the channel nonces), a property test that
+devices converge regardless of read order, provider tests against recorded
+responses, a two-device sync in memory, and a log-hygiene test that no key,
+secret, token, or password reaches the log:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/SyncMergeTests \
+  -only-testing:EdendaleTests/SyncFileFormatTests \
+  -only-testing:EdendaleTests/SyncStorageTests \
+  -only-testing:EdendaleTests/SyncCoordinatorTests \
+  -only-testing:EdendaleTests/SyncLogHygieneTests \
+  -only-testing:EdendaleTests/HandoffV2Tests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Checks that need hardware: the QR pairing between two devices (Bonjour and the
+camera do nothing in Simulator), iCloud Drive and a picked folder on a device,
+each provider with a real account, Background App Refresh timing, and the
+first launch's Core Data migration of an existing store. The iCloud Documents
+capability needs the container's schema deployed in the CloudKit dashboard for
+the new fields (`updateTime`, `deviceID`, `cleared`, `review`, `watchlist`)
+before a release build syncs them. Android and Windows implement the same
+format and handoff natively; the static Web branch only updates its privacy
+policy.
 
 ### Xcode Cloud
 

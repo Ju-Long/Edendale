@@ -1899,6 +1899,160 @@ References, checked 2026-10-17:
 - `about.get`:
   https://developers.google.com/workspace/drive/api/reference/rest/v3/about/get
 
+## Section K — 27.1 File Sync and Handoff v2
+
+**Goal:** implement FEATURES-27.1.md §5–§6 and SYNC-PROTOCOL.md (both on
+`main`, commit `915b40d`) natively: one sync location per device, one JSON
+device file per device in `Edendale/<space>/`, the `updateTime` merge, the
+sync triggers, and version 2 of the handoff so a device on any platform
+receives the location and its login by QR code. Apple-to-Apple account
+requests keep Section J's DeviceDiscoveryUI handoff.
+
+**Owner actions before consent works (FEATURES-27.1.md §10, decision 5):**
+- Entra: add `Files.ReadWrite.AppFolder` as a delegated permission on the
+  app registration. Existing OneDrive sign-ins must consent again.
+- Dropbox App Console: enable `files.content.write`. Existing Dropbox
+  sign-ins must authorize again.
+- CloudKit dashboard: deploy the `CDWatchProgress` and `CDUserMedia` fields
+  `updateTime`, `deviceID`, `cleared`, `review`, and `watchlist` to the
+  production schema before a release build syncs them.
+- App Store privacy label: watch state leaves the device only to storage
+  the user chose, under the user's own account (decision 7).
+
+### K.1 — Format and merge
+
+**Create:** `Shared/Controllers/Sync/SyncRecords.swift` (the device file:
+records, keys, validation through JSONSerialization so integers never carry
+a fraction and booleans are never numbers, limits, writing with sorted
+keys), `SyncLedger.swift` (the §7 merge: newest wins, tie by device ID,
+monotonic stamping, far-future guard, invalid stamps as 0, tombstone
+retention of 366 days so Appendix A's M3 tombstone is still written),
+`SyncStamper.swift` (device ID in the this-device-only Keychain, the
+high-water mark in the app group defaults), `SyncLog.swift` (one sink,
+redaction of anything that looks like key material, device file names kept).
+
+**Change:** `Shared/WatchProgress.xcdatamodeld` gains version 2 (additive,
+CloudKit-compatible): `CDWatchProgress.updateTime/deviceID/cleared`,
+`CDUserMedia.updateTime/deviceID/review/watchlist`. `WatchProgressStore`
+stamps every write, keeps removals as tombstones, posts
+`didChangeLocally`, and applies synced records verbatim; `UserMediaStore`
+the same, with the portable watchlist flag; `WatchlistStore` reports local
+and TMDB-confirmed flips to `UserMediaStore` and mirrors synced flips back
+(fetching the card's metadata). `KeychainStore.local` is the
+non-synchronizable, this-device-only store.
+
+**Acceptance:** Appendix A.1's M1–M8 pass; a property test over random
+record sets and read orders converges and is idempotent; a written file
+reads back unchanged; `603.5` and `completed: 1` are refused; a fractional
+`updateTime` counts as 0.
+
+### K.2 — Locations
+
+**Create:** `SyncLocation.swift` (provider, space, bookmark or account key
+or server URL, kept in the app group defaults), `SyncStorage.swift` (the
+protocol, `FolderSyncStorage` for picked folders and the ubiquity container,
+`SyncStorageFactory`), `CloudSyncStorage.swift` (Google Drive under
+`drive.file`, OneDrive's app folder, Dropbox), `ServerSyncStorage.swift`
+(WebDAV `PROPFIND`/`MKCOL`/`PUT`/`DELETE`, SFTP, SMB),
+`EDSMBSyncClient.{h,m}` (libsmb2 list/mkdir/read/write/rename/unlink,
+with the same care around a failed request as `EDSMBFile`).
+
+**Change:** `SFTPProtocol` and `SFTPConnection` gain `write`, `mkdir`,
+`remove`, `rename`, whole-file reads, and `stat`; `ProviderHTTP.send`
+takes `allowing:` statuses; `CloudProviders` adds the two scopes and
+`grantsSyncWrites`; `Edendale.entitlements` adds `CloudDocuments` and the
+ubiquity container; `Info.plist` adds `NSUbiquitousContainers` (public
+document scope), `NSBonjourServices`, the camera and local-network usage
+strings, the `fetch` background mode, and `BGTaskSchedulerPermittedIdentifiers`.
+
+**Acceptance:** each provider is called as SYNC-PROTOCOL.md §4's table says
+(recorded responses); a folder location creates `Edendale/<space>/`, lists
+only `<uuid>.json`, replaces in one step, and changes its stamp when a file
+changes.
+
+### K.3 — Client procedure
+
+**Create:** `SyncCoordinator.swift` (launch, foreground, debounced change,
+flush on playback stop and background, periodic, backoff; per-file stamps;
+episode records resolved through the store, the library, then TMDB, else
+held pending and still written out; the file is rewritten only when its
+bytes would differ), `SyncBackgroundRefresh.swift` (iOS BGAppRefreshTask and
+the background task around a flush).
+
+**Change:** `EdendaleApp` creates the coordinator and wires the watchlist
+bridge; `RootView` forwards scene phases; `PlayerSession.end()` posts the
+flush; `SettingsView` gains `SyncSection`.
+
+**Acceptance:** two in-memory devices converge through their own files,
+tombstones win, episodes map between the file's key and the local ID, an
+unchanged file is not re-read, a skipped or failing file leaves the store
+alone, switching location keeps the store and offers to delete the old file.
+
+### K.4 — Handoff v2
+
+**Create:** `Shared/Controllers/Accounts/HandoffV2.swift` (QR payload, key
+schedule, pairing halves, AES-GCM channel with direction-and-counter nonces,
+framing, messages with the spec's `driveId` spelling),
+`HandoffV2Session.swift` (NWListener with the Bonjour service and TXT
+record, QR with the host's address, guest connect by address then by
+browsing, the role/offer/result exchange, timeouts),
+`Shared/Controllers/Sync/SyncHandoff.swift` (the offer under the Google
+rule; receiving: token refresh, SFTP host-key check and login, SMB connect,
+then the location), `Shared/Views/Sync/SyncHandoffView.swift`,
+`QRScannerView.swift` (VisionKit, iOS). `AppRoute.handoff` opens an
+`edendale://handoff?…` link as the receiver.
+
+**Acceptance:** Appendix A.2's proof, key, and confirmation for RFC 7748's
+pair; the QR URI vector; the wrong-secret proof fails before `confirm`; a
+second `hello` on a code is refused; A.3's nonces and AAD; RFC 5869 TC1 and
+RFC 4231 1–4; a whole sender/receiver exchange in memory; the Google rule.
+
+### K.5 — Settings
+
+**Create:** `Shared/Views/Sync/SyncSection.swift`,
+`SyncLocationSetupView.swift` (provider → folder picker / iCloud Drive /
+`CloudAccountStep` / `ServerSourceForm` + `NetworkFolderPickerView` with
+`purpose: .sync` → space name, with the readable-files sentence).
+
+### K.6 — Verification
+
+- `SyncMergeTests`, `SyncFileFormatTests`, `SyncStorageTests`,
+  `SyncCoordinatorTests`, `SyncLogHygieneTests`, `HandoffV2Tests`; the
+  existing suites.
+- The all-platform build (macOS with tests, iOS, tvOS, visionOS).
+- Hardware (not run here): QR pairing between two devices, each provider
+  with a real account, iCloud Drive and a picked folder, Background App
+  Refresh, the Core Data migration of an existing store, and the Android
+  and Windows interop once those branches land.
+
+**Results, 2026-11-03:**
+- Builds and tests: see the pull request. Unit tests ran on macOS; iOS,
+  tvOS, and visionOS compiled without signing.
+- Wire choices beyond the specification (shared with the android and
+  windows sessions): `offer.location.provider` raw values are `folder`,
+  `icloudDrive`, `googleDrive`, `oneDrive`, `dropbox`, `webdav`, `smb`,
+  `sftp`; server locations carry the credential-free root URL in
+  `offer.location.url`; `role` carries `platform`; the TXT record carries
+  `platform`; tombstone retention is 366 days.
+- `MARKETING_VERSION` stays 27.0.1 until the owner cuts 27.1; the device
+  file's `app` field reads it.
+
+### Section K — Tracking
+
+| Step | Description | Status |
+|------|-------------|--------|
+| K.1 | Format, merge, stamping, Core Data v2, store changes | [x] |
+| K.2 | Folder, iCloud Drive, Google Drive, OneDrive, Dropbox, WebDAV, SMB, SFTP locations | [x] |
+| K.3 | Coordinator, triggers, backoff, background refresh | [x] |
+| K.4 | Handoff v2: QR pairing, channel, session, offer/receive | [x] |
+| K.5 | Settings → Sync, location setup, handoff screens | [x] |
+| K.6 | Unit tests and vectors; all-platform build | [x] |
+| — | Copy in all 18 locales | [ ] (English only in this change) |
+| — | Entra `Files.ReadWrite.AppFolder`, Dropbox `files.content.write` (owner) | [ ] |
+| — | CloudKit schema deployment (owner) | [ ] |
+| — | Hardware run: QR pairing, providers, iCloud Drive, background refresh | [ ] |
+| — | Web privacy policy paragraph (web branch) | [ ] |
+
 ### Section J — Tracking
 
 | Step | Description                                  | Status |

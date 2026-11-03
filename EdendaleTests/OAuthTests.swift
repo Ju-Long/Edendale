@@ -78,7 +78,9 @@ import Testing
 
         let microsoft = try #require(CloudProviders.configuration(for: .oneDrive, clientID: "guid"))
         #expect(microsoft.deviceAuthorizationEndpoint?.absoluteString == "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode")
-        #expect(microsoft.scopes == ["Files.Read", "User.Read", "offline_access"])
+        // 27.1 adds the app folder, where sync files live (ENHANCEMENT.md K.2).
+        #expect(microsoft.scopes == ["Files.Read", "Files.ReadWrite.AppFolder", "User.Read", "offline_access"])
+        #expect(dropbox.scopes.contains("files.content.write"))
         #expect(CloudProviders.supportsDeviceCode(.oneDrive))
         #expect(!CloudProviders.supportsDeviceCode(.googleDrive))
     }

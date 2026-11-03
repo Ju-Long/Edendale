@@ -75,8 +75,29 @@ nonisolated enum CloudProviders {
         }
         return parameters
     }
-    static let oneDriveScopes = ["Files.Read", "User.Read", "offline_access"]
-    static let dropboxScopes = ["files.metadata.read", "files.content.read", "account_info.read"]
+    /// 27.1 adds the app folder (`Apps/Edendale/`), where sync files live
+    /// (FEATURES-27.1.md §5.2, decision 1). Consent fails until the Entra
+    /// app registration lists `Files.ReadWrite.AppFolder`; existing
+    /// sign-ins must consent again.
+    static let oneDriveAppFolderScope = "Files.ReadWrite.AppFolder"
+    static let oneDriveScopes = ["Files.Read", oneDriveAppFolderScope, "User.Read", "offline_access"]
+    /// 27.1 adds `files.content.write` for sync files; the Dropbox App
+    /// Console must enable it first, and existing sign-ins must authorize
+    /// again.
+    static let dropboxWriteScope = "files.content.write"
+    static let dropboxScopes = ["files.metadata.read", "files.content.read", dropboxWriteScope, "account_info.read"]
+
+    /// Whether an account's grant can write sync files (FEATURES-27.1.md
+    /// §10): a OneDrive or Dropbox account from before 27.1 must sign in
+    /// again; Google's `drive.file` already covers the app's own files.
+    static func grantsSyncWrites(_ account: CloudAccount) -> Bool {
+        switch account.kind {
+        case .googleDrive: account.scopes.contains(googleDriveFileScope)
+        case .oneDrive: account.scopes.contains { $0.caseInsensitiveCompare(oneDriveAppFolderScope) == .orderedSame }
+        case .dropbox: account.scopes.contains(dropboxWriteScope)
+        default: false
+        }
+    }
 
     /// Personal and work/school Microsoft accounts both sign in through
     /// the `common` authority.

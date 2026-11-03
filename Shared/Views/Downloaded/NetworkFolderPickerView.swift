@@ -40,7 +40,15 @@ struct BrowseLocation: Hashable {
 }
 
 struct NetworkFolderPickerView: View {
+    /// What picking a folder does: index it into the library, or make it
+    /// the sync location.
+    enum Purpose {
+        case library
+        case sync
+    }
+
     let location: BrowseLocation
+    var purpose: Purpose = .library
     /// Called with the folder the user picked.
     let onIndex: (BrowseLocation) -> Void
 
@@ -58,11 +66,13 @@ struct NetworkFolderPickerView: View {
                     Button {
                         onIndex(location)
                     } label: {
-                        Label("Select \(location.name)", image: .folderOpen)
+                        Label(purpose == .sync ? "Sync in \(location.name)" : "Select \(location.name)", image: .folderOpen)
                     }
                     .disabled(entries == nil && errorMessage == nil)
                 } footer: {
-                    Text("Adds every video in this folder and its subfolders to your library.")
+                    Text(purpose == .sync
+                         ? "Edendale keeps its sync files in an Edendale folder inside this one."
+                         : "Adds every video in this folder and its subfolders to your library.")
                         .font(Typography.bodySM)
                         .foregroundStyle(Theme.textSecondary)
                 }

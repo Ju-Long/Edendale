@@ -20,8 +20,12 @@ nonisolated struct ProviderHTTP: Sendable {
     var backoffDelays: [TimeInterval] = [0.5, 1, 2]
 
     /// Sends the request `build` makes with a fresh access token and returns
-    /// a 2xx response. Other statuses throw a ConnectorError.
-    func send(_ build: (String) throws -> URLRequest) async throws -> (Data, HTTPURLResponse) {
+    /// a 2xx response, or one of `allowing`'s statuses. Other statuses throw
+    /// a ConnectorError.
+    func send(
+        allowing allowedStatuses: Set<Int> = [],
+        _ build: (String) throws -> URLRequest
+    ) async throws -> (Data, HTTPURLResponse) {
         var rejected: String?
         var refreshed = false
         var backoffs = 0
@@ -46,7 +50,7 @@ nonisolated struct ProviderHTTP: Sendable {
             guard let http = response as? HTTPURLResponse else {
                 throw URLError(.badServerResponse)
             }
-            if (200..<300).contains(http.statusCode) {
+            if (200..<300).contains(http.statusCode) || allowedStatuses.contains(http.statusCode) {
                 return (data, http)
             }
 

@@ -44,6 +44,30 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_edendale-handoff._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Edendale scans the code shown on another device to set up sync there, or to receive its sync location.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Edendale connects to the servers you link and hands sync logins to your other devices over your local network.</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.com.BaBaSaMa.Edendale</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Edendale</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.BaBaSaMa.Edendale.sync</string>
+	</array>
 	<key>NSApplicationServices</key>
 	<dict>
 		<key>Advertises</key>
@@ -64,6 +88,7 @@
 	<array>
 		<string>remote-notification</string>
 		<string>audio</string>
+		<string>fetch</string>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
