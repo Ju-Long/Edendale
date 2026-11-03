@@ -59,6 +59,11 @@ public sealed partial class MainWindow : Window
         UpdateDownloadedSections();
 
         AddShortcuts();
+
+        // The activation bar moves with the sidebar as Ctrl+B folds it, and with the player.
+        Nav.RegisterPropertyChangedCallback(NavigationView.IsPaneOpenProperty, (_, _) => PlaceActivationBar());
+        PlayerOverlay.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => PlaceActivationBar());
+        PlaceActivationBar();
     }
 
     // ------------------------------------------------------------------
@@ -363,6 +368,21 @@ public sealed partial class MainWindow : Window
             .SelectMany(item => item.MenuItems.OfType<NavigationViewItem>().Prepend(item))
             .FirstOrDefault(item => item.Tag as string == tag);
         _suppressNavSelection = false;
+    }
+
+    private const double ActivationBarGutter = 24;
+
+    /// <summary>
+    /// Centres the activation bar over the page beside the sidebar, open or
+    /// folded to its icons, so a long notice such as the OneDrive offer never
+    /// covers the navigation rows. The player covers the sidebar, so over it
+    /// the bar centres on the whole window.
+    /// </summary>
+    private void PlaceActivationBar()
+    {
+        var sidebar = PlayerOverlay.Visibility == Visibility.Visible ? 0
+            : Nav.IsPaneOpen ? Nav.OpenPaneLength : Nav.CompactPaneLength;
+        ActivationBar.Margin = new Thickness(sidebar + ActivationBarGutter, 12, ActivationBarGutter, 0);
     }
 
     public void ShowActivationMessage(string message)
