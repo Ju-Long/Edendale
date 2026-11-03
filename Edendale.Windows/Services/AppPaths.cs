@@ -80,19 +80,44 @@ public static class AppPaths
     }
 
     /// <summary>
-    /// Cloud replica root inside the user's OneDrive (Windows' default cloud
-    /// storage), or null when OneDrive is not set up on this machine. Not
-    /// created here — CloudSyncService creates it when it starts replicating.
+    /// The sync state (FEATURES-27.1.md §5): this device's sync ID, the chosen
+    /// location, the space name, the high-water stamp, and the stamps of the
+    /// other devices' files last read. Device-local, outside every synced
+    /// folder: the device ID must never travel to another PC (§5.5).
     /// </summary>
-    public static string? CloudReplicaDirectory
+    public static string SyncStateFile => Path.Combine(DataDirectory, "sync-state.json");
+
+    /// <summary>The user's OneDrive folder on this PC, or null when OneDrive is not set up.</summary>
+    public static string? OneDriveFolder
     {
         get
         {
             var oneDrive = Environment.GetEnvironmentVariable("OneDrive")
                 ?? Environment.GetEnvironmentVariable("OneDriveConsumer")
                 ?? Environment.GetEnvironmentVariable("OneDriveCommercial");
-            if (string.IsNullOrWhiteSpace(oneDrive) || !Directory.Exists(oneDrive)) return null;
-            return Path.Combine(oneDrive, "Apps", "Edendale");
+            return string.IsNullOrWhiteSpace(oneDrive) || !Directory.Exists(oneDrive) ? null : oneDrive;
         }
     }
+
+    /// <summary>The iCloud for Windows folder (%USERPROFILE%\iCloudDrive), or null when it is not installed.</summary>
+    public static string? ICloudDriveFolder
+    {
+        get
+        {
+            var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (string.IsNullOrWhiteSpace(profile)) return null;
+            var folder = Path.Combine(profile, "iCloudDrive");
+            return Directory.Exists(folder) ? folder : null;
+        }
+    }
+
+    /// <summary>
+    /// The replica root of builds before 27.1 inside the user's OneDrive
+    /// (%OneDrive%\Apps\Edendale, with user-media.json and
+    /// watch-progress.json), or null when OneDrive is not set up. Read once
+    /// at the first launch after the update (SYNC-PROTOCOL.md §8.4) and left
+    /// in place; nothing writes it any more.
+    /// </summary>
+    public static string? CloudReplicaDirectory =>
+        OneDriveFolder is { } oneDrive ? Path.Combine(oneDrive, "Apps", "Edendale") : null;
 }

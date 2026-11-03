@@ -32,6 +32,7 @@ public sealed partial class SettingsPage : Page
             StateText = Controls.SourceActions.StateText(folder) ?? "";
             StateVisibility = StateText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             SignInVisibility = Controls.SourceActions.NeedsSignIn(folder) ? Visibility.Visible : Visibility.Collapsed;
+            ChooseMoreVisibility = Controls.SourceActions.CanChooseMoreVideos(folder) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public LibraryFolder Folder { get; }
@@ -43,6 +44,8 @@ public sealed partial class SettingsPage : Page
         public string StateText { get; }
         public Visibility StateVisibility { get; }
         public Visibility SignInVisibility { get; }
+        /// <summary>Google Drive sources whose account is signed in here (3.20 R7).</summary>
+        public Visibility ChooseMoreVisibility { get; }
     }
 
     public SettingsPage()
@@ -58,9 +61,8 @@ public sealed partial class SettingsPage : Page
         DataPathText.Text = AppPaths.DataDirectory;
         // Apple's equivalent row reads "Synced via your iCloud"; say what
         // Windows actually does instead of borrowing the claim.
-        CloudSyncText.Text = AppPaths.CloudReplicaDirectory is string replica
-            ? Loc.Format("Settings_ReplicatedTo", replica)
-            : Loc.Get("Settings_StoredOnThisDevice");
+        UpdateWatchProgressRow();
+        AppServices.FileSync.StatusChanged += (_, _) => DispatcherQueue.TryEnqueue(UpdateWatchProgressRow);
 
         _suppressStartupToggle = true;
         StartupToggle.IsOn = StartupService.IsEnabled;
@@ -75,6 +77,15 @@ public sealed partial class SettingsPage : Page
         AppServices.Library.Changed += (_, _) => DispatcherQueue.TryEnqueue(UpdateSourcesUi);
         UpdateAccountUi();
         UpdateSourcesUi();
+    }
+
+    /// <summary>"Syncs through the OneDrive folder on this PC", or "Stored on this device" while sync is off.</summary>
+    private void UpdateWatchProgressRow()
+    {
+        var status = AppServices.FileSync.Status;
+        CloudSyncText.Text = status is { IsOn: true, LocationDescription: { } location }
+            ? Loc.Format("Settings_SyncsThrough", location)
+            : Loc.Get("Settings_StoredOnThisDevice");
     }
 
     private bool _suppressStartupToggle;
@@ -236,6 +247,14 @@ public sealed partial class SettingsPage : Page
         if ((sender as Button)?.Tag is LibraryFolder folder)
         {
             await AppServices.Library.RescanFolderAsync(folder);
+        }
+    }
+
+    private async void ChooseMoreVideos_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is LibraryFolder folder)
+        {
+            await Controls.SourceActions.ChooseMoreVideosAsync(XamlRoot, folder);
         }
     }
 

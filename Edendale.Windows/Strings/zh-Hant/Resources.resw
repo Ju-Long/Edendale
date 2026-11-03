@@ -149,7 +149,7 @@
     <value>您的典藏</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>媒體庫索引保留在此裝置上。觀看進度、收藏和評分也儲存在這裡，並在設定了 OneDrive 後複製到您自己的 OneDrive——絕不涉及任何第三方伺服器。您的待看清單儲存在此裝置上，並在您連接 TMDB 帳戶後與該帳戶同步。</value>
+    <value>媒體庫索引保留在此裝置上。觀看進度、收藏、待看清單和評分也儲存在這裡，並在您開啟同步後透過您選擇的資料夾或帳戶傳遞——Edendale 不執行任何伺服器。您的待看清單也會在您連接 TMDB 帳戶後與該帳戶同步。</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>資料資料夾</value>
@@ -1620,21 +1620,345 @@
     <value>適用於 30 fps 以下、最高 4K 的影片。</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>瀏覽器會開啟以登入 Google。Edendale 會向 Google 請求你雲端硬碟的唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>我的雲端硬碟</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>與我共用</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>共用雲端硬碟</value>
+    <value>瀏覽器會開啟以登入 Google。登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片，只會從此裝置連線，絕不會上傳或更改任何內容。</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale 需要權限才能查看你的 Google 雲端硬碟檔案。請重新登入，並保持選取雲端硬碟存取權限。</value>
+    <value>Edendale 需要存取你選擇的 Google 雲端硬碟檔案。請重新登入，並保持選取該存取權限。</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>你選擇的影片</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>選擇更多影片</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>選擇更多影片</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>選擇更多影片</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>已加入 {0} 部影片。</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>已加入 {0} 部影片。</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>你選擇的影片已在你的資料庫中。</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>重新連結 Google 雲端硬碟</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Edendale 現在只能看到你選擇的 Google 雲端硬碟影片，因此你先前的 Google 雲端硬碟來源已被移除。請開啟「新增網路來源」→「Google Drive」，登入並選擇你的影片。</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>這些影片是以 {0} 選擇的。請再次使用「選擇更多影片」，並使用 {1}。</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>同步</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>透過您自己的資料夾或帳戶，讓觀看進度、收藏、待看清單和評分在所有裝置上保持一致。Edendale 不執行任何伺服器：每台裝置寫入一個可讀的檔案。</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>選擇位置…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>與其他裝置配對…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>設定其他裝置…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>設定其他裝置</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>與其他裝置配對</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>位置</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>空間</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>此裝置</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>上次同步 {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>尚未同步</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>正在同步…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>立即同步</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>移除裝置</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>請重新登入 {0}，讓 Edendale 能在那裡寫入同步檔案。</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>此位置的登入資訊已不在此裝置上。請重新選擇位置。</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>請更新 Edendale 以與 {0} 同步。</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>{0} 的時鐘快了一天以上，其最新變更未被套用。</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>上次同步失敗：{0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>能開啟此資料夾的任何人都能讀取您的觀看記錄。檔案包含以 TMDB ID 標示的影片、進度、評分、待看清單、收藏和評論；絕不包含您的媒體庫、檔案路徑或登入資訊。</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>選擇位置</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>空間名稱</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>指向相同位置和相同空間名稱的裝置會彼此同步。最多 64 個字元，不能包含 / \ : * ? " &lt; &gt; |。</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>此裝置上的資料夾</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>選擇資料夾</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>{0} 上的資料夾</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>要關閉同步嗎？</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>觀看記錄會保留在此裝置上。除非您刪除此裝置的檔案，{0} 中的檔案也會保留。</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>關閉並刪除我的檔案</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>關閉並保留檔案</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>移除裝置</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>刪除某台裝置的檔案後，它的記錄將不再傳到其他裝置。在您於提供者處撤銷 Edendale 的存取權或變更伺服器密碼之前，該裝置仍保留其登入資訊和本機副本。</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>在 {0} 管理存取權</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>還沒有其他裝置寫入此空間。</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>請選擇此裝置用於空間「{0}」的資料夾。</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>請以 {0} 登入 Google 以使用空間「{1}」。</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>登入資訊要往哪個方向傳？</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>從此裝置傳送</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>在此裝置接收</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>在另一台裝置上開啟 設定 → 同步 → 與其他裝置配對，然後用它的相機掃描此 QR Code，或輸入數字。</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>或在另一台裝置上輸入此代碼</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>正在等待另一台裝置…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>已連線到 {0}…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>錯誤代碼次數過多。新代碼將在一分鐘後顯示。</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>用於配對另一台 Edendale 裝置的 QR Code</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>找到的裝置</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>正在此網路中尋找裝置…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>或輸入那裡顯示的位址</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>要傳送到 {0} 嗎？</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>同步位置：{0}，空間「{1}」</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>空間「{0}」（另一台裝置自行選擇資料夾）</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>帳戶</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>已儲存的登入</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>目前沒有可傳送的內容：請先開啟同步或連結帳戶。</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>傳送</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>已傳送到 {0}。</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>已從 {0} 接收。</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>QR Code 已過期或不正確。請顯示新的 QR Code 再試一次。</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>兩台裝置都選擇了傳送。請在其中一台上選擇由誰傳送。</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>另一台裝置正忙於另一次配對。</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>已儲存 {0} 項。</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>已儲存 {0} 項。</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0} 項無法使用。</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0} 項無法使用。</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>此電腦上的 OneDrive 資料夾</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>此電腦上的 iCloud Drive 資料夾</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>另一台裝置</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>其他裝置</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>無法讀取來自 {0} 的同步檔案，已略過。</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>來自 {0} 的同步檔案過大，已略過。</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>請先在「來源」中連結此伺服器，以便將其登入資訊（以及 SFTP 的主機金鑰）儲存在此電腦上。</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>若要透過雲端帳戶或伺服器同步，請先在「來源」中連結它。</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>刪除此電腦的舊同步檔案？</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>此電腦現在在別處同步。它在 {0} 的空間「{1}」中的檔案會一直保留，除非您將其刪除。</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>刪除</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>保留</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>透過 OneDrive 資料夾同步</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>Edendale 現在透過您選擇的資料夾或帳戶同步觀看記錄。先前儲存在 OneDrive 中的內容已在此電腦上。選擇您的 OneDrive 資料夾，讓您的電腦保持同步。</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>選擇 OneDrive</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>透過 {0} 同步</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>裝置要如何配對？</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>在此電腦上顯示 QR Code 和配對碼</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>輸入另一台裝置上的配對碼或連結</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>繼續</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>在下方選擇另一台裝置並輸入它顯示的配對碼，或貼上其 QR Code 中的連結。</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>配對碼或連結</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>請輸入 6 位數配對碼，或貼上 QR Code 中的連結。</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>請在清單中選擇另一台裝置，或輸入它顯示的位址。</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>此電腦的位址：{0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>正在連線…</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>配對碼不符。請在另一台裝置上核對後重試。</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>另一台裝置未及時回應。</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>另一台裝置已拒絕。</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>無法連線到另一台裝置。請確認兩台裝置在同一個網路中。</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>另一台裝置需要更新版本的 Edendale。</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>配對未完成。請重試。</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0} 會自行登入 Google：Google 登入無法在不同類型的裝置之間轉移。</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>登入</value>
   </data>
 </root>

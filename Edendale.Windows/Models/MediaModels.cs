@@ -176,20 +176,52 @@ public sealed class SeasonDetail
     public List<EpisodeDetail> Episodes { get; set; } = [];
 }
 
+/// <summary>
+/// One title's watch position. <see cref="LastWatchedEpochMillis"/> is also
+/// the record's sync `updateTime` (SYNC-PROTOCOL.md §6.1: there is no second
+/// time field), and <see cref="Device"/> the device that wrote this version.
+/// A cleared record (<see cref="IsCleared"/>) is a tombstone: kept so an
+/// older copy on another device cannot bring the position back.
+/// </summary>
 public sealed class WatchProgress
 {
+    /// <summary>The movie's or episode's TMDB id; 0 for an episode received from another device and not yet matched here.</summary>
     public int TmdbId { get; set; }
     /// <summary>"movie" or "episode".</summary>
     public string MediaType { get; set; } = "movie";
+    /// <summary>The fraction watched, 0–1.</summary>
     public double Position { get; set; }
     public double NormalizedPosition { get; set; }
     public double WatchedSeconds { get; set; }
+    /// <summary>The file's length in seconds; 0 when unknown (marked watched by hand).</summary>
+    public double DurationSeconds { get; set; }
+    /// <summary>The sync stamp: UTC milliseconds, monotonic per device (§7.2).</summary>
     public long LastWatchedEpochMillis { get; set; }
     public bool IsCompleted { get; set; }
+    /// <summary>A tombstone (§6.1 `cleared`): the position was removed on purpose.</summary>
+    public bool IsCleared { get; set; }
     public int? ShowTmdbId { get; set; }
     public int? SeasonNumber { get; set; }
     public int? EpisodeNumber { get; set; }
+    /// <summary>The sync device ID that wrote this version; null for records from before sync.</summary>
+    public string? Device { get; set; }
+
+    /// <summary>The Windows-local key: "movie:603" or "episode:62085".</summary>
     public string StorageKey => $"{MediaType}:{TmdbId}";
+
+    /// <summary>
+    /// The sync key (§6.1): "movie:603", or "tv:1399:1:2" for an episode whose
+    /// show, season, and episode are known. An episode without them keeps a
+    /// local-only key and never enters a device file.
+    /// </summary>
+    public string SyncKey => MediaType == "movie"
+        ? $"movie:{TmdbId}"
+        : ShowTmdbId is int show && SeasonNumber is int season && EpisodeNumber is int episode
+            ? $"tv:{show}:{season}:{episode}"
+            : $"episode:{TmdbId}";
+
+    /// <summary>Whether the record can be written to a device file.</summary>
+    public bool IsSyncable => MediaType == "movie" || (ShowTmdbId is not null && SeasonNumber is not null && EpisodeNumber is not null);
 }
 
 public sealed class HeroScene

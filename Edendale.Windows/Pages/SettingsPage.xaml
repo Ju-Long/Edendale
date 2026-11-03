@@ -64,7 +64,7 @@
                         <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
 
                         <!-- Apple's value here is "Synced via your iCloud"; Windows
-                             states what it actually does, OneDrive or nothing. -->
+                             states what it actually does: the sync location, or nothing. -->
                         <Grid Style="{StaticResource SettingsRowGridStyle}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -226,6 +226,17 @@
                                                     Visibility="{Binding SignInVisibility}">
                                                     <TextBlock x:Uid="SourceSignInLabel" Text="SIGN IN" />
                                                 </Button>
+                                                <!-- Google Drive: reopen Google's picker (3.20 R7). -->
+                                                <Button
+                                                    Style="{StaticResource ArchiveGhostButtonStyle}"
+                                                    Click="ChooseMoreVideos_Click"
+                                                    Tag="{Binding Folder}"
+                                                    Visibility="{Binding ChooseMoreVisibility}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/plus.svg" Width="12" Height="12" />
+                                                        <TextBlock x:Uid="SourceChooseMoreLabel" Text="CHOOSE MORE VIDEOS" />
+                                                    </StackPanel>
+                                                </Button>
                                                 <Button
                                                     Style="{StaticResource ArchiveGhostButtonStyle}"
                                                     Click="RescanFolder_Click"
@@ -279,6 +290,10 @@
             <!-- ACCOUNTS (DIFF.md §3.12): saved logins with the sources using
                  each. Removing a source never removes its login; this does. -->
             <controls:AccountsSettings />
+
+            <!-- SYNC — 27.1 file sync on the user's own storage and the
+                 device-to-device handoff (FEATURES-27.1.md §5, §6). -->
+            <controls:SyncSettings />
 
             <!-- TMDB ACCOUNT — TMDBAccountSection.swift. The four phases are
                  expressed through per-button Visibility in UpdateAccountUi(). -->
@@ -389,7 +404,7 @@
                     <StackPanel>
                         <TextBlock
                             x:Uid="SettingsArchivePrivacyNote"
-                            Text="The library index stays on this device. Watch progress, favourites, your watchlist, and ratings are stored here too, and replicate to your own OneDrive when it is set up — no third-party server is ever involved."
+                            Text="The library index stays on this device. Watch progress, favourites, your watchlist, and ratings are stored here too, and when you turn on sync they travel through a folder or account you choose — Edendale runs no server. Your watchlist also mirrors to your TMDB account when you connect one."
                             Style="{StaticResource SettingsBodyRowTextStyle}" />
 
                         <Border Style="{StaticResource SettingsRowSeparatorStyle}" />

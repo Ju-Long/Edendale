@@ -733,14 +733,16 @@ public sealed partial class MainWindow
             positionMilliseconds / 1000.0,
             _currentPlayback.ShowTmdbId,
             _currentPlayback.SeasonNumber,
-            _currentPlayback.EpisodeNumber);
+            _currentPlayback.EpisodeNumber,
+            durationMilliseconds / 1000.0);
     }
 
     private void CompleteCurrent()
     {
         if (_currentPlayback?.TmdbId is int tmdbId)
         {
-            AppServices.WatchProgress.MarkCompleted(tmdbId, _currentPlayback.MediaType);
+            AppServices.WatchProgress.MarkCompleted(tmdbId, _currentPlayback.MediaType,
+                _currentPlayback.ShowTmdbId, _currentPlayback.SeasonNumber, _currentPlayback.EpisodeNumber);
         }
         _transitions.MarkCurrentCompleted();
     }
@@ -1153,6 +1155,8 @@ public sealed partial class MainWindow
     private void ClosePlayer()
     {
         LeaveCurrentItem();
+        // §8.1: the latest position goes out as soon as playback stops.
+        _ = AppServices.FileSync.WriteNowAsync();
         _transitions.End();
         DisposePlayer();
         _currentPlayback = null;
@@ -1290,6 +1294,16 @@ public sealed partial class MainWindow
     {
         LeaveCurrentItem();
         DisposePlayer();
+        // For a folder location the provider's own client uploads the file
+        // later, so a write before quitting is enough (FEATURES-27.1.md §8).
+        try
+        {
+            AppServices.FileSync.WriteNowAsync().Wait(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception)
+        {
+            // Quitting never waits on storage; the next launch writes again.
+        }
         DisplayRefreshRate.Restore();
         DisplayAwake.Hold(false);
         _libVlc?.Dispose();

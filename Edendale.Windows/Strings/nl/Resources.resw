@@ -149,7 +149,7 @@
     <value>JE ARCHIEF</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>De bibliotheekindex blijft op dit apparaat. Kijkvoortgang, favorieten en beoordelingen worden hier ook opgeslagen en gerepliceerd naar je eigen OneDrive wanneer die is ingesteld — er is nooit een externe server bij betrokken. Je kijklijst wordt hier opgeslagen en gesynchroniseerd met je TMDB-account zodra je er een verbindt.</value>
+    <value>De bibliotheekindex blijft op dit apparaat. Kijkvoortgang, favorieten, je kijklijst en beoordelingen worden hier ook opgeslagen en gaan, als je synchronisatie aanzet, via een map of account die je zelf kiest — Edendale heeft geen server. Je kijklijst wordt ook gesynchroniseerd met je TMDB-account zodra je er een verbindt.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Gegevensmap</value>
@@ -1620,21 +1620,345 @@ IS STIL</value>
     <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Je browser opent om bij Google in te loggen. Edendale vraagt Google om alleen-lezentoegang tot je Drive. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Mijn Drive</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Gedeeld met mij</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Gedeelde drives</value>
+    <value>Je browser opent om bij Google in te loggen. Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale heeft toestemming nodig om je Google Drive-bestanden te zien. Log opnieuw in en laat de toegang tot Drive geselecteerd.</value>
+    <value>Edendale heeft toegang nodig tot de Google Drive-bestanden die je kiest. Log opnieuw in en laat die toegang geselecteerd.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Door jou gekozen video’s</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Kies meer video’s</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>KIES MEER VIDEO’S</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>KIES MEER VIDEO’S</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>{0} video toegevoegd.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>{0} video’s toegevoegd.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>De video’s die je hebt gekozen stonden al in je bibliotheek.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Koppel Google Drive opnieuw</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Edendale ziet nu alleen de Google Drive-video’s die je kiest, dus je eerdere Google Drive-bronnen zijn verwijderd. Open Netwerkbron toevoegen → Google Drive, log in en kies je video’s.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>Die video’s zijn gekozen als {0}. Gebruik Kies meer video’s opnieuw met {1}.</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>SYNCHRONISATIE</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>Houd kijkvoortgang, favorieten, kijklijst en beoordelingen op al je apparaten gelijk via een map of account van jezelf. Edendale draait geen server: elk apparaat schrijft één leesbaar bestand.</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>LOCATIE KIEZEN…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>KOPPELEN MET ANDER APPARAAT…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>ANDER APPARAAT INSTELLEN…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>Ander apparaat instellen</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>Koppelen met ander apparaat</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>Locatie</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>Ruimte</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>Dit apparaat</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>Laatst gesynchroniseerd {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>Nog niet gesynchroniseerd</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>Synchroniseren…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>NU SYNCHRONISEREN</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>UITSCHAKELEN</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>Apparaat verwijderen</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>Log opnieuw in bij {0} zodat Edendale daar zijn synchronisatiebestanden kan schrijven.</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>De login voor deze locatie staat niet meer op dit apparaat. Kies de locatie opnieuw.</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>Werk Edendale bij om met {0} te synchroniseren.</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>De klok van {0} loopt meer dan een dag voor; de laatste wijzigingen zijn niet toegepast.</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>De laatste synchronisatie is mislukt: {0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>Iedereen die deze map kan openen, kan je kijkgeschiedenis lezen. De bestanden bevatten titels als TMDB-ID, voortgang, beoordelingen, kijklijst, favorieten en recensies; nooit je bibliotheek, bestandspaden of logins.</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>Locatie kiezen</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>Naam van de ruimte</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>Apparaten met dezelfde locatie en ruimtenaam synchroniseren met elkaar. Maximaal 64 tekens, zonder / \ : * ? " &lt; &gt; |.</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>Een map op dit apparaat</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>Map kiezen</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>Map op {0}</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>Synchronisatie uitschakelen?</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>Je kijkgeschiedenis blijft op dit apparaat. De bestanden in {0} blijven ook staan, tenzij je het bestand van dit apparaat verwijdert.</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>Uitschakelen en mijn bestand verwijderen</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>Uitschakelen, bestand bewaren</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>Apparaat verwijderen</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>Door het bestand van een apparaat te verwijderen, bereikt zijn geschiedenis de andere apparaten niet meer. Dat apparaat houdt zijn login en lokale kopie tot je de toegang van Edendale bij de provider intrekt of het serverwachtwoord wijzigt.</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>Toegang beheren bij {0}</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>Geen ander apparaat heeft nog naar deze ruimte geschreven.</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>Kies de map die dit apparaat voor de ruimte “{0}” moet gebruiken.</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>Log in bij Google als {0} om de ruimte “{1}” te gebruiken.</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>Welke kant moeten de logins op?</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>Verzenden vanaf dit apparaat</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>Ontvangen op dit apparaat</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>Open op het andere apparaat Instellingen → Synchronisatie → Koppelen met ander apparaat, scan dan deze code met zijn camera of voer het nummer in.</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>Of voer deze code in op het andere apparaat</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>Wachten op het andere apparaat…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>Verbonden met {0}…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>Te veel verkeerde codes. Over een minuut verschijnt een nieuwe code.</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>QR-code om een ander Edendale-apparaat te koppelen</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>Gevonden apparaten</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>Apparaten zoeken op dit netwerk…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>Of voer het daar getoonde adres in</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>Verzenden naar {0}?</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>Synchronisatielocatie: {0}, ruimte “{1}”</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>Ruimte “{0}” (het andere apparaat kiest zijn eigen map)</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>Opgeslagen logins</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>Nog niets te verzenden: schakel eerst synchronisatie in of koppel een account.</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>Verzenden</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>Verzonden naar {0}.</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>Ontvangen van {0}.</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>De QR-code is verlopen of was onjuist. Toon een nieuwe en probeer het opnieuw.</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>Beide apparaten kozen verzenden. Kies op één apparaat wie verzendt.</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>Het andere apparaat is bezig met een andere koppeling.</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>{0} item opgeslagen.</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>{0} items opgeslagen.</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0} item kon niet worden gebruikt.</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0} items konden niet worden gebruikt.</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>OneDrive-map op deze pc</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>iCloud Drive-map op deze pc</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>een ander apparaat</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>Ander apparaat</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>Het synchronisatiebestand van {0} kon niet worden gelezen en is overgeslagen.</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>Het synchronisatiebestand van {0} is te groot en is overgeslagen.</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>Koppel deze server eerst bij Bronnen, zodat de login en bij SFTP de hostsleutel op deze pc zijn opgeslagen.</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>Koppel een cloudaccount of server eerst bij Bronnen om erlangs te synchroniseren.</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>Het oude synchronisatiebestand van deze pc verwijderen?</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>Deze pc synchroniseert nu ergens anders. Het bestand in {0}, ruimte ‘{1}’, blijft daar staan tenzij je het verwijdert.</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>Bewaren</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>Synchroniseren met je OneDrive-map</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>Edendale synchroniseert de kijkgeschiedenis nu via een map of account die je zelf kiest. Wat in OneDrive stond, staat al op deze pc. Kies je OneDrive-map om je pc’s gelijk te houden.</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>OneDrive kiezen</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>Synchroniseert via {0}</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>Hoe moeten de apparaten koppelen?</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>Een QR-code en een code op deze pc tonen</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>De code of link van het andere apparaat invoeren</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>Doorgaan</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>Kies hieronder het andere apparaat en voer de code in die het toont, of plak de link uit de QR-code.</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>Code of link</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>Voer de 6-cijferige code in of plak de link uit de QR-code.</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>Kies het andere apparaat in de lijst of voer het adres in dat het toont.</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>Adres van deze pc: {0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>Verbinden…</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>De code klopte niet. Controleer hem op het andere apparaat en probeer het opnieuw.</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>Het andere apparaat antwoordde niet op tijd.</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>Het andere apparaat heeft geweigerd.</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>Kan geen verbinding maken met het andere apparaat. Zorg dat beide op hetzelfde netwerk zitten.</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>Het andere apparaat heeft een nieuwere versie van Edendale nodig.</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>Het koppelen is niet afgerond. Probeer het opnieuw.</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0} meldt zich zelf aan bij Google: Google-aanmeldingen gaan niet over tussen verschillende soorten apparaten.</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>VERWIJDEREN</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>INLOGGEN</value>
   </data>
 </root>

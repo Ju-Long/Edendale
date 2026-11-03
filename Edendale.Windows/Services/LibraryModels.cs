@@ -50,9 +50,51 @@ public sealed class LibraryFolder
     /// </summary>
     public string? ChangeCursor { get; set; }
 
+    /// <summary>
+    /// Google Drive: ids of picked files removed from the library on this PC.
+    /// Google can't unshare one file with an app, so rescans skip these
+    /// instead (ENHANCEMENT.md 3.20 D2). Library data, so it never leaves
+    /// this PC; picking a file again brings it back.
+    /// </summary>
+    public List<string>? HiddenItemIds { get; set; }
+
     [JsonIgnore]
     public MediaSourceKind SourceKind =>
         MediaSourceKinds.FromRawValue(Kind) ?? MediaSourceKinds.FromPath(Path);
+
+    /// <summary>
+    /// A Google Drive source from before drive.file: a Drive folder, which
+    /// can't be listed any more, rather than "Videos you chose" (3.20 D1).
+    /// </summary>
+    [JsonIgnore]
+    public bool IsFromBeforeDriveFile =>
+        SourceKind == MediaSourceKind.GoogleDrive && !Remote.GoogleDriveConnector.IsChosenFolder(Path);
+
+    /// <summary>Whether a scan should skip this item: a Drive file removed on this PC.</summary>
+    public bool Hides(string itemPath) =>
+        HiddenItemIds is { Count: > 0 } hidden
+        && Remote.GoogleDriveConnector.FileId(itemPath) is { } id
+        && hidden.Contains(id, StringComparer.Ordinal);
+
+    /// <summary>Remembers removed Drive items so rescans skip them; other kinds keep nothing.</summary>
+    public void Hide(IEnumerable<string> itemPaths)
+    {
+        if (SourceKind != MediaSourceKind.GoogleDrive) return;
+        foreach (var id in itemPaths.Select(Remote.GoogleDriveConnector.FileId).OfType<string>())
+        {
+            HiddenItemIds ??= [];
+            if (!HiddenItemIds.Contains(id, StringComparer.Ordinal)) HiddenItemIds.Add(id);
+        }
+    }
+
+    /// <summary>Picking a hidden file again brings it back.</summary>
+    public void Unhide(IEnumerable<string> fileIds)
+    {
+        if (HiddenItemIds is null) return;
+        var picked = fileIds.ToHashSet(StringComparer.Ordinal);
+        HiddenItemIds.RemoveAll(picked.Contains);
+        if (HiddenItemIds.Count == 0) HiddenItemIds = null;
+    }
 
     [JsonIgnore]
     public bool IsRemote => SourceKind.IsRemote();

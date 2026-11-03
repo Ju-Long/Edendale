@@ -32,7 +32,7 @@ are reproduced exactly as they appear in each font binary's name table.
 | System.Security.Cryptography.ProtectedData | 8.0.0 | © Microsoft Corporation. All rights reserved. | MIT |
 | System.Text.Encoding.CodePages | 8.0.0 | © Microsoft Corporation. All rights reserved. | MIT |
 | SSH.NET | 2026.0.0 | Copyright © Renci 2010-2026 | MIT |
-| BouncyCastle.Cryptography (an SSH.NET dependency) | 2.7.0 | Copyright © Legion of the Bouncy Castle Inc. 2000-2026 | MIT |
+| BouncyCastle.Cryptography (the handoff's X25519 and elliptic-curve J-PAKE; also an SSH.NET dependency) | 2.7.0 | Copyright © Legion of the Bouncy Castle Inc. 2000-2026 | MIT |
 | Microsoft.Extensions.Logging.Abstractions (an SSH.NET dependency) | 8.0.3 | © Microsoft Corporation. All rights reserved. | MIT |
 
 The Windows App SDK is redistributed under proprietary Microsoft terms rather
@@ -51,6 +51,10 @@ and build history are available from VideoLAN's
 modify either library. The packages keep LibVLC under
 `libvlc/<architecture>` so a recipient can inspect or replace those
 shared-library files independently of Edendale.
+
+`Edendale.Windows/Core/Handoff/EcJPake.cs` is a C# port of Bouncy Castle
+Java's `org.bouncycastle.crypto.agreement.ecjpake` package (bcprov 1.84),
+which carries the same copyright holder and the MIT license below.
 
 ## MIT License
 

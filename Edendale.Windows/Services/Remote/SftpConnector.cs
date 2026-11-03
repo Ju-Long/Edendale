@@ -10,6 +10,11 @@
 //
 // Item URLs are sftp://host[:port]/path/Name.ext. Files stream through a
 // BufferedByteSource, each with its own connection.
+//
+// Write support (27.1 sync, FEATURES-27.1.md §10.5): folders are created as
+// needed and a file is replaced by writing <name>.tmp and renaming it over
+// the target (posix-rename where the server offers it). Only the sync
+// location writes; library sources stay read-only.
 
 using Edendale.Windows.Core;
 using Renci.SshNet;
@@ -263,6 +268,93 @@ public sealed class SftpConnector : IMediaConnector, IDisposable
         catch (SftpPathNotFoundException error)
         {
             throw new ConnectorException(ConnectorFailure.ListingFailed, path, inner: error);
+        }
+        catch (Exception error)
+        {
+            throw Translate(error, Host);
+        }
+    }, cancellation);
+
+    // ------------------------------------------------------------------
+    // Writing (the sync location)
+    // ------------------------------------------------------------------
+
+    /// <summary>Creates <paramref name="path"/> and any missing parents.</summary>
+    public Task CreateDirectoriesAsync(string path, CancellationToken cancellation) => Task.Run(() =>
+    {
+        try
+        {
+            WithClient(client =>
+            {
+                var current = "";
+                foreach (var segment in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    current += "/" + segment;
+                    if (!client.Exists(current)) client.CreateDirectory(current);
+                }
+                return true;
+            });
+        }
+        catch (Exception error)
+        {
+            throw Translate(error, Host);
+        }
+    }, cancellation);
+
+    public Task<byte[]> ReadFileAsync(string path, CancellationToken cancellation) => Task.Run(() =>
+    {
+        try
+        {
+            return WithClient(client => client.ReadAllBytes(path));
+        }
+        catch (SftpPathNotFoundException error)
+        {
+            throw new ConnectorException(ConnectorFailure.NotFound, "SFTP", inner: error);
+        }
+        catch (Exception error)
+        {
+            throw Translate(error, Host);
+        }
+    }, cancellation);
+
+    /// <summary>Writes <paramref name="path"/>.tmp, then renames it over <paramref name="path"/>.</summary>
+    public Task WriteFileAsync(string path, ReadOnlyMemory<byte> bytes, CancellationToken cancellation) => Task.Run(() =>
+    {
+        try
+        {
+            WithClient(client =>
+            {
+                var temporary = path + ".tmp";
+                client.WriteAllBytes(temporary, bytes.ToArray());
+                try
+                {
+                    client.RenameFile(temporary, path, isPosix: true);
+                }
+                catch (SshException)
+                {
+                    // No posix-rename@openssh.com: plain SFTP rename refuses to replace.
+                    if (client.Exists(path)) client.DeleteFile(path);
+                    client.RenameFile(temporary, path);
+                }
+                return true;
+            });
+        }
+        catch (Exception error)
+        {
+            throw Translate(error, Host);
+        }
+    }, cancellation);
+
+    /// <summary>Deletes a file; one that is already gone is fine.</summary>
+    public Task DeleteFileAsync(string path, CancellationToken cancellation) => Task.Run(() =>
+    {
+        try
+        {
+            WithClient(client =>
+            {
+                if (client.Exists(path)) client.DeleteFile(path);
+                return true;
+            });
         }
         catch (Exception error)
         {

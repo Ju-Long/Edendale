@@ -59,13 +59,14 @@ internal static class Program
         // Public-client IDs for Google Drive, OneDrive, and Dropbox sources
         // (PKCE). Leaving one empty hides that provider in the build. Google's
         // Desktop client type also issues a secret its token endpoint expects;
-        // Google documents it as not confidential (ENHANCEMENT.md D9).
+        // Google documents it as not confidential (ENHANCEMENT.md D9). Google
+        // Drive asks only for drive.file and opens Google's picker (3.20).
         new(
             Name: "GOOGLE_DRIVE_CLIENT_ID",
             Flag: "--google-drive-client-id",
             Label: "Google Drive client ID (Desktop app OAuth client)",
             Pattern: @"\A[0-9]+-[0-9a-z]+\.apps\.googleusercontent\.com\z",
-            Guidance: "The client ID ends in .apps.googleusercontent.com. Create an OAuth client of type Desktop app in a project with the Google Drive API enabled, and add the drive.readonly scope to its consent screen.",
+            Guidance: "The client ID ends in .apps.googleusercontent.com. Create an OAuth client of type Desktop app in a project with the Google Drive API and the Google Picker API enabled, and add only the drive.file scope on its Data Access page.",
             Required: false,
             Source: "https://console.cloud.google.com/apis/credentials",
             UnsetEffect: "Google Drive sources hidden"),
@@ -83,7 +84,7 @@ internal static class Program
             Flag: "--onedrive-client-id",
             Label: "OneDrive client ID (Microsoft Entra public client)",
             Pattern: @"\A[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\z",
-            Guidance: "The application (client) ID is a GUID. Register an app for personal and work or school accounts with the Files.Read and User.Read permissions, turn on Allow public client flows, and add http://127.0.0.1 to publicClient.redirectUris in its Manifest (the portal's Redirect URI box refuses it, and http://localhost doesn't match).",
+            Guidance: "The application (client) ID is a GUID. Register an app for personal and work or school accounts with the Files.Read, Files.ReadWrite.AppFolder (27.1 sync), and User.Read permissions, turn on Allow public client flows, and add http://127.0.0.1 to publicClient.redirectUris in its Manifest (the portal's Redirect URI box refuses it, and http://localhost doesn't match).",
             Required: false,
             Source: "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
             UnsetEffect: "OneDrive sources hidden"),
@@ -92,7 +93,7 @@ internal static class Program
             Flag: "--dropbox-app-key",
             Label: "Dropbox app key",
             Pattern: @"\A[a-z0-9]{10,32}\z",
-            Guidance: "The app key is lowercase letters and digits. Use a scoped app with the redirect URI http://127.0.0.1:49735/ and the files.metadata.read, files.content.read, and account_info.read scopes.",
+            Guidance: "The app key is lowercase letters and digits. Use a scoped app with the redirect URI http://127.0.0.1:49735/ and the files.metadata.read, files.content.read, files.content.write (27.1 sync), and account_info.read scopes.",
             Required: false,
             Source: "https://www.dropbox.com/developers/apps",
             UnsetEffect: "Dropbox sources hidden"),

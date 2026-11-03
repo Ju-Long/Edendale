@@ -444,7 +444,8 @@ internal sealed class TmdbRepository
                 record.PosterPath = display.PosterPath;
                 record.PosterUrl = display.PosterUrl;
             }
-            if (record.HasState) records.Add(record);
+            // Tombstones (cleared on purpose, with a sync stamp) stay in the store.
+            if (record.HasState || record.IsTombstone) records.Add(record);
         }
 
         return new UserMediaSyncOutcome { Records = records, Pushed = pushed, Pulled = pulled };
@@ -843,6 +844,11 @@ internal sealed class TmdbRepository
         Rating = record.Rating,
         RatingUpdatedAt = record.RatingUpdatedAt,
         RatingDirty = record.RatingDirty,
+        // The sync fields travel with the record; the store re-stamps what TMDB changed.
+        Watchlist = record.Watchlist,
+        Review = record.Review,
+        UpdateTime = record.UpdateTime,
+        Device = record.Device,
     };
 
     private static double? SanitizeRating(double? value) =>

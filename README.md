@@ -63,14 +63,16 @@ through the platform branch's issue and pull-request workflow.
 
 The `windows` branch contains a self-contained C# and WinUI 3 desktop
 application. Filename parsing, library rules, watch and user-media merging,
-TMDB access, persistence, playback, SMB integration, routing, and tests are
-implemented natively in this branch; no shared runtime or generated bridge is
-required.
+TMDB access, persistence, playback, SMB integration, file sync, the device
+handoff, routing, and tests are implemented natively in this branch; no shared
+runtime or generated bridge is required.
 
 The current feature build includes sidebar navigation with section rows, a
 custom title bar, a full-featured player (below), movie and show shelves,
 folder and network-source import with background metadata enrichment, search,
-detail and person pages with Play From, online subtitle search, and settings.
+detail and person pages with Play From, online subtitle search, sync of watch
+state through storage the user owns, setting up another device over the local
+network, and settings.
 
 Playback is powered by the official LibVLCSharp WinUI control and the bundled
 LibVLC 3 engine. It does not require a separate VLC installation and gives the
@@ -105,6 +107,13 @@ domain tests target plain .NET 8 and can also run on macOS or Linux:
 
 ```powershell
 dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj
+```
+
+On a machine that has only a newer .NET runtime (the tests target .NET 8),
+let the test host roll forward:
+
+```bash
+DOTNET_ROLL_FORWARD=Major dotnet test Edendale.Windows.Tests/Edendale.Windows.Tests.csproj
 ```
 
 ### API credentials
@@ -169,25 +178,35 @@ client type also issues a client secret its token endpoint expects; Google
 documents it as not confidential, because every copy of a desktop app carries
 it (D9). It stays in the gitignored `secrets.json` like the TMDB token.
 
-- **Google Drive:** in Google Cloud, enable the Google Drive API, set up the
-  OAuth consent screen with the `openid`, `email`, and
-  `https://www.googleapis.com/auth/drive.readonly` scopes, and create an OAuth
-  client of type **Desktop app**. Its client ID and secret are the two Google
-  values. Desktop clients accept any loopback port, so no redirect URI is
-  registered. `drive.readonly` is a restricted scope: while the consent
-  screen is in Testing, only listed test users can sign in and their sign-in
-  lasts 7 days; publishing to everyone needs Google's verification and
-  security assessment.
+- **Google Drive:** in Google Cloud, enable the Google Drive API and the
+  Google Picker API, add only `https://www.googleapis.com/auth/drive.file` on
+  the Google Auth Platform's Data Access page, and create an OAuth client of
+  type **Desktop app**. Its client ID and secret are the two Google values.
+  Desktop clients accept any loopback port, so no redirect URI is
+  registered. Edendale asks for `drive.file` alone and opens Google's picker
+  inside the sign-in page, so it sees only the files the user picks.
+  `drive.file` is non-sensitive: publishing needs no scope verification or
+  security assessment. While the consent screen is in Testing, only listed
+  test users can sign in and their sign-in lasts 7 days.
 - **OneDrive:** register a Microsoft Entra application for personal and work
-  or school accounts, with the delegated `Files.Read` and `User.Read`
-  permissions and **Allow public client flows** on. Add `http://127.0.0.1` to
+  or school accounts, with the delegated `Files.Read`,
+  `Files.ReadWrite.AppFolder`, and `User.Read` permissions and **Allow public
+  client flows** on. `Files.ReadWrite.AppFolder` is new in 27.1: it lets
+  Edendale write its sync files in the app's own folder, `Apps/Edendale/`, and
+  nowhere else (FEATURES-27.1.md §10, decision 1). Until the registration
+  lists it, a sign-in that asks for it can fail. Accounts linked before 27.1
+  keep refreshing with the scopes they were granted, so their sources keep
+  working; they consent once more when they become the sync location. Add `http://127.0.0.1` to
   `publicClient.redirectUris` in its Manifest: the portal's Redirect URI box
   refuses http loopback addresses, and a registered `http://localhost` doesn't
   match `127.0.0.1`. Microsoft ignores the port of a loopback redirect, so
   Edendale listens on any free one.
 - **Dropbox:** create a scoped app with Full Dropbox access, the redirect URI
   `http://127.0.0.1:49735/`, and the `files.metadata.read`,
-  `files.content.read`, and `account_info.read` scopes.
+  `files.content.read`, `files.content.write`, and `account_info.read` scopes.
+  `files.content.write` is new in 27.1, for the sync files in `/Edendale/`.
+  Dropbox refuses a sign-in that asks for a scope its App Console hasn't
+  enabled, so enable it before shipping this build.
 
 > Windows PowerShell 5.1 mangles multi-line strings piped into a native
 > program. Use a file redirect or `cmd /c` when feeding several values at once,
@@ -214,7 +233,7 @@ straight from the returned URL, decodes it using the character set the service
 reported — subtitles are routinely published in a legacy code page — and
 rewrites it as UTF-8 in `%LOCALAPPDATA%\Edendale\Subtitles` before attaching it
 to LibVLC, so re-selecting one costs nothing. That cache is device-local and
-never enters the OneDrive replica.
+never enters the sync files.
 
 There is no account and no session to store: a key is the whole of the
 service's authentication, and its allowance is per key per day.
@@ -277,7 +296,7 @@ The player follows DIFF.md §3.1–3.11 and §3.18 natively:
 - **Remembered state:** per title, the speed and the audio, subtitle, and
   video tracks; device-wide, Loop, Fit or Fill, and the audio, picture,
   subtitle, and enhancement settings. All of it stays in
-  `%LOCALAPPDATA%\Edendale\player-settings.json` and never replicates.
+  `%LOCALAPPDATA%\Edendale\player-settings.json` and never syncs.
 - **Episodes:** at the end of an episode the next one plays, and an Up Next
   card appears for the last 30 s. Continue Watching suggests the episode
   after the last one finished.
@@ -365,14 +384,22 @@ Source form (DIFF.md §3.12):
 | WebDAV | PROPFIND with Basic or Digest login (Nextcloud, ownCloud, Synology, QNAP, `rclone serve webdav`) |
 | S3-compatible | Signature Version 4 (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) |
 | NFS | LibVLC's bundled NFS client; the export needs the `insecure` option |
-| Google Drive | Drive API v3, read-only: My Drive, Shared with me, and shared drives |
+| Google Drive | Drive API v3 with `drive.file`: only the videos chosen in Google's picker |
 | OneDrive | Microsoft Graph, personal and work or school accounts |
 | Dropbox | Dropbox API v2 |
 
 - **Cloud accounts** appear in Link Source only when this build has their
-  client ID (see [API credentials](#api-credentials)). Google Drive follows
-  shortcuts, skips Docs, Sheets, and other Google formats, and refuses files
-  Google flags as harmful rather than overriding the warning.
+  client ID (see [API credentials](#api-credentials)).
+- **Google Drive** has nothing to browse. Google's picker opens during
+  sign-in, files only (a picked folder grants nothing inside it), and each
+  account gets one source, "Videos you chose", listing every video picked on
+  any device. **Choose More Videos** on the source's row or in Settings →
+  Accounts reopens the picker. A video removed from the library stays hidden
+  on this PC until it's picked again. Google Drive follows shortcuts, skips
+  Docs, Sheets, and other Google formats, and refuses files Google flags as
+  harmful rather than overriding the warning. Google accounts and folder
+  sources from builds before `drive.file` are removed at launch, with a
+  notice to link Google Drive again.
 - **TLS:** HTTPS sources need a certificate Windows trusts; self-signed
   certificates are refused (D10). Plain HTTP reaches only local addresses
   (`.local` and unqualified names, private and Tailscale IP ranges).
@@ -389,24 +416,110 @@ Source form (DIFF.md §3.12):
 - Removing a source keeps its login. Settings → Accounts lists every saved
   login and account with the sources using it, and forgets or signs out.
 
+### Sync between devices
+
+Release 27.1 replaces the OneDrive replica with sync on storage the user owns
+([FEATURES-27.1.md](https://github.com/Ju-Long/Edendale/blob/main/FEATURES-27.1.md)
+§5 and §6 on `main`; the file format, merge, and handoff are
+[SYNC-PROTOCOL.md](https://github.com/Ju-Long/Edendale/blob/main/SYNC-PROTOCOL.md),
+whose Appendix A vectors the tests copy from `main` at `915b40d`). Edendale
+runs no server: each device writes one readable JSON file,
+`Edendale/<space-name>/<device-id>.json`, reads the other devices' files, and
+merges them locally. Sync is off until the user chooses a location in Settings
+→ Sync, or receives one from another device.
+
+- **What travels:** watch progress (in seconds, with completion), favourites,
+  the watchlist flag, ratings, and review text written on another platform,
+  keyed by TMDB id (show, season, and episode for an episode). Never titles,
+  posters, the library, file paths, logins, or the TMDB session.
+- **Merge:** per record, the newest `updateTime` wins as a whole; equal stamps
+  go to the lexically smaller device ID. Every local write is stamped
+  `max(now, highest stamp applied + 1)`, a record stamped more than a day
+  ahead of this PC's clock is refused with a warning that names the device,
+  and a cleared value is kept as a tombstone for 366 days so an older copy
+  can't bring it back. Files that break the format are skipped whole and never
+  remove local data.
+- **Locations:** one per PC. The OneDrive folder on this PC (its root is
+  `%OneDrive%\Apps`, so the files land in `Apps\Edendale\<space>`, the folder
+  the OneDrive API location and the old replica use), the iCloud for Windows
+  folder (`%USERPROFILE%\iCloudDrive`), any picked folder (kept in the
+  future-access list), Google Drive under `drive.file` (the app creates
+  `Edendale/` and the space folder; no picker), OneDrive's app folder through
+  Microsoft Graph, Dropbox (`/Edendale/`), and WebDAV, SMB, or SFTP servers
+  whose logins are saved under Sources. Folder writes go to `<id>.json.tmp`,
+  then a rename; API writes replace the file in one upload.
+- **When:** at launch, on return to the foreground, 10 seconds after the last
+  change, at once when playback stops or the window loses focus or closes,
+  and every 5 minutes in the foreground. Unchanged files (by modification
+  time, ETag, Drive `modifiedTime`, Graph `eTag`, or Dropbox `rev`) are not
+  read again, and reading a file twice changes nothing. Failures back off 1,
+  2, 4, and 8 minutes up to an hour.
+- **Migration:** the first launch of 27.1 reads `%OneDrive%\Apps\Edendale\`
+  `user-media.json` and `watch-progress.json` once, stamps each record with
+  its own time and this PC's ID, merges them, and leaves both files in place.
+  A PC with OneDrive is then offered its OneDrive folder once, with the space
+  `Family` suggested so every PC that accepts lands in the same space.
+- **Remove a device** deletes its file; its records are already in every
+  other file. The dialog links to the provider's account page, because the
+  removed device keeps its login until access is revoked there (H6).
+- **Device ID and state:** `%LOCALAPPDATA%\Edendale\sync-state.json` holds
+  this PC's random device ID, the location (without credentials), the space,
+  the high-water stamp, and the stamps of the files read. It is never written
+  to a synced folder, so the ID can't reach another PC.
+
+**Setting up another device** (handoff version 2, SYNC-PROTOCOL.md §9) moves
+the sync location and, if the user ticks them, other linked accounts and saved
+logins, directly over the local network. The person first picks which way the
+logins go, then which device shows the code:
+
+- **This PC shows the code** (host): a QR code
+  (`edendale://handoff?v=2&n&h&p&k&s`, X25519 key and a 16-byte secret) and a
+  6-digit code, each valid for 2 minutes and one attempt. While that screen is
+  open the PC advertises `_edendale-handoff._tcp` with DNS-SD (TXT `v=2`,
+  `name`, `platform`); it stops when the screen closes. Five failures in a row
+  lock pairing for a minute.
+- **This PC enters the code** (guest): it browses for hosts and takes the
+  6-digit code (J-PAKE over P-256, participant IDs `edendale-host` and
+  `edendale-guest`) or a QR link pasted from the other device. A PC has no QR
+  scanner.
+- After pairing, frames are AES-256-GCM with the direction-and-counter nonce
+  of §9.5. The sender shows what it is about to send, with the receiver's
+  name, before anything goes. The receiver refreshes each token, connects to
+  each server (and for SFTP compares the host key the sender approved), and
+  keeps only what validates. A Google refresh token goes only to another
+  Windows PC; a phone, Mac, or TV gets the account's email and the space
+  folder's Drive ID and signs in to Google itself (§9.8). A folder location
+  sends only the space; the receiving device picks its own folder.
+
+The typed-code J-PAKE is a port of Bouncy Castle Java's `ecjpake` (the code
+the Android handoff runs) onto Bouncy Castle C#'s elliptic-curve arithmetic,
+since Bouncy Castle C# ships only the finite-field variant. RFC 8236 publishes
+no test vectors, so the tests check agreement, the wrong-code failure at round
+3, refused forgeries, and the wire shape the Android handoff reads.
+
+Sync and handoff log lines (`Core/Sync/SyncLog`) carry counts, file names,
+stamps, and error classes only; a test holds every line to that (H10).
+
 ### Data and privacy
 
 Library, watch-progress, user-media, and player-settings JSON live under
-`%LOCALAPPDATA%\Edendale`. When the user has configured OneDrive, watch and
-user-media state can replicate through their OneDrive folder.
+`%LOCALAPPDATA%\Edendale`. When the user turns on sync, watch and user-media
+state also travels as one readable JSON file per device through the folder or
+account they chose (above); anyone who can open that folder can read it, and
+the app says so when a location is chosen. The library, including the IDs of
+Google Drive videos removed from it, never syncs.
 
 Subtitles downloaded from Wyzie Subs are kept in
 `%LOCALAPPDATA%\Edendale\Subtitles`, indexed by title in
-`saved-subtitles.json`, and never replicate. Each is deleted after 30 days
+`saved-subtitles.json`, and never sync. Each is deleted after 30 days
 without being turned on, unless that's switched off in Settings → Subtitles.
 
-Every login stays on this device (D11). The TMDB session, SMB, SFTP, WebDAV,
-and S3 logins, and Google Drive, OneDrive, and Dropbox refresh tokens are protected with DPAPI
-for the current Windows user and never enter the OneDrive replica. Access
-tokens exist only in memory. Pinned SSH host keys are stored beside them. A
-OneDrive account linked as a storage source is separate from the OneDrive
-folder used for replication (D12): signing it out leaves replication alone,
-and turning replication off leaves the source alone.
+Every login stays on this device (D11) unless the user sends it to another
+of their devices with the handoff. The TMDB session, SMB, SFTP, WebDAV, and S3
+logins, and Google Drive, OneDrive, and Dropbox refresh tokens are protected
+with DPAPI for the current Windows user and never enter a sync file or a log.
+Access tokens exist only in memory. Pinned SSH host keys are stored beside
+them. The TMDB session never travels, not even in the handoff.
 
 Network access is limited to:
 
@@ -417,6 +530,12 @@ Network access is limited to:
   OneDrive through `graph.microsoft.com` and `login.microsoftonline.com`,
   and Dropbox through `api.dropboxapi.com`, `www.dropbox.com`, and
   `dl.dropboxusercontent.com`), to list and play the user's files;
+- the sync location the user chooses (a folder on this PC, Google Drive,
+  OneDrive through `graph.microsoft.com`, Dropbox through
+  `api.dropboxapi.com` and `content.dropboxapi.com`, or a WebDAV, SMB, or SFTP
+  server), to read and write the sync files;
+- the user's other devices on the local network, only while a pairing screen
+  is open: DNS-SD on the local link, then one direct, encrypted connection;
 - Wyzie Subs, only when the user opens the online subtitle search;
 - TheIntroDB, only while skip prompts are switched on: it receives the
   title's TMDB id, the season and episode numbers, the video's duration, and

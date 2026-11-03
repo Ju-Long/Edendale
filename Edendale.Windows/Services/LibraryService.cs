@@ -4,6 +4,7 @@
 
 using System.Text.Json;
 using Edendale.Windows.Core;
+using Edendale.Windows.Services.Remote;
 
 namespace Edendale.Windows.Services;
 
@@ -31,6 +32,13 @@ public sealed class LibraryService
     /// successful scan. Kept in memory: a relaunch scans again anyway.
     /// </summary>
     private readonly Dictionary<Guid, SourceState> _sourceStates = [];
+
+    /// <summary>
+    /// What the last Choose More Videos did to a Google Drive source, by
+    /// folder id, shown on its row until the source's next scan. Unlike
+    /// <see cref="_sourceStates"/>, never a problem.
+    /// </summary>
+    private readonly Dictionary<Guid, string> _sourceNotes = [];
 
     /// <summary>Guards the automatic sweep so overlapping visits don't scan a source twice.</summary>
     private int _rescanning;
@@ -70,6 +78,12 @@ public sealed class LibraryService
     public SourceState? StateFor(LibraryFolder folder)
     {
         lock (_gate) return _sourceStates.GetValueOrDefault(folder.Id);
+    }
+
+    /// <summary>What Choose More Videos last did to a Google Drive source, or null.</summary>
+    public string? NoteFor(LibraryFolder folder)
+    {
+        lock (_gate) return _sourceNotes.GetValueOrDefault(folder.Id);
     }
 
     /// <summary>The source a library file belongs to.</summary>
@@ -222,6 +236,78 @@ public sealed class LibraryService
 
     public Task RescanFolderAsync(LibraryFolder folder) => ScanFolderAsync(folder);
 
+    // ------------------------------------------------------------------
+    // Google Drive (ENHANCEMENT.md 3.20)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Links an account's one Google Drive source, "Videos you chose", or
+    /// rescans it when it is already here. <paramref name="pickedFileIds"/>
+    /// are the files Google's picker just returned (none when an already
+    /// linked account was chosen): picking a removed video again brings it
+    /// back. Returns how many of those picks are new to the library, which
+    /// the source's row then says.
+    /// </summary>
+    public async Task<int> AddChosenVideosAsync(IMediaConnector connector, IReadOnlyList<string> pickedFileIds)
+    {
+        var rootUrl = connector.Root;
+        HashSet<string> before;
+        lock (_gate)
+        {
+            var existing = _data.Folders.FirstOrDefault(f => string.Equals(f.Path, rootUrl, StringComparison.Ordinal));
+            existing?.Unhide(pickedFileIds);
+            before = existing is null ? [] : DriveFileIds(existing.Id);
+        }
+        await ImportRemoteFolderAsync(connector, rootUrl, GoogleDriveConnector.ChosenFolderName, GoogleDriveConnector.ChosenFolderDisplayPath);
+
+        int added;
+        lock (_gate)
+        {
+            var folder = _data.Folders.FirstOrDefault(f => string.Equals(f.Path, rootUrl, StringComparison.Ordinal));
+            if (folder is null) return 0;
+            var after = DriveFileIds(folder.Id);
+            added = pickedFileIds.Distinct(StringComparer.Ordinal).Count(id => after.Contains(id) && !before.Contains(id));
+            if (pickedFileIds.Count > 0 && !_sourceStates.ContainsKey(folder.Id))
+            {
+                _sourceNotes[folder.Id] = added == 0
+                    ? Loc.Get("GoogleDrive_AlreadyInLibrary")
+                    : Loc.Plural("GoogleDrive_AddedOne", "GoogleDrive_AddedOther", added);
+            }
+        }
+        Changed?.Invoke(this, EventArgs.Empty);
+        return added;
+    }
+
+    /// <summary>
+    /// 3.20 D1: removes Google Drive sources linked before drive.file, which are
+    /// Drive folders rather than "Videos you chose", with their files.
+    /// Returns how many went.
+    /// </summary>
+    public int RemoveGoogleDriveSourcesFromBeforeDriveFile()
+    {
+        int removed;
+        lock (_gate)
+        {
+            var outdated = _data.Folders.Where(folder => folder.IsFromBeforeDriveFile).ToList();
+            foreach (var folder in outdated) RemoveFolderLocked(folder);
+            removed = outdated.Count;
+        }
+        if (removed > 0) Save();
+        return removed;
+    }
+
+    /// <summary>The Drive file ids of a source's items. Call with <see cref="_gate"/> held.</summary>
+    private HashSet<string> DriveFileIds(Guid folderId) =>
+        _data.Movies.Where(m => m.FolderId == folderId).Select(m => m.FilePath)
+            .Concat(_data.Shows.SelectMany(s => s.Episodes).Where(e => e.FolderId == folderId).Select(e => e.FilePath))
+            .Select(GoogleDriveConnector.FileId)
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>3.20 D2: a removed Drive video stays hidden from later scans. Call with <see cref="_gate"/> held.</summary>
+    private void HideRemovedItems(Guid folderId, IEnumerable<string> paths) =>
+        _data.Folders.FirstOrDefault(folder => folder.Id == folderId)?.Hide(paths);
+
     /// <summary>
     /// Re-scans every linked source so files added outside the app show up.
     /// Runs on each library visit; re-entrancy is guarded. The automatic
@@ -252,31 +338,49 @@ public sealed class LibraryService
     /// </summary>
     public void RemoveFolder(LibraryFolder folder)
     {
+        lock (_gate) RemoveFolderLocked(folder);
+        Save();
+    }
+
+    /// <summary>Call with <see cref="_gate"/> held.</summary>
+    private void RemoveFolderLocked(LibraryFolder folder)
+    {
+        _data.Folders.RemoveAll(f => f.Id == folder.Id);
+        _data.Movies.RemoveAll(m => m.FolderId == folder.Id);
+        foreach (var show in _data.Shows) show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
+        _data.Shows.RemoveAll(s => s.Episodes.Count == 0);
+        _sourceStates.Remove(folder.Id);
+        _sourceNotes.Remove(folder.Id);
+    }
+
+    /// <summary>A removed Google Drive movie stays hidden from later scans (3.20 D2).</summary>
+    public void RemoveMovie(LibraryMovie movie)
+    {
         lock (_gate)
         {
-            _data.Folders.RemoveAll(f => f.Id == folder.Id);
-            _data.Movies.RemoveAll(m => m.FolderId == folder.Id);
-            foreach (var show in _data.Shows) show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
-            _data.Shows.RemoveAll(s => s.Episodes.Count == 0);
-            _sourceStates.Remove(folder.Id);
+            _data.Movies.RemoveAll(m => m.Id == movie.Id);
+            HideRemovedItems(movie.FolderId, [movie.FilePath]);
         }
         Save();
     }
 
-    public void RemoveMovie(LibraryMovie movie)
-    {
-        lock (_gate) _data.Movies.RemoveAll(m => m.Id == movie.Id);
-        Save();
-    }
-
+    /// <summary>A removed show's Google Drive episodes stay hidden from later scans (3.20 D2).</summary>
     public void RemoveShow(LibraryShow show)
     {
-        lock (_gate) _data.Shows.RemoveAll(s => s.Id == show.Id);
+        lock (_gate)
+        {
+            _data.Shows.RemoveAll(s => s.Id == show.Id);
+            foreach (var episodes in show.Episodes.GroupBy(e => e.FolderId))
+            {
+                HideRemovedItems(episodes.Key, episodes.Select(e => e.FilePath));
+            }
+        }
         Save();
     }
 
     private async Task ScanFolderAsync(LibraryFolder folder, IMediaConnector? connector = null)
     {
+        lock (_gate) _sourceNotes.Remove(folder.Id);
         IsImporting = true;
         ErrorMessage = null;
         Changed?.Invoke(this, EventArgs.Empty);
@@ -403,7 +507,8 @@ public sealed class LibraryService
                 _data.Movies.Select(m => m.FilePath)
                     .Concat(_data.Shows.SelectMany(s => s.Episodes).Select(e => e.FilePath)),
                 StringComparer.Ordinal);
-            return new ScanOutcome(AddFiles(folder, entries.Select(entry => entry.Url), knownPaths), null);
+            var visible = entries.Select(entry => entry.Url).Where(url => !folder.Hides(url));
+            return new ScanOutcome(AddFiles(folder, visible, knownPaths), null);
         }
     }
 

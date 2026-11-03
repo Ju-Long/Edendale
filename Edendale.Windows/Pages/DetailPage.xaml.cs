@@ -759,13 +759,14 @@ public sealed partial class DetailPage : Page
             };
             toggle.Click += (_, _) =>
             {
+                // Show, season, and episode let the change travel to other devices (SYNC-PROTOCOL.md §6.1).
                 if (AppServices.WatchProgress.IsWatched(menuTmdbId, "episode"))
                 {
-                    AppServices.WatchProgress.Remove(menuTmdbId, "episode");
+                    AppServices.WatchProgress.Remove(menuTmdbId, "episode", show.TmdbId, episode.Season, episode.Episode);
                 }
                 else
                 {
-                    AppServices.WatchProgress.MarkCompleted(menuTmdbId, "episode");
+                    AppServices.WatchProgress.MarkCompleted(menuTmdbId, "episode", show.TmdbId, episode.Season, episode.Episode);
                 }
             };
             flyout.Items.Add(toggle);
@@ -905,7 +906,11 @@ public sealed partial class DetailPage : Page
     /// </summary>
     private Button TmdbEpisodeCard(EpisodeDetail episode)
     {
-        var watched = AppServices.WatchProgress.IsWatched(episode.Id, "episode");
+        var showTmdbId = _detail?.Ref.Id;
+        // An episode watched on another device may not know this episode's id yet; its position does.
+        var watched = AppServices.WatchProgress.IsWatched(episode.Id, "episode")
+            || (showTmdbId is int show && episode is { SeasonNumber: int season, EpisodeNumber: int number }
+                && AppServices.WatchProgress.IsEpisodeWatched(show, season, number));
         var card = new LandscapeCard
         {
             Title = episode.Name,
@@ -921,25 +926,25 @@ public sealed partial class DetailPage : Page
             Style = (Style)Application.Current.Resources["CardButtonStyle"],
             Content = card,
         };
-        button.Click += (_, _) => ToggleTmdbEpisodeWatched(episode.Id);
+        button.Click += (_, _) => ToggleTmdbEpisodeWatched(episode, showTmdbId, watched);
 
         var flyout = new MenuFlyout();
         var toggle = new MenuFlyoutItem { Text = Loc.Get(watched ? "Detail_MarkUnwatchedTooltip" : "Detail_MarkWatchedTooltip") };
-        toggle.Click += (_, _) => ToggleTmdbEpisodeWatched(episode.Id);
+        toggle.Click += (_, _) => ToggleTmdbEpisodeWatched(episode, showTmdbId, watched);
         flyout.Items.Add(toggle);
         button.ContextFlyout = flyout;
         return button;
     }
 
-    private static void ToggleTmdbEpisodeWatched(int tmdbId)
+    private static void ToggleTmdbEpisodeWatched(EpisodeDetail episode, int? showTmdbId, bool watched)
     {
-        if (AppServices.WatchProgress.IsWatched(tmdbId, "episode"))
+        if (watched)
         {
-            AppServices.WatchProgress.Remove(tmdbId, "episode");
+            AppServices.WatchProgress.Remove(episode.Id, "episode", showTmdbId, episode.SeasonNumber, episode.EpisodeNumber);
         }
         else
         {
-            AppServices.WatchProgress.MarkCompleted(tmdbId, "episode");
+            AppServices.WatchProgress.MarkCompleted(episode.Id, "episode", showTmdbId, episode.SeasonNumber, episode.EpisodeNumber);
         }
     }
 

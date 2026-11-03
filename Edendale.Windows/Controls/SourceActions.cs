@@ -1,5 +1,6 @@
 using Edendale.Windows.Core;
 using Edendale.Windows.Services;
+using Edendale.Windows.Services.Remote;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -8,7 +9,8 @@ namespace Edendale.Windows.Controls;
 /// <summary>
 /// What a source row says and does, shared by the Downloaded page and
 /// Settings → Sources (SourceRow.swift): the kind and item count, the last
-/// scan's failure, Rescan, Sign In, and Remove.
+/// scan's failure, Rescan, Sign In, and Remove. A Google Drive source also
+/// offers Choose More Videos, which reopens Google's picker.
 /// </summary>
 internal static class SourceActions
 {
@@ -27,12 +29,26 @@ internal static class SourceActions
 
     /// <summary>
     /// The row's state line: why the last scan failed ("Offline — …" or
-    /// "Sign in again — …"), or null when it scanned cleanly.
+    /// "Sign in again — …"), what Choose More Videos just did ("Added 3
+    /// videos."), or null when there is nothing to say.
     /// </summary>
     public static string? StateText(LibraryFolder folder) =>
         AppServices.Library.StateFor(folder) is { } state
             ? Loc.Format(state.Kind == SourceStateKind.NeedsSignIn ? "Source_StateNeedsSignIn" : "Source_StateOffline", state.Message)
+            : AppServices.Library.NoteFor(folder);
+
+    /// <summary>The linked account behind a Google Drive source, while it is still signed in here.</summary>
+    public static CloudAccount? GoogleAccount(LibraryFolder folder) =>
+        folder.SourceKind == MediaSourceKind.GoogleDrive
+        && (folder.AccountKey ?? SourceUrl.CredentialHost(folder.Path)) is { } key
+            ? AppServices.CloudAccounts.Account(MediaSourceKind.GoogleDrive, key)
             : null;
+
+    public static bool CanChooseMoreVideos(LibraryFolder folder) => GoogleAccount(folder) is not null;
+
+    /// <summary>Google's picker for the source's account, then a rescan (3.20 R7).</summary>
+    public static Task ChooseMoreVideosAsync(XamlRoot root, LibraryFolder folder) =>
+        GoogleAccount(folder) is { } account ? LinkSourceDialog.ChooseMoreVideosAsync(root, account) : Task.CompletedTask;
 
     public static bool NeedsSignIn(LibraryFolder folder) =>
         AppServices.Library.StateFor(folder)?.Kind == SourceStateKind.NeedsSignIn;

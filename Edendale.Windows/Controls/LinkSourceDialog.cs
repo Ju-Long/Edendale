@@ -11,7 +11,10 @@ namespace Edendale.Windows.Controls;
 /// <summary>
 /// The Link Source flow shared by the Downloaded page and Settings
 /// (DIFF.md §3.12 and §3.15): pick a kind, fill in the form, approve an SSH
-/// host key on first use, then pick the folder to import. The address is
+/// host key on first use, then pick the folder to import. Google Drive has
+/// no folder step: its videos are chosen in Google's picker during sign-in,
+/// so the account's one source, "Videos you chose", is linked as soon as the
+/// account is ready (ENHANCEMENT.md 3.20). The address is
 /// focused on open and Tab moves between fields. Enter connects when every
 /// field is filled and otherwise moves to the first empty one; a guest
 /// connection (no username or password) is one click. Failures stay in the
@@ -61,6 +64,12 @@ public static class LinkSourceDialog
             }
 
             var connector = result.Connector!;
+            if (connector.Kind == MediaSourceKind.GoogleDrive)
+            {
+                // Signing in again opened the picker too, so its picks count.
+                await AppServices.Library.AddChosenVideosAsync(connector, result.PickedFileIds);
+                return connector.Root;
+            }
             if (form.SignInAgain is { } existing)
             {
                 (connector as IDisposable)?.Dispose();
@@ -116,12 +125,82 @@ public static class LinkSourceDialog
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }
+
+    /// <summary>
+    /// Choose More Videos (3.20 R7): reopens Google's picker for a linked account
+    /// in the browser while this dialog waits (Cancel stops waiting), then
+    /// rescans the account's source here, or adds it when this PC has none.
+    /// The source's row then says how many videos were added.
+    /// </summary>
+    public static async Task ChooseMoreVideosAsync(XamlRoot root, CloudAccount account)
+    {
+        var progress = new ProgressRing { IsActive = true, Width = 18, Height = 18, HorizontalAlignment = HorizontalAlignment.Left };
+        var status = new TextBlock
+        {
+            Text = Loc.Format("LinkSource_Waiting", account.SourceKind.DisplayName()),
+            TextWrapping = TextWrapping.Wrap,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetLiveSetting(status, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Assertive);
+        var content = new StackPanel { Spacing = 12, MinWidth = 360, MaxWidth = 460 };
+        content.Children.Add(new TextBlock { Text = account.Label, Style = (Style)Application.Current.Resources["BodySMTextStyle"] });
+        content.Children.Add(progress);
+        content.Children.Add(status);
+        var dialog = new ContentDialog
+        {
+            Title = Loc.Get("GoogleDrive_ChooseMoreTitle"),
+            Content = content,
+            CloseButtonText = Loc.Get("Common_Cancel"),
+            XamlRoot = root,
+        };
+
+        using var work = new CancellationTokenSource();
+        CloudSignInResult? result = null;
+        void Fail(string message)
+        {
+            progress.IsActive = false;
+            status.Text = message;
+            status.Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["EdendaleGoldBrush"];
+            dialog.CloseButtonText = Loc.Get("Common_OK");
+        }
+        dialog.Closing += (_, _) => work.Cancel();
+        dialog.Opened += async (_, _) =>
+        {
+            try
+            {
+                result = await CloudSignIn.ChooseMoreVideosAsync(account, LinkSourceForm.SignedInPage(), work.Token);
+                dialog.Hide();
+            }
+            catch (OAuthException failure) when (failure.Failure == OAuthFailure.Cancelled)
+            {
+                // Closed here, or the browser step timed out.
+                if (!work.IsCancellationRequested) Fail(failure.Message);
+            }
+            catch (OperationCanceledException)
+            {
+                // Closed while the code was being redeemed.
+            }
+            catch (Exception failure) when (failure is ConnectorException or OAuthException)
+            {
+                Fail(failure.Message);
+            }
+            catch (Exception failure)
+            {
+                Fail(Loc.Format("LinkSource_Failed", failure.Message));
+            }
+        };
+        await dialog.ShowAsync();
+        if (result is null) return;
+        var connector = new GoogleDriveConnector(result.Account, AppServices.CloudTokens);
+        await AppServices.Library.AddChosenVideosAsync(connector, result.PickedFileIds);
+    }
 }
 
 /// <summary>What the form connected to.</summary>
 internal sealed record LinkResult
 {
     public IMediaConnector? Connector { get; init; }
+    /// <summary>Google Drive: the files the sign-in's picker returned (none for an account already linked).</summary>
+    public IReadOnlyList<string> PickedFileIds { get; init; } = [];
     public string? SmbPath { get; init; }
     public SshHostKey? HostKey { get; init; }
     public bool HostKeyChanged { get; init; }
@@ -515,14 +594,17 @@ internal sealed class LinkSourceForm
                 var kind = Kind;
                 var accounts = AppServices.CloudAccounts.AccountsOf(kind);
                 CloudAccount account;
+                IReadOnlyList<string> picked = [];
                 if (SignInAgain is null && accounts.Count > 0 && _accountPicker.SelectedIndex >= 0 && _accountPicker.SelectedIndex < accounts.Count)
                 {
+                    // A linked Google account lists what was already chosen,
+                    // on any device; Choose More Videos adds to it.
                     account = accounts[_accountPicker.SelectedIndex];
                 }
                 else
                 {
                     ShowStatus(Loc.Format("LinkSource_Waiting", kind.DisplayName()));
-                    account = await CloudSignIn.SignInAsync(kind, SignedInPage(), cancellation);
+                    (account, picked) = await CloudSignIn.SignInAsync(kind, SignedInPage(), cancellation);
                 }
                 IMediaConnector? connector = kind switch
                 {
@@ -532,13 +614,13 @@ internal sealed class LinkSourceForm
                 };
                 if (connector is null) throw new ConnectorException(ConnectorFailure.SignInRequired, kind.DisplayName());
                 await connector.ValidateAsync(cancellation);
-                return new LinkResult { Connector = connector };
+                return new LinkResult { Connector = connector, PickedFileIds = picked };
             }
         }
     }
 
     /// <summary>What the browser shows after the redirect: a plain page in the app's colors.</summary>
-    private static string SignedInPage()
+    internal static string SignedInPage()
     {
         var heading = System.Net.WebUtility.HtmlEncode(Loc.Get("LinkSource_SignedInHeading"));
         var body = System.Net.WebUtility.HtmlEncode(Loc.Get("LinkSource_SignedInBody"));

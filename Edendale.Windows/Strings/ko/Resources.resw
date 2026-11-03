@@ -149,7 +149,7 @@
     <value>내 아카이브</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>라이브러리 색인은 이 기기에 유지됩니다. 시청 진행률, 즐겨찾기, 평점도 여기에 저장되며 OneDrive가 설정되어 있으면 사용자 본인의 OneDrive에 복제됩니다. 제3자 서버는 절대 관여하지 않습니다. 관심 목록은 이 기기에 저장되며 TMDB 계정을 연결하면 해당 계정과 동기화됩니다.</value>
+    <value>라이브러리 색인은 이 기기에 유지됩니다. 시청 진행률, 즐겨찾기, 관심 목록, 평점도 여기에 저장되며, 동기화를 켜면 사용자가 선택한 폴더나 계정을 통해 전달됩니다. Edendale은 서버를 운영하지 않습니다. 관심 목록은 TMDB 계정을 연결하면 해당 계정과도 동기화됩니다.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>데이터 폴더</value>
@@ -1620,21 +1620,345 @@
     <value>30fps 이하, 최대 4K 동영상에서 작동합니다.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>브라우저가 열리고 Google에 로그인합니다. Edendale은 Google에 드라이브에 대한 읽기 전용 접근 권한을 요청합니다. 이 기기에서만 연결하고, 폴더 목록과 재생하는 비디오만 읽으며, 아무것도 업로드하거나 변경하지 않습니다.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>내 드라이브</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>공유 문서함</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>공유 드라이브</value>
+    <value>브라우저가 열리고 Google에 로그인합니다. 로그인하면 Google 선택 도구가 열립니다. Edendale에서 재생할 비디오를 선택하세요. Edendale은 선택한 비디오만 볼 수 있으며, 이 기기에서만 연결하고, 아무것도 업로드하거나 변경하지 않습니다.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google 드라이브에서 이 파일을 잠재적으로 유해한 파일로 표시했으므로 스트리밍할 수 없습니다.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale이 Google 드라이브 파일을 보려면 권한이 필요합니다. 다시 로그인하고 드라이브 접근을 선택된 상태로 두십시오.</value>
+    <value>Edendale이 선택한 Google 드라이브 파일에 접근하려면 권한이 필요합니다. 다시 로그인하고 해당 접근 권한을 선택된 상태로 두십시오.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>선택한 비디오</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>비디오 더 선택하기</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>비디오 더 선택하기</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>비디오 더 선택하기</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>비디오 {0}개를 추가했습니다.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>비디오 {0}개를 추가했습니다.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>선택한 비디오는 이미 보관함에 있습니다.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Google 드라이브 다시 연결</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>이제 Edendale은 선택한 Google 드라이브 비디오만 볼 수 있으므로, 이전 Google 드라이브 소스가 제거되었습니다. 네트워크 소스 추가 → Google Drive를 열고 로그인한 다음 비디오를 선택하세요.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>이 비디오는 {0} 계정으로 선택되었습니다. {1} 계정으로 '비디오 더 선택하기'를 다시 사용하세요.</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>동기화</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>내가 소유한 폴더나 계정을 통해 시청 진행률, 즐겨찾기, 볼 목록, 평점을 모든 기기에서 같게 유지합니다. Edendale은 서버를 운영하지 않으며, 각 기기가 읽을 수 있는 파일 하나를 씁니다.</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>위치 선택…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>다른 기기와 페어링…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>다른 기기 설정…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>다른 기기 설정</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>다른 기기와 페어링</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>위치</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>공간</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>이 기기</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>마지막 동기화 {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>아직 동기화되지 않음</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>동기화 중…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>지금 동기화</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>끄기</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>기기 제거</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>Edendale이 동기화 파일을 쓸 수 있도록 {0}에 다시 로그인하세요.</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>이 위치의 로그인 정보가 이 기기에 없습니다. 위치를 다시 선택하세요.</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>{0}와 동기화하려면 Edendale을 업데이트하세요.</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>{0}의 시계가 하루 이상 빠릅니다. 최근 변경 사항이 적용되지 않았습니다.</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>마지막 동기화 실패: {0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>이 폴더를 열 수 있는 사람은 누구나 시청 기록을 읽을 수 있습니다. 파일에는 TMDB ID로 표시된 작품, 진행률, 평점, 볼 목록, 즐겨찾기, 리뷰가 담기며 라이브러리, 파일 경로, 로그인 정보는 절대 담기지 않습니다.</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>위치 선택</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>공간 이름</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>같은 위치와 같은 공간 이름을 가리키는 기기들이 서로 동기화합니다. 최대 64자, / \ : * ? " &lt; &gt; | 는 사용할 수 없습니다.</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>이 기기의 폴더</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>폴더 선택</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>{0}의 폴더</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>동기화를 끌까요?</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>시청 기록은 이 기기에 남습니다. 이 기기의 파일을 삭제하지 않으면 {0}의 파일도 남습니다.</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>끄고 내 파일 삭제</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>끄고 파일 유지</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>기기 제거</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>기기의 파일을 삭제하면 그 기록이 다른 기기에 전달되지 않습니다. 해당 기기는 제공업체에서 Edendale의 접근을 취소하거나 서버 비밀번호를 바꾸기 전까지 로그인 정보와 로컬 복사본을 유지합니다.</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>{0}에서 접근 관리</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>이 공간에 쓴 다른 기기가 아직 없습니다.</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>공간 “{0}”에 이 기기가 사용할 폴더를 선택하세요.</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>공간 “{1}”를 사용하려면 {0}(으)로 Google에 로그인하세요.</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>로그인 정보를 어느 방향으로 보낼까요?</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>이 기기에서 보내기</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>이 기기에서 받기</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>다른 기기에서 설정 → 동기화 → 다른 기기와 페어링을 열고, 그 기기의 카메라로 이 코드를 스캔하거나 번호를 입력하세요.</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>또는 다른 기기에서 이 코드를 입력</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>다른 기기를 기다리는 중…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>{0}에 연결됨…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>잘못된 코드가 너무 많습니다. 1분 후 새 코드가 표시됩니다.</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>다른 Edendale 기기와 페어링하기 위한 QR 코드</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>찾은 기기</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>이 네트워크에서 기기를 찾는 중…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>또는 거기에 표시된 주소를 입력</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>{0}(으)로 보낼까요?</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>동기화 위치: {0}, 공간 “{1}”</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>공간 “{0}” (다른 기기가 자체 폴더를 선택)</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>계정</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>저장된 로그인</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>아직 보낼 것이 없습니다. 먼저 동기화를 켜거나 계정을 연결하세요.</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>보내기</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>{0}(으)로 보냈습니다.</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>{0}에서 받았습니다.</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>QR 코드가 만료되었거나 잘못되었습니다. 새 코드를 표시하고 다시 시도하세요.</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>두 기기 모두 보내기를 선택했습니다. 한 기기에서 누가 보낼지 선택하세요.</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>다른 기기가 다른 페어링을 진행 중입니다.</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>{0}개 항목을 저장했습니다.</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>{0}개 항목을 저장했습니다.</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0}개 항목을 사용할 수 없었습니다.</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0}개 항목을 사용할 수 없었습니다.</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>이 PC의 OneDrive 폴더</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>이 PC의 iCloud Drive 폴더</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>다른 기기</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>다른 기기</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>{0}의 동기화 파일을 읽을 수 없어 건너뛰었습니다.</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>{0}의 동기화 파일이 너무 커서 건너뛰었습니다.</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>먼저 소스에서 이 서버를 연결해 로그인 정보와 SFTP의 경우 호스트 키를 이 PC에 저장하세요.</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>클라우드 계정이나 서버로 동기화하려면 먼저 소스에서 연결하세요.</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>이 PC의 이전 동기화 파일을 삭제할까요?</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>이 PC는 이제 다른 곳에서 동기화합니다. {0}의 공간 “{1}”에 있는 이 PC의 파일은 삭제하지 않으면 그대로 남습니다.</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>삭제</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>유지</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>OneDrive 폴더로 동기화</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>이제 Edendale은 사용자가 선택한 폴더나 계정을 통해 시청 기록을 동기화합니다. OneDrive에 보관하던 내용은 이미 이 PC에 있습니다. OneDrive 폴더를 선택하면 PC끼리 계속 동기화됩니다.</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>OneDrive 선택</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>{0}(으)로 동기화</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>기기를 어떻게 페어링할까요?</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>이 PC에 QR 코드와 코드 표시</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>다른 기기의 코드나 링크 입력</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>계속</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>아래에서 다른 기기를 선택하고 그 기기에 표시된 코드를 입력하거나, QR 코드의 링크를 붙여넣으세요.</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>코드 또는 링크</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>6자리 코드를 입력하거나 QR 코드의 링크를 붙여넣으세요.</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>목록에서 다른 기기를 선택하거나 그 기기에 표시된 주소를 입력하세요.</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>이 PC의 주소: {0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>연결하는 중…</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>코드가 일치하지 않습니다. 다른 기기에서 코드를 확인하고 다시 시도하세요.</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>다른 기기가 제시간에 응답하지 않았습니다.</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>다른 기기에서 거부했습니다.</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>다른 기기에 연결할 수 없습니다. 두 기기가 같은 네트워크에 있는지 확인하세요.</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>다른 기기에 최신 버전의 Edendale이 필요합니다.</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>페어링을 완료하지 못했습니다. 다시 시도하세요.</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0}은(는) 직접 Google에 로그인합니다. Google 로그인은 종류가 다른 기기 사이에서 옮겨지지 않습니다.</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>제거</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>로그인</value>
   </data>
 </root>

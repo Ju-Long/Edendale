@@ -327,6 +327,20 @@ public sealed partial class DownloadedPage : Page
                 actions.Children.Add(signIn);
             }
 
+            // Google Drive: reopen Google's picker to add videos (3.20 R7).
+            if (Controls.SourceActions.CanChooseMoreVideos(folder))
+            {
+                var chooseMore = new Button
+                {
+                    Style = (Style)resources["ArchiveGhostButtonStyle"],
+                    Content = new Controls.SvgIcon { UriSource = new Uri("ms-appx:///Assets/Icons/plus.svg"), Width = 14, Height = 14 },
+                };
+                ToolTipService.SetToolTip(chooseMore, Loc.Get("GoogleDrive_ChooseMoreTitle"));
+                AutomationProperties.SetName(chooseMore, $"{Loc.Get("GoogleDrive_ChooseMoreTitle")}, {folder.Name}");
+                chooseMore.Click += async (_, _) => await Controls.SourceActions.ChooseMoreVideosAsync(XamlRoot, folder);
+                actions.Children.Add(chooseMore);
+            }
+
             var rescan = new Button
             {
                 Style = (Style)resources["ArchiveGhostButtonStyle"],

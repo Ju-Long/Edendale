@@ -97,35 +97,46 @@ public sealed class WindowsCoreTests
     // ------------------------------------------------------------------
 
     [TestMethod]
-    public void MergeUserMedia_ResolvesFieldByField()
+    public void MergeUserMedia_TheNewestRecordWinsAsAWhole()
     {
-        // The favourite was set here later; the rating was set on the other
-        // device later. A field-wise merge keeps one of each. (The watchlist has
-        // moved to its own store and no longer rides this merge.)
+        // FEATURES-27.1.md §5.3: one updateTime per record, whole record wins.
+        // The favourite was set here later, but the other device's record is
+        // newer as a whole, so its favourite and rating both replace ours.
         var here = new UserMediaRecord
         {
             TmdbId = 603,
             MediaType = "movie",
             Favourite = true,
-            FavouriteUpdatedAt = 900,
             Rating = 6.0,
-            RatingUpdatedAt = 100,
+            UpdateTime = 500,
+            Device = "0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a",
         };
         var there = new UserMediaRecord
         {
             TmdbId = 603,
             MediaType = "movie",
             Favourite = false,
-            FavouriteUpdatedAt = 200,
             Rating = 9.0,
-            RatingUpdatedAt = 800,
+            UpdateTime = 800,
+            Device = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b",
         };
 
         var merged = WindowsCore.MergeUserMedia([here], [there]).Single();
 
-        Assert.IsTrue(merged.Favourite, "the newer favourite write should win");
-        Assert.AreEqual(9.0, merged.Rating, "the newer rating write should win");
+        Assert.IsFalse(merged.Favourite, "the newer record wins as a whole");
+        Assert.AreEqual(9.0, merged.Rating);
         Assert.AreEqual("movie:603", merged.StorageKey);
+        Assert.AreEqual(there.Device, merged.Device);
+    }
+
+    [TestMethod]
+    public void MergeUserMedia_RecordsFromBeforeSyncUseTheirFieldTimes()
+    {
+        var legacy = new UserMediaRecord { TmdbId = 603, MediaType = "movie", Favourite = true, FavouriteUpdatedAt = 900, RatingUpdatedAt = 100 };
+        var stamped = new UserMediaRecord { TmdbId = 603, MediaType = "movie", Rating = 9.0, UpdateTime = 800, Device = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b" };
+
+        Assert.AreEqual(900, legacy.EffectiveUpdateTime);
+        Assert.IsTrue(WindowsCore.MergeUserMedia([stamped], [legacy]).Single().Favourite, "the legacy record's newest field time counts");
     }
 
     // ------------------------------------------------------------------

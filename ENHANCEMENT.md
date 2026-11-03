@@ -18,6 +18,15 @@ Windows, plus Windows gaps found while comparing the branches.
   It was requested after the tracker started.
 - **Last reviewed:** 2026-10-01, against apple-27.0 `4f8383a`. The branch
   now bundles LibVLC 3.0.24 (F.1).
+- **Amended 2026-10-17:** Google Drive no longer uses `drive.readonly` or a
+  folder browser. It asks only for `drive.file` and opens Google's picker
+  during sign-in; see [3.20](#320-google-drive-with-drivefile). Where 3.12
+  and D9 describe Google Drive's scopes or folder roots, 3.20 replaces them.
+- **Amended 2026-11-03:** 27.1 file sync on the user's own storage and
+  handoff version 2 replace the OneDrive watch-state replica; see
+  [27.1 file sync and handoff version 2](#271-file-sync-and-handoff-version-2).
+  Where this file mentions the replica (D12, "Windows today"), that section
+  replaces it.
 
 ## How to use this file
 
@@ -96,6 +105,11 @@ Priority follows DIFF.md: **P1** parity, **P2** worthwhile, **P3** optional.
 - [ ] [3.13 Buffered remote reads](#313-buffered-remote-reads) (P1, with 3.12)
 - [x] [3.15 Desktop navigation and shortcuts](#315-desktop-navigation-and-shortcuts) (P2)
 - [x] [3.19 Settings layout](#319-settings-layout) (P3)
+- [ ] [3.20 Google Drive with drive.file](#320-google-drive-with-drivefile) (P1; code and tests done, Windows checks open)
+
+**27.1 sync and handoff** (FEATURES-27.1.md §5, §6; SYNC-PROTOCOL.md)
+
+- [ ] [27.1 file sync and handoff version 2](#271-file-sync-and-handoff-version-2) (P1; code and tests done, Windows checks and the owner's console changes open)
 
 **Video enhancement, Option A** (DIFF.md §3.16–3.17)
 
@@ -169,6 +183,11 @@ still open needs Windows hardware or a change on another branch.
   app registrations and their IDs in `secrets.json` (README "API
   credentials"), and SFTP, WebDAV, and S3 against
   real servers. The tests use stub handlers only.
+- 3.20: the Desktop client's loopback sign-in with Google's picker (spike
+  S3), Choose More Videos, and the relink notice, on a Windows PC with the
+  owner's account. See the checklist in 3.20.
+- 27.1 sync and handoff: S.D1 (every location, two PCs, pairing both ways),
+  and the owner's console changes and probes in S.9.
 
 **Changes on other branches** (AGENTS.md hard constraint 7)
 
@@ -178,10 +197,15 @@ still open needs Windows hardware or a change on another branch.
 - `main` DESIGN.md: the `PlaylistActiveBackground` and `PlaylistActiveText`
   rows (3.10).
 - `web`: the privacy text for linked storage providers (DIFF.md J.12),
-  now including Google Drive, which Google's verification requires.
+  now including Google Drive, which Google's verification requires. Since
+  3.20 it must describe `drive.file` and the picker; the list is in 3.20.
 - `apple-27.0`: X.1–X.8 are new behavior. Apple can adopt them or record them
   as Windows-only. X.8 matters most: Apple also caches downloads by file
   without tying them to a title.
+- `main` SYNC-PROTOCOL.md: write down the `url`, `platform`, and camelCase
+  `provider` choices the three branches share, and the OneDrive preset's
+  `Apps` root (27.1 section). `web`: the privacy policy's sync and handoff
+  text (FEATURES-27.1.md §6.6), which now applies to Windows too.
 
 ## Decisions
 
@@ -234,7 +258,8 @@ decision once its outcome is written into the section, and into DIFF.md on
   Desktop OAuth client. Its client secret, which Google documents as not
   confidential, comes from the gitignored `secrets.json` like the TMDB
   token and is sent only to Google's token endpoint. WebDAV still works.
-  DIFF.md §6.2 answer pending on `main`.
+  DIFF.md §6.2 answer pending on `main`. Since 2026-10-17 the same client
+  asks only for `drive.file` and opens Google's picker (3.20).
 - [ ] **D10 Home-server TLS** (3.12). DIFF.md §6.4: self-signed certificates
   with per-host pinning, or valid HTTPS only.
   **Outcome:** valid HTTPS only. A certificate Windows doesn't trust fails
@@ -248,6 +273,9 @@ decision once its outcome is written into the section, and into DIFF.md on
   from the existing OneDrive watch-state replica, or link them in the UI.
   **Outcome:** kept separate. Signing the storage account out leaves
   replication alone, and turning replication off leaves the source alone.
+  **Since 27.1** the replica is gone; a linked OneDrive account can itself
+  be the sync location (its app folder), and signing it out stops sync until
+  a location is chosen again.
 
 ## Foundation
 
@@ -685,13 +713,14 @@ Google Drive after D9.
   system browser and a loopback redirect (`http://127.0.0.1:<port>`).
   - Refresh tokens are stored with DPAPI; access tokens stay in memory.
   - A single refresh serves every waiting request.
-- [x] Google Drive: Drive API v3 with `drive.readonly` through a Desktop
-  OAuth client and the loopback redirect (D9, revised). The picker's root
-  is My Drive, Shared with me, and Shared drives; shortcuts are followed,
-  Google formats skipped, and files streamed with `alt=media`. A file
-  Google flags as abusive fails with its own message, and a sign-in with
-  Drive access unticked is refused. WebDAV through `rclone serve webdav`
-  still works.
+- [x] Google Drive: Drive API v3 through a Desktop OAuth client and the
+  loopback redirect (D9, revised). Shortcuts are followed, Google formats
+  skipped, and files streamed with `alt=media`. A file Google flags as
+  abusive fails with its own message, and a sign-in with Drive access
+  unticked is refused. WebDAV through `rclone serve webdav` still works.
+  First built on `drive.readonly` with My Drive, Shared with me, and Shared
+  drives to browse; 3.20 replaced both with `drive.file` and Google's
+  picker.
 - [x] NFS: through LibVLC (X.5).
 
 **Stage 4: docs and secrets**
@@ -767,6 +796,321 @@ DIFF.md §3.19.
 - [x] Order: About, Audience, Startup, Audio Enhancement, Subtitles, Skip
   Prompts, App Controls, Sources, Accounts, TMDB Account, then the
   Windows-only Your Archive and Attribution.
+
+### 3.20 Google Drive with drive.file
+
+**Decided 2026-10-17.** Google's Third-Party Data Safety team refused
+`drive.readonly` four times: restricted Drive scopes are only for sync,
+backup, productivity, or security apps, not a video player. Every platform
+moves to the non-sensitive `https://www.googleapis.com/auth/drive.file`.
+People choose the videos Edendale may play in Google's own picker, which
+opens inside the sign-in page (`trigger_onepick=true`), and Edendale reads
+only those files. `drive.file` needs no scope verification, demo video, or
+yearly CASA assessment. Google documents this flow for desktop apps with a
+loopback redirect, which is how Windows already signs in. apple-27.0 built it
+first (its ENHANCEMENT.md J.14); android, meta-horizon, and web follow on
+their own branches. The rules and decisions below are copied from the
+owner's plan so every branch reads the same.
+
+**What changes for people**
+
+| Moment | Before (`drive.readonly`) | After (`drive.file`) |
+|---|---|---|
+| Add Network Source → Google Drive | Sign in, browse My Drive, Shared with me, or Shared drives, pick a folder | Sign in; Google's picker opens on the same page; tick one or more videos |
+| The source | A folder, scanned with its subfolders | One source per account, "Videos you chose", listing every video chosen so far on any device |
+| New episodes | Appear at the next scan | Someone uses **Choose More Videos** and picks them |
+| Removing a video | It comes back at the next scan | It stays hidden on this PC until it's picked again |
+| Consent screen | "See and download all your Google Drive files", unverified-app warning | Access limited to the files the person picks; no warning |
+
+**Spike, 2026-10-17** (a throwaway Mac probe against the real iOS and
+Android clients, with the owner signing in; nothing committed, no code or
+token printed):
+- S1 and S2 pass: the picker opens for the iOS and Android clients. The
+  callback carries `code`, `state`, `scope`, `iss`, and `picked_file_ids`
+  (comma-separated), and the refresh token's scope is `drive.file` alone.
+- S3 open: the Windows Desktop client wasn't on the Mac. It needs a run on
+  Windows (checklist below).
+- S4 pass: grants belong to the Google account and Cloud project, not to
+  one client or token. An older refresh token and other platforms' clients
+  see every later pick.
+- S5 fail: a picked folder grants only itself, never its contents. Files
+  only (D3).
+- S6 partial: `mimetypes=video/*` empties the picker; an explicit list
+  works. Drive's MIME types for `.srt` and `.ass` are still unknown.
+- S8 pass: `about.get` works under `drive.file`, and `permissionId` is the
+  same for every client.
+- S9 pass: `alt=media` with `Range` returns 206.
+
+**Decisions** (all settled by the owner, 2026-10-17; "3.20 D1" in code, to
+tell them from this file's D1–D12)
+- D1, clean break: on the first launch of a `drive.file` build, remove every
+  Google Drive account whose stored scopes lack `drive.file`, with its
+  sources, and say once that Google Drive needs linking again.
+- D2, a per-source hidden-ID list kept on this PC: removing a Drive video
+  from the library adds its file ID; scans skip hidden IDs. Google can't
+  unshare one file with an app. Device-specific library data, never synced.
+- D3, files only (S5).
+- D4 (android only), keep the Custom Tab URL flow.
+- D5, keep `openid` and `email` in the Cloud Console's Data Access until no
+  shipped build requests them.
+
+**Shared rules** (AGENTS.md hard constraint 7: implemented natively here)
+- R1 scope: only `drive.file`. `openid` and `email` go, because the picker
+  flow allows no other scope next to `drive.file`.
+- R2 sign-in URL: the code request with PKCE plus `access_type=offline`,
+  `prompt=consent` (`consent select_account` on a first sign-in),
+  `trigger_onepick=true`, `allow_multiple=true`, and `mimetypes` as an
+  explicit list (`video/mp4,video/x-matroska,video/quicktime,video/x-msvideo,`
+  `video/webm,video/mp2t,video/mpeg,video/x-m4v,video/x-ms-wmv,video/3gpp`).
+  `login_hint=<email>` when choosing more videos. Never `video/*`, never
+  `allow_folder_selection`.
+- R3 callback: read `code`, `state`, `error`, `scope`, and `picked_file_ids`.
+  A cancel changes nothing. A granted scope without `drive.file` shows the
+  "Drive access" error.
+- R4 identity: `about.get?fields=user(permissionId,emailAddress,displayName)`;
+  `permissionId` is the account subject, replacing the ID token's `sub`.
+- R5 tokens: each picker run returns a new refresh token; keep the newest and
+  never revoke the old one. Google's revoke can end the whole grant.
+- R6 source: one Google Drive source per account, rooted at a virtual
+  folder, "Videos you chose": `files.list` with `q=trashed = false`, the
+  same fields and paging, `supportsAllDrives`, `includeItemsFromAllDrives`.
+  Videos are still recognized by extension; folders are skipped.
+- R7 Choose More Videos: on the Google Drive source and in Settings →
+  Accounts. Reruns R2 with `login_hint`, then rescans. Picked IDs only say
+  how many videos were added.
+- R8 no browsing: the My Drive, Shared with me, and Shared drives folders and
+  the folder-picker step go.
+- R9 playback unchanged: `files/<id>?alt=media` with `Range` and
+  `supportsAllDrives`.
+- R10 TVs: no Windows counterpart.
+- R11 existing accounts: D1. R12 removing one video: D2.
+- R13 words: the Link Source note, the errors, and Settings → Accounts in
+  every locale, plus the web privacy policy.
+
+**Windows specifics** (decided while building)
+- The source's URL is `gdrive://<account>/~chosen/Google%20Drive`, the same
+  as Apple's. D1 removes any Google Drive source whose URL isn't that, even
+  when its account is already gone.
+- D1 runs at every launch (`AppServices.MigrateGoogleDriveToFileAccess`),
+  before the window opens. Accounts from older builds stored no scopes, so
+  they count as lacking `drive.file`. Nothing is revoked: the grant is
+  shared with Edendale on other devices (S4). The notice appears in the main
+  window's info bar, only on a launch that removed something.
+- Linking Google Drive for an account that already has a source rescans it
+  instead of adding a second one. Picking an existing account in Add
+  Network Source links what was already chosen, with no picker; Choose
+  More Videos adds to it.
+- Choose More Videos opens the picker in the browser while a small dialog
+  waits; Cancel stops waiting. The source's row then says how many videos
+  were added, until its next scan. If the person switches to another Google
+  account in the picker, nothing is stored and the dialog says which
+  account to use.
+- Choosing a hidden video again unhides it. Hidden IDs live in
+  `library.json` (`hiddenItemIds`) and never enter the OneDrive replica.
+- The browser step's timeout is 10 minutes, up from 5, because choosing
+  videos happens inside it.
+- Signing out in Settings → Accounts still revokes the refresh token at
+  Google (best effort), as before. It's the only path that revokes.
+- Google Drive streams through `MediaInput`, so LibVLC can't see a subtitle
+  file next to the video. Picking `.srt` or `.ass` files (S6) wouldn't load
+  them on Windows yet.
+
+**Tasks**
+
+- [x] `Services/Remote/OAuth.cs`: R1, R2 (per-request parameters for
+  `login_hint`), R3 (`OAuthClient.AuthorizationResponse`), R4, the
+  `drive.file` scope check, and the account a Choose More Videos run leaves
+  (R5).
+- [x] `Services/Remote/CloudSignIn.cs`: sign-in returns the picked IDs;
+  `ChooseMoreVideosAsync` keeps the newest refresh token.
+- [x] `Services/SecretStores.cs`: stored scopes on `CloudAccount`, and D1's
+  account removal.
+- [x] `Services/Remote/GoogleDriveConnector.cs`: R6, R8.
+- [x] `Services/LibraryModels.cs`, `Services/LibraryService.cs`: D2, one
+  source per account, D1's source removal, and the row note.
+- [x] `Controls/LinkSourceDialog.cs`, `Controls/RemoteFolderPicker.cs`,
+  `Controls/SourceActions.cs`, `Controls/AccountsSettings.xaml.cs`,
+  `Pages/DownloadedPage.xaml.cs`, `Pages/SettingsPage.xaml(.cs)`: no folder
+  step for Google Drive; Choose More Videos on both source rows and in
+  Settings → Accounts.
+- [x] `App.xaml.cs`, `MainWindow.xaml(.cs)`, `Services/AppServices.cs`: D1 at
+  launch and the notice.
+- [x] `Core/AppText.cs` and `Strings/*/Resources.resw`: R13 in all 15
+  locales, with apple-27.0's translations of the same copy.
+- [x] `tools/Edendale.Secrets/Program.cs` and the README: `drive.file` plus
+  the Google Picker API. `secrets.example.json` is unchanged: it lists only
+  key names, and the two Google keys stay.
+- [x] Tests: `OAuthTests` (scope, picker URL, Choose More Videos parameters,
+  `picked_file_ids`, `about.get`, token replacement, another account),
+  `CloudListingTests` (the chosen listing, no browsing), `SourceUrlTests`
+  (the root URL, file IDs), and the new `GoogleDriveMigrationTests` (D1, D2).
+- [ ] On a Windows PC with the owner's account (S3):
+  - Add Network Source → Google Drive opens the picker after sign-in, only
+    video files are offered, and the chosen videos appear as "Videos you
+    chose" with no folder step.
+  - Choose More Videos from the Downloaded row, the Settings row, and
+    Settings → Accounts: the picker skips the account chooser, new picks
+    appear, the row says how many, and the source keeps working afterwards
+    (the old refresh token isn't revoked).
+  - Choose More Videos as another Google account is refused with its
+    message, and Cancel in the waiting dialog stops the browser wait.
+  - Remove a Drive movie, rescan, and it stays gone; pick it again and it
+    comes back.
+  - With a `cloud-accounts.bin` and `library.json` from an older build that
+    linked a Drive folder: the account and source go at launch, the notice
+    shows once, and not on the next launch.
+  - Every language: the new strings fit the dialog, rows, and info bar.
+- [ ] `web` privacy policy (not edited here; one new `updated` date in
+  `src/content/privacy/en.md` and its 7 translations):
+  - Google sign-in asks only for `drive.file`; `openid`, `email`, and
+    `drive.readonly` are gone from the apps.
+  - Edendale can see only the files the person picks in Google's picker,
+    opened during sign-in and from Choose More Videos. For those it reads
+    names, sizes, dates, and video durations to list them, and the file
+    bytes to play them. It never uploads, changes, or deletes anything.
+  - Account identity comes from Drive's `about.get` (permission ID, email,
+    display name), not an ID token.
+  - Removing a Drive video from the library keeps its file ID on that
+    device only, so a rescan skips it; it's never synced.
+  - Revoking access at myaccount.google.com/connections, or signing out in
+    Edendale, ends the grant, and Google forgets the picks.
+  - Keep the Limited Use and no-AI-training sentences.
+
+## 27.1 file sync and handoff version 2
+
+FEATURES-27.1.md §5, §6, and §8 and SYNC-PROTOCOL.md on `main` (vectors
+copied from `915b40d`). **Decided by the owner on 2026-11-02:** no Edendale
+server of any kind. Each device writes one JSON file,
+`Edendale/<space-name>/<device-id>.json`, to storage the user owns, reads the
+other devices' files, and merges them locally; the newest `updateTime` wins as
+a whole record. A handoff (version 2 of the Android phone-to-TV one) gives a
+new device the sync location and its login. Open decisions take the
+recommended answers: OneDrive's app folder with `Files.ReadWrite.AppFolder`
+(decision 1), tombstones kept a year (4), and the old replica files left in
+place after the import (3). Work branch: `claude/epic-heyrovsky-291930` from
+`windows-27.0.2`, PR against `windows`. The Apple and Android sessions'
+wire choices are matched (below).
+
+- [x] **S.1 Connector writes:** WebDAV `MKCOL`, `PUT`, `GET`, `DELETE`, and
+  `getetag` in the listing (`WebDavConnector`); SFTP folders made as needed,
+  `<name>.tmp` renamed over the target with posix-rename and a plain-rename
+  fallback, read, and delete (`SftpConnector`); SMB through UNC paths with
+  `System.IO`, after `NetworkShare.TryConnect` with the saved login. Library
+  sources stay read-only.
+- [x] **S.2 Sync location** (`Services/Sync/SyncState.cs`,
+  `SyncLocations.cs`, `Controls/SyncLocationDialog.cs`): one per PC; the
+  OneDrive folder on this PC (root `%OneDrive%\Apps`, see the decisions), the
+  iCloud for Windows folder (`%USERPROFILE%\iCloudDrive`), a picked folder
+  kept in the future-access list, Google Drive under `drive.file`
+  (`files.list`, multipart `files.create`, `files.update` with
+  `uploadType=media`; the handed-over folder ID used as is), OneDrive's app
+  folder (`/me/drive/special/approot`, `PUT …:/content` under 4 MiB, an
+  upload session above, `eTag` stamps), Dropbox (`/Edendale/`, `files/upload`
+  with `mode: overwrite`, `rev` stamps), and saved WebDAV, SMB, and SFTP
+  logins. `OAuth.cs` adds `Files.ReadWrite.AppFolder` and
+  `files.content.write`; `CloudSignIn.SignInForSyncAsync` signs in for the
+  location (Google without the picker, with a `login_hint` from a handoff).
+- [x] **S.3 Device file and merge** (`Core/Sync`): §5 and §6 validation
+  (format, space, device ID against the file name, 8 MiB and 100,000
+  records, integers without fractions, booleans never 0/1, half-step
+  ratings, 10,000-scalar reviews, unique keys), §7 merge with the device
+  tie-break, monotonic stamping, the 24-hour guard, invalid stamps as 0,
+  and tombstones written for 366 days. `UserMediaMerger` follows the §5.3
+  table: whole-record wins on one stamp, ties to the smaller device ID, and
+  cleared records kept as tombstones instead of pruned (`HasState`). Every
+  write in `WatchProgressStore` and `UserMediaStore` takes a stamp from the
+  shared `SyncClock` and this PC's ID; a TMDB pull that changes a value is a
+  new local write (§5.5). Positions travel in seconds (`DurationSeconds` is
+  new on `WatchProgress`), and episodes by show, season, and episode.
+- [x] **S.4 Migration** (`ReplicaMigration`, `App.xaml.cs`): the first launch
+  imports `%OneDrive%\Apps\Edendale\user-media.json` and
+  `watch-progress.json` once, stamped with their own times and this PC's ID,
+  and leaves both files in place. A PC with OneDrive is offered its OneDrive
+  folder once in the info bar. `CloudSyncService` is gone.
+- [x] **S.5 Triggers** (`SyncEngine`): launch, return to the foreground
+  (window activated, at most every 30 s), 10 s after the last change, at once
+  when playback stops or the window is deactivated or closed, and every 5
+  minutes in the foreground. A file whose stamp hasn't changed isn't read
+  again; a read that applies nothing new changes nothing; this PC's file is
+  rewritten only when a stamp or a merge moved. Failures back off 1, 2, 4, 8
+  minutes up to an hour, and a failed listing leaves the stores alone.
+- [x] **S.6 Handoff version 2** (`Core/Handoff`, `Services/Handoff`,
+  `Controls/HandoffDialog.cs`): DNS-SD `_edendale-handoff._tcp` (TXT `v=2`,
+  `name`, `platform`) only while the pairing screen is open; the PC as host
+  with a QR code and a 6-digit code, each 2 minutes and one attempt, and a
+  60-second lockout after 5 failures; the PC as guest with a typed code or a
+  pasted QR link; J-PAKE over P-256 with `edendale-host` and
+  `edendale-guest`; the AES-256-GCM channel with the §9.5 nonce and AAD;
+  `hello`, `confirm`, `role`, `offer`, `result`, and `error`; the Google
+  ecosystem rule; and validation of every received item before it is kept.
+- [x] **S.7 Settings → Sync** (`Controls/SyncSettings.cs`) with the
+  location, space, this PC's name, last sync, warnings, the other devices
+  (Remove, linking the provider's account page for H6), Sync Now, Turn Off
+  (keep or delete this PC's file), and the two handoff entries. Every new
+  string in all 18 `Resources.resw` files; copy shared with the Android
+  branch uses its translations.
+- [x] **S.T1 Tests:** `SyncMergeTests` (Appendix A.1 M1–M8, a convergence
+  property over random devices and read orders, space names, retention),
+  `SyncDeviceFileTests`, `SyncEngineTests` (two devices over a folder,
+  tombstones, episodes, the watchlist flag, backoff, skipped files),
+  `SyncLocationsTests` (Google Drive, OneDrive, Dropbox, and WebDAV against
+  recorded responses; handoff URLs; the scope rules), `ReplicaMigrationTests`,
+  `HandoffCryptoTests` (RFC 7748 §6.1, RFC 5869 A.1, RFC 4231 1–4, A.2 key
+  schedule and QR URI, A.3 nonces), `EcJPakeTests`, `HandoffSessionTests`
+  (whole exchanges over loopback both ways, wrong secret and wrong code before
+  any payload, same role, decline, version, expiry), `HandoffOffersTests`
+  (the offer, the Google rule, validation before storing, a whole PC-to-PC
+  handoff), and `LogHygieneTests` (H10).
+- [x] **S.8 Docs:** README ("Sync between devices", the scopes, privacy), this
+  section, and UPCOMING.md.
+- [ ] **S.D1 On Windows PCs:** every location kind with two PCs (and with an
+  Android or Apple device where one is to hand), resume across devices, the
+  far-future warning, Remove a Device, Turn Off both ways, the OneDrive
+  migration and its one-time offer, an older OneDrive or Dropbox account
+  asked to consent again, the picked folder in a packaged build after a
+  restart (future-access list), and pairing by QR link and by code in both
+  directions, including a wrong code, a stale QR code, the lockout, and
+  Windows Firewall's prompt for the listener. Not run: this branch was
+  written on a Mac (see the PR).
+- [ ] **S.9 Owner:** add `Files.ReadWrite.AppFolder` as a delegated permission
+  on the Entra app registration, and enable `files.content.write` on the
+  Dropbox app. Until then a OneDrive sign-in that asks for the new scope can
+  fail, and every Dropbox sign-in fails (Dropbox refuses unknown scopes).
+  Then the §11 probes: a `drive.file` folder made by another client is listed
+  by the Windows client of the same Cloud project; OneDrive's app folder
+  works for a personal account; the Apple app's iCloud Drive folder appears
+  in iCloud for Windows where the iCloud preset expects it.
+
+**Windows decisions** (made while building; tell the other branches)
+
+- The OneDrive preset's root is `%OneDrive%\Apps`, not `%OneDrive%`, so its
+  files land in `Apps\Edendale\<space>\`: the same folder the OneDrive API
+  location uses on every platform and the one the replica lived in. A plain
+  `%OneDrive%` root would put them in `Edendale\<space>\`, where API devices
+  never look.
+- Google Drive as a location signs in for `drive.file` without the picker:
+  the app's own `Edendale/` folder needs no pick (FEATURES-27.1.md §6.4). An
+  account linked for media is reused as is.
+- The watchlist store stays the watchlist's source of truth; its flag is
+  mirrored into the user-media records (stamped when it changes) so the sync
+  record is whole, and a merged flag flows back into the watchlist store,
+  whose TMDB push carries it on.
+- A device ID is made the first time sync needs one (turning sync on, or the
+  replica import, which §8.4 stamps with this PC's ID). Records written
+  before that carry no device and are signed when the file is written.
+- The migration offer suggests the space `Family` so PCs that all accept it
+  meet; the location dialog otherwise starts empty, as on Apple and Android.
+- Wire details the spec leaves open follow the Apple and Android branches:
+  camelCase `provider` values (`folder`, `googleDrive`, `oneDrive`,
+  `dropbox`, `webdav`, `smb`, `sftp`; Apple's `icloudDrive` is a folder
+  here), `offer.location.url` for a server's root (an SMB location's UNC
+  path travels as `smb://host/share/path/`), and `platform` in the `role`
+  message.
+- Bouncy Castle C# has no elliptic-curve J-PAKE, so `Core/Handoff/EcJPake.cs`
+  ports Bouncy Castle Java's (what Android runs) onto its EC arithmetic.
+  RFC 8236 has no test vectors; the tests check agreement, the round-3
+  failure, forgeries, and Android's wire shape. A test against a real
+  Android device is part of S.D1.
 
 ## Video enhancement (Option A)
 
@@ -1232,9 +1576,15 @@ From DIFF.md §5. Tick a line when its cases are ported to
 - [x] `LibrarySectionsTests` (3.15)
 - [x] `ConnectorTests`, `CloudListingTests`, `OAuthTests`, and
   `RemoteByteSourceTests` (3.12)
+- [x] `GoogleDriveMigrationTests`, plus the `drive.file` cases in
+  `OAuthTests`, `CloudListingTests`, and `SourceUrlTests` (3.20)
 - [x] `SFTPProtocolTests`: fingerprint cases only (3.12)
 - [x] `BufferedByteSourceTests` (3.13)
 - [x] Windows only: `GpuCapabilitiesTests` and `VideoEnhancementOptionsTests`
   (E.1, E.2)
 - [x] Windows only: `SavedSubtitlesTests` (X.8)
 - [x] Windows only: `FrameGenerationTests` (G.1)
+- [x] 27.1, every branch: `SyncMergeTests` (Appendix A.1), `SyncDeviceFileTests`,
+  `SyncEngineTests`, `SyncLocationsTests`, `ReplicaMigrationTests` (Windows
+  only), `HandoffCryptoTests` (Appendix A.2–A.4), `EcJPakeTests`,
+  `HandoffSessionTests`, `HandoffOffersTests`, and `LogHygieneTests`

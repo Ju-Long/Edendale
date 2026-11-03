@@ -149,7 +149,7 @@
     <value>SEU ARQUIVO</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>O índice da biblioteca permanece neste dispositivo. O progresso de exibição, os favoritos e as avaliações também são armazenados aqui e replicados no seu próprio OneDrive quando configurado — nenhum servidor de terceiros jamais é envolvido. Sua lista de interesse é armazenada aqui e sincronizada com sua conta TMDB quando você conecta uma.</value>
+    <value>O índice da biblioteca permanece neste dispositivo. O progresso de exibição, os favoritos, sua lista de interesse e as avaliações também são armazenados aqui e, quando você ativa a sincronização, passam por uma pasta ou conta que você escolhe — o Edendale não tem servidores. Sua lista de interesse também é sincronizada com sua conta TMDB quando você conecta uma.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Pasta de dados</value>
@@ -1620,21 +1620,345 @@ ESTÁ SILENCIOSA</value>
     <value>Funciona com vídeos de até 30 fps e até 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Seu navegador abre para entrar no Google. O Edendale pede ao Google acesso somente leitura ao seu Drive. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Meu Drive</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Compartilhados comigo</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Drives compartilhados</value>
+    <value>Seu navegador abre para entrar no Google. Depois de entrar, o seletor do Google é aberto: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses vídeos, se conecta apenas a partir deste dispositivo e nunca envia nem altera nada.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>O Google Drive marcou este arquivo como potencialmente nocivo, então ele não pode ser transmitido.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>O Edendale precisa de permissão para ver seus arquivos do Google Drive. Inicie a sessão novamente e deixe o acesso ao Drive selecionado.</value>
+    <value>O Edendale precisa de acesso aos arquivos do Google Drive que você escolher. Inicie a sessão novamente e deixe esse acesso selecionado.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Vídeos que você escolheu</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Escolher Mais Vídeos</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>ESCOLHER MAIS VÍDEOS</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>ESCOLHER MAIS VÍDEOS</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>{0} vídeo adicionado.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>{0} vídeos adicionados.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>Os vídeos que você escolheu já estavam na sua biblioteca.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Vincular o Google Drive Novamente</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Agora o Edendale vê apenas os vídeos do Google Drive que você escolher, então suas fontes anteriores do Google Drive foram removidas. Abra Adicionar Fonte de Rede → Google Drive, entre e escolha seus vídeos.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>Esses vídeos foram escolhidos com {0}. Use Escolher Mais Vídeos novamente com {1}.</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>SINCRONIZAÇÃO</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>Mantenha progresso, favoritos, lista para assistir e avaliações iguais em todos os seus dispositivos por meio de uma pasta ou conta sua. O Edendale não tem servidor: cada dispositivo grava um arquivo legível.</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>ESCOLHER UM LOCAL…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>EMPARELHAR COM OUTRO DISPOSITIVO…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>CONFIGURAR OUTRO DISPOSITIVO…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>Configurar outro dispositivo</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>Emparelhar com outro dispositivo</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>Espaço</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>Este dispositivo</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>Última sincronização {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>Ainda não sincronizado</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>Sincronizando…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>SINCRONIZAR AGORA</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>DESATIVAR</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>Remover um dispositivo</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>Entre novamente em {0} para que o Edendale possa gravar seus arquivos de sincronização lá.</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>O login deste local não está mais neste dispositivo. Escolha o local novamente.</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>Atualize o Edendale para sincronizar com {0}.</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>O relógio de {0} está mais de um dia adiantado; as últimas alterações não foram aplicadas.</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>A última sincronização falhou: {0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>Qualquer pessoa que possa abrir esta pasta pode ler seu histórico. Os arquivos contêm títulos por ID do TMDB, progresso, avaliações, lista para assistir, favoritos e resenhas; nunca sua biblioteca, caminhos de arquivo ou logins.</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>Escolher um local</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>Nome do espaço</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>Dispositivos que apontam para o mesmo local e o mesmo nome de espaço sincronizam entre si. Até 64 caracteres, sem / \ : * ? " &lt; &gt; |.</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>Uma pasta neste dispositivo</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>Escolher pasta</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>Pasta em {0}</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>Desativar a sincronização?</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>Seu histórico fica neste dispositivo. Os arquivos em {0} também ficam, a menos que você exclua o arquivo deste dispositivo.</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>Desativar e excluir meu arquivo</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>Desativar e manter o arquivo</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>Remover um dispositivo</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>Excluir o arquivo de um dispositivo impede que o histórico dele chegue aos outros. Esse dispositivo mantém o login e a cópia local até você revogar o acesso do Edendale no provedor ou alterar a senha do servidor.</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>Gerenciar acesso em {0}</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>Nenhum outro dispositivo gravou neste espaço ainda.</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>Escolha a pasta que este dispositivo deve usar para o espaço “{0}”.</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>Entre no Google como {0} para usar o espaço “{1}”.</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>Para que lado os logins devem ir?</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>Enviar deste dispositivo</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>Receber neste dispositivo</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>No outro dispositivo, abra Ajustes → Sincronização → Emparelhar com outro dispositivo e leia este código com a câmera dele ou digite o número.</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>Ou digite este código no outro dispositivo</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>Aguardando o outro dispositivo…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>Conectado a {0}…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>Muitos códigos errados. Um novo código aparece em um minuto.</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>Código QR para emparelhar outro dispositivo com o Edendale</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>Dispositivos encontrados</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>Procurando dispositivos nesta rede…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>Ou digite o endereço mostrado lá</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>Enviar para {0}?</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>Local de sincronização: {0}, espaço “{1}”</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>Espaço “{0}” (o outro dispositivo escolhe a própria pasta)</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>Contas</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>Logins salvos</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>Nada para enviar ainda: ative a sincronização ou vincule uma conta primeiro.</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>Enviar</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>Enviado para {0}.</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>Recebido de {0}.</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>O código QR expirou ou estava errado. Mostre um novo e tente de novo.</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>Os dois dispositivos escolheram enviar. Escolha quem envia em um deles.</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>O outro dispositivo está ocupado com outro emparelhamento.</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>{0} item armazenado.</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>{0} itens armazenados.</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0} item não pôde ser usado.</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0} itens não puderam ser usados.</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>Pasta do OneDrive neste PC</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>Pasta do iCloud Drive neste PC</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>outro dispositivo</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>Outro dispositivo</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>Excluir</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>Manter</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>Sincronizar com sua pasta do OneDrive</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>Escolher OneDrive</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>Sincroniza por {0}</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>Como os dispositivos devem emparelhar?</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>Mostrar um código QR e um código neste PC</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>Continuar</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>Código ou link</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>Endereço deste PC: {0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>Conectando…</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>O outro dispositivo não respondeu a tempo.</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>O outro dispositivo recusou.</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>O outro dispositivo precisa de uma versão mais recente do Edendale.</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>Não foi possível ler o arquivo de sincronização de {0}, então ele foi ignorado.</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>O arquivo de sincronização de {0} é grande demais, então ele foi ignorado.</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>Vincule este servidor em Fontes primeiro, para que o login e, no SFTP, a chave de host fiquem salvos neste PC.</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>Para sincronizar por uma conta na nuvem ou um servidor, vincule-o primeiro em Fontes.</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>Excluir o arquivo de sincronização antigo deste PC?</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>Este PC agora sincroniza em outro lugar. O arquivo dele em {0}, espaço “{1}”, fica lá a menos que você o exclua.</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>O Edendale agora sincroniza o histórico por uma pasta ou conta que você escolhe. O que ele guardava no OneDrive já está neste PC. Escolha sua pasta do OneDrive para manter seus PCs em dia.</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>Digitar o código ou o link do outro dispositivo</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>Escolha o outro dispositivo abaixo e digite o código que ele mostra, ou cole o link do código QR dele.</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>Digite o código de 6 dígitos ou cole o link do código QR.</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>Escolha o outro dispositivo na lista ou digite o endereço que ele mostra.</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>O código não confere. Verifique-o no outro dispositivo e tente de novo.</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>Não foi possível conectar ao outro dispositivo. Verifique se os dois estão na mesma rede.</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>O emparelhamento não terminou. Tente de novo.</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0} entra no Google por conta própria: logins do Google não passam entre tipos diferentes de dispositivo.</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>REMOVER</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>ENTRAR</value>
   </data>
 </root>

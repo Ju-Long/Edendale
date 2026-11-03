@@ -149,7 +149,7 @@
     <value>DEIN ARCHIV</value>
   </data>
   <data name="SettingsArchivePrivacyNote.Text" xml:space="preserve">
-    <value>Der Bibliotheksindex verbleibt auf diesem Gerät. Wiedergabefortschritt, Favoriten und Bewertungen werden ebenfalls hier gespeichert und in dein eigenes OneDrive repliziert, sofern eingerichtet – es ist niemals ein Drittanbieter-Server beteiligt. Deine Watchlist wird hier gespeichert und mit deinem TMDB-Konto abgeglichen, sobald du eines verbindest.</value>
+    <value>Der Bibliotheksindex verbleibt auf diesem Gerät. Wiedergabefortschritt, Favoriten, deine Watchlist und Bewertungen werden ebenfalls hier gespeichert und, wenn du die Synchronisierung einschaltest, über einen Ordner oder ein Konto deiner Wahl übertragen – Edendale betreibt keinen Server. Deine Watchlist wird außerdem mit deinem TMDB-Konto abgeglichen, sobald du eines verbindest.</value>
   </data>
   <data name="SettingsDataFolderLabel.Text" xml:space="preserve">
     <value>Datenordner</value>
@@ -1620,21 +1620,345 @@ IST STUMM</value>
     <value>Funktioniert bei Videos mit höchstens 30 fps bis 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Dein Browser öffnet die Google-Anmeldung. Edendale bittet Google um Lesezugriff auf dein Drive. Die Verbindung erfolgt nur von diesem Gerät aus. Edendale liest Ordnerlisten und die Videos, die du wiedergibst, und lädt niemals etwas hoch oder ändert etwas.</value>
-  </data>
-  <data name="GoogleDrive_MyDrive" xml:space="preserve">
-    <value>Meine Ablage</value>
-  </data>
-  <data name="GoogleDrive_SharedWithMe" xml:space="preserve">
-    <value>Für mich freigegeben</value>
-  </data>
-  <data name="GoogleDrive_SharedDrives" xml:space="preserve">
-    <value>Geteilte Ablagen</value>
+    <value>Dein Browser öffnet die Google-Anmeldung. Nach der Anmeldung öffnet sich die Auswahl von Google: Wähle die Videos aus, die Edendale wiedergeben darf. Edendale sieht nur diese, verbindet sich nur von diesem Gerät aus und lädt niemals etwas hoch oder ändert etwas.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive hat diese Datei als potenziell schädlich markiert, daher kann sie nicht gestreamt werden.</value>
   </data>
   <data name="OAuth_DriveAccessMissing" xml:space="preserve">
-    <value>Edendale benötigt die Berechtigung, deine Google Drive-Dateien zu sehen. Melde dich erneut an und lass den Drive-Zugriff ausgewählt.</value>
+    <value>Edendale benötigt Zugriff auf die Google Drive-Dateien, die du auswählst. Melde dich erneut an und lass diesen Zugriff ausgewählt.</value>
+  </data>
+  <data name="GoogleDrive_ChosenFolder" xml:space="preserve">
+    <value>Von dir ausgewählte Videos</value>
+  </data>
+  <data name="GoogleDrive_ChooseMoreTitle" xml:space="preserve">
+    <value>Weitere Videos auswählen</value>
+  </data>
+  <data name="Account_ChooseMoreVideos" xml:space="preserve">
+    <value>WEITERE VIDEOS AUSWÄHLEN</value>
+  </data>
+  <data name="SourceChooseMoreLabel.Text" xml:space="preserve">
+    <value>WEITERE VIDEOS AUSWÄHLEN</value>
+  </data>
+  <data name="GoogleDrive_AddedOne" xml:space="preserve">
+    <value>{0} Video hinzugefügt.</value>
+  </data>
+  <data name="GoogleDrive_AddedOther" xml:space="preserve">
+    <value>{0} Videos hinzugefügt.</value>
+  </data>
+  <data name="GoogleDrive_AlreadyInLibrary" xml:space="preserve">
+    <value>Die ausgewählten Videos waren bereits in deiner Mediathek.</value>
+  </data>
+  <data name="GoogleDrive_RelinkTitle" xml:space="preserve">
+    <value>Google Drive erneut verknüpfen</value>
+  </data>
+  <data name="GoogleDrive_RelinkMessage" xml:space="preserve">
+    <value>Edendale sieht jetzt nur noch die Google Drive-Videos, die du auswählst. Deshalb wurden deine bisherigen Google Drive-Quellen entfernt. Öffne „Netzwerkquelle hinzufügen“ → Google Drive, melde dich an und wähle deine Videos aus.</value>
+  </data>
+  <data name="OAuth_DifferentAccount" xml:space="preserve">
+    <value>Diese Videos wurden als {0} ausgewählt. Verwende „Weitere Videos auswählen“ erneut mit {1}.</value>
+  </data>
+  <data name="Sync_Header" xml:space="preserve">
+    <value>SYNCHRONISIERUNG</value>
+  </data>
+  <data name="Sync_OffNote" xml:space="preserve">
+    <value>Halte Wiedergabefortschritt, Favoriten, Merkliste und Bewertungen auf allen deinen Geräten gleich, über einen Ordner oder ein Konto, das dir gehört. Edendale betreibt keinen Server: Jedes Gerät schreibt eine lesbare Datei.</value>
+  </data>
+  <data name="Sync_ChooseLocationButton" xml:space="preserve">
+    <value>SPEICHERORT WÄHLEN…</value>
+  </data>
+  <data name="Sync_PairButton" xml:space="preserve">
+    <value>MIT ANDEREM GERÄT KOPPELN…</value>
+  </data>
+  <data name="Sync_SetUpButton" xml:space="preserve">
+    <value>ANDERES GERÄT EINRICHTEN…</value>
+  </data>
+  <data name="Sync_SetUpTitle" xml:space="preserve">
+    <value>Anderes Gerät einrichten</value>
+  </data>
+  <data name="Pairing_Title" xml:space="preserve">
+    <value>Mit anderem Gerät koppeln</value>
+  </data>
+  <data name="Sync_LocationLabel" xml:space="preserve">
+    <value>Speicherort</value>
+  </data>
+  <data name="Sync_SpaceLabel" xml:space="preserve">
+    <value>Bereich</value>
+  </data>
+  <data name="Sync_DeviceLabel" xml:space="preserve">
+    <value>Dieses Gerät</value>
+  </data>
+  <data name="Sync_LastSynced" xml:space="preserve">
+    <value>Zuletzt synchronisiert {0}</value>
+  </data>
+  <data name="Sync_NeverSynced" xml:space="preserve">
+    <value>Noch nicht synchronisiert</value>
+  </data>
+  <data name="Sync_Syncing" xml:space="preserve">
+    <value>Synchronisiere…</value>
+  </data>
+  <data name="Sync_NowButton" xml:space="preserve">
+    <value>JETZT SYNCHRONISIEREN</value>
+  </data>
+  <data name="Sync_TurnOffButton" xml:space="preserve">
+    <value>AUSSCHALTEN</value>
+  </data>
+  <data name="Sync_RemoveDevice" xml:space="preserve">
+    <value>Gerät entfernen</value>
+  </data>
+  <data name="Sync_NeedsConsent" xml:space="preserve">
+    <value>Melde dich erneut bei {0} an, damit Edendale dort seine Sync-Dateien schreiben kann.</value>
+  </data>
+  <data name="Sync_LoginMissing" xml:space="preserve">
+    <value>Die Anmeldung für diesen Speicherort ist auf diesem Gerät nicht mehr vorhanden. Wähle den Speicherort erneut.</value>
+  </data>
+  <data name="Sync_WarningNewerFormat" xml:space="preserve">
+    <value>Aktualisiere Edendale, um mit {0} zu synchronisieren.</value>
+  </data>
+  <data name="Sync_WarningClockAhead" xml:space="preserve">
+    <value>Die Uhr von {0} geht mehr als einen Tag vor; die letzten Änderungen wurden nicht übernommen.</value>
+  </data>
+  <data name="Sync_Failed" xml:space="preserve">
+    <value>Die letzte Synchronisierung ist fehlgeschlagen: {0}</value>
+  </data>
+  <data name="Sync_PrivacyNote" xml:space="preserve">
+    <value>Wer diesen Ordner öffnen kann, kann deinen Wiedergabeverlauf lesen. Die Dateien enthalten Titel als TMDB-ID, Fortschritt, Bewertungen, Merkliste, Favoriten und Rezensionen; niemals deine Mediathek, Dateipfade oder Anmeldungen.</value>
+  </data>
+  <data name="Sync_DialogTitle" xml:space="preserve">
+    <value>Speicherort wählen</value>
+  </data>
+  <data name="Sync_SpaceHint" xml:space="preserve">
+    <value>Name des Bereichs</value>
+  </data>
+  <data name="Sync_SpaceHelp" xml:space="preserve">
+    <value>Geräte mit demselben Speicherort und Bereichsnamen synchronisieren sich miteinander. Bis zu 64 Zeichen, ohne / \ : * ? " &lt; &gt; |.</value>
+  </data>
+  <data name="Sync_ProviderFolder" xml:space="preserve">
+    <value>Ein Ordner auf diesem Gerät</value>
+  </data>
+  <data name="Sync_PickFolder" xml:space="preserve">
+    <value>Ordner wählen</value>
+  </data>
+  <data name="Sync_ServerFolderLabel" xml:space="preserve">
+    <value>Ordner auf {0}</value>
+  </data>
+  <data name="Sync_TurnOffTitle" xml:space="preserve">
+    <value>Synchronisierung ausschalten?</value>
+  </data>
+  <data name="Sync_TurnOffMessage" xml:space="preserve">
+    <value>Dein Wiedergabeverlauf bleibt auf diesem Gerät. Die Dateien in {0} bleiben ebenfalls, sofern du die Datei dieses Geräts nicht löschst.</value>
+  </data>
+  <data name="Sync_TurnOffDelete" xml:space="preserve">
+    <value>Ausschalten und meine Datei löschen</value>
+  </data>
+  <data name="Sync_TurnOffKeep" xml:space="preserve">
+    <value>Ausschalten, Datei behalten</value>
+  </data>
+  <data name="Sync_RemoveDeviceTitle" xml:space="preserve">
+    <value>Gerät entfernen</value>
+  </data>
+  <data name="Sync_RemoveDeviceMessage" xml:space="preserve">
+    <value>Das Löschen der Datei eines Geräts verhindert, dass sein Verlauf die anderen erreicht. Das Gerät behält seine Anmeldung und seine lokale Kopie, bis du Edendales Zugriff beim Anbieter widerrufst oder das Serverpasswort änderst.</value>
+  </data>
+  <data name="Sync_ManageAccess" xml:space="preserve">
+    <value>Zugriff bei {0} verwalten</value>
+  </data>
+  <data name="Sync_NoOtherDevices" xml:space="preserve">
+    <value>Noch kein anderes Gerät hat in diesen Bereich geschrieben.</value>
+  </data>
+  <data name="Sync_FolderRelink" xml:space="preserve">
+    <value>Wähle den Ordner, den dieses Gerät für den Bereich „{0}“ verwenden soll.</value>
+  </data>
+  <data name="Sync_GoogleRelink" xml:space="preserve">
+    <value>Melde dich als {0} bei Google an, um den Bereich „{1}“ zu verwenden.</value>
+  </data>
+  <data name="Pairing_RoleQuestion" xml:space="preserve">
+    <value>In welche Richtung sollen die Anmeldungen gehen?</value>
+  </data>
+  <data name="Pairing_RoleSend" xml:space="preserve">
+    <value>Von diesem Gerät senden</value>
+  </data>
+  <data name="Pairing_RoleReceive" xml:space="preserve">
+    <value>Auf diesem Gerät empfangen</value>
+  </data>
+  <data name="Pairing_Instructions" xml:space="preserve">
+    <value>Öffne auf dem anderen Gerät Einstellungen → Synchronisierung → Mit anderem Gerät koppeln, scanne dann diesen Code mit dessen Kamera oder gib die Nummer ein.</value>
+  </data>
+  <data name="Pairing_CodeLabel" xml:space="preserve">
+    <value>Oder gib diesen Code auf dem anderen Gerät ein</value>
+  </data>
+  <data name="Pairing_Waiting" xml:space="preserve">
+    <value>Warte auf das andere Gerät…</value>
+  </data>
+  <data name="Pairing_Connected" xml:space="preserve">
+    <value>Verbunden mit {0}…</value>
+  </data>
+  <data name="Pairing_LockedOut" xml:space="preserve">
+    <value>Zu viele falsche Codes. In einer Minute erscheint ein neuer Code.</value>
+  </data>
+  <data name="Pairing_QrDescription" xml:space="preserve">
+    <value>QR-Code zum Koppeln eines anderen Edendale-Geräts</value>
+  </data>
+  <data name="Pairing_DevicesFound" xml:space="preserve">
+    <value>Gefundene Geräte</value>
+  </data>
+  <data name="Pairing_Searching" xml:space="preserve">
+    <value>Suche Geräte in diesem Netzwerk…</value>
+  </data>
+  <data name="Pairing_AddressLabel" xml:space="preserve">
+    <value>Oder gib die dort angezeigte Adresse ein</value>
+  </data>
+  <data name="Pairing_ConfirmSendTitle" xml:space="preserve">
+    <value>An {0} senden?</value>
+  </data>
+  <data name="Pairing_SendLocation" xml:space="preserve">
+    <value>Sync-Speicherort: {0}, Bereich „{1}“</value>
+  </data>
+  <data name="Pairing_SendLocationFolder" xml:space="preserve">
+    <value>Bereich „{0}“ (das andere Gerät wählt seinen eigenen Ordner)</value>
+  </data>
+  <data name="Pairing_SendAccounts" xml:space="preserve">
+    <value>Konten</value>
+  </data>
+  <data name="Pairing_SendLogins" xml:space="preserve">
+    <value>Gespeicherte Anmeldungen</value>
+  </data>
+  <data name="Pairing_NothingToSend" xml:space="preserve">
+    <value>Noch nichts zu senden: Schalte zuerst die Synchronisierung ein oder verknüpfe ein Konto.</value>
+  </data>
+  <data name="Pairing_Send" xml:space="preserve">
+    <value>Senden</value>
+  </data>
+  <data name="Pairing_Sent" xml:space="preserve">
+    <value>An {0} gesendet.</value>
+  </data>
+  <data name="Pairing_Received" xml:space="preserve">
+    <value>Von {0} empfangen.</value>
+  </data>
+  <data name="Pairing_WrongSecret" xml:space="preserve">
+    <value>Der QR-Code ist abgelaufen oder war falsch. Zeige einen neuen an und versuche es erneut.</value>
+  </data>
+  <data name="Pairing_SameRole" xml:space="preserve">
+    <value>Beide Geräte wollen senden. Lege auf einem Gerät fest, wer sendet.</value>
+  </data>
+  <data name="Pairing_Busy" xml:space="preserve">
+    <value>Das andere Gerät ist mit einer anderen Kopplung beschäftigt.</value>
+  </data>
+  <data name="Pairing_StoredOne" xml:space="preserve">
+    <value>{0} Element gespeichert.</value>
+  </data>
+  <data name="Pairing_StoredOther" xml:space="preserve">
+    <value>{0} Elemente gespeichert.</value>
+  </data>
+  <data name="Pairing_FailedOne" xml:space="preserve">
+    <value>{0} Element konnte nicht verwendet werden.</value>
+  </data>
+  <data name="Pairing_FailedOther" xml:space="preserve">
+    <value>{0} Elemente konnten nicht verwendet werden.</value>
+  </data>
+  <data name="Sync_FolderOneDrive" xml:space="preserve">
+    <value>OneDrive-Ordner auf diesem PC</value>
+  </data>
+  <data name="Sync_FolderICloud" xml:space="preserve">
+    <value>iCloud Drive-Ordner auf diesem PC</value>
+  </data>
+  <data name="Sync_AnotherDevice" xml:space="preserve">
+    <value>einem anderen Gerät</value>
+  </data>
+  <data name="Sync_UnknownPlatform" xml:space="preserve">
+    <value>Anderes Gerät</value>
+  </data>
+  <data name="Sync_WarningSkipped" xml:space="preserve">
+    <value>Die Sync-Datei von {0} konnte nicht gelesen werden und wurde übersprungen.</value>
+  </data>
+  <data name="Sync_WarningTooLarge" xml:space="preserve">
+    <value>Die Sync-Datei von {0} ist zu groß und wurde übersprungen.</value>
+  </data>
+  <data name="Sync_ServerNeedsLogin" xml:space="preserve">
+    <value>Verknüpfe diesen Server zuerst unter Quellen, damit seine Anmeldung und bei SFTP sein Hostschlüssel auf diesem PC gespeichert sind.</value>
+  </data>
+  <data name="Sync_ServersHint" xml:space="preserve">
+    <value>Um über ein Cloud-Konto oder einen Server zu synchronisieren, verknüpfe es zuerst unter Quellen.</value>
+  </data>
+  <data name="Sync_SwitchTitle" xml:space="preserve">
+    <value>Alte Sync-Datei dieses PCs löschen?</value>
+  </data>
+  <data name="Sync_SwitchMessage" xml:space="preserve">
+    <value>Dieser PC synchronisiert jetzt woanders. Seine Datei in {0}, Bereich „{1}“, bleibt dort, bis du sie löschst.</value>
+  </data>
+  <data name="Sync_SwitchDelete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="Sync_SwitchKeep" xml:space="preserve">
+    <value>Behalten</value>
+  </data>
+  <data name="Sync_OfferTitle" xml:space="preserve">
+    <value>Mit deinem OneDrive-Ordner synchronisieren</value>
+  </data>
+  <data name="Sync_OfferMessage" xml:space="preserve">
+    <value>Edendale synchronisiert den Wiedergabeverlauf jetzt über einen Ordner oder ein Konto deiner Wahl. Was in OneDrive lag, ist bereits auf diesem PC. Wähle deinen OneDrive-Ordner, damit deine PCs auf dem gleichen Stand bleiben.</value>
+  </data>
+  <data name="Sync_OfferAction" xml:space="preserve">
+    <value>OneDrive wählen</value>
+  </data>
+  <data name="Settings_SyncsThrough" xml:space="preserve">
+    <value>Synchronisiert über {0}</value>
+  </data>
+  <data name="Pairing_ModeQuestion" xml:space="preserve">
+    <value>Wie sollen sich die Geräte koppeln?</value>
+  </data>
+  <data name="Pairing_ModeShow" xml:space="preserve">
+    <value>QR-Code und Code auf diesem PC anzeigen</value>
+  </data>
+  <data name="Pairing_ModeEnter" xml:space="preserve">
+    <value>Code oder Link vom anderen Gerät eingeben</value>
+  </data>
+  <data name="Pairing_Continue" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="Pairing_GuestHint" xml:space="preserve">
+    <value>Wähle unten das andere Gerät und gib den angezeigten Code ein, oder füge den Link aus seinem QR-Code ein.</value>
+  </data>
+  <data name="Pairing_CodeOrLink" xml:space="preserve">
+    <value>Code oder Link</value>
+  </data>
+  <data name="Pairing_CodeInvalid" xml:space="preserve">
+    <value>Gib den 6-stelligen Code ein oder füge den Link aus dem QR-Code ein.</value>
+  </data>
+  <data name="Pairing_PickDevice" xml:space="preserve">
+    <value>Wähle das andere Gerät in der Liste oder gib die dort angezeigte Adresse ein.</value>
+  </data>
+  <data name="Pairing_HostAddress" xml:space="preserve">
+    <value>Adresse dieses PCs: {0}</value>
+  </data>
+  <data name="Pairing_Connecting" xml:space="preserve">
+    <value>Verbinden…</value>
+  </data>
+  <data name="Pairing_WrongCode" xml:space="preserve">
+    <value>Der Code stimmte nicht. Prüfe ihn auf dem anderen Gerät und versuche es erneut.</value>
+  </data>
+  <data name="Pairing_Timeout" xml:space="preserve">
+    <value>Das andere Gerät hat nicht rechtzeitig geantwortet.</value>
+  </data>
+  <data name="Pairing_Declined" xml:space="preserve">
+    <value>Das andere Gerät hat abgelehnt.</value>
+  </data>
+  <data name="Pairing_ConnectionFailed" xml:space="preserve">
+    <value>Keine Verbindung zum anderen Gerät. Stelle sicher, dass beide im selben Netzwerk sind.</value>
+  </data>
+  <data name="Pairing_Version" xml:space="preserve">
+    <value>Das andere Gerät braucht eine neuere Version von Edendale.</value>
+  </data>
+  <data name="Pairing_Failed" xml:space="preserve">
+    <value>Die Kopplung wurde nicht abgeschlossen. Versuche es erneut.</value>
+  </data>
+  <data name="Pairing_GoogleSignsInAgain" xml:space="preserve">
+    <value>{0} meldet sich selbst bei Google an: Google-Anmeldungen lassen sich nicht zwischen verschiedenen Gerätearten übertragen.</value>
+  </data>
+  <data name="Sync_RemoveDeviceButton" xml:space="preserve">
+    <value>ENTFERNEN</value>
+  </data>
+  <data name="Sync_SignInButton" xml:space="preserve">
+    <value>ANMELDEN</value>
   </data>
 </root>

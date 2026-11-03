@@ -161,8 +161,9 @@
             </SplitView>
         </Grid>
 
-        <!-- Feedback for rejected external links / unsupported files. Sits
-             above the player so messages raised during playback are seen. -->
+        <!-- Feedback for rejected external links / unsupported files, and
+             one-time notices (the Google Drive relink). Sits above the player
+             so messages raised during playback are seen. -->
         <InfoBar
             x:Name="ActivationBar"
             Grid.Row="1"

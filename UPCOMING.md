@@ -217,7 +217,10 @@ case.
 
 - [ ] The `SettingsNetworkNote` string (all `Strings\*\Resources.resw`)
   says trailers use YouTube's privacy-enhanced embed. The app actually
-  opens youtube.com in the browser when the user clicks a trailer.
+  opens youtube.com in the browser when the user clicks a trailer. Since
+  27.1 it must also name the sync location the user chooses and the other
+  devices reached while a pairing screen is open (README "Data and
+  privacy" already does). Fix both in one pass over the 18 files.
 - [ ] README says Edendale ships outside the Microsoft Store because of
   `broadFileSystemAccess`. This contradicts the Store submission. Update it,
   and keep the written justification for that restricted capability ready
@@ -225,8 +228,16 @@ case.
 - [ ] `Directory.Build.props` still has `VersionPrefix` 26.0.0 while the
   manifest is 27.0.1.0.
 - [ ] Confirm before advertising: the release build has client IDs for
-  Google Drive, OneDrive, and Dropbox and a Wyzie key. Google Drive needs
-  Google's app verification before anyone other than listed test users can
-  sign in.
+  Google Drive, OneDrive, and Dropbox and a Wyzie key. Google Drive now
+  asks only for the non-sensitive `drive.file` (ENHANCEMENT.md 3.20), so it
+  needs no scope verification, but the consent screen must be in
+  production before anyone other than listed test users can sign in.
+- [ ] Before a 27.1 build ships: the Entra app registration lists the
+  delegated `Files.ReadWrite.AppFolder`, and the Dropbox App Console has
+  `files.content.write` enabled (ENHANCEMENT.md S.9). 27.1 asks for both;
+  Dropbox refuses every sign-in until its scope is enabled.
+- [ ] 27.1 privacy: the Microsoft Store listing's privacy details and the
+  `web` privacy policy describe sync on the user's own storage and the
+  handoff (FEATURES-27.1.md §6.6, §9).
 - [ ] Screenshots: replace the Store screenshot of the old player with the
   27.0 player.
