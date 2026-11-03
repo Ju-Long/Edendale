@@ -93,10 +93,12 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock
                                 x:Uid="SettingsYoungAudienceLabel"
+                                x:Name="AudienceLabel"
                                 Text="Young Audience Friendly"
                                 Style="{StaticResource SettingsRowLabelTextStyle}"
                                 Foreground="{StaticResource EdendaleTextPrimaryBrush}"
                                 VerticalAlignment="Center" />
+                            <!-- Without a header the switch has no name of its own: it takes its label's. -->
                             <ToggleSwitch
                                 Grid.Column="1"
                                 x:Name="AudienceToggle"
@@ -105,6 +107,7 @@
                                 MinWidth="0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
+                                AutomationProperties.Name="{x:Bind AudienceLabel.Text}"
                                 Toggled="AudienceToggle_Toggled" />
                         </Grid>
 
@@ -131,6 +134,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock
                                 x:Uid="SettingsLaunchAtStartupLabel"
+                                x:Name="StartupLabel"
                                 Text="Launch Edendale at startup"
                                 Style="{StaticResource SettingsRowLabelTextStyle}"
                                 Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
@@ -142,6 +146,7 @@
                                 MinWidth="0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
+                                AutomationProperties.Name="{x:Bind StartupLabel.Text}"
                                 Toggled="StartupToggle_Toggled" />
                         </Grid>
 
