@@ -2047,7 +2047,7 @@ RFC 4231 1–4; a whole sender/receiver exchange in memory; the Google rule.
 | K.4 | Handoff v2: QR pairing, channel, session, offer/receive | [x] |
 | K.5 | Settings → Sync, location setup, handoff screens | [x] |
 | K.6 | Unit tests and vectors; all-platform build | [x] |
-| — | Copy in all 18 locales | [ ] (English only in this change) |
+| — | Copy in all 18 locales (113 keys) | [x] |
 | — | Entra `Files.ReadWrite.AppFolder`, Dropbox `files.content.write` (owner) | [ ] |
 | — | CloudKit schema deployment (owner) | [ ] |
 | — | Hardware run: QR pairing, providers, iCloud Drive, background refresh | [ ] |
