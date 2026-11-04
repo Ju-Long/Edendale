@@ -533,7 +533,7 @@ public static class RemoteHttp
     {
         // Each request sets its own timeout.
         Timeout = Timeout.InfiniteTimeSpan,
-        DefaultRequestHeaders = { { "User-Agent", "Edendale-Windows/27.0" } },
+        DefaultRequestHeaders = { { "User-Agent", "Edendale-Windows/27.1" } },
     };
 
     public static SocketsHttpHandler CreateHandler(ICredentials? credentials) => new()

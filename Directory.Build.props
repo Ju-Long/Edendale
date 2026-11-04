@@ -21,7 +21,7 @@
     <Company>Edendale contributors</Company>
     <Authors>Edendale contributors</Authors>
     <Copyright>Copyright (c) 2026 Edendale contributors</Copyright>
-    <VersionPrefix>27.0.2</VersionPrefix>
+    <VersionPrefix>27.1.0</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>
