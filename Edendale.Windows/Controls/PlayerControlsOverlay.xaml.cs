@@ -28,6 +28,10 @@ namespace Edendale.Windows.Controls;
 public sealed partial class PlayerControlsOverlay : UserControl
 {
     private MediaPlayer? _mediaPlayer;
+
+    /// <summary>Removes the handlers <see cref="Attach"/> gave the current player.</summary>
+    private Action? _detachPlayer;
+
     private DispatcherQueueTimer _hideTimer;
     private DispatcherQueueTimer _progressTimer;
     private bool _isSliderManipulating;
@@ -120,15 +124,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
     public void SetMediaPlayer(
         MediaPlayer? player, string title, string? subtitle, PlaybackRequest? request, PlayerContext? context)
     {
-        if (_mediaPlayer != null)
-        {
-            _mediaPlayer.Playing -= MediaPlayer_StateChanged;
-            _mediaPlayer.Paused -= MediaPlayer_StateChanged;
-            _mediaPlayer.Stopped -= MediaPlayer_StateChanged;
-            _mediaPlayer.EndReached -= MediaPlayer_StateChanged;
-            _mediaPlayer.EncounteredError -= MediaPlayer_StateChanged;
-            _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
-        }
+        _detachPlayer?.Invoke();
+        _detachPlayer = null;
 
         // A different item invalidates any in-flight search, the speed, and Up Next.
         if (!ReferenceEquals(request, _playback))
@@ -154,12 +151,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         if (_mediaPlayer != null)
         {
-            _mediaPlayer.Playing += MediaPlayer_StateChanged;
-            _mediaPlayer.Paused += MediaPlayer_StateChanged;
-            _mediaPlayer.Stopped += MediaPlayer_StateChanged;
-            _mediaPlayer.EndReached += MediaPlayer_StateChanged;
-            _mediaPlayer.EncounteredError += MediaPlayer_StateChanged;
-            _mediaPlayer.LengthChanged += MediaPlayer_LengthChanged;
+            Attach(_mediaPlayer);
 
             _mediaPlayer.SetRate((float)_baseRate);
             UpdatePlayPauseIcon();
@@ -580,11 +572,37 @@ public sealed partial class PlayerControlsOverlay : UserControl
         flyout.Items.Add(online);
     }
 
-    private void MediaPlayer_StateChanged(object? sender, EventArgs args)
+    /// <summary>
+    /// LibVLCSharp raises MediaPlayer events with its internal event manager
+    /// as the sender, not the player, so each handler is bound to the player
+    /// it was attached to. That keeps a late event from a replaced player
+    /// apart from the current one's.
+    /// </summary>
+    private void Attach(MediaPlayer player)
+    {
+        EventHandler<EventArgs> stateChanged = (_, _) => MediaPlayer_StateChanged(player);
+        player.Playing += stateChanged;
+        player.Paused += stateChanged;
+        player.Stopped += stateChanged;
+        player.EndReached += stateChanged;
+        player.EncounteredError += stateChanged;
+        player.LengthChanged += MediaPlayer_LengthChanged;
+        _detachPlayer = () =>
+        {
+            player.Playing -= stateChanged;
+            player.Paused -= stateChanged;
+            player.Stopped -= stateChanged;
+            player.EndReached -= stateChanged;
+            player.EncounteredError -= stateChanged;
+            player.LengthChanged -= MediaPlayer_LengthChanged;
+        };
+    }
+
+    private void MediaPlayer_StateChanged(MediaPlayer player)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (!ReferenceEquals(sender, _mediaPlayer)) return;
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
             UpdatePlayPauseIcon();
             if (_mediaPlayer?.IsPlaying == true)
             {
