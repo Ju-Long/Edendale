@@ -108,6 +108,12 @@ struct PlayerGuideTests {
         #expect(!names(.mac).contains(rotation))
         #expect(!names(.tv).contains(pip))
         #expect(!names(.vision).contains(pip))
+        // The immersive theater exists only on Apple Vision Pro.
+        let theatre = String(localized: "Theatre", table: "Theater")
+        #expect(names(.vision).contains(theatre))
+        for platform in [PlayerGuidePlatform.touch, .mac, .tv] {
+            #expect(!names(platform).contains(theatre))
+        }
         for platform in [PlayerGuidePlatform.touch, .vision, .mac, .tv] {
             #expect(names(platform).suffix(2) == [String(localized: "Playlist"), String(localized: "Adjustments")])
         }

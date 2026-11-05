@@ -99,6 +99,17 @@
 				Example.xcconfig,
 				Secrets.xcconfig,
 			);
+			platformFiltersByRelativePath = {
+				"Theaters/movie-theatre.usdz" = (
+					xros,
+				);
+				"Theaters/performance-theatre.usdz" = (
+					xros,
+				);
+				"Theaters/projector-room.usdz" = (
+					xros,
+				);
+			};
 			target = 27BC63B52FBDBE64005EAD5C /* Edendale */;
 		};
 		27BC63D92FBDBE65005EAD5C /* Exceptions for "Edendale" folder in "Edendale" target */ = {
@@ -122,6 +133,9 @@
 			membershipExceptions = (
 				Example.xcconfig,
 				Secrets.xcconfig,
+				"Theaters/movie-theatre.usdz",
+				"Theaters/performance-theatre.usdz",
+				"Theaters/projector-room.usdz",
 			);
 			target = 27ED01A200000000000000A2 /* Edendale TV */;
 		};
@@ -706,6 +720,8 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xros*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xrsimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
@@ -775,6 +791,8 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xros*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xrsimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;

@@ -148,6 +148,19 @@ struct PlayerScreen: View {
             )
             .ignoresSafeArea()
 
+            #if os(visionOS)
+            // The picture and subtitles are on the theater's screen, so the
+            // window turns into its remote instead of showing them twice.
+            if session.theater.isImmersed {
+                VisionTheaterRemoteBackdrop(
+                    environment: session.theater.environment,
+                    showsLabel: session.chrome?.controlsVisible != true
+                )
+                .ignoresSafeArea()
+                .transition(.opacity)
+            }
+            #endif
+
             #if os(iOS) || os(visionOS)
             if let chrome = session.chrome, !chrome.guideVisible {
                 PlayerGestureLayer(chrome: chrome, player: player)
@@ -246,6 +259,18 @@ struct PlayerScreen: View {
             pipSource: player.pipSource,
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
+        #elseif os(visionOS)
+        EnhancedVideoPlayer(
+            ringBuffer: player.ringBuffer,
+            presentationTime: player.videoPresentationTime,
+            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+            isPaused: !player.isPlaying,
+            enhancementPipeline: player.enhancementPipeline,
+            frameInterpolator: player.frameInterpolator,
+            sourceFrameRate: player.sourceFrameRate,
+            onSurfaceReady: { _ in session.surfaceDidAttach() }
+        )
+        .theaterFeed(session.theater.screenFeed)
         #else
         EnhancedVideoPlayer(
             ringBuffer: player.ringBuffer,

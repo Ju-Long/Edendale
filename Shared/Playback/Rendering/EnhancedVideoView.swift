@@ -79,6 +79,18 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         CATransaction.commit()
     }
 
+    #if os(visionOS)
+    /// The immersive theater's screen, which receives a copy of every frame
+    /// drawn here while a theater is open.
+    var theaterFeed: VisionTheaterScreenFeed? {
+        didSet {
+            guard oldValue !== theaterFeed else { return }
+            oldValue?.requestRedraw = nil
+            theaterFeed?.requestRedraw = { [weak self] in self?.setNeedsPausedRedraw() }
+        }
+    }
+    #endif
+
     /// Target frame rate in Hz for frame presentation pacing. Default 60.0.
     public var targetFrameRate: Float = 60.0 {
         didSet {
@@ -420,6 +432,9 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         let renderTexture = compositeSubtitles(onto: enhanced, commandBuffer: commandBuffer)
 
         presentTexture(renderTexture, drawable: drawable, renderPassDescriptor: renderPassDescriptor, commandBuffer: commandBuffer)
+        #if os(visionOS)
+        theaterFeed?.draw(renderTexture, commandBuffer: commandBuffer, metalContext: metalContext)
+        #endif
         commandBuffer.commit()
 
         onFramePresented?(currentDisplayTime)
@@ -485,6 +500,9 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
         let renderTexture = compositeSubtitles(onto: texture, commandBuffer: commandBuffer)
         presentTexture(renderTexture, drawable: drawable, renderPassDescriptor: renderPassDescriptor, commandBuffer: commandBuffer)
+        #if os(visionOS)
+        theaterFeed?.draw(renderTexture, commandBuffer: commandBuffer, metalContext: metalContext)
+        #endif
         commandBuffer.commit()
 
         if let realFrameTime {

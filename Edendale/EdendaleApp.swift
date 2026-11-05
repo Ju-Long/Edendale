@@ -134,6 +134,16 @@ struct EdendaleApp: App {
         .commands { EdendaleCommands() }
         #endif
 
+        #if os(visionOS)
+        // The player's Theater menu opens this around the viewer; the
+        // player window stays open as its remote.
+        ImmersiveSpace(id: VisionTheaterController.spaceID) {
+            VisionTheaterSpace()
+                .environment(playerSession)
+        }
+        .immersionStyle(selection: .constant(.full), in: .full)
+        #endif
+
         // macOS uses a dedicated player window. iOS, iPadOS, visionOS, and
         // tvOS present the player over ContentView instead (see ContentView).
         #if os(macOS)
