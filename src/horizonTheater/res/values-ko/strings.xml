@@ -10,4 +10,8 @@
          Edendale is MPL-2.0, FFmpeg is LGPL-2.1 (assets/licenses), and the
          Spatial SDK is under Meta's licence. -->
     <string name="settings_open_source">Edendale · 무료 오픈 소스(MPL-2.0). DTS와 TrueHD는 FFmpeg 6.0.2(LGPL-2.1)로 재생하며, 극장은 Meta의 라이선스에 따라 Meta Spatial SDK를 사용합니다. 라이선스 전문은 앱 안(assets/licenses)과 github.com/Ju-Long/Edendale에 있습니다.</string>
+    <string name="theater_rooms">시어터</string>
+    <string name="theater_room_movie_theatre">영화관</string>
+    <string name="theater_room_projector_room">영사실</string>
+    <string name="theater_room_performance_theatre">공연장</string>
 </resources>

@@ -3,6 +3,7 @@ package com.babasama.edendale.android.theater
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.sin
 
 /**
@@ -33,16 +34,44 @@ data class HeadPose(val position: Point3, val yawRadians: Float) {
     }
 }
 
-/** Where the picture goes: its centre, the yaw it faces back along, and its size in metres. */
+/**
+ * Where the picture goes: its centre, its yaw, and its size in metres. The
+ * yaw is the viewer's: a panel's +Z points along it, away from the viewer,
+ * which is how the 2026-10-25 spike faced its screen on the Quest 3
+ * (`Quaternion.lookRotation(forward)`), so its front is toward the viewer.
+ */
 data class ScreenPlacement(val center: Point3, val yawRadians: Float, val width: Float, val height: Float) {
     val aspectRatio: Float get() = width / height
 }
 
 /**
- * The whole arrangement: the scene's root (the seat, on the floor under the
- * viewer) with the yaw the room turns to, and the screen within it.
+ * The whole arrangement: the seat (on the floor under the viewer) with the
+ * viewer's yaw, the screen, and the room mesh's own transform: where its
+ * origin goes and the yaw it turns by. The room's transform equals the
+ * seat's for a room laid out the way the SDK is assumed to load it (its
+ * `Seat` at the origin, its screen along +Z); a [RoomFrame] read from the
+ * loaded mesh corrects it.
  */
-data class TheaterPlacement(val root: Point3, val yawRadians: Float, val screen: ScreenPlacement)
+data class TheaterPlacement(
+    val root: Point3,
+    val yawRadians: Float,
+    val screen: ScreenPlacement,
+    val roomOrigin: Point3 = root,
+    val roomYawRadians: Float = yawRadians,
+)
+
+/**
+ * `Seat` and `Screen` as the Spatial SDK loaded them: their positions in the
+ * room mesh's own frame, read from the loaded mesh's node matrices. The SDK
+ * converts glTF (right-handed, -Z ahead in these exports) into its
+ * left-handed frame, and its documentation doesn't say which axis it turns;
+ * with the frame read back, the room faces the viewer either way.
+ */
+data class RoomFrame(val seat: Point3, val screen: Point3) {
+    /** Seat to screen, ignoring height. */
+    val aheadX: Float get() = screen.x - seat.x
+    val aheadZ: Float get() = screen.z - seat.z
+}
 
 /**
  * The theater's geometry as pure functions (HORIZON.md G.7, G.T1): where the
@@ -91,10 +120,13 @@ object TheaterLayout {
      * under the head, turned to the head's yaw, so the room and the screen
      * are ahead of wherever the viewer faces when tracking starts or after a
      * recenter. With a [scene] the screen is where the authored `Screen`
-     * node is, relative to `Seat`; without one it is the spike's default
-     * quad at head height. The screen faces back along the viewer's yaw.
+     * node is, relative to `Seat`, [PICTURE_LIFT_METRES] toward the viewer;
+     * without one it is the spike's default quad at head height. The screen
+     * takes the viewer's yaw. With the [frame] the SDK loaded the room in,
+     * the room turns so its screen is ahead of the viewer whichever way the
+     * SDK's glTF import faced it, and the picture goes onto that screen.
      */
-    fun place(head: HeadPose, scene: TheaterScene?, aspectRatio: Float?): TheaterPlacement {
+    fun place(head: HeadPose, scene: TheaterScene?, aspectRatio: Float?, frame: RoomFrame? = null): TheaterPlacement {
         val root = Point3(head.position.x, 0f, head.position.z)
         val forward = head.forward
         val right = head.right
@@ -108,9 +140,47 @@ object TheaterLayout {
             maxWidth = scene?.screen?.width ?: DEFAULT_SCREEN_WIDTH_METRES,
             maxHeight = scene?.screen?.height,
         )
-        val center = root + forward * ahead + right * side + Point3(0f, up, 0f)
-        return TheaterPlacement(root, head.yawRadians, ScreenPlacement(center, head.yawRadians, width, height))
+        // The picture sits just in front of an authored Screen mesh, so the two never z-fight.
+        val lift = if (scene != null) forward * -PICTURE_LIFT_METRES else Point3.ORIGIN
+        val center = root + forward * ahead + right * side + Point3(0f, up, 0f) + lift
+        val usable = frame?.takeIf { scene != null && hypot(it.aheadX, it.aheadZ) >= MIN_SCREEN_DISTANCE_METRES }
+            ?: return TheaterPlacement(root, head.yawRadians, ScreenPlacement(center, head.yawRadians, width, height))
+
+        // Turn the room so its seat-to-screen line points where the viewer
+        // looks, then move it so its Seat is on the floor under the head. The
+        // picture goes where the loaded room's Screen is.
+        val roomYaw = head.yawRadians - atan2(usable.aheadX, usable.aheadZ)
+        val roomOrigin = root + rotateY(usable.seat, roomYaw) * -1f
+        val onRoomScreen = roomOrigin + rotateY(usable.screen, roomYaw) + lift
+        return TheaterPlacement(
+            root,
+            head.yawRadians,
+            ScreenPlacement(onRoomScreen, head.yawRadians, width, height),
+            roomOrigin,
+            roomYaw,
+        )
     }
 
+    /**
+     * The point [p] turned by [yawRadians] about +Y, the way the SDK's
+     * `Quaternion.lookRotationAroundY` turns +Z onto a yaw's forward:
+     * +Z goes to (sin, 0, cos) and +X to (cos, 0, -sin).
+     */
+    fun rotateY(p: Point3, yawRadians: Float): Point3 {
+        val c = cos(yawRadians)
+        val s = sin(yawRadians)
+        return Point3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c)
+    }
+
+    /** Where a point of the room mesh ends up once the room has [placement]'s transform. */
+    fun roomPointInWorld(placement: TheaterPlacement, p: Point3): Point3 =
+        placement.roomOrigin + rotateY(p, placement.roomYawRadians)
+
     private const val EPSILON = 1e-4f
+
+    /** A frame whose screen is nearer the seat than this is unusable, and the assumed one stays. */
+    private const val MIN_SCREEN_DISTANCE_METRES = 0.5f
+
+    /** How far in front of an authored Screen mesh the picture's panel sits. */
+    const val PICTURE_LIFT_METRES = 0.02f
 }

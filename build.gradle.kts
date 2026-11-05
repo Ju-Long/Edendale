@@ -208,10 +208,12 @@ android {
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
         // HORIZON.md D15: the theater layer, only with horizon.theater=true. Its code
-        // joins the flavor; its resources and manifest join the variant source sets,
-        // which outrank src/horizon, so its About line (naming the Spatial SDK) wins.
+        // and its rooms (G.14: the three GLBs, about 23 MB) join the flavor; its
+        // resources and manifest join the variant source sets, which outrank
+        // src/horizon, so its About line (naming the Spatial SDK) wins.
         if (horizonTheater) {
             getByName("horizon").kotlin.srcDir("src/horizonTheater/kotlin")
+            getByName("horizon").assets.srcDir("src/horizonTheater/assets")
             for (variant in listOf("horizonDebug", "horizonRelease")) {
                 maybeCreate(variant).res.srcDir("src/horizonTheater/res")
                 maybeCreate(variant).manifest.srcFile("src/horizonTheater/AndroidManifest.xml")
@@ -428,17 +430,26 @@ abstract class VerifyHorizonRelease : DefaultTask() {
                     .contains("Lcom/babasama/edendale/android/theater/TheaterActivity;")
             }
         }
+        // G.14: the rooms the theater offers (TheaterRoom), as assets/theater/<id>.glb.
+        val theaterRooms = apk?.let { file ->
+            ZipFile(file).use { zip -> zip.entries().asSequence().map { it.name }.filter { it.startsWith("assets/theater/") }.toSet() }
+        }.orEmpty()
+        val expectedRooms = listOf("movie-theatre", "projector-room", "performance-theatre").map { "assets/theater/$it.glb" }
         if (theaterBuilt.get()) {
+            val missingRooms = expectedRooms.filterNot { it in theaterRooms }
             if (!theaterDeclared || !theaterCompiled) {
                 failures += "a theater build (horizon.theater=true) lacks TheaterActivity's " +
                     listOfNotNull("manifest entry".takeIf { !theaterDeclared }, "class".takeIf { !theaterCompiled }).joinToString(" and ")
+            } else if (missingRooms.isNotEmpty()) {
+                failures += "a theater build (horizon.theater=true) lacks the rooms ${missingRooms.joinToString()} (G.14)"
             } else {
-                notes += "the immersive theater is built in (horizon.theater=true): TheaterActivity and the Spatial SDK ship (D12, D15)"
+                notes += "the immersive theater is built in (horizon.theater=true): TheaterActivity, its ${expectedRooms.size} rooms, and the Spatial SDK ship (D12, D15, G.14)"
             }
         } else {
             val theaterLeft = buildList {
                 if (theaterDeclared) add("TheaterActivity's manifest entry")
                 if (theaterCompiled) add("TheaterActivity's class")
+                addAll(theaterRooms)
                 if (permissions.any { it.endsWith(".HAND_TRACKING") }) add("the HAND_TRACKING permission")
                 addAll(runtimeComponents.get().filter { it.startsWith("com.meta.spatial") })
             }

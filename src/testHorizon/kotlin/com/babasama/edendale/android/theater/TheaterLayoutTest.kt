@@ -44,15 +44,74 @@ class TheaterLayoutTest {
     fun aSceneBuildsTheScreenWhereTheAuthorPutItRelativeToTheSeat() {
         val scene = TheaterScene(ScreenNode(ahead = 5f, up = 1.5f, right = 0.5f, width = 4f, height = 2.25f))
         val placement = TheaterLayout.place(seated, scene, aspectRatio = 16f / 9f)
-        // The seat goes under the head on the floor; the screen is 0.5 m to the right of it.
-        assertPoint(Point3(0.5f, 1.5f, 5f), placement.screen.center)
+        // The seat goes under the head on the floor; the screen is 0.5 m to the right of it,
+        // the picture 2 cm in front of the authored quad.
+        assertPoint(Point3(0.5f, 1.5f, 5f - TheaterLayout.PICTURE_LIFT_METRES), placement.screen.center)
         assertEquals(4f, placement.screen.width)
         assertEquals(2.25f, placement.screen.height)
 
         // Turned to face -X, "right" is +Z... and "ahead" is -X.
         val turned = HeadPose(Point3(0f, 1.2f, 0f), yawRadians = (-PI / 2).toFloat())
         val turnedPlacement = TheaterLayout.place(turned, scene, aspectRatio = 16f / 9f)
-        assertPoint(Point3(-5f, 1.5f, 0.5f), turnedPlacement.screen.center)
+        assertPoint(Point3(-5f + TheaterLayout.PICTURE_LIFT_METRES, 1.5f, 0.5f), turnedPlacement.screen.center)
+    }
+
+    // G.14: the room turns by the Seat and Screen the SDK loaded, whichever axis its glTF import turned.
+
+    private val cinema = TheaterScene(ScreenNode(ahead = 14f, up = 2.4f, right = 0f, width = 12f, height = 6.75f))
+
+    @Test
+    fun aRoomLoadedWithItsScreenAlongPlusZKeepsTheViewersYaw() {
+        // The SDK flipped glTF's Z: the screen, 14 m along -Z in the GLB, is along +Z.
+        val frame = RoomFrame(seat = Point3.ORIGIN, screen = Point3(0f, 2.4f, 14f))
+        val placement = TheaterLayout.place(seated, cinema, 16f / 9f, frame)
+        assertEquals(0f, placement.roomYawRadians, 1e-6f)
+        assertPoint(Point3.ORIGIN, placement.roomOrigin)
+        assertPoint(Point3(0f, 2.4f, 14f - TheaterLayout.PICTURE_LIFT_METRES), placement.screen.center)
+    }
+
+    @Test
+    fun aRoomLoadedWithItsScreenAlongMinusZIsTurnedAround() {
+        // The SDK flipped glTF's X instead: the screen stays along -Z, behind a viewer facing +Z.
+        val frame = RoomFrame(seat = Point3.ORIGIN, screen = Point3(0f, 2.4f, -14f))
+        val placement = TheaterLayout.place(seated, cinema, 16f / 9f, frame)
+        assertEquals(PI.toFloat(), abs(placement.roomYawRadians), 1e-5f)
+        // Turned, the room's screen is ahead of the viewer, and the picture is on it.
+        val roomScreen = TheaterLayout.roomPointInWorld(placement, frame.screen)
+        assertPoint(Point3(0f, 2.4f, 14f), roomScreen)
+        assertPoint(Point3(0f, 2.4f, 14f - TheaterLayout.PICTURE_LIFT_METRES), placement.screen.center)
+        assertEquals(seated.yawRadians, placement.screen.yawRadians)
+    }
+
+    @Test
+    fun theRoomsSeatLandsUnderTheHeadWhereverTheViewerFaces() {
+        val head = HeadPose(Point3(1f, 1.2f, -2f), yawRadians = 0.7f)
+        // A room authored with its seat off the mesh origin, its screen off to one side of it.
+        val frame = RoomFrame(seat = Point3(0.5f, 0f, 1f), screen = Point3(3.5f, 2f, -3f))
+        val placement = TheaterLayout.place(head, cinema, 16f / 9f, frame)
+        assertPoint(Point3(1f, 0f, -2f), TheaterLayout.roomPointInWorld(placement, frame.seat))
+        val screen = TheaterLayout.roomPointInWorld(placement, frame.screen)
+        val distance = kotlin.math.hypot(frame.screen.x - frame.seat.x, frame.screen.z - frame.seat.z)
+        assertPoint(Point3(1f, 0f, -2f) + head.forward * distance + Point3(0f, 2f, 0f), screen)
+        assertPoint(screen + head.forward * -TheaterLayout.PICTURE_LIFT_METRES, placement.screen.center)
+    }
+
+    @Test
+    fun aFrameWithTheScreenOnTheSeatIsIgnored() {
+        val frame = RoomFrame(seat = Point3.ORIGIN, screen = Point3(0.1f, 2f, 0.1f))
+        val placement = TheaterLayout.place(seated, cinema, 16f / 9f, frame)
+        assertEquals(seated.yawRadians, placement.roomYawRadians)
+        assertPoint(Point3(0f, 2.4f, 14f - TheaterLayout.PICTURE_LIFT_METRES), placement.screen.center)
+    }
+
+    @Test
+    fun rotationMatchesTheSdksLookRotationAroundY() {
+        // Checked against meta-spatial-sdk 0.14.0's Quaternion on the JVM:
+        // lookRotationAroundY((1, 0, 0)) takes +Z to +X and +X to -Z.
+        val quarter = (PI / 2).toFloat()
+        assertPoint(Point3(1f, 0f, 0f), TheaterLayout.rotateY(Point3(0f, 0f, 1f), quarter))
+        assertPoint(Point3(0f, 0f, -1f), TheaterLayout.rotateY(Point3(1f, 0f, 0f), quarter))
+        assertPoint(HeadPose(Point3.ORIGIN, quarter).right, TheaterLayout.rotateY(Point3(1f, 0f, 0f), quarter))
     }
 
     @Test

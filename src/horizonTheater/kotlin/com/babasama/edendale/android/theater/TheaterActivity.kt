@@ -49,7 +49,8 @@ import com.meta.spatial.core.SpatialFeature
 import com.meta.spatial.core.SystemBase
 import com.meta.spatial.core.Vector3
 import com.meta.spatial.runtime.ReferenceSpace
-import com.meta.spatial.runtime.SceneMaterial
+import com.meta.spatial.runtime.SceneMesh
+import com.meta.spatial.runtime.SceneObject
 import com.meta.spatial.runtime.SessionState
 import com.meta.spatial.toolkit.AppSystemActivity
 import com.meta.spatial.toolkit.DpDisplayOptions
@@ -65,6 +66,7 @@ import com.meta.spatial.toolkit.PixelDisplayOptions
 import com.meta.spatial.toolkit.PlayerBodyAttachmentSystem
 import com.meta.spatial.toolkit.QuadShapeOptions
 import com.meta.spatial.toolkit.Scale
+import com.meta.spatial.toolkit.SceneObjectSystem
 import com.meta.spatial.toolkit.Transform
 import com.meta.spatial.toolkit.UIPanelSettings
 import com.meta.spatial.toolkit.VideoSurfacePanelRegistration
@@ -72,6 +74,7 @@ import com.meta.spatial.toolkit.Visible
 import com.meta.spatial.vr.LocomotionSystem
 import com.meta.spatial.vr.VRFeature
 import java.io.FileNotFoundException
+import java.util.concurrent.CompletableFuture
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.CoroutineScope
@@ -87,11 +90,14 @@ import kotlinx.coroutines.launch
  * same renderers and data source as the panel player, so every source type
  * plays unchanged (G.5).
  *
- * Scene (G.7): `theater.glb` from the assets when the `scenes` branch has
- * exported one, placed so its `Seat` is under the viewer and its `Screen`
- * takes the picture; otherwise the spike's sky and a 4 m screen 5 m ahead.
- * The screen is placed from the head pose once tracking reports one, and
- * again after a recenter. Controls and subtitles are Compose panels (G.8).
+ * Rooms (G.7, G.14): one of the three `scenes` branch rooms ([TheaterRoom]),
+ * the one the viewer last chose, placed so its `Seat` is under the viewer
+ * and its `Screen` takes the picture. The controls card's Room list moves
+ * to another room while the video plays. A room that can't be read falls
+ * back to the spike's sky and a 4 m screen 5 m ahead. The screen is placed
+ * from the head pose once tracking reports one, and again after a recenter;
+ * the room turns by the `Seat` and `Screen` the SDK actually loaded
+ * ([RoomFrame]). Controls and subtitles are Compose panels (G.8).
  * Exit (G.6) returns to Home with the panel focused, through Meta's hybrid
  * pattern, and progress is saved on exit, on stop, and every five seconds.
  */
@@ -109,8 +115,15 @@ class TheaterActivity : AppSystemActivity() {
     private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private var room = TheaterRoom.DEFAULT
     private var authoredScene: TheaterScene? = null
     private var roomEntity: Entity? = null
+    /** Where the SDK loaded the room's Seat and Screen; null until its mesh is in. */
+    private var roomFrame: RoomFrame? = null
+    private var roomObject: CompletableFuture<SceneObject>? = null
+    /** The room is drawn: its frame is known, or waiting for it timed out. */
+    private var roomShown = false
+    private var roomWaitFrames = 0
     private var screenEntity: Entity? = null
     private var subtitlesEntity: Entity? = null
     private var controlsEntity: Entity? = null
@@ -156,7 +169,9 @@ class TheaterActivity : AppSystemActivity() {
         controls.title = handover.title
         controls.subtitle = handover.subtitle
         controls.subtitlesOff = handover.subtitlesOff
-        authoredScene = loadAuthoredScene()
+        room = TheaterRoom.fromId(getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(KEY_ROOM, null))
+        controls.room = room
+        authoredScene = loadAuthoredScene(room)
 
         // A seated theater has no locomotion (G.9); Meta's media sample drops the system the same way.
         if (systemManager.tryFindSystem<LocomotionSystem>() != null) systemManager.unregisterSystem<LocomotionSystem>()
@@ -333,13 +348,18 @@ class TheaterActivity : AppSystemActivity() {
     // The scene (G.7)
     // ------------------------------------------------------------------
 
-    /** The `scenes` branch's export, when one ships; null means the sky. */
-    private fun loadAuthoredScene(): TheaterScene? = try {
-        assets.open(SCENE_ASSET).use { TheaterScene.parse(it) }
+    /**
+     * The room's `Screen` and `Seat` from its GLB's JSON chunk (the textures
+     * aren't read); null means the sky. Every room ships in a theater build,
+     * so null is a broken asset, never a missing choice.
+     */
+    private fun loadAuthoredScene(room: TheaterRoom): TheaterScene? = try {
+        assets.open(room.assetPath).use { TheaterScene.parse(it) }
     } catch (missing: FileNotFoundException) {
+        Log.w(TAG, "${room.assetPath} isn't in the APK; showing the sky instead")
         null
     } catch (error: Exception) {
-        Log.w(TAG, "$SCENE_ASSET is unusable; showing the sky instead", error)
+        Log.w(TAG, "${room.assetPath} is unusable; showing the sky instead", error)
         null
     }
 
@@ -347,24 +367,42 @@ class TheaterActivity : AppSystemActivity() {
         super.onSceneReady()
         // The floor is the origin's height, which is what a seat and a recenter need.
         scene.setReferenceSpace(ReferenceSpace.LOCAL_FLOOR)
-        // Nothing is lit: the sky is unlit and an authored room ships baked textures.
+        // Nothing is lit: the sky is unlit, and the rooms' materials are
+        // KHR_materials_unlit, their light baked into the textures (G.14).
         scene.setLightingEnvironment(
             ambientColor = Vector3(0f),
             sunColor = Vector3(0f),
             sunDirection = Vector3(0f, -1f, 0f),
         )
 
-        roomEntity = if (authoredScene != null) {
+        roomEntity = createRoomEntity()
+        // Hidden until the head is found and the screen has a place (G.7).
+        screenEntity = Entity.create(listOf(Panel(R.id.theater_screen), Transform(), Visible(false)))
+        subtitlesEntity = Entity.create(listOf(Panel(R.id.theater_subtitles), Transform(), Visible(false)))
+        controlsEntity = Entity.create(listOf(Panel(R.id.theater_controls), Transform(), Visible(false)))
+    }
+
+    /**
+     * The current room's mesh, hidden until the SDK has loaded it and the
+     * placement knows which way it faces; or the sky when the room is unusable.
+     * No shader override: the prepared GLB's materials say unlit themselves
+     * (`KHR_materials_unlit`), which keeps the projector beam's blending.
+     */
+    private fun createRoomEntity(): Entity {
+        roomFrame = null
+        roomObject = null
+        roomWaitFrames = 0
+        return if (authoredScene != null) {
+            roomShown = false
             Entity.create(
                 listOf(
-                    Mesh(Uri.parse(SCENE_ASSET), hittable = MeshCollision.NoCollision).apply {
-                        defaultShaderOverride = SceneMaterial.UNLIT_SHADER
-                    },
+                    Mesh(Uri.parse(room.meshUri), hittable = MeshCollision.NoCollision),
                     Transform(),
                     Visible(false),
                 ),
             )
         } else {
+            roomShown = true
             Entity.create(
                 listOf(
                     Mesh(Uri.parse("mesh://skybox"), hittable = MeshCollision.NoCollision),
@@ -376,10 +414,22 @@ class TheaterActivity : AppSystemActivity() {
                 ),
             )
         }
-        // Hidden until the head is found and the screen has a place (G.7).
-        screenEntity = Entity.create(listOf(Panel(R.id.theater_screen), Transform(), Visible(false)))
-        subtitlesEntity = Entity.create(listOf(Panel(R.id.theater_subtitles), Transform(), Visible(false)))
-        controlsEntity = Entity.create(listOf(Panel(R.id.theater_controls), Transform(), Visible(false)))
+    }
+
+    /**
+     * Moves the viewer to [next] (G.14). The video keeps playing on the same
+     * panel; the old room goes, the new one loads hidden, and the picture
+     * moves to the new room's screen. Remembered for the next visit.
+     */
+    private fun switchRoom(next: TheaterRoom) {
+        if (next == room) return
+        room = next
+        controls.room = next
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_ROOM, next.id).apply()
+        authoredScene = loadAuthoredScene(next)
+        roomEntity?.destroy()
+        roomEntity = createRoomEntity()
+        placeAgain()
     }
 
     override fun registerPanels(): List<PanelRegistration> = listOf(
@@ -434,11 +484,61 @@ class TheaterActivity : AppSystemActivity() {
     // Placement (G.7)
     // ------------------------------------------------------------------
 
-    /** Until the screen has a place, looks for the head every frame. */
+    /** Until the screen has a place, looks for the head every frame; until the room's frame is known, for its mesh. */
     private inner class PlacementSystem : SystemBase() {
         override fun execute() {
             if (!placed) tryPlace()
+            if (authoredScene != null && roomFrame == null && roomWaitFrames < ROOM_FRAME_GIVE_UP_FRAMES) pollRoomFrame()
         }
+    }
+
+    /**
+     * Reads where the SDK put the room's `Seat` and `Screen`, once its mesh
+     * has loaded, and places the room by them. The SDK converts glTF into its
+     * own left-handed frame without saying which axis it turns, so the room
+     * is turned from what it actually loaded rather than from the GLB's JSON.
+     * If the mesh hasn't reported them after [ROOM_FRAME_TIMEOUT_FRAMES], the
+     * room shows with the JSON's frame (its screen along +Z), and keeps
+     * looking until [ROOM_FRAME_GIVE_UP_FRAMES] in case the SDK only loads a
+     * mesh it draws; the room turns as soon as its frame arrives.
+     */
+    private fun pollRoomFrame() {
+        val entity = roomEntity ?: return
+        val future = roomObject
+            ?: systemManager.tryFindSystem<SceneObjectSystem>()?.getSceneObject(entity)?.also { roomObject = it }
+        if (future != null && future.isDone && !future.isCompletedExceptionally) {
+            roomFrame = runCatching { future.getNow(null)?.mesh?.let(::readRoomFrame) }
+                .onFailure { Log.w(TAG, "couldn't read ${room.id}'s nodes", it) }
+                .getOrNull()
+        }
+        val frame = roomFrame
+        roomWaitFrames++
+        when {
+            frame != null -> {
+                Log.i(TAG, "${room.id} loaded with Seat at ${frame.seat} and Screen at ${frame.screen}")
+                roomShown = true
+                placeAgain()
+            }
+            !roomShown && roomWaitFrames > ROOM_FRAME_TIMEOUT_FRAMES -> {
+                Log.w(TAG, "${room.id} reported no Seat and Screen yet; showing it by its JSON frame")
+                roomShown = true
+                placeAgain()
+            }
+            roomWaitFrames >= ROOM_FRAME_GIVE_UP_FRAMES ->
+                Log.w(TAG, "${room.id} never reported Seat and Screen; it stays turned by its JSON frame")
+        }
+    }
+
+    /** Seat and Screen in the loaded mesh's own frame, or null while it has neither. */
+    private fun readRoomFrame(mesh: SceneMesh): RoomFrame? {
+        if (mesh.getNodeCount() == 0) return null
+        val seat = mesh.getNodeIndex(TheaterScene.SEAT).takeIf { it >= 0 } ?: return null
+        val screen = mesh.getNodeIndex(TheaterScene.SCREEN).takeIf { it >= 0 } ?: return null
+        fun position(node: Int): Point3 {
+            val t = mesh.calculateNodeGlobalMatrix(node).decompose().first.t
+            return Point3(t.x, t.y, t.z)
+        }
+        return RoomFrame(seat = position(seat), screen = position(screen))
     }
 
     /** The head's position and yaw from the local avatar, as Meta's samples read it. */
@@ -456,29 +556,32 @@ class TheaterActivity : AppSystemActivity() {
         if (!TheaterLayout.isTracking(head)) return
         lastHead = head
         placed = true
-        applyPlacement(TheaterLayout.place(head, authoredScene, aspectRatio))
+        applyPlacement(TheaterLayout.place(head, authoredScene, aspectRatio, roomFrame))
     }
 
-    /** Keeps the room where it is and refits the screen (a new aspect ratio). */
+    /** Keeps the viewer's place and refits the screen and the room (a new aspect ratio, room, or frame). */
     private fun placeAgain() {
         val head = lastHead ?: return
-        if (placed) applyPlacement(TheaterLayout.place(head, authoredScene, aspectRatio))
+        if (placed) applyPlacement(TheaterLayout.place(head, authoredScene, aspectRatio, roomFrame))
     }
 
     private fun applyPlacement(placement: TheaterPlacement) {
         val forward = Vector3(sin(placement.yawRadians), 0f, cos(placement.yawRadians))
         val screen = placement.screen
         val center = screen.center.toVector3()
-        // A panel's front faces the viewer when it looks along viewer − panel (Meta's samples).
-        val viewer = Vector3(placement.root.x, screen.center.y, placement.root.z)
-        val facing = Quaternion.lookRotationAroundY(viewer - center)
+        // The panel's +Z points away from the viewer, so its front faces them:
+        // the spike's screen on the Quest 3 was turned by lookRotation(forward).
+        val facing = Quaternion.lookRotationAroundY(forward)
         val fit = Scale(Vector3(screen.width / BASE_SCREEN_WIDTH, screen.height / BASE_SCREEN_HEIGHT, 1f))
 
         if (authoredScene != null) {
-            // The room's Seat under the viewer, its "ahead" along the viewer's yaw. If the
-            // SDK's GLB import keeps glTF's -Z as ahead, this turns the room around: G.10.
+            // The room's Seat under the viewer, its screen ahead (TheaterLayout, RoomFrame).
+            val roomForward = Vector3(sin(placement.roomYawRadians), 0f, cos(placement.roomYawRadians))
             roomEntity?.setComponents(
-                listOf(Transform(Pose(placement.root.toVector3(), Quaternion.lookRotationAroundY(forward))), Visible(true)),
+                listOf(
+                    Transform(Pose(placement.roomOrigin.toVector3(), Quaternion.lookRotationAroundY(roomForward))),
+                    Visible(roomShown),
+                ),
             )
         }
         screenEntity?.setComponents(listOf(Transform(Pose(center, facing)), fit, Visible(true)))
@@ -531,6 +634,11 @@ class TheaterActivity : AppSystemActivity() {
             player?.let { selectTextTrack(it, option) }
             controls.subtitlesOff = option == null
             saveContentPreferences()
+            noteInteraction()
+        }
+
+        override fun selectRoom(room: TheaterRoom) {
+            switchRoom(room)
             noteInteraction()
         }
 
@@ -656,8 +764,14 @@ class TheaterActivity : AppSystemActivity() {
     companion object {
         private const val TAG = "TheaterActivity"
 
-        /** The `scenes` branch's export, under src/horizon/assets (G.7, D17). */
-        const val SCENE_ASSET = "theater.glb"
+        /** The room the viewer last chose (G.14): a device preference, never synced. */
+        private const val PREFS_NAME = "theater"
+        private const val KEY_ROOM = "room"
+
+        /** About three seconds at 90 fps for a room's mesh to load before it shows by its JSON frame. */
+        private const val ROOM_FRAME_TIMEOUT_FRAMES = 270
+        /** About thirty seconds: after this the room stops looking for its loaded frame. */
+        private const val ROOM_FRAME_GIVE_UP_FRAMES = 2_700
 
         /** The registered quad is 16:9; a Scale component fits it to the video. */
         private const val BASE_SCREEN_WIDTH = 4f

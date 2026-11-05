@@ -54,8 +54,8 @@ import com.babasama.edendale.android.player.SkipInterval
 import com.babasama.edendale.android.player.TrackLabels
 import java.util.Locale
 
-/** Which track list the controls card shows in place of the transport. */
-internal enum class TheaterMenu { AUDIO, SUBTITLES }
+/** Which list the controls card shows in place of the transport. */
+internal enum class TheaterMenu { AUDIO, SUBTITLES, ROOM }
 
 /**
  * What the controls panel draws (HORIZON.md G.8), set by [TheaterActivity]
@@ -72,6 +72,8 @@ internal class TheaterControlsState {
     var textOptions by mutableStateOf<List<PlayerTrackOption>>(emptyList())
     var subtitlesOff by mutableStateOf(false)
     var menu by mutableStateOf<TheaterMenu?>(null)
+    /** The room the viewer sits in (G.14); the Room list marks it. */
+    var room by mutableStateOf(TheaterRoom.DEFAULT)
     /** A playback error's message; the card then offers only Exit. */
     var failure by mutableStateOf<String?>(null)
 }
@@ -83,6 +85,8 @@ internal interface TheaterControlsActions {
     fun seekToFraction(fraction: Float)
     fun selectAudio(option: PlayerTrackOption)
     fun selectSubtitles(option: PlayerTrackOption?)
+    /** Moves the viewer to another room; the video keeps playing (G.14). */
+    fun selectRoom(room: TheaterRoom)
     fun exit()
     /** Any press keeps the panel up a while longer. */
     fun noteInteraction()
@@ -90,7 +94,8 @@ internal interface TheaterControlsActions {
 
 /**
  * The small controls card under the screen (G.8): title, skip, play and
- * pause, the timeline, the audio and subtitle tracks, and Exit. It is a
+ * pause, the timeline, the audio and subtitle tracks, the room (G.14), and
+ * Exit. It is a
  * Compose panel the SDK renders to a compositor layer; the ray clicks it
  * with a trigger or a pinch. Popups don't render in a panel, so the track
  * lists open in place of the transport.
@@ -127,6 +132,11 @@ internal fun TheaterControlsPanel(state: TheaterControlsState, chrome: PlayerChr
                         offSelected = state.subtitlesOff,
                         label = { textLabel(it) },
                         onPick = { option -> actions.selectSubtitles(option) },
+                        onClose = { actions.noteInteraction(); state.menu = null },
+                    )
+                    state.menu == TheaterMenu.ROOM -> RoomList(
+                        selected = state.room,
+                        onPick = { room -> actions.selectRoom(room) },
                         onClose = { actions.noteInteraction(); state.menu = null },
                     )
                     else -> Transport(state, chrome, actions)
@@ -167,6 +177,9 @@ private fun Transport(state: TheaterControlsState, chrome: PlayerChromeState, ac
                 MenuButton(R.drawable.ic_subtitles, stringResource(R.string.player_subtitles)) {
                     actions.noteInteraction(); state.menu = TheaterMenu.SUBTITLES
                 }
+            }
+            MenuButton(R.drawable.ic_theater, stringResource(R.string.theater_rooms)) {
+                actions.noteInteraction(); state.menu = TheaterMenu.ROOM
             }
             ExitButton(actions)
         }
@@ -292,6 +305,37 @@ private fun FailureCard(message: String, actions: TheaterControlsActions) {
         ExitButton(actions)
     }
 }
+
+/** The three rooms, the current one marked; a row's press moves there and closes the list (G.14). */
+@Composable
+private fun RoomList(selected: TheaterRoom, onPick: (TheaterRoom) -> Unit, onClose: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.theater_rooms),
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
+                Icon(painterResource(R.drawable.ic_chevron_down), null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onBackground)
+            }
+        }
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            TheaterRoom.entries.forEach { room ->
+                TrackRow(stringResource(room.titleRes), room == selected) { onPick(room); onClose() }
+            }
+        }
+    }
+}
+
+/** The room's name, as visionOS names the same three rooms. */
+internal val TheaterRoom.titleRes: Int
+    get() = when (this) {
+        TheaterRoom.MOVIE_THEATRE -> R.string.theater_room_movie_theatre
+        TheaterRoom.PROJECTOR_ROOM -> R.string.theater_room_projector_room
+        TheaterRoom.PERFORMANCE_THEATRE -> R.string.theater_room_performance_theatre
+    }
 
 /** The track rows, with Off first for subtitles; a row's press picks it and closes the list. */
 @Composable

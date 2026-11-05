@@ -10,4 +10,8 @@
          Edendale is MPL-2.0, FFmpeg is LGPL-2.1 (assets/licenses), and the
          Spatial SDK is under Meta's licence. -->
     <string name="settings_open_source">Edendale · Бесплатно, с открытым исходным кодом (MPL-2.0). DTS и TrueHD воспроизводятся через FFmpeg 6.0.2 (LGPL-2.1); кинозал использует Meta Spatial SDK по лицензии Meta. Тексты лицензий есть в приложении (assets/licenses) и на github.com/Ju-Long/Edendale.</string>
+    <string name="theater_rooms">Зал</string>
+    <string name="theater_room_movie_theatre">Кинозал</string>
+    <string name="theater_room_projector_room">Проекционный зал</string>
+    <string name="theater_room_performance_theatre">Театральный зал</string>
 </resources>

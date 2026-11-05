@@ -82,10 +82,17 @@ The theater is its own activity with its own ExoPlayer, built with the
 same renderers and data source as the panel player, so local, SMB, WebDAV,
 SFTP, S3, and cloud sources play unchanged. A trigger press or a pinch shows
 its controls (play and pause, skip, the timeline, audio and subtitle tracks,
-Exit); B or Y, or Exit, returns to the panel; progress is saved as in the
-player. Its environment is `src/horizon/assets/theater.glb` when the
-`scenes` branch has exported one (the activity reads the `Screen` and `Seat`
-nodes), else a generated starfield (`tools/horizon/make_skybox.py`). The SDK
+the room, Exit); B or Y, or Exit, returns to the panel; progress is saved as
+in the player. The viewer sits in one of three rooms from the `scenes`
+branch, the same three as on Apple Vision Pro: Movie Theater, Projector Room,
+and Performance Theater. The controls' Room list moves between them while the
+video plays, and the theater opens in the last one chosen. They ship as
+`src/horizonTheater/assets/theater/<room>.glb` (about 23 MB, theater builds
+only), exported from `scenes` with its `tools/export_gltf.py` and made unlit
+for the Spatial SDK by `tools/horizon/prepare_theater_glb.py`. The activity
+places the picture on each room's `Screen` and the viewer on its `Seat`; a
+room that can't be read falls back to a generated starfield
+(`tools/horizon/make_skybox.py`) and a 4 m screen. The SDK
 is used without the Meta Platform SDK, without an account, and without the
 Spatial Gradle plugin, whose usage-data switch the build never turns on.
 
@@ -100,8 +107,9 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry and class together in a theater build |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, and three rooms together in a theater build |
 | With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
+| Theater rooms (after a scene changes on `scenes`) | On `scenes`: `Blender --background scenes/<room>/<room>.blend --python tools/export_gltf.py -- out/<room>.glb`; then here: `python3 -I tools/horizon/prepare_theater_glb.py <scenes checkout>/out/*.glb` → `src/horizonTheater/assets/theater/` (HORIZON.md G.14) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
 
 ### Signing
@@ -164,6 +172,7 @@ browser and their return to the app; the trailer opening outside the app; the
 headset off and on mid-playback; a second account on the headset; and,
 offline, each source failing on its own while the app stays usable. For the
 theater (HORIZON.md G.10): entering and leaving it from every source type;
+each room facing the viewer with the picture on its screen, the Room list,
 the screen's placement, a recenter, and the headset off and on; controllers
 and hands on the controls panel; DTS-HD MA, TrueHD, and E-AC-3; 30 minutes of
 playback against VrApi's FPS line; and `dumpsys netstats` showing nothing

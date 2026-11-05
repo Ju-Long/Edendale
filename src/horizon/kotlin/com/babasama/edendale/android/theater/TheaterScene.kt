@@ -39,21 +39,54 @@ data class TheaterScene(val screen: ScreenNode) {
 
         private const val GLB_MAGIC = 0x46546C67 // "glTF"
         private const val CHUNK_JSON = 0x4E4F534A // "JSON"
+        /** The 12-byte GLB header and the JSON chunk's 8-byte header. */
+        private const val HEADER_BYTES = 20
+        /** A room's JSON is a few kilobytes; anything near this is not a theater scene. */
+        private const val MAX_JSON_BYTES = 16 * 1024 * 1024
 
-        fun parse(stream: InputStream): TheaterScene = parse(stream.readBytes())
+        /**
+         * Reads only the GLB's header and JSON chunk from [stream], so a room's
+         * textures (megabytes of JPEG in the binary chunk) are never read here.
+         */
+        fun parse(stream: InputStream): TheaterScene {
+            val header = stream.readExactly(HEADER_BYTES)
+            val chunkLength = checkHeader(header, available = null)
+            return fromJson(stream.readExactly(chunkLength))
+        }
 
         /** Reads the GLB's JSON chunk and finds `Screen` and `Seat` by name. */
         fun parse(glb: ByteArray): TheaterScene {
-            if (glb.size < 20) throw TheaterSceneException("not a GLB: ${glb.size} bytes")
-            val buffer = ByteBuffer.wrap(glb).order(ByteOrder.LITTLE_ENDIAN)
+            if (glb.size < HEADER_BYTES) throw TheaterSceneException("not a GLB: ${glb.size} bytes")
+            val chunkLength = checkHeader(glb.copyOfRange(0, HEADER_BYTES), available = glb.size - HEADER_BYTES)
+            return fromJson(glb.copyOfRange(HEADER_BYTES, HEADER_BYTES + chunkLength))
+        }
+
+        /** The JSON chunk's length, after checking the 12-byte GLB header and the chunk header. */
+        private fun checkHeader(header: ByteArray, available: Int?): Int {
+            val buffer = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
             if (buffer.getInt(0) != GLB_MAGIC) throw TheaterSceneException("not a GLB: bad magic")
             val version = buffer.getInt(4)
             if (version != 2) throw TheaterSceneException("GLB version $version, expected 2")
             val chunkLength = buffer.getInt(12)
             if (buffer.getInt(16) != CHUNK_JSON) throw TheaterSceneException("the first GLB chunk isn't JSON")
-            if (chunkLength < 0 || 20 + chunkLength > glb.size) throw TheaterSceneException("truncated GLB")
-            val json = Json.parseToJsonElement(String(glb, 20, chunkLength, Charsets.UTF_8)).jsonObject
-            return fromDocument(json)
+            if (chunkLength < 0 || chunkLength > MAX_JSON_BYTES || (available != null && chunkLength > available)) {
+                throw TheaterSceneException("truncated GLB")
+            }
+            return chunkLength
+        }
+
+        private fun fromJson(chunk: ByteArray): TheaterScene =
+            fromDocument(Json.parseToJsonElement(String(chunk, Charsets.UTF_8)).jsonObject)
+
+        private fun InputStream.readExactly(count: Int): ByteArray {
+            val bytes = ByteArray(count)
+            var read = 0
+            while (read < count) {
+                val n = read(bytes, read, count - read)
+                if (n < 0) throw TheaterSceneException("truncated GLB")
+                read += n
+            }
+            return bytes
         }
 
         /** The same, from the glTF JSON (what `tools/_theater_scene.py` verifies on export). */

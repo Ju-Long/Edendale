@@ -11,7 +11,7 @@ against.
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
-| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff) |
+| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1` |
 
 **Why this is mostly packaging.** Horizon OS runs ordinary Android apps in a
 floating panel. Touch maps to controller rays, hand pinches, and (on Meta's VR
@@ -885,7 +885,9 @@ doesn't need any of G (D15).
   `scenes` has no scene, and the container has no Blender. Two conventions
   are a first-run check (G.10): that the SDK imports glTF's -Z as its own
   forward, and that `Quaternion.lookRotationAroundY(viewer − panel)` faces a
-  panel at the viewer, as Meta's samples use it.*
+  panel at the viewer, as Meta's samples use it. 2026-11-05: both are now
+  settled in code by G.14: the room turns by the Seat and Screen the SDK
+  loaded, and the screen faces the way the spike's did (Deviations).*
   - **Environment:** an equirectangular skybox (`mesh://skybox`), unlit so it
     costs little, and optionally a floor or room model. Art must be made in
     house or carry a licence that fits the repository. The spike's starfield
@@ -954,6 +956,15 @@ doesn't need any of G (D15).
   - F.7: tell reviewers how to open the theater.
 - [ ] **G.10** Device checks on the Quest 3 (Appendix 1):
   - entering and leaving the theater from every source type;
+  - each of the three rooms (G.14): it faces the viewer with the picture on
+    its screen and nothing mirrored, the baked colours show (not black), the
+    projector beam is a faint haze, the Room list switches while the video
+    plays, the next visit opens in the last room, and a recenter re-seats the
+    viewer; read `TheaterActivity`'s "loaded with Seat at … and Screen at …"
+    line in `logcat` for each room;
+  - the rooms' cost at 90 fps (VrApi's FPS line) and their texture memory:
+    the 4096² atlases are uncompressed JPEG, about 85 MB each with mipmaps on
+    the GPU (G.14);
   - video on the surface panel: 1080p and 4K HEVC, AV1, HDR10, and Dolby
     Vision;
   - audio: DTS-HD MA, TrueHD, E-AC-3 and Atmos, and 7.1. For TrueHD, use
@@ -1010,6 +1021,61 @@ doesn't need any of G (D15).
     the branch tables in `README.md` and `AGENTS.md` ("Scene sources:
     `.blend` files, textures, and export scripts; no executable code"). The
     `meta-horizon` row that D0 asks for can go in the same change.
+
+- [x] **G.14** The three rooms *(2026-11-05, on `meta-horizon-27.1`; no
+  headset or screen was available, so nothing here ran on a device)*. The
+  `scenes` branch's three rooms (`scenes` at `06fb0c7`) are the theater's
+  environments, as they are the visionOS theater's on `apple` (PR #13):
+  Movie Theatre, Projector Room, and Performance Theatre.
+  - **Export.** `tools/export_gltf.py` on `scenes`, Blender 5.2.3 LTS
+    headless, unchanged: 7.2, 4.1, and 11.4 MB; `Screen` 14, 7.4, and 14 m
+    ahead, 12, 5.6, and 11 m wide.
+  - **Made unlit for the SDK.** `scenes` bakes the light into emission over a
+    black base colour (its README), which an unlit shader draws black.
+    `tools/horizon/prepare_theater_glb.py` (standard library only,
+    deterministic) rewrites only the materials to `KHR_materials_unlit`: each
+    emission texture becomes the base colour, the screen's dark glow its base
+    colour, and the projector beam's black PNG turns white with its alpha
+    kept, tinted by its emission colour, still blended. Geometry, nodes, and
+    the other images are copied byte for byte. The SDK's library carries
+    `KHR_materials_unlit` and an unlit variant of its PBR shader (Findings).
+    Re-imported into Blender, all three render from the seat with their
+    baked colours and the beam as haze.
+  - **Shipped** as `src/horizonTheater/assets/theater/<room>.glb`, joined to
+    the `horizon` source set only with `horizon.theater=true` (D15), so the
+    2D APK carries none of the 23 MB. `verifyHorizonRelease` fails a 2D build
+    with any `assets/theater/` entry and a theater build missing any of the
+    three.
+  - **Choosing a room.** `TheaterRoom` (`src/horizon`, JVM-tested) lists the
+    three under the `scenes` folder names. The controls card gains a Room
+    button (the Theater icon) that lists them in place of the transport, the
+    current one ticked; picking one destroys the old room's entity, loads the
+    new one hidden, and moves the picture to its screen while the video
+    plays. The choice is remembered on the device (`theater` preferences,
+    never synced), and the player's Theater button opens the last room, the
+    cinema the first time. The 2D player is untouched, so `src/main` gains
+    nothing. Names and heading in all 19 locales, from the visionOS theater's
+    translations.
+  - **Placement, whichever way the SDK loads glTF.** Meta documents a
+    left-handed frame and that glTF is converted to it, not which axis turns.
+    Once the room's mesh is in, the activity reads `Seat` and `Screen` from
+    the loaded `SceneMesh` (`getNodeIndex`, `calculateNodeGlobalMatrix`) into
+    a `RoomFrame`, and `TheaterLayout.place` turns the room so its
+    seat-to-screen line points where the viewer looks, its `Seat` on the
+    floor under the head, and puts the picture on that screen, 2 cm toward the
+    viewer so it can't z-fight the room's screen mesh. The room stays hidden
+    until then, or for three seconds, after which it shows by the GLB's JSON
+    as before. JVM tests cover both possible conversions.
+  - **The screen faces the right way.** The spike, the only theater run on
+    the Quest 3, turned its screen with `Quaternion.lookRotation(forward)`
+    (+Z away from the viewer); G.7's code turned it toward the viewer, which
+    shows the panel's back. It now uses the viewer's yaw, as the spike did;
+    the SDK's `lookRotationAroundY` was run on the JVM to confirm the
+    rotation `TheaterLayout.rotateY` mirrors (Findings).
+  - **Reading a room** no longer reads the whole GLB: `TheaterScene.parse`
+    reads the header and the JSON chunk only.
+  - Not done: texture compression (KTX2/ASTC; the SDK's library has KTX2
+    support) and a per-room budget; both wait on G.10's measurements.
 
 ---
 
@@ -1091,6 +1157,7 @@ For whoever reviews the implementation:
 | 2026-10-25 | Quest 3 and the Mac, both decoders | **TrueHD from FFmpeg's own experimental encoder doesn't decode in Media3.** Every packet fails with "Assignment of matrix channel 0 to invalid output channel -22" and "Invalid data found when processing input". That happens with Jellyfin's decoder and the LGPL build alike, and on the Mac when libavcodec runs without a parser first. Media3's JNI doesn't preset a channel layout for TrueHD. Dolby-encoded TrueHD decodes. | Test TrueHD (B.9, G.10) with Dolby-encoded samples only. |
 | 2026-10-25 | Immersive spike, release (unsigned) | Size: 70.6 MB grows to 130.1 MB. `libMetaSpatialSDK.so` is 47.8 MB stored uncompressed (AGP's default; 18.6 MB gzipped), and `-vr` adds `libMetaSpatialSDKIsdk.so` (3.8 MB). The SDK's packages declare no permissions, and `verifyHorizonRelease` passes with `HAND_TRACKING` added. | D16, G.11. |
 | 2026-10-26 | Spatial Simulator; signed 2D release `0.27.0.1` (versionCode 3) | The release build (not debuggable, signed with `New.jks`) installs and launches as a panel; TMDB loads; Add Local Folder → EdendaleTest links and scans; Severance S01E01 plays, and the DTS fixture opens with `FfmpegAudioRenderer` loaded. The player's chrome shows only the playlist and panel buttons: no Theater, no PiP. The simulator reports `android.hardware.screen.landscape`, so the required landscape feature `aapt` infers from `PlayerActivity`'s `sensorLandscape` is satisfied there. | Check `adb shell pm list features` on the Quest 3; if the feature is missing, P.6's validator or the store's device filter may refuse the build, and the manifest would need `<uses-feature android:name="android.hardware.screen.landscape" android:required="false" />`. |
+| 2026-11-05 | Meta Spatial SDK 0.14.0 AARs (Gradle cache), no device | Read from the SDK itself, since Meta's pages don't say: `MeshCreationSystem` resolves a mesh URI against `apk:///`, the APK's assets, so `apk:///theater/<room>.glb` loads a room. `libMetaSpatialSDK.so` names `KHR_materials_unlit`, `KHR_texture_transform`, and `KHR_materials_pbrSpecularGlossiness`, and its PBR shader has an unlit variant (`pbLit_unlit`, `pbLit_noalphatest_unlit`; `outColor.rgb = unlit * albedo + …`), so the glTF-standard unlit material is drawn from its base colour. `SceneMesh` exposes `getNodeIndex(name)` and `calculateNodeGlobalMatrix(index)` (and `Matrix44.decompose()`), so the loaded room's nodes can be read back. Run on the JVM, `Quaternion.lookRotationAroundY(v)` turns +Z onto `v` and +X onto (cos, 0, −sin) of v's yaw. Meta's 3D-objects page says the SDK is left-handed (X right, Y up, Z forward) and converts glTF, without saying which axis; its architecture page says right-handed. | G.14 reads the room's frame at runtime; G.10 confirms on the Quest 3. |
 
 ## Deviations log
 
@@ -1122,6 +1189,10 @@ For whoever reviews the implementation:
 | 2026-10-26 | D.7 (new, then dropped) | The Menu button toggled Adjustments in the player; the step wasn't in Section D. The same day the real controllers showed that Horizon OS keeps the Menu button in 2D apps, and the owner had the shortcut removed: `DevicePolicy.menuButtonOpensAdjustments` and the `KEYCODE_MENU`/`BUTTON_START` branch in `PlayerActivity` are gone, so Menu keys fall back to the handheld handling. | Owner's request (2026-10-26), and Meta's VRC.Quest.Input.1 asks that in-app menus open from the left controller's Menu button; removed on the owner's decision once `SystemButtonHandler` was seen taking it (Findings). |
 | 2026-10-26 | B.5 | `src/main`'s `PlayerScreen` puts the centre button's Play/Pause label on the button (`Modifier.semantics`) instead of its icon, so the button keeps a label while the buffering spinner replaces the icon. | Found by the headset audit, but it isn't a headset fix: it belongs on `android` too, as its own change (branch model), with the owner's go-ahead. |
 | 2026-10-26 | A.4 | The `horizon` flavor sets its own `versionName`, `27.0`, over android's `0.27.0.1`, and, later the same day, its own `versionCode`, 4, over android's 3. | Owner's requests: Settings (which shows `versionName`) and the Horizon Store should read 27.0, and the next Horizon build is 4. Each store only compares a code with its own last upload, so the code no longer waits for a bump on `android`. Set both again for each Horizon release. |
+| 2026-11-05 | G.7, G.14 | The rooms ship as `src/horizonTheater/assets/theater/<room>.glb`, not `src/horizon/assets/<scene>.glb`. | D15 keeps every part of the theater out of the 2D build; 23 MB of rooms there would be dead weight. |
+| 2026-11-05 | G.7, G.14 | The room mesh has no `defaultShaderOverride`; the prepared GLB's materials are `KHR_materials_unlit` instead. | An override applies one shader to the whole mesh, and the projector beam needs its blending and its own material. If G.10 finds the rooms drawn black, set `defaultShaderOverride = SceneMaterial.UNLIT_SHADER` on the room's `Mesh` as the fallback; the prepared materials suit it too. |
+| 2026-11-05 | G.7 | The screen panel is turned by `lookRotationAroundY(forward)` (+Z away from the viewer), not `lookRotationAroundY(viewer − panel)`. | The spike on the Quest 3 turned its screen that way; G.7's code was written without a device. |
+| 2026-11-05 | G.14 | Rooms are chosen inside the theater (the controls' Room list) and remembered, instead of from a menu on the player's Theater button as on visionOS. | Keeps `src/main` as it is for `git merge android`, and entering the immersive activity is the slow step, so the choice is made where its effect shows. |
 
 ## Handoff log
 
@@ -1145,6 +1216,7 @@ For whoever reviews the implementation:
 | 2026-10-26 | G.1, G.T1 (first build and headset run) | Claude | The owner asked for a test of the 10-25 cloud session's G.1. Done in a scratch worktree detached at `d4a73ec`, so this checkout stayed as it was. Two fixes were needed, in this commit: `build.gradle.kts` called `horizonImplementation(…)` and `horizonCompileOnly(…)` as accessors, which the Kotlin DSL doesn't generate for flavor configurations, so Gradle failed while configuring; they're quoted now, as the spike had them. `tools/horizon/build-ffmpeg-decoder.sh` sent CMake's configure log into `build/ffmpeg-decoder/jni-build/` before that directory existed; it now creates each ABI's build directory first. Then the script ran in 90 s: four ABIs, the vendored classes match Media3 1.9.0, `config.h` says "LGPL version 2.1 or later", and the arm64 `libffmpegJNI.so` is 1,462,976 bytes (API 32). `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease` (JDK 17): 507 tests pass, and the release is 130.1 MB with the library and no `org.jellyfin` artifact; with `src/horizon/jniLibs` moved away, `verifyHorizonRelease` fails on the missing library. On the Quest 3, a debug build with a scratch-only `.ffmpegtest` application ID suffix was installed beside the owner's build and uninstalled afterwards; the owner's build and data weren't touched. `am instrument`: `FfmpegLibraryInstrumentedTest` (3 tests) and `FfmpegAudioInstrumentedTest` (the DTS 5.1 and TrueHD 5.1 fixtures) pass. A scratch test, not committed, played two 40 s DTS-HD MA 5.1 24-bit Blu-ray excerpts from the owner's library (deleted afterwards): the headset has no platform DTS decoder, `ffmpegLavc60.3.100-dca` decoded them to 6 channels at 48 kHz for their full length, and every channel's peak equals the same FFmpeg 6.0.2 decoding them on the Mac. Of the 10-25 row's list, steps 2–4 are done. **Not run:** the theater on the headset (G.10). |
 | 2026-10-26 | D15, P.6 (ALPHA package) | Owner, Claude | Owner asked for an ALPHA package and chose 2D only (theater held back) and a build without the upload. The owner put `New.jks`'s passwords in `.secret/horizon-signing.properties` (Claude created it from the example, without them). Claude added the `horizon.theater` switch (Deviations). Ran (JDK 17): `./gradlew clean`, then `testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 508 tests pass, the store check passes, signed with the Quest key (v2 only), 70.7 MB, "2D panel app"; and `-Phorizon.theater=true assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: passes at 130.1 MB with the theater's class, resources, and About line in the APK. `apksigner verify --print-certs` shows SHA-256 `f2ce0d97…7eff65`; `aapt2 dump badging` shows `com.babasama.edendale` 3 / `0.27.0.1`, minSdk 32, targetSdk 36, arm64-v8a, `installLocation` auto, INTERNET and ACCESS_NETWORK_STATE only. Spatial Simulator run in Findings (the old debug build there was uninstalled first). The APK is `release/horizon/0.27.0.1-alpha/Edendale-horizon-0.27.0.1-3.apk`, SHA-256 `0e01c8a26beffc788c84673e9069b5bb9333d06d751c4a9945fea30fddace442`. Not done: P.2, the upload (P.6), the headset install from the channel, and `pm list features` on the Quest 3. `Horizon Store/27.0/source-en-GB.md` still describes the theater, which a 2D submission doesn't have. |
 | 2026-10-28 | F.3 | Owner, Claude | Owner's go-ahead under Hard rule 6, as two changes on `web`: `d67e627` adds a Meta Quest row to the home page's download section, linking the listing at `https://www.meta.com/experiences/app/1413693368490384/` without the share link's `hwsh` and `utm_*` parameters, and `0644966` is F.3's privacy policy. `npm run check` and `npm run build` passed for each, and both deployed through GitHub Pages. Not read: Meta's Privacy VRC pages and the listing itself, which the cloud container couldn't reach. Nothing on this branch was built, since only this file changed. |
+| 2026-11-05 | G.14 (the three rooms) | Owner, Claude | The owner asked for a `meta-horizon-27.1` branch with the new 3D scenes, implemented in code only: no headset or screen was available. Cut from `meta-horizon` at `61b8751` in the worktree `.claude/worktrees/meta-horizon-27.1`, so the main checkout stayed on `apple-27.1`; `android`'s 27.1 work (sync, handoff v2) isn't merged here. Exported the three rooms from `scenes` `06fb0c7` with Blender 5.2.3 LTS (`tools/export_gltf.py`, unchanged) and prepared them with `tools/horizon/prepare_theater_glb.py` (two runs, identical bytes); Blender re-imported each prepared GLB and rendered it from the seat with its baked colours. Read the Spatial SDK 0.14.0 AARs from the Gradle cache and ran its `Quaternion` on the JVM (Findings). Ran (JDK 17): `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 529 tests pass, 2D release 70.7 MB with no `assets/theater/`; `-Phorizon.theater=true assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: passes at 141.0 MB (was 130.1) with the three rooms; with `projector-room.glb` moved away, `verifyHorizonRelease` fails naming it. **Not run:** anything on the Quest 3 or the Spatial Simulator: G.10's room checks, including the frame each room reports in `logcat`, whether the rooms draw unlit (Deviations: the shader-override fallback), the beam, the Room list, and the cost of the 4096² textures. |
 
 ## Sources
 

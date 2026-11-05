@@ -34,6 +34,35 @@ class TheaterSceneTest {
     }
 
     @Test
+    fun aStreamIsReadOnlyAsFarAsTheJsonChunk() {
+        // G.14: a room's binary chunk holds megabytes of texture the reader must not touch.
+        val json = glb(checkScene)
+        val withTextures = json + ByteArray(64 * 1024) { 0x55 }
+        var read = 0
+        val stream = object : java.io.InputStream() {
+            private var position = 0
+            override fun read(): Int = if (position < withTextures.size) withTextures[position++].toInt().and(0xFF).also { read++ } else -1
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                if (position >= withTextures.size) return -1
+                val n = minOf(len, withTextures.size - position, 7) // short reads, as an asset stream may give
+                System.arraycopy(withTextures, position, b, off, n)
+                position += n
+                read += n
+                return n
+            }
+        }
+        val scene = TheaterScene.parse(stream)
+        assertNode(ScreenNode(ahead = 5f, up = 1.5f, right = 0f, width = 4f, height = 2.25f), scene.screen)
+        assertEquals(json.size, read)
+    }
+
+    @Test
+    fun aTruncatedStreamFails() {
+        val bytes = glb(checkScene)
+        assertFailsWith<TheaterSceneException> { TheaterScene.parse(bytes.copyOf(bytes.size - 3).inputStream()) }
+    }
+
+    @Test
     fun followsParentsAndScales() {
         // Everything under a Room node that is moved 1 m right and 2 m ahead; the screen is scaled up twofold.
         val json = """
