@@ -283,17 +283,17 @@ unknown sibling files retain their filename fallback. Player Adjustments
 offers video and audio track selection when a file contains multiple tracks
 of that type.
 
-Settings includes adjustable Flat, Movies (default), Music, Dialogue, and Night
-Mode equalizer profiles. Profile selection and adjustments persist locally;
-changing profiles resets the adjustments. Player Adjustments also offers an
-Audio Booster, off by default, that adds 10 dB of preamp gain within the
-equalizer's bounds and restores the unboosted setting when disabled. Profiles
-and booster changes apply during playback and carry over between files.
+Settings → Audio includes adjustable Flat, Movies (default), Music, Dialogue,
+and Night Mode equalizer profiles. Profile selection and adjustments persist
+locally; changing profiles resets the adjustments. Player Adjustments also
+offers an Audio Booster, off by default, that adds 10 dB of preamp gain within
+the equalizer's bounds and restores the unboosted setting when disabled.
+Profiles and booster changes apply during playback and carry over between files.
 Night Mode changes the frequency balance; it does not compress dynamic range.
-These controls do not affect E-AC-3 audio (see
-[Surround and spatial audio](#surround-and-spatial-audio)) or visionOS
-spatial/multiview playback in the system player. tvOS uses remote-operated
-increment/decrement controls for adjustments.
+These controls do not affect E-AC-3 audio (see [Surround and spatial
+audio](#surround-and-spatial-audio)) or visionOS spatial/multiview playback in
+the system player. tvOS uses remote-operated increment/decrement controls for
+adjustments.
 
 Episodes automatically advance to the next stored episode in season/episode
 order, including the next season and stored specials, without replaying an
@@ -336,7 +336,7 @@ and other codecs still decode in FFmpeg.
 Audio enhancement doesn't apply to E-AC-3: equalizing needs decoded audio,
 which would drop the object audio. FFmpeg playback passes it through
 untouched, and AVFoundation playback installs no equalizer tap when the file's
-first audio track is E-AC-3. Settings → Audio Enhancement says so. Enhancement
+first audio track is E-AC-3. Settings → Audio says so. Enhancement
 of decoded surround covers every channel.
 
 When the renderer drops its queued audio because the output changed, or the
@@ -437,8 +437,8 @@ between Wi-Fi and Tailscale), unlock, and play.
 
 ### Intro, recap, and credits prompts
 
-Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
-Playback → Skip Prompts**, to use community timestamps from
+Enable **Settings → Player Controls → Playback → Skip Prompts**, or **Player
+Adjustments → Playback → Skip Prompts**, to use community timestamps from
 [TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The old
 90-second recap and final-three-minutes credits auto-skips have been removed;
 their saved preferences do not enable the new network feature.
@@ -485,9 +485,9 @@ deduplication, failures, stale responses, preference migration, and real VLC
 skip/progress/loop regression tests. Android and Windows need independent
 native implementations of the same behavior; the static Web branch is unaffected.
 
-### App controls
+### Player controls
 
-**Settings → App Controls** sets how far a skip jumps and how fast playback
+**Settings → Player Controls** sets how far a skip jumps and how fast playback
 runs while a side of the video is held. **Skip Back** and **Skip Forward**
 each offer 10, 15, or 30 seconds (default 10) in a segmented control drawn
 with the matching arrow-rotate glyphs; VoiceOver reads each segment's length.
@@ -527,14 +527,14 @@ hold-and-slide on iOS and iPadOS (keys too while a keyboard is attached); the
 same with look-and-tap and pinch gestures on visionOS; click, click-and-hold,
 and the key commands on macOS; and clickpad, swipe, resting thumb, Play/Pause,
 and Back on tvOS. The last page explains the toolbar chips. The pages quote the
-current **App Controls** skip lengths and hold speeds.
+current **Player Controls** skip lengths and hold speeds.
 
 The illustrations are SwiftUI drawings rather than recorded GIFs, so they
 follow those settings, the archive palette, and every localization. Under
 Reduce Motion each holds a single frame. Swipe, the arrow keys, or the Back and
 Next buttons turn pages. Escape, the close chip, or tvOS Back close the guide.
 Reopen it with the info chip in **Player Adjustments** or the player guide
-entry at the end of **Settings → App Controls**. Closing the guide stores
+entry at the end of **Settings → Player Controls**. Closing the guide stores
 `player.guideSeenVersion` in the device's preferences; raise
 `PlayerGuide.version` to show a revised guide once more.
 
@@ -632,8 +632,12 @@ theater.
 The macOS library window uses a split view instead of the adaptive tab view.
 Its sidebar lists Movies & Shows, Watchlist, Downloaded, and Search; Settings
 opens in its own window from **Edendale ▸ Settings…** (⌘,) instead of a
-sidebar row. (iPhone and iPad open Settings as a sheet from the gear button in
-each page's toolbar.) Watchlist and Downloaded are pages of their own and also
+sidebar row. That window has a sidebar of its own, like System Settings, listing
+General, Player Controls, Audio, Subtitles, Library, Sync, Accounts, and About
+beside the open category. (iPhone and iPad open Settings as a sheet from the
+gear button in each page's toolbar. There, and on Apple TV and Apple Vision
+Pro, Settings opens on the list of categories, and each one opens its own
+page.) Watchlist and Downloaded are pages of their own and also
 disclose their sections as child rows, so one section opens without scrolling
 the whole page:
 
@@ -687,13 +691,13 @@ change.
 
 ### Storage providers
 
-Settings → Link Source adds network and cloud sources. Each connects straight
-from the device to the provider. Edendale has no server or account of its own,
-logins and refresh tokens stay in the Keychain, and nothing in a source is
-uploaded or changed. The only files Edendale ever writes are its own sync
-files, and only to the location chosen in Settings → Sync (below). Accounts
-and logins sync through iCloud Keychain, except to Apple TV, which gets them
-from a nearby iPhone or iPad (Continue on iPhone or iPad).
+Settings → Library → Link Source adds network and cloud sources. Each connects
+straight from the device to the provider. Edendale has no server or account of
+its own, logins and refresh tokens stay in the Keychain, and nothing in a source
+is uploaded or changed. The only files Edendale ever writes are its own sync
+files, and only to the location chosen in Settings → Sync (below). Accounts and
+logins sync through iCloud Keychain, except to Apple TV, which gets them from a
+nearby iPhone or iPad (Continue on iPhone or iPad).
 
 | Source | How it links | What Edendale reads |
 |---|---|---|

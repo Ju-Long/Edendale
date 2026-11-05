@@ -41,7 +41,7 @@ final class PlayerSession {
     private(set) var chrome: PlayerChromeModel?
 
     let segmentSkipping: PlayerSegmentController
-    /// Skip lengths and press-and-hold speeds (Settings ▸ App Controls).
+    /// Skip lengths and press-and-hold speeds (Settings ▸ Player Controls).
     let controls: PlayerControlPreferences
     /// Text subtitle font, colours, and box (Settings ▸ Subtitles).
     let subtitleAppearance: SubtitleAppearance

@@ -2,7 +2,7 @@
 //  PlayerControlPreferences.swift
 //  Edendale
 //
-//  The viewer's quick-control preferences, set in Settings ▸ App Controls:
+//  The viewer's quick-control preferences, set in Settings ▸ Player Controls:
 //  how far a skip jumps back and forward, and the speeds a press-and-hold
 //  on the left or right side of the video engages. Device-local, like the
 //  other player preferences. The player reads them at the moment of each

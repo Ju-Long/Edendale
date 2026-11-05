@@ -5,7 +5,7 @@
 //  The player guide: a short run of pages, each pairing a looping
 //  illustration of one control with what it does. It covers the video on
 //  the viewer's first playback on the device (PlayerScreen), and opens on
-//  request from the Adjustments panel or Settings ▸ App Controls. Swipe,
+//  request from the Adjustments panel or Settings ▸ Player Controls. Swipe,
 //  the arrow keys, or the Back and Next buttons move between pages.
 //
 
