@@ -30,6 +30,10 @@ final class AudioEQProcessor: @unchecked Sendable {
         var bandGains: [Float] = Array(repeating: 0, count: bandCount)
         var isFlat = true
         var biquads: [vDSP.Biquad<Float>] = []
+        /// One channel's samples on the way into and out of its filters,
+        /// kept between buffers so processing allocates nothing.
+        var input: [Float] = []
+        var output: [Float] = []
     }
 
     func configure(sampleRate: Double, channelCount: Int) {
@@ -65,22 +69,18 @@ final class AudioEQProcessor: @unchecked Sendable {
                 guard let data = abl[ch].mData?.assumingMemoryBound(to: Float.self) else { continue }
                 let frames = Int(abl[ch].mDataByteSize) / MemoryLayout<Float>.size
                 guard frames > 0 else { continue }
-                let input = Array(UnsafeBufferPointer(start: data, count: frames))
-                let output = state.biquads[ch].apply(input: input)
-                if state.preampGain != 1 {
-                    var gain = state.preampGain
-                    vDSP_vsmul(output, 1, &gain, data, 1, vDSP_Length(frames))
-                } else {
-                    output.withUnsafeBufferPointer { src in
-                        data.update(from: src.baseAddress!, count: frames)
-                    }
-                }
+                Self.filter(&state, channel: ch, samples: data, stride: 1, frames: frames)
             }
         }
     }
 
     // MARK: - CMSampleBuffer processing (FFmpeg path)
 
+    /// Filters decoded PCM in place. The FFmpeg path calls this on the main
+    /// actor as it hands audio to the renderer, so every pass over the
+    /// samples is a vDSP call: a per-sample Swift loop over interleaved
+    /// surround audio took about half the main thread in Debug builds and
+    /// stalled the video.
     func processSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
         guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer),
               let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer),
@@ -88,71 +88,57 @@ final class AudioEQProcessor: @unchecked Sendable {
         else { return }
 
         let isFloat = asbd.pointee.mFormatFlags & kAudioFormatFlagIsFloat != 0
-        guard isFloat else { return }
+        guard isFloat, asbd.pointee.mBitsPerChannel == 32 else { return }
 
-        var length = 0
+        var contiguousLength = 0
+        var totalLength = 0
         var dataPointer: UnsafeMutablePointer<CChar>?
         guard CMBlockBufferGetDataPointer(
-            blockBuffer, atOffset: 0, lengthAtOffsetOut: nil,
-            totalLengthOut: &length, dataPointerOut: &dataPointer
-        ) == noErr, let dataPointer else { return }
+            blockBuffer, atOffset: 0, lengthAtOffsetOut: &contiguousLength,
+            totalLengthOut: &totalLength, dataPointerOut: &dataPointer
+        ) == noErr, let dataPointer, contiguousLength == totalLength else { return }
 
         let channels = max(Int(asbd.pointee.mChannelsPerFrame), 1)
         let isNonInterleaved = asbd.pointee.mFormatFlags & kAudioFormatFlagIsNonInterleaved != 0
-        let totalFloats = length / MemoryLayout<Float>.size
+        let totalFloats = totalLength / MemoryLayout<Float>.size
+        let frames = totalFloats / channels
+        guard frames > 0 else { return }
+        let samples = UnsafeMutableRawPointer(dataPointer).bindMemory(to: Float.self, capacity: totalFloats)
 
         lock.withLockUnchecked { state in
             guard !state.isFlat, !state.biquads.isEmpty else { return }
-
-            if channels == 1 || isNonInterleaved {
-                let framesPerChannel = totalFloats / channels
-                guard framesPerChannel > 0 else { return }
-                for ch in 0..<min(channels, state.biquads.count) {
-                    let offset = ch * framesPerChannel
-                    let ptr = dataPointer.withMemoryRebound(
-                        to: Float.self, capacity: totalFloats
-                    ) { $0 + offset }
-                    let input = Array(UnsafeBufferPointer(start: ptr, count: framesPerChannel))
-                    let output = state.biquads[ch].apply(input: input)
-                    if state.preampGain != 1 {
-                        var gain = state.preampGain
-                        vDSP_vsmul(output, 1, &gain, ptr, 1, vDSP_Length(framesPerChannel))
-                    } else {
-                        output.withUnsafeBufferPointer { src in
-                            ptr.update(from: src.baseAddress!, count: framesPerChannel)
-                        }
-                    }
-                }
-            } else {
-                let framesCount = totalFloats / channels
-                guard framesCount > 0 else { return }
-                let floats = dataPointer.withMemoryRebound(
-                    to: Float.self, capacity: totalFloats
-                ) { UnsafeMutableBufferPointer(start: $0, count: totalFloats) }
-
-                var channelBufs = (0..<channels).map { ch -> [Float] in
-                    var buf = [Float](repeating: 0, count: framesCount)
-                    for f in 0..<framesCount { buf[f] = floats[f * channels + ch] }
-                    return buf
-                }
-                for ch in 0..<min(channels, state.biquads.count) {
-                    let output = state.biquads[ch].apply(input: channelBufs[ch])
-                    if state.preampGain != 1 {
-                        var gain = state.preampGain
-                        var processed = [Float](repeating: 0, count: framesCount)
-                        vDSP_vsmul(output, 1, &gain, &processed, 1, vDSP_Length(framesCount))
-                        channelBufs[ch] = processed
-                    } else {
-                        channelBufs[ch] = Array(output)
-                    }
-                }
-                for ch in 0..<channels {
-                    for f in 0..<framesCount {
-                        floats[f * channels + ch] = channelBufs[ch][f]
-                    }
+            for ch in 0..<min(channels, state.biquads.count) {
+                if channels == 1 || isNonInterleaved {
+                    Self.filter(&state, channel: ch, samples: samples + ch * frames, stride: 1, frames: frames)
+                } else {
+                    Self.filter(&state, channel: ch, samples: samples + ch, stride: channels, frames: frames)
                 }
             }
         }
+    }
+
+    /// Runs one channel through its filter chain and the preamp, in place.
+    /// `stride` is the distance between the channel's consecutive samples:
+    /// 1 for planar audio, the channel count for interleaved audio.
+    private static func filter(
+        _ state: inout State,
+        channel: Int,
+        samples: UnsafeMutablePointer<Float>,
+        stride: Int,
+        frames: Int
+    ) {
+        // A track's buffers keep one size, so this reallocates only when
+        // the stream changes.
+        if state.input.count != frames {
+            state.input = [Float](repeating: 0, count: frames)
+            state.output = [Float](repeating: 0, count: frames)
+        }
+        var unity: Float = 1
+        var gain = state.preampGain
+        let count = vDSP_Length(frames)
+        vDSP_vsmul(samples, vDSP_Stride(stride), &unity, &state.input, 1, count)
+        state.biquads[channel].apply(input: state.input, output: &state.output)
+        vDSP_vsmul(state.output, 1, &gain, samples, vDSP_Stride(stride), count)
     }
 
     // MARK: - Biquad construction

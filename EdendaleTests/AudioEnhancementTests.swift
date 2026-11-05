@@ -6,6 +6,7 @@
 //  booster defaults (ENH-05).
 //
 
+import CoreMedia
 import Foundation
 import Testing
 @testable import Edendale
@@ -343,5 +344,92 @@ struct AudioBoosterTests {
 
         controller.resetUserAdjustments()
         #expect(controller.processor.isFlat)
+    }
+}
+
+/// The FFmpeg path equalizes interleaved surround PCM in place.
+struct AudioEQProcessorTests {
+    @Test func interleavedChannelsMatchEachChannelFilteredAlone() throws {
+        let frames = 1536
+        let left = (0..<frames).map { Float(sin(Double($0) * 0.031)) * 0.5 }
+        let right = (0..<frames).map { Float(sin(Double($0) * 0.27)) * 0.25 }
+        let bands: [Float] = [6, 4, 0, -3, 0, 2, 5, -6, 3, 1]
+
+        let stereo = AudioEQProcessor()
+        stereo.configure(sampleRate: 48_000, channelCount: 2)
+        stereo.update(preamp: -4, bands: bands)
+        let interleaved = zip(left, right).flatMap { [$0, $1] }
+        // Two buffers in a row, so the filters' state carries across them.
+        let first = try Self.process(interleaved, channels: 2, with: stereo)
+        let second = try Self.process(interleaved, channels: 2, with: stereo)
+
+        for (channel, signal) in [left, right].enumerated() {
+            let mono = AudioEQProcessor()
+            mono.configure(sampleRate: 48_000, channelCount: 1)
+            mono.update(preamp: -4, bands: bands)
+            let expected = try Self.process(signal, channels: 1, with: mono)
+                + Self.process(signal, channels: 1, with: mono)
+            let actual = (first + second).enumerated()
+                .filter { $0.offset % 2 == channel }
+                .map(\.element)
+            #expect(actual.count == expected.count)
+            #expect(zip(actual, expected).allSatisfy { abs($0 - $1) < 1e-6 })
+            #expect(actual != signal + signal)
+        }
+    }
+
+    @Test func flatProcessorLeavesSamplesUntouched() throws {
+        let processor = AudioEQProcessor()
+        processor.configure(sampleRate: 48_000, channelCount: 6)
+        processor.update(preamp: 0, bands: Array(repeating: 0, count: AudioEQProcessor.bandCount))
+        let samples = (0..<(6 * 512)).map { Float($0 % 97) / 97 }
+        #expect(try Self.process(samples, channels: 6, with: processor) == samples)
+    }
+
+    private static func process(_ samples: [Float], channels: Int, with processor: AudioEQProcessor) throws -> [Float] {
+        var description = AudioStreamBasicDescription(
+            mSampleRate: 48_000,
+            mFormatID: kAudioFormatLinearPCM,
+            mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
+            mBytesPerPacket: UInt32(4 * channels),
+            mFramesPerPacket: 1,
+            mBytesPerFrame: UInt32(4 * channels),
+            mChannelsPerFrame: UInt32(channels),
+            mBitsPerChannel: 32,
+            mReserved: 0
+        )
+        var format: CMAudioFormatDescription?
+        try #require(CMAudioFormatDescriptionCreate(
+            allocator: kCFAllocatorDefault, asbd: &description, layoutSize: 0, layout: nil,
+            magicCookieSize: 0, magicCookie: nil, extensions: nil, formatDescriptionOut: &format
+        ) == noErr)
+        let length = samples.count * MemoryLayout<Float>.size
+        var block: CMBlockBuffer?
+        try #require(CMBlockBufferCreateWithMemoryBlock(
+            allocator: kCFAllocatorDefault, memoryBlock: nil, blockLength: length,
+            blockAllocator: kCFAllocatorDefault, customBlockSource: nil, offsetToData: 0,
+            dataLength: length, flags: kCMBlockBufferAssureMemoryNowFlag, blockBufferOut: &block
+        ) == noErr)
+        let buffer = try #require(block)
+        try samples.withUnsafeBytes { bytes in
+            try #require(CMBlockBufferReplaceDataBytes(
+                with: bytes.baseAddress!, blockBuffer: buffer, offsetIntoDestination: 0, dataLength: length
+            ) == noErr)
+        }
+        var sample: CMSampleBuffer?
+        try #require(CMAudioSampleBufferCreateReadyWithPacketDescriptions(
+            allocator: kCFAllocatorDefault, dataBuffer: buffer, formatDescription: try #require(format),
+            sampleCount: samples.count / channels, presentationTimeStamp: .zero,
+            packetDescriptions: nil, sampleBufferOut: &sample
+        ) == noErr)
+        processor.processSampleBuffer(try #require(sample))
+
+        var output = [Float](repeating: 0, count: samples.count)
+        try output.withUnsafeMutableBytes { bytes in
+            try #require(CMBlockBufferCopyDataBytes(
+                buffer, atOffset: 0, dataLength: length, destination: bytes.baseAddress!
+            ) == noErr)
+        }
+        return output
     }
 }

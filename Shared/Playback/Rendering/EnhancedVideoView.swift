@@ -608,18 +608,12 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
         encoder.endEncoding()
 
-        let effectiveRate: Double
-        if isFrameInterpolationEnabled {
-            effectiveRate = Double(sourceFrameRate * 2.0)
-        } else {
-            effectiveRate = Double(max(targetFrameRate, 1.0))
-        }
-
-        #if os(macOS)
-        commandBuffer.present(drawable, afterMinimumDuration: 1.0 / effectiveRate)
-        #else
+        // Presented at the next refresh; `preferredFramesPerSecond` already
+        // paces the draws. Holding each present to a minimum duration (as
+        // macOS once did) made a 144 Hz display draw faster than it could
+        // present: the drawables queued up and every draw blocked the main
+        // thread in `nextDrawable`, which stalled playback and the UI.
         commandBuffer.present(drawable)
-        #endif
     }
 
     private func ensureCompositingTexture(width: Int, height: Int) -> MTLTexture? {

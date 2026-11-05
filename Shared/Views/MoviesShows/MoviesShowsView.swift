@@ -759,6 +759,9 @@ struct MoviesShowsView: View {
     /// holds the scene (even on visionOS) so playback is never cut short.
     private var heroRotationPaused: Bool {
         if showingTrailer { return true }
+        // The macOS library window stays live beside the player's; rotating
+        // the hero there only competes with the video for the main thread.
+        if playerSession.isPlayerPresented { return true }
         #if os(macOS)
         return isHoveringHero || isDraggingHero || isHeroScrolling
         #elseif os(iOS)
