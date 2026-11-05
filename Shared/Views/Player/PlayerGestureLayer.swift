@@ -11,7 +11,7 @@
 //    - press-and-hold L / R  0.5× / 2× (unless changed) until released
 //    - press-and-hold + horizontal drag   scrub the timeline
 //
-//  Skip lengths and hold speeds come from Settings ▸ App Controls.
+//  Skip lengths and hold speeds come from Settings ▸ Player Controls.
 //
 
 #if os(iOS) || os(visionOS)
@@ -179,7 +179,7 @@ struct PlayerGestureLayer: View {
         switch side {
         case .left:
             #if os(iOS)
-            mode = .verticalAdjust(side: .left, baseline: ScreenBrightness.current)
+            mode = .verticalAdjust(side: .left, baseline: ScreenBrightness.level)
             #else
             mode = .ignored  // visionOS has no per-app brightness control.
             #endif
@@ -194,8 +194,9 @@ struct PlayerGestureLayer: View {
         switch side {
         case .left:
             #if os(iOS)
-            ScreenBrightness.current = level
-            chrome.showHUD(.brightness(level))
+            if ScreenBrightness.set(level) {
+                chrome.showHUD(.brightness(level))
+            }
             #endif
         case .right:
             chrome.setVolume(Float(level))
@@ -232,21 +233,4 @@ struct PlayerGestureLayer: View {
     }
 }
 
-// MARK: - Screen brightness (iOS)
-
-#if os(iOS)
-/// Read/write access to the device screen's brightness.
-@MainActor
-private enum ScreenBrightness {
-    static var current: Double {
-        get { Double(activeScreen?.brightness ?? 0.5) }
-        set { activeScreen?.brightness = CGFloat(newValue) }
-    }
-
-    private static var activeScreen: UIScreen? {
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        return (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?.screen
-    }
-}
-#endif
 #endif

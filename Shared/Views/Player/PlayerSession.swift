@@ -82,6 +82,8 @@ final class PlayerSession {
     private var visionReachedEnd = false
     private var visionResumePositionOverride: Double?
     private var decoderResumePositionOverride: Double?
+    /// The immersive theater, which shows this session's picture.
+    let theater = VisionTheaterController()
     #endif
 
     /// Whether a hosted `EnhancedVideoPlayer` surface has attached its
@@ -438,6 +440,10 @@ final class PlayerSession {
 
         chrome?.sessionWillEnd()
         saveContentPreferences()
+        #if os(iOS) || os(macOS)
+        // The player's brightness ends with it.
+        ScreenBrightness.restore()
+        #endif
         stopAndRetirePlayer()
         chrome = nil
         item = nil

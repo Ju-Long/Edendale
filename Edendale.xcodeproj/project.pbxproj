@@ -99,6 +99,17 @@
 				Example.xcconfig,
 				Secrets.xcconfig,
 			);
+			platformFiltersByRelativePath = {
+				"Theaters/movie-theatre.usdz" = (
+					xros,
+				);
+				"Theaters/performance-theatre.usdz" = (
+					xros,
+				);
+				"Theaters/projector-room.usdz" = (
+					xros,
+				);
+			};
 			target = 27BC63B52FBDBE64005EAD5C /* Edendale */;
 		};
 		27BC63D92FBDBE65005EAD5C /* Exceptions for "Edendale" folder in "Edendale" target */ = {
@@ -122,6 +133,9 @@
 			membershipExceptions = (
 				Example.xcconfig,
 				Secrets.xcconfig,
+				"Theaters/movie-theatre.usdz",
+				"Theaters/performance-theatre.usdz",
+				"Theaters/projector-room.usdz",
 			);
 			target = 27ED01A200000000000000A2 /* Edendale TV */;
 		};
@@ -606,7 +620,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 27.0.1;
+				MARKETING_VERSION = 27.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -652,7 +666,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 27.0.1;
+				MARKETING_VERSION = 27.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -706,6 +720,8 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xros*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xrsimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
@@ -718,7 +734,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 27.0.1;
+				MARKETING_VERSION = 27.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -775,6 +791,8 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Edendale connects to the servers you link (such as SMB, NFS, SFTP, or WebDAV) to browse and play your own video files.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xros*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=xrsimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
@@ -787,7 +805,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 27.0.1;
+				MARKETING_VERSION = 27.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1047,7 +1065,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 27.0.1;
+				MARKETING_VERSION = 27.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = Edendale;
 				REGISTER_APP_GROUPS = YES;
@@ -1086,7 +1104,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Edendale;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 27.0.1;
+				MARKETING_VERSION = 27.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale;
 				PRODUCT_NAME = Edendale;
 				REGISTER_APP_GROUPS = YES;

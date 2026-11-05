@@ -25,7 +25,7 @@ struct AppControlsSection: View {
     private var controls: PlayerControlPreferences { session.controls }
 
     var body: some View {
-        SettingsSection(String(localized: "App Controls")) {
+        SettingsSection(String(localized: "Controls")) {
             skipRow(.backward)
             skipRow(.forward)
             #if !os(macOS) && !os(tvOS)

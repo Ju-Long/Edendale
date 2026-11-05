@@ -551,6 +551,82 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 Android and Windows need their own native guides for their own controls; the
 static Web branch is unaffected.
 
+### Immersive theater (visionOS)
+
+On Apple Vision Pro the player's toolbar has a **Theatre** chip (the
+clapperboard). It opens one of three rooms around the viewer as a full
+immersive space: **Movie Theatre** (a stadium cinema, 12 m screen at 14 m),
+**Projector Room** (a 1920s hall, 5.6 m screen at 7.4 m), and **Performance
+Theatre** (a proscenium stage, 11 m screen at 14 m). It opens only when the
+viewer picks a room. Picking another room while one is open swaps it in place.
+**Leave Theatre**, the Digital Crown, closing the player, or the next item
+going to the system player (spatial and multiview video) closes it.
+
+- **Picture.** The screen shows the frames the 2D player draws, after Video
+  Enhancement, so paused frames, seeks, and Up Next follow it without a second
+  decoder. `EnhancedVideoView` hands each finished frame to
+  `VisionTheaterScreenFeed`. The feed draws it, fitted and letterboxed, into a
+  RealityKit `LowLevelTexture` of 1080 rows in the screen's shape, under an
+  unlit, untone-mapped material. RealityKit reads a `LowLevelTexture` as
+  Display P3, so the feed converts the player's sRGB pixels to P3 primaries;
+  colours then match the 2D window. The canvas has no mipmaps: from the seat
+  each screen is about 1,700 display pixels wide, and RealityKit sampled the
+  lower levels of a mipmapped canvas as blank.
+- **Subtitles** are the 2D player's subtitle overlay, laid out in the screen's
+  shape and floated 2 cm in front of the picture.
+- **Player window.** It stays open as the theater's remote: it shrinks to
+  960 × 540 points and covers its own picture with the room's name. Its size
+  comes back on leaving. visionOS keeps the window where it was, in front of
+  the lower half of the screen, so drag it below the screen to see subtitles.
+- **Placement.** Each room's `Seat` (the floor under the viewer) is put on the
+  immersive space's origin, the floor under the viewer. The picture is a quad
+  laid over the room's `Screen`, 5 mm in front of it.
+- **Not offered** in the system player route for spatial and multiview video
+  (`VisionNativePlayerScreen`).
+
+The rooms are USDZ exports in `Shared/Theaters/`. The project's
+synchronized-folder exceptions give them only to the visionOS build: about
+22 MB, which the iOS, macOS, and tvOS apps don't carry. Their sources are on
+the `scenes` branch, and each export commit names the `scenes` commit it came
+from. To export them again, run this from a checkout of `scenes`, with
+Blender 5.2 LTS, then copy `out/*.usdz` here:
+
+```sh
+for name in movie-theatre projector-room performance-theatre; do
+  Blender --background scenes/$name/$name.blend \
+    --python tools/export_usd.py -- out/$name.usdz
+done
+```
+
+The menu and window strings are in `Shared/Theater.xcstrings`, in every app
+locale. Frame rate, heat, and comfort haven't been measured on a headset yet;
+everything above was checked in the visionOS 27.2 simulator. In RealityKit the
+Projector Room's haze beam draws as a flat grey wedge, unlike Blender's
+preview; that needs a change to the scene on `scenes`.
+
+Run the theater tests on macOS (geometry and bundled exports) and on a visionOS
+simulator (which also loads every room and finds its `Seat` and `Screen`):
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/TheaterLayoutTests \
+  -only-testing:EdendaleTests/PlayerGuideTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=visionOS Simulator,name=Apple Vision Pro' \
+  -only-testing:EdendaleTests/TheaterLayoutTests \
+  -parallel-testing-enabled NO ARCHS=arm64 CODE_SIGN_IDENTITY=- \
+  CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=
+```
+
+The Quest theater is built natively on `meta-horizon` from the same scenes'
+GLB exports. Android phones, Windows, and the static Web branch have no
+theater.
+
 ### macOS navigation, shortcuts, and player panels
 
 The macOS library window uses a split view instead of the adaptive tab view.

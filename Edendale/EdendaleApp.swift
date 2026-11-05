@@ -134,6 +134,16 @@ struct EdendaleApp: App {
         .commands { EdendaleCommands() }
         #endif
 
+        #if os(visionOS)
+        // The player's Theater menu opens this around the viewer; the
+        // player window stays open as its remote.
+        ImmersiveSpace(id: VisionTheaterController.spaceID) {
+            VisionTheaterSpace()
+                .environment(playerSession)
+        }
+        .immersionStyle(selection: .constant(.full), in: .full)
+        #endif
+
         // macOS uses a dedicated player window. iOS, iPadOS, visionOS, and
         // tvOS present the player over ContentView instead (see ContentView).
         #if os(macOS)
@@ -155,7 +165,9 @@ struct EdendaleApp: App {
         // opens tall enough for several sections and scrolls the rest.
         Settings {
             SettingsView()
-                .frame(width: 760, height: 680)
+                // The sidebar takes 200 points; the open page keeps the width it had
+                // when Settings was one page.
+                .frame(width: 960, height: 680)
                 .tint(Theme.gold)
                 .preferredColorScheme(.dark)
                 .environment(library)

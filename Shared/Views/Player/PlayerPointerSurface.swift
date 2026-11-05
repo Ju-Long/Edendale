@@ -4,7 +4,7 @@
 //
 //  The macOS player's mouse input over empty video: a click shows or hides
 //  the controls, and pressing and holding either half plays at that side's
-//  hold speed (Settings ▸ App Controls) until the button comes up — the
+//  hold speed (Settings ▸ Player Controls) until the button comes up — the
 //  pointer counterpart to the touch gesture layer and the Siri Remote hold.
 //
 

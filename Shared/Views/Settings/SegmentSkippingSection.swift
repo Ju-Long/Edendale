@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Settings → Player Controls ▸ Playback: whether the player offers to skip
+/// intros, recaps, and credits. What TheIntroDB receives is in the privacy
+/// policy; About credits the timestamps.
 struct SegmentSkippingSection: View {
     @Environment(PlayerSession.self) private var session
 
@@ -13,16 +16,9 @@ struct SegmentSkippingSection: View {
                     set: { session.segmentSkipping.isEnabled = $0 }
                 )
             )
-            SettingsNote(String(localized: "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Your video and filename stay on your device. Timestamps are kept only for the playback session."))
             #if os(visionOS)
             SettingsNote(String(localized: "Skip prompts are available in standard playback. Spatial playback in the system player is not supported yet."))
             #endif
-            SettingsActions {
-                Link("Timestamps by TheIntroDB", destination: URL(string: "https://theintrodb.org")!)
-                    .settingsLinkStyle()
-                Link("TheIntroDB Privacy Policy", destination: URL(string: "https://theintrodb.org/docs/privacy")!)
-                    .settingsLinkStyle()
-            }
         }
     }
 }

@@ -297,7 +297,7 @@ final class PlayerChromeModel {
         showHUD(.seek(by: seconds))
     }
 
-    /// Skip lengths and hold speeds from Settings ▸ App Controls.
+    /// Skip lengths and hold speeds from Settings ▸ Player Controls.
     var controls: PlayerControlPreferences { session.controls }
 
     /// Skips back or forward by the viewer's chosen length.
@@ -352,7 +352,7 @@ final class PlayerChromeModel {
     }
 
     /// Press-and-hold on one side of the video: that side's speed from
-    /// Settings ▸ App Controls (0.5× left and 2× right by default).
+    /// Settings ▸ Player Controls (0.5× left and 2× right by default).
     func beginHold(on side: HoldSide) {
         beginHoldRate(controls.holdRate(for: side))
     }

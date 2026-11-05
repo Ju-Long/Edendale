@@ -290,6 +290,10 @@ struct PlayerControlsOverlay: View {
             }
             #endif
 
+            #if os(visionOS)
+            VisionTheaterMenu(onFocus: chipDidFocus)
+            #endif
+
             PlayerAudioRouteButton(diameter: toolbarChipDiameter, onFocus: chipDidFocus)
 
             PlayerIconChip(

@@ -148,6 +148,19 @@ struct PlayerScreen: View {
             )
             .ignoresSafeArea()
 
+            #if os(visionOS)
+            // The picture and subtitles are on the theater's screen, so the
+            // window turns into its remote instead of showing them twice.
+            if session.theater.isImmersed {
+                VisionTheaterRemoteBackdrop(
+                    environment: session.theater.environment,
+                    showsLabel: session.chrome?.controlsVisible != true
+                )
+                .ignoresSafeArea()
+                .transition(.opacity)
+            }
+            #endif
+
             #if os(iOS) || os(visionOS)
             if let chrome = session.chrome, !chrome.guideVisible {
                 PlayerGestureLayer(chrome: chrome, player: player)
@@ -246,6 +259,18 @@ struct PlayerScreen: View {
             pipSource: player.pipSource,
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
+        #elseif os(visionOS)
+        EnhancedVideoPlayer(
+            ringBuffer: player.ringBuffer,
+            presentationTime: player.videoPresentationTime,
+            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+            isPaused: !player.isPlaying,
+            enhancementPipeline: player.enhancementPipeline,
+            frameInterpolator: player.frameInterpolator,
+            sourceFrameRate: player.sourceFrameRate,
+            onSurfaceReady: { _ in session.surfaceDidAttach() }
+        )
+        .theaterFeed(session.theater.screenFeed)
         #else
         EnhancedVideoPlayer(
             ringBuffer: player.ringBuffer,
@@ -285,17 +310,13 @@ struct PlayerScreen: View {
             chrome.skip(.forward)
         case .upArrow:
             if commandPressed {
-                let current = videoAdjustment.values[.brightness]
-                videoAdjustment.set(.brightness, to: current + VideoAdjustment.brightness.step)
-                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
+                adjustBrightness(by: PlayerLogic.levelStep, chrome: chrome)
             } else {
                 chrome.adjustVolume(by: PlayerLogic.levelStep)
             }
         case .downArrow:
             if commandPressed {
-                let current = videoAdjustment.values[.brightness]
-                videoAdjustment.set(.brightness, to: current - VideoAdjustment.brightness.step)
-                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
+                adjustBrightness(by: -PlayerLogic.levelStep, chrome: chrome)
             } else {
                 chrome.adjustVolume(by: -PlayerLogic.levelStep)
             }
@@ -319,6 +340,22 @@ struct PlayerScreen: View {
             return .ignored
         }
         return .handled
+    }
+
+    /// ⌘↑ / ⌘↓ change the screen's brightness, as the swipe does on iPhone
+    /// and iPad. Without one to change (visionOS) they brighten or darken
+    /// the picture itself.
+    private func adjustBrightness(by delta: Float, chrome: PlayerChromeModel) {
+        #if os(iOS) || os(macOS)
+        let level = PlayerLogic.adjustedLevel(Float(ScreenBrightness.level), by: delta)
+        if ScreenBrightness.set(Double(level)) {
+            chrome.showHUD(.brightness(Double(level)))
+            return
+        }
+        #endif
+        let step = delta > 0 ? VideoAdjustment.brightness.step : -VideoAdjustment.brightness.step
+        videoAdjustment.set(.brightness, to: videoAdjustment.values[.brightness] + step)
+        chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
     }
     #endif
 

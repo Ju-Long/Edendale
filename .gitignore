@@ -58,3 +58,7 @@ bun.lock
 /Vendor/FFmpeg/ffmpeg-*/
 /Vendor/FFmpeg/ffmpeg-*.tar.xz
 /Vendor/FFmpeg/frameworks/
+/release
+/src
+/scenes
+/out

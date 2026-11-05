@@ -308,9 +308,6 @@ struct PlayerSettingsPanel: View {
                     detail: String(localized: "Look up intro, recap, and credits timestamps with TheIntroDB")
                 )
             }
-            Text("When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.")
-                .font(Typography.bodySM)
-                .foregroundStyle(Theme.textSecondary)
             ArchiveToggle(isOn: $chrome.loopEnabled) {
                 optionLabel(
                     String(localized: "Loop Video"),

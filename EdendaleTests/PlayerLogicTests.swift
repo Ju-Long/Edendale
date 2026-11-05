@@ -202,3 +202,20 @@ struct PlayerLogicTests {
         #expect(PlayerLogic.siblingVideoFiles(of: missing) == [missing])
     }
 }
+
+#if os(macOS)
+/// macOS dims the player's display through its gamma table.
+@MainActor
+struct ScreenBrightnessDimmingTests {
+    @Test func fullLevelKeepsTheMacsBrightnessAndZeroKeepsAFloor() {
+        #expect(ScreenBrightness.dimmingScale(for: 1) == 1)
+        #expect(ScreenBrightness.dimmingScale(for: 0) == 0.15)
+        #expect(abs(ScreenBrightness.dimmingScale(for: 0.5) - 0.575) < 0.0001)
+    }
+
+    @Test func levelsOutsideTheRangeAreClamped() {
+        #expect(ScreenBrightness.dimmingScale(for: -1) == 0.15)
+        #expect(ScreenBrightness.dimmingScale(for: 3) == 1)
+    }
+}
+#endif

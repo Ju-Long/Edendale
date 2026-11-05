@@ -82,13 +82,15 @@ struct SettingsPage<Content: View>: View {
 
 // MARK: - Section
 
+/// A titled group of settings. A nil title draws the rows alone, for a
+/// page whose navigation title already names them.
 struct SettingsSection<Content: View, Footer: View>: View {
-    private let title: String
+    private let title: String?
     private let content: Content
     private let footer: Footer?
 
     init(
-        _ title: String,
+        _ title: String?,
         @ViewBuilder content: () -> Content,
         @ViewBuilder footer: () -> Footer
     ) {
@@ -99,17 +101,23 @@ struct SettingsSection<Content: View, Footer: View>: View {
 
     var body: some View {
         #if os(macOS) || os(tvOS)
-        VStack(alignment: .leading, spacing: 18) {
-            SectionHeader(title: title)
+        let stack = VStack(alignment: .leading, spacing: 18) {
+            if let title {
+                SectionHeader(title: title)
+            }
             SettingsCard { content }
             if let footer {
                 footer
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(title)
+        if let title {
+            stack.accessibilityLabel(title)
+        } else {
+            stack
+        }
         #else
-        if let footer {
+        if let title, let footer {
             Section {
                 content
             } header: {
@@ -117,11 +125,21 @@ struct SettingsSection<Content: View, Footer: View>: View {
             } footer: {
                 footer
             }
-        } else {
+        } else if let title {
             Section {
                 content
             } header: {
                 Text(title).labelCaps()
+            }
+        } else if let footer {
+            Section {
+                content
+            } footer: {
+                footer
+            }
+        } else {
+            Section {
+                content
             }
         }
         #endif
@@ -129,7 +147,7 @@ struct SettingsSection<Content: View, Footer: View>: View {
 }
 
 extension SettingsSection where Footer == EmptyView {
-    init(_ title: String, @ViewBuilder content: () -> Content) {
+    init(_ title: String?, @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
         self.footer = nil
