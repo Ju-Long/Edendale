@@ -5,7 +5,7 @@
 //  What the player guide teaches: one page per way of controlling playback,
 //  chosen for the platform's input (touch, pointer and keyboard, or the
 //  Siri Remote) and worded with the viewer's own skip lengths and hold
-//  speeds from Settings ▸ App Controls. The guide opens over the video on
+//  speeds from Settings ▸ Player Controls. The guide opens over the video on
 //  a viewer's first playback on the device, and again on request from the
 //  Adjustments panel or Settings (see PlayerGuideView).
 //
@@ -145,7 +145,7 @@ enum PlayerGuide {
         let forward = controls.skipForwardInterval.seconds
         let slow = PlayerLogic.rateLabel(controls.holdRate(for: .left))
         let fast = PlayerLogic.rateLabel(controls.holdRate(for: .right))
-        let appControls = String(localized: "Change skip lengths and hold speeds in Settings ▸ App Controls.")
+        let appControls = String(localized: "Change skip lengths and hold speeds in Settings ▸ Player Controls.")
 
         switch (topic, platform) {
         case (.showControls, .mac):

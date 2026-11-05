@@ -14044,114 +14044,120 @@
         }
       }
     },
-    "App Controls" : {
+    "Appearance" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App-Steuerung"
+            "value" : "Darstellung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Controls"
+            "value" : "Appearance"
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Controls"
+            "value" : "Appearance"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Controls"
+            "value" : "Appearance"
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Controls"
+            "value" : "Appearance"
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controles de la app"
+            "value" : "Apariencia"
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controles de la app"
+            "value" : "Apariencia"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Commandes de l’app"
+            "value" : "Apparence"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controlli dell’app"
+            "value" : "Aspetto"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アプリの操作"
+            "value" : "外観"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "앱 제어"
+            "value" : "모양"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App-bediening"
+            "value" : "Weergave"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controles do App"
+            "value" : "Aparência"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controlos da Aplicação"
+            "value" : "Aspeto"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Управление приложением"
+            "value" : "Оформление"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Appreglage"
+            "value" : "Utseende"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用控制"
+            "value" : "外观"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App 控制"
+            "value" : "外觀"
           }
         }
       }
@@ -15061,124 +15067,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示比例"
-          }
-        }
-      }
-    },
-    "Attribution" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Namensnennung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribution"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribution"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribution"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribution"
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribution"
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atribución"
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atribución"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribution"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attribuzione"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帰属表示"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "저작자 표시"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Naamsvermelding"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atribuição"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atribuição"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Атрибуция"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erkännande"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "归属声明"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "授權標示"
           }
         }
       }
@@ -19147,114 +19035,114 @@
         }
       }
     },
-    "Change skip lengths and hold speeds in Settings ▸ App Controls." : {
+    "Change skip lengths and hold speeds in Settings ▸ Player Controls." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sprunglängen und Haltegeschwindigkeiten änderst du unter Einstellungen ▸ App-Steuerung."
+            "value" : "Sprunglängen und Haltegeschwindigkeiten änderst du unter Einstellungen ▸ Player-Steuerung."
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Change skip lengths and hold speeds in Settings ▸ App Controls."
+            "value" : "Change skip lengths and hold speeds in Settings ▸ Player Controls."
           }
         },
         "en-CA" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Change skip lengths and hold speeds in Settings ▸ App Controls."
+            "value" : "Change skip lengths and hold speeds in Settings ▸ Player Controls."
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Change skip lengths and hold speeds in Settings ▸ App Controls."
+            "value" : "Change skip lengths and hold speeds in Settings ▸ Player Controls."
           }
         },
         "en-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Change skip lengths and hold speeds in Settings ▸ App Controls."
+            "value" : "Change skip lengths and hold speeds in Settings ▸ Player Controls."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cambia la duración de los saltos y las velocidades al mantener en Ajustes ▸ Controles de la app."
+            "value" : "Cambia la duración de los saltos y las velocidades al mantener en Ajustes ▸ Controles del reproductor."
           }
         },
         "es-MX" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cambia la duración de los saltos y las velocidades al mantener en Configuración ▸ Controles de la app."
+            "value" : "Cambia la duración de los saltos y las velocidades al mantener en Configuración ▸ Controles del reproductor."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifiez la durée des sauts et les vitesses de maintien dans Réglages ▸ Commandes de l’app."
+            "value" : "Modifiez la durée des sauts et les vitesses de maintien dans Réglages ▸ Commandes du lecteur."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifica la durata dei salti e le velocità di pressione prolungata in Impostazioni ▸ Controlli dell’app."
+            "value" : "Modifica la durata dei salti e le velocità di pressione prolungata in Impostazioni ▸ Controlli del lettore."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "スキップの秒数と長押し時の速度は「設定」▸「アプリの操作」で変更できます。"
+            "value" : "スキップの秒数と長押し時の速度は「設定」▸「プレーヤーの操作」で変更できます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "건너뛰기 간격과 길게 누를 때의 속도는 설정 ▸ 앱 제어에서 변경할 수 있습니다."
+            "value" : "건너뛰기 간격과 길게 누를 때의 속도는 설정 ▸ 플레이어 제어에서 변경할 수 있습니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wijzig spronglengtes en vasthoudsnelheden in Instellingen ▸ App-bediening."
+            "value" : "Wijzig spronglengtes en vasthoudsnelheden in Instellingen ▸ Spelerbediening."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Altere a duração dos saltos e as velocidades ao manter pressionado em Ajustes ▸ Controles do App."
+            "value" : "Altere a duração dos saltos e as velocidades ao manter pressionado em Ajustes ▸ Controles do Player."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Altere a duração dos saltos e as velocidades ao manter premido em Definições ▸ Controlos da Aplicação."
+            "value" : "Altere a duração dos saltos e as velocidades ao manter premido em Definições ▸ Controlos do Leitor."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Длину перемотки и скорость при удержании можно изменить в разделе «Настройки» ▸ «Управление приложением»."
+            "value" : "Длину перемотки и скорость при удержании можно изменить в разделе «Настройки» ▸ «Управление плеером»."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ändra hopplängder och hållhastigheter i Inställningar ▸ Appreglage."
+            "value" : "Ändra hopplängder och hållhastigheter i Inställningar ▸ Spelarreglage."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可在“设置”▸“应用控制”中更改跳转时长和按住时的速度。"
+            "value" : "可在“设置”▸“播放器控制”中更改跳转时长和按住时的速度。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可在「設定」▸「App 控制」中更改跳轉時間長度和按住時的速度。"
+            "value" : "可在「設定」▸「播放器控制」中更改跳轉時間長度和按住時的速度。"
           }
         }
       }
@@ -23837,6 +23725,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "對比"
+          }
+        }
+      }
+    },
+    "Controls" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steuerung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commandes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlli"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제어"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bediening"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reglage"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制"
           }
         }
       }
@@ -36920,6 +36926,124 @@
         }
       }
     },
+    "General" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allgemein"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Général"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generali"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일반"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algemeen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geral"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основные"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allmänt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        }
+      }
+    },
     "German" : {
       "localizations" : {
         "de" : {
@@ -43565,6 +43689,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "較少"
+          }
+        }
+      }
+    },
+    "Library" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mediathek"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bibliothèque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Libreria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライブラリ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보관함"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bibliotheek"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Медиатека"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bibliotek"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "资料库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料庫"
           }
         }
       }
@@ -57978,6 +58220,124 @@
         }
       }
     },
+    "Player Controls" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player-Steuerung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player Controls"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player Controls"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player Controls"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player Controls"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player Controls"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles del reproductor"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles del reproductor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commandes du lecteur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlli del lettore"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレーヤーの操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "플레이어 제어"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spelerbediening"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles do Player"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlos do Leitor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление плеером"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spelarreglage"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放器控制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放器控制"
+          }
+        }
+      }
+    },
     "Player Guide" : {
       "localizations" : {
         "de" : {
@@ -70305,124 +70665,6 @@
         }
       }
     },
-    "Settings → Sync adds your own storage, for devices outside iCloud." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "„Einstellungen → Synchronisierung“ ergänzt deinen eigenen Speicher für Geräte außerhalb von iCloud."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings → Sync adds your own storage, for devices outside iCloud."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings → Sync adds your own storage, for devices outside iCloud."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings → Sync adds your own storage, for devices outside iCloud."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings → Sync adds your own storage, for devices outside iCloud."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings → Sync adds your own storage, for devices outside iCloud."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajustes → Sincronización añade tu propio almacenamiento, para dispositivos fuera de iCloud."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajustes → Sincronización añade tu propio almacenamiento, para dispositivos fuera de iCloud."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réglages → Synchronisation ajoute votre propre stockage, pour les appareils hors iCloud."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impostazioni → Sincronizzazione aggiunge il tuo spazio di archiviazione, per i dispositivi fuori da iCloud."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「設定 → 同期」では、iCloud 以外のデバイス向けに自分のストレージを追加できます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "설정 → 동기화에서 iCloud 외부 기기를 위한 자체 저장소를 추가할 수 있습니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Instellingen → Synchronisatie voegt je eigen opslag toe, voor apparaten buiten iCloud."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajustes → Sincronização adiciona seu próprio armazenamento, para dispositivos fora do iCloud."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Definições → Sincronização adiciona o seu próprio armazenamento, para dispositivos fora do iCloud."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«Настройки → Синхронизация» добавляет ваше собственное хранилище для устройств вне iCloud."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inställningar → Synk lägger till din egen lagring, för enheter utanför iCloud."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“设置 → 同步”可添加你自己的存储，用于 iCloud 之外的设备。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「設定 → 同步」可加入你自己的儲存空間，用於 iCloud 之外的裝置。"
-          }
-        }
-      }
-    },
     "Shared folders on a Mac, PC, or NAS." : {
       "localizations" : {
         "de" : {
@@ -74092,124 +74334,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已取消登入。"
-          }
-        }
-      }
-    },
-    "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Für die Anmeldung wird das TMDB-Lese-Token der App (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig) benötigt."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El inicio de sesión necesita el token de acceso de lectura de TMDB de la app (TMDB_READ_ACCESS_TOKEN en Secrets.xcconfig)."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Para iniciar sesión se necesita el token de acceso de lectura de TMDB de la app (TMDB_READ_ACCESS_TOKEN en Secrets.xcconfig)."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La connexion nécessite le jeton d'accès en lecture TMDB de l'app (TMDB_READ_ACCESS_TOKEN dans Secrets.xcconfig)."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'accesso richiede il token di accesso in lettura di TMDB dell'app (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サインインにはアプリのTMDB読み取りアクセストークン（Secrets.xcconfigのTMDB_READ_ACCESS_TOKEN）が必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "로그인하려면 앱의 TMDB 읽기 접근 토큰(Secrets.xcconfig의 TMDB_READ_ACCESS_TOKEN)이 필요합니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voor het inloggen is het TMDB-leestoegangstoken van de app nodig (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O início da sessão requer o token de acesso de leitura do TMDB do app (TMDB_READ_ACCESS_TOKEN em Secrets.xcconfig)."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O início de sessão necessita do token de acesso de leitura TMDB da aplicação (TMDB_READ_ACCESS_TOKEN em Secrets.xcconfig)."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Для входа требуется токен чтения TMDB (TMDB_READ_ACCESS_TOKEN в Secrets.xcconfig)."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inloggning kräver appens TMDB-läsåtkomsttoken (TMDB_READ_ACCESS_TOKEN i Secrets.xcconfig)."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录需要应用的 TMDB 读取访问令牌（Secrets.xcconfig 中的 TMDB_READ_ACCESS_TOKEN）。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入需要 App 的 TMDB 讀取存取權杖（Secrets.xcconfig 中的 TMDB_READ_ACCESS_TOKEN）。"
           }
         }
       }
@@ -86392,120 +86516,6 @@
         }
       }
     },
-    "TheIntroDB Privacy Policy" : {
-      "comment" : "A link to TheIntroDB's privacy policy.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datenschutzrichtlinie von TheIntroDB"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB Privacy Policy"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB Privacy Policy"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB Privacy Policy"
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB Privacy Policy"
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Política de privacidad de TheIntroDB"
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Política de privacidad de TheIntroDB"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Politique de confidentialité de TheIntroDB"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Informativa sulla privacy di TheIntroDB"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDBプライバシーポリシー"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB 개인정보 처리방침"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacybeleid van TheIntroDB"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Política de Privacidade do TheIntroDB"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Política de Privacidade do TheIntroDB"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Политика конфиденциальности TheIntroDB"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB:s integritetspolicy"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB 隐私政策"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TheIntroDB 隱私權政策"
-          }
-        }
-      }
-    },
     "There are no saved %@ logins on this device. Link the server here first, or type the login on Apple TV." : {
       "localizations" : {
         "de" : {
@@ -96368,232 +96378,6 @@
         }
       }
     },
-    "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn aktiviert, erhält TheIntroDB die TMDB-ID des Titels, die Folgennummern, die Videodauer und deine IP-Adresse. Zum Überspringen ist immer ein Tastendruck nötig."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si está activado, TheIntroDB recibe el ID de TMDB del título, los números de episodio, la duración del vídeo y tu dirección IP. Para omitir siempre hay que pulsar un botón."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si está activado, TheIntroDB recibe el ID de TMDB del título, los números de episodio, la duración del video y tu dirección IP. Para omitir siempre hay que presionar un botón."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lorsque cette option est activée, TheIntroDB reçoit l’identifiant TMDB du titre, les numéros d’épisode, la durée de la vidéo et votre adresse IP. Passer un segment nécessite toujours d’appuyer sur un bouton."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se attivato, TheIntroDB riceve l’ID TMDB del titolo, i numeri degli episodi, la durata del video e il tuo indirizzo IP. Per saltare serve sempre la pressione di un pulsante."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有効にすると、TheIntroDBはタイトルのTMDB ID、エピソード番号、ビデオの長さ、およびあなたのIPアドレスを受け取ります。スキップには必ずボタンの操作が必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "활성화하면 TheIntroDB가 작품의 TMDB ID, 에피소드 번호, 비디오 길이 및 사용자의 IP 주소를 받습니다. 건너뛰려면 항상 버튼을 눌러야 합니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Als dit is ingeschakeld, ontvangt TheIntroDB de TMDB-ID van de titel, de afleveringsnummers, de videoduur en je IP-adres. Overslaan vereist altijd een druk op een knop."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando ativado, o TheIntroDB recebe o ID do TMDB do título, os números dos episódios, a duração do vídeo e seu endereço IP. Pular sempre exige tocar em um botão."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando ativado, o TheIntroDB recebe o ID do TMDB do título, os números dos episódios, a duração do vídeo e o seu endereço IP. Saltar exige sempre premir um botão."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если функция включена, TheIntroDB получает ID фильма или сериала в TMDB, номера эпизодов, длительность видео и ваш IP-адрес. Для пропуска всегда нужно нажать кнопку."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "När funktionen är aktiverad får TheIntroDB titelns TMDB-ID, avsnittsnummer, videons längd och din IP-adress. Att hoppa över kräver alltid ett knapptryck."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用后，TheIntroDB 会收到影视作品的 TMDB ID、集数编号、视频时长和你的 IP 地址。跳过始终需要按下按钮。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用後，TheIntroDB 會收到影片的 TMDB ID、集數編號、影片長度和你的 IP 位址。略過一律需要按下按鈕。"
-          }
-        }
-      }
-    },
-    "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Your video and filename stay on your device. Timestamps are kept only for the playback session." : {
-      "comment" : "A description of the feature that allows users to skip video prompts.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn aktiviert, erhält TheIntroDB die TMDB-ID des Titels, die Folgennummern, die Videodauer und deine IP-Adresse. Dein Video und der Dateiname bleiben auf deinem Gerät. Zeitmarken werden nur für die Dauer der Wiedergabe gespeichert."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Your video and filename stay on your device. Timestamps are kept only for the playback session."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Your video and filename stay on your device. Timestamps are kept only for the playback session."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Your video and filename stay on your device. Timestamps are kept only for the playback session."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Your video and filename stay on your device. Timestamps are kept only for the playback session."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si está activado, TheIntroDB recibe el ID de TMDB del título, los números de episodio, la duración del vídeo y tu dirección IP. Tu vídeo y el nombre del archivo se quedan en tu dispositivo. Las marcas de tiempo solo se conservan durante la sesión de reproducción."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si está activado, TheIntroDB recibe el ID de TMDB del título, los números de episodio, la duración del video y tu dirección IP. Tu video y el nombre del archivo se quedan en tu dispositivo. Las marcas de tiempo solo se conservan durante la sesión de reproducción."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lorsque cette option est activée, TheIntroDB reçoit l’identifiant TMDB du titre, les numéros d’épisode, la durée de la vidéo et votre adresse IP. Votre vidéo et le nom du fichier restent sur votre appareil. Les repères ne sont conservés que pendant la session de lecture."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se attivato, TheIntroDB riceve l’ID TMDB del titolo, i numeri degli episodi, la durata del video e il tuo indirizzo IP. Il video e il nome del file restano sul tuo dispositivo. I tempi vengono conservati solo per la sessione di riproduzione."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有効にすると、TheIntroDBはタイトルのTMDB ID、エピソード番号、ビデオの長さ、およびあなたのIPアドレスを受け取ります。ビデオとファイル名はデバイスに保持されます。タイムスタンプは再生セッション中のみ保持されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "활성화하면 TheIntroDB가 작품의 TMDB ID, 에피소드 번호, 비디오 길이 및 사용자의 IP 주소를 받습니다. 비디오와 파일 이름은 기기에 유지됩니다. 타임스탬프는 재생 세션 동안에만 보관됩니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Als dit is ingeschakeld, ontvangt TheIntroDB de TMDB-ID van de titel, de afleveringsnummers, de videoduur en je IP-adres. Je video en bestandsnaam blijven op je apparaat. Tijdstempels worden alleen bewaard voor de afspeelsessie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando ativado, o TheIntroDB recebe o ID do TMDB do título, os números dos episódios, a duração do vídeo e seu endereço IP. Seu vídeo e o nome do arquivo ficam no seu dispositivo. Os tempos são mantidos apenas durante a sessão de reprodução."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando ativado, o TheIntroDB recebe o ID do TMDB do título, os números dos episódios, a duração do vídeo e o seu endereço IP. O seu vídeo e o nome do ficheiro permanecem no seu dispositivo. Os tempos são mantidos apenas durante a sessão de reprodução."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если функция включена, TheIntroDB получает ID фильма или сериала в TMDB, номера эпизодов, длительность видео и ваш IP-адрес. Ваше видео и имя файла остаются на устройстве. Метки времени хранятся только во время сеанса воспроизведения."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "När funktionen är aktiverad får TheIntroDB titelns TMDB-ID, avsnittsnummer, videons längd och din IP-adress. Din video och ditt filnamn stannar på din enhet. Tidsstämplar sparas bara under uppspelningen."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用后，TheIntroDB 会收到影视作品的 TMDB ID、集数编号、视频时长和你的 IP 地址。你的视频和文件名保留在你的设备上。时间戳仅在播放会话期间保留。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用後，TheIntroDB 會收到影片的 TMDB ID、集數編號、影片長度和你的 IP 位址。你的影片和檔案名稱會留在你的裝置上。時間戳記只會在播放期間保留。"
-          }
-        }
-      }
-    },
     "While the controls are hidden, swipe right on the clickpad to jump forward %lld seconds, or left to jump back %lld seconds. Swipe down to see the timeline." : {
       "localizations" : {
         "de" : {
@@ -98174,124 +97958,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的評分"
-          }
-        }
-      }
-    },
-    "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deine TMDB-Anmeldung wird in deinem Schlüsselbund gesichert und über iCloud mit deinen anderen Geräten geteilt."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud."
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud."
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud."
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud."
-          }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu inicio de sesión de TMDB se guarda en el llavero y se comparte con tus otros dispositivos a través de iCloud."
-          }
-        },
-        "es-MX" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu inicio de sesión de TMDB se guarda en tu llavero y se comparte con tus otros dispositivos a través de iCloud."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vos identifiants TMDB sont stockés dans votre trousseau et partagés avec vos autres appareils via iCloud."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I tuoi dati di accesso a TMDB sono archiviati nel portachiavi e condivisi con gli altri tuoi dispositivi tramite iCloud."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TMDBのサインイン情報はキーチェーンに保存され、iCloudを通じて他のデバイスと同期されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TMDB 로그인은 키체인에 저장되며 iCloud를 통해 다른 기기와 공유됩니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je TMDB-login wordt bewaard in je sleutelhanger en via iCloud gedeeld met je andere apparaten."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O início de sessão do TMDB é armazenado nas suas chaves e compartilhado com os seus outros dispositivos pelo iCloud."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O seu início de sessão TMDB é guardado no seu porta-chaves e partilhado com os seus outros dispositivos através do iCloud."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваши данные для входа в TMDB хранятся в Связке ключей и синхронизируются с другими устройствами через iCloud."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Din TMDB-inloggning lagras i din nyckelring och delas med dina andra enheter via iCloud."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你的 TMDB 登录信息存储在你的钥匙串中，并通过 iCloud 与你的其他设备共享。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你的 TMDB 登入資訊儲存在鑰匙圈中，並透過 iCloud 與你的其他裝置同步。"
           }
         }
       }

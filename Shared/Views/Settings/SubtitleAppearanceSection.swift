@@ -18,7 +18,7 @@ struct SubtitleAppearanceSection: View {
     private var appearance: SubtitleAppearance { session.subtitleAppearance }
 
     var body: some View {
-        SettingsSection(String(localized: "Subtitles")) {
+        SettingsSection(String(localized: "Appearance")) {
             SubtitleAppearancePreview(appearance: appearance)
 
             choiceRow(

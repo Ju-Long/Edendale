@@ -21,13 +21,19 @@ struct TMDBAccountSection: View {
     @Environment(TMDBAccountStore.self) private var account
 
     var body: some View {
+        // A build without the app's TMDB token has no sign-in to offer.
+        if account.canSignIn || account.phase != .signedOut {
+            section
+        }
+    }
+
+    private var section: some View {
         SettingsSection(String(localized: "TMDB Account")) {
             switch account.phase {
             case .signedIn:
                 SettingsRow(
                     String(localized: "Account"),
-                    value: String(localized: "Connected"),
-                    detail: String(localized: "Your TMDB sign-in is stored in your keychain and shared with your other devices through iCloud.")
+                    value: String(localized: "Connected")
                 ) {
                     Button("Sign Out", role: .destructive) {
                         Task { await account.signOut() }
@@ -99,8 +105,6 @@ struct TMDBAccountSection: View {
                 }
                 .archiveButtonStyle(.secondary)
             }
-        } else {
-            SettingsNote(String(localized: "Signing in needs the app's TMDB read access token (TMDB_READ_ACCESS_TOKEN in Secrets.xcconfig)."))
         }
     }
 }

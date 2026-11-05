@@ -165,7 +165,9 @@ struct EdendaleApp: App {
         // opens tall enough for several sections and scrolls the rest.
         Settings {
             SettingsView()
-                .frame(width: 760, height: 680)
+                // The sidebar takes 200 points; the open page keeps the width it had
+                // when Settings was one page.
+                .frame(width: 960, height: 680)
                 .tint(Theme.gold)
                 .preferredColorScheme(.dark)
                 .environment(library)

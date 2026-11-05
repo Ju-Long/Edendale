@@ -28,7 +28,7 @@ struct AccountsSection: View {
     @State private var chooseError: String?
 
     var body: some View {
-        SettingsSection(String(localized: "Accounts")) {
+        SettingsSection(String(localized: "Linked Accounts")) {
             if store.accounts.isEmpty && store.savedLogins.isEmpty {
                 SettingsNote(String(localized: "No linked accounts or saved logins. Link Source adds them."))
             }
