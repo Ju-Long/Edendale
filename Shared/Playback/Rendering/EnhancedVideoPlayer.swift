@@ -26,6 +26,9 @@ public struct EnhancedVideoPlayer: View {
     var subtitleEngine: SubtitleEngine?
     var pipSource: SampleBufferPiPSource?
     public var onSurfaceReady: ((EnhancedVideoView) -> Void)?
+    #if os(visionOS)
+    private var theaterScreenFeed: VisionTheaterScreenFeed?
+    #endif
 
     init(
         ringBuffer: FrameRingBuffer? = nil,
@@ -57,8 +60,17 @@ public struct EnhancedVideoPlayer: View {
         self.onSurfaceReady = onSurfaceReady
     }
 
+    #if os(visionOS)
+    /// Also draws every frame onto the immersive theater's screen.
+    func theaterFeed(_ feed: VisionTheaterScreenFeed?) -> Self {
+        var copy = self
+        copy.theaterScreenFeed = feed
+        return copy
+    }
+    #endif
+
     public var body: some View {
-        EnhancedVideoPlayerRepresentable(
+        let representable = EnhancedVideoPlayerRepresentable(
             ringBuffer: ringBuffer,
             presentationTime: presentationTime,
             currentPixelBuffer: currentPixelBuffer,
@@ -74,6 +86,13 @@ public struct EnhancedVideoPlayer: View {
             pipSource: pipSource,
             onSurfaceReady: onSurfaceReady
         )
+        #if os(visionOS)
+        var feeding = representable
+        feeding.theaterFeed = theaterScreenFeed
+        return feeding
+        #else
+        return representable
+        #endif
     }
 }
 
@@ -151,6 +170,9 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
     let subtitleRevision: UInt
     let pipSource: SampleBufferPiPSource?
     let onSurfaceReady: ((EnhancedVideoView) -> Void)?
+    #if os(visionOS)
+    var theaterFeed: VisionTheaterScreenFeed?
+    #endif
 
     func makeUIView(context: Context) -> EnhancedVideoView {
         let view = EnhancedVideoView()
@@ -165,6 +187,9 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
 
     static func dismantleUIView(_ uiView: EnhancedVideoView, coordinator: ()) {
         uiView.pipSource = nil
+        #if os(visionOS)
+        uiView.theaterFeed = nil
+        #endif
         uiView.isPlaybackPaused = true
         uiView.isPaused = true
     }
@@ -180,6 +205,9 @@ private struct EnhancedVideoPlayerRepresentable: UIViewRepresentable {
         view.sourceFrameRate = sourceFrameRate
         view.subtitleEngine = subtitleEngine
         view.pipSource = pipSource
+        #if os(visionOS)
+        view.theaterFeed = theaterFeed
+        #endif
         if let currentPixelBuffer {
             view.currentPixelBuffer = currentPixelBuffer
         }

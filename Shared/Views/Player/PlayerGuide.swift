@@ -328,6 +328,14 @@ enum PlayerGuide {
                 detail: String(localized: "Hold the screen in its current orientation")
             ))
         }
+        if platform == .vision {
+            tools.append(PlayerGuideTool(
+                glyph: .asset(.clapperboard),
+                name: String(localized: "Theatre", table: "Theater"),
+                detail: String(localized: "Watch on a big screen in a theatre around you", table: "Theater",
+                               comment: "Player guide: what the Theatre chip does on Apple Vision Pro.")
+            ))
+        }
         tools.append(PlayerGuideTool(
             glyph: .system("airplayaudio"),
             name: String(localized: "Audio Output"),
