@@ -440,6 +440,10 @@ final class PlayerSession {
 
         chrome?.sessionWillEnd()
         saveContentPreferences()
+        #if os(iOS) || os(macOS)
+        // The player's brightness ends with it.
+        ScreenBrightness.restore()
+        #endif
         stopAndRetirePlayer()
         chrome = nil
         item = nil

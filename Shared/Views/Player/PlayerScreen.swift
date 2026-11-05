@@ -310,17 +310,13 @@ struct PlayerScreen: View {
             chrome.skip(.forward)
         case .upArrow:
             if commandPressed {
-                let current = videoAdjustment.values[.brightness]
-                videoAdjustment.set(.brightness, to: current + VideoAdjustment.brightness.step)
-                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
+                adjustBrightness(by: PlayerLogic.levelStep, chrome: chrome)
             } else {
                 chrome.adjustVolume(by: PlayerLogic.levelStep)
             }
         case .downArrow:
             if commandPressed {
-                let current = videoAdjustment.values[.brightness]
-                videoAdjustment.set(.brightness, to: current - VideoAdjustment.brightness.step)
-                chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
+                adjustBrightness(by: -PlayerLogic.levelStep, chrome: chrome)
             } else {
                 chrome.adjustVolume(by: -PlayerLogic.levelStep)
             }
@@ -344,6 +340,22 @@ struct PlayerScreen: View {
             return .ignored
         }
         return .handled
+    }
+
+    /// ⌘↑ / ⌘↓ change the screen's brightness, as the swipe does on iPhone
+    /// and iPad. Without one to change (visionOS) they brighten or darken
+    /// the picture itself.
+    private func adjustBrightness(by delta: Float, chrome: PlayerChromeModel) {
+        #if os(iOS) || os(macOS)
+        let level = PlayerLogic.adjustedLevel(Float(ScreenBrightness.level), by: delta)
+        if ScreenBrightness.set(Double(level)) {
+            chrome.showHUD(.brightness(Double(level)))
+            return
+        }
+        #endif
+        let step = delta > 0 ? VideoAdjustment.brightness.step : -VideoAdjustment.brightness.step
+        videoAdjustment.set(.brightness, to: videoAdjustment.values[.brightness] + step)
+        chrome.showHUD(.brightness(Double(videoAdjustment.effectiveValues[.brightness] / 2)))
     }
     #endif
 
