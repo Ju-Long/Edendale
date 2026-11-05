@@ -867,6 +867,8 @@ class PlayerActivity : ComponentActivity() {
         thumbstickSeeker?.cancel()
         saveContentPreferences()
         writeProgress()
+        // 27.1 sync writes the device file at once when playback stops (SYNC-PROTOCOL.md §8.1).
+        (applicationContext as? EdendaleApplication)?.sync?.flushSoon()
         player?.playWhenReady = false
         super.onStop()
     }
@@ -1374,6 +1376,7 @@ class PlayerActivity : ComponentActivity() {
                     showTmdbId = key.showTmdbId,
                     seasonNumber = key.season,
                     episodeNumber = key.episode,
+                    durationSeconds = duration / 1000.0,
                 ),
             )
         }

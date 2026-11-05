@@ -1,5 +1,6 @@
 package com.babasama.edendale.android.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -90,6 +91,9 @@ data class WatchProgressEntity(
     val showTmdbId: Int?,
     val seasonNumber: Int?,
     val episodeNumber: Int?,
+    /** The title's length in seconds when known (v4, for 27.1 sync's `duration`); 0 before then. */
+    @ColumnInfo(defaultValue = "0")
+    val durationSeconds: Double = 0.0,
 ) {
     fun toDomain(): WatchProgress = WatchProgress(
         tmdbId = tmdbId,
@@ -101,6 +105,7 @@ data class WatchProgressEntity(
         showTmdbId = showTmdbId,
         seasonNumber = seasonNumber,
         episodeNumber = episodeNumber,
+        durationSeconds = durationSeconds,
     )
 
     companion object {
@@ -115,8 +120,79 @@ data class WatchProgressEntity(
             showTmdbId = record.showTmdbId,
             seasonNumber = record.seasonNumber,
             episodeNumber = record.episodeNumber,
+            durationSeconds = record.durationSeconds,
         )
     }
+}
+
+/**
+ * The portable watch-progress records of 27.1 sync (SYNC-PROTOCOL.md §6.1),
+ * one row per key, exactly as the device file carries them: the merged view
+ * of every device in the space, tombstones included. `watch_progress` stays
+ * this device's own, file-keyed view and is projected from here.
+ */
+@Entity(tableName = "sync_watch_progress")
+data class SyncProgressEntity(
+    /** `movie:<id>` or `tv:<id>:<season>:<episode>`. */
+    @PrimaryKey val key: String,
+    val type: String,
+    val tmdbId: Int,
+    val season: Int?,
+    val episode: Int?,
+    val position: Double?,
+    val duration: Double?,
+    val completed: Boolean?,
+    val cleared: Boolean,
+    val device: String,
+    val updateTime: Long,
+)
+
+/** The portable user-media records of 27.1 sync (§6.2); `user_media` is projected from here. */
+@Entity(tableName = "sync_user_media")
+data class SyncUserMediaEntity(
+    /** `movie:<id>` or `tv:<id>`. */
+    @PrimaryKey val key: String,
+    val type: String,
+    val tmdbId: Int,
+    val favourite: Boolean,
+    val watchlist: Boolean,
+    val rating: Double?,
+    val review: String?,
+    val device: String,
+    val updateTime: Long,
+)
+
+@Dao
+interface SyncDao {
+    @Query("SELECT * FROM sync_watch_progress")
+    suspend fun allProgress(): List<SyncProgressEntity>
+
+    @Query("SELECT * FROM sync_user_media")
+    suspend fun allUserMedia(): List<SyncUserMediaEntity>
+
+    @Query("SELECT * FROM sync_watch_progress WHERE `key` = :key")
+    suspend fun progress(key: String): SyncProgressEntity?
+
+    @Query("SELECT * FROM sync_user_media WHERE `key` = :key")
+    suspend fun userMedia(key: String): SyncUserMediaEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertProgress(entities: List<SyncProgressEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertUserMedia(entities: List<SyncUserMediaEntity>)
+
+    @Query("DELETE FROM sync_watch_progress")
+    suspend fun clearProgress()
+
+    @Query("DELETE FROM sync_user_media")
+    suspend fun clearUserMedia()
+
+    @Query("SELECT COUNT(*) FROM sync_watch_progress")
+    suspend fun progressCount(): Int
+
+    @Query("SELECT COUNT(*) FROM sync_user_media")
+    suspend fun userMediaCount(): Int
 }
 
 @Dao
@@ -166,6 +242,17 @@ interface WatchProgressDao {
 
     @Query("DELETE FROM watch_progress WHERE storageKey = :storageKey")
     suspend fun delete(storageKey: String)
+
+    /** This device's row for an episode, by the show, season, and episode numbers a sync record is keyed by (27.1). */
+    @Query("SELECT * FROM watch_progress WHERE mediaType = 'episode' AND showTmdbId = :showTmdbId AND seasonNumber = :season AND episodeNumber = :episode LIMIT 1")
+    suspend fun findEpisode(showTmdbId: Int, season: Int, episode: Int): WatchProgressEntity?
+
+    /** The TMDB id of an episode the library knows, for projecting a synced episode record onto this device's rows (27.1). */
+    @Query(
+        "SELECT e.tmdbId FROM library_episode e JOIN library_show s ON e.showKey = s.`key` " +
+            "WHERE s.tmdbId = :showTmdbId AND e.season = :season AND e.episode = :episode AND e.tmdbId IS NOT NULL LIMIT 1",
+    )
+    suspend fun libraryEpisodeId(showTmdbId: Int, season: Int, episode: Int): Int?
 }
 
 // Local library index. Selected documents keep working across restarts because
@@ -364,16 +451,40 @@ interface LibraryDao {
         LibraryMovieEntity::class,
         LibraryShowEntity::class,
         LibraryEpisodeEntity::class,
+        SyncProgressEntity::class,
+        SyncUserMediaEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class EdendaleDatabase : RoomDatabase() {
     abstract fun userMediaDao(): UserMediaDao
     abstract fun watchProgressDao(): WatchProgressDao
     abstract fun libraryDao(): LibraryDao
+    abstract fun syncDao(): SyncDao
 
     companion object {
+        /**
+         * v4 (27.1 sync): the portable record tables, and the title's duration
+         * on `watch_progress`. Existing rows keep every value.
+         */
+        val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `watch_progress` ADD COLUMN `durationSeconds` REAL NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_watch_progress` (`key` TEXT NOT NULL, `type` TEXT NOT NULL, " +
+                        "`tmdbId` INTEGER NOT NULL, `season` INTEGER, `episode` INTEGER, `position` REAL, `duration` REAL, " +
+                        "`completed` INTEGER, `cleared` INTEGER NOT NULL, `device` TEXT NOT NULL, `updateTime` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`key`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_user_media` (`key` TEXT NOT NULL, `type` TEXT NOT NULL, " +
+                        "`tmdbId` INTEGER NOT NULL, `favourite` INTEGER NOT NULL, `watchlist` INTEGER NOT NULL, `rating` REAL, " +
+                        "`review` TEXT, `device` TEXT NOT NULL, `updateTime` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+                )
+            }
+        }
+
         /**
          * v3 gives each source its kind, a readable path, an account, and its
          * scan state (D.2). Existing rows keep every value; `kind` is filled

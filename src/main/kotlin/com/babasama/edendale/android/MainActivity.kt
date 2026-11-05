@@ -38,6 +38,11 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_VIEW) {
             val dataString = intent.dataString
             if (dataString != null) {
+                // A scanned or tapped pairing QR link (SYNC-PROTOCOL.md §9.3) opens the pairing screen as the guest.
+                if (com.babasama.edendale.handoff.HandoffV2.QrPayload.parse(dataString) != null) {
+                    com.babasama.edendale.android.sync.PendingPairing.link.value = dataString
+                    return
+                }
                 AppRoute.parse(dataString)?.let {
                     pendingRoute.value = it
                 }

@@ -36,10 +36,11 @@ class ProviderHttp(
 ) {
     /**
      * Sends the request [build] makes for an access token and returns a 2xx
-     * response. A refused second token asks for sign-in; other failures
-     * throw [RemoteSourceException].
+     * response, or one whose status [accept] allows (a 404 or 409 a caller
+     * treats as "not there"). A refused second token asks for sign-in; other
+     * failures throw [RemoteSourceException].
      */
-    suspend fun send(build: (String) -> RemoteRequest): RemoteResponse = withContext(Dispatchers.IO) {
+    suspend fun send(accept: (Int) -> Boolean = { false }, build: (String) -> RemoteRequest): RemoteResponse = withContext(Dispatchers.IO) {
         var rejected: String? = null
         var refreshed = false
         var backoffs = 0
@@ -54,7 +55,7 @@ class ProviderHttp(
                 delay(backoffDelaysMillis[backoffs++])
                 continue
             }
-            if (response.status in 200..299) {
+            if (response.status in 200..299 || accept(response.status)) {
                 answer = response
                 continue
             }
@@ -76,8 +77,8 @@ class ProviderHttp(
     }
 
     /** [send], parsing a JSON object body. */
-    suspend fun json(build: (String) -> RemoteRequest): JsonObject {
-        val response = send(build)
+    suspend fun json(accept: (Int) -> Boolean = { false }, build: (String) -> RemoteRequest): JsonObject {
+        val response = send(accept, build)
         return runCatching { Json.parseToJsonElement(response.body.decodeToString()).jsonObject }.getOrNull()
             ?: throw RemoteSourceException(kind, RemoteFailure.ServerError(200))
     }

@@ -173,6 +173,17 @@ fun EdendaleApp(
         }
     }
 
+    // A pairing link from the camera or another app (27.1 handoff): the guest side opens over whatever is showing.
+    val pendingPairingLink by com.babasama.edendale.android.sync.PendingPairing.link.collectAsState()
+    pendingPairingLink?.let { link ->
+        com.babasama.edendale.android.sync.PairingDialog(
+            isTelevision = isTelevision,
+            hosting = false,
+            initialLink = link,
+            onDismiss = { com.babasama.edendale.android.sync.PendingPairing.link.value = null },
+        )
+    }
+
     openShowKey?.let { key ->
         LocalShowHost(
             showKey = key,

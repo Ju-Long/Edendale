@@ -418,8 +418,11 @@ class LibraryRepository(
             )
             if (watched) {
                 dao.upsert(WatchProgressEntity.fromDomain(record))
+                LocalDataStore.syncRecorder?.progressWritten(record)
             } else {
+                val previous = dao.get(record.storageKey)?.toDomain()
                 dao.delete(record.storageKey)
+                LocalDataStore.syncRecorder?.progressCleared(previous ?: record)
             }
         }
     }
