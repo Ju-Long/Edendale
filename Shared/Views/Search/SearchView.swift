@@ -7,6 +7,9 @@
 
 import SwiftUI
 import SwiftData
+#if os(iOS)
+import UIKit
+#endif
 
 struct SearchView: View {
     @Environment(WatchProgressStore.self) private var watchStore
@@ -24,6 +27,17 @@ struct SearchView: View {
     @State private var model: SearchModel
     @State private var path = NavigationPath()
     @State private var showingDateFilter = false
+    #if os(iOS)
+    @State private var isSearchPresented = false
+    @FocusState private var isSearchFieldFocused: Bool
+    /// When the app last put the keyboard away itself: the Search key or a
+    /// tap on the results. Editing that ends just after keeps the search
+    /// open.
+    @State private var keyboardDismissRequestedAt: Date?
+    /// When editing last ended with the search kept open; see
+    /// `searchEditingBegan()`.
+    @State private var searchEditingEndedAt: Date?
+    #endif
 
     /// macOS passes a model it owns so the query and results survive while
     /// the sidebar shows other pages; a tab view keeps the tab alive instead.
@@ -48,6 +62,11 @@ struct SearchView: View {
                 }
                 .padding(.top, localMatches.isEmpty ? 0 : 8)
             }
+            #if os(iOS)
+            // A tap on the results puts the keyboard away. Simultaneous, so
+            // a poster still opens on the same tap.
+            .simultaneousGesture(TapGesture().onEnded { dismissSearchKeyboard() })
+            #endif
             .scrollDisabled(isScrollEmpty)
             #if os(tvOS)
             // Group the grid so Up from the top row reaches the filter bar
@@ -61,7 +80,29 @@ struct SearchView: View {
                 filterBar
             }
             #endif
+            #if os(iOS)
+            .searchable(
+                text: $model.searchText,
+                isPresented: $isSearchPresented,
+                prompt: "Movies, shows, people"
+            )
+            .searchFocused($isSearchFieldFocused)
+            // The Search key ends typing; the query and its results stay.
+            .onSubmit(of: .search) { dismissSearchKeyboard() }
+            // Presenting the search focuses the field; say so, so the focus
+            // binding has a change to make when the keyboard is put away.
+            .onChange(of: isSearchPresented) { _, presented in
+                if presented { isSearchFieldFocused = true }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidEndEditingNotification)) { note in
+                if note.object is UISearchTextField { searchEditingEnded() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { note in
+                if note.object is UISearchTextField { searchEditingBegan() }
+            }
+            #else
             .searchable(text: $model.searchText, prompt: "Movies, shows, people")
+            #endif
             .task { await model.loadTrendingIfNeeded() }
             .task(id: audienceVerificationKey) {
                 await youngAudienceFilter.verify(audienceRefs)
@@ -118,6 +159,53 @@ struct SearchView: View {
             }
         }
     }
+
+    #if os(iOS)
+    // Keeps the search field dismissible. On the iPhone Duo's inner screen
+    // the Search tab's field has a close (X) button that only ends editing;
+    // the system starts editing again a moment later because the search is
+    // still presented, so the keyboard never leaves. Ending the
+    // presentation instead minimizes the search the way the button means
+    // to: the field returns to rest, and the query and its results stay.
+    // UIKit's editing notifications are watched rather than the focus
+    // binding, which can miss the field's first loss of focus.
+
+    /// Puts the keyboard away and keeps the search open, query and all.
+    private func dismissSearchKeyboard() {
+        keyboardDismissRequestedAt = .now
+        isSearchFieldFocused = false
+    }
+
+    /// Editing ended. The app's own dismissals keep the search open; any
+    /// other end — the close button among them — minimizes it. The Search
+    /// key's submit arrives just after editing ends, so this decides on the
+    /// next turn of the run loop.
+    private func searchEditingEnded() {
+        guard isSearchPresented else { return }
+        DispatchQueue.main.async {
+            guard isSearchPresented else { return }
+            if let requestedAt = keyboardDismissRequestedAt,
+               Date.now.timeIntervalSince(requestedAt) < 0.5 {
+                keyboardDismissRequestedAt = nil
+                searchEditingEndedAt = .now
+            } else {
+                isSearchPresented = false
+            }
+        }
+    }
+
+    /// Editing began again within a quarter second of the app's own
+    /// dismissal. No tap is that quick, so the system is bouncing the field
+    /// back as it does after the close button: minimize the search.
+    private func searchEditingBegan() {
+        guard let endedAt = searchEditingEndedAt else { return }
+        searchEditingEndedAt = nil
+        if isSearchPresented, Date.now.timeIntervalSince(endedAt) < 0.25 {
+            isSearchFieldFocused = false
+            isSearchPresented = false
+        }
+    }
+    #endif
 
     // MARK: - Content
 

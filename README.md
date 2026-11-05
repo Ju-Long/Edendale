@@ -284,8 +284,13 @@ offers video and audio track selection when a file contains multiple tracks
 of that type.
 
 Settings → Audio includes adjustable Flat, Movies (default), Music, Dialogue,
-and Night Mode equalizer profiles. Profile selection and adjustments persist
-locally; changing profiles resets the adjustments. Player Adjustments also
+and Night Mode equalizer profiles. On iPhone, iPad, Mac, and Apple Vision Pro
+the ten bands are always shown as a graph whose center line is 0 dB: choosing
+a profile moves each band's point to that profile's level, and dragging a point
+up or down adjusts its band in 1 dB steps (the held point fills and shows its
+level). The preamp slider likewise shows its level before the booster. Profile
+selection and adjustments persist locally; changing profiles resets the
+adjustments. Player Adjustments also
 offers an Audio Booster, off by default, that adds 10 dB of preamp gain within
 the equalizer's bounds and restores the unboosted setting when disabled.
 Profiles and booster changes apply during playback and carry over between files.
@@ -633,11 +638,14 @@ The macOS library window uses a split view instead of the adaptive tab view.
 Its sidebar lists Movies & Shows, Watchlist, Downloaded, and Search; Settings
 opens in its own window from **Edendale ▸ Settings…** (⌘,) instead of a
 sidebar row. That window has a sidebar of its own, like System Settings, listing
-General, Player Controls, Audio, Subtitles, Library, Sync, Accounts, and About
-beside the open category. (iPhone and iPad open Settings as a sheet from the
-gear button in each page's toolbar. There, and on Apple TV and Apple Vision
-Pro, Settings opens on the list of categories, and each one opens its own
-page.) Watchlist and Downloaded are pages of their own and also
+General, Player Controls, Audio, Subtitles, Library, Sync, Accounts, Parental
+Controls, and About beside the open category. (iPhone and iPad open Settings as
+a sheet from the gear button in each page's toolbar. There, and on Apple TV and
+Apple Vision Pro, Settings opens on the list of categories, and each one opens
+its own page; only the Mac has General. iPhone, iPad, and Apple Vision Pro show
+Parental Controls and About in place at the end of that list instead of as
+pages.) Parental Controls holds Young Audience Friendly, a local preference that shows only titles rated
+PG or PG-13 (or TV-PG/TV-14). Watchlist and Downloaded are pages of their own and also
 disclose their sections as child rows, so one section opens without scrolling
 the whole page:
 

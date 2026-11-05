@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.BaBaSaMa.Edendale.sync</string>
+	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -44,14 +48,20 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSApplicationServices</key>
+	<dict>
+		<key>Advertises</key>
+		<array>
+			<dict>
+				<key>NSApplicationServiceIdentifier</key>
+				<string>Edendale-AccountHandoff</string>
+			</dict>
+		</array>
+	</dict>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_edendale-handoff._tcp</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>Edendale scans the code another device shows to set up sync there or to receive its sync location.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Edendale connects to the servers you link, such as SMB, NFS, SFTP, or WebDAV, to play your own videos, and to your other devices on this network to set up sync between them.</string>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.com.BaBaSaMa.Edendale</key>
@@ -63,20 +73,6 @@
 			<key>NSUbiquitousContainerSupportedFolderLevels</key>
 			<string>Any</string>
 		</dict>
-	</dict>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.BaBaSaMa.Edendale.sync</string>
-	</array>
-	<key>NSApplicationServices</key>
-	<dict>
-		<key>Advertises</key>
-		<array>
-			<dict>
-				<key>NSApplicationServiceIdentifier</key>
-				<string>Edendale-AccountHandoff</string>
-			</dict>
-		</array>
 	</dict>
 	<key>OneDriveClientID</key>
 	<string>$(ONEDRIVE_CLIENT_ID)</string>

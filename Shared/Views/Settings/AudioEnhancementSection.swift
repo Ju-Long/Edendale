@@ -8,6 +8,11 @@
 //  The Settings page (macOS/tvOS) offers the profiles as chips; the
 //  grouped list (iOS/visionOS) keeps a menu picker.
 //
+//  iPhone, iPad, Mac, and Vision Pro always show the bands as an
+//  EqualizerGraph whose center line is 0 dB: a profile moves the points
+//  to its curve, and the user drags them from there. Apple TV keeps
+//  remote-operated steppers behind its equalizer button.
+//
 //  visionOS native AVKit playback does not route through VLC, so
 //  equalizer profiles have no effect when the system player is active.
 //
@@ -18,20 +23,33 @@ struct AudioEnhancementSection: View {
     @Environment(AudioEnhancementController.self) private var controller
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    #if os(tvOS)
+    /// Apple TV opens the stepper rows from its equalizer button.
     @State private var isExpanded = false
+    #endif
 
     var body: some View {
         SettingsSection(String(localized: "Audio Enhancement")) {
             profilePicker
+            #if os(tvOS)
             if isExpanded {
                 SettingsRowGroup {
                     preampControl
-                    bandControls
+                    bandRows
                     if controller.hasUserAdjustments {
                         resetButton
                     }
                 }
             }
+            #else
+            SettingsRowGroup {
+                equalizerGraph
+                preampControl
+                if controller.hasUserAdjustments {
+                    resetButton
+                }
+            }
+            #endif
         } footer: {
             VStack(alignment: .leading, spacing: 8) {
                 Text("E-AC-3 surround tracks play through the system’s decoder without enhancement, keeping their full surround and spatial audio.")
@@ -52,15 +70,7 @@ struct AudioEnhancementSection: View {
     private var profilePicker: some View {
         #if os(macOS) || os(tvOS)
         VStack(alignment: .leading, spacing: 14) {
-            #if os(macOS)
-            HStack {
-                profileTitle
-                Spacer()
-                equalizerButton
-            }
-            #else
             profileTitle
-            #endif
 
             FlowLayout(spacing: 10, lineSpacing: 10) {
                 ForEach(AudioEnhancementProfile.allCases) { profile in
@@ -69,7 +79,7 @@ struct AudioEnhancementSection: View {
                         isSelected: controller.selectedProfile == profile,
                         size: profileChipSize
                     ) {
-                        controller.selectProfile(profile)
+                        animateEqualizer { controller.selectProfile(profile) }
                     }
                 }
                 #if os(tvOS)
@@ -86,7 +96,9 @@ struct AudioEnhancementSection: View {
             Spacer()
             Picker("Profile", selection: Binding(
                 get: { controller.selectedProfile },
-                set: { controller.selectProfile($0) }
+                set: { profile in
+                    animateEqualizer { controller.selectProfile(profile) }
+                }
             )) {
                 ForEach(AudioEnhancementProfile.allCases) { profile in
                     Text(profile.displayName).tag(profile)
@@ -95,10 +107,18 @@ struct AudioEnhancementSection: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .tint(Theme.gold)
-
-            equalizerButton
         }
         #endif
+    }
+
+    /// Profile changes and resets sweep the graph's points to their new
+    /// levels; drags move them directly.
+    private func animateEqualizer(_ change: () -> Void) {
+        if reduceMotion {
+            change()
+        } else {
+            withAnimation(.snappy(duration: 0.3)) { change() }
+        }
     }
 
     private var profileChipSize: FilterChip.Size {
@@ -115,6 +135,7 @@ struct AudioEnhancementSection: View {
             .foregroundStyle(Theme.textPrimary)
     }
 
+    #if os(tvOS)
     private var equalizerButton: some View {
         Button {
             if reduceMotion {
@@ -126,35 +147,32 @@ struct AudioEnhancementSection: View {
             }
         } label: {
             Image(systemName: "slider.horizontal.3")
-                #if !os(macOS) && !os(tvOS)
-                .foregroundStyle(isExpanded ? Theme.gold : Theme.textSecondary)
-                #endif
         }
-        #if os(macOS) || os(tvOS)
         // Gold while the equalizer is open. The style owns the color so its
         // focused state can recolor the glyph.
         .archiveButtonStyle(.ghost, active: isExpanded)
-        #else
-        .buttonStyle(.plain)
-        #endif
         .accessibilityLabel(isExpanded
             ? String(localized: "Hide equalizer")
             : String(localized: "Show equalizer")
         )
     }
+    #endif
 
     // MARK: - Preamp
 
     private var preampControl: some View {
+        // Absolute levels, like the graph: the profile sets the preamp and
+        // the user moves it from there. The player's booster adds its gain
+        // on top without moving this.
         #if os(tvOS)
         stepperRow(
             label: String(localized: "Preamp"),
-            effectiveValue: controller.effectivePreamp,
+            effectiveValue: controller.preampLevel,
             onDecrement: {
-                controller.setUserPreampAdjustment(controller.userPreampAdjustment - 1)
+                controller.setPreampLevel(controller.preampLevel - 1)
             },
             onIncrement: {
-                controller.setUserPreampAdjustment(controller.userPreampAdjustment + 1)
+                controller.setPreampLevel(controller.preampLevel + 1)
             }
         )
         #else
@@ -164,15 +182,15 @@ struct AudioEnhancementSection: View {
                     .font(Typography.bodySM)
                     .foregroundStyle(Theme.textSecondary)
                 Spacer()
-                Text(decibelLabel(controller.effectivePreamp))
+                Text(decibelLabel(controller.preampLevel))
                     .font(Typography.bodySM)
                     .monospacedDigit()
                     .foregroundStyle(Theme.gold)
             }
             Slider(
                 value: Binding(
-                    get: { controller.userPreampAdjustment },
-                    set: { controller.setUserPreampAdjustment($0) }
+                    get: { controller.preampLevel },
+                    set: { controller.setPreampLevel($0) }
                 ),
                 in: AudioEnhancementProfile.preampRange,
                 step: 1
@@ -181,76 +199,38 @@ struct AudioEnhancementSection: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Preamp")
-        .accessibilityValue(decibelLabel(controller.effectivePreamp))
+        .accessibilityValue(decibelLabel(controller.preampLevel))
         #endif
     }
 
     // MARK: - Bands
 
-    @ViewBuilder
-    private var bandControls: some View {
-        #if os(macOS)
-        // Two columns keep all ten bands in view on the page.
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 32), GridItem(.flexible())],
-            alignment: .leading,
-            spacing: 18
-        ) {
-            bandRows
-        }
-        #else
-        bandRows
-        #endif
-    }
-
+    #if os(tvOS)
     private var bandRows: some View {
         ForEach(0..<AudioEnhancementProfile.bandCount, id: \.self) { index in
-            #if os(tvOS)
             stepperRow(
                 label: AudioEnhancementProfile.bandFrequencyLabels[index] + " Hz",
                 effectiveValue: controller.effectiveBands[index],
                 onDecrement: {
-                    controller.setUserBandAdjustment(
-                        controller.userBandAdjustments[index] - 1,
-                        at: index
-                    )
+                    controller.setBandLevel(controller.effectiveBands[index] - 1, at: index)
                 },
                 onIncrement: {
-                    controller.setUserBandAdjustment(
-                        controller.userBandAdjustments[index] + 1,
-                        at: index
-                    )
+                    controller.setBandLevel(controller.effectiveBands[index] + 1, at: index)
                 }
             )
-            #else
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(AudioEnhancementProfile.bandFrequencyLabels[index] + " Hz")
-                        .font(Typography.bodySM)
-                        .foregroundStyle(Theme.textSecondary)
-                        .frame(width: 52, alignment: .leading)
-                    Spacer()
-                    Text(decibelLabel(controller.effectiveBands[index]))
-                        .font(Typography.bodySM)
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.gold)
-                }
-                Slider(
-                    value: Binding(
-                        get: { controller.userBandAdjustments[index] },
-                        set: { controller.setUserBandAdjustment($0, at: index) }
-                    ),
-                    in: AudioEnhancementProfile.amplificationRange,
-                    step: 1
-                )
-                .tint(Theme.gold)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(AudioEnhancementProfile.bandFrequencyLabels[index] + " Hz")
-            .accessibilityValue(decibelLabel(controller.effectiveBands[index]))
-            #endif
         }
     }
+    #else
+    private var equalizerGraph: some View {
+        EqualizerGraph(
+            levels: controller.effectiveBands,
+            frequencyLabels: AudioEnhancementProfile.bandFrequencyLabels,
+            range: AudioEnhancementProfile.amplificationRange
+        ) { band, level in
+            controller.setBandLevel(level, at: band)
+        }
+    }
+    #endif
 
     // MARK: - tvOS stepper row
 
@@ -296,12 +276,12 @@ struct AudioEnhancementSection: View {
     private var resetButton: some View {
         #if os(macOS) || os(tvOS)
         Button("Reset Adjustments") {
-            controller.resetUserAdjustments()
+            animateEqualizer { controller.resetUserAdjustments() }
         }
         .archiveButtonStyle(.ghost)
         #else
         Button {
-            controller.resetUserAdjustments()
+            animateEqualizer { controller.resetUserAdjustments() }
         } label: {
             Text("Reset Adjustments")
                 .font(Typography.bodyLG)
@@ -313,12 +293,6 @@ struct AudioEnhancementSection: View {
     // MARK: - Formatting
 
     private func decibelLabel(_ value: Float) -> String {
-        let rounded = Int(value.rounded())
-        if rounded > 0 {
-            return "+\(rounded) dB"
-        } else if rounded < 0 {
-            return "\(rounded) dB"
-        }
-        return "0 dB"
+        DecibelLabel.text(value)
     }
 }
