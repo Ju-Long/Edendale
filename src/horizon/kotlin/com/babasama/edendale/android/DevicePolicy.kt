@@ -43,6 +43,13 @@ data class DevicePolicy(
      * `horizon.theater=true` has it (D15).
      */
     val offersImmersiveTheater: Boolean,
+    /**
+     * The platform name this device writes into its sync file and sends in
+     * handoff version 2 (SYNC-PROTOCOL.md §3, §9.1, §9.6): `horizon` on a
+     * headset, which the Google Drive rule (§9.8) groups with `android` and
+     * `androidtv`, and which other devices show by name.
+     */
+    val syncPlatform: String,
 ) {
     companion object {
         fun resolve(isTelevision: Boolean, isHorizonOs: Boolean, hasTheater: Boolean): DevicePolicy {
@@ -66,6 +73,11 @@ data class DevicePolicy(
                 seeksWithThumbstick = isHorizonOs,
                 // G.5: the theater is a Spatial SDK activity in src/horizonTheater, built on request.
                 offersImmersiveTheater = isHorizonOs && hasTheater,
+                syncPlatform = when {
+                    isHorizonOs -> "horizon"
+                    television -> "androidtv"
+                    else -> "android"
+                },
             )
         }
 

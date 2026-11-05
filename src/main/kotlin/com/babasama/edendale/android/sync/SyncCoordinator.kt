@@ -15,7 +15,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.babasama.edendale.android.BuildConfig
 import com.babasama.edendale.android.EdendaleApplication
-import com.babasama.edendale.android.isTelevisionDevice
+import com.babasama.edendale.android.DevicePolicy
 import com.babasama.edendale.sync.SyncBackoff
 import com.babasama.edendale.sync.SyncDeviceInfo
 import com.babasama.edendale.sync.SyncEngine
@@ -81,8 +81,8 @@ class SyncCoordinator(private val app: EdendaleApplication) {
     private var consecutiveFailures = 0
     private var nextAllowedAt = 0L
 
-    /** The platform name this device writes into its file and the handoff (§3). */
-    val platform: String get() = if (app.isTelevisionDevice()) "androidtv" else "android"
+    /** The platform name this device writes into its file and the handoff (§3); `horizon` on a headset. */
+    val platform: String get() = DevicePolicy.current(app).syncPlatform
 
     fun deviceName(): String = settings.deviceName
         ?: runCatching { Settings.Global.getString(app.contentResolver, Settings.Global.DEVICE_NAME) }.getOrNull()?.takeIf { it.isNotBlank() }

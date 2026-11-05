@@ -18,6 +18,14 @@
     <uses-permission
         android:name="android.permission.WAKE_LOCK"
         tools:node="remove" />
+    <!-- WorkManager (27.1 sync's background job) declares it, and Meta
+         reviews it. It only re-registers the job after a reboot; WorkManager
+         also does that whenever the app starts, and the app syncs on launch.
+         WorkManager takes a wake lock only for foreground work, which sync
+         doesn't use, or in its pre-API-23 alarm scheduler. -->
+    <uses-permission
+        android:name="android.permission.RECEIVE_BOOT_COMPLETED"
+        tools:node="remove" />
 
     <uses-feature
         android:name="android.software.leanback"

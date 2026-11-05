@@ -328,6 +328,8 @@ class TheaterActivity : AppSystemActivity() {
                     showTmdbId = handover.showTmdbId,
                     seasonNumber = handover.season,
                     episodeNumber = handover.episode,
+                    // 27.1 sync sends the title's length with its position (SYNC-PROTOCOL.md §5).
+                    durationSeconds = duration / 1000.0,
                 ),
             )
         }
@@ -709,6 +711,8 @@ class TheaterActivity : AppSystemActivity() {
         saveContentPreferences()
         writeProgress()
         pauseForTheSystem()
+        // As PlayerActivity: 27.1 sync writes the device file at once when playback stops (SYNC-PROTOCOL.md §8.1).
+        (application as? EdendaleApplication)?.sync?.flushSoon()
         super.onStop()
     }
 

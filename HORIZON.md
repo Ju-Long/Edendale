@@ -7,11 +7,11 @@ against.
 
 | | |
 |---|---|
-| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19 |
+| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05 |
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
-| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1` |
+| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1`, where `android`'s 27.1 was merged the same day (B.13) |
 
 **Why this is mostly packaging.** Horizon OS runs ordinary Android apps in a
 floating panel. Touch maps to controller rays, hand pinches, and (on Meta's VR
@@ -501,6 +501,35 @@ and record the result in Findings either way.
 - [ ] **B.12** Wording: list the strings Horizon users see that mention a
   phone, TV, or remote. Change only the ones that are wrong on a headset, in
   all 19 locales.
+- [ ] **B.13** 27.1 sync and handoff version 2 (FEATURES-27.1.md §5–§6,
+  SYNC-PROTOCOL.md on `main`), merged from `android` at `9f99413`. Built
+  2026-11-05 without a headset:
+  - `DevicePolicy.syncPlatform` is `horizon` on a headset, and `src/main`'s
+    `SyncCoordinator.platform` reads it, so the device file, the DNS-SD TXT
+    record, and the `role` message carry `horizon` (§3, §9.1, §9.6).
+    `android`'s code says `android` for anything that isn't a TV.
+  - The theater's progress write carries `durationSeconds`, and its `onStop`
+    calls `sync.flushSoon()`, as `PlayerActivity` does in 27.1.
+  - The manifest overlay removes `RECEIVE_BOOT_COMPLETED` (Deviations).
+
+  On the Quest 3, check:
+  - Settings → Sync with a folder (the system picker, as B.2) and with a
+    linked Google Drive, OneDrive, or Dropbox account, then a WebDAV, SMB, or
+    SFTP login: the space's folder appears, and the headset's file has
+    `"platform": "horizon"` and the headset's name.
+  - A phone on the same space: progress made in the 2D player and in the
+    theater reaches the phone, and the phone's reaches the headset, at the
+    receiving device's next sync (Sync Now forces one).
+  - Pair with Another Device, the headset as host: the phone scans the
+    panel's QR code, or picks the headset from its list and types the code.
+    Then the headset as guest: paste the phone's link, or pick the phone and
+    type its code. Note whether Horizon OS offers any way to scan a QR code;
+    the app asks for no camera.
+  - A Google Drive location sent from an Android phone arrives as an account
+    the headset can use without signing in (§9.8 groups `horizon` with
+    `android`; C.1 decides whether that holds).
+  - `adb shell dumpsys jobscheduler` lists the app's sync job; after a
+    reboot it's missing until the app starts, then back.
 
 ---
 
@@ -516,6 +545,12 @@ and record the result in Findings either way.
   back to the shared key. Then test on the headset: the sign-in opens a
   Custom Tab or the browser, comes back through
   `com.babasama.edendale:/oauth2redirect`, and a folder links and plays.
+
+  *27.1:* SYNC-PROTOCOL.md §9.8 assumes `horizon` uses android's Google
+  client, so a phone sends its Google Drive login to a headset as it is. If
+  this step gives the Quest its own client ID, that token won't refresh on
+  the headset: §9.8 on `main` and android's `HandoffV2` grouping then need to
+  change with it.
 - [ ] **C.2** OneDrive *(owner, Entra)*: add an Android platform redirect with
   `New.jks`'s Base64 SHA-1, `6b+nVd6mkgufJMa1FVHbssFGHzI=` (D3). The manifest's
   current `msauth` path, `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`, belongs to another
@@ -545,6 +580,10 @@ and record the result in Findings either way.
   headset is slow. Network Service Discovery (mDNS) is supported on Horizon
   OS. Relabel the phone side's "Link to a TV" to cover headsets, in all 19
   locales.
+
+  *2026-11-05:* `android`'s 27.1 already lets a headset receive a sync
+  location and its logins: Settings → Sync → Pair with Another Device
+  (handoff version 2, B.13). Link Source's version-1 receiver stays TV-only.
 - [ ] **D.2** Player in its own panel: open `PlayerActivity` with
   `FLAG_ACTIVITY_LAUNCH_ADJACENT | FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_MULTIPLE_TASK`
   so the library and the video sit side by side. This is Horizon's equivalent
@@ -686,6 +725,11 @@ and record the result in Findings either way.
   Meta's own VRC pages, which the cloud container couldn't reach.
 - [ ] **F.4** Data Use Checkup *(owner)*: declare no Platform SDK features and
   no data collected by the developer.
+
+  *27.1:* sync sends watch state only to storage the user chose, on the
+  user's own account (FEATURES-27.1.md §5.1, store disclosures), and
+  `/privacy/` on `web` doesn't describe sync yet; settle both before a 27.1
+  upload.
 - [ ] **F.5** Age rating *(owner)*: answer the IARC questionnaire. The app
   shows TMDB metadata and artwork and plays the user's own files and YouTube
   trailers; it has no user-to-user features.
@@ -1096,6 +1140,7 @@ doesn't need any of G (D15).
 | Offline: sources fail per row, the app stays usable (Functional.3, .7) | ✓ | | ✓ |
 | Headset off and on mid-playback (B.4) | ✓ | | — |
 | Immersive theater (G.10) | ✓ | | check whether it runs |
+| Sync and pairing (B.13) | ✓ | | ✓ |
 
 ## Appendix 2 — Review checklist
 
@@ -1158,6 +1203,7 @@ For whoever reviews the implementation:
 | 2026-10-25 | Immersive spike, release (unsigned) | Size: 70.6 MB grows to 130.1 MB. `libMetaSpatialSDK.so` is 47.8 MB stored uncompressed (AGP's default; 18.6 MB gzipped), and `-vr` adds `libMetaSpatialSDKIsdk.so` (3.8 MB). The SDK's packages declare no permissions, and `verifyHorizonRelease` passes with `HAND_TRACKING` added. | D16, G.11. |
 | 2026-10-26 | Spatial Simulator; signed 2D release `0.27.0.1` (versionCode 3) | The release build (not debuggable, signed with `New.jks`) installs and launches as a panel; TMDB loads; Add Local Folder → EdendaleTest links and scans; Severance S01E01 plays, and the DTS fixture opens with `FfmpegAudioRenderer` loaded. The player's chrome shows only the playlist and panel buttons: no Theater, no PiP. The simulator reports `android.hardware.screen.landscape`, so the required landscape feature `aapt` infers from `PlayerActivity`'s `sensorLandscape` is satisfied there. | Check `adb shell pm list features` on the Quest 3; if the feature is missing, P.6's validator or the store's device filter may refuse the build, and the manifest would need `<uses-feature android:name="android.hardware.screen.landscape" android:required="false" />`. |
 | 2026-11-05 | Meta Spatial SDK 0.14.0 AARs (Gradle cache), no device | Read from the SDK itself, since Meta's pages don't say: `MeshCreationSystem` resolves a mesh URI against `apk:///`, the APK's assets, so `apk:///theater/<room>.glb` loads a room. `libMetaSpatialSDK.so` names `KHR_materials_unlit`, `KHR_texture_transform`, and `KHR_materials_pbrSpecularGlossiness`, and its PBR shader has an unlit variant (`pbLit_unlit`, `pbLit_noalphatest_unlit`; `outColor.rgb = unlit * albedo + …`), so the glTF-standard unlit material is drawn from its base colour. `SceneMesh` exposes `getNodeIndex(name)` and `calculateNodeGlobalMatrix(index)` (and `Matrix44.decompose()`), so the loaded room's nodes can be read back. Run on the JVM, `Quaternion.lookRotationAroundY(v)` turns +Z onto `v` and +X onto (cos, 0, −sin) of v's yaw. Meta's 3D-objects page says the SDK is left-handed (X right, Y up, Z forward) and converts glTF, without saying which axis; its architecture page says right-handed. | G.14 reads the room's frame at runtime; G.10 confirms on the Quest 3. |
+| 2026-11-05 | `work-runtime` 2.10.1 AAR (Gradle cache), no device | WorkManager, which `android`'s 27.1 sync adds, declares `WAKE_LOCK`, `ACCESS_NETWORK_STATE`, `RECEIVE_BOOT_COMPLETED`, and `FOREGROUND_SERVICE`. Only `Processor.startForeground` (foreground work) and the `systemalarm` classes call `WakeLocks.newWakeLock`, and `values-v23` turns the alarm scheduler off, so with minSdk 32 a periodic job never takes a wake lock. `RECEIVE_BOOT_COMPLETED` serves `RescheduleReceiver`. | The overlay removes it (Deviations); B.13 checks the job on the headset. |
 
 ## Deviations log
 
@@ -1193,6 +1239,9 @@ For whoever reviews the implementation:
 | 2026-11-05 | G.7, G.14 | The room mesh has no `defaultShaderOverride`; the prepared GLB's materials are `KHR_materials_unlit` instead. | An override applies one shader to the whole mesh, and the projector beam needs its blending and its own material. If G.10 finds the rooms drawn black, set `defaultShaderOverride = SceneMaterial.UNLIT_SHADER` on the room's `Mesh` as the fallback; the prepared materials suit it too. |
 | 2026-11-05 | G.7 | The screen panel is turned by `lookRotationAroundY(forward)` (+Z away from the viewer), not `lookRotationAroundY(viewer − panel)`. | The spike on the Quest 3 turned its screen that way; G.7's code was written without a device. |
 | 2026-11-05 | G.14 | Rooms are chosen inside the theater (the controls' Room list) and remembered, instead of from a menu on the player's Theater button as on visionOS. | Keeps `src/main` as it is for `git merge android`, and entering the immersive activity is the slow step, so the choice is made where its effect shows. |
+| 2026-11-05 | B.1, B.13 | `src/main` gains a fifth `DevicePolicy` hook: `SyncCoordinator.platform` reads `DevicePolicy.syncPlatform`. | SYNC-PROTOCOL.md §3 names a headset `horizon`, and the handoff's Google rule (§9.8) reads it; `android` has no headset to tell apart. |
+| 2026-11-05 | G.6, B.13 | The theater's `writeProgress` sets `durationSeconds`, and its `onStop` calls `sync.flushSoon()`. | The merge gives both to `PlayerActivity` only; the theater writes progress itself (G.6), and without the length the sync record's duration is estimated from the position. |
+| 2026-11-05 | A.2, B.13 | The overlay removes WorkManager's `RECEIVE_BOOT_COMPLETED` (`tools:node="remove"`), as it removes `WAKE_LOCK`; `FOREGROUND_SERVICE` stays, as it's on neither of Meta's lists. | Meta reviews it, and on a headset it only brings the background job back after a reboot before the app's next launch, which syncs anyway; WorkManager re-registers the job whenever the app starts. |
 
 ## Handoff log
 
@@ -1217,6 +1266,7 @@ For whoever reviews the implementation:
 | 2026-10-26 | D15, P.6 (ALPHA package) | Owner, Claude | Owner asked for an ALPHA package and chose 2D only (theater held back) and a build without the upload. The owner put `New.jks`'s passwords in `.secret/horizon-signing.properties` (Claude created it from the example, without them). Claude added the `horizon.theater` switch (Deviations). Ran (JDK 17): `./gradlew clean`, then `testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 508 tests pass, the store check passes, signed with the Quest key (v2 only), 70.7 MB, "2D panel app"; and `-Phorizon.theater=true assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: passes at 130.1 MB with the theater's class, resources, and About line in the APK. `apksigner verify --print-certs` shows SHA-256 `f2ce0d97…7eff65`; `aapt2 dump badging` shows `com.babasama.edendale` 3 / `0.27.0.1`, minSdk 32, targetSdk 36, arm64-v8a, `installLocation` auto, INTERNET and ACCESS_NETWORK_STATE only. Spatial Simulator run in Findings (the old debug build there was uninstalled first). The APK is `release/horizon/0.27.0.1-alpha/Edendale-horizon-0.27.0.1-3.apk`, SHA-256 `0e01c8a26beffc788c84673e9069b5bb9333d06d751c4a9945fea30fddace442`. Not done: P.2, the upload (P.6), the headset install from the channel, and `pm list features` on the Quest 3. `Horizon Store/27.0/source-en-GB.md` still describes the theater, which a 2D submission doesn't have. |
 | 2026-10-28 | F.3 | Owner, Claude | Owner's go-ahead under Hard rule 6, as two changes on `web`: `d67e627` adds a Meta Quest row to the home page's download section, linking the listing at `https://www.meta.com/experiences/app/1413693368490384/` without the share link's `hwsh` and `utm_*` parameters, and `0644966` is F.3's privacy policy. `npm run check` and `npm run build` passed for each, and both deployed through GitHub Pages. Not read: Meta's Privacy VRC pages and the listing itself, which the cloud container couldn't reach. Nothing on this branch was built, since only this file changed. |
 | 2026-11-05 | G.14 (the three rooms) | Owner, Claude | The owner asked for a `meta-horizon-27.1` branch with the new 3D scenes, implemented in code only: no headset or screen was available. Cut from `meta-horizon` at `61b8751` in the worktree `.claude/worktrees/meta-horizon-27.1`, so the main checkout stayed on `apple-27.1`; `android`'s 27.1 work (sync, handoff v2) isn't merged here. Exported the three rooms from `scenes` `06fb0c7` with Blender 5.2.3 LTS (`tools/export_gltf.py`, unchanged) and prepared them with `tools/horizon/prepare_theater_glb.py` (two runs, identical bytes); Blender re-imported each prepared GLB and rendered it from the seat with its baked colours. Read the Spatial SDK 0.14.0 AARs from the Gradle cache and ran its `Quaternion` on the JVM (Findings). Ran (JDK 17): `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 529 tests pass, 2D release 70.7 MB with no `assets/theater/`; `-Phorizon.theater=true assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: passes at 141.0 MB (was 130.1) with the three rooms; with `projector-room.glb` moved away, `verifyHorizonRelease` fails naming it. **Not run:** anything on the Quest 3 or the Spatial Simulator: G.10's room checks, including the frame each room reports in `logcat`, whether the rooms draw unlit (Deviations: the shader-override fallback), the beam, the Room list, and the cost of the 4096² textures. |
+| 2026-11-05 | B.13 (`android` 27.1 merged) | Owner, Claude | The owner chose to bring `android`'s 27.1 work (sync and handoff version 2, PR 9, `9f99413`) into `meta-horizon-27.1`. `git merge android`: conflicts only in `EdendaleApplication` (sync's start-up next to the `DevicePolicy` Watch Next hook; both kept) and the four English `strings.xml` (`player_theater` and the sync strings; both kept). `git diff android -- src/main/AndroidManifest.xml` is empty, and `git diff android -- src/main` lists the same files as before plus `SyncCoordinator`. Then the B.13 changes (Deviations). Ran (JDK 17): `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 569 tests pass (android's sync, handoff v2, and log-hygiene suites included), 2D release 71.8 MB, permissions `INTERNET`, `ACCESS_NETWORK_STATE`, `FOREGROUND_SERVICE`, and AndroidX's receiver permission, none needing Meta's review; `-Phorizon.theater=true assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: passes at 142.3 MB with the three rooms. **Not run:** anything on a headset (B.13's checks), and nothing pushed. |
 
 ## Sources
 

@@ -68,13 +68,23 @@ instead of the inline player, which shows no picture in a panel. The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 
+27.1's sync and handoff version 2 come from `android` as they are (Sync
+between devices, below), with three changes for a headset (HORIZON.md B.13).
+The device file and the handoff name the headset `horizon`
+(SYNC-PROTOCOL.md §3), which the Google Drive rule groups with Android. The
+theater, which keeps its own progress, writes the title's length and starts a
+sync when it stops, as the 2D player does. The manifest overlay removes
+WorkManager's `RECEIVE_BOOT_COMPLETED`, which Meta reviews, so after a
+reboot the background sync waits for the app's next launch, which syncs
+anyway.
+
 A build with `-Phorizon.theater=true` adds the **immersive theater**
 (HORIZON.md Section G): a Theater button in the player that puts the video on
 a large screen inside an environment, through Meta's Spatial SDK, which makes
 the app a hybrid app. The store's first release is the 2D panel app without
 it (HORIZON.md D15), so `gradle.properties` sets `horizon.theater=false`: the
 APK then has no Spatial SDK, no immersive activity, no hand-tracking
-permission, and no Theater button, and is about 71 MB instead of 130 MB. The
+permission, and no Theater button, and is about 72 MB instead of 142 MB. The
 theater's Spatial SDK code, manifest, and resources live in
 `src/horizonTheater/`, which Gradle adds only to a theater build; its pure
 layout and scene code stays in `src/horizon/.../theater/` with its tests.
@@ -168,8 +178,10 @@ with B or Y as Back; Add Folder through the system picker, and the folder
 surviving a restart; "Open with Edendale" from the Files app; H.264, HEVC, VP9,
 and AV1 at 1080p and 4K, and HDR on the panel; the audio formats and the
 equalizer; Google Drive, OneDrive, Dropbox, and TMDB sign-in from the panel's
-browser and their return to the app; the trailer opening outside the app; the
-headset off and on mid-playback; a second account on the headset; and,
+browser and their return to the app; the trailer opening outside the app;
+Settings → Sync with a folder and with a linked account, the headset's file
+naming it `horizon`, and pairing with a phone in both directions (HORIZON.md
+B.13); the headset off and on mid-playback; a second account on the headset; and,
 offline, each source failing on its own while the app stays usable. For the
 theater (HORIZON.md G.10): entering and leaving it from every source type;
 each room facing the viewer with the picture on its screen, the Room list,

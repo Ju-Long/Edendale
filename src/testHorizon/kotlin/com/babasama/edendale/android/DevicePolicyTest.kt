@@ -20,6 +20,7 @@ class DevicePolicyTest {
                 scrollsWithThumbstick = false,
                 seeksWithThumbstick = false,
                 offersImmersiveTheater = false,
+                syncPlatform = "android",
             ),
             DevicePolicy.resolve(isTelevision = false, isHorizonOs = false, hasTheater = true),
         )
@@ -38,6 +39,7 @@ class DevicePolicyTest {
                 scrollsWithThumbstick = false,
                 seeksWithThumbstick = false,
                 offersImmersiveTheater = false,
+                syncPlatform = "androidtv",
             ),
             DevicePolicy.resolve(isTelevision = true, isHorizonOs = false, hasTheater = true),
         )
@@ -56,6 +58,7 @@ class DevicePolicyTest {
                 scrollsWithThumbstick = true,
                 seeksWithThumbstick = true,
                 offersImmersiveTheater = true,
+                syncPlatform = "horizon",
             ),
             DevicePolicy.resolve(isTelevision = false, isHorizonOs = true, hasTheater = true),
         )
@@ -97,6 +100,20 @@ class DevicePolicyTest {
                 val without = DevicePolicy.resolve(isTelevision, isHorizonOs, hasTheater = false)
                 assertEquals(with.copy(offersImmersiveTheater = false), without)
             }
+        }
+    }
+
+    /** SYNC-PROTOCOL.md §3: a headset names itself `horizon` in its sync file and handoff, whatever its uiMode says. */
+    @Test
+    fun aHeadsetSyncsAsHorizon() {
+        assertEquals("horizon", DevicePolicy.resolve(isTelevision = false, isHorizonOs = true, hasTheater = false).syncPlatform)
+        assertEquals("horizon", DevicePolicy.resolve(isTelevision = true, isHorizonOs = true, hasTheater = true).syncPlatform)
+        assertEquals("androidtv", DevicePolicy.resolve(isTelevision = true, isHorizonOs = false, hasTheater = false).syncPlatform)
+        assertEquals("android", DevicePolicy.resolve(isTelevision = false, isHorizonOs = false, hasTheater = false).syncPlatform)
+        // Every value is one the protocol lists, so the other devices' validation accepts the file.
+        for (isTelevision in listOf(false, true)) for (isHorizonOs in listOf(false, true)) {
+            val platform = DevicePolicy.resolve(isTelevision, isHorizonOs, hasTheater = false).syncPlatform
+            assertEquals(true, platform in com.babasama.edendale.sync.SyncDeviceInfo.PLATFORMS, platform)
         }
     }
 
