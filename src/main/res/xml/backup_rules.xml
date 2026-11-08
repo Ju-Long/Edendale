@@ -10,4 +10,5 @@
     <exclude domain="sharedpref" path="edendale_google_drive.xml" />
     <exclude domain="sharedpref" path="edendale_wyzie.xml" />
         <exclude domain="sharedpref" path="edendale_sync.xml" />
+    <exclude domain="sharedpref" path="edendale_parental.xml" />
 </full-backup-content>
