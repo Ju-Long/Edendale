@@ -570,6 +570,49 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
 
+### Immersive theater (Android XR)
+
+On an Android XR headset the player's **Theater** chip seats you in one of
+three rooms built in Blender on the `scenes` branch, with the video on the
+room's screen: the **Movie Theater**, the **Projector Room**, and the
+**Performance Theater**, the same rooms the Apple Vision Pro and Meta Quest
+builds have (FEATURES-27.1.md §3; ENHANCEMENT.md Section N). The rooms are
+the `scenes` exports of `tools/export_gltf.py` from `06fb0c7` plus the
+owner's seat-forward edits of 2026-11-08 (`claude/scenes-bigger-screen`),
+which put the viewer where the screen spans 54–62° and mark every seat.
+
+- **Entering and leaving.** The chip hands the item, its position, the speed,
+  and the audio and subtitle choices to the theater, which plays on with its
+  own player; the per-title memory and the skip prompts work as in the 2D
+  player. **Exit theater** returns to the 2D player at the same position; when
+  the video ends, the title is marked complete and the library takes over.
+  The theater never starts on its own.
+- **The dock.** The controls float 0.65 m from your eyes, 45° below your line
+  of sight, and follow your head once you turn more than 12° or move more than
+  15 cm: title, timeline, skip back and forward with your intervals,
+  play/pause, Skip Intro / Recap / Credits, Up Next, and the audio, subtitle,
+  and room lists. Subtitles are drawn just in front of the picture.
+- **Seats.** The panel to the left of the dock maps every seat: pinch one to
+  sit there, hold and slide to sweep, **Best Seat** goes back to the room's
+  recommended place, and the room turns so the screen is straight ahead from
+  wherever you sit. **Recentre** puts the screen where you are looking, lying
+  down included.
+- **What stays on the device.** The last room and the seat per room live in
+  the `theater` preferences and are never synced.
+- **Comfort.** Seated, no locomotion, nothing animates but the video and a
+  short fade when the seat changes. Video Enhancement is off in the theater.
+
+The theater is a Play Feature Delivery module, `:xr`, that Play installs with
+the app only on devices declaring `android.software.xr.api.spatial`; phones
+and TVs never download its rooms (23 MB) or renderer. It holds Jetpack XR
+SceneCore, Runtime, and ARCore 1.0.0 (Apache-2.0); the Play Services AR
+runtime and Google's ARCore SDK are excluded, and the split carries no copy
+of Media3. `./gradlew assembleDebug` builds
+`xr/build/outputs/apk/debug/xr-debug.apk` beside the base APK; install both
+with `adb install-multiple -r Edendale-debug.apk xr-debug.apk`. The chip
+appears only on an XR device that has the `xr` split installed. The base
+APK alone, or a phone, shows no theater.
+
 ### Manual device checks
 
 Some behavior needs real hardware and isn't covered by the JVM or instrumented
@@ -591,6 +634,15 @@ tests. Before a release, check on:
 - **A tablet, Chromebook, or desktop-windowing device:** the navigation's child
   rows, docked panels, the keyboard shortcuts, and Meta+/.
 - **A Bluetooth headset:** play, pause, and skip from its buttons.
+- **An Android XR headset:** the Theater chip appears there and nowhere else;
+  each room faces you with the picture on its screen and its baked colours
+  showing; the dock stays still inside a 12° turn and catches up past it;
+  seats across the map, Best Seat, and Recentre (sitting and lying back);
+  subtitles and an audio switch; Exit returns to the player at the position
+  and the end of a video to the library; frame rate at the display's native
+  rate in the Performance Theatre (the heaviest room, 149k triangles), and 30
+  minutes of playback for heat; the Play delivery (the `xr` split arrives
+  with the app on an XR device and on no other).
 - **An SMB server over a phone hotspot or Tailscale:** steady playback, and
   recovery after the connection drops.
 - **Storage services:** link a folder, scan it, and play and seek a file on an
@@ -655,6 +707,7 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
 | Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE, X25519, and HKDF for the device handoffs | MIT (Bouncy Castle Licence) |
 | AndroidX WorkManager | Background sync | Apache-2.0 |
+| Jetpack XR 1.0.0 (`androidx.xr.scenecore`, `androidx.xr.runtime`, `androidx.xr.arcore`, with Google's Impress renderer) | The Android XR theater; in the `xr` split only | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in and pairing QR codes | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
