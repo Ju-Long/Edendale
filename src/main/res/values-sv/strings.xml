@@ -622,4 +622,6 @@
         <item quantity="one">%1$d objekt kunde inte användas.</item>
         <item quantity="other">%1$d objekt kunde inte användas.</item>
     </plurals>
+    <string name="player_theater">Biograf</string>
+    <string name="xr_module_title">Android XR · Biograf</string>
 </resources>

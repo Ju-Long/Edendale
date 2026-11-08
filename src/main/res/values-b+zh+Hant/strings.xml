@@ -613,4 +613,6 @@
     <plurals name="pairing_failed_count">
         <item quantity="other">%1$d 項無法使用。</item>
     </plurals>
+    <string name="player_theater">影院</string>
+    <string name="xr_module_title">Android XR · 影院</string>
 </resources>

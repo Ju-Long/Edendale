@@ -644,4 +644,6 @@
         <item quantity="many">%1$d элементов не удалось использовать.</item>
         <item quantity="other">%1$d элемента не удалось использовать.</item>
     </plurals>
+    <string name="player_theater">Кинозал</string>
+    <string name="xr_module_title">Android XR · Кинозал</string>
 </resources>

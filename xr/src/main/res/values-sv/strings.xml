@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- sv. Generated to match Apple/Shared/Theater.xcstrings and the Quest theater's strings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="theater_exit">Lämna biografen</string>
+    <string name="theater_position">Position</string>
+    <string name="theater_playback_failed">Videon kunde inte spelas upp här. Lämna biografen för att återgå till spelaren.</string>
+    <string name="theater_rooms">Salong</string>
+    <string name="theater_room_movie_theatre">Biosalong</string>
+    <string name="theater_room_projector_room">Projektionssal</string>
+    <string name="theater_room_performance_theatre">Teatersalong</string>
+    <string name="theater_seats">Platser</string>
+    <string name="theater_screen">Duk</string>
+    <string name="theater_your_seat">Din plats</string>
+    <string name="theater_best_seat">Bästa platsen</string>
+    <string name="theater_seat_name">Rad %1$d, plats %2$d</string>
+    <string name="theater_lights">Ljus</string>
+    <string name="theater_lights_normal">Normalt</string>
+    <string name="theater_lights_dim">Dämpat</string>
+    <string name="theater_lights_dark">Mörkt</string>
+    <string name="theater_recentre">Centrera om</string>
+    <string name="theater_recentre_caption">Flyttar duken dit du tittar, även när du ligger ner.</string>
+    <string name="theater_look_down">Titta nedåt för att se reglagen.</string>
+</resources>

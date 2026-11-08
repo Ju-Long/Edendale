@@ -682,5 +682,6 @@
     <string name="pairing_busy">The other device is busy with another pairing.</string>
 
     <!-- Android XR theater (Section N) -->
+    <string name="player_theater">Theater</string>
     <string name="xr_module_title">Android XR theater</string>
 </resources>

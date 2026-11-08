@@ -613,4 +613,6 @@
     <plurals name="pairing_failed_count">
         <item quantity="other">%1$d개 항목을 사용할 수 없었습니다.</item>
     </plurals>
+    <string name="player_theater">극장</string>
+    <string name="xr_module_title">Android XR · 극장</string>
 </resources>

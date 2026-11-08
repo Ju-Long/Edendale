@@ -350,4 +350,6 @@
         <item quantity="one">%1$d item couldn\'t be used.</item>
         <item quantity="other">%1$d items couldn\'t be used.</item>
     </plurals>
+    <string name="player_theater">Theatre</string>
+    <string name="xr_module_title">Android XR theatre</string>
 </resources>

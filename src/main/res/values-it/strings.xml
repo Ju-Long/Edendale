@@ -624,4 +624,6 @@
         <item quantity="one">%1$d elemento non è stato utilizzabile.</item>
         <item quantity="other">%1$d elementi non sono stati utilizzabili.</item>
     </plurals>
+    <string name="player_theater">Cinema</string>
+    <string name="xr_module_title">Android XR · Cinema</string>
 </resources>

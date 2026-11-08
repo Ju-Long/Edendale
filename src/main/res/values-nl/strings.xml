@@ -622,4 +622,6 @@
         <item quantity="one">%1$d item kon niet worden gebruikt.</item>
         <item quantity="other">%1$d items konden niet worden gebruikt.</item>
     </plurals>
+    <string name="player_theater">Bioscoop</string>
+    <string name="xr_module_title">Android XR · Bioscoop</string>
 </resources>

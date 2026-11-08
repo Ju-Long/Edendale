@@ -53,6 +53,8 @@ import com.babasama.edendale.android.R
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.isTelevisionDevice
+import com.babasama.edendale.android.xr.XrTheater
+import com.babasama.edendale.android.xr.XrTheaterHandover
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.introdb.IntroDbMedia
@@ -163,6 +165,12 @@ class PlayerActivity : ComponentActivity() {
         packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     }
 
+    /** An Android XR headset with the theater split installed (ENHANCEMENT.md N-D2). */
+    private val offersTheater: Boolean by lazy { XrTheater.isAvailable(this) }
+
+    /** A position the theater sent the viewer back to; applied once, in place of stored progress. */
+    private var pendingPositionMillis: Long? = null
+
     /** Drives the play/pause and skip buttons drawn inside the PiP window. */
     private val pipActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -242,6 +250,9 @@ class PlayerActivity : ComponentActivity() {
         val showTmdbId = intent.getIntExtra(EXTRA_SHOW_TMDB_ID, -1).takeIf { it > 0 }
         val season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 }
         val episode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
+        // The theater sends the viewer back to the exact position (Section N);
+        // everything else resumes from stored progress.
+        pendingPositionMillis = intent.getLongExtra(EXTRA_POSITION, -1L).takeIf { it >= 0L }
         currentTmdbId = tmdbId
         currentIsEpisode = isEpisode
         currentShowTmdbId = showTmdbId
@@ -379,6 +390,7 @@ class PlayerActivity : ComponentActivity() {
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
+                    onEnterTheater = if (offersTheater) ::enterTheater else null,
                     onAutoPipChanged = ::updatePipParams,
                     onSelectEntry = ::switchTo,
                     onSearchOnlineSubtitles = ::searchOnlineSubtitles,
@@ -394,16 +406,26 @@ class PlayerActivity : ComponentActivity() {
     /** Reads stored progress first (fast Room lookup), then starts playback. */
     private fun lifecycleScopedStart(exoPlayer: ExoPlayer, uri: Uri) {
         val key = progressKey
+        val startAt = pendingPositionMillis
+        pendingPositionMillis = null
         writeScope.launch {
-            resumeFraction = key?.let { dataStore?.getWatchProgress(it.storageKey) }
-                ?.takeIf { !it.isCompleted }
-                ?.normalizedPosition
-                ?.takeIf { it in 0.02..0.94 }
+            resumeFraction = if (startAt != null) {
+                null
+            } else {
+                key?.let { dataStore?.getWatchProgress(it.storageKey) }
+                    ?.takeIf { !it.isCompleted }
+                    ?.normalizedPosition
+                    ?.takeIf { it in 0.02..0.94 }
+            }
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
                 playbackFailureState.value = null
                 videoEffects.beforePrepare()
-                exoPlayer.setMediaItem(mediaItem(uri))
+                if (startAt != null) {
+                    exoPlayer.setMediaItem(mediaItem(uri), startAt)
+                } else {
+                    exoPlayer.setMediaItem(mediaItem(uri))
+                }
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
                 applyPendingResume()
@@ -1025,6 +1047,45 @@ class PlayerActivity : ComponentActivity() {
     // Key routing
     // ------------------------------------------------------------------
 
+    // ------------------------------------------------------------------
+    // Android XR theater (ENHANCEMENT.md Section N)
+    // ------------------------------------------------------------------
+
+    /**
+     * Hands playback to the immersive theater: the item, its position, the
+     * speed, the audio and subtitle choices, and the episode context, then
+     * closes this player. The theater writes progress itself; the write here
+     * only covers a handover that fails before it starts.
+     */
+    private fun enterTheater() {
+        val exoPlayer = player ?: return
+        saveContentPreferences()
+        writeProgress()
+        val tracks = exoPlayer.currentTracks
+        val audio = audioTrackOptions(tracks).firstOrNull { it.isSelected }
+        val text = textTrackOptions(tracks).firstOrNull { it.isSelected }
+        val handover = XrTheaterHandover(
+            uri = currentUriState.value,
+            title = titleState.value,
+            subtitle = subtitleState.value,
+            positionMillis = exoPlayer.currentPosition.coerceAtLeast(0L),
+            playWhenReady = exoPlayer.playWhenReady,
+            tmdbId = currentTmdbId,
+            isEpisode = currentIsEpisode,
+            showTmdbId = currentShowTmdbId,
+            season = progressKey?.season,
+            episode = progressKey?.episode,
+            audioTrackId = audio?.id,
+            audioLanguage = audio?.language,
+            subtitlesOff = text == null,
+            textTrackId = text?.id,
+            textLanguage = text?.language,
+            speed = chrome.baseRate,
+        )
+        startActivity(XrTheater.intent(this, handover))
+        finish()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // Never intercept volume keys — the system (or the TV/AVR) owns them.
         when (event.keyCode) {
@@ -1358,6 +1419,8 @@ class PlayerActivity : ComponentActivity() {
         private const val EXTRA_SHOW_TMDB_ID = "edendale.showTmdbId"
         private const val EXTRA_SEASON = "edendale.season"
         private const val EXTRA_EPISODE = "edendale.episode"
+        /** Where to start, in milliseconds; the theater's way back (Section N). */
+        private const val EXTRA_POSITION = "edendale.positionMillis"
 
         private const val ACTION_PIP_CONTROL = "com.babasama.edendale.PIP_CONTROL"
         private const val EXTRA_PIP_CONTROL = "edendale.pipControl"
@@ -1405,6 +1468,7 @@ class PlayerActivity : ComponentActivity() {
             showTmdbId: Int? = null,
             season: Int? = null,
             episode: Int? = null,
+            positionMillis: Long? = null,
         ): Intent = Intent(context, PlayerActivity::class.java).apply {
             putExtra(EXTRA_URI, uri)
             putExtra(EXTRA_TITLE, title)
@@ -1413,6 +1477,7 @@ class PlayerActivity : ComponentActivity() {
             showTmdbId?.let { putExtra(EXTRA_SHOW_TMDB_ID, it) }
             season?.let { putExtra(EXTRA_SEASON, it) }
             episode?.let { putExtra(EXTRA_EPISODE, it) }
+            positionMillis?.let { putExtra(EXTRA_POSITION, it) }
         }
     }
 }

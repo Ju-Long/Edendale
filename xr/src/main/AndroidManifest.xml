@@ -22,7 +22,7 @@
         <activity
             android:name=".theater.XrTheaterActivity"
             android:exported="false"
-            android:launchMode="singleTask"
+            android:launchMode="singleTop"
             android:excludeFromRecents="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
