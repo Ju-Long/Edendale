@@ -10,6 +10,7 @@ import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryRepository
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.parental.parentalPolicyChanges
 import com.babasama.edendale.android.player.PlayerActivity
 import com.babasama.edendale.domain.WatchProgress
 import kotlinx.coroutines.CancellationException
@@ -68,7 +69,7 @@ internal class WatchNextSettings(context: Context) {
  * off it holds no rows: turning it off removes every row Edendale wrote.
  *
  * The rows go to the system's TV provider on the device, where the launcher
- * reads them; nothing else leaves the device. Titles the Young Audience filter
+ * reads them; nothing else leaves the device. Titles the parental policy
  * hides in the app never reach the home screen.
  */
 internal class WatchNextPublisher(
@@ -77,12 +78,13 @@ internal class WatchNextPublisher(
     private val settings: WatchNextSettings = WatchNextSettings(context),
     private val store: WatchNextStore = TvProviderWatchNextStore(context),
 ) {
-    // The publisher's own filter: it reads the preference the app's filter
-    // writes, and verifies titles the same way, with no shared state to race on.
-    private val audienceFilter = youngAudienceFilter(context)
-
     // A failure here must never take the app down; the next change retries.
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, _ -> })
+
+    // The publisher's own filter: it reads the process's parental controls, as
+    // the app's filter does, but keeps its own decision cache, with no shared
+    // state to race on.
+    private val audienceFilter = youngAudienceFilter(context, scope)
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     fun start() {
@@ -92,7 +94,7 @@ internal class WatchNextPublisher(
                     if (!enabled) {
                         flowOf(emptyList())
                     } else {
-                        combine(librarySnapshots(), audiencePreferenceChanges(context)) { snapshot, _ -> snapshot }
+                        combine(librarySnapshots(), parentalPolicyChanges(context)) { snapshot, _ -> snapshot }
                             // Playback saves progress every 5 s, so the row is written once
                             // playback pauses or stops rather than on every save.
                             .debounce(SETTLE_MILLIS)
@@ -111,7 +113,7 @@ internal class WatchNextPublisher(
         library.folders,
     ) { progress, movies, episodes, shows, folders -> LibrarySnapshot(progress, movies, episodes, shows, folders) }
 
-    /** Continue Watching after the Young Audience filter, as programs. */
+    /** Continue Watching after the parental policy, as programs. */
     private suspend fun desired(snapshot: LibrarySnapshot): List<WatchNextProgram>? = try {
         audienceFilter.refreshPreference()
         audienceFilter.verify(libraryAudienceRefs(snapshot.movies, snapshot.shows))
