@@ -285,6 +285,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Für junges Publikum</string>
+    <string name="settings_young_audience_description">Nur Filme und Serien mit den Freigaben PG oder PG-13 anzeigen, einschließlich gleichwertiger TV-Kennzeichnungen.</string>
+    <string name="audience_verifying">Altersfreigaben werden geprüft</string>
+    <string name="audience_restricted_title">Nicht für junges Publikum verfügbar</string>
+    <string name="audience_restricted_message">Dieser Titel ist nicht als PG oder PG-13 bestätigt.</string>
+    <string name="watchlist_no_young_audience_titles">Deine Merkliste enthält derzeit keine Titel mit PG oder PG-13.</string>
+    <string name="filmography_no_young_audience_titles">In dieser Filmografie gibt es keine Titel mit PG oder PG-13.</string>
+    <string name="settings_section_parental_controls">Kindersicherung</string>
     <string name="parental_pin">PIN</string>
     <string name="parental_enter_pin">Eltern-PIN eingeben</string>
     <string name="parental_unlock">Entsperren</string>
@@ -295,6 +303,31 @@
     <string name="parental_pairing_link_message">Ein Kopplungslink erfordert die Eltern-PIN. Bei einer falschen PIN wird der Link verworfen.</string>
     <string name="parental_restricted_title">Eingeschränkt</string>
     <string name="parental_restricted_message">Dieser Titel liegt über der auf diesem Gerät festgelegten Altersfreigabe.</string>
+    <string name="parental_max_rating_movies">Höchste Filmfreigabe</string>
+    <string name="parental_max_rating_tv">Höchste Serienfreigabe</string>
+    <string name="parental_no_limit">Keine Begrenzung</string>
+    <string name="parental_region_note">Freigaben für %1$s, von TMDB</string>
+    <string name="parental_region_fallback">TMDB hat keine Freigabeliste für %1$s, daher werden die Freigaben für %2$s verwendet.</string>
+    <string name="parental_loading_ratings">Freigaben werden geladen…</string>
+    <string name="parental_ratings_unavailable">Die Freigabeliste konnte nicht geladen werden.</string>
+    <string name="parental_hide_restricted">Eingeschränkte Titel ausblenden</string>
+    <string name="parental_hide_restricted_detail">Ausgeschaltet bleiben eingeschränkte Titel in den Listen, lassen sich aber weder öffnen noch abspielen.</string>
+    <string name="parental_block_trailers">Trailer und Links blockieren</string>
+    <string name="parental_block_trailers_detail">Blendet „Trailer ansehen“ aus und fragt TMDB nie nach Trailern.</string>
+    <string name="parental_lock_settings">PIN für Einstellungen verlangen</string>
+    <string name="parental_lock_settings_detail">Beim Öffnen der Einstellungen wird die PIN abgefragt.</string>
+    <string name="parental_lock_library">PIN für Änderungen an der Bibliothek verlangen</string>
+    <string name="parental_lock_library_detail">Das Hinzufügen, Verknüpfen, erneute Scannen oder Entfernen von Quellen und Titeln fragt nach der PIN.</string>
+    <string name="parental_set_pin">PIN festlegen</string>
+    <string name="parental_change_pin">PIN ändern</string>
+    <string name="parental_remove_pin">PIN entfernen</string>
+    <string name="parental_new_pin">Neue PIN</string>
+    <string name="parental_confirm_pin">PIN bestätigen</string>
+    <string name="parental_current_pin">Aktuelle PIN</string>
+    <string name="parental_pins_differ">Die PINs stimmen nicht überein.</string>
+    <string name="parental_next">Weiter</string>
+    <string name="parental_set_pin_first">Lege eine PIN fest, um diese Sperre zu nutzen.</string>
+    <string name="parental_local_note">Diese Einstellungen bleiben auf diesem Gerät. Sie werden nie synchronisiert oder an ein anderes Gerät gesendet.</string>
     <string name="settings_section_app_controls">App-Steuerung</string>
     <string name="settings_app_controls_skip_backward">Zurückspringen</string>
     <string name="settings_app_controls_skip_forward">Vorspringen</string>

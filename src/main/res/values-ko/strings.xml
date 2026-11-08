@@ -281,6 +281,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">어린 시청자 친화</string>
+    <string name="settings_young_audience_description">PG 또는 PG-13 등급(및 동등한 TV 등급)의 영화와 시리즈만 표시합니다.</string>
+    <string name="audience_verifying">시청 등급 확인 중</string>
+    <string name="audience_restricted_title">어린 시청자에게 제공되지 않음</string>
+    <string name="audience_restricted_message">이 작품은 PG 또는 PG-13 등급으로 확인되지 않았습니다.</string>
+    <string name="watchlist_no_young_audience_titles">볼 목록에 현재 PG 또는 PG-13 작품이 없습니다.</string>
+    <string name="filmography_no_young_audience_titles">이 필모그래피에는 PG 또는 PG-13 작품이 없습니다.</string>
+    <string name="settings_section_parental_controls">자녀 보호</string>
     <string name="parental_pin">PIN</string>
     <string name="parental_enter_pin">보호자 PIN을 입력하세요</string>
     <string name="parental_unlock">잠금 해제</string>
@@ -291,6 +299,31 @@
     <string name="parental_pairing_link_message">페어링 링크에는 보호자 PIN이 필요합니다. PIN이 틀리면 링크가 폐기됩니다.</string>
     <string name="parental_restricted_title">제한됨</string>
     <string name="parental_restricted_message">이 작품은 이 기기에 설정된 등급 제한을 넘습니다.</string>
+    <string name="parental_max_rating_movies">영화 최대 등급</string>
+    <string name="parental_max_rating_tv">TV 프로그램 최대 등급</string>
+    <string name="parental_no_limit">제한 없음</string>
+    <string name="parental_region_note">%1$s 등급, TMDB 제공</string>
+    <string name="parental_region_fallback">TMDB에 %1$s 등급 목록이 없어 %2$s 등급을 사용합니다.</string>
+    <string name="parental_loading_ratings">등급 불러오는 중…</string>
+    <string name="parental_ratings_unavailable">등급 목록을 불러올 수 없습니다.</string>
+    <string name="parental_hide_restricted">제한된 작품 숨기기</string>
+    <string name="parental_hide_restricted_detail">끄면 제한된 작품이 목록에 남지만 열거나 재생할 수 없습니다.</string>
+    <string name="parental_block_trailers">트레일러와 링크 차단</string>
+    <string name="parental_block_trailers_detail">‘트레일러 시청’을 숨기고 TMDB에 트레일러를 요청하지 않습니다.</string>
+    <string name="parental_lock_settings">설정에 PIN 요구</string>
+    <string name="parental_lock_settings_detail">설정을 열 때 PIN을 묻습니다.</string>
+    <string name="parental_lock_library">라이브러리 변경에 PIN 요구</string>
+    <string name="parental_lock_library_detail">소스와 작품을 추가, 연결, 다시 스캔, 제거할 때 PIN을 묻습니다.</string>
+    <string name="parental_set_pin">PIN 설정</string>
+    <string name="parental_change_pin">PIN 변경</string>
+    <string name="parental_remove_pin">PIN 제거</string>
+    <string name="parental_new_pin">새 PIN</string>
+    <string name="parental_confirm_pin">PIN 확인</string>
+    <string name="parental_current_pin">현재 PIN</string>
+    <string name="parental_pins_differ">입력한 PIN이 서로 일치하지 않습니다.</string>
+    <string name="parental_next">다음</string>
+    <string name="parental_set_pin_first">이 잠금을 사용하려면 PIN을 설정하세요.</string>
+    <string name="parental_local_note">이 설정은 이 기기에만 저장됩니다. 동기화되거나 다른 기기로 전송되지 않습니다.</string>
     <string name="settings_section_app_controls">앱 제어</string>
     <string name="settings_app_controls_skip_backward">뒤로 건너뛰기</string>
     <string name="settings_app_controls_skip_forward">앞으로 건너뛰기</string>

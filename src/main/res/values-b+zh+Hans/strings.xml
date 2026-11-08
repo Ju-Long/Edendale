@@ -281,6 +281,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">适合青少年观众</string>
+    <string name="settings_young_audience_description">仅显示分级为 PG 或 PG-13（含同等电视分级）的电影和剧集。</string>
+    <string name="audience_verifying">正在核对分级</string>
+    <string name="audience_restricted_title">不向青少年观众提供</string>
+    <string name="audience_restricted_message">此影片未被确认为 PG 或 PG-13 分级。</string>
+    <string name="watchlist_no_young_audience_titles">你的待看列表中目前没有 PG 或 PG-13 分级的影片。</string>
+    <string name="filmography_no_young_audience_titles">此影人作品中没有 PG 或 PG-13 分级的影片。</string>
+    <string name="settings_section_parental_controls">家长控制</string>
     <string name="parental_pin">PIN 码</string>
     <string name="parental_enter_pin">输入家长 PIN 码</string>
     <string name="parental_unlock">解锁</string>
@@ -291,6 +299,31 @@
     <string name="parental_pairing_link_message">配对链接需要家长 PIN 码。PIN 码错误将丢弃该链接。</string>
     <string name="parental_restricted_title">受限</string>
     <string name="parental_restricted_message">此影片超出了本设备设置的分级上限。</string>
+    <string name="parental_max_rating_movies">电影最高分级</string>
+    <string name="parental_max_rating_tv">电视节目最高分级</string>
+    <string name="parental_no_limit">无限制</string>
+    <string name="parental_region_note">%1$s 的分级，来自 TMDB</string>
+    <string name="parental_region_fallback">TMDB 没有 %1$s 的分级列表，因此使用 %2$s 的分级。</string>
+    <string name="parental_loading_ratings">正在加载分级…</string>
+    <string name="parental_ratings_unavailable">无法加载分级列表。</string>
+    <string name="parental_hide_restricted">隐藏受限影片</string>
+    <string name="parental_hide_restricted_detail">关闭后，受限影片仍会显示在列表中，但无法打开或播放。</string>
+    <string name="parental_block_trailers">屏蔽预告片和链接</string>
+    <string name="parental_block_trailers_detail">隐藏“观看预告片”，且不会向 TMDB 请求预告片。</string>
+    <string name="parental_lock_settings">打开设置需要 PIN 码</string>
+    <string name="parental_lock_settings_detail">打开设置时会要求输入 PIN 码。</string>
+    <string name="parental_lock_library">更改媒体库需要 PIN 码</string>
+    <string name="parental_lock_library_detail">添加、关联、重新扫描或移除来源和影片时会要求输入 PIN 码。</string>
+    <string name="parental_set_pin">设置 PIN 码</string>
+    <string name="parental_change_pin">更改 PIN 码</string>
+    <string name="parental_remove_pin">移除 PIN 码</string>
+    <string name="parental_new_pin">新 PIN 码</string>
+    <string name="parental_confirm_pin">确认 PIN 码</string>
+    <string name="parental_current_pin">当前 PIN 码</string>
+    <string name="parental_pins_differ">两次输入的 PIN 码不一致。</string>
+    <string name="parental_next">下一步</string>
+    <string name="parental_set_pin_first">请先设置 PIN 码以使用此锁定。</string>
+    <string name="parental_local_note">这些设置仅保存在本设备上，绝不会同步或发送到其他设备。</string>
     <string name="settings_section_app_controls">应用控制</string>
     <string name="settings_app_controls_skip_backward">后退</string>
     <string name="settings_app_controls_skip_forward">快进</string>

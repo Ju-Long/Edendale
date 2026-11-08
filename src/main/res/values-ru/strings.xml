@@ -293,6 +293,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Для юной аудитории</string>
+    <string name="settings_young_audience_description">Показывать только фильмы и сериалы с рейтингом PG или PG-13, включая эквивалентные телевизионные рейтинги.</string>
+    <string name="audience_verifying">Проверка возрастных рейтингов</string>
+    <string name="audience_restricted_title">Недоступно для юной аудитории</string>
+    <string name="audience_restricted_message">Это название не подтверждено как PG или PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">В вашем списке «посмотреть» сейчас нет названий с рейтингом PG или PG-13.</string>
+    <string name="filmography_no_young_audience_titles">В этой фильмографии нет названий с рейтингом PG или PG-13.</string>
+    <string name="settings_section_parental_controls">Родительский контроль</string>
     <string name="parental_pin">PIN-код</string>
     <string name="parental_enter_pin">Введите родительский PIN-код</string>
     <string name="parental_unlock">Разблокировать</string>
@@ -303,6 +311,31 @@
     <string name="parental_pairing_link_message">Для ссылки сопряжения нужен родительский PIN-код. При неверном PIN-коде ссылка отклоняется.</string>
     <string name="parental_restricted_title">Ограничено</string>
     <string name="parental_restricted_message">Это название превышает ограничение рейтинга, заданное на этом устройстве.</string>
+    <string name="parental_max_rating_movies">Максимальный рейтинг фильмов</string>
+    <string name="parental_max_rating_tv">Максимальный рейтинг сериалов</string>
+    <string name="parental_no_limit">Без ограничений</string>
+    <string name="parental_region_note">Рейтинги для региона %1$s, по данным TMDB</string>
+    <string name="parental_region_fallback">У TMDB нет списка рейтингов для региона %1$s, поэтому используются рейтинги региона %2$s.</string>
+    <string name="parental_loading_ratings">Загрузка рейтингов…</string>
+    <string name="parental_ratings_unavailable">Не удалось загрузить список рейтингов.</string>
+    <string name="parental_hide_restricted">Скрывать ограниченные названия</string>
+    <string name="parental_hide_restricted_detail">Если выключено, ограниченные названия остаются в списках, но их нельзя открыть или воспроизвести.</string>
+    <string name="parental_block_trailers">Блокировать трейлеры и ссылки</string>
+    <string name="parental_block_trailers_detail">Скрывает кнопку трейлера и никогда не запрашивает трейлеры у TMDB.</string>
+    <string name="parental_lock_settings">Запрашивать PIN-код для настроек</string>
+    <string name="parental_lock_settings_detail">При открытии настроек запрашивается PIN-код.</string>
+    <string name="parental_lock_library">Запрашивать PIN-код для изменений библиотеки</string>
+    <string name="parental_lock_library_detail">Добавление, привязка, повторное сканирование или удаление источников и названий запрашивает PIN-код.</string>
+    <string name="parental_set_pin">Задать PIN-код</string>
+    <string name="parental_change_pin">Изменить PIN-код</string>
+    <string name="parental_remove_pin">Удалить PIN-код</string>
+    <string name="parental_new_pin">Новый PIN-код</string>
+    <string name="parental_confirm_pin">Подтвердите PIN-код</string>
+    <string name="parental_current_pin">Текущий PIN-код</string>
+    <string name="parental_pins_differ">PIN-коды не совпадают.</string>
+    <string name="parental_next">Далее</string>
+    <string name="parental_set_pin_first">Задайте PIN-код, чтобы использовать эту блокировку.</string>
+    <string name="parental_local_note">Эти настройки остаются на этом устройстве. Они никогда не синхронизируются и не отправляются на другое устройство.</string>
     <string name="settings_section_app_controls">Управление приложением</string>
     <string name="settings_app_controls_skip_backward">Перемотка назад</string>
     <string name="settings_app_controls_skip_forward">Перемотка вперед</string>

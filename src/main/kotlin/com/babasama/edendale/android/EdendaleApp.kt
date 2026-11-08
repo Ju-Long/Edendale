@@ -260,7 +260,6 @@ fun EdendaleApp(
             SettingsScreen(
                 isTelevision = true,
                 tmdbAccount = tmdbAccountViewModel,
-                audienceFilter = audienceFilter,
                 contentPadding = PaddingValues(top = 24.dp, bottom = 24.dp),
                 onDismiss = { showSettingsSheet = false },
             )
@@ -354,7 +353,6 @@ fun EdendaleApp(
                 SettingsScreen(
                     isTelevision = false,
                     tmdbAccount = tmdbAccountViewModel,
-                    audienceFilter = audienceFilter,
                     contentPadding = PaddingValues(bottom = 24.dp),
                 )
             }

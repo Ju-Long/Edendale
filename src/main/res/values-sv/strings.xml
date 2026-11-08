@@ -285,6 +285,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Anpassat för ung publik</string>
+    <string name="settings_young_audience_description">Visa bara filmer och serier med åldersgränsen PG eller PG-13, inklusive motsvarande TV-märkningar.</string>
+    <string name="audience_verifying">Kontrollerar åldersgränser</string>
+    <string name="audience_restricted_title">Inte tillgängligt för ung publik</string>
+    <string name="audience_restricted_message">Den här titeln är inte verifierad som PG eller PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">Din bevakningslista innehåller just nu inga titlar med PG eller PG-13.</string>
+    <string name="filmography_no_young_audience_titles">Den här filmografin har inga titlar med PG eller PG-13.</string>
+    <string name="settings_section_parental_controls">Föräldrakontroll</string>
     <string name="parental_pin">PIN-kod</string>
     <string name="parental_enter_pin">Ange föräldra-PIN-koden</string>
     <string name="parental_unlock">Lås upp</string>
@@ -295,6 +303,31 @@
     <string name="parental_pairing_link_message">En parkopplingslänk kräver föräldra-PIN-koden. En felaktig PIN-kod förkastar länken.</string>
     <string name="parental_restricted_title">Begränsad</string>
     <string name="parental_restricted_message">Den här titeln ligger över åldersgränsen som ställts in på den här enheten.</string>
+    <string name="parental_max_rating_movies">Högsta åldersgräns för filmer</string>
+    <string name="parental_max_rating_tv">Högsta åldersgräns för TV-serier</string>
+    <string name="parental_no_limit">Ingen gräns</string>
+    <string name="parental_region_note">Åldersgränser för %1$s, från TMDB</string>
+    <string name="parental_region_fallback">TMDB har ingen åldersgränslista för %1$s, så %2$s åldersgränser används.</string>
+    <string name="parental_loading_ratings">Läser in åldersgränser…</string>
+    <string name="parental_ratings_unavailable">Listan med åldersgränser kunde inte läsas in.</string>
+    <string name="parental_hide_restricted">Dölj begränsade titlar</string>
+    <string name="parental_hide_restricted_detail">Avstängt stannar begränsade titlar kvar i listorna men kan varken öppnas eller spelas upp.</string>
+    <string name="parental_block_trailers">Blockera trailers och länkar</string>
+    <string name="parental_block_trailers_detail">Döljer trailerknappen och frågar aldrig TMDB efter trailers.</string>
+    <string name="parental_lock_settings">Kräv PIN-kod för inställningar</string>
+    <string name="parental_lock_settings_detail">Att öppna inställningarna kräver PIN-koden.</string>
+    <string name="parental_lock_library">Kräv PIN-kod för ändringar i biblioteket</string>
+    <string name="parental_lock_library_detail">Att lägga till, länka, skanna om eller ta bort källor och titlar kräver PIN-koden.</string>
+    <string name="parental_set_pin">Ange PIN-kod</string>
+    <string name="parental_change_pin">Ändra PIN-kod</string>
+    <string name="parental_remove_pin">Ta bort PIN-kod</string>
+    <string name="parental_new_pin">Ny PIN-kod</string>
+    <string name="parental_confirm_pin">Bekräfta PIN-kod</string>
+    <string name="parental_current_pin">Nuvarande PIN-kod</string>
+    <string name="parental_pins_differ">PIN-koderna stämmer inte överens.</string>
+    <string name="parental_next">Nästa</string>
+    <string name="parental_set_pin_first">Ange en PIN-kod för att använda det här låset.</string>
+    <string name="parental_local_note">De här inställningarna stannar på den här enheten. De synkroniseras aldrig och skickas aldrig till någon annan enhet.</string>
     <string name="settings_section_app_controls">Appkontroller</string>
     <string name="settings_app_controls_skip_backward">Hoppa bakåt</string>
     <string name="settings_app_controls_skip_forward">Hoppa framåt</string>

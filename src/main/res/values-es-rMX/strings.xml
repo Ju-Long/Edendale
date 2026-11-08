@@ -285,6 +285,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Apto para público joven</string>
+    <string name="settings_young_audience_description">Mostrar solo películas y series clasificadas PG o PG-13, incluidas las etiquetas de TV equivalentes.</string>
+    <string name="audience_verifying">Verificando clasificaciones</string>
+    <string name="audience_restricted_title">No disponible para público joven</string>
+    <string name="audience_restricted_message">Este título no está verificado como PG o PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">Por ahora no hay títulos PG o PG-13 en tu lista de pendientes.</string>
+    <string name="filmography_no_young_audience_titles">No hay títulos PG o PG-13 disponibles en esta filmografía.</string>
+    <string name="settings_section_parental_controls">Control parental</string>
     <string name="parental_pin">PIN</string>
     <string name="parental_enter_pin">Ingresa el PIN parental</string>
     <string name="parental_unlock">Desbloquear</string>
@@ -295,6 +303,31 @@
     <string name="parental_pairing_link_message">Un enlace de emparejamiento requiere el PIN parental. Un PIN incorrecto descarta el enlace.</string>
     <string name="parental_restricted_title">Restringido</string>
     <string name="parental_restricted_message">Este título supera el límite de clasificación establecido en este dispositivo.</string>
+    <string name="parental_max_rating_movies">Clasificación máxima de películas</string>
+    <string name="parental_max_rating_tv">Clasificación máxima de series</string>
+    <string name="parental_no_limit">Sin límite</string>
+    <string name="parental_region_note">Clasificaciones de %1$s, según TMDB</string>
+    <string name="parental_region_fallback">TMDB no tiene una lista de clasificaciones para %1$s, así que se usan las de %2$s.</string>
+    <string name="parental_loading_ratings">Cargando clasificaciones…</string>
+    <string name="parental_ratings_unavailable">No se pudo cargar la lista de clasificaciones.</string>
+    <string name="parental_hide_restricted">Ocultar títulos restringidos</string>
+    <string name="parental_hide_restricted_detail">Desactivado, los títulos restringidos siguen en las listas, pero no se pueden abrir ni reproducir.</string>
+    <string name="parental_block_trailers">Bloquear tráileres y enlaces</string>
+    <string name="parental_block_trailers_detail">Oculta «Ver tráiler» y nunca pide tráileres a TMDB.</string>
+    <string name="parental_lock_settings">Pedir PIN para la configuración</string>
+    <string name="parental_lock_settings_detail">Al abrir la configuración se pide el PIN.</string>
+    <string name="parental_lock_library">Pedir PIN para cambios en la biblioteca</string>
+    <string name="parental_lock_library_detail">Agregar, vincular, volver a escanear o eliminar orígenes y títulos pide el PIN.</string>
+    <string name="parental_set_pin">Establecer PIN</string>
+    <string name="parental_change_pin">Cambiar PIN</string>
+    <string name="parental_remove_pin">Eliminar PIN</string>
+    <string name="parental_new_pin">Nuevo PIN</string>
+    <string name="parental_confirm_pin">Confirmar PIN</string>
+    <string name="parental_current_pin">PIN actual</string>
+    <string name="parental_pins_differ">Los PIN no coinciden.</string>
+    <string name="parental_next">Siguiente</string>
+    <string name="parental_set_pin_first">Establece un PIN para usar este bloqueo.</string>
+    <string name="parental_local_note">Esta configuración se queda en este dispositivo. Nunca se sincroniza ni se envía a otro dispositivo.</string>
     <string name="settings_section_app_controls">Controles de la app</string>
     <string name="settings_app_controls_skip_backward">Retroceder</string>
     <string name="settings_app_controls_skip_forward">Avanzar</string>

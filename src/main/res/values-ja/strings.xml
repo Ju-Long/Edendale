@@ -281,6 +281,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">若い視聴者向け</string>
+    <string name="settings_young_audience_description">PG または PG-13（および同等のテレビ向けレーティング）の映画と番組のみを表示します。</string>
+    <string name="audience_verifying">レーティングを確認しています</string>
+    <string name="audience_restricted_title">若い視聴者には提供されません</string>
+    <string name="audience_restricted_message">この作品は PG または PG-13 として確認されていません。</string>
+    <string name="watchlist_no_young_audience_titles">ウォッチリストに PG または PG-13 の作品は現在ありません。</string>
+    <string name="filmography_no_young_audience_titles">このフィルモグラフィーに PG または PG-13 の作品はありません。</string>
+    <string name="settings_section_parental_controls">ペアレンタルコントロール</string>
     <string name="parental_pin">PIN</string>
     <string name="parental_enter_pin">ペアレンタル PIN を入力</string>
     <string name="parental_unlock">ロック解除</string>
@@ -291,6 +299,31 @@
     <string name="parental_pairing_link_message">ペアリングリンクにはペアレンタル PIN が必要です。PIN を間違えるとリンクは破棄されます。</string>
     <string name="parental_restricted_title">制限あり</string>
     <string name="parental_restricted_message">この作品は、このデバイスで設定されたレーティングの上限を超えています。</string>
+    <string name="parental_max_rating_movies">映画の最大レーティング</string>
+    <string name="parental_max_rating_tv">テレビ番組の最大レーティング</string>
+    <string name="parental_no_limit">制限なし</string>
+    <string name="parental_region_note">%1$s のレーティング（TMDB より）</string>
+    <string name="parental_region_fallback">TMDB には %1$s のレーティング一覧がないため、%2$s のレーティングを使用します。</string>
+    <string name="parental_loading_ratings">レーティングを読み込んでいます…</string>
+    <string name="parental_ratings_unavailable">レーティング一覧を読み込めませんでした。</string>
+    <string name="parental_hide_restricted">制限された作品を非表示</string>
+    <string name="parental_hide_restricted_detail">オフにすると、制限された作品はリストに残りますが、開いたり再生したりはできません。</string>
+    <string name="parental_block_trailers">予告編とリンクをブロック</string>
+    <string name="parental_block_trailers_detail">「予告編を観る」を非表示にし、TMDB に予告編を要求しません。</string>
+    <string name="parental_lock_settings">設定に PIN を要求</string>
+    <string name="parental_lock_settings_detail">設定を開くときに PIN を求めます。</string>
+    <string name="parental_lock_library">ライブラリの変更に PIN を要求</string>
+    <string name="parental_lock_library_detail">ソースや作品の追加、リンク、再スキャン、削除には PIN が必要です。</string>
+    <string name="parental_set_pin">PIN を設定</string>
+    <string name="parental_change_pin">PIN を変更</string>
+    <string name="parental_remove_pin">PIN を削除</string>
+    <string name="parental_new_pin">新しい PIN</string>
+    <string name="parental_confirm_pin">PIN を確認</string>
+    <string name="parental_current_pin">現在の PIN</string>
+    <string name="parental_pins_differ">入力した PIN が互いに一致しません。</string>
+    <string name="parental_next">次へ</string>
+    <string name="parental_set_pin_first">このロックを使うには PIN を設定してください。</string>
+    <string name="parental_local_note">これらの設定はこのデバイスに留まります。同期されたり、他のデバイスに送信されたりすることはありません。</string>
     <string name="settings_section_app_controls">アプリコントロール</string>
     <string name="settings_app_controls_skip_backward">戻る</string>
     <string name="settings_app_controls_skip_forward">進む</string>

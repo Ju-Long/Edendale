@@ -285,6 +285,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Adapté au jeune public</string>
+    <string name="settings_young_audience_description">N\'afficher que les films et séries classés PG ou PG-13, y compris les mentions TV équivalentes.</string>
+    <string name="audience_verifying">Vérification des classifications</string>
+    <string name="audience_restricted_title">Indisponible pour le jeune public</string>
+    <string name="audience_restricted_message">Ce titre n\'est pas vérifié comme classé PG ou PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">Votre liste à voir ne contient actuellement aucun titre classé PG ou PG-13.</string>
+    <string name="filmography_no_young_audience_titles">Cette filmographie ne contient aucun titre classé PG ou PG-13.</string>
+    <string name="settings_section_parental_controls">Contrôle parental</string>
     <string name="parental_pin">Code PIN</string>
     <string name="parental_enter_pin">Saisissez le code PIN parental</string>
     <string name="parental_unlock">Déverrouiller</string>
@@ -295,6 +303,31 @@
     <string name="parental_pairing_link_message">Un lien de jumelage nécessite le code PIN parental. Un code erroné annule le lien.</string>
     <string name="parental_restricted_title">Restreint</string>
     <string name="parental_restricted_message">Ce titre dépasse la limite de classification définie sur cet appareil.</string>
+    <string name="parental_max_rating_movies">Classification maximale des films</string>
+    <string name="parental_max_rating_tv">Classification maximale des séries</string>
+    <string name="parental_no_limit">Aucune limite</string>
+    <string name="parental_region_note">Classifications pour %1$s, selon TMDB</string>
+    <string name="parental_region_fallback">TMDB n\'a pas de liste de classifications pour %1$s ; celles de %2$s sont utilisées.</string>
+    <string name="parental_loading_ratings">Chargement des classifications…</string>
+    <string name="parental_ratings_unavailable">La liste des classifications n\'a pas pu être chargée.</string>
+    <string name="parental_hide_restricted">Masquer les titres restreints</string>
+    <string name="parental_hide_restricted_detail">Désactivé, les titres restreints restent dans les listes mais ne peuvent être ni ouverts ni lus.</string>
+    <string name="parental_block_trailers">Bloquer les bandes-annonces et les liens</string>
+    <string name="parental_block_trailers_detail">Masque « Regarder la bande-annonce » et ne demande jamais de bandes-annonces à TMDB.</string>
+    <string name="parental_lock_settings">Exiger le code PIN pour les réglages</string>
+    <string name="parental_lock_settings_detail">L\'ouverture des réglages demande le code PIN.</string>
+    <string name="parental_lock_library">Exiger le code PIN pour modifier la bibliothèque</string>
+    <string name="parental_lock_library_detail">Ajouter, lier, réanalyser ou retirer des sources et des titres demande le code PIN.</string>
+    <string name="parental_set_pin">Définir le code PIN</string>
+    <string name="parental_change_pin">Modifier le code PIN</string>
+    <string name="parental_remove_pin">Supprimer le code PIN</string>
+    <string name="parental_new_pin">Nouveau code PIN</string>
+    <string name="parental_confirm_pin">Confirmer le code PIN</string>
+    <string name="parental_current_pin">Code PIN actuel</string>
+    <string name="parental_pins_differ">Les codes PIN ne correspondent pas.</string>
+    <string name="parental_next">Suivant</string>
+    <string name="parental_set_pin_first">Définissez un code PIN pour utiliser ce verrou.</string>
+    <string name="parental_local_note">Ces réglages restent sur cet appareil. Ils ne sont jamais synchronisés ni envoyés à un autre appareil.</string>
     <string name="settings_section_app_controls">Commandes de l\'application</string>
     <string name="settings_app_controls_skip_backward">Reculer</string>
     <string name="settings_app_controls_skip_forward">Avancer</string>

@@ -67,6 +67,7 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SmbClient
 import com.babasama.edendale.android.data.WyzieKeyStore
+import com.babasama.edendale.android.parental.ParentalControlsSection
 import com.babasama.edendale.android.parental.rememberParentalGate
 import com.babasama.edendale.parental.GatedAction
 import com.babasama.edendale.android.player.PlayerLogic
@@ -85,7 +86,6 @@ import com.babasama.edendale.android.data.SourceScanRules
 fun SettingsScreen(
     isTelevision: Boolean,
     tmdbAccount: TmdbAccountViewModel,
-    audienceFilter: YoungAudienceFilter,
     contentPadding: PaddingValues = PaddingValues(),
     onDismiss: (() -> Unit)? = null,
 ) {
@@ -232,11 +232,8 @@ fun SettingsScreen(
         }
 
         item {
-            AudienceSettingsSection(
-                isEnabled = audienceFilter.isEnabled,
-                isTelevision = isTelevision,
-                onToggle = { audienceFilter.isEnabled = it },
-            )
+            // Section O: the Young Audience preset, the rating ceilings, the switches, and the PIN (O-D12).
+            ParentalControlsSection(gate = gate, isTelevision = isTelevision)
         }
 
         if (isTelevision) {
@@ -438,31 +435,6 @@ fun SettingsScreen(
 }
 
 /**
- * The Young Audience preference. The whole row is one focus target — it fills
- * gold under the remote and the switch shows state — so the toggle is reachable
- * with the D-pad without a separately focusable control nested inside.
- */
-@Composable
-private fun AudienceSettingsSection(
-    isEnabled: Boolean,
-    isTelevision: Boolean,
-    onToggle: (Boolean) -> Unit,
-) {
-    SettingsSection(
-        header = stringResource(R.string.settings_section_audience),
-        isTelevision = isTelevision,
-        focusableContent = false,
-    ) {
-        SettingsSwitchRow(
-            title = stringResource(R.string.settings_young_audience_title),
-            detail = stringResource(R.string.settings_young_audience_description),
-            checked = isEnabled,
-            onToggle = onToggle,
-        )
-    }
-}
-
-/**
  * Settings → Android TV: Continue Watching on the home screen (I.3), off by
  * default, and the note about the TV layout.
  */
@@ -486,7 +458,12 @@ private fun AndroidTvSettingsSection() {
     }
 }
 
-/** A setting with a title, a line of detail, and a switch; the whole row toggles it and takes focus on TV. */
+/**
+ * A setting with a title, a line of detail, and a switch. The whole row is one
+ * focus target — it fills gold under the remote and the switch shows state — so
+ * the toggle is reachable with the D-pad without a separately focusable control
+ * nested inside.
+ */
 @Composable
 internal fun SettingsSwitchRow(
     title: String,

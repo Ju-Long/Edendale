@@ -281,6 +281,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">適合青少年觀眾</string>
+    <string name="settings_young_audience_description">僅顯示分級為 PG 或 PG-13（含同等電視分級）的電影和影集。</string>
+    <string name="audience_verifying">正在核對分級</string>
+    <string name="audience_restricted_title">不向青少年觀眾提供</string>
+    <string name="audience_restricted_message">此影片未被確認為 PG 或 PG-13 分級。</string>
+    <string name="watchlist_no_young_audience_titles">你的待看清單中目前沒有 PG 或 PG-13 分級的影片。</string>
+    <string name="filmography_no_young_audience_titles">此影人作品中沒有 PG 或 PG-13 分級的影片。</string>
+    <string name="settings_section_parental_controls">家長控制</string>
     <string name="parental_pin">PIN 碼</string>
     <string name="parental_enter_pin">輸入家長 PIN 碼</string>
     <string name="parental_unlock">解鎖</string>
@@ -291,6 +299,31 @@
     <string name="parental_pairing_link_message">配對連結需要家長 PIN 碼。PIN 碼錯誤將捨棄該連結。</string>
     <string name="parental_restricted_title">受限</string>
     <string name="parental_restricted_message">此影片超出了此裝置設定的分級上限。</string>
+    <string name="parental_max_rating_movies">電影最高分級</string>
+    <string name="parental_max_rating_tv">電視節目最高分級</string>
+    <string name="parental_no_limit">無限制</string>
+    <string name="parental_region_note">%1$s 的分級，來自 TMDB</string>
+    <string name="parental_region_fallback">TMDB 沒有 %1$s 的分級列表，因此使用 %2$s 的分級。</string>
+    <string name="parental_loading_ratings">正在載入分級…</string>
+    <string name="parental_ratings_unavailable">無法載入分級列表。</string>
+    <string name="parental_hide_restricted">隱藏受限影片</string>
+    <string name="parental_hide_restricted_detail">關閉後，受限影片仍會顯示在列表中，但無法開啟或播放。</string>
+    <string name="parental_block_trailers">封鎖預告片和連結</string>
+    <string name="parental_block_trailers_detail">隱藏「觀看預告片」，且不會向 TMDB 要求預告片。</string>
+    <string name="parental_lock_settings">開啟設定需要 PIN 碼</string>
+    <string name="parental_lock_settings_detail">開啟設定時會要求輸入 PIN 碼。</string>
+    <string name="parental_lock_library">變更媒體庫需要 PIN 碼</string>
+    <string name="parental_lock_library_detail">加入、連結、重新掃描或移除來源和影片時會要求輸入 PIN 碼。</string>
+    <string name="parental_set_pin">設定 PIN 碼</string>
+    <string name="parental_change_pin">變更 PIN 碼</string>
+    <string name="parental_remove_pin">移除 PIN 碼</string>
+    <string name="parental_new_pin">新 PIN 碼</string>
+    <string name="parental_confirm_pin">確認 PIN 碼</string>
+    <string name="parental_current_pin">目前的 PIN 碼</string>
+    <string name="parental_pins_differ">兩次輸入的 PIN 碼不一致。</string>
+    <string name="parental_next">下一步</string>
+    <string name="parental_set_pin_first">請先設定 PIN 碼以使用此鎖定。</string>
+    <string name="parental_local_note">這些設定僅保存在此裝置上，絕不會同步或傳送到其他裝置。</string>
     <string name="settings_section_app_controls">應用程式控制</string>
     <string name="settings_app_controls_skip_backward">倒退</string>
     <string name="settings_app_controls_skip_forward">快轉</string>

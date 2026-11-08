@@ -285,6 +285,14 @@
     </plurals>
 
     <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Geschikt voor jong publiek</string>
+    <string name="settings_young_audience_description">Toon alleen films en series met de classificatie PG of PG-13, inclusief gelijkwaardige tv-labels.</string>
+    <string name="audience_verifying">Classificaties controleren</string>
+    <string name="audience_restricted_title">Niet beschikbaar voor jong publiek</string>
+    <string name="audience_restricted_message">Deze titel is niet geverifieerd als PG of PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">Je kijklijst bevat momenteel geen titels met PG of PG-13.</string>
+    <string name="filmography_no_young_audience_titles">Deze filmografie bevat geen titels met PG of PG-13.</string>
+    <string name="settings_section_parental_controls">Ouderlijk toezicht</string>
     <string name="parental_pin">Pincode</string>
     <string name="parental_enter_pin">Voer de ouderlijke pincode in</string>
     <string name="parental_unlock">Ontgrendel</string>
@@ -295,6 +303,31 @@
     <string name="parental_pairing_link_message">Een koppelingslink vereist de ouderlijke pincode. Bij een verkeerde pincode vervalt de link.</string>
     <string name="parental_restricted_title">Beperkt</string>
     <string name="parental_restricted_message">Deze titel valt boven de classificatielimiet die op dit apparaat is ingesteld.</string>
+    <string name="parental_max_rating_movies">Maximale filmclassificatie</string>
+    <string name="parental_max_rating_tv">Maximale tv-classificatie</string>
+    <string name="parental_no_limit">Geen limiet</string>
+    <string name="parental_region_note">Classificaties voor %1$s, van TMDB</string>
+    <string name="parental_region_fallback">TMDB heeft geen classificatielijst voor %1$s, dus worden de classificaties van %2$s gebruikt.</string>
+    <string name="parental_loading_ratings">Classificaties laden…</string>
+    <string name="parental_ratings_unavailable">De classificatielijst kon niet worden geladen.</string>
+    <string name="parental_hide_restricted">Beperkte titels verbergen</string>
+    <string name="parental_hide_restricted_detail">Uitgeschakeld blijven beperkte titels in lijsten staan, maar kunnen ze niet worden geopend of afgespeeld.</string>
+    <string name="parental_block_trailers">Trailers en links blokkeren</string>
+    <string name="parental_block_trailers_detail">Verbergt de trailerknop en vraagt TMDB nooit om trailers.</string>
+    <string name="parental_lock_settings">Pincode vereisen voor instellingen</string>
+    <string name="parental_lock_settings_detail">Bij het openen van Instellingen wordt om de pincode gevraagd.</string>
+    <string name="parental_lock_library">Pincode vereisen voor bibliotheekwijzigingen</string>
+    <string name="parental_lock_library_detail">Bronnen en titels toevoegen, koppelen, opnieuw scannen of verwijderen vraagt om de pincode.</string>
+    <string name="parental_set_pin">Pincode instellen</string>
+    <string name="parental_change_pin">Pincode wijzigen</string>
+    <string name="parental_remove_pin">Pincode verwijderen</string>
+    <string name="parental_new_pin">Nieuwe pincode</string>
+    <string name="parental_confirm_pin">Pincode bevestigen</string>
+    <string name="parental_current_pin">Huidige pincode</string>
+    <string name="parental_pins_differ">De pincodes komen niet overeen.</string>
+    <string name="parental_next">Volgende</string>
+    <string name="parental_set_pin_first">Stel een pincode in om deze vergrendeling te gebruiken.</string>
+    <string name="parental_local_note">Deze instellingen blijven op dit apparaat. Ze worden nooit gesynchroniseerd of naar een ander apparaat gestuurd.</string>
     <string name="settings_section_app_controls">App-bediening</string>
     <string name="settings_app_controls_skip_backward">Terugspoelen</string>
     <string name="settings_app_controls_skip_forward">Vooruitspoelen</string>
