@@ -25,6 +25,11 @@
             android:launchMode="singleTop"
             android:excludeFromRecents="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <!-- The theater opens straight into Full Space; the rest of the app stays a panel. -->
+            <property
+                android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"
+                android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED" />
+        </activity>
     </application>
 </manifest>

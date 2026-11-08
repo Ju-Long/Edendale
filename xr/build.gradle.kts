@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.compose.material3)
     implementation(libs.media3.exoplayer)
 
