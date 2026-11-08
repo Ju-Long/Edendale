@@ -120,6 +120,26 @@ enum PlayerLogic {
         return next
     }
 
+    // MARK: - Prompt focus
+
+    /// A prompt over the picture that the remote's focus can rest on.
+    nonisolated enum Prompt: Equatable, Sendable {
+        /// The "Up Next" card for the next episode.
+        case upNext
+        /// The button that skips an intro, recap, or credits segment.
+        case segmentSkip
+    }
+
+    /// The prompt the tvOS remote's focus defaults to while the controls are
+    /// hidden, so Select acts on it straight away. The Up Next card wins when
+    /// both are up — its window usually falls inside the credits — since
+    /// playing on is the likelier choice there.
+    static func defaultPrompt(showsUpNext: Bool, showsSegmentSkip: Bool) -> Prompt? {
+        if showsUpNext { return .upNext }
+        if showsSegmentSkip { return .segmentSkip }
+        return nil
+    }
+
     // MARK: - End-of-media
 
     /// Whether a stop at `time` (of `duration`) counts as reaching the end,

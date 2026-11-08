@@ -5,9 +5,9 @@
 //  Settings for the player's quick controls: how far a skip jumps back and
 //  forward, chosen with segmented 10 / 15 / 30-second controls drawn with
 //  the matching arrow-rotate glyphs, and the speed each side of the video
-//  plays at while held, set with a stepper. On tvOS both are archive
-//  chrome: there is no system stepper, so speeds step with − and + buttons,
-//  and the system segmented control's white focus platter hides the glyphs.
+//  plays at while held, set with a stepper. Apple TV has no stepper, and the
+//  system segmented control's white focus platter hides the glyphs, so both
+//  are menu pickers there, each named with the remote gesture beneath.
 //  The section closes with the player guide, which shows every control.
 //
 
@@ -44,13 +44,18 @@ struct AppControlsSection: View {
 
     @ViewBuilder
     private var guideRow: some View {
-        #if os(macOS) || os(tvOS)
+        #if os(macOS)
         SettingsRow(String(localized: "Player Guide"), detail: guideDetail) {
             Button("Show") { showGuide = true }
                 .archiveButtonStyle(.secondary)
                 .accessibilityLabel("Show Player Guide")
                 .sheet(isPresented: $showGuide) { guide }
         }
+        #elseif os(tvOS)
+        Button { showGuide = true } label: {
+            SettingsRowLabel(title: String(localized: "Show Player Guide"), detail: guideDetail)
+        }
+        .sheet(isPresented: $showGuide) { guide }
         #else
         Button("Show Player Guide") { showGuide = true }
             .sheet(isPresented: $showGuide) { guide }
@@ -64,6 +69,9 @@ struct AppControlsSection: View {
         #if os(macOS)
         .frame(minWidth: 760, idealWidth: 880, minHeight: 540, idealHeight: 600)
         #endif
+        // The guide keeps its own archive buttons; only the Settings rows
+        // draw system ones.
+        .environment(\.archiveButtonsUseSystemStyle, false)
     }
 
     #if os(macOS) || os(tvOS)
@@ -80,10 +88,18 @@ struct AppControlsSection: View {
 
     @ViewBuilder
     private func skipRow(_ direction: SkipDirection) -> some View {
-        #if os(macOS) || os(tvOS)
+        #if os(macOS)
         SettingsRow(skipTitle(direction), detail: skipDetail(direction)) {
             skipPicker(direction)
         }
+        #elseif os(tvOS)
+        SettingsChoiceRow(
+            skipTitle(direction),
+            detail: skipDetail(direction),
+            selection: skipBinding(direction),
+            options: SkipInterval.allCases,
+            name: \.spokenName
+        )
         #else
         LabeledContent(skipTitle(direction)) {
             skipPicker(direction)
@@ -91,13 +107,8 @@ struct AppControlsSection: View {
         #endif
     }
 
-    @ViewBuilder
+    #if !os(tvOS)
     private func skipPicker(_ direction: SkipDirection) -> some View {
-        #if os(tvOS)
-        SkipSegments(direction: direction, selection: skipBinding(direction))
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(skipTitle(direction))
-        #else
         Picker(skipTitle(direction), selection: skipBinding(direction)) {
             ForEach(SkipInterval.allCases) { interval in
                 interval.segmentImage(for: direction)
@@ -115,8 +126,8 @@ struct AppControlsSection: View {
         #endif
         // `labelsHidden` also takes the name off the segments' group.
         .accessibilityLabel(skipTitle(direction))
-        #endif
     }
+    #endif
 
     private func skipBinding(_ direction: SkipDirection) -> Binding<SkipInterval> {
         Binding(
@@ -142,8 +153,13 @@ struct AppControlsSection: View {
     @ViewBuilder
     private func holdRow(_ side: HoldSide) -> some View {
         #if os(tvOS)
-        SettingsRow(holdTitle(side), detail: holdDetail(side)) {
-            holdButtons(side)
+        SettingsChoiceRow(
+            holdTitle(side),
+            detail: holdDetail(side),
+            selection: holdStepBinding(side),
+            options: holdRateSteps
+        ) { step in
+            PlayerLogic.rateLabel(Float(step) * PlayerControlPreferences.holdRateStep)
         }
         #elseif os(macOS)
         SettingsRow(holdTitle(side), value: holdRateLabel(side), detail: holdDetail(side)) {
@@ -183,35 +199,20 @@ struct AppControlsSection: View {
     #endif
 
     #if os(tvOS)
-    /// A stepper in archive chrome: the system focus platter turns white
-    /// under parchment glyphs and hides them.
-    private func holdButtons(_ side: HoldSide) -> some View {
-        HStack(spacing: 16) {
-            Button("−") { stepHoldRate(side, by: -1) }
-                .archiveButtonStyle(.secondary)
-            Text(holdRateLabel(side))
-                .font(SettingsMetrics.titleFont)
-                .monospacedDigit()
-                .foregroundStyle(Theme.gold)
-                .frame(minWidth: 110)
-            Button("+") { stepHoldRate(side, by: 1) }
-                .archiveButtonStyle(.secondary)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(holdTitle(side))
-        .accessibilityValue(holdRateLabel(side))
-        .accessibilityAdjustableAction { direction in
-            switch direction {
-            case .increment: stepHoldRate(side, by: 1)
-            case .decrement: stepHoldRate(side, by: -1)
-            @unknown default: break
-            }
-        }
+    /// Every speed the hold can play at, counted in steps so the picker's
+    /// tags compare exactly.
+    private var holdRateSteps: [Int] {
+        let range = PlayerControlPreferences.holdRateRange
+        let step = PlayerControlPreferences.holdRateStep
+        return Array(Int((range.lowerBound / step).rounded())...Int((range.upperBound / step).rounded()))
     }
 
-    private func stepHoldRate(_ side: HoldSide, by steps: Float) {
-        let rate = controls.holdRate(for: side)
-        controls.setHoldRate(rate + steps * PlayerControlPreferences.holdRateStep, for: side)
+    private func holdStepBinding(_ side: HoldSide) -> Binding<Int> {
+        let step = PlayerControlPreferences.holdRateStep
+        return Binding(
+            get: { Int((controls.holdRate(for: side) / step).rounded()) },
+            set: { controls.setHoldRate(Float($0) * step, for: side) }
+        )
     }
     #endif
 
@@ -273,14 +274,9 @@ struct AppControlsSection: View {
     #endif
 }
 
-private extension SkipInterval {
-    /// What the glyph's numeral says, for VoiceOver and the pointer tooltip.
-    var spokenName: String {
-        String(localized: "\(seconds) seconds")
-    }
-
+extension SkipInterval {
     /// The arrow-rotate glyph for this length: counterclockwise going back,
-    /// clockwise going forward.
+    /// clockwise going forward. The tabletop player's skip buttons use it too.
     func icon(for direction: SkipDirection) -> ImageResource {
         switch (direction, self) {
         case (.backward, .ten): .arrowRotateLeft10
@@ -290,6 +286,13 @@ private extension SkipInterval {
         case (.forward, .fifteen): .arrowRotateRight15
         case (.forward, .thirty): .arrowRotateRight30
         }
+    }
+}
+
+private extension SkipInterval {
+    /// What the glyph's numeral says, for VoiceOver and the pointer tooltip.
+    var spokenName: String {
+        String(localized: "\(seconds) seconds")
     }
 
     #if !os(tvOS)
@@ -314,69 +317,3 @@ private extension SkipInterval {
     }
     #endif
 }
-
-#if os(tvOS)
-/// The skip lengths as a segmented control in archive chrome. The system
-/// control floods its focused segment with a white platter that glares
-/// across the room and hides the glyph. Here the chosen length sits on a
-/// dim pill in gold, and focus is the gold ring and glow the Settings rows
-/// use.
-private struct SkipSegments: View {
-    let direction: SkipDirection
-    @Binding var selection: SkipInterval
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(SkipInterval.allCases) { interval in
-                Button {
-                    selection = interval
-                } label: {
-                    SkipSegmentLabel(
-                        icon: interval.icon(for: direction),
-                        isSelected: selection == interval
-                    )
-                }
-                // Label-only chrome, as for FilterChip: even `.plain` paints
-                // the system platter behind a focused button.
-                .buttonStyle(ChipButtonStyle())
-                .focusEffectDisabled()
-                .accessibilityLabel(interval.spokenName)
-                .accessibilityAddTraits(selection == interval ? [.isButton, .isSelected] : .isButton)
-            }
-        }
-        .padding(6)
-        .background(Theme.background, in: Capsule())
-        .overlay {
-            Capsule().strokeBorder(Theme.hairline, lineWidth: 1)
-        }
-    }
-}
-
-/// One segment's face. Kept apart from the button so it can read
-/// `\.isFocused`, which reflects the button's focus only inside its label.
-private struct SkipSegmentLabel: View {
-    let icon: ImageResource
-    let isSelected: Bool
-    @Environment(\.isFocused) private var isFocused
-
-    var body: some View {
-        Image(icon)
-            .font(Typography.text(32, weight: .medium))
-            .foregroundStyle(foreground)
-            .frame(width: 88, height: 64)
-            .background(isSelected || isFocused ? Theme.surfaceHigh : .clear, in: Capsule())
-            .overlay {
-                Capsule().strokeBorder(isFocused ? Theme.gold : .clear, lineWidth: 2)
-            }
-            .shadow(color: isFocused ? Theme.goldGlow : .clear, radius: 14)
-            .scaleEffect(isFocused ? 1.08 : 1)
-            .animation(.easeOut(duration: 0.15), value: isFocused)
-            .contentShape(Capsule())
-    }
-
-    private var foreground: Color {
-        if isSelected { return Theme.gold }
-        return isFocused ? Theme.textPrimary : Theme.textSecondary
-    }
-}
-#endif

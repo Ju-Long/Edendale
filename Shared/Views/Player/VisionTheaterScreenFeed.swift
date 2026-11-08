@@ -12,13 +12,15 @@ import RealityKit
 
 /// Copies each frame the player draws onto the theater screen.
 ///
-/// `EnhancedVideoView` hands over its finished frame (after Video
-/// Enhancement) inside its own command buffer. The feed draws it, fitted and
-/// letterboxed, into a RealityKit `LowLevelTexture` in the screen's shape
-/// (see `TheaterLayout.canvasRows`), which the screen's unlit material
-/// samples. RealityKit shows the new contents once that command buffer
-/// completes. The screen therefore follows the 2D player exactly, paused
-/// frames and seeks included, with no second decoder.
+/// The player's `EnhancedVideoView` hands over its finished frame (after
+/// Video Enhancement) inside its own command buffer. Once the theater has
+/// closed the player window, that view is the theater's own (see
+/// `VisionTheaterSpace`). The feed draws the frame, fitted and letterboxed,
+/// into a RealityKit `LowLevelTexture` in the screen's shape (see
+/// `TheaterLayout.canvasRows`), which the screen's unlit material samples.
+/// RealityKit shows the new contents once that command buffer completes.
+/// The screen therefore follows the player exactly, paused frames and
+/// seeks included, with no second decoder.
 @MainActor
 final class VisionTheaterScreenFeed {
     /// What the screen's material samples.
@@ -29,12 +31,17 @@ final class VisionTheaterScreenFeed {
         didSet {
             // A paused player draws only on request, so the screen would
             // stay black until the next seek.
-            if isActive, !oldValue { requestRedraw?() }
+            if isActive, !oldValue { requestRedraw() }
         }
     }
 
-    /// Set by the video view: asks it to draw once more while it is paused.
-    var requestRedraw: (() -> Void)?
+    /// The video view drawing onto the screen, set by the view itself.
+    weak var source: EnhancedVideoView?
+
+    /// Asks the video view to draw once more while it is paused.
+    private func requestRedraw() {
+        source?.setNeedsPausedRedraw()
+    }
 
     /// The screen's width over its height, from the loaded scene.
     var screenAspect: Double = 16.0 / 9.0
@@ -56,7 +63,7 @@ final class VisionTheaterScreenFeed {
         textureResource = resource
         // The room loads after the theater opened; a paused player has to
         // draw its frame again now there is a canvas to draw it on.
-        if isActive { requestRedraw?() }
+        if isActive { requestRedraw() }
         return resource
     }
 

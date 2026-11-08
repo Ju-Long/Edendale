@@ -65,6 +65,7 @@ struct MediaDetailView: View {
             }
         }
         .background(Theme.background)
+        .pushedPage()
         .task(id: audienceVerificationKey) {
             await youngAudienceFilter.verify(sourceMediaRef.map { [$0] } ?? [])
         }
@@ -539,45 +540,58 @@ struct MediaDetailView: View {
     }
 
     /// One cast portrait. Tapping routes to the Search tab filtered to this
-    /// person's filmography. tvOS drops the system focus ring in favour of the
-    /// reserved-bounds enlargement used by posters (see `CardFocusButtonStyle`).
+    /// person's filmography. Apple TV pushes the person's page onto this
+    /// stack instead, so Back returns to this title rather than to the Search
+    /// tab's first page, where Back leaves the app. tvOS drops the system
+    /// focus ring in favour of the reserved-bounds enlargement used by posters
+    /// (see `CardFocusButtonStyle`).
     @ViewBuilder
     private func castCard(_ member: TMDBCastMember) -> some View {
-        Button {
-            searchCoordinator.pendingPerson = PersonRef(id: member.id, name: member.name)
-        } label: {
-            VStack(spacing: 8) {
-                ZStack {
-                    Theme.surface
-                    Image(.film)
-                        .font(.system(size: 20))
-                        .foregroundStyle(Theme.surfaceHigh)
-                    if let url = member.profileURL {
-                        KFImage(url)
-                            .resizable()
-                            .fade(duration: 0.25)
-                            .aspectRatio(contentMode: .fill)
-                    }
-                }
-                .frame(width: 84, height: 84)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
-                Text(member.name)
-                    .font(Typography.bodySM)
-                    .foregroundStyle(Theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .frame(width: 90)
-            }
-        }
+        let person = PersonRef(id: member.id, name: member.name)
         #if os(tvOS)
+        NavigationLink(value: person) {
+            castCardLabel(member)
+        }
         .buttonStyle(CardFocusButtonStyle())
+        .accessibilityLabel(member.name)
+        .accessibilityHint("Shows this person's filmography.")
         #else
+        Button {
+            searchCoordinator.pendingPerson = person
+        } label: {
+            castCardLabel(member)
+        }
         .buttonStyle(.plain)
-        #endif
         // The button already folds its portrait and caption into one element;
         // this pins the reading to the name and says where the tap goes.
         .accessibilityLabel(member.name)
         .accessibilityHint("Shows this person's filmography.")
+        #endif
+    }
+
+    private func castCardLabel(_ member: TMDBCastMember) -> some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Theme.surface
+                Image(.film)
+                    .font(.system(size: 20))
+                    .foregroundStyle(Theme.surfaceHigh)
+                if let url = member.profileURL {
+                    KFImage(url)
+                        .resizable()
+                        .fade(duration: 0.25)
+                        .aspectRatio(contentMode: .fill)
+                }
+            }
+            .frame(width: 84, height: 84)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+            Text(member.name)
+                .font(Typography.bodySM)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(width: 90)
+        }
     }
 
     // MARK: - Critical consensus

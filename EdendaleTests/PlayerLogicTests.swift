@@ -104,6 +104,22 @@ struct PlayerLogicTests {
         #expect(!PlayerLogic.isNaturalEnd(time: .seconds(27), duration: clip))   // short of both arms
     }
 
+    // MARK: - Prompt focus
+
+    @Test func remoteFocusDefaultsToTheSkipPrompt() {
+        #expect(PlayerLogic.defaultPrompt(showsUpNext: false, showsSegmentSkip: true) == .segmentSkip)
+    }
+
+    @Test func upNextTakesFocusOverTheSkipPrompt() {
+        // Up Next's last 30 seconds usually fall inside the credits.
+        #expect(PlayerLogic.defaultPrompt(showsUpNext: true, showsSegmentSkip: true) == .upNext)
+        #expect(PlayerLogic.defaultPrompt(showsUpNext: true, showsSegmentSkip: false) == .upNext)
+    }
+
+    @Test func noPromptLeavesFocusAlone() {
+        #expect(PlayerLogic.defaultPrompt(showsUpNext: false, showsSegmentSkip: false) == nil)
+    }
+
     // MARK: - Aspect fill
 
     @Test func aspectFillScaleCoversMismatchedShapes() {

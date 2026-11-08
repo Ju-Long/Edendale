@@ -49,6 +49,7 @@ struct PersonDetailView: View {
             .padding(.vertical, 24)
         }
         .background(Theme.background)
+        .pushedPage()
         #if !os(tvOS)
         .navigationTitle(detail?.name ?? person.name)
         #if os(iOS) || os(visionOS)

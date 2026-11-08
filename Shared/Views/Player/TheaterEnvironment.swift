@@ -34,3 +34,39 @@ enum TheaterEnvironment: String, CaseIterable, Identifiable, Sendable {
         }
     }
 }
+
+/// How bright a theater's room is. The rooms' light is baked into them, so
+/// this scales all of it, the screen's glow on the room included; the
+/// picture keeps its own brightness.
+enum TheaterLights: String, CaseIterable, Identifiable, Sendable {
+    case normal
+    case dim
+    case dark
+
+    var id: String { rawValue }
+
+    /// The share of the baked light the room is drawn with. Light adds up
+    /// linearly, so these look brighter than they read: dim is about half
+    /// as bright to the eye, dark leaves the room just visible.
+    var brightness: Float {
+        switch self {
+        case .normal: 1
+        case .dim: 0.3
+        case .dark: 0.06
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .normal:
+            String(localized: "Normal", table: "Theater",
+                   comment: "Theater lights choice: the room as lit by default.")
+        case .dim:
+            String(localized: "Dim", table: "Theater",
+                   comment: "Theater lights choice: the room's lights turned down.")
+        case .dark:
+            String(localized: "Dark", table: "Theater",
+                   comment: "Theater lights choice: the room's lights turned almost off, leaving it just visible.")
+        }
+    }
+}

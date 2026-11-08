@@ -11,7 +11,8 @@
 import SwiftUI
 
 /// Toolbar chip that opens one of the theaters, swaps rooms, or leaves.
-/// The theater only ever opens from here, by the viewer's choice.
+/// The theater only ever opens from here, by the viewer's choice; its seat
+/// panel (`VisionTheaterSeatPanel`) picks the seat and the lights.
 struct VisionTheaterMenu: View {
     @Environment(PlayerSession.self) private var session
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
@@ -66,21 +67,18 @@ struct VisionTheaterMenu: View {
     }
 }
 
-/// Covers the window's own picture while the theater shows it, so the
-/// window reads as the theater's remote: the controls draw over it as usual.
+/// Covers the window's own picture while the theater shows it, until the
+/// window closes (see `VisionTheaterController`), or for good if visionOS
+/// keeps it open. The controls are on the theater's panel below the
+/// viewer's line of sight (`VisionTheaterDock`), so the window only says
+/// where everything went.
 struct VisionTheaterRemoteBackdrop: View {
     let environment: TheaterEnvironment?
-    /// Off while the controls are up: their play button sits where the
-    /// label would, and the hint would be stale.
-    var showsLabel = true
 
     var body: some View {
         ZStack {
             Theme.background
-            if showsLabel {
-                label
-                    .transition(.opacity)
-            }
+            label
         }
     }
 
@@ -97,8 +95,8 @@ struct VisionTheaterRemoteBackdrop: View {
                     .foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center)
             }
-            Text("Tap to show the controls.", tableName: "Theater",
-                 comment: "Hint under the theater name in the player window while the video plays in an immersive theater.")
+            Text("Look down for the controls.", tableName: "Theater",
+                 comment: "Hint under the theater name in the player window while the video plays in an immersive theater. The controls float below the viewer's line of sight and follow the way they face.")
                 .font(Typography.bodySM)
                 .foregroundStyle(Theme.textSecondary)
         }

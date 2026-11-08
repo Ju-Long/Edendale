@@ -51,6 +51,10 @@ struct RootView: View {
     #else
     @State private var selectedTab: RootTab = .movies
     #endif
+    #if os(tvOS)
+    /// So Back in the sidebar returns from a pushed page (see PushedPage).
+    @State private var pushedPages = PushedPages()
+    #endif
     @State private var externalDetail: RoutedMediaDetail?
     /// A handoff code opened as a link (the Camera app, a tap): the code
     /// doesn't say which way the other device hands off, so the user picks.
@@ -72,7 +76,15 @@ struct RootView: View {
         .sheet(item: $externalDetail) { destination in
             NavigationStack {
                 MediaDetailView(source: destination.source)
+                    // Apple TV opens a detail page's cast in place (see
+                    // MediaDetailView).
+                    .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             }
+            // The environment set above wraps `navigation` only, not this
+            // sheet; without it a routed link (widget, Top Shelf, Siri)
+            // traps on MediaDetailView's SearchCoordinator.
+            .environment(moviesModel)
+            .environment(searchCoordinator)
         }
         .confirmationDialog(
             "Pair with \(scannedHandoff?.name ?? "")?",
@@ -201,6 +213,10 @@ struct RootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        #if os(tvOS)
+        .sidebarBackReturnsFromPushedPages()
+        .environment(pushedPages)
+        #endif
         #endif
     }
 

@@ -9,7 +9,9 @@
 //  files are left alone and that a saved login or account stays in
 //  Settings → Accounts. A Google Drive source also offers Choose More
 //  Videos, which reopens Google's picker; Apple TV, which never opens the
-//  picker, says where to choose them instead.
+//  picker, says where to choose them instead. In Apple TV Settings, a
+//  grouped system List, the row is a system list row whose Rescan and
+//  Remove sit in a dialog.
 //
 
 import SwiftUI
@@ -27,8 +29,44 @@ struct SourceRow: View {
     @State private var isConfirmingRemove = false
     @State private var isChoosingVideos = false
     @State private var chooseError: String?
+    #if os(tvOS)
+    /// Set on Apple TV Settings rows (see ArchiveButtonStyle).
+    @Environment(\.archiveButtonsUseSystemStyle) private var usesSystemStyle
+    @State private var isShowingActions = false
+    #endif
 
     var body: some View {
+        row
+            .alert("Remove Source", isPresented: $isConfirmingRemove) {
+                Button("Cancel", role: .cancel) {}
+                Button("Remove", role: .destructive, action: onRemove)
+            } message: {
+                Text(removeMessage)
+            }
+            .alert(
+                "Choose More Videos",
+                isPresented: Binding(get: { chooseError != nil }, set: { if !$0 { chooseError = nil } })
+            ) {
+                Button("OK") {}
+            } message: {
+                Text(chooseError ?? "")
+            }
+    }
+
+    @ViewBuilder
+    private var row: some View {
+        #if os(tvOS)
+        if usesSystemStyle {
+            systemRow
+        } else {
+            archiveRow
+        }
+        #else
+        archiveRow
+        #endif
+    }
+
+    private var archiveRow: some View {
         Menu {
             #if !os(tvOS)
             if let account = googleAccount {
@@ -71,21 +109,46 @@ struct SourceRow: View {
                 }
             #endif
         }
-        .alert("Remove Source", isPresented: $isConfirmingRemove) {
-            Button("Cancel", role: .cancel) {}
-            Button("Remove", role: .destructive, action: onRemove)
-        } message: {
-            Text(removeMessage)
+    }
+
+    #if os(tvOS)
+    /// The source as a system list row: system type and colors, which stay
+    /// legible on the focused row's white platter.
+    private var systemRow: some View {
+        Button {
+            isShowingActions = true
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(folder.name)
+                Group {
+                    Text(subtitle)
+                    Text(folder.locationDescription)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                    if let status {
+                        Text(status)
+                            .foregroundStyle(.primary)
+                    }
+                    if folder.sourceKind == .googleDrive {
+                        Text(GoogleDriveConnector.chooseOnAnotherDeviceNote)
+                    }
+                }
+                .font(SettingsMetrics.detailFont)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+            }
         }
-        .alert(
-            "Choose More Videos",
-            isPresented: Binding(get: { chooseError != nil }, set: { if !$0 { chooseError = nil } })
-        ) {
-            Button("OK") {}
-        } message: {
-            Text(chooseError ?? "")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(folder.name)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityAddTraits(.isButton)
+        .confirmationDialog(folder.name, isPresented: $isShowingActions, titleVisibility: .visible) {
+            Button("Rescan", action: onRescan)
+            Button("Remove", role: .destructive, action: requestRemoveConfirmation)
+            Button("Cancel", role: .cancel) {}
         }
     }
+    #endif
 
     /// The linked account behind a Google Drive source, if it's still here.
     private var googleAccount: CloudAccount? {

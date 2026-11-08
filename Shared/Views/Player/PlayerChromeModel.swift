@@ -50,10 +50,21 @@ final class PlayerChromeModel {
     }()
 
     /// An open panel is layered over the video, so the chrome stays up and
-    /// the Up Next card and skip prompts step aside. A docked panel leaves
-    /// the video uncovered.
+    /// the Up Next card and skip prompts step aside. A docked panel, or one
+    /// below the fold, leaves the video uncovered.
     var panelCoversVideo: Bool {
-        activePanel != nil && !Self.docksSidePanels
+        activePanel != nil && !Self.docksSidePanels && !isTabletop
+    }
+
+    /// An iPhone Duo stands half-open with the fold across the screen: the
+    /// picture fills the upper half and the controls lie on the lower half
+    /// (see `PlayerTabletopLayout`). Set by `PlayerScreen`; never true on
+    /// other devices. The controls cover nothing there, so they stay up.
+    var isTabletop = false {
+        didSet {
+            guard isTabletop != oldValue else { return }
+            showControls()
+        }
     }
 
     /// Seconds of inactivity before the controls hide.
@@ -144,6 +155,53 @@ final class PlayerChromeModel {
         )
     }
 
+    #if os(tvOS)
+    // MARK: - Prompt focus
+
+    /// Asks the prompt it names to take the remote's focus; `serial` makes a
+    /// repeated request for the same prompt a change too.
+    struct PromptFocusRequest: Equatable {
+        let prompt: PlayerLogic.Prompt
+        let serial: Int
+    }
+
+    /// The latest focus request. The skip prompt and the Up Next card are
+    /// drawn by different views, each owning its own focus, so they take it
+    /// when a request names them.
+    private(set) var promptFocusRequest: PromptFocusRequest?
+
+    /// The skip prompt for the current intro, recap, or credits segment is
+    /// on screen.
+    var showsSegmentSkip: Bool {
+        !panelCoversVideo && !isScrubbing && session.segmentSkipping.activeSegment != nil
+    }
+
+    /// The prompt the remote's focus rests on while the controls are hidden,
+    /// or nil when neither prompt is on screen.
+    var defaultPrompt: PlayerLogic.Prompt? {
+        PlayerLogic.defaultPrompt(
+            showsUpNext: upcomingEpisode != nil && !panelCoversVideo && !isScrubbing,
+            showsSegmentSkip: showsSegmentSkip
+        )
+    }
+
+    /// Moves the remote's focus onto `defaultPrompt`. False when no prompt
+    /// is up, leaving focus where it is.
+    @discardableResult
+    func focusDefaultPrompt() -> Bool {
+        guard let prompt = defaultPrompt else { return false }
+        focus(prompt)
+        return true
+    }
+
+    func focus(_ prompt: PlayerLogic.Prompt) {
+        promptFocusRequest = PromptFocusRequest(
+            prompt: prompt,
+            serial: (promptFocusRequest?.serial ?? 0) + 1
+        )
+    }
+    #endif
+
     // MARK: - End-of-media bookkeeping
 
     private var lastKnownTime: Duration = .zero
@@ -190,8 +248,16 @@ final class PlayerChromeModel {
     }
 
     /// Tap on an empty part of the overlay: hide when visible, show when not.
+    /// In tabletop the controls stay below the fold, and a tap on the
+    /// picture only closes an open panel there.
     func toggleControls() {
-        if controlsVisible {
+        if isTabletop {
+            if activePanel != nil {
+                closePanel()
+            } else {
+                showControls()
+            }
+        } else if controlsVisible {
             hideControls()
         } else {
             showControls()
@@ -204,9 +270,10 @@ final class PlayerChromeModel {
     }
 
     /// Auto-hide only makes sense while actively playing with nothing
-    /// covering the video.
+    /// covering the video, and with the controls over the picture.
     private var canAutoHide: Bool {
-        !panelCoversVideo
+        !isTabletop
+            && !panelCoversVideo
             && !isScrubbing
             && (player?.isPlaying ?? false)
     }
@@ -324,12 +391,14 @@ final class PlayerChromeModel {
     }
 
     /// Every volume change explicitly unmutes, including touch gestures.
-    func setVolume(_ level: Float) {
+    /// A control that shows its own level (the tabletop volume slider)
+    /// skips the HUD.
+    func setVolume(_ level: Float, showsHUD: Bool = true) {
         guard let player else { return }
         let normalized = min(max(level, 0), 1)
         player.isMuted = false
         player.volume = normalized
-        showHUD(.volume(normalized))
+        if showsHUD { showHUD(.volume(normalized)) }
     }
 
 
