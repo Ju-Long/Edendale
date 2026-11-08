@@ -136,6 +136,12 @@ android {
         buildConfig = true
     }
 
+    // The Android XR theater lives in the :xr feature module (Section N). Play
+    // installs it only on devices that declare android.software.xr.api.spatial;
+    // a universal or debug install carries it everywhere and the player offers
+    // the theater only where that feature exists.
+    dynamicFeatures += setOf(":xr")
+
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }

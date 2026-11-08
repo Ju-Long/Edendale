@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution">
+
+    <!-- Installed with the app only on devices that declare the spatial XR
+         feature; fused into a universal APK, where the player still offers
+         the theater only on such a device. -->
+    <dist:module
+        dist:instant="false"
+        dist:title="@string/xr_module_title">
+        <dist:delivery>
+            <dist:install-time>
+                <dist:conditions>
+                    <dist:device-feature dist:name="android.software.xr.api.spatial" />
+                </dist:conditions>
+            </dist:install-time>
+        </dist:delivery>
+        <dist:fusing dist:include="true" />
+    </dist:module>
+
+    <application>
+        <activity
+            android:name=".theater.XrTheaterActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="false"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+    </application>
+</manifest>
