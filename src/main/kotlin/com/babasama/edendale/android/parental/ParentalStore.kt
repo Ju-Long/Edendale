@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.babasama.edendale.android.AudiencePreferenceStore
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -142,5 +143,25 @@ class InMemoryParentalStore : ParentalStore {
     private fun put(key: String, value: Any) {
         values[key] = value
         listeners.forEach { it(key) }
+    }
+}
+
+/** The Young Audience preset in memory, for the hermetic tests. */
+class InMemoryAudiencePreferenceStore(initial: Boolean = false) : AudiencePreferenceStore {
+    private val listeners = CopyOnWriteArrayList<() -> Unit>()
+
+    @Volatile
+    private var value = initial
+
+    override var enabled: Boolean
+        get() = value
+        set(new) {
+            value = new
+            listeners.forEach { it() }
+        }
+
+    override fun addListener(listener: () -> Unit): AutoCloseable {
+        listeners += listener
+        return AutoCloseable { listeners -= listener }
     }
 }

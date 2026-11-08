@@ -11,6 +11,8 @@ import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class TmdbApiTest {
     @Test
@@ -23,6 +25,23 @@ class TmdbApiTest {
         assertEquals("A Film", items[0].title)
         assertEquals(MediaType.TV, items[1].mediaType)
         assertEquals("A Series", items[1].title)
+    }
+
+    @Test
+    fun certificationListsUseTheListEndpointsWithNoParameters() = runCommonTest {
+        val transport = FakeTransport("""{"certifications": {"US": [{"certification": "PG", "meaning": "", "order": 2}]}}""")
+        val api = TmdbApi(transport)
+
+        assertNotNull(api.certificationList(MediaType.MOVIE))
+        assertEquals("/certification/movie/list", transport.lastPath)
+        assertEquals(emptyMap(), transport.lastParameters)
+
+        assertNotNull(api.certificationList(MediaType.TV))
+        assertEquals("/certification/tv/list", transport.lastPath)
+        assertEquals(emptyMap(), transport.lastParameters)
+
+        // A body without the lists is no payload.
+        assertNull(TmdbApi(FakeTransport("{}")).certificationList(MediaType.MOVIE))
     }
 
     @Test

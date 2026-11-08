@@ -56,9 +56,16 @@ fun visibleItems(
 ): List<MediaItem> =
     if (!enabled) items else items.filter { decisions[it.ref] == AudienceDecision.ALLOWED }
 
-/** Persists the enabled flag; a seam so tests need no Android SharedPreferences. */
+/**
+ * Persists the Young Audience preset, which stays in `edendale_audience` and
+ * rides backup as it always has (O-D7); a seam so tests need no Android
+ * SharedPreferences.
+ */
 interface AudiencePreferenceStore {
     var enabled: Boolean
+
+    /** Calls [listener] after every change until the returned handle is closed. */
+    fun addListener(listener: () -> Unit): AutoCloseable
 }
 
 /**
@@ -158,13 +165,29 @@ private const val AUDIENCE_PREFERENCES_NAME = "edendale_audience"
 private const val AUDIENCE_KEY_ENABLED = "young_audience_friendly"
 
 /** SharedPreferences-backed preference store for the shipping app. */
-private class AndroidAudiencePreferenceStore(context: Context) : AudiencePreferenceStore {
+internal class AndroidAudiencePreferenceStore(context: Context) : AudiencePreferenceStore {
     private val preferences =
         context.applicationContext.getSharedPreferences(AUDIENCE_PREFERENCES_NAME, Context.MODE_PRIVATE)
+
+    // SharedPreferences holds its listeners weakly; this list keeps them alive
+    // for as long as the store does.
+    private val listeners = java.util.concurrent.CopyOnWriteArrayList<SharedPreferences.OnSharedPreferenceChangeListener>()
 
     override var enabled: Boolean
         get() = preferences.getBoolean(AUDIENCE_KEY_ENABLED, false)
         set(value) { preferences.edit().putBoolean(AUDIENCE_KEY_ENABLED, value).apply() }
+
+    override fun addListener(listener: () -> Unit): AutoCloseable {
+        val changeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == AUDIENCE_KEY_ENABLED || key == null) listener()
+        }
+        listeners += changeListener
+        preferences.registerOnSharedPreferenceChangeListener(changeListener)
+        return AutoCloseable {
+            preferences.unregisterOnSharedPreferenceChangeListener(changeListener)
+            listeners -= changeListener
+        }
+    }
 }
 
 /** A filter over the device's stored preference, for work outside the UI such as the Watch Next row (I.3). */
