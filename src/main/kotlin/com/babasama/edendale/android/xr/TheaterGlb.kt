@@ -16,6 +16,9 @@ import kotlinx.serialization.json.intOrNull
 /** The GLB has no usable `Screen` and `Seat`, or isn't a GLB at all. */
 class TheaterGlbException(message: String) : Exception(message)
 
+/** An image embedded in the GLB (the `images` entry at [index]); the build copies it out as an asset for the lights. */
+data class GlbImage(val index: Int, val name: String, val mimeType: String?)
+
 /**
  * What a room's GLB says about where the viewer sits and where the picture goes,
  * in the room's own frame, read from the file's JSON chunk alone (never the
@@ -31,6 +34,10 @@ data class TheaterGlb(
     val seatMarkers: List<Pair<String, Vec3>>,
     /** Names of the nodes that carry a mesh, in node order (the lights rule leaves `Screen` and `Projector_beam` alone). */
     val meshNodeNames: List<String>,
+    /** The embedded images in index order; one with a URI instead of a buffer view is left out. */
+    val images: List<GlbImage> = emptyList(),
+    /** Mesh node name → the image behind its first primitive's material's emissive texture: the baked rooms' atlases. */
+    val emissiveImageByNode: Map<String, Int> = emptyMap(),
 ) {
     companion object {
         const val SCREEN = "Screen"
@@ -82,7 +89,34 @@ data class TheaterGlb(
                 screenBoundsMax = boundsMax,
                 seatMarkers = markers,
                 meshNodeNames = meshNodeNames,
+                images = images(document),
+                emissiveImageByNode = emissiveImages(document, nodes),
             )
+        }
+
+        /** Every image that lives in the file (a buffer view), by its `images` index. */
+        private fun images(document: JsonObject): List<GlbImage> =
+            document.array("images").orEmpty().mapIndexedNotNull { index, element ->
+                val image = element.obj ?: return@mapIndexedNotNull null
+                if (image.int("bufferView") == null) return@mapIndexedNotNull null
+                GlbImage(index, image.name.orEmpty(), image.string("mimeType"))
+            }
+
+        /** The exporter gives each baked object one material whose emissive texture is its atlas; this finds that image per node. */
+        private fun emissiveImages(document: JsonObject, nodes: JsonArray): Map<String, Int> {
+            val meshes = document.array("meshes") ?: return emptyMap()
+            val materials = document.array("materials") ?: return emptyMap()
+            val textures = document.array("textures") ?: return emptyMap()
+            val out = LinkedHashMap<String, Int>()
+            for (index in nodes.indices) {
+                val node = nodes.node(index)
+                val name = node.name?.takeIf { it.isNotEmpty() } ?: continue
+                val mesh = node.int("mesh")?.let { meshes.getOrNull(it)?.obj } ?: continue
+                val material = mesh.array("primitives")?.firstOrNull()?.obj?.int("material")?.let { materials.getOrNull(it)?.obj } ?: continue
+                val texture = material.obj("emissiveTexture")?.int("index")?.let { textures.getOrNull(it)?.obj } ?: continue
+                out[name] = texture.int("source") ?: continue
+            }
+            return out
         }
 
         /** Validates both headers and returns the JSON chunk's length; [available] is the byte count behind them when known. */

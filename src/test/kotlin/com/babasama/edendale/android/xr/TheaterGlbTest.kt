@@ -7,6 +7,7 @@ import java.nio.ByteOrder
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.serialization.json.Json
@@ -239,6 +240,51 @@ class TheaterGlbTest {
         """
         assertEquals(listOf("Room", "Screen", "Seats"), TheaterGlb.parse(glb(json)).meshNodeNames)
         assertEquals(listOf("Screen", "Floor"), TheaterGlb.parse(glb(CHECK_SCENE)).meshNodeNames)
+    }
+
+    @Test
+    fun bakedNodesMapToTheirAtlasImages() {
+        val json = """
+            {"nodes":[
+              {"name":"Room","mesh":0},
+              {"name":"Screen","mesh":1},
+              {"name":"Seat"},
+              {"name":"Projector beam","mesh":2},
+              {"name":"Seats","mesh":3}
+            ],
+            "meshes":[
+              {"primitives":[{"attributes":{"POSITION":0},"material":0}]},
+              {"primitives":[{"attributes":{"POSITION":0},"material":1}]},
+              {"primitives":[{"attributes":{"POSITION":0},"material":2}]},
+              {"primitives":[{"attributes":{"POSITION":0}}]}
+            ],
+            "materials":[
+              {"name":"RoomBaked","emissiveTexture":{"index":0},"emissiveFactor":[1,1,1]},
+              {"name":"ScreenSurface","emissiveTexture":{"index":0},"emissiveFactor":[0.012,0.012,0.012]},
+              {"name":"ProjectorBeam","pbrMetallicRoughness":{"baseColorTexture":{"index":1}}}
+            ],
+            "textures":[{"source":1},{"source":0}],
+            "images":[
+              {"name":"beam","mimeType":"image/png","bufferView":0},
+              {"name":"room","mimeType":"image/jpeg","bufferView":1},
+              {"name":"elsewhere","uri":"room.jpg"}
+            ],
+            "bufferViews":[{"buffer":0,"byteOffset":0,"byteLength":100},{"buffer":0,"byteOffset":100,"byteLength":2500}],
+            "accessors":[{"min":[-2,-1.125,0],"max":[2,1.125,0]}]}
+        """
+        val parsed = TheaterGlb.parse(glb(json))
+        assertEquals(mapOf("Room" to 1, "Screen" to 1), parsed.emissiveImageByNode)
+        assertEquals(listOf(GlbImage(0, "beam", "image/png"), GlbImage(1, "room", "image/jpeg")), parsed.images, "the image with a URI is not in the file")
+        assertEquals(mapOf("Room" to 1), TheaterLightsRules.dimmableNodes(parsed), "the screen is never dimmed")
+    }
+
+    @Test
+    fun theUntouchedRuleReadsBlenderSpacesAsUnderscores() {
+        assertTrue(TheaterLightsRules.untouched("Projector beam"))
+        assertTrue(TheaterLightsRules.untouched("Projector_beam"))
+        assertTrue(TheaterLightsRules.untouched("Screen"))
+        assertFalse(TheaterLightsRules.untouched("Seats"))
+        assertFalse(TheaterLightsRules.untouched("Room"))
     }
 
     @Test

@@ -13,10 +13,21 @@ object XrTheater {
         hasVideo = true,
     )
 
-    /** The intent the player sends; the activity lives in the split, so it is named, not referenced. */
+    /**
+     * The intent the player sends; the activity lives in the split, so it is
+     * named, not referenced. A `content:` item rides as the intent's data with
+     * a read grant, so a file the player was only handed (Open With) stays
+     * readable in the theater; the handover's own copy of the URI is what the
+     * theater reads.
+     */
     fun intent(context: Context, handover: XrTheaterHandover): Intent =
         Intent().setClassName(context.packageName, XrTheaterRules.ACTIVITY_CLASS).apply {
             action = Intent.ACTION_MAIN
+            val uri = android.net.Uri.parse(handover.uri)
+            if (uri.scheme == "content") {
+                data = uri
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
             handover.write(IntentExtras(this))
         }
 

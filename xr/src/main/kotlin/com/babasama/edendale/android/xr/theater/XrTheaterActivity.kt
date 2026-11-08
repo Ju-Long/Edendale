@@ -3,7 +3,9 @@ package com.babasama.edendale.android.xr.theater
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
@@ -22,6 +24,7 @@ import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.xr.R
 import com.babasama.edendale.android.xr.SeatID
+import com.babasama.edendale.android.xr.TheaterLights
 import com.babasama.edendale.android.xr.TheaterPlayback
 import com.babasama.edendale.android.xr.TheaterRoom
 import com.babasama.edendale.android.xr.XrTheater
@@ -74,11 +77,27 @@ class XrTheaterActivity : ComponentActivity(), TheaterStage.Listener, TheaterAct
             snapshotFlow { playback.ended }.filter { it }.first()
             leaveToLibrary()
         }
-        onBackPressedDispatcher.addCallback(this) { exit() }
+        onBackPressedDispatcher.addCallback(this) {
+            Log.i(TAG, "back: leaving to the player")
+            exit()
+        }
     }
 
+    /**
+     * A panel's view. The system's back reaches whichever window has focus,
+     * and in Full Space that is a panel's own embedded window rather than the
+     * activity's, so each panel answers Back the way the activity does.
+     */
     private fun compose(content: @androidx.compose.runtime.Composable () -> Unit): View =
-        ComposeView(this).apply { setContent(content) }
+        object : FrameLayout(this) {
+            override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+                if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+                    if (event.action == KeyEvent.ACTION_UP) onBackPressedDispatcher.onBackPressed()
+                    return true
+                }
+                return super.dispatchKeyEvent(event)
+            }
+        }.apply { addView(ComposeView(context).apply { setContent(content) }) }
 
     override fun onStart() {
         super.onStart()
@@ -112,8 +131,12 @@ class XrTheaterActivity : ComponentActivity(), TheaterStage.Listener, TheaterAct
     }
 
     private fun leave(next: Intent) {
-        if (leaving) return
+        if (leaving) {
+            Log.i(TAG, "leave ignored: already leaving")
+            return
+        }
         leaving = true
+        Log.i(TAG, "leaving for ${next.component?.className ?: next.action}")
         playback.saveContentPreferences()
         playback.writeProgress()
         stage.release()
@@ -139,6 +162,7 @@ class XrTheaterActivity : ComponentActivity(), TheaterStage.Listener, TheaterAct
     override fun chooseRoom(room: TheaterRoom) = stage.chooseRoom(room)
     override fun chooseSeat(seat: SeatID?) = stage.chooseSeat(seat)
     override fun recentre() = stage.recentre()
+    override fun chooseLights(level: TheaterLights) = stage.chooseLights(level)
 
     private companion object {
         const val TAG = "XrTheater"

@@ -61,3 +61,17 @@ object TheaterPreferencesRules {
     /** Nodes the lights never dim (the picture's own screen and the projector's beam), with their subtrees. */
     val UNTOUCHED_NODES = setOf("Screen", "Projector_beam")
 }
+
+/**
+ * Which of a room's nodes the house lights dim (N.9): the baked ones, whose
+ * material carries an emissive atlas, less [TheaterPreferencesRules.UNTOUCHED_NODES].
+ * The screen's material has no texture and the beam's is a base colour, so
+ * both fall out of the first rule as well as the second.
+ */
+object TheaterLightsRules {
+    /** Node name → the index of the atlas image to re-supply at a lower emissive factor. */
+    fun dimmableNodes(glb: TheaterGlb): Map<String, Int> = glb.emissiveImageByNode.filterKeys { !untouched(it) }
+
+    /** glTF keeps Blender's spaces in node names where USD wrote underscores; the untouched list names the USD form. */
+    fun untouched(nodeName: String): Boolean = nodeName.replace(' ', '_') in TheaterPreferencesRules.UNTOUCHED_NODES
+}

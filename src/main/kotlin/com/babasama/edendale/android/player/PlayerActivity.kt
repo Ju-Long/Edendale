@@ -1082,6 +1082,9 @@ class PlayerActivity : ComponentActivity() {
             textLanguage = text?.language,
             speed = chrome.baseRate,
         )
+        // The theater's player takes over; this one stops first, so the file is
+        // never decoded twice while the theater opens at the same position.
+        exoPlayer.stop()
         startActivity(XrTheater.intent(this, handover))
         finish()
     }

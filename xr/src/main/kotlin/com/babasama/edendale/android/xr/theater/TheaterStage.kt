@@ -37,11 +37,13 @@ import com.babasama.edendale.android.xr.SeatID
 import com.babasama.edendale.android.xr.TheaterDock
 import com.babasama.edendale.android.xr.TheaterGeometry
 import com.babasama.edendale.android.xr.TheaterGlb
+import com.babasama.edendale.android.xr.TheaterLights
 import com.babasama.edendale.android.xr.TheaterPlayback
 import com.babasama.edendale.android.xr.TheaterRoom
 import com.babasama.edendale.android.xr.TheaterSeatMap
 import com.babasama.edendale.android.xr.Vec3
 import java.nio.file.Paths
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -95,6 +97,8 @@ internal class TheaterStage(
     private var lastAspect: Float? = null
     private var follower = DockFollower()
     private var fadeJob: Job? = null
+    private var lighting: TheaterLighting? = null
+    private var lightsJob: Job? = null
     private var released = false
 
     /** What the current room's GLB says; null while a room loads or when its file is unusable. */
@@ -114,6 +118,7 @@ internal class TheaterStage(
     // ------------------------------------------------------------------
 
     suspend fun start() {
+        ui.lights = preferences.lights
         val result = Session.create(activity as Context)
         if (result !is SessionCreateSuccess) {
             listener.onUnavailable(result::class.java.simpleName)
@@ -168,7 +173,6 @@ internal class TheaterStage(
         val session = session ?: return
         val scene = scene ?: return
         val stage = Entity.create(session, "theater-stage", Pose.Identity, scene.activitySpace)
-        stage.setEnabled(false)
         stageRoot = stage
         roomRoot = Entity.create(session, "theater-room", Pose.Identity, stage)
 
@@ -186,6 +190,8 @@ internal class TheaterStage(
         val session = session ?: return
         val roomRoot = roomRoot ?: return
         // SceneCore reclaims entities; detaching is how one leaves the scene.
+        lightsJob?.cancel()
+        lighting?.release()
         roomEntity?.let { runCatching { it.parent = null } }; roomEntity = null
         roomModel?.close(); roomModel = null
         glb = null; screen = null
@@ -216,6 +222,27 @@ internal class TheaterStage(
         ensurePicture()
         applySeat(preferences.seat(room), animated = false)
         ui.seatedSeat = currentSeat()
+        applyLights(ui.lights)
+    }
+
+    /** The house lights (N.9): the base's rule says which nodes, [TheaterLighting] re-materials them. */
+    fun chooseLights(level: TheaterLights) {
+        preferences.lights = level
+        ui.lights = level
+        applyLights(level)
+    }
+
+    private fun applyLights(level: TheaterLights) {
+        val session = session ?: return
+        val entity = roomEntity ?: return
+        val glb = glb ?: return
+        val room = ui.room
+        val lighting = lighting ?: TheaterLighting(session).also { lighting = it }
+        lightsJob?.cancel()
+        lightsJob = scope.launch {
+            runCatching { lighting.apply(entity, room, glb, level) { !released && roomEntity === entity && ui.lights == level } }
+                .onFailure { if (it !is CancellationException) Log.w(TAG, "lights ${level.raw} not applied: ${it.message}") }
+        }
     }
 
     /** The picture quad and the subtitle panel, made once and re-fitted per room and aspect. */
@@ -224,12 +251,15 @@ internal class TheaterStage(
         val roomRoot = roomRoot ?: return
         val screen = screen ?: return
         val size = fittedPictureSize()
-        val center = Pose(screen.center.toVector3(), Quaternion.Identity)
+        // N-D12's 2 cm plus a centimetre: invisible from the seats, and a margin
+        // for a coarser depth buffer at 10 m than the one the 2 cm was chosen on.
+        val center = Pose(Vector3(screen.center.x, screen.center.y, screen.center.z + PICTURE_LIFT), Quaternion.Identity)
         val surface = picture ?: SurfaceEntity.create(
             session,
             center,
             SurfaceEntity.Shape.Quad(FloatSize2d(size.first, size.second)),
             SurfaceEntity.StereoMode.MONO,
+            SurfaceEntity.MediaBlendingMode.OPAQUE,
             SurfaceEntity.SuperSampling.PENTAGON,
             SurfaceEntity.SurfaceProtection.NONE,
             roomRoot,
@@ -243,7 +273,7 @@ internal class TheaterStage(
         val canvas = TheaterGeometry.subtitleCanvas(screen)
         val panel = subtitles ?: panels.create(session, IntSize2d(canvas.first, canvas.second), "theater-subtitles", roomRoot, panels.subtitleView())
             .also { subtitles = it }
-        panel.setPose(Pose(Vector3(screen.center.x, screen.center.y, screen.center.z + SUBTITLE_LIFT), Quaternion.Identity))
+        panel.setPose(Pose(Vector3(screen.center.x, screen.center.y, screen.center.z + PICTURE_LIFT + SUBTITLE_LIFT), Quaternion.Identity))
         panel.setScale(screen.width / panel.size.width)
     }
 
@@ -329,12 +359,14 @@ internal class TheaterStage(
             val pose = head?.let { TheaterStageRules.seatingPose(it) }
                 ?: if (framesWithoutHead > TheaterDock.HEAD_WAIT_FRAMES * 2) TheaterStageRules.UNTRACKED_SEATING else null
             if (pose != null) {
+                Log.i(TAG, if (head != null) "seated from the head at ${head.position}, gaze ${head.forward}" else "seated without tracking after $framesWithoutHead frames")
                 stage.setPose(pose.toPose())
-                stage.setEnabled(true)
                 follower = DockFollower()
                 seated = true
-                // The main panel only held the "look down" hint; the dock is up now.
-                runCatching { scene.mainPanelEntity.setEnabled(false) }
+                // The main panel only held the "look down" hint; it goes under the
+                // floor rather than away, because the activity's window keeps input
+                // focus (the system back) only while its panel exists.
+                runCatching { scene.mainPanelEntity.setPose(Pose(Vector3(0f, -4f, 0f), Quaternion.Identity)) }
             } else {
                 return
             }
@@ -390,11 +422,16 @@ internal class TheaterStage(
         }
         runCatching { roomModel?.close() }
         dock = null; seatPanel = null; subtitles = null; picture = null; roomEntity = null; roomRoot = null; stageRoot = null
+        lightsJob?.cancel()
+        lighting?.release(); lighting = null
         runCatching { scene?.requestHomeSpace() }
     }
 
     companion object {
         private const val TAG = "XrTheater"
+
+        /** The picture sits this far in front of the room's screen mesh (on top of the geometry's 5 mm). */
+        private const val PICTURE_LIFT = 0.03f
 
         /** The subtitle panel floats this far in front of the picture. */
         private const val SUBTITLE_LIFT = 0.02f

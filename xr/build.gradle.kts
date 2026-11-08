@@ -1,3 +1,6 @@
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
 // The Android XR immersive theater: a Play Feature Delivery module that Play
 // installs only on devices with android.software.xr.api.spatial (see its
 // manifest). It holds the Jetpack XR libraries, the three rooms, and the
@@ -59,4 +62,54 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit)
+}
+
+// The house lights re-supply each room's atlas as a texture at a lower emissive
+// factor, and SceneCore loads textures from assets only, so the images embedded
+// in the rooms' GLBs are copied out at build time as
+// assets/theater/<room>-<image index>.<jpg|png> (ENHANCEMENT.md N.9).
+// Nothing is checked in twice, and a re-exported room cannot drift from its
+// lights.
+abstract class ExtractTheaterAtlases : DefaultTask() {
+    @get:InputFiles
+    abstract val rooms: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun extract() {
+        val out = outputDir.get().asFile.resolve("theater")
+        out.deleteRecursively()
+        out.mkdirs()
+        rooms.files.sortedBy { it.name }.forEach { glb ->
+            val bytes = glb.readBytes()
+            val header = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+            require(header.getInt(0) == 0x46546C67 && header.getInt(16) == 0x4E4F534A) { "${glb.name} is not a GLB" }
+            val jsonLength = header.getInt(12)
+            val binStart = 20 + jsonLength + 8
+            @Suppress("UNCHECKED_CAST")
+            val document = groovy.json.JsonSlurper().parseText(bytes.decodeToString(20, 20 + jsonLength)) as Map<String, Any?>
+            @Suppress("UNCHECKED_CAST")
+            val views = document["bufferViews"] as? List<Map<String, Any?>> ?: return@forEach
+            @Suppress("UNCHECKED_CAST")
+            (document["images"] as? List<Map<String, Any?>>).orEmpty().forEachIndexed { index, image ->
+                val view = (image["bufferView"] as? Number)?.let { views[it.toInt()] } ?: return@forEachIndexed
+                val start = binStart + ((view["byteOffset"] as? Number)?.toInt() ?: 0)
+                val length = (view["byteLength"] as Number).toInt()
+                val kind = if (image["mimeType"] == "image/png") "png" else "jpg"
+                out.resolve("${glb.nameWithoutExtension}-$index.$kind").writeBytes(bytes.copyOfRange(start, start + length))
+            }
+        }
+    }
+}
+
+val extractTheaterAtlases = tasks.register<ExtractTheaterAtlases>("extractTheaterAtlases") {
+    rooms.from(fileTree("src/main/assets/theater") { include("*.glb") })
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(extractTheaterAtlases, ExtractTheaterAtlases::outputDir)
+    }
 }

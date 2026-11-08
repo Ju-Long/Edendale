@@ -61,6 +61,7 @@ import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.xr.SeatID
 import com.babasama.edendale.android.xr.TheaterPlayback
+import com.babasama.edendale.android.xr.TheaterLights
 import com.babasama.edendale.android.xr.TheaterRoom
 import com.babasama.edendale.android.xr.TheaterSeatMap
 import com.babasama.edendale.android.xr.TheaterSubtitleOverlay
@@ -88,6 +89,7 @@ internal class TheaterUiState {
     var seatedSeat by mutableStateOf<SeatID?>(null)
     var pointedSeat by mutableStateOf<SeatID?>(null)
     var menu by mutableStateOf<TheaterMenu?>(null)
+    var lights by mutableStateOf(TheaterLights.NORMAL)
 }
 
 internal interface TheaterActions {
@@ -102,6 +104,7 @@ internal interface TheaterActions {
     fun chooseRoom(room: TheaterRoom)
     fun chooseSeat(seat: SeatID?)
     fun recentre()
+    fun chooseLights(level: TheaterLights)
 }
 
 private val PanelShape = RoundedCornerShape(24.dp)
@@ -461,6 +464,8 @@ internal fun TheaterSeatPanel(ui: TheaterUiState, actions: TheaterActions) {
             HorizontalDivider(color = EdendaleColors.Outline)
             Spacer(Modifier.height(16.dp))
         }
+        LightsRow(ui, actions)
+        Spacer(Modifier.height(16.dp))
         Surface(onClick = actions::recentre, shape = RoundedCornerShape(8.dp), color = EdendaleColors.Surface) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(painterResource(BaseR.drawable.ic_theater), contentDescription = null, modifier = Modifier.size(24.dp), tint = EdendaleColors.Gold)
@@ -558,3 +563,34 @@ internal fun TheaterSubtitlePanel(playback: TheaterPlayback) {
         }
     }
 }
+
+/** The house lights (N.9): Normal, Dim, Dark, the current level in gold. */
+@Composable
+private fun LightsRow(ui: TheaterUiState, actions: TheaterActions) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.theater_lights), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        TheaterLights.entries.forEach { level ->
+            val selected = ui.lights == level
+            Surface(
+                onClick = { actions.chooseLights(level) },
+                shape = CircleShape,
+                color = if (selected) EdendaleColors.Gold else EdendaleColors.Surface,
+                modifier = Modifier.padding(start = 6.dp),
+            ) {
+                Text(
+                    stringResource(level.labelRes),
+                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (selected) EdendaleColors.Background else EdendaleColors.TextPrimary,
+                )
+            }
+        }
+    }
+}
+
+private val TheaterLights.labelRes: Int
+    get() = when (this) {
+        TheaterLights.NORMAL -> R.string.theater_lights_normal
+        TheaterLights.DIM -> R.string.theater_lights_dim
+        TheaterLights.DARK -> R.string.theater_lights_dark
+    }
