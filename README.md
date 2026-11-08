@@ -597,21 +597,25 @@ which put the viewer where the screen spans 54–62° and mark every seat.
   recommended place, and the room turns so the screen is straight ahead from
   wherever you sit. **Recentre** puts the screen where you are looking, lying
   down included.
-- **What stays on the device.** The last room and the seat per room live in
-  the `theater` preferences and are never synced.
+- **Lights.** Normal, Dim, or Dark on the seat panel turns the room's baked
+  light down to 30 % or 6 %; the picture, the screen's own surround, and the
+  Projector Room's beam keep their brightness.
+- **What stays on the device.** The last room, the lights, and the seat per
+  room live in the `theater` preferences and are never synced.
 - **Comfort.** Seated, no locomotion, nothing animates but the video and a
   short fade when the seat changes. Video Enhancement is off in the theater.
 
 The theater is a Play Feature Delivery module, `:xr`, that Play installs with
 the app only on devices declaring `android.software.xr.api.spatial`; phones
-and TVs never download its rooms (23 MB) or renderer. It holds Jetpack XR
-SceneCore, Runtime, and ARCore 1.0.0 (Apache-2.0); the Play Services AR
-runtime and Google's ARCore SDK are excluded, and the split carries no copy
-of Media3. `./gradlew assembleDebug` builds
-`xr/build/outputs/apk/debug/xr-debug.apk` beside the base APK; install both
-with `adb install-multiple -r Edendale-debug.apk xr-debug.apk`. The chip
-appears only on an XR device that has the `xr` split installed. The base
-APK alone, or a phone, shows no theater.
+and TVs never download its rooms (30 MB with their atlases) or renderer. It
+holds Jetpack XR SceneCore, Runtime, and ARCore 1.0.0 (Apache-2.0); the Play
+Services AR runtime and Google's ARCore SDK are excluded, and the split
+carries no copy of Media3. `./gradlew assembleDebug` builds
+`xr/build/outputs/apk/debug/xr-debug.apk` beside the base APK (copying each
+room's atlases out of its GLB on the way, for the lights); install both with
+`adb install-multiple -r Edendale-debug.apk xr-debug.apk`. The chip appears
+only on an XR device that has the `xr` split installed. The base APK alone,
+or a phone, shows no theater.
 
 ### Manual device checks
 
