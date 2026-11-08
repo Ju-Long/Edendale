@@ -283,6 +283,18 @@
         <item quantity="one">%1$d träff till.</item>
         <item quantity="other">%1$d träffar till.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN-kod</string>
+    <string name="parental_enter_pin">Ange föräldra-PIN-koden</string>
+    <string name="parental_unlock">Lås upp</string>
+    <string name="parental_wrong_pin">PIN-koden stämde inte.</string>
+    <string name="parental_pin_length">Använd 4 till 8 siffror.</string>
+    <string name="parental_locked_out">För många felaktiga PIN-koder. Försök igen om %1$s.</string>
+    <string name="parental_checking_pin">Kontrollerar PIN-koden…</string>
+    <string name="parental_pairing_link_message">En parkopplingslänk kräver föräldra-PIN-koden. En felaktig PIN-kod förkastar länken.</string>
+    <string name="parental_restricted_title">Begränsad</string>
+    <string name="parental_restricted_message">Den här titeln ligger över åldersgränsen som ställts in på den här enheten.</string>
     <string name="settings_section_app_controls">Appkontroller</string>
     <string name="settings_app_controls_skip_backward">Hoppa bakåt</string>
     <string name="settings_app_controls_skip_forward">Hoppa framåt</string>

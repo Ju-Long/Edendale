@@ -119,8 +119,10 @@ fun SearchScreen(
     }
     val localProgressByKey = remember(localProgress) { localProgress.byStorageKey() }
 
-    // Young Audience filter: hide anything not verified as PG / PG-13. Local
-    // matches without a TMDB id cannot be verified, so they fail closed too.
+    // The parental policy: hide anything not verified as allowed while "Hide
+    // restricted titles" is on. Local matches without a TMDB id cannot be
+    // verified, so they fail closed too; with hiding off every match stays in
+    // the list and the detail page or the player blocks instead (O.5).
     val audienceRefs = remember(state.results, state.trending, localMatches) {
         (state.results.map { it.ref } +
             state.trending.map { it.ref } +
@@ -133,7 +135,7 @@ fun SearchScreen(
     }
     val visibleResults = audienceFilter.visible(state.results)
     val visibleTrending = audienceFilter.visible(state.trending)
-    val visibleLocal = if (!audienceFilter.isEnabled) {
+    val visibleLocal = if (!audienceFilter.hidesRestrictedTitles) {
         localMatches
     } else {
         LocalMatches(

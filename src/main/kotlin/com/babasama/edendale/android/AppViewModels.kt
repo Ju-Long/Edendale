@@ -16,7 +16,10 @@ import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.UserMediaRecord
 import com.babasama.edendale.android.data.LocalCopy
 import com.babasama.edendale.android.data.LocalDataStore
+import com.babasama.edendale.android.parental.awaitReady
+import com.babasama.edendale.android.parental.parentalControls
 import com.babasama.edendale.domain.WatchProgress
+import com.babasama.edendale.parental.ParentalGateRules
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.babasama.edendale.tmdb.BrowseRepository
@@ -63,6 +66,7 @@ class BrowseViewModel(
     private val strings = AppStrings(application)
     private val dataStore = LocalDataStore((application as EdendaleApplication).database)
     private val libraryRepo = (application as EdendaleApplication).libraryRepository
+    private val parental = parentalControls(application)
 
     var state by mutableStateOf(BrowseUiState())
         private set
@@ -140,7 +144,9 @@ class BrowseViewModel(
                 )
                 detail.seasons.firstOrNull()?.let { selectSeason(it.seasonNumber) }
 
-                val trailer = repository.bestTrailer(ref)
+                // O-D10: with Block trailers and links on, /videos is never requested.
+                parental.awaitReady()
+                val trailer = if (ParentalGateRules.allowsTrailers(parental.policy.value)) repository.bestTrailer(ref) else null
                 if (detailState.ref == ref) {
                     detailState = detailState.copy(trailer = trailer)
                 }

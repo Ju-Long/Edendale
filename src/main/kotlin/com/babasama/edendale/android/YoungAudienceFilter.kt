@@ -144,8 +144,16 @@ class YoungAudienceFilter(
         return visibleItems(items, decisions, hidesRestrictedTitles)
     }
 
-    private val hidesRestrictedTitles: Boolean
-        get() = isEnabled && (policyState?.hideRestrictedTitles ?: true)
+    /**
+     * True while restricted titles are kept out of lists: a title rule is in
+     * force (or still unknown) and "Hide restricted titles" is on. Off, the
+     * lists show everything and only [allows] blocks (O.5).
+     */
+    val hidesRestrictedTitles: Boolean
+        get() {
+            synchronizeContext()
+            return isEnabled && (policyState?.hideRestrictedTitles ?: true)
+        }
 
     /**
      * True while any requested title has not been resolved yet. Unknown titles

@@ -10,9 +10,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
+import com.babasama.edendale.android.parental.rememberParentalGate
 import com.babasama.edendale.domain.AppRoute
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
+import com.babasama.edendale.parental.GatedAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -99,7 +101,11 @@ fun EdendaleApp(
     val searchViewModel: SearchViewModel = viewModel()
     val tmdbAccountViewModel: TmdbAccountViewModel = viewModel()
     val watchlistViewModel: WatchlistViewModel = viewModel()
-    val audienceFilter = (viewModel<AudienceFilterViewModel>()).filter
+    val audienceViewModel = viewModel<AudienceFilterViewModel>()
+    val audienceFilter = audienceViewModel.filter
+    val parentalControls = audienceViewModel.controls
+    // Settings, library edits, Sync, and pairing links ask for the parental PIN while locked (O.5).
+    val parentalGate = rememberParentalGate(isTelevision)
     // The navigation row on screen: a tab, or (in extended navigation) one
     // section of the Watchlist or Downloaded page (J.1).
     var navigationItem by rememberSaveable(stateSaver = NavigationItem.Saver) {
@@ -107,6 +113,10 @@ fun EdendaleApp(
     }
     val selectedTab = navigationItem.tab
     var showSettingsSheet by rememberSaveable { mutableStateOf(false) }
+    // O-D4: a correct PIN lasts five minutes or until the Settings sheet closes, whichever comes first.
+    LaunchedEffect(showSettingsSheet) {
+        if (!showSettingsSheet) parentalControls.lock()
+    }
     // The local show drill-in is reachable from both Downloaded and Search, so
     // it is hoisted here alongside the other full-screen overrides.
     var openShowKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -128,7 +138,7 @@ fun EdendaleApp(
     val hasWatchlist = watchlistRecords.isNotEmpty() && (
         !audienceFilter.isEnabled ||
             audienceFilter.isVerifying(watchlistRefs) ||
-            watchlistRecords.any { audienceFilter.allows(it.ref) }
+            watchlistRecords.any { audienceFilter.shows(it.ref) }
         )
     val tabs = buildList {
         add(AppTab.MOVIES)
@@ -174,8 +184,21 @@ fun EdendaleApp(
     }
 
     // A pairing link from the camera or another app (27.1 handoff): the guest side opens over whatever is showing.
+    // O-D13: while the controls are locked the PIN comes first; a wrong or cancelled PIN drops the link.
     val pendingPairingLink by com.babasama.edendale.android.sync.PendingPairing.link.collectAsState()
-    pendingPairingLink?.let { link ->
+    var unlockedPairingLink by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(pendingPairingLink) {
+        val link = pendingPairingLink
+        if (link == null) {
+            unlockedPairingLink = null
+            return@LaunchedEffect
+        }
+        parentalGate.require(
+            GatedAction.PAIRING_LINK,
+            onRefused = { com.babasama.edendale.android.sync.PendingPairing.link.value = null },
+        ) { unlockedPairingLink = link }
+    }
+    pendingPairingLink?.takeIf { it == unlockedPairingLink }?.let { link ->
         com.babasama.edendale.android.sync.PairingDialog(
             isTelevision = isTelevision,
             hosting = false,
@@ -261,7 +284,7 @@ fun EdendaleApp(
         var downloadedSections: List<DownloadedSection>? = null
         if (extendedNavigation) {
             watchlistSections = remember { SettledValue<List<WatchlistSection>>() }.update(
-                WatchlistSection.available(watchlistRecords.filter { audienceFilter.allows(it.ref) }.map { it.mediaType })
+                WatchlistSection.available(watchlistRecords.filter { audienceFilter.shows(it.ref) }.map { it.mediaType })
                     .takeUnless { audienceFilter.isVerifying(watchlistRefs) },
             )
             downloadedSections = remember { SettledValue<List<DownloadedSection>>() }
@@ -288,7 +311,7 @@ fun EdendaleApp(
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
                 audienceFilter = audienceFilter,
-                onOpenSettings = { showSettingsSheet = true },
+                onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
                 onOpenShow = { openShowKey = it },
             )
             compactPortrait -> PhoneShell(
@@ -300,7 +323,7 @@ fun EdendaleApp(
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
                 audienceFilter = audienceFilter,
-                onOpenSettings = { showSettingsSheet = true },
+                onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
                 onOpenShow = { openShowKey = it },
             )
             else -> WideShell(
@@ -316,7 +339,7 @@ fun EdendaleApp(
                 watchlistViewModel = watchlistViewModel,
                 audienceFilter = audienceFilter,
                 extendedNavigation = extendedNavigation,
-                onOpenSettings = { showSettingsSheet = true },
+                onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
                 onOpenShow = { openShowKey = it },
             )
         }

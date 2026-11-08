@@ -51,12 +51,14 @@ import coil.compose.AsyncImage
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.parental.rememberParentalGate
 import com.babasama.edendale.android.player.PlayerActivity
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
 import com.babasama.edendale.android.data.SourceScanRules
+import com.babasama.edendale.parental.GatedAction
 
 /**
  * One linked source: local folder or network share, its item count, and the
@@ -229,6 +231,8 @@ fun LocalShowHost(
     val folders by library.folders.collectAsState(initial = emptyList())
     val progressList by library.watchProgress.collectAsState(initial = emptyList())
     val show = shows.firstOrNull { it.key == showKey }
+    // Remove from Library asks for the parental PIN while library changes are locked (O.5).
+    val gate = rememberParentalGate(isTelevision)
 
     if (show == null) {
         // Either the first frame before Room answers, or the show was removed
@@ -263,7 +267,7 @@ fun LocalShowHost(
             val watched = progressByKey.forEpisode(episode.tmdbId)?.isCompleted == true
             library.setEpisodeWatched(episode, show.tmdbId, !watched)
         },
-        onRemove = { copies -> copies.forEach { library.removeEpisode(it.uri) } },
+        onRemove = { copies -> gate.require(GatedAction.LIBRARY_EDIT) { copies.forEach { library.removeEpisode(it.uri) } } },
     )
 }
 

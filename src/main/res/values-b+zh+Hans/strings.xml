@@ -279,6 +279,18 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">还有 %1$d 个匹配项。</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN 码</string>
+    <string name="parental_enter_pin">输入家长 PIN 码</string>
+    <string name="parental_unlock">解锁</string>
+    <string name="parental_wrong_pin">PIN 码不正确。</string>
+    <string name="parental_pin_length">请使用 4 到 8 位数字。</string>
+    <string name="parental_locked_out">PIN 码错误次数过多。请在 %1$s 后重试。</string>
+    <string name="parental_checking_pin">正在检查 PIN 码…</string>
+    <string name="parental_pairing_link_message">配对链接需要家长 PIN 码。PIN 码错误将丢弃该链接。</string>
+    <string name="parental_restricted_title">受限</string>
+    <string name="parental_restricted_message">此影片超出了本设备设置的分级上限。</string>
     <string name="settings_section_app_controls">应用控制</string>
     <string name="settings_app_controls_skip_backward">后退</string>
     <string name="settings_app_controls_skip_forward">快进</string>

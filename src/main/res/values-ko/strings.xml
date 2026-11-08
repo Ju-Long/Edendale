@@ -279,6 +279,18 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">%1$d개가 더 일치합니다.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">보호자 PIN을 입력하세요</string>
+    <string name="parental_unlock">잠금 해제</string>
+    <string name="parental_wrong_pin">PIN이 일치하지 않습니다.</string>
+    <string name="parental_pin_length">4~8자리 숫자를 사용하세요.</string>
+    <string name="parental_locked_out">잘못된 PIN 입력이 너무 많습니다. %1$s 후에 다시 시도하세요.</string>
+    <string name="parental_checking_pin">PIN 확인 중…</string>
+    <string name="parental_pairing_link_message">페어링 링크에는 보호자 PIN이 필요합니다. PIN이 틀리면 링크가 폐기됩니다.</string>
+    <string name="parental_restricted_title">제한됨</string>
+    <string name="parental_restricted_message">이 작품은 이 기기에 설정된 등급 제한을 넘습니다.</string>
     <string name="settings_section_app_controls">앱 제어</string>
     <string name="settings_app_controls_skip_backward">뒤로 건너뛰기</string>
     <string name="settings_app_controls_skip_forward">앞으로 건너뛰기</string>

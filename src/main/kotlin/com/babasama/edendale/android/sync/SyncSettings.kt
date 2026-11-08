@@ -62,8 +62,10 @@ import com.babasama.edendale.android.handoff.HandoffDiscovery
 import com.babasama.edendale.android.handoff.PairingGuest
 import com.babasama.edendale.android.handoff.PairingHost
 import com.babasama.edendale.android.handoff.handoffFailureMessage
+import com.babasama.edendale.android.parental.ParentalGate
 import com.babasama.edendale.android.sourceKindLabel
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.parental.GatedAction
 import com.babasama.edendale.handoff.AccountHandoff
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
 import com.babasama.edendale.handoff.HandoffCrypto
@@ -137,10 +139,12 @@ internal fun pairingFailureMessage(context: Context, error: Throwable): String =
  * Settings → Sync (FEATURES-27.1.md §5.1): off by default; a location and a
  * space name turn it on. On, it shows the location, the space, this device,
  * and the last sync, and offers Sync Now, pairing another device both ways,
- * removing a device, and turning off. Never claims instant sync.
+ * removing a device, and turning off. Never claims instant sync. The section
+ * stays readable while the parental controls are locked; every button asks
+ * for the PIN through [gate] (O-D14).
  */
 @Composable
-internal fun SyncSettingsSection(isTelevision: Boolean) {
+internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
     val context = LocalContext.current
     val app = context.applicationContext as EdendaleApplication
     val sync = app.sync
@@ -152,6 +156,8 @@ internal fun SyncSettingsSection(isTelevision: Boolean) {
     var turningOff by remember { mutableStateOf(false) }
     var removingDevice by remember { mutableStateOf(false) }
     var accountLabel by remember { mutableStateOf<String?>(null) }
+    // Every change in this section is a sync change the acceptance criteria put behind the PIN.
+    fun gated(action: () -> Unit): () -> Unit = { gate.require(GatedAction.SYNC, onUnlocked = action) }
 
     LaunchedEffect(changes) {
         sync.refreshStatus()
@@ -172,21 +178,21 @@ internal fun SyncSettingsSection(isTelevision: Boolean) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (status.isOn) {
-                    ArchiveButton(label = stringResource(R.string.sync_now), onClick = { sync.syncNow() }, enabled = !status.syncing, iconRes = R.drawable.ic_arrow_rotate_right)
-                    ArchiveButton(label = stringResource(R.string.sync_set_up_device), onClick = { pairing = true }, iconRes = R.drawable.ic_tv)
+                    ArchiveButton(label = stringResource(R.string.sync_now), onClick = gated { sync.syncNow() }, enabled = !status.syncing, iconRes = R.drawable.ic_arrow_rotate_right)
+                    ArchiveButton(label = stringResource(R.string.sync_set_up_device), onClick = gated { pairing = true }, iconRes = R.drawable.ic_tv)
                 } else {
-                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = { choosing = true }, kind = ArchiveButtonKind.Primary, iconRes = R.drawable.ic_folder_circle_plus)
+                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true }, kind = ArchiveButtonKind.Primary, iconRes = R.drawable.ic_folder_circle_plus)
                 }
-                ArchiveButton(label = stringResource(R.string.sync_receive_from_device), onClick = { pairing = false }, iconRes = R.drawable.ic_link)
+                ArchiveButton(label = stringResource(R.string.sync_receive_from_device), onClick = gated { pairing = false }, iconRes = R.drawable.ic_link)
             }
             if (status.isOn) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = { choosing = true })
-                    ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = { removingDevice = true })
-                    ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = { turningOff = true }, iconRes = R.drawable.ic_xmark)
+                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true })
+                    ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = gated { removingDevice = true })
+                    ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = gated { turningOff = true }, iconRes = R.drawable.ic_xmark)
                 }
             }
         },

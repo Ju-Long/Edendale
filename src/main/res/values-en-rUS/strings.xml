@@ -4,6 +4,18 @@
 <resources>
     <string name="settings_backup_note">Watch progress, favorites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
     <string name="tmdb_account_intro">Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB.</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Enter the parental PIN</string>
+    <string name="parental_unlock">Unlock</string>
+    <string name="parental_wrong_pin">That PIN didn\'t match.</string>
+    <string name="parental_pin_length">Use 4 to 8 digits.</string>
+    <string name="parental_locked_out">Too many wrong PINs. Try again in %1$s.</string>
+    <string name="parental_checking_pin">Checking the PIN…</string>
+    <string name="parental_pairing_link_message">A pairing link needs the parental PIN. A wrong PIN discards the link.</string>
+    <string name="parental_restricted_title">Restricted</string>
+    <string name="parental_restricted_message">This title is above the rating limit set on this device.</string>
     <string name="settings_section_app_controls">App Controls</string>
     <string name="settings_app_controls_skip_backward">Skip Back</string>
     <string name="settings_app_controls_skip_forward">Skip Forward</string>

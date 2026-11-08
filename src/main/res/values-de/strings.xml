@@ -283,6 +283,18 @@
         <item quantity="one">%1$d weitere Übereinstimmung.</item>
         <item quantity="other">%1$d weitere Übereinstimmungen.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Eltern-PIN eingeben</string>
+    <string name="parental_unlock">Entsperren</string>
+    <string name="parental_wrong_pin">Diese PIN stimmt nicht.</string>
+    <string name="parental_pin_length">Verwende 4 bis 8 Ziffern.</string>
+    <string name="parental_locked_out">Zu viele falsche PINs. Versuche es in %1$s erneut.</string>
+    <string name="parental_checking_pin">PIN wird geprüft…</string>
+    <string name="parental_pairing_link_message">Ein Kopplungslink erfordert die Eltern-PIN. Bei einer falschen PIN wird der Link verworfen.</string>
+    <string name="parental_restricted_title">Eingeschränkt</string>
+    <string name="parental_restricted_message">Dieser Titel liegt über der auf diesem Gerät festgelegten Altersfreigabe.</string>
     <string name="settings_section_app_controls">App-Steuerung</string>
     <string name="settings_app_controls_skip_backward">Zurückspringen</string>
     <string name="settings_app_controls_skip_forward">Vorspringen</string>

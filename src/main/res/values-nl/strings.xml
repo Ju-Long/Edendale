@@ -283,6 +283,18 @@
         <item quantity="one">Nog %1$d overeenkomst.</item>
         <item quantity="other">Nog %1$d overeenkomsten.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">Pincode</string>
+    <string name="parental_enter_pin">Voer de ouderlijke pincode in</string>
+    <string name="parental_unlock">Ontgrendel</string>
+    <string name="parental_wrong_pin">Die pincode klopt niet.</string>
+    <string name="parental_pin_length">Gebruik 4 tot 8 cijfers.</string>
+    <string name="parental_locked_out">Te veel verkeerde pincodes. Probeer het over %1$s opnieuw.</string>
+    <string name="parental_checking_pin">Pincode controleren…</string>
+    <string name="parental_pairing_link_message">Een koppelingslink vereist de ouderlijke pincode. Bij een verkeerde pincode vervalt de link.</string>
+    <string name="parental_restricted_title">Beperkt</string>
+    <string name="parental_restricted_message">Deze titel valt boven de classificatielimiet die op dit apparaat is ingesteld.</string>
     <string name="settings_section_app_controls">App-bediening</string>
     <string name="settings_app_controls_skip_backward">Terugspoelen</string>
     <string name="settings_app_controls_skip_forward">Vooruitspoelen</string>

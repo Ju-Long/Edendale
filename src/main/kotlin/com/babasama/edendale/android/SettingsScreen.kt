@@ -67,6 +67,8 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.SmbClient
 import com.babasama.edendale.android.data.WyzieKeyStore
+import com.babasama.edendale.android.parental.rememberParentalGate
+import com.babasama.edendale.parental.GatedAction
 import com.babasama.edendale.android.player.PlayerLogic
 import com.babasama.edendale.android.player.PlayerPreferences
 import com.babasama.edendale.android.player.PlayerPreferencesRules
@@ -94,7 +96,9 @@ fun SettingsScreen(
     val activity by library.activity.collectAsState()
     // Google Drive sources (H.9.4): what Choose More Videos added, and the picker itself.
     val sourceNotes by library.sourceNotes.collectAsState()
-    val chooseMoreVideos = rememberChooseMoreVideos()
+    // Library edits and every Sync button ask for the parental PIN while their lock is on (O.5).
+    val gate = rememberParentalGate(isTelevision)
+    val chooseMoreVideos = rememberChooseMoreVideos(gate)
 
     var showSmbDialog by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<LibraryFolderEntity?>(null) }
@@ -325,14 +329,14 @@ fun SettingsScreen(
                             ArchiveButton(
                                 label = stringResource(R.string.add_local_folder_ellipsis),
                                 iconRes = R.drawable.ic_folder_circle_plus,
-                                onClick = { folderPicker.launch(null) },
+                                onClick = { gate.require(GatedAction.LIBRARY_EDIT) { folderPicker.launch(null) } },
                             )
                         }
                         ArchiveButton(
                             label = stringResource(R.string.link_network_source_ellipsis),
                             iconRes = R.drawable.ic_link,
                             isTelevision = isTelevision,
-                            onClick = { showSmbDialog = true },
+                            onClick = { gate.require(GatedAction.LIBRARY_EDIT) { showSmbDialog = true } },
                         )
                     }
                     activity.errorMessage?.let { message ->
@@ -367,8 +371,8 @@ fun SettingsScreen(
                             itemCount = itemCounts[folder.treeUri] ?: 0,
                             isScanning = activity.scanningFolder == folder.displayName,
                             isTelevision = isTelevision,
-                            onRescan = { library.rescanFolder(folder.treeUri) },
-                            onRemove = { pendingRemoval = folder },
+                            onRescan = { gate.require(GatedAction.LIBRARY_EDIT) { library.rescanFolder(folder.treeUri) } },
+                            onRemove = { gate.require(GatedAction.LIBRARY_EDIT) { pendingRemoval = folder } },
                             note = sourceNotes[folder.treeUri],
                             chooseMoreVideos = chooseMoreVideos,
                         )
@@ -383,7 +387,7 @@ fun SettingsScreen(
 
         item {
             // 27.1: file-based sync on storage the viewer owns (FEATURES-27.1.md §5).
-            com.babasama.edendale.android.sync.SyncSettingsSection(isTelevision = isTelevision)
+            com.babasama.edendale.android.sync.SyncSettingsSection(isTelevision = isTelevision, gate = gate)
         }
 
         item {
@@ -484,7 +488,7 @@ private fun AndroidTvSettingsSection() {
 
 /** A setting with a title, a line of detail, and a switch; the whole row toggles it and takes focus on TV. */
 @Composable
-private fun SettingsSwitchRow(
+internal fun SettingsSwitchRow(
     title: String,
     detail: String,
     checked: Boolean,

@@ -283,6 +283,18 @@
         <item quantity="one">%1$d coincidencia más.</item>
         <item quantity="other">%1$d coincidencias más.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Ingresa el PIN parental</string>
+    <string name="parental_unlock">Desbloquear</string>
+    <string name="parental_wrong_pin">Ese PIN no coincide.</string>
+    <string name="parental_pin_length">Usa de 4 a 8 dígitos.</string>
+    <string name="parental_locked_out">Demasiados PIN incorrectos. Intenta de nuevo en %1$s.</string>
+    <string name="parental_checking_pin">Verificando el PIN…</string>
+    <string name="parental_pairing_link_message">Un enlace de emparejamiento requiere el PIN parental. Un PIN incorrecto descarta el enlace.</string>
+    <string name="parental_restricted_title">Restringido</string>
+    <string name="parental_restricted_message">Este título supera el límite de clasificación establecido en este dispositivo.</string>
     <string name="settings_section_app_controls">Controles de la app</string>
     <string name="settings_app_controls_skip_backward">Retroceder</string>
     <string name="settings_app_controls_skip_forward">Avanzar</string>

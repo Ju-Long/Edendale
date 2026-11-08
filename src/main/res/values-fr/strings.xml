@@ -283,6 +283,18 @@
         <item quantity="one">%1$d correspondance supplémentaire.</item>
         <item quantity="other">%1$d correspondances supplémentaires.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">Code PIN</string>
+    <string name="parental_enter_pin">Saisissez le code PIN parental</string>
+    <string name="parental_unlock">Déverrouiller</string>
+    <string name="parental_wrong_pin">Ce code PIN ne correspond pas.</string>
+    <string name="parental_pin_length">Utilisez 4 à 8 chiffres.</string>
+    <string name="parental_locked_out">Trop de codes PIN erronés. Réessayez dans %1$s.</string>
+    <string name="parental_checking_pin">Vérification du code PIN…</string>
+    <string name="parental_pairing_link_message">Un lien de jumelage nécessite le code PIN parental. Un code erroné annule le lien.</string>
+    <string name="parental_restricted_title">Restreint</string>
+    <string name="parental_restricted_message">Ce titre dépasse la limite de classification définie sur cet appareil.</string>
     <string name="settings_section_app_controls">Commandes de l\'application</string>
     <string name="settings_app_controls_skip_backward">Reculer</string>
     <string name="settings_app_controls_skip_forward">Avancer</string>

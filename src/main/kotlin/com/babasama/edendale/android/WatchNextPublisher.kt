@@ -117,7 +117,8 @@ internal class WatchNextPublisher(
     private suspend fun desired(snapshot: LibrarySnapshot): List<WatchNextProgram>? = try {
         audienceFilter.refreshPreference()
         audienceFilter.verify(libraryAudienceRefs(snapshot.movies, snapshot.shows))
-        val visible = visibleLibrary(snapshot.movies, snapshot.shows, snapshot.episodes, audienceFilter)
+        // Strict: the home screen cannot show a restricted state, so a hidden title never becomes a row, whatever "Hide restricted titles" says.
+        val visible = visibleLibrary(snapshot.movies, snapshot.shows, snapshot.episodes, audienceFilter, strict = true)
         val entries = continueWatching(
             snapshot.progress,
             visible.movies,

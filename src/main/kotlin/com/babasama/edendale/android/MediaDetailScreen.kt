@@ -44,9 +44,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.babasama.edendale.android.parental.restrictedMessageRes
+import com.babasama.edendale.android.parental.restrictedTitleRes
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.parental.ParentalGateRules
+import com.babasama.edendale.parental.ParentalPolicy
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,9 +76,11 @@ fun MediaDetailScreen(
     ) {
         if (ref != null) audienceFilter.verify(listOf(ref))
     }
-    // Fails closed: an enabled filter blocks the page until this title is
-    // verified as PG / PG-13, so a deep link cannot flash restricted content.
+    // Fails closed: an active policy blocks the page until this title is
+    // verified as allowed, so a deep link cannot flash restricted content.
     val audienceBlocked = ref != null && audienceFilter.isEnabled && !audienceFilter.allows(ref)
+    // O-D10: with Block trailers and links on, Watch Trailer is gone and no trailer is ever fetched.
+    val trailersAllowed = ParentalGateRules.allowsTrailers(audienceFilter.policy)
     val windowSize = currentWindowSizeDp()
     val topBarEdgeMargin = if (isTelevision || windowSize.width >= 600.dp) 48.dp else 20.dp
     val contentFocus = androidx.compose.runtime.remember { FocusRequester() }
@@ -130,11 +136,12 @@ fun MediaDetailScreen(
                     if (audienceFilter.isVerifying(listOf(ref!!))) {
                         ArchiveLoadingState()
                     } else {
-                        AudienceRestrictedState(isTelevision = isTelevision, onBack = onBack)
+                        AudienceRestrictedState(policy = audienceFilter.policy, isTelevision = isTelevision, onBack = onBack)
                     }
                 }
                 state.detail != null -> DetailContent(
                     state = state,
+                    trailersAllowed = trailersAllowed,
                     isTelevision = isTelevision,
                     onSetRating = onSetRating,
                     onOpenFilmography = onOpenFilmography,
@@ -218,8 +225,10 @@ private fun DetailTopBar(
     )
 }
 
+/** The blocked page: the Young Audience wording for the preset alone, the rating-limit wording once a ceiling exists. */
 @Composable
 private fun AudienceRestrictedState(
+    policy: ParentalPolicy?,
     isTelevision: Boolean,
     onBack: () -> Unit,
 ) {
@@ -232,8 +241,8 @@ private fun AudienceRestrictedState(
                 tint = MaterialTheme.colorScheme.outline,
             )
         },
-        title = stringResource(R.string.audience_restricted_title),
-        message = stringResource(R.string.audience_restricted_message),
+        title = stringResource(restrictedTitleRes(policy)),
+        message = stringResource(restrictedMessageRes(policy)),
         action = {
             ArchiveButton(
                 label = stringResource(R.string.action_go_back),
@@ -248,6 +257,8 @@ private fun AudienceRestrictedState(
 @Composable
 private fun DetailContent(
     state: DetailUiState,
+    /** False while Block trailers and links is on (O-D10): no Watch Trailer button, and a playing trailer stops. */
+    trailersAllowed: Boolean,
     isTelevision: Boolean,
     onSetRating: (com.babasama.edendale.domain.MediaRef, Double?) -> Unit,
     onOpenFilmography: (Int, String) -> Unit,
@@ -255,6 +266,7 @@ private fun DetailContent(
     onToggleEpisodeWatched: (com.babasama.edendale.tmdb.TmdbEpisodeDetail) -> Unit,
 ) {
     val detail = state.detail!!
+    val trailer = state.trailer?.takeIf { trailersAllowed }
     // Without remember this reset to false on the next recomposition, so the
     // trailer closed itself the moment anything else in the screen changed.
     var showTrailer by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -277,7 +289,7 @@ private fun DetailContent(
                     .height(heroHeight),
             ) {
                 val backdrop = detail.backdropUrl()
-                if (showTrailer && state.trailer != null) {
+                if (showTrailer && trailer != null) {
                     androidx.compose.ui.viewinterop.AndroidView(
                         factory = { context ->
                             android.webkit.WebView(context).apply {
@@ -285,7 +297,7 @@ private fun DetailContent(
                                 settings.mediaPlaybackRequiresUserGesture = false
                                 webChromeClient = android.webkit.WebChromeClient()
                                 setBackgroundColor(android.graphics.Color.BLACK)
-                                val url = "https://www.youtube-nocookie.com/embed/${state.trailer.key}?autoplay=1&modestbranding=1&playsinline=1"
+                                val url = "https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&modestbranding=1&playsinline=1"
                                 loadUrl(url)
                             }
                         },
@@ -301,7 +313,7 @@ private fun DetailContent(
                 } else {
                     PosterPlaceholder(modifier = Modifier.fillMaxSize())
                 }
-                if (!showTrailer) {
+                if (!showTrailer || trailer == null) {
                     Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -358,7 +370,7 @@ private fun DetailContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    if (!isTelevision && state.trailer != null) {
+                    if (!isTelevision && trailer != null) {
                         androidx.compose.material3.OutlinedButton(onClick = { showTrailer = !showTrailer }) {
                             Icon(painterResource(id = if (showTrailer) R.drawable.ic_eye_slash else R.drawable.ic_play), contentDescription = null)
                             Spacer(Modifier.width(8.dp))

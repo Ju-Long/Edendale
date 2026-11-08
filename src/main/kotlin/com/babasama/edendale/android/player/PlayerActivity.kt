@@ -22,6 +22,7 @@ import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
 import android.view.Menu
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
@@ -50,9 +51,16 @@ import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.KeyboardShortcuts
 import com.babasama.edendale.android.PlayerKeyCommand
 import com.babasama.edendale.android.R
+import com.babasama.edendale.android.YoungAudienceFilter
 import com.babasama.edendale.android.data.LocalDataStore
 import com.babasama.edendale.android.data.WyzieKeyStore
 import com.babasama.edendale.android.isTelevisionDevice
+import com.babasama.edendale.android.parental.ParentalControls
+import com.babasama.edendale.android.parental.awaitReady
+import com.babasama.edendale.android.parental.parentalControls
+import com.babasama.edendale.android.parental.restrictedMessageRes
+import com.babasama.edendale.android.youngAudienceFilter
+import com.babasama.edendale.parental.ParentalGateRules
 import com.babasama.edendale.android.xr.XrTheater
 import com.babasama.edendale.android.xr.XrTheaterHandover
 import com.babasama.edendale.domain.WatchMediaType
@@ -73,6 +81,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -194,6 +206,12 @@ class PlayerActivity : ComponentActivity() {
     /** Survives activity teardown long enough to land the final write. */
     private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // The parental policy at the player (O.5): the process's controls and this
+    // activity's own filter, on a main-thread scope that ends with the activity.
+    private val parentalScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private lateinit var parental: ParentalControls
+    private lateinit var audienceFilter: YoungAudienceFilter
+
     private data class ProgressKey(
         val tmdbId: Int,
         val mediaType: WatchMediaType,
@@ -213,6 +231,8 @@ class PlayerActivity : ComponentActivity() {
         }
 
         isTelevision = isTelevisionDevice()
+        parental = parentalControls(this)
+        audienceFilter = youngAudienceFilter(this, parentalScope)
         val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
         val contentPreferences = getSharedPreferences(ContentPlayerPreferencesRules.PREFS_NAME, MODE_PRIVATE)
         contentPreferencesStore = SharedPreferencesContentStore(contentPreferences)
@@ -239,7 +259,8 @@ class PlayerActivity : ComponentActivity() {
             finish()
             return
         }
-        titleState.value = intent.getStringExtra(EXTRA_TITLE)
+        // Shown once the parental check lets the item start, so a refused title never flashes.
+        val title = intent.getStringExtra(EXTRA_TITLE)
             ?: displayName(uri)
             ?: uri.lastPathSegment
             ?: getString(R.string.default_video_name)
@@ -366,8 +387,8 @@ class PlayerActivity : ComponentActivity() {
         refreshWyzieConfigured()
 
         transitions.present()
-        lifecycleScopedStart(exoPlayer, uri)
-        loadPlaylist(uri.toString(), showTmdbId)
+        startWhenPermitted(exoPlayer, uri, title, tmdbId, isEpisode, showTmdbId)
+        observeParentalPolicy()
 
         setContent {
             EdendaleTheme(isTelevision = isTelevision) {
@@ -400,6 +421,59 @@ class PlayerActivity : ComponentActivity() {
                     onClose = { finish() },
                 )
             }
+        }
+    }
+
+    /**
+     * O.5: with no title rule active this is the plain start. Otherwise
+     * playback waits for the controls to read their store and for this
+     * title's verdict, and a restricted or id-less item (O-D8) is refused
+     * with a notice; the Watch Next row's intent and an "Open with" file
+     * arrive here like any other launch, so they are covered too.
+     */
+    private fun startWhenPermitted(
+        exoPlayer: ExoPlayer,
+        uri: Uri,
+        title: String,
+        tmdbId: Int?,
+        isEpisode: Boolean,
+        showTmdbId: Int?,
+    ) {
+        fun start() {
+            titleState.value = title
+            refreshMediaSession()
+            lifecycleScopedStart(exoPlayer, uri)
+            loadPlaylist(uri.toString(), showTmdbId)
+        }
+        if (parental.ready.value && !parental.policy.value.isActive) {
+            start()
+            return
+        }
+        parentalScope.launch {
+            parental.awaitReady()
+            val ref = ParentalGateRules.playbackRef(tmdbId, isEpisode, showTmdbId)
+            if (ref != null && audienceFilter.isEnabled) audienceFilter.verify(listOf(ref))
+            if (isDestroyed) return@launch
+            if (ParentalGateRules.permitsPlayback(audienceFilter.isEnabled, ref, audienceFilter::allows)) {
+                start()
+            } else {
+                refuseRestricted(Toast.LENGTH_LONG)
+                finish()
+            }
+        }
+    }
+
+    private fun refuseRestricted(duration: Int) {
+        Toast.makeText(this, getString(restrictedMessageRes(parental.policy.value)), duration).show()
+    }
+
+    /** A policy or list change while playing re-filters the rows, so a new ceiling reaches the panel, Up Next, and the media session. */
+    private fun observeParentalPolicy() {
+        parentalScope.launch {
+            combine(parental.policy, parental.lists) { policy, lists -> policy.key to lists }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { loadPlaylist(currentUriState.value, currentShowTmdbId) }
         }
     }
 
@@ -452,19 +526,22 @@ class PlayerActivity : ComponentActivity() {
     private fun loadPlaylist(uriString: String, showTmdbId: Int?) {
         val app = application as EdendaleApplication
         writeScope.launch {
-            val playlist = runCatching {
+            val loaded = runCatching {
                 loadPlayerPlaylist(
                     dao = app.database.libraryDao(),
                     uriString = uriString,
                     showTmdbIdExtra = showTmdbId,
                 )
             }.getOrNull() ?: return@launch
+            // O.5: only the rows the parental policy permits, verified first so the filter can judge them.
+            if (audienceFilter.isEnabled) audienceFilter.verify(playlistAudienceRefs(loaded))
+            val playlist = permittedPlaylist(loaded, audienceFilter.isEnabled, audienceFilter::allows)
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
                 playlistState.value = playlist
                 // The launch intent carries no episode code; backfill the
                 // subtitle line once the library row is known.
-                playlist.entries.firstOrNull { it.uri == currentUriState.value }
+                playlist?.entries?.firstOrNull { it.uri == currentUriState.value }
                     ?.let { subtitleState.value = it.detail }
                 refreshMediaSession()
             }
@@ -479,6 +556,11 @@ class PlayerActivity : ComponentActivity() {
      */
     internal fun switchTo(entry: PlaylistEntry) {
         val exoPlayer = player ?: return
+        // O.5: the rows are already filtered; this keeps a row from a list loaded under an older policy from playing.
+        if (!ParentalGateRules.permitsPlayback(audienceFilter.isEnabled, entry.audienceRef(), audienceFilter::allows)) {
+            refuseRestricted(Toast.LENGTH_SHORT)
+            return
+        }
         saveContentPreferences()
         currentTmdbId = entry.tmdbId?.takeIf { it > 0 }
         currentIsEpisode = entry.isEpisode
@@ -850,6 +932,7 @@ class PlayerActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        parentalScope.cancel()
         prefsSubscription?.close()
         segmentController.end()
         transitions.end()

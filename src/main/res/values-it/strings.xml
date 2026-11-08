@@ -283,6 +283,18 @@
         <item quantity="one">%1$d altra corrispondenza.</item>
         <item quantity="other">%1$d altre corrispondenze.</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Inserisci il PIN genitori</string>
+    <string name="parental_unlock">Sblocca</string>
+    <string name="parental_wrong_pin">Il PIN non corrisponde.</string>
+    <string name="parental_pin_length">Usa da 4 a 8 cifre.</string>
+    <string name="parental_locked_out">Troppi PIN errati. Riprova tra %1$s.</string>
+    <string name="parental_checking_pin">Verifica del PIN…</string>
+    <string name="parental_pairing_link_message">Un link di associazione richiede il PIN genitori. Un PIN errato annulla il link.</string>
+    <string name="parental_restricted_title">Con restrizioni</string>
+    <string name="parental_restricted_message">Questo titolo supera il limite di classificazione impostato su questo dispositivo.</string>
     <string name="settings_section_app_controls">Controlli dell\'app</string>
     <string name="settings_app_controls_skip_backward">Salta indietro</string>
     <string name="settings_app_controls_skip_forward">Salta avanti</string>

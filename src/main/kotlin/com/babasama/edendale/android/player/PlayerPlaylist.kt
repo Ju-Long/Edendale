@@ -6,6 +6,8 @@ import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.copySource
 import com.babasama.edendale.android.data.LibraryDao
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.domain.MediaRef
+import com.babasama.edendale.parental.ParentalGateRules
 
 /**
  * One row of the player's playlist side panel: the show's episodes when the
@@ -65,6 +67,33 @@ internal fun playlistItems(playlist: PlayerPlaylist?): List<PlaylistItem> {
 /** The line the panel scrolls to when it opens, or -1. */
 internal fun List<PlaylistItem>.indexOfEntry(uri: String): Int =
     indexOfFirst { it is PlaylistItem.Entry && it.entry.uri == uri }
+
+/** The title the parental policy judges a row by (O.5): an episode by its show, a movie by itself, an id-less file by nothing. */
+internal fun PlaylistEntry.audienceRef(): MediaRef? = ParentalGateRules.playbackRef(tmdbId, isEpisode, showTmdbId)
+
+/** Every title a playlist's rows are judged by, for one verification before the rows are filtered. */
+internal fun playlistAudienceRefs(playlist: PlayerPlaylist?): List<MediaRef> =
+    playlist?.entries.orEmpty().mapNotNull { it.audienceRef() }.distinct()
+
+/**
+ * The rows a viewer may reach while a title rule is active (O.5), filtered
+ * the way the library's `visibleLibrary` filters: episodes follow their show,
+ * and a file without a TMDB id is restricted (O-D8). The panel, Up Next,
+ * auto-advance, and the media session's next and previous all read this
+ * list, so none of them can land on a restricted title. A folder list that
+ * shrinks below two siblings is no list at all, as the loader decides; an
+ * episode list stands with one.
+ */
+internal fun permittedPlaylist(
+    playlist: PlayerPlaylist?,
+    policyActive: Boolean,
+    allows: (MediaRef) -> Boolean,
+): PlayerPlaylist? {
+    if (playlist == null || !policyActive) return playlist
+    val entries = playlist.entries.filter { ParentalGateRules.permitsPlayback(true, it.audienceRef(), allows) }
+    if (entries.isEmpty() || (!playlist.isEpisodeList && entries.size < 2)) return null
+    return playlist.copy(entries = entries)
+}
 
 /**
  * The directory component of a stored library URI, used to narrow folder
@@ -144,6 +173,9 @@ internal suspend fun loadPlayerPlaylist(
     val playingMovie = dao.movieByUri(uriString) ?: return null
     val root = playingMovie.folderUri ?: return null
     val parent = playlistParentKey(uriString)
+    val folderEpisodes = dao.episodesInFolder(root)
+    // A loose episode is judged by its show (O.5), so the row carries the show's id when the library knows it.
+    val showIdsByKey = folderEpisodes.map { it.showKey }.distinct().associateWith { key -> dao.showByKey(key)?.tmdbId }
     val siblings = (
         dao.moviesInFolder(root).map { movie ->
             PlaylistEntry(
@@ -158,14 +190,14 @@ internal suspend fun loadPlayerPlaylist(
                 backdropPath = movie.backdropPath,
                 runtimeMinutes = movie.runtimeMinutes,
             )
-        } + dao.episodesInFolder(root).map { episode ->
+        } + folderEpisodes.map { episode ->
             PlaylistEntry(
                 uri = episode.uri,
                 title = episode.title ?: episode.fileName,
                 detail = "S%02dE%02d".format(episode.season, episode.episode),
                 tmdbId = episode.tmdbId,
                 isEpisode = true,
-                showTmdbId = null,
+                showTmdbId = showIdsByKey[episode.showKey],
                 season = episode.season,
                 episode = episode.episode,
                 stillPath = episode.stillPath,

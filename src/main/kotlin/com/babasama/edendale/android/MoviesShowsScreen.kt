@@ -201,7 +201,8 @@ private fun MoviesShowsContent(
         audienceFilter.verify(audienceRefs)
     }
 
-    val heroScenes = catalog.heroScenes.filter { audienceFilter.allows(it.detail.ref) }
+    // A list surface: hidden only while "Hide restricted titles" is on; the detail page and playback still block (O.5).
+    val heroScenes = catalog.heroScenes.filter { audienceFilter.shows(it.detail.ref) }
     val verifying = audienceFilter.isVerifying(audienceRefs)
 
     LazyColumn(

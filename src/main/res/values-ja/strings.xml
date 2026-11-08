@@ -279,6 +279,18 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">ほか%1$d件が一致しました。</item>
     </plurals>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">ペアレンタル PIN を入力</string>
+    <string name="parental_unlock">ロック解除</string>
+    <string name="parental_wrong_pin">PIN が一致しません。</string>
+    <string name="parental_pin_length">4〜8 桁の数字を使ってください。</string>
+    <string name="parental_locked_out">PIN の誤りが多すぎます。%1$s 後にもう一度お試しください。</string>
+    <string name="parental_checking_pin">PIN を確認しています…</string>
+    <string name="parental_pairing_link_message">ペアリングリンクにはペアレンタル PIN が必要です。PIN を間違えるとリンクは破棄されます。</string>
+    <string name="parental_restricted_title">制限あり</string>
+    <string name="parental_restricted_message">この作品は、このデバイスで設定されたレーティングの上限を超えています。</string>
     <string name="settings_section_app_controls">アプリコントロール</string>
     <string name="settings_app_controls_skip_backward">戻る</string>
     <string name="settings_app_controls_skip_forward">進む</string>

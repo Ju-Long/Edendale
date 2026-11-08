@@ -58,12 +58,14 @@ import com.babasama.edendale.android.data.SourceScanRules
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.parental.rememberParentalGate
 import com.babasama.edendale.android.player.PlayerActivity
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.parental.GatedAction
 import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,17 +108,22 @@ internal fun libraryAudienceRefs(movies: List<LibraryMovieEntity>, shows: List<L
         shows.mapNotNull { s -> s.tmdbId?.let { MediaRef(it, MediaType.TV) } }).distinct()
 
 /**
- * An imported title is shown only when its TMDB enrichment verifies it as
- * PG / PG-13 while the filter is on; an un-enriched file has no id to
- * verify, so it fails closed. Episodes follow their show.
+ * An imported title is shown only when its TMDB enrichment verifies it under
+ * the parental policy; an un-enriched file has no id to verify, so it fails
+ * closed. Episodes follow their show. With "Hide restricted titles" off the
+ * lists keep everything and the detail page or the player blocks instead
+ * (O.5); [strict] ignores that switch for a surface that cannot show a
+ * restricted state, such as the TV home screen's Watch Next row.
  */
 internal fun visibleLibrary(
     movies: List<LibraryMovieEntity>,
     shows: List<LibraryShowEntity>,
     episodes: List<LibraryEpisodeEntity>,
     audienceFilter: YoungAudienceFilter,
+    strict: Boolean = false,
 ): VisibleLibrary {
     if (!audienceFilter.isEnabled) return VisibleLibrary(movies, shows, episodes)
+    if (!strict && !audienceFilter.hidesRestrictedTitles) return VisibleLibrary(movies, shows, episodes)
     val visibleShows = shows.filter { it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.TV)) } == true }
     val showKeys = visibleShows.map { it.key }.toSet()
     return VisibleLibrary(
@@ -184,9 +191,11 @@ private fun DownloadedScreenContent(
     val scanError = activity.errorMessage
     // Google Drive sources (H.9.4): what Choose More Videos added, and the picker itself.
     val sourceNotes by library.sourceNotes.collectAsState()
-    val chooseMoreVideos = rememberChooseMoreVideos()
+    // Every library edit on this page asks for the parental PIN while "Require PIN for library changes" is on (O.5).
+    val gate = rememberParentalGate(isTelevision)
+    val chooseMoreVideos = rememberChooseMoreVideos(gate)
 
-    // Young Audience filter: see visibleLibrary.
+    // The parental policy: see visibleLibrary.
     val audienceRefs = remember(allMovies, allShows) { libraryAudienceRefs(allMovies, allShows) }
     LaunchedEffect(audienceRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
         audienceFilter.verify(audienceRefs)
@@ -244,8 +253,8 @@ private fun DownloadedScreenContent(
     ) { uri ->
         if (uri != null) library.importFolder(uri)
     }
-    val addFolder: () -> Unit = { folderPicker.launch(null) }
-    val linkSource: () -> Unit = { showSmbDialog = true }
+    val addFolder: () -> Unit = { gate.require(GatedAction.LIBRARY_EDIT) { folderPicker.launch(null) } }
+    val linkSource: () -> Unit = { gate.require(GatedAction.LIBRARY_EDIT) { showSmbDialog = true } }
     if (showSmbDialog) {
         LinkSourceDialog(
             isTelevision = isTelevision,
@@ -266,7 +275,7 @@ private fun DownloadedScreenContent(
                 when (command) {
                     LibraryCommand.ADD_FOLDER -> if (!isTelevision) addFolder()
                     LibraryCommand.LINK_SOURCE -> linkSource()
-                    LibraryCommand.RESCAN -> if (hasSources) library.rescanAll(force = true)
+                    LibraryCommand.RESCAN -> if (hasSources) gate.require(GatedAction.LIBRARY_EDIT) { library.rescanAll(force = true) }
                     LibraryCommand.TOGGLE_NAVIGATION -> Unit
                 }
             }
@@ -459,7 +468,7 @@ private fun DownloadedScreenContent(
                                     leadingIcon = { Icon(painterResource(id = R.drawable.ic_trash_can), contentDescription = null) },
                                     onClick = {
                                         menuOpen = false
-                                        library.removeMovie(movie.uri)
+                                        gate.require(GatedAction.LIBRARY_EDIT) { library.removeMovie(movie.uri) }
                                     },
                                 )
                             }
@@ -515,8 +524,8 @@ private fun DownloadedScreenContent(
                             folder = folder,
                             itemCount = count,
                             isTelevision = isTelevision,
-                            onRescan = { library.rescanFolder(folder.treeUri) },
-                            onRemove = { pendingRemoval = folder.treeUri },
+                            onRescan = { gate.require(GatedAction.LIBRARY_EDIT) { library.rescanFolder(folder.treeUri) } },
+                            onRemove = { gate.require(GatedAction.LIBRARY_EDIT) { pendingRemoval = folder.treeUri } },
                             note = sourceNotes[folder.treeUri],
                             chooseMoreVideos = chooseMoreVideos,
                         )
