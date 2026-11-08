@@ -404,6 +404,65 @@ own copy, then local folders, then the rest by source name), and **Play
 From** picks a copy: beside Play for movies, and in an episode's long-press
 menu (the menu key on TV) for episodes.
 
+### Parental controls
+
+**Settings → Parental Controls** (second in Settings, where Audience was)
+keeps the library fit for whoever holds the remote, and everything in it
+stays on this device (FEATURES-27.1.md §4):
+
+- **Young Audience Friendly** is the preset from 27.0: only titles rated PG
+  or PG-13, or their TV equivalents.
+- **Maximum movie rating** and **Maximum TV rating** set a ceiling from
+  TMDB's ordered certification lists for the device's region, which the
+  detail line names; "No limit" is the first choice. When TMDB publishes no
+  list for that region, the ceiling and the per-title lookups both use the
+  US list, and the section says so. A title's own certification comes from
+  TMDB as before; a title without one, or a file the library has not
+  matched to TMDB, counts as restricted while a ceiling or the preset is
+  on, and with both on a title must pass both. The two lists are fetched
+  when the section opens or a ceiling is set, kept on the device, and
+  refreshed at most once a day.
+- **Hide restricted titles** (on by default) keeps restricted titles out of
+  Home, Search, Watchlist, Downloaded, filmographies, the player's episode
+  and folder lists, and the TV home screen's Watch Next row. Off, they stay
+  in the lists, but their page shows the restricted state and the player
+  refuses them; Watch Next stays strict either way. The player applies the
+  same rule to whatever it is asked to play — a poster, a Continue Watching
+  card, a Watch Next row, or a file opened from another app — and lists
+  only permitted titles, so Up Next, auto-advance, and the system media
+  controls' next and previous never reach a restricted one.
+- **Block trailers and links** hides Watch Trailer on the detail page and
+  stops the app asking TMDB for trailers at all.
+- **Require PIN for settings** asks for the PIN when Settings opens, on TV
+  and handhelds alike, which covers every setting and link inside it.
+  **Require PIN for library changes** asks before Add Local Folder, Link
+  Network Source, Rescan, Remove, Remove from Library, Choose More Videos,
+  and their keyboard shortcuts; the automatic rescan on opening Downloaded
+  is not a change. Turning either on before a PIN exists sets one first.
+- **Set PIN**, **Change PIN**, and **Remove PIN**: 4 to 8 digits, typed
+  masked (on a TV through the on-screen keyboard). Once a PIN exists, the
+  Parental Controls section itself and every button in Settings → Sync
+  (Choose a Location, Sync Now, both pairing roles, Remove a Device, Turn
+  Off) ask for it too, and a pairing link opened from a QR code asks before
+  the pairing dialog; a wrong or cancelled PIN there drops the link. A
+  correct PIN unlocks for five minutes or until Settings closes, whichever
+  comes first.
+
+The PIN itself is never stored: an Argon2id hash (64 MiB, 3 iterations, one
+lane, a 16-byte salt, a 32-byte hash, with the parameters beside it) lives
+with the ceiling, the switches, the back-off state, and the cached
+certification lists in `edendale_parental.xml`, an encrypted preferences
+file under an Android Keystore key, excluded from backup and device transfer
+like the logins, so a restored device keeps the Young Audience preset (which
+stays in `edendale_audience.xml`) but has no PIN. The first three wrong
+attempts are free; every further wrong PIN waits 30 seconds, then 1, 5, 15,
+and 60 minutes, with the countdown in the dialog, and the wait survives a
+force-stop, a reboot, and a clock change. The PIN is separate from the
+pairing code. Nothing from this section is synced, handed off, or sent
+anywhere, and the logs carry counts and outcomes only; its only requests are
+TMDB's two certification lists and the per-title certification lookups the
+filter already made.
+
 ### Audio Enhancement
 
 **Settings → Audio Enhancement** applies a 10-band equalizer (60 Hz to 16 kHz)
@@ -512,7 +571,8 @@ Selecting a row opens the player at the saved position, just like the shelf
 card. Rows update after playback pauses or stops, disappear when a title is
 finished or its file is deleted, and all disappear when the setting is turned
 off. A row removed from the home screen comes back only after you watch that
-title again. Titles hidden by Young Audience Friendly never appear.
+title again. Titles the parental controls restrict never appear, even
+while Hide restricted titles is off.
 
 The rows stay on the TV and Edendale sends nothing over the network for them,
 but the launcher (Google's app on Google TV) can read them, which is why the
@@ -680,6 +740,13 @@ tests. Before a release, check on:
   TV, host the pairing from the Sync screen and receive a location from a
   phone. Check that an OneDrive or Dropbox account from a build before 27.1
   is asked to sign in again before it can be a location.
+- **Parental controls (27.1):** on a phone and a TV, set a PIN, see the
+  back-off after four wrong tries and its countdown survive a force-stop,
+  set a PG-13 ceiling and watch an R title leave Home, Search, Downloaded,
+  the player's episode list, and Watch Next, open its page and get the
+  restricted state, see Watch Trailer gone with the switch on, have Settings,
+  Add Local Folder, and a pairing link ask for the PIN, remove the PIN, and
+  run TalkBack over the rating picker.
 
 ### DTS and TrueHD
 
