@@ -119,7 +119,7 @@ struct SettingsView: View {
             // full screen and the Menu button walks back out of it. Both
             // pickers hang off the whole stack, so the Library page can open
             // them wherever it sits.
-            .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
+            .sheet(isPresented: $showLinkSource) { AddNetworkSourceView().tvSheetInsets() }
             #if !os(tvOS)
             .fileImporter(
                 isPresented: $showImporter,
@@ -148,25 +148,6 @@ struct SettingsView: View {
                 }
             }
         }
-//        HStack(spacing: 0) {
-//            List(selection: $selection) {
-//                ForEach(SettingsCategory.listed) { category in
-//                    SettingsCategoryLabel(category: category)
-//                        .tag(category)
-//                }
-//            }
-//            .listStyle(.sidebar)
-//            .frame(width: 200)
-//
-//            Rectangle()
-//                .fill(Theme.hairline)
-//                .frame(width: 1)
-//                .accessibilityHidden(true)
-//
-//            page(selection)
-//                .id(selection)
-//                .frame(maxWidth: .infinity, maxHeight: .infinity)
-//        }
         .background(Theme.background)
         .navigationTitle(selection.title)
         #else

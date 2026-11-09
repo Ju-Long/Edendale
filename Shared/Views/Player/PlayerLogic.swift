@@ -107,7 +107,9 @@ enum PlayerLogic {
         duration: Duration?,
         loopEnabled: Bool,
         episode: Episode?,
-        show: TVShow?
+        show: TVShow?,
+        otherCopies: [TVShow] = [],
+        isOffline: (TVShow) -> Bool = { _ in false }
     ) -> Episode? {
         guard let duration, duration > .zero,
               !loopEnabled,
@@ -115,7 +117,7 @@ enum PlayerLogic {
         else { return nil }
         let remaining = duration - time
         guard remaining <= upcomingPreviewThreshold, remaining > .zero,
-              let next = nextEpisode(after: episode, in: show)
+              let next = nextEpisode(after: episode, in: show, otherCopies: otherCopies, isOffline: isOffline)
         else { return nil }
         return next
     }
@@ -209,16 +211,39 @@ enum PlayerLogic {
     /// and into season 1; main seasons never go backwards to season 0
     /// because tuple ordering naturally excludes lower-numbered seasons.
     static func nextEpisode(after current: Episode, in show: TVShow) -> Episode? {
+        nextEpisode(after: current, in: show, otherCopies: [])
+    }
+
+    /// The next stored episode across every copy of the show. `show` is
+    /// the copy playing now, so the source (or endpoint) the viewer chose
+    /// keeps playing whenever it has the next episode; only an episode it
+    /// lacks comes from another copy, the first whose source isn't known
+    /// to be offline. An episode only another copy has is not skipped.
+    static func nextEpisode(
+        after current: Episode,
+        in show: TVShow,
+        otherCopies: [TVShow],
+        isOffline: (TVShow) -> Bool = { _ in false }
+    ) -> Episode? {
         guard show.episodes.contains(where: { $0.id == current.id }) else { return nil }
-        return show.episodes
-            .filter {
-                ($0.seasonNumber, $0.episodeNumber)
-                    > (current.seasonNumber, current.episodeNumber)
-            }
-            .min {
-                ($0.seasonNumber, $0.episodeNumber)
-                    < ($1.seasonNumber, $1.episodeNumber)
-            }
+        let currentOrder = (current.seasonNumber, current.episodeNumber)
+        func earliestAfterCurrent(in copy: TVShow) -> Episode? {
+            copy.episodes
+                .filter { ($0.seasonNumber, $0.episodeNumber) > currentOrder }
+                .min { ($0.seasonNumber, $0.episodeNumber) < ($1.seasonNumber, $1.episodeNumber) }
+        }
+
+        let others = otherCopies.filter { $0.id != show.id }
+        let own = earliestAfterCurrent(in: show)
+        let elsewhere = others.compactMap { copy in earliestAfterCurrent(in: copy).map { (copy, $0) } }
+        guard let next = ([own].compactMap(\.self) + elsewhere.map(\.1))
+            .min(by: { ($0.seasonNumber, $0.episodeNumber) < ($1.seasonNumber, $1.episodeNumber) })
+        else { return nil }
+        let nextOrder = (next.seasonNumber, next.episodeNumber)
+
+        if let own, (own.seasonNumber, own.episodeNumber) == nextOrder { return own }
+        let candidates = elsewhere.filter { ($0.1.seasonNumber, $0.1.episodeNumber) == nextOrder }
+        return (candidates.first { !isOffline($0.0) } ?? candidates.first)?.1
     }
 
     /// Identifies the furthest completed episode per show from a

@@ -50,6 +50,9 @@ struct EdendaleApp: App {
         // leaves the Keychain and library alone.
         if !Persistence.isRunningUnitTests {
             cloudAccounts.migrateGoogleDriveToFileAccess(library: library)
+            // Titles a previous launch left unmatched (quit mid-import,
+            // offline) are looked up again without waiting for a rescan.
+            library.enrichPendingMetadata()
         }
         _cloudAccounts = State(initialValue: cloudAccounts)
         _watchStore = State(initialValue: ws)

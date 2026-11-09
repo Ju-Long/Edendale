@@ -72,6 +72,7 @@ struct AppControlsSection: View {
         // The guide keeps its own archive buttons; only the Settings rows
         // draw system ones.
         .environment(\.archiveButtonsUseSystemStyle, false)
+        .tvSheetInsets()
     }
 
     #if os(macOS) || os(tvOS)

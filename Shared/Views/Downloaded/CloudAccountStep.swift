@@ -8,7 +8,8 @@
 //  Vision Pro that is the provider's page in ASWebAuthenticationSession.
 //  Apple TV has no web sign-in: it gets the account from a nearby iPhone or
 //  iPad (AccountHandoff), or for OneDrive also from a code approved on any
-//  other device.
+//  other device. With no account linked there yet, the list of nearby
+//  devices opens as soon as the step does.
 //
 //  Google Drive's sign-in also opens Google's picker, where the user ticks
 //  the videos Edendale may play. There is no folder to browse afterwards:
@@ -108,7 +109,13 @@ struct CloudAccountStep: View {
     @ViewBuilder
     private var signInActions: some View {
         #if os(tvOS)
-        HandoffButton(kind: kind, title: String(localized: "Continue on iPhone or iPad")) { response in
+        // With no account here yet, choosing the provider was the request
+        // to hand one off: open the device list straight away.
+        HandoffButton(
+            kind: kind,
+            title: String(localized: "Continue on iPhone or iPad"),
+            opensOnAppear: store.accounts(of: kind).isEmpty
+        ) { response in
             guard let account = response.account else { throw AccountHandoff.HandoffError.malformedMessage }
             open(try await store.adoptHandedOffAccount(account.cloudAccount))
         } onError: { message in
@@ -250,27 +257,31 @@ struct CloudAccountStep: View {
 }
 
 #if os(tvOS)
-/// "Continue on iPhone or iPad": presents DeviceDiscoveryUI's device picker,
-/// sends an AccountHandoff request to the device the user chooses, and
-/// passes on the approved response.
+/// "Continue on iPhone or iPad": opens the system list of nearby iPhones and
+/// iPads, sends an AccountHandoff request to the device the user chooses,
+/// and passes on the approved response.
 struct HandoffButton: View {
     let kind: MediaSourceKind
     let title: String
+    /// Opens the device list as soon as the button first appears, for a
+    /// step where handing off is the expected next move (a cloud provider
+    /// with no account on this Apple TV yet). Backing out of the list
+    /// leaves the button and the step's other options.
+    var opensOnAppear = false
     let onResponse: (AccountHandoff.Response) async throws -> Void
     let onError: (String) -> Void
 
-    @Environment(\.devicePickerSupports) private var devicePickerSupports
-    @State private var isPickerPresented = false
     @State private var isWaiting = false
+    @State private var didOpenOnAppear = false
 
     private var descriptor: NWBrowser.Descriptor {
         .applicationService(name: AccountHandoff.serviceName)
     }
 
     var body: some View {
-        if devicePickerSupports(descriptor, parameters: { .applicationService }) {
+        if DDDevicePickerViewController.isSupported(descriptor, using: .applicationService) {
             Button {
-                isPickerPresented = true
+                chooseDevice()
             } label: {
                 if isWaiting {
                     HStack(spacing: 12) {
@@ -282,24 +293,20 @@ struct HandoffButton: View {
                 }
             }
             .disabled(isWaiting)
-            .fullScreenCover(isPresented: $isPickerPresented) {
-                DevicePicker(descriptor) { endpoint in
-                    isPickerPresented = false
-                    request(from: endpoint)
-                } label: {
-                    Text("Link \(kind.displayName) from your iPhone or iPad. Open Edendale there to approve.")
-                } fallback: {
-                    Text("Linking from an iPhone or iPad isn't available on this Apple TV.")
-                } parameters: {
-                    .applicationService
-                }
+            .onAppear {
+                guard opensOnAppear, !didOpenOnAppear else { return }
+                didOpenOnAppear = true
+                chooseDevice()
             }
         }
     }
 
-    private func request(from endpoint: NWEndpoint) {
-        isWaiting = true
+    /// Unstructured on purpose: the full-screen picker takes this view off
+    /// screen, which would cancel a `.task` mid-handoff.
+    private func chooseDevice() {
         Task {
+            guard let endpoint = await NearbyDevicePicker.choose(descriptor) else { return }
+            isWaiting = true
             do {
                 let response = try await AccountHandoffClient.request(
                     AccountHandoff.Request(kind: kind, deviceName: UIDevice.current.name),
@@ -311,6 +318,73 @@ struct HandoffButton: View {
             }
             isWaiting = false
         }
+    }
+}
+
+/// DeviceDiscoveryUI's device list, presented directly. SwiftUI's
+/// DevicePicker is itself a button that opens this list, which put a
+/// second press between "Continue on iPhone or iPad" and the devices.
+@MainActor
+enum NearbyDevicePicker {
+    /// Presents the list over whatever is frontmost and returns the device
+    /// chosen, or nil when the user backs out or the list can't be shown.
+    static func choose(_ descriptor: NWBrowser.Descriptor) async -> NWEndpoint? {
+        // Selecting a provider pushes its step and opens the list in the
+        // same moment; presenting mid-push unbalances UIKit's appearance
+        // calls, so let the push land first.
+        if let frontmost = frontmostController() {
+            await transitionToFinish(in: frontmost)
+        }
+        guard let picker = DDDevicePickerViewController(browseDescriptor: descriptor, parameters: .applicationService),
+              let presenter = frontmostController()
+        else { return nil }
+        presenter.present(picker, animated: true)
+        defer {
+            // The list may already be on its way out (Menu, or the system
+            // closing it after a choice). Dismissing the picker itself,
+            // never its presenter, can't take the sheet beneath with it.
+            if picker.presentingViewController != nil, !picker.isBeingDismissed {
+                picker.dismiss(animated: true)
+            }
+        }
+        return try? await picker.endpoint
+    }
+
+    private static func frontmostController() -> UIViewController? {
+        let window = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)
+        var controller = window?.rootViewController
+        while let presented = controller?.presentedViewController, !presented.isBeingDismissed {
+            controller = presented
+        }
+        return controller
+    }
+
+    /// Waits out a presentation or navigation transition in progress under
+    /// `controller`, if any.
+    private static func transitionToFinish(in controller: UIViewController) async {
+        guard let coordinator = runningTransition(in: controller) else { return }
+        await withCheckedContinuation { continuation in
+            var resumed = false
+            let resume = {
+                guard !resumed else { return }
+                resumed = true
+                continuation.resume()
+            }
+            if !coordinator.animate(alongsideTransition: nil, completion: { _ in resume() }) {
+                resume()
+            }
+        }
+    }
+
+    private static func runningTransition(in controller: UIViewController) -> UIViewControllerTransitionCoordinator? {
+        if let coordinator = controller.transitionCoordinator { return coordinator }
+        for child in controller.children {
+            if let coordinator = runningTransition(in: child) { return coordinator }
+        }
+        return nil
     }
 }
 #endif

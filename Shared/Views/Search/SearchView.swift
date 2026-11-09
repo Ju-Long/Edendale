@@ -156,6 +156,7 @@ struct SearchView: View {
                     Task { await model.loadHeatmapIfNeeded() }
                 }
                 .presentationDetents([.medium])
+                .tvSheetInsets()
             }
         }
     }
@@ -576,19 +577,22 @@ struct SearchView: View {
         let needle = model.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard needle.count > 1 else { return [] }
 
-        let movies = libraryMovies
+        // One result per title, however many sources hold a copy.
+        let movies = PlaybackSources.distinct(libraryMovies
             .filter {
                 $0.displayTitle.localizedCaseInsensitiveContains(needle)
                     && isVisibleToSelectedAudience($0)
             }
-            .sorted { $0.displayTitle.localizedCompare($1.displayTitle) == .orderedAscending }
+            .sorted { $0.displayTitle.localizedCompare($1.displayTitle) == .orderedAscending },
+            key: { PlaybackSources.copyKey($0) })
             .map(LocalMatch.movie)
-        let shows = libraryShows
+        let shows = PlaybackSources.distinct(libraryShows
             .filter {
                 $0.displayName.localizedCaseInsensitiveContains(needle)
                     && isVisibleToSelectedAudience($0)
             }
-            .sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending }
+            .sorted { $0.displayName.localizedCompare($1.displayName) == .orderedAscending },
+            key: { PlaybackSources.copyKey($0) })
             .map(LocalMatch.show)
         return movies + shows
     }

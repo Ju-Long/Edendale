@@ -934,7 +934,7 @@ struct MoviesShowsView: View {
     private func playOrOpen(_ hero: MoviesShowsModel.Hero) {
         Task {
             if hero.detail.ref.mediaType == .movie,
-               let movie = Movie.first(tmdbId: hero.detail.ref.id, in: modelContext) {
+               let movie = Movie.preferredCopy(tmdbId: hero.detail.ref.id, in: modelContext) {
                 await playerSession.play(movie: movie)
             } else {
                 openHeroDetail(hero)

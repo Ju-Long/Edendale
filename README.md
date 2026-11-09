@@ -167,6 +167,11 @@ xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
   -destination 'generic/platform=visionOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
 
+The FFmpeg script builds the visionOS Simulator slice for arm64 only, so the
+project excludes x86_64 when building for the visionOS Simulator
+(`EXCLUDED_ARCHS[sdk=xrsimulator*]`). The iOS and tvOS Simulator slices still
+include x86_64.
+
 ### Picture in Picture and subtitles
 
 On iOS/iPadOS, starting PiP dismisses the full-screen player while preserving
@@ -317,6 +322,75 @@ reachable when controls are visible. Movies, files without episode context,
 unknown durations, and the final stored episode do not show it. The native
 visionOS system-player route uses the same preview rule. Artwork has a
 readable fallback, focus is visible, and transitions honor Reduce Motion.
+
+### Titles in several sources
+
+One file can reach the library more than once: from two sources, or from
+one share linked through two endpoints (its LAN host name, such as
+`longs-mac-studio.local`, and its Tailscale address). Each copy keeps its
+own library record, tied to the others by its TMDB match, or before it has
+one by its parsed title (and year). The Downloaded grids and Search's
+library results show one card per title; Remove on a card held by several
+sources offers one Remove per source.
+
+The detail page's **Play From** chevron beside Play lists every copy of a
+movie, and tapping an episode held by several sources opens the same menu
+before the player starts. Each choice names the source and its endpoint
+(the server and any port given, or the account for cloud sources), then
+the kind and file name, and marks the source played last and any source
+the last scan couldn't reach. Playing a copy remembers it on this device
+(`lastPlayedAt` on the movie or on the show copy, library data that never
+syncs). Play, Continue Watching, and widget and Shortcuts routes start the
+reachable copy played last, else the first reachable one.
+
+Automatic advance, the Up Next card, and its preview stay on the copy that
+is playing. Only an episode that copy lacks comes from another copy (the
+first whose source is reachable), and the copy after that returns to the
+chosen source as soon as it has the next episode, so an episode stored in
+only one source is never skipped.
+
+**Clear Progress** deletes a saved position: from a Continue Watching card's
+context menu, an in-progress episode card's context menu on the show page,
+or an in-progress movie's poster on the Movies page. It is written as a
+removal (a tombstone), so other devices and sync spaces drop it too.
+
+**Mark Watched** on an episode (a show page's episode card, or the TMDB
+season browser) records the episode's show and its season and episode
+numbers, as finishing it in the player does. Before, a hand-made mark
+carried only the episode's TMDB ID, so Continue Watching never suggested
+the episode after it and the sync file, which names an episode by show,
+season, and number, left the mark out.
+
+TMDB enrichment no longer runs per import only. A sweep of the whole
+library runs at launch, after every import or rescan, and on every visit
+to Downloaded, and looks up each movie and show without a TMDB match and
+each episode without one whose show is matched, including episodes added
+to a show that was matched earlier (which previously stayed unmatched and
+saved no watch progress). A title is indexed once it has a TMDB ID. One
+TMDB answered without a match for is marked (`metadataCheckedAt`) and asked
+about again after seven days, or at once on a forced rescan (⌘R or a
+source's Rescan). A lookup that fails because TMDB is unreachable, refuses
+the credential, or rate-limits marks nothing and ends that sweep, so the
+next sweep resumes where it stopped. The sweep runs on the library's own
+task: leaving the page doesn't cancel it, and requests made while it runs
+queue a single extra pass.
+
+Run the regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/LibraryEnrichmentTests \
+  -only-testing:EdendaleTests/MultipleSourcesTests \
+  -only-testing:EdendaleTests/PlaybackSourcesTests \
+  -only-testing:EdendaleTests/EpisodeProgressionTests \
+  -only-testing:EdendaleTests/ContinueWatchingTests \
+  -only-testing:EdendaleTests/UpcomingEpisodePreviewTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+These are product rules: the Android and Windows branches need their own
+native implementations; the static Web branch is unaffected.
 
 ### Surround and spatial audio
 
@@ -750,6 +824,22 @@ A child row appears only while its section has titles for the current
 audience setting. If the open section empties, the sidebar returns to the
 parent page. Choosing a row always opens that page at its root, and the
 search query survives visits to other pages.
+
+On iPhone and iPad (iOS 26.1 and later) the Downloaded sections extend out
+of the tab bar instead: while the Downloaded tab's root page is showing and
+at least two sections have titles, the tab bar's bottom accessory offers
+All, Watching (Continue Watching), Movies, and TV Shows. It sits above the
+tab bar on iPhone and at the foot of the screen on iPad, and becomes a menu
+naming the current choice beside a minimized tab bar. It hides on pushed
+pages and on other tabs, keeps its choice, scrolls the page back to the top
+on a change, and falls back to All when the chosen section empties; the
+page keeps the Downloaded title. A SwiftUI `TabSection` can't do this: on
+iPhone its tabs become separate top-level tabs (iOS 26.5 and 27.2 alike),
+and its header and `defaultSectionExpansion` apply only in a sidebar.
+Apple TV, Apple Vision Pro, and iOS before 26.1 have no tab bar accessory,
+so there the Downloaded page shows the same choices as chips above its
+content. Android and Windows need their own native section picker; the
+static Web branch is unaffected.
 
 Menu bar commands:
 

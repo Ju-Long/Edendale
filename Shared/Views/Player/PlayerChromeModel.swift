@@ -151,7 +151,9 @@ final class PlayerChromeModel {
             duration: player.duration,
             loopEnabled: loopEnabled,
             episode: session.item?.episode,
-            show: session.item?.episode?.show
+            show: session.item?.episode?.show,
+            otherCopies: session.otherCopiesOfCurrentShow(),
+            isOffline: session.isSourceOffline
         )
     }
 

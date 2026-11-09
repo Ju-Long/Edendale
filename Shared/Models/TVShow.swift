@@ -21,6 +21,13 @@ final class TVShow {
     var firstAirDate: String?
 
     var dateAdded: Date
+    /// When TMDB last answered with no match for this show (see
+    /// `Movie.metadataCheckedAt`).
+    var metadataCheckedAt: Date?
+    /// When an episode of this copy of the show last started playing. Each
+    /// copy belongs to one source, so this remembers the source (or
+    /// endpoint) the viewer chose for the show.
+    var lastPlayedAt: Date?
     var folder: VideoFolder?
 
     @Relationship(deleteRule: .cascade, inverse: \Episode.show)

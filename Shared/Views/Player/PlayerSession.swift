@@ -279,6 +279,7 @@ final class PlayerSession {
         // render a fully-formed session. Retain old scope alongside.
         let oldScope = item?.scope
         item = newItem
+        showCopiesCache = nil
         reattachedSubtitleIDs = []
 
         segmentSkipping.begin(itemID: newItem.id, media: newItem.segmentLookup)
@@ -783,7 +784,12 @@ final class PlayerSession {
 
         guard let currentEpisode = item?.episode,
               let show = currentEpisode.show,
-              let next = PlayerLogic.nextEpisode(after: currentEpisode, in: show)
+              let next = PlayerLogic.nextEpisode(
+                after: currentEpisode,
+                in: show,
+                otherCopies: otherCopiesOfCurrentShow(),
+                isOffline: isSourceOffline
+              )
         else {
             end()
             return
@@ -806,6 +812,26 @@ final class PlayerSession {
                 self.advanceRequestID = nil
             }
         }
+    }
+
+    /// Other copies of the playing episode's show (other sources, or the
+    /// same share through another endpoint), looked up once per item: the
+    /// Up Next preview asks on every clock tick.
+    @ObservationIgnored private var showCopiesCache: (showID: UUID, copies: [TVShow])?
+
+    /// The next episode comes from the copy playing now — the source the
+    /// viewer chose — and from one of these only when that copy lacks it.
+    func otherCopiesOfCurrentShow() -> [TVShow] {
+        guard let show = item?.episode?.show else { return [] }
+        if let cache = showCopiesCache, cache.showID == show.id { return cache.copies }
+        let copies = library.otherCopies(of: show)
+        showCopiesCache = (show.id, copies)
+        return copies
+    }
+
+    /// Whether the last scan couldn't reach this copy's source.
+    func isSourceOffline(_ show: TVShow) -> Bool {
+        library.isOffline(show.folder)
     }
 
     private func replayCurrent() {

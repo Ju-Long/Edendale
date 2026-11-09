@@ -5,7 +5,9 @@
 //  The local library: a Continue Watching shelf of half-finished titles,
 //  poster grids for movies and shows, and the linked sources beneath.
 //  Empty state modeled on Infuse's files screen, restyled for the archive.
-//  The macOS sidebar also opens each section as a page of its own.
+//  The macOS sidebar also opens each section as a page of its own; the
+//  tab bar's section picker does the same on the other platforms (see
+//  DownloadedSectionPicker).
 //
 
 import SwiftUI
@@ -13,7 +15,8 @@ import SwiftData
 import UniformTypeIdentifiers
 
 /// One part of the Downloaded page shown on its own — the Downloaded row's
-/// children in the macOS sidebar. A `nil` section is the whole page.
+/// children in the macOS sidebar, and the choices of the tab bar's section
+/// picker elsewhere. A `nil` section is the whole page.
 enum DownloadedSection: Hashable, CaseIterable {
     case continueWatching, movies, shows
 
@@ -23,6 +26,23 @@ enum DownloadedSection: Hashable, CaseIterable {
         case .movies: String(localized: "Movies")
         case .shows: String(localized: "TV Shows")
         }
+    }
+
+    /// The label in the tab bar's section picker, where four choices share
+    /// one phone-width row. VoiceOver still reads `title`.
+    var shortTitle: String {
+        switch self {
+        case .continueWatching: String(localized: "Watching")
+        case .movies, .shows: title
+        }
+    }
+
+    /// The section still to show once `available` has changed: one that has
+    /// emptied (its last title removed, or hidden by the audience filter)
+    /// falls back to the whole page.
+    static func resolved(_ selection: DownloadedSection?, available: [DownloadedSection]) -> DownloadedSection? {
+        guard let selection, available.contains(selection) else { return nil }
+        return selection
     }
 
     /// Symbol asset for the section's sidebar row.
@@ -51,9 +71,16 @@ enum DownloadedSection: Hashable, CaseIterable {
 }
 
 struct DownloadedView: View {
-    /// Shows only this section (a macOS sidebar child row); `nil` shows the
-    /// whole library.
+    /// Shows only this section (a macOS sidebar child row, or the tab bar's
+    /// section picker); `nil` shows the whole library.
     var section: DownloadedSection? = nil
+    /// The section picker's selection, when the page itself shows the
+    /// picker above its content: where the tab bar can't carry it (Apple
+    /// TV, Apple Vision Pro, iOS before 26.1). `nil` shows no picker here.
+    var sectionSelection: Binding<DownloadedSection?>? = nil
+    /// Reports how many pages are pushed on the stack, so the tab bar's
+    /// picker shows only over the root page.
+    var onNavigationDepthChange: ((Int) -> Void)? = nil
 
     @Environment(LibraryController.self) private var library
     @Environment(CloudAccountStore.self) private var cloudAccounts
@@ -69,6 +96,8 @@ struct DownloadedView: View {
     @Query(sort: \VideoFolder.dateAdded) private var folders: [VideoFolder]
 
     @State private var path = NavigationPath()
+    /// Back to the top when the section picker changes the page.
+    @State private var scrollPosition = ScrollPosition(edge: .top)
     @State private var showImporter = false
     @State private var showLinkSource = false
     /// A rescan requested from the menu bar (⌘R) is running. The automatic
@@ -133,12 +162,14 @@ struct DownloadedView: View {
                 await youngAudienceFilter.verify(audienceRefs)
             }
             // tvOS renders a large navigation title as a giant mid-screen overlay.
-            #if !os(tvOS)
-            .navigationTitle(section?.title ?? String(localized: "Downloaded"))
-            #endif
             #if os(macOS)
+            .navigationTitle(section?.title ?? String(localized: "Downloaded"))
             // "Movies" alone could be the Watchlist page's; name the parent.
             .navigationSubtitle(section == nil ? "" : String(localized: "Downloaded"))
+            #elseif !os(tvOS)
+            // The section picker names the section, and the section's own
+            // heading leads the page; a title repeating it read twice.
+            .navigationTitle(String(localized: "Downloaded"))
             #endif
             .toolbar {
                 if !isEmpty {
@@ -161,12 +192,15 @@ struct DownloadedView: View {
             .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             .settingsToolbar()
         }
+        .onChange(of: path.count, initial: true) { _, depth in
+            onNavigationDepthChange?(depth)
+        }
         // Presented from the stack itself rather than its root page so the
         // macOS menu commands below can open them over a pushed detail page.
         // Sheet on every platform: AddNetworkSourceView brings its own
         // NavigationStack, and a second navigationDestination(isPresented:)
         // on this path-driven stack is what wedged the flow on tvOS.
-        .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
+        .sheet(isPresented: $showLinkSource) { AddNetworkSourceView().tvSheetInsets() }
         #if !os(tvOS)
         .fileImporter(
             isPresented: $showImporter,
@@ -236,6 +270,12 @@ struct DownloadedView: View {
     private var libraryContent: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 40) {
+                if let sectionSelection {
+                    let sections = availableSections
+                    if DownloadedSectionPicker.isOffered(for: sections) {
+                        DownloadedSectionChips(selection: sectionSelection, sections: sections, edgeMargin: edgeMargin)
+                    }
+                }
                 statusRows
                 switch section {
                 case nil:
@@ -253,6 +293,10 @@ struct DownloadedView: View {
             }
             .padding(.vertical, 24)
             .padding(.bottom, 40)
+        }
+        .scrollPosition($scrollPosition)
+        .onChange(of: section) {
+            scrollPosition.scrollTo(edge: .top)
         }
     }
 
@@ -301,7 +345,16 @@ struct DownloadedView: View {
     // MARK: - Continue watching
 
     private var resumeItems: [ResumeItem] {
-        ResumeItem.items(watchStore: watchStore, movies: visibleMovies, shows: visibleShows)
+        ResumeItem.items(watchStore: watchStore, movies: visibleMovies, shows: visibleShows, isOffline: library.isOffline)
+    }
+
+    /// The sections with something to show: the section picker's choices.
+    private var availableSections: [DownloadedSection] {
+        DownloadedSection.available(
+            hasResumeItems: !resumeItems.isEmpty,
+            movies: visibleMovies,
+            shows: visibleShows
+        )
     }
 
     /// tmdbIds of movies already surfaced in Continue Watching, so the poster
@@ -349,7 +402,8 @@ struct DownloadedView: View {
             watchStore: watchStore,
             movies: visibleMovies,
             shows: visibleShows,
-            limit: nil
+            limit: nil,
+            isOffline: library.isOffline
         )
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
@@ -392,6 +446,22 @@ struct DownloadedView: View {
         .buttonStyle(.plain)
         #endif
         .accessibilityHint(item.isNextUp ? "Plays next episode." : "Resumes playback.")
+        .contextMenu {
+            // A next-up card has no saved position of its own.
+            if !item.isNextUp {
+                clearProgressButton(tmdbId: item.progress.tmdbId, mediaType: item.progress.mediaType)
+            }
+        }
+    }
+
+    /// Deletes the saved position, which takes the title out of Continue
+    /// Watching; it syncs to other devices as a removal.
+    private func clearProgressButton(tmdbId: Int, mediaType: WatchMediaType) -> some View {
+        Button(role: .destructive) {
+            watchStore.remove(tmdbId: tmdbId, mediaType: mediaType)
+        } label: {
+            Label("Clear Progress", image: .trashCan)
+        }
     }
 
     private func resume(_ item: ResumeItem) {
@@ -410,7 +480,10 @@ struct DownloadedView: View {
         // On the whole page, anything currently in Continue Watching is shown
         // there with its resume progress; leaving it out here keeps each
         // movie to one card. The Movies page on its own lists every movie.
-        let gridMovies = section == .movies ? visibleMovies : visibleMovies.filter { movie in
+        // One card per title: copies in other sources, or the same share
+        // linked through another endpoint, are chosen on its page.
+        let titles = PlaybackSources.distinct(visibleMovies, key: { PlaybackSources.copyKey($0) })
+        let gridMovies = section == .movies ? titles : titles.filter { movie in
             guard let id = movie.tmdbId else { return true }
             return !resumeMovieIDs.contains(id)
         }
@@ -432,11 +505,16 @@ struct DownloadedView: View {
                         .posterButtonStyle()
                         .accessibilityHint("Opens the archive record.")
                         .contextMenu {
-                            Button(role: .destructive) {
-                                library.removeMovie(movie)
-                            } label: {
-                                Label("Remove", image: .trashCan)
+                            if let id = movie.tmdbId, let progress = watchStore.progress(for: id, mediaType: .movie),
+                               !progress.isCompleted, progress.position > 0 {
+                                clearProgressButton(tmdbId: id, mediaType: .movie)
                             }
+                            removeButtons(
+                                copies: copies(of: movie),
+                                folder: \.folder,
+                                filePath: \.filePath,
+                                remove: library.removeMovie
+                            )
                         }
                     }
                 }
@@ -449,11 +527,12 @@ struct DownloadedView: View {
 
     @ViewBuilder
     private var showsSection: some View {
-        if !visibleShows.isEmpty {
+        let titles = PlaybackSources.distinct(visibleShows, key: { PlaybackSources.copyKey($0) })
+        if !titles.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: String(localized: "TV Shows"))
                 LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
-                    ForEach(visibleShows) { show in
+                    ForEach(titles) { show in
                         NavigationLink(value: show) {
                             PosterCard(
                                 title: show.displayName,
@@ -466,11 +545,12 @@ struct DownloadedView: View {
                         .posterButtonStyle()
                         .accessibilityHint("Opens the archive record.")
                         .contextMenu {
-                            Button(role: .destructive) {
-                                library.removeTVShow(show)
-                            } label: {
-                                Label("Remove", image: .trashCan)
-                            }
+                            removeButtons(
+                                copies: copies(of: show),
+                                folder: \.folder,
+                                filePath: { $0.folder?.folderPath ?? $0.name },
+                                remove: library.removeTVShow
+                            )
                         }
                     }
                 }
@@ -489,9 +569,55 @@ struct DownloadedView: View {
         return parts.joined(separator: " · ")
     }
 
+    /// Every copy of the card's movie in the visible library, the card's first.
+    private func copies(of movie: Movie) -> [Movie] {
+        let key = PlaybackSources.copyKey(movie)
+        let others = visibleMovies.filter { $0.id != movie.id && PlaybackSources.copyKey($0) == key }
+        return PlaybackSources.order(primary: movie, others: others, folder: \.folder)
+    }
+
+    /// Every copy of the card's show in the visible library, the card's first.
+    private func copies(of show: TVShow) -> [TVShow] {
+        let key = PlaybackSources.copyKey(show)
+        let others = visibleShows.filter { $0.id != show.id && PlaybackSources.copyKey($0) == key }
+        return PlaybackSources.order(primary: show, others: others, folder: \.folder)
+    }
+
+    /// Remove for a title in one source; one per source when the card
+    /// stands for copies in several, so removing one leaves the others.
+    @ViewBuilder
+    private func removeButtons<Item: Identifiable>(
+        copies: [Item],
+        folder: @escaping (Item) -> VideoFolder?,
+        filePath: @escaping (Item) -> String,
+        remove: @escaping (Item) -> Void
+    ) -> some View {
+        if copies.count == 1, let only = copies.first {
+            Button(role: .destructive) {
+                remove(only)
+            } label: {
+                Label("Remove", image: .trashCan)
+            }
+        } else {
+            ForEach(copies) { copy in
+                Button(role: .destructive) {
+                    remove(copy)
+                } label: {
+                    Label(
+                        "Remove from \(PlaybackSources.title(folder: folder(copy), filePath: filePath(copy)))",
+                        image: .trashCan
+                    )
+                }
+            }
+        }
+    }
+
     private func showSubtitle(_ show: TVShow) -> String {
-        let seasons = show.availableSeasons.count
-        let episodes = show.episodes.count
+        // Counted across every copy: an episode in two sources is one.
+        let copies = copies(of: show)
+        let slots = PlaybackSources.episodeSlots(primary: show, others: Array(copies.dropFirst()))
+        let seasons = Set(slots.map(\.season)).count
+        let episodes = slots.count
         let seasonText = seasons == 1
             ? String(localized: "1 season")
             : String(localized: "\(seasons) seasons")
@@ -652,25 +778,45 @@ struct ResumeItem: Identifiable {
     /// Continue Watching for the given (audience-filtered) library, most
     /// recently watched first: movies in progress, each show's in-progress
     /// episode, or the stored episode after its furthest completed one.
-    /// `limit` caps the shelf; `nil` returns every item.
+    /// A title in several sources is one card, played from the copy the
+    /// viewer played last unless its source is offline. `limit` caps the
+    /// shelf; `nil` returns every item.
     @MainActor
     static func items(
         watchStore: WatchProgressStore,
         movies: [Movie],
         shows: [TVShow],
-        limit: Int? = 12
+        limit: Int? = 12,
+        isOffline: (VideoFolder?) -> Bool = { _ in false }
     ) -> [ResumeItem] {
         var items: [ResumeItem] = []
 
         for progress in watchStore.inProgress where progress.mediaType == .movie {
-            if let movie = movies.first(where: { $0.tmdbId == progress.tmdbId }) {
+            let copies = movies.filter { $0.tmdbId == progress.tmdbId }
+            if let movie = PlaybackSources.preferred(copies, isOffline: { isOffline($0.folder) }, lastPlayed: \.lastPlayedAt) {
                 items.append(ResumeItem(progress: progress, payload: .movie(movie)))
             }
         }
 
-        var seen: Set<Int> = []
+        var showIDs: [Int] = []
+        var copiesByShow: [Int: [TVShow]] = [:]
         for show in shows {
-            guard let showId = show.tmdbId, seen.insert(showId).inserted else { continue }
+            guard let showId = show.tmdbId else { continue }
+            if copiesByShow[showId] == nil { showIDs.append(showId) }
+            copiesByShow[showId, default: []].append(show)
+        }
+
+        for showId in showIDs {
+            let copies = copiesByShow[showId] ?? []
+            // The copy played last (its source) first, then the others.
+            let preferred = PlaybackSources.preferred(copies, isOffline: { isOffline($0.folder) }, lastPlayed: \.lastPlayedAt)
+            let ordered = copies.filter { $0.id == preferred?.id } + copies.filter { $0.id != preferred?.id }
+            func episode(where matches: (Episode) -> Bool) -> Episode? {
+                for copy in ordered {
+                    if let episode = copy.episodes.first(where: matches) { return episode }
+                }
+                return nil
+            }
 
             guard let latest = watchStore.progressMap.values
                 .filter({ $0.mediaType == .episode && $0.showTmdbId == showId })
@@ -678,14 +824,18 @@ struct ResumeItem: Identifiable {
             else { continue }
 
             if !latest.isCompleted, latest.position > 0,
-               let ep = show.episodes.first(where: { $0.tmdbId == latest.tmdbId }) {
+               let ep = episode(where: { $0.tmdbId == latest.tmdbId }) {
                 items.append(ResumeItem(progress: latest, payload: .episode(ep)))
             } else if latest.isCompleted,
                       let season = latest.seasonNumber,
                       let epNum = latest.episodeNumber,
-                      let next = show.episodes
-                          .filter({ ($0.seasonNumber, $0.episodeNumber) > (season, epNum) })
-                          .min(by: { ($0.seasonNumber, $0.episodeNumber) < ($1.seasonNumber, $1.episodeNumber) }) {
+                      // The earliest stored episode after it on any copy…
+                      let nextOrder = ordered.flatMap(\.episodes)
+                          .map({ ($0.seasonNumber, $0.episodeNumber) })
+                          .filter({ $0 > (season, epNum) })
+                          .min(by: { $0 < $1 }),
+                      // …from the preferred copy that has it.
+                      let next = episode(where: { ($0.seasonNumber, $0.episodeNumber) == nextOrder }) {
                 items.append(ResumeItem(
                     progress: WatchProgress(
                         tmdbId: next.tmdbId ?? 0,

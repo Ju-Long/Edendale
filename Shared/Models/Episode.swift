@@ -29,6 +29,9 @@ final class Episode {
     var dateAdded: Date
     /// True when the file lives in iCloud Drive and may not be locally present.
     var isICloudItem: Bool
+    /// When TMDB last had no such episode for the matched show (see
+    /// `Movie.metadataCheckedAt`).
+    var metadataCheckedAt: Date?
 
     var show: TVShow?
 
