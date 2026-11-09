@@ -73,9 +73,11 @@ xcodebuild -resolvePackageDependencies -project Edendale.xcodeproj
 xcodebuild -list -project Edendale.xcodeproj
 ```
 
-The FFmpeg source download is checked against a pinned SHA-256 checksum. Its
-source, intermediate frameworks, and final XCFramework are gitignored; commit
-the build script and Xcode project references, not the generated binaries.
+The FFmpeg source download is checked against a pinned SHA-256 checksum. If
+ffmpeg.org keeps failing, the script falls back to GitHub's archive of the same
+release tag, which has its own pinned checksum. FFmpeg's source, intermediate
+frameworks, and final XCFramework are gitignored; commit the build script and
+Xcode project references, not the generated binaries.
 For a faster single-platform setup, use
 `bash Vendor/FFmpeg/build-ffmpeg.sh --platform ios` (also accepts `macos`,
 `tvos`, and `visionos`). This replaces the XCFramework with only that platform's

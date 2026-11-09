@@ -3,7 +3,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FFMPEG_VERSION="7.1.1"
+# The release tarball from ffmpeg.org.
 FFMPEG_SHA256="733984395e0dbbe5c046abda2dc49a5544e7e0e1e2366bba849222ae9e3a03b1"
+# GitHub's archive of the same release tag, used when ffmpeg.org fails. It holds
+# the same sources, plus git dotfiles and minus the VERSION file.
+FFMPEG_MIRROR_SHA256="f117507dc501f2a6c11f9241d8d0c3213846cfad91764361af37befd6b6c523d"
 SRC_DIR="${SCRIPT_DIR}/ffmpeg-${FFMPEG_VERSION}"
 BUILD_ROOT="${SCRIPT_DIR}/build"
 FRAMEWORKS_DIR="${SCRIPT_DIR}/frameworks"
@@ -34,15 +38,55 @@ case "${PLATFORM}" in
     *) echo "error: Unsupported FFmpeg platform: ${PLATFORM}" >&2; exit 1 ;;
 esac
 
-# 1. Download FFmpeg source if not present
-if [ ! -d "${SRC_DIR}" ]; then
-    echo "==> Downloading FFmpeg ${FFMPEG_VERSION}..."
-    cd "${SCRIPT_DIR}"
-    curl --fail --location --retry 3 --output "ffmpeg-${FFMPEG_VERSION}.tar.xz" \
-        "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz"
-    printf '%s  %s\n' "${FFMPEG_SHA256}" "ffmpeg-${FFMPEG_VERSION}.tar.xz" | shasum -a 256 -c -
-    tar -xf "ffmpeg-${FFMPEG_VERSION}.tar.xz"
-    rm "ffmpeg-${FFMPEG_VERSION}.tar.xz"
+# Downloads $1 to $2 and checks it against the SHA-256 in $3. ffmpeg.org can
+# take most of a minute to finish a TLS handshake or reset the connection
+# outright (curl error 35 in Xcode Cloud), and plain --retry does not retry
+# those, so retry every kind of failure for a bounded time.
+download_verified() {
+    local url="$1"
+    local output="$2"
+    local sha256="$3"
+
+    echo "==> Downloading FFmpeg ${FFMPEG_VERSION} from ${url}..."
+    if ! curl --fail --location --silent --show-error \
+            --connect-timeout 60 --speed-limit 10240 --speed-time 60 \
+            --retry 3 --retry-delay 10 --retry-all-errors --retry-max-time 300 \
+            --output "${output}" "${url}"; then
+        echo "warning: Could not download ${url}." >&2
+        return 1
+    fi
+    if ! printf '%s  %s\n' "${sha256}" "${output}" | shasum -a 256 -c - > /dev/null; then
+        echo "warning: ${url} does not match its pinned SHA-256." >&2
+        return 1
+    fi
+}
+
+# 1. Download FFmpeg source if not present. Unpack it in a staging folder and
+# move it into place last, so an interrupted run never leaves a partial tree
+# that later runs would mistake for the source.
+if [ ! -f "${SRC_DIR}/configure" ]; then
+    STAGE_DIR="${SRC_DIR}.download"
+    rm -rf "${SRC_DIR}" "${STAGE_DIR}"
+    mkdir -p "${STAGE_DIR}"
+    if download_verified "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz" \
+            "${STAGE_DIR}/source.tar.xz" "${FFMPEG_SHA256}"; then
+        tar -xf "${STAGE_DIR}/source.tar.xz" -C "${STAGE_DIR}"
+        mv "${STAGE_DIR}/ffmpeg-${FFMPEG_VERSION}" "${SRC_DIR}"
+    elif download_verified "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n${FFMPEG_VERSION}.tar.gz" \
+            "${STAGE_DIR}/source.tar.gz" "${FFMPEG_MIRROR_SHA256}"; then
+        tar -xf "${STAGE_DIR}/source.tar.gz" -C "${STAGE_DIR}"
+        MIRROR_TREE="${STAGE_DIR}/FFmpeg-n${FFMPEG_VERSION}"
+        # Make the tree match the release tarball. Without VERSION, FFmpeg's
+        # version.sh asks git, which finds Edendale's repository instead.
+        find "${MIRROR_TREE}" \( -name .gitignore -o -name .gitattributes \) -type f -delete
+        printf '%s\n' "${FFMPEG_VERSION}" > "${MIRROR_TREE}/VERSION"
+        mv "${MIRROR_TREE}" "${SRC_DIR}"
+    else
+        rm -rf "${STAGE_DIR}"
+        echo "error: Could not download FFmpeg ${FFMPEG_VERSION} from ffmpeg.org or GitHub." >&2
+        exit 1
+    fi
+    rm -rf "${STAGE_DIR}"
 fi
 
 # Apply visionOS patch to videotoolbox.c if needed
