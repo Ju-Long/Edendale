@@ -473,9 +473,14 @@ internal fun SettingsSwitchRow(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
+    // A toggleable row with the Switch role, so TalkBack says on or off; the
+    // Switch inside only draws the state.
     Surface(
-        onClick = { onToggle(!checked) },
-        modifier = Modifier.fillMaxWidth(),
+        checked = checked,
+        onCheckedChange = onToggle,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { role = Role.Switch },
         color = if (focused) EdendaleColors.Gold else Color.Transparent,
         contentColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
         interactionSource = interactionSource,
