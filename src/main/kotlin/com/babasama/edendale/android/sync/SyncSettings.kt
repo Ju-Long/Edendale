@@ -286,6 +286,7 @@ internal fun ChooseLocationDialog(
     var space by remember { mutableStateOf(presetSpace ?: sync.settings.location?.space ?: "") }
     var accounts by remember { mutableStateOf<List<CloudAccount>>(emptyList()) }
     var serverLogins by remember { mutableStateOf<List<SavedServerLogin>>(emptyList()) }
+    var linkedFolderUris by remember { mutableStateOf<List<String>>(emptyList()) }
     var smbLogins by remember { mutableStateOf<List<SavedSmbLogin>>(emptyList()) }
     var chosenAccount by remember { mutableStateOf<CloudAccount?>(null) }
     var chosenServer by remember { mutableStateOf<Triple<SyncProvider, String, Int?>?>(null) }
@@ -299,6 +300,7 @@ internal fun ChooseLocationDialog(
             accounts = runCatching { app.cloudAccounts.vault.all() }.getOrDefault(emptyList())
             serverLogins = runCatching { ServerLoginStore(context).all().filter { it.kind == MediaSourceKind.WEBDAV || it.kind == MediaSourceKind.SFTP } }.getOrDefault(emptyList())
             smbLogins = runCatching { SmbCredentialsStore(context).savedLogins() }.getOrDefault(emptyList())
+            linkedFolderUris = runCatching { app.database.libraryDao().folders().map { it.treeUri } }.getOrDefault(emptyList())
         }
     }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -404,7 +406,13 @@ internal fun ChooseLocationDialog(
                         val provider = SyncProvider.forKind(login.kind) ?: return@forEach
                         ChoiceRow(label = "${sourceKindLabel(login.kind)} · ${login.user} @ ${login.address}", selected = chosenServer?.second == login.host && chosenServer?.first == provider, iconRes = R.drawable.ic_folder_tree) {
                             chosenServer = Triple(provider, login.host, login.port)
-                            if (serverFolder.isBlank()) serverFolder = if (provider == SyncProvider.WEBDAV) "https://${login.address}/" else "/"
+                            if (serverFolder.isBlank()) {
+                                serverFolder = if (provider == SyncProvider.WEBDAV) {
+                                    com.babasama.edendale.sync.defaultWebDavSyncFolder(login.host, login.port, linkedFolderUris)
+                                } else {
+                                    "/"
+                                }
+                            }
                             chosenAccount = null
                             folderUri = null
                         }
