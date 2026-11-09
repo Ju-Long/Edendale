@@ -3,7 +3,6 @@ package com.babasama.edendale.android.xr.theater
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -51,7 +51,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -340,7 +343,7 @@ private fun ColumnScope.ListHeader(title: String, onClose: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
         IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
-            Icon(painterResource(BaseR.drawable.ic_chevron_down), contentDescription = null, modifier = Modifier.size(24.dp), tint = EdendaleColors.TextPrimary)
+            Icon(painterResource(BaseR.drawable.ic_chevron_down), contentDescription = stringResource(BaseR.string.action_close), modifier = Modifier.size(24.dp), tint = EdendaleColors.TextPrimary)
         }
     }
 }
@@ -381,7 +384,8 @@ private fun ListRow(text: String, selected: Boolean, onClick: () -> Unit) {
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(if (selected) EdendaleColors.SurfaceHigh else Color.Transparent)
-            .clickable(onClick = onClick)
+            // Radio semantics, so TalkBack says which track, room, or level is chosen.
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -575,7 +579,12 @@ private fun LightsRow(ui: TheaterUiState, actions: TheaterActions) {
                 onClick = { actions.chooseLights(level) },
                 shape = CircleShape,
                 color = if (selected) EdendaleColors.Gold else EdendaleColors.Surface,
-                modifier = Modifier.padding(start = 6.dp),
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .semantics {
+                        role = Role.RadioButton
+                        this.selected = selected
+                    },
             ) {
                 Text(
                     stringResource(level.labelRes),
