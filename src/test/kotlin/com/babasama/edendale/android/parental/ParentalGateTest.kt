@@ -172,6 +172,58 @@ class ParentalGateTest {
     }
 
     @Test
+    fun aNewerPairingLinkReplacesTheOneStillWaiting(): Unit = runBlocking {
+        // One process-wide link, one gate per window: a second scanned link
+        // must not be refused because the first one's dialog is still up, or
+        // that refusal clears the shared link and the new one is lost.
+        val controls = controls()
+        val gate = ParentalGate(controls, scope) { clock.wall }
+        controls.setPin(null, "1234".toCharArray(), clock.wall)
+        controls.lock()
+
+        var shared: String? = "first"
+        var opened: String? = null
+        fun ask(link: String) = gate.require(
+            GatedAction.PAIRING_LINK,
+            onRefused = { if (shared == link) shared = null },
+        ) { opened = link }
+
+        ask("first")
+        shared = "second"
+        ask("second")
+        assertEquals("second", shared, "the replaced request's refusal leaves the newer link alone")
+        assertNotNull(gate.pending)
+
+        assertIs<PinResult.Unlocked>(controls.verifyPin("1234".toCharArray(), clock.wall))
+        gate.finish(unlocked = true)
+        assertEquals("second", opened)
+        assertNull(gate.pending)
+
+        // Other actions still wait their turn behind a pending question.
+        controls.lock()
+        ask("third")
+        val sync = Outcome()
+        gate.require(GatedAction.SYNC, onRefused = sync.refuse, onUnlocked = sync.run)
+        assertEquals(1, sync.refused)
+    }
+
+    @Test
+    fun withdrawClosesAWaitingLinkWithoutAnswering(): Unit = runBlocking {
+        val controls = controls()
+        val gate = ParentalGate(controls, scope) { clock.wall }
+        controls.setPin(null, "1234".toCharArray(), clock.wall)
+        controls.lock()
+        val link = Outcome()
+        gate.require(GatedAction.PAIRING_LINK, onRefused = link.refuse, onUnlocked = link.run)
+        gate.withdraw(GatedAction.SETTINGS)
+        assertNotNull(gate.pending, "only the named action is withdrawn")
+        gate.withdraw(GatedAction.PAIRING_LINK)
+        assertNull(gate.pending)
+        assertEquals(0, link.ran)
+        assertEquals(0, link.refused)
+    }
+
+    @Test
     fun aRequestBeforeTheStoreIsReadWaitsForIt() {
         val latch = CountDownLatch(1)
         val controls = controls(store = GatedStore(latch), ioDispatcher = Dispatchers.IO)

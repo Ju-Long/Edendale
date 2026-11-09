@@ -185,17 +185,24 @@ fun EdendaleApp(
 
     // A pairing link from the camera or another app (27.1 handoff): the guest side opens over whatever is showing.
     // O-D13: while the controls are locked the PIN comes first; a wrong or cancelled PIN drops the link.
+    // The link is process-wide and each MainActivity window has its own gate (a scanned link
+    // can open a second window over the first), so a refusal clears only the link it refused,
+    // and a window whose link went away elsewhere closes its PIN dialog.
     val pendingPairingLink by com.babasama.edendale.android.sync.PendingPairing.link.collectAsState()
     var unlockedPairingLink by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pendingPairingLink) {
         val link = pendingPairingLink
         if (link == null) {
             unlockedPairingLink = null
+            parentalGate.withdraw(GatedAction.PAIRING_LINK)
             return@LaunchedEffect
         }
         parentalGate.require(
             GatedAction.PAIRING_LINK,
-            onRefused = { com.babasama.edendale.android.sync.PendingPairing.link.value = null },
+            onRefused = {
+                val pending = com.babasama.edendale.android.sync.PendingPairing.link
+                if (pending.value == link) pending.value = null
+            },
         ) { unlockedPairingLink = link }
     }
     pendingPairingLink?.takeIf { it == unlockedPairingLink }?.let { link ->

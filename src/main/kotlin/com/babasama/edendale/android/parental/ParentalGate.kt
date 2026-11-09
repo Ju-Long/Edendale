@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +64,8 @@ internal class GateRequest(val action: GatedAction, val onUnlocked: () -> Unit, 
  * [rememberParentalGate] shows the PIN dialog, and runs or drops it with the
  * answer. Until the controls have read their store a request waits rather
  * than guessing. One question at a time: a request that arrives while
- * another waits is refused.
+ * another waits is refused, except a newer pairing link, which replaces the
+ * one still waiting (the viewer scanned it last; the older one is dropped).
  */
 @Stable
 class ParentalGate internal constructor(
@@ -99,11 +101,25 @@ class ParentalGate internal constructor(
             controls.hasPin.value,
             controls.isUnlocked(now()),
         )
+        val waiting = pending
         when {
             !asks -> request.onUnlocked()
-            pending != null -> request.onRefused()
-            else -> pending = request
+            waiting == null -> pending = request
+            waiting.action == GatedAction.PAIRING_LINK && request.action == GatedAction.PAIRING_LINK -> {
+                pending = request
+                waiting.onRefused()
+            }
+            else -> request.onRefused()
         }
+    }
+
+    /**
+     * Closes a waiting [action]'s dialog without running either callback:
+     * for a pairing link that was answered, refused, or replaced elsewhere
+     * (another window of the app holds the same process-wide link).
+     */
+    fun withdraw(action: GatedAction) {
+        if (pending?.action == action) pending = null
     }
 
     /** The dialog's answer: the PIN matched, or the viewer gave up. */
@@ -126,15 +142,18 @@ fun rememberParentalGate(isTelevision: Boolean): ParentalGate {
     val scope = rememberCoroutineScope()
     val gate = remember(controls, scope) { ParentalGate(controls, scope) }
     gate.pending?.let { request ->
-        PinDialog(
-            controls = controls,
-            isTelevision = isTelevision,
-            title = stringResource(R.string.parental_enter_pin),
-            message = if (request.action == GatedAction.PAIRING_LINK) stringResource(R.string.parental_pairing_link_message) else null,
-            dismissOnWrongPin = ParentalGateRules.dropsOnWrongPin(request.action),
-            onUnlocked = { gate.finish(true) },
-            onDismiss = { gate.finish(false) },
-        )
+        // Keyed by the request, so a replacing pairing link starts with an empty field.
+        key(request) {
+            PinDialog(
+                controls = controls,
+                isTelevision = isTelevision,
+                title = stringResource(R.string.parental_enter_pin),
+                message = if (request.action == GatedAction.PAIRING_LINK) stringResource(R.string.parental_pairing_link_message) else null,
+                dismissOnWrongPin = ParentalGateRules.dropsOnWrongPin(request.action),
+                onUnlocked = { gate.finish(true) },
+                onDismiss = { gate.finish(false) },
+            )
+        }
     }
     return gate
 }
