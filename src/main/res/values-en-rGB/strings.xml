@@ -48,7 +48,6 @@
     <string name="parental_next">Next</string>
     <string name="parental_set_pin_first">Set a PIN to use this lock.</string>
     <string name="parental_local_note">These settings stay on this device. They are never synced or sent to another device.</string>
-    <string name="settings_section_app_controls">App Controls</string>
     <string name="settings_app_controls_skip_backward">Skip Back</string>
     <string name="settings_app_controls_skip_forward">Skip Forward</string>
     <string name="settings_app_controls_skip_note">Double-tap the left or right side of the video to skip back or forward.</string>
@@ -397,4 +396,10 @@
     </plurals>
     <string name="player_theater">Theatre</string>
     <string name="xr_module_title">Android XR theatre</string>
+    <string name="settings_player_controls">Player Controls</string>
+    <string name="settings_audio">Audio</string>
+    <string name="settings_library">Library</string>
+    <string name="settings_section_controls">Controls</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_parental_more">Ratings, Locks, and PIN</string>
 </resources>

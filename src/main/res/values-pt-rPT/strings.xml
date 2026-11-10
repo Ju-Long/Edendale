@@ -151,26 +151,19 @@
     <string name="error_server_unreachable">Não foi possível aceder a esse servidor.</string>
     <string name="settings_title">Definições</string>
     <string name="settings_section_about">Sobre</string>
+    <string name="settings_player_controls">Controlos do Leitor</string>
+    <string name="settings_audio">Áudio</string>
+    <string name="settings_library">Biblioteca</string>
+    <string name="settings_section_controls">Controlos</string>
+    <string name="settings_section_appearance">Aspeto</string>
+    <string name="settings_parental_more">Classificações, bloqueios e PIN</string>
     <string name="settings_version">Versão</string>
-    <string name="settings_watch_progress">Progresso de visualização</string>
-    <string name="settings_stored_on_device">Guardado neste dispositivo</string>
-    <string name="settings_tmdb_access">Acesso ao TMDB</string>
-    <string name="settings_tmdb_configured">Configurado no momento da compilação</string>
-    <string name="settings_tmdb_missing">Adicione um token ao secrets.json e recompile</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">O tipo de letra grande, as margens seguras para overscan, a elevação de foco do comando e a apresentação em formato horizontal estão ativos.</string>
     <string name="settings_watch_next_title">Continuar a ver no ecrã principal</string>
     <string name="settings_watch_next_description">Mostra o que está a ver na fila «Continuar a ver» do ecrã principal. O Edendale não envia nada pela rede para isso, mas a app do ecrã principal pode ver estes títulos.</string>
     <string name="settings_section_sources">Fontes</string>
     <string name="settings_no_sources">Nenhuma fonte ligada</string>
-    <string name="settings_section_backup">Cópia de segurança</string>
-    <string name="settings_backup_note">O progresso de visualização, os favoritos, a lista de observação e as classificações viajam com o Android Auto Backup para o seu Google Drive, para que regressem quando configurar um novo dispositivo. A cópia de segurança segue a definição do sistema do seu dispositivo — o Edendale não adiciona nada por si.</string>
-    <string name="settings_backup_secrets_note">A sua sessão do TMDB e quaisquer inícios de sessão de partilhas de rede guardados são excluídos da cópia de segurança e da transferência do dispositivo: estão encriptados para este dispositivo e não podem sair dele.</string>
-    <string name="settings_section_privacy">Privacidade</string>
-    <string name="settings_privacy_note">Sem análise de dados. Os pedidos de rede limitam-se ao TMDB, à Wyzie após uma pesquisa explícita de legendas e aos seus fornecedores de sincronização privada.</string>
-    <string name="settings_section_attribution">Atribuição</string>
     <string name="tmdb_attribution">Este produto utiliza a API do TMDB mas não é endossado nem certificado pelo TMDB.</string>
-    <string name="settings_open_source">Edendale · Gratuito e de código aberto</string>
     <string name="settings_section_tmdb_account">Conta TMDB</string>
     <string name="tmdb_account_intro">Ligue a sua conta TMDB para sincronizar favoritos, a sua lista de observação e classificações em vários dispositivos. O tempo de visualização fica fora do TMDB.</string>
     <string name="tmdb_loading_account">A carregar conta…</string>
@@ -225,6 +218,12 @@
     <string name="player_in_this_folder">Nesta Pasta</string>
     <string name="player_volume">Volume</string>
     <string name="player_brightness">Brilho</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">Volume %1$s</string>
+    <string name="player_brightness_level">Brilho %1$s</string>
+    <string name="player_rotation_lock">Bloqueio da Rotação</string>
+    <string name="player_state_on">Ligado</string>
+    <string name="player_state_off">Desligado</string>
     <string name="player_seek_seconds">%1$d s</string>
     <string name="error_folder_not_opened">Não foi possível abrir essa pasta.</string>
     <string name="default_folder_name">Pasta</string>
@@ -253,7 +252,6 @@
     <string name="wyzie_api_key">Chave da API</string>
     <string name="wyzie_key_saved">Chave guardada</string>
     <string name="wyzie_key_encrypted">A chave é guardada encriptada neste dispositivo.</string>
-    <string name="wyzie_using_build_key">A usar a chave de secrets.json.</string>
     <string name="wyzie_key_required">A pesquisa de legendas online precisa da sua própria chave da API Wyzie. Visite store.wyzie.io/redeem, conclua os passos no site para resgatar a sua subscrição e cole a chave abaixo.</string>
     <string name="wyzie_get_free_key">Obter uma chave gratuita</string>
     <string name="wyzie_error_key_storage">Não foi possível atualizar a chave da API Wyzie.</string>
@@ -328,7 +326,6 @@
     <string name="parental_next">Seguinte</string>
     <string name="parental_set_pin_first">Defina um PIN para usar este bloqueio.</string>
     <string name="parental_local_note">Estas definições ficam neste dispositivo. Nunca são sincronizadas nem enviadas para outro dispositivo.</string>
-    <string name="settings_section_app_controls">Controlos da aplicação</string>
     <string name="settings_app_controls_skip_backward">Recuar</string>
     <string name="settings_app_controls_skip_forward">Avançar</string>
     <string name="settings_app_controls_skip_note">Dê dois toques no lado esquerdo ou direito do vídeo para recuar ou avançar.</string>
@@ -405,6 +402,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">Reproduzir a Partir de</string>
     <string name="play_from_unavailable">%1$s · Indisponível</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">Este dispositivo</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · Última reprodução</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d fontes</item>
         <item quantity="other">%1$d fontes</item>
@@ -632,6 +633,25 @@
     <string name="sync_remove_device_message">Eliminar o ficheiro de um dispositivo impede que o seu histórico chegue aos outros. Esse dispositivo mantém o início de sessão e a cópia local até revogar o acesso do Edendale no fornecedor ou alterar a palavra-passe do servidor.</string>
     <string name="sync_manage_access">Gerir acesso em %1$s</string>
     <string name="sync_no_other_devices">Nenhum outro dispositivo escreveu ainda neste espaço.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">Histórico</string>
+    <string name="watch_history_on_device">Neste dispositivo</string>
+    <string name="watch_history_note_sync_on">A eliminação também se aplica aos seus outros dispositivos.</string>
+    <string name="watch_history_note_sync_off">A eliminação aplica-se só a este dispositivo.</string>
+    <string name="watch_history_delete_ellipsis">Eliminar histórico…</string>
+    <string name="watch_history_deleting">A eliminar…</string>
+    <string name="watch_history_deleted">Histórico eliminado.</string>
+    <string name="watch_history_deleted_others_follow">Eliminado neste dispositivo. Os seus outros dispositivos vão eliminar a respetiva cópia na próxima sincronização.</string>
+    <string name="watch_history_pending">Eliminado neste dispositivo. Os seus outros dispositivos vão eliminá-lo quando o Edendale conseguir aceder a %1$s.</string>
+    <string name="watch_history_failed">Não foi possível eliminar o histórico.</string>
+    <string name="watch_history_everywhere_title">Eliminar o histórico em todos os dispositivos?</string>
+    <string name="watch_history_everywhere_message">O progresso e as marcas de visto são eliminados aqui e, através de %1$s, nos seus outros dispositivos.</string>
+    <string name="watch_history_everywhere_confirm">Eliminar em todos os dispositivos</string>
+    <string name="watch_history_local_title">Eliminar o histórico deste dispositivo?</string>
+    <string name="watch_history_local_message">O progresso e as marcas de visto são eliminados deste dispositivo. Se ativar a sincronização mais tarde, o histórico dos seus outros dispositivos volta.</string>
+    <string name="watch_history_local_confirm">Eliminar</string>
+    <string name="watch_history_kept">Os favoritos, a lista para ver, as avaliações, as críticas, a sua biblioteca e a sua conta TMDB ficam como estão.</string>
+    <string name="clear_progress">Limpar progresso</string>
     <string name="sync_folder_relink">Escolha a pasta que este dispositivo deve usar para o espaço “%1$s”.</string>
     <string name="sync_google_relink">Inicie sessão no Google como %1$s para usar o espaço “%2$s”.</string>
     <string name="pairing_role_question">Para que lado vão os inícios de sessão?</string>

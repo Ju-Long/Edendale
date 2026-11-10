@@ -23,6 +23,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.MainActivity
+import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.connectorFailureMessage
 import com.babasama.edendale.android.data.LocalDataStore
@@ -515,7 +516,13 @@ class TheaterPlayback(context: Context, val handover: XrTheaterHandover) {
         val app = application ?: return
         writeScope.launch {
             val loaded = runCatching {
-                loadPlayerPlaylist(dao = app.database.libraryDao(), uriString = handover.uri, showTmdbIdExtra = handover.showTmdbId)
+                loadPlayerPlaylist(
+                    dao = app.database.libraryDao(),
+                    uriString = handover.uri,
+                    showTmdbIdExtra = handover.showTmdbId,
+                    // As the 2D player loads it: the show's remembered source anchors a file outside the library (27.1).
+                    remembered = app.libraryRepository.sourceMemory.sourceFor(PlaybackSources.showMemoryKey(handover.showTmdbId, null)),
+                )
             }.getOrNull() ?: return@launch
             withContext(Dispatchers.Main) {
                 if (released) return@withContext
@@ -589,7 +596,11 @@ class TheaterPlayback(context: Context, val handover: XrTheaterHandover) {
         player.release()
     }
 
-    /** Exit: back to the 2D player at the current position (N-D7). */
+    /**
+     * Exit: back to the 2D player at the current position (N-D7). The 2D
+     * player already had its chance to remember this item's source (27.1), so
+     * coming back doesn't record it again.
+     */
     fun returnToPlayerIntent(): Intent = PlayerActivity.intent(
         context = appContext,
         uri = handover.uri,
@@ -600,9 +611,14 @@ class TheaterPlayback(context: Context, val handover: XrTheaterHandover) {
         season = handover.season,
         episode = handover.episode,
         positionMillis = player.currentPosition.coerceAtLeast(0L),
+        rememberSource = false,
     )
 
-    /** The Up Next card: the 2D player on the next episode, or null while there is none. */
+    /**
+     * The Up Next card: the 2D player on the next episode, or null while there
+     * is none. It follows the list, as the 2D player's Up Next does, so it
+     * leaves the show's remembered source alone (27.1).
+     */
     fun upNextIntent(): Intent? = upcomingEntry?.let { entry ->
         PlayerActivity.intent(
             context = appContext,
@@ -613,6 +629,7 @@ class TheaterPlayback(context: Context, val handover: XrTheaterHandover) {
             showTmdbId = entry.showTmdbId,
             season = entry.season,
             episode = entry.episode,
+            rememberSource = false,
         )
     }
 

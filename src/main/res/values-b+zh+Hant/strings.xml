@@ -151,26 +151,19 @@
     <string name="error_server_unreachable">無法連線至該伺服器。</string>
     <string name="settings_title">設定</string>
     <string name="settings_section_about">關於</string>
+    <string name="settings_player_controls">播放器控制</string>
+    <string name="settings_audio">音訊</string>
+    <string name="settings_library">資料庫</string>
+    <string name="settings_section_controls">控制</string>
+    <string name="settings_section_appearance">外觀</string>
+    <string name="settings_parental_more">分級、鎖定與 PIN 碼</string>
     <string name="settings_version">版本</string>
-    <string name="settings_watch_progress">觀看進度</string>
-    <string name="settings_stored_on_device">儲存於此裝置</string>
-    <string name="settings_tmdb_access">TMDB 存取權限</string>
-    <string name="settings_tmdb_configured">已於建置時設定</string>
-    <string name="settings_tmdb_missing">請在 secrets.json 加入憑證並重新建置</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">已啟用大字體、防止過度掃描的邊距、遙控器焦點提升，以及橫向顯示模式。</string>
     <string name="settings_watch_next_title">在主畫面顯示「繼續觀看」</string>
     <string name="settings_watch_next_description">在主畫面的「繼續觀看」列中顯示你正在觀看的內容。Edendale 不會為此透過網路傳送任何內容，但主畫面應用程式可以看到這些標題。</string>
     <string name="settings_section_sources">來源</string>
     <string name="settings_no_sources">未連結任何來源</string>
-    <string name="settings_section_backup">備份</string>
-    <string name="settings_backup_note">觀看進度、最愛、待看清單與評分將透過 Android Auto Backup 備份至你的 Google Drive，因此設定新裝置時可以全部還原。備份作業會遵循裝置的系統設定 — Edendale 不會擅自加入任何額外內容。</string>
-    <string name="settings_backup_secrets_note">你的 TMDB 工作階段和任何已儲存的網路共用登入資訊都不會被備份或轉移到其他裝置：它們已加密並綁定於此裝置，無法被匯出。</string>
-    <string name="settings_section_privacy">隱私權</string>
-    <string name="settings_privacy_note">無分析追蹤。網路請求僅限於 TMDB、明確搜尋字幕後的 Wyzie 和你的私人同步服務供應商。</string>
-    <string name="settings_section_attribution">授權標示</string>
     <string name="tmdb_attribution">本產品使用 TMDB API，但未經 TMDB 認可或認證。</string>
-    <string name="settings_open_source">Edendale · 免費且開放原始碼</string>
     <string name="settings_section_tmdb_account">TMDB 帳號</string>
     <string name="tmdb_account_intro">連結你的 TMDB 帳戶，即可跨裝置同步最愛、待看清單與評分。觀看時間不會傳送至 TMDB。</string>
     <string name="tmdb_loading_account">正在載入帳戶…</string>
@@ -225,6 +218,12 @@
     <string name="player_in_this_folder">在此檔案夾中</string>
     <string name="player_volume">音量</string>
     <string name="player_brightness">亮度</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">音量 %1$s</string>
+    <string name="player_brightness_level">亮度 %1$s</string>
+    <string name="player_rotation_lock">旋轉鎖定</string>
+    <string name="player_state_on">開啟</string>
+    <string name="player_state_off">關閉</string>
     <string name="player_seek_seconds">%1$d 秒</string>
     <string name="error_folder_not_opened">無法開啟該資料夾。</string>
     <string name="default_folder_name">資料夾</string>
@@ -250,7 +249,6 @@
     <string name="wyzie_api_key">API 金鑰</string>
     <string name="wyzie_key_saved">金鑰已儲存</string>
     <string name="wyzie_key_encrypted">金鑰已加密儲存在此裝置上。</string>
-    <string name="wyzie_using_build_key">正在使用 secrets.json 中的金鑰。</string>
     <string name="wyzie_key_required">線上字幕搜尋需要你自己的 Wyzie API 金鑰。請造訪 store.wyzie.io/redeem，依網站步驟兌換你的訂閱，然後在下方貼上金鑰。</string>
     <string name="wyzie_get_free_key">取得免費金鑰</string>
     <string name="wyzie_error_key_storage">無法更新 Wyzie API 金鑰。</string>
@@ -324,7 +322,6 @@
     <string name="parental_next">下一步</string>
     <string name="parental_set_pin_first">請先設定 PIN 碼以使用此鎖定。</string>
     <string name="parental_local_note">這些設定僅保存在此裝置上，絕不會同步或傳送到其他裝置。</string>
-    <string name="settings_section_app_controls">應用程式控制</string>
     <string name="settings_app_controls_skip_backward">倒退</string>
     <string name="settings_app_controls_skip_forward">快轉</string>
     <string name="settings_app_controls_skip_note">點兩下影片左側或右側以倒退或快轉。</string>
@@ -401,6 +398,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">播放來源</string>
     <string name="play_from_unavailable">%1$s · 無法使用</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">此裝置</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · 上次播放</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d 個來源</item>
         <item quantity="other">%1$d 個來源</item>
@@ -623,6 +624,25 @@
     <string name="sync_remove_device_message">刪除某台裝置的檔案後，它的記錄將不再傳到其他裝置。在你於提供者處撤銷 Edendale 的存取權或變更伺服器密碼之前，該裝置仍保留其登入資訊和本機副本。</string>
     <string name="sync_manage_access">在 %1$s 管理存取權</string>
     <string name="sync_no_other_devices">還沒有其他裝置寫入此空間。</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">觀看記錄</string>
+    <string name="watch_history_on_device">此裝置上</string>
+    <string name="watch_history_note_sync_on">刪除後，你其他裝置上的記錄也會清除。</string>
+    <string name="watch_history_note_sync_off">刪除只會清除此裝置上的記錄。</string>
+    <string name="watch_history_delete_ellipsis">刪除觀看記錄…</string>
+    <string name="watch_history_deleting">正在刪除…</string>
+    <string name="watch_history_deleted">觀看記錄已刪除。</string>
+    <string name="watch_history_deleted_others_follow">已在此裝置上刪除。你的其他裝置會在下次同步時刪除各自的記錄。</string>
+    <string name="watch_history_pending">已在此裝置上刪除。Edendale 連上 %1$s 後，你的其他裝置也會刪除。</string>
+    <string name="watch_history_failed">無法刪除觀看記錄。</string>
+    <string name="watch_history_everywhere_title">要在所有裝置上刪除觀看記錄嗎？</string>
+    <string name="watch_history_everywhere_message">觀看進度和已觀看標記會從此裝置刪除，並透過 %1$s 從你的其他裝置刪除。</string>
+    <string name="watch_history_everywhere_confirm">在所有裝置上刪除</string>
+    <string name="watch_history_local_title">要刪除此裝置上的觀看記錄嗎？</string>
+    <string name="watch_history_local_message">觀看進度和已觀看標記會從此裝置刪除。如果之後開啟同步，你其他裝置上的記錄會回來。</string>
+    <string name="watch_history_local_confirm">刪除</string>
+    <string name="watch_history_kept">收藏、待看清單、評分、評論、你的媒體庫和 TMDB 帳戶都保持不變。</string>
+    <string name="clear_progress">清除觀看進度</string>
     <string name="sync_folder_relink">請選擇此裝置用於空間「%1$s」的資料夾。</string>
     <string name="sync_google_relink">請以 %1$s 登入 Google 以使用空間「%2$s」。</string>
     <string name="pairing_role_question">登入資訊要往哪個方向傳？</string>

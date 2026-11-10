@@ -2,9 +2,11 @@ package com.babasama.edendale.android.player
 
 import android.net.Uri
 import android.provider.DocumentsContract
+import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.copySource
 import com.babasama.edendale.android.data.LibraryDao
+import com.babasama.edendale.android.data.LibraryEpisodeEntity
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.parental.ParentalGateRules
@@ -29,6 +31,16 @@ internal data class PlaylistEntry(
     /** The show's backdrop for an episode, the movie's own for a movie. */
     val backdropPath: String? = null,
     val runtimeMinutes: Int? = null,
+    /** The source this copy plays from, for an episode row's Play From menu (27.1). */
+    val source: CopySource? = null,
+    /** `PlaybackSources.sourceKey` of that source. */
+    val sourceKey: String? = null,
+    /**
+     * Every copy of this episode, this one included, in Play From order, when
+     * the library holds more than one; each is a whole entry of its own (its
+     * own file, title, and source). Empty otherwise.
+     */
+    val copies: List<PlaylistEntry> = emptyList(),
 ) {
     /** The 16:9 artwork the playlist row shows: the episode still, else the backdrop. */
     val artworkPath: String? get() = stillPath ?: backdropPath
@@ -114,13 +126,95 @@ internal fun playlistParentKey(uri: String): String? = when {
 }
 
 /**
+ * The episode list's rows (C.2 with D.5): each episode's chosen copy, which Up
+ * Next and auto-advance play, carrying every copy of the episode as an entry
+ * of its own when there's more than one, for the row's Play From menu (27.1).
+ * A copy TMDB hasn't matched yet — a link added after the others — plays
+ * under a matched copy's id and name, so its progress and resume are the
+ * episode's; an episode no copy of which is matched keeps its file name.
+ */
+internal fun episodeEntries(
+    rows: List<PlaybackSources.PlayerEpisode<LibraryEpisodeEntity>>,
+    showTmdbId: Int?,
+    backdropPath: String?,
+    sourceOf: (LibraryEpisodeEntity) -> CopySource,
+): List<PlaylistEntry> {
+    fun entry(episode: LibraryEpisodeEntity, named: LibraryEpisodeEntity?) = PlaylistEntry(
+        uri = episode.uri,
+        title = episode.title ?: named?.title ?: episode.fileName,
+        detail = "S%02dE%02d".format(episode.season, episode.episode),
+        tmdbId = episode.tmdbId ?: named?.tmdbId,
+        isEpisode = true,
+        showTmdbId = showTmdbId,
+        season = episode.season,
+        episode = episode.episode,
+        stillPath = episode.stillPath ?: named?.stillPath,
+        backdropPath = backdropPath,
+        runtimeMinutes = episode.runtimeMinutes ?: named?.runtimeMinutes,
+        source = sourceOf(episode),
+        sourceKey = PlaybackSources.sourceKey(episode.folderUri),
+    )
+    return rows.map { row ->
+        val named = row.copies.firstOrNull { it.tmdbId != null }
+        val chosen = entry(row.chosen, named)
+        if (row.copies.size < 2) chosen else chosen.copy(copies = row.copies.map { if (it == row.chosen) chosen else entry(it, named) })
+    }
+}
+
+/**
+ * The episode list for [episodes], every copy of the show, while [playing]
+ * plays ([PlaybackSources.playerEpisodeRows], then [episodeEntries]). The
+ * playing copy's source answers whatever its last scan said, for the copy
+ * each row plays and for each row's Play From alike
+ * ([PlaybackSources.whilePlaying]): a stale flag mustn't mark the copies of
+ * the source playing now "Unavailable". [remembered], the source the show
+ * last played from, anchors the list only when [playing] isn't a library row.
+ */
+internal fun playerEpisodeEntries(
+    episodes: List<LibraryEpisodeEntity>,
+    playing: LibraryEpisodeEntity?,
+    showTmdbId: Int?,
+    backdropPath: String?,
+    remembered: String? = null,
+    sourceOf: (LibraryEpisodeEntity) -> CopySource,
+): List<PlaylistEntry> {
+    val sourceKey: (LibraryEpisodeEntity) -> String = { PlaybackSources.sourceKey(it.folderUri) }
+    val source = PlaybackSources.whilePlaying(playing, sourceKey, sourceOf)
+    val rows = PlaybackSources.playerEpisodeRows(
+        episodes = episodes,
+        playing = playing,
+        season = { it.season },
+        number = { it.episode },
+        sourceKey = sourceKey,
+        source = source,
+        path = { it.uri },
+        remembered = remembered.takeIf { playing == null },
+    )
+    return episodeEntries(rows, showTmdbId, backdropPath, source)
+}
+
+/**
+ * The list with [pick], one of an episode's copies, in place of that
+ * episode's row, until a reload settles the rows after it: the panel shows
+ * the pick as playing straight away.
+ */
+internal fun PlayerPlaylist.choosing(pick: PlaylistEntry): PlayerPlaylist = this.copy(
+    entries = entries.map { entry ->
+        if (entry.uri != pick.uri && entry.copies.any { it.uri == pick.uri }) pick.copy(copies = entry.copies) else entry
+    },
+)
+
+/**
  * Loads the panel's contents for the playing [uriString]. Suspends on Room's
- * own executor; safe to call from any dispatcher.
+ * own executor; safe to call from any dispatcher. [remembered], the source the
+ * show last played from (27.1), anchors the episode list only when the
+ * playing URI isn't a library row; otherwise the playing copy's source does.
  */
 internal suspend fun loadPlayerPlaylist(
     dao: LibraryDao,
     uriString: String,
     showTmdbIdExtra: Int?,
+    remembered: String? = null,
 ): PlayerPlaylist? {
     // Episode branch: resolve by URI first — showKey is assigned by the local
     // filename parse, so this works even before TMDB enrichment names the
@@ -137,36 +231,15 @@ internal suspend fun loadPlayerPlaylist(
         if (showTmdbId != null) dao.shows().filter { it.tmdbId == showTmdbId }.forEach { add(it.key) }
     }
     val folders = dao.folders().associateBy { it.treeUri }
-    val episodes = PlaybackSources.playerEpisodes(
+    val entries = playerEpisodeEntries(
         episodes = showKeys.flatMap { dao.episodesForShow(it) },
         playing = playingEpisode,
-        season = { it.season },
-        number = { it.episode },
-        folderUri = { it.folderUri },
-        source = { folders.copySource(it.folderUri) },
-        path = { it.uri },
-    )
-    if (episodes.isNotEmpty()) {
-        val backdropPath = show?.backdropPath
-        return PlayerPlaylist(
-            isEpisodeList = true,
-            showName = show?.name,
-            entries = episodes.map { episode ->
-                PlaylistEntry(
-                    uri = episode.uri,
-                    title = episode.title ?: episode.fileName,
-                    detail = "S%02dE%02d".format(episode.season, episode.episode),
-                    tmdbId = episode.tmdbId,
-                    isEpisode = true,
-                    showTmdbId = showTmdbId,
-                    season = episode.season,
-                    episode = episode.episode,
-                    stillPath = episode.stillPath,
-                    backdropPath = backdropPath,
-                    runtimeMinutes = episode.runtimeMinutes,
-                )
-            },
-        )
+        showTmdbId = showTmdbId,
+        backdropPath = show?.backdropPath,
+        remembered = remembered,
+    ) { folders.copySource(it.folderUri) }
+    if (entries.isNotEmpty()) {
+        return PlayerPlaylist(isEpisodeList = true, showName = show?.name, entries = entries)
     }
 
     // Folder branch: siblings of a known movie, narrowed to its directory.

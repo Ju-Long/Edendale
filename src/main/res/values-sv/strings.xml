@@ -151,26 +151,19 @@
     <string name="error_server_unreachable">Den servern kunde inte nås.</string>
     <string name="settings_title">Inställningar</string>
     <string name="settings_section_about">Om</string>
+    <string name="settings_player_controls">Spelarreglage</string>
+    <string name="settings_audio">Ljud</string>
+    <string name="settings_library">Bibliotek</string>
+    <string name="settings_section_controls">Reglage</string>
+    <string name="settings_section_appearance">Utseende</string>
+    <string name="settings_parental_more">Åldersgränser, lås och PIN-kod</string>
     <string name="settings_version">Version</string>
-    <string name="settings_watch_progress">Uppspelningsförlopp</string>
-    <string name="settings_stored_on_device">Lagras på denna enhet</string>
-    <string name="settings_tmdb_access">TMDB-åtkomst</string>
-    <string name="settings_tmdb_configured">Konfigurerad vid bygge</string>
-    <string name="settings_tmdb_missing">Lägg till en token i secrets.json och bygg om</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">Stor text, overscan-säkra marginaler, fokuslyft för fjärrkontroll och landskapspresentation är aktiva.</string>
     <string name="settings_watch_next_title">Fortsätt titta på hemskärmen</string>
     <string name="settings_watch_next_description">Visar det du tittar på i hemskärmens rad ”Fortsätt titta”. Edendale skickar inget över nätverket för detta, men hemskärmsappen kan se dessa titlar.</string>
     <string name="settings_section_sources">Källor</string>
     <string name="settings_no_sources">Inga källor länkade</string>
-    <string name="settings_section_backup">Säkerhetskopiering</string>
-    <string name="settings_backup_note">Visningsförlopp, favoriter, din visningslista och betyg åker med Android Auto Backup till din Google Drive, så de återvänder när du konfigurerar en ny enhet. Säkerhetskopieringen följer din enhets systeminställning — Edendale lägger inte till något eget.</string>
-    <string name="settings_backup_secrets_note">Din TMDB-session och eventuella sparade inloggningar för nätverksresurser exkluderas från säkerhetskopiering och enhetsöverföring: de är krypterade till denna enhet och kan inte lämna den.</string>
-    <string name="settings_section_privacy">Integritet</string>
-    <string name="settings_privacy_note">Ingen analys. Nätverksförfrågningar begränsas till TMDB, Wyzie efter en uttrycklig undertextsökning och dina privata synkroniseringsleverantörer.</string>
-    <string name="settings_section_attribution">Erkännande</string>
     <string name="tmdb_attribution">Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</string>
-    <string name="settings_open_source">Edendale · Gratis och öppen källkod</string>
     <string name="settings_section_tmdb_account">TMDB-konto</string>
     <string name="tmdb_account_intro">Anslut ditt TMDB-konto för att synkronisera favoriter, din visningslista och betyg över enheter. Visningstid stannar utanför TMDB.</string>
     <string name="tmdb_loading_account">Läser in konto…</string>
@@ -225,6 +218,12 @@
     <string name="player_in_this_folder">I den här mappen</string>
     <string name="player_volume">Volym</string>
     <string name="player_brightness">Ljusstyrka</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">Volym %1$s</string>
+    <string name="player_brightness_level">Ljusstyrka %1$s</string>
+    <string name="player_rotation_lock">Rotationslås</string>
+    <string name="player_state_on">På</string>
+    <string name="player_state_off">Av</string>
     <string name="player_seek_seconds">%1$d s</string>
     <string name="error_folder_not_opened">Den mappen kunde inte öppnas.</string>
     <string name="default_folder_name">Mapp</string>
@@ -253,7 +252,6 @@
     <string name="wyzie_api_key">API-nyckel</string>
     <string name="wyzie_key_saved">Nyckeln har sparats</string>
     <string name="wyzie_key_encrypted">Nyckeln lagras krypterad på den här enheten.</string>
-    <string name="wyzie_using_build_key">Nyckeln från secrets.json används.</string>
     <string name="wyzie_key_required">Sökning efter undertexter online kräver en egen Wyzie API-nyckel. Besök store.wyzie.io/redeem, slutför stegen på webbplatsen för att lösa in din prenumeration och klistra in nyckeln nedan.</string>
     <string name="wyzie_get_free_key">Hämta en kostnadsfri nyckel</string>
     <string name="wyzie_error_key_storage">Wyzie API-nyckeln kunde inte uppdateras.</string>
@@ -328,7 +326,6 @@
     <string name="parental_next">Nästa</string>
     <string name="parental_set_pin_first">Ange en PIN-kod för att använda det här låset.</string>
     <string name="parental_local_note">De här inställningarna stannar på den här enheten. De synkroniseras aldrig och skickas aldrig till någon annan enhet.</string>
-    <string name="settings_section_app_controls">Appkontroller</string>
     <string name="settings_app_controls_skip_backward">Hoppa bakåt</string>
     <string name="settings_app_controls_skip_forward">Hoppa framåt</string>
     <string name="settings_app_controls_skip_note">Tryck två gånger på vänster eller höger sida av videon för att hoppa bakåt eller framåt.</string>
@@ -405,6 +402,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">Spela upp från</string>
     <string name="play_from_unavailable">%1$s · Inte tillgänglig</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">Den här enheten</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · Senast uppspelad</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d källor</item>
         <item quantity="other">%1$d källor</item>
@@ -630,6 +631,25 @@
     <string name="sync_remove_device_message">Att ta bort en enhets fil hindrar dess historik från att nå de andra. Den enheten behåller sin inloggning och sin lokala kopia tills du återkallar Edendales åtkomst hos leverantören eller byter serverlösenordet.</string>
     <string name="sync_manage_access">Hantera åtkomst hos %1$s</string>
     <string name="sync_no_other_devices">Ingen annan enhet har skrivit till det här utrymmet ännu.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">Tittarhistorik</string>
+    <string name="watch_history_on_device">På den här enheten</string>
+    <string name="watch_history_note_sync_on">Borttagningen gäller även dina andra enheter.</string>
+    <string name="watch_history_note_sync_off">Borttagningen gäller bara den här enheten.</string>
+    <string name="watch_history_delete_ellipsis">Ta bort tittarhistorik…</string>
+    <string name="watch_history_deleting">Tar bort…</string>
+    <string name="watch_history_deleted">Tittarhistoriken har tagits bort.</string>
+    <string name="watch_history_deleted_others_follow">Borttagen på den här enheten. Dina andra enheter tar bort sina kopior nästa gång de synkroniserar.</string>
+    <string name="watch_history_pending">Borttagen på den här enheten. Dina andra enheter följer efter när Edendale når %1$s.</string>
+    <string name="watch_history_failed">Tittarhistoriken kunde inte tas bort.</string>
+    <string name="watch_history_everywhere_title">Ta bort tittarhistoriken överallt?</string>
+    <string name="watch_history_everywhere_message">Tittarförlopp och markeringar som sedda tas bort här och, via %1$s, på dina andra enheter.</string>
+    <string name="watch_history_everywhere_confirm">Ta bort överallt</string>
+    <string name="watch_history_local_title">Ta bort tittarhistoriken på den här enheten?</string>
+    <string name="watch_history_local_message">Tittarförlopp och markeringar som sedda tas bort från den här enheten. Om du slår på synkronisering senare kommer historiken från dina andra enheter tillbaka.</string>
+    <string name="watch_history_local_confirm">Ta bort</string>
+    <string name="watch_history_kept">Favoriter, bevakningslista, betyg, recensioner, ditt bibliotek och ditt TMDB-konto lämnas orörda.</string>
+    <string name="clear_progress">Rensa förlopp</string>
     <string name="sync_folder_relink">Välj mappen som den här enheten ska använda för utrymmet ”%1$s”.</string>
     <string name="sync_google_relink">Logga in på Google som %1$s för att använda utrymmet ”%2$s”.</string>
     <string name="pairing_role_question">Åt vilket håll ska inloggningarna gå?</string>

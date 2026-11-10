@@ -8,6 +8,7 @@
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
         <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
         <exclude domain="sharedpref" path="edendale_google_drive.xml" />
+        <exclude domain="sharedpref" path="edendale_playback_sources.xml" />
         <exclude domain="sharedpref" path="edendale_wyzie.xml" />
         <exclude domain="sharedpref" path="edendale_sync.xml" />
         <exclude domain="sharedpref" path="edendale_parental.xml" />
@@ -20,6 +21,7 @@
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
         <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
         <exclude domain="sharedpref" path="edendale_google_drive.xml" />
+        <exclude domain="sharedpref" path="edendale_playback_sources.xml" />
         <exclude domain="sharedpref" path="edendale_wyzie.xml" />
         <exclude domain="sharedpref" path="edendale_sync.xml" />
         <exclude domain="sharedpref" path="edendale_parental.xml" />

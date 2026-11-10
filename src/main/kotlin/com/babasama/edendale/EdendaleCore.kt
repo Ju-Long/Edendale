@@ -8,7 +8,7 @@ object EdendaleCore {
     const val moduleName: String = "EdendaleAndroid"
 
     /** App version string; kept in sync with Android's versionName. */
-    const val version: String = "0.27"
+    const val version: String = "0.27.1"
 
     val description: String
         get() = "$moduleName core running on $platformName"

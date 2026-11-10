@@ -149,6 +149,32 @@ class PlayerControlPreferencesTest {
     }
 
     @Test
+    fun theEnhancementChoiceOutlivesThePlayerAndNullForgetsIt() {
+        val store = InMemoryPlayerPreferencesStore()
+        val prefs = PlayerPreferences(store)
+        assertEquals(null, prefs.videoEnhancement)
+
+        val choice = com.babasama.edendale.android.player.video.EnhancementSettings(
+            preset = com.babasama.edendale.android.player.video.EnhancementPreset.SHARPEN_ONLY,
+            sharpness = 0.8f,
+            showOriginal = true,
+        )
+        prefs.videoEnhancement = choice
+        assertTrue(store.contains(PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT))
+        // The app closing and a new player reading the same store: Show Original never comes back.
+        assertEquals(choice.copy(showOriginal = false), PlayerPreferences(store).videoEnhancement)
+
+        PlayerPreferences(store).videoEnhancement = null
+        assertFalse(store.contains(PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT))
+        assertEquals(null, PlayerPreferences(store).videoEnhancement)
+
+        // An unreadable value reads as no choice, not as the class default.
+        store.putString(PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT, "{\"preset\":\"unknown\"}")
+        assertEquals(null, PlayerPreferences(store).videoEnhancement)
+        assertEquals("video.enhancement", PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT)
+    }
+
+    @Test
     fun legacyAutoSkipKeysAreRemovedAndSkipPromptsRemainsOff() {
         val store = InMemoryPlayerPreferencesStore()
         store.putBoolean("player.skipRecap", true)

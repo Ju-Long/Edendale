@@ -10,13 +10,14 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
+import android.hardware.display.DisplayManager
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
-import android.provider.Settings
 import android.util.Rational
 import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
@@ -49,6 +50,7 @@ import com.babasama.edendale.android.AppStrings
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.KeyboardShortcuts
+import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.PlayerKeyCommand
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.YoungAudienceFilter
@@ -63,6 +65,7 @@ import com.babasama.edendale.android.youngAudienceFilter
 import com.babasama.edendale.parental.ParentalGateRules
 import com.babasama.edendale.android.xr.XrTheater
 import com.babasama.edendale.android.xr.XrTheaterHandover
+import com.babasama.edendale.android.xr.XrTheaterRules
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.introdb.IntroDbMedia
@@ -118,6 +121,15 @@ class PlayerActivity : ComponentActivity() {
     private var resumeFraction: Double? = null
     private var resumeApplied = false
     private var completedWritten = false
+
+    /**
+     * Whether the item presented now has reached READY, its stored resume
+     * point applied: only then does its position mean anything. Until then it
+     * reads 0, so a progress write would file 0 over the resume point (and 27.1
+     * sync would carry it), and a Play From pick of another copy resumes from
+     * the stored progress instead of carrying the position.
+     */
+    private var itemStarted = false
 
     private var isTelevision = false
     private lateinit var chrome: PlayerChromeState
@@ -183,6 +195,35 @@ class PlayerActivity : ComponentActivity() {
     /** A position the theater sent the viewer back to; applied once, in place of stored progress. */
     private var pendingPositionMillis: Long? = null
 
+    /** Android XR: no brightness swipe (as on visionOS) and no Rotation Lock there. */
+    private val isSpatialDevice: Boolean by lazy { packageManager.hasSystemFeature(XrTheaterRules.FEATURE_SPATIAL) }
+
+    /** The left swipe's level: the screen's brightness while the player is in front. Null on TV and Android XR. */
+    private var screenBrightness: PlayerScreenBrightness? = null
+
+    /** The right swipe's level: the device's media volume. Null on TV, which has no swipes. */
+    private var deviceVolume: DeviceVolume? = null
+
+    /** The activity the viewer is using: top-resumed from API 29, resumed before that. */
+    private var isInFront = false
+
+    /** Whether the Rotation Lock chip is offered right now (handhelds, full screen). */
+    private val rotationLockAvailable = mutableStateOf(false)
+
+    /** Learned from a lock that landed a half turn away: this device maps the odd rotations the other way. */
+    private var rotationMappingReversed = false
+    private var rotationLockGuard: DisplayManager.DisplayListener? = null
+    private val endRotationLockGuard = Runnable { stopRotationLockGuard() }
+
+    /**
+     * Whether the item loading becomes its show's or movie's remembered source
+     * once it plays (27.1): a Play From pick does, and so does the launch item
+     * unless its launcher fell back from the remembered source
+     * ([EXTRA_REMEMBER_SOURCE]); an advance, Up Next, or a panel row follows
+     * the list, whose fallbacks mustn't overwrite the viewer's choice.
+     */
+    private var rememberSourceOnReady = true
+
     /** Drives the play/pause and skip buttons drawn inside the PiP window. */
     private val pipActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -229,14 +270,25 @@ class PlayerActivity : ComponentActivity() {
             hide(WindowInsetsCompat.Type.systemBars())
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+        // The hardware volume keys move media volume even while paused, the same stream the swipe moves.
+        volumeControlStream = AudioManager.STREAM_MUSIC
 
         isTelevision = isTelevisionDevice()
+        if (!isTelevision && !isSpatialDevice) screenBrightness = PlayerScreenBrightness(this)
         parental = parentalControls(this)
         audienceFilter = youngAudienceFilter(this, parentalScope)
         val playerPreferences = getSharedPreferences("player", MODE_PRIVATE)
         val contentPreferences = getSharedPreferences(ContentPlayerPreferencesRules.PREFS_NAME, MODE_PRIVATE)
         contentPreferencesStore = SharedPreferencesContentStore(contentPreferences)
         chrome = PlayerChromeState(playerPreferences)
+        // A relaunch (a keyboard, font, or language change) keeps the system's
+        // requested orientation, so a Rotation Lock taken before it still
+        // holds; the chip starts from it. A fresh player always starts unlocked.
+        if (savedInstanceState != null && !isTelevision && !isSpatialDevice &&
+            OrientationLockRules.isLocked(requestedOrientation)
+        ) {
+            chrome.setOrientationLocked(true)
+        }
         chrome.onSpeedChanged = {
             saveContentPreferences()
         }
@@ -274,6 +326,14 @@ class PlayerActivity : ComponentActivity() {
         // The theater sends the viewer back to the exact position (Section N);
         // everything else resumes from stored progress.
         pendingPositionMillis = intent.getLongExtra(EXTRA_POSITION, -1L).takeIf { it >= 0L }
+        rememberSourceOnReady = intent.getBooleanExtra(EXTRA_REMEMBER_SOURCE, true)
+        if (savedInstanceState != null) {
+            // A relaunch (a keyboard, font, or language change): the intent is
+            // the item playing (switchTo keeps it so), which carries on where
+            // it was, and its source is recorded only if it wasn't yet.
+            savedInstanceState.getLong(STATE_POSITION, -1L).takeIf { it >= 0L }?.let { pendingPositionMillis = it }
+            rememberSourceOnReady = savedInstanceState.getBoolean(STATE_REMEMBER_SOURCE, rememberSourceOnReady)
+        }
         currentTmdbId = tmdbId
         currentIsEpisode = isEpisode
         currentShowTmdbId = showTmdbId
@@ -330,10 +390,18 @@ class PlayerActivity : ComponentActivity() {
             .setHandleAudioBecomingNoisy(true)
             .build()
         player = exoPlayer
+        if (!isTelevision) deviceVolume = DeviceVolume(this, exoPlayer)
         exoPlayer.repeatMode = if (chrome.loopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_READY) applyPendingResume()
+                // The item a switch replaces can still turn READY before the
+                // new one is set; that mustn't take the new item's resume
+                // point or count as the new item starting.
+                if (playbackState == Player.STATE_READY && isPresented(exoPlayer)) {
+                    applyPendingResume()
+                    itemStarted = true
+                    rememberPlayingSource()
+                }
                 if (playbackState == Player.STATE_ENDED) {
                     handlePlaybackEnded()
                 }
@@ -370,8 +438,9 @@ class PlayerActivity : ComponentActivity() {
             isTelevision = isTelevision,
             reprepare = ::reprepareAtCurrentPosition,
             saveAdjustments = { chrome.preferences.videoAdjustments = it },
+            saveEnhancement = { chrome.preferences.videoEnhancement = it },
         )
-        videoEffects.attach(exoPlayer, chrome.preferences.videoAdjustments)
+        videoEffects.attach(exoPlayer, chrome.preferences.videoAdjustments, chrome.preferences.videoEnhancement)
         updateVideoDisplaySize()
         // Once per app version, off the main thread: can this device run enhancement in budget (F.6.3)?
         writeScope.launch { EnhancementCapability.evaluateIfNeeded(applicationContext) }
@@ -408,12 +477,17 @@ class PlayerActivity : ComponentActivity() {
                     upcomingEpisode = upcomingEpisodeState,
                     playbackFailure = playbackFailureState,
                     video = videoEffects,
+                    brightness = screenBrightness,
+                    volume = deviceVolume,
+                    rotationLockAvailable = rotationLockAvailable,
+                    onToggleRotationLock = ::toggleRotationLock,
                     inPipMode = inPipMode,
                     supportsPip = supportsPip,
                     onEnterPip = if (supportsPip) ::enterPictureInPicture else null,
                     onEnterTheater = if (offersTheater) ::enterTheater else null,
                     onAutoPipChanged = ::updatePipParams,
                     onSelectEntry = ::switchTo,
+                    onSelectCopy = ::switchToCopy,
                     onSearchOnlineSubtitles = ::searchOnlineSubtitles,
                     onDownloadOnlineSubtitle = ::downloadOnlineSubtitle,
                     onSkip = { performSkip() },
@@ -422,6 +496,7 @@ class PlayerActivity : ComponentActivity() {
                 )
             }
         }
+        refreshRotationLockAvailability()
     }
 
     /**
@@ -486,10 +561,7 @@ class PlayerActivity : ComponentActivity() {
             resumeFraction = if (startAt != null) {
                 null
             } else {
-                key?.let { dataStore?.getWatchProgress(it.storageKey) }
-                    ?.takeIf { !it.isCompleted }
-                    ?.normalizedPosition
-                    ?.takeIf { it in 0.02..0.94 }
+                PlayerLogic.resumeFraction(key?.let { dataStore?.getWatchProgress(it.storageKey) })
             }
             withContext(Dispatchers.Main) {
                 if (isDestroyed) return@withContext
@@ -506,6 +578,10 @@ class PlayerActivity : ComponentActivity() {
             }
         }
     }
+
+    /** Whether the player holds the item presented now, not the one a switch is about to replace. */
+    private fun isPresented(exoPlayer: Player): Boolean =
+        exoPlayer.currentMediaItem?.localConfiguration?.uri?.toString() == currentUriState.value
 
     private fun applyPendingResume() {
         val exoPlayer = player ?: return
@@ -531,6 +607,7 @@ class PlayerActivity : ComponentActivity() {
                     dao = app.database.libraryDao(),
                     uriString = uriString,
                     showTmdbIdExtra = showTmdbId,
+                    remembered = app.libraryRepository.sourceMemory.sourceFor(PlaybackSources.showMemoryKey(showTmdbId, null)),
                 )
             }.getOrNull() ?: return@launch
             // O.5: only the rows the parental policy permits, verified first so the filter can judge them.
@@ -552,14 +629,16 @@ class PlayerActivity : ComponentActivity() {
      * Plays another playlist entry in place. Flushing the outgoing item's
      * progress must precede the re-key — writeProgress reads the player's
      * live position, so reversing the order files the old position under
-     * the new key.
+     * the new key. [explicitSource] marks a Play From pick, whose source the
+     * show or movie then remembers once it plays (27.1). Returns whether it
+     * switched.
      */
-    internal fun switchTo(entry: PlaylistEntry) {
-        val exoPlayer = player ?: return
+    internal fun switchTo(entry: PlaylistEntry, explicitSource: Boolean = false): Boolean {
+        val exoPlayer = player ?: return false
         // O.5: the rows are already filtered; this keeps a row from a list loaded under an older policy from playing.
         if (!ParentalGateRules.permitsPlayback(audienceFilter.isEnabled, entry.audienceRef(), audienceFilter::allows)) {
             refuseRestricted(Toast.LENGTH_SHORT)
-            return
+            return false
         }
         saveContentPreferences()
         currentTmdbId = entry.tmdbId?.takeIf { it > 0 }
@@ -576,7 +655,9 @@ class PlayerActivity : ComponentActivity() {
         onlineSubtitles.reset()
         resumeFraction = null
         resumeApplied = false
+        itemStarted = false
         completedWritten = false
+        rememberSourceOnReady = explicitSource
         upcomingEpisodeState.value = null
         videoEffects.onItemChanged()
         progressKey = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
@@ -608,9 +689,61 @@ class PlayerActivity : ComponentActivity() {
         titleState.value = entry.title
         subtitleState.value = entry.detail
         currentUriState.value = entry.uri
+        // A relaunch builds the player again from its intent, so the intent
+        // follows the item playing: the next episode or a picked copy, not
+        // the one the player opened with, and no stale start position.
+        setIntent(
+            PlayerActivity.intent(
+                context = this,
+                uri = entry.uri,
+                title = entry.title,
+                tmdbId = entry.tmdbId,
+                isEpisode = entry.isEpisode,
+                showTmdbId = entry.showTmdbId,
+                season = entry.season,
+                episode = entry.episode,
+            ),
+        )
         lifecycleScopedStart(exoPlayer, Uri.parse(entry.uri))
         chrome.showControls()
         refreshMediaSession()
+        return true
+    }
+
+    /**
+     * A Play From pick in the episodes panel (27.1): plays [copy] and makes
+     * its source the show's remembered one. Another copy of the episode
+     * playing now carries on from the same moment once this copy has started
+     * ([PlayerLogic.copySwitchStartMillis]); before that, from the stored
+     * progress the copies share, which the outgoing write leaves alone. The
+     * list then reloads around the new copy, so Up Next and the next advance
+     * follow its source.
+     */
+    internal fun switchToCopy(copy: PlaylistEntry) {
+        val exoPlayer = player ?: return
+        val currentUri = currentUriState.value
+        if (copy.uri == currentUri) return
+        val playlist = playlistState.value
+        val sameEpisode = playlist?.entries?.firstOrNull { it.uri == currentUri }?.copies.orEmpty().any { it.uri == copy.uri }
+        pendingPositionMillis = PlayerLogic.copySwitchStartMillis(sameEpisode, itemStarted, exoPlayer.currentPosition)
+        if (!switchTo(copy, explicitSource = true)) {
+            pendingPositionMillis = null
+            return
+        }
+        playlist?.let { playlistState.value = it.choosing(copy) }
+        loadPlaylist(copy.uri, copy.showTmdbId)
+    }
+
+    /** Remembers where the item that just became ready plays from, once per item ([rememberSourceOnReady]). */
+    private fun rememberPlayingSource() {
+        if (!rememberSourceOnReady) return
+        rememberSourceOnReady = false
+        val app = application as EdendaleApplication
+        val uri = currentUriState.value
+        val tmdbId = currentTmdbId.takeUnless { currentIsEpisode }
+        writeScope.launch {
+            runCatching { app.libraryRepository.sourceMemory.recordPlayed(app.database.libraryDao(), uri, tmdbId) }
+        }
     }
 
     /**
@@ -833,6 +966,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (::videoEffects.isInitialized) updateVideoDisplaySize()
+        refreshRotationLockAvailability()
     }
 
     private fun updateUpcomingEpisode(positionMillis: Long, durationMillis: Long) {
@@ -884,41 +1018,146 @@ class PlayerActivity : ComponentActivity() {
     }
 
     // ------------------------------------------------------------------
-    // Window brightness (handheld swipe gesture)
+    // Screen brightness (handheld swipe gesture)
     // ------------------------------------------------------------------
 
-    /** Level in 0…1, or -1 to hand control back to the system. */
-    internal fun setWindowBrightness(level: Float) {
-        val attributes = window.attributes
-        attributes.screenBrightness = if (level < 0f) {
-            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-        } else {
-            level.coerceIn(0f, 1f)
+    /**
+     * The swipe's brightness holds only while the player is the activity the
+     * viewer is using and isn't floating: in Picture in Picture, or while the
+     * other app in split screen is in use, the window override would keep
+     * setting the whole display's brightness. Top-resumed rather than window
+     * focus, because the player's own menus take the focus.
+     */
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        isInFront = isTopResumedActivity
+        updateBrightnessScope()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Before API 29 there is no top-resumed state; only the focused activity is resumed.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            isInFront = true
+            updateBrightnessScope()
         }
-        // The reassignment is what applies it.
-        window.attributes = attributes
+    }
+
+    override fun onPause() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            isInFront = false
+            updateBrightnessScope()
+        }
+        super.onPause()
+    }
+
+    private fun updateBrightnessScope() {
+        val brightness = screenBrightness ?: return
+        if (isInFront && !isInPictureInPictureMode) brightness.resume() else brightness.suspend()
+    }
+
+    // ------------------------------------------------------------------
+    // Rotation Lock (handhelds)
+    // ------------------------------------------------------------------
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        refreshRotationLockAvailability()
+    }
+
+    private fun refreshRotationLockAvailability() {
+        rotationLockAvailable.value = OrientationLockRules.isAvailable(
+            isTelevision = isTelevision,
+            isXr = isSpatialDevice,
+            inMultiWindow = isInMultiWindowMode,
+            inPip = isInPictureInPictureMode,
+            sdkInt = Build.VERSION.SDK_INT,
+            targetSdk = applicationInfo.targetSdkVersion,
+            smallestDisplayWidthDp = resources.configuration.smallestScreenWidthDp,
+        )
     }
 
     /**
-     * The window override reads as -1 until set once, so the first gesture
-     * seeds its baseline from the system setting instead.
+     * Locks to the exact orientation on screen, or goes back to the
+     * manifest's sensor landscape. The lock is the session's: the requested
+     * orientation lasts through episode switches, Picture in Picture, and a
+     * relaunch (which [onCreate] reads back), and ends when the player closes.
      */
-    internal fun windowBrightnessBaseline(): Float {
-        val current = window.attributes.screenBrightness
-        if (current >= 0f) return current
-        val system = Settings.System.getInt(
-            contentResolver,
-            Settings.System.SCREEN_BRIGHTNESS,
-            128,
-        )
-        return (system / 255f).coerceIn(0f, 1f)
+    private fun toggleRotationLock() {
+        if (chrome.orientationLocked) {
+            stopRotationLockGuard()
+            requestedOrientation = OrientationLockRules.UNLOCKED
+            chrome.setOrientationLocked(false)
+            return
+        }
+        val rotation = displayRotation() ?: return
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val mapped = OrientationLockRules.lockedOrientation(rotation, isLandscape)
+        val locked = if (rotationMappingReversed && rotation % 2 == 1) mapped.opposite() else mapped
+        requestedOrientation = locked.activityInfoValue
+        chrome.setOrientationLocked(true)
+        guardRotationLock(rotation, locked)
     }
+
+    /**
+     * Devices built with `config_reverseDefaultRotation` turn the odd
+     * rotations the other way round, so a lock can land a half turn from the
+     * picture the viewer was looking at. A 180° turn changes no
+     * configuration, so a display listener watches briefly after each lock and
+     * turns the lock round; later locks in this session start from the turned
+     * mapping.
+     */
+    private fun guardRotationLock(fromRotation: Int, locked: LockedOrientation) {
+        stopRotationLockGuard()
+        val displays = getSystemService(DisplayManager::class.java) ?: return
+        val displayId = currentDisplayId() ?: return
+        val listener = object : DisplayManager.DisplayListener {
+            override fun onDisplayAdded(addedId: Int) = Unit
+            override fun onDisplayRemoved(removedId: Int) = Unit
+            override fun onDisplayChanged(changedId: Int) {
+                if (changedId != displayId || !chrome.orientationLocked) return
+                val now = displayRotation() ?: return
+                if (!OrientationLockRules.isHalfTurn(fromRotation, now)) return
+                stopRotationLockGuard()
+                if (fromRotation % 2 == 1) rotationMappingReversed = !rotationMappingReversed
+                requestedOrientation = locked.opposite().activityInfoValue
+            }
+        }
+        runCatching { displays.registerDisplayListener(listener, mainHandler) }.onSuccess {
+            rotationLockGuard = listener
+            mainHandler.postDelayed(endRotationLockGuard, ROTATION_LOCK_GUARD_MILLIS)
+        }
+    }
+
+    private fun stopRotationLockGuard() {
+        mainHandler.removeCallbacks(endRotationLockGuard)
+        val listener = rotationLockGuard ?: return
+        rotationLockGuard = null
+        runCatching { getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(listener) }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun displayRotation(): Int? = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display?.rotation else windowManager.defaultDisplay.rotation
+    }.getOrNull()
+
+    @Suppress("DEPRECATION")
+    private fun currentDisplayId(): Int? = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display?.displayId else windowManager.defaultDisplay.displayId
+    }.getOrNull()
 
     override fun onStart() {
         super.onStart()
         player?.playWhenReady = true
         updatePipParams()
         if (::wyzieKeyStore.isInitialized) refreshWyzieConfigured()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // A relaunch carries on from here rather than from the intent's start.
+        player?.currentPosition?.takeIf { itemStarted && it >= 0L }?.let { outState.putLong(STATE_POSITION, it) }
+        outState.putBoolean(STATE_REMEMBER_SOURCE, rememberSourceOnReady)
     }
 
     override fun onStop() {
@@ -940,7 +1179,8 @@ class PlayerActivity : ComponentActivity() {
         searchJob?.cancel()
         downloadJob?.cancel()
         unregisterPipReceiver()
-        setWindowBrightness(-1f)
+        screenBrightness?.release()
+        stopRotationLockGuard()
         // The session's player wraps ExoPlayer and releases it with itself.
         val session = mediaSession
         if (session != null) session.release() else player?.release()
@@ -1016,6 +1256,9 @@ class PlayerActivity : ComponentActivity() {
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPipMode.value = isInPictureInPictureMode
+        // The floating window must not set the whole display's brightness.
+        updateBrightnessScope()
+        refreshRotationLockAvailability()
         // The floating window is too small for the app's own chrome — it uses
         // the system's remote actions instead.
         if (isInPictureInPictureMode) {
@@ -1371,8 +1614,14 @@ class PlayerActivity : ComponentActivity() {
         entries.getOrNull(index + offset)?.let(::switchTo)
     }
 
+    /**
+     * Files the presented item's position under its TMDB id. Short of a
+     * completion, an item that hasn't started ([itemStarted]) writes nothing:
+     * it still reads 0:00, and its stored resume point must survive a close or
+     * a switch while it buffers.
+     */
     internal fun writeProgress(completed: Boolean = false) {
-        if (!completed && !transitions.shouldWriteProgress) return
+        if (!completed && (!itemStarted || !transitions.shouldWriteProgress)) return
         val key = progressKey ?: return
         val store = dataStore ?: return
         val exoPlayer = player ?: return
@@ -1508,6 +1757,18 @@ class PlayerActivity : ComponentActivity() {
         /** Where to start, in milliseconds; the theater's way back (Section N). */
         private const val EXTRA_POSITION = "edendale.positionMillis"
 
+        /**
+         * False when the launcher fell back from the source the title last
+         * played from (`PlaybackSources.remembersSource`) or follows a list,
+         * so playing the item mustn't make its source the remembered one
+         * (27.1). Absent means true.
+         */
+        private const val EXTRA_REMEMBER_SOURCE = "edendale.rememberSource"
+
+        /** Saved state across a relaunch: where the item was, and whether its source is still to be recorded. */
+        private const val STATE_POSITION = "edendale.state.positionMillis"
+        private const val STATE_REMEMBER_SOURCE = "edendale.state.rememberSource"
+
         private const val ACTION_PIP_CONTROL = "com.babasama.edendale.PIP_CONTROL"
         private const val EXTRA_PIP_CONTROL = "edendale.pipControl"
         private const val PIP_CONTROL_PLAY = 1
@@ -1518,6 +1779,9 @@ class PlayerActivity : ComponentActivity() {
         /** The system rejects PiP aspect ratios outside 1:2.39 … 2.39:1. */
         private const val MIN_PIP_ASPECT = 1.0 / 2.39
         private const val MAX_PIP_ASPECT = 2.39
+
+        /** How long after a lock a half turn of the display counts as the lock's doing. */
+        private const val ROTATION_LOCK_GUARD_MILLIS = 1_500L
 
         private val TRANSPORT_KEYS = intArrayOf(
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
@@ -1540,8 +1804,11 @@ class PlayerActivity : ComponentActivity() {
             showTmdbId: Int? = null,
             season: Int? = null,
             episode: Int? = null,
+            rememberSource: Boolean = true,
         ) {
-            context.startActivity(intent(context, uri, title, tmdbId, isEpisode, showTmdbId, season, episode))
+            context.startActivity(
+                intent(context, uri, title, tmdbId, isEpisode, showTmdbId, season, episode, rememberSource = rememberSource),
+            )
         }
 
         /** The request [play] sends, also written into the TV home screen's Watch Next rows (I.3). */
@@ -1555,6 +1822,7 @@ class PlayerActivity : ComponentActivity() {
             season: Int? = null,
             episode: Int? = null,
             positionMillis: Long? = null,
+            rememberSource: Boolean = true,
         ): Intent = Intent(context, PlayerActivity::class.java).apply {
             putExtra(EXTRA_URI, uri)
             putExtra(EXTRA_TITLE, title)
@@ -1564,6 +1832,7 @@ class PlayerActivity : ComponentActivity() {
             season?.let { putExtra(EXTRA_SEASON, it) }
             episode?.let { putExtra(EXTRA_EPISODE, it) }
             positionMillis?.let { putExtra(EXTRA_POSITION, it) }
+            if (!rememberSource) putExtra(EXTRA_REMEMBER_SOURCE, false)
         }
     }
 }

@@ -80,6 +80,21 @@ class CloudAccounts(context: Context) {
     }
 
     /**
+     * Signs in only to use the account as the sync location (FEATURES-27.1.md
+     * §5.2): the account is stored as any sign-in stores it, but no library
+     * source is linked and Google's picker never opens, since sync needs no
+     * picked videos. [loginHint] names the Google account a handoff from
+     * another ecosystem expects (§6.4).
+     */
+    suspend fun signInForSync(activity: Activity, kind: MediaSourceKind, loginHint: String? = null): CloudAccount {
+        val configuration = configuration(kind)?.let(CloudProviders::syncSignInConfiguration)
+            ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
+        val parameters = loginHint?.takeIf { it.isNotBlank() }?.let { mapOf("login_hint" to it) }.orEmpty()
+        val (response, _) = authorize(activity, configuration, parameters)
+        return CloudSignIn.store(kind, configuration, response, http, vault, tokens)
+    }
+
+    /**
      * Choose More Videos (H.9.6): reruns Google's picker for a linked
      * account, with its email as the hint. Every run returns a new refresh
      * token; the newest is kept and the old one is left alone, because

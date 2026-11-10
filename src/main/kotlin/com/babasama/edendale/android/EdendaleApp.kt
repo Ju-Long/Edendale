@@ -52,12 +52,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -117,9 +120,20 @@ fun EdendaleApp(
     LaunchedEffect(showSettingsSheet) {
         if (!showSettingsSheet) parentalControls.lock()
     }
-    // The local show drill-in is reachable from both Downloaded and Search, so
-    // it is hoisted here alongside the other full-screen overrides.
-    var openShowKey by rememberSaveable { mutableStateOf<String?>(null) }
+    // The full-screen pages below replace the shell, so it keeps its saved
+    // state here while one is up: Back from a title's page lands on the same
+    // tab, scrolled where it was, rather than on a page built afresh.
+    val shellState = rememberShellState()
+    // Lists parked for Back belong to the tab they were on.
+    LaunchedEffect(navigationItem) { shellState.lists.clear() }
+    // The open title's page — a library show's too — outlives process death.
+    // The view model doesn't, so its source is mirrored here, and a restored
+    // activity that finds the view model empty opens the page again.
+    var savedDetail by rememberSaveable { mutableStateOf<String?>(null) }
+    val restoredDetail = remember { savedDetail?.let(DetailSource::decode) }
+    LaunchedEffect(Unit) { restoredDetail?.let(browseViewModel::restoreDetail) }
+    val detailSource = browseViewModel.detailState.source
+    SideEffect { savedDetail = detailSource?.let(DetailSource::encode) }
     val openTab: (AppTab) -> Unit = { tab ->
         navigationItem = NavigationItem.of(tab)
     }
@@ -214,15 +228,6 @@ fun EdendaleApp(
         )
     }
 
-    openShowKey?.let { key ->
-        LocalShowHost(
-            showKey = key,
-            isTelevision = isTelevision,
-            onBack = { openShowKey = null },
-        )
-        return
-    }
-
     if (browseViewModel.filmographyState.personId != null) {
         FilmographyScreen(
             state = browseViewModel.filmographyState,
@@ -234,7 +239,7 @@ fun EdendaleApp(
         return
     }
 
-    if (browseViewModel.detailState.ref != null) {
+    if (browseViewModel.detailState.isOpen) {
         MediaDetailScreen(
             state = browseViewModel.detailState,
             audienceFilter = audienceFilter,
@@ -247,6 +252,8 @@ fun EdendaleApp(
             onOpenFilmography = browseViewModel::openFilmography,
             onSelectSeason = browseViewModel::selectSeason,
             onToggleEpisodeWatched = browseViewModel::toggleEpisodeWatched,
+            onLibraryMovie = browseViewModel::syncLibraryMovie,
+            onLibraryShow = browseViewModel::syncLibraryShow,
         )
         return
     }
@@ -274,94 +281,102 @@ fun EdendaleApp(
         return
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val compactPortrait = !isTelevision && maxWidth < 600.dp && maxHeight > maxWidth
-        val wide = !isTelevision && !compactPortrait
-        val extendedNavigation = wide && maxWidth >= 1100.dp
-        // Section rows exist only in extended navigation; elsewhere a section
-        // shows as its whole page.
-        val shownItem = if (extendedNavigation) navigationItem else navigationItem.page
+    shellState.Shell {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val compactPortrait = !isTelevision && maxWidth < 600.dp && maxHeight > maxWidth
+            val wide = !isTelevision && !compactPortrait
+            val extendedNavigation = wide && maxWidth >= 1100.dp
+            // Section rows exist only in extended navigation; elsewhere a section
+            // shows as its whole page.
+            val shownItem = if (extendedNavigation) navigationItem else navigationItem.page
 
-        // Extended navigation's child rows appear only while their section has
-        // titles for the current audience setting. Both lists hold their last
-        // settled value while ratings are verified or the library loads, and
-        // an open section that empties returns to its parent page.
-        var watchlistSections: List<WatchlistSection>? = null
-        var downloadedSections: List<DownloadedSection>? = null
-        if (extendedNavigation) {
-            watchlistSections = remember { SettledValue<List<WatchlistSection>>() }.update(
-                WatchlistSection.available(watchlistRecords.filter { audienceFilter.shows(it.ref) }.map { it.mediaType })
-                    .takeUnless { audienceFilter.isVerifying(watchlistRefs) },
-            )
-            downloadedSections = remember { SettledValue<List<DownloadedSection>>() }
-                .update(rememberDownloadedSections(audienceFilter))
-            LaunchedEffect(watchlistSections, downloadedSections) {
-                if (watchlistSections != null && downloadedSections != null) {
-                    navigationItem = navigationItem.resolved(watchlistSections, downloadedSections)
+            // Extended navigation's child rows appear only while their section has
+            // titles for the current audience setting. Both lists hold their last
+            // settled value while ratings are verified or the library loads, and
+            // an open section that empties returns to its parent page.
+            var watchlistSections: List<WatchlistSection>? = null
+            var downloadedSections: List<DownloadedSection>? = null
+            if (extendedNavigation) {
+                watchlistSections = remember { SettledValue<List<WatchlistSection>>() }.update(
+                    WatchlistSection.available(watchlistRecords.filter { audienceFilter.shows(it.ref) }.map { it.mediaType })
+                        .takeUnless { audienceFilter.isVerifying(watchlistRefs) },
+                )
+                downloadedSections = remember { SettledValue<List<DownloadedSection>>() }
+                    .update(rememberDownloadedSections(audienceFilter))
+                LaunchedEffect(watchlistSections, downloadedSections) {
+                    if (watchlistSections != null && downloadedSections != null) {
+                        navigationItem = navigationItem.resolved(watchlistSections, downloadedSections)
+                    }
                 }
             }
-        }
-        val commands = keyboard?.commands
-        if (wide && keyboard != null) {
-            LaunchedEffect(keyboard) {
-                keyboard.commands.collect { if (it == LibraryCommand.TOGGLE_NAVIGATION) navigationHidden = !navigationHidden }
+            val commands = keyboard?.commands
+            if (wide && keyboard != null) {
+                LaunchedEffect(keyboard) {
+                    keyboard.commands.collect { if (it == LibraryCommand.TOGGLE_NAVIGATION) navigationHidden = !navigationHidden }
+                }
             }
-        }
-        when {
-            isTelevision -> TvShell(
-                tabs = tabs,
-                selectedItem = shownItem,
-                commands = commands,
-                onSelectTab = openTab,
-                browseViewModel = browseViewModel,
-                searchViewModel = searchViewModel,
-                watchlistViewModel = watchlistViewModel,
-                audienceFilter = audienceFilter,
-                onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
-                onOpenShow = { openShowKey = it },
-            )
-            compactPortrait -> PhoneShell(
-                tabs = tabs,
-                selectedItem = shownItem,
-                commands = commands,
-                onSelectTab = openTab,
-                browseViewModel = browseViewModel,
-                searchViewModel = searchViewModel,
-                watchlistViewModel = watchlistViewModel,
-                audienceFilter = audienceFilter,
-                onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
-                onOpenShow = { openShowKey = it },
-            )
-            else -> WideShell(
-                tabs = tabs,
-                selectedItem = shownItem,
-                onSelect = { navigationItem = it },
-                commands = commands,
-                watchlistSections = watchlistSections.orEmpty(),
-                downloadedSections = downloadedSections.orEmpty(),
-                navigationHidden = navigationHidden,
-                browseViewModel = browseViewModel,
-                searchViewModel = searchViewModel,
-                watchlistViewModel = watchlistViewModel,
-                audienceFilter = audienceFilter,
-                extendedNavigation = extendedNavigation,
-                onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
-                onOpenShow = { openShowKey = it },
-            )
-        }
-
-        if (showSettingsSheet) {
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ModalBottomSheet(
-                onDismissRequest = { showSettingsSheet = false },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.background,
-            ) {
-                SettingsScreen(
-                    isTelevision = false,
-                    tmdbAccount = tmdbAccountViewModel,
-                    contentPadding = PaddingValues(bottom = 24.dp),
+            when {
+                isTelevision -> TvShell(
+                    tabs = tabs,
+                    selectedItem = shownItem,
+                    commands = commands,
+                    onSelectTab = openTab,
+                    browseViewModel = browseViewModel,
+                    searchViewModel = searchViewModel,
+                    watchlistViewModel = watchlistViewModel,
+                    audienceFilter = audienceFilter,
+                    onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
                 )
+                compactPortrait -> PhoneShell(
+                    tabs = tabs,
+                    selectedItem = shownItem,
+                    commands = commands,
+                    onSelectTab = openTab,
+                    browseViewModel = browseViewModel,
+                    searchViewModel = searchViewModel,
+                    watchlistViewModel = watchlistViewModel,
+                    audienceFilter = audienceFilter,
+                    onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
+                )
+                else -> WideShell(
+                    tabs = tabs,
+                    selectedItem = shownItem,
+                    onSelect = { navigationItem = it },
+                    commands = commands,
+                    watchlistSections = watchlistSections.orEmpty(),
+                    downloadedSections = downloadedSections.orEmpty(),
+                    navigationHidden = navigationHidden,
+                    browseViewModel = browseViewModel,
+                    searchViewModel = searchViewModel,
+                    watchlistViewModel = watchlistViewModel,
+                    audienceFilter = audienceFilter,
+                    extendedNavigation = extendedNavigation,
+                    onOpenSettings = { parentalGate.require(GatedAction.SETTINGS) { showSettingsSheet = true } },
+                )
+            }
+
+            if (showSettingsSheet) {
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                val sheetScope = rememberCoroutineScope()
+                ModalBottomSheet(
+                    onDismissRequest = { showSettingsSheet = false },
+                    sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.background,
+                    // Back first leaves an open Settings page, so Settings handles it: the
+                    // sheet's own callback sits on its window ahead of any BackHandler.
+                    properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+                ) {
+                    SettingsScreen(
+                        isTelevision = false,
+                        tmdbAccount = tmdbAccountViewModel,
+                        contentPadding = PaddingValues(bottom = 24.dp),
+                        onBackFromFirstPage = {
+                            sheetScope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) showSettingsSheet = false
+                            }
+                        },
+                    )
+                }
             }
         }
     }
@@ -379,7 +394,6 @@ private fun PhoneShell(
     watchlistViewModel: WatchlistViewModel,
     audienceFilter: YoungAudienceFilter,
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -411,7 +425,6 @@ private fun PhoneShell(
             isTelevision = false,
             contentPadding = padding,
             onOpenSettings = onOpenSettings,
-            onOpenShow = onOpenShow,
         )
     }
 }
@@ -432,7 +445,6 @@ private fun WideShell(
     audienceFilter: YoungAudienceFilter,
     extendedNavigation: Boolean,
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit,
 ) {
     Row(Modifier.fillMaxSize()) {
         if (!navigationHidden) {
@@ -471,7 +483,6 @@ private fun WideShell(
                 isTelevision = false,
                 contentPadding = PaddingValues(),
                 onOpenSettings = onOpenSettings,
-                onOpenShow = onOpenShow,
             )
         }
     }
@@ -670,7 +681,6 @@ private fun TvShell(
     watchlistViewModel: WatchlistViewModel,
     audienceFilter: YoungAudienceFilter,
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit,
 ) {
     // D-pad Down out of the tab strip had nothing to land on: Compose finds the
     // body when searching up from it (Up already returns to the bar), but not
@@ -730,7 +740,6 @@ private fun TvShell(
                 isTelevision = true,
                 contentPadding = padding,
                 onOpenSettings = onOpenSettings,
-                onOpenShow = onOpenShow,
             )
         }
     }
@@ -783,7 +792,6 @@ private fun AppTabContent(
     isTelevision: Boolean,
     contentPadding: PaddingValues,
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit,
 ) {
     when (item.tab) {
         AppTab.MOVIES -> MoviesShowsScreen(
@@ -812,7 +820,8 @@ private fun AppTabContent(
                 isTelevision = isTelevision,
                 contentPadding = contentPadding,
                 onOpenSettings = onOpenSettings,
-                onOpenShow = onOpenShow,
+                onOpenMovie = browseViewModel::openLocalMovie,
+                onOpenShow = browseViewModel::openLocalShow,
                 section = (item as? NavigationItem.Downloaded)?.section,
                 commands = commands,
             )
@@ -825,7 +834,8 @@ private fun AppTabContent(
             onOpenPerson = browseViewModel::openFilmography,
             contentPadding = contentPadding,
             onOpenSettings = onOpenSettings,
-            onOpenShow = onOpenShow,
+            onOpenMovie = browseViewModel::openLocalMovie,
+            onOpenShow = browseViewModel::openLocalShow,
         )
     }
 }

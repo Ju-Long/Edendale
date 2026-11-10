@@ -48,11 +48,13 @@ import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.FocusableRows
 import com.babasama.edendale.android.InfoRow
+import com.babasama.edendale.android.SettingsActionRow
 import com.babasama.edendale.android.LabeledRow
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.SettingsRowDivider
 import com.babasama.edendale.android.SettingsSection
 import com.babasama.edendale.android.connectorFailureMessage
+import com.babasama.edendale.android.oauthFailureMessage
 import com.babasama.edendale.android.data.SavedServerLogin
 import com.babasama.edendale.android.data.SavedSmbLogin
 import com.babasama.edendale.android.data.ServerLoginStore
@@ -73,6 +75,8 @@ import com.babasama.edendale.handoff.HandoffProtocolV2
 import com.babasama.edendale.handoff.HandoffV2
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudProviders
+import com.babasama.edendale.oauth.OAuthException
+import com.babasama.edendale.oauth.OAuthFailure
 import com.babasama.edendale.sync.DeviceFileCodec
 import com.babasama.edendale.sync.SpaceName
 import com.babasama.edendale.sync.SyncLocation
@@ -172,11 +176,7 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
         isTelevision = isTelevision,
         focusableContent = false,
         actions = {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            SettingsActionRow {
                 if (status.isOn) {
                     ArchiveButton(label = stringResource(R.string.sync_now), onClick = gated { sync.syncNow() }, enabled = !status.syncing, iconRes = R.drawable.ic_arrow_rotate_right)
                     ArchiveButton(label = stringResource(R.string.sync_set_up_device), onClick = gated { pairing = true }, iconRes = R.drawable.ic_tv)
@@ -186,10 +186,7 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
                 ArchiveButton(label = stringResource(R.string.sync_receive_from_device), onClick = gated { pairing = false }, iconRes = R.drawable.ic_link)
             }
             if (status.isOn) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
+                SettingsActionRow {
                     ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true })
                     ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = gated { removingDevice = true })
                     ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = gated { turningOff = true }, iconRes = R.drawable.ic_xmark)
@@ -255,6 +252,9 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
     }
 }
 
+/** The cloud providers Choose a Location can sign in to on its own, in the order Link Source lists them. */
+private val SYNC_SIGN_IN_KINDS = listOf(MediaSourceKind.GOOGLE_DRIVE, MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX)
+
 /** The activity a Compose context belongs to, for a sign-in's Custom Tab. */
 private fun Context.findActivity(): Activity? {
     var current: Context? = this
@@ -267,7 +267,9 @@ private fun Context.findActivity(): Activity? {
 
 /**
  * Choose a Location (§5.2): a folder on this device (phones and tablets), a
- * linked cloud account, or a saved server login with the folder inside it,
+ * linked cloud account or one signed in to right here (phones and tablets;
+ * the library's sources are untouched, so videos can stay on SMB while the
+ * history goes to Drive), or a saved server login with the folder inside it,
  * plus the space name. Saving turns sync on and runs the first sync.
  */
 @Composable
@@ -294,6 +296,9 @@ internal fun ChooseLocationDialog(
     var folderUri by remember { mutableStateOf<Uri?>(null) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // A sign-in made from this dialog, so an account need not be linked as a library source first.
+    var signingIn by remember { mutableStateOf<MediaSourceKind?>(null) }
+    var signInJob by remember { mutableStateOf<Job?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -311,6 +316,39 @@ internal fun ChooseLocationDialog(
             folderUri = uri
             chosenAccount = null
             chosenServer = null
+        }
+    }
+
+    /**
+     * Signs in to [kind] for sync only (no library source, no Google picker)
+     * and chooses the new account. Tapping the waiting row again stops it:
+     * a Custom Tab closed without signing in never reports back.
+     */
+    fun signIn(kind: MediaSourceKind) {
+        if (signingIn != null) {
+            signInJob?.cancel()
+            return
+        }
+        val activity = context.findActivity() ?: return
+        signingIn = kind
+        error = null
+        signInJob = scope.launch {
+            try {
+                val account = app.cloudAccounts.signInForSync(activity, kind)
+                accounts = withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.all() }.getOrDefault(emptyList()) }
+                chosenAccount = accounts.firstOrNull { it.kind == account.kind && it.key == account.key } ?: account
+                chosenServer = null
+                folderUri = null
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: OAuthException) {
+                if (failure.failure != OAuthFailure.Cancelled) error = oauthFailureMessage(context, failure)
+            } catch (failure: Exception) {
+                error = connectorFailureMessage(context, failure) ?: context.getString(R.string.error_server_unreachable)
+            } finally {
+                signingIn = null
+                signInJob = null
+            }
         }
     }
 
@@ -392,6 +430,25 @@ internal fun ChooseLocationDialog(
                         }
                     }
                 }
+                // Signing in here stores the account for sync alone: a library can stay on SMB while its history goes to Drive.
+                val signInKinds = if (isTelevision) {
+                    emptyList()
+                } else {
+                    SYNC_SIGN_IN_KINDS.filter { app.cloudAccounts.isOffered(it) && (presetProvider == null || it == presetProvider.kind) }
+                }
+                if (signInKinds.isNotEmpty()) {
+                    if (offeredAccounts.isNotEmpty()) {
+                        Text(stringResource(R.string.link_source_another_account).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    signInKinds.forEach { kind ->
+                        val label = if (signingIn == kind) {
+                            stringResource(R.string.link_source_waiting, sourceKindLabel(kind))
+                        } else {
+                            stringResource(R.string.link_source_sign_in_to, sourceKindLabel(kind))
+                        }
+                        ChoiceRow(label = label, selected = false, iconRes = R.drawable.ic_link) { signIn(kind) }
+                    }
+                }
                 if (presetProvider == null && (serverLogins.isNotEmpty() || smbLogins.isNotEmpty())) {
                     Text(stringResource(R.string.sync_provider_servers).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     smbLogins.forEach { login ->
@@ -440,7 +497,12 @@ internal fun ChooseLocationDialog(
             }
         },
         confirmButton = {
-            ArchiveButton(label = stringResource(R.string.action_save), onClick = { save() }, enabled = !saving, kind = ArchiveButtonKind.Primary)
+            ArchiveButton(
+                label = stringResource(R.string.action_save),
+                onClick = { save() },
+                enabled = !saving && signingIn == null && (folderUri != null || chosenAccount != null || chosenServer != null),
+                kind = ArchiveButtonKind.Primary,
+            )
         },
         dismissButton = { ArchiveButton(label = stringResource(R.string.action_cancel), onClick = onDismiss) },
     )
@@ -810,7 +872,7 @@ private fun FollowUpButton(followUp: SyncHandoff.FollowUp, onDone: () -> Unit) {
                     val activity = context.findActivity() ?: return@ArchiveButton
                     scope.launch {
                         try {
-                            val account = app.cloudAccounts.signIn(activity, MediaSourceKind.GOOGLE_DRIVE, loginHint = followUp.hint).account
+                            val account = app.cloudAccounts.signInForSync(activity, MediaSourceKind.GOOGLE_DRIVE, loginHint = followUp.hint)
                             app.sync.enable(SyncLocation(SyncProvider.GOOGLE_DRIVE, followUp.space, accountKey = account.key, googleFolderId = followUp.folderId))
                             onDone()
                         } catch (cancelled: CancellationException) {

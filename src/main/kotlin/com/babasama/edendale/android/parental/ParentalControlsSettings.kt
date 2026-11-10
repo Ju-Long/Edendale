@@ -58,6 +58,7 @@ import com.babasama.edendale.android.InfoRow
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.SettingsActionRow
 import com.babasama.edendale.android.SettingsRowDivider
+import com.babasama.edendale.android.SettingsNavigationRow
 import com.babasama.edendale.android.SettingsSection
 import com.babasama.edendale.android.SettingsSwitchRow
 import com.babasama.edendale.android.tvFocusLift
@@ -76,11 +77,53 @@ import kotlinx.coroutines.launch
 private enum class PinFlow { SET, CHANGE, REMOVE }
 
 /**
- * Settings → Parental Controls (O.6; O-D12, where "Audience" was): the Young
- * Audience preset, the two rating ceilings with their picker, the three
- * switches, and the PIN. Every change goes through [gate] as a parental
- * change, so the PIN typed to open Settings carries over (O-D4) and a locked
- * profile is asked (FEATURES-27.1 §4). Nothing here leaves the device.
+ * Settings' first page → Parental Controls, as iOS 27.1 shows it: the Young
+ * Audience preset in place, then a row opening the rest of the controls
+ * ([ParentalControlsSection]). The switch is a parental change like the rest.
+ */
+@Composable
+internal fun ParentalControlsSummarySection(
+    gate: ParentalGate,
+    isTelevision: Boolean,
+    moreModifier: Modifier,
+    onOpenMore: () -> Unit,
+) {
+    val context = LocalContext.current
+    val controls = remember(context) { parentalControls(context) }
+    val scope = rememberCoroutineScope()
+    val policy by controls.policy.collectAsState()
+
+    SettingsSection(
+        header = stringResource(R.string.settings_section_parental_controls),
+        isTelevision = isTelevision,
+        focusableContent = false,
+    ) {
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_young_audience_title),
+            detail = stringResource(R.string.settings_young_audience_description),
+            checked = policy.youngAudienceFriendly,
+            onToggle = { on ->
+                gate.require(GatedAction.PARENTAL_CHANGE) {
+                    scope.launch { controls.updatePolicy(System.currentTimeMillis()) { it.copy(youngAudienceFriendly = on) } }
+                }
+            },
+        )
+        SettingsRowDivider()
+        SettingsNavigationRow(
+            title = stringResource(R.string.settings_parental_more),
+            modifier = moreModifier,
+            onClick = onOpenMore,
+        )
+    }
+}
+
+/**
+ * Settings → Parental Controls → Ratings, Locks, and PIN (O.6; O-D12, where
+ * "Audience" was): the two rating ceilings with their picker, the switches,
+ * and the PIN; the Young Audience preset is on the first page. Every change
+ * goes through [gate] as a parental change, so the PIN typed to open Settings
+ * carries over (O-D4) and a locked profile is asked (FEATURES-27.1 §4).
+ * Nothing here leaves the device.
  */
 @Composable
 internal fun ParentalControlsSection(gate: ParentalGate, isTelevision: Boolean) {
@@ -119,18 +162,12 @@ internal fun ParentalControlsSection(gate: ParentalGate, isTelevision: Boolean) 
     val regionShown = lists?.region ?: deviceRegion.ifEmpty { ParentalRules.FALLBACK_REGION }
     val regionNote = stringResource(R.string.parental_region_note, regionName(regionShown))
 
+    // Untitled: the page's own title names it.
     SettingsSection(
-        header = stringResource(R.string.settings_section_parental_controls),
+        header = null,
         isTelevision = isTelevision,
         focusableContent = false,
     ) {
-        SettingsSwitchRow(
-            title = stringResource(R.string.settings_young_audience_title),
-            detail = stringResource(R.string.settings_young_audience_description),
-            checked = policy.youngAudienceFriendly,
-            onToggle = { on -> change { it.copy(youngAudienceFriendly = on) } },
-        )
-        SettingsRowDivider()
         RatingLimitRow(
             title = stringResource(R.string.parental_max_rating_movies),
             value = policy.ceiling?.movie ?: stringResource(R.string.parental_no_limit),

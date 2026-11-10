@@ -59,13 +59,20 @@ class SyncEngine(
     private val space: String,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
-    /** Runs one sync; throws [IOException] when the location can't be listed or the file can't be written. */
+    /**
+     * Runs one sync; throws [IOException] when the location can't be listed
+     * or the file can't be written. With [readEveryFile], every other file is
+     * read again, changed or not, so the ledger takes in anything an earlier
+     * read held back behind a stamp that hasn't moved since (a record the
+     * far-future guard refused that is now in range): Delete Watch History
+     * reads this way before it clears, so its tombstones cover those keys too.
+     */
     @Throws(IOException::class)
-    suspend fun sync(): SyncReport {
+    suspend fun sync(readEveryFile: Boolean = false): SyncReport {
         storage.ensureSpace(space)
         val listed = storage.list(space)
         SyncLog.log(TAG, "listed ${listed.size} file(s) in space")
-        val known = store.stamps()
+        val known = if (readEveryFile) emptyMap() else store.stamps()
         val stamps = known.toMutableMap()
         val warnings = mutableListOf<SyncWarning>()
         var read = 0

@@ -22,9 +22,11 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleRadii
+import com.babasama.edendale.android.PlayFromChevron
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.rememberRuntimeFormat
 import com.babasama.edendale.domain.TmdbImageSize
@@ -60,7 +64,9 @@ import com.babasama.edendale.domain.tmdbImageUrl
  * or the files in the playing file's folder. The current row and the focused
  * row both take the white fill, black text, and larger title; the playing
  * indicator tells the current one apart. The panel opens scrolled to the
- * current file — on TV with focus on it — and follows an auto-advance.
+ * current file — on TV with focus on it — and follows an auto-advance. An
+ * episode the library holds more than once has a Play From chevron
+ * ([onSelectCopy], 27.1), on the playing row too.
  */
 @Composable
 internal fun PlaylistPanel(
@@ -71,6 +77,7 @@ internal fun PlaylistPanel(
     panelWidth: Dp,
     panelFocus: FocusRequester,
     onSelectEntry: (PlaylistEntry) -> Unit,
+    onSelectCopy: (PlaylistEntry) -> Unit = {},
 ) {
     val items = remember(playlist) { playlistItems(playlist) }
     val isEpisodeList = playlist?.isEpisodeList == true
@@ -127,6 +134,12 @@ internal fun PlaylistPanel(
                                     chrome.noteInteraction()
                                     onSelectEntry(entry)
                                 },
+                                // The controls' auto-hide mustn't close the panel under an open menu.
+                                onSourcesShown = { chrome.noteInteraction() },
+                                onSelectCopy = { copy ->
+                                    chrome.noteInteraction()
+                                    onSelectCopy(copy)
+                                },
                             )
                         }
                     }
@@ -163,6 +176,12 @@ private fun SeasonHeading(season: Int) {
     )
 }
 
+/**
+ * One entry. The tappable part and the Play From chevron are siblings, so the
+ * D-pad reaches the chevron: Compose's focus search never moves from a
+ * focused node into its own children. The fill and lift follow the tappable
+ * part; the chevron fills gold on its own.
+ */
 @Composable
 private fun PlaylistRow(
     entry: PlaylistEntry,
@@ -173,8 +192,11 @@ private fun PlaylistRow(
     reduceMotion: Boolean,
     focusRequester: FocusRequester?,
     onClick: () -> Unit,
+    onSourcesShown: () -> Unit,
+    onSelectCopy: (PlaylistEntry) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    var sourcesOpen by remember { mutableStateOf(false) }
     val highlighted = isCurrent || focused
     val scale by animateFloatAsState(
         targetValue = if (focused && isTelevision && !reduceMotion) 1.03f else 1f,
@@ -191,41 +213,66 @@ private fun PlaylistRow(
                 scaleX = scale
                 scaleY = scale
             }
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-            .onFocusChanged { focused = it.isFocused }
             .clip(shape)
-            .background(if (highlighted) EdendaleColors.PlaylistActiveBackground else Color.Transparent, shape)
-            // The playing row stays clickable so it stays focusable; a press
-            // on it does nothing.
-            .clickable { if (!isCurrent) onClick() }
-            .semantics { selected = isCurrent }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .background(if (highlighted) EdendaleColors.PlaylistActiveBackground else Color.Transparent, shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (showsArtwork) PlaylistArtwork(entry.artworkPath)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = entry.title,
-                style = if (highlighted) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
-                color = ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            entry.detail?.let {
-                Text(text = it, style = MaterialTheme.typography.bodySmall, color = secondaryInk)
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .onFocusChanged { focused = it.isFocused }
+                // The playing row stays clickable so it stays focusable; a press
+                // on it does nothing.
+                .clickable { if (!isCurrent) onClick() }
+                .semantics { selected = isCurrent }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showsArtwork) PlaylistArtwork(entry.artworkPath)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = entry.title,
+                    style = if (highlighted) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
+                    color = ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                entry.detail?.let {
+                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = secondaryInk)
+                }
+                if (showsArtwork && playTime != null) {
+                    Text(text = playTime, style = MaterialTheme.typography.bodySmall, color = secondaryInk)
+                }
             }
-            if (showsArtwork && playTime != null) {
-                Text(text = playTime, style = MaterialTheme.typography.bodySmall, color = secondaryInk)
+            if (isCurrent) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_play),
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = EdendaleColors.PlaylistActiveText,
+                )
             }
         }
-        if (isCurrent) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_play),
-                contentDescription = null,
-                modifier = Modifier.size(12.dp),
-                tint = EdendaleColors.PlaylistActiveText,
-            )
+        if (entry.copies.size > 1) {
+            // The chevron's glyph takes the row's ink, which the white fill turns black.
+            CompositionLocalProvider(LocalContentColor provides ink) {
+                PlayFromChevron(
+                    copies = entry.copies,
+                    source = { it.source ?: CopySource("", null, isUnavailable = false) },
+                    path = { it.uri },
+                    onPlay = onSelectCopy,
+                    expanded = sourcesOpen,
+                    onExpandedChange = { open ->
+                        sourcesOpen = open
+                        if (open) onSourcesShown()
+                    },
+                    isTelevision = isTelevision,
+                    marked = entry.copies.firstOrNull { it.uri == entry.uri },
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+            }
         }
     }
 }

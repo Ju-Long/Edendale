@@ -151,26 +151,19 @@
     <string name="error_server_unreachable">无法访问该服务器。</string>
     <string name="settings_title">设置</string>
     <string name="settings_section_about">关于</string>
+    <string name="settings_player_controls">播放器控制</string>
+    <string name="settings_audio">音频</string>
+    <string name="settings_library">资料库</string>
+    <string name="settings_section_controls">控制</string>
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_parental_more">分级、锁定和 PIN 码</string>
     <string name="settings_version">版本</string>
-    <string name="settings_watch_progress">观看进度</string>
-    <string name="settings_stored_on_device">存储在当前设备上</string>
-    <string name="settings_tmdb_access">TMDB 访问</string>
-    <string name="settings_tmdb_configured">已在构建时配置</string>
-    <string name="settings_tmdb_missing">在 secrets.json 中添加 token 并重新构建</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">大字体、防过扫安全边距、遥控器焦点提升及横屏显示已启用。</string>
     <string name="settings_watch_next_title">在主屏幕上显示“继续观看”</string>
     <string name="settings_watch_next_description">在主屏幕的“继续观看”行中显示你正在观看的内容。Edendale 不会为此通过网络发送任何内容，但主屏幕应用可以看到这些标题。</string>
     <string name="settings_section_sources">来源</string>
     <string name="settings_no_sources">未链接源</string>
-    <string name="settings_section_backup">备份</string>
-    <string name="settings_backup_note">观看进度、收藏、待看清单及评分通过 Android Auto Backup 随同备份至您的 Google Drive，以便在设置新设备时恢复。备份遵循您设备的系统设置 — Edendale 本身不会增加任何额外内容。</string>
-    <string name="settings_backup_secrets_note">您的 TMDB 会话及任何保存的网络共享登录信息将不会被备份和传输至其他设备：它们已被加密至当前设备且无法转移。</string>
-    <string name="settings_section_privacy">隐私</string>
-    <string name="settings_privacy_note">没有数据分析。网络请求仅限于 TMDB、明确搜索字幕后的 Wyzie 及您的私有同步服务提供商。</string>
-    <string name="settings_section_attribution">归属声明</string>
     <string name="tmdb_attribution">本产品使用 TMDB API，但未经 TMDB 认可或认证。</string>
-    <string name="settings_open_source">Edendale · 免费开源</string>
     <string name="settings_section_tmdb_account">TMDB 帐户</string>
     <string name="tmdb_account_intro">连接您的 TMDB 帐户跨设备同步收藏、待看清单和评分。观看时间不会同步到 TMDB。</string>
     <string name="tmdb_loading_account">正在加载帐户…</string>
@@ -225,6 +218,12 @@
     <string name="player_in_this_folder">在此文件夹中</string>
     <string name="player_volume">音量</string>
     <string name="player_brightness">亮度</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">音量 %1$s</string>
+    <string name="player_brightness_level">亮度 %1$s</string>
+    <string name="player_rotation_lock">旋转锁定</string>
+    <string name="player_state_on">打开</string>
+    <string name="player_state_off">关闭</string>
     <string name="player_seek_seconds">%1$d 秒</string>
     <string name="error_folder_not_opened">无法打开该文件夹。</string>
     <string name="default_folder_name">文件夹</string>
@@ -250,7 +249,6 @@
     <string name="wyzie_api_key">API 密钥</string>
     <string name="wyzie_key_saved">密钥已保存</string>
     <string name="wyzie_key_encrypted">密钥已加密存储在此设备上。</string>
-    <string name="wyzie_using_build_key">正在使用 secrets.json 中的密钥。</string>
     <string name="wyzie_key_required">在线字幕搜索需要你自己的 Wyzie API 密钥。请访问 store.wyzie.io/redeem，按网站步骤兑换你的订阅，然后在下方粘贴密钥。</string>
     <string name="wyzie_get_free_key">获取免费密钥</string>
     <string name="wyzie_error_key_storage">无法更新 Wyzie API 密钥。</string>
@@ -324,7 +322,6 @@
     <string name="parental_next">下一步</string>
     <string name="parental_set_pin_first">请先设置 PIN 码以使用此锁定。</string>
     <string name="parental_local_note">这些设置仅保存在本设备上，绝不会同步或发送到其他设备。</string>
-    <string name="settings_section_app_controls">应用控制</string>
     <string name="settings_app_controls_skip_backward">后退</string>
     <string name="settings_app_controls_skip_forward">快进</string>
     <string name="settings_app_controls_skip_note">轻点视频左侧或右侧两次可后退或快进。</string>
@@ -401,6 +398,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">播放来源</string>
     <string name="play_from_unavailable">%1$s · 不可用</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">此设备</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · 上次播放</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d 个来源</item>
         <item quantity="other">%1$d 个来源</item>
@@ -623,6 +624,25 @@
     <string name="sync_remove_device_message">删除某台设备的文件后，它的记录将不再传到其他设备。在你于提供商处撤销 Edendale 的访问权限或更改服务器密码之前，该设备仍保留其登录信息和本地副本。</string>
     <string name="sync_manage_access">在 %1$s 管理访问权限</string>
     <string name="sync_no_other_devices">还没有其他设备写入此空间。</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">观看记录</string>
+    <string name="watch_history_on_device">此设备上</string>
+    <string name="watch_history_note_sync_on">删除后，你其他设备上的记录也会清除。</string>
+    <string name="watch_history_note_sync_off">删除只会清除此设备上的记录。</string>
+    <string name="watch_history_delete_ellipsis">删除观看记录…</string>
+    <string name="watch_history_deleting">正在删除…</string>
+    <string name="watch_history_deleted">观看记录已删除。</string>
+    <string name="watch_history_deleted_others_follow">已在此设备上删除。你的其他设备会在下次同步时删除各自的记录。</string>
+    <string name="watch_history_pending">已在此设备上删除。Edendale 连上 %1$s 后，你的其他设备也会删除。</string>
+    <string name="watch_history_failed">无法删除观看记录。</string>
+    <string name="watch_history_everywhere_title">要在所有设备上删除观看记录吗？</string>
+    <string name="watch_history_everywhere_message">观看进度和已看标记会从此设备删除，并通过 %1$s 从你的其他设备删除。</string>
+    <string name="watch_history_everywhere_confirm">在所有设备上删除</string>
+    <string name="watch_history_local_title">要删除此设备上的观看记录吗？</string>
+    <string name="watch_history_local_message">观看进度和已看标记会从此设备删除。如果之后开启同步，你其他设备上的记录会回来。</string>
+    <string name="watch_history_local_confirm">删除</string>
+    <string name="watch_history_kept">收藏、待看列表、评分、评论、你的媒体库和 TMDB 账户都保持不变。</string>
+    <string name="clear_progress">清除观看进度</string>
     <string name="sync_folder_relink">请选择此设备用于空间“%1$s”的文件夹。</string>
     <string name="sync_google_relink">请以 %1$s 登录 Google 以使用空间“%2$s”。</string>
     <string name="pairing_role_question">登录信息要往哪个方向传？</string>

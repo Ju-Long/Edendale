@@ -17,19 +17,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 
 /**
- * Enhancement settings for the app process (D11): Apple starts each playback
- * at Balanced, Sharpness 0.5, Denoise 0.5, and never saves changes. Android
- * starts at Off where the capability check failed, and on TV until F.1.6
- * passes on a real set.
- */
-object EnhancementSession {
-    @Volatile var settings: EnhancementSettings? = null
-
-    fun current(defaultPreset: EnhancementPreset): EnhancementSettings =
-        settings ?: EnhancementSettings(preset = defaultPreset).also { settings = it }
-}
-
-/**
  * The player's side of Picture and Enhancement (F.1, F.6): installs Media3's
  * effects pipeline only when something needs it, re-prepares at the current
  * position when that happens mid-play, redraws the paused frame after a
@@ -44,6 +31,8 @@ class VideoEffectsController(
     private val reprepare: () -> Unit,
     /** Saves picture adjustments (device-local, `video.adjustments`). */
     private val saveAdjustments: (VideoAdjustmentValues) -> Unit,
+    /** Saves the viewer's enhancement choice (device-local, `video.enhancement`); never Show Original. */
+    private val saveEnhancement: (EnhancementSettings) -> Unit = {},
 ) {
     val holder = VideoEffectsHolder()
     private val governor = EnhancementGovernor()
@@ -89,13 +78,21 @@ class VideoEffectsController(
             return target.takeIf { isTelevision && installed && target != sourceSize }
         }
 
-    fun attach(player: ExoPlayer, storedAdjustments: VideoAdjustmentValues) {
+    /**
+     * [storedEnhancement] is the viewer's saved choice, or null to start at the
+     * device's default. The default is worked out for each player, so the
+     * first one after an install or update (before the capability check has
+     * run) no longer holds Off for the rest of the process.
+     */
+    fun attach(player: ExoPlayer, storedAdjustments: VideoAdjustmentValues, storedEnhancement: EnhancementSettings? = null) {
         this.player = player
         adjustments = storedAdjustments
         holder.adjustments = storedAdjustments
-        val capable = EnhancementCapability.cachedResult(context) == true
-        val defaultPreset = if (isTelevision || !capable) EnhancementPreset.OFF else EnhancementPreset.BALANCED
-        enhancement = EnhancementSession.current(defaultPreset)
+        enhancement = EnhancementSettings.initial(
+            stored = storedEnhancement,
+            isTelevision = isTelevision,
+            capable = EnhancementCapability.cachedResult(context),
+        )
         holder.enhancement = enhancement
     }
 
@@ -130,19 +127,19 @@ class VideoEffectsController(
 
     fun setPreset(preset: EnhancementPreset) {
         if (preset != enhancement.preset) holder.historyGeneration++
-        updateEnhancement(enhancement.copy(preset = preset))
+        updateEnhancement(enhancement.copy(preset = preset), save = true)
     }
 
-    fun setSharpness(value: Float) = updateEnhancement(enhancement.withSharpness(value))
+    fun setSharpness(value: Float) = updateEnhancement(enhancement.withSharpness(value), save = true)
 
-    fun setDenoise(value: Float) = updateEnhancement(enhancement.withDenoise(value))
+    fun setDenoise(value: Float) = updateEnhancement(enhancement.withDenoise(value), save = true)
 
-    fun showEnhancementOriginal(on: Boolean) = updateEnhancement(enhancement.copy(showOriginal = on))
+    /** Momentary: compares against the untouched picture without saving anything. */
+    fun showEnhancementOriginal(on: Boolean) = updateEnhancement(enhancement.copy(showOriginal = on), save = false)
 
-    private fun updateEnhancement(settings: EnhancementSettings) {
+    private fun updateEnhancement(settings: EnhancementSettings, save: Boolean) {
         enhancement = settings
-        // Show Original is momentary; the session keeps the real choice.
-        EnhancementSession.settings = settings.copy(showOriginal = false)
+        if (save) saveEnhancement(settings.copy(showOriginal = false))
         holder.enhancement = settings
         apply()
     }

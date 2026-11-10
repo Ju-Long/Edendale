@@ -12,12 +12,16 @@ import com.babasama.edendale.android.player.EpisodeCandidate
 import com.babasama.edendale.android.player.EpisodeProgression
 import com.babasama.edendale.android.player.ShowCandidate
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.SourceEndpoint
 import com.babasama.edendale.domain.MediaDetail
+import com.babasama.edendale.domain.MediaRef
+import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.parental.ParentalGateRules
 
 /**
  * The screens' pure logic — every join, format, and layout calculation the
@@ -136,7 +140,21 @@ internal data class ContinueEntry(
     val durationMillis: Long? = null,
     /** When it was last watched (for next-up, the completed episode): the shelf's order. */
     val lastWatchedEpochMillis: Long = 0L,
+    /**
+     * Whether playing this copy may make its source the one the title
+     * remembers (27.1): false when the card fell back from the remembered
+     * source because its last scan failed (`PlaybackSources.remembersSource`).
+     */
+    val remembersSource: Boolean = true,
 )
+
+/**
+ * The watch record a part-watched entry resumes from, in the domain's
+ * storage-key form, which the card's Clear Progress clears. Null for a
+ * next-up entry: it is a suggestion with no record of its own.
+ */
+internal val ContinueEntry.progressKey: String?
+    get() = if (isNextUp) null else tmdbId?.let { if (isEpisode) "episode:$it" else "movie:$it" }
 
 /** How many resumable titles the shelf shows before it stops being a shelf. */
 internal const val CONTINUE_WATCHING_LIMIT = 12
@@ -160,31 +178,51 @@ private fun WatchProgress.playbackMillis(runtimeMinutes: Int?): Pair<Long?, Long
 
 // MARK: - Copies of one title (D.5)
 
-/** The source a copy came from; an individually picked file counts as local. */
+/**
+ * The source a copy came from, with where it's reached from (27.1); an
+ * individually picked file counts as local, on this device.
+ */
 internal fun Map<String, LibraryFolderEntity>.copySource(folderUri: String?): CopySource {
     val folder = folderUri?.let { this[it] } ?: return CopySource("", MediaSourceKind.LOCAL, isUnavailable = false)
-    return CopySource(folder.displayName, SourceScanRules.kindOf(folder), isUnavailable = folder.status != null)
+    val kind = SourceScanRules.kindOf(folder)
+    return CopySource(
+        name = folder.displayName,
+        kind = kind,
+        isUnavailable = folder.status != null,
+        endpoint = SourceEndpoint.of(kind, folder.treeUri, folder.endpoint),
+    )
 }
+
+/** The copy a card starts, and whether playing it may become the title's remembered source (27.1). */
+private class CardStart<T>(val file: T, val remembersSource: Boolean)
 
 /**
  * The copy Play starts for each TMDB id when the same title was imported more
- * than once: the first available one in Play From order (D.5), so the choice
- * never depends on scan order.
+ * than once: one on the source the title last played from ([remembered]),
+ * else the first available one in Play From order (D.5), so the choice never
+ * depends on scan order.
  */
 private fun <T> List<T>.preferredCopyByTmdbId(
     tmdbId: (T) -> Int?,
     folderUri: (T) -> String?,
     uri: (T) -> String,
     folders: Map<String, LibraryFolderEntity>,
-): Map<Int, T> =
+    remembered: (T) -> String? = { null },
+): Map<Int, CardStart<T>> =
     filter { tmdbId(it) != null }
         .groupBy { tmdbId(it)!! }
-        .mapValues { (_, copies) -> preferredCopy(null, copies, folderUri, uri, folders)!! }
+        .mapValues { (_, copies) ->
+            val source = copies.firstNotNullOfOrNull(remembered)
+            val file = preferredCopy(null, copies, folderUri, uri, folders, source)!!
+            CardStart(file, PlaybackSources.remembersSource(copies, file, { PlaybackSources.sourceKey(folderUri(it)) }, source))
+        }
 
 /**
  * The copy to play among [copies]: [primary] (the one the viewer picked) first,
  * then local folders, then by source name, skipping sources whose last scan
- * failed unless every one did (D.5).
+ * failed unless every one did (D.5). Copies on the [remembered] source — the
+ * one the title last played from (27.1) — go first; it still falls back when
+ * its last scan failed.
  */
 internal fun <T> preferredCopy(
     primary: T?,
@@ -192,29 +230,136 @@ internal fun <T> preferredCopy(
     folderUri: (T) -> String?,
     uri: (T) -> String,
     folders: Map<String, LibraryFolderEntity>,
+    remembered: String? = null,
 ): T? {
     val ordered = PlaybackSources.order(primary, copies, { folders.copySource(folderUri(it)) }, uri)
-    return PlaybackSources.preferred(ordered) { folders.copySource(folderUri(it)).isUnavailable }
+    return PlaybackSources.startingCopy(ordered, { PlaybackSources.sourceKey(folderUri(it)) }, remembered) {
+        folders.copySource(folderUri(it)).isUnavailable
+    }
 }
 
-/** A movie's copies in Play From order, [primary] (the page's own) first. */
-internal fun movieCopies(
-    primary: LibraryMovieEntity,
-    movies: List<LibraryMovieEntity>,
-    folders: Map<String, LibraryFolderEntity>,
-): List<LibraryMovieEntity> {
-    val others = primary.tmdbId?.let { id -> movies.filter { it.tmdbId == id && it.uri != primary.uri } }.orEmpty()
-    return PlaybackSources.order(primary, others, { folders.copySource(it.folderUri) }, { it.uri })
+// MARK: - Detail page
+
+/**
+ * What a detail page shows (Apple's `MediaDetailSource`): a TMDB title, or a
+ * library row opened from Downloaded or Search. A library row may have no
+ * TMDB match at all, so its page is built from the row itself.
+ */
+sealed interface DetailSource {
+    data class Tmdb(val ref: MediaRef) : DetailSource
+
+    /** A movie file, by its library uri. */
+    data class LocalMovie(val uri: String) : DetailSource
+
+    /** A library show, by its key: its episodes merged across every copy ([pageShow]). */
+    data class LocalShow(val key: String) : DetailSource
+
+    companion object {
+        /**
+         * The page as text the activity's saved state can hold, so an open
+         * page outlives process death the way an open show does.
+         */
+        fun encode(source: DetailSource): String = when (source) {
+            is Tmdb -> "tmdb:${source.ref.mediaType.pathSegment}:${source.ref.id}"
+            is LocalMovie -> "movie:${source.uri}"
+            is LocalShow -> "show:${source.key}"
+        }
+
+        /** The page [encode] wrote, or null for text that isn't one. */
+        fun decode(saved: String): DetailSource? {
+            val value = saved.substringAfter(':', "").ifEmpty { return null }
+            return when (saved.substringBefore(':')) {
+                "tmdb" -> {
+                    val type = MediaType.entries.firstOrNull { it.pathSegment == value.substringBefore(':') } ?: return null
+                    val id = value.substringAfter(':', "").toIntOrNull() ?: return null
+                    Tmdb(MediaRef(id, type))
+                }
+                // A uri carries colons of its own, so everything after the first one is the value.
+                "movie" -> LocalMovie(value)
+                "show" -> LocalShow(value)
+                else -> null
+            }
+        }
+    }
 }
 
-/** The movie copy a tap on [tapped] plays: itself unless its source is unavailable and another isn't. */
-internal fun preferredMovie(
-    tapped: LibraryMovieEntity,
+/** The TMDB title a library movie was matched to; null until enrichment matches the file. */
+internal val LibraryMovieEntity.tmdbRef: MediaRef?
+    get() = tmdbId?.let { MediaRef(it, MediaType.MOVIE) }
+
+/**
+ * A detail page's header: TMDB's record field by field where there is one,
+ * else the library row's own, so an unmatched file, a device without a TMDB
+ * key, or one that is offline still gets a page.
+ */
+internal data class DetailHeader(
+    val mediaType: MediaType,
+    val title: String,
+    val tagline: String?,
+    val overview: String?,
+    val backdropPath: String?,
+    val posterPath: String?,
+    val year: Int?,
+    val runtimeMinutes: Int?,
+    /** TMDB's score; a library row has none. */
+    val score: Double?,
+)
+
+/** The header for [detail], falling back to [movie] or [show]; null while there is nothing to show. */
+internal fun detailHeader(
+    detail: MediaDetail?,
+    movie: LibraryMovieEntity?,
+    show: LibraryShowEntity?,
+): DetailHeader? {
+    val title = detail?.title ?: movie?.title ?: show?.name ?: return null
+    return DetailHeader(
+        mediaType = detail?.ref?.mediaType ?: if (movie != null) MediaType.MOVIE else MediaType.TV,
+        title = title,
+        tagline = detail?.tagline?.takeIf { it.isNotBlank() },
+        overview = listOfNotNull(detail?.overview, movie?.overview, show?.overview).firstOrNull { it.isNotBlank() },
+        backdropPath = detail?.backdropPath ?: movie?.backdropPath ?: show?.backdropPath,
+        posterPath = detail?.posterPath ?: movie?.posterPath ?: show?.posterPath,
+        year = detail?.year ?: movie?.year ?: show?.firstAirYear,
+        runtimeMinutes = listOfNotNull(detail?.runtimeMinutes, movie?.runtimeMinutes).firstOrNull { it > 0 },
+        score = detail?.score,
+    )
+}
+
+/**
+ * The library movie a page plays: the row a library page was opened from,
+ * or for a TMDB movie page the first of its imported copies in Play From
+ * order (D.5), so a title found in Movies & Shows plays what the library
+ * holds. Null for a show and for a title the library doesn't hold.
+ */
+internal fun pageMovie(
+    source: DetailSource?,
     movies: List<LibraryMovieEntity>,
     folders: Map<String, LibraryFolderEntity>,
-): LibraryMovieEntity =
-    PlaybackSources.preferred(movieCopies(tapped, movies, folders)) { folders.copySource(it.folderUri).isUnavailable }
-        ?: tapped
+): LibraryMovieEntity? = when (source) {
+    is DetailSource.LocalMovie -> movies.firstOrNull { it.uri == source.uri }
+    is DetailSource.Tmdb -> source.ref.takeIf { it.mediaType == MediaType.MOVIE }?.let { ref ->
+        PlaybackSources.order(null, movies.filter { it.tmdbId == ref.id }, { folders.copySource(it.folderUri) }, { it.uri })
+            .firstOrNull()
+    }
+    is DetailSource.LocalShow, null -> null
+}
+
+/**
+ * Whether the parental policy blocks a detail page: while a title rule is
+ * in force only a title verified as allowed opens, so a library file without
+ * a TMDB match fails closed (O-D8), as it does in the player.
+ */
+internal fun detailRestricted(policyActive: Boolean, ref: MediaRef?, allows: (MediaRef) -> Boolean): Boolean =
+    !ParentalGateRules.permitsPlayback(policyActive, ref, allows)
+
+/**
+ * The title the parental policy judges a page by: the page's TMDB title,
+ * else its library movie's or show's match the moment the row has one. Null
+ * for a library file or show enrichment hasn't matched, which
+ * [detailRestricted] blocks while a rule is on.
+ */
+internal fun pageGateRef(ref: MediaRef?, movie: LibraryMovieEntity?, show: LibraryShowEntity?): MediaRef? =
+    ref ?: movie?.tmdbRef ?: show?.tmdbId?.let { MediaRef(it, MediaType.TV) }
 
 /**
  * Continue Watching, newest first, joined to the local files that play it:
@@ -228,6 +373,10 @@ internal fun preferredMovie(
  * [nextUpFormat] carries the localized "Up Next · %1$s" template; the English
  * default keeps this file free of Android types for the JVM tests.
  * [limit] caps the shelf; null returns every entry.
+ * [lastSources] is the playback memory (27.1): a title resumes, and a show's
+ * next episode starts, on the source it last played from while that source
+ * has the file and its last scan didn't fail. A card that falls back from it
+ * keeps the memory as it is ([ContinueEntry.remembersSource]).
  */
 internal fun continueWatching(
     progress: List<WatchProgress>,
@@ -237,36 +386,54 @@ internal fun continueWatching(
     nextUpFormat: (String) -> String = { "Up Next · $it" },
     limit: Int? = CONTINUE_WATCHING_LIMIT,
     folders: List<LibraryFolderEntity> = emptyList(),
+    lastSources: Map<String, String> = emptyMap(),
 ): List<ContinueEntry> {
     if (progress.isEmpty()) return emptyList()
     val foldersByUri = folders.associateBy { it.treeUri }
-    val moviesByTmdbId = movies.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri)
-    val episodesByTmdbId = episodes.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri)
     val showsByKey = shows.associateBy { it.key }
+    // A movie's copies are its title's: the same TMDB id, or the same file
+    // through another link whose match is still pending (27.1), so the card
+    // and the movie's page start the same copy.
+    val moviesByTmdbId = movieTitles(movies, foldersByUri)
+        .filter { it.tmdbId != null }
+        .associate { title ->
+            val remembered = PlaybackSources.movieMemoryKey(title.tmdbId)?.let(lastSources::get)
+            val start = moviePlayStart(title.copies, foldersByUri, remembered)!!
+            title.tmdbId!! to (title to CardStart(start.copy, start.remembersSource))
+        }
+    val episodesByTmdbId = episodes.preferredCopyByTmdbId({ it.tmdbId }, { it.folderUri }, { it.uri }, foldersByUri) {
+        PlaybackSources.rememberedShowSource(lastSources, showsByKey[it.showKey]?.tmdbId, listOf(it.showKey))
+    }
 
     val resumable = progress.filter { it.isResumable() }
     val inProgress = resumable.mapNotNull { record ->
         val fraction = record.normalizedPosition.toFloat()
         val entry = when (record.mediaType) {
             WatchMediaType.MOVIE -> {
-                val movie = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val (title, start) = moviesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                // The card names the title by its matched copy, and plays the
+                // copy Play would start — which may be an alias whose match is
+                // still pending, so the record's id goes with it.
+                val movie = title.display
                 val (position, duration) = record.playbackMillis(movie.runtimeMinutes)
                 ContinueEntry(
-                    uri = movie.uri,
+                    uri = start.file.uri,
                     title = movie.title,
                     subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes),
                     posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
                     fraction = fraction,
-                    tmdbId = movie.tmdbId,
+                    tmdbId = record.tmdbId,
                     isEpisode = false,
                     backdropUrl = tmdbImageUrl(movie.backdropPath, TmdbImageSize.BACKDROP),
                     positionMillis = position,
                     durationMillis = duration,
                     lastWatchedEpochMillis = record.lastWatchedEpochMillis,
+                    remembersSource = start.remembersSource,
                 )
             }
             WatchMediaType.EPISODE -> {
-                val episode = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val start = episodesByTmdbId[record.tmdbId] ?: return@mapNotNull null
+                val episode = start.file
                 val show = showsByKey[episode.showKey]
                 val (position, duration) = record.playbackMillis(episode.runtimeMinutes)
                 ContinueEntry(
@@ -286,13 +453,14 @@ internal fun continueWatching(
                     positionMillis = position,
                     durationMillis = duration,
                     lastWatchedEpochMillis = record.lastWatchedEpochMillis,
+                    remembersSource = start.remembersSource,
                 )
             }
         }
         entry to record.lastWatchedEpochMillis
     }
 
-    val nextUp = nextUpEntries(progress, resumable, episodes, shows, episodesByTmdbId, nextUpFormat, foldersByUri)
+    val nextUp = nextUpEntries(progress, resumable, episodes, shows, episodesByTmdbId, nextUpFormat, foldersByUri, lastSources)
 
     val sorted = (inProgress + nextUp)
         .sortedByDescending { it.second }
@@ -306,23 +474,25 @@ internal fun episodeCode(season: Int, episode: Int): String = "S${season.pad()}E
 /**
  * Next-up entries paired with the completed episode's last-watched time, which
  * is where they sort. Copies of one show (the same TMDB id imported from
- * several folders) merge into one candidate list, so they give one card.
+ * several folders) merge into one candidate list, so they give one card, which
+ * starts on the source the show last played from ([lastSources]) when it can.
  */
 private fun nextUpEntries(
     progress: List<WatchProgress>,
     resumable: List<WatchProgress>,
     episodes: List<LibraryEpisodeEntity>,
     shows: List<LibraryShowEntity>,
-    episodesByTmdbId: Map<Int, LibraryEpisodeEntity>,
+    episodesByTmdbId: Map<Int, CardStart<LibraryEpisodeEntity>>,
     nextUpFormat: (String) -> String,
     folders: Map<String, LibraryFolderEntity>,
+    lastSources: Map<String, String>,
 ): List<Pair<ContinueEntry, Long>> {
     val showsByKey = shows.associateBy { it.key }
     val inProgressShowIds = resumable
         .filter { it.mediaType == WatchMediaType.EPISODE }
         .mapNotNull { record ->
             record.showTmdbId
-                ?: episodesByTmdbId[record.tmdbId]?.let { showsByKey[it.showKey]?.tmdbId }
+                ?: episodesByTmdbId[record.tmdbId]?.let { showsByKey[it.file.showKey]?.tmdbId }
         }
         .toSet()
     val episodesByShowKey = episodes.groupBy { it.showKey }
@@ -358,7 +528,10 @@ private fun nextUpEntries(
             val copies = episodes.filter {
                 it.showKey in showKeys && it.season == found.season && it.episode == found.episode
             }
-            val episode = preferredCopy(null, copies, { it.folderUri }, { it.uri }, folders) ?: found
+            val remembered = PlaybackSources.rememberedShowSource(lastSources, candidate.show.tmdbId, showKeys.sorted())
+            val episode = preferredCopy(null, copies, { it.folderUri }, { it.uri }, folders, remembered) ?: found
+            // A copy whose match is still pending plays as the matched one.
+            val named = copies.firstOrNull { it.tmdbId != null } ?: episode
             val show = showsByKey[episode.showKey]
             ContinueEntry(
                 uri = episode.uri,
@@ -366,16 +539,17 @@ private fun nextUpEntries(
                 subtitle = nextUpFormat(episodeCode(episode.season, episode.episode)),
                 posterUrl = tmdbImageUrl(show?.posterPath, TmdbImageSize.POSTER),
                 fraction = 0f,
-                tmdbId = episode.tmdbId,
+                tmdbId = named.tmdbId,
                 isEpisode = true,
                 showTmdbId = candidate.show.tmdbId,
                 season = episode.season,
                 episode = episode.episode,
                 isNextUp = true,
-                episodeTitle = episode.title,
-                backdropUrl = tmdbImageUrl(episode.stillPath ?: show?.backdropPath, TmdbImageSize.BACKDROP),
-                durationMillis = episode.runtimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L },
+                episodeTitle = named.title,
+                backdropUrl = tmdbImageUrl(named.stillPath ?: show?.backdropPath, TmdbImageSize.BACKDROP),
+                durationMillis = named.runtimeMinutes?.takeIf { it > 0 }?.let { it * 60_000L },
                 lastWatchedEpochMillis = candidate.lastWatchedEpochMillis,
+                remembersSource = PlaybackSources.remembersSource(copies, episode, { PlaybackSources.sourceKey(it.folderUri) }, remembered),
             ) to candidate.lastWatchedEpochMillis
         }
 }
@@ -428,10 +602,13 @@ internal fun nextStarRating(index: Int, current: Double): Double? {
 
 // MARK: - Search: local library matches
 
-/** Imported titles whose name contains the query — matched entirely on device. */
+/**
+ * Imported titles whose name contains the query — matched entirely on
+ * device. One entry per title, as Downloaded shows them (27.1).
+ */
 internal data class LocalMatches(
-    val movies: List<LibraryMovieEntity> = emptyList(),
-    val shows: List<LibraryShowEntity> = emptyList(),
+    val movies: List<LibraryTitle<LibraryMovieEntity>> = emptyList(),
+    val shows: List<ShowTitle> = emptyList(),
 ) {
     val isEmpty: Boolean get() = movies.isEmpty() && shows.isEmpty()
 }
@@ -440,26 +617,29 @@ internal data class LocalMatches(
  * The "From Your Library" section's contents. Matching is a plain on-device
  * `contains`, so results land before the first TMDB response; the keyword scope
  * narrows which half is searched, and a person filter suppresses the section
- * entirely because filmography is a TMDB-only view.
+ * entirely because filmography is a TMDB-only view. Titles are grouped
+ * first ([movieTitles], [showTitles]) and then matched, so a title matches
+ * when any of its copies' names does and shows once however many links
+ * reach it.
  */
 internal fun localMatches(
     term: String,
     scope: SearchScope,
     hasActivePerson: Boolean,
-    movies: List<LibraryMovieEntity>,
-    shows: List<LibraryShowEntity>,
+    movies: List<LibraryTitle<LibraryMovieEntity>>,
+    shows: List<ShowTitle>,
 ): LocalMatches {
     if (term.isBlank() || hasActivePerson || scope == SearchScope.PEOPLE) return LocalMatches()
     return LocalMatches(
         movies = if (scope == SearchScope.SHOWS) {
             emptyList()
         } else {
-            movies.filter { it.title.contains(term, ignoreCase = true) }
+            movies.filter { title -> title.copies.any { it.title.contains(term, ignoreCase = true) } }
         },
         shows = if (scope == SearchScope.MOVIES) {
             emptyList()
         } else {
-            shows.filter { it.name.contains(term, ignoreCase = true) }
+            shows.filter { title -> title.shows.any { it.name.contains(term, ignoreCase = true) } }
         },
     )
 }

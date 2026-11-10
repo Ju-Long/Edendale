@@ -1,5 +1,12 @@
 package com.babasama.edendale.android.player.video
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -19,11 +26,19 @@ enum class EnhancementPreset(val raw: String) {
     ;
 
     val upscales: Boolean get() = this == BALANCED || this == HIGH_QUALITY
+
+    companion object {
+        /** The preset stored as [raw], or null for anything else. */
+        fun fromRaw(raw: String?): EnhancementPreset? = entries.firstOrNull { it.raw == raw }
+    }
 }
 
 /**
- * Enhancement as the viewer set it (D11): it lives in memory for the app
- * process and is never saved. Sharpness and denoise range 0–1 in steps of 0.05.
+ * Enhancement as the viewer set it. Unlike Apple, which starts every playback
+ * at Balanced (D11), Android keeps the viewer's choice on the device as one
+ * JSON object under `video.enhancement` beside the picture adjustments, so it
+ * survives the app closing. Show Original is a momentary comparison and is
+ * never saved. Sharpness and denoise range 0–1 in steps of 0.05.
  */
 data class EnhancementSettings(
     val preset: EnhancementPreset = EnhancementPreset.BALANCED,
@@ -34,13 +49,56 @@ data class EnhancementSettings(
     fun withSharpness(value: Float) = copy(sharpness = normalizeUnit(value))
     fun withDenoise(value: Float) = copy(denoise = normalizeUnit(value))
 
+    /** The stored form: the preset and both sliders; Show Original stays out. */
+    fun toJson(): String = JsonObject(
+        mapOf(
+            KEY_PRESET to JsonPrimitive(preset.raw),
+            KEY_SHARPNESS to JsonPrimitive(normalizeUnit(sharpness)),
+            KEY_DENOISE to JsonPrimitive(normalizeUnit(denoise)),
+        ),
+    ).toString()
+
     companion object {
         const val STEP = 0.05f
+
+        private const val KEY_PRESET = "preset"
+        private const val KEY_SHARPNESS = "sharpness"
+        private const val KEY_DENOISE = "denoise"
 
         fun normalizeUnit(value: Float): Float {
             if (!value.isFinite()) return 0.5f
             return ((value.coerceIn(0f, 1f) / STEP).roundToInt() * STEP).coerceIn(0f, 1f)
         }
+
+        /**
+         * The stored choice, or null when there is none or it can't be read: a
+         * missing or unknown preset never turns into the class default
+         * (Balanced), so an unreadable value falls back to the device's own
+         * default in [initial]. A missing or broken slider reads as 0.5.
+         */
+        fun fromJson(raw: String?): EnhancementSettings? {
+            val obj = raw?.let { runCatching { Json.parseToJsonElement(it).jsonObject }.getOrNull() } ?: return null
+            val preset = obj[KEY_PRESET]
+                ?.let { runCatching { it.jsonPrimitive.takeIf { primitive -> primitive.isString }?.contentOrNull }.getOrNull() }
+                ?.let(EnhancementPreset::fromRaw)
+                ?: return null
+            fun slider(key: String): Float =
+                normalizeUnit(obj[key]?.let { runCatching { it.jsonPrimitive.doubleOrNull }.getOrNull() }?.toFloat() ?: Float.NaN)
+            return EnhancementSettings(preset = preset, sharpness = slider(KEY_SHARPNESS), denoise = slider(KEY_DENOISE))
+        }
+
+        /**
+         * What a player starts with: the viewer's stored choice on every kind of
+         * device (the F.6 governor still drops work that runs over budget, and HDR
+         * and Dolby Vision still bypass it), else Off on TV (until F.1.6 passes on
+         * a real set) and wherever the capability check hasn't passed (F.6.3),
+         * else Balanced.
+         */
+        fun initial(stored: EnhancementSettings?, isTelevision: Boolean, capable: Boolean?): EnhancementSettings =
+            stored?.copy(showOriginal = false)
+                ?: EnhancementSettings(
+                    preset = if (isTelevision || capable != true) EnhancementPreset.OFF else EnhancementPreset.BALANCED,
+                )
     }
 }
 

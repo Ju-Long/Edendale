@@ -4,13 +4,12 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.babasama.edendale.android.data.LibraryFolderEntity
-import com.babasama.edendale.android.data.SmbClient
 import com.babasama.edendale.android.data.SourceScanRules
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.SourceEndpoint
 import com.babasama.edendale.connectors.SourceStatus
-import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.oauth.OAuthException
 import com.babasama.edendale.oauth.OAuthFailure
 import com.babasama.edendale.remote.RemoteFailure
@@ -18,15 +17,19 @@ import com.babasama.edendale.remote.RemoteSourceException
 
 /**
  * Why a source's last scan failed, for its row in Settings → Sources and in
- * Downloaded (D.3); null once a scan succeeds. Names the server for a network
- * share, the folder otherwise.
+ * Downloaded (D.3); null once a scan succeeds. Names a remote source by its
+ * endpoint, as Play From does (27.1) — the server's address or the account,
+ * never an account key — and a local folder by its name.
  */
 @Composable
 internal fun sourceStatusMessage(folder: LibraryFolderEntity): String? {
     val status = SourceStatus.fromRaw(folder.status) ?: return null
-    val name = SmbClient.hostOf(folder.treeUri)
-        ?: SourceUrl.credentialHost(folder.treeUri)?.takeIf { SourceScanRules.kindOf(folder)?.isRemote == true }
-        ?: folder.displayName
+    val kind = SourceScanRules.kindOf(folder)
+    val name = if (kind?.isRemote == true) {
+        sourceEndpointLabel(SourceEndpoint.of(kind, folder.treeUri, folder.endpoint))
+    } else {
+        folder.displayName
+    }
     return when (status) {
         SourceStatus.OFFLINE -> stringResource(R.string.sources_status_offline, name)
         SourceStatus.NEEDS_SIGN_IN -> stringResource(R.string.sources_status_needs_sign_in, name)

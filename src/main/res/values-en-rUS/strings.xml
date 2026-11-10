@@ -2,7 +2,6 @@
 <!-- en-US. Generated to match Apple/Shared/Localizable.xcstrings;
      anything absent falls back to values/strings.xml. -->
 <resources>
-    <string name="settings_backup_note">Watch progress, favorites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
     <string name="tmdb_account_intro">Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB.</string>
 
     <!-- Young Audience filter and parental controls (Section O) -->
@@ -49,7 +48,6 @@
     <string name="parental_next">Next</string>
     <string name="parental_set_pin_first">Set a PIN to use this lock.</string>
     <string name="parental_local_note">These settings stay on this device. They are never synced or sent to another device.</string>
-    <string name="settings_section_app_controls">App Controls</string>
     <string name="settings_app_controls_skip_backward">Skip Back</string>
     <string name="settings_app_controls_skip_forward">Skip Forward</string>
     <string name="settings_app_controls_skip_note">Double-tap the left or right side of the video to skip back or forward.</string>
@@ -359,6 +357,8 @@
     <string name="sync_remove_device_message">Deleting a device\'s file stops its history reaching the others. That device keeps its login and its local copy until you revoke Edendale\'s access at the provider or change the server password.</string>
     <string name="sync_manage_access">Manage access at %1$s</string>
     <string name="sync_no_other_devices">No other device has written to this space yet.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_kept">Favorites, watchlist, ratings, reviews, your library, and your TMDB account stay as they are.</string>
     <string name="sync_folder_relink">Pick the folder this device should use for the space “%1$s”.</string>
     <string name="sync_google_relink">Sign in to Google as %1$s to use the space “%2$s”.</string>
     <string name="pairing_role_question">Which way should the logins go?</string>
@@ -398,4 +398,10 @@
     </plurals>
     <string name="player_theater">Theater</string>
     <string name="xr_module_title">Android XR theater</string>
+    <string name="settings_player_controls">Player Controls</string>
+    <string name="settings_audio">Audio</string>
+    <string name="settings_library">Library</string>
+    <string name="settings_section_controls">Controls</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_parental_more">Ratings, Locks, and PIN</string>
 </resources>

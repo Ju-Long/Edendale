@@ -84,8 +84,9 @@ internal fun PictureSection(video: VideoEffectsController, chrome: PlayerChromeS
 
 /**
  * Enhancement (F.7), the panel's last section: the preset menu, Sharpness,
- * Denoise (High Quality), Show Original, and the resolution label. Kept in
- * memory for the app process, never saved (D11).
+ * Denoise (High Quality), Show Original, and the resolution label. The preset
+ * and sliders are saved on the device as the viewer changes them; Show
+ * Original never is.
  */
 @Composable
 internal fun EnhancementSection(video: VideoEffectsController, chrome: PlayerChromeState, isTelevision: Boolean) {

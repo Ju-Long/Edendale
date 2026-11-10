@@ -94,7 +94,10 @@ internal class WatchNextPublisher(
                     if (!enabled) {
                         flowOf(emptyList())
                     } else {
-                        combine(librarySnapshots(), parentalPolicyChanges(context)) { snapshot, _ -> snapshot }
+                        // A row opens the source its title last played from (27.1), so a new one rewrites it.
+                        combine(librarySnapshots(), library.sourceMemory.changes, parentalPolicyChanges(context)) { snapshot, sources, _ ->
+                            snapshot.copy(lastSources = sources)
+                        }
                             // Playback saves progress every 5 s, so the row is written once
                             // playback pauses or stops rather than on every save.
                             .debounce(SETTLE_MILLIS)
@@ -126,6 +129,7 @@ internal class WatchNextPublisher(
             visible.shows,
             limit = null,
             folders = snapshot.folders,
+            lastSources = snapshot.lastSources,
         )
         WatchNext.programs(entries)
     } catch (cancelled: CancellationException) {
@@ -146,6 +150,7 @@ internal class WatchNextPublisher(
         val episodes: List<LibraryEpisodeEntity>,
         val shows: List<LibraryShowEntity>,
         val folders: List<LibraryFolderEntity>,
+        val lastSources: Map<String, String> = emptyMap(),
     )
 
     private companion object {
@@ -243,6 +248,7 @@ internal class TvProviderWatchNextStore(private val context: Context) : WatchNex
         showTmdbId = play.showTmdbId,
         season = play.season,
         episode = play.episode,
+        rememberSource = play.remembersSource,
     ).toUri(Intent.URI_INTENT_SCHEME)
 
     // The provider's millisecond columns are 32-bit.

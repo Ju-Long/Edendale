@@ -65,6 +65,22 @@ object CloudProviders {
         "mimetypes" to GOOGLE_PICKER_MIME_TYPES.joinToString(","),
     )
 
+    /** The parameters in [GOOGLE_PICKER_PARAMETERS] that open the picker; the others ask for a refresh token. */
+    val GOOGLE_PICKER_ONLY_KEYS = setOf("trigger_onepick", "allow_multiple", "mimetypes")
+
+    /**
+     * The sign-in a sync location makes (FEATURES-27.1.md §5.2): the same
+     * scopes and refresh-token parameters, without Google's picker, because
+     * sync needs only the files Edendale itself creates, which `drive.file`
+     * grants without picking anything. The other providers have no picker.
+     */
+    fun syncSignInConfiguration(configuration: OAuthConfiguration): OAuthConfiguration =
+        if (configuration.kind == MediaSourceKind.GOOGLE_DRIVE) {
+            configuration.copy(additionalAuthorizationParameters = configuration.additionalAuthorizationParameters - GOOGLE_PICKER_ONLY_KEYS)
+        } else {
+            configuration
+        }
+
     /** Reruns the picker for an account already linked: no account chooser, with the account's email as the hint. */
     fun googleChooseMoreParameters(loginHint: String?): Map<String, String> = buildMap {
         put("prompt", "consent")

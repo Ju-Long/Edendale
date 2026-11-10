@@ -28,6 +28,13 @@ class BufferedByteSourceTest {
         var openCount = 0
             private set
         val readOffsets: MutableList<Long> = Collections.synchronizedList(mutableListOf())
+
+        /**
+         * A copy taken under the list's lock: read-ahead keeps appending on its
+         * own thread, and iterating a synchronized list without its lock throws
+         * ConcurrentModificationException now and then.
+         */
+        fun offsets(): List<Long> = synchronized(readOffsets) { readOffsets.toList() }
         @Volatile var keepAliveCount = 0
             private set
         @Volatile var delayMillis = 0L
@@ -151,7 +158,7 @@ class BufferedByteSourceTest {
             assertContentEquals(server.data, readAll(source, server.data.size))
             assertEquals(-1, read(source, server.data.size.toLong(), 10).first)
             // Every fetch was a whole, chunk-aligned chunk, and none repeated.
-            val offsets = server.readOffsets.toList()
+            val offsets = server.offsets()
             assertTrue(offsets.all { it % chunk == 0L })
             assertEquals(offsets.size, offsets.toSet().size)
             assertEquals(1, server.openCount)
@@ -220,7 +227,7 @@ class BufferedByteSourceTest {
             waitUntil { server.readOffsets.contains(1024L) }
             server.drop(refuse = true)
             assertFailsWith<RemoteConnectionLostException> { read(source, 8L * 1024, 100) }
-            assertEquals(listOf(250L, 500L, 1_000L, 2_000L, 4_000L, 8_000L), waits.toList())
+            assertEquals(listOf(250L, 500L, 1_000L, 2_000L, 4_000L, 8_000L), synchronized(waits) { waits.toList() })
         }
     }
 
@@ -341,11 +348,11 @@ class BufferedByteSourceTest {
         source(server, aheadChunks = 2, cacheChunks = 6).use { source ->
             assertContentEquals(server.data, readAll(source, server.data.size))
             assertTrue(source.cachedChunkCount <= 6)
-            val fetchesOfFirstChunk = server.readOffsets.count { it == 0L }
+            val fetchesOfFirstChunk = server.offsets().count { it == 0L }
             val (count, bytes) = read(source, 0, 100)
             assertEquals(100, count)
             assertContentEquals(server.data.copyOf(100), bytes)
-            assertEquals(fetchesOfFirstChunk + 1, server.readOffsets.count { it == 0L })
+            assertEquals(fetchesOfFirstChunk + 1, server.offsets().count { it == 0L })
         }
     }
 

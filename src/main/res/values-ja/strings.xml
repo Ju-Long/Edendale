@@ -151,26 +151,19 @@
     <string name="error_server_unreachable">そのサーバーに到達できませんでした。</string>
     <string name="settings_title">設定</string>
     <string name="settings_section_about">情報</string>
+    <string name="settings_player_controls">プレーヤーの操作</string>
+    <string name="settings_audio">オーディオ</string>
+    <string name="settings_library">ライブラリ</string>
+    <string name="settings_section_controls">操作</string>
+    <string name="settings_section_appearance">外観</string>
+    <string name="settings_parental_more">レーティング、ロック、PIN</string>
     <string name="settings_version">バージョン</string>
-    <string name="settings_watch_progress">視聴状況</string>
-    <string name="settings_stored_on_device">このデバイスに保存済み</string>
-    <string name="settings_tmdb_access">TMDBアクセス</string>
-    <string name="settings_tmdb_configured">ビルド時に設定済み</string>
-    <string name="settings_tmdb_missing">secrets.jsonにトークンを追加して再ビルドしてください</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">大きな文字、オーバースキャン対応のマージン、リモコンフォーカスのリフト、およびランドスケープ表示が有効になっています。</string>
     <string name="settings_watch_next_title">ホーム画面に「視聴を続ける」を表示</string>
     <string name="settings_watch_next_description">視聴中のタイトルをホーム画面の「視聴を続ける」の列に表示します。Edendale はこのためにネットワークへ何も送信しませんが、ホーム画面のアプリはこれらのタイトルを見ることができます。</string>
     <string name="settings_section_sources">ソース</string>
     <string name="settings_no_sources">リンクされたソースはありません</string>
-    <string name="settings_section_backup">バックアップ</string>
-    <string name="settings_backup_note">視聴の進行状況、お気に入り、ウォッチリスト、評価は Android Auto Backup を経由して Google Drive に保存されるため、新しいデバイスをセットアップする際に復元されます。バックアップはデバイスのシステム設定に従います — Edendale は独自に何も追加しません。</string>
-    <string name="settings_backup_secrets_note">TMDBセッションと保存されたネットワーク共有のログイン情報は、バックアップやデバイスの転送から除外されます。これらはこのデバイスに暗号化されており、デバイスから出ることはありません。</string>
-    <string name="settings_section_privacy">プライバシー</string>
-    <string name="settings_privacy_note">分析情報はありません。ネットワークリクエストはTMDB、明示的な字幕検索後のWyzie、プライベートな同期プロバイダに限定されます。</string>
-    <string name="settings_section_attribution">帰属表示</string>
     <string name="tmdb_attribution">この製品はTMDB APIを使用していますが、TMDBによる承認や認定は受けていません。</string>
-    <string name="settings_open_source">Edendale · 無料のオープンソース</string>
     <string name="settings_section_tmdb_account">TMDBアカウント</string>
     <string name="tmdb_account_intro">TMDBアカウントを接続して、お気に入り、ウォッチリスト、評価をデバイス間で同期します。視聴時間は TMDB には送信されません。</string>
     <string name="tmdb_loading_account">アカウントを読み込み中…</string>
@@ -225,6 +218,12 @@
     <string name="player_in_this_folder">このフォルダ内</string>
     <string name="player_volume">音量</string>
     <string name="player_brightness">明るさ</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">音量 %1$s</string>
+    <string name="player_brightness_level">明るさ %1$s</string>
+    <string name="player_rotation_lock">画面の向きのロック</string>
+    <string name="player_state_on">オン</string>
+    <string name="player_state_off">オフ</string>
     <string name="player_seek_seconds">%1$d秒</string>
     <string name="error_folder_not_opened">そのフォルダを開けませんでした。</string>
     <string name="default_folder_name">フォルダ</string>
@@ -250,7 +249,6 @@
     <string name="wyzie_api_key">APIキー</string>
     <string name="wyzie_key_saved">キーを保存しました</string>
     <string name="wyzie_key_encrypted">キーはこのデバイスに暗号化して保存されます。</string>
-    <string name="wyzie_using_build_key">secrets.json のキーを使用しています。</string>
     <string name="wyzie_key_required">オンライン字幕検索にはご自身のWyzie APIキーが必要です。store.wyzie.io/redeem にアクセスし、サイトの手順に従ってサブスクリプションを引き換えたうえで、下にキーを貼り付けてください。</string>
     <string name="wyzie_get_free_key">無料キーを取得</string>
     <string name="wyzie_error_key_storage">Wyzie APIキーを更新できませんでした。</string>
@@ -324,7 +322,6 @@
     <string name="parental_next">次へ</string>
     <string name="parental_set_pin_first">このロックを使うには PIN を設定してください。</string>
     <string name="parental_local_note">これらの設定はこのデバイスに留まります。同期されたり、他のデバイスに送信されたりすることはありません。</string>
-    <string name="settings_section_app_controls">アプリコントロール</string>
     <string name="settings_app_controls_skip_backward">戻る</string>
     <string name="settings_app_controls_skip_forward">進む</string>
     <string name="settings_app_controls_skip_note">ビデオの左側または右側をダブルタップして、戻るか進みます。</string>
@@ -401,6 +398,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">再生元</string>
     <string name="play_from_unavailable">%1$s · 利用不可</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">このデバイス</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · 前回再生</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d個のソース</item>
         <item quantity="other">%1$d個のソース</item>
@@ -623,6 +624,25 @@
     <string name="sync_remove_device_message">端末のファイルを削除すると、その履歴は他の端末に届かなくなります。その端末は、プロバイダーで Edendale のアクセスを取り消すかサーバーのパスワードを変えるまで、ログイン情報とローカルのコピーを保持します。</string>
     <string name="sync_manage_access">%1$s でアクセスを管理</string>
     <string name="sync_no_other_devices">このスペースに書き込んだ他の端末はまだありません。</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">視聴履歴</string>
+    <string name="watch_history_on_device">この端末</string>
+    <string name="watch_history_note_sync_on">削除すると、ほかの端末からも消えます。</string>
+    <string name="watch_history_note_sync_off">削除しても、消えるのはこの端末の履歴だけです。</string>
+    <string name="watch_history_delete_ellipsis">視聴履歴を削除…</string>
+    <string name="watch_history_deleting">削除中…</string>
+    <string name="watch_history_deleted">視聴履歴を削除しました。</string>
+    <string name="watch_history_deleted_others_follow">この端末では削除しました。ほかの端末でも、次に同期したときに削除されます。</string>
+    <string name="watch_history_pending">この端末では削除しました。Edendale が %1$s に接続できたら、ほかの端末でも削除されます。</string>
+    <string name="watch_history_failed">視聴履歴を削除できませんでした。</string>
+    <string name="watch_history_everywhere_title">すべての端末で視聴履歴を削除しますか？</string>
+    <string name="watch_history_everywhere_message">視聴の進み具合と視聴済みの印を、この端末と、%1$s を通じてほかの端末から削除します。</string>
+    <string name="watch_history_everywhere_confirm">すべての端末で削除</string>
+    <string name="watch_history_local_title">この端末の視聴履歴を削除しますか？</string>
+    <string name="watch_history_local_message">この端末から視聴の進み具合と視聴済みの印を削除します。あとで同期をオンにすると、ほかの端末の履歴が戻ります。</string>
+    <string name="watch_history_local_confirm">削除</string>
+    <string name="watch_history_kept">お気に入り、ウォッチリスト、評価、レビュー、ライブラリ、TMDB アカウントはそのままです。</string>
+    <string name="clear_progress">視聴の進み具合を消去</string>
     <string name="sync_folder_relink">スペース「%1$s」にこの端末が使うフォルダーを選んでください。</string>
     <string name="sync_google_relink">スペース「%2$s」を使うには %1$s として Google にサインインしてください。</string>
     <string name="pairing_role_question">ログイン情報をどちらに送りますか？</string>

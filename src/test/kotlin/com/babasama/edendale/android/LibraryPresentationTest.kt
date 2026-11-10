@@ -2,8 +2,11 @@ package com.babasama.edendale.android
 
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
+import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.SourceEndpoint
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
@@ -580,17 +583,18 @@ class LibraryPresentationTest {
 
     // MARK: - Copies of one title (D.5)
 
-    private fun folder(uri: String, name: String, kind: String, status: String? = null) =
+    private fun folder(uri: String, name: String, kind: String, status: String? = null, endpoint: String? = null) =
         com.babasama.edendale.android.data.LibraryFolderEntity(
             treeUri = uri,
             displayName = name,
             addedAtEpochMillis = 0,
             kind = kind,
             status = status,
+            endpoint = endpoint,
         )
 
     @Test
-    fun `a tapped copy plays unless its source is unreachable`() {
+    fun `Play starts the first reachable copy, whichever copy the page was opened from`() {
         val folders = listOf(
             folder("smb://nas/films/", "NAS", "smb", status = "offline"),
             folder("content://tree/movies", "Movies", "local"),
@@ -599,11 +603,14 @@ class LibraryPresentationTest {
         val onPhone = movie(uri = "content://tree/movies/Heat.mkv", tmdbId = 949, folderUri = "content://tree/movies")
         val other = movie(uri = "content://tree/movies/Alien.mkv", tmdbId = 348)
 
-        assertEquals(onPhone, preferredMovie(onNas, listOf(onNas, onPhone, other), folders))
-        assertEquals(onPhone, preferredMovie(onPhone, listOf(onNas, onPhone, other), folders))
-        // Reachable again: the tapped copy plays.
+        fun play(page: LibraryMovieEntity, movies: List<LibraryMovieEntity>, sources: Map<String, LibraryFolderEntity>) =
+            moviePlayStart(movieCopies(page, movies, sources), sources, remembered = null)!!.copy
+        assertEquals(onPhone, play(onNas, listOf(onNas, onPhone, other), folders))
+        assertEquals(onPhone, play(onPhone, listOf(onNas, onPhone, other), folders))
+        // Reachable again: still Play From order (27.1), what Continue Watching starts,
+        // rather than the copy the page was opened from.
         val online = folders + ("smb://nas/films/" to folders.getValue("smb://nas/films/").copy(status = null))
-        assertEquals(onNas, preferredMovie(onNas, listOf(onNas, onPhone), online))
+        assertEquals(onPhone, play(onNas, listOf(onNas, onPhone), online))
         assertEquals(listOf(onNas, onPhone), movieCopies(onNas, listOf(onPhone, onNas, other), online))
     }
 
@@ -620,6 +627,176 @@ class LibraryPresentationTest {
         assertEquals(onPhone.uri, continueWatching(listOf(record), listOf(onNas, onPhone), emptyList(), emptyList(), folders = folders).single().uri)
         val phoneOffline = folders.map { if (it.kind == "local") it.copy(status = "offline") else it }
         assertEquals(onNas.uri, continueWatching(listOf(record), listOf(onNas, onPhone), emptyList(), emptyList(), folders = phoneOffline).single().uri)
+    }
+
+    // MARK: - Where copies are reached from, and the source a title last played from (27.1)
+
+    @Test
+    fun `a copy's source carries where it's reached from`() {
+        val folders = listOf(
+            folder("smb://Longs-Mac-Studio.local/Extra/", "Extra", "smb"),
+            folder("gdrive://9f86d081884c7d659a2feaa0c55ad015/chosen/", "Videos you chose", "gdrive", endpoint = "me@example.com"),
+            folder("s3://9f86d081884c7d659a2feaa0c55ad015/films/", "films", "s3", status = "offline", endpoint = "http://minio.local:9000"),
+            folder("content://tree/movies", "Movies", "local"),
+        ).associateBy { it.treeUri }
+
+        assertEquals(SourceEndpoint.Server("longs-mac-studio.local"), folders.copySource("smb://Longs-Mac-Studio.local/Extra/").endpoint)
+        assertEquals(
+            SourceEndpoint.Account(MediaSourceKind.GOOGLE_DRIVE, "me@example.com"),
+            folders.copySource("gdrive://9f86d081884c7d659a2feaa0c55ad015/chosen/").endpoint,
+        )
+        val s3 = folders.copySource("s3://9f86d081884c7d659a2feaa0c55ad015/films/")
+        assertEquals(SourceEndpoint.Server("minio.local", 9000), s3.endpoint)
+        assertTrue(s3.isUnavailable)
+        assertEquals(CopySource("Movies", MediaSourceKind.LOCAL, false, SourceEndpoint.ThisDevice), folders.copySource("content://tree/movies"))
+        // A file added on its own, or a copy whose source is gone, is on this device.
+        assertEquals(CopySource("", MediaSourceKind.LOCAL, false, SourceEndpoint.ThisDevice), folders.copySource(null))
+        assertEquals(SourceEndpoint.ThisDevice, folders.copySource("smb://gone/x/").endpoint)
+    }
+
+    private val lanRoot = "smb://longs-mac-studio.local/Public/"
+    private val tailscaleRoot = "smb://100.64.0.2/Public/"
+
+    private fun twoLinks(lanOffline: Boolean = false, tailscaleOffline: Boolean = false) = listOf(
+        folder(lanRoot, "Public", "smb", status = if (lanOffline) "offline" else null),
+        folder(tailscaleRoot, "Public", "smb", status = if (tailscaleOffline) "offline" else null),
+    )
+
+    private fun onBothLinks(file: String, make: (String) -> LibraryEpisodeEntity) =
+        make(lanRoot + file).copy(folderUri = lanRoot) to make(tailscaleRoot + file).copy(folderUri = tailscaleRoot)
+
+    @Test
+    fun `continue watching resumes on the source the show was last played from`() {
+        val (lan, tailscale) = onBothLinks("S01E02.mkv") { episode(uri = it, tmdbId = 3000) }
+        val record = progress(3000, type = WatchMediaType.EPISODE)
+        fun resume(folders: List<com.babasama.edendale.android.data.LibraryFolderEntity>, lastSources: Map<String, String>) =
+            continueWatching(listOf(record), emptyList(), listOf(lan, tailscale), listOf(show()), folders = folders, lastSources = lastSources).single().uri
+
+        // Nothing remembered: the LAN link, which ranks before the Tailscale one.
+        assertEquals(lan.uri, resume(twoLinks(), emptyMap()))
+        assertEquals(tailscale.uri, resume(twoLinks(), mapOf("show:95396" to tailscaleRoot)))
+        // Remembered before the show matched TMDB.
+        assertEquals(tailscale.uri, resume(twoLinks(), mapOf("showKey:severance" to tailscaleRoot)))
+    }
+
+    @Test
+    fun `a movie resumes on the source it was last played from`() {
+        val onLan = movie(uri = lanRoot + "Heat.mkv", tmdbId = 949, folderUri = lanRoot)
+        val onTailscale = movie(uri = tailscaleRoot + "Heat.mkv", tmdbId = 949, folderUri = tailscaleRoot)
+        val record = progress(949, position = 0.5)
+        fun resume(lastSources: Map<String, String>) =
+            continueWatching(listOf(record), listOf(onLan, onTailscale), emptyList(), emptyList(), folders = twoLinks(), lastSources = lastSources).single().uri
+
+        assertEquals(onLan.uri, resume(emptyMap()))
+        assertEquals(onTailscale.uri, resume(mapOf("movie:949" to tailscaleRoot)))
+        // Another title's memory changes nothing.
+        assertEquals(onLan.uri, resume(mapOf("movie:603" to tailscaleRoot)))
+    }
+
+    @Test
+    fun `the up next card follows the remembered source`() {
+        val (lan, tailscale) = onBothLinks("S01E02.mkv") { showEpisode("copy", 1, 2, tmdbId = 2, uri = it) }
+        fun upNext(folders: List<com.babasama.edendale.android.data.LibraryFolderEntity>, lastSources: Map<String, String>) =
+            continueWatching(
+                progress = listOf(completedEpisode(1, show = 7, season = 1, number = 1)),
+                movies = emptyList(),
+                episodes = listOf(lan, tailscale),
+                shows = listOf(show(key = "copy", tmdbId = 7)),
+                folders = folders,
+                lastSources = lastSources,
+            ).single()
+
+        assertEquals(lan.uri, upNext(twoLinks(), emptyMap()).uri)
+        val entry = upNext(twoLinks(), mapOf("show:7" to tailscaleRoot))
+        assertEquals(tailscale.uri, entry.uri)
+        assertTrue(entry.isNextUp)
+        assertEquals(tailscale.uri, upNext(twoLinks(), mapOf("showKey:copy" to tailscaleRoot)).uri)
+    }
+
+    @Test
+    fun `a remembered source that is offline falls back to the first reachable copy`() {
+        val (lan, tailscale) = onBothLinks("S01E02.mkv") { episode(uri = it, tmdbId = 3000) }
+        val entries = continueWatching(
+            listOf(progress(3000, type = WatchMediaType.EPISODE)),
+            emptyList(),
+            listOf(lan, tailscale),
+            listOf(show()),
+            folders = twoLinks(tailscaleOffline = true),
+            lastSources = mapOf("show:95396" to tailscaleRoot),
+        )
+        assertEquals(lan.uri, entries.single().uri)
+    }
+
+    @Test
+    fun `a card that falls back from the remembered source leaves the memory alone`() {
+        val (lan, tailscale) = onBothLinks("S01E02.mkv") { episode(uri = it, tmdbId = 3000) }
+        fun resume(folders: List<com.babasama.edendale.android.data.LibraryFolderEntity>, lastSources: Map<String, String>) =
+            continueWatching(
+                listOf(progress(3000, type = WatchMediaType.EPISODE)),
+                emptyList(),
+                listOf(lan, tailscale),
+                listOf(show()),
+                folders = folders,
+                lastSources = lastSources,
+            ).single()
+
+        // Nothing remembered yet, or the card starts the remembered source: playing it counts.
+        assertTrue(resume(twoLinks(), emptyMap()).remembersSource)
+        assertTrue(resume(twoLinks(), mapOf("show:95396" to tailscaleRoot)).remembersSource)
+        // The remembered Tailscale link was flagged by an old scan: the card starts the LAN
+        // link, and playing it mustn't move the show off Tailscale for good.
+        val fallback = resume(twoLinks(tailscaleOffline = true), mapOf("show:95396" to tailscaleRoot))
+        assertEquals(lan.uri, fallback.uri)
+        assertFalse(fallback.remembersSource)
+        // A remembered source this show has no copy on wasn't passed over.
+        assertTrue(resume(twoLinks(), mapOf("show:95396" to "smb://unlinked/Public/")).remembersSource)
+
+        // A movie the same way.
+        val onLan = movie(uri = lanRoot + "Heat.mkv", tmdbId = 949, folderUri = lanRoot)
+        val onTailscale = movie(uri = tailscaleRoot + "Heat.mkv", tmdbId = 949, folderUri = tailscaleRoot)
+        val heat = continueWatching(
+            listOf(progress(949, position = 0.5)),
+            listOf(onLan, onTailscale),
+            emptyList(),
+            emptyList(),
+            folders = twoLinks(lanOffline = true),
+            lastSources = mapOf("movie:949" to lanRoot),
+        ).single()
+        assertEquals(onTailscale.uri, heat.uri)
+        assertFalse(heat.remembersSource)
+    }
+
+    @Test
+    fun `an up next card that falls back from the remembered source leaves the memory alone`() {
+        val (lan, tailscale) = onBothLinks("S01E02.mkv") { showEpisode("copy", 1, 2, tmdbId = 2, uri = it) }
+        fun upNext(folders: List<com.babasama.edendale.android.data.LibraryFolderEntity>) =
+            continueWatching(
+                progress = listOf(completedEpisode(1, show = 7, season = 1, number = 1)),
+                movies = emptyList(),
+                episodes = listOf(lan, tailscale),
+                shows = listOf(show(key = "copy", tmdbId = 7)),
+                folders = folders,
+                lastSources = mapOf("show:7" to tailscaleRoot),
+            ).single()
+
+        assertTrue(upNext(twoLinks()).remembersSource)
+        val fallback = upNext(twoLinks(tailscaleOffline = true))
+        assertEquals(lan.uri, fallback.uri)
+        assertFalse(fallback.remembersSource)
+    }
+
+    @Test
+    fun `a remembered source that no longer exists is ignored`() {
+        val (lan, tailscale) = onBothLinks("S01E02.mkv") { episode(uri = it, tmdbId = 3000) }
+        val entries = continueWatching(
+            listOf(progress(3000, type = WatchMediaType.EPISODE)),
+            emptyList(),
+            listOf(tailscale, lan),
+            listOf(show()),
+            folders = twoLinks(),
+            lastSources = mapOf("show:95396" to "smb://unlinked/Public/"),
+        )
+        assertEquals(lan.uri, entries.single().uri)
     }
 
     // MARK: - Grid layout
@@ -776,19 +953,19 @@ class LibraryPresentationTest {
             hasActivePerson = false,
             // Lower-case query against a mixed-case title, and upper-case
             // against a lower-case one, so the comparison is pinned both ways.
-            movies = listOf(movie(title = "The Matrix"), movie(uri = "b", title = "Alien")),
-            shows = listOf(show(name = "MATLOCK", key = "matlock"), show(name = "Severance", key = "sev")),
+            movies = movieTitles(listOf(movie(title = "The Matrix"), movie(uri = "b", title = "Alien", tmdbId = 348)), emptyMap()),
+            shows = showTitles(listOf(show(name = "MATLOCK", key = "matlock"), show(name = "Severance", key = "sev")), emptyList()),
         )
 
-        assertEquals(listOf("The Matrix"), matches.movies.map { it.title })
-        assertEquals(listOf("MATLOCK"), matches.shows.map { it.name })
+        assertEquals(listOf("The Matrix"), matches.movies.map { it.display.title })
+        assertEquals(listOf("MATLOCK"), matches.shows.map { it.display.name })
         assertFalse(matches.isEmpty)
     }
 
     @Test
     fun `a keyword scope narrows which half is searched`() {
-        val movies = listOf(movie(title = "Severance Package"))
-        val shows = listOf(show(name = "Severance"))
+        val movies = movieTitles(listOf(movie(title = "Severance Package")), emptyMap())
+        val shows = showTitles(listOf(show(name = "Severance")), emptyList())
 
         val moviesOnly = localMatches("severance", SearchScope.MOVIES, false, movies, shows)
         assertEquals(1, moviesOnly.movies.size)
@@ -801,8 +978,8 @@ class LibraryPresentationTest {
 
     @Test
     fun `filmography and empty queries suppress the library section`() {
-        val movies = listOf(movie(title = "The Matrix"))
-        val shows = listOf(show())
+        val movies = movieTitles(listOf(movie(title = "The Matrix")), emptyMap())
+        val shows = showTitles(listOf(show()), emptyList())
 
         // A person filter and a people scope are both TMDB-only views.
         assertTrue(localMatches("matrix", SearchScope.ALL, true, movies, shows).isEmpty)
