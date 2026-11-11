@@ -424,7 +424,7 @@ record of its own, so it has no menu.
 
 The device ID and the location settings live in `edendale_sync.xml`, excluded
 from backup and device transfer like the logins, so a restored device makes a
-new ID. The sync tables are in the Room database (schema 4). Sync logs carry
+new ID. The sync tables are in the Room database (schema 5). Sync logs carry
 counts, file names, stamps, and error classes only, in debug builds only; a
 JVM test runs a whole pairing and sync through the log sink and checks that no
 code, QR secret, key, token, or password reaches it.
@@ -746,6 +746,18 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 `build/outputs/apk/release/Edendale-release-unsigned.apk`. Release signing is
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
+
+Google Play takes an Android App Bundle, which carries the base and the
+`:xr` feature module (see Immersive theater below); Play builds each device's
+APKs from it and delivers the module only to Android XR devices:
+
+```sh
+./gradlew bundleRelease
+```
+
+It writes `build/outputs/bundle/release/Edendale-release.aab` (about 58 MB
+on 2026-11-11, with the module's rooms; `base/` and `xr/` inside), unsigned
+until the upload key is supplied as above.
 
 ### Immersive theater (Android XR)
 

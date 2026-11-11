@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Films en series</string>
+    <string name="tab_watchlist">Kijklijst</string>
     <string name="tab_downloaded">Gedownload</string>
     <string name="tab_search">Zoek</string>
     <string name="action_settings">Instellingen</string>
@@ -291,6 +292,7 @@
     <string name="audience_verifying">Classificaties controleren</string>
     <string name="audience_restricted_title">Niet beschikbaar voor jong publiek</string>
     <string name="audience_restricted_message">Deze titel is niet geverifieerd als PG of PG-13.</string>
+    <string name="watchlist_remove">Verwijder uit kijklijst</string>
     <string name="watchlist_no_young_audience_titles">Je kijklijst bevat momenteel geen titels met PG of PG-13.</string>
     <string name="filmography_no_young_audience_titles">Deze filmografie bevat geen titels met PG of PG-13.</string>
     <string name="settings_section_parental_controls">Ouderlijk toezicht</string>

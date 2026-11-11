@@ -12,11 +12,21 @@ import org.w3c.dom.Element
  * The string resources themselves, read from `src/main/res` (Gradle runs the
  * JVM suite from the project directory). R.1: the Link Source notes say what
  * 27.1 sync writes, and every locale keeps the English placeholders, so a
- * translation can't show a raw `%1$s` or miss an argument.
+ * translation can't show a raw `%1$s` or miss an argument. R.6: every
+ * translated locale has every string.
  */
 class StringResourcesTest {
 
     private val res = File("src/main/res")
+
+    /** The names of every `<string>` and `<plurals>` in [folder]. */
+    private fun names(folder: String): Set<String> {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File(res, "$folder/strings.xml"))
+        return listOf("string", "plurals").flatMapTo(mutableSetOf()) { tag ->
+            val nodes = document.getElementsByTagName(tag)
+            (0 until nodes.length).map { (nodes.item(it) as Element).getAttribute("name") }
+        }
+    }
 
     /** `<string>` values by name; plurals and arrays are left out. */
     private fun strings(folder: String): Map<String, String> {
@@ -42,6 +52,18 @@ class StringResourcesTest {
                 assertEquals(placeholders(base), placeholders(value), "$folder/$name")
             }
         }
+    }
+
+    @Test
+    fun `every translated locale has every English string`() {
+        // R.6: `tab_watchlist` and `watchlist_remove` were English-only. The
+        // `values-en-r*` files are spelling overrides and fall back instead.
+        val english = names("values")
+        for (folder in TRANSLATED) {
+            assertEquals(emptySet(), english - names(folder), "missing in $folder")
+            assertEquals(emptySet(), names(folder) - english, "only in $folder")
+        }
+        for (folder in ENGLISH_OVERRIDES) assertEquals(emptySet(), names(folder) - english, "only in $folder")
     }
 
     @Test

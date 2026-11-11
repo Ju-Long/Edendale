@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">電影與節目</string>
+    <string name="tab_watchlist">待看清單</string>
     <string name="tab_downloaded">已下載</string>
     <string name="tab_search">搜尋</string>
     <string name="action_settings">設定</string>
@@ -287,6 +288,7 @@
     <string name="audience_verifying">正在核對分級</string>
     <string name="audience_restricted_title">不向青少年觀眾提供</string>
     <string name="audience_restricted_message">此影片未被確認為 PG 或 PG-13 分級。</string>
+    <string name="watchlist_remove">從待看清單中移除</string>
     <string name="watchlist_no_young_audience_titles">你的待看清單中目前沒有 PG 或 PG-13 分級的影片。</string>
     <string name="filmography_no_young_audience_titles">此影人作品中沒有 PG 或 PG-13 分級的影片。</string>
     <string name="settings_section_parental_controls">家長控制</string>

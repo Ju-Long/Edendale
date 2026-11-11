@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">映画と番組</string>
+    <string name="tab_watchlist">ウォッチリスト</string>
     <string name="tab_downloaded">ダウンロード済み</string>
     <string name="tab_search">検索</string>
     <string name="action_settings">設定</string>
@@ -287,6 +288,7 @@
     <string name="audience_verifying">レーティングを確認しています</string>
     <string name="audience_restricted_title">若い視聴者には提供されません</string>
     <string name="audience_restricted_message">この作品は PG または PG-13 として確認されていません。</string>
+    <string name="watchlist_remove">ウォッチリストから削除</string>
     <string name="watchlist_no_young_audience_titles">ウォッチリストに PG または PG-13 の作品は現在ありません。</string>
     <string name="filmography_no_young_audience_titles">このフィルモグラフィーに PG または PG-13 の作品はありません。</string>
     <string name="settings_section_parental_controls">ペアレンタルコントロール</string>

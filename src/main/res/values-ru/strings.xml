@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Фильмы и сериалы</string>
+    <string name="tab_watchlist">Список к просмотру</string>
     <string name="tab_downloaded">Загрузки</string>
     <string name="tab_search">Поиск</string>
     <string name="action_settings">Настройки</string>
@@ -299,6 +300,7 @@
     <string name="audience_verifying">Проверка возрастных рейтингов</string>
     <string name="audience_restricted_title">Недоступно для юной аудитории</string>
     <string name="audience_restricted_message">Это название не подтверждено как PG или PG-13.</string>
+    <string name="watchlist_remove">Удалить из списка к просмотру</string>
     <string name="watchlist_no_young_audience_titles">В вашем списке «посмотреть» сейчас нет названий с рейтингом PG или PG-13.</string>
     <string name="filmography_no_young_audience_titles">В этой фильмографии нет названий с рейтингом PG или PG-13.</string>
     <string name="settings_section_parental_controls">Родительский контроль</string>
