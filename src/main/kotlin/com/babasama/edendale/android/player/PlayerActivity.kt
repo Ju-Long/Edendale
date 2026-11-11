@@ -1385,6 +1385,10 @@ class PlayerActivity : ComponentActivity() {
      */
     private fun enterTheater() {
         val exoPlayer = player ?: return
+        // Only an item that has started here is handed over. Until then the
+        // parental check (O.5) may still be deciding whether it plays at all,
+        // and its position reads 0 over the stored resume point.
+        if (!itemStarted) return
         saveContentPreferences()
         writeProgress()
         val tracks = exoPlayer.currentTracks
