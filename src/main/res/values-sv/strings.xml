@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Fortsätt titta</string>
     <string name="section_movies">Filmer</string>
     <string name="section_tv_shows">TV-serier</string>
+    <string name="section_all">Alla</string>
+    <string name="section_watching_short">Pågående</string>
+    <string name="section_shows_short">Serier</string>
     <string name="section_sources">Källor</string>
     <string name="library_empty_title">Biblioteket är tyst</string>
     <string name="library_empty_message">Lägg till en fil eller länka en källa för att fortsätta.</string>

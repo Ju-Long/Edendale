@@ -110,6 +110,9 @@
     <string name="section_continue_watching">視聴を続ける</string>
     <string name="section_movies">映画</string>
     <string name="section_tv_shows">テレビ番組</string>
+    <string name="section_all">すべて</string>
+    <string name="section_watching_short">視聴中</string>
+    <string name="section_shows_short">番組</string>
     <string name="section_sources">ソース</string>
     <string name="library_empty_title">ライブラリは静寂です</string>
     <string name="library_empty_message">続けるには、ファイルを追加するかソースをリンクしてください。</string>

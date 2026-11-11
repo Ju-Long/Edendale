@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Continuar viendo</string>
     <string name="section_movies">Películas</string>
     <string name="section_tv_shows">Programas de TV</string>
+    <string name="section_all">Todo</string>
+    <string name="section_watching_short">Viendo</string>
+    <string name="section_shows_short">Series</string>
     <string name="section_sources">Orígenes</string>
     <string name="library_empty_title">La Biblioteca Está en Silencio</string>
     <string name="library_empty_message">Agrega un archivo o vincula una fuente para continuar.</string>

@@ -110,6 +110,9 @@
     <string name="section_continue_watching">시청 계속하기</string>
     <string name="section_movies">영화</string>
     <string name="section_tv_shows">TV 프로그램</string>
+    <string name="section_all">전체</string>
+    <string name="section_watching_short">시청 중</string>
+    <string name="section_shows_short">시리즈</string>
     <string name="section_sources">소스</string>
     <string name="library_empty_title">고요한 라이브러리</string>
     <string name="library_empty_message">계속하려면 파일을 추가하거나 소스를 연결하세요.</string>

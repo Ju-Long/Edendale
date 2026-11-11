@@ -609,9 +609,18 @@ Google Fonts' `ofl/nunito/Nunito[wght].ttf` with fontTools'
 
 ### Keyboard and large screens
 
+Once at least two of Continue Watching, Movies, and TV Shows have titles, the
+Downloaded page heads itself with segmented buttons — All, Watching, Movies,
+and Shows — that show the whole library or one section of it. On phones and
+tablets they stay pinned under the top bar while the page scrolls, across the
+width on a phone and at the top left on wider windows; on TV they sit under
+the page heading, and Left and Right stop at the ends.
+
 In windows at least 1100 dp wide, the navigation lists Watchlist → Movies and
 TV Shows, and Downloaded → Continue Watching, Movies, and TV Shows, as rows of
 their own while each has titles for the current audience setting. The
+Downloaded rows and the page's segmented buttons show the same choice, and
+either one changes it. The
 Continue Watching page lists every title in progress; the shelf on the
 Downloaded page keeps its 12. In the player, the playlist and Player
 Adjustments dock beside the video instead of covering it.

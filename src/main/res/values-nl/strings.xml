@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Verder kijken</string>
     <string name="section_movies">Films</string>
     <string name="section_tv_shows">Tv-series</string>
+    <string name="section_all">Alles</string>
+    <string name="section_watching_short">Bezig</string>
+    <string name="section_shows_short">Series</string>
     <string name="section_sources">Bronnen</string>
     <string name="library_empty_title">De bibliotheek is stil</string>
     <string name="library_empty_message">Voeg een bestand toe of koppel een bron om door te gaan.</string>

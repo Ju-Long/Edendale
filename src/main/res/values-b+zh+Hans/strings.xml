@@ -110,6 +110,9 @@
     <string name="section_continue_watching">继续观看</string>
     <string name="section_movies">电影</string>
     <string name="section_tv_shows">电视节目</string>
+    <string name="section_all">全部</string>
+    <string name="section_watching_short">观看中</string>
+    <string name="section_shows_short">剧集</string>
     <string name="section_sources">来源</string>
     <string name="library_empty_title">媒体库悄然无声</string>
     <string name="library_empty_message">添加文件或链接源以继续。</string>

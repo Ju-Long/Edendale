@@ -141,6 +141,10 @@
     <string name="section_continue_watching">Continue Watching</string>
     <string name="section_movies">Movies</string>
     <string name="section_tv_shows">TV Shows</string>
+    <!-- 27.1: the Downloaded page's section picker; the whole library, and Continue Watching and TV Shows shortened to fit four choices in a phone-width row -->
+    <string name="section_all">All</string>
+    <string name="section_watching_short">Watching</string>
+    <string name="section_shows_short">Shows</string>
     <string name="section_sources">Sources</string>
     <string name="library_empty_title">The Library Is Silent</string>
     <string name="library_empty_message">Add a file or link a source to continue.</string>

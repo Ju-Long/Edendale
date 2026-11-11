@@ -286,29 +286,37 @@ fun EdendaleApp(
             val compactPortrait = !isTelevision && maxWidth < 600.dp && maxHeight > maxWidth
             val wide = !isTelevision && !compactPortrait
             val extendedNavigation = wide && maxWidth >= 1100.dp
-            // Section rows exist only in extended navigation; elsewhere a section
-            // shows as its whole page.
-            val shownItem = if (extendedNavigation) navigationItem else navigationItem.page
+            // Watchlist section rows exist only in extended navigation, where a
+            // section shows as its whole page; Downloaded's sections are also the
+            // page's own picker (27.1), at every width.
+            val shownItem = navigationItem.shown(extendedNavigation)
 
-            // Extended navigation's child rows appear only while their section has
-            // titles for the current audience setting. Both lists hold their last
-            // settled value while ratings are verified or the library loads, and
-            // an open section that empties returns to its parent page.
+            // A section is offered — as a child row, or in the Downloaded page's
+            // picker — only while it has titles for the current audience setting.
+            // Both lists hold their last settled value while ratings are verified
+            // or the library loads, and an open section that empties returns to
+            // its parent page.
             var watchlistSections: List<WatchlistSection>? = null
-            var downloadedSections: List<DownloadedSection>? = null
             if (extendedNavigation) {
                 watchlistSections = remember { SettledValue<List<WatchlistSection>>() }.update(
                     WatchlistSection.available(watchlistRecords.filter { audienceFilter.shows(it.ref) }.map { it.mediaType })
                         .takeUnless { audienceFilter.isVerifying(watchlistRefs) },
                 )
-                downloadedSections = remember { SettledValue<List<DownloadedSection>>() }
-                    .update(rememberDownloadedSections(audienceFilter))
-                LaunchedEffect(watchlistSections, downloadedSections) {
-                    if (watchlistSections != null && downloadedSections != null) {
-                        navigationItem = navigationItem.resolved(watchlistSections, downloadedSections)
-                    }
-                }
             }
+            // Read only where something lists them, the page's picker or the
+            // section rows: another tab at a narrower width neither watches the
+            // library nor asks for its titles' ratings.
+            val downloadedSections = remember { SettledValue<List<DownloadedSection>>() }.update(
+                if (extendedNavigation || navigationItem.tab == AppTab.DOWNLOADED) {
+                    rememberDownloadedSections(audienceFilter)
+                } else {
+                    null
+                },
+            )
+            LaunchedEffect(watchlistSections, downloadedSections, extendedNavigation) {
+                navigationItem = navigationItem.resolved(watchlistSections, downloadedSections, sectionRows = extendedNavigation)
+            }
+            val selectDownloadedSection: (DownloadedSection?) -> Unit = { navigationItem = NavigationItem.Downloaded(it) }
             val commands = keyboard?.commands
             if (wide && keyboard != null) {
                 LaunchedEffect(keyboard) {
@@ -321,6 +329,8 @@ fun EdendaleApp(
                     selectedItem = shownItem,
                     commands = commands,
                     onSelectTab = openTab,
+                    downloadedSections = downloadedSections.orEmpty(),
+                    onSelectDownloadedSection = selectDownloadedSection,
                     browseViewModel = browseViewModel,
                     searchViewModel = searchViewModel,
                     watchlistViewModel = watchlistViewModel,
@@ -332,6 +342,8 @@ fun EdendaleApp(
                     selectedItem = shownItem,
                     commands = commands,
                     onSelectTab = openTab,
+                    downloadedSections = downloadedSections.orEmpty(),
+                    onSelectDownloadedSection = selectDownloadedSection,
                     browseViewModel = browseViewModel,
                     searchViewModel = searchViewModel,
                     watchlistViewModel = watchlistViewModel,
@@ -345,6 +357,7 @@ fun EdendaleApp(
                     commands = commands,
                     watchlistSections = watchlistSections.orEmpty(),
                     downloadedSections = downloadedSections.orEmpty(),
+                    onSelectDownloadedSection = selectDownloadedSection,
                     navigationHidden = navigationHidden,
                     browseViewModel = browseViewModel,
                     searchViewModel = searchViewModel,
@@ -389,6 +402,8 @@ private fun PhoneShell(
     selectedItem: NavigationItem,
     commands: Flow<LibraryCommand>?,
     onSelectTab: (AppTab) -> Unit,
+    downloadedSections: List<DownloadedSection>,
+    onSelectDownloadedSection: (DownloadedSection?) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
     watchlistViewModel: WatchlistViewModel,
@@ -418,6 +433,8 @@ private fun PhoneShell(
         AppTabContent(
             item = selectedItem,
             commands = commands,
+            downloadedSections = downloadedSections,
+            onSelectDownloadedSection = onSelectDownloadedSection,
             browseViewModel = browseViewModel,
             searchViewModel = searchViewModel,
             watchlistViewModel = watchlistViewModel,
@@ -438,6 +455,7 @@ private fun WideShell(
     commands: Flow<LibraryCommand>?,
     watchlistSections: List<WatchlistSection>,
     downloadedSections: List<DownloadedSection>,
+    onSelectDownloadedSection: (DownloadedSection?) -> Unit,
     navigationHidden: Boolean,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
@@ -476,6 +494,8 @@ private fun WideShell(
             AppTabContent(
                 item = selectedItem,
                 commands = commands,
+                downloadedSections = downloadedSections,
+                onSelectDownloadedSection = onSelectDownloadedSection,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
@@ -552,7 +572,9 @@ private fun WideNavigation(
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     NavigationButton(
                         tab = tab,
-                        selected = selectedItem == page,
+                        // The rail lists no section rows, so its tab stays lit
+                        // while the page's picker shows one of its sections.
+                        selected = selectedItem.lights(tab, sectionRows = extended),
                         extended = extended,
                         onClick = { onSelect(page) },
                     )
@@ -676,6 +698,8 @@ private fun TvShell(
     selectedItem: NavigationItem,
     commands: Flow<LibraryCommand>?,
     onSelectTab: (AppTab) -> Unit,
+    downloadedSections: List<DownloadedSection>,
+    onSelectDownloadedSection: (DownloadedSection?) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
     watchlistViewModel: WatchlistViewModel,
@@ -733,6 +757,8 @@ private fun TvShell(
             AppTabContent(
                 item = selectedItem,
                 commands = commands,
+                downloadedSections = downloadedSections,
+                onSelectDownloadedSection = onSelectDownloadedSection,
                 browseViewModel = browseViewModel,
                 searchViewModel = searchViewModel,
                 watchlistViewModel = watchlistViewModel,
@@ -785,6 +811,8 @@ private fun TvNavigationTab(tab: AppTab, selected: Boolean, onClick: () -> Unit)
 private fun AppTabContent(
     item: NavigationItem,
     commands: Flow<LibraryCommand>?,
+    downloadedSections: List<DownloadedSection>,
+    onSelectDownloadedSection: (DownloadedSection?) -> Unit,
     browseViewModel: BrowseViewModel,
     searchViewModel: SearchViewModel,
     watchlistViewModel: WatchlistViewModel,
@@ -814,18 +842,22 @@ private fun AppTabContent(
                 section = (item as? NavigationItem.Watchlist)?.section,
             )
         }
-        AppTab.DOWNLOADED -> key(item) {
-            DownloadedScreen(
-                audienceFilter = audienceFilter,
-                isTelevision = isTelevision,
-                contentPadding = contentPadding,
-                onOpenSettings = onOpenSettings,
-                onOpenMovie = browseViewModel::openLocalMovie,
-                onOpenShow = browseViewModel::openLocalShow,
-                section = (item as? NavigationItem.Downloaded)?.section,
-                commands = commands,
-            )
-        }
+        // One page for every section: its picker (27.1) and the section rows
+        // change what it lists, and it starts that section at its top itself,
+        // so a change neither sweeps the library again nor drops the remote's
+        // focus from the picker.
+        AppTab.DOWNLOADED -> DownloadedScreen(
+            audienceFilter = audienceFilter,
+            isTelevision = isTelevision,
+            contentPadding = contentPadding,
+            onOpenSettings = onOpenSettings,
+            onOpenMovie = browseViewModel::openLocalMovie,
+            onOpenShow = browseViewModel::openLocalShow,
+            section = (item as? NavigationItem.Downloaded)?.section,
+            sections = downloadedSections,
+            onSelectSection = onSelectDownloadedSection,
+            commands = commands,
+        )
         AppTab.SEARCH -> SearchScreen(
             viewModel = searchViewModel,
             audienceFilter = audienceFilter,

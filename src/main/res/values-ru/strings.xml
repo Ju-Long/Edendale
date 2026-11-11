@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Продолжить просмотр</string>
     <string name="section_movies">Фильмы</string>
     <string name="section_tv_shows">Сериалы</string>
+    <string name="section_all">Все</string>
+    <string name="section_watching_short">Смотрю</string>
+    <string name="section_shows_short">Сериалы</string>
     <string name="section_sources">Источники</string>
     <string name="library_empty_title">Библиотека безмолвствует</string>
     <string name="library_empty_message">Добавьте файл или привяжите источник, чтобы продолжить.</string>

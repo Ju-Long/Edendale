@@ -4,6 +4,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.DropdownMenu
@@ -33,6 +38,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,8 +83,15 @@ fun DownloadedScreen(
     onOpenMovie: (LibraryMovieEntity) -> Unit,
     /** Opens a show's page, which lists its episodes. */
     onOpenShow: (LibraryShowEntity) -> Unit = {},
-    /** Shows only this section (a navigation child row, J.1); null shows the whole library. */
+    /**
+     * Shows only this section (the section picker's choice, or a navigation
+     * child row, J.1); null shows the whole library.
+     */
     section: DownloadedSection? = null,
+    /** The sections with something to show, as the section picker offers them (27.1). */
+    sections: List<DownloadedSection> = emptyList(),
+    /** Chooses a section in the picker; null is the whole library. */
+    onSelectSection: (DownloadedSection?) -> Unit = {},
     /** Hardware-keyboard commands: add a folder, link a source, rescan (J.3). */
     commands: Flow<LibraryCommand>? = null,
 ) {
@@ -92,6 +105,8 @@ fun DownloadedScreen(
             onOpenMovie = onOpenMovie,
             onOpenShow = onOpenShow,
             section = section,
+            sections = sections,
+            onSelectSection = onSelectSection,
             commands = commands,
         )
     }
@@ -140,8 +155,9 @@ internal fun visibleLibrary(
 
 /**
  * The Downloaded sections with something to show, for extended navigation's
- * child rows (J.1). Null until the library has loaded and while audience
- * ratings are being verified, so a row doesn't flicker or close its page.
+ * child rows (J.1) and the page's section picker (27.1). Null until the
+ * library has loaded and while audience ratings are being verified, so a
+ * choice doesn't flicker or close its page.
  */
 @Composable
 internal fun rememberDownloadedSections(audienceFilter: YoungAudienceFilter): List<DownloadedSection>? {
@@ -182,10 +198,13 @@ private fun DownloadedScreenContent(
     onOpenMovie: (LibraryMovieEntity) -> Unit,
     onOpenShow: (LibraryShowEntity) -> Unit,
     section: DownloadedSection?,
+    sections: List<DownloadedSection>,
+    onSelectSection: (DownloadedSection?) -> Unit,
     commands: Flow<LibraryCommand>?,
 ) {
     val library = rememberLibrary()
-    val edgeMargin = if (isTelevision || availableWidth >= 600.dp) 48.dp else 20.dp
+    val compactWidth = !isTelevision && availableWidth < 600.dp
+    val edgeMargin = if (compactWidth) 20.dp else 48.dp
 
     // Null until Room answers. The page waits for the whole library before it
     // lays out, so a scroll position brought back from a title's page lands on
@@ -280,6 +299,22 @@ private fun DownloadedScreenContent(
     val listState = rememberShellListState("downloaded:${section?.name ?: "all"}")
     val posterReturn = rememberPosterReturn(isTelevision, ready = libraryLoaded)
 
+    // The section picker (27.1). Choosing a section keeps this page — its
+    // sweep, and the remote's focus on the picker — and starts the new
+    // section at the top with the bar out. A page built afresh (Back from a
+    // title's page) keeps the place it saved.
+    val pickerShown = libraryLoaded && DownloadedSection.isPickerOffered(sections)
+    val topBarState = rememberTopAppBarState()
+    var shownSection by remember { mutableStateOf(section) }
+    LaunchedEffect(section) {
+        if (section != shownSection) {
+            shownSection = section
+            listState.scrollToItem(0)
+            topBarState.heightOffset = 0f
+            topBarState.contentOffset = 0f
+        }
+    }
+
     // Add Local Folder and Add Network Source, shared by the menu, the empty
     // state, and the keyboard.
     var showSmbDialog by remember { mutableStateOf(false) }
@@ -370,6 +405,19 @@ private fun DownloadedScreenContent(
                         ) {
                             SectionHeader(stringResource(R.string.tab_downloaded), modifier = Modifier.weight(1f), large = true)
                             AddSourceMenu(isTelevision = true, onAddFolder = addFolder, onLinkSource = linkSource)
+                        }
+                    }
+                    // Under the heading at the top left; the TV bar above is the tab strip.
+                    if (pickerShown) {
+                        item("sections") {
+                            DownloadedSectionPicker(
+                                sections = sections,
+                                selection = section,
+                                onSelect = onSelectSection,
+                                fillWidth = false,
+                                isTelevision = true,
+                                modifier = Modifier.padding(horizontal = edgeMargin),
+                            )
                         }
                     }
                 }
@@ -560,11 +608,18 @@ private fun DownloadedScreenContent(
     if (isTelevision) {
         content(contentPadding)
     } else {
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(topBarState)
         Scaffold(
             topBar = {
+              Column {
                 TopAppBar(
-                    title = { PageTitle(stringResource(R.string.tab_downloaded), section?.let { stringResource(it.title) }) },
+                    // The picker names the section on screen; without it the title does.
+                    title = {
+                        PageTitle(
+                            stringResource(R.string.tab_downloaded),
+                            section?.takeUnless { pickerShown }?.let { stringResource(it.title) },
+                        )
+                    },
                     actions = {
                         if (folders.isNotEmpty() || allMovies.isNotEmpty() || allShows.isNotEmpty()) {
                             AddSourceMenu(isTelevision = false, onAddFolder = addFolder, onLinkSource = linkSource)
@@ -582,6 +637,40 @@ private fun DownloadedScreenContent(
                     ),
                     scrollBehavior = scrollBehavior,
                 )
+                // Pinned under the bar, which scrolls away above it: the
+                // choice stays in reach anywhere down the page, as iOS's tab
+                // bar accessory does. It takes the bar's colour as content
+                // passes under them both.
+                if (pickerShown) {
+                    // Derived, as Material's own bar reads it: the offset moves
+                    // with every scrolled pixel, the answer only at the top.
+                    val overlapped by remember(scrollBehavior) {
+                        derivedStateOf { scrollBehavior.state.overlappedFraction > 0.01f }
+                    }
+                    val underBar by animateColorAsState(
+                        targetValue = if (overlapped) {
+                            MaterialTheme.colorScheme.surfaceContainerLow
+                        } else {
+                            MaterialTheme.colorScheme.background
+                        },
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "Section picker bar",
+                    )
+                    DownloadedSectionPicker(
+                        sections = sections,
+                        selection = section,
+                        onSelect = onSelectSection,
+                        fillWidth = compactWidth,
+                        isTelevision = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(underBar)
+                            // Wider windows keep it to its own width at the top left.
+                            .then(if (compactWidth) Modifier else Modifier.wrapContentWidth(Alignment.Start))
+                            .padding(start = edgeMargin, end = edgeMargin, bottom = 10.dp),
+                    )
+                }
+              }
             },
             containerColor = Color.Transparent,
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
