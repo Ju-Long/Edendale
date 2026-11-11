@@ -1,9 +1,10 @@
 ---
-updated: 2026-10-28
+updated: 2026-11-11
 summary:
   - O Edendale não tem sistema de contas nem servidores próprios. Os apps não contêm analytics, publicidade nem rastreamento.
-  - Sua biblioteca, seus ajustes e seus logins salvos ficam no seu dispositivo. O que é sincronizado passa por um serviço que você controla, como o iCloud ou o seu próprio OneDrive.
-  - Google Drive, OneDrive e Dropbox recebem acesso somente leitura, são acessados diretamente do seu dispositivo e só servem para listar e reproduzir seus vídeos.
+  - Sua biblioteca, seus ajustes, seus logins salvos e o controle dos pais ficam no seu dispositivo. O que é sincronizado passa por um armazenamento ou serviço que você controla, como o iCloud ou o seu próprio Google Drive, OneDrive, Dropbox ou servidor.
+  - A sincronização entre dispositivos fica desativada até você ativá-la. Então cada dispositivo grava seu histórico de reprodução como um arquivo legível no armazenamento que você escolher, e os logins só passam diretamente de um dispositivo seu para outro.
+  - O Edendale acessa o Google Drive, o OneDrive e o Dropbox diretamente do seu dispositivo, só para listar e reproduzir seus vídeos e manter os próprios arquivos de sincronização. No Google Drive, ele só vê os vídeos que você escolhe e os arquivos que ele mesmo cria.
   - Detalhes de filmes, busca de legendas, botões para pular e trailers contatam os serviços indicados abaixo, apenas para a finalidade descrita.
 ---
 
@@ -38,10 +39,15 @@ apenas para corrigir problemas.
   controles, incluindo as escolhas lembradas para cada título.
 - **As legendas que você baixa.**
 - **Logins salvos e contas vinculadas:** senhas de servidores, chaves de
-  acesso do S3 e tokens de login na nuvem, guardados no armazenamento
-  protegido do sistema: as Chaves (Keychain) nos dispositivos Apple, um
-  armazenamento criptografado com o Android Keystore e a Proteção de Dados do
-  Windows (DPAPI). Tokens de acesso de curta duração ficam apenas na memória.
+  acesso do S3 e tokens de login na nuvem, incluindo o login do seu local de
+  sincronização, guardados no armazenamento protegido do sistema: as Chaves
+  (Keychain) nos dispositivos Apple, um armazenamento criptografado com o
+  Android Keystore e a Proteção de Dados do Windows (DPAPI). Tokens de acesso
+  de curta duração ficam apenas na memória.
+- **Controle dos pais:** os limites de classificação indicativa, as demais
+  opções do controle dos pais e o PIN dos pais, que é guardado apenas como um
+  hash lento com sal. O Edendale nunca os sincroniza, nunca os envia a outro
+  dispositivo nem a nenhum outro lugar.
 
 O Edendale lê os nomes dos arquivos no seu dispositivo para reconhecer filmes
 e episódios antes de contatar qualquer serviço online, e nunca envia seus
@@ -52,20 +58,84 @@ vídeos para lugar nenhum.
 O Edendale só sincroniza por meio de serviços que você controla, e só quando
 você os ativa:
 
+- **Sincronização entre dispositivos (Edendale 27.1 e posteriores):** seu
+  histórico de reprodução, pelo armazenamento que você escolher, como descrito
+  na próxima seção.
 - **Dispositivos Apple:** com o iCloud, seu progresso, suas avaliações, seus
   favoritos e sua lista são sincronizados pelo seu banco de dados privado do
   iCloud. Contas vinculadas e logins salvos são sincronizados pelas Chaves do
   iCloud com seu iPhone, iPad, Mac e Apple Vision Pro. A Apple TV mantém suas
   próprias cópias.
-- **Windows:** se você ativar a replicação pelo OneDrive, seu progresso e o
-  estado dos seus títulos são copiados por meio de uma pasta no seu próprio
-  OneDrive. Logins e contas nunca saem do dispositivo.
+- **Windows:** se você ativou a replicação pelo OneDrive antes do Edendale
+  27.1, seu progresso e o estado dos seus títulos são copiados por meio de uma
+  pasta no seu próprio OneDrive. Logins e contas nunca saem do dispositivo. O
+  Edendale 27.1 a substitui pela sincronização entre dispositivos: ele lê
+  esses arquivos uma vez e os deixa onde estão.
 - **Android:** o próprio backup do Android pode incluir sua biblioteca e seus
-  dados de reprodução. Logins, chaves e tokens de conta ficam fora dos backups
-  e das transferências entre dispositivos.
+  dados de reprodução. Logins, chaves, tokens de conta, os ajustes de
+  sincronização, e o PIN dos pais e os limites de classificação ficam fora dos
+  backups e das transferências entre dispositivos.
+- **Meta Quest:** se o backup na nuvem estiver ativado nas configurações do
+  headset, o backup da Meta usa o do Android, com as mesmas exclusões. Remover
+  o app do headset apaga tudo o que ele guardou ali. A Meta mantém os backups
+  dela e restaura o mais recente se você instalar o Edendale de novo, até que
+  você os apague no backup na nuvem das configurações do headset; veja
+  [a ajuda da Meta sobre backup na nuvem](https://www.meta.com/help/quest/399621398228171/).
 - **Sua conta do TMDB (opcional):** se você entrar no The Movie Database, o
   Edendale mantém seus favoritos, sua lista e suas avaliações sincronizados
   com essa conta. O progresso de reprodução nunca é enviado ao TMDB.
+
+## Sincronização entre dispositivos
+
+A partir do Edendale 27.1, **Ajustes → Sincronização** pode manter seu
+histórico de reprodução igual em todos os seus dispositivos. Ela fica
+desativada até você ativá-la e escolher um local. O Edendale continua sem
+servidores e sem sistema de contas: seus dispositivos compartilham o
+histórico apenas por um armazenamento que já é seu.
+
+- **O que um arquivo de sincronização contém:** cada dispositivo grava um
+  arquivo, `Edendale/<nome do espaço>/<ID do dispositivo>.json`, com seu
+  progresso de reprodução e se você terminou cada título, suas avaliações,
+  resenhas, favoritos e o estado da sua lista, cada um identificado pelo ID do
+  TMDB do título; o nome e a plataforma do dispositivo; um ID aleatório criado
+  para a sincronização; e a versão do Edendale. Ele nunca contém sua
+  biblioteca, nomes ou caminhos de arquivos, logins, sua sessão do TMDB nem o
+  controle dos pais.
+- **Onde ele fica:** no local que você escolhe e que é seu: uma pasta do seu
+  dispositivo (incluindo o iCloud Drive ou uma pasta oferecida por outro app
+  de nuvem), a pasta do próprio Edendale no iCloud Drive nos dispositivos
+  Apple, seu Google Drive, o OneDrive (na pasta de aplicativos dele,
+  `Apps/Edendale`), o Dropbox ou seu próprio servidor WebDAV, SMB ou SFTP.
+  Cada dispositivo lê ali os arquivos dos outros dispositivos e os combina no
+  próprio dispositivo. Os arquivos são JSON simples e legível, então qualquer
+  pessoa que consiga abrir essa pasta ou essa conta pode ler seu histórico de
+  reprodução; o Edendale avisa isso quando você escolhe um local.
+- **Como parar:** **Desativar** em Ajustes → Sincronização interrompe a
+  sincronização naquele dispositivo e oferece apagar o arquivo dele; o
+  histórico no dispositivo continua. Remover um dispositivo em Ajustes →
+  Sincronização apaga o arquivo desse dispositivo. No Android, **Excluir
+  histórico** apaga o progresso e as marcações de assistido no dispositivo e,
+  com a sincronização ativada, nos seus outros dispositivos quando eles
+  sincronizarem de novo. Depois disso, os arquivos de sincronização mantêm por
+  até um ano uma marcação para cada título apagado, sem o progresso, para que
+  uma cópia mais antiga não o traga de volta. Para remover tudo, desative a
+  sincronização em todos os dispositivos e apague a pasta `Edendale` do seu
+  armazenamento.
+- **Configurar outro dispositivo:** **Configurar outro dispositivo** envia o
+  local de sincronização e o login dele, e as outras contas e logins que você
+  marcar, diretamente de um dispositivo seu para outro pela sua rede local. A
+  conexão é criptografada com uma chave que os dois dispositivos combinam
+  quando você escaneia um código QR ou digita um código mostrado no outro
+  dispositivo, e o dispositivo que envia pede que você confirme o nome do
+  outro antes de enviar qualquer coisa. Nada passa por nós nem por mais
+  ninguém. Enquanto a tela de pareamento está aberta, o dispositivo anuncia o
+  nome dele na sua rede local para que o outro possa encontrá-lo. Entre
+  plataformas para as quais um login do Google não pode ser transferido, só
+  são enviados o endereço de e-mail da Conta do Google, o nome do espaço e o
+  ID da pasta de sincronização, e você entra no Google no novo dispositivo.
+- **Um dispositivo que você remove** mantém o login que recebeu, e o
+  histórico que já tem, até você revogar o acesso do Edendale no seu provedor
+  de armazenamento ou trocar a senha do servidor.
 
 ## Serviços online que o Edendale usa
 
@@ -89,63 +159,87 @@ conexão com a internet, além do seguinte:
   do YouTube (youtube-nocookie.com). No Windows, ele abre o trailer em
   youtube.com no seu navegador e, no Meta Quest, no navegador ou no app do
   YouTube.
-- **O armazenamento que você vincula**, descrito na próxima seção.
+- **O armazenamento que você vincula**, e o que você escolhe para a
+  sincronização, descritos na próxima seção.
 
 ## O armazenamento que você vincula
 
 O Edendale reproduz vídeos de pastas do seu dispositivo e do armazenamento que
 você vincula: servidores SMB, NFS, SFTP e WebDAV, armazenamento compatível com
 S3, Google Drive, OneDrive e Dropbox. Os serviços disponíveis variam conforme
-a plataforma; por enquanto, o Google Drive está disponível nos dispositivos
-Apple. Cada conexão vai diretamente do seu dispositivo ao serviço que você
-escolheu. Nada passa por um servidor operado por nós.
+a plataforma. Cada conexão vai diretamente do seu dispositivo ao serviço que
+você escolheu. Nada passa por um servidor operado por nós.
 
 - **Login:** no Google Drive, OneDrive e Dropbox, você entra pela página do
   próprio provedor usando OAuth 2.0 com PKCE, então o Edendale nunca vê sua
   senha. Logins de servidores (nomes de usuário, senhas e chaves de acesso)
   são enviados apenas ao servidor a que pertencem.
-- **Acesso somente leitura:** o Edendale solicita permissões somente leitura.
-  Google: `openid`, `email` e `drive.readonly`. Microsoft: `Files.Read`,
-  `User.Read` e `offline_access`. Dropbox: `account_info.read`,
-  `files.metadata.read` e `files.content.read`. O Edendale não pode criar,
-  alterar, compartilhar nem apagar nada no seu armazenamento.
-- **O que o Edendale lê:** o ID e o endereço de e-mail da sua conta, para
-  identificá-la e manter as origens dela separadas; os nomes, tamanhos, datas
-  e durações dos arquivos e pastas nos locais que você explora e vincula; e o
-  conteúdo de um vídeo apenas enquanto você o assiste.
+- **Acesso limitado:** o Google recebe só `drive.file`, que abrange os vídeos
+  que você escolhe no seletor de arquivos do próprio Google e os arquivos que
+  o Edendale cria, e nada mais do seu Drive. Microsoft: `Files.Read`,
+  `Files.ReadWrite.AppFolder`, `User.Read` e `offline_access`. Dropbox:
+  `account_info.read`, `files.metadata.read`, `files.content.read` e
+  `files.content.write`. O Edendale só lê seus vídeos: nunca os envia,
+  altera, compartilha nem apaga, nem nada mais no seu armazenamento. Os únicos
+  arquivos que ele grava ou apaga são os próprios arquivos de sincronização, e
+  só se você ativar a sincronização: na pasta `Edendale` dele no Google
+  Drive, no Dropbox ou no servidor ou na pasta que você escolheu, e na pasta
+  de aplicativos do OneDrive.
+- **O que o Edendale lê:** o ID, o endereço de e-mail e o nome da sua conta,
+  para identificá-la e manter as origens dela separadas; os nomes, tamanhos,
+  datas e durações dos arquivos e pastas nos locais que você explora e vincula
+  ou, no Google Drive, dos vídeos que você escolhe; o conteúdo de um vídeo
+  apenas enquanto você o assiste; e, se você ativar a sincronização, os
+  arquivos de sincronização dos seus dispositivos.
 - **O que o Edendale guarda:** os dados dos arquivos passam a fazer parte da
   sua biblioteca no dispositivo. Tokens de login e credenciais vão para o
   armazenamento protegido, como descrito acima. Os dados de vídeo ficam na
   memória durante a reprodução e nunca são salvos no disco.
-- **TVs:** uma Apple TV pode receber uma conta ou login do seu iPhone ou iPad
-  por uma conexão criptografada na sua rede local, só depois que você inicia
-  a transferência na TV e a confirma no celular ou tablet. Em uma TV, o
-  OneDrive também pode entrar com um código que você aprova em outro
-  dispositivo.
+- **TVs:** uma Apple TV pode receber uma conta ou login do seu iPhone ou iPad,
+  e uma Android TV do Edendale em outro dispositivo Android, por uma conexão
+  criptografada na sua rede local, só depois que você inicia a transferência
+  na TV e a confirma no outro dispositivo. Em uma TV, o OneDrive também pode
+  entrar com um código que você aprova em outro dispositivo. A partir do
+  Edendale 27.1, qualquer dispositivo seu pode configurar outro dessa forma,
+  como descrito em “Sincronização entre dispositivos”.
 
 ## Dados de usuário do Google
 
-Quando você vincula o Google Drive, o Edendale acessa:
+Quando você vincula o Google Drive, você escolhe vídeos no seletor de arquivos
+do próprio Google, que abre quando você entra e sempre que você usa
+**Escolher Mais Vídeos**. Se você entrar no Google Drive só para guardar ali
+os arquivos de sincronização, o seletor não abre. O Edendale acessa:
 
-- o ID exclusivo e o endereço de e-mail da sua Conta do Google (`openid` e
-  `email`), para mostrar qual conta está vinculada e distinguir suas contas;
-  e
-- os arquivos e pastas do seu Google Drive (`drive.readonly`): o Edendale
-  lista as pastas que você explora e vincula, lê os nomes, tamanhos, datas e
-  durações de vídeo dos arquivos que elas contêm e transmite os vídeos que
-  você escolhe assistir.
+- os vídeos que você escolhe, e nada mais do seu Google Drive (`drive.file`):
+  o Edendale os lista, lê os nomes, tamanhos, datas e durações de vídeo deles
+  e transmite os que você escolhe assistir. O Google compartilha suas escolhas
+  entre os apps do Edendale, então um vídeo escolhido em um dispositivo também
+  pode aparecer em outro conectado à mesma Conta do Google;
+- se você escolher o Google Drive para a sincronização, a pasta `Edendale` e
+  os arquivos de sincronização que o próprio Edendale cria nela, que ele lê,
+  substitui e apaga como descrito em “Sincronização entre dispositivos”; e
+- o ID de usuário do Google Drive, o endereço de e-mail e o nome da sua
+  conta, que o Google Drive fornece com essa mesma permissão, para mostrar
+  qual conta está vinculada e distinguir suas contas.
 
-O Edendale usa esses dados apenas para oferecer sua origem do Google Drive:
-escolher uma pasta, listar os vídeos dela e reproduzi-los. Como em qualquer
-origem, o Edendale lê os nomes dos arquivos no seu dispositivo para
-reconhecer filmes e episódios e envia ao TMDB apenas o título e o ano
-reconhecidos para buscar os detalhes.
+O Edendale usa esses dados apenas para oferecer sua origem do Google Drive
+(listar os vídeos que você escolheu e reproduzi-los) e, se você quiser, para
+manter seus arquivos de sincronização no seu Drive. Ele nunca envia, altera,
+compartilha nem apaga seus vídeos ou qualquer outro arquivo do seu Drive.
+Como em qualquer origem, o Edendale lê os nomes dos arquivos no seu
+dispositivo para reconhecer filmes e episódios e envia ao TMDB apenas o
+título e o ano reconhecidos para buscar os detalhes.
 
-Os dados ficam nos seus dispositivos: os dados dos arquivos na sua
-biblioteca, e a conta vinculada (ID, endereço de e-mail e token de login) nas
-Chaves, que as Chaves do iCloud sincronizam com seus outros dispositivos
-Apple. Ela só chega a uma Apple TV quando você confirma uma transferência a
-partir do seu iPhone ou iPad. Os dados de usuário do Google nunca são
+Os dados ficam nos seus dispositivos e no seu próprio Drive: os dados dos
+arquivos na sua biblioteca, e a conta vinculada (ID, endereço de e-mail, nome
+e token de login) no armazenamento protegido, como descrito acima. Nos
+dispositivos Apple, as Chaves do iCloud sincronizam a conta com seus outros
+dispositivos Apple. Ela só chega a outro dispositivo quando você confirma uma
+transferência a partir de um dos seus; entre plataformas para as quais um
+login do Google não pode ser transferido, só são enviados o endereço de
+e-mail e o ID da pasta de sincronização. Se você remover um vídeo da sua
+biblioteca, o Edendale guarda o ID do arquivo só naquele dispositivo, para que
+o vídeo não volte a ser listado. Os dados de usuário do Google nunca são
 enviados para nós nem para qualquer servidor operado por nós, então nunca os
 vemos nem os lemos. Eles nunca são vendidos, nunca são usados para
 publicidade e nunca são usados para desenvolver, aprimorar ou treinar modelos
@@ -156,7 +250,12 @@ arquivos dela da sua biblioteca) e finalize a sessão em **Ajustes → Contas**.
 **Finalizar Sessão e Revogar Acesso** também revoga o acesso do Edendale no
 Google. Você pode removê-lo a qualquer momento nas
 [conexões de terceiros da sua Conta do Google](https://myaccount.google.com/connections).
-Apagar o app apaga tudo o que ele guardou naquele dispositivo.
+Revogar o acesso o encerra em todos os dispositivos, incluindo as TVs, e o
+Google esquece os vídeos que você escolheu. Os arquivos de sincronização que o
+Edendale criou continuam no seu Drive até você apagá-los. Apagar o app apaga
+tudo o que ele guardou naquele dispositivo. Um backup no Android ou no Meta
+Quest pode manter uma cópia da sua biblioteca, mas nunca a conta vinculada nem
+o token de login dela.
 
 O uso e a transferência, pelo Edendale, para qualquer outro app de
 informações recebidas das APIs do Google seguirão a
@@ -166,16 +265,22 @@ requisitos de uso limitado (Limited Use).
 
 ## Contas da Microsoft e do Dropbox
 
-O OneDrive e o Dropbox funcionam da mesma forma: acesso somente leitura,
-usado só para listar e reproduzir seus vídeos e guardado só nos seus
-dispositivos. Finalize a sessão em **Ajustes → Contas**. No Dropbox,
-**Finalizar Sessão e Revogar Acesso** também encerra o acesso do Edendale no
-Dropbox. Você também pode remover o Edendale dos
+O OneDrive e o Dropbox funcionam de forma muito parecida: acesso de leitura às
+pastas que você explora e vincula, usado só para listar e reproduzir seus
+vídeos, e, se você escolher um deles para a sincronização, acesso de gravação
+usado só para os arquivos de sincronização do próprio Edendale, na pasta de
+aplicativos do OneDrive (`Apps/Edendale`) ou na pasta `Edendale` do seu
+Dropbox. O Edendale nunca altera nem apaga mais nada ali. Os dados da conta e
+os tokens de login ficam guardados só nos seus dispositivos. Finalize a
+sessão em **Ajustes → Contas**. No Dropbox, **Finalizar Sessão e Revogar
+Acesso** também encerra o acesso do Edendale no Dropbox. Você também pode
+remover o Edendale dos
 [apps com acesso à sua conta Microsoft](https://account.live.com/consent/Manage)
 ou dos seus
 [apps conectados do Dropbox](https://www.dropbox.com/account/connected_apps).
-Uma conta Microsoft corporativa ou de estudante pode ser gerenciada pela sua
-organização.
+Os arquivos de sincronização continuam no seu armazenamento até você
+apagá-los. Uma conta Microsoft corporativa ou de estudante pode ser gerenciada
+pela sua organização.
 
 ## Este site
 
@@ -198,11 +303,12 @@ coletarmos.
 ## Suas escolhas
 
 Você pode ver, alterar ou apagar seus dados no app a qualquer momento: remover
-uma origem, sair de uma conta, desativar a sincronização do iCloud ou a
-replicação pelo OneDrive, ou apagar o app. Como não temos nenhum dado pessoal
-seu, esses controles são a forma de exercer seus direitos de acesso e
-exclusão. Os dados mantidos pelos serviços acima seguem as políticas de
-privacidade deles.
+uma origem, sair de uma conta, desativar a sincronização entre dispositivos, a
+sincronização do iCloud, a replicação pelo OneDrive ou o backup do seu
+dispositivo, apagar os arquivos de sincronização do seu armazenamento ou
+apagar o app. Como não temos nenhum dado pessoal seu, esses controles são a
+forma de exercer seus direitos de acesso e exclusão. Os dados mantidos pelos
+serviços acima seguem as políticas de privacidade deles.
 
 ## Alterações nesta política
 
