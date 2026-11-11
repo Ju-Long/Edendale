@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">电影与电视节目</string>
+    <string name="tab_watchlist">待看列表</string>
     <string name="tab_downloaded">已下载</string>
     <string name="tab_search">搜索</string>
     <string name="action_settings">设置</string>
@@ -287,6 +288,7 @@
     <string name="audience_verifying">正在核对分级</string>
     <string name="audience_restricted_title">不向青少年观众提供</string>
     <string name="audience_restricted_message">此影片未被确认为 PG 或 PG-13 分级。</string>
+    <string name="watchlist_remove">从待看列表中移除</string>
     <string name="watchlist_no_young_audience_titles">你的待看列表中目前没有 PG 或 PG-13 分级的影片。</string>
     <string name="filmography_no_young_audience_titles">此影人作品中没有 PG 或 PG-13 分级的影片。</string>
     <string name="settings_section_parental_controls">家长控制</string>
@@ -504,7 +506,8 @@
     <string name="link_source_another_account">其他帐户</string>
     <string name="link_source_sign_in_to">登录 %1$s</string>
     <string name="link_source_waiting">正在等待 %1$s…</string>
-    <string name="link_source_cloud_privacy">Edendale 向 %1$s 请求只读访问权限。它仅从此设备连接，读取文件夹列表和你播放的视频，绝不会上传或更改任何内容。</string>
+    <string name="link_source_cloud_privacy">Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时，将同步文件写入 Edendale 文件夹。</string>
+    <string name="link_source_onedrive_privacy">Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时写入它自己的 Apps/Edendale 文件夹。</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">在你的手机或电脑上打开 %1$s%2$s，然后输入此代码：</string>
     <string name="device_code_accessibility">代码 %1$s</string>
@@ -540,8 +543,8 @@
     <string name="connector_certificate_unverified">%1$s 的证书尚未批准。请重新链接服务器以进行核对。</string>
     <string name="connector_certificate_mismatch">%1$s 的证书已更改。在你重新链接服务器并批准新证书之前，Edendale 不会连接。</string>
     <string name="link_source_gdrive_description">你从 Google 云端硬盘中选择的视频。</string>
-    <string name="link_source_gdrive_privacy">登录后会打开 Google 的选择器：请选择 Edendale 可以播放的视频。Edendale 只能看到这些视频，仅从此设备连接，绝不会上传或更改任何内容。</string>
-    <string name="link_source_gdrive_privacy_tv">请在手机或平板电脑上的 Edendale 中选择视频。电视会从你的手机获取帐户，并列出你选择的所有视频。Edendale 只能看到这些视频，绝不会上传或更改任何内容。</string>
+    <string name="link_source_gdrive_privacy">登录后会打开 Google 的选择器：请选择 Edendale 可以播放的视频。Edendale 只能看到这些视频及其自己创建的同步文件，仅从此设备连接，不会更改其他任何内容。</string>
+    <string name="link_source_gdrive_privacy_tv">请在手机或平板电脑上的 Edendale 中选择视频。电视会从你的手机获取帐户，并列出你选择的所有视频。Edendale 只能看到这些视频及其自己创建的同步文件，不会更改其他任何内容。</string>
     <string name="gdrive_chosen_folder">你选择的视频</string>
     <string name="gdrive_choose_more">选择更多视频</string>
     <string name="gdrive_choose_on_another_device">请在手机或平板电脑上的 Edendale 中为此来源选择视频，然后在此处重新扫描。</string>
@@ -619,10 +622,15 @@
     <string name="sync_no_accounts">请先在“关联来源”中关联账户或服务器。</string>
     <string name="sync_server_folder_label">%1$s 上的文件夹</string>
     <string name="sync_google_tv_note">电视无法登录 Google。请在 Android 手机上设置 Google Drive，然后通过“设置其他设备”发送到这里。</string>
+    <string name="sync_folder_tv_note">电视无法选择文件夹。请在手机上选择账户或服务器作为位置，然后通过“设置其他设备”发送到这里。</string>
+    <string name="pairing_location_pending">%1$s 还需要完成同步位置的设置。</string>
     <string name="sync_turn_off_title">要关闭同步吗？</string>
     <string name="sync_turn_off_message">观看记录会保留在此设备上。除非你删除此设备的文件，%1$s 中的文件也会保留。</string>
     <string name="sync_turn_off_delete">关闭并删除我的文件</string>
     <string name="sync_turn_off_keep">关闭并保留文件</string>
+    <string name="sync_previous_file_note">此设备的文件仍在 %1$s（%2$s）中。删除它，或保留在那里。</string>
+    <string name="sync_previous_file_delete">删除我在那里的文件</string>
+    <string name="sync_previous_file_keep">保留</string>
     <string name="sync_remove_device_title">移除设备</string>
     <string name="sync_remove_device_message">删除某台设备的文件后，它的记录将不再传到其他设备。在你于提供商处撤销 Edendale 的访问权限或更改服务器密码之前，该设备仍保留其登录信息和本地副本。</string>
     <string name="sync_manage_access">在 %1$s 管理访问权限</string>

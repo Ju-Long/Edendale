@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Filme &amp; Serien</string>
+    <string name="tab_watchlist">Watchlist</string>
     <string name="tab_downloaded">Heruntergeladen</string>
     <string name="tab_search">Suchen</string>
     <string name="action_settings">Einstellungen</string>
@@ -291,6 +292,7 @@
     <string name="audience_verifying">Altersfreigaben werden geprüft</string>
     <string name="audience_restricted_title">Nicht für junges Publikum verfügbar</string>
     <string name="audience_restricted_message">Dieser Titel ist nicht als PG oder PG-13 bestätigt.</string>
+    <string name="watchlist_remove">Aus Watchlist entfernen</string>
     <string name="watchlist_no_young_audience_titles">Deine Merkliste enthält derzeit keine Titel mit PG oder PG-13.</string>
     <string name="filmography_no_young_audience_titles">In dieser Filmografie gibt es keine Titel mit PG oder PG-13.</string>
     <string name="settings_section_parental_controls">Kindersicherung</string>
@@ -510,7 +512,8 @@
     <string name="link_source_another_account">Weiterer Account</string>
     <string name="link_source_sign_in_to">Bei %1$s anmelden</string>
     <string name="link_source_waiting">Warten auf %1$s …</string>
-    <string name="link_source_cloud_privacy">Edendale bittet %1$s um Lesezugriff. Die Verbindung erfolgt nur von diesem Gerät aus. Edendale liest Ordnerlisten und die Videos, die du wiedergibst, und lädt niemals etwas hoch oder ändert etwas.</string>
+    <string name="link_source_cloud_privacy">Edendale liest Ordnerlisten und die Videos, die du wiedergibst, verbindet sich nur von diesem Gerät aus und schreibt nur seine Sync-Dateien in den Ordner „Edendale“, wenn du dort synchronisierst.</string>
+    <string name="link_source_onedrive_privacy">Edendale liest Ordnerlisten und die Videos, die du wiedergibst, verbindet sich nur von diesem Gerät aus und schreibt nur in seinen eigenen Ordner „Apps/Edendale“, wenn du dort synchronisierst.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">Öffne auf deinem Telefon oder Computer %1$s%2$s und gib diesen Code ein:</string>
     <string name="device_code_accessibility">Code %1$s</string>
@@ -546,8 +549,8 @@
     <string name="connector_certificate_unverified">Das Zertifikat für %1$s wurde noch nicht bestätigt. Verknüpfe den Server erneut, um es zu prüfen.</string>
     <string name="connector_certificate_mismatch">Das Zertifikat für %1$s hat sich geändert. Edendale stellt keine Verbindung her, bis du das neue Zertifikat bestätigst, indem du den Server erneut verknüpfst.</string>
     <string name="link_source_gdrive_description">Videos, die du in Google Drive auswählst.</string>
-    <string name="link_source_gdrive_privacy">Nach der Anmeldung öffnet sich die Auswahl von Google: Wähle die Videos aus, die Edendale wiedergeben darf. Edendale sieht nur diese, verbindet sich nur von diesem Gerät aus und lädt niemals etwas hoch oder ändert etwas.</string>
-    <string name="link_source_gdrive_privacy_tv">Wähle deine Videos in Edendale auf einem Telefon oder Tablet aus. Der Fernseher erhält den Account von deinem Telefon und listet alle Videos auf, die du ausgewählt hast. Edendale sieht nur diese Videos und lädt niemals etwas hoch oder ändert etwas.</string>
+    <string name="link_source_gdrive_privacy">Nach der Anmeldung öffnet sich die Auswahl von Google: Wähle die Videos aus, die Edendale wiedergeben darf. Edendale sieht nur diese und die Sync-Dateien, die es selbst anlegt, verbindet sich nur von diesem Gerät aus und ändert nichts anderes.</string>
+    <string name="link_source_gdrive_privacy_tv">Wähle deine Videos in Edendale auf einem Telefon oder Tablet aus. Der Fernseher erhält den Account von deinem Telefon und listet alle Videos auf, die du ausgewählt hast. Edendale sieht nur diese Videos und die Sync-Dateien, die es selbst anlegt, und ändert nichts anderes.</string>
     <string name="gdrive_chosen_folder">Von dir ausgewählte Videos</string>
     <string name="gdrive_choose_more">Weitere Videos auswählen</string>
     <string name="gdrive_choose_on_another_device">Wähle Videos für diese Quelle in Edendale auf einem Telefon oder Tablet aus und scanne dann hier erneut.</string>
@@ -626,10 +629,15 @@
     <string name="sync_no_accounts">Verknüpfe zuerst unter „Quelle verknüpfen“ ein Konto oder einen Server.</string>
     <string name="sync_server_folder_label">Ordner auf %1$s</string>
     <string name="sync_google_tv_note">Ein Fernseher kann sich nicht bei Google anmelden. Richte Google Drive auf einem Android-Telefon ein und sende es mit „Anderes Gerät einrichten“ hierher.</string>
+    <string name="sync_folder_tv_note">Ein Fernseher kann keinen Ordner auswählen. Wähle auf einem Telefon ein Konto oder einen Server als Speicherort und sende ihn mit „Anderes Gerät einrichten“ hierher.</string>
+    <string name="pairing_location_pending">%1$s muss den Sync-Speicherort noch fertig einrichten.</string>
     <string name="sync_turn_off_title">Synchronisierung ausschalten?</string>
     <string name="sync_turn_off_message">Dein Wiedergabeverlauf bleibt auf diesem Gerät. Die Dateien in %1$s bleiben ebenfalls, sofern du die Datei dieses Geräts nicht löschst.</string>
     <string name="sync_turn_off_delete">Ausschalten und meine Datei löschen</string>
     <string name="sync_turn_off_keep">Ausschalten, Datei behalten</string>
+    <string name="sync_previous_file_note">Die Datei dieses Geräts ist noch in %1$s (%2$s). Lösche sie oder lass sie dort.</string>
+    <string name="sync_previous_file_delete">Meine Datei dort löschen</string>
+    <string name="sync_previous_file_keep">Behalten</string>
     <string name="sync_remove_device_title">Gerät entfernen</string>
     <string name="sync_remove_device_message">Das Löschen der Datei eines Geräts verhindert, dass sein Verlauf die anderen erreicht. Das Gerät behält seine Anmeldung und seine lokale Kopie, bis du Edendales Zugriff beim Anbieter widerrufst oder das Serverpasswort änderst.</string>
     <string name="sync_manage_access">Zugriff bei %1$s verwalten</string>

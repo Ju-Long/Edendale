@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">映画と番組</string>
+    <string name="tab_watchlist">ウォッチリスト</string>
     <string name="tab_downloaded">ダウンロード済み</string>
     <string name="tab_search">検索</string>
     <string name="action_settings">設定</string>
@@ -287,6 +288,7 @@
     <string name="audience_verifying">レーティングを確認しています</string>
     <string name="audience_restricted_title">若い視聴者には提供されません</string>
     <string name="audience_restricted_message">この作品は PG または PG-13 として確認されていません。</string>
+    <string name="watchlist_remove">ウォッチリストから削除</string>
     <string name="watchlist_no_young_audience_titles">ウォッチリストに PG または PG-13 の作品は現在ありません。</string>
     <string name="filmography_no_young_audience_titles">このフィルモグラフィーに PG または PG-13 の作品はありません。</string>
     <string name="settings_section_parental_controls">ペアレンタルコントロール</string>
@@ -504,7 +506,8 @@
     <string name="link_source_another_account">別のアカウント</string>
     <string name="link_source_sign_in_to">%1$sにサインイン</string>
     <string name="link_source_waiting">%1$sを待っています…</string>
-    <string name="link_source_cloud_privacy">Edendaleは%1$sに読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。</string>
+    <string name="link_source_cloud_privacy">Edendaleはフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、そこで同期する場合にのみEdendaleフォルダに同期ファイルを書き込みます。</string>
+    <string name="link_source_onedrive_privacy">Edendaleはフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、そこで同期する場合にのみ専用のApps/Edendaleフォルダに書き込みます。</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">スマートフォンまたはコンピュータで%1$s%2$sを開き、次のコードを入力してください:</string>
     <string name="device_code_accessibility">コード %1$s</string>
@@ -540,8 +543,8 @@
     <string name="connector_certificate_unverified">%1$s の証明書はまだ承認されていません。確認するにはサーバーをもう一度リンクしてください。</string>
     <string name="connector_certificate_mismatch">%1$s の証明書が変更されました。サーバーをもう一度リンクして新しい証明書を承認するまで、Edendale は接続しません。</string>
     <string name="link_source_gdrive_description">Googleドライブから選択したビデオ。</string>
-    <string name="link_source_gdrive_privacy">サインインすると、Googleの選択画面が開きます。Edendaleで再生するビデオを選択してください。Edendaleが見られるのは選択したビデオだけです。このデバイスからのみ接続し、何かをアップロードしたり変更したりすることはありません。</string>
-    <string name="link_source_gdrive_privacy_tv">ビデオはスマートフォンまたはタブレットのEdendaleで選択します。テレビはスマートフォンからアカウントを受け取り、選択したすべてのビデオを一覧表示します。Edendaleが見られるのはそれらのビデオだけで、何かをアップロードしたり変更したりすることはありません。</string>
+    <string name="link_source_gdrive_privacy">サインインすると、Googleの選択画面が開きます。Edendaleで再生するビデオを選択してください。Edendaleが見られるのは選択したビデオと自分で作成した同期ファイルだけです。このデバイスからのみ接続し、それ以外は何も変更しません。</string>
+    <string name="link_source_gdrive_privacy_tv">ビデオはスマートフォンまたはタブレットのEdendaleで選択します。テレビはスマートフォンからアカウントを受け取り、選択したすべてのビデオを一覧表示します。Edendaleが見られるのはそれらのビデオと自分で作成した同期ファイルだけで、それ以外は何も変更しません。</string>
     <string name="gdrive_chosen_folder">選択したビデオ</string>
     <string name="gdrive_choose_more">ほかのビデオを選択</string>
     <string name="gdrive_choose_on_another_device">このソースのビデオはスマートフォンまたはタブレットのEdendaleで選択し、ここで再スキャンしてください。</string>
@@ -619,10 +622,15 @@
     <string name="sync_no_accounts">先に「ソースをリンク」でアカウントかサーバーをリンクしてください。</string>
     <string name="sync_server_folder_label">%1$s 上のフォルダー</string>
     <string name="sync_google_tv_note">テレビは Google にサインインできません。Android スマートフォンで Google Drive を設定し、「別の端末を設定」でここに送ってください。</string>
+    <string name="sync_folder_tv_note">テレビではフォルダーを選べません。スマートフォンでアカウントかサーバーを保存先に選び、「別の端末を設定」でここに送ってください。</string>
+    <string name="pairing_location_pending">%1$s で同期の保存先の設定を完了する必要があります。</string>
     <string name="sync_turn_off_title">同期をオフにしますか？</string>
     <string name="sync_turn_off_message">視聴履歴はこの端末に残ります。%1$s のファイルも、この端末のファイルを削除しない限り残ります。</string>
     <string name="sync_turn_off_delete">オフにして自分のファイルを削除</string>
     <string name="sync_turn_off_keep">オフにしてファイルを残す</string>
+    <string name="sync_previous_file_note">この端末のファイルはまだ %1$s（%2$s）にあります。削除するか、そのままにしてください。</string>
+    <string name="sync_previous_file_delete">そこにある自分のファイルを削除</string>
+    <string name="sync_previous_file_keep">そのままにする</string>
     <string name="sync_remove_device_title">端末を削除</string>
     <string name="sync_remove_device_message">端末のファイルを削除すると、その履歴は他の端末に届かなくなります。その端末は、プロバイダーで Edendale のアクセスを取り消すかサーバーのパスワードを変えるまで、ログイン情報とローカルのコピーを保持します。</string>
     <string name="sync_manage_access">%1$s でアクセスを管理</string>

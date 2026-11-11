@@ -160,6 +160,9 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
     var turningOff by remember { mutableStateOf(false) }
     var removingDevice by remember { mutableStateOf(false) }
     var accountLabel by remember { mutableStateOf<String?>(null) }
+    var previousAccountLabel by remember { mutableStateOf<String?>(null) }
+    var deletingOldFile by remember { mutableStateOf(false) }
+    var oldFileError by remember { mutableStateOf<String?>(null) }
     // Every change in this section is a sync change the acceptance criteria put behind the PIN.
     fun gated(action: () -> Unit): () -> Unit = { gate.require(GatedAction.SYNC, onUnlocked = action) }
 
@@ -168,6 +171,10 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
         val location = sync.settings.location
         accountLabel = location?.accountKey?.let { key ->
             location.provider.kind?.let { kind -> withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.account(kind, key)?.label }.getOrNull() } }
+        }
+        val previous = sync.settings.previousLocation
+        previousAccountLabel = previous?.accountKey?.let { key ->
+            previous.provider.kind?.let { kind -> withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.account(kind, key)?.label }.getOrNull() } }
         }
     }
 
@@ -190,6 +197,25 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
                     ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true })
                     ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = gated { removingDevice = true })
                     ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = gated { turningOff = true }, iconRes = R.drawable.ic_xmark)
+                }
+            }
+            // FEATURES-27.1 §5.1: a replaced location keeps this device's file until the viewer deletes it, and the app offers to.
+            if (status.previousLocation != null) {
+                SettingsActionRow {
+                    ArchiveButton(
+                        label = stringResource(if (deletingOldFile) R.string.watch_history_deleting else R.string.sync_previous_file_delete),
+                        enabled = !deletingOldFile,
+                        iconRes = R.drawable.ic_trash_can,
+                        onClick = gated {
+                            deletingOldFile = true
+                            oldFileError = null
+                            scope.launch {
+                                sync.deletePreviousFile().onFailure { oldFileError = syncErrorMessage(context, it) }
+                                deletingOldFile = false
+                            }
+                        },
+                    )
+                    ArchiveButton(label = stringResource(R.string.sync_previous_file_keep), enabled = !deletingOldFile, onClick = gated { oldFileError = null; sync.keepPreviousFile() })
                 }
             }
         },
@@ -222,6 +248,16 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
                 }
                 SettingsRowDivider()
                 InfoRow(stringResource(R.string.sync_privacy_note))
+            }
+        }
+        status.previousLocation?.let { previous ->
+            FocusableRows(isTelevision) {
+                SettingsRowDivider()
+                InfoRow(stringResource(R.string.sync_previous_file_note, locationLabel(context, previous, previousAccountLabel), previous.space))
+                oldFileError?.let { message ->
+                    SettingsRowDivider()
+                    InfoRow(message)
+                }
             }
         }
     }
@@ -575,6 +611,8 @@ internal fun PairingDialog(isTelevision: Boolean, hosting: Boolean, onDismiss: (
     var outcome by remember { mutableStateOf<Pair<HandoffV2.RoleMessage, HandoffV2.ResultMessage?>?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
     var followUp by remember { mutableStateOf<SyncHandoff.FollowUp?>(null) }
+    // Whether this side sent a location, so the result can say the other device still finishes it.
+    var sentLocation by remember { mutableStateOf(false) }
     // The sender's confirmation, awaited by the protocol thread.
     var pendingOffer by remember { mutableStateOf<Pair<HandoffV2.RoleMessage, CompletableDeferred<HandoffV2.Offer?>>?>(null) }
     var choice by remember { mutableStateOf<OfferChoice?>(null) }
@@ -680,10 +718,19 @@ internal fun PairingDialog(isTelevision: Boolean, hosting: Boolean, onDismiss: (
                         result?.let {
                             Text(context.resources.getQuantityString(R.plurals.pairing_stored_count, it.stored.size, it.stored.size), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (it.failed.isNotEmpty()) Text(context.resources.getQuantityString(R.plurals.pairing_failed_count, it.failed.size, it.failed.size), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.error)
+                            if (chosenRole == HandoffV2.Role.SENDER && HandoffV2.locationPending(it, sentLocation)) {
+                                Text(stringResource(R.string.pairing_location_pending, peer.name), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                         when (val next = followUp) {
                             is SyncHandoff.FollowUp.PickFolder -> Text(stringResource(R.string.sync_folder_relink, next.space), style = BodyCopyStyle(), color = EdendaleColors.Gold)
                             is SyncHandoff.FollowUp.GoogleSignIn -> Text(stringResource(R.string.sync_google_relink, next.hint ?: "Google", next.space), style = BodyCopyStyle(), color = EdendaleColors.Gold)
+                            // §9.8: a TV says where to set the location up instead of offering what it can't do.
+                            is SyncHandoff.FollowUp.OnAnotherDevice -> Text(
+                                stringResource(if (next.provider == SyncProvider.FOLDER) R.string.sync_folder_tv_note else R.string.sync_google_tv_note),
+                                style = BodyCopyStyle(),
+                                color = EdendaleColors.Gold,
+                            )
                             null -> Unit
                         }
                     }
@@ -762,7 +809,7 @@ internal fun PairingDialog(isTelevision: Boolean, hosting: Boolean, onDismiss: (
                 finished != null -> {
                     when (val next = followUp) {
                         is SyncHandoff.FollowUp.PickFolder, is SyncHandoff.FollowUp.GoogleSignIn -> FollowUpButton(next, onDone = onDismiss)
-                        null -> ArchiveButton(label = stringResource(R.string.action_close), onClick = onDismiss, kind = ArchiveButtonKind.Primary)
+                        is SyncHandoff.FollowUp.OnAnotherDevice, null -> ArchiveButton(label = stringResource(R.string.action_close), onClick = onDismiss, kind = ArchiveButtonKind.Primary)
                     }
                 }
                 offer != null && current != null -> ArchiveButton(
@@ -777,6 +824,7 @@ internal fun PairingDialog(isTelevision: Boolean, hosting: Boolean, onDismiss: (
                             platform,
                             offer.first.platform,
                         )
+                        sentLocation = built.location != null
                         offer.second.complete(built)
                         pendingOffer = null
                         choice = null
@@ -883,6 +931,7 @@ private fun FollowUpButton(followUp: SyncHandoff.FollowUp, onDone: () -> Unit) {
                     }
                 },
             )
+            is SyncHandoff.FollowUp.OnAnotherDevice -> Unit
         }
         ArchiveButton(label = stringResource(R.string.action_close), onClick = onDone)
         error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }

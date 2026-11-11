@@ -17,8 +17,11 @@ keeps library and watch data under the user's control.
 - Use the navigation, accessibility, input, storage, and media capabilities
   native to each supported platform.
 
-Trailers open only after an explicit user action. Edendale contains no
-analytics.
+Trailers open only after an explicit user action. They play in YouTube's
+privacy-enhanced embed (`youtube-nocookie.com`), which refuses to play
+(error 153) unless the app names itself, so the request carries a `Referer`
+of `https://com.babasama.edendale/`, the application ID and nothing else, as
+YouTube asks of apps that embed its player. Edendale contains no analytics.
 
 ## Repository model
 
@@ -351,9 +354,9 @@ straight to the service; nothing passes through an Edendale server.
 | WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest; a self-signed certificate is approved on first use | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
 | SFTP (any server you can reach over SSH) | User and password; the server's host key is approved on first use | The login, folder listings, and pipelined reads of the files that play |
 | S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
-| OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
-| Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
-| Google Drive | Google sign-in with Google's picker, limited to the files you choose (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play |
+| OneDrive (personal, work, school) | Microsoft sign-in; Edendale writes only to its app folder, `Apps/Edendale/`, and only when OneDrive is the sync location | The sign-in, folder listings, and byte ranges from short-lived download links; the sync files when it is the sync location |
+| Dropbox | Dropbox sign-in; Edendale writes only its sync files, in `Edendale/`, and only when Dropbox is the sync location | The sign-in, folder listings, and byte ranges from temporary links; the sync files when it is the sync location |
+| Google Drive | Google sign-in with Google's picker, limited to the files you choose and the sync files Edendale creates (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play; the sync files when it is the sync location |
 
 Logins, key pairs, and account tokens are stored encrypted on the device,
 excluded from backup and device transfer, and listed in **Settings →
@@ -422,12 +425,16 @@ the code, the address to enter it at, and a QR code for that address, and
 waits while you approve on a phone or computer. Dropbox and Google Drive come
 to a TV from a phone (see Phone-to-TV handoff). Edendale uses no provider SDK
 and ships no client secret. OneDrive and Dropbox receive the sign-in, folder
-listings, and the byte ranges of what plays.
+listings, and the byte ranges of what plays. Since 27.1 the grant also covers
+Edendale's own sync files (OneDrive's app folder, `Apps/Edendale/`; Dropbox's
+`Edendale/`), written only once you choose that account in **Settings →
+Sync**; Edendale writes nothing else there. Link Source says so under the
+sign-in.
 
 Google Drive asks only for `drive.file`, so Edendale sees only the files you
-choose. Signing in opens Google's picker in the same Custom Tab: tick the
-videos to add, from My Drive, Shared with me, or a shared drive. There are no
-folders to browse, and a picked folder never shares what's inside it, so the
+choose and the sync files it creates, and changes nothing else. Signing in
+opens Google's picker in the same Custom Tab: tick the videos to add, from
+My Drive, Shared with me, or a shared drive. There are no folders to browse, and a picked folder never shares what's inside it, so the
 picker offers video files only. Each account gets one source, **Videos you
 chose**, which lists every video picked with that Google account on any
 device. New episodes don't appear on
@@ -441,7 +448,8 @@ scan would bring the file back. Shortcuts are followed,
 Google formats are skipped, videos are recognized by file extension, and
 subtitles beside a video load only if they were picked too. Google receives
 the sign-in, the file listing (`files.list`), the account's name and email
-(`about`), and the byte ranges of what plays.
+(`about`), the byte ranges of what plays, and, when Drive is the sync
+location, the sync files.
 
 Accounts linked by a build that asked for `drive.readonly` can't open the
 picker, and their folder sources can't be listed under `drive.file`. The
@@ -540,9 +548,19 @@ one sentence: anyone who can open the folder can read your watch history.
 Sync runs on launch, on return to the foreground, ten seconds after the last
 change (at once when playback stops or the app goes to the background), every
 five minutes in the foreground, and in the background through a periodic
-WorkManager job with a network constraint, which Doze defers. A failed sync
+WorkManager job with a network constraint, which Doze defers. Leaving the
+app with a change not yet written also queues a one-off WorkManager job that
+writes it once a network is up, even if the app's process has ended; it does
+nothing if the sync started on leaving already wrote it. A folder location
+has no file watcher: another device's change reaches this one at those same
+moments. A failed sync
 backs off 1, 2, 4, 8 minutes up to an hour. **Sync Now** ignores the backoff.
-**Turn Off** keeps the local copy and offers to delete this device's file;
+**Turn Off** keeps the local copy and offers to delete this device's file.
+Choosing another location (in **Choose a Location** or through a handoff)
+keeps the old one's files, and the section then says this device's file is
+still there, with **Delete My File There** and **Keep It**; the old location
+is remembered in `edendale_sync.xml` until you answer, and a failed deletion
+can be tried again.
 **Remove a Device** deletes another device's file and links to the provider's
 page where you revoke Edendale's access, because a removed device keeps its
 login until you do. Episodes are keyed by show, season, and episode number;
@@ -575,7 +593,7 @@ record of its own, so it has no menu.
 
 The device ID and the location settings live in `edendale_sync.xml`, excluded
 from backup and device transfer like the logins, so a restored device makes a
-new ID. The sync tables are in the Room database (schema 4). Sync logs carry
+new ID. The sync tables are in the Room database (schema 5). Sync logs carry
 counts, file names, stamps, and error classes only, in debug builds only; a
 JVM test runs a whole pairing and sync through the log sink and checks that no
 code, QR secret, key, token, or password reaches it.
@@ -600,8 +618,13 @@ space name only; the receiver picks its own folder. Google Drive logins move
 only within an ecosystem (Android phone to Android TV or Quest): to an
 iPhone, Mac, or PC the handoff sends the account's email and the space
 folder's Drive ID instead, and that device signs in to Google with the email
-pre-filled. The phone-to-TV handoff for library sources (version 1) is
-unchanged; a Link Source host tells a version-2 guest to use the Sync screen.
+pre-filled. Until the folder is picked or the sign-in is done, the location is
+not reported as stored, and the sender says the other device still has to
+finish it. A TV has neither a folder picker nor a Google sign-in (SYNC-PROTOCOL
+§9.8): it reports such a location as failed and says to set it up on a phone
+and send it with **Set Up Another Device**. The phone-to-TV handoff for library
+sources (version 1) is unchanged; a Link Source host tells a version-2 guest to
+use the Sync screen.
 
 OneDrive and Dropbox accounts linked before 27.1 lack the write scopes: the
 Sync screen says to sign in again before such an account can be a location.
@@ -892,6 +915,18 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 `build/outputs/apk/release/Edendale-release-unsigned.apk`. Release signing is
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
+
+Google Play takes an Android App Bundle, which carries the base and the
+`:xr` feature module (see Immersive theater below); Play builds each device's
+APKs from it and delivers the module only to Android XR devices:
+
+```sh
+./gradlew bundleRelease
+```
+
+It writes `build/outputs/bundle/release/Edendale-release.aab` (about 58 MB
+on 2026-11-11, with the module's rooms; `base/` and `xr/` inside), unsigned
+until the upload key is supplied as above.
 
 ### Immersive theater (Android XR)
 

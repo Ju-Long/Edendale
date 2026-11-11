@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Filmes e Séries</string>
+    <string name="tab_watchlist">Minha Lista</string>
     <string name="tab_downloaded">Downloads</string>
     <string name="tab_search">Buscar</string>
     <string name="action_settings">Ajustes</string>
@@ -291,6 +292,7 @@
     <string name="audience_verifying">Verificando classificações</string>
     <string name="audience_restricted_title">Indisponível para público jovem</string>
     <string name="audience_restricted_message">Este título não foi verificado como PG ou PG-13.</string>
+    <string name="watchlist_remove">Remover da Minha Lista</string>
     <string name="watchlist_no_young_audience_titles">Não há títulos PG ou PG-13 na sua lista para assistir no momento.</string>
     <string name="filmography_no_young_audience_titles">Não há títulos PG ou PG-13 disponíveis nesta filmografia.</string>
     <string name="settings_section_parental_controls">Controle dos pais</string>
@@ -512,7 +514,8 @@
     <string name="link_source_another_account">Outra Conta</string>
     <string name="link_source_sign_in_to">Iniciar Sessão em %1$s</string>
     <string name="link_source_waiting">Aguardando %1$s…</string>
-    <string name="link_source_cloud_privacy">O Edendale pede a %1$s acesso somente leitura. Ele se conecta apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que você reproduz, e nunca envia nem altera nada.</string>
+    <string name="link_source_cloud_privacy">O Edendale lê as listas de pastas e os vídeos que você reproduz, se conecta apenas a partir deste dispositivo e só grava seus arquivos de sincronização, na pasta Edendale, quando você sincroniza lá.</string>
+    <string name="link_source_onedrive_privacy">O Edendale lê as listas de pastas e os vídeos que você reproduz, se conecta apenas a partir deste dispositivo e só grava em sua própria pasta Apps/Edendale, quando você sincroniza lá.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">No seu celular ou computador, abra %1$s%2$s e digite este código:</string>
     <string name="device_code_accessibility">Código %1$s</string>
@@ -548,8 +551,8 @@
     <string name="connector_certificate_unverified">O certificado de %1$s ainda não foi aprovado. Vincule o servidor novamente para revisá-lo.</string>
     <string name="connector_certificate_mismatch">O certificado de %1$s mudou. O Edendale não se conectará até que você aprove o novo vinculando o servidor novamente.</string>
     <string name="link_source_gdrive_description">Vídeos que você escolhe no Google Drive.</string>
-    <string name="link_source_gdrive_privacy">Depois de iniciar a sessão, o seletor do Google é aberto: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses vídeos, se conecta apenas a partir deste dispositivo e nunca envia nem altera nada.</string>
-    <string name="link_source_gdrive_privacy_tv">Escolha seus vídeos no Edendale em um celular ou tablet. A TV recebe a conta do seu celular e lista todos os vídeos que você escolheu. O Edendale vê apenas esses vídeos e nunca envia nem altera nada.</string>
+    <string name="link_source_gdrive_privacy">Depois de iniciar a sessão, o seletor do Google é aberto: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses vídeos e os arquivos de sincronização que cria, se conecta apenas a partir deste dispositivo e não altera mais nada.</string>
+    <string name="link_source_gdrive_privacy_tv">Escolha seus vídeos no Edendale em um celular ou tablet. A TV recebe a conta do seu celular e lista todos os vídeos que você escolheu. O Edendale vê apenas esses vídeos e os arquivos de sincronização que cria, e não altera mais nada.</string>
     <string name="gdrive_chosen_folder">Vídeos que você escolheu</string>
     <string name="gdrive_choose_more">Escolher Mais Vídeos</string>
     <string name="gdrive_choose_on_another_device">Escolha vídeos para esta fonte no Edendale em um celular ou tablet e depois reescaneie aqui.</string>
@@ -628,10 +631,15 @@
     <string name="sync_no_accounts">Vincule primeiro uma conta ou servidor em Vincular fonte.</string>
     <string name="sync_server_folder_label">Pasta em %1$s</string>
     <string name="sync_google_tv_note">Uma TV não consegue entrar no Google. Configure o Google Drive em um celular Android e envie para aqui com Configurar outro dispositivo.</string>
+    <string name="sync_folder_tv_note">Uma TV não consegue escolher uma pasta. Escolha uma conta ou um servidor como local em um celular e envie para aqui com Configurar outro dispositivo.</string>
+    <string name="pairing_location_pending">%1$s ainda precisa terminar de configurar o local de sincronização.</string>
     <string name="sync_turn_off_title">Desativar a sincronização?</string>
     <string name="sync_turn_off_message">Seu histórico fica neste dispositivo. Os arquivos em %1$s também ficam, a menos que você exclua o arquivo deste dispositivo.</string>
     <string name="sync_turn_off_delete">Desativar e excluir meu arquivo</string>
     <string name="sync_turn_off_keep">Desativar e manter o arquivo</string>
+    <string name="sync_previous_file_note">O arquivo deste dispositivo ainda está em %1$s (%2$s). Exclua-o ou deixe-o lá.</string>
+    <string name="sync_previous_file_delete">Excluir meu arquivo lá</string>
+    <string name="sync_previous_file_keep">Manter</string>
     <string name="sync_remove_device_title">Remover um dispositivo</string>
     <string name="sync_remove_device_message">Excluir o arquivo de um dispositivo impede que o histórico dele chegue aos outros. Esse dispositivo mantém o login e a cópia local até você revogar o acesso do Edendale no provedor ou alterar a senha do servidor.</string>
     <string name="sync_manage_access">Gerenciar acesso em %1$s</string>

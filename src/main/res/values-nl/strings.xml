@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Films en series</string>
+    <string name="tab_watchlist">Kijklijst</string>
     <string name="tab_downloaded">Gedownload</string>
     <string name="tab_search">Zoek</string>
     <string name="action_settings">Instellingen</string>
@@ -291,6 +292,7 @@
     <string name="audience_verifying">Classificaties controleren</string>
     <string name="audience_restricted_title">Niet beschikbaar voor jong publiek</string>
     <string name="audience_restricted_message">Deze titel is niet geverifieerd als PG of PG-13.</string>
+    <string name="watchlist_remove">Verwijder uit kijklijst</string>
     <string name="watchlist_no_young_audience_titles">Je kijklijst bevat momenteel geen titels met PG of PG-13.</string>
     <string name="filmography_no_young_audience_titles">Deze filmografie bevat geen titels met PG of PG-13.</string>
     <string name="settings_section_parental_controls">Ouderlijk toezicht</string>
@@ -510,7 +512,8 @@
     <string name="link_source_another_account">Ander account</string>
     <string name="link_source_sign_in_to">Log in bij %1$s</string>
     <string name="link_source_waiting">Wachten op %1$s…</string>
-    <string name="link_source_cloud_privacy">Edendale vraagt %1$s om alleen-lezentoegang. Het maakt alleen verbinding vanaf dit apparaat, leest mappenlijsten en de video’s die je afspeelt, en uploadt of wijzigt nooit iets.</string>
+    <string name="link_source_cloud_privacy">Edendale leest mappenlijsten en de video’s die je afspeelt, maakt alleen verbinding vanaf dit apparaat en schrijft alleen zijn synchronisatiebestanden, in de map Edendale, als je daar synchroniseert.</string>
+    <string name="link_source_onedrive_privacy">Edendale leest mappenlijsten en de video’s die je afspeelt, maakt alleen verbinding vanaf dit apparaat en schrijft alleen naar zijn eigen map Apps/Edendale, als je daar synchroniseert.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">Open op je telefoon of computer %1$s%2$s en voer deze code in:</string>
     <string name="device_code_accessibility">Code %1$s</string>
@@ -546,8 +549,8 @@
     <string name="connector_certificate_unverified">Het certificaat van %1$s is nog niet goedgekeurd. Koppel de server opnieuw om het te controleren.</string>
     <string name="connector_certificate_mismatch">Het certificaat van %1$s is gewijzigd. Edendale maakt geen verbinding totdat je het nieuwe certificaat goedkeurt door de server opnieuw te koppelen.</string>
     <string name="link_source_gdrive_description">Video’s die je kiest uit Google Drive.</string>
-    <string name="link_source_gdrive_privacy">Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets.</string>
-    <string name="link_source_gdrive_privacy_tv">Kies je video’s in Edendale op een telefoon of tablet. De tv krijgt het account van je telefoon en toont alle video’s die je hebt gekozen. Edendale ziet alleen die video’s en uploadt of wijzigt nooit iets.</string>
+    <string name="link_source_gdrive_privacy">Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s en de synchronisatiebestanden die het zelf maakt, maakt alleen verbinding vanaf dit apparaat en verandert verder niets.</string>
+    <string name="link_source_gdrive_privacy_tv">Kies je video’s in Edendale op een telefoon of tablet. De tv krijgt het account van je telefoon en toont alle video’s die je hebt gekozen. Edendale ziet alleen die video’s en de synchronisatiebestanden die het zelf maakt, en verandert verder niets.</string>
     <string name="gdrive_chosen_folder">Door jou gekozen video’s</string>
     <string name="gdrive_choose_more">Kies meer video’s</string>
     <string name="gdrive_choose_on_another_device">Kies video’s voor deze bron in Edendale op een telefoon of tablet en scan hier daarna opnieuw.</string>
@@ -626,10 +629,15 @@
     <string name="sync_no_accounts">Koppel eerst een account of server via Bron koppelen.</string>
     <string name="sync_server_folder_label">Map op %1$s</string>
     <string name="sync_google_tv_note">Een tv kan niet inloggen bij Google. Stel Google Drive in op een Android-telefoon en stuur het hierheen met Ander apparaat instellen.</string>
+    <string name="sync_folder_tv_note">Een tv kan geen map kiezen. Kies op een telefoon een account of server als locatie en stuur die hierheen met Ander apparaat instellen.</string>
+    <string name="pairing_location_pending">%1$s moet het instellen van de synchronisatielocatie nog afronden.</string>
     <string name="sync_turn_off_title">Synchronisatie uitschakelen?</string>
     <string name="sync_turn_off_message">Je kijkgeschiedenis blijft op dit apparaat. De bestanden in %1$s blijven ook staan, tenzij je het bestand van dit apparaat verwijdert.</string>
     <string name="sync_turn_off_delete">Uitschakelen en mijn bestand verwijderen</string>
     <string name="sync_turn_off_keep">Uitschakelen, bestand bewaren</string>
+    <string name="sync_previous_file_note">Het bestand van dit apparaat staat nog in %1$s (%2$s). Verwijder het of laat het daar staan.</string>
+    <string name="sync_previous_file_delete">Mijn bestand daar verwijderen</string>
+    <string name="sync_previous_file_keep">Behouden</string>
     <string name="sync_remove_device_title">Apparaat verwijderen</string>
     <string name="sync_remove_device_message">Door het bestand van een apparaat te verwijderen, bereikt zijn geschiedenis de andere apparaten niet meer. Dat apparaat houdt zijn login en lokale kopie tot je de toegang van Edendale bij de provider intrekt of het serverwachtwoord wijzigt.</string>
     <string name="sync_manage_access">Toegang beheren bij %1$s</string>

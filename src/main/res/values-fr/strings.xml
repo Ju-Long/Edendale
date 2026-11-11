@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Films et séries</string>
+    <string name="tab_watchlist">Liste de suivi</string>
     <string name="tab_downloaded">Téléchargements</string>
     <string name="tab_search">Rechercher</string>
     <string name="action_settings">Réglages</string>
@@ -291,6 +292,7 @@
     <string name="audience_verifying">Vérification des classifications</string>
     <string name="audience_restricted_title">Indisponible pour le jeune public</string>
     <string name="audience_restricted_message">Ce titre n\'est pas vérifié comme classé PG ou PG-13.</string>
+    <string name="watchlist_remove">Retirer de la liste de suivi</string>
     <string name="watchlist_no_young_audience_titles">Votre liste à voir ne contient actuellement aucun titre classé PG ou PG-13.</string>
     <string name="filmography_no_young_audience_titles">Cette filmographie ne contient aucun titre classé PG ou PG-13.</string>
     <string name="settings_section_parental_controls">Contrôle parental</string>
@@ -512,7 +514,8 @@
     <string name="link_source_another_account">Autre compte</string>
     <string name="link_source_sign_in_to">Se connecter à %1$s</string>
     <string name="link_source_waiting">En attente de %1$s…</string>
-    <string name="link_source_cloud_privacy">Edendale demande à %1$s un accès en lecture seule. Il se connecte uniquement depuis cet appareil, lit les listes de dossiers et les vidéos que vous regardez, et n’envoie ni ne modifie jamais rien.</string>
+    <string name="link_source_cloud_privacy">Edendale lit les listes de dossiers et les vidéos que vous regardez, se connecte uniquement depuis cet appareil et n’écrit que ses fichiers de synchronisation, dans le dossier Edendale, lorsque vous y synchronisez.</string>
+    <string name="link_source_onedrive_privacy">Edendale lit les listes de dossiers et les vidéos que vous regardez, se connecte uniquement depuis cet appareil et n’écrit que dans son propre dossier Apps/Edendale, lorsque vous y synchronisez.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">Sur votre téléphone ou ordinateur, ouvrez %1$s%2$s et saisissez ce code :</string>
     <string name="device_code_accessibility">Code %1$s</string>
@@ -548,8 +551,8 @@
     <string name="connector_certificate_unverified">Le certificat de %1$s n\'a pas encore été approuvé. Reliez à nouveau le serveur pour le vérifier.</string>
     <string name="connector_certificate_mismatch">Le certificat de %1$s a changé. Edendale ne se connectera pas tant que vous n\'aurez pas approuvé le nouveau en reliant à nouveau le serveur.</string>
     <string name="link_source_gdrive_description">Les vidéos que vous choisissez dans Google Drive.</string>
-    <string name="link_source_gdrive_privacy">Après la connexion, le sélecteur de Google s’ouvre : choisissez les vidéos qu’Edendale peut lire. Edendale ne voit que celles-ci, se connecte uniquement depuis cet appareil, et n’envoie ni ne modifie jamais rien.</string>
-    <string name="link_source_gdrive_privacy_tv">Choisissez vos vidéos dans Edendale sur un téléphone ou une tablette. Le téléviseur reçoit le compte de votre téléphone et affiche toutes les vidéos que vous avez choisies. Edendale ne voit que ces vidéos et n’envoie ni ne modifie jamais rien.</string>
+    <string name="link_source_gdrive_privacy">Après la connexion, le sélecteur de Google s’ouvre : choisissez les vidéos qu’Edendale peut lire. Edendale ne voit que celles-ci et les fichiers de synchronisation qu’il crée, se connecte uniquement depuis cet appareil et ne modifie rien d’autre.</string>
+    <string name="link_source_gdrive_privacy_tv">Choisissez vos vidéos dans Edendale sur un téléphone ou une tablette. Le téléviseur reçoit le compte de votre téléphone et affiche toutes les vidéos que vous avez choisies. Edendale ne voit que ces vidéos et les fichiers de synchronisation qu’il crée, et ne modifie rien d’autre.</string>
     <string name="gdrive_chosen_folder">Vidéos que vous avez choisies</string>
     <string name="gdrive_choose_more">Choisir d’autres vidéos</string>
     <string name="gdrive_choose_on_another_device">Choisissez des vidéos pour cette source dans Edendale sur un téléphone ou une tablette, puis réanalysez ici.</string>
@@ -628,10 +631,15 @@
     <string name="sync_no_accounts">Liez d\'abord un compte ou un serveur dans Lier une source.</string>
     <string name="sync_server_folder_label">Dossier sur %1$s</string>
     <string name="sync_google_tv_note">Un téléviseur ne peut pas se connecter à Google. Configurez Google Drive sur un téléphone Android et envoyez-le ici avec Configurer un autre appareil.</string>
+    <string name="sync_folder_tv_note">Un téléviseur ne peut pas choisir de dossier. Choisissez un compte ou un serveur comme emplacement sur un téléphone et envoyez-le ici avec Configurer un autre appareil.</string>
+    <string name="pairing_location_pending">%1$s doit encore terminer la configuration de l’emplacement de synchronisation.</string>
     <string name="sync_turn_off_title">Désactiver la synchronisation ?</string>
     <string name="sync_turn_off_message">Votre historique reste sur cet appareil. Les fichiers dans %1$s restent aussi, sauf si vous supprimez le fichier de cet appareil.</string>
     <string name="sync_turn_off_delete">Désactiver et supprimer mon fichier</string>
     <string name="sync_turn_off_keep">Désactiver, garder le fichier</string>
+    <string name="sync_previous_file_note">Le fichier de cet appareil est encore dans %1$s (%2$s). Supprimez-le ou laissez-le là.</string>
+    <string name="sync_previous_file_delete">Supprimer mon fichier là-bas</string>
+    <string name="sync_previous_file_keep">Le conserver</string>
     <string name="sync_remove_device_title">Retirer un appareil</string>
     <string name="sync_remove_device_message">Supprimer le fichier d\'un appareil empêche son historique d\'atteindre les autres. Cet appareil garde son identifiant et sa copie locale jusqu\'à ce que vous révoquiez l\'accès d\'Edendale chez le fournisseur ou changiez le mot de passe du serveur.</string>
     <string name="sync_manage_access">Gérer l\'accès sur %1$s</string>

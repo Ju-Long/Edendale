@@ -6,6 +6,7 @@
     <string name="brand_wordmark">EDENDALE</string>
     <string name="brand_initial">E</string>
     <string name="tab_movies_shows">Фильмы и сериалы</string>
+    <string name="tab_watchlist">Список к просмотру</string>
     <string name="tab_downloaded">Загрузки</string>
     <string name="tab_search">Поиск</string>
     <string name="action_settings">Настройки</string>
@@ -299,6 +300,7 @@
     <string name="audience_verifying">Проверка возрастных рейтингов</string>
     <string name="audience_restricted_title">Недоступно для юной аудитории</string>
     <string name="audience_restricted_message">Это название не подтверждено как PG или PG-13.</string>
+    <string name="watchlist_remove">Удалить из списка к просмотру</string>
     <string name="watchlist_no_young_audience_titles">В вашем списке «посмотреть» сейчас нет названий с рейтингом PG или PG-13.</string>
     <string name="filmography_no_young_audience_titles">В этой фильмографии нет названий с рейтингом PG или PG-13.</string>
     <string name="settings_section_parental_controls">Родительский контроль</string>
@@ -526,7 +528,8 @@
     <string name="link_source_another_account">Другой аккаунт</string>
     <string name="link_source_sign_in_to">Войти в %1$s</string>
     <string name="link_source_waiting">Ожидание %1$s…</string>
-    <string name="link_source_cloud_privacy">Edendale запрашивает у %1$s доступ только для чтения. Приложение подключается только с этого устройства, читает списки папок и воспроизводимые видео и никогда ничего не загружает и не изменяет.</string>
+    <string name="link_source_cloud_privacy">Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только свои файлы синхронизации в папку Edendale, если вы синхронизируетесь туда.</string>
+    <string name="link_source_onedrive_privacy">Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только в свою папку Apps/Edendale, если вы синхронизируетесь туда.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">На телефоне или компьютере откройте %1$s%2$s и введите этот код:</string>
     <string name="device_code_accessibility">Код %1$s</string>
@@ -562,8 +565,8 @@
     <string name="connector_certificate_unverified">Сертификат для %1$s ещё не подтверждён. Привяжите сервер заново, чтобы проверить его.</string>
     <string name="connector_certificate_mismatch">Сертификат для %1$s изменился. Edendale не подключится, пока вы не подтвердите новый, привязав сервер заново.</string>
     <string name="link_source_gdrive_description">Видео, которые вы выберете на Google Диске.</string>
-    <string name="link_source_gdrive_privacy">После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их, подключается только с этого устройства и никогда ничего не загружает и не изменяет.</string>
-    <string name="link_source_gdrive_privacy_tv">Выбирайте видео в Edendale на телефоне или планшете. Телевизор получает аккаунт с вашего телефона и показывает все выбранные вами видео. Edendale видит только эти видео и никогда ничего не загружает и не изменяет.</string>
+    <string name="link_source_gdrive_privacy">После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их и созданные им файлы синхронизации, подключается только с этого устройства и больше ничего не меняет.</string>
+    <string name="link_source_gdrive_privacy_tv">Выбирайте видео в Edendale на телефоне или планшете. Телевизор получает аккаунт с вашего телефона и показывает все выбранные вами видео. Edendale видит только эти видео и созданные им файлы синхронизации и больше ничего не меняет.</string>
     <string name="gdrive_chosen_folder">Выбранные вами видео</string>
     <string name="gdrive_choose_more">Выбрать ещё видео</string>
     <string name="gdrive_choose_on_another_device">Выберите видео для этого источника в Edendale на телефоне или планшете, а затем просканируйте его здесь заново.</string>
@@ -644,10 +647,15 @@
     <string name="sync_no_accounts">Сначала привяжите учётную запись или сервер в разделе «Привязать источник».</string>
     <string name="sync_server_folder_label">Папка на %1$s</string>
     <string name="sync_google_tv_note">Телевизор не может войти в Google. Настройте Google Диск на телефоне Android и отправьте сюда через «Настроить другое устройство».</string>
+    <string name="sync_folder_tv_note">Телевизор не может выбрать папку. Выберите учётную запись или сервер как расположение на телефоне и отправьте сюда через «Настроить другое устройство».</string>
+    <string name="pairing_location_pending">На %1$s нужно ещё завершить настройку расположения синхронизации.</string>
     <string name="sync_turn_off_title">Выключить синхронизацию?</string>
     <string name="sync_turn_off_message">История просмотра останется на этом устройстве. Файлы в %1$s тоже останутся, если вы не удалите файл этого устройства.</string>
     <string name="sync_turn_off_delete">Выключить и удалить мой файл</string>
     <string name="sync_turn_off_keep">Выключить, оставить файл</string>
+    <string name="sync_previous_file_note">Файл этого устройства всё ещё в %1$s (%2$s). Удалите его или оставьте там.</string>
+    <string name="sync_previous_file_delete">Удалить мой файл там</string>
+    <string name="sync_previous_file_keep">Оставить</string>
     <string name="sync_remove_device_title">Удалить устройство</string>
     <string name="sync_remove_device_message">Удаление файла устройства не даст его истории попадать на другие. Это устройство сохранит логин и локальную копию, пока вы не отзовёте доступ Edendale у провайдера или не смените пароль сервера.</string>
     <string name="sync_manage_access">Управлять доступом в %1$s</string>

@@ -21,7 +21,8 @@ import java.util.UUID
 /**
  * What 27.1 sync keeps on this device outside the record tables
  * (FEATURES-27.1.md §5.5; SYNC-PROTOCOL.md §3, §7.2, §8): the device ID,
- * the one location, the high-water mark, the stamps last read per file,
+ * the one location (and the one it replaced, until the viewer deletes or
+ * keeps this device's file there), the high-water mark, the stamps last read per file,
  * whether local changes await a write, and the last sync's outcome for the
  * UI. The file is excluded from cloud backup and device transfer in
  * `backup_rules.xml` and `data_extraction_rules.xml`, because a device ID
@@ -69,6 +70,20 @@ class SyncSettingsStore(context: Context) {
                 remove(KEY_LAST_ERROR)
                 remove(KEY_WARNINGS)
                 putBoolean(KEY_DIRTY, true)
+            }.commit()
+            changed()
+        }
+
+    /**
+     * The location a new one replaced, while this device's file may still be
+     * there (FEATURES-27.1.md §5.1): Settings → Sync offers to delete it or
+     * keep it. Null once answered.
+     */
+    var previousLocation: SyncLocation?
+        get() = preferences.getString(KEY_PREVIOUS_LOCATION, null)?.let(::decodeLocation)
+        set(value) {
+            preferences.edit().apply {
+                if (value == null) remove(KEY_PREVIOUS_LOCATION) else putString(KEY_PREVIOUS_LOCATION, encodeLocation(value))
             }.commit()
             changed()
         }
@@ -182,6 +197,7 @@ class SyncSettingsStore(context: Context) {
         private const val KEY_DEVICE_ID = "device-id"
         private const val KEY_DEVICE_NAME = "device-name"
         private const val KEY_LOCATION = "location"
+        private const val KEY_PREVIOUS_LOCATION = "previous-location"
         private const val KEY_HIGH_WATER = "high-water"
         private const val KEY_DIRTY = "dirty"
         private const val KEY_STAMPS = "stamps"

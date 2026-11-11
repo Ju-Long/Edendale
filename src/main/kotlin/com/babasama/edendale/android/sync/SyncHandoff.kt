@@ -82,6 +82,9 @@ class SyncHandoff(private val app: EdendaleApplication) {
 
         /** A Google Drive location from another ecosystem: sign in to Google as [hint], then use the folder. */
         data class GoogleSignIn(val space: String, val hint: String?, val folderId: String?) : FollowUp
+
+        /** A TV can't finish a [provider] location (no folder picker, no Google sign-in): the screen says what to do instead (§9.8). */
+        data class OnAnotherDevice(val provider: SyncProvider) : FollowUp
     }
 
     data class Received(val result: HandoffV2.ResultMessage, val followUp: FollowUp?)
@@ -91,7 +94,9 @@ class SyncHandoff(private val app: EdendaleApplication) {
      * with the saved credential), stores what validates, and turns sync on
      * at the location when its login made it. A Google location from
      * another ecosystem, or a folder location, is left for the viewer to
-     * finish ([FollowUp]).
+     * finish ([FollowUp]) and is not reported as stored, since nothing is
+     * yet; a TV, which can do neither, reports it as failed and says what
+     * to do instead ([HandoffV2.locationStep]).
      */
     suspend fun receive(offer: HandoffV2.Offer): Received = withContext(Dispatchers.IO) {
         val stored = mutableListOf<String>()
@@ -117,36 +122,47 @@ class SyncHandoff(private val app: EdendaleApplication) {
 
         offer.accounts.forEach { storeAccount(it) }
         offer.logins.forEach { storeLogin(it) }
-        offer.unsupportedLocationProvider?.let { failed += HandoffV2.ResultMessage.Failure("location", "provider:$it") }
+        offer.unsupportedLocationProvider?.let { failed += HandoffV2.ResultMessage.Failure(HandoffV2.LOCATION_ITEM, "provider:$it") }
 
         offer.location?.let { payload ->
             val space = SpaceName.normalize(payload.space)
             if (space == null) {
-                failed += HandoffV2.ResultMessage.Failure("location", "space")
+                failed += HandoffV2.ResultMessage.Failure(HandoffV2.LOCATION_ITEM, "space")
                 return@let
             }
-            when (payload.provider) {
-                SyncProvider.FOLDER -> {
-                    followUp = FollowUp.PickFolder(space)
-                    stored += "location"
+            when (val step = HandoffV2.locationStep(payload, app.sync.platform)) {
+                is HandoffV2.LocationStep.Unavailable -> {
+                    failed += HandoffV2.ResultMessage.Failure(HandoffV2.LOCATION_ITEM, step.reason)
+                    followUp = FollowUp.OnAnotherDevice(payload.provider)
+                    return@let
                 }
+                // Stored once the viewer has picked the folder or signed in (FollowUpButton).
+                HandoffV2.LocationStep.PickFolder -> {
+                    followUp = FollowUp.PickFolder(space)
+                    return@let
+                }
+                HandoffV2.LocationStep.GoogleSignIn -> {
+                    followUp = FollowUp.GoogleSignIn(space, payload.googleAccountHint, payload.googleFolderId)
+                    return@let
+                }
+                HandoffV2.LocationStep.Store -> Unit
+            }
+            when (payload.provider) {
+                SyncProvider.FOLDER -> Unit
                 SyncProvider.GOOGLE_DRIVE, SyncProvider.ONE_DRIVE, SyncProvider.DROPBOX -> {
                     val account = payload.account
                     if (account != null && account.kind == payload.provider.kind && storeAccount(account)) {
                         app.sync.enable(SyncLocation(payload.provider, space, accountKey = account.cloudAccount.key, googleFolderId = payload.googleFolderId))
-                        stored += "location"
-                    } else if (payload.provider == SyncProvider.GOOGLE_DRIVE && account == null) {
-                        followUp = FollowUp.GoogleSignIn(space, payload.googleAccountHint, payload.googleFolderId)
-                        stored += "location"
+                        stored += HandoffV2.LOCATION_ITEM
                     } else {
-                        failed += HandoffV2.ResultMessage.Failure("location", "account")
+                        failed += HandoffV2.ResultMessage.Failure(HandoffV2.LOCATION_ITEM, "account")
                     }
                 }
                 SyncProvider.SMB, SyncProvider.WEBDAV, SyncProvider.SFTP -> {
                     val login = payload.login
                     val path = payload.path
                     if (login == null || login.kind != payload.provider.kind || path.isNullOrBlank()) {
-                        failed += HandoffV2.ResultMessage.Failure("location", "login")
+                        failed += HandoffV2.ResultMessage.Failure(HandoffV2.LOCATION_ITEM, "login")
                         return@let
                     }
                     val adopted = if (login.user.isEmpty() && login.password.isEmpty() && login.kind == MediaSourceKind.SMB) true else storeLogin(login)
@@ -155,9 +171,9 @@ class SyncHandoff(private val app: EdendaleApplication) {
                         // An SFTP folder arrives as `sftp://host[:port]/path/`; the storage wants the absolute path.
                         val folder = if (login.kind == MediaSourceKind.SFTP && path.startsWith("sftp://", ignoreCase = true)) Sftp.path(path) else path
                         app.sync.enable(SyncLocation(payload.provider, space, host = login.host, port = port, path = folder))
-                        stored += "location"
+                        stored += HandoffV2.LOCATION_ITEM
                     } else {
-                        failed += HandoffV2.ResultMessage.Failure("location", "login")
+                        failed += HandoffV2.ResultMessage.Failure(HandoffV2.LOCATION_ITEM, "login")
                     }
                 }
             }

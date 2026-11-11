@@ -180,6 +180,20 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `the one-off flush job is needed only while a write is pending`() = runBlocking {
+        // FEATURES-27.1.md §8 (R.7): leaving the foreground with a pending write hands it to a one-off job.
+        assertFalse(SyncTriggers.flushJobNeeded(syncOn = false, writePending = true))
+        assertFalse(SyncTriggers.flushJobNeeded(syncOn = true, writePending = false))
+        val storage = MemorySyncStorage()
+        val store = MemorySyncStore()
+        store.write(now) { stamp -> UserMediaSyncRecord(SyncMediaType.MOVIE, 603, favourite = true, device = a.id, updateTime = stamp) }
+        assertTrue(SyncTriggers.flushJobNeeded(syncOn = true, writePending = store.isDirty()))
+        // The sync started on leaving wrote the file: the job, when it runs, has nothing left to do.
+        assertTrue(SyncEngine(storage, store, a, "Family") { now }.sync().wrote)
+        assertFalse(SyncTriggers.flushJobNeeded(syncOn = true, writePending = store.isDirty()))
+    }
+
+    @Test
     fun `the far-future guard warns and the removed device's file is deleted`() = runBlocking {
         val storage = MemorySyncStorage()
         val store = MemorySyncStore()
