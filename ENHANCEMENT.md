@@ -617,6 +617,23 @@ Asked by the owner on 2026-11-11: a selection at the top of Downloaded for All, 
 
 ---
 
+## Section R — Gaps from the 2026-11-11 review
+
+On 2026-11-11 six reviewers went over `android-27.1`, each finding checked by a second reviewer. These are the confirmed gaps an agent could build, one commit each; the owner's items (M.7, the Play notes, the pull request) and the hardware checks stay where they are.
+
+**Rules:** Hard rules 2, 3, 5, and 8 apply. Strings go in `values` and the 14 translated locales; the four `values-en-r*` files change only where they already carry a key. Pure rules are tested in the hermetic suite.
+
+- [x] **R.1** Link Source's privacy notes said Edendale asks for "read-only access" and "never uploads or changes anything", but 27.1 sync writes its own files (`drive.file`, `Files.ReadWrite.AppFolder`, `files.content.write`). The notes now follow `apple-27.1`'s `CloudAccountStep.privacyNote`: Google Drive "sees only those and the sync files it creates … and changes nothing else" (the TV note likewise), OneDrive "writes only to its own Apps/Edendale folder, when you sync there" (`link_source_onedrive_privacy`, new), and Dropbox "writes only its sync files, in the Edendale folder, when you sync there" (`link_source_cloud_privacy`, which loses its provider argument). The translations take Apple's catalogue in each file's own terms. The four `values-en-r*` files carried the three old keys and were updated too. README's Storage services table and Cloud accounts say the same. `StringResourcesTest` checks the notes in every locale and that every locale keeps the English placeholders.
+- [ ] **R.2** A TV that receives a Google Drive location without its login, or a folder location, shows a note instead of a sign-in or folder picker it can't complete (SYNC-PROTOCOL.md §9.8), and `location` is reported as stored only once the location is in use.
+- [ ] **R.3** Choosing a different sync location asks whether to delete this device's file in the old one (FEATURES-27.1.md §5.1).
+- [ ] **R.4** The handoff `Login` reader accepts the nested `credential` shape when `user` is absent (SYNC-PROTOCOL.md §9.7).
+- [ ] **R.5** The trailer embed sends a `Referer`, so YouTube doesn't answer with error 153.
+- [ ] **R.6** Small items: README's schema number and release steps for the `:xr` module, the Watchlist strings in every locale, the instrumented workflow's branches.
+- [ ] **R.7** Deviations recorded: no one-off WorkManager job after local changes (FEATURES §8), no folder watcher (§5.4), the cloud account's e-mail in Auto Backup.
+- [ ] **R.D1** On the throwaway `edendale_phone` and `edendale_tv` emulators: the TV note for a Google location and a folder location, the delete-old-file prompt, and a trailer from the detail page.
+
+---
+
 ## Appendix 1 — Apple reference index
 
 Paths are on `origin/apple-27.0`; tests are under `EdendaleTests/`.
@@ -1358,3 +1375,11 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | Q.T1 | JVM tests | Complete (845, 0 failures) | 147c2f2 |
 | Q.D1 | Emulator checks | Complete (phone API 37 at 448, 360, 900, and 1280 dp; TV API 36; the rail fix checked again at 900 dp; right-to-left not run) | 147c2f2 |
 | Q.D2 | Owner, on hardware | Not run | |
+| R.1 | Privacy notes cover the sync files | Complete | |
+| R.2 | TV handoff: a note instead of a sign-in it can't complete | Open | |
+| R.3 | Changing the location offers to delete the old file | Open | |
+| R.4 | Handoff `Login` reader: nested `credential` | Open | |
+| R.5 | Trailer `Referer` | Open | |
+| R.6 | Small items | Open | |
+| R.7 | Deviations recorded | Open | |
+| R.D1 | Emulator checks | Not run | |

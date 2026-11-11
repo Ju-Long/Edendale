@@ -504,7 +504,8 @@
     <string name="link_source_another_account">其他帳號</string>
     <string name="link_source_sign_in_to">登入 %1$s</string>
     <string name="link_source_waiting">正在等候 %1$s⋯</string>
-    <string name="link_source_cloud_privacy">Edendale 會向 %1$s 請求唯讀存取權限。它只會從此裝置連線，讀取檔案夾列表和你播放的影片，絕不會上傳或更改任何內容。</string>
+    <string name="link_source_cloud_privacy">Edendale 會讀取檔案夾列表和你播放的影片，只會從此裝置連線，並且只在你同步到該處時，將同步檔案寫入 Edendale 檔案夾。</string>
+    <string name="link_source_onedrive_privacy">Edendale 會讀取檔案夾列表和你播放的影片，只會從此裝置連線，並且只在你同步到該處時寫入它自己的 Apps/Edendale 檔案夾。</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">在你的手機或電腦上打開 %1$s%2$s，然後輸入此代碼：</string>
     <string name="device_code_accessibility">代碼 %1$s</string>
@@ -540,8 +541,8 @@
     <string name="connector_certificate_unverified">%1$s 的憑證尚未核准。請重新連結伺服器以進行核對。</string>
     <string name="connector_certificate_mismatch">%1$s 的憑證已變更。在你重新連結伺服器並核准新憑證之前，Edendale 不會連線。</string>
     <string name="link_source_gdrive_description">你從 Google 雲端硬碟中選擇的影片。</string>
-    <string name="link_source_gdrive_privacy">登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片，只會從此裝置連線，絕不會上傳或更改任何內容。</string>
-    <string name="link_source_gdrive_privacy_tv">請在手機或平板電腦上的 Edendale 中選擇影片。電視會從你的手機取得帳號，並列出你選擇的所有影片。Edendale 只能看到這些影片，絕不會上傳或更改任何內容。</string>
+    <string name="link_source_gdrive_privacy">登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片及其自己建立的同步檔案，只會從此裝置連線，不會更改其他任何內容。</string>
+    <string name="link_source_gdrive_privacy_tv">請在手機或平板電腦上的 Edendale 中選擇影片。電視會從你的手機取得帳號，並列出你選擇的所有影片。Edendale 只能看到這些影片及其自己建立的同步檔案，不會更改其他任何內容。</string>
     <string name="gdrive_chosen_folder">你選擇的影片</string>
     <string name="gdrive_choose_more">選擇更多影片</string>
     <string name="gdrive_choose_on_another_device">請在手機或平板電腦上的 Edendale 中為此來源選擇影片，然後在此處重新掃描。</string>

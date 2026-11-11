@@ -504,7 +504,8 @@
     <string name="link_source_another_account">別のアカウント</string>
     <string name="link_source_sign_in_to">%1$sにサインイン</string>
     <string name="link_source_waiting">%1$sを待っています…</string>
-    <string name="link_source_cloud_privacy">Edendaleは%1$sに読み取り専用アクセスを要求します。このデバイスからのみ接続し、フォルダの一覧と再生するビデオを読み取り、何かをアップロードしたり変更したりすることはありません。</string>
+    <string name="link_source_cloud_privacy">Edendaleはフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、そこで同期する場合にのみEdendaleフォルダに同期ファイルを書き込みます。</string>
+    <string name="link_source_onedrive_privacy">Edendaleはフォルダの一覧と再生するビデオを読み取り、このデバイスからのみ接続し、そこで同期する場合にのみ専用のApps/Edendaleフォルダに書き込みます。</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">スマートフォンまたはコンピュータで%1$s%2$sを開き、次のコードを入力してください:</string>
     <string name="device_code_accessibility">コード %1$s</string>
@@ -540,8 +541,8 @@
     <string name="connector_certificate_unverified">%1$s の証明書はまだ承認されていません。確認するにはサーバーをもう一度リンクしてください。</string>
     <string name="connector_certificate_mismatch">%1$s の証明書が変更されました。サーバーをもう一度リンクして新しい証明書を承認するまで、Edendale は接続しません。</string>
     <string name="link_source_gdrive_description">Googleドライブから選択したビデオ。</string>
-    <string name="link_source_gdrive_privacy">サインインすると、Googleの選択画面が開きます。Edendaleで再生するビデオを選択してください。Edendaleが見られるのは選択したビデオだけです。このデバイスからのみ接続し、何かをアップロードしたり変更したりすることはありません。</string>
-    <string name="link_source_gdrive_privacy_tv">ビデオはスマートフォンまたはタブレットのEdendaleで選択します。テレビはスマートフォンからアカウントを受け取り、選択したすべてのビデオを一覧表示します。Edendaleが見られるのはそれらのビデオだけで、何かをアップロードしたり変更したりすることはありません。</string>
+    <string name="link_source_gdrive_privacy">サインインすると、Googleの選択画面が開きます。Edendaleで再生するビデオを選択してください。Edendaleが見られるのは選択したビデオと自分で作成した同期ファイルだけです。このデバイスからのみ接続し、それ以外は何も変更しません。</string>
+    <string name="link_source_gdrive_privacy_tv">ビデオはスマートフォンまたはタブレットのEdendaleで選択します。テレビはスマートフォンからアカウントを受け取り、選択したすべてのビデオを一覧表示します。Edendaleが見られるのはそれらのビデオと自分で作成した同期ファイルだけで、それ以外は何も変更しません。</string>
     <string name="gdrive_chosen_folder">選択したビデオ</string>
     <string name="gdrive_choose_more">ほかのビデオを選択</string>
     <string name="gdrive_choose_on_another_device">このソースのビデオはスマートフォンまたはタブレットのEdendaleで選択し、ここで再スキャンしてください。</string>

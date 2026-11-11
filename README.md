@@ -187,9 +187,9 @@ straight to the service; nothing passes through an Edendale server.
 | WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest; a self-signed certificate is approved on first use | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
 | SFTP (any server you can reach over SSH) | User and password; the server's host key is approved on first use | The login, folder listings, and pipelined reads of the files that play |
 | S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
-| OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
-| Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
-| Google Drive | Google sign-in with Google's picker, limited to the files you choose (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play |
+| OneDrive (personal, work, school) | Microsoft sign-in; Edendale writes only to its app folder, `Apps/Edendale/`, and only when OneDrive is the sync location | The sign-in, folder listings, and byte ranges from short-lived download links; the sync files when it is the sync location |
+| Dropbox | Dropbox sign-in; Edendale writes only its sync files, in `Edendale/`, and only when Dropbox is the sync location | The sign-in, folder listings, and byte ranges from temporary links; the sync files when it is the sync location |
+| Google Drive | Google sign-in with Google's picker, limited to the files you choose and the sync files Edendale creates (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play; the sync files when it is the sync location |
 
 Logins, key pairs, and account tokens are stored encrypted on the device,
 excluded from backup and device transfer, and listed in **Settings →
@@ -258,12 +258,16 @@ the code, the address to enter it at, and a QR code for that address, and
 waits while you approve on a phone or computer. Dropbox and Google Drive come
 to a TV from a phone (see Phone-to-TV handoff). Edendale uses no provider SDK
 and ships no client secret. OneDrive and Dropbox receive the sign-in, folder
-listings, and the byte ranges of what plays.
+listings, and the byte ranges of what plays. Since 27.1 the grant also covers
+Edendale's own sync files (OneDrive's app folder, `Apps/Edendale/`; Dropbox's
+`Edendale/`), written only once you choose that account in **Settings →
+Sync**; Edendale writes nothing else there. Link Source says so under the
+sign-in.
 
 Google Drive asks only for `drive.file`, so Edendale sees only the files you
-choose. Signing in opens Google's picker in the same Custom Tab: tick the
-videos to add, from My Drive, Shared with me, or a shared drive. There are no
-folders to browse, and a picked folder never shares what's inside it, so the
+choose and the sync files it creates, and changes nothing else. Signing in
+opens Google's picker in the same Custom Tab: tick the videos to add, from
+My Drive, Shared with me, or a shared drive. There are no folders to browse, and a picked folder never shares what's inside it, so the
 picker offers video files only. Each account gets one source, **Videos you
 chose**, which lists every video picked with that Google account on any
 device. New episodes don't appear on
@@ -277,7 +281,8 @@ scan would bring the file back. Shortcuts are followed,
 Google formats are skipped, videos are recognized by file extension, and
 subtitles beside a video load only if they were picked too. Google receives
 the sign-in, the file listing (`files.list`), the account's name and email
-(`about`), and the byte ranges of what plays.
+(`about`), the byte ranges of what plays, and, when Drive is the sync
+location, the sync files.
 
 Accounts linked by a build that asked for `drive.readonly` can't open the
 picker, and their folder sources can't be listed under `drive.file`. The

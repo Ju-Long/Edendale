@@ -512,7 +512,8 @@
     <string name="link_source_another_account">Outra Conta</string>
     <string name="link_source_sign_in_to">Iniciar Sessão em %1$s</string>
     <string name="link_source_waiting">A aguardar %1$s…</string>
-    <string name="link_source_cloud_privacy">O Edendale pede a %1$s acesso só de leitura. Liga-se apenas a partir deste dispositivo, lê as listas de pastas e os vídeos que reproduz, e nunca envia nem altera nada.</string>
+    <string name="link_source_cloud_privacy">O Edendale lê as listas de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve os seus ficheiros de sincronização, na pasta Edendale, quando sincroniza aí.</string>
+    <string name="link_source_onedrive_privacy">O Edendale lê as listas de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve na sua própria pasta Apps/Edendale, quando sincroniza aí.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">No seu telemóvel ou computador, abra %1$s%2$s e introduza este código:</string>
     <string name="device_code_accessibility">Código %1$s</string>
@@ -548,8 +549,8 @@
     <string name="connector_certificate_unverified">O certificado de %1$s ainda não foi aprovado. Volte a ligar o servidor para o rever.</string>
     <string name="connector_certificate_mismatch">O certificado de %1$s mudou. O Edendale não se liga até que aprove o novo voltando a ligar o servidor.</string>
     <string name="link_source_gdrive_description">Vídeos que escolhe no Google Drive.</string>
-    <string name="link_source_gdrive_privacy">Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale só vê esses vídeos, liga-se apenas a partir deste dispositivo e nunca envia nem altera nada.</string>
-    <string name="link_source_gdrive_privacy_tv">Escolha os seus vídeos no Edendale num telemóvel ou tablet. A TV recebe a conta do seu telemóvel e lista todos os vídeos que escolheu. O Edendale só vê esses vídeos e nunca envia nem altera nada.</string>
+    <string name="link_source_gdrive_privacy">Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale só vê esses vídeos e os ficheiros de sincronização que cria, liga-se apenas a partir deste dispositivo e não altera mais nada.</string>
+    <string name="link_source_gdrive_privacy_tv">Escolha os seus vídeos no Edendale num telemóvel ou tablet. A TV recebe a conta do seu telemóvel e lista todos os vídeos que escolheu. O Edendale só vê esses vídeos e os ficheiros de sincronização que cria, e não altera mais nada.</string>
     <string name="gdrive_chosen_folder">Vídeos que escolheu</string>
     <string name="gdrive_choose_more">Escolher Mais Vídeos</string>
     <string name="gdrive_choose_on_another_device">Escolha vídeos para esta fonte no Edendale num telemóvel ou tablet e depois volte a analisar aqui.</string>
