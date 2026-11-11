@@ -62,9 +62,11 @@ in `src/horizon` (the manifest overlay and `DevicePolicy`) and
 `src/testHorizon`, so merges from `android` touch `src/main` alone. On a
 headset the app is a handheld app, never the TV shell: `DevicePolicy` turns
 off Picture-in-Picture (Horizon OS can't float it), Watch Next, the Video
-Enhancement default, and the player's brightness and volume swipes (a panel
-ignores both). Watch Trailer opens YouTube in the browser or the YouTube app
-instead of the inline player, which shows no picture in a panel. The release
+Enhancement default (until the viewer saves a preset of their own), the
+player's brightness and volume swipes (a panel ignores both), and Rotation
+Lock (a panel doesn't turn). Watch Trailer opens YouTube in the browser or
+the YouTube app instead of the inline player, which shows no picture in a
+panel. The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 
@@ -77,6 +79,19 @@ sync when it stops, as the 2D player does. The manifest overlay removes
 WorkManager's `RECEIVE_BOOT_COMPLETED`, which Meta reviews, so after a
 reboot the background sync waits for the app's next launch, which syncs
 anyway.
+
+The rest of android's 27.1 arrived on 2026-11-11 (HORIZON.md B.14): parental
+controls, detail pages for downloaded titles, one poster per title, Play
+From by source, Delete Watch History, the Settings pages, and the Downloaded
+page's section picker work on a headset as they do on a phone. Three things
+differ. android's **Android XR theater** is not part of this branch's build:
+its `:xr` module (the `xr/` directory) needs Jetpack XR, which Horizon OS
+doesn't have, so `settings.gradle.kts` leaves it out and the "Immersive
+theater (Android XR)" section below, with its `xr-debug.apk`, describes
+`android` alone; a Quest's theater is the one described next. The player
+never offers **Rotation Lock**. And **Settings → About** carries this
+build's own licence line (MPL-2.0 over an LGPL-2.1 FFmpeg, and the Spatial
+SDK in a theater build), which `android`'s Settings no longer has.
 
 A build with `-Phorizon.theater=true` adds the **immersive theater**
 (HORIZON.md Section G): a Theater button in the player that puts the video on
@@ -117,7 +132,7 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, and three rooms together in a theater build |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, and three rooms together in a theater build |
 | With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
 | Theater rooms (after a scene changes on `scenes`) | On `scenes`: `Blender --background scenes/<room>/<room>.blend --python tools/export_gltf.py -- out/<room>.glb`; then here: `python3 -I tools/horizon/prepare_theater_glb.py <scenes checkout>/out/*.glb` → `src/horizonTheater/assets/theater/` (HORIZON.md G.14) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
@@ -137,8 +152,8 @@ and its passwords never enter the repository or a CI log.
 
 `versionCode` and `versionName` in `defaultConfig` are `android`'s and arrive
 with its merges, but the `horizon` flavor overrides both: `versionName` is the
-Horizon release's own (`27.0`, not android's `0.27.0.1`), which Settings and
-the store show, and `versionCode` (4) only has to be higher than the Meta
+Horizon release's own (`27.1`, not android's `0.27.1`), which Settings and
+the store show, and `versionCode` (5) only has to be higher than the Meta
 Horizon Store's last upload. Set both in the flavor for each release.
 
 ### The Spatial Simulator
@@ -182,7 +197,12 @@ browser and their return to the app; the trailer opening outside the app;
 Settings → Sync with a folder and with a linked account, the headset's file
 naming it `horizon`, and pairing with a phone in both directions (HORIZON.md
 B.13); the headset off and on mid-playback; a second account on the headset; and,
-offline, each source failing on its own while the app stays usable. For the
+offline, each source failing on its own while the app stays usable. For
+27.1 (HORIZON.md B.14): installing over the previous build with the library,
+links, and progress kept; a downloaded title's page and the Downloaded
+section picker; Settings' pages with B or Y as Back; Parental Controls with a
+PIN from the system keyboard and its gates; Delete Watch History; and the
+player without a Rotation Lock or Picture in Picture button. For the
 theater (HORIZON.md G.10): entering and leaving it from every source type;
 each room facing the viewer with the picture on its screen, the Room list,
 the screen's placement, a recenter, and the headset off and on; controllers

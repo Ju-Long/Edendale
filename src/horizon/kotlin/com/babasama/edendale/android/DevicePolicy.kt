@@ -9,8 +9,9 @@ import com.babasama.edendale.android.player.video.EnhancementPreset
  * A Quest reports the handheld `uiMode`, so without this it would get a
  * phone's choices: Picture-in-Picture, which Horizon OS can't float
  * (Findings, 2026-10-10), an enhancement default measured on phones, swipe
- * controls a panel ignores, a trailer whose picture a panel doesn't show, and
- * no use for the thumbsticks (Findings, 2026-10-25).
+ * controls a panel ignores, a Rotation Lock for a panel that never turns, a
+ * trailer whose picture a panel doesn't show, and no use for the thumbsticks
+ * (Findings, 2026-10-25).
  *
  * [resolve] is pure, so [DevicePolicyTest] covers every combination;
  * [current] reads the device and the build flags.
@@ -24,8 +25,18 @@ data class DevicePolicy(
     val offersPictureInPicture: Boolean,
     /** Video Enhancement before the viewer chooses; the capability check may still lower it to Off. */
     val enhancementDefault: EnhancementPreset,
-    /** The player's vertical swipes: window brightness on the left, player volume on the right (B.6). */
+    /**
+     * The player's vertical swipes: the screen's brightness on the left (a
+     * window override, as before) and, since android's 27.1, the device's
+     * media volume on the right in place of the player's own (B.6, B.14).
+     */
     val offersSwipeAdjustments: Boolean,
+    /**
+     * The player's Rotation Lock chip (android's 27.1). A panel doesn't turn
+     * with the head, so a headset has no rotation to lock (B.14); a TV never
+     * had one.
+     */
+    val offersRotationLock: Boolean,
     /** Play the trailer in the detail hero; otherwise Watch Trailer hands it to YouTube or the browser (B.10). */
     val playsTrailersInline: Boolean,
     /** The library scrolls what the ray points at with a thumbstick ([ThumbstickScroller], B.5). */
@@ -64,6 +75,8 @@ data class DevicePolicy(
                 enhancementDefault = if (television || isHorizonOs) EnhancementPreset.OFF else EnhancementPreset.BALANCED,
                 // B.6: neither swipe made a visible or audible change in a panel on the Quest 3.
                 offersSwipeAdjustments = !isHorizonOs,
+                // B.14: nothing rotates a panel, and a TV has one orientation.
+                offersRotationLock = !isHorizonOs && !television,
                 // B.10: the embed played sound but no picture in a panel on the Quest 3.
                 playsTrailersInline = !isHorizonOs,
                 // B.5: Horizon sends the sticks as joystick axes that nothing else reads.

@@ -583,6 +583,11 @@ private fun AboutSettingsSection(versionName: String, isTelevision: Boolean) {
             InfoRow(stringResource(R.string.tmdb_attribution))
             SettingsRowDivider()
             InfoRow(stringResource(R.string.settings_nunito_attribution))
+            // HORIZON.md G.2, B.14: this build's licences (FFmpeg under LGPL-2.1,
+            // and the Spatial SDK in a theater build). android's 27.1 Settings
+            // dropped its open-source line, so the string is src/horizon's alone.
+            SettingsRowDivider()
+            InfoRow(stringResource(R.string.settings_open_source))
         }
         // A TV has no browser to open it in.
         if (!isTelevision) {

@@ -1115,7 +1115,8 @@ class PlayerActivity : ComponentActivity() {
     private fun refreshRotationLockAvailability() {
         rotationLockAvailable.value = OrientationLockRules.isAvailable(
             isTelevision = isTelevision,
-            isXr = isSpatialDevice,
+            // A Quest's panel has no rotation to lock either (HORIZON.md B.14).
+            isXr = isSpatialDevice || !devicePolicy.offersRotationLock,
             inMultiWindow = isInMultiWindowMode,
             inPip = isInPictureInPictureMode,
             sdkInt = Build.VERSION.SDK_INT,
@@ -1435,6 +1436,9 @@ class PlayerActivity : ComponentActivity() {
      */
     private fun enterHorizonTheater() {
         val exoPlayer = player ?: return
+        // As android's enterTheater (B.14): only an item that has started is
+        // handed over, so the parental check has ruled on it first.
+        if (!itemStarted) return
         saveContentPreferences()
         writeProgress()
         val tracks = exoPlayer.currentTracks
@@ -1458,6 +1462,9 @@ class PlayerActivity : ComponentActivity() {
             textLanguage = text?.language,
             speed = chrome.baseRate,
         )
+        // As android's enterTheater: this player stops first, so the file is
+        // never decoded twice while the theater opens at the same position.
+        exoPlayer.stop()
         startActivity(handover.intent(this))
         finish()
     }

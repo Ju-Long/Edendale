@@ -162,11 +162,12 @@ android {
             // upload probe (P.6) says otherwise.
             minSdk = 32
             // The Horizon Store release's own name and code (owner, 2026-10-26),
-            // shown in Settings and the store: "27.0" rather than android's
-            // "0.27.0.1". The code only has to beat the store's last upload, so
-            // it moves with Horizon releases, not with android's (A.4).
-            versionCode = 4
-            versionName = "27.0"
+            // shown in Settings and the store: "27.1" rather than android's
+            // "0.27.1" (27.0 was android's 0.27.0.1). The code only has to beat
+            // the store's last upload, so it moves with Horizon releases, not
+            // with android's (A.4): 5 for 27.1, after 27.0's 4 (B.14).
+            versionCode = 5
+            versionName = "27.1"
             buildConfigField("boolean", "HORIZON_OS", "true")
             buildConfigField("boolean", "HORIZON_THEATER", horizonTheater.toString())
         }
@@ -426,6 +427,18 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         val jellyfin = runtimeComponents.get().filter { it.startsWith("org.jellyfin") }
         if (jellyfin.isNotEmpty()) failures += "GPL-3.0 artifacts in the release runtime classpath: ${jellyfin.joinToString()} (HORIZON.md G.1)"
         else notes += "no org.jellyfin artifact in the release runtime classpath"
+
+        // B.14: android's Android XR theater (its :xr feature module, Jetpack XR) is not
+        // part of this branch's build. A merge that brought it back would put the
+        // feature's activity in this manifest, or Jetpack XR in the classpath.
+        val androidXr = buildList {
+            if (manifest.elements("activity").any { it.attr("name")?.endsWith(".XrTheaterActivity") == true }) {
+                add("XrTheaterActivity's manifest entry")
+            }
+            addAll(runtimeComponents.get().filter { it.startsWith("androidx.xr") })
+        }
+        if (androidXr.isNotEmpty()) failures += "android's Android XR theater is in the build: ${androidXr.joinToString()} (HORIZON.md B.14)"
+        else notes += "no Android XR theater: neither android's :xr activity nor a Jetpack XR artifact (B.14)"
 
         // D15: a 2D build carries nothing of the theater. A theater build says so, since
         // shipping the Spatial SDK (D12) and the theater (D15) are the owner's decisions,

@@ -16,6 +16,7 @@ class DevicePolicyTest {
                 offersPictureInPicture = true,
                 enhancementDefault = EnhancementPreset.BALANCED,
                 offersSwipeAdjustments = true,
+                offersRotationLock = true,
                 playsTrailersInline = true,
                 scrollsWithThumbstick = false,
                 seeksWithThumbstick = false,
@@ -35,6 +36,7 @@ class DevicePolicyTest {
                 offersPictureInPicture = true,
                 enhancementDefault = EnhancementPreset.OFF,
                 offersSwipeAdjustments = true,
+                offersRotationLock = false,
                 playsTrailersInline = true,
                 scrollsWithThumbstick = false,
                 seeksWithThumbstick = false,
@@ -46,7 +48,7 @@ class DevicePolicyTest {
     }
 
     @Test
-    fun horizonIsHandheldWithThumbstickScrollAndTheaterAndWithoutPipEnhancementSwipesOrInlineTrailers() {
+    fun horizonIsHandheldWithThumbstickScrollAndTheaterAndWithoutPipEnhancementSwipesRotationLockOrInlineTrailers() {
         assertEquals(
             DevicePolicy(
                 usesTelevisionShell = false,
@@ -54,6 +56,7 @@ class DevicePolicyTest {
                 offersPictureInPicture = false,
                 enhancementDefault = EnhancementPreset.OFF,
                 offersSwipeAdjustments = false,
+                offersRotationLock = false,
                 playsTrailersInline = false,
                 scrollsWithThumbstick = true,
                 seeksWithThumbstick = true,
@@ -73,6 +76,16 @@ class DevicePolicyTest {
         }
         val horizon = DevicePolicy.resolve(isTelevision = false, isHorizonOs = true, hasTheater = false)
         assertEquals(true, horizon.seeksWithThumbstick)
+    }
+
+    /** B.14: android's 27.1 Rotation Lock is a phone's and a tablet's; a panel and a TV have nothing to turn. */
+    @Test
+    fun onlyAHandheldOffersRotationLock() {
+        assertEquals(true, DevicePolicy.resolve(isTelevision = false, isHorizonOs = false, hasTheater = false).offersRotationLock)
+        assertEquals(false, DevicePolicy.resolve(isTelevision = true, isHorizonOs = false, hasTheater = false).offersRotationLock)
+        for (isTelevision in listOf(false, true)) for (hasTheater in listOf(false, true)) {
+            assertEquals(false, DevicePolicy.resolve(isTelevision, isHorizonOs = true, hasTheater = hasTheater).offersRotationLock)
+        }
     }
 
     @Test
