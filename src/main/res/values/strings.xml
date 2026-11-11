@@ -682,6 +682,9 @@
     <string name="sync_turn_off_message">Your watch history stays on this device. The files in %1$s stay too unless you delete this device\'s file.</string>
     <string name="sync_turn_off_delete">Turn Off and Delete My File</string>
     <string name="sync_turn_off_keep">Turn Off, Keep the File</string>
+    <string name="sync_previous_file_note">This device\'s file is still in %1$s (%2$s). Delete it, or keep it there.</string>
+    <string name="sync_previous_file_delete">Delete My File There</string>
+    <string name="sync_previous_file_keep">Keep It</string>
     <string name="sync_remove_device_title">Remove a Device</string>
     <string name="sync_remove_device_message">Deleting a device\'s file stops its history reaching the others. That device keeps its login and its local copy until you revoke Edendale\'s access at the provider or change the server password.</string>
     <string name="sync_manage_access">Manage access at %1$s</string>

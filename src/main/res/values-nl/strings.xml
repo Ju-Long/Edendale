@@ -633,6 +633,9 @@
     <string name="sync_turn_off_message">Je kijkgeschiedenis blijft op dit apparaat. De bestanden in %1$s blijven ook staan, tenzij je het bestand van dit apparaat verwijdert.</string>
     <string name="sync_turn_off_delete">Uitschakelen en mijn bestand verwijderen</string>
     <string name="sync_turn_off_keep">Uitschakelen, bestand bewaren</string>
+    <string name="sync_previous_file_note">Het bestand van dit apparaat staat nog in %1$s (%2$s). Verwijder het of laat het daar staan.</string>
+    <string name="sync_previous_file_delete">Mijn bestand daar verwijderen</string>
+    <string name="sync_previous_file_keep">Behouden</string>
     <string name="sync_remove_device_title">Apparaat verwijderen</string>
     <string name="sync_remove_device_message">Door het bestand van een apparaat te verwijderen, bereikt zijn geschiedenis de andere apparaten niet meer. Dat apparaat houdt zijn login en lokale kopie tot je de toegang van Edendale bij de provider intrekt of het serverwachtwoord wijzigt.</string>
     <string name="sync_manage_access">Toegang beheren bij %1$s</string>

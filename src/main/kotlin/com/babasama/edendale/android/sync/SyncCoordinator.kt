@@ -51,6 +51,8 @@ data class SyncStatus(
     val lastError: Throwable? = null,
     val warnings: List<SyncWarning> = emptyList(),
     val problem: SyncLocationProblem? = null,
+    /** The location a new one replaced, while this device's file may still be there (§5.1). */
+    val previousLocation: SyncLocation? = null,
 ) {
     val isOn: Boolean get() = location != null
 }
@@ -229,8 +231,12 @@ class SyncCoordinator(private val app: EdendaleApplication) {
     /**
      * Turns sync on with [location] (§5.1): this device's existing rows join
      * the ledger, the device ID is made if needed, and a first sync runs.
+     * A different location it replaces is remembered, so Settings can offer
+     * to delete this device's file there ([deletePreviousFile]).
      */
     suspend fun enable(location: SyncLocation) = withContext(Dispatchers.IO) {
+        val previous = SyncLocation.previousAfter(settings.location, location, settings.previousLocation)
+        if (previous != settings.previousLocation) settings.previousLocation = previous
         settings.location = location
         recorder.importExisting()
         refreshStatus()
@@ -257,6 +263,27 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         // The tombstones stay in the ledger for whichever location comes next; the old one is no longer waited on.
         if (_historyDeletion.value is HistoryDeletion.Pending) _historyDeletion.value = HistoryDeletion.Idle
         WorkManager.getInstance(app).cancelUniqueWork(WORK_NAME)
+        refreshStatus()
+    }
+
+    /**
+     * Deletes this device's file from the location [enable] replaced (§5.1;
+     * SYNC-PROTOCOL.md §4), then forgets that location. When the old
+     * location can't be reached the failure comes back and the location
+     * stays remembered for another try.
+     */
+    suspend fun deletePreviousFile(): Result<Unit> = withContext(Dispatchers.IO) {
+        val previous = settings.previousLocation ?: return@withContext Result.success(Unit)
+        val result = runCatching { SyncEngine(factory.open(previous), store, deviceInfo(), previous.space).removeOwnFile() }
+        result.onFailure { SyncLog.log(TAG, "deleting own file in the old location failed: ${SyncLog.describe(it)}") }
+        if (result.isSuccess) settings.previousLocation = null
+        refreshStatus()
+        result
+    }
+
+    /** Keep It: this device's file stays in the old location, and Settings stops asking. */
+    fun keepPreviousFile() {
+        settings.previousLocation = null
         refreshStatus()
     }
 
@@ -349,6 +376,7 @@ class SyncCoordinator(private val app: EdendaleApplication) {
             lastSyncAt = settings.lastSyncAt,
             warnings = settings.warnings,
             problem = location?.let(factory::problem),
+            previousLocation = settings.previousLocation,
         )
     }
 

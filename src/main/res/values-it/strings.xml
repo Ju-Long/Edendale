@@ -635,6 +635,9 @@
     <string name="sync_turn_off_message">La tua cronologia resta su questo dispositivo. Anche i file in %1$s restano, a meno che non elimini il file di questo dispositivo.</string>
     <string name="sync_turn_off_delete">Disattiva ed elimina il mio file</string>
     <string name="sync_turn_off_keep">Disattiva, conserva il file</string>
+    <string name="sync_previous_file_note">Il file di questo dispositivo è ancora in %1$s (%2$s). Eliminalo o lascialo lì.</string>
+    <string name="sync_previous_file_delete">Elimina il mio file lì</string>
+    <string name="sync_previous_file_keep">Conserva</string>
     <string name="sync_remove_device_title">Rimuovi un dispositivo</string>
     <string name="sync_remove_device_message">Eliminare il file di un dispositivo impedisce alla sua cronologia di raggiungere gli altri. Quel dispositivo conserva accesso e copia locale finché non revochi l\'accesso di Edendale presso il provider o cambi la password del server.</string>
     <string name="sync_manage_access">Gestisci l\'accesso su %1$s</string>

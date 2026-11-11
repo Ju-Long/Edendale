@@ -626,6 +626,9 @@
     <string name="sync_turn_off_message">观看记录会保留在此设备上。除非你删除此设备的文件，%1$s 中的文件也会保留。</string>
     <string name="sync_turn_off_delete">关闭并删除我的文件</string>
     <string name="sync_turn_off_keep">关闭并保留文件</string>
+    <string name="sync_previous_file_note">此设备的文件仍在 %1$s（%2$s）中。删除它，或保留在那里。</string>
+    <string name="sync_previous_file_delete">删除我在那里的文件</string>
+    <string name="sync_previous_file_keep">保留</string>
     <string name="sync_remove_device_title">移除设备</string>
     <string name="sync_remove_device_message">删除某台设备的文件后，它的记录将不再传到其他设备。在你于提供商处撤销 Edendale 的访问权限或更改服务器密码之前，该设备仍保留其登录信息和本地副本。</string>
     <string name="sync_manage_access">在 %1$s 管理访问权限</string>

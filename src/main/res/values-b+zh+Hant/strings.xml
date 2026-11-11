@@ -626,6 +626,9 @@
     <string name="sync_turn_off_message">觀看記錄會保留在此裝置上。除非你刪除此裝置的檔案，%1$s 中的檔案也會保留。</string>
     <string name="sync_turn_off_delete">關閉並刪除我的檔案</string>
     <string name="sync_turn_off_keep">關閉並保留檔案</string>
+    <string name="sync_previous_file_note">此裝置的檔案仍在 %1$s（%2$s）中。刪除它，或保留在該處。</string>
+    <string name="sync_previous_file_delete">刪除我在該處的檔案</string>
+    <string name="sync_previous_file_keep">保留</string>
     <string name="sync_remove_device_title">移除裝置</string>
     <string name="sync_remove_device_message">刪除某台裝置的檔案後，它的記錄將不再傳到其他裝置。在你於提供者處撤銷 Edendale 的存取權或變更伺服器密碼之前，該裝置仍保留其登入資訊和本機副本。</string>
     <string name="sync_manage_access">在 %1$s 管理存取權</string>

@@ -633,6 +633,9 @@
     <string name="sync_turn_off_message">Din tittarhistorik stannar på den här enheten. Filerna i %1$s stannar också, om du inte tar bort den här enhetens fil.</string>
     <string name="sync_turn_off_delete">Stäng av och ta bort min fil</string>
     <string name="sync_turn_off_keep">Stäng av, behåll filen</string>
+    <string name="sync_previous_file_note">Den här enhetens fil finns kvar i %1$s (%2$s). Ta bort den eller låt den vara.</string>
+    <string name="sync_previous_file_delete">Ta bort min fil där</string>
+    <string name="sync_previous_file_keep">Behåll</string>
     <string name="sync_remove_device_title">Ta bort en enhet</string>
     <string name="sync_remove_device_message">Att ta bort en enhets fil hindrar dess historik från att nå de andra. Den enheten behåller sin inloggning och sin lokala kopia tills du återkallar Edendales åtkomst hos leverantören eller byter serverlösenordet.</string>
     <string name="sync_manage_access">Hantera åtkomst hos %1$s</string>

@@ -633,6 +633,9 @@
     <string name="sync_turn_off_message">Dein Wiedergabeverlauf bleibt auf diesem Gerät. Die Dateien in %1$s bleiben ebenfalls, sofern du die Datei dieses Geräts nicht löschst.</string>
     <string name="sync_turn_off_delete">Ausschalten und meine Datei löschen</string>
     <string name="sync_turn_off_keep">Ausschalten, Datei behalten</string>
+    <string name="sync_previous_file_note">Die Datei dieses Geräts ist noch in %1$s (%2$s). Lösche sie oder lass sie dort.</string>
+    <string name="sync_previous_file_delete">Meine Datei dort löschen</string>
+    <string name="sync_previous_file_keep">Behalten</string>
     <string name="sync_remove_device_title">Gerät entfernen</string>
     <string name="sync_remove_device_message">Das Löschen der Datei eines Geräts verhindert, dass sein Verlauf die anderen erreicht. Das Gerät behält seine Anmeldung und seine lokale Kopie, bis du Edendales Zugriff beim Anbieter widerrufst oder das Serverpasswort änderst.</string>
     <string name="sync_manage_access">Zugriff bei %1$s verwalten</string>

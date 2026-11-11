@@ -635,6 +635,9 @@
     <string name="sync_turn_off_message">Tu historial se queda en este dispositivo. Los archivos de %1$s también se quedan, salvo que borres el archivo de este dispositivo.</string>
     <string name="sync_turn_off_delete">Desactivar y borrar mi archivo</string>
     <string name="sync_turn_off_keep">Desactivar y conservar el archivo</string>
+    <string name="sync_previous_file_note">El archivo de este dispositivo sigue en %1$s (%2$s). Elimínalo o déjalo allí.</string>
+    <string name="sync_previous_file_delete">Eliminar mi archivo allí</string>
+    <string name="sync_previous_file_keep">Conservar</string>
     <string name="sync_remove_device_title">Quitar un dispositivo</string>
     <string name="sync_remove_device_message">Borrar el archivo de un dispositivo impide que su historial llegue a los demás. Ese dispositivo conserva su inicio de sesión y su copia local hasta que revoques el acceso de Edendale en el proveedor o cambies la contraseña del servidor.</string>
     <string name="sync_manage_access">Gestionar el acceso en %1$s</string>

@@ -626,6 +626,9 @@
     <string name="sync_turn_off_message">視聴履歴はこの端末に残ります。%1$s のファイルも、この端末のファイルを削除しない限り残ります。</string>
     <string name="sync_turn_off_delete">オフにして自分のファイルを削除</string>
     <string name="sync_turn_off_keep">オフにしてファイルを残す</string>
+    <string name="sync_previous_file_note">この端末のファイルはまだ %1$s（%2$s）にあります。削除するか、そのままにしてください。</string>
+    <string name="sync_previous_file_delete">そこにある自分のファイルを削除</string>
+    <string name="sync_previous_file_keep">そのままにする</string>
     <string name="sync_remove_device_title">端末を削除</string>
     <string name="sync_remove_device_message">端末のファイルを削除すると、その履歴は他の端末に届かなくなります。その端末は、プロバイダーで Edendale のアクセスを取り消すかサーバーのパスワードを変えるまで、ログイン情報とローカルのコピーを保持します。</string>
     <string name="sync_manage_access">%1$s でアクセスを管理</string>

@@ -635,6 +635,9 @@
     <string name="sync_turn_off_message">Votre historique reste sur cet appareil. Les fichiers dans %1$s restent aussi, sauf si vous supprimez le fichier de cet appareil.</string>
     <string name="sync_turn_off_delete">Désactiver et supprimer mon fichier</string>
     <string name="sync_turn_off_keep">Désactiver, garder le fichier</string>
+    <string name="sync_previous_file_note">Le fichier de cet appareil est encore dans %1$s (%2$s). Supprimez-le ou laissez-le là.</string>
+    <string name="sync_previous_file_delete">Supprimer mon fichier là-bas</string>
+    <string name="sync_previous_file_keep">Le conserver</string>
     <string name="sync_remove_device_title">Retirer un appareil</string>
     <string name="sync_remove_device_message">Supprimer le fichier d\'un appareil empêche son historique d\'atteindre les autres. Cet appareil garde son identifiant et sa copie locale jusqu\'à ce que vous révoquiez l\'accès d\'Edendale chez le fournisseur ou changiez le mot de passe du serveur.</string>
     <string name="sync_manage_access">Gérer l\'accès sur %1$s</string>

@@ -383,7 +383,12 @@ change (at once when playback stops or the app goes to the background), every
 five minutes in the foreground, and in the background through a periodic
 WorkManager job with a network constraint, which Doze defers. A failed sync
 backs off 1, 2, 4, 8 minutes up to an hour. **Sync Now** ignores the backoff.
-**Turn Off** keeps the local copy and offers to delete this device's file;
+**Turn Off** keeps the local copy and offers to delete this device's file.
+Choosing another location (in **Choose a Location** or through a handoff)
+keeps the old one's files, and the section then says this device's file is
+still there, with **Delete My File There** and **Keep It**; the old location
+is remembered in `edendale_sync.xml` until you answer, and a failed deletion
+can be tried again.
 **Remove a Device** deletes another device's file and links to the provider's
 page where you revoke Edendale's access, because a removed device keeps its
 login until you do. Episodes are keyed by show, season, and episode number;

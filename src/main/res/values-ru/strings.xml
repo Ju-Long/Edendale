@@ -651,6 +651,9 @@
     <string name="sync_turn_off_message">История просмотра останется на этом устройстве. Файлы в %1$s тоже останутся, если вы не удалите файл этого устройства.</string>
     <string name="sync_turn_off_delete">Выключить и удалить мой файл</string>
     <string name="sync_turn_off_keep">Выключить, оставить файл</string>
+    <string name="sync_previous_file_note">Файл этого устройства всё ещё в %1$s (%2$s). Удалите его или оставьте там.</string>
+    <string name="sync_previous_file_delete">Удалить мой файл там</string>
+    <string name="sync_previous_file_keep">Оставить</string>
     <string name="sync_remove_device_title">Удалить устройство</string>
     <string name="sync_remove_device_message">Удаление файла устройства не даст его истории попадать на другие. Это устройство сохранит логин и локальную копию, пока вы не отзовёте доступ Edendale у провайдера или не смените пароль сервера.</string>
     <string name="sync_manage_access">Управлять доступом в %1$s</string>

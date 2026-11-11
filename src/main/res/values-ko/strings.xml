@@ -626,6 +626,9 @@
     <string name="sync_turn_off_message">시청 기록은 이 기기에 남습니다. 이 기기의 파일을 삭제하지 않으면 %1$s의 파일도 남습니다.</string>
     <string name="sync_turn_off_delete">끄고 내 파일 삭제</string>
     <string name="sync_turn_off_keep">끄고 파일 유지</string>
+    <string name="sync_previous_file_note">이 기기의 파일이 아직 %1$s(%2$s)에 있습니다. 삭제하거나 그대로 두세요.</string>
+    <string name="sync_previous_file_delete">그곳의 내 파일 삭제</string>
+    <string name="sync_previous_file_keep">유지</string>
     <string name="sync_remove_device_title">기기 제거</string>
     <string name="sync_remove_device_message">기기의 파일을 삭제하면 그 기록이 다른 기기에 전달되지 않습니다. 해당 기기는 제공업체에서 Edendale의 접근을 취소하거나 서버 비밀번호를 바꾸기 전까지 로그인 정보와 로컬 복사본을 유지합니다.</string>
     <string name="sync_manage_access">%1$s에서 접근 관리</string>

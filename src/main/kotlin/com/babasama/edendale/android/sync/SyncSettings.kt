@@ -160,6 +160,9 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
     var turningOff by remember { mutableStateOf(false) }
     var removingDevice by remember { mutableStateOf(false) }
     var accountLabel by remember { mutableStateOf<String?>(null) }
+    var previousAccountLabel by remember { mutableStateOf<String?>(null) }
+    var deletingOldFile by remember { mutableStateOf(false) }
+    var oldFileError by remember { mutableStateOf<String?>(null) }
     // Every change in this section is a sync change the acceptance criteria put behind the PIN.
     fun gated(action: () -> Unit): () -> Unit = { gate.require(GatedAction.SYNC, onUnlocked = action) }
 
@@ -168,6 +171,10 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
         val location = sync.settings.location
         accountLabel = location?.accountKey?.let { key ->
             location.provider.kind?.let { kind -> withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.account(kind, key)?.label }.getOrNull() } }
+        }
+        val previous = sync.settings.previousLocation
+        previousAccountLabel = previous?.accountKey?.let { key ->
+            previous.provider.kind?.let { kind -> withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.account(kind, key)?.label }.getOrNull() } }
         }
     }
 
@@ -190,6 +197,25 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
                     ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true })
                     ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = gated { removingDevice = true })
                     ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = gated { turningOff = true }, iconRes = R.drawable.ic_xmark)
+                }
+            }
+            // FEATURES-27.1 §5.1: a replaced location keeps this device's file until the viewer deletes it, and the app offers to.
+            if (status.previousLocation != null) {
+                SettingsActionRow {
+                    ArchiveButton(
+                        label = stringResource(if (deletingOldFile) R.string.watch_history_deleting else R.string.sync_previous_file_delete),
+                        enabled = !deletingOldFile,
+                        iconRes = R.drawable.ic_trash_can,
+                        onClick = gated {
+                            deletingOldFile = true
+                            oldFileError = null
+                            scope.launch {
+                                sync.deletePreviousFile().onFailure { oldFileError = syncErrorMessage(context, it) }
+                                deletingOldFile = false
+                            }
+                        },
+                    )
+                    ArchiveButton(label = stringResource(R.string.sync_previous_file_keep), enabled = !deletingOldFile, onClick = gated { oldFileError = null; sync.keepPreviousFile() })
                 }
             }
         },
@@ -222,6 +248,16 @@ internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
                 }
                 SettingsRowDivider()
                 InfoRow(stringResource(R.string.sync_privacy_note))
+            }
+        }
+        status.previousLocation?.let { previous ->
+            FocusableRows(isTelevision) {
+                SettingsRowDivider()
+                InfoRow(stringResource(R.string.sync_previous_file_note, locationLabel(context, previous, previousAccountLabel), previous.space))
+                oldFileError?.let { message ->
+                    SettingsRowDivider()
+                    InfoRow(message)
+                }
             }
         }
     }
