@@ -17,8 +17,11 @@ keeps library and watch data under the user's control.
 - Use the navigation, accessibility, input, storage, and media capabilities
   native to each supported platform.
 
-Trailers open only after an explicit user action. Edendale contains no
-analytics.
+Trailers open only after an explicit user action. They play in YouTube's
+privacy-enhanced embed (`youtube-nocookie.com`), which refuses to play
+(error 153) unless the app names itself, so the request carries a `Referer`
+of `https://com.babasama.edendale/`, the application ID and nothing else, as
+YouTube asks of apps that embed its player. Edendale contains no analytics.
 
 ## Repository model
 

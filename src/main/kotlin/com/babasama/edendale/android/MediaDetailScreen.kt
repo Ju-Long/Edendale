@@ -590,8 +590,10 @@ private fun DetailContent(
                                 settings.mediaPlaybackRequiresUserGesture = false
                                 webChromeClient = android.webkit.WebChromeClient()
                                 setBackgroundColor(android.graphics.Color.BLACK)
-                                val url = "https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&modestbranding=1&playsinline=1"
-                                loadUrl(url)
+                                loadUrl(
+                                    TrailerEmbed.url(trailer.key),
+                                    TrailerEmbed.headers(context.packageName),
+                                )
                             }
                         },
                         modifier = Modifier.matchParentSize()
