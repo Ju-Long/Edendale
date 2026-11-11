@@ -15,7 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.InetAddress
@@ -26,10 +28,12 @@ import java.net.Socket
  * The host side of a version-2 handoff (SYNC-PROTOCOL.md §9): the device
  * whose pairing screen is open. It advertises `_edendale-handoff._tcp` with
  * `v=2`, `name`, and `platform` while the screen is open, shows a QR code
- * (an X25519 key and a 128-bit secret) and a six-digit code, and takes one
- * guest at a time. Which side sends is the viewer's choice ([role]) and
- * independent of who hosts. A QR code or code lasts 2 minutes and one
- * attempt; after 5 wrong codes in a row the next code waits a minute.
+ * (an X25519 key and a 128-bit secret) and a six-digit code for a PC, which
+ * has no camera (FEATURES-27.1.md §6.2), and takes one guest at a time.
+ * Which side sends is the viewer's choice ([role]) and independent of who
+ * hosts. A QR code or code lasts 2 minutes and one attempt, and a new one
+ * replaces it when it expires, as on Apple; after 5 wrong codes in a row
+ * the next code waits a minute.
  */
 class PairingHost(
     context: Context,
@@ -40,6 +44,8 @@ class PairingHost(
     private val offer: suspend (peer: HandoffV2.RoleMessage) -> HandoffV2.Offer?,
     /** The receiver's validation and storage. */
     private val receive: suspend (offer: HandoffV2.Offer, peer: HandoffV2.RoleMessage) -> HandoffV2.ResultMessage,
+    /** The guest's name and platform, once the roles are exchanged. */
+    private val onPeer: (peer: HandoffV2.RoleMessage) -> Unit = {},
 ) {
     sealed interface Status {
         data object Waiting : Status
@@ -81,6 +87,13 @@ class PairingHost(
         newCode(socket.localPort)
         register(socket.localPort)
         job = scope.launch(Dispatchers.IO) {
+            // An expired code is replaced while no guest is connected, and a lockout ends on time (§9.3, §9.4).
+            launch {
+                while (isActive && !socket.isClosed) {
+                    delay(REFRESH_CHECK_MILLIS)
+                    if (!busy && needsNewCode(System.currentTimeMillis())) newCode()
+                }
+            }
             while (!socket.isClosed) {
                 val connection = try {
                     socket.accept()
@@ -92,7 +105,14 @@ class PairingHost(
         }
     }
 
+    private fun needsNewCode(now: Long): Boolean = when (_state.value.status) {
+        is Status.LockedOut -> now >= lockedUntil
+        Status.Waiting, is Status.Failed -> pairing?.isExpired ?: false
+        else -> false
+    }
+
     /** A fresh QR code and code (§9.3, §9.4), or the lockout after too many wrong codes. */
+    @Synchronized
     fun newCode(port: Int = listener?.localPort ?: 0) {
         val now = System.currentTimeMillis()
         if (now < lockedUntil) {
@@ -103,6 +123,8 @@ class PairingHost(
         val keys = HandoffV2.newKeyPair()
         val payload = HandoffV2.QrPayload(deviceName, HandoffHost.localAddresses().firstOrNull(), port.takeIf { it > 0 }, keys.publicKey, HandoffV2.newSecret())
         val code = HandoffCrypto.newCode()
+        // The replaced code's key goes now; its secret went with its pairing (§9.3).
+        keyPair?.destroy()
         keyPair = keys
         pairing = HandoffProtocolV2.HostPairing(payload, keys, code)
         _state.value = State(payload.uri(), code, deviceName, HandoffHost.localAddresses().map { "$it:$port" }, Status.Waiting)
@@ -132,6 +154,10 @@ class PairingHost(
                 offer = { peer ->
                     _state.value = _state.value.copy(status = Status.Connected(peer.name))
                     kotlinx.coroutines.runBlocking { offer(peer) }
+                },
+                onPeer = { peer ->
+                    _state.value = _state.value.copy(status = Status.Connected(peer.name))
+                    onPeer(peer)
                 },
                 receive = { incoming, peer ->
                     _state.value = _state.value.copy(status = Status.Connected(peer.name))
@@ -173,7 +199,7 @@ class PairingHost(
         val listener = object : NsdManager.RegistrationListener {
             override fun onServiceRegistered(serviceInfo: NsdServiceInfo) = Unit
             override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                // Discovery fails; the QR code and the typed address still work.
+                // Discovery fails; the QR code carries the address, so scanning still works.
                 SyncLog.log(TAG, "NSD registration failed: $errorCode")
             }
             override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) = Unit
@@ -198,14 +224,17 @@ class PairingHost(
 
     companion object {
         const val TAG = "PairingHost"
+
+        /** How often an expired code or a finished lockout is noticed. */
+        const val REFRESH_CHECK_MILLIS = 1_000L
     }
 }
 
 /**
- * The guest side of a version-2 handoff: connects to a host found by
- * discovery, named in a QR code, or typed, and runs the exchange on an IO
- * thread. The viewer's choices (which role, what to send, what to keep)
- * arrive through the callbacks, which may wait.
+ * The guest side of a version-2 handoff: connects to the host a scanned QR
+ * code names (by its address, or found by discovery) and runs the exchange
+ * on an IO thread. The viewer's choices (what to send, what to keep) arrive
+ * through the callbacks, which may wait.
  */
 object PairingGuest {
     const val CONNECT_TIMEOUT_MILLIS = 10_000
@@ -216,8 +245,11 @@ object PairingGuest {
         port: Int,
         pairing: HandoffProtocolV2.GuestPairing,
         participant: HandoffProtocolV2.Participant,
+        /** The socket is open; pairing starts. */
+        onConnected: () -> Unit = {},
     ): HandoffProtocolV2.Outcome = Socket().use { socket ->
         socket.connect(java.net.InetSocketAddress(host, port), CONNECT_TIMEOUT_MILLIS)
+        onConnected()
         HandoffProtocolV2.guest(socket, pairing, participant)
     }
 }

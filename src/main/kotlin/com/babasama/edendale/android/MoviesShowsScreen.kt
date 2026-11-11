@@ -523,7 +523,11 @@ private fun HeroCopy(
                 Button(onClick = { play(preferred, remembersSource) }) {
                     Icon(painterResource(id = R.drawable.ic_play), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(if (scene.isContinueWatching) R.string.action_resume else R.string.action_play))
+                    Text(
+                        stringResource(if (scene.isContinueWatching) R.string.action_resume else R.string.action_play),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 if (copies.size > 1) {
                     PlayFromButton(
@@ -542,7 +546,13 @@ private fun HeroCopy(
                 OutlinedButton(onClick = onClick) {
                     Icon(painterResource(id = R.drawable.ic_circle_info), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.action_details))
+                    // Last in the row, so it takes what Play and Play From
+                    // leave; at phone width that can be less than the word.
+                    Text(
+                        stringResource(R.string.action_details),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
@@ -596,7 +606,7 @@ private fun CollectionsSection(
                 ArchiveFilterChip(
                     selected = selected == filter,
                     onClick = { onSelect(filter) },
-                    label = { Text(filter.localizedTitle().uppercase()) },
+                    label = { Text(filter.localizedTitle().uppercase(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     isTelevision = isTelevision,
                 )
             }

@@ -339,9 +339,13 @@ fun SearchScreen(
                 onClick = { showHeatmap = true },
                 label = {
                     if (state.selectedRange != null) {
-                        Text(stringResource(R.string.search_date_range, state.selectedRange.first, state.selectedRange.second))
+                        Text(
+                            stringResource(R.string.search_date_range, state.selectedRange.first, state.selectedRange.second),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     } else {
-                        Text(stringResource(R.string.search_any_date))
+                        Text(stringResource(R.string.search_any_date), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 isTelevision = isTelevision,
@@ -361,7 +365,7 @@ fun SearchScreen(
                 ArchiveFilterChip(
                     selected = true,
                     onClick = { viewModel.clearScope() },
-                    label = { Text(stringResource(state.scope.labelRes())) },
+                    label = { Text(stringResource(state.scope.labelRes()), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     isTelevision = isTelevision,
                     trailingIcon = { Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.search_clear_scope)) }
                 )
@@ -373,7 +377,7 @@ fun SearchScreen(
                 ArchiveFilterChip(
                     selected = true,
                     onClick = { onOpenPerson(state.activePerson.id, state.activePerson.name) },
-                    label = { Text(state.activePerson.name) },
+                    label = { Text(state.activePerson.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     isTelevision = isTelevision,
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     trailingIcon = {

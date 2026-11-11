@@ -256,6 +256,8 @@ private fun ColumnScope.Transport(playback: TheaterPlayback, ui: TheaterUiState,
             ) {
                 Text(
                     stringResource(label),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -326,7 +328,13 @@ private fun ExitButton(actions: TheaterActions) {
     TextButton(onClick = actions::exit, modifier = Modifier.heightIn(min = 48.dp)) {
         Icon(painterResource(BaseR.drawable.ic_xmark), contentDescription = null, modifier = Modifier.size(20.dp), tint = EdendaleColors.Gold)
         Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.theater_exit), color = EdendaleColors.Gold, style = MaterialTheme.typography.labelLarge)
+        Text(
+            stringResource(R.string.theater_exit),
+            color = EdendaleColors.Gold,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -458,6 +466,8 @@ internal fun TheaterSeatPanel(ui: TheaterUiState, actions: TheaterActions) {
                         Spacer(Modifier.width(8.dp))
                         Text(
                             stringResource(R.string.theater_best_seat),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodySmall,
                             color = if (atBest) EdendaleColors.TextSecondary else EdendaleColors.TextPrimary,
                         )
@@ -589,6 +599,8 @@ private fun LightsRow(ui: TheaterUiState, actions: TheaterActions) {
                 Text(
                     stringResource(level.labelRes),
                     Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,
                     color = if (selected) EdendaleColors.Background else EdendaleColors.TextPrimary,
                 )

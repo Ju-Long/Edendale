@@ -413,7 +413,7 @@ fun BackChip(isTelevision: Boolean, onBack: () -> Unit, modifier: Modifier = Mod
         ) {
             Icon(painterResource(id = R.drawable.ic_chevron_left), contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.action_back))
+            Text(stringResource(R.string.action_back), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

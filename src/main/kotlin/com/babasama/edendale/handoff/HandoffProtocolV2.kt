@@ -109,6 +109,8 @@ object HandoffProtocolV2 {
         val platform: String,
         /** The sender's offer for the receiver named; may wait for the viewer. Null declines. */
         val offer: (peer: HandoffV2.RoleMessage) -> HandoffV2.Offer? = { null },
+        /** The other device, once the roles are exchanged and differ: a receiver can name who it waits for. */
+        val onPeer: (peer: HandoffV2.RoleMessage) -> Unit = {},
         /** The receiver's validation and storage of what arrived. */
         val receive: (offer: HandoffV2.Offer, peer: HandoffV2.RoleMessage) -> HandoffV2.ResultMessage = { _, _ -> HandoffV2.ResultMessage(emptyList(), emptyList()) },
     )
@@ -168,6 +170,7 @@ object HandoffProtocolV2 {
             runCatching { frames.write(channel.seal(HandoffV2.channelErrorFrame(HandoffV2.ErrorReason.ROLE))) }
             throw HandoffException.SameRole
         }
+        participant.onPeer(peer)
         return when (participant.role) {
             HandoffV2.Role.SENDER -> {
                 val offer = participant.offer(peer) ?: HandoffV2.Offer.DECLINED
