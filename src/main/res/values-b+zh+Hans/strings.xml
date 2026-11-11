@@ -620,6 +620,8 @@
     <string name="sync_no_accounts">请先在“关联来源”中关联账户或服务器。</string>
     <string name="sync_server_folder_label">%1$s 上的文件夹</string>
     <string name="sync_google_tv_note">电视无法登录 Google。请在 Android 手机上设置 Google Drive，然后通过“设置其他设备”发送到这里。</string>
+    <string name="sync_folder_tv_note">电视无法选择文件夹。请在手机上选择账户或服务器作为位置，然后通过“设置其他设备”发送到这里。</string>
+    <string name="pairing_location_pending">%1$s 还需要完成同步位置的设置。</string>
     <string name="sync_turn_off_title">要关闭同步吗？</string>
     <string name="sync_turn_off_message">观看记录会保留在此设备上。除非你删除此设备的文件，%1$s 中的文件也会保留。</string>
     <string name="sync_turn_off_delete">关闭并删除我的文件</string>

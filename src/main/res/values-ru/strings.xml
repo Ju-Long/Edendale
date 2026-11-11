@@ -645,6 +645,8 @@
     <string name="sync_no_accounts">Сначала привяжите учётную запись или сервер в разделе «Привязать источник».</string>
     <string name="sync_server_folder_label">Папка на %1$s</string>
     <string name="sync_google_tv_note">Телевизор не может войти в Google. Настройте Google Диск на телефоне Android и отправьте сюда через «Настроить другое устройство».</string>
+    <string name="sync_folder_tv_note">Телевизор не может выбрать папку. Выберите учётную запись или сервер как расположение на телефоне и отправьте сюда через «Настроить другое устройство».</string>
+    <string name="pairing_location_pending">На %1$s нужно ещё завершить настройку расположения синхронизации.</string>
     <string name="sync_turn_off_title">Выключить синхронизацию?</string>
     <string name="sync_turn_off_message">История просмотра останется на этом устройстве. Файлы в %1$s тоже останутся, если вы не удалите файл этого устройства.</string>
     <string name="sync_turn_off_delete">Выключить и удалить мой файл</string>

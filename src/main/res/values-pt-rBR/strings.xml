@@ -629,6 +629,8 @@
     <string name="sync_no_accounts">Vincule primeiro uma conta ou servidor em Vincular fonte.</string>
     <string name="sync_server_folder_label">Pasta em %1$s</string>
     <string name="sync_google_tv_note">Uma TV não consegue entrar no Google. Configure o Google Drive em um celular Android e envie para aqui com Configurar outro dispositivo.</string>
+    <string name="sync_folder_tv_note">Uma TV não consegue escolher uma pasta. Escolha uma conta ou um servidor como local em um celular e envie para aqui com Configurar outro dispositivo.</string>
+    <string name="pairing_location_pending">%1$s ainda precisa terminar de configurar o local de sincronização.</string>
     <string name="sync_turn_off_title">Desativar a sincronização?</string>
     <string name="sync_turn_off_message">Seu histórico fica neste dispositivo. Os arquivos em %1$s também ficam, a menos que você exclua o arquivo deste dispositivo.</string>
     <string name="sync_turn_off_delete">Desativar e excluir meu arquivo</string>

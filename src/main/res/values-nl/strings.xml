@@ -627,6 +627,8 @@
     <string name="sync_no_accounts">Koppel eerst een account of server via Bron koppelen.</string>
     <string name="sync_server_folder_label">Map op %1$s</string>
     <string name="sync_google_tv_note">Een tv kan niet inloggen bij Google. Stel Google Drive in op een Android-telefoon en stuur het hierheen met Ander apparaat instellen.</string>
+    <string name="sync_folder_tv_note">Een tv kan geen map kiezen. Kies op een telefoon een account of server als locatie en stuur die hierheen met Ander apparaat instellen.</string>
+    <string name="pairing_location_pending">%1$s moet het instellen van de synchronisatielocatie nog afronden.</string>
     <string name="sync_turn_off_title">Synchronisatie uitschakelen?</string>
     <string name="sync_turn_off_message">Je kijkgeschiedenis blijft op dit apparaat. De bestanden in %1$s blijven ook staan, tenzij je het bestand van dit apparaat verwijdert.</string>
     <string name="sync_turn_off_delete">Uitschakelen en mijn bestand verwijderen</string>

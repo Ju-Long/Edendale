@@ -627,6 +627,8 @@
     <string name="sync_no_accounts">Länka först ett konto eller en server under Länka källa.</string>
     <string name="sync_server_folder_label">Mapp på %1$s</string>
     <string name="sync_google_tv_note">En tv kan inte logga in på Google. Konfigurera Google Drive på en Android-telefon och skicka det hit med Konfigurera en annan enhet.</string>
+    <string name="sync_folder_tv_note">En tv kan inte välja en mapp. Välj ett konto eller en server som plats på en telefon och skicka den hit med Konfigurera en annan enhet.</string>
+    <string name="pairing_location_pending">%1$s måste fortfarande slutföra konfigurationen av synkroniseringsplatsen.</string>
     <string name="sync_turn_off_title">Stänga av synkroniseringen?</string>
     <string name="sync_turn_off_message">Din tittarhistorik stannar på den här enheten. Filerna i %1$s stannar också, om du inte tar bort den här enhetens fil.</string>
     <string name="sync_turn_off_delete">Stäng av och ta bort min fil</string>

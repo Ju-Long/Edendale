@@ -231,6 +231,43 @@ class HandoffV2Test {
         assertEquals(listOf(login), across.logins)
     }
 
+    @Test
+    fun `a TV reports a location it can't finish and shows a note`() {
+        val folder = HandoffV2.LocationPayload(SyncProvider.FOLDER, "Family")
+        assertEquals(HandoffV2.LocationStep.PickFolder, HandoffV2.locationStep(folder, "android"))
+        assertEquals(HandoffV2.LocationStep.PickFolder, HandoffV2.locationStep(folder, "horizon"))
+        assertEquals(HandoffV2.LocationStep.Unavailable("unavailable"), HandoffV2.locationStep(folder, "androidtv"))
+        assertEquals(HandoffV2.LocationStep.Unavailable("unavailable"), HandoffV2.locationStep(folder, "tvOS"))
+        assertTrue(HandoffV2.canPickFolder("android"))
+        assertFalse(HandoffV2.canPickFolder("androidtv"))
+
+        // §9.8: a Google location from an iPhone reaches an Android TV without its account.
+        val google = HandoffV2.LocationPayload(SyncProvider.GOOGLE_DRIVE, "Family", account = account, googleFolderId = "1AbC")
+        val fromIphone = HandoffV2.offerFor(google, emptyList(), emptyList(), "ios", "androidtv").location!!
+        assertEquals(HandoffV2.LocationStep.Unavailable("google-sign-in-unavailable"), HandoffV2.locationStep(fromIphone, "androidtv"))
+        assertEquals(HandoffV2.LocationStep.GoogleSignIn, HandoffV2.locationStep(fromIphone, "android"))
+        // From an Android phone the account travels, and the TV stores it.
+        val fromPhone = HandoffV2.offerFor(google, emptyList(), emptyList(), "android", "androidtv").location!!
+        assertEquals(HandoffV2.LocationStep.Store, HandoffV2.locationStep(fromPhone, "androidtv"))
+        // Other providers carry their login; a missing one fails later as "account" or "login".
+        assertEquals(HandoffV2.LocationStep.Store, HandoffV2.locationStep(HandoffV2.LocationPayload(SyncProvider.ONE_DRIVE, "Family"), "androidtv"))
+        assertEquals(HandoffV2.LocationStep.Store, HandoffV2.locationStep(HandoffV2.LocationPayload(SyncProvider.SMB, "Family", login = login, path = "smb://nas/share/"), "androidtv"))
+    }
+
+    @Test
+    fun `the sender hears that a location still waits on the other device`() {
+        val pending = HandoffV2.ResultMessage(listOf("login:sftp:nas.local"), emptyList())
+        assertTrue(HandoffV2.locationPending(pending, sentLocation = true))
+        assertFalse(HandoffV2.locationPending(pending, sentLocation = false))
+        assertFalse(HandoffV2.locationPending(HandoffV2.ResultMessage(listOf("location"), emptyList()), sentLocation = true))
+        assertFalse(
+            HandoffV2.locationPending(
+                HandoffV2.ResultMessage(emptyList(), listOf(HandoffV2.ResultMessage.Failure("location", "unavailable"))),
+                sentLocation = true,
+            ),
+        )
+    }
+
     // MARK: - Whole exchanges over a socket
 
     private class Loopback : AutoCloseable {

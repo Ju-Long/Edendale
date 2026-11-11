@@ -627,6 +627,8 @@
     <string name="sync_no_accounts">Verknüpfe zuerst unter „Quelle verknüpfen“ ein Konto oder einen Server.</string>
     <string name="sync_server_folder_label">Ordner auf %1$s</string>
     <string name="sync_google_tv_note">Ein Fernseher kann sich nicht bei Google anmelden. Richte Google Drive auf einem Android-Telefon ein und sende es mit „Anderes Gerät einrichten“ hierher.</string>
+    <string name="sync_folder_tv_note">Ein Fernseher kann keinen Ordner auswählen. Wähle auf einem Telefon ein Konto oder einen Server als Speicherort und sende ihn mit „Anderes Gerät einrichten“ hierher.</string>
+    <string name="pairing_location_pending">%1$s muss den Sync-Speicherort noch fertig einrichten.</string>
     <string name="sync_turn_off_title">Synchronisierung ausschalten?</string>
     <string name="sync_turn_off_message">Dein Wiedergabeverlauf bleibt auf diesem Gerät. Die Dateien in %1$s bleiben ebenfalls, sofern du die Datei dieses Geräts nicht löschst.</string>
     <string name="sync_turn_off_delete">Ausschalten und meine Datei löschen</string>

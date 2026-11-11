@@ -620,6 +620,8 @@
     <string name="sync_no_accounts">先に「ソースをリンク」でアカウントかサーバーをリンクしてください。</string>
     <string name="sync_server_folder_label">%1$s 上のフォルダー</string>
     <string name="sync_google_tv_note">テレビは Google にサインインできません。Android スマートフォンで Google Drive を設定し、「別の端末を設定」でここに送ってください。</string>
+    <string name="sync_folder_tv_note">テレビではフォルダーを選べません。スマートフォンでアカウントかサーバーを保存先に選び、「別の端末を設定」でここに送ってください。</string>
+    <string name="pairing_location_pending">%1$s で同期の保存先の設定を完了する必要があります。</string>
     <string name="sync_turn_off_title">同期をオフにしますか？</string>
     <string name="sync_turn_off_message">視聴履歴はこの端末に残ります。%1$s のファイルも、この端末のファイルを削除しない限り残ります。</string>
     <string name="sync_turn_off_delete">オフにして自分のファイルを削除</string>

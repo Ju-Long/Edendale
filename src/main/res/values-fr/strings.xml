@@ -629,6 +629,8 @@
     <string name="sync_no_accounts">Liez d\'abord un compte ou un serveur dans Lier une source.</string>
     <string name="sync_server_folder_label">Dossier sur %1$s</string>
     <string name="sync_google_tv_note">Un téléviseur ne peut pas se connecter à Google. Configurez Google Drive sur un téléphone Android et envoyez-le ici avec Configurer un autre appareil.</string>
+    <string name="sync_folder_tv_note">Un téléviseur ne peut pas choisir de dossier. Choisissez un compte ou un serveur comme emplacement sur un téléphone et envoyez-le ici avec Configurer un autre appareil.</string>
+    <string name="pairing_location_pending">%1$s doit encore terminer la configuration de l’emplacement de synchronisation.</string>
     <string name="sync_turn_off_title">Désactiver la synchronisation ?</string>
     <string name="sync_turn_off_message">Votre historique reste sur cet appareil. Les fichiers dans %1$s restent aussi, sauf si vous supprimez le fichier de cet appareil.</string>
     <string name="sync_turn_off_delete">Désactiver et supprimer mon fichier</string>

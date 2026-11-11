@@ -441,8 +441,13 @@ space name only; the receiver picks its own folder. Google Drive logins move
 only within an ecosystem (Android phone to Android TV or Quest): to an
 iPhone, Mac, or PC the handoff sends the account's email and the space
 folder's Drive ID instead, and that device signs in to Google with the email
-pre-filled. The phone-to-TV handoff for library sources (version 1) is
-unchanged; a Link Source host tells a version-2 guest to use the Sync screen.
+pre-filled. Until the folder is picked or the sign-in is done, the location is
+not reported as stored, and the sender says the other device still has to
+finish it. A TV has neither a folder picker nor a Google sign-in (SYNC-PROTOCOL
+§9.8): it reports such a location as failed and says to set it up on a phone
+and send it with **Set Up Another Device**. The phone-to-TV handoff for library
+sources (version 1) is unchanged; a Link Source host tells a version-2 guest to
+use the Sync screen.
 
 OneDrive and Dropbox accounts linked before 27.1 lack the write scopes: the
 Sync screen says to sign in again before such an account can be a location.

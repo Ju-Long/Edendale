@@ -629,6 +629,8 @@
     <string name="sync_no_accounts">Vincula primero una cuenta o un servidor en Vincular fuente.</string>
     <string name="sync_server_folder_label">Carpeta en %1$s</string>
     <string name="sync_google_tv_note">Un televisor no puede iniciar sesión en Google. Configura Google Drive en un teléfono Android y envíalo aquí con Configurar otro dispositivo.</string>
+    <string name="sync_folder_tv_note">Un televisor no puede elegir una carpeta. Elige una cuenta o un servidor como ubicación en un teléfono y envíala aquí con Configurar otro dispositivo.</string>
+    <string name="pairing_location_pending">%1$s aún tiene que terminar de configurar la ubicación de sincronización.</string>
     <string name="sync_turn_off_title">¿Desactivar la sincronización?</string>
     <string name="sync_turn_off_message">Tu historial se queda en este dispositivo. Los archivos de %1$s también se quedan, a menos que borres el archivo de este dispositivo.</string>
     <string name="sync_turn_off_delete">Desactivar y borrar mi archivo</string>

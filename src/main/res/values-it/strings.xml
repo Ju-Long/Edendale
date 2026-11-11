@@ -629,6 +629,8 @@
     <string name="sync_no_accounts">Collega prima un account o un server in Collega sorgente.</string>
     <string name="sync_server_folder_label">Cartella su %1$s</string>
     <string name="sync_google_tv_note">Un televisore non può accedere a Google. Configura Google Drive su un telefono Android e invialo qui con Configura un altro dispositivo.</string>
+    <string name="sync_folder_tv_note">Un televisore non può scegliere una cartella. Scegli un account o un server come posizione su un telefono e inviala qui con Configura un altro dispositivo.</string>
+    <string name="pairing_location_pending">%1$s deve ancora completare la configurazione della posizione di sincronizzazione.</string>
     <string name="sync_turn_off_title">Disattivare la sincronizzazione?</string>
     <string name="sync_turn_off_message">La tua cronologia resta su questo dispositivo. Anche i file in %1$s restano, a meno che non elimini il file di questo dispositivo.</string>
     <string name="sync_turn_off_delete">Disattiva ed elimina il mio file</string>

@@ -629,6 +629,8 @@
     <string name="sync_no_accounts">Associe primeiro uma conta ou servidor em Associar fonte.</string>
     <string name="sync_server_folder_label">Pasta em %1$s</string>
     <string name="sync_google_tv_note">Uma TV não consegue iniciar sessão no Google. Configure o Google Drive num telemóvel Android e envie para aqui com Configurar outro dispositivo.</string>
+    <string name="sync_folder_tv_note">Uma TV não consegue escolher uma pasta. Escolha uma conta ou um servidor como local num telemóvel e envie para aqui com Configurar outro dispositivo.</string>
+    <string name="pairing_location_pending">%1$s ainda tem de terminar a configuração do local de sincronização.</string>
     <string name="sync_turn_off_title">Desativar a sincronização?</string>
     <string name="sync_turn_off_message">O seu histórico fica neste dispositivo. Os ficheiros em %1$s também ficam, a menos que elimine o ficheiro deste dispositivo.</string>
     <string name="sync_turn_off_delete">Desativar e eliminar o meu ficheiro</string>

@@ -620,6 +620,8 @@
     <string name="sync_no_accounts">먼저 소스 연결에서 계정이나 서버를 연결하세요.</string>
     <string name="sync_server_folder_label">%1$s의 폴더</string>
     <string name="sync_google_tv_note">TV는 Google에 로그인할 수 없습니다. Android 휴대전화에서 Google Drive를 설정한 뒤 다른 기기 설정으로 여기로 보내세요.</string>
+    <string name="sync_folder_tv_note">TV에서는 폴더를 선택할 수 없습니다. 휴대전화에서 계정이나 서버를 위치로 선택한 뒤 다른 기기 설정으로 여기로 보내세요.</string>
+    <string name="pairing_location_pending">%1$s에서 동기화 위치 설정을 마쳐야 합니다.</string>
     <string name="sync_turn_off_title">동기화를 끌까요?</string>
     <string name="sync_turn_off_message">시청 기록은 이 기기에 남습니다. 이 기기의 파일을 삭제하지 않으면 %1$s의 파일도 남습니다.</string>
     <string name="sync_turn_off_delete">끄고 내 파일 삭제</string>

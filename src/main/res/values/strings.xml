@@ -676,6 +676,8 @@
     <string name="sync_no_accounts">Link an account or server in Link Source first.</string>
     <string name="sync_server_folder_label">Folder on %1$s</string>
     <string name="sync_google_tv_note">A TV can\'t sign in to Google. Set up Google Drive on an Android phone and send it here with Set Up Another Device.</string>
+    <string name="sync_folder_tv_note">A TV can\'t pick a folder. Choose an account or a server as the location on a phone and send it here with Set Up Another Device.</string>
+    <string name="pairing_location_pending">%1$s still has to finish setting up the sync location.</string>
     <string name="sync_turn_off_title">Turn off sync?</string>
     <string name="sync_turn_off_message">Your watch history stays on this device. The files in %1$s stay too unless you delete this device\'s file.</string>
     <string name="sync_turn_off_delete">Turn Off and Delete My File</string>
