@@ -384,7 +384,12 @@ one sentence: anyone who can open the folder can read your watch history.
 Sync runs on launch, on return to the foreground, ten seconds after the last
 change (at once when playback stops or the app goes to the background), every
 five minutes in the foreground, and in the background through a periodic
-WorkManager job with a network constraint, which Doze defers. A failed sync
+WorkManager job with a network constraint, which Doze defers. Leaving the
+app with a change not yet written also queues a one-off WorkManager job that
+writes it once a network is up, even if the app's process has ended; it does
+nothing if the sync started on leaving already wrote it. A folder location
+has no file watcher: another device's change reaches this one at those same
+moments. A failed sync
 backs off 1, 2, 4, 8 minutes up to an hour. **Sync Now** ignores the backoff.
 **Turn Off** keeps the local copy and offers to delete this device's file.
 Choosing another location (in **Choose a Location** or through a handoff)

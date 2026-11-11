@@ -176,9 +176,18 @@ object SyncBackoff {
  * When the client syncs (§8.1): on launch and on return to the foreground,
  * 10 seconds after the last local change (at once when playback stops or the
  * app goes to the background), and every 5 minutes in the foreground. Pure
- * constants for the Android coordinator and its tests.
+ * rules for the Android coordinator and its tests.
  */
 object SyncTriggers {
     const val DEBOUNCE_MILLIS = 10_000L
     const val PERIODIC_MILLIS = 5 * 60_000L
+
+    /**
+     * FEATURES-27.1.md §8, "a one-off job after local changes": leaving the
+     * foreground with a write still pending also hands it to a one-off
+     * background job, which outlives the process and waits for a network;
+     * the job writes only if the write is still pending when it runs, since
+     * the sync started on leaving usually gets there first.
+     */
+    fun flushJobNeeded(syncOn: Boolean, writePending: Boolean): Boolean = syncOn && writePending
 }

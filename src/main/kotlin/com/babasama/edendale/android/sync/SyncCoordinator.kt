@@ -9,10 +9,13 @@ import android.provider.Settings
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.babasama.edendale.android.BuildConfig
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.isTelevisionDevice
@@ -83,7 +86,8 @@ sealed interface HistoryDeletion {
  * Runs sync on this device (SYNC-PROTOCOL.md §8.1; FEATURES-27.1.md §5.4,
  * §8): on launch, on return to the foreground, 10 seconds after the last
  * local change (at once when playback stops or the app goes to the
- * background), every 5 minutes in the foreground, and in the background
+ * background, with a one-off WorkManager job behind it while a write is
+ * pending), every 5 minutes in the foreground, and in the background
  * through a periodic WorkManager job with a network constraint. One sync at
  * a time; failures back off 1, 2, 4, 8 minutes up to an hour. Lives for the
  * process ([EdendaleApplication.sync]).
@@ -154,6 +158,7 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         periodic = null
         debounce?.cancel()
         if (settings.location != null) requestSync(reason = "background")
+        if (SyncTriggers.flushJobNeeded(settings.location != null, settings.dirty)) enqueueFlushWork()
     }
 
     /** A local write: write the file 10 seconds after the last one (§8.1). */
@@ -263,6 +268,7 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         // The tombstones stay in the ledger for whichever location comes next; the old one is no longer waited on.
         if (_historyDeletion.value is HistoryDeletion.Pending) _historyDeletion.value = HistoryDeletion.Idle
         WorkManager.getInstance(app).cancelUniqueWork(WORK_NAME)
+        WorkManager.getInstance(app).cancelUniqueWork(FLUSH_WORK_NAME)
         refreshStatus()
     }
 
@@ -388,21 +394,49 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         WorkManager.getInstance(app).enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
+    /**
+     * FEATURES-27.1.md §8: the one-off job after local changes. WorkManager
+     * keeps it across process death and runs it once a network is up; one
+     * is enough however many changes led here, so a waiting one is kept.
+     */
+    private fun enqueueFlushWork() {
+        val request = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            // The sync started on leaving usually finishes first; the job then finds nothing to write.
+            .setInitialDelay(SyncTriggers.DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS)
+            .setInputData(workDataOf(SyncWorker.KEY_FLUSH to true))
+            .build()
+        WorkManager.getInstance(app).enqueueUniqueWork(FLUSH_WORK_NAME, ExistingWorkPolicy.KEEP, request)
+    }
+
     companion object {
         const val TAG = "SyncCoordinator"
         const val WORK_NAME = "edendale-sync"
+        const val FLUSH_WORK_NAME = "edendale-sync-flush"
     }
 }
 
-/** The periodic background sync (§8). Credential-encrypted storage opens after the first unlock; before that the work waits. */
+/**
+ * The periodic background sync (§8), and the one-off flush after local
+ * changes ([KEY_FLUSH]), which ends at once when nothing is left to write.
+ * Credential-encrypted storage opens after the first unlock; before that the
+ * work waits.
+ */
 class SyncWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
         val app = applicationContext as? EdendaleApplication ?: return Result.failure()
+        val settings = app.sync.settings
+        if (inputData.getBoolean(KEY_FLUSH, false) && !SyncTriggers.flushJobNeeded(settings.location != null, settings.dirty)) return Result.success()
         val report = try {
             app.sync.runSync(reason = "background")
         } catch (error: IOException) {
             null
         }
         return if (report != null || app.sync.settings.location == null) Result.success() else Result.retry()
+    }
+
+    companion object {
+        /** Input flag of the one-off flush job. */
+        const val KEY_FLUSH = "flush"
     }
 }
