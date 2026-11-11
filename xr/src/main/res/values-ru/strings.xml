@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ru. Generated to match Apple/Shared/Theater.xcstrings and the Quest theater's strings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="theater_exit">Выйти из кинозала</string>
+    <string name="theater_position">Позиция</string>
+    <string name="theater_playback_failed">Не удалось воспроизвести видео здесь. Выйдите из кинозала, чтобы вернуться в плеер.</string>
+    <string name="theater_rooms">Зал</string>
+    <string name="theater_room_movie_theatre">Кинозал</string>
+    <string name="theater_room_projector_room">Проекционный зал</string>
+    <string name="theater_room_performance_theatre">Театральный зал</string>
+    <string name="theater_seats">Места</string>
+    <string name="theater_screen">Экран</string>
+    <string name="theater_your_seat">Ваше место</string>
+    <string name="theater_best_seat">Лучшее место</string>
+    <string name="theater_seat_name">Ряд %1$d, место %2$d</string>
+    <string name="theater_lights">Свет</string>
+    <string name="theater_lights_normal">Обычный</string>
+    <string name="theater_lights_dim">Приглушённый</string>
+    <string name="theater_lights_dark">Почти выключен</string>
+    <string name="theater_recentre">Центрировать</string>
+    <string name="theater_recentre_caption">Ставит экран туда, куда вы смотрите, даже лёжа.</string>
+    <string name="theater_look_down">Посмотрите вниз, чтобы увидеть элементы управления.</string>
+</resources>

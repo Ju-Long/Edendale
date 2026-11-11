@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Fortsätt titta</string>
     <string name="section_movies">Filmer</string>
     <string name="section_tv_shows">TV-serier</string>
+    <string name="section_all">Alla</string>
+    <string name="section_watching_short">Pågående</string>
+    <string name="section_shows_short">Serier</string>
     <string name="section_sources">Källor</string>
     <string name="library_empty_title">Biblioteket är tyst</string>
     <string name="library_empty_message">Lägg till en fil eller länka en källa för att fortsätta.</string>
@@ -151,26 +154,19 @@
     <string name="error_server_unreachable">Den servern kunde inte nås.</string>
     <string name="settings_title">Inställningar</string>
     <string name="settings_section_about">Om</string>
+    <string name="settings_player_controls">Spelarreglage</string>
+    <string name="settings_audio">Ljud</string>
+    <string name="settings_library">Bibliotek</string>
+    <string name="settings_section_controls">Reglage</string>
+    <string name="settings_section_appearance">Utseende</string>
+    <string name="settings_parental_more">Åldersgränser, lås och PIN-kod</string>
     <string name="settings_version">Version</string>
-    <string name="settings_watch_progress">Uppspelningsförlopp</string>
-    <string name="settings_stored_on_device">Lagras på denna enhet</string>
-    <string name="settings_tmdb_access">TMDB-åtkomst</string>
-    <string name="settings_tmdb_configured">Konfigurerad vid bygge</string>
-    <string name="settings_tmdb_missing">Lägg till en token i secrets.json och bygg om</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">Stor text, overscan-säkra marginaler, fokuslyft för fjärrkontroll och landskapspresentation är aktiva.</string>
     <string name="settings_watch_next_title">Fortsätt titta på hemskärmen</string>
     <string name="settings_watch_next_description">Visar det du tittar på i hemskärmens rad ”Fortsätt titta”. Edendale skickar inget över nätverket för detta, men hemskärmsappen kan se dessa titlar.</string>
     <string name="settings_section_sources">Källor</string>
     <string name="settings_no_sources">Inga källor länkade</string>
-    <string name="settings_section_backup">Säkerhetskopiering</string>
-    <string name="settings_backup_note">Visningsförlopp, favoriter, din visningslista och betyg åker med Android Auto Backup till din Google Drive, så de återvänder när du konfigurerar en ny enhet. Säkerhetskopieringen följer din enhets systeminställning — Edendale lägger inte till något eget.</string>
-    <string name="settings_backup_secrets_note">Din TMDB-session och eventuella sparade inloggningar för nätverksresurser exkluderas från säkerhetskopiering och enhetsöverföring: de är krypterade till denna enhet och kan inte lämna den.</string>
-    <string name="settings_section_privacy">Integritet</string>
-    <string name="settings_privacy_note">Ingen analys. Nätverksförfrågningar begränsas till TMDB, Wyzie efter en uttrycklig undertextsökning och dina privata synkroniseringsleverantörer.</string>
-    <string name="settings_section_attribution">Erkännande</string>
     <string name="tmdb_attribution">Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</string>
-    <string name="settings_open_source">Edendale · Gratis och öppen källkod</string>
     <string name="settings_section_tmdb_account">TMDB-konto</string>
     <string name="tmdb_account_intro">Anslut ditt TMDB-konto för att synkronisera favoriter, din visningslista och betyg över enheter. Visningstid stannar utanför TMDB.</string>
     <string name="tmdb_loading_account">Läser in konto…</string>
@@ -196,7 +192,6 @@
     <string name="tmdb_sync_status">Synkroniserade %1$s — %2$d skickades, %3$d hämtades</string>
     <string name="player_close">Stäng spelare</string>
     <string name="player_picture_in_picture">Bild-i-bild</string>
-    <string name="player_theater">Biograf</string>
     <string name="player_back_10">Bakåt 10 sekunder</string>
     <string name="player_forward_10">Framåt 10 sekunder</string>
     <string name="player_adjustments">Justeringar</string>
@@ -226,6 +221,12 @@
     <string name="player_in_this_folder">I den här mappen</string>
     <string name="player_volume">Volym</string>
     <string name="player_brightness">Ljusstyrka</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">Volym %1$s</string>
+    <string name="player_brightness_level">Ljusstyrka %1$s</string>
+    <string name="player_rotation_lock">Rotationslås</string>
+    <string name="player_state_on">På</string>
+    <string name="player_state_off">Av</string>
     <string name="player_seek_seconds">%1$d s</string>
     <string name="error_folder_not_opened">Den mappen kunde inte öppnas.</string>
     <string name="default_folder_name">Mapp</string>
@@ -254,7 +255,6 @@
     <string name="wyzie_api_key">API-nyckel</string>
     <string name="wyzie_key_saved">Nyckeln har sparats</string>
     <string name="wyzie_key_encrypted">Nyckeln lagras krypterad på den här enheten.</string>
-    <string name="wyzie_using_build_key">Nyckeln från secrets.json används.</string>
     <string name="wyzie_key_required">Sökning efter undertexter online kräver en egen Wyzie API-nyckel. Besök store.wyzie.io/redeem, slutför stegen på webbplatsen för att lösa in din prenumeration och klistra in nyckeln nedan.</string>
     <string name="wyzie_get_free_key">Hämta en kostnadsfri nyckel</string>
     <string name="wyzie_error_key_storage">Wyzie API-nyckeln kunde inte uppdateras.</string>
@@ -284,7 +284,51 @@
         <item quantity="one">%1$d träff till.</item>
         <item quantity="other">%1$d träffar till.</item>
     </plurals>
-    <string name="settings_section_app_controls">Appkontroller</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Anpassat för ung publik</string>
+    <string name="settings_young_audience_description">Visa bara filmer och serier med åldersgränsen PG eller PG-13, inklusive motsvarande TV-märkningar.</string>
+    <string name="audience_verifying">Kontrollerar åldersgränser</string>
+    <string name="audience_restricted_title">Inte tillgängligt för ung publik</string>
+    <string name="audience_restricted_message">Den här titeln är inte verifierad som PG eller PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">Din bevakningslista innehåller just nu inga titlar med PG eller PG-13.</string>
+    <string name="filmography_no_young_audience_titles">Den här filmografin har inga titlar med PG eller PG-13.</string>
+    <string name="settings_section_parental_controls">Föräldrakontroll</string>
+    <string name="parental_pin">PIN-kod</string>
+    <string name="parental_enter_pin">Ange föräldra-PIN-koden</string>
+    <string name="parental_unlock">Lås upp</string>
+    <string name="parental_wrong_pin">PIN-koden stämde inte.</string>
+    <string name="parental_pin_length">Använd 4 till 8 siffror.</string>
+    <string name="parental_locked_out">För många felaktiga PIN-koder. Försök igen om %1$s.</string>
+    <string name="parental_checking_pin">Kontrollerar PIN-koden…</string>
+    <string name="parental_pairing_link_message">En parkopplingslänk kräver föräldra-PIN-koden. En felaktig PIN-kod förkastar länken.</string>
+    <string name="parental_restricted_title">Begränsad</string>
+    <string name="parental_restricted_message">Den här titeln ligger över åldersgränsen som ställts in på den här enheten.</string>
+    <string name="parental_max_rating_movies">Högsta åldersgräns för filmer</string>
+    <string name="parental_max_rating_tv">Högsta åldersgräns för TV-serier</string>
+    <string name="parental_no_limit">Ingen gräns</string>
+    <string name="parental_region_note">Åldersgränser för %1$s, från TMDB</string>
+    <string name="parental_region_fallback">TMDB har ingen åldersgränslista för %1$s, så %2$s åldersgränser används.</string>
+    <string name="parental_loading_ratings">Läser in åldersgränser…</string>
+    <string name="parental_ratings_unavailable">Listan med åldersgränser kunde inte läsas in.</string>
+    <string name="parental_hide_restricted">Dölj begränsade titlar</string>
+    <string name="parental_hide_restricted_detail">Avstängt stannar begränsade titlar kvar i listorna men kan varken öppnas eller spelas upp.</string>
+    <string name="parental_block_trailers">Blockera trailers och länkar</string>
+    <string name="parental_block_trailers_detail">Döljer trailerknappen och frågar aldrig TMDB efter trailers.</string>
+    <string name="parental_lock_settings">Kräv PIN-kod för inställningar</string>
+    <string name="parental_lock_settings_detail">Att öppna inställningarna kräver PIN-koden.</string>
+    <string name="parental_lock_library">Kräv PIN-kod för ändringar i biblioteket</string>
+    <string name="parental_lock_library_detail">Att lägga till, länka, skanna om eller ta bort källor och titlar kräver PIN-koden.</string>
+    <string name="parental_set_pin">Ange PIN-kod</string>
+    <string name="parental_change_pin">Ändra PIN-kod</string>
+    <string name="parental_remove_pin">Ta bort PIN-kod</string>
+    <string name="parental_new_pin">Ny PIN-kod</string>
+    <string name="parental_confirm_pin">Bekräfta PIN-kod</string>
+    <string name="parental_current_pin">Nuvarande PIN-kod</string>
+    <string name="parental_pins_differ">PIN-koderna stämmer inte överens.</string>
+    <string name="parental_next">Nästa</string>
+    <string name="parental_set_pin_first">Ange en PIN-kod för att använda det här låset.</string>
+    <string name="parental_local_note">De här inställningarna stannar på den här enheten. De synkroniseras aldrig och skickas aldrig till någon annan enhet.</string>
     <string name="settings_app_controls_skip_backward">Hoppa bakåt</string>
     <string name="settings_app_controls_skip_forward">Hoppa framåt</string>
     <string name="settings_app_controls_skip_note">Tryck två gånger på vänster eller höger sida av videon för att hoppa bakåt eller framåt.</string>
@@ -361,6 +405,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">Spela upp från</string>
     <string name="play_from_unavailable">%1$s · Inte tillgänglig</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">Den här enheten</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · Senast uppspelad</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d källor</item>
         <item quantity="other">%1$d källor</item>
@@ -586,6 +634,25 @@
     <string name="sync_remove_device_message">Att ta bort en enhets fil hindrar dess historik från att nå de andra. Den enheten behåller sin inloggning och sin lokala kopia tills du återkallar Edendales åtkomst hos leverantören eller byter serverlösenordet.</string>
     <string name="sync_manage_access">Hantera åtkomst hos %1$s</string>
     <string name="sync_no_other_devices">Ingen annan enhet har skrivit till det här utrymmet ännu.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">Tittarhistorik</string>
+    <string name="watch_history_on_device">På den här enheten</string>
+    <string name="watch_history_note_sync_on">Borttagningen gäller även dina andra enheter.</string>
+    <string name="watch_history_note_sync_off">Borttagningen gäller bara den här enheten.</string>
+    <string name="watch_history_delete_ellipsis">Ta bort tittarhistorik…</string>
+    <string name="watch_history_deleting">Tar bort…</string>
+    <string name="watch_history_deleted">Tittarhistoriken har tagits bort.</string>
+    <string name="watch_history_deleted_others_follow">Borttagen på den här enheten. Dina andra enheter tar bort sina kopior nästa gång de synkroniserar.</string>
+    <string name="watch_history_pending">Borttagen på den här enheten. Dina andra enheter följer efter när Edendale når %1$s.</string>
+    <string name="watch_history_failed">Tittarhistoriken kunde inte tas bort.</string>
+    <string name="watch_history_everywhere_title">Ta bort tittarhistoriken överallt?</string>
+    <string name="watch_history_everywhere_message">Tittarförlopp och markeringar som sedda tas bort här och, via %1$s, på dina andra enheter.</string>
+    <string name="watch_history_everywhere_confirm">Ta bort överallt</string>
+    <string name="watch_history_local_title">Ta bort tittarhistoriken på den här enheten?</string>
+    <string name="watch_history_local_message">Tittarförlopp och markeringar som sedda tas bort från den här enheten. Om du slår på synkronisering senare kommer historiken från dina andra enheter tillbaka.</string>
+    <string name="watch_history_local_confirm">Ta bort</string>
+    <string name="watch_history_kept">Favoriter, bevakningslista, betyg, recensioner, ditt bibliotek och ditt TMDB-konto lämnas orörda.</string>
+    <string name="clear_progress">Rensa förlopp</string>
     <string name="sync_folder_relink">Välj mappen som den här enheten ska använda för utrymmet ”%1$s”.</string>
     <string name="sync_google_relink">Logga in på Google som %1$s för att använda utrymmet ”%2$s”.</string>
     <string name="pairing_role_question">Åt vilket håll ska inloggningarna gå?</string>
@@ -623,4 +690,6 @@
         <item quantity="one">%1$d objekt kunde inte användas.</item>
         <item quantity="other">%1$d objekt kunde inte användas.</item>
     </plurals>
+    <string name="player_theater">Biograf</string>
+    <string name="xr_module_title">Android XR · Biograf</string>
 </resources>

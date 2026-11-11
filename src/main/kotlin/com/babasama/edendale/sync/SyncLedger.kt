@@ -72,6 +72,29 @@ data class SyncLedger(
 
     fun writing(record: UserMediaSyncRecord): SyncLedger = copy(userMedia = userMedia + (record.key to record), highWater = maxOf(highWater, record.updateTime))
 
+    /**
+     * Delete Watch History with sync on. The protocol can only say "cleared"
+     * per key (§6.1), so every live progress record, and each key in
+     * [alsoKnown] the ledger lacks (this device's rows that never reached
+     * it), becomes a tombstone written by [device] at [stamp], one local
+     * write taken with §7.2 so it wins over everything already applied. A
+     * tombstone already held keeps its stamp and device: re-stamping it would
+     * only churn the files. User media is untouched. Returns the ledger and
+     * the keys cleared; with nothing to clear, this same ledger and no keys.
+     * Keyed by map, so no key can reach a file twice.
+     */
+    fun clearingAllProgress(stamp: Long, device: String, alsoKnown: Collection<ProgressRecord> = emptyList()): Pair<SyncLedger, Set<String>> {
+        val cleared = LinkedHashMap<String, ProgressRecord>()
+        progress.values.filterNot { it.cleared }.forEach { cleared[it.key] = it.clearedBy(device, stamp) }
+        alsoKnown.forEach { record ->
+            if (record.key !in progress && record.key !in cleared) cleared[record.key] = record.clearedBy(device, stamp)
+        }
+        if (cleared.isEmpty()) return this to emptySet()
+        return copy(progress = progress + cleared, highWater = maxOf(highWater, stamp)) to cleared.keys
+    }
+
+    private fun ProgressRecord.clearedBy(device: String, stamp: Long) = ProgressRecord.tombstone(type, tmdbId, season, episode, device, stamp)
+
     /** The device file this ledger writes out: the merged view, every tombstone included (the codec prunes old ones). */
     fun file(space: String, device: SyncDeviceInfo): DeviceFile =
         DeviceFile(space, device, progress.values.sortedBy { it.key }, userMedia.values.sortedBy { it.key })

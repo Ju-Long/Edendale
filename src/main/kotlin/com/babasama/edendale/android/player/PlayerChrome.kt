@@ -27,6 +27,21 @@ internal sealed interface PlayerHud {
 }
 
 /**
+ * A level the handheld swipes move: the screen's brightness on the left of
+ * the video ([PlayerScreenBrightness]) and the device's media volume on the
+ * right ([DeviceVolume]). The gesture layer depends on this rather than on
+ * the activity, so either side can be absent (Android XR has no brightness
+ * swipe, as visionOS has none).
+ */
+internal interface PlayerLevelControl {
+    /** The level a swipe starts from, 0…1; read once as each swipe begins. */
+    fun current(): Float
+
+    /** Moves to [level] (0…1) and returns the level that took, which the HUD shows. */
+    fun set(level: Float): Float
+}
+
+/**
  * Controls-overlay state for one playback session, mirroring Apple's
  * `PlayerChromeModel`: visibility, side panels, playback speed (base rate +
  * temporary hold override), loop, auto-skip preferences, aspect fill, the
@@ -214,6 +229,23 @@ internal class PlayerChromeState(val preferences: PlayerPreferences) {
         preferences.autoPip = enabled
     }
 
+    /**
+     * Rotation Lock (Apple's `isOrientationLocked`), for this player session
+     * only: it lasts through episode switches, Up Next, and Picture in
+     * Picture, and ends with the player, whose requested orientation ends
+     * with the activity (a relaunch keeps it, and the activity reads it back
+     * into a new chrome). Never saved.
+     */
+    val orientationLocked: Boolean get() = orientationLockState.value
+
+    // A plain state holder: a private setter would clash with setOrientationLocked on the JVM.
+    private val orientationLockState = mutableStateOf(false)
+
+    fun setOrientationLocked(locked: Boolean) {
+        orientationLockState.value = locked
+        showControls()
+    }
+
     // ------------------------------------------------------------------
     // HUD
     // ------------------------------------------------------------------
@@ -221,8 +253,19 @@ internal class PlayerChromeState(val preferences: PlayerPreferences) {
     var hud by mutableStateOf<PlayerHud?>(null)
         private set
 
+    /**
+     * Bumped by every [showHud], including one that repeats the HUD already
+     * on screen, so the fade waits for the last update rather than the last
+     * change (Apple's `showHUD` restarts its timer on every call). A volume
+     * swipe moves in the device's steps and shows the same level move after
+     * move until it crosses into the next one.
+     */
+    var hudTick by mutableLongStateOf(0L)
+        private set
+
     fun showHud(content: PlayerHud) {
         hud = content
+        hudTick++
     }
 
     fun dismissHud() {

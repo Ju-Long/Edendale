@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- zh-Hant. Generated to match Apple/Shared/Theater.xcstrings and the Quest theater's strings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="theater_exit">離開影院</string>
+    <string name="theater_position">播放位置</string>
+    <string name="theater_playback_failed">無法在此播放影片。請離開影院以返回播放器。</string>
+    <string name="theater_rooms">影廳</string>
+    <string name="theater_room_movie_theatre">電影院</string>
+    <string name="theater_room_projector_room">放映廳</string>
+    <string name="theater_room_performance_theatre">劇院</string>
+    <string name="theater_seats">座位</string>
+    <string name="theater_screen">銀幕</string>
+    <string name="theater_your_seat">你的座位</string>
+    <string name="theater_best_seat">最佳座位</string>
+    <string name="theater_seat_name">第 %1$d 排 %2$d 座</string>
+    <string name="theater_lights">燈光</string>
+    <string name="theater_lights_normal">正常</string>
+    <string name="theater_lights_dim">調暗</string>
+    <string name="theater_lights_dark">很暗</string>
+    <string name="theater_recentre">重新置中</string>
+    <string name="theater_recentre_caption">把銀幕放到你正在看的方向，躺著也可以。</string>
+    <string name="theater_look_down">往下看即可找到控制項目。</string>
+</resources>

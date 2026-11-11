@@ -87,6 +87,9 @@ object PlayerPreferencesRules {
     // Video adjustments (F.2)
     const val KEY_VIDEO_ADJUSTMENTS = "video.adjustments"
 
+    // Video enhancement (F.7): the viewer's preset and sliders, never Show Original
+    const val KEY_VIDEO_ENHANCEMENT = "video.enhancement"
+
     // Defaults and bounds
     val DEFAULT_SKIP_INTERVAL = SkipInterval.TEN
     const val DEFAULT_HOLD_LEFT_RATE = 0.5f
@@ -506,6 +509,23 @@ class PlayerPreferences(
             store.getString(PlayerPreferencesRules.KEY_VIDEO_ADJUSTMENTS, null),
         )
         set(value) = store.putString(PlayerPreferencesRules.KEY_VIDEO_ADJUSTMENTS, value.normalized().toJson())
+
+    /**
+     * Enhancement (F.7) as the viewer last set it, one JSON object under
+     * `video.enhancement`; null when nothing is saved or it can't be read, so
+     * the player starts at the device's default. Setting null removes it.
+     */
+    var videoEnhancement: com.babasama.edendale.android.player.video.EnhancementSettings?
+        get() = com.babasama.edendale.android.player.video.EnhancementSettings.fromJson(
+            store.getString(PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT, null),
+        )
+        set(value) {
+            if (value == null) {
+                store.remove(PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT)
+            } else {
+                store.putString(PlayerPreferencesRules.KEY_VIDEO_ENHANCEMENT, value.toJson())
+            }
+        }
 
     /** Audio Enhancement as one typed value (E.1); setting it stores all four keys. */
     var audioEnhancement: AudioEnhancementSettings

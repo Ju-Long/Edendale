@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Weiter ansehen</string>
     <string name="section_movies">Filme</string>
     <string name="section_tv_shows">TV-Serien</string>
+    <string name="section_all">Alle</string>
+    <string name="section_watching_short">Begonnen</string>
+    <string name="section_shows_short">Serien</string>
     <string name="section_sources">Quellen</string>
     <string name="library_empty_title">Die Bibliothek ist still</string>
     <string name="library_empty_message">Füge eine Datei hinzu oder verknüpfe eine Quelle, um fortzufahren.</string>
@@ -151,26 +154,19 @@
     <string name="error_server_unreachable">Dieser Server konnte nicht erreicht werden.</string>
     <string name="settings_title">Einstellungen</string>
     <string name="settings_section_about">Info</string>
+    <string name="settings_player_controls">Player-Steuerung</string>
+    <string name="settings_audio">Audio</string>
+    <string name="settings_library">Mediathek</string>
+    <string name="settings_section_controls">Steuerung</string>
+    <string name="settings_section_appearance">Darstellung</string>
+    <string name="settings_parental_more">Freigaben, Sperren und PIN</string>
     <string name="settings_version">Version</string>
-    <string name="settings_watch_progress">Wiedergabefortschritt</string>
-    <string name="settings_stored_on_device">Auf diesem Gerät gespeichert</string>
-    <string name="settings_tmdb_access">TMDB-Zugriff</string>
-    <string name="settings_tmdb_configured">Zur Build-Zeit konfiguriert</string>
-    <string name="settings_tmdb_missing">Füge einen Token zu secrets.json hinzu und erstelle den Build neu</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">Große Schrift, Overscan-sichere Ränder, Fokus-Hervorhebung durch die Fernbedienung und Querformat-Präsentation sind aktiv.</string>
     <string name="settings_watch_next_title">Weiter ansehen auf dem Startbildschirm</string>
     <string name="settings_watch_next_description">Zeigt, was du gerade ansiehst, in der Reihe „Weiter ansehen“ des Startbildschirms. Edendale sendet dafür nichts über das Netzwerk, aber die Startbildschirm-App kann diese Titel sehen.</string>
     <string name="settings_section_sources">Quellen</string>
     <string name="settings_no_sources">Keine Quellen verknüpft</string>
-    <string name="settings_section_backup">Backup</string>
-    <string name="settings_backup_note">Wiedergabefortschritt, Favoriten, Watchlist und Bewertungen werden über Android Auto Backup in deinem Google Drive gesichert, sodass sie zurückkehren, wenn du ein neues Gerät einrichtest. Das Backup richtet sich nach der Systemeinstellung deines Geräts — Edendale fügt nichts Eigenes hinzu.</string>
-    <string name="settings_backup_secrets_note">Deine TMDB-Sitzung und alle gespeicherten Logins für Netzwerkfreigaben sind vom Backup und der Geräteübertragung ausgeschlossen: Sie sind an dieses Gerät verschlüsselt und können es nicht verlassen.</string>
-    <string name="settings_section_privacy">Datenschutz</string>
-    <string name="settings_privacy_note">Keine Analyse. Netzwerkanfragen beschränken sich auf TMDB, Wyzie nach einer ausdrücklichen Untertitelsuche und deine privaten Sync-Anbieter.</string>
-    <string name="settings_section_attribution">Namensnennung</string>
     <string name="tmdb_attribution">Dieses Produkt verwendet die TMDB-API, wird jedoch nicht von TMDB befürwortet oder zertifiziert.</string>
-    <string name="settings_open_source">Edendale · Kostenlos und Open Source</string>
     <string name="settings_section_tmdb_account">TMDB-Account</string>
     <string name="tmdb_account_intro">Verbinde dein TMDB-Konto, um Favoriten, deine Watchlist und Bewertungen über Geräte hinweg zu synchronisieren. Die Wiedergabezeit bleibt außerhalb von TMDB.</string>
     <string name="tmdb_loading_account">Konto wird geladen…</string>
@@ -196,7 +192,6 @@
     <string name="tmdb_sync_status">%1$s synchronisiert — %2$d hochgeladen, %3$d heruntergeladen</string>
     <string name="player_close">Player schließen</string>
     <string name="player_picture_in_picture">Bild-in-Bild</string>
-    <string name="player_theater">Kino</string>
     <string name="player_back_10">10 Sekunden zurück</string>
     <string name="player_forward_10">10 Sekunden vor</string>
     <string name="player_adjustments">Anpassungen</string>
@@ -226,6 +221,12 @@
     <string name="player_in_this_folder">In diesem Ordner</string>
     <string name="player_volume">Lautstärke</string>
     <string name="player_brightness">Helligkeit</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">Lautstärke %1$s</string>
+    <string name="player_brightness_level">Helligkeit %1$s</string>
+    <string name="player_rotation_lock">Ausrichtungssperre</string>
+    <string name="player_state_on">Ein</string>
+    <string name="player_state_off">Aus</string>
     <string name="player_seek_seconds">%1$d s</string>
     <string name="error_folder_not_opened">Dieser Ordner konnte nicht geöffnet werden.</string>
     <string name="default_folder_name">Ordner</string>
@@ -254,7 +255,6 @@
     <string name="wyzie_api_key">API-Schlüssel</string>
     <string name="wyzie_key_saved">Schlüssel gespeichert</string>
     <string name="wyzie_key_encrypted">Der Schlüssel wird verschlüsselt auf diesem Gerät gespeichert.</string>
-    <string name="wyzie_using_build_key">Der Schlüssel aus secrets.json wird verwendet.</string>
     <string name="wyzie_key_required">Die Online-Untertitelsuche benötigt deinen eigenen Wyzie-API-Schlüssel. Rufe store.wyzie.io/redeem auf, schließe die Schritte auf der Website ab, um dein Abo einzulösen, und füge den Schlüssel unten ein.</string>
     <string name="wyzie_get_free_key">Kostenlosen Schlüssel abrufen</string>
     <string name="wyzie_error_key_storage">Der Wyzie-API-Schlüssel konnte nicht aktualisiert werden.</string>
@@ -284,7 +284,51 @@
         <item quantity="one">%1$d weitere Übereinstimmung.</item>
         <item quantity="other">%1$d weitere Übereinstimmungen.</item>
     </plurals>
-    <string name="settings_section_app_controls">App-Steuerung</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Für junges Publikum</string>
+    <string name="settings_young_audience_description">Nur Filme und Serien mit den Freigaben PG oder PG-13 anzeigen, einschließlich gleichwertiger TV-Kennzeichnungen.</string>
+    <string name="audience_verifying">Altersfreigaben werden geprüft</string>
+    <string name="audience_restricted_title">Nicht für junges Publikum verfügbar</string>
+    <string name="audience_restricted_message">Dieser Titel ist nicht als PG oder PG-13 bestätigt.</string>
+    <string name="watchlist_no_young_audience_titles">Deine Merkliste enthält derzeit keine Titel mit PG oder PG-13.</string>
+    <string name="filmography_no_young_audience_titles">In dieser Filmografie gibt es keine Titel mit PG oder PG-13.</string>
+    <string name="settings_section_parental_controls">Kindersicherung</string>
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Eltern-PIN eingeben</string>
+    <string name="parental_unlock">Entsperren</string>
+    <string name="parental_wrong_pin">Diese PIN stimmt nicht.</string>
+    <string name="parental_pin_length">Verwende 4 bis 8 Ziffern.</string>
+    <string name="parental_locked_out">Zu viele falsche PINs. Versuche es in %1$s erneut.</string>
+    <string name="parental_checking_pin">PIN wird geprüft…</string>
+    <string name="parental_pairing_link_message">Ein Kopplungslink erfordert die Eltern-PIN. Bei einer falschen PIN wird der Link verworfen.</string>
+    <string name="parental_restricted_title">Eingeschränkt</string>
+    <string name="parental_restricted_message">Dieser Titel liegt über der auf diesem Gerät festgelegten Altersfreigabe.</string>
+    <string name="parental_max_rating_movies">Höchste Filmfreigabe</string>
+    <string name="parental_max_rating_tv">Höchste Serienfreigabe</string>
+    <string name="parental_no_limit">Keine Begrenzung</string>
+    <string name="parental_region_note">Freigaben für %1$s, von TMDB</string>
+    <string name="parental_region_fallback">TMDB hat keine Freigabeliste für %1$s, daher werden die Freigaben für %2$s verwendet.</string>
+    <string name="parental_loading_ratings">Freigaben werden geladen…</string>
+    <string name="parental_ratings_unavailable">Die Freigabeliste konnte nicht geladen werden.</string>
+    <string name="parental_hide_restricted">Eingeschränkte Titel ausblenden</string>
+    <string name="parental_hide_restricted_detail">Ausgeschaltet bleiben eingeschränkte Titel in den Listen, lassen sich aber weder öffnen noch abspielen.</string>
+    <string name="parental_block_trailers">Trailer und Links blockieren</string>
+    <string name="parental_block_trailers_detail">Blendet „Trailer ansehen“ aus und fragt TMDB nie nach Trailern.</string>
+    <string name="parental_lock_settings">PIN für Einstellungen verlangen</string>
+    <string name="parental_lock_settings_detail">Beim Öffnen der Einstellungen wird die PIN abgefragt.</string>
+    <string name="parental_lock_library">PIN für Änderungen an der Bibliothek verlangen</string>
+    <string name="parental_lock_library_detail">Das Hinzufügen, Verknüpfen, erneute Scannen oder Entfernen von Quellen und Titeln fragt nach der PIN.</string>
+    <string name="parental_set_pin">PIN festlegen</string>
+    <string name="parental_change_pin">PIN ändern</string>
+    <string name="parental_remove_pin">PIN entfernen</string>
+    <string name="parental_new_pin">Neue PIN</string>
+    <string name="parental_confirm_pin">PIN bestätigen</string>
+    <string name="parental_current_pin">Aktuelle PIN</string>
+    <string name="parental_pins_differ">Die PINs stimmen nicht überein.</string>
+    <string name="parental_next">Weiter</string>
+    <string name="parental_set_pin_first">Lege eine PIN fest, um diese Sperre zu nutzen.</string>
+    <string name="parental_local_note">Diese Einstellungen bleiben auf diesem Gerät. Sie werden nie synchronisiert oder an ein anderes Gerät gesendet.</string>
     <string name="settings_app_controls_skip_backward">Zurückspringen</string>
     <string name="settings_app_controls_skip_forward">Vorspringen</string>
     <string name="settings_app_controls_skip_note">Tippe zweimal auf die linke oder rechte Seite des Videos, um vor- oder zurückzuspringen.</string>
@@ -361,6 +405,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">Wiedergeben von</string>
     <string name="play_from_unavailable">%1$s · Nicht verfügbar</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">Dieses Gerät</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · Zuletzt abgespielt</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d Quellen</item>
         <item quantity="other">%1$d Quellen</item>
@@ -586,6 +634,25 @@
     <string name="sync_remove_device_message">Das Löschen der Datei eines Geräts verhindert, dass sein Verlauf die anderen erreicht. Das Gerät behält seine Anmeldung und seine lokale Kopie, bis du Edendales Zugriff beim Anbieter widerrufst oder das Serverpasswort änderst.</string>
     <string name="sync_manage_access">Zugriff bei %1$s verwalten</string>
     <string name="sync_no_other_devices">Noch kein anderes Gerät hat in diesen Bereich geschrieben.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">Wiedergabeverlauf</string>
+    <string name="watch_history_on_device">Auf diesem Gerät</string>
+    <string name="watch_history_note_sync_on">Das Löschen gilt auch für deine anderen Geräte.</string>
+    <string name="watch_history_note_sync_off">Das Löschen gilt nur für dieses Gerät.</string>
+    <string name="watch_history_delete_ellipsis">Wiedergabeverlauf löschen…</string>
+    <string name="watch_history_deleting">Wird gelöscht…</string>
+    <string name="watch_history_deleted">Wiedergabeverlauf gelöscht.</string>
+    <string name="watch_history_deleted_others_follow">Auf diesem Gerät gelöscht. Deine anderen Geräte löschen ihre Kopie bei der nächsten Synchronisierung.</string>
+    <string name="watch_history_pending">Auf diesem Gerät gelöscht. Deine anderen Geräte folgen, sobald Edendale %1$s erreicht.</string>
+    <string name="watch_history_failed">Der Wiedergabeverlauf konnte nicht gelöscht werden.</string>
+    <string name="watch_history_everywhere_title">Wiedergabeverlauf überall löschen?</string>
+    <string name="watch_history_everywhere_message">Wiedergabefortschritt und Gesehen-Markierungen werden hier gelöscht und über %1$s auch auf deinen anderen Geräten.</string>
+    <string name="watch_history_everywhere_confirm">Überall löschen</string>
+    <string name="watch_history_local_title">Wiedergabeverlauf auf diesem Gerät löschen?</string>
+    <string name="watch_history_local_message">Wiedergabefortschritt und Gesehen-Markierungen werden auf diesem Gerät gelöscht. Schaltest du die Synchronisierung später ein, kommt der Verlauf deiner anderen Geräte zurück.</string>
+    <string name="watch_history_local_confirm">Löschen</string>
+    <string name="watch_history_kept">Favoriten, Merkliste, Bewertungen, Rezensionen, deine Mediathek und dein TMDB-Konto bleiben unverändert.</string>
+    <string name="clear_progress">Fortschritt löschen</string>
     <string name="sync_folder_relink">Wähle den Ordner, den dieses Gerät für den Bereich „%1$s“ verwenden soll.</string>
     <string name="sync_google_relink">Melde dich als %1$s bei Google an, um den Bereich „%2$s“ zu verwenden.</string>
     <string name="pairing_role_question">In welche Richtung sollen die Anmeldungen gehen?</string>
@@ -623,4 +690,6 @@
         <item quantity="one">%1$d Element konnte nicht verwendet werden.</item>
         <item quantity="other">%1$d Elemente konnten nicht verwendet werden.</item>
     </plurals>
+    <string name="player_theater">Kino</string>
+    <string name="xr_module_title">Android XR · Kino</string>
 </resources>

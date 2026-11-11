@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The player's Theater button (HORIZON.md G.5): a screen above a row of seats. -->
+<!-- A screen above a row of seats: the immersive theater (ENHANCEMENT.md Section N). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -8,8 +8,8 @@
     <path
         android:fillColor="#FF000000"
         android:fillType="evenOdd"
-        android:pathData="M112 96h416c26.5 0 48 21.5 48 48v224c0 26.5-21.5 48-48 48H112c-26.5 0-48-21.5-48-48V144c0-26.5 21.5-48 48-48z m0 32c-8.8 0-16 7.2-16 16v224c0 8.8 7.2 16 16 16h416c8.8 0 16-7.2 16-16V144c0-8.8-7.2-16-16-16H112z"/>
+        android:pathData="M112 96h416c26.5 0 48 21.5 48 48v208c0 26.5-21.5 48-48 48H112c-26.5 0-48-21.5-48-48V144c0-26.5 21.5-48 48-48z M112 128c-8.8 0-16 7.2-16 16v208c0 8.8 7.2 16 16 16h416c8.8 0 16-7.2 16-16V144c0-8.8-7.2-16-16-16H112z"/>
     <path
         android:fillColor="#FF000000"
-        android:pathData="M96 464c0-8.8 7.2-16 16-16h112c8.8 0 16 7.2 16 16v64c0 8.8-7.2 16-16 16H112c-8.8 0-16-7.2-16-16v-64z m160 0c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16v64c0 8.8-7.2 16-16 16h-96c-8.8 0-16-7.2-16-16v-64z m144 0c0-8.8 7.2-16 16-16h112c8.8 0 16 7.2 16 16v64c0 8.8-7.2 16-16 16H416c-8.8 0-16-7.2-16-16v-64z"/>
+        android:pathData="M96 464c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16v64c0 8.8-7.2 16-16 16h-96c-8.8 0-16-7.2-16-16v-64z M256 464c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16v64c0 8.8-7.2 16-16 16h-96c-8.8 0-16-7.2-16-16v-64z M416 464c0-8.8 7.2-16 16-16h96c8.8 0 16 7.2 16 16v64c0 8.8-7.2 16-16 16h-96c-8.8 0-16-7.2-16-16v-64z"/>
 </vector>

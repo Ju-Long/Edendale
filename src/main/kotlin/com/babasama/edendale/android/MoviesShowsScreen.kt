@@ -40,6 +40,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -201,7 +202,8 @@ private fun MoviesShowsContent(
         audienceFilter.verify(audienceRefs)
     }
 
-    val heroScenes = catalog.heroScenes.filter { audienceFilter.allows(it.detail.ref) }
+    // A list surface: hidden only while "Hide restricted titles" is on; the detail page and playback still block (O.5).
+    val heroScenes = catalog.heroScenes.filter { audienceFilter.shows(it.detail.ref) }
     val verifying = audienceFilter.isVerifying(audienceRefs)
 
     LazyColumn(
@@ -392,9 +394,13 @@ private fun HeroCard(
     val detail = scene.detail
     val tmdbId = scene.progress?.tmdbId ?: detail.ref.id
     // Remembered per title: without this every recomposition reset the lookup
-    // to null and the Play/Resume button vanished again.
+    // to null and the Play/Resume button vanished again. Reloaded whenever the
+    // playback memory changes (27.1): this page stays composed while the
+    // player is in front, and after a Play From pick, Play/Resume and the
+    // "Last played" check must follow the source that just played.
+    val lastSources by rememberLibrary().sourceMemory.changes.collectAsState()
     var copies by remember(tmdbId) { mutableStateOf<List<LocalCopy>>(emptyList()) }
-    LaunchedEffect(tmdbId) {
+    LaunchedEffect(tmdbId, lastSources) {
         copies = getLocalCopies(tmdbId)
     }
 
@@ -492,9 +498,10 @@ private fun HeroCopy(
         HeroMetadata(detail)
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            // Play starts the first copy whose source is reachable (D.5).
+            // Play starts the first copy whose source is reachable (D.5); the
+            // source this title last played from comes first (27.1).
             val preferred = PlaybackSources.preferred(copies) { it.source.isUnavailable }
-            val play: (LocalCopy) -> Unit = { copy ->
+            val play: (LocalCopy, Boolean) -> Unit = { copy, rememberSource ->
                 com.babasama.edendale.android.player.PlayerActivity.play(
                     context = context,
                     uri = copy.uri,
@@ -504,16 +511,31 @@ private fun HeroCopy(
                     showTmdbId = scene.progress?.showTmdbId,
                     season = scene.progress?.seasonNumber,
                     episode = scene.progress?.episodeNumber,
+                    rememberSource = rememberSource,
                 )
             }
             if (preferred != null && !isTelevision) {
-                Button(onClick = { play(preferred) }) {
+                // A Play that fell back from the last-played source leaves the memory alone.
+                val sourceKey: (LocalCopy) -> String = { PlaybackSources.sourceKey(it.folderUri) }
+                val remembersSource = PlaybackSources.remembersSource(
+                    copies, preferred, sourceKey, copies.firstOrNull { it.lastPlayed }?.let(sourceKey),
+                )
+                Button(onClick = { play(preferred, remembersSource) }) {
                     Icon(painterResource(id = R.drawable.ic_play), contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(if (scene.isContinueWatching) R.string.action_resume else R.string.action_play))
                 }
                 if (copies.size > 1) {
-                    PlayFromButton(copies = copies, source = { it.source }, path = { it.uri }, onPlay = play)
+                    PlayFromButton(
+                        copies = copies,
+                        source = { it.source },
+                        path = { it.uri },
+                        // A pick is the viewer's choice: it becomes the memory.
+                        onPlay = { play(it, true) },
+                        // The copy on the source this title last played from (27.1).
+                        marked = copies.firstOrNull { it.lastPlayed },
+                        markLabel = R.string.play_from_last_played,
+                    )
                 }
             }
             if (!isTelevision) {

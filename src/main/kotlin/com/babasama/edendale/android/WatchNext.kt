@@ -42,6 +42,7 @@ internal object WatchNext {
             showTmdbId = entry.showTmdbId,
             season = entry.season,
             episode = entry.episode,
+            remembersSource = entry.remembersSource,
         ),
     )
 
@@ -105,6 +106,8 @@ internal data class WatchNextPlay(
     val showTmdbId: Int?,
     val season: Int?,
     val episode: Int?,
+    /** False when the card fell back from the source the title last played from (27.1): the row's play keeps that memory. */
+    val remembersSource: Boolean = true,
 )
 
 /** One home-screen program as Edendale wants it. */

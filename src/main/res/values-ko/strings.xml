@@ -110,6 +110,9 @@
     <string name="section_continue_watching">시청 계속하기</string>
     <string name="section_movies">영화</string>
     <string name="section_tv_shows">TV 프로그램</string>
+    <string name="section_all">전체</string>
+    <string name="section_watching_short">시청 중</string>
+    <string name="section_shows_short">시리즈</string>
     <string name="section_sources">소스</string>
     <string name="library_empty_title">고요한 라이브러리</string>
     <string name="library_empty_message">계속하려면 파일을 추가하거나 소스를 연결하세요.</string>
@@ -151,26 +154,19 @@
     <string name="error_server_unreachable">해당 서버에 연결할 수 없습니다.</string>
     <string name="settings_title">설정</string>
     <string name="settings_section_about">정보</string>
+    <string name="settings_player_controls">플레이어 제어</string>
+    <string name="settings_audio">오디오</string>
+    <string name="settings_library">보관함</string>
+    <string name="settings_section_controls">제어</string>
+    <string name="settings_section_appearance">모양</string>
+    <string name="settings_parental_more">등급, 잠금 및 PIN</string>
     <string name="settings_version">버전</string>
-    <string name="settings_watch_progress">시청 진행률</string>
-    <string name="settings_stored_on_device">이 기기에 저장됨</string>
-    <string name="settings_tmdb_access">TMDB 액세스</string>
-    <string name="settings_tmdb_configured">빌드 시 구성됨</string>
-    <string name="settings_tmdb_missing">secrets.json에 토큰을 추가하고 다시 빌드하세요</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">큰 글꼴, 오버스캔 안전 여백, 리모컨 포커스 강조, 가로 모드 표시가 활성화됩니다.</string>
     <string name="settings_watch_next_title">홈 화면에 시청 계속하기 표시</string>
     <string name="settings_watch_next_description">시청 중인 타이틀을 홈 화면의 ‘시청 계속하기’ 줄에 표시합니다. Edendale은 이를 위해 네트워크로 아무것도 보내지 않지만, 홈 화면 앱은 이 타이틀을 볼 수 있습니다.</string>
     <string name="settings_section_sources">소스</string>
     <string name="settings_no_sources">연결된 소스 없음</string>
-    <string name="settings_section_backup">백업</string>
-    <string name="settings_backup_note">시청 기록, 즐겨찾기, 관심 목록, 별점이 Android Auto Backup을 통해 Google Drive에 백업되므로 새 기기를 설정할 때 복원할 수 있습니다. 백업은 기기의 시스템 설정을 따르며 — Edendale은 자체적으로 추가하는 항목이 없습니다.</string>
-    <string name="settings_backup_secrets_note">TMDB 세션 및 저장된 네트워크 공유 로그인 정보는 백업 및 기기 전송에서 제외됩니다: 이 기기에 암호화되어 외부로 유출될 수 없습니다.</string>
-    <string name="settings_section_privacy">개인정보 보호</string>
-    <string name="settings_privacy_note">분석 데이터 수집이 없습니다. 네트워크 요청은 TMDB, 명시적인 자막 검색 후의 Wyzie 및 개인 동기화 제공업체로만 제한됩니다.</string>
-    <string name="settings_section_attribution">저작자 표시</string>
     <string name="tmdb_attribution">이 제품은 TMDB API를 사용하지만 TMDB의 보증이나 인증을 받지 않았습니다.</string>
-    <string name="settings_open_source">Edendale · 무료 및 오픈 소스</string>
     <string name="settings_section_tmdb_account">TMDB 계정</string>
     <string name="tmdb_account_intro">TMDB 계정을 연결하여 기기 간에 즐겨찾기, 관심 목록, 별점을 동기화하세요. 시청 시간은 TMDB에 저장되지 않습니다.</string>
     <string name="tmdb_loading_account">계정 불러오는 중…</string>
@@ -196,7 +192,6 @@
     <string name="tmdb_sync_status">%1$s 동기화 완료 — %2$d개 푸시됨, %3$d개 가져옴</string>
     <string name="player_close">플레이어 닫기</string>
     <string name="player_picture_in_picture">화면 속 화면</string>
-    <string name="player_theater">극장</string>
     <string name="player_back_10">10초 뒤로</string>
     <string name="player_forward_10">10초 앞으로</string>
     <string name="player_adjustments">조정</string>
@@ -226,6 +221,12 @@
     <string name="player_in_this_folder">이 폴더</string>
     <string name="player_volume">음량</string>
     <string name="player_brightness">밝기</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">음량 %1$s</string>
+    <string name="player_brightness_level">밝기 %1$s</string>
+    <string name="player_rotation_lock">화면 회전 잠금</string>
+    <string name="player_state_on">켬</string>
+    <string name="player_state_off">끔</string>
     <string name="player_seek_seconds">%1$d초</string>
     <string name="error_folder_not_opened">해당 폴더를 열 수 없습니다.</string>
     <string name="default_folder_name">폴더</string>
@@ -251,7 +252,6 @@
     <string name="wyzie_api_key">API 키</string>
     <string name="wyzie_key_saved">키 저장됨</string>
     <string name="wyzie_key_encrypted">키는 이 기기에 암호화되어 저장됩니다.</string>
-    <string name="wyzie_using_build_key">secrets.json의 키를 사용 중입니다.</string>
     <string name="wyzie_key_required">온라인 자막 검색에는 본인의 Wyzie API 키가 필요합니다. store.wyzie.io/redeem을 방문해 사이트의 단계를 완료하여 구독을 등록한 다음, 아래에 키를 붙여넣으세요.</string>
     <string name="wyzie_get_free_key">무료 키 받기</string>
     <string name="wyzie_error_key_storage">Wyzie API 키를 업데이트할 수 없습니다.</string>
@@ -280,7 +280,51 @@
     <plurals name="player_online_more_matched">
         <item quantity="other">%1$d개가 더 일치합니다.</item>
     </plurals>
-    <string name="settings_section_app_controls">앱 제어</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">어린 시청자 친화</string>
+    <string name="settings_young_audience_description">PG 또는 PG-13 등급(및 동등한 TV 등급)의 영화와 시리즈만 표시합니다.</string>
+    <string name="audience_verifying">시청 등급 확인 중</string>
+    <string name="audience_restricted_title">어린 시청자에게 제공되지 않음</string>
+    <string name="audience_restricted_message">이 작품은 PG 또는 PG-13 등급으로 확인되지 않았습니다.</string>
+    <string name="watchlist_no_young_audience_titles">볼 목록에 현재 PG 또는 PG-13 작품이 없습니다.</string>
+    <string name="filmography_no_young_audience_titles">이 필모그래피에는 PG 또는 PG-13 작품이 없습니다.</string>
+    <string name="settings_section_parental_controls">자녀 보호</string>
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">보호자 PIN을 입력하세요</string>
+    <string name="parental_unlock">잠금 해제</string>
+    <string name="parental_wrong_pin">PIN이 일치하지 않습니다.</string>
+    <string name="parental_pin_length">4~8자리 숫자를 사용하세요.</string>
+    <string name="parental_locked_out">잘못된 PIN 입력이 너무 많습니다. %1$s 후에 다시 시도하세요.</string>
+    <string name="parental_checking_pin">PIN 확인 중…</string>
+    <string name="parental_pairing_link_message">페어링 링크에는 보호자 PIN이 필요합니다. PIN이 틀리면 링크가 폐기됩니다.</string>
+    <string name="parental_restricted_title">제한됨</string>
+    <string name="parental_restricted_message">이 작품은 이 기기에 설정된 등급 제한을 넘습니다.</string>
+    <string name="parental_max_rating_movies">영화 최대 등급</string>
+    <string name="parental_max_rating_tv">TV 프로그램 최대 등급</string>
+    <string name="parental_no_limit">제한 없음</string>
+    <string name="parental_region_note">%1$s 등급, TMDB 제공</string>
+    <string name="parental_region_fallback">TMDB에 %1$s 등급 목록이 없어 %2$s 등급을 사용합니다.</string>
+    <string name="parental_loading_ratings">등급 불러오는 중…</string>
+    <string name="parental_ratings_unavailable">등급 목록을 불러올 수 없습니다.</string>
+    <string name="parental_hide_restricted">제한된 작품 숨기기</string>
+    <string name="parental_hide_restricted_detail">끄면 제한된 작품이 목록에 남지만 열거나 재생할 수 없습니다.</string>
+    <string name="parental_block_trailers">트레일러와 링크 차단</string>
+    <string name="parental_block_trailers_detail">‘트레일러 시청’을 숨기고 TMDB에 트레일러를 요청하지 않습니다.</string>
+    <string name="parental_lock_settings">설정에 PIN 요구</string>
+    <string name="parental_lock_settings_detail">설정을 열 때 PIN을 묻습니다.</string>
+    <string name="parental_lock_library">라이브러리 변경에 PIN 요구</string>
+    <string name="parental_lock_library_detail">소스와 작품을 추가, 연결, 다시 스캔, 제거할 때 PIN을 묻습니다.</string>
+    <string name="parental_set_pin">PIN 설정</string>
+    <string name="parental_change_pin">PIN 변경</string>
+    <string name="parental_remove_pin">PIN 제거</string>
+    <string name="parental_new_pin">새 PIN</string>
+    <string name="parental_confirm_pin">PIN 확인</string>
+    <string name="parental_current_pin">현재 PIN</string>
+    <string name="parental_pins_differ">입력한 PIN이 서로 일치하지 않습니다.</string>
+    <string name="parental_next">다음</string>
+    <string name="parental_set_pin_first">이 잠금을 사용하려면 PIN을 설정하세요.</string>
+    <string name="parental_local_note">이 설정은 이 기기에만 저장됩니다. 동기화되거나 다른 기기로 전송되지 않습니다.</string>
     <string name="settings_app_controls_skip_backward">뒤로 건너뛰기</string>
     <string name="settings_app_controls_skip_forward">앞으로 건너뛰기</string>
     <string name="settings_app_controls_skip_note">비디오의 왼쪽이나 오른쪽을 두 번 탭하여 뒤로 또는 앞으로 건너뜁니다.</string>
@@ -357,6 +401,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">재생 소스</string>
     <string name="play_from_unavailable">%1$s · 사용할 수 없음</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">이 기기</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · 마지막 재생</string>
     <plurals name="play_from_source_count">
         <item quantity="one">소스 %1$d개</item>
         <item quantity="other">소스 %1$d개</item>
@@ -579,6 +627,25 @@
     <string name="sync_remove_device_message">기기의 파일을 삭제하면 그 기록이 다른 기기에 전달되지 않습니다. 해당 기기는 제공업체에서 Edendale의 접근을 취소하거나 서버 비밀번호를 바꾸기 전까지 로그인 정보와 로컬 복사본을 유지합니다.</string>
     <string name="sync_manage_access">%1$s에서 접근 관리</string>
     <string name="sync_no_other_devices">이 공간에 쓴 다른 기기가 아직 없습니다.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">시청 기록</string>
+    <string name="watch_history_on_device">이 기기</string>
+    <string name="watch_history_note_sync_on">삭제하면 다른 기기에서도 지워집니다.</string>
+    <string name="watch_history_note_sync_off">삭제하면 이 기기에서만 지워집니다.</string>
+    <string name="watch_history_delete_ellipsis">시청 기록 삭제…</string>
+    <string name="watch_history_deleting">삭제 중…</string>
+    <string name="watch_history_deleted">시청 기록을 삭제했습니다.</string>
+    <string name="watch_history_deleted_others_follow">이 기기에서 삭제했습니다. 다른 기기는 다음에 동기화할 때 각자의 기록을 삭제합니다.</string>
+    <string name="watch_history_pending">이 기기에서 삭제했습니다. Edendale이 %1$s에 연결되면 다른 기기에서도 삭제됩니다.</string>
+    <string name="watch_history_failed">시청 기록을 삭제하지 못했습니다.</string>
+    <string name="watch_history_everywhere_title">모든 기기에서 시청 기록을 삭제할까요?</string>
+    <string name="watch_history_everywhere_message">시청 진행률과 시청함 표시가 이 기기에서, 그리고 %1$s을(를) 통해 다른 기기에서도 삭제됩니다.</string>
+    <string name="watch_history_everywhere_confirm">모든 기기에서 삭제</string>
+    <string name="watch_history_local_title">이 기기의 시청 기록을 삭제할까요?</string>
+    <string name="watch_history_local_message">이 기기에서 시청 진행률과 시청함 표시가 삭제됩니다. 나중에 동기화를 켜면 다른 기기의 기록이 다시 돌아옵니다.</string>
+    <string name="watch_history_local_confirm">삭제</string>
+    <string name="watch_history_kept">즐겨찾기, 볼 목록, 평점, 리뷰, 라이브러리, TMDB 계정은 그대로 유지됩니다.</string>
+    <string name="clear_progress">시청 진행률 지우기</string>
     <string name="sync_folder_relink">공간 “%1$s”에 이 기기가 사용할 폴더를 선택하세요.</string>
     <string name="sync_google_relink">공간 “%2$s”를 사용하려면 %1$s(으)로 Google에 로그인하세요.</string>
     <string name="pairing_role_question">로그인 정보를 어느 방향으로 보낼까요?</string>
@@ -614,4 +681,6 @@
     <plurals name="pairing_failed_count">
         <item quantity="other">%1$d개 항목을 사용할 수 없었습니다.</item>
     </plurals>
+    <string name="player_theater">극장</string>
+    <string name="xr_module_title">Android XR · 극장</string>
 </resources>

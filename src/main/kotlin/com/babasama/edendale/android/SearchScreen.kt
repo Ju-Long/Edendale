@@ -55,7 +55,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -64,9 +63,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
+import com.babasama.edendale.android.parental.rememberParentalGate
 import com.babasama.edendale.android.data.LibraryShowEntity
-import com.babasama.edendale.android.player.PlayerActivity
 import com.babasama.edendale.domain.MediaItem
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
@@ -76,6 +76,7 @@ import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.parental.GatedAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +88,10 @@ fun SearchScreen(
     onOpenPerson: (Int, String) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit = {},
+    /** Opens an imported movie's page, which plays it. */
+    onOpenMovie: (LibraryMovieEntity) -> Unit,
+    /** Opens an imported show's page, which lists its episodes. */
+    onOpenShow: (LibraryShowEntity) -> Unit = {},
 ) {
     val state = viewModel.state
     val windowSize = currentWindowSizeDp()
@@ -104,28 +108,47 @@ fun SearchScreen(
     // Local matches are on-device title contains, so they land before the first
     // TMDB response. Person filmography and the release heatmap stay TMDB-only.
     val library = rememberLibrary()
-    val localMovies by library.movies.collectAsState(initial = emptyList())
-    val localShows by library.shows.collectAsState(initial = emptyList())
-    val localProgress by library.watchProgress.collectAsState(initial = emptyList())
+    // Null until Room answers. The results wait for the library, so a scroll
+    // position brought back from a title's page lands where it was rather
+    // than on a list whose library section is still to come.
+    val localMovies by library.movies.collectAsState(initial = null)
+    val localShows by library.shows.collectAsState(initial = null)
+    val localEpisodes by library.episodes.collectAsState(initial = null)
+    val localFolders by library.folders.collectAsState(initial = null)
+    val localProgress by library.watchProgress.collectAsState(initial = null)
+    // The source each movie last played from (27.1): its tile's Play From marks it.
+    val lastSources by library.sourceMemory.changes.collectAsState()
+    val libraryLoaded = localMovies != null && localShows != null && localEpisodes != null &&
+        localFolders != null && localProgress != null
     val localTerm = SearchQuery.parse(state.query).term.trim()
-    val localMatches = remember(localTerm, state.scope, state.activePerson, localMovies, localShows) {
+    // One entry per title, as in Downloaded (27.1): grouped, then matched.
+    val foldersByUri = remember(localFolders) { localFolders.orEmpty().associateBy { it.treeUri } }
+    val movieTitles = remember(localMovies, foldersByUri) { movieTitles(localMovies.orEmpty(), foldersByUri) }
+    val showTitles = remember(localShows, localEpisodes) { showTitles(localShows.orEmpty(), localEpisodes.orEmpty()) }
+    val localMatches = remember(localTerm, state.scope, state.activePerson, movieTitles, showTitles) {
         localMatches(
             term = localTerm,
             scope = state.scope,
             hasActivePerson = state.activePerson != null,
-            movies = localMovies,
-            shows = localShows,
+            movies = movieTitles,
+            shows = showTitles,
         )
     }
-    val localProgressByKey = remember(localProgress) { localProgress.byStorageKey() }
+    // Remove from Library asks for the parental PIN while library changes are locked (O.5).
+    val gate = rememberParentalGate(isTelevision)
+    val localProgressByKey = remember(localProgress) { localProgress.orEmpty().byStorageKey() }
+    // TV: Back from a title's page puts the remote on the poster that opened it.
+    val posterReturn = rememberPosterReturn(isTelevision, ready = libraryLoaded)
 
-    // Young Audience filter: hide anything not verified as PG / PG-13. Local
-    // matches without a TMDB id cannot be verified, so they fail closed too.
+    // The parental policy: hide anything not verified as allowed while "Hide
+    // restricted titles" is on. Local matches without a TMDB id cannot be
+    // verified, so they fail closed too; with hiding off every match stays in
+    // the list and the detail page or the player blocks instead (O.5).
     val audienceRefs = remember(state.results, state.trending, localMatches) {
         (state.results.map { it.ref } +
             state.trending.map { it.ref } +
-            localMatches.movies.mapNotNull { m -> m.tmdbId?.let { MediaRef(it, MediaType.MOVIE) } } +
-            localMatches.shows.mapNotNull { s -> s.tmdbId?.let { MediaRef(it, MediaType.TV) } })
+            localMatches.movies.flatMap { it.copies }.mapNotNull { m -> m.tmdbId?.let { MediaRef(it, MediaType.MOVIE) } } +
+            localMatches.shows.flatMap { it.shows }.mapNotNull { s -> s.tmdbId?.let { MediaRef(it, MediaType.TV) } })
             .distinct()
     }
     LaunchedEffect(audienceRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
@@ -133,17 +156,25 @@ fun SearchScreen(
     }
     val visibleResults = audienceFilter.visible(state.results)
     val visibleTrending = audienceFilter.visible(state.trending)
-    val visibleLocal = if (!audienceFilter.isEnabled) {
+    val visibleLocal = if (!audienceFilter.hidesRestrictedTitles) {
         localMatches
     } else {
-        LocalMatches(
-            movies = localMatches.movies.filter {
+        // Row by row, as Downloaded filters before it groups: a title keeps
+        // the copies verified as allowed, goes when none is, and is matched
+        // again against what is left, so its name still shows the query.
+        val allowedMovies = localMatches.movies.mapNotNull { title ->
+            val allowed = title.copies.filter {
                 it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.MOVIE)) } == true
-            },
-            shows = localMatches.shows.filter {
+            }
+            if (allowed.isEmpty()) null else title.copy(copies = allowed)
+        }
+        val allowedShows = localMatches.shows.mapNotNull { title ->
+            val allowed = title.shows.filter {
                 it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.TV)) } == true
-            },
-        )
+            }
+            if (allowed.isEmpty()) null else title.copy(shows = allowed)
+        }
+        localMatches(localTerm, state.scope, state.activePerson != null, allowedMovies, allowedShows)
     }
     val audienceVerifying = audienceFilter.isVerifying(audienceRefs)
 
@@ -368,6 +399,9 @@ fun SearchScreen(
             contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 56.dp),
             verticalArrangement = Arrangement.spacedBy(28.dp),
         ) {
+            // The moment before Room answers lists nothing (libraryLoaded).
+            if (!libraryLoaded) return@LazyColumn
+
             state.errorMessage?.let { message ->
                 item("error") {
                     Text(
@@ -395,7 +429,12 @@ fun SearchScreen(
                         progressByKey = localProgressByKey,
                         edgeMargin = edgeMargin,
                         isTelevision = isTelevision,
+                        posterReturn = posterReturn,
+                        foldersByUri = foldersByUri,
+                        lastSources = lastSources,
+                        onOpenMovie = onOpenMovie,
                         onOpenShow = onOpenShow,
+                        onRemoveMovies = { copies -> gate.require(GatedAction.LIBRARY_EDIT) { copies.forEach { library.removeMovie(it.uri) } } },
                     )
                 }
             }
@@ -414,6 +453,7 @@ fun SearchScreen(
                         items = visibleResults,
                         edgeMargin = edgeMargin,
                         isTelevision = isTelevision,
+                        posterReturn = posterReturn,
                         onOpenDetail = onOpenDetail,
                     )
                 }
@@ -508,6 +548,7 @@ fun SearchScreen(
                             items = visibleTrending,
                             edgeMargin = edgeMargin,
                             isTelevision = isTelevision,
+                            posterReturn = posterReturn,
                             onOpenDetail = onOpenDetail,
                         )
                     }
@@ -611,8 +652,9 @@ private fun TvCollapsedSearchField(
 }
 
 /**
- * "From Your Library": movies play straight away, shows open the local drill-in.
- * Neither needs a TMDB id, so unmatched imports still appear here.
+ * "From Your Library": one poster per title, as in Downloaded; each opens
+ * its page — a movie's plays it, a show's lists its episodes. Neither needs
+ * a TMDB id, so unmatched imports still appear here.
  */
 @Composable
 private fun LibraryResultsGrid(
@@ -620,14 +662,13 @@ private fun LibraryResultsGrid(
     progressByKey: Map<String, WatchProgress>,
     edgeMargin: Dp,
     isTelevision: Boolean,
-    onOpenShow: (String) -> Unit,
+    posterReturn: PosterReturn,
+    foldersByUri: Map<String, LibraryFolderEntity>,
+    lastSources: Map<String, String>,
+    onOpenMovie: (LibraryMovieEntity) -> Unit,
+    onOpenShow: (LibraryShowEntity) -> Unit,
+    onRemoveMovies: (List<LibraryMovieEntity>) -> Unit,
 ) {
-    val context = LocalContext.current
-    val runtimeFormat = rememberRuntimeFormat()
-    val library = rememberLibrary()
-    val allMovies by library.movies.collectAsState(initial = emptyList())
-    val folders by library.folders.collectAsState(initial = emptyList())
-    val foldersByUri = remember(folders) { folders.associateBy { it.treeUri } }
     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = edgeMargin)) {
         val spacing = if (isTelevision) 24.dp else 16.dp
         val minimumWidth = if (isTelevision) 180.dp else 145.dp
@@ -640,39 +681,42 @@ private fun LibraryResultsGrid(
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
                     rowCells.forEach { cell ->
                         when (cell) {
-                            is LibraryMovieEntity -> {
-                                val progress = progressByKey.forMovie(cell.tmdbId)
-                                LibraryPosterCard(
-                                    title = cell.title,
-                                    subtitle = mediaSubtitle(cell.year, cell.runtimeMinutes, runtimeFormat),
-                                    posterUrl = tmdbImageUrl(cell.posterPath, TmdbImageSize.POSTER),
+                            is LibraryTitle<*> -> {
+                                @Suppress("UNCHECKED_CAST")
+                                val title = cell as LibraryTitle<LibraryMovieEntity>
+                                val posterKey = title.posterKey
+                                LibraryMovieTile(
+                                    title = title,
                                     width = cardWidth,
                                     isTelevision = isTelevision,
-                                    isWatched = progress?.isCompleted == true,
-                                    progress = progress.partialFraction(),
-                                    mediaType = MediaType.MOVIE,
+                                    progress = progressByKey.forMovie(title.tmdbId),
+                                    foldersByUri = foldersByUri,
+                                    remembered = PlaybackSources.movieMemoryKey(title.tmdbId)?.let(lastSources::get),
+                                    modifier = posterReturn.modifier(posterKey),
+                                    onOpen = {
+                                        posterReturn.opening(posterKey)
+                                        onOpenMovie(title.display)
+                                    },
+                                    onRemove = onRemoveMovies,
+                                )
+                            }
+                            is ShowTitle -> {
+                                val show = cell.display
+                                val posterKey = cell.posterKey
+                                LibraryPosterCard(
+                                    title = show.name,
+                                    subtitle = show.firstAirYear?.toString(),
+                                    posterUrl = tmdbImageUrl(show.posterPath, TmdbImageSize.POSTER),
+                                    width = cardWidth,
+                                    isTelevision = isTelevision,
+                                    mediaType = MediaType.TV,
+                                    modifier = posterReturn.modifier(posterKey),
                                     onClick = {
-                                        // This copy, unless its source is unreachable and another isn't (D.5).
-                                        val copy = preferredMovie(cell, allMovies, foldersByUri)
-                                        PlayerActivity.play(
-                                            context = context,
-                                            uri = copy.uri,
-                                            title = copy.title,
-                                            tmdbId = copy.tmdbId,
-                                            isEpisode = false,
-                                        )
+                                        posterReturn.opening(posterKey)
+                                        onOpenShow(show)
                                     },
                                 )
                             }
-                            is LibraryShowEntity -> LibraryPosterCard(
-                                title = cell.name,
-                                subtitle = cell.firstAirYear?.toString(),
-                                posterUrl = tmdbImageUrl(cell.posterPath, TmdbImageSize.POSTER),
-                                width = cardWidth,
-                                isTelevision = isTelevision,
-                                mediaType = MediaType.TV,
-                                onClick = { onOpenShow(cell.key) },
-                            )
                         }
                     }
                 }
@@ -799,6 +843,7 @@ private fun SearchResultsGrid(
     items: List<MediaItem>,
     edgeMargin: Dp,
     isTelevision: Boolean,
+    posterReturn: PosterReturn,
     onOpenDetail: (MediaRef) -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = edgeMargin)) {
@@ -810,11 +855,16 @@ private fun SearchResultsGrid(
             items.chunked(columnCount).forEach { rowItems ->
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
                     rowItems.forEach { item ->
+                        val posterKey = "tmdb:${item.ref.mediaType.pathSegment}:${item.ref.id}"
                         PosterCard(
                             item = item,
                             width = cardWidth,
                             isTelevision = isTelevision,
-                            onClick = { onOpenDetail(item.ref) },
+                            onClick = {
+                                posterReturn.opening(posterKey)
+                                onOpenDetail(item.ref)
+                            },
+                            modifier = posterReturn.modifier(posterKey),
                         )
                     }
                 }

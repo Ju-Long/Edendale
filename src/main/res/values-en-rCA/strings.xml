@@ -3,7 +3,51 @@
      anything absent falls back to values/strings.xml. -->
 <resources>
     <string name="detail_favorite">Favourite</string>
-    <string name="settings_section_app_controls">App Controls</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Young Audience Friendly</string>
+    <string name="settings_young_audience_description">Only show movies and series rated PG or PG-13, including equivalent TV labels.</string>
+    <string name="audience_verifying">Verifying audience ratings</string>
+    <string name="audience_restricted_title">Unavailable for Young Audiences</string>
+    <string name="audience_restricted_message">This title is not verified as PG or PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">No PG or PG-13 titles are currently in your watchlist.</string>
+    <string name="filmography_no_young_audience_titles">No PG or PG-13 titles are available in this filmography.</string>
+    <string name="settings_section_parental_controls">Parental Controls</string>
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Enter the parental PIN</string>
+    <string name="parental_unlock">Unlock</string>
+    <string name="parental_wrong_pin">That PIN didn\'t match.</string>
+    <string name="parental_pin_length">Use 4 to 8 digits.</string>
+    <string name="parental_locked_out">Too many wrong PINs. Try again in %1$s.</string>
+    <string name="parental_checking_pin">Checking the PIN…</string>
+    <string name="parental_pairing_link_message">A pairing link needs the parental PIN. A wrong PIN discards the link.</string>
+    <string name="parental_restricted_title">Restricted</string>
+    <string name="parental_restricted_message">This title is above the rating limit set on this device.</string>
+    <string name="parental_max_rating_movies">Maximum movie rating</string>
+    <string name="parental_max_rating_tv">Maximum TV rating</string>
+    <string name="parental_no_limit">No limit</string>
+    <string name="parental_region_note">Ratings for %1$s, from TMDB</string>
+    <string name="parental_region_fallback">TMDB has no rating list for %1$s, so %2$s ratings are used.</string>
+    <string name="parental_loading_ratings">Loading ratings…</string>
+    <string name="parental_ratings_unavailable">The rating list couldn\'t be loaded.</string>
+    <string name="parental_hide_restricted">Hide restricted titles</string>
+    <string name="parental_hide_restricted_detail">When off, restricted titles stay in lists but can\'t be opened or played.</string>
+    <string name="parental_block_trailers">Block trailers and links</string>
+    <string name="parental_block_trailers_detail">Hides Watch Trailer and never asks TMDB for trailers.</string>
+    <string name="parental_lock_settings">Require PIN for settings</string>
+    <string name="parental_lock_settings_detail">Opening Settings asks for the PIN.</string>
+    <string name="parental_lock_library">Require PIN for library changes</string>
+    <string name="parental_lock_library_detail">Adding, linking, rescanning, or removing sources and titles asks for the PIN.</string>
+    <string name="parental_set_pin">Set PIN</string>
+    <string name="parental_change_pin">Change PIN</string>
+    <string name="parental_remove_pin">Remove PIN</string>
+    <string name="parental_new_pin">New PIN</string>
+    <string name="parental_confirm_pin">Confirm PIN</string>
+    <string name="parental_current_pin">Current PIN</string>
+    <string name="parental_pins_differ">The PINs don\'t match.</string>
+    <string name="parental_next">Next</string>
+    <string name="parental_set_pin_first">Set a PIN to use this lock.</string>
+    <string name="parental_local_note">These settings stay on this device. They are never synced or sent to another device.</string>
     <string name="settings_app_controls_skip_backward">Skip Back</string>
     <string name="settings_app_controls_skip_forward">Skip Forward</string>
     <string name="settings_app_controls_skip_note">Double-tap the left or right side of the video to skip back or forward.</string>
@@ -272,7 +316,6 @@
     <string name="handoff_rejected_plain">The TV couldn\'t use what was sent.</string>
     <string name="handoff_tv_address">If your phone doesn\'t find this TV, enter its address instead: %1$s</string>
     <string name="handoff_address_label">Or enter the address shown on the TV</string>
-    <string name="player_theater">Theatre</string>
 
     <!-- 27.1 sync and handoff version 2 -->
     <string name="settings_section_sync">Sync</string>
@@ -351,4 +394,12 @@
         <item quantity="one">%1$d item couldn\'t be used.</item>
         <item quantity="other">%1$d items couldn\'t be used.</item>
     </plurals>
+    <string name="player_theater">Theatre</string>
+    <string name="xr_module_title">Android XR theatre</string>
+    <string name="settings_player_controls">Player Controls</string>
+    <string name="settings_audio">Audio</string>
+    <string name="settings_library">Library</string>
+    <string name="settings_section_controls">Controls</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_parental_more">Ratings, Locks, and PIN</string>
 </resources>

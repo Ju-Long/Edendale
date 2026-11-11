@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- es-MX. Generated to match Apple/Shared/Theater.xcstrings and the Quest theater's strings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="theater_exit">Salir del cine</string>
+    <string name="theater_position">Posición</string>
+    <string name="theater_playback_failed">No se pudo reproducir el video aquí. Sal del cine para volver al reproductor.</string>
+    <string name="theater_rooms">Sala</string>
+    <string name="theater_room_movie_theatre">Sala de cine</string>
+    <string name="theater_room_projector_room">Sala de proyección</string>
+    <string name="theater_room_performance_theatre">Teatro</string>
+    <string name="theater_seats">Asientos</string>
+    <string name="theater_screen">Pantalla</string>
+    <string name="theater_your_seat">Tu asiento</string>
+    <string name="theater_best_seat">Mejor asiento</string>
+    <string name="theater_seat_name">Fila %1$d, asiento %2$d</string>
+    <string name="theater_lights">Luces</string>
+    <string name="theater_lights_normal">Normales</string>
+    <string name="theater_lights_dim">Atenuadas</string>
+    <string name="theater_lights_dark">Casi apagadas</string>
+    <string name="theater_recentre">Recentrar</string>
+    <string name="theater_recentre_caption">Coloca la pantalla donde miras, incluso acostado.</string>
+    <string name="theater_look_down">Mira hacia abajo para ver los controles.</string>
+</resources>

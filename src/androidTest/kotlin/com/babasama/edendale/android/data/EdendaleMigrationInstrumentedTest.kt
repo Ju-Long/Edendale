@@ -90,6 +90,43 @@ class EdendaleMigrationInstrumentedTest {
         db.close()
     }
 
+    /** v5: every source keeps its values; `endpoint` and `scanStartedAt` start null. */
+    @Test
+    fun migrate4To5KeepsEverySourceAndAddsNullColumns() {
+        helper.createDatabase(TEST_DB, 4).apply {
+            execSQL(
+                "INSERT INTO library_folder (treeUri, displayName, addedAtEpochMillis, kind, displayPath, " +
+                    "accountKey, lastScannedAt, changeCursor, status) VALUES " +
+                    "('smb://nas/media/', 'media', 200, 'smb', 'smb://nas/media/', 'nas', 1000, NULL, 'offline'), " +
+                    "('gdrive://0123456789abcdef0123456789abcdef/root/Movies', 'Movies', 300, 'gdrive', " +
+                    "'me@example.com › Movies', '0123456789abcdef0123456789abcdef', NULL, NULL, NULL)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 5, true, EdendaleDatabase.MIGRATION_4_5)
+
+        db.query(
+            "SELECT displayName, kind, displayPath, accountKey, lastScannedAt, status, endpoint, scanStartedAt " +
+                "FROM library_folder ORDER BY addedAtEpochMillis",
+        ).use { cursor ->
+            assertEquals(2, cursor.count)
+            cursor.moveToNext()
+            assertEquals("media", cursor.getString(0))
+            assertEquals("smb", cursor.getString(1))
+            assertEquals("nas", cursor.getString(3))
+            assertEquals(1000L, cursor.getLong(4))
+            assertEquals("offline", cursor.getString(5))
+            assertNull(cursor.getString(6))
+            assertNull(cursor.getString(7))
+            cursor.moveToNext()
+            assertEquals("me@example.com › Movies", cursor.getString(2))
+            assertNull(cursor.getString(6))
+            assertNull(cursor.getString(7))
+        }
+        db.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test.db"
     }

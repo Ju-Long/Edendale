@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every user-facing string of the Android XR theater lives here; translations sit in
+     values-<locale>/strings.xml. Labels are stored in natural case. The room names, seats,
+     lights, and Recentre copy are the visionOS theater's (Apple/Shared/Theater.xcstrings);
+     the exit, position, and failure lines are the Quest theater's. -->
+<resources>
+    <string name="theater_exit">Exit theater</string>
+    <string name="theater_position">Position</string>
+    <string name="theater_playback_failed">The video couldn’t be played here. Exit the theater to return to the player.</string>
+    <string name="theater_rooms">Theater</string>
+    <string name="theater_room_movie_theatre">Movie Theater</string>
+    <string name="theater_room_projector_room">Projector Room</string>
+    <string name="theater_room_performance_theatre">Performance Theater</string>
+    <string name="theater_seats">Seats</string>
+    <string name="theater_screen">Screen</string>
+    <string name="theater_your_seat">Your Seat</string>
+    <string name="theater_best_seat">Best Seat</string>
+    <string name="theater_seat_name">Row %1$d, Seat %2$d</string>
+    <string name="theater_lights">Lights</string>
+    <string name="theater_lights_normal">Normal</string>
+    <string name="theater_lights_dim">Dim</string>
+    <string name="theater_lights_dark">Dark</string>
+    <string name="theater_recentre">Recenter</string>
+    <string name="theater_recentre_caption">Puts the screen where you\'re looking, even lying down.</string>
+    <string name="theater_look_down">Look down for the controls.</string>
+</resources>

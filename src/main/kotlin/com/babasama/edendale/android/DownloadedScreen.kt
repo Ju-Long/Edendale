@@ -4,9 +4,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,16 +21,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,10 +38,12 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,19 +53,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.data.LibraryActivity
 import com.babasama.edendale.android.data.SourceScanRules
 import com.babasama.edendale.android.data.LibraryEpisodeEntity
+import com.babasama.edendale.android.data.LibraryFolderEntity
 import com.babasama.edendale.android.data.LibraryMovieEntity
 import com.babasama.edendale.android.data.LibraryShowEntity
+import com.babasama.edendale.android.parental.rememberParentalGate
 import com.babasama.edendale.android.player.PlayerActivity
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.TmdbImageSize
 import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.domain.tmdbImageUrl
+import com.babasama.edendale.parental.GatedAction
 import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,9 +79,19 @@ fun DownloadedScreen(
     isTelevision: Boolean,
     contentPadding: PaddingValues = PaddingValues(),
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit = {},
-    /** Shows only this section (a navigation child row, J.1); null shows the whole library. */
+    /** Opens a movie's page, as Apple's library does; the page plays it. */
+    onOpenMovie: (LibraryMovieEntity) -> Unit,
+    /** Opens a show's page, which lists its episodes. */
+    onOpenShow: (LibraryShowEntity) -> Unit = {},
+    /**
+     * Shows only this section (the section picker's choice, or a navigation
+     * child row, J.1); null shows the whole library.
+     */
     section: DownloadedSection? = null,
+    /** The sections with something to show, as the section picker offers them (27.1). */
+    sections: List<DownloadedSection> = emptyList(),
+    /** Chooses a section in the picker; null is the whole library. */
+    onSelectSection: (DownloadedSection?) -> Unit = {},
     /** Hardware-keyboard commands: add a folder, link a source, rescan (J.3). */
     commands: Flow<LibraryCommand>? = null,
 ) {
@@ -86,12 +102,18 @@ fun DownloadedScreen(
             availableWidth = maxWidth,
             contentPadding = contentPadding,
             onOpenSettings = onOpenSettings,
+            onOpenMovie = onOpenMovie,
             onOpenShow = onOpenShow,
             section = section,
+            sections = sections,
+            onSelectSection = onSelectSection,
             commands = commands,
         )
     }
 }
+
+/** This process's identity, so a sweep remembered in saved state is one this process made. */
+private val processToken: String = java.util.UUID.randomUUID().toString()
 
 /** The library after the Young Audience filter, shared by the page and the navigation's child rows. */
 internal data class VisibleLibrary(
@@ -106,17 +128,22 @@ internal fun libraryAudienceRefs(movies: List<LibraryMovieEntity>, shows: List<L
         shows.mapNotNull { s -> s.tmdbId?.let { MediaRef(it, MediaType.TV) } }).distinct()
 
 /**
- * An imported title is shown only when its TMDB enrichment verifies it as
- * PG / PG-13 while the filter is on; an un-enriched file has no id to
- * verify, so it fails closed. Episodes follow their show.
+ * An imported title is shown only when its TMDB enrichment verifies it under
+ * the parental policy; an un-enriched file has no id to verify, so it fails
+ * closed. Episodes follow their show. With "Hide restricted titles" off the
+ * lists keep everything and the detail page or the player blocks instead
+ * (O.5); [strict] ignores that switch for a surface that cannot show a
+ * restricted state, such as the TV home screen's Watch Next row.
  */
 internal fun visibleLibrary(
     movies: List<LibraryMovieEntity>,
     shows: List<LibraryShowEntity>,
     episodes: List<LibraryEpisodeEntity>,
     audienceFilter: YoungAudienceFilter,
+    strict: Boolean = false,
 ): VisibleLibrary {
     if (!audienceFilter.isEnabled) return VisibleLibrary(movies, shows, episodes)
+    if (!strict && !audienceFilter.hidesRestrictedTitles) return VisibleLibrary(movies, shows, episodes)
     val visibleShows = shows.filter { it.tmdbId?.let { id -> audienceFilter.allows(MediaRef(id, MediaType.TV)) } == true }
     val showKeys = visibleShows.map { it.key }.toSet()
     return VisibleLibrary(
@@ -128,8 +155,9 @@ internal fun visibleLibrary(
 
 /**
  * The Downloaded sections with something to show, for extended navigation's
- * child rows (J.1). Null until the library has loaded and while audience
- * ratings are being verified, so a row doesn't flicker or close its page.
+ * child rows (J.1) and the page's section picker (27.1). Null until the
+ * library has loaded and while audience ratings are being verified, so a
+ * choice doesn't flicker or close its page.
  */
 @Composable
 internal fun rememberDownloadedSections(audienceFilter: YoungAudienceFilter): List<DownloadedSection>? {
@@ -167,26 +195,42 @@ private fun DownloadedScreenContent(
     availableWidth: Dp,
     contentPadding: PaddingValues,
     onOpenSettings: () -> Unit,
-    onOpenShow: (String) -> Unit,
+    onOpenMovie: (LibraryMovieEntity) -> Unit,
+    onOpenShow: (LibraryShowEntity) -> Unit,
     section: DownloadedSection?,
+    sections: List<DownloadedSection>,
+    onSelectSection: (DownloadedSection?) -> Unit,
     commands: Flow<LibraryCommand>?,
 ) {
-    val context = LocalContext.current
     val library = rememberLibrary()
-    val edgeMargin = if (isTelevision || availableWidth >= 600.dp) 48.dp else 20.dp
+    val compactWidth = !isTelevision && availableWidth < 600.dp
+    val edgeMargin = if (compactWidth) 20.dp else 48.dp
 
-    val allMovies by library.movies.collectAsState(initial = emptyList())
-    val allShows by library.shows.collectAsState(initial = emptyList())
-    val episodes by library.episodes.collectAsState(initial = emptyList())
-    val folders by library.folders.collectAsState(initial = emptyList())
-    val progressList by library.watchProgress.collectAsState(initial = emptyList())
+    // Null until Room answers. The page waits for the whole library before it
+    // lays out, so a scroll position brought back from a title's page lands on
+    // the same row rather than on a list still filling in, and the empty state
+    // no longer flashes up first.
+    val loadedMovies by library.movies.collectAsState(initial = null)
+    val loadedShows by library.shows.collectAsState(initial = null)
+    val loadedEpisodes by library.episodes.collectAsState(initial = null)
+    val loadedFolders by library.folders.collectAsState(initial = null)
+    val loadedProgress by library.watchProgress.collectAsState(initial = null)
+    val libraryLoaded = loadedMovies != null && loadedShows != null && loadedEpisodes != null &&
+        loadedFolders != null && loadedProgress != null
+    val allMovies = loadedMovies.orEmpty()
+    val allShows = loadedShows.orEmpty()
+    val episodes = loadedEpisodes.orEmpty()
+    val folders = loadedFolders.orEmpty()
+    val progressList = loadedProgress.orEmpty()
     val activity by library.activity.collectAsState(initial = LibraryActivity())
     val scanError = activity.errorMessage
     // Google Drive sources (H.9.4): what Choose More Videos added, and the picker itself.
     val sourceNotes by library.sourceNotes.collectAsState()
-    val chooseMoreVideos = rememberChooseMoreVideos()
+    // Every library edit on this page asks for the parental PIN while "Require PIN for library changes" is on (O.5).
+    val gate = rememberParentalGate(isTelevision)
+    val chooseMoreVideos = rememberChooseMoreVideos(gate)
 
-    // Young Audience filter: see visibleLibrary.
+    // The parental policy: see visibleLibrary.
     val audienceRefs = remember(allMovies, allShows) { libraryAudienceRefs(allMovies, allShows) }
     LaunchedEffect(audienceRefs, audienceFilter.isEnabled, audienceFilter.contextIdentifier) {
         audienceFilter.verify(audienceRefs)
@@ -200,10 +244,11 @@ private fun DownloadedScreenContent(
     val runtimeFormat = rememberRuntimeFormat()
     val progressByKey = remember(progressList) { progressList.byStorageKey() }
     val upNextTemplate = stringResource(R.string.library_continue_up_next)
-    val foldersByUri = remember(folders) { folders.associateBy { it.treeUri } }
+    // The source each title last played from (27.1), so a card resumes there.
+    val lastSources by library.sourceMemory.changes.collectAsState()
     // Every resumable title: the Continue Watching page lists them all (J.2),
     // the shelf keeps its cap.
-    val allContinueEntries = remember(progressList, movies, visibleEpisodes, shows, upNextTemplate, folders) {
+    val allContinueEntries = remember(progressList, movies, visibleEpisodes, shows, upNextTemplate, folders, lastSources) {
         continueWatching(
             progressList,
             movies,
@@ -212,10 +257,15 @@ private fun DownloadedScreenContent(
             nextUpFormat = { upNextTemplate.format(it) },
             limit = null,
             folders = folders,
+            lastSources = lastSources,
         )
     }
     val continueEntries = allContinueEntries.take(CONTINUE_WATCHING_LIMIT)
-    val episodeCounts = remember(episodes) { episodes.groupingBy { it.showKey }.eachCount() }
+    // One poster per title (27.1): a movie's copies through every link, and
+    // a show's rows, each counting an episode once however many copies it has.
+    val foldersByUri = remember(folders) { folders.associateBy { it.treeUri } }
+    val movieTitles = remember(movies, foldersByUri) { movieTitles(movies, foldersByUri) }
+    val showTitles = remember(shows, visibleEpisodes) { showTitles(shows, visibleEpisodes) }
 
     val spacing = if (isTelevision) 20.dp else 14.dp
     val preferredPoster: Dp = when {
@@ -232,8 +282,37 @@ private fun DownloadedScreenContent(
 
     var pendingRemoval by remember { mutableStateOf<String?>(null) }
 
+    // One sweep per visit (D.3). Back from a title's page brings this page
+    // back with its saved state (EdendaleApp) rather than starting a new
+    // visit; a page restored after process death sweeps again.
+    var sweptBy by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
-        library.rescanAll()
+        if (sweptBy != processToken) {
+            sweptBy = processToken
+            library.rescanAll()
+        }
+    }
+
+    // Back from a title's page: the list where it was, by its first visible
+    // row (playing from the page can add or empty the Continue Watching shelf
+    // above it), and on TV the remote on the poster that opened the page.
+    val listState = rememberShellListState("downloaded:${section?.name ?: "all"}")
+    val posterReturn = rememberPosterReturn(isTelevision, ready = libraryLoaded)
+
+    // The section picker (27.1). Choosing a section keeps this page — its
+    // sweep, and the remote's focus on the picker — and starts the new
+    // section at the top with the bar out. A page built afresh (Back from a
+    // title's page) keeps the place it saved.
+    val pickerShown = libraryLoaded && DownloadedSection.isPickerOffered(sections)
+    val topBarState = rememberTopAppBarState()
+    var shownSection by remember { mutableStateOf(section) }
+    LaunchedEffect(section) {
+        if (section != shownSection) {
+            shownSection = section
+            listState.scrollToItem(0)
+            topBarState.heightOffset = 0f
+            topBarState.contentOffset = 0f
+        }
     }
 
     // Add Local Folder and Add Network Source, shared by the menu, the empty
@@ -244,8 +323,8 @@ private fun DownloadedScreenContent(
     ) { uri ->
         if (uri != null) library.importFolder(uri)
     }
-    val addFolder: () -> Unit = { folderPicker.launch(null) }
-    val linkSource: () -> Unit = { showSmbDialog = true }
+    val addFolder: () -> Unit = { gate.require(GatedAction.LIBRARY_EDIT) { folderPicker.launch(null) } }
+    val linkSource: () -> Unit = { gate.require(GatedAction.LIBRARY_EDIT) { showSmbDialog = true } }
     if (showSmbDialog) {
         LinkSourceDialog(
             isTelevision = isTelevision,
@@ -266,7 +345,7 @@ private fun DownloadedScreenContent(
                 when (command) {
                     LibraryCommand.ADD_FOLDER -> if (!isTelevision) addFolder()
                     LibraryCommand.LINK_SOURCE -> linkSource()
-                    LibraryCommand.RESCAN -> if (hasSources) library.rescanAll(force = true)
+                    LibraryCommand.RESCAN -> if (hasSources) gate.require(GatedAction.LIBRARY_EDIT) { library.rescanAll(force = true) }
                     LibraryCommand.TOGGLE_NAVIGATION -> Unit
                 }
             }
@@ -291,7 +370,10 @@ private fun DownloadedScreenContent(
     }
 
     val content = @Composable { padding: PaddingValues ->
-        if (movies.isEmpty() && shows.isEmpty() && folders.isEmpty() && !activity.isBusy) {
+        if (!libraryLoaded) {
+            // The moment before Room answers draws nothing.
+            Box(Modifier.fillMaxSize())
+        } else if (movies.isEmpty() && shows.isEmpty() && folders.isEmpty() && !activity.isBusy) {
             DownloadedEmptyState(
                 isTelevision = isTelevision,
                 scanError = scanError,
@@ -303,6 +385,7 @@ private fun DownloadedScreenContent(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                state = listState,
                 contentPadding = PaddingValues(
                     top = padding.calculateTopPadding() + 24.dp,
                     bottom = padding.calculateBottomPadding() + 56.dp,
@@ -322,6 +405,19 @@ private fun DownloadedScreenContent(
                         ) {
                             SectionHeader(stringResource(R.string.tab_downloaded), modifier = Modifier.weight(1f), large = true)
                             AddSourceMenu(isTelevision = true, onAddFolder = addFolder, onLinkSource = linkSource)
+                        }
+                    }
+                    // Under the heading at the top left; the TV bar above is the tab strip.
+                    if (pickerShown) {
+                        item("sections") {
+                            DownloadedSectionPicker(
+                                sections = sections,
+                                selection = section,
+                                onSelect = onSelectSection,
+                                fillWidth = false,
+                                isTelevision = true,
+                                modifier = Modifier.padding(horizontal = edgeMargin),
+                            )
                         }
                     }
                 }
@@ -416,54 +512,30 @@ private fun DownloadedScreenContent(
                         )
                     }
                     posterRows(
-                        items = movies,
+                        items = movieTitles,
                         columns = columns,
                         cellWidth = cellWidth,
                         spacing = spacing,
                         edgeMargin = edgeMargin,
-                        key = { it.uri },
-                    ) { movie ->
-                        val progress = progressByKey.forMovie(movie.tmdbId)
-                        // Remove from Library, where it lasts: a Google Drive copy stays hidden from
-                        // rescans (D21) and a file added on its own is never rescanned.
-                        val removable = SourceScanRules.removalLasts(movie.folderUri)
-                        val removeLabel = stringResource(R.string.remove_from_library)
-                        var menuOpen by remember(movie.uri) { mutableStateOf(false) }
-                        Box {
-                            LibraryPosterCard(
-                                title = movie.title,
-                                subtitle = mediaSubtitle(movie.year, movie.runtimeMinutes, runtimeFormat),
-                                posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
-                                width = cellWidth,
-                                isTelevision = isTelevision,
-                                isWatched = progress?.isCompleted == true,
-                                progress = progress.partialFraction(),
-                                mediaType = MediaType.MOVIE,
-                                onLongClick = if (removable) ({ menuOpen = true }) else null,
-                                onLongClickLabel = if (removable) removeLabel else null,
-                                onClick = {
-                                    // This copy, unless its source is unreachable and another isn't (D.5).
-                                    val copy = preferredMovie(movie, allMovies, foldersByUri)
-                                    PlayerActivity.play(
-                                        context = context,
-                                        uri = copy.uri,
-                                        title = copy.title,
-                                        tmdbId = copy.tmdbId,
-                                        isEpisode = false,
-                                    )
-                                },
-                            )
-                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                DropdownMenuItem(
-                                    text = { Text(removeLabel) },
-                                    leadingIcon = { Icon(painterResource(id = R.drawable.ic_trash_can), contentDescription = null) },
-                                    onClick = {
-                                        menuOpen = false
-                                        library.removeMovie(movie.uri)
-                                    },
-                                )
-                            }
-                        }
+                        // Prefixed: a movie and a show can share a TMDB id number.
+                        key = { "movie:${it.key}" },
+                    ) { title ->
+                        val posterKey = title.posterKey
+                        LibraryMovieTile(
+                            title = title,
+                            width = cellWidth,
+                            isTelevision = isTelevision,
+                            progress = progressByKey.forMovie(title.tmdbId),
+                            foldersByUri = foldersByUri,
+                            remembered = PlaybackSources.movieMemoryKey(title.tmdbId)?.let(lastSources::get),
+                            modifier = posterReturn.modifier(posterKey),
+                            // The movie's page, which plays it (Apple's library does the same).
+                            onOpen = {
+                                posterReturn.opening(posterKey)
+                                onOpenMovie(title.display)
+                            },
+                            onRemove = { copies -> gate.require(GatedAction.LIBRARY_EDIT) { copies.forEach { library.removeMovie(it.uri) } } },
+                        )
                     }
                 }
 
@@ -476,14 +548,16 @@ private fun DownloadedScreenContent(
                         )
                     }
                     posterRows(
-                        items = shows,
+                        items = showTitles,
                         columns = columns,
                         cellWidth = cellWidth,
                         spacing = spacing,
                         edgeMargin = edgeMargin,
-                        key = { it.key },
-                    ) { show ->
-                        val count = episodeCounts[show.key] ?: 0
+                        key = { "show:${it.key}" },
+                    ) { title ->
+                        val show = title.display
+                        val count = title.episodeCount
+                        val posterKey = title.posterKey
                         LibraryPosterCard(
                             title = show.name,
                             subtitle = listOfNotNull(
@@ -494,7 +568,12 @@ private fun DownloadedScreenContent(
                             width = cellWidth,
                             isTelevision = isTelevision,
                             mediaType = MediaType.TV,
-                            onClick = { onOpenShow(show.key) },
+                            modifier = posterReturn.modifier(posterKey),
+                            // The show's page, with its episodes from every copy.
+                            onClick = {
+                                posterReturn.opening(posterKey)
+                                onOpenShow(show)
+                            },
                         )
                     }
                 }
@@ -515,8 +594,8 @@ private fun DownloadedScreenContent(
                             folder = folder,
                             itemCount = count,
                             isTelevision = isTelevision,
-                            onRescan = { library.rescanFolder(folder.treeUri) },
-                            onRemove = { pendingRemoval = folder.treeUri },
+                            onRescan = { gate.require(GatedAction.LIBRARY_EDIT) { library.rescanFolder(folder.treeUri) } },
+                            onRemove = { gate.require(GatedAction.LIBRARY_EDIT) { pendingRemoval = folder.treeUri } },
                             note = sourceNotes[folder.treeUri],
                             chooseMoreVideos = chooseMoreVideos,
                         )
@@ -529,11 +608,18 @@ private fun DownloadedScreenContent(
     if (isTelevision) {
         content(contentPadding)
     } else {
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(topBarState)
         Scaffold(
             topBar = {
+              Column {
                 TopAppBar(
-                    title = { PageTitle(stringResource(R.string.tab_downloaded), section?.let { stringResource(it.title) }) },
+                    // The picker names the section on screen; without it the title does.
+                    title = {
+                        PageTitle(
+                            stringResource(R.string.tab_downloaded),
+                            section?.takeUnless { pickerShown }?.let { stringResource(it.title) },
+                        )
+                    },
                     actions = {
                         if (folders.isNotEmpty() || allMovies.isNotEmpty() || allShows.isNotEmpty()) {
                             AddSourceMenu(isTelevision = false, onAddFolder = addFolder, onLinkSource = linkSource)
@@ -551,6 +637,40 @@ private fun DownloadedScreenContent(
                     ),
                     scrollBehavior = scrollBehavior,
                 )
+                // Pinned under the bar, which scrolls away above it: the
+                // choice stays in reach anywhere down the page, as iOS's tab
+                // bar accessory does. It takes the bar's colour as content
+                // passes under them both.
+                if (pickerShown) {
+                    // Derived, as Material's own bar reads it: the offset moves
+                    // with every scrolled pixel, the answer only at the top.
+                    val overlapped by remember(scrollBehavior) {
+                        derivedStateOf { scrollBehavior.state.overlappedFraction > 0.01f }
+                    }
+                    val underBar by animateColorAsState(
+                        targetValue = if (overlapped) {
+                            MaterialTheme.colorScheme.surfaceContainerLow
+                        } else {
+                            MaterialTheme.colorScheme.background
+                        },
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "Section picker bar",
+                    )
+                    DownloadedSectionPicker(
+                        sections = sections,
+                        selection = section,
+                        onSelect = onSelectSection,
+                        fillWidth = compactWidth,
+                        isTelevision = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(underBar)
+                            // Wider windows keep it to its own width at the top left.
+                            .then(if (compactWidth) Modifier else Modifier.wrapContentWidth(Alignment.Start))
+                            .padding(start = edgeMargin, end = edgeMargin, bottom = 10.dp),
+                    )
+                }
+              }
             },
             containerColor = Color.Transparent,
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -560,31 +680,174 @@ private fun DownloadedScreenContent(
     }
 }
 
-/** A Continue Watching card: resumes the title, or starts the next episode. */
+/**
+ * One movie's poster in Downloaded and Search (27.1): a title, however many
+ * links reach its file and however many sources hold it. A tap opens the
+ * movie's page, whose Play and Play From play it. A long press — the Menu
+ * key on TV — opens Play From, the copy last played checked, then Remove
+ * from Library for the copies whose removal lasts (D21): one item, or one
+ * per copy, named as Play From names it, when several would go. The poster
+ * itself carries no chevron: Play From sits beside the page's Play, as on
+ * iOS.
+ */
+@Composable
+internal fun LibraryMovieTile(
+    title: LibraryTitle<LibraryMovieEntity>,
+    width: Dp,
+    isTelevision: Boolean,
+    progress: WatchProgress?,
+    foldersByUri: Map<String, LibraryFolderEntity>,
+    /** The source key the movie last played from on this device (27.1), if any. */
+    remembered: String?,
+    onOpen: () -> Unit,
+    /** Removes these copies, behind the parental gate. */
+    onRemove: (List<LibraryMovieEntity>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val movie = title.display
+    val copies = title.copies
+    val hasCopies = copies.size > 1
+    // Only copies that stay removed: Google Drive videos (D21) and files added on their own.
+    val removable = copies.filter { SourceScanRules.removalLasts(it.folderUri) }
+    val hasMenu = hasCopies || removable.isNotEmpty()
+    val playFrom = stringResource(R.string.play_from)
+    val removeLabel = stringResource(R.string.remove_from_library)
+    var menuOpen by remember(title.key) { mutableStateOf(false) }
+    val subtitle = listOfNotNull(
+        mediaSubtitle(movie.year, movie.runtimeMinutes, rememberRuntimeFormat()),
+        if (hasCopies) pluralStringResource(R.plurals.play_from_source_count, copies.size, copies.size) else null,
+    ).joinToString(" · ").ifEmpty { null }
+    Box {
+        LibraryPosterCard(
+            title = movie.title,
+            subtitle = subtitle,
+            posterUrl = tmdbImageUrl(movie.posterPath, TmdbImageSize.POSTER),
+            width = width,
+            isTelevision = isTelevision,
+            isWatched = progress?.isCompleted == true,
+            progress = progress.partialFraction(),
+            mediaType = MediaType.MOVIE,
+            onLongClick = if (hasMenu) ({ menuOpen = true }) else null,
+            onLongClickLabel = if (hasCopies) playFrom else if (removable.isNotEmpty()) removeLabel else null,
+            modifier = modifier,
+            onClick = onOpen,
+        )
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            if (hasCopies) {
+                PlayFromHeading()
+                PlayFromItems(
+                    copies = copies,
+                    source = { foldersByUri.copySource(it.folderUri) },
+                    path = { it.uri },
+                    marked = lastPlayedCopy(copies, { it.folderUri }, remembered),
+                    markLabel = R.string.play_from_last_played,
+                    onPlay = { copy ->
+                        menuOpen = false
+                        // A pick is the viewer's choice, so the movie remembers its source.
+                        PlayerActivity.play(
+                            context = context,
+                            uri = copy.uri,
+                            title = movie.title,
+                            // An alias whose match is pending plays as its title.
+                            tmdbId = copy.tmdbId ?: title.tmdbId,
+                            isEpisode = false,
+                        )
+                    },
+                )
+            }
+            val source: (LibraryMovieEntity) -> CopySource = { foldersByUri.copySource(it.folderUri) }
+            val removeRows = if (removable.size > 1) {
+                PlaybackSources.menuRows(
+                    copies = removable,
+                    source = source,
+                    path = { it.uri },
+                    label = { sourceEndpointLabel(context, it) },
+                    kindLabel = { sourceKindLabel(context, it) },
+                )
+            } else {
+                null
+            }
+            removable.forEachIndexed { index, copy ->
+                ArchiveMenuItem(
+                    text = { focused ->
+                        Column {
+                            Text(removeLabel)
+                            removeRows?.get(index)?.let { row ->
+                                Text(
+                                    text = "${row.title} · ${row.detail}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    },
+                    leadingIcon = { Icon(painterResource(id = R.drawable.ic_trash_can), contentDescription = null) },
+                    onClick = {
+                        menuOpen = false
+                        onRemove(listOf(copy))
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A Continue Watching card: resumes the title, or starts the next episode. A
+ * part-watched card's menu (a long press, or Menu on TV) offers Clear
+ * Progress, as Apple's resume card does, which syncs as a clear. It says
+ * what it does rather than "remove": a movie or a show's first episode
+ * leaves the shelf, but an episode after a finished one comes back as that
+ * show's Up Next card. A next-up card has no record to clear, so no menu.
+ */
 @Composable
 private fun ContinueCard(entry: ContinueEntry, width: Dp, isTelevision: Boolean) {
     val context = LocalContext.current
-    LibraryPosterCard(
-        title = entry.title,
-        subtitle = entry.subtitle,
-        posterUrl = entry.posterUrl,
-        width = width,
-        isTelevision = isTelevision,
-        progress = entry.fraction.takeUnless { entry.isNextUp },
-        mediaType = if (entry.isEpisode) MediaType.TV else MediaType.MOVIE,
-        onClick = {
-            PlayerActivity.play(
-                context = context,
-                uri = entry.uri,
-                title = entry.title,
-                tmdbId = entry.tmdbId,
-                isEpisode = entry.isEpisode,
-                showTmdbId = entry.showTmdbId,
-                season = entry.season,
-                episode = entry.episode,
-            )
-        },
-    )
+    val library = rememberLibrary()
+    val progressKey = entry.progressKey
+    val clearLabel = stringResource(R.string.clear_progress)
+    var menuOpen by remember(entry.uri) { mutableStateOf(false) }
+    Box {
+        LibraryPosterCard(
+            title = entry.title,
+            subtitle = entry.subtitle,
+            posterUrl = entry.posterUrl,
+            width = width,
+            isTelevision = isTelevision,
+            progress = entry.fraction.takeUnless { entry.isNextUp },
+            mediaType = if (entry.isEpisode) MediaType.TV else MediaType.MOVIE,
+            onLongClick = if (progressKey != null) ({ menuOpen = true }) else null,
+            onLongClickLabel = if (progressKey != null) clearLabel else null,
+            onClick = {
+                PlayerActivity.play(
+                    context = context,
+                    uri = entry.uri,
+                    title = entry.title,
+                    tmdbId = entry.tmdbId,
+                    isEpisode = entry.isEpisode,
+                    showTmdbId = entry.showTmdbId,
+                    season = entry.season,
+                    episode = entry.episode,
+                    rememberSource = entry.remembersSource,
+                )
+            },
+        )
+        if (progressKey != null) {
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                AddSourceMenuItem(
+                    labelRes = R.string.clear_progress,
+                    iconRes = R.drawable.ic_trash_can,
+                    onClick = {
+                        menuOpen = false
+                        library.clearWatchProgress(progressKey)
+                    },
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -668,37 +931,22 @@ fun AddSourceMenu(
     }
 }
 
-/**
- * A menu row carries no container colour of its own, so Material has nothing to
- * tint on focus and the D-pad appears to do nothing inside the popup. This
- * paints the row itself and flips the label and glyph to match.
- */
+/** An Add Source row; [ArchiveMenuItem] paints its D-pad focus. */
 @Composable
 private fun AddSourceMenuItem(
     @StringRes labelRes: Int,
     @DrawableRes iconRes: Int,
     onClick: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    DropdownMenuItem(
+    ArchiveMenuItem(
         text = { Text(stringResource(labelRes)) },
         onClick = onClick,
-        modifier = Modifier.background(
-            if (focused) EdendaleColors.Gold else Color.Transparent,
-        ),
         leadingIcon = {
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
             )
         },
-        colors = MenuDefaults.itemColors(
-            textColor = if (focused) EdendaleColors.OnGold else MaterialTheme.colorScheme.onSurface,
-            leadingIconColor = if (focused) EdendaleColors.OnGold
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        interactionSource = interactionSource,
     )
 }
 

@@ -42,7 +42,21 @@ data class HomeCatalog(
     val popularShows: List<MediaItem>,
     val topRated: List<MediaItem>,
     val genres: List<Genre>,
-)
+) {
+    /**
+     * A hero's resume state is a snapshot from [BrowseRepository.loadHome].
+     * Once its watch record is gone from [records] (Delete Watch History,
+     * Continue Watching's Clear Progress, or a clear synced from another
+     * device), the scene stays as a featured title instead of offering to
+     * resume. This same catalog when nothing changed.
+     */
+    fun keepingProgressIn(records: List<WatchProgress>): HomeCatalog {
+        val keys = records.mapTo(HashSet()) { it.storageKey }
+        fun HeroScene.isStale() = progress?.let { it.storageKey !in keys } == true
+        if (heroScenes.none { it.isStale() }) return this
+        return copy(heroScenes = heroScenes.map { if (it.isStale()) it.copy(progress = null) else it })
+    }
+}
 
 /**
  * The result of one scoped search. [titles] and [people] are both populated

@@ -9,14 +9,20 @@ import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.MediaItem
 import com.babasama.edendale.domain.MediaRef
+import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.domain.PersonDetail
 import com.babasama.edendale.domain.PersonItem
 import com.babasama.edendale.domain.SearchQuery
 import com.babasama.edendale.domain.SearchScope
 import com.babasama.edendale.domain.UserMediaRecord
+import com.babasama.edendale.android.data.LibraryMovieEntity
+import com.babasama.edendale.android.data.LibraryShowEntity
 import com.babasama.edendale.android.data.LocalCopy
 import com.babasama.edendale.android.data.LocalDataStore
+import com.babasama.edendale.android.parental.awaitReady
+import com.babasama.edendale.android.parental.parentalControls
 import com.babasama.edendale.domain.WatchProgress
+import com.babasama.edendale.parental.ParentalGateRules
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.babasama.edendale.tmdb.BrowseRepository
@@ -39,11 +45,23 @@ data class BrowseUiState(
 )
 
 data class DetailUiState(
+    /** The open page; null while none is. */
+    val source: DetailSource? = null,
+    /**
+     * The TMDB title behind the page: a TMDB page's own, a library movie's
+     * match, or null for a file enrichment hasn't matched.
+     */
     val ref: MediaRef? = null,
     val isLoading: Boolean = false,
     val detail: MediaDetail? = null,
     val userMedia: UserMediaRecord? = null,
-    val watchProgress: WatchProgress? = null,
+    /**
+     * True once [userMedia] has been read for [ref]. A null [userMedia] is
+     * also what a title without marks reads as, and the favourite and
+     * Watchlist toggles flip what the page shows, so the page shows the
+     * user's marks only from then on.
+     */
+    val userMediaLoaded: Boolean = false,
     val trailer: com.babasama.edendale.tmdb.TmdbVideo? = null,
     val errorMessage: String? = null,
     /** Season the episode browser is showing; null until a show detail lands. */
@@ -54,7 +72,15 @@ data class DetailUiState(
     val seasonErrorMessage: String? = null,
     /** Watched episode TMDB ids, so the browser can tick them without a per-card query. */
     val watchedEpisodeIds: Set<Int> = emptySet(),
-)
+    /**
+     * The library movie's title and poster, which a Watchlist save records
+     * when TMDB has no record for the page (no key, offline, or no match).
+     */
+    val fallbackTitle: String? = null,
+    val fallbackPosterPath: String? = null,
+) {
+    val isOpen: Boolean get() = source != null
+}
 
 class BrowseViewModel(
     application: Application
@@ -63,6 +89,7 @@ class BrowseViewModel(
     private val strings = AppStrings(application)
     private val dataStore = LocalDataStore((application as EdendaleApplication).database)
     private val libraryRepo = (application as EdendaleApplication).libraryRepository
+    private val parental = parentalControls(application)
 
     var state by mutableStateOf(BrowseUiState())
         private set
@@ -74,8 +101,24 @@ class BrowseViewModel(
     private var collectionJob: Job? = null
     private var seasonJob: Job? = null
 
+    /**
+     * The latest watch rows. A deletion can land while [load] waits on TMDB
+     * (a launch sync applying another device's clear), before there is a
+     * catalog to strip, so [load] applies them to the catalog it assigns.
+     */
+    private var watchRows: List<WatchProgress>? = null
+
     init {
         load()
+        // The hero's progress is a snapshot: once its record is deleted, it stops offering to resume.
+        viewModelScope.launch {
+            dataStore.observeWatchProgress().collect { rows ->
+                watchRows = rows
+                val catalog = state.catalog ?: return@collect
+                val kept = catalog.keepingProgressIn(rows)
+                if (kept !== catalog) state = state.copy(catalog = kept)
+            }
+        }
     }
 
     fun load() {
@@ -87,7 +130,7 @@ class BrowseViewModel(
             state = state.copy(phase = LoadPhase.LOADING, errorMessage = null)
             try {
                 val progress = dataStore.getAllWatchProgress()
-                val catalog = repository.loadHome(progress)
+                val catalog = repository.loadHome(progress).let { loaded -> watchRows?.let(loaded::keepingProgressIn) ?: loaded }
                 state = state.copy(phase = LoadPhase.LOADED, catalog = catalog)
                 selectCollection(CollectionFilter.All)
             } catch (error: CancellationException) {
@@ -122,17 +165,21 @@ class BrowseViewModel(
     fun openDetail(ref: MediaRef) {
         closeFilmography()
         detailJob?.cancel()
-        detailState = DetailUiState(ref = ref, isLoading = true)
+        val source = DetailSource.Tmdb(ref)
+        detailState = DetailUiState(source = source, ref = ref, isLoading = true)
         detailJob = viewModelScope.launch {
             try {
-                val detail = repository.detail(ref)
+                // The user's own marks are local, so they come first: a page
+                // the library draws meanwhile (or after TMDB fails) shows them
+                // right, and a toggle flips what the page shows.
                 val userMedia = dataStore.getUserMedia(ref)
-                val watchProgress = dataStore.getWatchProgress("${ref.mediaType.pathSegment}:${ref.id}")
-                detailState = DetailUiState(
-                    ref = ref,
+                detailState = detailState.copy(userMedia = userMedia, userMediaLoaded = true)
+                val detail = repository.detail(ref)
+                // Copied rather than rebuilt, so the marks above and a library
+                // match's title and poster (syncLibraryMovie) outlive the load.
+                detailState = detailState.copy(
+                    isLoading = false,
                     detail = detail,
-                    userMedia = userMedia,
-                    watchProgress = watchProgress,
                     // Shows open on their first season; the episode list itself
                     // is fetched lazily by selectSeason below.
                     selectedSeason = detail.seasons.firstOrNull()?.seasonNumber,
@@ -140,18 +187,143 @@ class BrowseViewModel(
                 )
                 detail.seasons.firstOrNull()?.let { selectSeason(it.seasonNumber) }
 
-                val trailer = repository.bestTrailer(ref)
+                // O-D10: with Block trailers and links on, /videos is never requested.
+                parental.awaitReady()
+                val trailer = if (ParentalGateRules.allowsTrailers(parental.policy.value)) repository.bestTrailer(ref) else null
                 if (detailState.ref == ref) {
                     detailState = detailState.copy(trailer = trailer)
                 }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                detailState = DetailUiState(
-                    ref = ref,
-                    errorMessage = error.message ?: strings.detailsNotLoaded,
-                )
+                // Copied, so the user's marks and the library match stay: a
+                // page the library holds keeps drawing from its copy, and a
+                // trailer that failed after the record landed leaves it be.
+                if (detailState.source == source) {
+                    detailState = detailState.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: strings.detailsNotLoaded,
+                    )
+                }
             }
+        }
+    }
+
+    /**
+     * Opens a library movie's page (Apple's `MediaDetailSource.localMovie`).
+     * The page shows the row at once; its TMDB match, when it has one, adds
+     * the user's marks and, when TMDB answers, the full record ([loadMatch]).
+     */
+    fun openLocalMovie(movie: LibraryMovieEntity) {
+        closeFilmography()
+        detailJob?.cancel()
+        seasonJob?.cancel()
+        detailState = DetailUiState(source = DetailSource.LocalMovie(movie.uri))
+        syncLibraryMovie(movie)
+    }
+
+    /**
+     * Opens a library show's page (Apple's `MediaDetailSource.localShow`):
+     * its episodes from the library at once, and, once the show is matched,
+     * the user's marks and TMDB's record ([syncLibraryShow]).
+     */
+    fun openLocalShow(show: LibraryShowEntity) {
+        closeFilmography()
+        detailJob?.cancel()
+        seasonJob?.cancel()
+        detailState = DetailUiState(source = DetailSource.LocalShow(show.key))
+        syncLibraryShow(show)
+    }
+
+    /**
+     * [syncLibraryMovie] for a show: keeps an open page in step with the
+     * library show behind it — the page's own row, or a TMDB page's library
+     * match — and attaches a match enrichment finds while a library page is
+     * open (or the row of a page restored after process death).
+     */
+    fun syncLibraryShow(show: LibraryShowEntity) {
+        val state = detailState
+        val ref = show.tmdbId?.let { MediaRef(it, MediaType.TV) }
+        val ownRow = state.source == DetailSource.LocalShow(show.key)
+        val match = state.source is DetailSource.Tmdb && ref != null && state.ref == ref
+        if (!ownRow && !match) return
+        if (state.fallbackTitle != show.name || state.fallbackPosterPath != show.posterPath) {
+            detailState = state.copy(fallbackTitle = show.name, fallbackPosterPath = show.posterPath)
+        }
+        if (!ownRow || ref == null || ref == detailState.ref) return
+        detailJob?.cancel()
+        detailState = detailState.copy(ref = ref, detail = null, userMedia = null, userMediaLoaded = false, trailer = null)
+        detailJob = viewModelScope.launch { loadMatch(ref) }
+    }
+
+    /**
+     * Keeps an open page in step with the library movie behind it — the
+     * page's own row, or a TMDB page's library match. Its title and poster
+     * are what a Watchlist save records without a TMDB record. On a library
+     * page, a match enrichment finds while the page is open (or the row of a
+     * page restored after process death, which starts from its uri) attaches
+     * the TMDB title and loads its half of the page.
+     */
+    fun syncLibraryMovie(movie: LibraryMovieEntity) {
+        val state = detailState
+        val ref = movie.tmdbRef
+        val ownRow = state.source == DetailSource.LocalMovie(movie.uri)
+        val match = state.source is DetailSource.Tmdb && ref != null && state.ref == ref
+        if (!ownRow && !match) return
+        if (state.fallbackTitle != movie.title || state.fallbackPosterPath != movie.posterPath) {
+            detailState = state.copy(fallbackTitle = movie.title, fallbackPosterPath = movie.posterPath)
+        }
+        if (!ownRow || ref == null || ref == detailState.ref) return
+        detailJob?.cancel()
+        detailState = detailState.copy(ref = ref, detail = null, userMedia = null, userMediaLoaded = false, trailer = null)
+        detailJob = viewModelScope.launch { loadMatch(ref) }
+    }
+
+    /**
+     * A library page's TMDB half for its match [ref]: the user's own marks
+     * always, TMDB's record and trailer when TMDB answers. A failed fetch
+     * (offline, or no TMDB key) leaves the page on the row's own header and
+     * never turns it into an error page.
+     */
+    private suspend fun loadMatch(ref: MediaRef) {
+        val userMedia = dataStore.getUserMedia(ref)
+        if (detailState.ref != ref) return
+        detailState = detailState.copy(userMedia = userMedia, userMediaLoaded = true)
+        if (!repository.isConfigured) return
+        val detail = try {
+            repository.detail(ref)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            return
+        }
+        if (detailState.ref != ref) return
+        detailState = detailState.copy(detail = detail)
+
+        // O-D10: with Block trailers and links on, /videos is never requested.
+        parental.awaitReady()
+        if (!ParentalGateRules.allowsTrailers(parental.policy.value)) return
+        val trailer = try {
+            repository.bestTrailer(ref)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            null
+        }
+        if (detailState.ref == ref) detailState = detailState.copy(trailer = trailer)
+    }
+
+    /**
+     * Reopens the page a process death closed: a TMDB page loads again, and
+     * a library page starts from its uri or key until the screen hands it
+     * the row ([syncLibraryMovie], [syncLibraryShow]). A page that is already
+     * open stays as it is.
+     */
+    fun restoreDetail(source: DetailSource) {
+        if (detailState.isOpen) return
+        when (source) {
+            is DetailSource.Tmdb -> openDetail(source.ref)
+            is DetailSource.LocalMovie, is DetailSource.LocalShow -> detailState = DetailUiState(source = source)
         }
     }
 
@@ -230,33 +402,43 @@ class BrowseViewModel(
         viewModelScope.launch {
             val isFavourite = detailState.userMedia?.favourite == true
             dataStore.setFavourite(ref, !isFavourite)
-            detailState = detailState.copy(userMedia = dataStore.getUserMedia(ref))
+            refreshUserMedia(ref)
         }
+    }
+
+    /** Reads [ref]'s marks back into the page, unless another title opened meanwhile. */
+    private suspend fun refreshUserMedia(ref: MediaRef) {
+        val userMedia = dataStore.getUserMedia(ref)
+        if (detailState.ref == ref) detailState = detailState.copy(userMedia = userMedia, userMediaLoaded = true)
     }
 
     fun toggleWatchlist(ref: MediaRef) {
         viewModelScope.launch {
             val inWatchlist = detailState.userMedia?.watchlist == true
             // Snapshot the title and poster so the Watchlist tab can render the
-            // card without a per-title fetch, and it stays useful offline.
+            // card without a per-title fetch, and it stays useful offline. A
+            // library page without a TMDB record snapshots its row's.
             dataStore.setWatchlist(
                 ref,
                 !inWatchlist,
-                title = detailState.detail?.title,
-                posterPath = detailState.detail?.posterPath,
+                title = detailState.detail?.title ?: detailState.fallbackTitle,
+                posterPath = detailState.detail?.posterPath ?: detailState.fallbackPosterPath,
             )
-            detailState = detailState.copy(userMedia = dataStore.getUserMedia(ref))
+            refreshUserMedia(ref)
         }
     }
 
     /**
      * Mark Watched for movies: writes a completed [WatchProgress], or
      * clears it again. Shows are marked per episode, so this is movie-only.
+     * [isWatched] is the page's live watch state: the player may have
+     * finished the title since the page opened. The page observes the
+     * record, so nothing is copied back here.
      */
-    fun toggleWatched(ref: MediaRef) {
+    fun toggleWatched(ref: MediaRef, isWatched: Boolean) {
         viewModelScope.launch {
             val key = "movie:${ref.id}"
-            if (detailState.watchProgress?.isCompleted == true) {
+            if (isWatched) {
                 dataStore.deleteWatchProgress(key)
             } else {
                 dataStore.updateWatchProgress(
@@ -269,14 +451,13 @@ class BrowseViewModel(
                     ),
                 )
             }
-            detailState = detailState.copy(watchProgress = dataStore.getWatchProgress(key))
         }
     }
 
     fun setRating(ref: MediaRef, rating: Double?) {
         viewModelScope.launch {
             dataStore.setRating(ref, rating)
-            detailState = detailState.copy(userMedia = dataStore.getUserMedia(ref))
+            refreshUserMedia(ref)
         }
     }
 

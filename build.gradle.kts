@@ -135,8 +135,8 @@ android {
         applicationId = "com.babasama.edendale"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 3
-        versionName = "0.27.0.1"
+        versionCode = 4
+        versionName = "0.27.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Dropbox redirects to db-<app key>://, so the redirect activity's
@@ -204,6 +204,13 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // HORIZON.md B.14: android declares its :xr feature module here
+    // (`dynamicFeatures += setOf(":xr")`, the Android XR theater of Section N).
+    // This branch builds one APK for the Meta Horizon Store and leaves the
+    // module out (settings.gradle.kts), so no Jetpack XR code, room, or
+    // activity reaches a Quest; the player offers that theater only where the
+    // module is installed, which is never here.
 
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")

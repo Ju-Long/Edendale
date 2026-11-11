@@ -230,9 +230,19 @@ way.
 Online subtitle search, like trailer playback, starts only after an explicit
 user action; opening the player or its settings panel never sends a search.
 
+### Settings
+
+Settings opens as a sheet on phones and tablets and full screen on TV, laid
+out as on iOS 27.1: a first page listing Player Controls, Audio, Subtitles,
+Library, Sync, and Accounts (and Android TV on a TV), then Parental Controls
+and About, which holds the version, TMDB's notice, the Nunito credit, and (on
+phones and tablets) the TheIntroDB link. Each category opens as its own page.
+Back, or the page's Back chip, returns to the list; on a TV, focus lands on the
+row the page was opened from, and Back on the list closes Settings.
+
 ### Intro, recap, and credits prompts
 
-Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
+Enable **Settings → Player Controls → Skip Prompts**, or **Player Adjustments →
 Playback → Skip Prompts**, to use community timestamps from
 [TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The legacy
 90-second recap and final-three-minutes credits auto-skips have been removed;
@@ -266,9 +276,9 @@ network errors, invalid ranges, and rate limits leave normal playback
 available without a prompt. Playback and initial import never wait for this
 service.
 
-### App Controls and player memory
+### Player Controls and player memory
 
-**Settings → App Controls** sets the skip lengths (10, 15, or 30 seconds,
+**Settings → Player Controls** sets the skip lengths (10, 15, or 30 seconds,
 for back and forward separately) and the hold speeds (0.25× to 3.00× for each
 side). One skip length drives every skip: double-tap, the on-screen buttons,
 the D-pad and TV timeline, media keys, Picture-in-Picture actions, and the
@@ -281,6 +291,22 @@ show as a whole, the player remembers the speed, the audio track, the
 subtitle track or that subtitles were off, and the video track, matching
 tracks by language and then by name. These settings stay on the device and
 are never synced.
+
+On phones and tablets, a vertical swipe on the right of the video changes the
+device's media volume, the one the hardware keys and Android's volume panel
+set. With headphones in, a raise past Android's safe level shows Android's
+hearing warning; a device with a fixed volume changes the player's own volume
+instead. A swipe on the left changes the screen's brightness on Android's own
+slider scale, for the player only: the brightness is handed back while the
+video floats in Picture in Picture or another app is in use, comes back with
+the player unless you changed it meanwhile, and ends when the player closes.
+A vertical swipe never counts as a tap, and Android XR has no brightness
+swipe. **Rotation Lock**, next to Picture in Picture, holds the orientation
+on screen until you turn it off or close the player, through episode
+switches, Picture in Picture, and Android relaunching the player. It is never
+saved, and it isn't offered on TV, Android XR, in split screen or desktop
+windows, or on Android 16 tablets and unfolded foldables, which ignore app
+orientation requests.
 
 ### Network shares
 
@@ -465,10 +491,15 @@ server. Sync is off until you choose a **location** and a **space name**:
 | Location | How |
 |---|---|
 | A folder on this device | The system folder picker, with a persisted read and write permission (phones and tablets; TVs have no picker) |
-| Google Drive | A linked account; the folders are created under `drive.file`, so Edendale sees only what it made |
-| OneDrive | A linked account; the files live in the app folder, `Apps/Edendale/`, with `Files.ReadWrite.AppFolder` |
-| Dropbox | A linked account, with `files.content.write` |
+| Google Drive | A linked account, or **Sign In to Google Drive** in the dialog itself; the folders are created under `drive.file`, so Edendale sees only what it made. Signing in from the dialog skips Google's video picker and links no library source |
+| OneDrive | A linked account, or **Sign In to OneDrive** in the dialog; the files live in the app folder, `Apps/Edendale/`, with `Files.ReadWrite.AppFolder` |
+| Dropbox | A linked account, or **Sign In to Dropbox** in the dialog, with `files.content.write` |
 | WebDAV, SMB, SFTP | A saved login and the folder inside the server; the connectors create folders and write files (`MKCOL` and `PUT`, SMB create and rename, SFTP write and rename) |
+
+The location doesn't have to be where your videos are: a library on an SMB
+share can keep its history in Google Drive. Signing in from **Choose a
+Location** (phones and tablets) only stores the account for sync; a TV gets
+its location from a phone through **Set Up Another Device**.
 
 Inside the location every device writes one file,
 `Edendale/<space name>/<device id>.json`: its whole watch state as readable
@@ -498,6 +529,29 @@ login until you do. Episodes are keyed by show, season, and episode number;
 one received from another device appears here once the library knows the
 episode, and travels on to other devices either way. Values pulled from a
 TMDB account become new local writes stamped when they are pulled.
+
+**Watch History**, below the Sync group, counts the titles and episodes this
+device holds progress or a watched mark for, and **Delete Watch History…**
+deletes them, behind the parental PIN like every Sync button (on a TV the
+dialog opens on Cancel). Only progress and watched marks go: favourites,
+watchlist, ratings, the library, and the TMDB account stay. With sync on, the
+deletion is a write like any clear: Edendale first reads every device file in
+full, then gives each title one tombstone, empties this device's progress in
+the same transaction, and writes its own file at once. Each other device
+applies the tombstones at its next sync and rewrites its own file; until then
+that file still holds its history, and a device that no longer syncs keeps
+its copy until **Remove a Device** deletes its file. Anything watched
+elsewhere after the deletion is newer and stays. If the location can't be
+reached, the page says the other devices follow once Edendale reaches it.
+With sync off, only this device's progress and its copy of the sync records
+are emptied, with no tombstones, so turning sync on later brings back what
+the other devices hold.
+
+A long press (Menu on a TV) on a part-watched Continue Watching card offers
+**Clear Progress**, as on Apple, which clears that title the same way. A
+movie, or a show's first episode, leaves the shelf; an episode that follows a
+finished one comes back as the show's Up Next card. An Up Next card has no
+record of its own, so it has no menu.
 
 The device ID and the location settings live in `edendale_sync.xml`, excluded
 from backup and device transfer like the logins, so a restored device makes a
@@ -534,23 +588,117 @@ Sync screen says to sign in again before such an account can be a location.
 
 ### Sources and accounts
 
-Each visit to Downloaded rescans local folders; a remote source is rescanned
-only if its last scan was over 15 minutes ago, and **Rescan** always scans.
+Each visit to Downloaded rescans local folders (coming back from a title's
+page isn't a new visit); a remote source is rescanned only if its last scan
+was over 15 minutes ago, and **Rescan** always scans. A scan stores what it
+found all at once when it finishes. If Edendale is closed or killed before
+then, it scans that source again the next time it opens, whichever page it
+opens on, and matches any titles still waiting for TMDB details.
 A source that can't be reached, or whose login was refused, says so on its own
-row in Settings → Sources and in Downloaded, where its rescan button becomes
+row in Settings → Library and in Downloaded, where its rescan button becomes
 Try Again, instead of an error for the whole library. Removing a source keeps its login: **Settings →
 Accounts** lists every saved login with the number of sources using it, and
 removes a login only when you ask.
 
-When the same title is imported from several sources, each file stays its
-own record. **Play** uses the first copy whose source is reachable (the page's
-own copy, then local folders, then the rest by source name), and **Play
-From** picks a copy: beside Play for movies, and in an episode's long-press
-menu (the menu key on TV) for episodes.
+Tapping a movie or a show in Downloaded, or in Search's From Your Library,
+opens its page, as on Apple's platforms. A movie's page has **Play**
+(**Resume** once the player would resume) and **Play From** when the library
+holds it more than once; a show's page lists its episodes by season in place
+of TMDB's season browser. Both carry your marks, and TMDB's story and cast
+when the title has a match; an unmatched file or show, or a device without
+TMDB, shows its own title, year, and artwork. A TMDB page for a title the
+library holds plays it the same way. Back returns to the same place in
+Downloaded or Search (on TV, to the same poster). Continue Watching cards
+still play at once.
+
+One file reached through several links — a share linked over the LAN as
+`longs-mac-studio.local` and through Tailscale as `100.x.y.z`, say — is one
+poster, and so is a title imported from several sources: copies are the
+same file at the same path on the share (or the same S3 key, cloud file, or
+document) whatever the address, or files matched to one TMDB title; files
+matched to different titles stay apart. The poster says how many sources
+hold it, and a long press (the menu key on TV) opens Play From, then Remove
+from Library for each copy where removing lasts. A show counts each episode
+once, however many copies it has.
+
+Each file stays its own record. **Play From** names each copy by where it's
+reached from — **This device**, a server's address such as
+`longs-mac-studio.local` or `100.101.102.103`, or an account such as
+`Google Drive - me@example.com` — then its kind and file name. **Play** starts
+the source the title last played from on this device when it's reachable,
+else the first reachable copy: local folders, then servers on your network,
+then Tailscale addresses, then everything else. Falling back doesn't change
+which source is remembered. **Play From** sits beside Play for movies;
+tapping an episode with several copies (or its chevron) opens it with the
+last-played copy checked, and the player's Episodes panel has the same
+chevron. Once an episode plays, the next ones — Up Next, auto-advance,
+Continue Watching, the TV's Watch Next row — stay on its source. Which source
+a title last played from stays on this device: it is never synced or backed
+up.
+
+### Parental controls
+
+**Settings → Parental Controls** keeps the library fit for whoever holds the
+remote, and everything in it stays on this device (FEATURES-27.1.md §4).
+Young Audience Friendly sits on Settings' first page; the ceilings, switches,
+and PIN open from **Ratings, Locks, and PIN** beneath it:
+
+- **Young Audience Friendly** is the preset from 27.0: only titles rated PG
+  or PG-13, or their TV equivalents.
+- **Maximum movie rating** and **Maximum TV rating** set a ceiling from
+  TMDB's ordered certification lists for the device's region, which the
+  detail line names; "No limit" is the first choice. When TMDB publishes no
+  list for that region, the ceiling and the per-title lookups both use the
+  US list, and the section says so. A title's own certification comes from
+  TMDB as before; a title without one, or a file the library has not
+  matched to TMDB, counts as restricted while a ceiling or the preset is
+  on, and with both on a title must pass both. The two lists are fetched
+  when the section opens or a ceiling is set, kept on the device, and
+  refreshed at most once a day.
+- **Hide restricted titles** (on by default) keeps restricted titles out of
+  Home, Search, Watchlist, Downloaded, filmographies, the player's episode
+  and folder lists, and the TV home screen's Watch Next row. Off, they stay
+  in the lists, but their page shows the restricted state and the player
+  refuses them; Watch Next stays strict either way. The player applies the
+  same rule to whatever it is asked to play — a poster, a Continue Watching
+  card, a Watch Next row, or a file opened from another app — and lists
+  only permitted titles, so Up Next, auto-advance, and the system media
+  controls' next and previous never reach a restricted one.
+- **Block trailers and links** hides Watch Trailer on the detail page and
+  stops the app asking TMDB for trailers at all.
+- **Require PIN for settings** asks for the PIN when Settings opens, on TV
+  and handhelds alike, which covers every setting and link inside it.
+  **Require PIN for library changes** asks before Add Local Folder, Link
+  Network Source, Rescan, Remove, Remove from Library, Choose More Videos,
+  and their keyboard shortcuts; the automatic rescan on opening Downloaded
+  is not a change. Turning either on before a PIN exists sets one first.
+- **Set PIN**, **Change PIN**, and **Remove PIN**: 4 to 8 digits, typed
+  masked (on a TV through the on-screen keyboard). Once a PIN exists, the
+  Parental Controls section itself and every button in Settings → Sync
+  (Choose a Location, Sync Now, both pairing roles, Remove a Device, Turn
+  Off) ask for it too, and a pairing link opened from a QR code asks before
+  the pairing dialog; a wrong or cancelled PIN there drops the link. A
+  correct PIN unlocks for five minutes or until Settings closes, whichever
+  comes first.
+
+The PIN itself is never stored: an Argon2id hash (64 MiB, 3 iterations, one
+lane, a 16-byte salt, a 32-byte hash, with the parameters beside it) lives
+with the ceiling, the switches, the back-off state, and the cached
+certification lists in `edendale_parental.xml`, an encrypted preferences
+file under an Android Keystore key, excluded from backup and device transfer
+like the logins, so a restored device keeps the Young Audience preset (which
+stays in `edendale_audience.xml`) but has no PIN. The first three wrong
+attempts are free; every further wrong PIN waits 30 seconds, then 1, 5, 15,
+and 60 minutes, with the countdown in the dialog, and the wait survives a
+force-stop, a reboot, and a clock change. The PIN is separate from the
+pairing code. Nothing from this section is synced, handed off, or sent
+anywhere, and the logs carry counts and outcomes only; its only requests are
+TMDB's two certification lists and the per-title certification lookups the
+filter already made.
 
 ### Audio Enhancement
 
-**Settings → Audio Enhancement** applies a 10-band equalizer (60 Hz to 16 kHz)
+**Settings → Audio** applies a 10-band equalizer (60 Hz to 16 kHz)
 through a Media3 audio processor: choose Flat, Movies (the default), Music,
 Dialogue, or Night Mode, then fine-tune the preamp and each band; changing the
 profile resets the adjustments. **Audio Booster** (also in Player Adjustments →
@@ -567,10 +715,11 @@ and hue, saved on the device; **Show Original** compares without changing them,
 and **Reset** returns to neutral. **Enhancement** upscales and sharpens video
 on the GPU: Off, Sharpen Only, Balanced (upscale and sharpen), or High Quality
 (adds temporal denoise), with Sharpness and Denoise and the resolution change
-shown as `1280×720 → 1920×1080`. Enhancement settings last until the app
-closes and are never saved. It starts at Balanced on phones and tablets that
-pass a one-time on-device GPU check, and at Off on Android TV and on devices
-that don't. HDR and Dolby Vision video skip every effect.
+shown as `1280×720 → 1920×1080`. The preset, Sharpness, and Denoise are
+saved on the device (Show Original never is) and apply on every device, TV
+included. Until you choose, Enhancement starts at Balanced on phones and
+tablets that pass a one-time on-device GPU check, and at Off on Android TV and
+on devices that don't. HDR and Dolby Vision video skip every effect.
 
 The effects run through Media3's video effects (`androidx.media3:media3-effect`)
 and are installed only while something needs them; otherwise video goes
@@ -604,9 +753,18 @@ Google Fonts' `ofl/nunito/Nunito[wght].ttf` with fontTools'
 
 ### Keyboard and large screens
 
+Once at least two of Continue Watching, Movies, and TV Shows have titles, the
+Downloaded page heads itself with segmented buttons — All, Watching, Movies,
+and Shows — that show the whole library or one section of it. On phones and
+tablets they stay pinned under the top bar while the page scrolls, across the
+width on a phone and at the top left on wider windows; on TV they sit under
+the page heading, and Left and Right stop at the ends.
+
 In windows at least 1100 dp wide, the navigation lists Watchlist → Movies and
 TV Shows, and Downloaded → Continue Watching, Movies, and TV Shows, as rows of
 their own while each has titles for the current audience setting. The
+Downloaded rows and the page's segmented buttons show the same choice, and
+either one changes it. The
 Continue Watching page lists every title in progress; the shelf on the
 Downloaded page keeps its 12. In the player, the playlist and Player
 Adjustments dock beside the video instead of covering it.
@@ -620,7 +778,7 @@ With a hardware keyboard:
 | Ctrl+Alt+N | Link a network source (Downloaded) |
 | Ctrl+R or F5 | Rescan every source (Downloaded) |
 | Space | Play or pause |
-| ← and → | Skip back or forward by the App Controls lengths |
+| ← and → | Skip back or forward by the Player Controls lengths |
 | S | Skip an intro, recap, or credits when offered |
 | Esc | Close a panel, then the player |
 
@@ -635,7 +793,7 @@ tapping the rule beside the Episodes heading.
 While a video plays, the player publishes a Media3 `MediaSession`
 (`androidx.media3:media3-session`), so headset buttons, Bluetooth controls,
 Google Assistant, and Android TV's system media UI reach it, including in
-Picture-in-Picture. Skip back and forward use the **Settings → App Controls**
+Picture-in-Picture. Skip back and forward use the **Settings → Player Controls**
 lengths, and next and previous play the neighboring playlist entry. The session
 lives only as long as the player: there is no background playback service, and
 playback still pauses when the player leaves the screen. The artwork it reports
@@ -656,7 +814,8 @@ Selecting a row opens the player at the saved position, just like the shelf
 card. Rows update after playback pauses or stops, disappear when a title is
 finished or its file is deleted, and all disappear when the setting is turned
 off. A row removed from the home screen comes back only after you watch that
-title again. Titles hidden by Young Audience Friendly never appear.
+title again. Titles the parental controls restrict never appear, even
+while Hide restricted titles is off.
 
 The rows stay on the TV and Edendale sends nothing over the network for them,
 but the launcher (Google's app on Google TV) can read them, which is why the
@@ -714,6 +873,53 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
 
+### Immersive theater (Android XR)
+
+On an Android XR headset the player's **Theater** chip seats you in one of
+three rooms built in Blender on the `scenes` branch, with the video on the
+room's screen: the **Movie Theater**, the **Projector Room**, and the
+**Performance Theater**, the same rooms the Apple Vision Pro and Meta Quest
+builds have (FEATURES-27.1.md §3; ENHANCEMENT.md Section N). The rooms are
+the `scenes` exports of `tools/export_gltf.py` from `06fb0c7` plus the
+owner's seat-forward edits of 2026-11-08 (`claude/scenes-bigger-screen`),
+which put the viewer where the screen spans 54–62° and mark every seat.
+
+- **Entering and leaving.** The chip hands the item, its position, the speed,
+  and the audio and subtitle choices to the theater, which plays on with its
+  own player; the per-title memory and the skip prompts work as in the 2D
+  player. **Exit theater** returns to the 2D player at the same position; when
+  the video ends, the title is marked complete and the library takes over.
+  The theater never starts on its own.
+- **The dock.** The controls float 0.65 m from your eyes, 45° below your line
+  of sight, and follow your head once you turn more than 12° or move more than
+  15 cm: title, timeline, skip back and forward with your intervals,
+  play/pause, Skip Intro / Recap / Credits, Up Next, and the audio, subtitle,
+  and room lists. Subtitles are drawn just in front of the picture.
+- **Seats.** The panel to the left of the dock maps every seat: pinch one to
+  sit there, hold and slide to sweep, **Best Seat** goes back to the room's
+  recommended place, and the room turns so the screen is straight ahead from
+  wherever you sit. **Recentre** puts the screen where you are looking, lying
+  down included.
+- **Lights.** Normal, Dim, or Dark on the seat panel turns the room's baked
+  light down to 30 % or 6 %; the picture, the screen's own surround, and the
+  Projector Room's beam keep their brightness.
+- **What stays on the device.** The last room, the lights, and the seat per
+  room live in the `theater` preferences and are never synced.
+- **Comfort.** Seated, no locomotion, nothing animates but the video and a
+  short fade when the seat changes. Video Enhancement is off in the theater.
+
+The theater is a Play Feature Delivery module, `:xr`, that Play installs with
+the app only on devices declaring `android.software.xr.api.spatial`; phones
+and TVs never download its rooms (30 MB with their atlases) or renderer. It
+holds Jetpack XR SceneCore, Runtime, and ARCore 1.0.0 (Apache-2.0); the Play
+Services AR runtime and Google's ARCore SDK are excluded, and the split
+carries no copy of Media3. `./gradlew assembleDebug` builds
+`xr/build/outputs/apk/debug/xr-debug.apk` beside the base APK (copying each
+room's atlases out of its GLB on the way, for the lights); install both with
+`adb install-multiple -r Edendale-debug.apk xr-debug.apk`. The chip appears
+only on an XR device that has the `xr` split installed. The base APK alone,
+or a phone, shows no theater.
+
 ### Manual device checks
 
 Some behavior needs real hardware and isn't covered by the JVM or instrumented
@@ -723,7 +929,14 @@ tests. Before a release, check on:
   Picture-in-Picture; per-title track memory; the track pickers and playlist
   with TalkBack; subtitle appearance in Fit and Fill; the Up Next card and skip
   prompts; equalizer changes while playing; Picture and Enhancement presets on
-  SDR video, with HDR video bypassed.
+  SDR video, with HDR video bypassed, and the chosen preset after a restart;
+  the volume swipe against the hardware keys and Android's volume panel (with
+  headphones in, the hearing warning without Android's panel on Android 12+,
+  with it on Android 8–11) and a slow swipe inside one step keeping the pill
+  up; the brightness swipe against Quick Settings' slider, in and out of
+  Picture in Picture and split screen; Rotation Lock in both landscape
+  directions, after Picture in Picture, after an episode switch, and after
+  connecting a keyboard.
 - **A mid-range phone (Adreno 6xx or Mali-G57 class):** Balanced and High
   Quality on 720p and 1080p video without dropped frames, and the governor
   stepping down when the device runs hot.
@@ -735,8 +948,36 @@ tests. Before a release, check on:
 - **A tablet, Chromebook, or desktop-windowing device:** the navigation's child
   rows, docked panels, the keyboard shortcuts, and Meta+/.
 - **A Bluetooth headset:** play, pause, and skip from its buttons.
+- **An Android XR headset:** the Theater chip appears there and nowhere else;
+  each room faces you with the picture on its screen and its baked colours
+  showing; the dock stays still inside a 12° turn and catches up past it;
+  seats across the map, Best Seat, and Recentre (sitting and lying back);
+  subtitles and an audio switch; Exit returns to the player at the position
+  and the end of a video to the library; frame rate at the display's native
+  rate in the Performance Theatre (the heaviest room, 149k triangles), and 30
+  minutes of playback for heat; the Play delivery (the `xr` split arrives
+  with the app on an XR device and on no other).
 - **An SMB server over a phone hotspot or Tailscale:** steady playback, and
   recovery after the connection drops.
+- **One share linked twice (27.1):** link the same SMB or WebDAV share by its
+  LAN name and by its Tailscale address. Downloaded and Search show one poster
+  per title ("2 sources"); its long press and its page's Play From name both
+  addresses, LAN first; Play starts the LAN copy, or the Tailscale one after a
+  Play From pick, and keeps to it after a restart; with the LAN source
+  offline, Play falls back without forgetting the pick. A show's page lists
+  each episode once; the next episode, Up Next, and auto-advance stay on the
+  source playing. Kill the app during a scan of a large source and check the
+  next launch scans it again.
+- **Detail pages (27.1):** on a phone and a TV, open a downloaded movie and
+  show and a Search library result. Play or Resume starts where the player
+  would; Play From lists every copy and skips an offline source; an unmatched
+  file or show shows its own title and plays; a movie that is also
+  downloaded, opened from the Watchlist tab in airplane mode, shows the
+  file's artwork and a filled bookmark. Back lands on the same row in
+  Downloaded and Search, also after the first play adds Continue Watching; on
+  TV, focus returns to the same poster, and a show page opens on its first
+  episode. With a parental rule on, an unmatched file or show shows the
+  restricted state.
 - **Storage services:** link a folder, scan it, and play and seek a file on an
   SFTP server (password authentication, host-key fingerprint check on first use,
   and changed-key rejection), a Nextcloud or Synology server over HTTPS (a
@@ -767,7 +1008,20 @@ tests. Before a release, check on:
   a device's file and turn sync off with and without deleting the file. On a
   TV, host the pairing from the Sync screen and receive a location from a
   phone. Check that an OneDrive or Dropbox account from a build before 27.1
-  is asked to sign in again before it can be a location.
+  is asked to sign in again before it can be a location. Delete Watch
+  History on one device (Delete Everywhere): Continue Watching, watched
+  ticks, the home hero, and the TV's Watch Next row empty on both once the
+  other syncs, while favourites and ratings stay; in airplane mode the page
+  says the others follow later. Clear a part-watched movie, and an episode
+  after a finished one, from Continue Watching by long press and by the TV's
+  Menu key.
+- **Parental controls (27.1):** on a phone and a TV, set a PIN, see the
+  back-off after four wrong tries and its countdown survive a force-stop,
+  set a PG-13 ceiling and watch an R title leave Home, Search, Downloaded,
+  the player's episode list, and Watch Next, open its page and get the
+  restricted state, see Watch Trailer gone with the switch on, have Settings,
+  Add Local Folder, and a pairing link ask for the PIN, remove the PIN, and
+  run TalkBack over the rating picker.
 
 ### DTS and TrueHD
 
@@ -820,6 +1074,7 @@ The Meta Quest app built from this branch is not GPL-3.0 as a whole:
 | sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
 | Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE, X25519, and HKDF for the device handoffs | MIT (Bouncy Castle Licence) |
 | AndroidX WorkManager | Background sync | Apache-2.0 |
+| Jetpack XR 1.0.0 (`androidx.xr.scenecore`, `androidx.xr.runtime`, `androidx.xr.arcore`, with Google's Impress renderer) | The Android XR theater; in the `xr` split only | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in and pairing QR codes | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |

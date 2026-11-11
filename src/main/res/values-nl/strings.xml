@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Verder kijken</string>
     <string name="section_movies">Films</string>
     <string name="section_tv_shows">Tv-series</string>
+    <string name="section_all">Alles</string>
+    <string name="section_watching_short">Bezig</string>
+    <string name="section_shows_short">Series</string>
     <string name="section_sources">Bronnen</string>
     <string name="library_empty_title">De bibliotheek is stil</string>
     <string name="library_empty_message">Voeg een bestand toe of koppel een bron om door te gaan.</string>
@@ -151,26 +154,19 @@
     <string name="error_server_unreachable">Die server kon niet worden bereikt.</string>
     <string name="settings_title">Instellingen</string>
     <string name="settings_section_about">Info</string>
+    <string name="settings_player_controls">Spelerbediening</string>
+    <string name="settings_audio">Audio</string>
+    <string name="settings_library">Bibliotheek</string>
+    <string name="settings_section_controls">Bediening</string>
+    <string name="settings_section_appearance">Weergave</string>
+    <string name="settings_parental_more">Classificaties, vergrendelingen en pincode</string>
     <string name="settings_version">Versie</string>
-    <string name="settings_watch_progress">Kijkvoortgang</string>
-    <string name="settings_stored_on_device">Opgeslagen op dit apparaat</string>
-    <string name="settings_tmdb_access">TMDB-toegang</string>
-    <string name="settings_tmdb_configured">Geconfigureerd tijdens het bouwen</string>
-    <string name="settings_tmdb_missing">Voeg een token toe aan secrets.json en bouw opnieuw op</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">Grote letters, overscan-veilige marges, afstandsbediening-focus lift en landschapsweergave zijn actief.</string>
     <string name="settings_watch_next_title">Verder kijken op het startscherm</string>
     <string name="settings_watch_next_description">Toont wat je aan het kijken bent in de rij ‘Verder kijken’ van het startscherm. Edendale stuurt hiervoor niets over het netwerk, maar de startscherm-app kan deze titels zien.</string>
     <string name="settings_section_sources">Bronnen</string>
     <string name="settings_no_sources">Geen bronnen gekoppeld</string>
-    <string name="settings_section_backup">Back-up</string>
-    <string name="settings_backup_note">Kijkvoortgang, favorieten, kijklijst en beoordelingen liften mee met Android Auto Backup naar je Google Drive, zodat ze terugkeren wanneer je een nieuw apparaat instelt. De back-up volgt de systeeminstelling van je apparaat — Edendale voegt daar zelf niets aan toe.</string>
-    <string name="settings_backup_secrets_note">Je TMDB-sessie en alle opgeslagen inloggegevens voor netwerkshares zijn uitgesloten van back-ups en overdracht naar een ander apparaat: ze zijn op dit apparaat versleuteld en kunnen het niet verlaten.</string>
-    <string name="settings_section_privacy">Privacy</string>
-    <string name="settings_privacy_note">Geen analyses. Netwerkverzoeken zijn beperkt tot TMDB, Wyzie na een expliciete ondertitelzoekopdracht en je privé synchronisatieproviders.</string>
-    <string name="settings_section_attribution">Naamsvermelding</string>
     <string name="tmdb_attribution">Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB.</string>
-    <string name="settings_open_source">Edendale · Gratis en open-source</string>
     <string name="settings_section_tmdb_account">TMDB-account</string>
     <string name="tmdb_account_intro">Koppel je TMDB-account om favorieten, je kijklijst en beoordelingen te synchroniseren tussen apparaten. Kijktijd blijft buiten TMDB.</string>
     <string name="tmdb_loading_account">Account laden…</string>
@@ -196,7 +192,6 @@
     <string name="tmdb_sync_status">Gesynchroniseerd %1$s — %2$d gepusht, %3$d gepulld</string>
     <string name="player_close">Speler sluiten</string>
     <string name="player_picture_in_picture">Beeld in beeld</string>
-    <string name="player_theater">Bioscoop</string>
     <string name="player_back_10">10 seconden terug</string>
     <string name="player_forward_10">10 seconden vooruit</string>
     <string name="player_adjustments">Aanpassingen</string>
@@ -226,6 +221,12 @@
     <string name="player_in_this_folder">In deze map</string>
     <string name="player_volume">Volume</string>
     <string name="player_brightness">Helderheid</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">Volume %1$s</string>
+    <string name="player_brightness_level">Helderheid %1$s</string>
+    <string name="player_rotation_lock">Rotatievergrendeling</string>
+    <string name="player_state_on">Aan</string>
+    <string name="player_state_off">Uit</string>
     <string name="player_seek_seconds">%1$ds</string>
     <string name="error_folder_not_opened">Die map kon niet worden geopend.</string>
     <string name="default_folder_name">Map</string>
@@ -254,7 +255,6 @@
     <string name="wyzie_api_key">API-sleutel</string>
     <string name="wyzie_key_saved">Sleutel opgeslagen</string>
     <string name="wyzie_key_encrypted">De sleutel wordt versleuteld op dit apparaat bewaard.</string>
-    <string name="wyzie_using_build_key">De sleutel uit secrets.json wordt gebruikt.</string>
     <string name="wyzie_key_required">Voor online ondertitels zoeken is je eigen Wyzie-API-sleutel nodig. Ga naar store.wyzie.io/redeem, doorloop de stappen op de site om je abonnement te verzilveren en plak de sleutel hieronder.</string>
     <string name="wyzie_get_free_key">Gratis sleutel ophalen</string>
     <string name="wyzie_error_key_storage">De Wyzie-API-sleutel kon niet worden bijgewerkt.</string>
@@ -284,7 +284,51 @@
         <item quantity="one">Nog %1$d overeenkomst.</item>
         <item quantity="other">Nog %1$d overeenkomsten.</item>
     </plurals>
-    <string name="settings_section_app_controls">App-bediening</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Geschikt voor jong publiek</string>
+    <string name="settings_young_audience_description">Toon alleen films en series met de classificatie PG of PG-13, inclusief gelijkwaardige tv-labels.</string>
+    <string name="audience_verifying">Classificaties controleren</string>
+    <string name="audience_restricted_title">Niet beschikbaar voor jong publiek</string>
+    <string name="audience_restricted_message">Deze titel is niet geverifieerd als PG of PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">Je kijklijst bevat momenteel geen titels met PG of PG-13.</string>
+    <string name="filmography_no_young_audience_titles">Deze filmografie bevat geen titels met PG of PG-13.</string>
+    <string name="settings_section_parental_controls">Ouderlijk toezicht</string>
+    <string name="parental_pin">Pincode</string>
+    <string name="parental_enter_pin">Voer de ouderlijke pincode in</string>
+    <string name="parental_unlock">Ontgrendel</string>
+    <string name="parental_wrong_pin">Die pincode klopt niet.</string>
+    <string name="parental_pin_length">Gebruik 4 tot 8 cijfers.</string>
+    <string name="parental_locked_out">Te veel verkeerde pincodes. Probeer het over %1$s opnieuw.</string>
+    <string name="parental_checking_pin">Pincode controleren…</string>
+    <string name="parental_pairing_link_message">Een koppelingslink vereist de ouderlijke pincode. Bij een verkeerde pincode vervalt de link.</string>
+    <string name="parental_restricted_title">Beperkt</string>
+    <string name="parental_restricted_message">Deze titel valt boven de classificatielimiet die op dit apparaat is ingesteld.</string>
+    <string name="parental_max_rating_movies">Maximale filmclassificatie</string>
+    <string name="parental_max_rating_tv">Maximale tv-classificatie</string>
+    <string name="parental_no_limit">Geen limiet</string>
+    <string name="parental_region_note">Classificaties voor %1$s, van TMDB</string>
+    <string name="parental_region_fallback">TMDB heeft geen classificatielijst voor %1$s, dus worden de classificaties van %2$s gebruikt.</string>
+    <string name="parental_loading_ratings">Classificaties laden…</string>
+    <string name="parental_ratings_unavailable">De classificatielijst kon niet worden geladen.</string>
+    <string name="parental_hide_restricted">Beperkte titels verbergen</string>
+    <string name="parental_hide_restricted_detail">Uitgeschakeld blijven beperkte titels in lijsten staan, maar kunnen ze niet worden geopend of afgespeeld.</string>
+    <string name="parental_block_trailers">Trailers en links blokkeren</string>
+    <string name="parental_block_trailers_detail">Verbergt de trailerknop en vraagt TMDB nooit om trailers.</string>
+    <string name="parental_lock_settings">Pincode vereisen voor instellingen</string>
+    <string name="parental_lock_settings_detail">Bij het openen van Instellingen wordt om de pincode gevraagd.</string>
+    <string name="parental_lock_library">Pincode vereisen voor bibliotheekwijzigingen</string>
+    <string name="parental_lock_library_detail">Bronnen en titels toevoegen, koppelen, opnieuw scannen of verwijderen vraagt om de pincode.</string>
+    <string name="parental_set_pin">Pincode instellen</string>
+    <string name="parental_change_pin">Pincode wijzigen</string>
+    <string name="parental_remove_pin">Pincode verwijderen</string>
+    <string name="parental_new_pin">Nieuwe pincode</string>
+    <string name="parental_confirm_pin">Pincode bevestigen</string>
+    <string name="parental_current_pin">Huidige pincode</string>
+    <string name="parental_pins_differ">De pincodes komen niet overeen.</string>
+    <string name="parental_next">Volgende</string>
+    <string name="parental_set_pin_first">Stel een pincode in om deze vergrendeling te gebruiken.</string>
+    <string name="parental_local_note">Deze instellingen blijven op dit apparaat. Ze worden nooit gesynchroniseerd of naar een ander apparaat gestuurd.</string>
     <string name="settings_app_controls_skip_backward">Terugspoelen</string>
     <string name="settings_app_controls_skip_forward">Vooruitspoelen</string>
     <string name="settings_app_controls_skip_note">Dubbeltik op de linker- of rechterkant van de video om terug of vooruit te springen.</string>
@@ -361,6 +405,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">Speel af vanaf</string>
     <string name="play_from_unavailable">%1$s · Niet beschikbaar</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">Dit apparaat</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · Laatst afgespeeld</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d bronnen</item>
         <item quantity="other">%1$d bronnen</item>
@@ -586,6 +634,25 @@
     <string name="sync_remove_device_message">Door het bestand van een apparaat te verwijderen, bereikt zijn geschiedenis de andere apparaten niet meer. Dat apparaat houdt zijn login en lokale kopie tot je de toegang van Edendale bij de provider intrekt of het serverwachtwoord wijzigt.</string>
     <string name="sync_manage_access">Toegang beheren bij %1$s</string>
     <string name="sync_no_other_devices">Geen ander apparaat heeft nog naar deze ruimte geschreven.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">Kijkgeschiedenis</string>
+    <string name="watch_history_on_device">Op dit apparaat</string>
+    <string name="watch_history_note_sync_on">Verwijderen geldt ook voor je andere apparaten.</string>
+    <string name="watch_history_note_sync_off">Verwijderen geldt alleen voor dit apparaat.</string>
+    <string name="watch_history_delete_ellipsis">Kijkgeschiedenis verwijderen…</string>
+    <string name="watch_history_deleting">Verwijderen…</string>
+    <string name="watch_history_deleted">Kijkgeschiedenis verwijderd.</string>
+    <string name="watch_history_deleted_others_follow">Verwijderd op dit apparaat. Je andere apparaten verwijderen hun kopie bij de volgende synchronisatie.</string>
+    <string name="watch_history_pending">Verwijderd op dit apparaat. Je andere apparaten volgen zodra Edendale %1$s bereikt.</string>
+    <string name="watch_history_failed">De kijkgeschiedenis kon niet worden verwijderd.</string>
+    <string name="watch_history_everywhere_title">Kijkgeschiedenis overal verwijderen?</string>
+    <string name="watch_history_everywhere_message">Kijkvoortgang en bekeken-markeringen worden hier verwijderd en, via %1$s, ook op je andere apparaten.</string>
+    <string name="watch_history_everywhere_confirm">Overal verwijderen</string>
+    <string name="watch_history_local_title">Kijkgeschiedenis op dit apparaat verwijderen?</string>
+    <string name="watch_history_local_message">Kijkvoortgang en bekeken-markeringen worden van dit apparaat verwijderd. Zet je synchronisatie later aan, dan komt de geschiedenis van je andere apparaten terug.</string>
+    <string name="watch_history_local_confirm">Verwijderen</string>
+    <string name="watch_history_kept">Favorieten, kijklijst, beoordelingen, recensies, je bibliotheek en je TMDB-account blijven zoals ze zijn.</string>
+    <string name="clear_progress">Voortgang wissen</string>
     <string name="sync_folder_relink">Kies de map die dit apparaat voor de ruimte “%1$s” moet gebruiken.</string>
     <string name="sync_google_relink">Log in bij Google als %1$s om de ruimte “%2$s” te gebruiken.</string>
     <string name="pairing_role_question">Welke kant moeten de logins op?</string>
@@ -623,4 +690,6 @@
         <item quantity="one">%1$d item kon niet worden gebruikt.</item>
         <item quantity="other">%1$d items konden niet worden gebruikt.</item>
     </plurals>
+    <string name="player_theater">Bioscoop</string>
+    <string name="xr_module_title">Android XR · Bioscoop</string>
 </resources>

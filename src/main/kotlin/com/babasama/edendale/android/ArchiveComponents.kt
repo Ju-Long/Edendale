@@ -41,6 +41,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -393,6 +395,7 @@ fun LibraryPosterCard(
     /** Opens the card's menu: a long press, or the Menu key on TV. */
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     PosterCardShell(
@@ -402,6 +405,7 @@ fun LibraryPosterCard(
         progress = progress,
         onClick = onClick,
         semanticsLabel = title,
+        modifier = modifier,
         onLongClick = onLongClick,
         onLongClickLabel = onLongClickLabel,
         artwork = { m ->
@@ -926,6 +930,46 @@ fun ArchiveIconButton(
     ) {
         content(focused)
     }
+}
+
+/**
+ * A dropdown-menu row that answers the D-pad. A menu row carries no container
+ * colour of its own, so Material has nothing to tint on focus and the D-pad
+ * appears to do nothing inside the popup. This paints the row gold itself and
+ * hands its content the focus state, so text and glyphs that colour
+ * themselves can switch to the ink that reads on the fill.
+ */
+@Composable
+fun ArchiveMenuItem(
+    text: @Composable (focused: Boolean) -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: (@Composable (focused: Boolean) -> Unit)? = null,
+    trailingIcon: (@Composable (focused: Boolean) -> Unit)? = null,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    DropdownMenuItem(
+        text = { text(focused) },
+        onClick = onClick,
+        modifier = modifier.background(if (focused) FocusedContainer else Color.Transparent),
+        leadingIcon = if (leadingIcon != null) {
+            { leadingIcon(focused) }
+        } else {
+            null
+        },
+        trailingIcon = if (trailingIcon != null) {
+            { trailingIcon(focused) }
+        } else {
+            null
+        },
+        colors = MenuDefaults.itemColors(
+            textColor = if (focused) FocusedContent else MaterialTheme.colorScheme.onSurface,
+            leadingIconColor = if (focused) FocusedContent else MaterialTheme.colorScheme.onSurfaceVariant,
+            trailingIconColor = if (focused) FocusedContent else MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        interactionSource = interactionSource,
+    )
 }
 
 /**

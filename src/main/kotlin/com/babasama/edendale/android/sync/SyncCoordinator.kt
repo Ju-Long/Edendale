@@ -55,6 +55,28 @@ data class SyncStatus(
     val isOn: Boolean get() = location != null
 }
 
+/** Where Settings → Sync → Delete Watch History stands; it outlives the page, so leaving Settings stops nothing. */
+sealed interface HistoryDeletion {
+    data object Idle : HistoryDeletion
+
+    data object Running : HistoryDeletion
+
+    /**
+     * Deleted here. With [othersFollow] (sync on), the tombstones are in this
+     * device's file at the location, but a sync only ever writes its own
+     * file (§8.2): every other device's file there keeps its copy until that
+     * device next syncs, and one that no longer syncs keeps it until Remove a
+     * Device deletes its file. So the line claims no more than this device.
+     */
+    data class Done(val othersFollow: Boolean) : HistoryDeletion
+
+    /** Deleted here; the location couldn't be reached, so the tombstones wait for the next sync that can write them. */
+    data class Pending(val location: SyncLocation) : HistoryDeletion
+
+    /** The database refused the change, so nothing was deleted. */
+    data object Failed : HistoryDeletion
+}
+
 /**
  * Runs sync on this device (SYNC-PROTOCOL.md §8.1; FEATURES-27.1.md §5.4,
  * §8): on launch, on return to the foreground, 10 seconds after the last
@@ -74,6 +96,8 @@ class SyncCoordinator(private val app: EdendaleApplication) {
     private val syncMutex = Mutex()
     private val _status = MutableStateFlow(SyncStatus())
     val status: StateFlow<SyncStatus> = _status.asStateFlow()
+    private val _historyDeletion = MutableStateFlow<HistoryDeletion>(HistoryDeletion.Idle)
+    val historyDeletion: StateFlow<HistoryDeletion> = _historyDeletion.asStateFlow()
 
     private var debounce: Job? = null
     private var periodic: Job? = null
@@ -157,8 +181,12 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         scope.launch { runSync(reason) }
     }
 
-    /** One sync, if a location is set and the backoff allows; returns the report, or null when nothing ran. */
-    suspend fun runSync(reason: String, ignoreBackoff: Boolean = false): SyncReport? {
+    /**
+     * One sync, if a location is set and the backoff allows; returns the
+     * report, or null when nothing ran. [readEveryFile] reads unchanged files
+     * too ([SyncEngine.sync]).
+     */
+    suspend fun runSync(reason: String, ignoreBackoff: Boolean = false, readEveryFile: Boolean = false): SyncReport? {
         val location = settings.location ?: return null
         if (!ignoreBackoff && System.currentTimeMillis() < nextAllowedAt) {
             SyncLog.log(TAG, "$reason: waiting out the backoff")
@@ -170,7 +198,7 @@ class SyncCoordinator(private val app: EdendaleApplication) {
                 val storage = factory.open(location)
                 val engine = SyncEngine(storage, store, deviceInfo(), location.space)
                 SyncLog.log(TAG, "sync ($reason) starting")
-                val report = engine.sync()
+                val report = engine.sync(readEveryFile)
                 // A Google Drive location learns its space folder's ID for handoffs across ecosystems (§6.4).
                 if (storage is com.babasama.edendale.sync.GoogleDriveSyncStorage && location.googleFolderId == null) {
                     storage.spaceFolderId(location.space)?.let { settings.location = location.copy(googleFolderId = it) }
@@ -181,6 +209,8 @@ class SyncCoordinator(private val app: EdendaleApplication) {
                 settings.lastError = null
                 settings.warnings = report.warnings
                 _status.value = _status.value.copy(syncing = false, lastError = null, warnings = report.warnings, lastSyncAt = settings.lastSyncAt, problem = null)
+                // A successful sync writes whatever is dirty, so a waiting history deletion has now reached the location.
+                if (_historyDeletion.value is HistoryDeletion.Pending) _historyDeletion.value = HistoryDeletion.Done(othersFollow = true)
                 report
             } catch (cancelled: CancellationException) {
                 _status.value = _status.value.copy(syncing = false)
@@ -224,8 +254,67 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         settings.clearLocation()
         consecutiveFailures = 0
         nextAllowedAt = 0L
+        // The tombstones stay in the ledger for whichever location comes next; the old one is no longer waited on.
+        if (_historyDeletion.value is HistoryDeletion.Pending) _historyDeletion.value = HistoryDeletion.Idle
         WorkManager.getInstance(app).cancelUniqueWork(WORK_NAME)
         refreshStatus()
+    }
+
+    /**
+     * Settings → Sync → Delete Watch History: every progress record and
+     * watched mark goes; favourites, the watchlist, ratings, and reviews
+     * stay. With sync off, only this device's tables are emptied and no
+     * tombstone is written, so turning sync on later brings back what the
+     * other devices hold. With sync on, clearing is a write (SYNC-PROTOCOL.md
+     * §6.1, §7): see [clearHistoryEverywhere]. Runs in the coordinator's
+     * own scope, not the page's, so closing Settings doesn't cut it short.
+     */
+    fun deleteWatchHistory() {
+        val current = _historyDeletion.value
+        if (current == HistoryDeletion.Running || !_historyDeletion.compareAndSet(current, HistoryDeletion.Running)) return
+        scope.launch {
+            _historyDeletion.value = try {
+                val location = settings.location
+                if (location == null) {
+                    syncMutex.withLock { store.forgetAllProgress() }
+                    HistoryDeletion.Done(othersFollow = false)
+                } else {
+                    clearHistoryEverywhere(location)
+                }
+            } catch (cancelled: CancellationException) {
+                _historyDeletion.value = HistoryDeletion.Idle
+                throw cancelled
+            } catch (error: Exception) {
+                SyncLog.log(TAG, "deleting watch history failed: ${SyncLog.describe(error)}")
+                HistoryDeletion.Failed
+            }
+        }
+    }
+
+    /**
+     * Every file is read again in full, not only the changed ones
+     * ([SyncEngine.sync] `readEveryFile`), so the ledger holds every key
+     * another device wrote and the high-water mark passes every stamp; then
+     * each key gets one tombstone stamped as a local write and the file is
+     * written at once. Offline, the read fails and the clear covers the keys
+     * already known; the store stays dirty, so the next sync that reaches
+     * [location] writes the tombstones. [runSync] takes the sync lock itself,
+     * so it is never called while holding it.
+     */
+    private suspend fun clearHistoryEverywhere(location: SyncLocation): HistoryDeletion {
+        runSync(reason = "watch history read", ignoreBackoff = true, readEveryFile = true)
+        val cleared = syncMutex.withLock { store.clearAllProgress(settings.deviceId, settings.nextStamp(System.currentTimeMillis())) }
+        debounce?.cancel()
+        val report = runSync(reason = "watch history write", ignoreBackoff = true)
+        val stillOn = settings.location != null
+        // Nothing cleared (rows that never synced) means nothing for the other devices to follow.
+        return if (report != null || cleared == 0 || !stillOn) HistoryDeletion.Done(othersFollow = stillOn && cleared > 0) else HistoryDeletion.Pending(location)
+    }
+
+    /** The page was left: a finished deletion's line has been seen. A running or waiting one keeps its state. */
+    fun acknowledgeHistoryDeletion() {
+        val current = _historyDeletion.value
+        if (current is HistoryDeletion.Done || current == HistoryDeletion.Failed) _historyDeletion.compareAndSet(current, HistoryDeletion.Idle)
     }
 
     /** Removes another device's file from the space (§8.3). */

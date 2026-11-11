@@ -3,9 +3,10 @@ package com.babasama.edendale.android.player.video
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** F.2.T1–T2, F.3.T1, and F.6.T1. */
+/** F.2.T1–T2, F.3.T1, F.6.T1, and the saved enhancement choice. */
 class VideoEnhancementTest {
 
     // MARK: - Picture adjustments (F.2.T1)
@@ -40,6 +41,72 @@ class VideoEnhancementTest {
         assertEquals(VideoAdjustmentValues.NEUTRAL, VideoAdjustmentValues.fromJson("not json"))
         assertEquals(VideoAdjustmentValues.NEUTRAL, VideoAdjustmentValues.fromJson(null))
         assertEquals(VideoAdjustmentValues(gamma = 3f), VideoAdjustmentValues.fromJson("""{"gamma":9.9}"""))
+    }
+
+    // MARK: - The saved enhancement choice (owner request 9)
+
+    @Test
+    fun enhancementRoundTripsThroughJsonWithoutShowOriginal() {
+        val choice = EnhancementSettings(preset = EnhancementPreset.HIGH_QUALITY, sharpness = 0.75f, denoise = 0.2f, showOriginal = true)
+        val json = choice.toJson()
+        assertFalse(json.contains("showOriginal"))
+        assertEquals(choice.copy(showOriginal = false), EnhancementSettings.fromJson(json))
+        EnhancementPreset.entries.forEach { preset ->
+            assertEquals(preset, EnhancementSettings.fromJson(EnhancementSettings(preset = preset).toJson())?.preset)
+            assertEquals(preset, EnhancementPreset.fromRaw(preset.raw))
+        }
+        assertTrue(json.contains("\"preset\":\"quality\""))
+    }
+
+    @Test
+    fun anUnreadableChoiceIsNoChoiceNeverBalanced() {
+        assertNull(EnhancementSettings.fromJson(null))
+        assertNull(EnhancementSettings.fromJson(""))
+        assertNull(EnhancementSettings.fromJson("not json"))
+        assertNull(EnhancementSettings.fromJson("[\"balanced\"]"))
+        assertNull(EnhancementSettings.fromJson("{}"))
+        assertNull(EnhancementSettings.fromJson("""{"sharpness":0.5,"denoise":0.5}"""))
+        assertNull(EnhancementSettings.fromJson("""{"preset":"ultra"}"""))
+        assertNull(EnhancementSettings.fromJson("""{"preset":2}"""))
+        assertNull(EnhancementSettings.fromJson("""{"preset":null}"""))
+        assertNull(EnhancementSettings.fromJson("""{"preset":{"raw":"off"}}"""))
+        assertNull(EnhancementPreset.fromRaw("Balanced"))
+        assertNull(EnhancementPreset.fromRaw(null))
+    }
+
+    @Test
+    fun storedSlidersFollowTheSliderRules() {
+        // Snapped to 0.05, clamped, and 0.5 where missing or broken.
+        assertEquals(
+            EnhancementSettings(preset = EnhancementPreset.OFF).withSharpness(0.65f).withDenoise(1f),
+            EnhancementSettings.fromJson("""{"preset":"off","sharpness":0.66,"denoise":7}"""),
+        )
+        assertEquals(
+            EnhancementSettings(preset = EnhancementPreset.SHARPEN_ONLY, sharpness = 0.5f, denoise = 0.5f),
+            EnhancementSettings.fromJson("""{"preset":"sharpenOnly","sharpness":"lots","denoise":[1]}"""),
+        )
+        assertEquals(
+            EnhancementSettings(preset = EnhancementPreset.BALANCED, sharpness = 0f, denoise = 0.5f),
+            EnhancementSettings.fromJson("""{"preset":"balanced","sharpness":-2}"""),
+        )
+    }
+
+    @Test
+    fun theStoredChoiceWinsOnEveryDeviceElseTheDeviceDefault() {
+        val stored = EnhancementSettings(preset = EnhancementPreset.HIGH_QUALITY, sharpness = 0.3f, denoise = 0.9f)
+        // TV and a failed (or not yet run) capability check no longer override an explicit choice.
+        for (isTelevision in listOf(true, false)) {
+            for (capable in listOf(true, false, null)) {
+                assertEquals(stored, EnhancementSettings.initial(stored, isTelevision, capable))
+            }
+        }
+        assertFalse(EnhancementSettings.initial(stored.copy(showOriginal = true), false, true).showOriginal)
+        // Nothing stored: Balanced only on a handheld that passed the check.
+        assertEquals(EnhancementSettings(preset = EnhancementPreset.BALANCED), EnhancementSettings.initial(null, false, true))
+        assertEquals(EnhancementPreset.OFF, EnhancementSettings.initial(null, false, false).preset)
+        assertEquals(EnhancementPreset.OFF, EnhancementSettings.initial(null, false, null).preset)
+        assertEquals(EnhancementPreset.OFF, EnhancementSettings.initial(null, true, true).preset)
+        assertEquals(0.5f, EnhancementSettings.initial(null, true, true).sharpness)
     }
 
     // MARK: - Color math (F.2.T2)

@@ -75,7 +75,8 @@ fun WatchlistScreen(
         audienceFilter.verify(records.map { it.ref })
     }
 
-    val visible = records.filter { audienceFilter.allows(it.ref) }
+    // A list surface: hidden only while "Hide restricted titles" is on; the detail page still blocks (O.5).
+    val visible = records.filter { audienceFilter.shows(it.ref) }
     val movies = visible.filter { it.mediaType == MediaType.MOVIE }
     val shows = visible.filter { it.mediaType == MediaType.TV }
     val verifying = audienceFilter.isVerifying(records.map { it.ref })
@@ -110,7 +111,7 @@ fun WatchlistScreen(
                     item("empty") {
                         WatchlistEmptyOrVerifying(
                             verifying = verifying,
-                            filtered = audienceFilter.isEnabled && records.isNotEmpty(),
+                            filtered = audienceFilter.hidesRestrictedTitles && records.isNotEmpty(),
                             edgeMargin = edgeMargin,
                         )
                     }

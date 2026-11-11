@@ -93,9 +93,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -150,13 +154,22 @@ internal fun PlayerScreen(
     upcomingEpisode: State<PlaylistEntry?>,
     playbackFailure: State<PlaybackFailure?>,
     video: VideoEffectsController? = null,
+    /** The left swipe's level, the screen's brightness; null where that swipe does nothing (Android XR). */
+    brightness: PlayerLevelControl? = null,
+    /** The right swipe's level, the device's media volume. */
+    volume: PlayerLevelControl? = null,
+    /** Whether Rotation Lock can be offered now; never on TV. */
+    rotationLockAvailable: State<Boolean>? = null,
+    onToggleRotationLock: () -> Unit = {},
     inPipMode: State<Boolean>,
     supportsPip: Boolean,
     onEnterPip: (() -> Unit)?,
-    /** Hands playback to the immersive theater (HORIZON.md G.5); null where there is none. */
+    /** Hands playback to the Android XR theater (ENHANCEMENT.md Section N); null where there is none. */
     onEnterTheater: (() -> Unit)? = null,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
+    /** A Play From pick in the episodes panel (27.1). */
+    onSelectCopy: (PlaylistEntry) -> Unit = {},
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
     onSkip: () -> Unit,
@@ -228,8 +241,9 @@ internal fun PlayerScreen(
         }
     }
 
-    // Non-sticky HUDs fade shortly after their last update.
-    LaunchedEffect(chrome.hud) {
+    // Non-sticky HUDs fade shortly after their last update, even one that
+    // repeated what's on screen (hudTick).
+    LaunchedEffect(chrome.hud, chrome.hudTick) {
         val current = chrome.hud ?: return@LaunchedEffect
         if (current.sticky) return@LaunchedEffect
         delay(PlayerLogic.HUD_DISMISS_MILLIS)
@@ -331,7 +345,7 @@ internal fun PlayerScreen(
             )
 
             if (!isTelevision && !inPipMode.value) {
-                PlayerGestureLayer(player, chrome, activity)
+                PlayerGestureLayer(player, chrome, brightness, volume)
             }
 
             val promptFocus = remember { FocusRequester() }
@@ -407,6 +421,9 @@ internal fun PlayerScreen(
                     timelineFocus = timelineFocus,
                     upNextFocus = upNextFocus.takeIf { visibleUpNext != null },
                     onEnterPip = onEnterPip,
+                    onToggleRotationLock = onToggleRotationLock.takeIf {
+                        !isTelevision && rotationLockAvailable?.value == true
+                    },
                     onEnterTheater = onEnterTheater,
                     onClose = onClose,
                 )
@@ -508,6 +525,7 @@ internal fun PlayerScreen(
                 docked = docked,
                 onAutoPipChanged = onAutoPipChanged,
                 onSelectEntry = onSelectEntry,
+                onSelectCopy = onSelectCopy,
                 onSearchOnlineSubtitles = onSearchOnlineSubtitles,
                 onDownloadOnlineSubtitle = onDownloadOnlineSubtitle,
                 onTrackSelected = onTrackSelected,
@@ -841,6 +859,8 @@ private fun PlayerControlsOverlay(
     /** Set while the Up Next card shows; it sits just below the top row. */
     upNextFocus: FocusRequester?,
     onEnterPip: (() -> Unit)?,
+    /** Set where Rotation Lock is offered: handhelds in full screen. */
+    onToggleRotationLock: (() -> Unit)?,
     onEnterTheater: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
@@ -915,7 +935,26 @@ private fun PlayerControlsOverlay(
                     onClick = onEnterPip,
                 )
             }
-            // HORIZON.md G.5: only a headset offers the theater, and only while a video is loaded.
+            // Apple's place for it, after Picture in Picture; gold while locked.
+            if (onToggleRotationLock != null) {
+                PlayerChip(
+                    iconRes = if (chrome.orientationLocked) {
+                        R.drawable.ic_mobile_rotate_lock
+                    } else {
+                        R.drawable.ic_mobile_rotate_unlock
+                    },
+                    contentDescription = stringResource(R.string.player_rotation_lock),
+                    stateDescription = stringResource(
+                        if (chrome.orientationLocked) R.string.player_state_on else R.string.player_state_off,
+                    ),
+                    isTelevision = isTelevision,
+                    isActive = chrome.orientationLocked,
+                    canFocus = controlsFocusable,
+                    onFocus = chipDidFocus,
+                    onClick = onToggleRotationLock,
+                )
+            }
+            // Section N: only an Android XR headset with the theater installed offers it.
             if (onEnterTheater != null) {
                 PlayerChip(
                     iconRes = R.drawable.ic_theater,
@@ -1086,7 +1125,11 @@ private fun PlayerControlsOverlay(
     }
 }
 
-/** Circular icon button used across the player chrome. */
+/**
+ * Circular icon button used across the player chrome. A chip that turns
+ * something on and off passes [stateDescription] ("On" / "Off"), so TalkBack
+ * says the state the gold glyph shows.
+ */
 @Composable
 internal fun PlayerChip(
     iconRes: Int,
@@ -1096,11 +1139,19 @@ internal fun PlayerChip(
     isActive: Boolean = false,
     canFocus: Boolean = true,
     onFocus: () -> Unit = {},
+    stateDescription: String? = null,
     onClick: () -> Unit,
 ) {
     ArchiveIconButton(
         onClick = onClick,
         modifier = modifier
+            .then(
+                if (stateDescription != null) {
+                    Modifier.semantics { this.stateDescription = stateDescription }
+                } else {
+                    Modifier
+                },
+            )
             .focusProperties { this.canFocus = canFocus }
             .onFocusChanged { if (it.isFocused) onFocus() },
         isTelevision = isTelevision,
@@ -1311,10 +1362,28 @@ private fun BoxScope.TvTimelineOverlay(
 @Composable
 private fun BoxScope.PlayerHudView(chrome: PlayerChromeState) {
     val hud = chrome.hud ?: return
+    // The bar's fill is the whole message for volume and brightness, so
+    // TalkBack gets it in words (Apple's HUD label).
+    val locale = LocalConfiguration.current.locales[0]
+    val spokenLevel = when (hud) {
+        is PlayerHud.Volume -> stringResource(R.string.player_volume_level, PlayerLogic.levelLabel(hud.level, locale))
+        is PlayerHud.Brightness -> stringResource(R.string.player_brightness_level, PlayerLogic.levelLabel(hud.level, locale))
+        else -> null
+    }
     Surface(
         modifier = Modifier
             .align(Alignment.TopCenter)
-            .padding(top = 72.dp),
+            .padding(top = 72.dp)
+            .then(
+                if (spokenLevel != null) {
+                    Modifier.clearAndSetSemantics {
+                        contentDescription = spokenLevel
+                        liveRegion = LiveRegionMode.Polite
+                    }
+                } else {
+                    Modifier
+                },
+            ),
         shape = RoundedCornerShape(50),
         color = EdendaleColors.SurfaceLow.copy(alpha = .92f),
     ) {
@@ -1415,6 +1484,7 @@ private fun BoxScope.PlayerPanels(
     docked: Boolean,
     onAutoPipChanged: () -> Unit,
     onSelectEntry: (PlaylistEntry) -> Unit,
+    onSelectCopy: (PlaylistEntry) -> Unit,
     onSearchOnlineSubtitles: () -> Unit,
     onDownloadOnlineSubtitle: (WyzieSubtitle) -> Unit,
     onTrackSelected: () -> Unit = {},
@@ -1450,6 +1520,7 @@ private fun BoxScope.PlayerPanels(
             panelWidth = panelWidth,
             panelFocus = panelFocus,
             onSelectEntry = onSelectEntry,
+            onSelectCopy = onSelectCopy,
         )
     }
 
@@ -2116,7 +2187,7 @@ internal fun SegmentChip(
 // Touch gestures (handhelds)
 // ------------------------------------------------------------------
 
-private enum class GestureMode { PENDING, HOLD_SPEED, SCRUB, ADJUST_LEFT, ADJUST_RIGHT, IGNORED }
+private enum class GestureMode { PENDING, HOLD_SPEED, SCRUB, ADJUST_LEFT, ADJUST_RIGHT, SWALLOW, IGNORED }
 
 private const val HOLD_DWELL_MILLIS = 400L
 
@@ -2125,8 +2196,10 @@ private const val HOLD_DWELL_MILLIS = 400L
  *  - single tap             show/hide the controls
  *  - double tap L / C / R   skip back / play-pause / skip forward, by the
  *                           App Controls lengths (10, 15, or 30 s)
- *  - vertical swipe L / R   screen brightness / player volume, where the
- *                           device policy offers them (not on Horizon OS)
+ *  - vertical swipe L / R   the screen's brightness / the device's media
+ *                           volume ([brightness] / [volume]; on a side whose
+ *                           control is null the swipe does nothing, and like
+ *                           every vertical swipe it is never taken for a tap)
  *  - press-and-hold L / R   the App Controls hold speeds (0.5× / 2.0× by
  *                           default) until released
  *  - hold + horizontal drag scrub the timeline (full width = 5 minutes)
@@ -2135,10 +2208,10 @@ private const val HOLD_DWELL_MILLIS = 400L
 private fun BoxScope.PlayerGestureLayer(
     player: ExoPlayer,
     chrome: PlayerChromeState,
-    activity: PlayerActivity?,
+    brightness: PlayerLevelControl?,
+    volume: PlayerLevelControl?,
 ) {
     val haptics = LocalHapticFeedback.current
-    val swipeAdjusts = activity?.devicePolicy?.offersSwipeAdjustments != false
     Box(
         Modifier
             .matchParentSize()
@@ -2157,7 +2230,7 @@ private fun BoxScope.PlayerGestureLayer(
                     },
                 )
             }
-            .pointerInput(player) {
+            .pointerInput(player, brightness, volume) {
                 val swipeSlop = 14.dp.toPx()
                 val scrubSlop = 30.dp.toPx()
                 val adjustTravel = 280.dp.toPx()
@@ -2209,14 +2282,20 @@ private fun BoxScope.PlayerGestureLayer(
                             GestureMode.PENDING -> {
                                 if (translation.getDistance() > swipeSlop) {
                                     mode = if (kotlin.math.abs(translation.y) > kotlin.math.abs(translation.x)) {
-                                        if (!swipeAdjusts) {
-                                            GestureMode.IGNORED
-                                        } else if (down.position.x < size.width / 2f) {
-                                            baseline = activity?.windowBrightnessBaseline() ?: 0.5f
-                                            GestureMode.ADJUST_LEFT
+                                        val leftSide = down.position.x < size.width / 2f
+                                        val control = if (leftSide) brightness else volume
+                                        // A vertical swipe is never a tap: its moves are
+                                        // consumed from here, so the tap detector above
+                                        // doesn't toggle the controls or count it as half
+                                        // of a double tap.
+                                        change.consume()
+                                        if (control == null) {
+                                            // Nothing to adjust on this side (Android XR's brightness).
+                                            GestureMode.SWALLOW
                                         } else {
-                                            baseline = player.volume
-                                            GestureMode.ADJUST_RIGHT
+                                            // Read once per swipe: the device's level as it is now.
+                                            baseline = control.current()
+                                            if (leftSide) GestureMode.ADJUST_LEFT else GestureMode.ADJUST_RIGHT
                                         }
                                     } else {
                                         // Horizontal drags only scrub after a
@@ -2261,17 +2340,19 @@ private fun BoxScope.PlayerGestureLayer(
                                 change.consume()
                             }
                             GestureMode.ADJUST_LEFT -> {
-                                val level = (baseline - translation.y / adjustTravel).coerceIn(0f, 1f)
-                                activity?.setWindowBrightness(level)
+                                val target = PlayerLogic.swipeLevel(baseline, translation.y, adjustTravel)
+                                val level = brightness?.set(target) ?: target
                                 chrome.showHud(PlayerHud.Brightness(level))
                                 change.consume()
                             }
                             GestureMode.ADJUST_RIGHT -> {
-                                val level = (baseline - translation.y / adjustTravel).coerceIn(0f, 1f)
-                                player.volume = level
+                                // The HUD shows the level that took, so a step the system refused never looks taken.
+                                val target = PlayerLogic.swipeLevel(baseline, translation.y, adjustTravel)
+                                val level = volume?.set(target) ?: target
                                 chrome.showHud(PlayerHud.Volume(level))
                                 change.consume()
                             }
+                            GestureMode.SWALLOW -> change.consume()
                             GestureMode.IGNORED -> Unit
                         }
                     }

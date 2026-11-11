@@ -110,6 +110,9 @@
     <string name="section_continue_watching">Продолжить просмотр</string>
     <string name="section_movies">Фильмы</string>
     <string name="section_tv_shows">Сериалы</string>
+    <string name="section_all">Все</string>
+    <string name="section_watching_short">Смотрю</string>
+    <string name="section_shows_short">Сериалы</string>
     <string name="section_sources">Источники</string>
     <string name="library_empty_title">Библиотека безмолвствует</string>
     <string name="library_empty_message">Добавьте файл или привяжите источник, чтобы продолжить.</string>
@@ -151,26 +154,19 @@
     <string name="error_server_unreachable">Не удалось подключиться к этому серверу.</string>
     <string name="settings_title">Настройки</string>
     <string name="settings_section_about">Об этом приложении</string>
+    <string name="settings_player_controls">Управление плеером</string>
+    <string name="settings_audio">Аудио</string>
+    <string name="settings_library">Медиатека</string>
+    <string name="settings_section_controls">Управление</string>
+    <string name="settings_section_appearance">Оформление</string>
+    <string name="settings_parental_more">Рейтинги, блокировки и PIN-код</string>
     <string name="settings_version">Версия</string>
-    <string name="settings_watch_progress">Прогресс просмотра</string>
-    <string name="settings_stored_on_device">Хранится на этом устройстве</string>
-    <string name="settings_tmdb_access">Доступ к TMDB</string>
-    <string name="settings_tmdb_configured">Настроено при сборке</string>
-    <string name="settings_tmdb_missing">Добавьте токен в secrets.json и пересоберите</string>
     <string name="settings_section_android_tv">Android TV</string>
-    <string name="settings_android_tv_note">Включены крупный шрифт, безопасные для оверскана поля, увеличение при фокусе с пульта и альбомная ориентация.</string>
     <string name="settings_watch_next_title">«Продолжить просмотр» на главном экране</string>
     <string name="settings_watch_next_description">Показывает то, что вы смотрите, в ряду «Продолжить просмотр» на главном экране. Edendale ничего не отправляет для этого по сети, но приложение главного экрана может видеть эти названия.</string>
     <string name="settings_section_sources">Источники</string>
     <string name="settings_no_sources">Нет привязанных источников</string>
-    <string name="settings_section_backup">Резервное копирование</string>
-    <string name="settings_backup_note">Прогресс просмотра, избранное, список просмотра и оценки отправляются через Android Auto Backup на ваш Google Drive, поэтому они восстановятся при настройке нового устройства. Резервное копирование следует системным настройкам вашего устройства — Edendale не добавляет ничего от себя.</string>
-    <string name="settings_backup_secrets_note">Ваша сессия TMDB и любые сохраненные логины для сетевых папок исключены из резервного копирования и переноса на другие устройства: они зашифрованы для этого устройства и не могут его покинуть.</string>
-    <string name="settings_section_privacy">Конфиденциальность</string>
-    <string name="settings_privacy_note">Никакой аналитики. Сетевые запросы ограничены TMDB, Wyzie после явного поиска субтитров и вашими частными провайдерами синхронизации.</string>
-    <string name="settings_section_attribution">Атрибуция</string>
     <string name="tmdb_attribution">Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.</string>
-    <string name="settings_open_source">Edendale · Бесплатное и открытое ПО</string>
     <string name="settings_section_tmdb_account">Аккаунт TMDB</string>
     <string name="tmdb_account_intro">Подключите ваш аккаунт TMDB для синхронизации избранного, списка просмотра и оценок между устройствами. Время просмотра не отправляется в TMDB.</string>
     <string name="tmdb_loading_account">Загрузка аккаунта…</string>
@@ -196,7 +192,6 @@
     <string name="tmdb_sync_status">Синхронизировано %1$s — %2$d отправлено, %3$d получено</string>
     <string name="player_close">Закрыть плеер</string>
     <string name="player_picture_in_picture">Картинка в картинке</string>
-    <string name="player_theater">Кинозал</string>
     <string name="player_back_10">Назад на 10 секунд</string>
     <string name="player_forward_10">Вперед на 10 секунд</string>
     <string name="player_adjustments">Коррекция</string>
@@ -226,6 +221,12 @@
     <string name="player_in_this_folder">В этой папке</string>
     <string name="player_volume">Громкость</string>
     <string name="player_brightness">Яркость</string>
+    <!-- Player: device volume and brightness for TalkBack, and Rotation Lock -->
+    <string name="player_volume_level">Громкость %1$s</string>
+    <string name="player_brightness_level">Яркость %1$s</string>
+    <string name="player_rotation_lock">Блокировка поворота</string>
+    <string name="player_state_on">Вкл.</string>
+    <string name="player_state_off">Выкл.</string>
     <string name="player_seek_seconds">%1$d с</string>
     <string name="error_folder_not_opened">Не удалось открыть эту папку.</string>
     <string name="default_folder_name">Папка</string>
@@ -260,7 +261,6 @@
     <string name="wyzie_api_key">Ключ API</string>
     <string name="wyzie_key_saved">Ключ сохранён</string>
     <string name="wyzie_key_encrypted">Ключ хранится на этом устройстве в зашифрованном виде.</string>
-    <string name="wyzie_using_build_key">Используется ключ из secrets.json.</string>
     <string name="wyzie_key_required">Для поиска субтитров в интернете нужен собственный ключ API Wyzie. Перейдите на store.wyzie.io/redeem, выполните шаги на сайте, чтобы активировать подписку, затем вставьте ключ ниже.</string>
     <string name="wyzie_get_free_key">Получить бесплатный ключ</string>
     <string name="wyzie_error_key_storage">Не удалось обновить ключ API Wyzie.</string>
@@ -292,7 +292,51 @@
         <item quantity="many">Ещё %1$d совпадений.</item>
         <item quantity="other">Ещё %1$d совпадения.</item>
     </plurals>
-    <string name="settings_section_app_controls">Управление приложением</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Для юной аудитории</string>
+    <string name="settings_young_audience_description">Показывать только фильмы и сериалы с рейтингом PG или PG-13, включая эквивалентные телевизионные рейтинги.</string>
+    <string name="audience_verifying">Проверка возрастных рейтингов</string>
+    <string name="audience_restricted_title">Недоступно для юной аудитории</string>
+    <string name="audience_restricted_message">Это название не подтверждено как PG или PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">В вашем списке «посмотреть» сейчас нет названий с рейтингом PG или PG-13.</string>
+    <string name="filmography_no_young_audience_titles">В этой фильмографии нет названий с рейтингом PG или PG-13.</string>
+    <string name="settings_section_parental_controls">Родительский контроль</string>
+    <string name="parental_pin">PIN-код</string>
+    <string name="parental_enter_pin">Введите родительский PIN-код</string>
+    <string name="parental_unlock">Разблокировать</string>
+    <string name="parental_wrong_pin">PIN-код не совпадает.</string>
+    <string name="parental_pin_length">Используйте от 4 до 8 цифр.</string>
+    <string name="parental_locked_out">Слишком много неверных PIN-кодов. Повторите попытку через %1$s.</string>
+    <string name="parental_checking_pin">Проверка PIN-кода…</string>
+    <string name="parental_pairing_link_message">Для ссылки сопряжения нужен родительский PIN-код. При неверном PIN-коде ссылка отклоняется.</string>
+    <string name="parental_restricted_title">Ограничено</string>
+    <string name="parental_restricted_message">Это название превышает ограничение рейтинга, заданное на этом устройстве.</string>
+    <string name="parental_max_rating_movies">Максимальный рейтинг фильмов</string>
+    <string name="parental_max_rating_tv">Максимальный рейтинг сериалов</string>
+    <string name="parental_no_limit">Без ограничений</string>
+    <string name="parental_region_note">Рейтинги для региона %1$s, по данным TMDB</string>
+    <string name="parental_region_fallback">У TMDB нет списка рейтингов для региона %1$s, поэтому используются рейтинги региона %2$s.</string>
+    <string name="parental_loading_ratings">Загрузка рейтингов…</string>
+    <string name="parental_ratings_unavailable">Не удалось загрузить список рейтингов.</string>
+    <string name="parental_hide_restricted">Скрывать ограниченные названия</string>
+    <string name="parental_hide_restricted_detail">Если выключено, ограниченные названия остаются в списках, но их нельзя открыть или воспроизвести.</string>
+    <string name="parental_block_trailers">Блокировать трейлеры и ссылки</string>
+    <string name="parental_block_trailers_detail">Скрывает кнопку трейлера и никогда не запрашивает трейлеры у TMDB.</string>
+    <string name="parental_lock_settings">Запрашивать PIN-код для настроек</string>
+    <string name="parental_lock_settings_detail">При открытии настроек запрашивается PIN-код.</string>
+    <string name="parental_lock_library">Запрашивать PIN-код для изменений библиотеки</string>
+    <string name="parental_lock_library_detail">Добавление, привязка, повторное сканирование или удаление источников и названий запрашивает PIN-код.</string>
+    <string name="parental_set_pin">Задать PIN-код</string>
+    <string name="parental_change_pin">Изменить PIN-код</string>
+    <string name="parental_remove_pin">Удалить PIN-код</string>
+    <string name="parental_new_pin">Новый PIN-код</string>
+    <string name="parental_confirm_pin">Подтвердите PIN-код</string>
+    <string name="parental_current_pin">Текущий PIN-код</string>
+    <string name="parental_pins_differ">PIN-коды не совпадают.</string>
+    <string name="parental_next">Далее</string>
+    <string name="parental_set_pin_first">Задайте PIN-код, чтобы использовать эту блокировку.</string>
+    <string name="parental_local_note">Эти настройки остаются на этом устройстве. Они никогда не синхронизируются и не отправляются на другое устройство.</string>
     <string name="settings_app_controls_skip_backward">Перемотка назад</string>
     <string name="settings_app_controls_skip_forward">Перемотка вперед</string>
     <string name="settings_app_controls_skip_note">Дважды коснитесь левой или правой части видео для перемотки назад или вперед.</string>
@@ -371,6 +415,10 @@
     <!-- D.5 Play From -->
     <string name="play_from">Воспроизвести с</string>
     <string name="play_from_unavailable">%1$s · Недоступно</string>
+    <!-- Play From names each copy by where it is reached from (27.1) -->
+    <string name="source_endpoint_this_device">Это устройство</string>
+    <string name="source_endpoint_account">%1$s - %2$s</string>
+    <string name="play_from_last_played">%1$s · Последнее воспроизведение</string>
     <plurals name="play_from_source_count">
         <item quantity="one">%1$d источник</item>
         <item quantity="few">%1$d источника</item>
@@ -604,6 +652,25 @@
     <string name="sync_remove_device_message">Удаление файла устройства не даст его истории попадать на другие. Это устройство сохранит логин и локальную копию, пока вы не отзовёте доступ Edendale у провайдера или не смените пароль сервера.</string>
     <string name="sync_manage_access">Управлять доступом в %1$s</string>
     <string name="sync_no_other_devices">Другие устройства ещё ничего не записали в это пространство.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_section">История просмотра</string>
+    <string name="watch_history_on_device">На этом устройстве</string>
+    <string name="watch_history_note_sync_on">Удаление затронет и другие ваши устройства.</string>
+    <string name="watch_history_note_sync_off">Удаление затронет только это устройство.</string>
+    <string name="watch_history_delete_ellipsis">Удалить историю просмотра…</string>
+    <string name="watch_history_deleting">Удаление…</string>
+    <string name="watch_history_deleted">История просмотра удалена.</string>
+    <string name="watch_history_deleted_others_follow">Удалено на этом устройстве. Остальные ваши устройства удалят свои копии при следующей синхронизации.</string>
+    <string name="watch_history_pending">Удалено на этом устройстве. Остальные ваши устройства удалят её, как только Edendale подключится к %1$s.</string>
+    <string name="watch_history_failed">Не удалось удалить историю просмотра.</string>
+    <string name="watch_history_everywhere_title">Удалить историю просмотра везде?</string>
+    <string name="watch_history_everywhere_message">Прогресс и отметки о просмотре удаляются здесь и, через %1$s, на других ваших устройствах.</string>
+    <string name="watch_history_everywhere_confirm">Удалить везде</string>
+    <string name="watch_history_local_title">Удалить историю просмотра на этом устройстве?</string>
+    <string name="watch_history_local_message">Прогресс и отметки о просмотре удаляются с этого устройства. Если позже включить синхронизацию, история с других ваших устройств вернётся.</string>
+    <string name="watch_history_local_confirm">Удалить</string>
+    <string name="watch_history_kept">Избранное, список «посмотреть», оценки, рецензии, ваша библиотека и аккаунт TMDB не меняются.</string>
+    <string name="clear_progress">Сбросить прогресс</string>
     <string name="sync_folder_relink">Выберите папку, которую это устройство будет использовать для пространства «%1$s».</string>
     <string name="sync_google_relink">Войдите в Google как %1$s, чтобы использовать пространство «%2$s».</string>
     <string name="pairing_role_question">В какую сторону передать логины?</string>
@@ -645,4 +712,6 @@
         <item quantity="many">%1$d элементов не удалось использовать.</item>
         <item quantity="other">%1$d элемента не удалось использовать.</item>
     </plurals>
+    <string name="player_theater">Кинозал</string>
+    <string name="xr_module_title">Android XR · Кинозал</string>
 </resources>

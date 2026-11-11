@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- nl. Generated to match Apple/Shared/Theater.xcstrings and the Quest theater's strings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="theater_exit">Bioscoop verlaten</string>
+    <string name="theater_position">Positie</string>
+    <string name="theater_playback_failed">De video kon hier niet worden afgespeeld. Verlaat de bioscoop om terug te gaan naar de speler.</string>
+    <string name="theater_rooms">Zaal</string>
+    <string name="theater_room_movie_theatre">Bioscoopzaal</string>
+    <string name="theater_room_projector_room">Projectiezaal</string>
+    <string name="theater_room_performance_theatre">Schouwburg</string>
+    <string name="theater_seats">Stoelen</string>
+    <string name="theater_screen">Scherm</string>
+    <string name="theater_your_seat">Jouw stoel</string>
+    <string name="theater_best_seat">Beste plek</string>
+    <string name="theater_seat_name">Rij %1$d, stoel %2$d</string>
+    <string name="theater_lights">Licht</string>
+    <string name="theater_lights_normal">Normaal</string>
+    <string name="theater_lights_dim">Gedimd</string>
+    <string name="theater_lights_dark">Donker</string>
+    <string name="theater_recentre">Opnieuw centreren</string>
+    <string name="theater_recentre_caption">Zet het scherm waar je kijkt, ook als je ligt.</string>
+    <string name="theater_look_down">Kijk omlaag voor de bediening.</string>
+</resources>
