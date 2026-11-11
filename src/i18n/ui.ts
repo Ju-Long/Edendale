@@ -23,7 +23,7 @@ const en = {
     "Continue this link in the Edendale app, or return to the Edendale project site.",
   "meta.privacy.title": "Privacy policy — Edendale",
   "meta.privacy.description":
-    "How Edendale handles your data: no account, no Edendale servers, no analytics, and read-only access to the storage you link.",
+    "How Edendale handles your data: no account, no Edendale servers, no analytics, and your storage used only to play your videos and, if you choose, to sync your watch history.",
   "meta.socialAlt": "Edendale — your private cinematic archive.",
 
   "chrome.skipToContent": "Skip to content",
@@ -101,9 +101,9 @@ const en = {
   "sources.cloudTitle": "In the cloud",
   "sources.cloudBody":
     "Cloud drives sign you in on the provider’s own page, so Edendale never sees your password.",
-  "sources.accessTitle": "Read-only, and only to play",
+  "sources.accessTitle": "Only to play, and to sync",
   "sources.accessBody":
-    "Edendale asks Google Drive, OneDrive, and Dropbox for read-only access: to show which account is linked, list the folders you choose, and stream the videos you play. It can’t change or delete anything there, and nothing passes through an Edendale server.",
+    "Edendale asks Google Drive, OneDrive, and Dropbox only for what it needs: to show which account is linked, list the videos and folders you choose, and stream what you play. In Google Drive it sees only the videos you pick. If you turn on sync, it writes its own sync files and nothing else; it never changes or deletes your videos, and nothing passes through an Edendale server.",
   "sources.accessLink": "How Edendale handles your data",
   "sources.availability": "Available services differ by platform.",
 
@@ -202,7 +202,7 @@ const es: Dictionary = {
     "Continúa este enlace en la app de Edendale o vuelve al sitio del proyecto.",
   "meta.privacy.title": "Política de privacidad — Edendale",
   "meta.privacy.description":
-    "Cómo trata Edendale tus datos: sin cuenta, sin servidores de Edendale, sin analíticas y con acceso de solo lectura al almacenamiento que vinculas.",
+    "Cómo trata Edendale tus datos: sin cuenta, sin servidores de Edendale, sin analíticas, y tu almacenamiento solo se usa para reproducir tus vídeos y, si lo eliges, sincronizar tu historial.",
   "meta.socialAlt": "Edendale: tu archivo cinematográfico privado.",
 
   "chrome.skipToContent": "Saltar al contenido",
@@ -281,9 +281,9 @@ const es: Dictionary = {
   "sources.cloudTitle": "En la nube",
   "sources.cloudBody":
     "En las unidades en la nube inicias sesión en la página del propio proveedor, así que Edendale nunca ve tu contraseña.",
-  "sources.accessTitle": "Solo lectura, y solo para reproducir",
+  "sources.accessTitle": "Solo para reproducir, y para sincronizar",
   "sources.accessBody":
-    "Edendale pide a Google Drive, OneDrive y Dropbox acceso de solo lectura: para mostrar qué cuenta está vinculada, listar las carpetas que eliges y transmitir los vídeos que reproduces. No puede cambiar ni borrar nada allí, y nada pasa por un servidor de Edendale.",
+    "Edendale pide a Google Drive, OneDrive y Dropbox solo lo que necesita: mostrar qué cuenta está vinculada, listar los vídeos y las carpetas que eliges y transmitir lo que reproduces. En Google Drive solo ve los vídeos que eliges. Si activas la sincronización, escribe sus propios archivos de sincronización y nada más; nunca cambia ni borra tus vídeos, y nada pasa por un servidor de Edendale.",
   "sources.accessLink": "Cómo trata Edendale tus datos",
   "sources.availability":
     "Los servicios disponibles varían según la plataforma.",
@@ -380,7 +380,7 @@ const fr: Dictionary = {
     "Poursuivez ce lien dans l’app Edendale ou revenez au site du projet.",
   "meta.privacy.title": "Politique de confidentialité — Edendale",
   "meta.privacy.description":
-    "Comment Edendale traite vos données : aucun compte, aucun serveur Edendale, aucune analyse, et un accès en lecture seule aux stockages que vous associez.",
+    "Comment Edendale traite vos données : aucun compte, aucun serveur Edendale, aucune analyse, et vos stockages utilisés uniquement pour lire vos vidéos et, si vous le choisissez, synchroniser votre historique.",
   "meta.socialAlt": "Edendale — votre archive cinématographique privée.",
 
   "chrome.skipToContent": "Aller au contenu",
@@ -459,9 +459,9 @@ const fr: Dictionary = {
   "sources.cloudTitle": "Dans le cloud",
   "sources.cloudBody":
     "Pour les stockages en ligne, vous vous connectez sur la page du fournisseur : Edendale ne voit jamais votre mot de passe.",
-  "sources.accessTitle": "En lecture seule, juste pour regarder",
+  "sources.accessTitle": "Pour regarder, et pour synchroniser",
   "sources.accessBody":
-    "Edendale ne demande à Google Drive, OneDrive et Dropbox qu’un accès en lecture seule : pour afficher le compte associé, parcourir les dossiers que vous choisissez et diffuser les vidéos que vous regardez. Il ne peut rien y modifier ni supprimer, et rien ne passe par un serveur Edendale.",
+    "Edendale ne demande à Google Drive, OneDrive et Dropbox que ce dont il a besoin : afficher le compte associé, lister les vidéos et les dossiers que vous choisissez et diffuser ce que vous regardez. Dans Google Drive, il ne voit que les vidéos que vous choisissez. Si vous activez la synchronisation, il écrit ses propres fichiers de synchronisation et rien d’autre ; il ne modifie ni ne supprime jamais vos vidéos, et rien ne passe par un serveur Edendale.",
   "sources.accessLink": "Comment Edendale traite vos données",
   "sources.availability":
     "Les services disponibles varient selon la plateforme.",
@@ -559,7 +559,7 @@ const de: Dictionary = {
     "Setze diesen Link in der Edendale-App fort oder kehre zur Projektseite zurück.",
   "meta.privacy.title": "Datenschutzerklärung — Edendale",
   "meta.privacy.description":
-    "Wie Edendale mit deinen Daten umgeht: kein Konto, keine Edendale-Server, keine Analysen und nur Lesezugriff auf die Speicher, die du verknüpfst.",
+    "Wie Edendale mit deinen Daten umgeht: kein Konto, keine Edendale-Server, keine Analysen, und deine Speicher werden nur zum Abspielen genutzt und, wenn du willst, zum Synchronisieren deines Verlaufs.",
   "meta.socialAlt": "Edendale – dein privates Filmarchiv.",
 
   "chrome.skipToContent": "Zum Inhalt springen",
@@ -639,9 +639,9 @@ const de: Dictionary = {
   "sources.cloudTitle": "In der Cloud",
   "sources.cloudBody":
     "Bei Cloud-Speichern meldest du dich auf der Seite des Anbieters an, deshalb sieht Edendale dein Passwort nie.",
-  "sources.accessTitle": "Nur lesen, nur zum Abspielen",
+  "sources.accessTitle": "Zum Abspielen und zum Synchronisieren",
   "sources.accessBody":
-    "Edendale bittet Google Drive, OneDrive und Dropbox nur um Lesezugriff: um das verknüpfte Konto anzuzeigen, die gewählten Ordner aufzulisten und die Videos zu streamen, die du abspielst. Es kann dort nichts ändern oder löschen, und nichts läuft über einen Edendale-Server.",
+    "Edendale bittet Google Drive, OneDrive und Dropbox nur um das, was es braucht: das verknüpfte Konto anzuzeigen, die gewählten Videos und Ordner aufzulisten und zu streamen, was du abspielst. In Google Drive sieht es nur die Videos, die du auswählst. Wenn du die Synchronisierung einschaltest, schreibt es seine eigenen Synchronisierungsdateien und sonst nichts; deine Videos ändert oder löscht es nie, und nichts läuft über einen Edendale-Server.",
   "sources.accessLink": "Wie Edendale mit deinen Daten umgeht",
   "sources.availability":
     "Welche Dienste verfügbar sind, hängt von der Plattform ab.",
@@ -739,7 +739,7 @@ const ptBR: Dictionary = {
     "Continue este link no app Edendale ou volte ao site do projeto.",
   "meta.privacy.title": "Política de privacidade — Edendale",
   "meta.privacy.description":
-    "Como o Edendale trata seus dados: sem conta, sem servidores do Edendale, sem analytics e com acesso somente leitura ao armazenamento que você vincula.",
+    "Como o Edendale trata seus dados: sem conta, sem servidores do Edendale, sem analytics, e seu armazenamento usado só para reproduzir seus vídeos e, se você quiser, sincronizar seu histórico.",
   "meta.socialAlt": "Edendale — seu acervo de cinema particular.",
 
   "chrome.skipToContent": "Ir para o conteúdo",
@@ -818,9 +818,9 @@ const ptBR: Dictionary = {
   "sources.cloudTitle": "Na nuvem",
   "sources.cloudBody":
     "Nos armazenamentos na nuvem, você entra pela página do próprio provedor, então o Edendale nunca vê sua senha.",
-  "sources.accessTitle": "Somente leitura, só para assistir",
+  "sources.accessTitle": "Só para assistir, e para sincronizar",
   "sources.accessBody":
-    "O Edendale pede ao Google Drive, OneDrive e Dropbox apenas acesso somente leitura: para mostrar qual conta está vinculada, listar as pastas que você escolhe e transmitir os vídeos que você assiste. Ele não pode alterar nem apagar nada lá, e nada passa por um servidor do Edendale.",
+    "O Edendale pede ao Google Drive, OneDrive e Dropbox só o que precisa: mostrar qual conta está vinculada, listar os vídeos e as pastas que você escolhe e transmitir o que você assiste. No Google Drive, ele só vê os vídeos que você escolhe. Se você ativar a sincronização, ele grava os próprios arquivos de sincronização e nada mais; nunca altera nem apaga seus vídeos, e nada passa por um servidor do Edendale.",
   "sources.accessLink": "Como o Edendale trata seus dados",
   "sources.availability":
     "Os serviços disponíveis variam conforme a plataforma.",
@@ -918,7 +918,7 @@ const ja: Dictionary = {
     "このリンクを Edendale アプリで続けるか、プロジェクトサイトに戻ってください。",
   "meta.privacy.title": "プライバシーポリシー — Edendale",
   "meta.privacy.description":
-    "Edendale のデータの扱い：アカウントなし、Edendale のサーバーなし、解析なし。リンクしたストレージには読み取り専用でアクセスします。",
+    "Edendale のデータの扱い：アカウントなし、Edendale のサーバーなし、解析なし。ストレージは動画の再生と、選んだ場合の視聴履歴の同期にだけ使います。",
   "meta.socialAlt": "Edendale — あなただけのプライベートな映画アーカイブ。",
 
   "chrome.skipToContent": "本文へスキップ",
@@ -994,9 +994,9 @@ const ja: Dictionary = {
   "sources.cloudTitle": "クラウド",
   "sources.cloudBody":
     "クラウドストレージへのサインインは各サービス自身のページで行うため、Edendale がパスワードを見ることはありません。",
-  "sources.accessTitle": "読み取り専用、再生のためだけに",
+  "sources.accessTitle": "再生と、同期のためだけに",
   "sources.accessBody":
-    "Edendale が Google Drive、OneDrive、Dropbox に求めるのは読み取り専用のアクセスだけです。リンク中のアカウントの表示、選んだフォルダの一覧、再生する動画のストリーミングにのみ使います。そこにあるものを変更・削除することはできず、Edendale のサーバーを経由するものもありません。",
+    "Edendale が Google Drive、OneDrive、Dropbox に求めるのは必要なアクセスだけです。リンク中のアカウントの表示、選んだ動画やフォルダの一覧、再生する動画のストリーミングに使います。Google Drive では選んだ動画だけが見えます。同期をオンにすると、自身の同期ファイルだけを書き込みます。動画を変更・削除することはなく、Edendale のサーバーを経由するものもありません。",
   "sources.accessLink": "Edendale のデータの扱い",
   "sources.availability": "利用できるサービスはプラットフォームによって異なります。",
 
@@ -1086,7 +1086,7 @@ const ko: Dictionary = {
     "이 링크를 Edendale 앱에서 이어서 보거나 프로젝트 사이트로 돌아가세요.",
   "meta.privacy.title": "개인정보 처리방침 — Edendale",
   "meta.privacy.description":
-    "Edendale이 데이터를 다루는 방식: 계정 없음, Edendale 서버 없음, 분석 없음. 연결한 저장소에는 읽기 전용으로만 접근합니다.",
+    "Edendale이 데이터를 다루는 방식: 계정 없음, Edendale 서버 없음, 분석 없음. 저장소는 동영상 재생과, 원할 경우 시청 기록 동기화에만 사용합니다.",
   "meta.socialAlt": "Edendale — 나만의 사적인 영화 아카이브.",
 
   "chrome.skipToContent": "본문으로 건너뛰기",
@@ -1162,9 +1162,9 @@ const ko: Dictionary = {
   "sources.cloudTitle": "클라우드",
   "sources.cloudBody":
     "클라우드 저장소는 서비스 자체 페이지에서 로그인하므로 Edendale은 비밀번호를 볼 수 없습니다.",
-  "sources.accessTitle": "읽기 전용, 재생을 위해서만",
+  "sources.accessTitle": "재생과 동기화를 위해서만",
   "sources.accessBody":
-    "Edendale은 Google Drive, OneDrive, Dropbox에 읽기 전용 접근만 요청합니다. 연결된 계정을 표시하고, 선택한 폴더의 목록을 보여 주고, 재생하는 동영상을 스트리밍하는 데에만 씁니다. 그곳의 어떤 것도 바꾸거나 지울 수 없으며, Edendale 서버를 거치는 것도 없습니다.",
+    "Edendale은 Google Drive, OneDrive, Dropbox에 필요한 접근만 요청합니다. 연결된 계정을 표시하고, 선택한 동영상과 폴더의 목록을 보여 주고, 재생하는 동영상을 스트리밍하는 데 씁니다. Google Drive에서는 고른 동영상만 봅니다. 동기화를 켜면 자체 동기화 파일만 쓰며, 동영상을 바꾸거나 지우지 않고, Edendale 서버를 거치는 것도 없습니다.",
   "sources.accessLink": "Edendale의 데이터 처리 방식",
   "sources.availability": "사용할 수 있는 서비스는 플랫폼마다 다릅니다.",
 
@@ -1257,7 +1257,7 @@ const zhHans: Dictionary = {
     "在 Edendale 应用中继续打开此链接，或返回项目网站。",
   "meta.privacy.title": "隐私政策 — Edendale",
   "meta.privacy.description":
-    "Edendale 如何处理你的数据：没有账号，没有 Edendale 服务器，没有分析统计，对你关联的存储只有只读访问权限。",
+    "Edendale 如何处理你的数据：没有账号，没有 Edendale 服务器，没有分析统计；你的存储只用于播放视频，以及在你选择时同步观看记录。",
   "meta.socialAlt": "Edendale — 属于你自己的私人影库。",
 
   "chrome.skipToContent": "跳到主要内容",
@@ -1332,9 +1332,9 @@ const zhHans: Dictionary = {
   "sources.networkBody": "家中的服务器和 NAS 共享，登录信息保存在设备受保护的存储中。",
   "sources.cloudTitle": "云端",
   "sources.cloudBody": "云端存储在服务商自己的页面上登录，因此 Edendale 永远看不到你的密码。",
-  "sources.accessTitle": "只读，只为播放",
+  "sources.accessTitle": "只为播放和同步",
   "sources.accessBody":
-    "Edendale 只向 Google Drive、OneDrive 和 Dropbox 申请只读访问权限：用来显示已关联的账号、列出你选择的文件夹，以及串流你播放的视频。它无法更改或删除其中的任何内容，也没有任何数据经过 Edendale 的服务器。",
+    "Edendale 只向 Google Drive、OneDrive 和 Dropbox 申请所需的访问权限：用来显示已关联的账号、列出你选择的视频和文件夹，以及串流你播放的视频。在 Google Drive 中，它只能看到你选择的视频。如果你开启同步，它只写入自己的同步文件；它从不更改或删除你的视频，也没有任何数据经过 Edendale 的服务器。",
   "sources.accessLink": "Edendale 如何处理你的数据",
   "sources.availability": "可用的服务因平台而异。",
 
