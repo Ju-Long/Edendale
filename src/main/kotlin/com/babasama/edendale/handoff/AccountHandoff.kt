@@ -243,22 +243,31 @@ object AccountHandoff {
         driveId = json.string("driveId"),
     )
 
-    /** A [Login] from its JSON; the kind must use a server login. */
+    /**
+     * A [Login] from its JSON; the kind must use a server login. The flat
+     * shape (`user`, `password`, `s3.pathStyle`) is canonical (SYNC-PROTOCOL.md
+     * §9.7). During 27.1 a login without `user` is read from the nested
+     * `credential` Apple builds before 27.1 send (`username`, `password`,
+     * `s3.usesPathStyle`, `port`), so one such login no longer fails the
+     * whole offer.
+     */
     fun decodeLogin(json: JsonObject): Login {
-        val s3 = (json["s3"] as? JsonObject)?.let { s3 ->
+        val nested = if (json.string("user") == null) json["credential"] as? JsonObject else null
+        val credential = nested ?: json
+        val s3 = (credential["s3"] as? JsonObject)?.let { s3 ->
             S3Configuration(
                 endpoint = s3.string("endpoint") ?: throw HandoffException.MalformedMessage,
                 region = s3.string("region") ?: throw HandoffException.MalformedMessage,
                 bucket = s3.string("bucket") ?: throw HandoffException.MalformedMessage,
-                usesPathStyle = s3["pathStyle"]?.jsonPrimitive?.content == "true",
+                usesPathStyle = s3[if (nested != null) "usesPathStyle" else "pathStyle"]?.jsonPrimitive?.content == "true",
             )
         }
         return Login(
             kind = json.kind("kind")?.takeIf { it.usesServerLogin } ?: throw HandoffException.MalformedMessage,
             host = json.string("host") ?: throw HandoffException.MalformedMessage,
-            port = (json["port"] as? JsonPrimitive)?.intOrNull,
-            user = json.string("user") ?: throw HandoffException.MalformedMessage,
-            password = json.string("password") ?: throw HandoffException.MalformedMessage,
+            port = (json["port"] as? JsonPrimitive)?.intOrNull ?: (nested?.get("port") as? JsonPrimitive)?.intOrNull,
+            user = credential.string(if (nested != null) "username" else "user") ?: throw HandoffException.MalformedMessage,
+            password = credential.string("password") ?: throw HandoffException.MalformedMessage,
             hostKeyFingerprint = json.string("hostKeyFingerprint"),
             certificateFingerprint = json.string("certificateFingerprint"),
             s3 = s3,

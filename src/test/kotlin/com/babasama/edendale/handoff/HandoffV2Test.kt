@@ -1,6 +1,7 @@
 package com.babasama.edendale.handoff
 
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.S3Configuration
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
 import com.babasama.edendale.sync.SyncProvider
 import java.net.InetAddress
@@ -18,6 +19,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 /**
  * SYNC-PROTOCOL.md Appendix A.2–A.4 (from `main` at c620b21): the external
@@ -229,6 +232,42 @@ class HandoffV2Test {
         assertEquals("1AbC", across.location?.googleFolderId)
         assertEquals(listOf(oneDrive), across.accounts)
         assertEquals(listOf(login), across.logins)
+    }
+
+    @Test
+    fun `a Login without user is read from the nested credential Apple builds before 27_1 send`() {
+        // SYNC-PROTOCOL.md §9.7 (main 768f368): the nested shape, an SFTP location login and an S3 login.
+        val offer = HandoffV2.decodeOffer(
+            """
+            {"type":"offer","status":"approved",
+             "location":{"provider":"sftp","space":"Family","url":"sftp://nas.local:2222/home/me/",
+                         "login":{"kind":"sftp","host":"nas.local","hostKeyFingerprint":"SHA256:abc",
+                                  "credential":{"username":"me","password":"pw","port":2222}}},
+             "accounts":[],
+             "logins":[{"kind":"s3","host":"acct","port":null,
+                        "credential":{"username":"AKIA","password":"secret",
+                                      "s3":{"endpoint":"https://minio.local:9000","region":"us-east-1","bucket":"films","usesPathStyle":true}}}]}
+            """.trimIndent().toByteArray(),
+        )
+        assertEquals(AccountHandoff.Login(MediaSourceKind.SFTP, "nas.local", 2222, "me", "pw", hostKeyFingerprint = "SHA256:abc"), offer.location?.login)
+        assertEquals(
+            listOf(AccountHandoff.Login(MediaSourceKind.S3, "acct", null, "AKIA", "secret", s3 = S3Configuration("https://minio.local:9000", "us-east-1", "films", usesPathStyle = true))),
+            offer.logins,
+        )
+        // Apple 27.1 writes both shapes in one object: the flat fields win.
+        val both = AccountHandoff.decodeLogin(
+            Json.parseToJsonElement(
+                """{"kind":"sftp","host":"nas.local","port":22,"user":"me","password":"pw","credential":{"username":"old","password":"old","port":2200}}""",
+            ).jsonObject,
+        )
+        assertEquals(AccountHandoff.Login(MediaSourceKind.SFTP, "nas.local", 22, "me", "pw"), both)
+        // Neither shape: still malformed.
+        assertFailsWith<HandoffException.MalformedMessage> {
+            AccountHandoff.decodeLogin(Json.parseToJsonElement("""{"kind":"smb","host":"nas.local","credential":{"password":"pw"}}""").jsonObject)
+        }
+        assertFailsWith<HandoffException.MalformedMessage> {
+            AccountHandoff.decodeLogin(Json.parseToJsonElement("""{"kind":"smb","host":"nas.local"}""").jsonObject)
+        }
     }
 
     @Test
