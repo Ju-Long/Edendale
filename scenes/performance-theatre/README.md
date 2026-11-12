@@ -4,16 +4,17 @@ A proscenium playhouse with the screen where the stage is. Red velvet house
 curtains are swept open and tied back with gold rope on either side, under a
 swagged valance with a gold fringe and tassels. Black masking frames the
 picture inside them, and footlights glow along the stage lip. The viewer sits
-in the centre seat of the stalls, in curved, gently raked rows of red velvet
+near the front of the stalls, in curved, gently raked rows of red velvet
 seats. Two tiers of opera boxes line the side walls by the stage, a curved
 balcony with its lamps hangs behind, and a painted dome with a chandelier
 rises overhead.
 
 | | |
 |---|---|
-| Viewer | `Seat`, on the floor under the centre seat of row 9 of 14 (8 rows in front, 5 behind) |
-| Screen | `Screen`, 11.0 × 6.19 m, 14 m ahead, its centre 3.09 m up: 43° wide, 7.7° above eye level |
-| Room | 21 m wide; 17.2 m from the back wall to the proscenium, the stage beyond; 12.5 m to the ceiling, the dome 1.8 m higher; rows 0.95 m apart and 0.15 m above the one in front |
+| Viewer | `Seat`, on the floor under the centre seat of row 4 of 14 (3 rows in front, 10 behind) |
+| Seat map | `SeatMap`: 384 seats, rows 1–3 of 29 and rows 4–14 of 27, numbered left to right across the aisles |
+| Screen | `Screen`, 11.0 × 6.19 m, 9.25 m ahead, its centre 3.84 m up: 62° wide, 16° above eye level |
+| Room | 21 m wide; 17.2 m from the back wall to the proscenium, the stage beyond; 13.25 m from the seat's floor to the ceiling, the dome 1.8 m higher; rows 0.95 m apart and 0.15 m above the one in front |
 | Seating | 384 seats, about 27 a row in an 11-seat centre block and two side blocks, on arcs centred 24 m ahead |
 | Around the screen | black legs and border close around the picture, then the red drapes and the gilt proscenium |
 | Exported meshes | `Room` (21,218 triangles, `textures/room.jpg`, 4096²), `Drapes` (25,336, `textures/drapes.jpg`, 2048²), `Seats` (102,876, `textures/seats.jpg`, 4096²) |
