@@ -73,6 +73,7 @@ import com.babasama.edendale.introdb.PlaybackSegment
 import com.babasama.edendale.introdb.PlayerSegmentController
 import com.babasama.edendale.introdb.SkipAction
 import com.babasama.edendale.android.player.video.EnhancementCapability
+import com.babasama.edendale.android.player.video.MotionSmoothingCapability
 import com.babasama.edendale.android.player.video.PixelSize
 import com.babasama.edendale.android.player.video.VideoEffectsController
 import com.babasama.edendale.wyzie.WyzieException
@@ -442,8 +443,12 @@ class PlayerActivity : ComponentActivity() {
         )
         videoEffects.attach(exoPlayer, chrome.preferences.videoAdjustments, chrome.preferences.videoEnhancement)
         updateVideoDisplaySize()
-        // Once per app version, off the main thread: can this device run enhancement in budget (F.6.3)?
-        writeScope.launch { EnhancementCapability.evaluateIfNeeded(applicationContext) }
+        // Once per app version, off the main thread: can this device run enhancement in budget (F.6.3),
+        // and then Motion Smoothing (G.5)?
+        writeScope.launch {
+            EnhancementCapability.evaluateIfNeeded(applicationContext)
+            MotionSmoothingCapability.evaluateIfNeeded(applicationContext, isTelevision)
+        }
 
         mediaSession = PlayerMediaSession(
             context = this,

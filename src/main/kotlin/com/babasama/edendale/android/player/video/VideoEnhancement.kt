@@ -186,9 +186,13 @@ data class EnhancementStages(val upscale: Boolean, val sharpen: Boolean, val den
  * Motion Smoothing (G.5.2) costs more than any enhancement stage, so it goes
  * first: while it's on, the enhancement passes running over budget turn it
  * off before anything else, and so does thermal pressure or battery saver.
- * Its own GPU time has a budget of 8 ms per real frame (Findings — G.1):
- * over it, the motion search drops to half resolution, then Motion
- * Smoothing turns off. It comes back only with [resetMotionSmoothing] (the
+ * Its own GPU time has a budget of 40 % of the source's frame interval per
+ * real frame ([motionSmoothingBudgetMillis], set for each video from
+ * [motionSmoothingBudgetFor]; 13.3 ms
+ * at 30 fps, 16.7 ms at 24): over it, the motion search drops to half
+ * resolution, then Motion Smoothing turns off. Findings — G: the Pixel 3
+ * played 24 → 48 fps with no frame dropped at 13.4 ms a real frame (32 %)
+ * and fell behind at 32 ms (77 %); G.1's 8 ms came from a software GPU. It comes back only with [resetMotionSmoothing] (the
  * next video), since nothing measures what it would cost while it's off.
  */
 class EnhancementGovernor(
@@ -196,8 +200,10 @@ class EnhancementGovernor(
     private val window: Int = 30,
     /** Back up only when the window's average is this far under budget. */
     private val recoverFraction: Double = 0.6,
-    private val motionSmoothingBudgetMillis: Double = MOTION_SMOOTHING_BUDGET_MILLIS,
 ) {
+    /** Motion Smoothing's GPU budget per real frame for the playing video; see [motionSmoothingBudgetMillis]. */
+    var motionSmoothingBudgetMillis: Double = motionSmoothingBudgetFor(MotionSmoothingRules.MAX_SOURCE_FPS)
+
     /** 0 = everything allowed, 1 = no denoise, 2 = no denoise and no upscale. */
     var level = 0
         private set
@@ -282,6 +288,18 @@ class EnhancementGovernor(
         return true
     }
 
+    /**
+     * The device's Motion Smoothing check passed only with the half-resolution
+     * search ([MotionSmoothingCapability]): start there rather than stepping
+     * down after a window of late frames.
+     */
+    fun requireHalfResolution() {
+        if (motionSmoothingLevel >= 1) return
+        motionSmoothingLevel = 1
+        motionSmoothingSamples.clear()
+        motionSmoothingSettle = SETTLE_SAMPLES
+    }
+
     /** A new video: Motion Smoothing starts again at full resolution. */
     fun resetMotionSmoothing() {
         motionSmoothingLevel = 0
@@ -298,8 +316,11 @@ class EnhancementGovernor(
     companion object {
         const val BUDGET_MILLIS = 8.0
 
-        /** The synthetic frame's whole cost per real frame (Findings — G.1's go/no-go line). */
-        const val MOTION_SMOOTHING_BUDGET_MILLIS = 8.0
+        /** The share of a source frame's interval Motion Smoothing may spend on the GPU (Findings — G). */
+        const val MOTION_SMOOTHING_BUDGET_FRACTION = 0.4
+
+        /** Motion Smoothing's budget per real frame for a source at [sourceFps]. */
+        fun motionSmoothingBudgetFor(sourceFps: Float): Double = MOTION_SMOOTHING_BUDGET_FRACTION * 1000.0 / sourceFps
 
         /** GPU timer results arrive a few frames late (`GpuTimer` keeps four queries in flight). */
         const val SETTLE_SAMPLES = 8

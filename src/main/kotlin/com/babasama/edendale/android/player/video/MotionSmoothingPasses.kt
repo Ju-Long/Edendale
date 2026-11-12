@@ -35,7 +35,7 @@ class MotionSmoothingPasses(context: Context) {
     /** All or nothing: a shader that doesn't build releases the ones built before it. */
     private val programs: List<FrameGenProgram> = buildList {
         try {
-            for (asset in listOf(LUMA, COARSE, REFINE, CUT, WARP)) add(FrameGenProgram(appContext, asset))
+            for (asset in listOf(LUMA, COARSE, PICK, REFINE, CUT, WARP)) add(FrameGenProgram(appContext, asset))
         } catch (e: Exception) {
             forEach { it.release() }
             throw e
@@ -43,9 +43,10 @@ class MotionSmoothingPasses(context: Context) {
     }
     private val luma = programs[0]
     private val coarse = programs[1]
-    private val refine = programs[2]
-    private val cut = programs[3]
-    private val warp = programs[4]
+    private val pick = programs[2]
+    private val refine = programs[3]
+    private val cut = programs[4]
+    private val warp = programs[5]
     private val copy = try {
         GlPass(appContext, GlPass.COPY)
     } catch (e: Exception) {
@@ -57,6 +58,7 @@ class MotionSmoothingPasses(context: Context) {
     private val colors = arrayOfNulls<RenderTarget>(2)
     private val lumas = arrayOfNulls<GlTarget>(2)
     private var currentSlot = 0
+    private var coarseSads: GlTarget? = null
     private var coarseVectors: GlTarget? = null
     private var refinedVectors: GlTarget? = null
     private var rowCounts: GlTarget? = null
@@ -147,7 +149,7 @@ class MotionSmoothingPasses(context: Context) {
     fun release() {
         copy.release()
         programs.forEach { it.release() }
-        (colors.toList() + lumas + listOf(coarseVectors, refinedVectors, rowCounts, cutVerdict)).forEach {
+        (colors.toList() + lumas + listOf(coarseSads, coarseVectors, refinedVectors, rowCounts, cutVerdict)).forEach {
             when (it) {
                 is RenderTarget -> it.release()
                 is GlTarget -> it.release()
@@ -155,6 +157,7 @@ class MotionSmoothingPasses(context: Context) {
         }
         colors.fill(null)
         lumas.fill(null)
+        coarseSads = null
         coarseVectors = null
         refinedVectors = null
         rowCounts = null
@@ -170,17 +173,27 @@ class MotionSmoothingPasses(context: Context) {
         // Integer targets can't be blended.
         GLES20.glDisable(GLES20.GL_BLEND)
 
+        // The coarse search in two passes: each block's 17 rows of even offsets at once, then the pick.
         val coarseGrid = grid(searchSize, COARSE_BLOCK)
-        val coarseTarget = intTarget(coarseVectors, coarseGrid, GLES30.GL_RGBA16I).also { coarseVectors = it }
-        coarseTarget.focus()
+        val side = COARSE_SEARCH_RADIUS + 1
+        val rows = intTarget(coarseSads, PixelSize(coarseGrid.width, coarseGrid.height * side), GLES30.GL_RGBA32I)
+            .also { coarseSads = it }
+        rows.focus()
         coarse.use()
         coarse.texture("uPrevSampler", 0, previous)
         coarse.texture("uCurrSampler", 1, current)
-        coarse.int("uBlockSize", COARSE_BLOCK)
-        coarse.int("uSearchRadius", COARSE_SEARCH_RADIUS)
-        coarse.float("uUnmatchedError", SCENE_CUT_BLOCK_ERROR)
         coarse.draw()
         afterPass?.invoke("coarse")
+
+        val coarseTarget = intTarget(coarseVectors, coarseGrid, GLES30.GL_RGBA16I).also { coarseVectors = it }
+        coarseTarget.focus()
+        pick.use()
+        pick.texture("uPrevSampler", 0, previous)
+        pick.texture("uCurrSampler", 1, current)
+        pick.texture("uRowSampler", 2, rows.texId)
+        pick.float("uUnmatchedError", SCENE_CUT_BLOCK_ERROR)
+        pick.draw()
+        afterPass?.invoke("pick")
 
         val refinedTarget = intTarget(refinedVectors, grid(searchSize, REFINE_BLOCK), GLES30.GL_RGBA16I).also { refinedVectors = it }
         refinedTarget.focus()
@@ -188,13 +201,12 @@ class MotionSmoothingPasses(context: Context) {
         refine.texture("uPrevSampler", 0, previous)
         refine.texture("uCurrSampler", 1, current)
         refine.texture("uCoarseSampler", 2, coarseTarget.texId)
-        refine.int("uBlockSize", REFINE_BLOCK)
         refine.int("uCoarseBlockSize", COARSE_BLOCK)
         refine.draw()
         afterPass?.invoke("refine")
 
-        val rows = intTarget(rowCounts, PixelSize(1, coarseGrid.height), GLES30.GL_R32I).also { rowCounts = it }
-        rows.focus()
+        val cutRows = intTarget(rowCounts, PixelSize(1, coarseGrid.height), GLES30.GL_R32I).also { rowCounts = it }
+        cutRows.focus()
         cut.use()
         cut.texture("uCountSampler", 0, coarseTarget.texId)
         cut.int("uMode", 0)
@@ -205,7 +217,7 @@ class MotionSmoothingPasses(context: Context) {
         val verdict = intTarget(cutVerdict, PixelSize(1, 1), GLES30.GL_RGBA32I).also { cutVerdict = it }
         verdict.focus()
         cut.use()
-        cut.texture("uCountSampler", 0, rows.texId)
+        cut.texture("uCountSampler", 0, cutRows.texId)
         cut.int("uMode", 1)
         cut.int("uCutCount", cutBlockCount(coarseGrid))
         cut.draw()
@@ -266,6 +278,7 @@ class MotionSmoothingPasses(context: Context) {
     companion object {
         const val LUMA = "shaders/edendale_fg_luma_es3.glsl"
         const val COARSE = "shaders/edendale_fg_coarse_es3.glsl"
+        const val PICK = "shaders/edendale_fg_pick_es3.glsl"
         const val REFINE = "shaders/edendale_fg_refine_es3.glsl"
         const val CUT = "shaders/edendale_fg_cut_es3.glsl"
         const val WARP = "shaders/edendale_fg_warp_es3.glsl"

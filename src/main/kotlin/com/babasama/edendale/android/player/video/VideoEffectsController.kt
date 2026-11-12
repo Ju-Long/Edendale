@@ -303,6 +303,11 @@ class VideoEffectsController(
      * the GL thread runs. The effect itself is installed by [apply].
      */
     private fun refreshMotionSmoothing() {
+        // Both checks: Enhancement's (F.6.3), and Motion Smoothing's own, which also says where to start.
+        val searchCheck = MotionSmoothingCapability.cachedResult(context)
+        val capable = EnhancementCapability.cachedResult(context) == true &&
+            (searchCheck == MotionSmoothingCapability.Verdict.FULL || searchCheck == MotionSmoothingCapability.Verdict.HALF)
+        if (searchCheck == MotionSmoothingCapability.Verdict.HALF) governor.requireHalfResolution()
         val offer = if (holder.motionSmoothingUnavailable) {
             null
         } else {
@@ -311,7 +316,7 @@ class VideoEffectsController(
                 displayRates = displayRefreshRates(),
                 isTelevision = isTelevision,
                 isHdr = holder.isHdr,
-                capable = EnhancementCapability.cachedResult(context),
+                capable = capable,
             )
         }
         if (offer != motionSmoothingOffer) motionSmoothingOffer = offer
@@ -325,6 +330,7 @@ class VideoEffectsController(
             else -> null
         }
         if (pause != motionSmoothingPause) motionSmoothingPause = pause
+        offer?.let { governor.motionSmoothingBudgetMillis = EnhancementGovernor.motionSmoothingBudgetFor(it.sourceFps) }
         val running = wanted && speedAllows && governorAllows
         // Only a running Motion Smoothing costs anything, so only then does it go before enhancement stages.
         governor.motionSmoothingActive = running

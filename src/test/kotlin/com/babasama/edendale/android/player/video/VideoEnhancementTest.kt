@@ -264,6 +264,7 @@ class VideoEnhancementTest {
     @Test
     fun motionSmoothingOverItsOwnBudgetHalvesTheSearchThenTurnsOff() {
         val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingBudgetMillis = 8.0
         governor.motionSmoothingActive = true
         repeat(5) { governor.recordMotionSmoothing(6.0) }
         assertFalse(governor.motionSmoothingAtHalfResolution)
@@ -283,6 +284,39 @@ class VideoEnhancementTest {
         assertFalse(governor.allowsMotionSmoothing)
         // Enhancement stages are untouched by Motion Smoothing's own budget.
         assertEquals(all, governor.limit(all))
+    }
+
+    @Test
+    fun aDeviceThatOnlyFitsHalfResolutionStartsThere() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingBudgetMillis = 8.0
+        governor.requireHalfResolution()
+        assertTrue(governor.motionSmoothingAtHalfResolution)
+        assertTrue(governor.allowsMotionSmoothing)
+        // Asking again changes nothing; over budget from there turns it off.
+        governor.requireHalfResolution()
+        assertEquals(1, governor.motionSmoothingLevel)
+        repeat(EnhancementGovernor.SETTLE_SAMPLES + 5) { governor.recordMotionSmoothing(12.0) }
+        assertFalse(governor.allowsMotionSmoothing)
+        // Off for budget isn't undone by the check's floor.
+        governor.requireHalfResolution()
+        assertEquals(2, governor.motionSmoothingLevel)
+    }
+
+    @Test
+    fun motionSmoothingsBudgetIsFortyPercentOfTheSourceFrame() {
+        assertEquals(13.33, EnhancementGovernor.motionSmoothingBudgetFor(30f), 0.01)
+        assertEquals(16.68, EnhancementGovernor.motionSmoothingBudgetFor(23.976f), 0.01)
+        // The default is the strictest case offered, 30 fps, and the device check uses it too.
+        assertEquals(EnhancementGovernor.motionSmoothingBudgetFor(30f), EnhancementGovernor().motionSmoothingBudgetMillis, 1e-9)
+        assertEquals(EnhancementGovernor.motionSmoothingBudgetFor(30f), MotionSmoothingCapability.CHECK_BUDGET_MILLIS, 1e-9)
+        // The Pixel 3 at 24 fps (Findings — G): 13.4 ms a real frame played cleanly, 32 ms didn't.
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingBudgetMillis = EnhancementGovernor.motionSmoothingBudgetFor(24f)
+        repeat(10) { governor.recordMotionSmoothing(13.4) }
+        assertEquals(0, governor.motionSmoothingLevel)
+        repeat(5) { governor.recordMotionSmoothing(32.0) }
+        assertTrue(governor.motionSmoothingAtHalfResolution)
     }
 
     @Test

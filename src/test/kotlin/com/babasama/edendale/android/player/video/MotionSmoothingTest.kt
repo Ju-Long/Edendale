@@ -205,6 +205,22 @@ class MotionSmoothingTest {
         assertNull(seeking.fps)
     }
 
+    // MARK: - The device check (G.5)
+
+    @Test
+    fun theDeviceCheckOffersTheResolutionThatFitsTheBudget() {
+        assertEquals(MotionSmoothingCapability.Verdict.FULL, MotionSmoothingCapability.verdict(fullMillis = 6.5, halfMillis = null))
+        assertEquals(MotionSmoothingCapability.Verdict.FULL, MotionSmoothingCapability.verdict(fullMillis = 8.0, halfMillis = 3.0, budgetMillis = 8.0))
+        // The Pixel 3's 1080p check (Findings — G): 39.1 and 15.6 ms, over 13.3 ms both.
+        assertEquals(MotionSmoothingCapability.Verdict.NONE, MotionSmoothingCapability.verdict(fullMillis = 39.1, halfMillis = 15.6))
+        assertEquals(MotionSmoothingCapability.Verdict.HALF, MotionSmoothingCapability.verdict(fullMillis = 20.0, halfMillis = 9.0))
+        assertEquals(MotionSmoothingCapability.Verdict.FULL, MotionSmoothingCapability.verdict(fullMillis = 13.0, halfMillis = null))
+        // A run that failed counts as too slow.
+        assertEquals(MotionSmoothingCapability.Verdict.HALF, MotionSmoothingCapability.verdict(fullMillis = null, halfMillis = 13.3))
+        assertEquals(MotionSmoothingCapability.Verdict.NONE, MotionSmoothingCapability.verdict(fullMillis = Double.NaN, halfMillis = null))
+        assertEquals(listOf("full", "half", "none"), MotionSmoothingCapability.Verdict.entries.map { it.raw })
+    }
+
     // MARK: - The scene-cut count and the grids (G.2.2)
 
     @Test
