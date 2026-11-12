@@ -24,7 +24,9 @@ import kotlin.test.assertTrue
  * devices scan and which show, which scanned codes count, the sender's
  * Continue, how result items read, the host found by name, the camera
  * frame decoder against a real handoff code, and the peer callback a
- * receiver uses to name who it waits for.
+ * receiver uses to name who it waits for. Section T: where entering the
+ * other device's code is offered, which hosts take a typed code, the host
+ * it goes to, the code field, and the wait after five wrong codes.
  */
 class PairingFlowTest {
     private val workers = Executors.newCachedThreadPool { Thread(it).apply { isDaemon = true } }
@@ -84,6 +86,94 @@ class PairingFlowTest {
         assertEquals("Bedroom TV", PairingFlow.target(listOf("Bedroom TV"), "Living Room TV"))
         assertNull(PairingFlow.target(listOf("Bedroom TV", "Office PC"), "Living Room TV"))
         assertNull(PairingFlow.target(emptyList(), "Living Room TV"))
+    }
+
+    // MARK: - Joining by the other device's code (Section T)
+
+    @Test
+    fun `entering the other device's code is offered from the scanner and wherever a device can only show`() {
+        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true)
+        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false)
+        val headset = PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true)
+        val noCamera = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false)
+        // The scanner offers it on every device that has one: the camera may be refused.
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SCAN, phone))
+        // A phone showing its code goes Back to the choice, where the scanner is.
+        assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, phone))
+        // A device that can only show offers it under its own code, so two such devices can pair.
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, television))
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, headset))
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, noCamera))
+        assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.ENTER, television))
+        assertFalse(PairingFlow.offersEntry(null, phone))
+        // Entering is never one of the first choices: the scanner stays first where there is a camera.
+        assertEquals(PairingFlow.Mode.SCAN, phone.first())
+        assertTrue(listOf(phone, television, headset, noCamera).none { PairingFlow.Mode.ENTER in it })
+    }
+
+    @Test
+    fun `a typed code goes only to a version-2 host that shows one`() {
+        val found = listOf(
+            PairingFlow.Host("Living Room TV", "androidtv", 2),
+            PairingFlow.Host("Bedroom TV", null, 1),
+            PairingFlow.Host("Kitchen iPad", "ipados", 2),
+            PairingFlow.Host("Apple TV", "tvos", 2),
+            PairingFlow.Host("Quest 3", "horizon", 2),
+            PairingFlow.Host("Office PC", "windows", 2),
+            PairingFlow.Host("Pixel", "android", 2),
+        )
+        assertEquals(listOf("Living Room TV", "Quest 3", "Office PC", "Pixel"), PairingFlow.codeHosts(found).map { it.name })
+        assertFalse(PairingFlow.onlyQrHosts(found))
+        // Only Apple devices (and a version-1 TV) answered: the screen says why none is listed.
+        assertTrue(PairingFlow.onlyQrHosts(listOf(PairingFlow.Host("Apple TV", "tvos", 2), PairingFlow.Host("Bedroom TV", null, 1))))
+        assertFalse(PairingFlow.onlyQrHosts(listOf(PairingFlow.Host("Bedroom TV", null, 1))))
+        assertFalse(PairingFlow.onlyQrHosts(emptyList()))
+        assertFalse(PairingFlow.showsCode("macOS"))
+        assertFalse(PairingFlow.showsCode("visionos"))
+        // A platform this build doesn't know yet, or none, may still show a code.
+        assertTrue(PairingFlow.showsCode("xbox"))
+        assertTrue(PairingFlow.showsCode(null))
+    }
+
+    @Test
+    fun `the code goes to the host picked while it is there, or to the only one`() {
+        assertEquals("Living Room TV", PairingFlow.codeHost(listOf("Living Room TV"), picked = null))
+        assertNull(PairingFlow.codeHost(listOf("Living Room TV", "Office PC"), picked = null))
+        assertEquals("Office PC", PairingFlow.codeHost(listOf("Living Room TV", "Office PC"), picked = "Office PC"))
+        // The picked host left: the list again, not another host the code wasn't read from.
+        assertNull(PairingFlow.codeHost(listOf("Living Room TV"), picked = "Office PC"))
+        assertNull(PairingFlow.codeHost(emptyList(), picked = null))
+    }
+
+    @Test
+    fun `the code field keeps six digits`() {
+        assertEquals("123456", PairingFlow.typedCode("123 456"))
+        assertEquals("123456", PairingFlow.typedCode("12-34-5678"))
+        // Full-width digits, as a Japanese or Chinese keyboard may type them, and Arabic-Indic ones.
+        assertEquals("123456", PairingFlow.typedCode("１２３４５６"))
+        assertEquals("123", PairingFlow.typedCode("١٢٣"))
+        assertEquals("", PairingFlow.typedCode("code"))
+        assertTrue(PairingFlow.isWholeCode("012345"))
+        assertFalse(PairingFlow.isWholeCode("12345"))
+        assertFalse(PairingFlow.isWholeCode("１２３４５６"))
+        assertTrue(PairingFlow.isWholeCode(PairingFlow.typedCode("１２３４５６")))
+    }
+
+    @Test
+    fun `five wrong codes in a row make the field wait a minute, as the host does`() {
+        val start = 1_000_000L
+        var attempts = PairingFlow.CodeAttempts()
+        repeat(HandoffV2.MAX_CODE_FAILURES - 1) { attempts = attempts.failed(start) }
+        assertEquals(HandoffV2.MAX_CODE_FAILURES - 1, attempts.wrong)
+        assertFalse(attempts.isLocked(start))
+        attempts = attempts.failed(start)
+        assertTrue(attempts.isLocked(start))
+        assertTrue(attempts.isLocked(start + HandoffV2.CODE_LOCKOUT_MILLIS - 1))
+        assertFalse(attempts.isLocked(start + HandoffV2.CODE_LOCKOUT_MILLIS))
+        // After the wait the count starts again, as the host's does.
+        attempts = attempts.failed(start + HandoffV2.CODE_LOCKOUT_MILLIS)
+        assertEquals(1, attempts.wrong)
+        assertFalse(attempts.isLocked(start + HandoffV2.CODE_LOCKOUT_MILLIS))
     }
 
     // MARK: - Camera frames

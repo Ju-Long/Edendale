@@ -256,6 +256,7 @@ internal fun SyncHandoffDialog(
                 discovery.start()
                 scanned?.let { startGuest(it, myRole) }
             }
+            PairingFlow.Mode.ENTER -> discovery.start()
             null -> Unit
         }
     }
