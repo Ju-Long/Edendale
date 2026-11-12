@@ -365,9 +365,14 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             if (simple in reviewRequired) notes += "permission $permission needs Meta's review; justify it in the submission"
         }
         if (permissions.any { it.endsWith("WRITE_EPG_DATA") }) failures += "WRITE_EPG_DATA (TV Watch Next) is still declared"
-        // B.14: android's pairing QR scanner asks for the camera; a headset never offers it,
-        // and Meta reviews the permission, so the overlay removes it.
-        if (permissions.any { it == "android.permission.CAMERA" }) failures += "CAMERA (android's pairing QR scanner) is still declared (HORIZON.md B.14)"
+        // B.15: a Quest 3's pairing scanner reads the passthrough camera, which Meta's
+        // Passthrough Camera API opens only with both permissions; one without the other
+        // is a scanner that can't open. Both are on Meta's review list (noted above).
+        val camera = "android.permission.CAMERA" in permissions
+        val headsetCamera = "horizonos.permission.HEADSET_CAMERA" in permissions
+        if (camera != headsetCamera) {
+            failures += "CAMERA and horizonos.permission.HEADSET_CAMERA must be declared together for the Quest 3's pairing scanner (HORIZON.md B.15)"
+        }
         notes += "permissions: ${permissions.joinToString()}"
 
         val features = manifest.elements("uses-feature")

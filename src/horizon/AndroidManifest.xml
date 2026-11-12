@@ -27,16 +27,16 @@
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"
         tools:node="remove" />
 
-    <!-- android's 27.1 pairing scans the other device's QR code with the
-         camera on phones and tablets. Meta reviews CAMERA, and a headset is
-         never offered the scanner (android's own headset check; a headset
-         only shows its QR code and six-digit code), so the permission and
-         its optional camera features come out here (B.14). Without the
-         permission the camera can't open even where the scanner is mounted
-         for a moment while a pairing link connects. -->
-    <uses-permission
-        android:name="android.permission.CAMERA"
-        tools:node="remove" />
+    <!-- B.15: a Quest 3 or 3S scans the other device's pairing code with its
+         passthrough camera (Meta's Passthrough Camera API, Horizon OS v74 and
+         later), which needs android's CAMERA and Meta's HEADSET_CAMERA, both
+         asked for only when the viewer chooses to scan; frames are read on
+         the headset and never kept or sent. Meta reviews both, so the
+         submission justifies them (HORIZON.md B.15). A Quest 2 or Pro never
+         offers the scanner and asks for neither. android's three optional
+         camera features still come out, as in B.14: they are
+         required="false" and say nothing about a headset's cameras. -->
+    <uses-permission android:name="horizonos.permission.HEADSET_CAMERA" />
     <uses-feature
         android:name="android.hardware.camera.any"
         tools:node="remove" />

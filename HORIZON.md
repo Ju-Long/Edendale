@@ -7,7 +7,7 @@ against.
 
 | | |
 |---|---|
-| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05; `android-27.1` at `71a9007` (the rest of 27.1: parental controls, the ten requests, the Settings layout, the Downloaded section picker, and the Android XR theater's rules) merged on 2026-11-11 (B.14); `android-27.1` at `071d632` (the 27.1 review's fixes, ENHANCEMENT.md Section R) merged the same day as `0694582` (B.14); `android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, with a QR scanner on phones and tablets, and button text that shrinks or wraps on small screens, ENHANCEMENT.md Section S) merged on 2026-11-12 (B.14) |
+| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05; `android-27.1` at `71a9007` (the rest of 27.1: parental controls, the ten requests, the Settings layout, the Downloaded section picker, and the Android XR theater's rules) merged on 2026-11-11 (B.14); `android-27.1` at `071d632` (the 27.1 review's fixes, ENHANCEMENT.md Section R) merged the same day as `0694582` (B.14); `android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, with a QR scanner on phones and tablets, and button text that shrinks or wraps on small screens, ENHANCEMENT.md Section S) merged on 2026-11-12 (B.14); `android-27.1` at `35bbf0c` (joining by the other device's code, a Quest 3 scanning with its passthrough camera, and a pairing link that asks for no camera, ENHANCEMENT.md Section T) merged on 2026-11-12 (B.15) |
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
@@ -554,6 +554,11 @@ and record the result in Findings either way.
     guest only through an `edendale://handoff` link opened on it, which
     first asks "Pair with …?". A headset and a TV both only show a code, so
     they can't pair with each other. The checks for this are B.14's.
+    *Later on 2026-11-12 (B.15):* android's Section T brings back joining by
+    a typed code (Enter the Other Device's Code, which lists the devices
+    found) and lets a Quest 3 or 3S scan with its passthrough camera, so a
+    headset pairs with a TV or another headset and joins a phone without a
+    link; the checks are B.15's.
   - A Google Drive location sent from an Android phone arrives as an account
     the headset can use without signing in (§9.8 groups `horizon` with
     `android`; C.1 decides whether that holds).
@@ -663,7 +668,11 @@ and record the result in Findings either way.
     Whether headset-to-TV pairing matters is the owner's call; a fix would
     be android's (Hard rule 1), for example a guest that picks a found host
     and types its code, which the host still accepts
-    (`HandoffProtocolV2.GuestPairing.Code`).
+    (`HandoffProtocolV2.GuestPairing.Code`). *Later on 2026-11-12 (B.15):*
+    android's Section T is that fix, and more: any device can join by the
+    other device's code, a pairing link no longer composes the scanner, and
+    a Quest 3 or 3S scans with its passthrough camera, so this build
+    declares `CAMERA` again, with Meta's `HEADSET_CAMERA`.
 
   On the Quest 3, check:
   - Installing over the 27.0 build keeps the library, progress, and accounts.
@@ -717,7 +726,9 @@ and record the result in Findings either way.
     for `CAMERA`, which this build doesn't declare. Note any pause or flash
     of the panel; if a phone shows the same, it's android's to fix.
   - `adb shell dumpsys package com.babasama.edendale` lists no
-    `android.permission.CAMERA`.
+    `android.permission.CAMERA`. *(Superseded by B.15: it lists `CAMERA` and
+    `horizonos.permission.HEADSET_CAMERA`, granted only once a scan is
+    allowed.)*
   - Choosing another sync location on the headset, from a folder to a
     linked account and back: Sync says "This device's file is still in …"
     with Delete My File There and Keep It; Delete My File There removes the
@@ -766,6 +777,75 @@ and record the result in Findings either way.
   three camera features with `tools:node="remove"`, and
   `verifyHorizonRelease` fails if `CAMERA` is declared, so a submission has
   no camera to justify; B.13's pairing check has a note for the new screen.
+
+- [ ] **B.15** Joining by a typed code, the Quest 3 scanner, and the pairing
+  link: `android-27.1` at `35bbf0c` (ENHANCEMENT.md Section T), merged on
+  2026-11-12 at the owner's request ("Also let Quest 3 scan"), with no new
+  hook in `src/main`. Built without a headset:
+  - **Joining by a typed code.** Under the code a headset shows (a Quest 2
+    or Pro always; a Quest 3 that chose Show), and under a Quest 3's
+    scanner, **Enter the Other Device's Code** lists the devices on the
+    network that show a code (Apple's show only a QR code and aren't
+    listed), takes the only one at once, and asks for its six digits on the
+    system keyboard. So a headset pairs with a TV or another headset, one
+    showing and one typing, and joins a phone as the guest without a link.
+    A headset's own code now reads "Or enter the code … on an Android
+    device, a Meta Quest, or a Windows PC." Five wrong codes in a row make
+    the field wait the minute the host waits.
+  - **A Quest 3 scans.** `PairingFlow.modes` offers a Quest 3 or 3S **Scan
+    the Other Device's Code** beside Show, as on a phone: a headset whose
+    cameras carry Meta's passthrough tag, or whose model is `Quest 3` or
+    `Quest 3S` (device `eureka`). The scanner asks for `CAMERA` and
+    `horizonos.permission.HEADSET_CAMERA` together, then opens the left
+    passthrough camera through CameraX, picked by Meta's tags
+    (`com.meta.extra_metadata.camera_source` 0, `.position` 0); never the
+    avatar camera. A Quest 2 or Pro has no passthrough camera for apps,
+    still only shows, and never asks.
+  - **The overlay** keeps android's `CAMERA`, which B.14 removed, and adds
+    `HEADSET_CAMERA`; android's three optional camera features still come
+    out. `verifyHorizonRelease` fails if one permission is declared without
+    the other, and notes both as needing Meta's review.
+  - **The pairing link.** android's dialog no longer composes the scanner
+    while a link connects, so a link opened on the headset asks for no
+    camera (B.14's check).
+  - **For the submission (Section F, the owner's):** Meta reviews `CAMERA`
+    and `HEADSET_CAMERA`. A justification to adapt: "Edendale uses the
+    headset's camera only to scan the QR code another device shows when
+    you pair it, to share your sync location and logins. The camera opens
+    only after you choose Scan the Other Device's Code in Settings → Sync
+    and allow it; frames are read on the headset to find the code and are
+    never stored or sent. Pairing works without the camera: you can type
+    the six-digit code instead." Meta counts camera images as Device User
+    Data under its Developer Data Use Policy, and `web`'s privacy policy
+    says nothing yet about a camera on a Quest (F.3).
+
+  On the Quest 3, check:
+  - Receive from Another Device and Set Up Another Device offer Scan the
+    Other Device's Code and Show a Code for the Other Device to Scan. Scan
+    asks for the camera and the headset camera (note whether that is one
+    prompt or two), shows the passthrough view in the panel, and reads a
+    phone's code held in view; pairing goes on. Note the distance and light
+    that work. If the panel says "The camera isn't available" with both
+    allowed, `adb logcat -s PairingScanner` says why ("no camera to scan
+    with" or "camera failed"): CameraX didn't open the passthrough camera,
+    and android's scanner needs a Camera2 path (ENHANCEMENT.md Findings).
+  - Refusing either permission: "The camera isn't available…", and Enter
+    the Other Device's Code joins instead.
+  - Enter the Other Device's Code: a phone showing its code is taken at
+    once or listed; the system keyboard types the six digits; a wrong code,
+    then the right one; Back to the scanner.
+  - The headset and an Android TV pair, one showing and the other typing,
+    then the other way round.
+  - On a Quest 2 or Pro if one is at hand (or in the Spatial Simulator):
+    only the code shows, with Enter the Other Device's Code under it, and
+    no camera prompt ever.
+  - A pairing link opened on the headset (`adb shell am start -a
+    android.intent.action.VIEW -d '<the phone's link>'
+    com.babasama.edendale`), Receive on this device: it connects with no
+    `GrantPermissionsActivity` in `logcat`.
+  - `adb shell dumpsys package com.babasama.edendale` lists
+    `android.permission.CAMERA` and `horizonos.permission.HEADSET_CAMERA`,
+    granted only after a scan was allowed.
 
 ---
 
@@ -1448,6 +1528,7 @@ For whoever reviews the implementation:
 | 2026-11-05 | Meta Spatial SDK 0.14.0 AARs (Gradle cache), no device | Read from the SDK itself, since Meta's pages don't say: `MeshCreationSystem` resolves a mesh URI against `apk:///`, the APK's assets, so `apk:///theater/<room>.glb` loads a room. `libMetaSpatialSDK.so` names `KHR_materials_unlit`, `KHR_texture_transform`, and `KHR_materials_pbrSpecularGlossiness`, and its PBR shader has an unlit variant (`pbLit_unlit`, `pbLit_noalphatest_unlit`; `outColor.rgb = unlit * albedo + …`), so the glTF-standard unlit material is drawn from its base colour. `SceneMesh` exposes `getNodeIndex(name)` and `calculateNodeGlobalMatrix(index)` (and `Matrix44.decompose()`), so the loaded room's nodes can be read back. Run on the JVM, `Quaternion.lookRotationAroundY(v)` turns +Z onto `v` and +X onto (cos, 0, −sin) of v's yaw. Meta's 3D-objects page says the SDK is left-handed (X right, Y up, Z forward) and converts glTF, without saying which axis; its architecture page says right-handed. | G.14 reads the room's frame at runtime; G.10 confirms on the Quest 3. |
 | 2026-11-05 | `work-runtime` 2.10.1 AAR (Gradle cache), no device | WorkManager, which `android`'s 27.1 sync adds, declares `WAKE_LOCK`, `ACCESS_NETWORK_STATE`, `RECEIVE_BOOT_COMPLETED`, and `FOREGROUND_SERVICE`. Only `Processor.startForeground` (foreground work) and the `systemalarm` classes call `WakeLocks.newWakeLock`, and `values-v23` turns the alarm scheduler off, so with minSdk 32 a periodic job never takes a wake lock. `RECEIVE_BOOT_COMPLETED` serves `RescheduleReceiver`. *2026-11-11:* the same holds for the one-off job android's R.7 queues on leaving with a write pending (B.14), a `OneTimeWorkRequest` with a network constraint that is neither expedited nor foreground work. | The overlay removes it (Deviations); B.13 checks the job on the headset. |
 | 2026-11-11 | Spatial Simulator 207.0.0.83.331; signed 2D release `27.1` (versionCode 5) from the B.14 tree, installed over the `27.0` build of 2026-10-26 | The upgrade keeps the library, its artwork, and progress (Room goes to schema 5 on the 10-26 data): Continue Watching still holds His Girl Friday at 13:33, and it resumes there. A downloaded film opens its detail page (Play, the stars, the story); a 2 s clip plays to its end, returns to the page, and is marked watched. The player's chrome shows only the playlist and panel buttons: no Picture in Picture, no Rotation Lock, no Theater. A vertical `adb shell input swipe` on either half shows no HUD, doesn't toggle the controls, and leaves the media volume at 15. Settings is the list of pages; Player Controls has no Picture in Picture row, there is no Android TV page, and Back returns from a page to the list. About reads Version 27.1, then TMDB's notice, the font's credit, the licence line (MPL-2.0, FFmpeg 6.0.2 under LGPL-2.1), and TheIntroDB's link. Ratings, Locks, and PIN: a PIN set through the two-step dialog with `adb shell input text`; with Require PIN for library changes on, Add Local Folder asks for the parental PIN; changing a lock asks for it; Remove PIN restores the page (the test PIN and lock were removed afterwards). With the Downloaded section picker merged in: the picker sits at the top left of the page beside the sidebar's Continue Watching, Movies, and TV Shows rows, and a choice in either shows in the other. | The simulator can't answer B.14's headset checks (rays, hands, the sticks, the system keyboard, the browser hand-off). It had no route out on this run: a second build with the service keys failed to reach `api.themoviedb.org`, so the home page, the rating lists, and Watch Trailer (B.10 on the rebuilt detail page) were not seen and stay on B.14's headset list. The simulator now holds the keyed `27.1` build in place of `27.0`. |
+| 2026-11-12 | Meta's documents, no device | Meta's Passthrough Camera API: Quest 3 and 3S on Horizon OS v74 and later (v76 in the Kotlin sample); the headset's front colour cameras through Camera2; `android.permission.CAMERA` and `horizonos.permission.HEADSET_CAMERA` (Meta's Android-apps page says either; its Spatial SDK page and sample use both, so this build declares both); vendor tags `com.meta.extra_metadata.camera_source` (0 is passthrough) and `com.meta.extra_metadata.position` (0 left, 1 right); 1280×960 frames (1280×1280 from v83); camera images are Device User Data under Meta's Developer Data Use Policy. Meta's samples open these cameras with Camera2, and its pages don't say whether CameraX lists them. The models `Quest 3` and `Quest 3S` are assumed; the 2026-10-10 probe recorded only the device `eureka`. | B.15's headset check: if CameraX can't open the passthrough camera, android's scanner needs a Camera2 path. |
 
 ## Deviations log
 
@@ -1495,6 +1576,7 @@ For whoever reviews the implementation:
 | 2026-11-11 | .gitignore, B.14 | android's new `/src/horizon` ignore line was not taken. | android ignores leftovers of this branch in its checkout; here that directory is the flavor's source. |
 | 2026-11-11 | B.10, B.14 | `TrailerEmbed.kt` and `TrailerEmbedTest.kt` are no longer this branch's additions to `src/main` and `src/test`: android has the same files since R.5 (`7d3883d`), `TrailerEmbed.watchUrl` included, which only B.10's Watch Trailer branch calls. So the trailer `Referer` fix that Hard rule 1 names as its example has gone to android and come back by merge, and `src/test` is android's byte for byte. | Hard rule 1 itself: a fix that isn't specific to a headset goes to `android` as its own change and returns by merge. |
 | 2026-11-12 | A.2, B.14 | The overlay removes the `android.permission.CAMERA` that android's `717a2ed` declares, and its three `required="false"` camera features (`android.hardware.camera.any`, `android.hardware.camera`, `android.hardware.camera.autofocus`), with `tools:node="remove"`, as it removes `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED`, and `verifyHorizonRelease` fails if `CAMERA` is still declared. The CameraX 1.4.2 libraries stay in the APK, unused on a headset, and `src/main` gains no hook. | Meta reviews `CAMERA` (it is on `gradle/meta-review-required-permissions.txt`, which the check would only note), and nothing on a headset uses it: `PairingFlow.modes` offers the scanner only on a device with a camera that is neither a TV nor a headset (`isHeadset` in `SyncHandoffDialog`: the manufacturer `Oculus` or `Meta`, or Android XR's spatial feature), so a Quest pairs by showing its QR code and its six-digit code, and its submission has no camera to justify. The libraries stay because `src/main` compiles against them; keeping them out would take a hook around `QrCodeScanner` in `src/main` (Hard rule 1). |
+| 2026-11-12 | A.2, B.15 | The overlay keeps android's `android.permission.CAMERA`, which B.14 removed, and adds Meta's `horizonos.permission.HEADSET_CAMERA`; `verifyHorizonRelease` fails only when one is declared without the other. | The owner asked for a Quest 3 to scan another device's code (2026-11-12), which Meta's Passthrough Camera API allows only with both. Both are on Meta's review list, so the submission justifies them (B.15 has a draft). A Quest 2 or Pro never offers the scanner, so it never asks. |
 
 ## Handoff log
 
@@ -1523,6 +1605,7 @@ For whoever reviews the implementation:
 | 2026-11-11 | B.14 (`android-27.1` merged) | Owner, Claude | The owner asked for android's 27.1 changes on this branch once reviewed. `android-27.1` was reviewed first (its own ENHANCEMENT.md Handoff row; the Downloaded section picker was committed there as `147c2f2`, and the Theater chip's wait for the parental check as `71a9007`). `git merge android-27.1`: conflicts in `.gitignore`, `MediaDetailScreen`, `PlayerActivity`, `PlayerScreen`, `VideoEffectsController`, and `ic_theater.xml` (the merge commit's message says how each went), and `player_theater` twice in every `strings.xml`. `git diff android-27.1 -- src/main/AndroidManifest.xml` and `-- src/main/res` are empty; `git diff android-27.1 --stat -- src/main` lists `EdendaleApplication`, `MainActivity`, `MediaDetailScreen`, `SettingsScreen`, `TrailerEmbed`, `PlayerActivity`, `PlayerScreen`, `VideoEffectsController`, and `SyncCoordinator`. Then the B.14 changes (Deviations). Ran (JDK 17): `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 898 tests pass (569 before the merge), the store check passes with the same four permissions, signed with the Quest key, 72.6 MB, "2D panel app"; and the same with `-Phorizon.theater=true`: 898 tests pass, 143.1 MB, with `TheaterActivity`, its three rooms, and the Spatial SDK. The merge commit alone compiles (`compileHorizonDebugKotlin compileHorizonDebugUnitTestKotlin`). Spatial Simulator run in Findings. The merged code was reviewed by three reviewers, each finding checked by a second. **Not run:** every headset check in B.14, the instrumented tests, and the theater on a device. Still android's to fix, and so still here after this merge (its ENHANCEMENT.md Handoff row of 2026-11-11): the Link Source privacy lines that say Edendale never uploads although sync writes its own files, the Google sign-in a TV can't complete after a handoff from another ecosystem, no offer to delete this device's file when the sync location changes, and the handoff `Login` reader without the nested `credential` fallback. The trailer `Referer` fix is still this branch's alone (`TrailerEmbed`; `android-trailer-referer` isn't merged into android). *2026-11-11:* android fixed all five as R.1–R.5 on `android-27.1`, merged here the same day (next row). |
 | 2026-11-11 | B.14 (`android-27.1` R.1–R.7 merged) | Owner, Claude | The owner asked for the 27.1 review's fixes on this branch. `git merge android-27.1`, then at `071d632` (`71a9007..071d632`, eight commits, ENHANCEMENT.md R.1–R.7), onto `190019a`, committed as `0694582` and not pushed. One conflict: `.github/workflows/instrumented.yml`, where android renamed `android-27.0` to `android-27.1` in its push and pull-request triggers; this branch kept `[meta-horizon]` in both. Everything else merged without a conflict. `git diff android-27.1 -- src/main/AndroidManifest.xml` and `-- src/main/res` were empty with `android-27.1` at `071d632`, and `git diff 071d632 0694582 --stat -- src/main` lists `EdendaleApplication`, `MainActivity`, `MediaDetailScreen`, `SettingsScreen`, `PlayerActivity`, `PlayerScreen`, `VideoEffectsController`, and `SyncCoordinator`: `TrailerEmbed` has left the list (Deviations). Ran: `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 908 tests pass, 0 failures (898 before the merge), the store check passes with the same four permissions, signed release 72.7 MB; and the same with `-Phorizon.theater=true`: 908 tests pass, the store check passes with `HAND_TRACKING` as well, 143.1 MB. The merge was reviewed by two reviewers, each finding checked by a second. They found no fault in the merged code. They found that this plan and the README hadn't caught up: no B.14 text or Handoff row for this merge; the previous row and the 2026-10-10 trailer finding still giving the `Referer` fix as this branch's alone; Hard rule 1's and Appendix 2's `git diff android -- src/main`, which has shown all of 27.1 since the first merge of `android-27.1`; and, in README, android's new App Bundle paragraph (the `:xr` bundle this branch doesn't build), the Meta Quest section's trailer sentence (silent on a headset leaving the `youtube-nocookie.com` embed that the merged opening describes), and that section's 27.1 headset list. All are corrected in this change. They named B.14's three new headset checks (R.2's follow-ups, R.3's old file, R.7's one-off job) and the next merge's `CAMERA` (B.14). Left as they are: `StringResourcesTest` reads `src/main/res` only, so the flavor's strings in `src/horizon/res` and `src/horizonTheater/res` aren't checked across the 19 locales (a test in `src/testHorizon` would cover them); and `Horizon Store/27.0/source-en-GB.md` says the watch history stays on the headset, which a 27.1 listing has to change now that sync can write it elsewhere. **Not run:** a headset, the simulator, the instrumented tests. Of the android items the previous row listed as still to fix, R.1 to R.5 fixed the privacy lines, the TV sign-in, the old location's file, the `Login` reader, and the trailer `Referer`. `android-27.1` has since moved to `717a2ed` (pairing by scanning a QR code), not merged here: it adds `android.permission.CAMERA`, which is on `gradle/meta-review-required-permissions.txt`, so the next merge has to remove it in the overlay and keep the scanner off a headset (`717a2ed`'s own headset check already offers a headset only its code to show), or the owner has to justify it to Meta (B.13 records that the app asks for no camera). |
 | 2026-11-12 | B.14 (`android-27.1` `717a2ed` merged) | Owner, Claude | The owner asked for the merge. `git merge android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, ENHANCEMENT.md Section S, and button text that shrinks or wraps on small screens) onto `489f92a`: no conflict. `git diff 717a2ed --stat -- src/main` lists the same eight files as the previous row, and `git diff 717a2ed` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/test`, or `-- ENHANCEMENT.md` is empty. Then the overlay's removal of `CAMERA` and the three camera features, and the store check's failure on `CAMERA` (Deviations). Ran: `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 916 tests pass (908 before the merge), the store check passes with the same permissions as before and no `CAMERA`, signed release 74.3 MB; and `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease -Phorizon.theater=true`: 916 tests pass, the store check passes with the same permissions as before and no `CAMERA`, 144.9 MB. The merge was reviewed by two reviewers, each finding checked by a second: a headset now only shows its code, so it pairs only with a device that scans that code (a phone or tablet with a camera, an iPhone or iPad) or a Windows PC that types it, is a guest only through an `edendale://handoff` link, and can't pair with a TV or another headset; and with such a link android's dialog composes `QrCodeScanner` once before it connects, so the scanner asks for the `CAMERA` this build doesn't declare (android's to fix if it shows on a phone). Their headset questions are B.14's new checks, and their corrections to B.13, B.14, D.1, the header, the Deviations log, and the README's Meta Quest section are in this change. **Not run:** a headset, the simulator, the instrumented tests. |
+| 2026-11-12 | B.15 (`android-27.1` `35bbf0c` merged) | Owner, Claude | The owner asked for a Quest 3 to scan ("Also let Quest 3 scan") and for this branch's part of it: the merge, the permissions, the store check, and this plan, unpushed. `git merge android-27.1` at `35bbf0c` (ENHANCEMENT.md Section T) onto `77972ba`: no conflict, `6091729`. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, and `git diff android-27.1 --stat -- src/main` lists the same eight files. Then the overlay and the store check (Deviations). Ran: `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 927 tests pass (916 before the merge), the store check passes and notes `CAMERA` and `horizonos.permission.HEADSET_CAMERA` for Meta's review, signed release 74.4 MB; and the same with `-Phorizon.theater=true`: 927 tests pass, the store check passes with `HAND_TRACKING` as well, 145.0 MB. android checked the typed join, the pairing link, and the TV layout on its emulators (ENHANCEMENT.md T.D1). **Not run:** a headset (whether CameraX opens the Quest 3's passthrough camera is unverified, Findings), the simulator, the instrumented tests. |
 
 ## Sources
 
