@@ -140,6 +140,7 @@ internal static class AppText
         ["Sync_WarningTooLarge"] = "The sync file from {0} is too large, so it was skipped.",
         ["Sync_WarningSkipped"] = "The sync file from {0} couldn’t be read, so it was skipped.",
         ["Sync_WarningClockAhead"] = "The clock on {0} is more than a day ahead; its latest changes were not applied.",
+        ["Sync_WarningCloudDownload"] = "The sync file from {0} couldn’t be downloaded from the cloud. Make sure the app that syncs this folder is running and that Windows lets Edendale download files.",
         ["Sync_FolderOneDrive"] = "OneDrive folder on this PC",
         ["Sync_FolderICloud"] = "iCloud Drive folder on this PC",
 

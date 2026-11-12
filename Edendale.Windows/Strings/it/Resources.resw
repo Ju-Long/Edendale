@@ -1970,4 +1970,7 @@
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Non è stato possibile scaricare dal cloud il file di sincronizzazione di {0}. Assicurati che l'app che sincronizza questa cartella sia in esecuzione e che Windows consenta a Edendale di scaricare file.</value>
+  </data>
 </root>

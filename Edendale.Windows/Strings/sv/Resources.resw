@@ -1970,4 +1970,7 @@
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Synkfilen från {0} kunde inte hämtas från molnet. Kontrollera att appen som synkar den här mappen körs och att Windows låter Edendale hämta filer.</value>
+  </data>
 </root>

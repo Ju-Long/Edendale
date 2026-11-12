@@ -1970,4 +1970,7 @@
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>{0}의 동기화 파일을 클라우드에서 다운로드할 수 없습니다. 이 폴더를 동기화하는 앱이 실행 중인지, Windows에서 Edendale의 파일 다운로드를 허용하는지 확인하세요.</value>
+  </data>
 </root>

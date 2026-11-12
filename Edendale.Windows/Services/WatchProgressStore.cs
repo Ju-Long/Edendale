@@ -234,21 +234,30 @@ public sealed class WatchProgressStore
         RaiseChanged(local: false);
     }
 
+    /// <summary>Whether an episode received from another device still waits for this PC's id.</summary>
+    public bool HasUnresolvedEpisodes
+    {
+        get
+        {
+            lock (_gate) return _records.Values.Any(record => record is { MediaType: "episode", TmdbId: 0, IsSyncable: true });
+        }
+    }
+
     /// <summary>
-    /// Fills in the TMDB ids of episodes received from other devices, from
-    /// <paramref name="resolve"/> (show, season, episode → episode id). Returns
+    /// Fills in the TMDB ids of episodes received from other devices from
+    /// the library's <paramref name="index"/> by sync key
+    /// (<c>tv:&lt;show&gt;:&lt;season&gt;:&lt;episode&gt;</c>, SyncEpisodeIndex). Returns
     /// how many were matched.
     /// </summary>
-    public int ResolveEpisodeIds(Func<int, int, int, int?> resolve)
+    public int ResolveEpisodeIds(IReadOnlyDictionary<string, int> index)
     {
         var resolved = 0;
         lock (_gate)
         {
-            foreach (var record in _records.Values.ToList())
+            foreach (var record in _records.Values)
             {
-                if (record.MediaType != "episode" || record.TmdbId != 0) continue;
-                if (record is not { ShowTmdbId: int show, SeasonNumber: int season, EpisodeNumber: int episode }) continue;
-                if (resolve(show, season, episode) is not int id || id <= 0) continue;
+                if (record is not { MediaType: "episode", TmdbId: 0, IsSyncable: true }) continue;
+                if (!index.TryGetValue(record.SyncKey, out var id) || id <= 0) continue;
                 record.TmdbId = id;
                 _episodes[id] = record;
                 resolved++;

@@ -113,6 +113,16 @@ public sealed class LibraryService
         lock (_gate) return [.. _data.Shows.Where(s => s.TmdbId == tmdbId)];
     }
 
+    /// <summary>
+    /// Every identified episode's TMDB id by sync key (<c>tv:1399:2:4</c>),
+    /// in one pass under the lock without copying the library: how the sync
+    /// engine and the progress store place episodes from other devices.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> EpisodeIndex()
+    {
+        lock (_gate) return Core.Sync.SyncEpisodeIndex.FromLibrary(_data.Shows);
+    }
+
     /// <summary>How many sources a saved login serves (Settings → Accounts).</summary>
     public int SourceCount(MediaSourceKind kind, string credentialKey)
     {

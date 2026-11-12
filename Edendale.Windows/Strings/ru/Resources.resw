@@ -1970,4 +1970,7 @@
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Гц</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Не удалось загрузить из облака файл синхронизации от {0}. Убедитесь, что приложение, которое синхронизирует эту папку, запущено и что Windows разрешает Edendale загружать файлы.</value>
+  </data>
 </root>

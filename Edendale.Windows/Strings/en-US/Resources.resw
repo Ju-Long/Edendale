@@ -1975,4 +1975,8 @@ IS SILENT</value>
     <value>Hz</value>
     <comment>The unit under the equalizer graph's dB scale.</comment>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>The sync file from {0} couldn’t be downloaded from the cloud. Make sure the app that syncs this folder is running and that Windows lets Edendale download files.</value>
+    <comment>Settings &gt; Sync warning when Windows refuses to download a cloud placeholder. {0} = device name.</comment>
+  </data>
 </root>

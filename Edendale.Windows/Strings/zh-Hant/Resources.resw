@@ -1970,4 +1970,7 @@
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>無法從雲端下載來自 {0} 的同步檔案。請確認同步此資料夾的應用程式正在執行，且 Windows 允許 Edendale 下載檔案。</value>
+  </data>
 </root>

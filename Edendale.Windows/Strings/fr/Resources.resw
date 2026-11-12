@@ -1970,4 +1970,7 @@ EST SILENCIEUSE</value>
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Le fichier de synchronisation de {0} n'a pas pu être téléchargé depuis le cloud. Vérifiez que l'app qui synchronise ce dossier est ouverte et que Windows autorise Edendale à télécharger des fichiers.</value>
+  </data>
 </root>

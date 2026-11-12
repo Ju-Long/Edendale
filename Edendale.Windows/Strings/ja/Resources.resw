@@ -1970,4 +1970,7 @@
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>{0} の同期ファイルをクラウドからダウンロードできませんでした。このフォルダーを同期するアプリが実行中であること、および Windows が Edendale にファイルのダウンロードを許可していることを確認してください。</value>
+  </data>
 </root>

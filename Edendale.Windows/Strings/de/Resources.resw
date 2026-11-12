@@ -1970,4 +1970,7 @@ IST STUMM</value>
   <data name="Audio_HertzUnit" xml:space="preserve">
     <value>Hz</value>
   </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Die Sync-Datei von {0} konnte nicht aus der Cloud heruntergeladen werden. Prüfe, ob die App läuft, die diesen Ordner synchronisiert, und ob Windows Edendale das Herunterladen von Dateien erlaubt.</value>
+  </data>
 </root>
