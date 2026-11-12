@@ -2033,4 +2033,7 @@ IST STUMM</value>
   <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
     <value>Legt fest, von welcher Quelle diese Folge abgespielt wird.</value>
   </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>Fortschritt löschen</value>
+  </data>
 </root>

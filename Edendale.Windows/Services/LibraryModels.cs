@@ -125,6 +125,16 @@ public sealed class LibraryMovie
     public string Title { get; set; } = "";
     public int? Year { get; set; }
     public int? TmdbId { get; set; }
+
+    /// <summary>
+    /// When TMDB last answered with no match for this file. The metadata
+    /// sweep waits <see cref="LibraryEnrichment.UnmatchedRetryInterval"/>
+    /// before asking again, and a forced rescan asks at once; a failed request
+    /// leaves it null so the next sweep retries (Apple Movie.metadataCheckedAt).
+    /// Library data: it stays in library.json and never syncs.
+    /// </summary>
+    public DateTimeOffset? MetadataCheckedAt { get; set; }
+
     public string? PosterUrl { get; set; }
     public string? BackdropUrl { get; set; }
     public string? Overview { get; set; }
@@ -160,6 +170,13 @@ public sealed class LibraryEpisode
     public int Episode { get; set; }
     public string? Title { get; set; }
     public int? TmdbId { get; set; }
+
+    /// <summary>
+    /// When TMDB last had no such episode for the matched show (see
+    /// <see cref="LibraryMovie.MetadataCheckedAt"/>).
+    /// </summary>
+    public DateTimeOffset? MetadataCheckedAt { get; set; }
+
     public string? StillUrl { get; set; }
     public int? RuntimeMinutes { get; set; }
     public DateTimeOffset DateAdded { get; set; } = DateTimeOffset.UtcNow;
@@ -173,6 +190,13 @@ public sealed class LibraryShow
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "";
     public int? TmdbId { get; set; }
+
+    /// <summary>
+    /// When TMDB last answered with no match for this show (see
+    /// <see cref="LibraryMovie.MetadataCheckedAt"/>).
+    /// </summary>
+    public DateTimeOffset? MetadataCheckedAt { get; set; }
+
     public string? PosterUrl { get; set; }
     public string? BackdropUrl { get; set; }
     public string? Overview { get; set; }

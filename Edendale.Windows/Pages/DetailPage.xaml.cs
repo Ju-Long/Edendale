@@ -726,9 +726,10 @@ public sealed partial class DetailPage : Page
 
         double progress = 0;
         var watched = false;
+        WatchProgress? record = null;
         if (episode.TmdbId is int tmdbId)
         {
-            var record = AppServices.WatchProgress.Get(tmdbId, "episode");
+            record = AppServices.WatchProgress.Get(tmdbId, "episode");
             watched = record?.IsCompleted == true;
             if (record is { IsCompleted: false }) progress = record.Position;
         }
@@ -776,7 +777,8 @@ public sealed partial class DetailPage : Page
             AutomationProperties.SetHelpText(button, Loc.Get("Detail_EpisodePlayHint"));
         }
 
-        // The context menu keeps the watch state; Play From is the card's own menu.
+        // The context menu keeps the watch state, and Clear Progress for an
+        // episode under way; Play From is the card's own menu.
         var flyout = new MenuFlyout();
         if (episode.TmdbId is int menuTmdbId)
         {
@@ -797,6 +799,19 @@ public sealed partial class DetailPage : Page
                 }
             };
             flyout.Items.Add(toggle);
+
+            // Deletes the saved position; it travels to other devices as a removal.
+            if (record is { IsCompleted: false } saved)
+            {
+                var clear = new MenuFlyoutItem { Text = Loc.Get("Library_ClearProgress") };
+                clear.Click += (_, _) => AppServices.WatchProgress.Remove(
+                    menuTmdbId,
+                    "episode",
+                    saved.ShowTmdbId ?? show.TmdbId,
+                    saved.SeasonNumber ?? episode.Season,
+                    saved.EpisodeNumber ?? episode.Episode);
+                flyout.Items.Add(clear);
+            }
         }
         if (flyout.Items.Count > 0) button.ContextFlyout = flyout;
         return button;

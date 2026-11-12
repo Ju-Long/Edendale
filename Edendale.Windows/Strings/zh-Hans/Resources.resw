@@ -2033,4 +2033,7 @@
   <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
     <value>选择播放此集所用的来源。</value>
   </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>清除观看进度</value>
+  </data>
 </root>

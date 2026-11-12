@@ -2033,4 +2033,7 @@
   <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
     <value>Выбирает источник для воспроизведения этого эпизода.</value>
   </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>Сбросить прогресс</value>
+  </data>
 </root>

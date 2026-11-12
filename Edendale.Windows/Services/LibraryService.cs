@@ -52,7 +52,10 @@ public sealed class LibraryService
     public event EventHandler? Changed;
 
     public bool IsImporting { get; private set; }
-    public bool IsEnriching { get; private set; }
+
+    /// <summary>Whether the TMDB sweep is running (the Downloaded page's status row).</summary>
+    public bool IsEnriching => _metadata.IsRunning;
+
     public string? ErrorMessage { get; private set; }
 
     public LibraryService(SmbCredentialsStore smbCredentials)
@@ -70,6 +73,9 @@ public sealed class LibraryService
         {
             _data = new LibraryData();
         }
+
+        _metadata = new MetadataSweep(_data, _gate, MetadataLookup.Tmdb, () => DateTimeOffset.UtcNow, Save);
+        _metadata.RunningChanged += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public IReadOnlyList<LibraryFolder> Folders { get { lock (_gate) return [.. _data.Folders]; } }
@@ -319,7 +325,15 @@ public sealed class LibraryService
         await ScanFolderAsync(folder, connector);
     }
 
-    public Task RescanFolderAsync(LibraryFolder folder) => ScanFolderAsync(folder);
+    /// <summary>
+    /// A source's Rescan: scans it, then asks TMDB again about every title it
+    /// had no match for (Apple LibraryController.rescanFolder).
+    /// </summary>
+    public async Task RescanFolderAsync(LibraryFolder folder)
+    {
+        await ScanFolderAsync(folder);
+        _ = EnrichPendingMetadata(retryingUnmatched: true);
+    }
 
     // ------------------------------------------------------------------
     // Google Drive (ENHANCEMENT.md 3.20)
@@ -409,6 +423,11 @@ public sealed class LibraryService
             {
                 if (force || folder.NeedsAutomaticRescan(now)) await ScanFolderAsync(folder);
             }
+            // Every visit also finishes what an earlier sweep left: an import
+            // interrupted by quitting, lookups made while offline, and episodes
+            // added to a show that was already matched. Ctrl+R and F5 also ask
+            // again about titles TMDB had no match for.
+            _ = EnrichPendingMetadata(retryingUnmatched: force);
         }
         finally
         {
@@ -510,7 +529,7 @@ public sealed class LibraryService
             Changed?.Invoke(this, EventArgs.Empty);
         }
 
-        _ = EnrichAsync();
+        _ = EnrichPendingMetadata();
     }
 
     private readonly record struct ScanOutcome(bool Changed, SourceState? Failure);
@@ -700,104 +719,20 @@ public sealed class LibraryService
     // Background TMDB enrichment — never blocks the import fast path.
     // ------------------------------------------------------------------
 
-    private int _enrichmentRunning;
+    /// <summary>The library-wide TMDB sweep (MetadataSweep); it saves through <see cref="Save"/>.</summary>
+    private readonly MetadataSweep _metadata;
 
-    private async Task EnrichAsync()
-    {
-        if (!WindowsCore.HasTmdbCredentials) return;
-        if (Interlocked.Exchange(ref _enrichmentRunning, 1) == 1) return;
-
-        IsEnriching = true;
-        Changed?.Invoke(this, EventArgs.Empty);
-        try
-        {
-            foreach (var movie in Movies.Where(m => m.TmdbId is null))
-            {
-                await EnrichMovieAsync(movie);
-            }
-            foreach (var show in Shows)
-            {
-                if (show.TmdbId is null) await EnrichShowAsync(show);
-                if (show.TmdbId is int showId)
-                {
-                    foreach (var episode in show.Episodes.Where(e => e.TmdbId is null).ToList())
-                    {
-                        await EnrichEpisodeAsync(showId, episode);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            Interlocked.Exchange(ref _enrichmentRunning, 0);
-            IsEnriching = false;
-            Save();
-        }
-    }
-
-    private async Task EnrichMovieAsync(LibraryMovie movie)
-    {
-        try
-        {
-            var results = await WindowsCore.SearchMediaAsync(movie.Title);
-            var match = results
-                .Where(item => item.MediaType == "movie")
-                .OrderByDescending(item => movie.Year is int year && item.Year == year)
-                .FirstOrDefault();
-            if (match is null) return;
-
-            movie.TmdbId = match.Id;
-            movie.PosterUrl = match.PosterUrl;
-            movie.BackdropUrl = match.BackdropUrl;
-            movie.Overview ??= match.Overview;
-            movie.Year ??= match.Year;
-
-            var detail = await WindowsCore.LoadMediaDetailAsync(match.Id, "movie");
-            movie.RuntimeMinutes = detail.RuntimeMinutes;
-            movie.Overview = detail.Overview ?? movie.Overview;
-        }
-        catch
-        {
-            // Enrichment is best-effort; the file stays usable without it.
-        }
-    }
-
-    private async Task EnrichShowAsync(LibraryShow show)
-    {
-        try
-        {
-            var results = await WindowsCore.SearchMediaAsync(show.Name);
-            var match = results.FirstOrDefault(item => item.MediaType == "tv");
-            if (match is null) return;
-
-            show.TmdbId = match.Id;
-            show.PosterUrl = match.PosterUrl;
-            show.BackdropUrl = match.BackdropUrl;
-            show.Overview = match.Overview;
-            show.FirstAirYear = match.Year;
-        }
-        catch
-        {
-            // Best-effort.
-        }
-    }
-
-    private async Task EnrichEpisodeAsync(int showTmdbId, LibraryEpisode episode)
-    {
-        try
-        {
-            var detail = await WindowsCore.LoadEpisodeDetailAsync(showTmdbId, episode.Season, episode.Episode);
-            if (detail.Id == 0) return;
-            episode.TmdbId = detail.Id;
-            episode.Title = detail.Name;
-            episode.StillUrl = detail.StillUrl;
-            episode.RuntimeMinutes = detail.RuntimeMinutes;
-        }
-        catch
-        {
-            // Best-effort.
-        }
-    }
+    /// <summary>
+    /// Looks up every title still without TMDB metadata, on the sweep's own
+    /// task: at launch, after every import or rescan, and on every Downloaded
+    /// visit. A request while a sweep runs queues one more pass.
+    /// <paramref name="retryingUnmatched"/> (Ctrl+R, F5, a source's Rescan)
+    /// also asks again about titles TMDB had no match for, without waiting
+    /// out <see cref="LibraryEnrichment.UnmatchedRetryInterval"/>. A build
+    /// without TMDB credentials has nothing to ask.
+    /// </summary>
+    public Task EnrichPendingMetadata(bool retryingUnmatched = false) =>
+        WindowsCore.HasTmdbCredentials ? _metadata.Request(retryingUnmatched) : Task.CompletedTask;
 
     /// <summary>
     /// Serializes the writes of library.json. Only file work runs under it,

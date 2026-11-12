@@ -42,8 +42,14 @@
             </Button>
         </DataTemplate>
 
+        <!-- A resumable card offers Clear Progress; an Up Next card has no
+             saved position of its own, so it has no menu. -->
         <DataTemplate x:Key="ResumeTemplate" x:DataType="pages:ResumeEntry">
-            <Button Style="{StaticResource CardButtonStyle}" Click="Resume_Click" Tag="{x:Bind}">
+            <Button
+                Style="{StaticResource CardButtonStyle}"
+                Click="Resume_Click"
+                Tag="{x:Bind}"
+                ContextFlyout="{x:Bind pages:DownloadedPage.ResumeContextFlyout(Record)}">
                 <controls:LandscapeCard
                     Title="{x:Bind Title}"
                     Subtitle="{x:Bind Subtitle}"

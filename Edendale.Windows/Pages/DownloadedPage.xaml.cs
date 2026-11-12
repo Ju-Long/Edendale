@@ -7,6 +7,7 @@ using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
@@ -24,6 +25,12 @@ public sealed class ResumeEntry
     public LibraryMovie? Movie { get; init; }
     public LibraryShow? Show { get; init; }
     public LibraryEpisode? Episode { get; init; }
+
+    /// <summary>
+    /// The saved position behind a resumable card; null for a next-up
+    /// suggestion, which has none of its own.
+    /// </summary>
+    public WatchProgress? Record { get; init; }
 
     /// <summary>Orders resumable titles and next-up suggestions together.</summary>
     public long LastWatchedEpochMillis { get; init; }
@@ -100,6 +107,23 @@ public sealed partial class DownloadedPage : Page
     /// <summary>x:Bind hook for the poster grid's watched check.</summary>
     public static bool MovieWatched(int? tmdbId) =>
         tmdbId is int id && AppServices.WatchProgress.IsWatched(id, "movie");
+
+    /// <summary>
+    /// x:Bind hook for a Continue Watching card's menu: Clear Progress, which
+    /// deletes the saved position and takes the title off the shelf (it syncs
+    /// to other devices as a removal). An Up Next card gets no menu.
+    /// </summary>
+    public static FlyoutBase? ResumeContextFlyout(WatchProgress? record)
+    {
+        if (record is null) return null;
+        var clear = new MenuFlyoutItem { Text = Loc.Get("Library_ClearProgress") };
+        clear.Click += (_, _) => ClearProgress(record);
+        return new MenuFlyout { Items = { clear } };
+    }
+
+    /// <summary>Writes the position away as a removal (a stamped tombstone the sync files carry).</summary>
+    internal static void ClearProgress(WatchProgress record) =>
+        AppServices.WatchProgress.Remove(record.TmdbId, record.MediaType, record.ShowTmdbId, record.SeasonNumber, record.EpisodeNumber);
 
     /// <summary>
     /// x:Bind hook for a show card's subtitle: seasons and episodes counted
@@ -227,6 +251,7 @@ public sealed partial class DownloadedPage : Page
                     Progress = progress.Position,
                     PlaceholderAsset = "ms-appx:///Assets/Icons/film.svg",
                     Movie = movie,
+                    Record = progress,
                     LastWatchedEpochMillis = progress.LastWatchedEpochMillis,
                 });
             }
@@ -243,6 +268,7 @@ public sealed partial class DownloadedPage : Page
                     PlaceholderAsset = "ms-appx:///Assets/Icons/tv.svg",
                     Show = show,
                     Episode = episode,
+                    Record = progress,
                     LastWatchedEpochMillis = progress.LastWatchedEpochMillis,
                 });
             }
@@ -436,17 +462,22 @@ public sealed partial class DownloadedPage : Page
     }
 
     /// <summary>
-    /// A movie card's menu, built as it opens: Remove for a title one source
-    /// holds, or one "Remove from Media (nas.local)" per copy, its kind and
-    /// file name beside it, which tells apart two files in one source
-    /// (DownloadedView.removeButtons at apple-27.1 94a8b4f). Removing one
-    /// copy leaves the others.
+    /// A movie card's menu, built as it opens so it is current: Clear
+    /// Progress while the movie is under way, then Remove for a title one
+    /// source holds, or one "Remove from Media (nas.local)" per copy, its kind
+    /// and file name beside it, which tells apart two files in one source
+    /// (DownloadedView at apple-27.1 94a8b4f). Removing one copy leaves the
+    /// others.
     /// </summary>
     private void MovieMenu_Opening(object? sender, object e)
     {
         if (sender is not MenuFlyout menu || menu.Target is not FrameworkElement { Tag: LibraryMovie movie }) return;
         var library = AppServices.Library;
         menu.Items.Clear();
+        if (movie.TmdbId is int id && AppServices.WatchProgress.Get(id, "movie") is { IsCompleted: false, Position: > 0 } progress)
+        {
+            menu.Items.Add(MenuItem(Loc.Get("Library_ClearProgress"), null, () => ClearProgress(progress)));
+        }
         var copies = library.MovieCopies(movie);
         if (copies.Count <= 1)
         {

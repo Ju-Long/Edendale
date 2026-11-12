@@ -155,7 +155,7 @@ public static class AppServices
         return accounts + sources > 0;
     }
 
-    /// <summary>Launch-time side effects: file sync (with the one-time replica import) and TMDB account sync.</summary>
+    /// <summary>Launch-time side effects: file sync (with the one-time replica import), the library's TMDB sweep, and TMDB account sync.</summary>
     public static void StartBackgroundSync()
     {
         FileSync.Start();
@@ -167,6 +167,9 @@ public static class AppServices
             if (WatchProgress.HasUnresolvedEpisodes) WatchProgress.ResolveEpisodeIds(Library.EpisodeIndex());
         });
         Library.Changed += (_, _) => _episodeResolve.Change(TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+        // Titles a previous launch left unmatched (quit mid-import, offline)
+        // are looked up again without waiting for a visit to Downloaded.
+        _ = Library.EnrichPendingMetadata();
         Account.SyncOnLaunch();
 
         // The watchlist has its own cloud-priority sync: once at launch and

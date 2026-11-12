@@ -2051,4 +2051,8 @@ IS SILENT</value>
   <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
     <value>Chooses which source to play this episode from.</value>
   </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>Clear Progress</value>
+    <comment>Deletes a saved position (Continue Watching card, in-progress movie poster, in-progress episode card).</comment>
+  </data>
 </root>
