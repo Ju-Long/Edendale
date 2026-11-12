@@ -270,7 +270,11 @@ class VideoEnhancementTest {
         repeat(5) { governor.recordMotionSmoothing(11.0) }
         assertTrue(governor.motionSmoothingAtHalfResolution)
         assertTrue(governor.allowsMotionSmoothing)
-        repeat(5) { governor.recordMotionSmoothing(9.0) }
+        // Frames timed at full resolution before the GL thread saw the step don't count against half resolution.
+        repeat(EnhancementGovernor.SETTLE_SAMPLES) { assertFalse(governor.recordMotionSmoothing(12.0)) }
+        repeat(5) { governor.recordMotionSmoothing(4.0) }
+        assertTrue(governor.allowsMotionSmoothing)
+        repeat(5) { governor.recordMotionSmoothing(13.0) }
         assertFalse(governor.allowsMotionSmoothing)
         assertEquals(2, governor.motionSmoothingLevel)
         // Off stays off: nothing measures it, and junk samples don't count.

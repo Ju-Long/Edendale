@@ -222,7 +222,6 @@ class VideoEffectsController(
      */
     fun onTick() {
         val exo = player ?: return
-        val offered = motionSmoothingOffer != null
         measureFrameRate()
         if (!installed) {
             // Nothing to govern, but the Motion Smoothing switch may become available (the capability verdict).
@@ -245,7 +244,8 @@ class VideoEffectsController(
                 governor.record(if (delta > 0) EnhancementGovernor.BUDGET_MILLIS * 1.5 else EnhancementGovernor.BUDGET_MILLIS * 0.3)
             }
         }
-        holder.drainMotionSmoothingMillis().forEach { governor.recordMotionSmoothing(it) }
+        // After a step the rest of the batch was timed before the GL thread saw it.
+        for (millis in holder.drainMotionSmoothingMillis()) if (governor.recordMotionSmoothing(millis)) break
         val upscale = governor.allowsUpscale
         holder.allowsDenoise = governor.allowsDenoise
         // Also picks up the capability verdict once its first run finishes, a measured frame rate, and a GPU
@@ -255,9 +255,10 @@ class VideoEffectsController(
             holder.allowsUpscale = upscale
             refreshTarget()
             apply()
-        } else if (!offered && motionSmoothingOffer != null) {
-            // Newly offered: add the effect now. One that goes away just stops running until the next change,
-            // so the gap between two videos doesn't rebuild the chain twice.
+        } else if (wantsMotionSmoothingEffect() && !installedMotionSmoothing) {
+            // Wanted and not yet in the chain (offered just now, by whichever call noticed first): add it.
+            // One no longer wanted just stops running until the next change, so the gap between two
+            // videos doesn't rebuild the chain twice.
             apply()
         }
     }
@@ -315,7 +316,6 @@ class VideoEffectsController(
         }
         if (offer != motionSmoothingOffer) motionSmoothingOffer = offer
         val wanted = enhancement.motionSmoothing && offer != null
-        governor.motionSmoothingActive = wanted
         val speedAllows = MotionSmoothingRules.runsAtSpeed(playbackSpeed)
         val governorAllows = governor.allowsMotionSmoothing
         val pause = when {
@@ -326,6 +326,8 @@ class VideoEffectsController(
         }
         if (pause != motionSmoothingPause) motionSmoothingPause = pause
         val running = wanted && speedAllows && governorAllows
+        // Only a running Motion Smoothing costs anything, so only then does it go before enhancement stages.
+        governor.motionSmoothingActive = running
         holder.motionSmoothing = if (running) {
             MotionSmoothingRun(running = true, frameDurationUs = offer!!.frameDurationUs, halfResolution = governor.motionSmoothingAtHalfResolution)
         } else {

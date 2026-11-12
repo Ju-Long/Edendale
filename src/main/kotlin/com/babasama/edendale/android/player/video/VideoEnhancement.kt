@@ -206,11 +206,14 @@ class EnhancementGovernor(
     var motionSmoothingLevel = 0
         private set
 
-    /** Motion Smoothing is on for the playing video; set by the player. */
+    /** Motion Smoothing is running (not merely switched on, or paused); set by the player. */
     var motionSmoothingActive = false
 
     private val samples = ArrayDeque<Double>()
     private val motionSmoothingSamples = ArrayDeque<Double>()
+
+    /** Samples still to ignore after a step: frames timed before the GL thread saw the change. */
+    private var motionSmoothingSettle = 0
     private var pressure = false
 
     val allowsDenoise: Boolean get() = level < 1 && !pressure
@@ -257,15 +260,25 @@ class EnhancementGovernor(
         return level != before
     }
 
-    /** Motion Smoothing's GPU time for one real frame. Returns true when it stepped down. */
+    /**
+     * Motion Smoothing's GPU time for one real frame. Returns true when it
+     * stepped down; the caller drops the rest of that batch, and the next
+     * [SETTLE_SAMPLES] are ignored too, so frames timed at full resolution
+     * don't count against the half-resolution search.
+     */
     fun recordMotionSmoothing(frameMillis: Double): Boolean {
         if (!frameMillis.isFinite() || frameMillis < 0 || motionSmoothingLevel >= 2) return false
+        if (motionSmoothingSettle > 0) {
+            motionSmoothingSettle--
+            return false
+        }
         motionSmoothingSamples.addLast(frameMillis)
         while (motionSmoothingSamples.size > window) motionSmoothingSamples.removeFirst()
         if (motionSmoothingSamples.size < window) return false
         if (motionSmoothingSamples.average() <= motionSmoothingBudgetMillis) return false
         motionSmoothingLevel++
         motionSmoothingSamples.clear()
+        motionSmoothingSettle = SETTLE_SAMPLES
         return true
     }
 
@@ -273,6 +286,7 @@ class EnhancementGovernor(
     fun resetMotionSmoothing() {
         motionSmoothingLevel = 0
         motionSmoothingSamples.clear()
+        motionSmoothingSettle = 0
     }
 
     fun reset() {
@@ -286,5 +300,8 @@ class EnhancementGovernor(
 
         /** The synthetic frame's whole cost per real frame (Findings — G.1's go/no-go line). */
         const val MOTION_SMOOTHING_BUDGET_MILLIS = 8.0
+
+        /** GPU timer results arrive a few frames late (`GpuTimer` keeps four queries in flight). */
+        const val SETTLE_SAMPLES = 8
     }
 }

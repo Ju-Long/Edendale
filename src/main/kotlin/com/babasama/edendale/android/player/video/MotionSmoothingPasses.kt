@@ -31,12 +31,27 @@ import kotlin.math.ceil
 @OptIn(UnstableApi::class)
 class MotionSmoothingPasses(context: Context) {
     private val appContext = context.applicationContext
-    private val copy = GlPass(appContext, GlPass.COPY)
-    private val luma = FrameGenProgram(appContext, LUMA)
-    private val coarse = FrameGenProgram(appContext, COARSE)
-    private val refine = FrameGenProgram(appContext, REFINE)
-    private val cut = FrameGenProgram(appContext, CUT)
-    private val warp = FrameGenProgram(appContext, WARP)
+
+    /** All or nothing: a shader that doesn't build releases the ones built before it. */
+    private val programs: List<FrameGenProgram> = buildList {
+        try {
+            for (asset in listOf(LUMA, COARSE, REFINE, CUT, WARP)) add(FrameGenProgram(appContext, asset))
+        } catch (e: Exception) {
+            forEach { it.release() }
+            throw e
+        }
+    }
+    private val luma = programs[0]
+    private val coarse = programs[1]
+    private val refine = programs[2]
+    private val cut = programs[3]
+    private val warp = programs[4]
+    private val copy = try {
+        GlPass(appContext, GlPass.COPY)
+    } catch (e: Exception) {
+        programs.forEach { it.release() }
+        throw e
+    }
 
     /** Two slots each, swapped by [commit]: the previous frame and the current one. */
     private val colors = arrayOfNulls<RenderTarget>(2)
@@ -124,7 +139,7 @@ class MotionSmoothingPasses(context: Context) {
 
     fun release() {
         copy.release()
-        listOf(luma, coarse, refine, cut, warp).forEach { it.release() }
+        programs.forEach { it.release() }
         (colors.toList() + lumas + listOf(coarseVectors, refinedVectors, rowCounts, cutVerdict)).forEach {
             when (it) {
                 is RenderTarget -> it.release()

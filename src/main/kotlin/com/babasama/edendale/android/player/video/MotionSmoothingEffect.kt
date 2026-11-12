@@ -103,6 +103,7 @@ internal class MotionSmoothingShaderProgram(
             timer.poll()?.let(holder::recordMotionSmoothingMillis)
             inputListener.onInputFrameProcessed(inputTexture)
         } catch (e: GlUtil.GlException) {
+            timer.end()
             errorExecutor.execute { errorListener.onError(VideoFrameProcessingException(e, presentationTimeUs)) }
         }
     }
@@ -181,8 +182,9 @@ internal class MotionSmoothingShaderProgram(
         return (texture ?: newTexture(size)).also { inUse.add(it) }
     }
 
+    /** Half-float for HDR, which the effect only ever copies (an SDR chain still installed as an HDR item starts). */
     private fun newTexture(size: PixelSize): GlTextureInfo {
-        val texId = GlUtil.createTexture(size.width, size.height, false)
+        val texId = GlUtil.createTexture(size.width, size.height, useHdr)
         return GlTextureInfo(texId, GlUtil.createFboForTexture(texId), C.INDEX_UNSET, size.width, size.height)
     }
 
