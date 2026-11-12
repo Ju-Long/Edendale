@@ -14,6 +14,8 @@ struct PlayerTVTimelineOverlay: View {
     let chrome: PlayerChromeModel
     let player: PlaybackEngine
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var progress: Double {
         let value = chrome.isScrubbing ? chrome.scrubPosition : player.position
         return min(max(value, 0), 1)
@@ -41,6 +43,11 @@ struct PlayerTVTimelineOverlay: View {
                         Capsule()
                             .fill(Theme.gold)
                             .frame(width: progress * proxy.size.width)
+                        playhead
+                            .position(
+                                x: progress * proxy.size.width,
+                                y: proxy.size.height / 2
+                            )
                     }
                 }
                 .frame(height: 8)
@@ -73,6 +80,30 @@ struct PlayerTVTimelineOverlay: View {
             )
         )
         .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    /// The playhead circle. During a jog it stretches into a capsule whose
+    /// chevrons point the way it's winding, one to three for the speed.
+    private var playhead: some View {
+        let jog = chrome.jog
+        let tier = jog?.speedTier ?? 0
+        return ZStack {
+            Capsule()
+                .fill(Theme.gold)
+            if let jog {
+                HStack(spacing: -6) {
+                    ForEach(0..<tier, id: \.self) { _ in
+                        Image(jog.forward ? .chevronRight : .chevronLeft)
+                    }
+                }
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Theme.background)
+                .transition(.opacity)
+            }
+        }
+        .frame(width: jog == nil ? 18 : 40 + CGFloat(tier) * 24, height: jog == nil ? 18 : 32)
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+        .animation(reduceMotion ? nil : .spring(duration: 0.25, bounce: 0.2), value: jog)
     }
 }
 #endif

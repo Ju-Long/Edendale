@@ -10,6 +10,10 @@
 //  engages that side's hold speed (0.5× left and 2× right unless changed in
 //  Settings), reverting the instant it lifts.
 //
+//  The same touches feed `RemoteJogDetector`: a quick wind around the ring
+//  becomes a jog that scrubs the timeline, and holds stay off for the rest
+//  of that touch.
+//
 
 #if os(tvOS)
 import Foundation
@@ -35,6 +39,12 @@ final class TVRemoteInput {
     private var latestX: Float = 0
     private var latestY: Float = 0
 
+    /// Circles around the ring: a quick wind takes over the timeline (see
+    /// `RemoteJogDetector`), and holds stay off until the thumb lifts.
+    private var jogDetector = RemoteJogDetector()
+    private var jogIdleTask: Task<Void, Never>?
+    private var holdBlockedUntilLift = false
+
     init(chrome: PlayerChromeModel) {
         self.chrome = chrome
         for controller in GCController.controllers() { monitor(controller) }
@@ -59,6 +69,9 @@ final class TVRemoteInput {
     /// touch actor state, so teardown is explicit.
     func invalidate() {
         release()
+        jogIdleTask?.cancel()
+        jogIdleTask = nil
+        jogDetector.reset()
         for (_, pad) in monitoredPads { pad.dpad.valueChangedHandler = nil }
         monitoredPads.removeAll()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
@@ -89,10 +102,13 @@ final class TVRemoteInput {
 
         // A hold only makes sense over the bare video — never fight a side
         // panel's list scrolling or hijack the remote inside a menu.
-        guard chrome.activePanel == nil else {
+        guard chrome.activePanel == nil, !chrome.guideVisible else {
             release()
+            endJog()
             return
         }
+
+        if trackJog(x: x, y: y) { return }
 
         if engagedSide != nil {
             if let side = PlayerLogic.holdSide(x: x, y: y, active: true) {
@@ -112,6 +128,69 @@ final class TVRemoteInput {
             dwellTask?.cancel()
             dwellTask = nil
         }
+    }
+
+    /// Runs the touch through the jog detector. Returns true when the touch
+    /// belongs to a circle, so the hold logic must leave it alone.
+    private func trackJog(x: Float, y: Float) -> Bool {
+        // Menu or a click ended the jog on the chrome's side.
+        if jogDetector.isEngaged, chrome.jog == nil { jogDetector.reset() }
+
+        let event = jogDetector.process(
+            x: Double(x), y: Double(y),
+            at: ProcessInfo.processInfo.systemUptime
+        )
+        switch event {
+        case .none:
+            break
+        case .rotating:
+            chrome.noteRemoteCircle()
+        case .engaged(let clockwise):
+            chrome.noteRemoteCircle()
+            if chrome.beginJog(forward: clockwise) {
+                watchJogIdle()
+            } else {
+                jogDetector.reset()
+            }
+        case .turned(let radians, let turnsPerSecond):
+            chrome.noteRemoteCircle()
+            chrome.jog(byRadians: radians, turnsPerSecond: turnsPerSecond)
+        }
+
+        let lifted = abs(x) < 0.05 && abs(y) < 0.05
+        if event != .none || jogDetector.isEngaged {
+            holdBlockedUntilLift = true
+            release()
+        } else if lifted {
+            holdBlockedUntilLift = false
+        }
+        return holdBlockedUntilLift
+    }
+
+    /// Ends the jog once the ring has been still for the detector's timeout.
+    private func watchJogIdle() {
+        jogIdleTask?.cancel()
+        jogIdleTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(250))
+                guard let self, !Task.isCancelled else { return }
+                guard self.jogDetector.isEngaged, self.chrome.jog != nil else {
+                    self.jogDetector.reset()
+                    return
+                }
+                if self.jogDetector.isIdle(at: ProcessInfo.processInfo.systemUptime) {
+                    self.endJog()
+                    return
+                }
+            }
+        }
+    }
+
+    private func endJog() {
+        jogIdleTask?.cancel()
+        jogIdleTask = nil
+        jogDetector.reset()
+        chrome.endJog()
     }
 
     private func armDwell() {
