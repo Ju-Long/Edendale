@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>아카이브에서 영화, 시리즈 및 이를 만든 사람들을 검색하세요.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>제거</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>제거</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>라이브러리가
 조용합니다</value>
@@ -2023,5 +2017,20 @@
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>열려 있는 대화 상자를 닫은 다음 페어링 링크를 다시 여세요.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>{0}에서 제거</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>마지막 재생</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>이 작품을 재생할 소스를 선택합니다.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>이 에피소드를 재생합니다.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>이 에피소드를 재생할 소스를 선택합니다.</value>
   </data>
 </root>

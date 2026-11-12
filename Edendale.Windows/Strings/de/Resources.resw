@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Durchsuche das Archiv nach Filmen, Serien und den Personen, die sie gemacht haben.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Entfernen</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Entfernen</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>DIE BIBLIOTHEK
 IST STUMM</value>
@@ -2023,5 +2017,20 @@ IST STUMM</value>
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>Schließe das geöffnete Dialogfeld und öffne den Kopplungslink dann erneut.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Aus {0} entfernen</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Zuletzt abgespielt</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Legt fest, von welcher Quelle dieser Titel wiedergegeben wird.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Gibt diese Folge wieder.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Legt fest, von welcher Quelle diese Folge abgespielt wird.</value>
   </data>
 </root>

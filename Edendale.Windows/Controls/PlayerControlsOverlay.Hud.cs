@@ -18,7 +18,8 @@ public sealed partial class PlayerControlsOverlay
 
     private DispatcherQueueTimer _hudTimer = null!;
     private bool _hudPersistent;
-    private LibraryEpisode? _upNext;
+    /// <summary>The episode the Up Next card offers, with the record holding it.</summary>
+    private ShowEpisode? _upNext;
     private readonly global::Windows.UI.ViewManagement.UISettings _uiSettings = new();
 
     private void InitializeHud()
@@ -86,31 +87,31 @@ public sealed partial class PlayerControlsOverlay
     // Up Next (3.4)
     // ------------------------------------------------------------------
 
-    /// <summary>Recomputed every tick, so seeking back hides the card again.</summary>
+    /// <summary>
+    /// Recomputed every tick, so seeking back hides the card again. It
+    /// previews what auto-advance will play: the next episode from the
+    /// playing source, or from another copy only when that source lacks it.
+    /// </summary>
     private void UpdateUpNext(long timeMilliseconds, long durationMilliseconds)
     {
-        var next = _context is null
-            ? null
-            : EpisodeProgression.UpcomingEpisode(
-                TimeSpan.FromMilliseconds(timeMilliseconds),
-                durationMilliseconds > 0 ? TimeSpan.FromMilliseconds(durationMilliseconds) : null,
-                AppServices.PlayerPreferences.LoopEnabled,
-                _context.Episode,
-                _context.Show);
+        var next = _context?.Upcoming(
+            TimeSpan.FromMilliseconds(timeMilliseconds),
+            durationMilliseconds > 0 ? TimeSpan.FromMilliseconds(durationMilliseconds) : null,
+            AppServices.PlayerPreferences.LoopEnabled);
 
-        if (next?.Id == _upNext?.Id) return;
+        if (next?.Episode.Id == _upNext?.Episode.Id) return;
         _upNext = next;
-        if (next is null)
+        if (next is not var (show, episode))
         {
             UpNextCard.Visibility = Visibility.Collapsed;
             return;
         }
 
-        UpNextCode.Text = next.EpisodeCode;
-        UpNextTitle.Text = next.DisplayTitle;
-        var artwork = next.StillUrl ?? _context?.Show?.BackdropUrl;
+        UpNextCode.Text = episode.EpisodeCode;
+        UpNextTitle.Text = episode.DisplayTitle;
+        var artwork = episode.StillUrl ?? show.BackdropUrl;
         UpNextImage.Source = Uri.TryCreate(artwork, UriKind.Absolute, out var uri) ? new BitmapImage(uri) : null;
-        AutomationProperties.SetName(UpNextCard, Loc.Format("UpNext_Name", next.EpisodeCode, next.DisplayTitle));
+        AutomationProperties.SetName(UpNextCard, Loc.Format("UpNext_Name", episode.EpisodeCode, episode.DisplayTitle));
         UpNextCard.Visibility = Visibility.Visible;
     }
 
@@ -123,8 +124,8 @@ public sealed partial class PlayerControlsOverlay
 
     private void UpNextCard_Click(object sender, RoutedEventArgs e)
     {
-        if (_upNext is not { } next || _context?.Show is not { } show) return;
-        PlayNextRequested?.Invoke(this, PlayerSession.RequestFor(show, next));
+        if (_upNext is not var (show, episode)) return;
+        PlayNextRequested?.Invoke(this, PlayerSession.RequestFor(show, episode));
     }
 
     // ------------------------------------------------------------------

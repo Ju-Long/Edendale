@@ -50,6 +50,9 @@ public sealed partial class MainWindow
     private readonly PlaybackTransitions _transitions = new();
     private bool _resumePending;
     private bool _titleMemoryPending;
+
+    /// <summary>Set when an item opens; its first Playing notes the copy as played last.</summary>
+    private bool _notePlayedPending;
     private ReopenState? _reopenState;
     private string? _reattachSelected;
     private bool _reattachPending;
@@ -131,7 +134,9 @@ public sealed partial class MainWindow
 
         _transitions.Present();
         _currentPlayback = request;
-        _context = PlayerContext.Resolve(request, AppServices.Library.Shows);
+        // Every copy of the show, so the next episode stays on the playing source.
+        _context = PlayerContext.Resolve(request, AppServices.Library.Shows, AppServices.Library.IsUnavailable, AppServices.Library.FolderById);
+        _notePlayedPending = true;
         _resumePending = true;
         _titleMemoryPending = true;
         _reopenState = null;
@@ -157,7 +162,7 @@ public sealed partial class MainWindow
         _gamepad?.SetRunning(true);
         ControlsOverlay.SetMediaPlayer(null, request.Title.ToUpperInvariant(), request.Subtitle, request, _context);
         AdjustmentsPanel.Bind(null, _context);
-        if (_openPane == PlayerPane.Playlist) PlaylistPanel.Load(request);
+        if (_openPane == PlayerPane.Playlist) PlaylistPanel.Load(request, _context);
         if (_openPane == PlayerPane.None) ControlsOverlay.Focus(FocusState.Programmatic);
         _transport?.SetItem(request, _context);
         UpdateTaskbarButtons(playing: false);
@@ -530,6 +535,16 @@ public sealed partial class MainWindow
             _transport?.SetPlaying(true);
             UpdateTaskbarButtons(playing: true);
 
+            // The first time this item plays, the library remembers its copy
+            // and source, so Play and Play From default to it next time. Once
+            // it is actually playing: a copy that fails to open isn't the one
+            // the viewer last watched.
+            if (_notePlayedPending && _currentPlayback is { } playing)
+            {
+                _notePlayedPending = false;
+                AppServices.Library.NotePlayed(playing.FilePath);
+            }
+
             if (_reopenState is { } state)
             {
                 RestoreReopenState(player, state);
@@ -835,7 +850,7 @@ public sealed partial class MainWindow
         }
         if (_isCompactOverlay || _currentPlayback is null) return;
 
-        if (pane == PlayerPane.Playlist) PlaylistPanel.Load(_currentPlayback);
+        if (pane == PlayerPane.Playlist) PlaylistPanel.Load(_currentPlayback, _context);
         PlaylistPanel.Visibility = pane == PlayerPane.Playlist ? Visibility.Visible : Visibility.Collapsed;
         AdjustmentsPanel.Visibility = pane == PlayerPane.Adjustments ? Visibility.Visible : Visibility.Collapsed;
         _openPane = pane;

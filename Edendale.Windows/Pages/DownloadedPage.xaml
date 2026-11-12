@@ -10,12 +10,12 @@
     NavigationCacheMode="Required">
 
     <Page.Resources>
+        <!-- One card per title, however many sources hold a copy. Its menu is
+             built as it opens: one Remove, or one Remove per source. -->
         <DataTemplate x:Key="LibraryMovieTemplate" x:DataType="services:LibraryMovie">
             <Button Style="{StaticResource CardButtonStyle}" Click="Movie_Click" Tag="{x:Bind}">
                 <Button.ContextFlyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem x:Uid="RemoveMovieMenuItem" Text="Remove" Click="RemoveMovie_Click" Tag="{x:Bind}" />
-                    </MenuFlyout>
+                    <MenuFlyout Opening="MovieMenu_Opening" />
                 </Button.ContextFlyout>
                 <controls:PosterCard
                     Title="{x:Bind Title}"
@@ -30,13 +30,12 @@
         <DataTemplate x:Key="LibraryShowTemplate" x:DataType="services:LibraryShow">
             <Button Style="{StaticResource CardButtonStyle}" Click="Show_Click" Tag="{x:Bind}">
                 <Button.ContextFlyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem x:Uid="RemoveShowMenuItem" Text="Remove" Click="RemoveShow_Click" Tag="{x:Bind}" />
-                    </MenuFlyout>
+                    <MenuFlyout Opening="ShowMenu_Opening" />
                 </Button.ContextFlyout>
+                <!-- Seasons and episodes counted across every copy of the show. -->
                 <controls:PosterCard
                     Title="{x:Bind Name}"
-                    Subtitle="{x:Bind DisplaySubtitle}"
+                    Subtitle="{x:Bind pages:DownloadedPage.ShowSubtitle(Id)}"
                     ImageUrl="{x:Bind PosterUrl}"
                     CardWidth="180"
                     PlaceholderAsset="ms-appx:///Assets/Icons/tv.svg" />

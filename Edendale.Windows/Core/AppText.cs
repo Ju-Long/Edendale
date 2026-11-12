@@ -30,6 +30,10 @@ internal static class AppText
 
         ["Plural_DayOne"] = "{0} day",
         ["Plural_DayOther"] = "{0} days",
+        ["Plural_SeasonOne"] = "{0} season",
+        ["Plural_SeasonOther"] = "{0} seasons",
+        ["Plural_EpisodeOne"] = "{0} episode",
+        ["Plural_EpisodeOther"] = "{0} episodes",
 
         ["Season_Number"] = "Season {0}",
         ["Season_Label"] = "Season",
@@ -108,6 +112,7 @@ internal static class AppText
         ["SourceKind_Local"] = "Local Folder",
         ["SourceKind_S3"] = "S3-Compatible Storage",
         ["Source_Unavailable"] = "Unavailable",
+        ["Source_LastPlayed"] = "Last Played",
         ["Account_Guest"] = "Guest",
 
         ["Connector_InvalidAddress"] = "That server address doesn’t look right. Enter a hostname like nas.local or an IP address.",

@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Doorzoek het archief naar films, series en de mensen die ze hebben gemaakt.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Verwijder</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Verwijder</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>DE BIBLIOTHEEK
 IS STIL</value>
@@ -2023,5 +2017,20 @@ IS STIL</value>
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>Sluit het geopende dialoogvenster en open de koppellink daarna opnieuw.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Verwijderen uit {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Laatst afgespeeld</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Kiest van welke bron deze titel wordt afgespeeld.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Speelt deze aflevering af.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Kiest van welke bron deze aflevering wordt afgespeeld.</value>
   </data>
 </root>

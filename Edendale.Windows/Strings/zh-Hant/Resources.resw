@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>在典藏中搜尋電影、影集及製作人員。</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>移除</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>移除</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>媒體櫃
 一片寂靜</value>
@@ -2023,5 +2017,20 @@
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>請關閉已開啟的對話方塊，然後重新開啟配對連結。</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>從{0}中移除</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>上次播放</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>選擇播放此影片所用的來源。</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>播放此集。</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>選擇播放此集所用的來源。</value>
   </data>
 </root>

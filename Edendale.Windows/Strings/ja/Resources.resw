@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>アーカイブで映画、シリーズ、およびそれらを制作した人々を検索します。</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>削除</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>削除</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>ライブラリは
 静かです</value>
@@ -2023,5 +2017,20 @@
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>開いているダイアログを閉じてから、ペアリングのリンクをもう一度開いてください。</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>{0}から削除</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>前回再生</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>このタイトルの再生に使うソースを選択します。</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>このエピソードを再生します。</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>このエピソードの再生に使うソースを選択します。</value>
   </data>
 </root>

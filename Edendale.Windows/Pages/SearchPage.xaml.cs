@@ -872,11 +872,12 @@ public sealed partial class SearchPage : Page
         var library = AppServices.Library;
         var results = new List<LocalSearchResult>();
 
-        foreach (var movie in library.Movies)
+        // One result per title, however many sources hold a copy (SearchView at apple-27.1 94a8b4f).
+        var movies = library.Movies.Where(movie =>
+            movie.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
+            && (movie.Year is int movieYear ? movieYear >= fromYear && movieYear <= toYear : !(yearFilter.HasValue || HasDateFilter)));
+        foreach (var movie in Core.PlaybackSources.Distinct(movies, Core.PlaybackSources.CopyKey))
         {
-            if (!movie.Title.Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
-            if (movie.Year is int movieYear && (movieYear < fromYear || movieYear > toYear)) continue;
-            if (movie.Year is null && (yearFilter.HasValue || HasDateFilter)) continue;
             results.Add(new LocalSearchResult
             {
                 Title = movie.Title,
@@ -886,15 +887,15 @@ public sealed partial class SearchPage : Page
                 Movie = movie,
             });
         }
-        foreach (var show in library.Shows)
+        var shows = library.Shows.Where(show =>
+            show.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+            && (show.FirstAirYear is int showYear ? showYear >= fromYear && showYear <= toYear : !(yearFilter.HasValue || HasDateFilter)));
+        foreach (var show in Core.PlaybackSources.Distinct(shows, Core.PlaybackSources.CopyKey))
         {
-            if (!show.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
-            if (show.FirstAirYear is int showYear && (showYear < fromYear || showYear > toYear)) continue;
-            if (show.FirstAirYear is null && (yearFilter.HasValue || HasDateFilter)) continue;
             results.Add(new LocalSearchResult
             {
                 Title = show.Name,
-                Subtitle = show.DisplaySubtitle,
+                Subtitle = library.ShowSubtitle(show.Id) ?? show.DisplaySubtitle,
                 ImageUrl = show.PosterUrl,
                 PlaceholderAsset = "ms-appx:///Assets/Icons/tv.svg",
                 Show = show,

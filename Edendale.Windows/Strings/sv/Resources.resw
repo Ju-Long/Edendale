@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Sök i arkivet efter filmer, serier och personerna som skapade dem.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Ta bort</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Ta bort</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>BIBLIOTEKET
 ÄR TYST</value>
@@ -2023,5 +2017,20 @@
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>Stäng den öppna dialogrutan och öppna sedan länken för ihopparning igen.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Ta bort från {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Senast uppspelad</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Väljer vilken källa titeln spelas upp från.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Spelar upp det här avsnittet.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Väljer vilken källa avsnittet spelas upp från.</value>
   </data>
 </root>

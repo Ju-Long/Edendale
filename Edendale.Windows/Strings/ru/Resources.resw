@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Ищите в архиве фильмы, сериалы и людей, которые их создали.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Удалить</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Удалить</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>БИБЛИОТЕКА
 БЕЗМОЛВСТВУЕТ</value>
@@ -2023,5 +2017,20 @@
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>Закройте открытое диалоговое окно, затем снова откройте ссылку для связывания.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Удалить из {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Последнее воспроизведение</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Выбирает источник для воспроизведения.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Воспроизводит этот эпизод.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Выбирает источник для воспроизведения этого эпизода.</value>
   </data>
 </root>

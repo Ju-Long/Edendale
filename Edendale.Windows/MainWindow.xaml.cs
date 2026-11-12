@@ -319,7 +319,8 @@ public sealed partial class MainWindow : Window
             case AppRoute.PlayMovie playMovie:
                 _ = GatedPlayAsync(playMovie.TmdbId, "movie", () =>
                 {
-                    if (AppServices.Library.MovieByTmdbId(playMovie.TmdbId) is { } libraryMovie)
+                    // Of several copies, the reachable one played last, else the first reachable.
+                    if (AppServices.Library.PreferredMovie(playMovie.TmdbId) is { } libraryMovie)
                     {
                         AppServices.Player.Play(libraryMovie);
                     }
@@ -334,8 +335,7 @@ public sealed partial class MainWindow : Window
                 break;
 
             case AppRoute.PlayEpisode playEpisode:
-                if (AppServices.Library.EpisodeByTmdbId(playEpisode.TmdbId) is { } episode
-                    && AppServices.Library.ShowForEpisode(episode) is { } episodeShow)
+                if (AppServices.Library.PreferredEpisode(playEpisode.TmdbId) is var (episodeShow, episode))
                 {
                     _ = GatedPlayShowAsync(episodeShow, () => AppServices.Player.Play(episodeShow, episode));
                 }

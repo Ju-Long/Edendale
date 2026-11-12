@@ -181,6 +181,81 @@ public sealed class LibraryService
     }
 
     // ------------------------------------------------------------------
+    // Titles in several sources (apple-27.1 94a8b4f). The rules live in
+    // LibraryData and PlaybackSources, where the tests reach them.
+    // ------------------------------------------------------------------
+
+    /// <summary>Every copy of the movie's title, the movie first, in Play From order.</summary>
+    public IReadOnlyList<LibraryMovie> MovieCopies(LibraryMovie movie)
+    {
+        lock (_gate) return _data.MovieCopies(movie);
+    }
+
+    /// <summary>Every record of the show's title, the show first.</summary>
+    public IReadOnlyList<LibraryShow> ShowCopies(LibraryShow show)
+    {
+        lock (_gate) return _data.ShowCopies(show);
+    }
+
+    /// <summary>The sources holding a show title's episodes: local first, then by name and path.</summary>
+    public IReadOnlyList<Guid> ShowSources(IReadOnlyList<LibraryShow> copies)
+    {
+        lock (_gate) return PlaybackSources.ShowSources(copies, _data.FolderById);
+    }
+
+    /// <summary>
+    /// A show card's subtitle, with seasons and episodes counted across every
+    /// record of its title; null when the show is gone.
+    /// </summary>
+    public string? ShowSubtitle(Guid showId)
+    {
+        lock (_gate)
+        {
+            return _data.Shows.FirstOrDefault(show => show.Id == showId) is { } show
+                ? PlaybackSources.ShowSubtitle(_data.ShowCopies(show))
+                : null;
+        }
+    }
+
+    /// <summary>When an episode of the show's title last started playing from a source; null when never.</summary>
+    public DateTimeOffset? SourceLastPlayedAt(LibraryShow show, Guid folderId)
+    {
+        lock (_gate) return PlaybackSources.SourceLastPlayedAt(_data.ShowCopies(show), folderId);
+    }
+
+    /// <summary>
+    /// The copy of a TMDB movie that Continue Watching, the Movies &amp; Shows
+    /// hero, and play routes start: the reachable copy played last, else the
+    /// first reachable one.
+    /// </summary>
+    public LibraryMovie? PreferredMovie(int tmdbId)
+    {
+        lock (_gate) return _data.PreferredMovie(tmdbId, _sourceStates.ContainsKey);
+    }
+
+    /// <summary>
+    /// The file of a TMDB episode that Continue Watching and play routes
+    /// start: from the reachable source played last, else the first reachable one.
+    /// </summary>
+    public ShowEpisode? PreferredEpisode(int episodeTmdbId)
+    {
+        lock (_gate) return _data.PreferredEpisode(episodeTmdbId, _sourceStates.ContainsKey);
+    }
+
+    /// <summary>
+    /// Remembers that a library file started playing, so Play, Continue
+    /// Watching, and Play From default to the copy and source played last.
+    /// Device data in library.json: it never syncs. Saved off the calling
+    /// thread; a file outside the library changes nothing.
+    /// </summary>
+    public void NotePlayed(string filePath)
+    {
+        bool noted;
+        lock (_gate) noted = _data.NotePlayed(filePath, DateTimeOffset.UtcNow);
+        if (noted) _ = Task.Run(Save);
+    }
+
+    // ------------------------------------------------------------------
     // Import & rescan
     // ------------------------------------------------------------------
 
@@ -357,7 +432,12 @@ public sealed class LibraryService
     {
         _data.Folders.RemoveAll(f => f.Id == folder.Id);
         _data.Movies.RemoveAll(m => m.FolderId == folder.Id);
-        foreach (var show in _data.Shows) show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
+        foreach (var show in _data.Shows)
+        {
+            show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
+            // What played from the source is forgotten with it.
+            LibraryData.ForgetSource(show, folder.Id);
+        }
         _data.Shows.RemoveAll(s => s.Episodes.Count == 0);
         _sourceStates.Remove(folder.Id);
         _sourceNotes.Remove(folder.Id);
@@ -374,17 +454,23 @@ public sealed class LibraryService
         Save();
     }
 
-    /// <summary>A removed show's Google Drive episodes stay hidden from later scans (3.20 D2).</summary>
-    public void RemoveShow(LibraryShow show)
+    /// <summary>
+    /// Remove on a show card held by one source: every record of the title
+    /// goes. Removed Google Drive episodes stay hidden from later scans (3.20 D2).
+    /// </summary>
+    public void RemoveShows(IReadOnlyList<LibraryShow> copies)
     {
-        lock (_gate)
-        {
-            _data.Shows.RemoveAll(s => s.Id == show.Id);
-            foreach (var episodes in show.Episodes.GroupBy(e => e.FolderId))
-            {
-                HideRemovedItems(episodes.Key, episodes.Select(e => e.FilePath));
-            }
-        }
+        lock (_gate) _data.RemoveShows([.. copies.Select(show => show.Id)]);
+        Save();
+    }
+
+    /// <summary>
+    /// "Remove from" one source on a show card held by several: that source's
+    /// episodes of the title go and the other sources stay (LibraryData.RemoveShowSource).
+    /// </summary>
+    public void RemoveShowSource(IReadOnlyList<LibraryShow> copies, Guid folderId)
+    {
+        lock (_gate) _data.RemoveShowSource([.. copies.Select(show => show.Id)], folderId);
         Save();
     }
 
@@ -713,23 +799,47 @@ public sealed class LibraryService
         }
     }
 
+    /// <summary>
+    /// Serializes the writes of library.json. Only file work runs under it,
+    /// never <see cref="_gate"/>, so the two locks can't deadlock.
+    /// </summary>
+    private readonly object _saveLock = new();
+
+    /// <summary>Numbers each snapshot taken under <see cref="_gate"/>.</summary>
+    private long _snapshotSequence;
+
+    /// <summary>The newest snapshot on disk; guarded by <see cref="_saveLock"/>.</summary>
+    private long _writtenSequence;
+
+    /// <summary>
+    /// Persists the library. The JSON is built under <see cref="_gate"/>, so a
+    /// scan or a play stamp can't change an episode list or a dictionary while
+    /// it is read (that threw, and the save was silently lost). The file is
+    /// then written and moved into place under <see cref="_saveLock"/>, so
+    /// two saves never share the temporary file, and a snapshot older than
+    /// the one already written is dropped rather than put back over it.
+    /// </summary>
     private void Save()
     {
         try
         {
-            LibraryData snapshot;
+            string json;
+            long sequence;
             lock (_gate)
             {
-                snapshot = new LibraryData
-                {
-                    Folders = [.. _data.Folders],
-                    Movies = [.. _data.Movies],
-                    Shows = [.. _data.Shows],
-                };
+                json = JsonSerializer.Serialize(_data, JsonOptions);
+                sequence = ++_snapshotSequence;
             }
-            var temporary = AppPaths.LibraryFile + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(snapshot, JsonOptions));
-            File.Move(temporary, AppPaths.LibraryFile, overwrite: true);
+            lock (_saveLock)
+            {
+                if (sequence > _writtenSequence)
+                {
+                    var temporary = AppPaths.LibraryFile + ".tmp";
+                    File.WriteAllText(temporary, json);
+                    File.Move(temporary, AppPaths.LibraryFile, overwrite: true);
+                    _writtenSequence = sequence;
+                }
+            }
         }
         catch
         {

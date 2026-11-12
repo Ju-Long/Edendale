@@ -418,8 +418,9 @@ public sealed partial class MoviesShowsPage : Page
     {
         var scene = CurrentHero;
         if (scene is null) return;
+        // The reachable copy played last, else the first reachable one.
         if (scene.Detail.Ref.MediaType == "movie"
-            && AppServices.Library.MovieByTmdbId(scene.Detail.Ref.Id) is { } movie)
+            && AppServices.Library.PreferredMovie(scene.Detail.Ref.Id) is { } movie)
         {
             AppServices.Player.Play(movie);
         }

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Edendale.Windows.Core;
 using Edendale.Windows.Models;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
@@ -100,6 +101,12 @@ public sealed partial class DownloadedPage : Page
     public static bool MovieWatched(int? tmdbId) =>
         tmdbId is int id && AppServices.WatchProgress.IsWatched(id, "movie");
 
+    /// <summary>
+    /// x:Bind hook for a show card's subtitle: seasons and episodes counted
+    /// across every record of its title, an episode two sources hold once.
+    /// </summary>
+    public static string ShowSubtitle(Guid showId) => AppServices.Library.ShowSubtitle(showId) ?? "";
+
     // ------------------------------------------------------------------
     // Rendering
     // ------------------------------------------------------------------
@@ -140,6 +147,10 @@ public sealed partial class DownloadedPage : Page
         // The audience filter hides blocked titles here and in every grid below.
         var movies = library.Movies.Where(m => AudienceAllows(m.TmdbId, "movie")).ToList();
         var shows = library.Shows.Where(s => AudienceAllows(s.TmdbId, "tv")).ToList();
+        // One card per title, however many sources hold a copy: the newest
+        // copy stands for it, and its page plays and lists every copy.
+        var movieTitles = PlaybackSources.Distinct(movies, PlaybackSources.CopyKey);
+        var showTitles = PlaybackSources.Distinct(shows, PlaybackSources.CopyKey);
 
         if (_section is { } section)
         {
@@ -153,10 +164,10 @@ public sealed partial class DownloadedPage : Page
                 : [];
             ContinueGridSection.Visibility = everyResume.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ResumeGridRepeater.ItemsSource = everyResume;
-            var sectionMovies = section == Core.DownloadedSection.Movies ? movies : [];
+            var sectionMovies = section == Core.DownloadedSection.Movies ? movieTitles : [];
             MoviesSection.Visibility = sectionMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             MoviesRepeater.ItemsSource = sectionMovies;
-            var sectionShows = section == Core.DownloadedSection.Shows ? shows : [];
+            var sectionShows = section == Core.DownloadedSection.Shows ? showTitles : [];
             ShowsSection.Visibility = sectionShows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ShowsRepeater.ItemsSource = sectionShows;
             _ = VerifyAudienceAsync();
@@ -173,14 +184,14 @@ public sealed partial class DownloadedPage : Page
             .Where(entry => entry.Movie?.TmdbId is not null)
             .Select(entry => entry.Movie!.TmdbId!.Value)
             .ToHashSet();
-        var gridMovies = movies
+        var gridMovies = movieTitles
             .Where(movie => movie.TmdbId is not int id || !resumeMovieIds.Contains(id))
             .ToList();
         MoviesSection.Visibility = gridMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         MoviesRepeater.ItemsSource = gridMovies;
 
-        ShowsSection.Visibility = shows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        ShowsRepeater.ItemsSource = shows;
+        ShowsSection.Visibility = showTitles.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowsRepeater.ItemsSource = showTitles;
 
         BuildSources(library);
 
@@ -193,7 +204,10 @@ public sealed partial class DownloadedPage : Page
     /// Half-watched titles plus, for each show with nothing in progress, the
     /// stored episode after the furthest completed one (DIFF.md §3.4). The
     /// suggestion works after the watched file was deleted, merges duplicate
-    /// show records into one card, and never writes progress.
+    /// show records into one card, and never writes progress. Each card
+    /// starts the reachable copy played last, else the first reachable one
+    /// (ResumeItem.items at apple-27.1 94a8b4f); so do the jump-list entries
+    /// built from these.
     /// </summary>
     internal static List<ResumeEntry> ContinueWatchingEntries(LibraryService library, IReadOnlyList<LibraryMovie> movies, int? limit)
     {
@@ -203,7 +217,7 @@ public sealed partial class DownloadedPage : Page
         {
             if (progress.MediaType == "movie")
             {
-                var movie = movies.FirstOrDefault(m => m.TmdbId == progress.TmdbId);
+                var movie = movies.Any(m => m.TmdbId == progress.TmdbId) ? library.PreferredMovie(progress.TmdbId) : null;
                 if (movie is null) continue;
                 entries.Add(new ResumeEntry
                 {
@@ -218,10 +232,8 @@ public sealed partial class DownloadedPage : Page
             }
             else
             {
-                var episode = library.EpisodeByTmdbId(progress.TmdbId);
-                if (episode is null) continue;
-                var show = library.ShowForEpisode(episode);
-                if (show is null || !AudienceAllows(show.TmdbId, "tv")) continue;
+                if (library.PreferredEpisode(progress.TmdbId) is not var (show, episode)) continue;
+                if (!AudienceAllows(show.TmdbId, "tv")) continue;
                 entries.Add(new ResumeEntry
                 {
                     Title = show.Name,
@@ -240,7 +252,13 @@ public sealed partial class DownloadedPage : Page
             .Where(progress => progress.MediaType == "episode" && progress.ShowTmdbId is not null)
             .Select(progress => progress.ShowTmdbId!.Value)
             .ToHashSet();
-        foreach (var nextUp in Core.EpisodeProgression.NextUpEpisodes(AppServices.WatchProgress.All, inProgressShows, library.Shows))
+        // The next episode comes from the show's reachable source played last, else the first reachable one.
+        var nextUps = EpisodeProgression.NextUpEpisodes(
+            AppServices.WatchProgress.All,
+            inProgressShows,
+            library.Shows,
+            copies => PlaybackSources.SourcePreference(copies, library.FolderById, library.IsUnavailable));
+        foreach (var nextUp in nextUps)
         {
             if (!AudienceAllows(nextUp.Show.TmdbId, "tv")) continue;
             entries.Add(new ResumeEntry
@@ -417,20 +435,71 @@ public sealed partial class DownloadedPage : Page
         }
     }
 
-    private void RemoveMovie_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// A movie card's menu, built as it opens: Remove for a title one source
+    /// holds, or one "Remove from Media (nas.local)" per copy, its kind and
+    /// file name beside it, which tells apart two files in one source
+    /// (DownloadedView.removeButtons at apple-27.1 94a8b4f). Removing one
+    /// copy leaves the others.
+    /// </summary>
+    private void MovieMenu_Opening(object? sender, object e)
     {
-        if ((sender as FrameworkElement)?.Tag is LibraryMovie movie)
+        if (sender is not MenuFlyout menu || menu.Target is not FrameworkElement { Tag: LibraryMovie movie }) return;
+        var library = AppServices.Library;
+        menu.Items.Clear();
+        var copies = library.MovieCopies(movie);
+        if (copies.Count <= 1)
         {
-            AppServices.Library.RemoveMovie(movie);
+            menu.Items.Add(MenuItem(Loc.Get("Common_Remove"), null, () => library.RemoveMovie(movie)));
+            return;
+        }
+        foreach (var copy in copies)
+        {
+            var folder = library.FolderById(copy.FolderId);
+            menu.Items.Add(MenuItem(
+                Loc.Format("Library_RemoveFrom", PlaybackSources.Title(folder, copy.FilePath)),
+                PlaybackSources.Detail(folder, copy.FilePath),
+                () => library.RemoveMovie(copy)));
         }
     }
 
-    private void RemoveShow_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// A show card's menu: Remove for a title one source holds, or one
+    /// "Remove from …" per source, which takes that source's episodes of the
+    /// show and leaves the others. One record can span sources on Windows, so
+    /// a source is what Apple calls a copy of the show.
+    /// </summary>
+    private void ShowMenu_Opening(object? sender, object e)
     {
-        if ((sender as FrameworkElement)?.Tag is LibraryShow show)
+        if (sender is not MenuFlyout menu || menu.Target is not FrameworkElement { Tag: LibraryShow show }) return;
+        var library = AppServices.Library;
+        menu.Items.Clear();
+        var copies = library.ShowCopies(show);
+        var sources = library.ShowSources(copies);
+        if (sources.Count <= 1)
         {
-            AppServices.Library.RemoveShow(show);
+            menu.Items.Add(MenuItem(Loc.Get("Common_Remove"), null, () => library.RemoveShows(copies)));
+            return;
         }
+        foreach (var id in sources)
+        {
+            var folder = library.FolderById(id);
+            var name = folder is null ? Loc.Get("Source_Unavailable") : PlaybackSources.Title(folder, folder.Path);
+            menu.Items.Add(MenuItem(Loc.Format("Library_RemoveFrom", name), null, () => library.RemoveShowSource(copies, id)));
+        }
+    }
+
+    /// <summary>A menu row; <paramref name="detail"/> sits on the right and is read with the row's name.</summary>
+    private static MenuFlyoutItem MenuItem(string text, string? detail, Action action)
+    {
+        var item = new MenuFlyoutItem { Text = text };
+        if (detail is not null)
+        {
+            item.KeyboardAcceleratorTextOverride = detail;
+            AutomationProperties.SetName(item, $"{text}, {detail}");
+        }
+        item.Click += (_, _) => action();
+        return item;
     }
 
     private void Resume_Click(object sender, RoutedEventArgs e)

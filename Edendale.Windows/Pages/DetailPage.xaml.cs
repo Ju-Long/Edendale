@@ -3,6 +3,8 @@ using Edendale.Windows.Core;
 using Edendale.Windows.Models;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
@@ -130,47 +132,44 @@ public sealed partial class DetailPage : Page
             : null;
 
         // A TMDB browse item resolves to its library match so its file is
-        // playable from Movies & Shows too.
+        // playable from Movies & Shows too: the newest copy, the one the
+        // Downloaded page's card stands for.
         if (_args.Ref is { } reference)
         {
-            if (reference.MediaType == "movie") _localMovie ??= library.MovieByTmdbId(reference.Id);
-            else _localShow ??= library.ShowByTmdbId(reference.Id);
+            if (reference.MediaType == "movie") _localMovie ??= library.Movies.FirstOrDefault(m => m.TmdbId == reference.Id);
+            else _localShow ??= library.Shows.FirstOrDefault(s => s.TmdbId == reference.Id);
         }
         ResolveCopies();
     }
 
-    /// <summary>The page's own movie file first, then its other copies (local first, then by source).</summary>
+    /// <summary>
+    /// The page's own movie file first, then the title's other copies (local
+    /// first, then by source): other sources, and the same share linked
+    /// through another endpoint, tied by TMDB match or else by parsed title.
+    /// </summary>
     private void ResolveCopies()
     {
-        var library = AppServices.Library;
-        if (_localMovie is not { } movie)
-        {
-            _movieCopies = [];
-            return;
-        }
-        var others = movie.TmdbId is int tmdbId
-            ? library.MoviesByTmdbId(tmdbId).Where(copy => copy.Id != movie.Id)
-            : [];
-        _movieCopies = PlaybackSources.Order(movie, others, copy => library.FolderById(copy.FolderId));
+        _movieCopies = _localMovie is { } movie ? AppServices.Library.MovieCopies(movie) : [];
     }
 
     /// <summary>
-    /// Play From rows: the source's name, then "Kind · filename" (with
-    /// "· Unavailable" while the source is offline or needs sign-in) as the
+    /// Play From rows: the source's name and endpoint, "Media (nas.local)",
+    /// then "Kind · filename" with "· Last Played" on the copy played last and
+    /// "· Unavailable" while the source is offline or needs sign-in, as the
     /// row's trailing text, which screen readers hear as part of the name.
     /// </summary>
-    private static MenuFlyoutItem PlayFromItem(Guid folderId, string filePath, Action play)
+    private static MenuFlyoutItem PlayFromItem(Guid folderId, string filePath, bool isLastPlayed, Action play)
     {
         var library = AppServices.Library;
         var folder = library.FolderById(folderId);
-        var name = folder?.Name ?? PlaybackSources.FileName(filePath);
-        var detail = PlaybackSources.Detail(folder, filePath, library.IsUnavailable(folderId));
+        var title = PlaybackSources.Title(folder, filePath);
+        var detail = PlaybackSources.Detail(folder, filePath, library.IsUnavailable(folderId), isLastPlayed);
         var item = new MenuFlyoutItem
         {
-            Text = name,
+            Text = title,
             KeyboardAcceleratorTextOverride = detail,
         };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, $"{name}, {detail}");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, $"{title}, {detail}");
         item.Click += (_, _) => play();
         return item;
     }
@@ -463,9 +462,15 @@ public sealed partial class DetailPage : Page
         PlayFromMenu.Items.Clear();
         if (_movieCopies.Count > 1)
         {
-            foreach (var copy in _movieCopies)
+            // The copy played last leads and says so; the rest keep their order.
+            var lastPlayed = PlaybackSources.MostRecentlyPlayed(_movieCopies, copy => copy.LastPlayedAt);
+            foreach (var copy in PlaybackSources.LastPlayedFirst(_movieCopies, copy => copy.LastPlayedAt))
             {
-                PlayFromMenu.Items.Add(PlayFromItem(copy.FolderId, copy.FilePath, () => AppServices.Player.Play(copy)));
+                PlayFromMenu.Items.Add(PlayFromItem(
+                    copy.FolderId,
+                    copy.FilePath,
+                    copy.Id == lastPlayed?.Id,
+                    () => AppServices.Player.Play(copy)));
             }
         }
         if (_localMovie?.TmdbId is int tmdbId
@@ -636,11 +641,17 @@ public sealed partial class DetailPage : Page
         AppServices.UserMedia.SetRating(reference.Id, reference.MediaType, rating, title, posterPath);
     }
 
-    /// <summary>Plays the first copy whose source is reachable (DIFF.md §3.11).</summary>
+    /// <summary>
+    /// Plays the reachable copy played last, else the first reachable one
+    /// (DIFF.md §3.11, MediaDetailView.play at apple-27.1 94a8b4f).
+    /// </summary>
     private void Play_Click(object sender, RoutedEventArgs e)
     {
         var library = AppServices.Library;
-        var copy = PlaybackSources.Preferred(_movieCopies, movie => library.IsUnavailable(movie.FolderId)) ?? _localMovie;
+        var copy = PlaybackSources.Preferred(
+            _movieCopies,
+            movie => library.IsUnavailable(movie.FolderId),
+            movie => movie.LastPlayedAt) ?? _localMovie;
         if (copy is not null) AppServices.Player.Play(copy);
     }
 
@@ -663,7 +674,8 @@ public sealed partial class DetailPage : Page
 
     /// <summary>
     /// Season shelves merge every imported copy of the show into one list
-    /// keyed by (season, episode), in airing order (DIFF.md §3.11). Each
+    /// keyed by (season, episode), in airing order (DIFF.md §3.11): every
+    /// record of the title, tied by TMDB match or else by parsed name. Each
     /// heading's rule is the shelf's scroll indicator and scrubber (§3.15).
     /// </summary>
     private void RenderEpisodes()
@@ -677,8 +689,7 @@ public sealed partial class DetailPage : Page
         SeasonsList.Children.Clear();
 
         var library = AppServices.Library;
-        var others = show.TmdbId is int tmdbId ? library.ShowsByTmdbId(tmdbId) : [];
-        var slots = PlaybackSources.EpisodeSlots(show, others, library.FolderById);
+        var slots = PlaybackSources.EpisodeSlots(show, library.ShowCopies(show), library.FolderById);
 
         foreach (var season in slots.GroupBy(slot => slot.Season))
         {
@@ -743,13 +754,29 @@ public sealed partial class DetailPage : Page
             Style = (Style)Application.Current.Resources["CardButtonStyle"],
             Content = card,
         };
-        void PlayCopy(LibraryEpisode copy) => AppServices.Player.Play(library.ShowForEpisode(copy) ?? show, copy);
-        button.Click += (_, _) =>
+        LibraryShow ShowOf(LibraryEpisode copy) => library.ShowForEpisode(copy) ?? show;
+        void PlayCopy(LibraryEpisode copy) => AppServices.Player.Play(ShowOf(copy), copy);
+        if (slot.Copies.Count > 1)
         {
-            var copy = PlaybackSources.Preferred(slot.Copies, item => library.IsUnavailable(item.FolderId)) ?? episode;
-            PlayCopy(copy);
-        };
+            // Several sources hold this episode (or one share through several
+            // endpoints): the viewer picks one before the player opens
+            // (MediaDetailView.episodeCard at apple-27.1 94a8b4f). A Button
+            // opens its Flyout on click, Enter, Space, and controller A; Esc
+            // or B closes it and returns focus to the card.
+            var playFrom = new MenuFlyout { Placement = FlyoutPlacementMode.BottomEdgeAlignedLeft };
+            // Rebuilt as it opens, so reachability and the source played last are current.
+            playFrom.Opening += (_, _) => FillEpisodePlayFrom(playFrom, slot, ShowOf, PlayCopy);
+            FillEpisodePlayFrom(playFrom, slot, ShowOf, PlayCopy);
+            button.Flyout = playFrom;
+            AutomationProperties.SetHelpText(button, Loc.Get("Detail_EpisodePlayFromHint"));
+        }
+        else
+        {
+            button.Click += (_, _) => PlayCopy(slot.Copies[0]);
+            AutomationProperties.SetHelpText(button, Loc.Get("Detail_EpisodePlayHint"));
+        }
 
+        // The context menu keeps the watch state; Play From is the card's own menu.
         var flyout = new MenuFlyout();
         if (episode.TmdbId is int menuTmdbId)
         {
@@ -771,18 +798,35 @@ public sealed partial class DetailPage : Page
             };
             flyout.Items.Add(toggle);
         }
-        if (slot.Copies.Count > 1)
-        {
-            // The Play From section: one row per copy, the page's own first.
-            if (flyout.Items.Count > 0) flyout.Items.Add(new MenuFlyoutSeparator());
-            flyout.Items.Add(new MenuFlyoutItem { Text = Loc.Get("Detail_PlayFrom"), IsEnabled = false });
-            foreach (var copy in slot.Copies)
-            {
-                flyout.Items.Add(PlayFromItem(copy.FolderId, copy.FilePath, () => PlayCopy(copy)));
-            }
-        }
         if (flyout.Items.Count > 0) button.ContextFlyout = flyout;
         return button;
+    }
+
+    /// <summary>
+    /// An episode's Play From menu: a "Play From" heading, then one row per
+    /// copy, the one whose source was played last first and marked, the rest
+    /// in slot order (the page's own record first).
+    /// </summary>
+    private static void FillEpisodePlayFrom(
+        MenuFlyout menu,
+        PlaybackSources.EpisodeSlot slot,
+        Func<LibraryEpisode, LibraryShow> showOf,
+        Action<LibraryEpisode> play)
+    {
+        var library = AppServices.Library;
+        DateTimeOffset? LastPlayed(LibraryEpisode copy) => library.SourceLastPlayedAt(showOf(copy), copy.FolderId);
+
+        menu.Items.Clear();
+        // A heading, not a choice: screen readers skip it, and each row says its source.
+        var heading = new MenuFlyoutItem { Text = Loc.Get("Detail_PlayFrom"), IsEnabled = false };
+        AutomationProperties.SetAccessibilityView(heading, AccessibilityView.Raw);
+        menu.Items.Add(heading);
+
+        var lastPlayed = PlaybackSources.MostRecentlyPlayed(slot.Copies, LastPlayed);
+        foreach (var copy in PlaybackSources.LastPlayedFirst(slot.Copies, LastPlayed))
+        {
+            menu.Items.Add(PlayFromItem(copy.FolderId, copy.FilePath, copy.Id == lastPlayed?.Id, () => play(copy)));
+        }
     }
 
     // ------------------------------------------------------------------

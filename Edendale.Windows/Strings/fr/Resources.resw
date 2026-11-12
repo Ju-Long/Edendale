@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Recherchez dans l'archive des films, des séries et les personnes qui les ont créés.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Supprimer</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Supprimer</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>LA BIBLIOTHÈQUE
 EST SILENCIEUSE</value>
@@ -2023,5 +2017,20 @@ EST SILENCIEUSE</value>
   </data>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>Fermez la boîte de dialogue ouverte, puis rouvrez le lien de jumelage.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Retirer de {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Dernière lecture</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Choisit la source à partir de laquelle lire ce titre.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Lit cet épisode.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Choisit la source à partir de laquelle lire cet épisode.</value>
   </data>
 </root>

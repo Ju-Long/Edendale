@@ -253,12 +253,6 @@
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Search the archive for films, series, and the people who made them.</value>
   </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Remove</value>
-  </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>THE LIBRARY
 IS SILENT</value>
@@ -2039,5 +2033,22 @@ IS SILENT</value>
   <data name="Activation_DialogOpen" xml:space="preserve">
     <value>Close the open dialog, then open the pairing link again.</value>
     <comment>A pairing link arrived while another dialog was open.</comment>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Remove from {0}</value>
+    <comment>A card held by several sources: one Remove per source. {0} = the source and its endpoint, Media (nas.local).</comment>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Last Played</value>
+    <comment>Play From: the copy (or source) played last on this PC.</comment>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Chooses which source to play this title from.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Plays this episode.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Chooses which source to play this episode from.</value>
   </data>
 </root>
