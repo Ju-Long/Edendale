@@ -78,6 +78,9 @@ class MotionSmoothingPasses(context: Context) {
     var hasPrevious = false
         private set
 
+    /** Called after each pass with its name; the benchmark times passes with it. Null in the app. */
+    internal var afterPass: ((String) -> Unit)? = null
+
     /** Takes the real frame [inputTexId] of [size]; doesn't change the history until [commit]. */
     fun ingest(inputTexId: Int, size: PixelSize, halfResolution: Boolean) {
         val scale = if (halfResolution || size.width > HALF_RESOLUTION_WIDTH) 2 else 1
@@ -92,12 +95,14 @@ class MotionSmoothingPasses(context: Context) {
         val color = colorTarget(currentSlot)
         color.focus()
         copy.draw(inputTexId)
+        afterPass?.invoke("copy in")
         val lumaTarget = lumaTarget(currentSlot)
         lumaTarget.focus()
         luma.use()
         luma.texture("uTexSampler", 0, inputTexId)
         luma.int("uScale", scale)
         luma.draw()
+        afterPass?.invoke("luma")
     }
 
     /**
@@ -118,12 +123,14 @@ class MotionSmoothingPasses(context: Context) {
         warp.float("uMotionScale", searchScale.toFloat())
         warp.float("uBlendTime", blendTime)
         warp.draw()
+        afterPass?.invoke("warp")
     }
 
     /** Draws the current real frame into [outputFbo]. */
     fun drawCurrent(outputFbo: Int) {
         GlUtil.focusFramebufferUsingCurrentContext(outputFbo, frameSize.width, frameSize.height)
         copy.draw(colorTarget(currentSlot).texId)
+        afterPass?.invoke("copy out")
     }
 
     /** The frame just ingested becomes the previous one. */
@@ -173,6 +180,7 @@ class MotionSmoothingPasses(context: Context) {
         coarse.int("uSearchRadius", COARSE_SEARCH_RADIUS)
         coarse.float("uUnmatchedError", SCENE_CUT_BLOCK_ERROR)
         coarse.draw()
+        afterPass?.invoke("coarse")
 
         val refinedTarget = intTarget(refinedVectors, grid(searchSize, REFINE_BLOCK), GLES30.GL_RGBA16I).also { refinedVectors = it }
         refinedTarget.focus()
@@ -183,6 +191,7 @@ class MotionSmoothingPasses(context: Context) {
         refine.int("uBlockSize", REFINE_BLOCK)
         refine.int("uCoarseBlockSize", COARSE_BLOCK)
         refine.draw()
+        afterPass?.invoke("refine")
 
         val rows = intTarget(rowCounts, PixelSize(1, coarseGrid.height), GLES30.GL_R32I).also { rowCounts = it }
         rows.focus()
@@ -191,6 +200,7 @@ class MotionSmoothingPasses(context: Context) {
         cut.int("uMode", 0)
         cut.int("uCutCount", 0)
         cut.draw()
+        afterPass?.invoke("cut rows")
 
         val verdict = intTarget(cutVerdict, PixelSize(1, 1), GLES30.GL_RGBA32I).also { cutVerdict = it }
         verdict.focus()
@@ -199,6 +209,7 @@ class MotionSmoothingPasses(context: Context) {
         cut.int("uMode", 1)
         cut.int("uCutCount", cutBlockCount(coarseGrid))
         cut.draw()
+        afterPass?.invoke("cut total")
     }
 
     // MARK: - Readback for tests (G.6.T2)

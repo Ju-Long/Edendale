@@ -180,6 +180,27 @@ class MotionSmoothingPassesInstrumentedTest {
             val label = if (half) "half" else "full"
             Log.i("MotionSmoothingBench", "1080p $label resolution: median %.2f ms, best %.2f ms, worst %.2f ms".format(median, times.first(), times.last()))
             results.putDouble("${label}MedianMs", median)
+            // Each pass on its own, finished before the next starts.
+            val perPass = LinkedHashMap<String, MutableList<Double>>()
+            var mark = 0L
+            passes.afterPass = { name ->
+                GLES20.glFinish()
+                val now = SystemClock.elapsedRealtimeNanos()
+                perPass.getOrPut(name) { mutableListOf() }.add((now - mark) / 1_000_000.0)
+                mark = now
+            }
+            repeat(12) { i ->
+                GLES20.glFinish()
+                mark = SystemClock.elapsedRealtimeNanos()
+                passes.ingest(frames[i % frames.size], size, half)
+                if (passes.hasPrevious) passes.synthesize(output.fboId)
+                passes.drawCurrent(output.fboId)
+                passes.commit()
+            }
+            passes.afterPass = null
+            val breakdown = perPass.entries.joinToString(", ") { (name, ms) -> "%s %.2f".format(name, ms.drop(2).sorted().let { it[it.size / 2] }) }
+            Log.i("MotionSmoothingBench", "1080p $label resolution by pass (ms): $breakdown")
+            results.putString("${label}Passes", breakdown)
         }
         instrumentation.sendStatus(0, results)
     }
