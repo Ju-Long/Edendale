@@ -282,7 +282,12 @@ public sealed class SyncEngine : IDisposable
 
     /// <summary>
     /// Chooses the location (§4): lists the space once to prove it works,
-    /// creating Edendale/ and the space folder, then syncs. The old location
+    /// creating Edendale/ and the space folder, then starts the first sync
+    /// without waiting for it (SyncCoordinator.setLocation → requestSync on
+    /// apple-27.1). A handoff receiver answers its `result` right after this
+    /// returns, and the sender waits only 2 minutes for it (§9.2), less than
+    /// one sync may take; the sync's progress and any failure show in
+    /// Settings → Sync through <see cref="StatusChanged"/>. The old location
     /// is left alone; the caller offers to delete this device's file there.
     /// Throws a ConnectorException or IOException when the location fails.
     /// </summary>
@@ -308,7 +313,8 @@ public sealed class SyncEngine : IDisposable
         }
         SyncLog.Info("sync", $"location set: {location.Kind}");
         RaiseStatusChanged();
-        if (_started) await SyncAsync("location", userRequested: true).ConfigureAwait(false);
+        // Not awaited: RunAsync records its own failure (Status.LastError), and Current tracks it.
+        if (_started) _ = SyncAsync("location", userRequested: true);
     }
 
     /// <summary>Turns sync off. The local store stays; the device's file in the location is deleted when asked.</summary>

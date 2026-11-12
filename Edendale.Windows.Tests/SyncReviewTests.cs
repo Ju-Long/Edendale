@@ -58,6 +58,7 @@ public sealed class SyncReviewTests
     {
         private readonly FolderSyncLocation _folder = new(root);
         private TaskCompletionSource _gate = Open();
+        private int _holdFrom;
         private int _listings;
 
         public int Listings => Volatile.Read(ref _listings);
@@ -72,14 +73,19 @@ public sealed class SyncReviewTests
             return gate;
         }
 
-        public void Hold() => _gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        /// <summary>Holds listings from the <paramref name="fromListing"/>th on (all, by default) until <see cref="Release"/>.</summary>
+        public void Hold(int fromListing = 0)
+        {
+            _holdFrom = fromListing;
+            _gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
 
         public void Release() => _gate.TrySetResult();
 
         public async Task<IReadOnlyList<SyncFileEntry>> ListAsync(string space, CancellationToken cancellation)
         {
-            Interlocked.Increment(ref _listings);
-            await _gate.Task.WaitAsync(cancellation);
+            var listing = Interlocked.Increment(ref _listings);
+            if (listing >= _holdFrom) await _gate.Task.WaitAsync(cancellation);
             if (FailNextListing is { } failure)
             {
                 FailNextListing = null;
@@ -209,6 +215,33 @@ public sealed class SyncReviewTests
         Assert.AreEqual(0, a.State.Peers.Count);
         Assert.IsFalse(File.Exists(FileOf(first, a.State.DeviceId)), "the old location isn't written");
         Assert.IsTrue(File.Exists(FileOf(second, a.State.DeviceId)), "the queued sync wrote to the new one");
+    }
+
+    /// <summary>
+    /// A handoff receiver answers the sender within its 2 minutes (§9.2), so
+    /// choosing a location returns once the location lists, and its first
+    /// sync runs on its own (SyncCoordinator.setLocation on apple-27.1).
+    /// </summary>
+    [TestMethod]
+    public async Task ChoosingALocationReturnsBeforeItsFirstSyncEnds()
+    {
+        var (a, location, folder) = DeviceWithTestLocation("A", T0);
+        using var device = a;
+        a.Engine.Start();
+        await a.Engine.Current!;
+        Assert.AreEqual(1, location.Listings);
+
+        // The proving listing (2) passes; the first sync's (3) is held.
+        location.Hold(fromListing: 3);
+        await a.Engine.SetLocationAsync(new SyncLocationSettings { Kind = SyncLocationKind.Folder, Path = folder, Space = "Movies" }, CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(10));
+        await Eventually(() => location.Listings == 3, "the first sync's listing");
+        Assert.IsTrue(a.Engine.Status.IsSyncing, "the first sync is still running");
+
+        location.Release();
+        await a.Engine.Current!.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.IsFalse(a.Engine.Status.IsSyncing);
+        Assert.IsTrue(File.Exists(Path.Combine(folder, "Edendale", "Movies", a.State.DeviceId + ".json")));
     }
 
     // ------------------------------------------------------------------

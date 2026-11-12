@@ -16,7 +16,8 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
-  IgnorableNamespaces="uap rescap mp">
+  xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2"
+  IgnorableNamespaces="uap rescap mp desktop2">
 
   <Identity
     Name="LongJu.Edendale"
@@ -79,6 +80,17 @@
           Square310x310Logo="Assets\LargeTile.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0A0A0F" />
       </uap:VisualElements>
+      <Extensions>
+        <!-- edendale:// links (AppRoute): jump-list entries, links to a title,
+             and the pairing QR code Windows Camera opens (SYNC-PROTOCOL.md
+             §9.3). A packaged app can only declare its protocol here; the
+             runtime registration in ActivationService serves unpackaged builds. -->
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="edendale">
+            <uap:DisplayName>Edendale</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
     </Application>
   </Applications>
 
@@ -99,4 +111,20 @@
     <!-- SMB shares on the user's own network. -->
     <Capability Name="privateNetworkClientServer" />
   </Capabilities>
+
+  <Extensions>
+    <!-- The pairing screen listens for the other device on a TCP port the
+         system picks (Set Up / Receive from Another Device, SYNC-PROTOCOL.md
+         §9). A full-trust app gets no capability-based firewall rule, so
+         without these Windows prompts the first time, and a dismissed prompt
+         leaves the other device unable to connect: the Windows counterpart
+         of the Mac's incoming-connections entitlement (apple-27.1 K.7).
+         Public networks stay closed. -->
+    <desktop2:Extension Category="windows.firewallRules">
+      <desktop2:FirewallRules Executable="Edendale.exe">
+        <desktop2:Rule Direction="in" IPProtocol="TCP" Profile="private" />
+        <desktop2:Rule Direction="in" IPProtocol="TCP" Profile="domain" />
+      </desktop2:FirewallRules>
+    </desktop2:Extension>
+  </Extensions>
 </Package>

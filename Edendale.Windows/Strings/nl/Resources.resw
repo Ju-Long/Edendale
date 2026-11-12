@@ -537,7 +537,7 @@ IS STIL</value>
     <value>Ontworpen voor privacy</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Je bibliotheekindex en kijkvoortgang blijven op dit apparaat. Edendale neemt contact op met TMDB voor artwork en metadata, en verder alleen met wat jij kiest: de bronnen die je koppelt, ondertitelzoekopdrachten, overslaan voorstellen als dat aanstaat en trailers die je afspeelt. Verder wordt niets verstuurd.</value>
+    <value>Je bibliotheekindex blijft op dit apparaat. Edendale neemt contact op met TMDB voor artwork en metadata, en verder alleen met wat jij kiest: de bronnen die je koppelt, de synchronisatielocatie die je kiest in Instellingen → Synchronisatie, ondertitelzoekopdrachten, overslaan voorstellen als dat aanstaat en trailers die je afspeelt. Verder wordt niets verstuurd.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Kies een dag en vervolgens een tweede dag om het bereik te sluiten.</value>
@@ -1446,10 +1446,10 @@ IS STIL</value>
     <value>Voer de server en export in, bijvoorbeeld nas.local/export/video. De export moet verbindingen vanaf niet-geprivilegieerde poorten toestaan (de optie ‘insecure’).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Je browser opent om bij Microsoft in te loggen. Edendale vraagt alleen om je bestanden te lezen en houdt dit account gescheiden van de OneDrive-map waarnaar het je kijkgeschiedenis kopieert.</value>
+    <value>Je browser opent om bij Microsoft in te loggen. Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen naar zijn eigen map Apps/Edendale, als je daar synchroniseert.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Je browser opent om bij Dropbox in te loggen. Edendale vraagt alleen om je bestanden en accountnaam te lezen.</value>
+    <value>Je browser opent om bij Dropbox in te loggen. Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen zijn synchronisatiebestanden, in de map Edendale, als je daar synchroniseert.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Inloggen</value>
@@ -1572,7 +1572,7 @@ IS STIL</value>
     <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Je browser opent om bij Google in te loggen. Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets.</value>
+    <value>Je browser opent om bij Google in te loggen. Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die en de synchronisatiebestanden die het zelf maakt, maakt alleen vanaf dit apparaat verbinding en verandert verder niets.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</value>
@@ -1620,7 +1620,7 @@ IS STIL</value>
     <value>LOCATIE KIEZEN…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>KOPPELEN MET ANDER APPARAAT…</value>
+    <value>ONTVANGEN VAN EEN ANDER APPARAAT…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>ANDER APPARAAT INSTELLEN…</value>
@@ -1629,7 +1629,7 @@ IS STIL</value>
     <value>Ander apparaat instellen</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Koppelen met ander apparaat</value>
+    <value>Ontvangen van een ander apparaat</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Locatie</value>
@@ -1722,7 +1722,7 @@ IS STIL</value>
     <value>Kies de map die dit apparaat voor de ruimte “{0}” moet gebruiken.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Log in bij Google als {0} om de ruimte “{1}” te gebruiken.</value>
+    <value>Log in bij Google Drive als {0} om deel te nemen aan de ruimte “{1}”.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>Welke kant moeten de logins op?</value>
@@ -1732,9 +1732,6 @@ IS STIL</value>
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Ontvangen op dit apparaat</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>Open op het andere apparaat Instellingen → Synchronisatie → Koppelen met ander apparaat, scan dan deze code met zijn camera of voer het nummer in.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Of voer deze code in op het andere apparaat</value>
@@ -1828,9 +1825,6 @@ IS STIL</value>
   </data>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Koppel deze server eerst bij Bronnen, zodat de login en bij SFTP de hostsleutel op deze pc zijn opgeslagen.</value>
-  </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Koppel een cloudaccount of server eerst bij Bronnen om erlangs te synchroniseren.</value>
   </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Het oude synchronisatiebestand van deze pc verwijderen?</value>
@@ -1972,5 +1966,62 @@ IS STIL</value>
   </data>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>Het synchronisatiebestand van {0} kon niet uit de cloud worden gedownload. Controleer of de app die deze map synchroniseert actief is en of Windows Edendale bestanden laat downloaden.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>{0} kon niet worden bewaard ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>{0} kon niet worden bewaard.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Synchronisatielocatie</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0}-account</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0}-login voor {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Log in bij Google Drive om deel te nemen aan de ruimte “{0}”.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Koppelen met {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Verstuur de synchronisatielocatie en logins van dit apparaat naar het andere apparaat, of ontvang die van het andere apparaat.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Verzenden vanaf dit apparaat</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Ontvangen op dit apparaat</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Scan deze code met Edendale op het andere apparaat, via Instellingen → Synchronisatie → {0}. Elke twee minuten verschijnt een nieuwe code.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} heeft Edendale niet toegestaan zijn synchronisatiebestanden te schrijven. Log opnieuw in en sta die toegang toe.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Log opnieuw in zodat Edendale hier zijn synchronisatiebestanden kan schrijven.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Je hoeft niets te kiezen: Edendale bewaart zijn synchronisatiebestanden in een Edendale-map die het zelf in je Google Drive maakt. Het ziet alleen de bestanden die het zelf maakt, maakt alleen vanaf dit apparaat verbinding en verandert verder niets.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen naar zijn eigen map Apps/Edendale, als je daar synchroniseert.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen zijn synchronisatiebestanden, in de map Edendale, als je daar synchroniseert.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Koppel een WebDAV-, SMB- of SFTP-server waarvoor je moet inloggen eerst bij Bronnen om erlangs te synchroniseren.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale kon het bestand van dit apparaat niet uit {0} verwijderen.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Sluit het geopende dialoogvenster en open de koppellink daarna opnieuw.</value>
   </data>
 </root>

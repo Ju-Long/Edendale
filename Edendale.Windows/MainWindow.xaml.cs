@@ -364,6 +364,18 @@ public sealed partial class MainWindow : Window
                 }
                 break;
 
+            case AppRoute.Handoff handoff:
+                // Only one ContentDialog can be open: a link that arrives
+                // during another dialog says so instead of replacing it.
+                if (Content.XamlRoot is not { } root) break;
+                if (Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(root).Any(popup => popup.Child is ContentDialog))
+                {
+                    ShowActivationMessage(Loc.Get("Activation_DialogOpen"));
+                    break;
+                }
+                _ = Controls.HandoffDialog.ShowForLinkAsync(root, handoff.Code);
+                break;
+
             default:
                 ShowActivationMessage(Loc.Get("Library_ItemMissing"));
                 break;

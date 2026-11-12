@@ -5,7 +5,11 @@
 // play/<local-movie|local-episode>/<guid>. A route carries intent only;
 // MainWindow.OpenRoute performs navigation/playback through the existing
 // NavigationService + PlayerSession, so external links can never bypass
-// the shell.
+// the shell. edendale://handoff is the pairing QR code (SYNC-PROTOCOL.md
+// §9.3), opened from a camera app or a link; it asks which way the logins go
+// before anything connects (RootView.swift on apple-27.1).
+
+using Edendale.Windows.Core.Handoff;
 
 namespace Edendale.Windows.Services;
 
@@ -20,6 +24,12 @@ public abstract record AppRoute
     public sealed record PlayLocalMovie(Guid Id) : AppRoute;
     public sealed record PlayLocalEpisode(Guid Id) : AppRoute;
 
+    /// <summary>A pairing code opened as a link. The code carries the pairing secret, so this never prints it.</summary>
+    public sealed record Handoff(HandoffQrCode Code) : AppRoute
+    {
+        public override string ToString() => nameof(Handoff);
+    }
+
     public const string Scheme = "edendale";
     public const string Host = "edendale.babasama.com";
 
@@ -32,6 +42,11 @@ public abstract record AppRoute
         {
             head = uri.Host.ToLowerInvariant();
             tail = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            // Only the app's own scheme: a web link never starts a pairing.
+            if (head == HandoffQrCode.Path)
+            {
+                return HandoffQrCode.Parse(uri.OriginalString) is { } code ? new Handoff(code) : null;
+            }
         }
         else if (string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
         {

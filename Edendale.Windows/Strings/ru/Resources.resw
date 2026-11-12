@@ -537,7 +537,7 @@
     <value>Конфиденциальность в основе</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Индекс библиотеки и прогресс просмотра остаются на этом устройстве. Edendale обращается к TMDB за обложками и метаданными, а в остальном — только к тому, что выберете вы: к привязанным источникам, поиску субтитров, предложениям пропуска (если они включены) и трейлерам, которые вы запускаете. Больше ничего никуда не отправляется.</value>
+    <value>Индекс библиотеки остаётся на этом устройстве. Edendale обращается к TMDB за обложками и метаданными, а в остальном — только к тому, что выберете вы: к привязанным источникам, к месту синхронизации, выбранному в «Настройки → Синхронизация», к поиску субтитров, предложениям пропуска (если они включены) и трейлерам, которые вы запускаете. Больше ничего никуда не отправляется.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Выберите день, затем второй, чтобы закрыть диапазон.</value>
@@ -1446,10 +1446,10 @@
     <value>Введите сервер и экспорт, например nas.local/export/video. Экспорт должен разрешать подключения с непривилегированных портов (параметр «insecure»).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Откроется браузер для входа в Microsoft. Edendale запрашивает только чтение файлов и держит эту учётную запись отдельно от папки OneDrive, в которую копирует историю просмотра.</value>
+    <value>Откроется браузер для входа в Microsoft. Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только в свою папку Apps/Edendale, если вы синхронизируетесь туда.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Откроется браузер для входа в Dropbox. Edendale запрашивает только чтение файлов и имени учётной записи.</value>
+    <value>Откроется браузер для входа в Dropbox. Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только свои файлы синхронизации в папку Edendale, если вы синхронизируетесь туда.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Войти</value>
@@ -1572,7 +1572,7 @@
     <value>Работает с видео до 30 кадров/с и разрешением до 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Откроется браузер для входа в Google. После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их, подключается только с этого устройства и никогда ничего не загружает и не изменяет.</value>
+    <value>Откроется браузер для входа в Google. После входа откроется окно выбора Google: выберите видео, которые Edendale может воспроизводить. Edendale видит только их и созданные им файлы синхронизации, подключается только с этого устройства и больше ничего не меняет.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Диск пометил этот файл как потенциально опасный, поэтому его нельзя транслировать.</value>
@@ -1620,7 +1620,7 @@
     <value>ВЫБРАТЬ РАСПОЛОЖЕНИЕ…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>СВЯЗАТЬ С ДРУГИМ УСТРОЙСТВОМ…</value>
+    <value>ПОЛУЧИТЬ С ДРУГОГО УСТРОЙСТВА…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>НАСТРОИТЬ ДРУГОЕ УСТРОЙСТВО…</value>
@@ -1629,7 +1629,7 @@
     <value>Настроить другое устройство</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Связать с другим устройством</value>
+    <value>Получить с другого устройства</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Расположение</value>
@@ -1722,7 +1722,7 @@
     <value>Выберите папку, которую это устройство будет использовать для пространства «{0}».</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Войдите в Google как {0}, чтобы использовать пространство «{1}».</value>
+    <value>Войдите в Google Диск как {0}, чтобы присоединиться к пространству «{1}».</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>В какую сторону передать логины?</value>
@@ -1732,9 +1732,6 @@
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Получить на этом устройстве</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>На другом устройстве откройте Настройки → Синхронизация → Связать с другим устройством, затем отсканируйте этот код его камерой или введите число.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Или введите этот код на другом устройстве</value>
@@ -1828,9 +1825,6 @@
   </data>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Сначала привяжите этот сервер в разделе «Источники», чтобы его логин, а для SFTP и ключ хоста, сохранились на этом ПК.</value>
-  </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Чтобы синхронизировать через облачную учётную запись или сервер, сначала привяжите их в разделе «Источники».</value>
   </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Удалить старый файл синхронизации этого ПК?</value>
@@ -1972,5 +1966,62 @@
   </data>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>Не удалось загрузить из облака файл синхронизации от {0}. Убедитесь, что приложение, которое синхронизирует эту папку, запущено и что Windows разрешает Edendale загружать файлы.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>Не удалось сохранить {0} ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>Не удалось сохранить {0}.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Расположение синхронизации</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>Аккаунт {0}</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>Вход {0} для {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Войдите в Google Диск, чтобы присоединиться к пространству «{0}».</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Связать с {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Отправьте расположение синхронизации и данные входа этого устройства на другое устройство или получите их с другого устройства.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Отправить с этого устройства</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Получить на этом устройстве</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Отсканируйте этот код в Edendale на другом устройстве через «Настройки → Синхронизация → {0}». Новый код появляется каждые две минуты.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} не разрешил Edendale записывать файлы синхронизации. Войдите снова и разрешите этот доступ.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Войдите снова, чтобы Edendale мог записывать сюда свои файлы синхронизации.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Ничего выбирать не нужно: Edendale хранит файлы синхронизации в папке Edendale, которую сам создаёт на вашем Google Диске. Он видит только созданные им файлы, подключается только с этого устройства и больше ничего не меняет.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только в свою папку Apps/Edendale, если вы синхронизируетесь туда.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale читает списки папок и воспроизводимые видео, подключается только с этого устройства и записывает только свои файлы синхронизации в папку Edendale, если вы синхронизируетесь туда.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Чтобы синхронизировать через сервер WebDAV, SMB или SFTP, для которого нужен вход, сначала привяжите его в разделе «Источники».</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale не удалось удалить файл этого устройства из {0}.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Закройте открытое диалоговое окно, затем снова откройте ссылку для связывания.</value>
   </data>
 </root>

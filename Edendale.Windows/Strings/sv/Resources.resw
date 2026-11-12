@@ -537,7 +537,7 @@
     <value>Designad för integritet</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Ditt biblioteksindex och ditt visningsförlopp stannar på den här enheten. Edendale kontaktar TMDB för bilder och metadata, och i övrigt bara det du väljer: källorna du länkar, undertextsökningar, hoppa över-förslag när de är på och trailers du spelar upp. Inget annat skickas någonstans.</value>
+    <value>Ditt biblioteksindex stannar på den här enheten. Edendale kontaktar TMDB för bilder och metadata, och i övrigt bara det du väljer: källorna du länkar, synkplatsen du väljer under Inställningar → Synkronisering, undertextsökningar, hoppa över-förslag när de är på och trailers du spelar upp. Inget annat skickas någonstans.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Välj en dag, och sedan en andra dag för att stänga intervallet.</value>
@@ -1446,10 +1446,10 @@
     <value>Ange server och export, till exempel nas.local/export/video. Exporten måste tillåta anslutningar från oprivilegierade portar (alternativet ”insecure”).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Microsoft. Edendale ber bara om att läsa dina filer och håller kontot åtskilt från OneDrive-mappen som visningshistoriken kopieras till.</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Microsoft. Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara till sin egen mapp Apps/Edendale, när du synkar där.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Dropbox. Edendale ber bara om att läsa dina filer och ditt kontonamn.</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Dropbox. Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara sina synkfiler, i mappen Edendale, när du synkar där.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Logga in</value>
@@ -1572,7 +1572,7 @@
     <value>Fungerar med video på högst 30 bilder/s, upp till 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Google. När du har loggat in öppnas Googles väljare: välj de videor som Edendale får spela upp. Edendale ser bara dem, ansluter bara från den här enheten och laddar aldrig upp eller ändrar något.</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Google. När du loggat in öppnas Googles väljare: välj de videor Edendale får spela upp. Edendale ser bara dem och synkfilerna som den själv skapar, ansluter bara från den här enheten och ändrar inget annat.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</value>
@@ -1620,7 +1620,7 @@
     <value>VÄLJ EN PLATS…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>PARA IHOP MED EN ANNAN ENHET…</value>
+    <value>TA EMOT FRÅN EN ANNAN ENHET…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>KONFIGURERA EN ANNAN ENHET…</value>
@@ -1629,7 +1629,7 @@
     <value>Konfigurera en annan enhet</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Para ihop med en annan enhet</value>
+    <value>Ta emot från en annan enhet</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Plats</value>
@@ -1722,7 +1722,7 @@
     <value>Välj mappen som den här enheten ska använda för utrymmet ”{0}”.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Logga in på Google som {0} för att använda utrymmet ”{1}”.</value>
+    <value>Logga in på Google Drive som {0} för att gå med i utrymmet ”{1}”.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>Åt vilket håll ska inloggningarna gå?</value>
@@ -1732,9 +1732,6 @@
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Ta emot på den här enheten</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>Öppna Inställningar → Synkronisering → Para ihop med en annan enhet på den andra enheten, skanna sedan den här koden med dess kamera eller ange numret.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Eller ange den här koden på den andra enheten</value>
@@ -1828,9 +1825,6 @@
   </data>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Länka den här servern under Källor först, så att inloggningen och, för SFTP, värdnyckeln sparas på den här datorn.</value>
-  </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Länka ett molnkonto eller en server under Källor först för att synka genom det.</value>
   </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Radera den här datorns gamla synkfil?</value>
@@ -1972,5 +1966,62 @@
   </data>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>Synkfilen från {0} kunde inte hämtas från molnet. Kontrollera att appen som synkar den här mappen körs och att Windows låter Edendale hämta filer.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>{0} kunde inte behållas ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>{0} kunde inte behållas.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Synkplats</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0}-konto</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0}-inloggning för {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Logga in på Google Drive för att gå med i utrymmet ”{0}”.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Para ihop med {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Skicka den här enhetens synkplats och inloggningar till den andra enheten, eller ta emot den andra enhetens.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Skicka från den här enheten</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Ta emot på den här enheten</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Skanna den här koden med Edendale på den andra enheten, från Inställningar → Synk → {0}. En ny kod visas varannan minut.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} tillät inte Edendale att skriva sina synkfiler. Logga in igen och tillåt den åtkomsten.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Logga in igen så att Edendale kan skriva sina synkfiler här.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Det finns inget att välja: Edendale lägger sina synkfiler i en Edendale-mapp som den själv skapar i din Google Drive. Den ser bara filerna som den själv skapar, ansluter bara från den här enheten och ändrar inget annat.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara till sin egen mapp Apps/Edendale, när du synkar där.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara sina synkfiler, i mappen Edendale, när du synkar där.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Länka en WebDAV-, SMB- eller SFTP-server som kräver inloggning under Källor först för att synka genom den.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale kunde inte ta bort den här enhetens fil från {0}.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Stäng den öppna dialogrutan och öppna sedan länken för ihopparning igen.</value>
   </data>
 </root>

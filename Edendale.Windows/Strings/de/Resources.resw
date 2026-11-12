@@ -537,7 +537,7 @@ IST STUMM</value>
     <value>Von Grund auf privat</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Dein Bibliotheksindex und dein Wiedergabefortschritt bleiben auf diesem Gerät. Edendale kontaktiert TMDB für Artwork und Metadaten und sonst nur, was du auswählst: die verknüpften Quellen, Untertitelsuchen, Überspringen anbieten, wenn es aktiv ist, und Trailer, die du abspielst. Sonst wird nichts gesendet.</value>
+    <value>Dein Bibliotheksindex bleibt auf diesem Gerät. Edendale kontaktiert TMDB für Artwork und Metadaten und sonst nur, was du auswählst: die verknüpften Quellen, den Speicherort, den du unter Einstellungen → Synchronisierung wählst, Untertitelsuchen, Überspringen anbieten, wenn es aktiv ist, und Trailer, die du abspielst. Sonst wird nichts gesendet.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Wähle einen Tag, dann einen zweiten Tag, um den Zeitraum einzugrenzen.</value>
@@ -1446,10 +1446,10 @@ IST STUMM</value>
     <value>Gib Server und Freigabe ein, zum Beispiel nas.local/export/video. Die Freigabe muss Verbindungen von nicht privilegierten Ports erlauben (Option „insecure“).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Dein Browser öffnet die Microsoft-Anmeldung. Edendale fragt nur nach Lesezugriff auf deine Dateien und hält dieses Konto getrennt vom OneDrive-Ordner, in den es deinen Wiedergabeverlauf kopiert.</value>
+    <value>Dein Browser öffnet die Microsoft-Anmeldung. Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und schreibt nur in seinen eigenen Ordner „Apps/Edendale“, wenn du dort synchronisierst.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Dein Browser öffnet die Dropbox-Anmeldung. Edendale fragt nur nach Lesezugriff auf deine Dateien und deinen Kontonamen.</value>
+    <value>Dein Browser öffnet die Dropbox-Anmeldung. Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und schreibt nur seine Sync-Dateien in den Ordner „Edendale“, wenn du dort synchronisierst.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Anmelden</value>
@@ -1572,7 +1572,7 @@ IST STUMM</value>
     <value>Funktioniert bei Videos mit höchstens 30 fps bis 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Dein Browser öffnet die Google-Anmeldung. Nach der Anmeldung öffnet sich die Auswahl von Google: Wähle die Videos aus, die Edendale wiedergeben darf. Edendale sieht nur diese, verbindet sich nur von diesem Gerät aus und lädt niemals etwas hoch oder ändert etwas.</value>
+    <value>Dein Browser öffnet die Google-Anmeldung. Nach der Anmeldung öffnet sich Googles Auswahl: Wähle die Videos, die Edendale abspielen darf. Edendale sieht nur diese und die Sync-Dateien, die es selbst anlegt, verbindet sich nur von diesem Gerät aus und ändert nichts anderes.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive hat diese Datei als potenziell schädlich markiert, daher kann sie nicht gestreamt werden.</value>
@@ -1620,7 +1620,7 @@ IST STUMM</value>
     <value>SPEICHERORT WÄHLEN…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>MIT ANDEREM GERÄT KOPPELN…</value>
+    <value>VON EINEM ANDEREN GERÄT EMPFANGEN …</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>ANDERES GERÄT EINRICHTEN…</value>
@@ -1629,7 +1629,7 @@ IST STUMM</value>
     <value>Anderes Gerät einrichten</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Mit anderem Gerät koppeln</value>
+    <value>Von einem anderen Gerät empfangen</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Speicherort</value>
@@ -1722,7 +1722,7 @@ IST STUMM</value>
     <value>Wähle den Ordner, den dieses Gerät für den Bereich „{0}“ verwenden soll.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Melde dich als {0} bei Google an, um den Bereich „{1}“ zu verwenden.</value>
+    <value>Melde dich als {0} bei Google Drive an, um dem Bereich „{1}“ beizutreten.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>In welche Richtung sollen die Anmeldungen gehen?</value>
@@ -1732,9 +1732,6 @@ IST STUMM</value>
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Auf diesem Gerät empfangen</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>Öffne auf dem anderen Gerät Einstellungen → Synchronisierung → Mit anderem Gerät koppeln, scanne dann diesen Code mit dessen Kamera oder gib die Nummer ein.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Oder gib diesen Code auf dem anderen Gerät ein</value>
@@ -1828,9 +1825,6 @@ IST STUMM</value>
   </data>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Verknüpfe diesen Server zuerst unter Quellen, damit seine Anmeldung und bei SFTP sein Hostschlüssel auf diesem PC gespeichert sind.</value>
-  </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Um über ein Cloud-Konto oder einen Server zu synchronisieren, verknüpfe es zuerst unter Quellen.</value>
   </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Alte Sync-Datei dieses PCs löschen?</value>
@@ -1972,5 +1966,62 @@ IST STUMM</value>
   </data>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>Die Sync-Datei von {0} konnte nicht aus der Cloud heruntergeladen werden. Prüfe, ob die App läuft, die diesen Ordner synchronisiert, und ob Windows Edendale das Herunterladen von Dateien erlaubt.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>{0} konnte nicht behalten werden ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>{0} konnte nicht behalten werden.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Sync-Speicherort</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0}-Konto</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0}-Anmeldung für {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Melde dich bei Google Drive an, um dem Bereich „{0}“ beizutreten.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Mit {0} koppeln?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Sende den Sync-Speicherort und die Anmeldungen dieses Geräts an das andere Gerät, oder empfange die des anderen Geräts.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Von diesem Gerät senden</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Auf diesem Gerät empfangen</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Scanne diesen Code mit Edendale auf dem anderen Gerät unter „Einstellungen → Synchronisierung → {0}“. Alle zwei Minuten erscheint ein neuer Code.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} hat Edendale das Schreiben seiner Sync-Dateien nicht erlaubt. Melde dich erneut an und erlaube diesen Zugriff.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Melde dich erneut an, damit Edendale hier seine Sync-Dateien schreiben kann.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Hier musst du nichts auswählen: Edendale legt seine Sync-Dateien in einem Edendale-Ordner ab, den es selbst in deinem Google Drive anlegt. Es sieht nur die Dateien, die es selbst anlegt, verbindet sich nur von diesem Gerät aus und ändert nichts anderes.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und schreibt nur in seinen eigenen Ordner „Apps/Edendale“, wenn du dort synchronisierst.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale liest Ordnerinhalte und die Videos, die du abspielst, verbindet sich nur von diesem Gerät aus und schreibt nur seine Sync-Dateien in den Ordner „Edendale“, wenn du dort synchronisierst.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Um über einen WebDAV-, SMB- oder SFTP-Server mit Anmeldung zu synchronisieren, verknüpfe ihn zuerst unter Quellen.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale konnte die Datei dieses Geräts nicht aus {0} löschen.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Schließe das geöffnete Dialogfeld und öffne den Kopplungslink dann erneut.</value>
   </data>
 </root>

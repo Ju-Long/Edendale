@@ -537,7 +537,7 @@ ESTÁ SILENCIOSA</value>
     <value>Privacidade desde a conceção</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>O índice da sua biblioteca e o progresso de visualização ficam neste dispositivo. O Edendale contacta o TMDB para imagens e metadados e, fora isso, apenas o que escolher: as fontes que associar, pesquisas de legendas, sugestões para saltar quando ativadas e trailers que reproduzir. Nada mais é enviado.</value>
+    <value>O índice da sua biblioteca fica neste dispositivo. O Edendale contacta o TMDB para imagens e metadados e, fora isso, apenas o que escolher: as fontes que associar, o local de sincronização que escolher em Definições → Sincronização, pesquisas de legendas, sugestões para saltar quando ativadas e trailers que reproduzir. Nada mais é enviado.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Escolha um dia e depois um segundo dia para fechar o intervalo.</value>
@@ -1446,10 +1446,10 @@ ESTÁ SILENCIOSA</value>
     <value>Introduza o servidor e a exportação, por exemplo nas.local/export/video. A exportação tem de permitir ligações de portas não privilegiadas (a opção “insecure”).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>O browser abre para iniciar sessão na Microsoft. O Edendale só pede para ler os seus ficheiros e mantém esta conta separada da pasta do OneDrive para onde copia o seu histórico de visualização.</value>
+    <value>O browser abre para iniciar sessão na Microsoft. O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve na sua própria pasta Apps/Edendale, quando sincroniza aí.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>O browser abre para iniciar sessão no Dropbox. O Edendale só pede para ler os seus ficheiros e o nome da conta.</value>
+    <value>O browser abre para iniciar sessão no Dropbox. O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve os seus ficheiros de sincronização, na pasta Edendale, quando sincroniza aí.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Iniciar sessão</value>
@@ -1572,7 +1572,7 @@ ESTÁ SILENCIOSA</value>
     <value>Funciona com vídeos até 30 fps e até 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>O browser abre para iniciar sessão na Google. Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale só vê esses vídeos, liga-se apenas a partir deste dispositivo e nunca envia nem altera nada.</value>
+    <value>O browser abre para iniciar sessão na Google. Depois de iniciar sessão, abre-se o seletor da Google: escolha os vídeos que o Edendale pode reproduzir. O Edendale vê apenas esses e os ficheiros de sincronização que cria, liga-se apenas a partir deste dispositivo e não altera mais nada.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>O Google Drive assinalou este ficheiro como potencialmente prejudicial, por isso não pode ser transmitido.</value>
@@ -1620,7 +1620,7 @@ ESTÁ SILENCIOSA</value>
     <value>ESCOLHER UM LOCAL…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>EMPARELHAR COM OUTRO DISPOSITIVO…</value>
+    <value>RECEBER DE OUTRO DISPOSITIVO…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>CONFIGURAR OUTRO DISPOSITIVO…</value>
@@ -1629,7 +1629,7 @@ ESTÁ SILENCIOSA</value>
     <value>Configurar outro dispositivo</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Emparelhar com outro dispositivo</value>
+    <value>Receber de outro dispositivo</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Local</value>
@@ -1722,7 +1722,7 @@ ESTÁ SILENCIOSA</value>
     <value>Escolha a pasta que este dispositivo deve usar para o espaço “{0}”.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Inicie sessão no Google como {0} para usar o espaço “{1}”.</value>
+    <value>Inicie sessão no Google Drive como {0} para se juntar ao espaço “{1}”.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>Para que lado vão os inícios de sessão?</value>
@@ -1732,9 +1732,6 @@ ESTÁ SILENCIOSA</value>
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Receber neste dispositivo</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>No outro dispositivo, abra Definições → Sincronização → Emparelhar com outro dispositivo e leia este código com a câmara dele ou introduza o número.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Ou introduza este código no outro dispositivo</value>
@@ -1871,9 +1868,6 @@ ESTÁ SILENCIOSA</value>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Associe primeiro este servidor em Fontes, para que o início de sessão e, no SFTP, a chave do anfitrião fiquem guardados neste PC.</value>
   </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Para sincronizar através de uma conta na nuvem ou de um servidor, associe-o primeiro em Fontes.</value>
-  </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Eliminar o ficheiro de sincronização antigo deste PC?</value>
   </data>
@@ -1972,5 +1966,62 @@ ESTÁ SILENCIOSA</value>
   </data>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>Não foi possível transferir da nuvem o ficheiro de sincronização de {0}. Verifique se a aplicação que sincroniza esta pasta está em execução e se o Windows permite que o Edendale transfira ficheiros.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>Não foi possível manter {0} ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>Não foi possível manter {0}.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Localização de sincronização</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>Conta {0}</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>Início de sessão {0} para {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Inicie sessão no Google Drive para se juntar ao espaço “{0}”.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Emparelhar com {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Envie a localização de sincronização e os inícios de sessão deste dispositivo para o outro, ou receba os do outro dispositivo.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Enviar deste dispositivo</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Receber neste dispositivo</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Leia este código com o Edendale no outro dispositivo, em Definições → Sincronização → {0}. Aparece um novo código a cada dois minutos.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} não permitiu que o Edendale escrevesse os seus ficheiros de sincronização. Inicie sessão novamente e permita esse acesso.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Inicie sessão novamente para que o Edendale possa escrever aqui os seus ficheiros de sincronização.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Não há nada para escolher: o Edendale guarda os seus ficheiros de sincronização numa pasta Edendale que cria no seu Google Drive. Vê apenas os ficheiros que cria, liga-se apenas a partir deste dispositivo e não altera mais nada.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve na sua própria pasta Apps/Edendale, quando sincroniza aí.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>O Edendale lê as listagens de pastas e os vídeos que reproduz, liga-se apenas a partir deste dispositivo e só escreve os seus ficheiros de sincronização, na pasta Edendale, quando sincroniza aí.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Para sincronizar através de um servidor WebDAV, SMB ou SFTP que exija início de sessão, associe-o primeiro em Fontes.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>O Edendale não conseguiu eliminar o ficheiro deste dispositivo de {0}.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Feche a caixa de diálogo aberta e volte a abrir a ligação de emparelhamento.</value>
   </data>
 </root>

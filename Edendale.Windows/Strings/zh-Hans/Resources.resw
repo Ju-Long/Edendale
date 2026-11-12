@@ -537,7 +537,7 @@
     <value>隐私保护源于设计</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>你的媒体库索引和观看进度会保留在此设备上。Edendale 会连接 TMDB 获取图片和元数据，除此之外只连接你选择的内容：你链接的来源、字幕搜索、开启时的跳过提示以及你播放的预告片。不会向其他任何地方发送内容。</value>
+    <value>你的媒体库索引会保留在此设备上。Edendale 会连接 TMDB 获取图片和元数据，除此之外只连接你选择的内容：你链接的来源、你在“设置 → 同步”中选择的同步位置、字幕搜索、开启时的跳过提示以及你播放的预告片。不会向其他任何地方发送内容。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>选择一天，再选择第二天以确定范围。</value>
@@ -1446,10 +1446,10 @@
     <value>输入服务器和导出路径，例如 nas.local/export/video。该导出必须允许来自非特权端口的连接（“insecure” 选项）。</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>浏览器将打开以登录 Microsoft。Edendale 只请求读取你的文件，并将此账户与其复制观看记录的 OneDrive 文件夹分开管理。</value>
+    <value>浏览器将打开以登录 Microsoft。Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时写入它自己的 Apps/Edendale 文件夹。</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>浏览器将打开以登录 Dropbox。Edendale 只请求读取你的文件和账户名称。</value>
+    <value>浏览器将打开以登录 Dropbox。Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时，将同步文件写入 Edendale 文件夹。</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>登录</value>
@@ -1572,7 +1572,7 @@
     <value>适用于 30 fps 及以下、最高 4K 的视频。</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>浏览器将打开以登录 Google。登录后会打开 Google 的选择器：请选择 Edendale 可以播放的视频。Edendale 只能看到这些视频，仅从此设备连接，绝不会上传或更改任何内容。</value>
+    <value>浏览器将打开以登录 Google。登录后会打开 Google 选择器：选择 Edendale 可以播放的视频。Edendale 只能看到这些视频及其自己创建的同步文件，仅从此设备连接，不会更改其他任何内容。</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google 云端硬盘已将此文件标记为可能有害，因此无法流式播放。</value>
@@ -1620,7 +1620,7 @@
     <value>选择位置…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>与其他设备配对…</value>
+    <value>从其他设备接收…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>设置其他设备…</value>
@@ -1629,7 +1629,7 @@
     <value>设置其他设备</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>与其他设备配对</value>
+    <value>从其他设备接收</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>位置</value>
@@ -1722,7 +1722,7 @@
     <value>请选择此设备用于空间“{0}”的文件夹。</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>请以 {0} 登录 Google 以使用空间“{1}”。</value>
+    <value>以 {0} 登录 Google 云端硬盘以加入空间“{1}”。</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>登录信息要往哪个方向传？</value>
@@ -1732,9 +1732,6 @@
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>在此设备接收</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>在另一台设备上打开 设置 → 同步 → 与其他设备配对，然后用它的相机扫描此二维码，或输入数字。</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>或在另一台设备上输入此代码</value>
@@ -1828,9 +1825,6 @@
   </data>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>请先在“来源”中链接此服务器，以便将其登录信息（以及 SFTP 的主机密钥）保存在此电脑上。</value>
-  </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>若要通过云账户或服务器同步，请先在“来源”中链接它。</value>
   </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>删除此电脑的旧同步文件？</value>
@@ -1972,5 +1966,62 @@
   </data>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>无法从云端下载来自 {0} 的同步文件。请确认同步此文件夹的应用正在运行，并且 Windows 允许 Edendale 下载文件。</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>无法保留 {0}（{1}）</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>无法保留 {0}。</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>同步位置</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0} 账户</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0} 登录（{1}）</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>登录 Google 云端硬盘以加入空间“{0}”。</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>与 {0} 配对？</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>将此设备的同步位置和登录信息发送到另一台设备，或接收另一台设备的。</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>从此设备发送</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>在此设备接收</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>在另一台设备上通过 Edendale 的“设置 → 同步 → {0}”扫描此代码。每两分钟会出现新代码。</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} 未允许 Edendale 写入同步文件。请重新登录并允许该访问权限。</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>请重新登录，以便 Edendale 在此写入同步文件。</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>无需选择任何内容：Edendale 会把同步文件保存在它在你的 Google 云端硬盘中创建的 Edendale 文件夹里。它只能看到自己创建的文件，仅从此设备连接，不会更改其他任何内容。</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时写入它自己的 Apps/Edendale 文件夹。</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale 会读取文件夹列表和你播放的视频，仅从此设备连接，并且只在你同步到那里时，将同步文件写入 Edendale 文件夹。</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>若要通过需要登录的 WebDAV、SMB 或 SFTP 服务器同步，请先在“来源”中链接它。</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale 无法从 {0} 删除此设备的文件。</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>请关闭已打开的对话框，然后重新打开配对链接。</value>
   </data>
 </root>

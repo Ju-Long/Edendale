@@ -159,6 +159,7 @@ internal static class AppText
         ["OAuth_Server"] = "{0} couldn’t complete sign-in ({1}).",
         ["OAuth_ServerDetail"] = "{0} couldn’t complete sign-in ({1}): {2}",
         ["OAuth_Malformed"] = "{0} sent a response Edendale couldn’t read.",
+        ["OAuth_SyncWriteMissing"] = "{0} didn’t allow Edendale to write its sync files. Sign in again and allow that access.",
     };
 
     /// <summary>The localized string for <paramref name="key"/>, or the English default.</summary>

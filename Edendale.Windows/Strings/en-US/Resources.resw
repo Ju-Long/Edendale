@@ -537,7 +537,7 @@ IS SILENT</value>
     <value>Private by Design</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Your library index and watch progress stay on this device. Edendale contacts TMDB for artwork and metadata, and otherwise only what you choose: the sources you link, subtitle searches, skip prompts when they’re on, and trailers you play. Nothing else is sent anywhere.</value>
+    <value>Your library index stays on this device. Edendale contacts TMDB for artwork and metadata, and otherwise only what you choose: the sources you link, the sync location you pick in Settings → Sync, subtitle searches, skip prompts when they’re on, and trailers you play. Nothing else is sent anywhere.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Pick a day, then a second day to close the range.</value>
@@ -1446,10 +1446,10 @@ IS SILENT</value>
     <value>Enter the server and export, for example nas.local/export/video. The export must allow connections from unprivileged ports (the “insecure” option).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Your browser opens to sign in to Microsoft. Edendale asks only to read your files, and keeps this account separate from the OneDrive folder it copies your watch history to.</value>
+    <value>Your browser opens to sign in to Microsoft. Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Your browser opens to sign in to Dropbox. Edendale asks only to read your files and account name.</value>
+    <value>Your browser opens to sign in to Dropbox. Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Sign In</value>
@@ -1572,7 +1572,7 @@ IS SILENT</value>
     <value>Works on video at 30 fps or less, up to 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Your browser opens to sign in to Google. After you sign in, Google’s picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything.</value>
+    <value>Your browser opens to sign in to Google. After you sign in, Google’s picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive flagged this file as potentially harmful, so it can’t be streamed.</value>
@@ -1620,7 +1620,7 @@ IS SILENT</value>
     <value>CHOOSE A LOCATION…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>PAIR WITH ANOTHER DEVICE…</value>
+    <value>RECEIVE FROM ANOTHER DEVICE…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>SET UP ANOTHER DEVICE…</value>
@@ -1629,7 +1629,7 @@ IS SILENT</value>
     <value>Set Up Another Device</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Pair with Another Device</value>
+    <value>Receive from Another Device</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Location</value>
@@ -1722,7 +1722,7 @@ IS SILENT</value>
     <value>Pick the folder this device should use for the space “{0}”.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Sign in to Google as {0} to use the space “{1}”.</value>
+    <value>Sign in to Google Drive as {0} to join the space “{1}”.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>Which way should the logins go?</value>
@@ -1732,9 +1732,6 @@ IS SILENT</value>
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Receive on this device</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>On the other device, open Settings → Sync → Pair with Another Device, then scan this code with its camera or enter the number.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Or enter this code on the other device</value>
@@ -1828,9 +1825,6 @@ IS SILENT</value>
   </data>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Link this server under Sources first, so its login and, for SFTP, its host key are saved on this PC.</value>
-  </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>To sync through a cloud account or a server, link it under Sources first.</value>
   </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Delete this PC’s old sync file?</value>
@@ -1978,5 +1972,72 @@ IS SILENT</value>
   <data name="Sync_WarningCloudDownload" xml:space="preserve">
     <value>The sync file from {0} couldn’t be downloaded from the cloud. Make sure the app that syncs this folder is running and that Windows lets Edendale download files.</value>
     <comment>Settings &gt; Sync warning when Windows refuses to download a cloud placeholder. {0} = device name.</comment>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>{0} couldn’t be kept ({1})</value>
+    <comment>Handoff result. {0} = what failed (Pairing_Item*), {1} = the other device's reason.</comment>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>{0} couldn’t be kept.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Sync location</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0} account</value>
+    <comment>{0} = provider name (OneDrive).</comment>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0} login for {1}</value>
+    <comment>{0} = source kind (SFTP), {1} = host.</comment>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Sign in to Google Drive to join the space “{0}”.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Pair with {0}?</value>
+    <comment>A pairing link was opened. {0} = the other device's name.</comment>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Send this device’s sync location and logins to the other device, or receive the other device’s.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Send from This Device</value>
+    <comment>Button.</comment>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Receive on This Device</value>
+    <comment>Button.</comment>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Scan this code with Edendale on the other device, from Settings → Sync → {0}. A new code appears every two minutes.</value>
+    <comment>{0} = the other device's entry: Pairing_Title or Sync_SetUpTitle.</comment>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} didn’t allow Edendale to write its sync files. Sign in again and allow that access.</value>
+    <comment>{0} = provider name.</comment>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Sign in again so Edendale can write its sync files here.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>There’s nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale reads folder listings and the videos you play, connects from this device only, and writes only to its own Apps/Edendale folder, when you sync there.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>To sync through a WebDAV, SMB, or SFTP server that needs a login, link it under Sources first.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale couldn’t delete this device’s file from {0}.</value>
+    <comment>After switching locations, deleting this device's file at the old one failed. {0} = the old location.</comment>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Close the open dialog, then open the pairing link again.</value>
+    <comment>A pairing link arrived while another dialog was open.</comment>
   </data>
 </root>
