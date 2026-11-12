@@ -69,10 +69,15 @@ final class CloudAccountStore {
     /// Google Drive the page also opens Google's picker. A `loginHint`
     /// pre-fills the account (a sync location handed over from another
     /// ecosystem, FEATURES-27.1.md §6.4).
-    func signIn(kind: MediaSourceKind, loginHint: String? = nil) async throws -> SignIn {
+    /// A `.sync` sign-in skips Google's picker (ENHANCEMENT.md K.8).
+    func signIn(
+        kind: MediaSourceKind,
+        loginHint: String? = nil,
+        purpose: CloudProviders.SignInPurpose = .library
+    ) async throws -> SignIn {
         var parameters: [String: String] = [:]
         if let loginHint, !loginHint.isEmpty { parameters["login_hint"] = loginHint }
-        let (response, picked) = try await authorize(kind: kind, parameters: parameters)
+        let (response, picked) = try await authorize(kind: kind, purpose: purpose, parameters: parameters)
         return SignIn(account: try await completeSignIn(kind: kind, tokens: response), pickedFileIDs: picked)
     }
 
@@ -95,9 +100,10 @@ final class CloudAccountStore {
     /// exchange.
     private func authorize(
         kind: MediaSourceKind,
+        purpose: CloudProviders.SignInPurpose = .library,
         parameters: [String: String] = [:]
     ) async throws -> (OAuthTokenResponse, [String]) {
-        guard let configuration = CloudProviders.configuration(for: kind) else {
+        guard let configuration = CloudProviders.configuration(for: kind, purpose: purpose) else {
             throw OAuthError.notConfigured(provider: kind.displayName)
         }
         let client = OAuthClient(configuration: configuration, session: session)

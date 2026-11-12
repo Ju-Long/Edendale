@@ -123,7 +123,10 @@ struct AccountHandoffRequestView: View {
         errorMessage = nil
         Task {
             do {
-                let signIn = try await store.signIn(kind: kind)
+                let signIn = try await store.signIn(
+                    kind: kind,
+                    purpose: pending.request.forSync == true ? .sync : .library
+                )
                 await center.approve(account: signIn.account)
             } catch OAuthError.cancelled {
             } catch {
