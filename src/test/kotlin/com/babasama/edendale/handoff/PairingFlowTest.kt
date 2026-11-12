@@ -24,7 +24,9 @@ import kotlin.test.assertTrue
  * devices scan and which show, which scanned codes count, the sender's
  * Continue, how result items read, the host found by name, the camera
  * frame decoder against a real handoff code, and the peer callback a
- * receiver uses to name who it waits for.
+ * receiver uses to name who it waits for. Section T: where entering the
+ * other device's code is offered, which hosts take a typed code, the host
+ * it goes to, the code field, and the wait after five wrong codes.
  */
 class PairingFlowTest {
     private val workers = Executors.newCachedThreadPool { Thread(it).apply { isDaemon = true } }
@@ -36,13 +38,46 @@ class PairingFlowTest {
         HandoffV2.QrPayload(name, host, port, HandoffV2.newKeyPair().publicKey, HandoffV2.newSecret())
 
     @Test
-    fun `a phone or tablet with a camera scans or shows, everything else shows`() {
+    fun `a phone or tablet with a camera, or a Quest 3, scans or shows, everything else shows`() {
         val both = listOf(PairingFlow.Mode.SCAN, PairingFlow.Mode.SHOW)
         val show = listOf(PairingFlow.Mode.SHOW)
-        assertEquals(both, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true))
-        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false))
-        assertEquals(show, PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = true))
-        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true))
+        assertEquals(both, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true, headsetCamera = false))
+        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false, headsetCamera = false))
+        assertEquals(show, PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = true, headsetCamera = false))
+        // A headset scans only with a passthrough camera an app can read (Section T), whatever cameras it reports.
+        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true, headsetCamera = false))
+        assertEquals(both, PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = false, headsetCamera = true))
+        assertEquals(show, PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = true, headsetCamera = true))
+    }
+
+    // MARK: - A Quest 3 scanning with its passthrough camera (Section T)
+
+    @Test
+    fun `a Quest 3 or 3S scans, by its cameras' tags or by its model`() {
+        assertTrue(PairingFlow.headsetScans(passthroughListed = true, model = "Quest Pro", device = "seacliff"))
+        assertTrue(PairingFlow.headsetScans(passthroughListed = false, model = "Quest 3", device = "eureka"))
+        assertTrue(PairingFlow.headsetScans(passthroughListed = false, model = "Quest 3S", device = "unknown"))
+        assertTrue(PairingFlow.headsetScans(passthroughListed = false, model = "", device = "eureka"))
+        assertFalse(PairingFlow.headsetScans(passthroughListed = false, model = "Quest 2", device = "hollywood"))
+        assertFalse(PairingFlow.headsetScans(passthroughListed = false, model = "Quest Pro", device = "seacliff"))
+    }
+
+    @Test
+    fun `the Quest reads codes with a passthrough camera, never the avatar camera`() {
+        val left = PairingFlow.CameraTags("50", source = 0, position = 0)
+        val right = PairingFlow.CameraTags("51", source = 0, position = 1)
+        val avatar = PairingFlow.CameraTags("1", source = null, position = null)
+        assertEquals("50", PairingFlow.passthroughCamera(listOf(avatar, right, left)))
+        assertEquals("51", PairingFlow.passthroughCamera(listOf(avatar, right)))
+        assertNull(PairingFlow.passthroughCamera(listOf(avatar)))
+        assertNull(PairingFlow.passthroughCamera(listOf(PairingFlow.CameraTags("2", source = 1, position = 0))))
+        assertNull(PairingFlow.passthroughCamera(emptyList()))
+    }
+
+    @Test
+    fun `a Meta headset asks for the headset camera with the camera`() {
+        assertEquals(listOf("android.permission.CAMERA", "horizonos.permission.HEADSET_CAMERA"), PairingFlow.cameraPermissions(metaHeadset = true))
+        assertEquals(listOf("android.permission.CAMERA"), PairingFlow.cameraPermissions(metaHeadset = false))
     }
 
     @Test
@@ -84,6 +119,136 @@ class PairingFlowTest {
         assertEquals("Bedroom TV", PairingFlow.target(listOf("Bedroom TV"), "Living Room TV"))
         assertNull(PairingFlow.target(listOf("Bedroom TV", "Office PC"), "Living Room TV"))
         assertNull(PairingFlow.target(emptyList(), "Living Room TV"))
+    }
+
+    // MARK: - A pairing link (Section T)
+
+    @Test
+    fun `a pairing link shows it connecting from the first frame, so the scanner never asks for the camera`() {
+        // The link's code is in hand before the connection starts.
+        assertEquals(PairingFlow.GuestView.CONNECTING, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = true, step = null))
+        assertEquals(PairingFlow.GuestView.CONNECTING, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = true, step = PairingFlow.GuestStep.CONNECTING))
+        assertEquals(PairingFlow.GuestView.PAIRING, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = true, step = PairingFlow.GuestStep.PAIRING))
+        // Without a code, the scanner shows only where the viewer chose to scan, and the field where they chose to type.
+        assertEquals(PairingFlow.GuestView.SCANNER, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = false, step = null))
+        assertEquals(PairingFlow.GuestView.CODE_ENTRY, PairingFlow.guestView(PairingFlow.Mode.ENTER, hasCode = false, step = null))
+        assertEquals(PairingFlow.GuestView.CONNECTING, PairingFlow.guestView(PairingFlow.Mode.ENTER, hasCode = false, step = PairingFlow.GuestStep.CONNECTING))
+        assertEquals(PairingFlow.GuestView.PAIRING, PairingFlow.guestView(PairingFlow.Mode.ENTER, hasCode = false, step = PairingFlow.GuestStep.PAIRING))
+    }
+
+    @Test
+    fun `Try Again after a link's code on a device that can't scan shows its own code`() {
+        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false, headsetCamera = false)
+        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true, headsetCamera = false)
+        assertEquals(PairingFlow.Mode.SHOW, PairingFlow.retryMode(PairingFlow.Mode.SCAN, television))
+        assertEquals(PairingFlow.Mode.SCAN, PairingFlow.retryMode(PairingFlow.Mode.SCAN, phone))
+        assertEquals(PairingFlow.Mode.ENTER, PairingFlow.retryMode(PairingFlow.Mode.ENTER, television))
+        assertEquals(PairingFlow.Mode.SHOW, PairingFlow.retryMode(PairingFlow.Mode.SHOW, phone))
+        assertNull(PairingFlow.retryMode(null, phone))
+    }
+
+    // MARK: - Joining by the other device's code (Section T)
+
+    @Test
+    fun `entering the other device's code is offered from the scanner and wherever a device can only show`() {
+        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true, headsetCamera = false)
+        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false, headsetCamera = false)
+        val headset = PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true, headsetCamera = false)
+        val noCamera = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false, headsetCamera = false)
+        // The scanner offers it on every device that has one: the camera may be refused.
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SCAN, phone))
+        // A phone showing its code goes Back to the choice, where the scanner is.
+        assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, phone))
+        // A device that can only show offers it under its own code, so two such devices can pair.
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, television))
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, headset))
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, noCamera))
+        // A Quest 3 scans, so it is offered entering as a phone is: from its scanner.
+        val quest3 = PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = false, headsetCamera = true)
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SCAN, quest3))
+        assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, quest3))
+        assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.ENTER, television))
+        assertFalse(PairingFlow.offersEntry(null, phone))
+        // Entering is never one of the first choices: the scanner stays first where there is a camera.
+        assertEquals(PairingFlow.Mode.SCAN, phone.first())
+        assertTrue(listOf(phone, television, headset, noCamera).none { PairingFlow.Mode.ENTER in it })
+    }
+
+    @Test
+    fun `a typed code goes only to a version-2 host that shows one`() {
+        val found = listOf(
+            PairingFlow.Host("Living Room TV", "androidtv", 2),
+            PairingFlow.Host("Bedroom TV", null, 1),
+            PairingFlow.Host("Kitchen iPad", "ipados", 2),
+            PairingFlow.Host("Apple TV", "tvos", 2),
+            PairingFlow.Host("Quest 3", "horizon", 2),
+            PairingFlow.Host("Office PC", "windows", 2),
+            PairingFlow.Host("Pixel", "android", 2),
+        )
+        assertEquals(listOf("Living Room TV", "Quest 3", "Office PC", "Pixel"), PairingFlow.codeHosts(found).map { it.name })
+        assertFalse(PairingFlow.onlyQrHosts(found))
+        // Only Apple devices (and a version-1 TV) answered: the screen says why none is listed.
+        assertTrue(PairingFlow.onlyQrHosts(listOf(PairingFlow.Host("Apple TV", "tvos", 2), PairingFlow.Host("Bedroom TV", null, 1))))
+        assertFalse(PairingFlow.onlyQrHosts(listOf(PairingFlow.Host("Bedroom TV", null, 1))))
+        assertFalse(PairingFlow.onlyQrHosts(emptyList()))
+        assertFalse(PairingFlow.showsCode("macOS"))
+        assertFalse(PairingFlow.showsCode("visionos"))
+        // A platform this build doesn't know yet, or none, may still show a code.
+        assertTrue(PairingFlow.showsCode("xbox"))
+        assertTrue(PairingFlow.showsCode(null))
+    }
+
+    @Test
+    fun `this device's own code, still advertised a moment after it stopped showing it, isn't listed`() {
+        val found = listOf(
+            PairingFlow.Host("Living Room TV", "androidtv", 2, port = 40123),
+            PairingFlow.Host("Office PC", "windows", 2, port = 40123),
+            PairingFlow.Host("Living Room TV", "androidtv", 2, port = 40999),
+        )
+        assertEquals(listOf("Office PC" to 40123, "Living Room TV" to 40999), PairingFlow.codeHosts(found, ownName = "Living Room TV", ownPort = 40123).map { it.name to it.port })
+        assertEquals(3, PairingFlow.codeHosts(found).size)
+        assertEquals(3, PairingFlow.codeHosts(found, ownName = "Living Room TV", ownPort = null).size)
+    }
+
+    @Test
+    fun `the code goes to the host picked while it is there, or to the only one`() {
+        assertEquals("Living Room TV", PairingFlow.codeHost(listOf("Living Room TV"), picked = null))
+        assertNull(PairingFlow.codeHost(listOf("Living Room TV", "Office PC"), picked = null))
+        assertEquals("Office PC", PairingFlow.codeHost(listOf("Living Room TV", "Office PC"), picked = "Office PC"))
+        // The picked host left: the list again, not another host the code wasn't read from.
+        assertNull(PairingFlow.codeHost(listOf("Living Room TV"), picked = "Office PC"))
+        assertNull(PairingFlow.codeHost(emptyList(), picked = null))
+    }
+
+    @Test
+    fun `the code field keeps six digits`() {
+        assertEquals("123456", PairingFlow.typedCode("123 456"))
+        assertEquals("123456", PairingFlow.typedCode("12-34-5678"))
+        // Full-width digits, as a Japanese or Chinese keyboard may type them, and Arabic-Indic ones.
+        assertEquals("123456", PairingFlow.typedCode("１２３４５６"))
+        assertEquals("123", PairingFlow.typedCode("١٢٣"))
+        assertEquals("", PairingFlow.typedCode("code"))
+        assertTrue(PairingFlow.isWholeCode("012345"))
+        assertFalse(PairingFlow.isWholeCode("12345"))
+        assertFalse(PairingFlow.isWholeCode("１２３４５６"))
+        assertTrue(PairingFlow.isWholeCode(PairingFlow.typedCode("１２３４５６")))
+    }
+
+    @Test
+    fun `five wrong codes in a row make the field wait a minute, as the host does`() {
+        val start = 1_000_000L
+        var attempts = PairingFlow.CodeAttempts()
+        repeat(HandoffV2.MAX_CODE_FAILURES - 1) { attempts = attempts.failed(start) }
+        assertEquals(HandoffV2.MAX_CODE_FAILURES - 1, attempts.wrong)
+        assertFalse(attempts.isLocked(start))
+        attempts = attempts.failed(start)
+        assertTrue(attempts.isLocked(start))
+        assertTrue(attempts.isLocked(start + HandoffV2.CODE_LOCKOUT_MILLIS - 1))
+        assertFalse(attempts.isLocked(start + HandoffV2.CODE_LOCKOUT_MILLIS))
+        // After the wait the count starts again, as the host's does.
+        attempts = attempts.failed(start + HandoffV2.CODE_LOCKOUT_MILLIS)
+        assertEquals(1, attempts.wrong)
+        assertFalse(attempts.isLocked(start + HandoffV2.CODE_LOCKOUT_MILLIS))
     }
 
     // MARK: - Camera frames

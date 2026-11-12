@@ -711,7 +711,17 @@
     <string name="pairing_show_instructions">Scan deze code met Edendale op het andere apparaat, via Instellingen → Synchronisatie → %1$s. Elke twee minuten verschijnt een nieuwe code.</string>
     <string name="pairing_starting">Starten…</string>
     <string name="pairing_waiting_for_send">Wachten tot %1$s verstuurt…</string>
-    <string name="pairing_pc_code">Voer op een Windows-pc in plaats daarvan de code %1$s in.</string>
+    <string name="pairing_pc_code">Of voer de code %1$s in op een Android-apparaat, een Meta Quest of een Windows-pc.</string>
+    <string name="pairing_mode_enter">Code van het andere apparaat invoeren</string>
+    <string name="pairing_searching">Apparaten zoeken op dit netwerk…</string>
+    <string name="pairing_devices_found">Gevonden apparaten</string>
+    <string name="pairing_enter_code">Code getoond op %1$s</string>
+    <string name="pairing_discovery_failed">Edendale kan dit netwerk niet doorzoeken naar andere apparaten. Controleer of wifi aanstaat.</string>
+    <string name="pairing_code_apple_only">Apple-apparaten tonen alleen een QR-code om te scannen, dus ze staan hier niet.</string>
+    <string name="pairing_wrong_code">Die code kwam niet overeen. Voer de nieuwe code in die op %1$s wordt getoond.</string>
+    <string name="pairing_code_expired">Die code is verlopen. Voer de code in die nu op %1$s wordt getoond.</string>
+    <string name="pairing_host_wrong_code">Op het andere apparaat is een verkeerde code ingevoerd. Voer de nieuwe code hierboven in.</string>
+    <string name="pairing_same_role_receive">Beide apparaten kozen ontvangen. Kies op één apparaat wie verzendt.</string>
     <string name="player_theater">Bioscoop</string>
     <string name="xr_module_title">Android XR · Bioscoop</string>
 </resources>

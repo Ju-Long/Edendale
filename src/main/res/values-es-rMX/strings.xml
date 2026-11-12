@@ -713,7 +713,17 @@
     <string name="pairing_show_instructions">Escanea este código con Edendale en el otro dispositivo, desde Configuración → Sincronización → %1$s. Cada dos minutos aparece un código nuevo.</string>
     <string name="pairing_starting">Iniciando…</string>
     <string name="pairing_waiting_for_send">Esperando a que %1$s envíe…</string>
-    <string name="pairing_pc_code">En una PC con Windows, ingresa en su lugar el código %1$s.</string>
+    <string name="pairing_pc_code">O ingresa el código %1$s en un dispositivo Android, un visor Meta Quest o una PC con Windows.</string>
+    <string name="pairing_mode_enter">Ingresar el código del otro dispositivo</string>
+    <string name="pairing_searching">Buscando dispositivos en esta red…</string>
+    <string name="pairing_devices_found">Dispositivos encontrados</string>
+    <string name="pairing_enter_code">Código mostrado en %1$s</string>
+    <string name="pairing_discovery_failed">Edendale no puede buscar otros dispositivos en esta red. Asegúrate de que el Wi-Fi esté activado.</string>
+    <string name="pairing_code_apple_only">Los dispositivos Apple solo muestran un código QR para escanear, por eso no aparecen aquí.</string>
+    <string name="pairing_wrong_code">Ese código no coincide. Ingresa el nuevo código que se muestra en %1$s.</string>
+    <string name="pairing_code_expired">Ese código caducó. Ingresa el código que se muestra ahora en %1$s.</string>
+    <string name="pairing_host_wrong_code">Se ingresó un código incorrecto en el otro dispositivo. Ingresa el nuevo código de arriba.</string>
+    <string name="pairing_same_role_receive">Ambos dispositivos eligieron recibir. Elige quién envía en uno de ellos.</string>
     <string name="player_theater">Cine</string>
     <string name="xr_module_title">Android XR · Cine</string>
 </resources>

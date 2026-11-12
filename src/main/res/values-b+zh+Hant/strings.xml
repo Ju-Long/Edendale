@@ -704,7 +704,17 @@
     <string name="pairing_show_instructions">在另一台裝置上透過 Edendale 的「設定 → 同步 → %1$s」掃描此代碼。每兩分鐘會出現新代碼。</string>
     <string name="pairing_starting">正在啟動…</string>
     <string name="pairing_waiting_for_send">正在等待 %1$s 傳送…</string>
-    <string name="pairing_pc_code">在 Windows 電腦上，請改為輸入代碼 %1$s。</string>
+    <string name="pairing_pc_code">也可以在 Android 裝置、Meta Quest 或 Windows 電腦上輸入代碼 %1$s。</string>
+    <string name="pairing_mode_enter">輸入另一台裝置的代碼</string>
+    <string name="pairing_searching">正在此網路中尋找裝置…</string>
+    <string name="pairing_devices_found">找到的裝置</string>
+    <string name="pairing_enter_code">%1$s 上顯示的代碼</string>
+    <string name="pairing_discovery_failed">Edendale 無法在此網路中搜尋其他裝置。請確認 Wi-Fi 已開啟。</string>
+    <string name="pairing_code_apple_only">Apple 裝置只顯示供掃描的 QR Code，因此不會列在這裡。</string>
+    <string name="pairing_wrong_code">代碼不符。請輸入 %1$s 上顯示的新代碼。</string>
+    <string name="pairing_code_expired">代碼已過期。請輸入 %1$s 上現在顯示的代碼。</string>
+    <string name="pairing_host_wrong_code">另一台裝置上輸入的代碼不正確。請輸入上方的新代碼。</string>
+    <string name="pairing_same_role_receive">兩台裝置都選擇了接收。請在其中一台上選擇由誰傳送。</string>
     <string name="player_theater">影院</string>
     <string name="xr_module_title">Android XR · 影院</string>
 </resources>
