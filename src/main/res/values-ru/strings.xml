@@ -729,7 +729,15 @@
     <string name="pairing_show_instructions">Отсканируйте этот код в Edendale на другом устройстве через «Настройки → Синхронизация → %1$s». Новый код появляется каждые две минуты.</string>
     <string name="pairing_starting">Запуск…</string>
     <string name="pairing_waiting_for_send">Ожидание отправки от %1$s…</string>
-    <string name="pairing_pc_code">На ПК с Windows вместо этого введите код %1$s.</string>
+    <string name="pairing_pc_code">Или введите код %1$s на устройстве Android, Meta Quest или ПК с Windows.</string>
+    <string name="pairing_mode_enter">Ввести код другого устройства</string>
+    <string name="pairing_searching">Поиск устройств в этой сети…</string>
+    <string name="pairing_devices_found">Найденные устройства</string>
+    <string name="pairing_enter_code">Код, показанный на %1$s</string>
+    <string name="pairing_discovery_failed">Edendale не может искать другие устройства в этой сети. Убедитесь, что Wi-Fi включён.</string>
+    <string name="pairing_code_apple_only">Устройства Apple показывают только QR-код для сканирования, поэтому их здесь нет.</string>
+    <string name="pairing_wrong_code">Код не совпал. Введите новый код, показанный на %1$s.</string>
+    <string name="pairing_code_expired">Срок действия кода истёк. Введите код, который сейчас показан на %1$s.</string>
     <string name="player_theater">Кинозал</string>
     <string name="xr_module_title">Android XR · Кинозал</string>
 </resources>

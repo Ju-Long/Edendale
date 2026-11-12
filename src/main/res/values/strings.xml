@@ -760,7 +760,15 @@
     <string name="pairing_show_instructions">Scan this code with Edendale on the other device, from Settings → Sync → %1$s. A new code appears every two minutes.</string>
     <string name="pairing_starting">Starting…</string>
     <string name="pairing_waiting_for_send">Waiting for %1$s to send…</string>
-    <string name="pairing_pc_code">On a Windows PC, enter the code %1$s instead.</string>
+    <string name="pairing_pc_code">Or enter the code %1$s on an Android device, a Meta Quest, or a Windows PC.</string>
+    <string name="pairing_mode_enter">Enter the Other Device\'s Code</string>
+    <string name="pairing_searching">Looking for devices on this network…</string>
+    <string name="pairing_devices_found">Devices found</string>
+    <string name="pairing_enter_code">Code shown on %1$s</string>
+    <string name="pairing_discovery_failed">Edendale can\'t search this network for other devices. Make sure Wi-Fi is on.</string>
+    <string name="pairing_code_apple_only">Apple devices show only a QR code to scan, so they aren\'t listed here.</string>
+    <string name="pairing_wrong_code">That code didn\'t match. Enter the new code shown on %1$s.</string>
+    <string name="pairing_code_expired">That code has expired. Enter the code shown on %1$s now.</string>
 
     <!-- Android XR theater (Section N) -->
     <string name="player_theater">Theater</string>

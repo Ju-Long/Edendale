@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,9 +30,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.ApprovalQrCode
 import com.babasama.edendale.android.ArchiveButton
@@ -36,12 +44,15 @@ import com.babasama.edendale.android.ArchiveButtonKind
 import com.babasama.edendale.android.BodyCopyStyle
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleColors
+import com.babasama.edendale.android.EdendaleRadii
 import com.babasama.edendale.android.R
+import com.babasama.edendale.android.handoff.DiscoveredTelevision
 import com.babasama.edendale.android.handoff.HandoffDiscovery
 import com.babasama.edendale.android.handoff.PairingGuest
 import com.babasama.edendale.android.handoff.PairingHost
 import com.babasama.edendale.android.handoff.QrCodeScanner
 import com.babasama.edendale.android.sourceKindLabel
+import com.babasama.edendale.android.tvFocusLift
 import com.babasama.edendale.android.xr.XrTheaterRules
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.handoff.AccountHandoff
@@ -54,6 +65,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -91,7 +103,10 @@ private enum class GuestStep { CONNECTING, PAIRING }
  * button chose the direction ([role]); the sender first ticks what to send
  * (its sync location, other linked accounts, saved logins). Then a phone or
  * tablet scans the other device's QR code or shows one, and a TV or a
- * headset shows one ([PairingFlow.modes]). The sender confirms what goes to
+ * headset shows one ([PairingFlow.modes]). From the scanner, or under a code
+ * shown by a device that can't scan, Enter the Other Device's Code joins
+ * instead: pick the device found on the network (or the only one) and type
+ * the six digits it shows (Section T). The sender confirms what goes to
  * the named device before anything is sent; the receiver stores what
  * validates, and both show the result. A code scanned by another app
  * arrives as [scannedLink] with no direction yet, so the dialog asks for one
@@ -119,10 +134,25 @@ internal fun SyncHandoffDialog(
     var choice by remember { mutableStateOf<OfferChoice?>(null) }
     var mode by remember { mutableStateOf(if (linked != null) PairingFlow.Mode.SCAN else null) }
     var scanned by remember { mutableStateOf(linked) }
+    // Entering the other device's code (Section T): the screen it was opened from, the host picked, the digits.
+    var enteredFrom by remember { mutableStateOf<PairingFlow.Mode?>(null) }
+    var picked by remember { mutableStateOf<String?>(null) }
+    var typed by remember { mutableStateOf("") }
+    var codeError by remember { mutableStateOf<String?>(null) }
+    var attempts by remember { mutableStateOf(PairingFlow.CodeAttempts()) }
+    var locked by remember { mutableStateOf(false) }
+    // The port this device's own code was shown on, so its advertisement isn't listed while it fades.
+    var ownPort by remember { mutableStateOf<Int?>(null) }
 
     var host by remember { mutableStateOf<PairingHost?>(null) }
     val hostState = host?.state?.collectAsState()?.value
     val discovery = remember(context) { HandoffDiscovery(context) }
+    val found by discovery.televisions.collectAsState()
+    val searchFailed by discovery.failed.collectAsState()
+    val foundHosts = found.map { PairingFlow.Host(it.name, it.platform, it.version, it.port) }
+    val codeNames = PairingFlow.codeHosts(foundHosts, ownName = deviceName.take(PairingHost.ADVERTISED_NAME_LENGTH), ownPort = ownPort).map { it.name }
+    val codeDevices = codeNames.mapNotNull { name -> found.firstOrNull { it.name == name } }
+    val codeTarget = PairingFlow.codeHost(codeNames, picked)?.let { name -> codeDevices.firstOrNull { it.name == name } }
     var guestJob by remember { mutableStateOf<Job?>(null) }
     var guestStep by remember { mutableStateOf<GuestStep?>(null) }
 
@@ -208,6 +238,41 @@ internal fun SyncHandoffDialog(
         }
     }
 
+    /** Connects to the host picked from those found and pairs by the six digits it shows (J-PAKE, §9.4). */
+    fun startCodeGuest(device: DiscoveredTelevision, code: String, myRole: HandoffV2.Role) {
+        if (guestJob?.isActive == true) return
+        failure = null
+        codeError = null
+        picked = device.name
+        guestStep = GuestStep.CONNECTING
+        guestJob = scope.launch(Dispatchers.IO) {
+            try {
+                outcome = PairingGuest.run(device.host, device.port, HandoffProtocolV2.GuestPairing.Code(code), participant(myRole)) {
+                    guestStep = GuestStep.PAIRING
+                }
+                attempts = PairingFlow.CodeAttempts()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                typed = ""
+                when {
+                    error === HandoffException.Declined -> declinedBy = peer?.name ?: device.name
+                    // One attempt per code: the host shows a new one, unless five wrong codes in a row make it wait a minute.
+                    error === HandoffException.WrongCode -> {
+                        attempts = attempts.failed(System.currentTimeMillis())
+                        codeError = context.getString(R.string.pairing_wrong_code, device.name)
+                    }
+                    // The host had no code for this attempt: it expired, was replaced, or the host is waiting after wrong codes.
+                    error === HandoffException.WrongSecret -> codeError = context.getString(R.string.pairing_code_expired, device.name)
+                    else -> failure = pairingFailureMessage(context, error)
+                }
+            } finally {
+                pendingOffer = null
+                guestStep = null
+            }
+        }
+    }
+
     fun stopPairing() {
         guestJob?.cancel()
         guestJob = null
@@ -220,6 +285,37 @@ internal fun SyncHandoffDialog(
         sending = false
     }
 
+    /** From the scanner, or from this device's own code: join by the other device's code instead. */
+    fun enterCode() {
+        ownPort = hostState?.qrUri?.let(HandoffV2.QrPayload::parse)?.port
+        stopPairing()
+        scanned = null
+        enteredFrom = mode
+        picked = null
+        typed = ""
+        codeError = null
+        mode = PairingFlow.Mode.ENTER
+    }
+
+    /** Back from the code: to the list where one was picked from several, else to the screen it was opened from. */
+    fun leaveEntry() {
+        typed = ""
+        codeError = null
+        if (picked != null && codeDevices.size > 1) {
+            picked = null
+            return
+        }
+        picked = null
+        mode = enteredFrom
+        enteredFrom = null
+    }
+
+    fun submitCode(myRole: HandoffV2.Role) {
+        val device = codeTarget ?: return
+        if (!PairingFlow.isWholeCode(typed) || locked) return
+        startCodeGuest(device, typed, myRole)
+    }
+
     fun retry() {
         stopPairing()
         outcome = null
@@ -228,6 +324,8 @@ internal fun SyncHandoffDialog(
         followUp = null
         sentLocation = false
         scanned = null
+        typed = ""
+        codeError = null
         val myRole = chosenRole ?: return
         when {
             mode == PairingFlow.Mode.SHOW -> startHosting(myRole)
@@ -277,6 +375,25 @@ internal fun SyncHandoffDialog(
         }
     }
 
+    // A picked host that left the network: back to the list (or the only one left), not to a host the code wasn't read from.
+    LaunchedEffect(codeNames, picked, guestStep) {
+        if (picked != null && picked !in codeNames && guestStep == null) {
+            picked = null
+            typed = ""
+        }
+    }
+
+    // After five wrong codes in a row the field waits a minute, as the host does (§9.4).
+    LaunchedEffect(attempts) {
+        val wait = attempts.lockedUntil - System.currentTimeMillis()
+        locked = wait > 0
+        if (wait > 0) {
+            delay(wait)
+            locked = false
+            codeError = null
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             discovery.stop()
@@ -294,7 +411,14 @@ internal fun SyncHandoffDialog(
     val inProgress = other != null || guestStep != null || hostStatus is PairingHost.Status.Connected
     // A link that isn't a version-2 handoff code (or a mangled one) goes no further.
     val badLink = scannedLink != null && linked == null
-    val canGoBack = modes.size > 1 && mode != null && linked == null && !inProgress && done == null && declinedBy == null && failure == null
+    val canGoBack = !inProgress && done == null && declinedBy == null && failure == null && when (mode) {
+        PairingFlow.Mode.ENTER -> enteredFrom != null
+        PairingFlow.Mode.SCAN, PairingFlow.Mode.SHOW -> modes.size > 1 && linked == null
+        null -> false
+    }
+    // Enter the Other Device's Code, from the scanner or from a code shown by a device that can't scan.
+    val offersEntry = myRole != null && !choosing && !inProgress && done == null && declinedBy == null && failure == null &&
+        PairingFlow.offersEntry(mode, modes) && scanned == null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -350,7 +474,8 @@ internal fun SyncHandoffDialog(
                         else -> {
                             ApprovalQrCode(hostState.qrUri, stringResource(R.string.pairing_qr_description), isTelevision, Modifier.align(Alignment.CenterHorizontally))
                             Note(stringResource(R.string.pairing_show_instructions, otherDeviceAction(context, myRole)))
-                            // FEATURES-27.1 §6.2: a PC has no camera, so it pairs by the typed code (J-PAKE, §9.4).
+                            // FEATURES-27.1 §6.2: a PC has no camera, so it pairs by the typed code (J-PAKE, §9.4); so can
+                            // an Android device or a Quest that can't or won't scan (Section T). Apple's devices can't type it.
                             hostState.code?.let { code -> Note(stringResource(R.string.pairing_pc_code, code.chunked(3).joinToString(" "))) }
                             (hostStatus as? PairingHost.Status.Failed)?.let {
                                 Text(pairingFailureMessage(context, it.error), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
@@ -359,6 +484,30 @@ internal fun SyncHandoffDialog(
                     }
                     guestStep == GuestStep.CONNECTING -> Waiting(stringResource(R.string.pairing_connecting))
                     guestStep == GuestStep.PAIRING -> Waiting(stringResource(R.string.pairing_pairing))
+                    mode == PairingFlow.Mode.ENTER -> CodeEntry(
+                        isTelevision = isTelevision,
+                        devices = codeDevices,
+                        target = codeTarget,
+                        searchFailed = searchFailed,
+                        onlyQrHosts = PairingFlow.onlyQrHosts(foundHosts),
+                        typed = typed,
+                        locked = locked,
+                        error = codeError,
+                        otherAction = otherDeviceAction(context, myRole),
+                        onPick = { name ->
+                            picked = name
+                            typed = ""
+                            codeError = null
+                            attempts = PairingFlow.CodeAttempts()
+                        },
+                        onType = { digits ->
+                            typed = digits
+                            codeError = null
+                            // The code is read from this host: keep it even if another one appears.
+                            if (picked == null) picked = codeTarget?.name
+                        },
+                        onSubmit = { submitCode(myRole) },
+                    )
                     else -> {
                         QrCodeScanner(onCode = { payload ->
                             scanned = payload
@@ -396,6 +545,13 @@ internal fun SyncHandoffDialog(
                         offerWaiting.complete(offer)
                     },
                 )
+                mode == PairingFlow.Mode.ENTER && codeTarget != null && !inProgress -> ArchiveButton(
+                    label = stringResource(R.string.action_continue),
+                    enabled = PairingFlow.isWholeCode(typed) && !locked,
+                    kind = ArchiveButtonKind.Primary,
+                    onClick = { submitCode(myRole) },
+                )
+                offersEntry -> ArchiveButton(label = stringResource(R.string.pairing_mode_enter), onClick = { enterCode() }, kind = ArchiveButtonKind.Secondary)
                 else -> Unit
             }
         },
@@ -413,9 +569,13 @@ internal fun SyncHandoffDialog(
                 canGoBack -> ArchiveButton(
                     label = stringResource(R.string.action_back),
                     onClick = {
-                        stopPairing()
-                        scanned = null
-                        mode = null
+                        if (mode == PairingFlow.Mode.ENTER) {
+                            leaveEntry()
+                        } else {
+                            stopPairing()
+                            scanned = null
+                            mode = null
+                        }
                     },
                 )
                 else -> ArchiveButton(label = stringResource(if (failure != null) R.string.action_close else R.string.action_cancel), onClick = onDismiss)
@@ -531,6 +691,72 @@ private fun ResultView(
             null -> Unit
         }
     }
+}
+
+/**
+ * Joining by the other device's code (Section T): the devices found that show
+ * one (or the search), then the six digits the chosen one shows. The field
+ * takes focus, so a remote's OK opens the on-screen keyboard and a phone's
+ * keyboard comes up; Go sends the code, as Continue does.
+ */
+@Composable
+private fun CodeEntry(
+    isTelevision: Boolean,
+    devices: List<DiscoveredTelevision>,
+    target: DiscoveredTelevision?,
+    searchFailed: Boolean,
+    onlyQrHosts: Boolean,
+    typed: String,
+    locked: Boolean,
+    error: String?,
+    otherAction: String,
+    onPick: (String) -> Unit,
+    onType: (String) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    if (target != null) {
+        val focus = remember { FocusRequester() }
+        OutlinedTextField(
+            value = typed,
+            onValueChange = { onType(PairingFlow.typedCode(it)) },
+            modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            label = { Text(stringResource(R.string.pairing_enter_code, target.name)) },
+            singleLine = true,
+            enabled = !locked,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Go),
+            keyboardActions = KeyboardActions(onGo = { onSubmit() }),
+        )
+        LaunchedEffect(target.name, locked) {
+            if (!locked) runCatching { focus.requestFocus() }
+        }
+        when {
+            locked -> ErrorText(stringResource(R.string.pairing_locked_out))
+            error != null -> ErrorText(error)
+        }
+    } else {
+        when {
+            devices.size > 1 -> {
+                SectionLabel(stringResource(R.string.pairing_devices_found))
+                devices.forEach { device ->
+                    ChoiceRow(
+                        label = device.name,
+                        selected = false,
+                        iconRes = if (device.platform == "androidtv" || device.platform == "tvos") R.drawable.ic_tv else R.drawable.ic_link,
+                        modifier = Modifier.tvFocusLift(isTelevision, RoundedCornerShape(EdendaleRadii.Soft.dp)),
+                    ) { onPick(device.name) }
+                }
+            }
+            searchFailed -> Statement(stringResource(R.string.pairing_discovery_failed))
+            else -> Waiting(stringResource(R.string.pairing_searching))
+        }
+        if (onlyQrHosts) Note(stringResource(R.string.pairing_code_apple_only))
+    }
+    Note(stringResource(R.string.pairing_mode_footer, otherAction))
+}
+
+@Composable
+private fun ErrorText(text: String) {
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
 }
 
 private fun describeItem(context: Context, raw: String): String = when (val item = PairingFlow.item(raw)) {

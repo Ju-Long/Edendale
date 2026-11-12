@@ -711,7 +711,15 @@
     <string name="pairing_show_instructions">Skanna den här koden med Edendale på den andra enheten, från Inställningar → Synkronisering → %1$s. En ny kod visas varannan minut.</string>
     <string name="pairing_starting">Startar…</string>
     <string name="pairing_waiting_for_send">Väntar på att %1$s skickar…</string>
-    <string name="pairing_pc_code">På en Windows-dator anger du i stället koden %1$s.</string>
+    <string name="pairing_pc_code">Eller ange koden %1$s på en Android-enhet, en Meta Quest eller en Windows-dator.</string>
+    <string name="pairing_mode_enter">Ange den andra enhetens kod</string>
+    <string name="pairing_searching">Letar efter enheter i det här nätverket…</string>
+    <string name="pairing_devices_found">Hittade enheter</string>
+    <string name="pairing_enter_code">Kod som visas på %1$s</string>
+    <string name="pairing_discovery_failed">Edendale kan inte söka efter andra enheter i det här nätverket. Kontrollera att Wi-Fi är på.</string>
+    <string name="pairing_code_apple_only">Apple-enheter visar bara en QR-kod att skanna, så de visas inte här.</string>
+    <string name="pairing_wrong_code">Koden stämde inte. Ange den nya koden som visas på %1$s.</string>
+    <string name="pairing_code_expired">Koden har gått ut. Ange koden som visas på %1$s nu.</string>
     <string name="player_theater">Biograf</string>
     <string name="xr_module_title">Android XR · Biograf</string>
 </resources>

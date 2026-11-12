@@ -136,6 +136,18 @@ class PairingFlowTest {
     }
 
     @Test
+    fun `this device's own code, still advertised a moment after it stopped showing it, isn't listed`() {
+        val found = listOf(
+            PairingFlow.Host("Living Room TV", "androidtv", 2, port = 40123),
+            PairingFlow.Host("Office PC", "windows", 2, port = 40123),
+            PairingFlow.Host("Living Room TV", "androidtv", 2, port = 40999),
+        )
+        assertEquals(listOf("Office PC" to 40123, "Living Room TV" to 40999), PairingFlow.codeHosts(found, ownName = "Living Room TV", ownPort = 40123).map { it.name to it.port })
+        assertEquals(3, PairingFlow.codeHosts(found).size)
+        assertEquals(3, PairingFlow.codeHosts(found, ownName = "Living Room TV", ownPort = null).size)
+    }
+
+    @Test
     fun `the code goes to the host picked while it is there, or to the only one`() {
         assertEquals("Living Room TV", PairingFlow.codeHost(listOf("Living Room TV"), picked = null))
         assertNull(PairingFlow.codeHost(listOf("Living Room TV", "Office PC"), picked = null))

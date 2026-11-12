@@ -50,8 +50,8 @@ object PairingFlow {
         Mode.ENTER, null -> false
     }
 
-    /** A version-2 host found on the network (§9.1): the name, platform, and version it advertises. */
-    data class Host(val name: String, val platform: String?, val version: Int)
+    /** A host found on the network (§9.1): the name, platform, and version it advertises, and its port. */
+    data class Host(val name: String, val platform: String?, val version: Int, val port: Int = 0)
 
     /** Apple's platforms show only a QR code: CryptoKit has no J-PAKE, so they offer no typed code (FEATURES-27.1.md §6.2). */
     private val QR_ONLY_PLATFORMS = setOf("ios", "ipados", "macos", "tvos", "visionos")
@@ -59,11 +59,19 @@ object PairingFlow {
     /** Whether a host on [platform] shows a six-digit code. A platform this build doesn't know is given the benefit of the doubt. */
     fun showsCode(platform: String?): Boolean = platform?.lowercase() !in QR_ONLY_PLATFORMS
 
-    /** The hosts a typed code can go to: the version-2 hosts that show a code, in the order found. */
-    fun codeHosts(found: List<Host>): List<Host> = found.filter { it.version >= HandoffV2.VERSION && showsCode(it.platform) }
+    /** Whether a typed code can go to [host]: a version-2 host that shows a code. */
+    fun takesCode(host: Host): Boolean = host.version >= HandoffV2.VERSION && showsCode(host.platform)
+
+    /**
+     * The hosts a typed code can go to, in the order found. This device's own
+     * code, still advertised for a moment after it stopped showing it to
+     * enter another's ([ownName] on [ownPort]), isn't one of them.
+     */
+    fun codeHosts(found: List<Host>, ownName: String? = null, ownPort: Int? = null): List<Host> =
+        found.filter { takesCode(it) && !(ownPort != null && it.port == ownPort && it.name == ownName) }
 
     /** Whether version-2 hosts were found but none shows a code (only Apple devices), so the screen can say why none is listed. */
-    fun onlyQrHosts(found: List<Host>): Boolean = found.any { it.version >= HandoffV2.VERSION } && codeHosts(found).isEmpty()
+    fun onlyQrHosts(found: List<Host>): Boolean = found.any { it.version >= HandoffV2.VERSION } && found.none(::takesCode)
 
     /**
      * The host a typed code goes to, by name: the one the viewer picked while

@@ -713,7 +713,15 @@
     <string name="pairing_show_instructions">Escaneie este código com o Edendale no outro dispositivo, em Ajustes → Sincronização → %1$s. Um novo código aparece a cada dois minutos.</string>
     <string name="pairing_starting">Iniciando…</string>
     <string name="pairing_waiting_for_send">Aguardando %1$s enviar…</string>
-    <string name="pairing_pc_code">Em um PC com Windows, digite o código %1$s.</string>
+    <string name="pairing_pc_code">Ou digite o código %1$s em um dispositivo Android, um Meta Quest ou um PC com Windows.</string>
+    <string name="pairing_mode_enter">Digitar o código do outro dispositivo</string>
+    <string name="pairing_searching">Procurando dispositivos nesta rede…</string>
+    <string name="pairing_devices_found">Dispositivos encontrados</string>
+    <string name="pairing_enter_code">Código mostrado em %1$s</string>
+    <string name="pairing_discovery_failed">O Edendale não consegue procurar outros dispositivos nesta rede. Verifique se o Wi-Fi está ativado.</string>
+    <string name="pairing_code_apple_only">Os dispositivos Apple mostram só um código QR para escanear, por isso não aparecem aqui.</string>
+    <string name="pairing_wrong_code">Esse código não confere. Digite o novo código mostrado em %1$s.</string>
+    <string name="pairing_code_expired">Esse código expirou. Digite o código mostrado agora em %1$s.</string>
     <string name="player_theater">Cinema</string>
     <string name="xr_module_title">Android XR · Cinema</string>
 </resources>

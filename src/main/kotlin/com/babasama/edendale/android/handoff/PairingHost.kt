@@ -193,7 +193,7 @@ class PairingHost(
             serviceType = AccountHandoff.SERVICE_TYPE.trimEnd('.')
             setPort(port)
             setAttribute("v", HandoffV2.VERSION.toString())
-            setAttribute("name", deviceName.take(60))
+            setAttribute("name", deviceName.take(ADVERTISED_NAME_LENGTH))
             setAttribute("platform", platform)
         }
         val listener = object : NsdManager.RegistrationListener {
@@ -227,6 +227,9 @@ class PairingHost(
 
         /** How often an expired code or a finished lockout is noticed. */
         const val REFRESH_CHECK_MILLIS = 1_000L
+
+        /** The longest name the `name` TXT record carries. */
+        const val ADVERTISED_NAME_LENGTH = 60
     }
 }
 

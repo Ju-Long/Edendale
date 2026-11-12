@@ -704,7 +704,15 @@
     <string name="pairing_show_instructions">もう一方の端末の Edendale で「設定 → 同期 → %1$s」からこのコードをスキャンしてください。2分ごとに新しいコードが表示されます。</string>
     <string name="pairing_starting">開始中…</string>
     <string name="pairing_waiting_for_send">%1$s の送信を待機中…</string>
-    <string name="pairing_pc_code">Windows PC では、代わりにコード %1$s を入力してください。</string>
+    <string name="pairing_pc_code">または、Android 端末、Meta Quest、Windows PC でコード %1$s を入力してください。</string>
+    <string name="pairing_mode_enter">他の端末のコードを入力</string>
+    <string name="pairing_searching">このネットワークで端末を探しています…</string>
+    <string name="pairing_devices_found">見つかった端末</string>
+    <string name="pairing_enter_code">%1$s に表示されたコード</string>
+    <string name="pairing_discovery_failed">Edendale はこのネットワークで他の端末を検索できません。Wi-Fi がオンになっているか確認してください。</string>
+    <string name="pairing_code_apple_only">Apple の端末はスキャン用の QR コードしか表示しないため、ここには表示されません。</string>
+    <string name="pairing_wrong_code">コードが一致しませんでした。%1$s に表示された新しいコードを入力してください。</string>
+    <string name="pairing_code_expired">コードの有効期限が切れました。%1$s に今表示されているコードを入力してください。</string>
     <string name="player_theater">シアター</string>
     <string name="xr_module_title">Android XR · シアター</string>
 </resources>

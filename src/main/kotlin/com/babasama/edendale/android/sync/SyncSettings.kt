@@ -534,10 +534,10 @@ internal fun ChooseLocationDialog(
 }
 
 @Composable
-internal fun ChoiceRow(label: String, selected: Boolean, iconRes: Int, onClick: () -> Unit) {
+internal fun ChoiceRow(label: String, selected: Boolean, iconRes: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
     androidx.compose.material3.Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(com.babasama.edendale.android.EdendaleRadii.Soft.dp),
         color = if (selected) EdendaleColors.SurfaceLow else androidx.compose.ui.graphics.Color.Transparent,
     ) {
