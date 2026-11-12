@@ -193,6 +193,9 @@ struct PlayerScreen: View {
         // the video narrows beside an open panel instead of sitting under it.
         HStack(spacing: 0) {
             playbackLayers(player: player, item: item)
+                // A resting pointer hides over the video, but stays over a
+                // docked panel and the guide, which are there to be read.
+                .hidesIdlePointer(session.chrome?.guideVisible != true)
             if let chrome = session.chrome, let panel = chrome.activePanel {
                 PlayerDockedPanel(panel: panel, chrome: chrome, player: player, item: item)
                     .transition(.move(edge: .trailing))
