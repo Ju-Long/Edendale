@@ -35,6 +35,11 @@ internal static class AppText
         ["Plural_EpisodeOne"] = "{0} episode",
         ["Plural_EpisodeOther"] = "{0} episodes",
 
+        ["DownloadedSection_All"] = "All",
+        ["Section_ContinueWatching"] = "Continue Watching",
+        ["Section_Movies"] = "Movies",
+        ["Section_TvShows"] = "TV Shows",
+
         ["Season_Number"] = "Season {0}",
         ["Season_Label"] = "Season",
 

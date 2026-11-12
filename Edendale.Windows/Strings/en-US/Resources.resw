@@ -2055,4 +2055,12 @@ IS SILENT</value>
     <value>Clear Progress</value>
     <comment>Deletes a saved position (Continue Watching card, in-progress movie poster, in-progress episode card).</comment>
   </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>All</value>
+    <comment>Downloaded section picker: the whole page.</comment>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Downloaded sections</value>
+    <comment>Screen-reader name of the Downloaded page's section chips.</comment>
+  </data>
 </root>

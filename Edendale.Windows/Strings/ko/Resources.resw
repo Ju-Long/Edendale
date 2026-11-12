@@ -2036,4 +2036,10 @@
   <data name="Library_ClearProgress" xml:space="preserve">
     <value>시청 진행률 지우기</value>
   </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>전체</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>다운로드 섹션</value>
+  </data>
 </root>

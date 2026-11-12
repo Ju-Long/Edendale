@@ -2036,4 +2036,10 @@
   <data name="Library_ClearProgress" xml:space="preserve">
     <value>Cancella avanzamento</value>
   </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>Tutto</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sezioni di Scaricati</value>
+  </data>
 </root>

@@ -2036,4 +2036,10 @@ IS STIL</value>
   <data name="Library_ClearProgress" xml:space="preserve">
     <value>Voortgang wissen</value>
   </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>Alles</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Secties van Gedownload</value>
+  </data>
 </root>

@@ -2036,4 +2036,10 @@ ESTÁ EN SILENCIO</value>
   <data name="Library_ClearProgress" xml:space="preserve">
     <value>Borrar progreso</value>
   </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>Todo</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Secciones de Descargas</value>
+  </data>
 </root>

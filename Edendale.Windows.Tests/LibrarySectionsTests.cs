@@ -85,4 +85,51 @@ public sealed class LibrarySectionsTests
         Assert.AreEqual(0, metrics.OffsetFor(0.7));
         Assert.IsFalse(default(ShelfScrollMetrics).IsScrollable);
     }
+
+    // ------------------------------------------------------------------
+    // The Downloaded page's section picker (apple-27.1 94a8b4f)
+    // ------------------------------------------------------------------
+
+    /// <summary>Ports tabBarSectionPickerOffersTheWholePageThenEachSection (without iOS's short titles).</summary>
+    [TestMethod]
+    public void SectionPickerOffersTheWholePageThenEachSection()
+    {
+        DownloadedSection[] all = [DownloadedSection.ContinueWatching, DownloadedSection.Movies, DownloadedSection.Shows];
+        CollectionAssert.AreEqual(
+            new DownloadedSection?[] { null, DownloadedSection.ContinueWatching, DownloadedSection.Movies, DownloadedSection.Shows },
+            LibrarySections.PickerChoices(all).ToArray());
+        CollectionAssert.AreEqual(new DownloadedSection?[] { null, DownloadedSection.Shows }, LibrarySections.PickerChoices([DownloadedSection.Shows]).ToArray());
+
+        Assert.IsTrue(LibrarySections.IsPickerOffered(all));
+        Assert.IsTrue(LibrarySections.IsPickerOffered([DownloadedSection.Movies, DownloadedSection.Shows]));
+        Assert.IsFalse(LibrarySections.IsPickerOffered([DownloadedSection.Movies]), "one section lists what the whole page does");
+        Assert.IsFalse(LibrarySections.IsPickerOffered([]));
+
+        Assert.AreEqual("All", ((DownloadedSection?)null).PickerTitle());
+        Assert.AreEqual("Continue Watching", ((DownloadedSection?)DownloadedSection.ContinueWatching).PickerTitle());
+        Assert.AreEqual("Movies", ((DownloadedSection?)DownloadedSection.Movies).PickerTitle());
+        Assert.AreEqual("TV Shows", ((DownloadedSection?)DownloadedSection.Shows).PickerTitle());
+    }
+
+    [TestMethod]
+    public void APickedSectionThatEmptiesFallsBackToTheWholePage()
+    {
+        DownloadedSection[] available = [DownloadedSection.Movies, DownloadedSection.Shows];
+        Assert.AreEqual(DownloadedSection.Movies, LibrarySections.Resolved(DownloadedSection.Movies, available));
+        Assert.IsNull(LibrarySections.Resolved(DownloadedSection.ContinueWatching, available));
+        Assert.IsNull(LibrarySections.Resolved(null, available));
+    }
+
+    [TestMethod]
+    public void PickerChoicesSelectTheirSidebarRows()
+    {
+        Assert.AreEqual(new SidebarItem("downloaded"), SidebarItem.ForDownloaded(null));
+        Assert.AreEqual("downloaded", SidebarItem.ForDownloaded(null).NavTag);
+        foreach (var section in new[] { DownloadedSection.ContinueWatching, DownloadedSection.Movies, DownloadedSection.Shows })
+        {
+            var row = SidebarItem.ForDownloaded(section);
+            Assert.AreEqual("downloaded:" + section.Tag(), row.NavTag);
+            Assert.AreEqual(section, row.DownloadedSection);
+        }
+    }
 }

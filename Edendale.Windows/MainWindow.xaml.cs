@@ -112,8 +112,8 @@ public sealed partial class MainWindow : Window
         var library = AppServices.Library;
         var movies = library.Movies.Where(movie => DownloadedPage.AudienceAllows(movie.TmdbId, "movie")).ToList();
         var shows = library.Shows.Count(show => DownloadedPage.AudienceAllows(show.TmdbId, "tv"));
-        var hasResume = DownloadedPage.ContinueWatchingEntries(library, movies, limit: 1).Count > 0;
-        _downloadedSections = LibrarySections.AvailableDownloaded(hasResume, movies.Count, shows);
+        // The same rule as the page's section picker, so the rows and the chips agree.
+        _downloadedSections = DownloadedPage.AvailableSections(library, movies, shows);
 
         DownloadedContinueNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.ContinueWatching));
         DownloadedMoviesNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Movies));
@@ -407,6 +407,17 @@ public sealed partial class MainWindow : Window
         }
 
         if (focusCategories && RootFrame.Content is SettingsPage settings) settings.FocusCategories();
+    }
+
+    /// <summary>
+    /// The Downloaded page's own picker chose <paramref name="section"/>
+    /// (null: the whole page) without navigating: the sidebar row follows,
+    /// and choosing a row later still navigates.
+    /// </summary>
+    public void FollowDownloadedSection(DownloadedSection? section)
+    {
+        _rootParameter = section;
+        SelectSidebar(SidebarItem.ForDownloaded(section).NavTag);
     }
 
     private void SelectSidebar(string tag)

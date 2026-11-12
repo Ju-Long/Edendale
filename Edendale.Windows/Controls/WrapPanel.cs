@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation;
 
@@ -26,6 +28,14 @@ public sealed partial class WrapPanel : Panel
 
     /// <summary>The gap between lines.</summary>
     public double LineSpacing { get => (double)GetValue(LineSpacingProperty); set => SetValue(LineSpacingProperty, value); }
+
+    /// <summary>
+    /// A panel given a name (the Downloaded section picker) is a named group
+    /// to screen readers, so its chips are heard as one set; an unnamed one,
+    /// like a row of Settings actions, stays out of the tree.
+    /// </summary>
+    protected override AutomationPeer? OnCreateAutomationPeer() =>
+        string.IsNullOrEmpty(AutomationProperties.GetName(this)) ? base.OnCreateAutomationPeer() : new NamedGroupAutomationPeer(this);
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -85,4 +95,14 @@ public sealed partial class WrapPanel : Panel
         }
         return new Size(widest, y);
     }
+}
+
+/// <summary>A panel as a named group whose children are its controls.</summary>
+public sealed partial class NamedGroupAutomationPeer(WrapPanel owner) : FrameworkElementAutomationPeer(owner)
+{
+    protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Group;
+
+    protected override bool IsControlElementCore() => true;
+
+    protected override string GetClassNameCore() => nameof(WrapPanel);
 }

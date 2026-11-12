@@ -120,17 +120,35 @@
         <ScrollViewer x:Name="LibraryScroll" Visibility="Collapsed">
             <StackPanel Spacing="40" Padding="48,24,48,64">
 
-                <Grid>
-                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                        <ProgressRing
-                            x:Name="StatusRing"
-                            IsActive="False"
-                            Width="18"
-                            Height="18"
-                            Foreground="{StaticResource EdendaleGoldBrush}" />
-                        <TextBlock x:Name="StatusText" Style="{StaticResource LabelCapsTextStyle}" VerticalAlignment="Center" />
+                <Grid ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="16" VerticalAlignment="Center">
+                        <!-- The page's own section picker (DownloadedSectionPicker.swift):
+                             All, then each section with titles, the same choice as the
+                             sidebar rows. Shown only when there are two sections or more.
+                             A named group of radio chips; the arrow keys move between them. -->
+                        <controls:WrapPanel
+                            x:Uid="DownloadedSectionPicker"
+                            x:Name="SectionPicker"
+                            Spacing="10"
+                            LineSpacing="10"
+                            XYFocusKeyboardNavigation="Enabled"
+                            Visibility="Collapsed"
+                            AutomationProperties.Name="Downloaded sections" />
+                        <StackPanel x:Name="StatusRow" Orientation="Horizontal" Spacing="12" Visibility="Collapsed">
+                            <ProgressRing
+                                x:Name="StatusRing"
+                                IsActive="False"
+                                Width="18"
+                                Height="18"
+                                Foreground="{StaticResource EdendaleGoldBrush}" />
+                            <TextBlock x:Name="StatusText" Style="{StaticResource LabelCapsTextStyle}" VerticalAlignment="Center" />
+                        </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
                         <Button
                             Style="{StaticResource ArchiveSecondaryButtonStyle}"
                             Click="AddFolder_Click">

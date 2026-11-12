@@ -2036,4 +2036,10 @@
   <data name="Library_ClearProgress" xml:space="preserve">
     <value>視聴の進み具合を消去</value>
   </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>すべて</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>ダウンロード済みのセクション</value>
+  </data>
 </root>

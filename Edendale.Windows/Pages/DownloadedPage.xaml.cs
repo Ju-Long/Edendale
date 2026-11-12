@@ -45,8 +45,12 @@ public sealed partial class DownloadedPage : Page
 {
     private bool _rescannedThisVisit;
 
-    /// <summary>The sidebar section this visit shows, or null for the whole page (DIFF.md §3.15).</summary>
+    /// <summary>The section shown, or null for the whole page (DIFF.md §3.15): a sidebar row's, or the picker's.</summary>
     private Core.DownloadedSection? _section;
+
+    /// <summary>The section picker's chips, rebuilt only when the choices change so a pick keeps its focus.</summary>
+    private Controls.ChipGroup<Core.DownloadedSection?>? _picker;
+    private IReadOnlyList<Core.DownloadedSection?> _pickerChoices = [];
 
     public DownloadedPage()
     {
@@ -86,7 +90,9 @@ public sealed partial class DownloadedPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        _section = e.Parameter is Core.DownloadedSection section ? section : null;
+        // Back from a title keeps the section on screen: a pick changed it
+        // without navigating, so the stack entry still names the old one.
+        if (e.NavigationMode != NavigationMode.Back) _section = e.Parameter is Core.DownloadedSection section ? section : null;
         // A new section starts at the top; Back keeps the reader's place.
         if (e.NavigationMode != NavigationMode.Back) LibraryScroll.ChangeView(null, 0, null, disableAnimation: true);
         RefreshAll();
@@ -103,6 +109,15 @@ public sealed partial class DownloadedPage : Page
         base.OnNavigatedFrom(e);
         _rescannedThisVisit = false;
     }
+
+    /// <summary>
+    /// The sections with titles for the current audience, in sidebar order:
+    /// one rule for the sidebar rows and the page's picker, so they agree.
+    /// </summary>
+    internal static IReadOnlyList<Core.DownloadedSection> AvailableSections(
+        LibraryService library, IReadOnlyList<LibraryMovie> visibleMovies, int visibleShowCount) =>
+        Core.LibrarySections.AvailableDownloaded(
+            ContinueWatchingEntries(library, visibleMovies, limit: 1).Count > 0, visibleMovies.Count, visibleShowCount);
 
     /// <summary>x:Bind hook for the poster grid's watched check.</summary>
     public static bool MovieWatched(int? tmdbId) =>
@@ -143,7 +158,7 @@ public sealed partial class DownloadedPage : Page
         LibraryScroll.Visibility = library.IsEmpty ? Visibility.Collapsed : Visibility.Visible;
         if (library.IsEmpty) return;
 
-        // Status row
+        // Status row: only while something is under way.
         if (library.IsImporting)
         {
             StatusRing.IsActive = true;
@@ -164,6 +179,7 @@ public sealed partial class DownloadedPage : Page
             StatusRing.IsActive = false;
             StatusText.Text = "";
         }
+        StatusRow.Visibility = StatusRing.IsActive ? Visibility.Visible : Visibility.Collapsed;
         ErrorText.Text = library.ErrorMessage ?? "";
         ErrorText.Visibility = library.ErrorMessage is null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -175,6 +191,7 @@ public sealed partial class DownloadedPage : Page
         // copy stands for it, and its page plays and lists every copy.
         var movieTitles = PlaybackSources.Distinct(movies, PlaybackSources.CopyKey);
         var showTitles = PlaybackSources.Distinct(shows, PlaybackSources.CopyKey);
+        UpdateSectionPicker(AvailableSections(library, movies, shows.Count));
 
         if (_section is { } section)
         {
@@ -222,6 +239,51 @@ public sealed partial class DownloadedPage : Page
         // Resolve certifications for anything not yet decided; the filter's
         // Changed event re-runs this and the blocked titles drop out.
         _ = VerifyAudienceAsync();
+    }
+
+    /// <summary>
+    /// The page's own section picker: hidden with fewer than two sections;
+    /// a section that emptied falls back to the whole page here, as its
+    /// sidebar row does; and the chips are rebuilt only when the choices
+    /// change, so a pick keeps keyboard focus on its chip.
+    /// </summary>
+    private void UpdateSectionPicker(IReadOnlyList<Core.DownloadedSection> sections)
+    {
+        if (_section is not null && Core.LibrarySections.Resolved(_section, sections) is null)
+        {
+            _section = null;
+            (App.MainWindow as MainWindow)?.FollowDownloadedSection(null);
+        }
+
+        var offered = Core.LibrarySections.IsPickerOffered(sections);
+        SectionPicker.Visibility = offered ? Visibility.Visible : Visibility.Collapsed;
+        if (!offered) return;
+
+        var choices = Core.LibrarySections.PickerChoices(sections);
+        if (_picker is null || !choices.SequenceEqual(_pickerChoices))
+        {
+            _pickerChoices = choices;
+            _picker = new Controls.ChipGroup<Core.DownloadedSection?>(
+                SectionPicker,
+                [.. choices.Select(choice => new Controls.ChipOption<Core.DownloadedSection?>(choice, choice.PickerTitle(), choice.PickerTitle()))],
+                PickSection,
+                radio: true);
+        }
+        _picker.Select(_section);
+    }
+
+    /// <summary>
+    /// A chip changes the section in place, as Apple's and Android's do: no
+    /// navigation, so no transition, no second rescan, and focus stays on the
+    /// chip. The sidebar row follows, and the page starts again at the top.
+    /// </summary>
+    private void PickSection(Core.DownloadedSection? choice)
+    {
+        if (choice == _section) return;
+        _section = choice;
+        (App.MainWindow as MainWindow)?.FollowDownloadedSection(choice);
+        LibraryScroll.ChangeView(null, 0, null, disableAnimation: true);
+        RefreshAll();
     }
 
     /// <summary>
