@@ -439,18 +439,29 @@ location and its login to a new device over the local network (handoff
 version 2, SYNC-PROTOCOL.md §9), so the second device needs no second sign-in.
 The screen is built as the Apple branch's: the button picks the direction;
 the sender first ticks what to send (the location, and any other linked
-accounts and saved logins); then a phone or tablet with a camera chooses
+accounts and saved logins); then a phone or tablet with a camera, or a Quest
+3 or 3S (Meta's Passthrough Camera API reads its front cameras), chooses
 **Scan the Other Device's Code** or **Show a Code for the Other Device to
-Scan**, and a TV or headset shows one. The device showing the code (the host)
+Scan**, and a TV, another headset, or a device without a camera shows one.
+The device showing the code (the host)
 shows a QR code (an ephemeral X25519 key and a 128-bit secret), replaced by a
 new one every two minutes, and advertises `_edendale-handoff._tcp` with `v=2`
 while the screen is open. The scanner reads it in the dialog with the camera
 (CameraX, asked for only when you choose to scan; frames are read on the
 device and never kept) and connects at the address the code carries, or finds
 the host by name. A code scanned by the system camera opens Edendale too
-(`edendale://handoff`), which asks which way to go. Below the QR code the host
-shows a six-digit code for a Windows PC, which has no camera; the typed code
-runs J-PAKE over P-256 as the phone-to-TV handoff does. Both sides derive one AES-256-GCM key (HKDF-SHA256
+(`edendale://handoff`), which asks which way to go, and shows it connecting
+without opening the camera. Beside the QR code the host shows a six-digit code
+(on a TV the two sit side by side, so the remote never has to scroll). Any
+Android device joins with it instead of scanning: **Enter the Other Device's
+Code**, under the scanner (also when the camera is refused) and under the code
+a TV, a headset, or a phone without a camera shows, lists the devices on the
+network that show one (Apple's show only a QR code and aren't listed), takes
+the only one at once, and asks for its six digits; so two TVs, a TV and a
+headset, or two headsets pair with one showing and the other typing, and a
+Windows PC types it too. The typed code runs J-PAKE over P-256 as the
+phone-to-TV handoff does; a wrong code asks for the new one the host shows,
+and after five wrong codes the field waits the minute the host does. Both sides derive one AES-256-GCM key (HKDF-SHA256
 over the transcript, HMAC proofs both ways; the nonce is the direction and a
 counter, and the label is authenticated data). A wrong code or QR code fails
 before anything is sent; a code lasts two minutes and one attempt, and five
@@ -903,7 +914,10 @@ tests. Before a release, check on:
   pair a second device both ways (a phone scanning the other's QR code in
   the dialog, a phone showing its code, a code scanned by the system camera,
   and a PC typing a TV's code), refuse the camera once and check the dialog
-  says to show a code instead, send the location with an account and with a
+  says to show a code instead, join by **Enter the Other Device's Code**
+  (two TVs, a TV and a phone without the camera, a wrong code, five wrong
+  codes), open a pairing link on a phone that hasn't allowed the camera and
+  check no camera prompt appears, send the location with an account and with a
   saved login, and check that a wrong code and a stale QR code fail before
   anything is sent and that a shown code renews after two minutes; remove
   a device's file and turn sync off with and without deleting the file. On a
@@ -957,7 +971,7 @@ own source is at <https://github.com/jellyfin/jellyfin-androidx-media>.
 | Jetpack XR 1.0.0 (`androidx.xr.scenecore`, `androidx.xr.runtime`, `androidx.xr.arcore`, with Google's Impress renderer) | The Android XR theater; in the `xr` split only | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
 | ZXing core | TMDB sign-in and pairing QR codes, and reading a scanned pairing code | Apache-2.0 |
-| AndroidX CameraX 1.4.2 (`camera-camera2`, `camera-lifecycle`, `camera-view`) | The pairing screen's QR scanner on phones and tablets | Apache-2.0 |
+| AndroidX CameraX 1.4.2 (`camera-camera2`, `camera-lifecycle`, `camera-view`) | The pairing screen's QR scanner on phones and tablets, and on a Quest 3 or 3S through its passthrough camera (`Camera2CameraInfo` reads Meta's camera tags) | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
 | AMD FidelityFX Super Resolution 1.0 (EASU, ported to GLSL) | Upscaling | MIT |
 | Nunito | The Rounded subtitle font | SIL OFL 1.1 |
