@@ -723,6 +723,7 @@
     <string name="pairing_wrong_code">Il codice non corrisponde. Inserisci il nuovo codice mostrato su %1$s.</string>
     <string name="pairing_code_expired">Il codice è scaduto. Inserisci il codice mostrato ora su %1$s.</string>
     <string name="pairing_host_wrong_code">Sull\'altro dispositivo è stato inserito un codice errato. Inserisci il nuovo codice qui sopra.</string>
+    <string name="pairing_same_role_receive">Entrambi i dispositivi hanno scelto di ricevere. Scegli chi invia su uno dei due.</string>
     <string name="player_theater">Cinema</string>
     <string name="xr_module_title">Android XR · Cinema</string>
 </resources>

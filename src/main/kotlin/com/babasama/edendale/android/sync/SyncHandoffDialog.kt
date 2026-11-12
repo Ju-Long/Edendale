@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.babasama.edendale.android.ApprovalQrCode
 import com.babasama.edendale.android.ArchiveButton
 import com.babasama.edendale.android.ArchiveButtonKind
@@ -230,7 +232,7 @@ internal fun SyncHandoffDialog(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                if (error === HandoffException.Declined) declinedBy = peer?.name ?: payload.name else failure = pairingFailureMessage(context, error)
+                if (error === HandoffException.Declined) declinedBy = peer?.name ?: payload.name else failure = pairingFailure(context, error, myRole)
             } finally {
                 pendingOffer = null
                 guestStep = null
@@ -264,7 +266,7 @@ internal fun SyncHandoffDialog(
                     }
                     // The host had no code for this attempt: it expired, was replaced, or the host is waiting after wrong codes.
                     error === HandoffException.WrongSecret -> codeError = context.getString(R.string.pairing_code_expired, device.name)
-                    else -> failure = pairingFailureMessage(context, error)
+                    else -> failure = pairingFailure(context, error, myRole)
                 }
             } finally {
                 pendingOffer = null
@@ -425,6 +427,8 @@ internal fun SyncHandoffDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        // A TV's platform width is too narrow for the code beside its text; Material still caps the dialog at 560 dp.
+        properties = DialogProperties(usePlatformDefaultWidth = !isTelevision),
         title = {
             Text(
                 when (myRole) {
@@ -470,25 +474,30 @@ internal fun SyncHandoffDialog(
                             stringResource(R.string.pairing_connected, other.name)
                         },
                     )
-                    mode == PairingFlow.Mode.SHOW -> {
-                        when {
-                            hostStatus is PairingHost.Status.Connected -> Waiting(stringResource(R.string.pairing_pairing))
-                            hostStatus is PairingHost.Status.LockedOut -> Statement(stringResource(R.string.pairing_locked_out))
-                            hostState?.qrUri == null -> Waiting(stringResource(R.string.pairing_starting))
-                            else -> {
-                                ApprovalQrCode(hostState.qrUri, stringResource(R.string.pairing_qr_description), isTelevision, Modifier.align(Alignment.CenterHorizontally))
-                                Note(stringResource(R.string.pairing_show_instructions, otherDeviceAction(context, myRole)))
-                                // FEATURES-27.1 §6.2: a PC has no camera, so it pairs by the typed code (J-PAKE, §9.4); so can
-                                // an Android device or a Quest that can't or won't scan (Section T). Apple's devices can't type it.
-                                hostState.code?.let { code -> Note(stringResource(R.string.pairing_pc_code, code.chunked(3).joinToString(" "))) }
-                                (hostStatus as? PairingHost.Status.Failed)?.let {
-                                    // A wrong code typed on the other device: this screen already shows the new one.
-                                    ErrorText(if (it.error === HandoffException.WrongCode) stringResource(R.string.pairing_host_wrong_code) else pairingFailureMessage(context, it.error))
-                                }
-                            }
+                    // A device that can't scan joins another that only shows a code by typing that code ([offersEntry]).
+                    mode == PairingFlow.Mode.SHOW -> when {
+                        hostStatus is PairingHost.Status.Connected -> Waiting(stringResource(R.string.pairing_pairing))
+                        hostStatus is PairingHost.Status.LockedOut -> {
+                            Statement(stringResource(R.string.pairing_locked_out))
+                            if (offersEntry) EnterCodeRow(isTelevision) { enterCode() }
                         }
-                        // A device that can't scan joins another that only shows a code by typing that code.
-                        if (offersEntry) EnterCodeRow(isTelevision) { enterCode() }
+                        hostState?.qrUri == null -> {
+                            Waiting(stringResource(R.string.pairing_starting))
+                            if (offersEntry) EnterCodeRow(isTelevision) { enterCode() }
+                        }
+                        else -> ShownCode(
+                            isTelevision = isTelevision,
+                            qrUri = hostState.qrUri,
+                            instructions = stringResource(R.string.pairing_show_instructions, otherDeviceAction(context, myRole)),
+                            // FEATURES-27.1 §6.2: a PC has no camera, so it pairs by the typed code (J-PAKE, §9.4); so can
+                            // an Android device or a Quest that can't or won't scan (Section T). Apple's devices can't type it.
+                            codeLine = hostState.code?.let { code -> stringResource(R.string.pairing_pc_code, code.chunked(3).joinToString(" ")) },
+                            // A wrong code typed on the other device: this screen already shows the new one.
+                            error = (hostStatus as? PairingHost.Status.Failed)?.let {
+                                if (it.error === HandoffException.WrongCode) stringResource(R.string.pairing_host_wrong_code) else pairingFailure(context, it.error, myRole)
+                            },
+                            onEnter = if (offersEntry) ({ enterCode() }) else null,
+                        )
                     }
                     // A code in hand (a pairing link's) shows it connecting at once: the scanner, which asks for the camera, never composes.
                     else -> when (PairingFlow.guestView(mode, hasCode = scanned != null, step = guestStep)) {
@@ -595,6 +604,14 @@ internal fun SyncHandoffDialog(
         },
     )
 }
+
+/** A failure as this dialog says it: two devices that both chose to receive aren't told they both chose to send. */
+private fun pairingFailure(context: Context, error: Throwable, role: HandoffV2.Role): String =
+    if (error === HandoffException.SameRole && role == HandoffV2.Role.RECEIVER) {
+        context.getString(R.string.pairing_same_role_receive)
+    } else {
+        pairingFailureMessage(context, error)
+    }
 
 /** What the other device chooses: the opposite of this one's direction. */
 private fun otherDeviceAction(context: Context, role: HandoffV2.Role): String = context.getString(
@@ -765,6 +782,39 @@ private fun CodeEntry(
     Note(stringResource(R.string.pairing_mode_footer, otherAction))
 }
 
+/**
+ * This device's code: the QR code, how to use it, the six-digit code, and
+ * Enter the Other Device's Code where this device can't scan. A TV's screen
+ * is too short for the QR code above the rest (its dialog would hide the
+ * six digits and the row below the fold, where a remote can't scroll), so a
+ * TV puts them side by side in a wider dialog.
+ */
+@Composable
+private fun ColumnScope.ShownCode(
+    isTelevision: Boolean,
+    qrUri: String,
+    instructions: String,
+    codeLine: String?,
+    error: String?,
+    onEnter: (() -> Unit)?,
+) {
+    val details: @Composable () -> Unit = {
+        Note(instructions)
+        codeLine?.let { Note(it) }
+        error?.let { ErrorText(it) }
+        onEnter?.let { EnterCodeRow(isTelevision, it) }
+    }
+    if (isTelevision) {
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            ApprovalQrCode(qrUri, stringResource(R.string.pairing_qr_description), isTelevision = true, size = TELEVISION_QR_SIZE.dp)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) { details() }
+        }
+    } else {
+        ApprovalQrCode(qrUri, stringResource(R.string.pairing_qr_description), isTelevision = false, modifier = Modifier.align(Alignment.CenterHorizontally))
+        details()
+    }
+}
+
 /** Enter the Other Device's Code, as a row beside the scan-or-show rows: it wraps where a one-line button would cut it short. */
 @Composable
 private fun EnterCodeRow(isTelevision: Boolean, onClick: () -> Unit) {
@@ -824,6 +874,9 @@ private fun TickRow(label: String, detail: String? = null, checked: Boolean, onC
         }
     }
 }
+
+/** The pairing QR code's side on a TV, beside its text; still about 40% of a 1080p screen's height. */
+private const val TELEVISION_QR_SIZE = 220
 
 /** How long a guest looks for the host by name when the code's address doesn't answer (Apple waits 15 s). */
 private const val DISCOVERY_TIMEOUT_MILLIS = 15_000L

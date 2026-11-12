@@ -714,6 +714,7 @@
     <string name="pairing_wrong_code">代碼不符。請輸入 %1$s 上顯示的新代碼。</string>
     <string name="pairing_code_expired">代碼已過期。請輸入 %1$s 上現在顯示的代碼。</string>
     <string name="pairing_host_wrong_code">另一台裝置上輸入的代碼不正確。請輸入上方的新代碼。</string>
+    <string name="pairing_same_role_receive">兩台裝置都選擇了接收。請在其中一台上選擇由誰傳送。</string>
     <string name="player_theater">影院</string>
     <string name="xr_module_title">Android XR · 影院</string>
 </resources>
