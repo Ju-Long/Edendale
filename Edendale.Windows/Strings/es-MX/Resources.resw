@@ -2042,4 +2042,7 @@ ESTÁ EN SILENCIO</value>
   <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Secciones de Descargas</value>
   </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Almacenando en búfer</value>
+  </data>
 </root>

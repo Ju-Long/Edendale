@@ -2042,4 +2042,7 @@ IS STIL</value>
   <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Secties van Gedownload</value>
   </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bufferen</value>
+  </data>
 </root>

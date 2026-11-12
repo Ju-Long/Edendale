@@ -2042,4 +2042,7 @@ EST SILENCIEUSE</value>
   <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Sections des téléchargements</value>
   </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mise en mémoire tampon</value>
+  </data>
 </root>

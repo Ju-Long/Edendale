@@ -94,6 +94,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         InitializeGestures();
         InitializeHud();
+        InitializeBuffering();
+        InitializePointer();
 
         TimelineSlider.AddHandler(PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
         TimelineSlider.AddHandler(PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
@@ -142,6 +144,9 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         _mediaPlayer = player;
         _audioApplied = false;
+        ResetBuffering();
+        // Between two files the pointer shows; the next player hides it again.
+        ApplyIdlePointer();
         if (title.Length > 0 || player is null)
         {
             TitleText.Text = title;
@@ -192,11 +197,13 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private void UserControl_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         TrackPointerDrag(e);
-        ShowControls();
+        // A report at the point the mouse already had is not a move (a4c8561).
+        if (TrackIdlePointer(e)) ShowControls();
     }
 
     private void UserControl_PointerExited(object sender, PointerRoutedEventArgs e)
     {
+        IdlePointerLeft(e);
         HideControls();
     }
 
@@ -587,8 +594,10 @@ public sealed partial class PlayerControlsOverlay : UserControl
         player.EndReached += stateChanged;
         player.EncounteredError += stateChanged;
         player.LengthChanged += MediaPlayer_LengthChanged;
+        var detachBuffering = AttachBuffering(player);
         _detachPlayer = () =>
         {
+            detachBuffering();
             player.Playing -= stateChanged;
             player.Paused -= stateChanged;
             player.Stopped -= stateChanged;
@@ -604,6 +613,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
         {
             if (!ReferenceEquals(player, _mediaPlayer)) return;
             UpdatePlayPauseIcon();
+            BufferingStateChanged(player);
             if (_mediaPlayer?.IsPlaying == true)
             {
                 if (!_audioApplied)
@@ -718,6 +728,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         UpdateUpNext(position, duration);
         UpdateSegmentPrompt(position, duration);
+        WatchForStall(_mediaPlayer, duration);
     }
 
     // ------------------------------------------------------------------

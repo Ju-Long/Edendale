@@ -2042,4 +2042,7 @@ IST STUMM</value>
   <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Bereiche von Heruntergeladen</value>
   </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Puffern</value>
+  </data>
 </root>

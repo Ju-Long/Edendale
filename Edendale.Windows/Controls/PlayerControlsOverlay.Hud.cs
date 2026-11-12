@@ -79,9 +79,9 @@ public sealed partial class PlayerControlsOverlay
         HudPill.Opacity = 0;
     }
 
-    /// <summary>Ctrl+↑/↓ brightness, shown as a percentage.</summary>
-    public void ShowBrightness(double brightness) =>
-        ShowHud(Loc.Format("Hud_Brightness", (int)Math.Round(brightness * 100)), null);
+    /// <summary>Ctrl+↑/↓: the player's brightness level, 0…1, shown as a percentage.</summary>
+    public void ShowBrightness(double level) =>
+        ShowHud(Loc.Format("Hud_Brightness", (int)Math.Round(level * 100)), null);
 
     // ------------------------------------------------------------------
     // Up Next (3.4)

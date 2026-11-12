@@ -87,6 +87,8 @@
     <Compile Include="..\Edendale.Windows\Core\PlaybackTransitions.cs" Link="App\Core\PlaybackTransitions.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerControlPreferences.cs" Link="App\Core\PlayerControlPreferences.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerLogic.cs" Link="App\Core\PlayerLogic.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlaybackStallWatch.cs" Link="App\Core\PlaybackStallWatch.cs" />
+    <Compile Include="..\Edendale.Windows\Core\IdlePointer.cs" Link="App\Core\IdlePointer.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerPreferences.cs" Link="App\Core\PlayerPreferences.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerTracks.cs" Link="App\Core\PlayerTracks.cs" />
     <Compile Include="..\Edendale.Windows\Core\SavedSubtitles.cs" Link="App\Core\SavedSubtitles.cs" />

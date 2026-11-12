@@ -23,6 +23,24 @@ public sealed class PlayerSession
 {
     public event EventHandler<PlaybackRequest>? PlaybackRequested;
 
+    /// <summary>
+    /// The player is on screen (Apple's isPlayerPresented). The pages under
+    /// the overlay stay live, so work they do for show, like Home's rotating
+    /// hero, waits while this is true (apple-27.1 e90a988).
+    /// </summary>
+    public bool IsPresented { get; private set; }
+
+    /// <summary>Raised when <see cref="IsPresented"/> changes, never for a repeated value.</summary>
+    public event EventHandler? PresentedChanged;
+
+    /// <summary>The shell reports the player opening and closing.</summary>
+    public void SetPresented(bool presented)
+    {
+        if (presented == IsPresented) return;
+        IsPresented = presented;
+        PresentedChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void Play(LibraryMovie movie) => PlaybackRequested?.Invoke(this, new PlaybackRequest
     {
         FilePath = movie.FilePath,

@@ -9,7 +9,10 @@ namespace Edendale.Windows.Tests;
 /// connections can be dropped, refused, or slowed, ported from Apple's
 /// BufferedByteSourceTests: read-ahead, a seek jumping the read-ahead queue,
 /// reconnecting after a drop, giving up after the retries, failing a bad
-/// first login at once, interrupts, cancel, keep-alives, and eviction.
+/// first login at once, interrupts, cancel, keep-alives, and eviction; and
+/// since apple-27.1 5020ec3, what it holds past the last read, a read-ahead
+/// that grows into the memory the app can spare and gives it back, and a
+/// brief jump away that keeps the buffer.
 /// </summary>
 [TestClass]
 public sealed class BufferedByteSourceTests
@@ -92,16 +95,37 @@ public sealed class BufferedByteSourceTests
         public void Dispose() { }
     }
 
+    /// <summary>The memory the app has to spare, as a test sets it.</summary>
+    private sealed class FakeHeadroom(long bytes)
+    {
+        private long _bytes = bytes;
+
+        public long Bytes
+        {
+            get => Interlocked.Read(ref _bytes);
+            set => Interlocked.Exchange(ref _bytes, value);
+        }
+    }
+
     private static BufferedByteSource MakeSource(FakeFileServer server, int aheadChunks = 8, int cacheChunks = 16,
-        double[]? retryDelays = null, double keepAlive = 0) =>
+        double[]? retryDelays = null, double keepAlive = 0, int? maxAheadChunks = null, FakeHeadroom? headroom = null) =>
         new("nas.local", server.Open)
         {
             ChunkSize = Chunk,
             ReadAheadBytes = aheadChunks * Chunk,
+            // Without a test's say-so the read-ahead never grows with memory.
+            MaxReadAheadBytes = (maxAheadChunks ?? aheadChunks) * Chunk,
+            MemoryHeadroom = headroom is null ? null : () => headroom.Bytes,
             CacheBytes = cacheChunks * Chunk,
             RetryDelays = (retryDelays ?? [0.01, 0.01, 0.01]).Select(TimeSpan.FromSeconds).ToArray(),
             KeepAliveInterval = TimeSpan.FromSeconds(keepAlive),
         };
+
+    private static (long Bytes, bool Complete) Ahead(BufferedByteSource source)
+    {
+        var bytes = source.BufferedBytesAhead(out var complete);
+        return (bytes, complete);
+    }
 
     private static Task<(int Count, byte[] Data)> Read(IByteSource source, long offset, int length, Func<bool>? abort = null) =>
         RemoteByteSourceTests.BlockingRead(source, offset, length, abort);
@@ -359,6 +383,230 @@ public sealed class BufferedByteSourceTests
         }
     }
 
+    // ------------------------------------------------------------------
+    // apple-27.1 5020ec3: what it holds, memory, and brief jumps
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public async Task ReportsWhatItHoldsPastTheLastRead()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(32 * 1024));
+        var source = MakeSource(server);
+        try
+        {
+            Assert.AreEqual(0, Ahead(source).Bytes, "nothing is fetched before the first read");
+            Assert.IsFalse(Ahead(source).Complete);
+
+            await Read(source, 0, 100);
+            await WaitUntil(() => Ahead(source).Complete);
+            Assert.IsTrue(Ahead(source).Complete);
+            Assert.AreEqual(9 * Chunk - 100, Ahead(source).Bytes, "the rest of the first chunk and the eight read ahead");
+
+            await Read(source, 100, Chunk);
+            Assert.AreEqual(8 * Chunk, Ahead(source).Bytes, "reading to the end of the chunk leaves the eight");
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task HoldsNothingOnceAStalledLinkHasEmptiedIt()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(32 * 1024));
+        var source = MakeSource(server, aheadChunks: 4, cacheChunks: 8);
+        try
+        {
+            await Read(source, 0, Chunk);
+            await WaitUntil(() => Ahead(source).Complete);
+            Assert.AreEqual(4 * Chunk, Ahead(source).Bytes);
+
+            // The link slows to a crawl while reading uses the buffer up.
+            server.Delay = TimeSpan.FromSeconds(0.3);
+            for (var index = 1; index <= 4; index++) await Read(source, index * Chunk, Chunk);
+            Assert.AreEqual(0, Ahead(source).Bytes);
+            Assert.IsFalse(Ahead(source).Complete);
+
+            // It fills again behind the paused reader.
+            await WaitUntil(() => Ahead(source).Complete, timeout: 5);
+            Assert.AreEqual(4 * Chunk, Ahead(source).Bytes);
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task AReadAheadThatGaveUpCountsAsComplete()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(16 * 1024));
+        var source = MakeSource(server, aheadChunks: 2, cacheChunks: 4, retryDelays: [0.01, 0.01]);
+        try
+        {
+            await Read(source, 0, Chunk);
+            await WaitUntil(() => Ahead(source).Complete);
+            server.Drop(refuse: true);
+            // Chunk 1 is cached; fetching chunk 3 behind it fails for good.
+            await Read(source, Chunk, Chunk);
+            await WaitUntil(() => Ahead(source).Complete);
+            // Playback goes on with what is left and meets the error at a
+            // read, rather than waiting for a buffer that will never fill.
+            Assert.IsTrue(Ahead(source).Complete);
+            Assert.AreEqual(Chunk, Ahead(source).Bytes);
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task ReadsFurtherAheadWhileTheAppHasMemoryToSpare()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(64 * 1024));
+        var source = MakeSource(server, aheadChunks: 4, cacheChunks: 8, maxAheadChunks: 24, headroom: new FakeHeadroom(1 << 20));
+        try
+        {
+            await Read(source, 0, 100);
+            await WaitUntil(() => Ahead(source).Complete);
+            Assert.AreEqual(25 * Chunk - 100, Ahead(source).Bytes, "the rest of the first chunk and 24 more");
+            await Task.Delay(100);
+            CollectionAssert.DoesNotContain(server.ReadOffsets, 25L * 1024, "and no further");
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task KeepsToTheSmallReadAheadWhenTheAppHasNoMemoryToSpare()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(64 * 1024));
+        var source = MakeSource(server, aheadChunks: 4, cacheChunks: 8, maxAheadChunks: 24, headroom: new FakeHeadroom(0));
+        try
+        {
+            await Read(source, 0, 100);
+            await WaitUntil(() => Ahead(source).Complete);
+            Assert.AreEqual(5 * Chunk - 100, Ahead(source).Bytes);
+            await Task.Delay(100);
+            CollectionAssert.DoesNotContain(server.ReadOffsets, 5L * 1024);
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task StopsGrowingWhenMemoryFillsAndGoesOnWhenItFrees()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(64 * 1024)) { Delay = TimeSpan.FromSeconds(0.02) };
+        var room = new FakeHeadroom(1 << 20);
+        var source = MakeSource(server, aheadChunks: 4, cacheChunks: 8, maxAheadChunks: 24, headroom: room);
+        try
+        {
+            await Read(source, 0, Chunk);
+            await WaitUntil(() => server.ReadOffsets.Contains(8 * 1024));
+            // The app reaches its memory target: what is here stays, no more comes.
+            room.Bytes = 0;
+            await WaitUntil(() => Ahead(source).Complete);
+            var held = Ahead(source).Bytes;
+            Assert.IsTrue(held >= 8 * Chunk, held.ToString());
+            Assert.IsTrue(held < 24 * Chunk, held.ToString());
+            await Task.Delay(150);
+            Assert.AreEqual(held, Ahead(source).Bytes);
+
+            // Memory frees up; the next read that moves on sets it growing again.
+            server.Delay = TimeSpan.Zero;
+            room.Bytes = 1 << 20;
+            await Read(source, Chunk, Chunk);
+            await WaitUntil(() => Ahead(source).Bytes == 24 * Chunk);
+            Assert.AreEqual(24 * Chunk, Ahead(source).Bytes);
+            Assert.IsTrue(Ahead(source).Complete);
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task GivesTheExtraBackWhenTheAppRunsWellOverItsMemory()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(64 * 1024));
+        var room = new FakeHeadroom(1 << 20);
+        var source = MakeSource(server, aheadChunks: 4, cacheChunks: 8, maxAheadChunks: 24, headroom: room);
+        try
+        {
+            await Read(source, 0, Chunk);
+            await WaitUntil(() => Ahead(source).Complete);
+            Assert.AreEqual(24 * Chunk, Ahead(source).Bytes);
+
+            // Something else in the app takes far more than the target allows.
+            room.Bytes = -(64L << 20);
+            await Read(source, Chunk, Chunk);
+            await WaitUntil(() => Ahead(source).Bytes <= 4 * Chunk);
+            Assert.AreEqual(4 * Chunk, Ahead(source).Bytes, "the read-ahead every device gets is all that is left");
+            Assert.IsTrue(Ahead(source).Complete);
+            var fetches = server.ReadOffsets.Count;
+            await Task.Delay(100);
+            Assert.AreEqual(fetches, server.ReadOffsets.Count);
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task ABriefJumpAwayKeepsWhatWasBuffered()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(64 * 1024));
+        var source = MakeSource(server, aheadChunks: 8, cacheChunks: 10);
+        try
+        {
+            await Read(source, 0, 100);
+            await WaitUntil(() => Ahead(source).Complete);
+            // FFmpeg (and LibVLC's demuxers) read a Matroska file's index at its
+            // end on the first seek, then land a little further on from where it was.
+            await Read(source, 63 * 1024, 100);
+            var (count, bytes) = await Read(source, 3 * 1024, 100);
+            Assert.AreEqual(100, count);
+            CollectionAssert.AreEqual(server.Data[(3 * 1024)..(3 * 1024 + 100)], bytes);
+            for (var index = 3; index <= 8; index++)
+            {
+                Assert.AreEqual(1, server.ReadOffsets.Count(offset => offset == index * 1024), $"chunk {index} fetched once");
+            }
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
+    [TestMethod]
+    public async Task ASeekLetsGoOfTheOldPlaceOnceReadingHasSettled()
+    {
+        var server = new FakeFileServer(HttpStub.TestData(64 * 1024));
+        var source = MakeSource(server, aheadChunks: 2, cacheChunks: 4);
+        try
+        {
+            await Read(source, 0, Chunk);
+            await WaitUntil(() => Ahead(source).Complete);
+            for (var index = 30; index < 40; index++) await Read(source, index * Chunk, Chunk);
+            // Ten chunks on, the start of the file is no longer kept.
+            await Read(source, 0, 100);
+            Assert.AreEqual(2, server.ReadOffsets.Count(offset => offset == 0));
+        }
+        finally
+        {
+            source.Cancel();
+        }
+    }
+
     [TestMethod]
     public void DefaultsMatchDiff()
     {
@@ -366,6 +614,8 @@ public sealed class BufferedByteSourceTests
         Assert.AreEqual(1 << 20, source.ChunkSize);
         Assert.AreEqual(48L << 20, source.ReadAheadBytes);
         Assert.AreEqual(64L << 20, source.CacheBytes);
+        Assert.AreEqual(384L << 20, source.MaxReadAheadBytes);
+        Assert.AreEqual(500L << 20, source.MemoryTarget);
         CollectionAssert.AreEqual(new[] { 0.25, 0.5, 1, 2, 4, 8 }, source.RetryDelays.Select(delay => delay.TotalSeconds).ToArray());
         Assert.AreEqual(TimeSpan.FromSeconds(20), source.KeepAliveInterval);
     }

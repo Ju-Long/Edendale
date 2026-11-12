@@ -144,6 +144,45 @@ public static class PlayerLogic
             || time >= length - TimeSpan.FromSeconds(2);
     }
 
+    /// <summary>
+    /// Whether an end of media is a remote read that gave up rather than the
+    /// end of the file. LibVLC's custom input turns a failed read into the end
+    /// of the stream, so a dropped link would otherwise finish the episode and
+    /// play the next one; Apple counts only <see cref="IsNaturalEnd"/> as
+    /// finished. A source that failed earlier and recovered still ends
+    /// naturally at the end.
+    /// </summary>
+    public static bool EndIsFailure(bool sourceFailed, TimeSpan time, TimeSpan? duration) =>
+        sourceFailed && !IsNaturalEnd(time, duration);
+
+    // ------------------------------------------------------------------
+    // Buffering (apple-27.1 5020ec3)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Whether the buffering indicator shows: the file is opening, LibVLC is
+    /// filling its buffer, or the playback clock has stood still
+    /// (<see cref="PlaybackStallWatch"/>). Never while the player is paused,
+    /// stopped, or at the end (<paramref name="active"/> false).
+    /// </summary>
+    public static bool IsBuffering(bool active, bool opening, bool filling, bool stalled) =>
+        active && (opening || filling || stalled);
+
+    // ------------------------------------------------------------------
+    // Dimming (Ctrl+↑/↓, apple-27.1 7c73875)
+    // ------------------------------------------------------------------
+
+    /// <summary>The darkest the player dims: 15 % of the picture's light.</summary>
+    public const double MinimumDimming = 0.15;
+
+    /// <summary>
+    /// How much of the picture's light a player level 0…1 lets through, as
+    /// macOS scales the display: level 1 leaves the picture as it is and level
+    /// 0 keeps 15 %, so the darkest step never goes black.
+    /// </summary>
+    public static double DimmingScale(double level) =>
+        MinimumDimming + (1 - MinimumDimming) * Math.Clamp(level, 0, 1);
+
     // ------------------------------------------------------------------
     // Seeking
     // ------------------------------------------------------------------

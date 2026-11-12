@@ -2063,4 +2063,8 @@ IS SILENT</value>
     <value>Downloaded sections</value>
     <comment>Screen-reader name of the Downloaded page's section chips.</comment>
   </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Buffering</value>
+    <comment>Screen-reader name of the player's buffering indicator, also announced when a stream stalls.</comment>
+  </data>
 </root>

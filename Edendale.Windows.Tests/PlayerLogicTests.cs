@@ -173,4 +173,52 @@ public sealed class PlayerLogicTests
         Assert.AreEqual(0, PlayerLogic.ChapterMarks([10_000], 0).Count);
         Assert.AreEqual(0, PlayerLogic.ChapterMarks([10_000], -1).Count);
     }
+
+    // ------------------------------------------------------------------
+    // apple-27.1: buffering, a failed stream's end, and dimming
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public void BufferingShowsWhileOpeningFillingOrStalledButNeverPaused()
+    {
+        Assert.IsTrue(PlayerLogic.IsBuffering(active: true, opening: true, filling: false, stalled: false));
+        Assert.IsTrue(PlayerLogic.IsBuffering(active: true, opening: false, filling: true, stalled: false));
+        Assert.IsTrue(PlayerLogic.IsBuffering(active: true, opening: false, filling: false, stalled: true));
+        Assert.IsFalse(PlayerLogic.IsBuffering(active: true, opening: false, filling: false, stalled: false));
+        Assert.IsFalse(PlayerLogic.IsBuffering(active: false, opening: true, filling: true, stalled: true), "paused, stopped, or ended");
+    }
+
+    [TestMethod]
+    public void AFailedStreamEndsInAnErrorUnlessItReachedTheEnd()
+    {
+        var duration = TimeSpan.FromSeconds(1200);
+        Assert.IsTrue(PlayerLogic.EndIsFailure(true, TimeSpan.FromSeconds(480), duration));
+        Assert.IsFalse(PlayerLogic.EndIsFailure(true, TimeSpan.FromSeconds(1152), duration), "past 95 %");
+        Assert.IsFalse(PlayerLogic.EndIsFailure(true, TimeSpan.FromSeconds(28.5), TimeSpan.FromSeconds(30)), "the last two seconds");
+        Assert.IsFalse(PlayerLogic.EndIsFailure(false, TimeSpan.FromSeconds(480), duration), "a file that simply ended");
+        Assert.IsTrue(PlayerLogic.EndIsFailure(true, TimeSpan.FromSeconds(480), null), "an unknown length is never the natural end");
+    }
+
+    /// <summary>Ports Apple's ScreenBrightnessDimmingTests.</summary>
+    [TestMethod]
+    public void DimmingKeepsAFloorAndClamps()
+    {
+        Assert.AreEqual(1, PlayerLogic.DimmingScale(1), Epsilon);
+        Assert.AreEqual(0.15, PlayerLogic.DimmingScale(0), Epsilon);
+        Assert.AreEqual(0.575, PlayerLogic.DimmingScale(0.5), Epsilon);
+        Assert.AreEqual(0.15, PlayerLogic.DimmingScale(-1), Epsilon);
+        Assert.AreEqual(1, PlayerLogic.DimmingScale(3), Epsilon);
+    }
+
+    [TestMethod]
+    public void DimmingStepsDownFromThePictureAsItIsWithoutDrift()
+    {
+        var level = PlayerLogic.AdjustedLevel(1, PlayerLogic.LevelStep);
+        Assert.AreEqual(1, level, Epsilon, "100 % is the picture as it is, the top");
+        for (var step = 0; step < 10; step++) level = PlayerLogic.AdjustedLevel(level, -PlayerLogic.LevelStep);
+        Assert.AreEqual(0.5, level, Epsilon);
+        for (var step = 0; step < 20; step++) level = PlayerLogic.AdjustedLevel(level, -PlayerLogic.LevelStep);
+        Assert.AreEqual(0, level, Epsilon);
+        Assert.AreEqual(PlayerLogic.MinimumDimming, PlayerLogic.DimmingScale(level), Epsilon);
+    }
 }

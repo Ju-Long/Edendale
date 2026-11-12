@@ -153,6 +153,23 @@
             </Grid>
         </Grid>
 
+        <!-- 5020ec3: buffering, in the play button's place, while the file
+             opens or a stream refills. A sibling of the controls, so it
+             stays while they hide; it never takes input. -->
+        <ProgressRing
+            x:Name="BufferingRing"
+            x:Uid="PlayerBufferingRing"
+            Width="64"
+            Height="64"
+            IsActive="False"
+            Visibility="Collapsed"
+            IsHitTestVisible="False"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Foreground="{StaticResource EdendaleGoldBrush}"
+            AutomationProperties.Name="Buffering"
+            AutomationProperties.LiveSetting="Polite" />
+
         <!-- F.5: a pill near the top for volume, mute, brightness, speed while
              holding, and skips. It never takes input; screen readers hear the
              same text through the live region. -->
