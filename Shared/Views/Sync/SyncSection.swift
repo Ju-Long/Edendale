@@ -49,6 +49,14 @@ struct SyncSection: View {
                                 deviceToRemove = device
                             }
                             .archiveButtonStyle(.ghost)
+                            .confirmationDialog("Remove Device", isPresented: isRemoving(device)) {
+                                Button("Remove \(device.name)", role: .destructive) {
+                                    Task { try? await sync.removeDevice(fileName: device.fileName) }
+                                }
+                                Button("Cancel", role: .cancel) {}
+                            } message: {
+                                Text("Deletes \(device.name)'s file from the space. If it syncs again it writes a new one, so also sign Edendale out there or revoke its access at your storage provider.")
+                            }
                         }
                     }
                 }
@@ -62,6 +70,12 @@ struct SyncSection: View {
                         .archiveButtonStyle(.ghost)
                     Button("Turn Off", role: .destructive) { confirmTurnOff = true }
                         .archiveButtonStyle(.ghost)
+                        .confirmationDialog("Turn Off Sync", isPresented: $confirmTurnOff) {
+                            Button("Turn Off", role: .destructive) { sync.setLocation(nil) }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("Your watch history stays on this device. Your file stays in the sync folder until you delete it.")
+                        }
                 }
             } else {
                 SettingsNote(String(localized: "Keep your watch history in step across your devices through storage you own: a folder, iCloud Drive, Google Drive, OneDrive, Dropbox, or a WebDAV, SMB, or SFTP server. Off until you choose a location."))
@@ -72,6 +86,15 @@ struct SyncSection: View {
             }
 
             SettingsNote(String(localized: "Sync files are readable JSON: anyone who can open the sync folder can read your watch history. Logins never go into the folder."))
+                // Every presentation here hangs off a single row. Outside
+                // the Mac this section is a List Section, which hands its
+                // modifiers to each of its rows: a sheet on the whole
+                // section is presented once per row, and the failed extra
+                // attempts dismiss Settings itself. This note shows whether
+                // sync is on or off, so neither sheet loses its row when
+                // what it does turns sync on or off.
+                .sheet(isPresented: $showSetup) { SyncLocationSetupView().tvSheetInsets() }
+                .sheet(item: $handoffRole) { role in SyncHandoffView(role: role).tvSheetInsets() }
 
             SettingsActions {
                 Button("Set Up Another Device…") { handoffRole = .sender }
@@ -96,26 +119,15 @@ struct SyncSection: View {
                 }
             }
         }
-        .sheet(isPresented: $showSetup) { SyncLocationSetupView() }
-        .sheet(item: $handoffRole) { role in SyncHandoffView(role: role) }
-        .confirmationDialog("Turn Off Sync", isPresented: $confirmTurnOff) {
-            Button("Turn Off", role: .destructive) { sync.setLocation(nil) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Your watch history stays on this device. Your file stays in the sync folder until you delete it.")
-        }
-        .confirmationDialog(
-            "Remove Device",
-            isPresented: Binding(get: { deviceToRemove != nil }, set: { if !$0 { deviceToRemove = nil } }),
-            presenting: deviceToRemove
-        ) { device in
-            Button("Remove \(device.name)", role: .destructive) {
-                Task { try? await sync.removeDevice(fileName: device.fileName) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { device in
-            Text("Deletes \(device.name)'s file from the space. If it syncs again it writes a new one, so also sign Edendale out there or revoke its access at your storage provider.")
-        }
+    }
+
+    /// Whether the removal dialog is up for this device, so each Remove
+    /// button carries its own dialog.
+    private func isRemoving(_ device: (fileName: String, name: String)) -> Binding<Bool> {
+        Binding(
+            get: { deviceToRemove?.fileName == device.fileName },
+            set: { if !$0 { deviceToRemove = nil } }
+        )
     }
 
     private var lastSyncedDetail: String {

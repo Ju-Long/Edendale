@@ -19,6 +19,16 @@
 //  has. An idle connection (paused playback) gets a keep-alive so the
 //  server, or a NAT on the way, doesn't drop it.
 //
+//  The 48 MiB is what every device can spare. While the whole app uses less
+//  than 500 MiB the worker reads on, up to 384 MiB ahead, so a light player
+//  (a phone-sized picture, sound alone) turns its spare memory into minutes
+//  of buffer. Once the app is past that it reads no further, and well past
+//  it the extra is given back, farthest chunks first.
+//
+//  A link slower than the video still empties the buffer. The source says
+//  how much it holds past the read position, so the player can stop and
+//  refill instead of running ahead of its data (see RebufferPolicy).
+//
 
 #import <Foundation/Foundation.h>
 #import "FFmpegReader.h"
@@ -44,6 +54,10 @@ NS_SWIFT_NAME(BufferedFile)
 - (void)abort;
 @end
 
+/// The memory the app may still take, in bytes; negative once it is past
+/// what it should use. Called on the source's worker thread.
+typedef int64_t (^EDMemoryHeadroom)(void);
+
 /// Connects and opens the file; runs on the source's worker thread. Returns
 /// nil with `error` set (its localized description is shown to the user).
 typedef id<EDBufferedFile> _Nullable (^EDBufferedFileOpener)(NSError **error);
@@ -61,16 +75,31 @@ NS_SWIFT_NAME(BufferedByteSource)
 
 /// Bytes per fetch. Default 1 MiB.
 @property (nonatomic) NSInteger chunkSize;
-/// How far past the read position to fetch. Default 48 MiB.
+/// How far past the read position to fetch, whatever memory the app uses.
+/// Default 48 MiB.
 @property (nonatomic) NSInteger readAheadBytes;
-/// Most bytes kept in memory; at least readAheadBytes plus two chunks.
-/// Default 64 MiB.
+/// How far to fetch while the app uses less than memoryTarget; never less
+/// than readAheadBytes. Default 384 MiB.
+@property (nonatomic) NSInteger maxReadAheadBytes;
+/// The app memory (its footprint, as Xcode's gauge shows it) up to which
+/// the read-ahead grows past readAheadBytes. Default 500 MiB.
+@property (nonatomic) int64_t memoryTarget;
+/// Replaces the measurement behind memoryTarget. Tests set it.
+@property (nonatomic, copy, nullable) EDMemoryHeadroom memoryHeadroom;
+/// readAheadBytes plus what is kept outside the read-ahead (just behind
+/// the read position, or where reading was before a seek); the difference
+/// is at least two chunks. Default 64 MiB.
 @property (nonatomic) NSInteger cacheBytes;
 /// Delays before each reconnect after a failure; their count is the number
 /// of retries. Default 0.25, 0.5, 1, 2, 4, 8 s.
 @property (nonatomic, copy) NSArray<NSNumber *> *retryDelays;
 /// Idle time before a keep-alive; 0 disables it. Default 20 s.
 @property (nonatomic) NSTimeInterval keepAliveInterval;
+
+/// The bytes fetched past the end of the last read, for the player's
+/// rebuffering (see EDByteSource). `complete` once the read-ahead for that
+/// position is all here, or has given up.
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete NS_SWIFT_NAME(bufferedBytesAhead(complete:));
 
 @end
 

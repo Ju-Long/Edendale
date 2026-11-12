@@ -106,13 +106,29 @@ final class WatchProgressStore {
         persist([stamped], local: true)
     }
 
-    func markCompleted(tmdbId: Int, mediaType: WatchMediaType) {
+    /// Marks an item watched. An episode passes its show and numbers: they
+    /// are how Continue Watching finds the next episode and how the sync
+    /// file names the record (SYNC-PROTOCOL.md §6.1); without them a mark
+    /// made by hand neither suggested the next episode nor reached devices
+    /// syncing through files. Context a row already has is kept.
+    func markCompleted(
+        tmdbId: Int,
+        mediaType: WatchMediaType,
+        showTmdbId: Int? = nil,
+        seasonNumber: Int? = nil,
+        episodeNumber: Int? = nil
+    ) {
         var p = progressMap[cacheKey(tmdbId, mediaType)]
             ?? tombstones[cacheKey(tmdbId, mediaType)]
             ?? WatchProgress(tmdbId: tmdbId, mediaType: mediaType)
         p.position = 1.0
         p.isCompleted = true
         p.lastWatchedAt = Date()
+        if mediaType == .episode {
+            p.showTmdbId = p.showTmdbId.flatMap { $0 > 0 ? $0 : nil } ?? showTmdbId
+            p.seasonNumber = p.seasonNumber ?? seasonNumber
+            p.episodeNumber = p.episodeNumber ?? episodeNumber
+        }
         update(p)
     }
 

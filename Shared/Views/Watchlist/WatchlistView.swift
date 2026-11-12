@@ -107,6 +107,8 @@ struct WatchlistView: View {
             .navigationDestination(for: MediaRef.self) { ref in
                 MediaDetailView(source: .tmdb(ref))
             }
+            // Apple TV opens a detail page's cast in place (see MediaDetailView).
+            .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             .settingsToolbar()
             .task(id: audienceVerificationKey) {
                 await youngAudienceFilter.verify(watchlistItems.map(\.ref))

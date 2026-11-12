@@ -8,9 +8,10 @@
 //  has no device sign-in, so Apple TV asks a nearby iPhone or iPad instead,
 //  the way YouTube is approved on a phone:
 //
-//    1. Apple TV: Link Source → provider → Continue on iPhone or iPad opens
-//       DeviceDiscoveryUI's DevicePicker, listing iPhones and iPads on the
-//       same network, signed in to the TV user's iCloud account (or a family
+//    1. Apple TV: Link Source → provider opens DeviceDiscoveryUI's device
+//       list (straight away with no account there yet, otherwise from
+//       Continue on iPhone or iPad), listing iPhones and iPads on the same
+//       network, signed in to the TV user's iCloud account (or a family
 //       member's), with Edendale installed.
 //    2. Choosing one opens an NWConnection with `.applicationService`
 //       parameters, which the system encrypts, and sends a Request.
@@ -45,6 +46,10 @@ nonisolated enum AccountHandoff {
         let kind: MediaSourceKind
         /// Shown in the confirmation on the phone.
         let deviceName: String
+        /// The TV wants the account for sync files (ENHANCEMENT.md K.8): a
+        /// phone that has to sign in skips Google's picker. Left out of
+        /// library requests; builds before it ignore the key.
+        var forSync: Bool? = nil
     }
 
     struct Response: Codable, Equatable, Sendable {

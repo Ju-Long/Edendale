@@ -50,6 +50,17 @@ struct RootView: View {
     @State private var searchModel = SearchModel()
     #else
     @State private var selectedTab: RootTab = .movies
+    /// What the Downloaded tab shows: its whole page, or one section, as
+    /// chosen in the section picker the tab bar carries (see
+    /// DownloadedSectionPicker); the macOS sidebar lists them as rows.
+    @State private var downloadedSection: DownloadedSection?
+    /// Pages pushed on the Downloaded tab's stack: the tab bar's section
+    /// picker shows only over the tab's root page.
+    @State private var downloadedDepth = 0
+    #endif
+    #if os(tvOS)
+    /// So Back in the sidebar returns from a pushed page (see PushedPage).
+    @State private var pushedPages = PushedPages()
     #endif
     @State private var externalDetail: RoutedMediaDetail?
     /// A handoff code opened as a link (the Camera app, a tap): the code
@@ -72,12 +83,16 @@ struct RootView: View {
         .sheet(item: $externalDetail) { destination in
             NavigationStack {
                 MediaDetailView(source: destination.source)
+                    // Apple TV opens a detail page's cast in place (see
+                    // MediaDetailView).
+                    .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             }
             // The environment set above wraps `navigation` only, not this
             // sheet; without it a routed link (widget, Top Shelf, Siri)
             // traps on MediaDetailView's SearchCoordinator.
             .environment(moviesModel)
             .environment(searchCoordinator)
+            .tvSheetInsets()
         }
         .confirmationDialog(
             "Pair with \(scannedHandoff?.name ?? "")?",
@@ -93,6 +108,7 @@ struct RootView: View {
         }
         .sheet(item: $handoff) { request in
             SyncHandoffView(role: request.role, scanned: request.payload)
+                .tvSheetInsets()
         }
         // A cast tap anywhere sets `pendingPerson`; jump to the Search tab so
         // it can load that person's filmography.
@@ -180,6 +196,7 @@ struct RootView: View {
             )
         }
         #else
+        let downloadedSections = self.downloadedSections
         TabView(selection: $selectedTab) {
             Tab("Movies & Shows", image: "clapperboard", value: RootTab.movies) {
                 MoviesShowsView()
@@ -192,7 +209,12 @@ struct RootView: View {
             }
 
             Tab("Downloaded", image: "folder-closed", value: RootTab.downloaded) {
-                DownloadedView()
+                DownloadedView(
+                    section: downloadedSection,
+                    // Where the tab bar can't carry the picker, the page does.
+                    sectionSelection: DownloadedSectionPicker.ridesOnTabBar ? nil : $downloadedSection,
+                    onNavigationDepthChange: { downloadedDepth = $0 }
+                )
             }
 
             #if os(tvOS) || os(visionOS)
@@ -206,6 +228,25 @@ struct RootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        #if os(iOS)
+        // Downloaded's sections extend out of the tab bar instead of
+        // becoming sidebar rows, and only over that tab's root page.
+        .modifier(DownloadedSectionAccessory(
+            isEnabled: selectedTab == .downloaded
+                && downloadedDepth == 0
+                && DownloadedSectionPicker.isOffered(for: downloadedSections),
+            selection: $downloadedSection,
+            sections: downloadedSections
+        ))
+        #endif
+        // A section that empties falls back to the whole page.
+        .onChange(of: downloadedSections) { _, sections in
+            downloadedSection = DownloadedSection.resolved(downloadedSection, available: sections)
+        }
+        #if os(tvOS)
+        .sidebarBackReturnsFromPushedPages()
+        .environment(pushedPages)
+        #endif
         #endif
     }
 
@@ -233,7 +274,10 @@ struct RootView: View {
             $0.isInWatchlist && youngAudienceFilter.allows($0.ref)
         })
     }
+    #endif
 
+    /// The Downloaded sections with something to show: the macOS sidebar's
+    /// child rows, and the choices of the tab bar's section picker.
     private var downloadedSections: [DownloadedSection] {
         // Same show order as the Downloaded page, which decides between
         // duplicate show records.
@@ -250,7 +294,6 @@ struct RootView: View {
             shows: shows
         )
     }
-    #endif
 
     private var hasWatchlistItems: Bool {
         watchlistStore.items.contains {
@@ -332,7 +375,9 @@ struct RootView: View {
             guard await isVisibleToSelectedAudience(
                 MediaRef(id: tmdbId, mediaType: .movie)
             ) else { return }
-            if let movie = libraryMovies.first(where: { $0.tmdbId == tmdbId }) {
+            // Of several copies, the one played last (its source).
+            let copies = libraryMovies.filter { $0.tmdbId == tmdbId }
+            if let movie = PlaybackSources.mostRecentlyPlayed(copies, lastPlayed: \.lastPlayedAt) ?? copies.first {
                 await playerSession.play(movie: movie)
             } else {
                 selectedTab = .movies
@@ -342,7 +387,8 @@ struct RootView: View {
             }
 
         case .playEpisode(let tmdbId):
-            if let episode = libraryEpisodes.first(where: { $0.tmdbId == tmdbId }) {
+            let copies = libraryEpisodes.filter { $0.tmdbId == tmdbId }
+            if let episode = PlaybackSources.mostRecentlyPlayed(copies, lastPlayed: { $0.show?.lastPlayedAt }) ?? copies.first {
                 guard await isVisibleToSelectedAudience(episode) else { return }
                 await playerSession.play(episode: episode)
             } else {

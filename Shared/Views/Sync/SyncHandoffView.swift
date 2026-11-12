@@ -446,7 +446,7 @@ struct SyncHandoffView: View {
         followUpError = nil
         Task {
             do {
-                let signIn = try await accounts.signIn(kind: .googleDrive, loginHint: hint)
+                let signIn = try await accounts.signIn(kind: .googleDrive, loginHint: hint, purpose: .sync)
                 sync.setLocation(SyncLocation(provider: .googleDrive, space: space, accountKey: signIn.account.key, googleFolderID: folderID))
                 followUp = nil
             } catch OAuthError.cancelled {

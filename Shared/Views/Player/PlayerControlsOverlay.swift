@@ -6,7 +6,8 @@
 //  play/pause in the center, timeline along the bottom, side panels on the
 //  trailing edge (docked beside the video on macOS; see PlayerScreen).
 //  Taps on empty overlay space hide the controls; on tvOS an invisible
-//  focus catcher brings them back.
+//  focus catcher brings them back. On an iPhone Duo standing half-open the
+//  controls move below the fold instead (see PlayerTabletop).
 //
 
 import SwiftUI
@@ -23,6 +24,12 @@ struct PlayerControlsOverlay: View {
 
     #if os(iOS) || os(macOS)
     let pipSource: SampleBufferPiPSource?
+    #endif
+
+    #if os(iOS)
+    /// Set while an iPhone Duo stands half-open in portrait: the controls
+    /// move below the fold instead of covering the picture.
+    var tabletop: PlayerTabletopLayout? = nil
     #endif
 
     #if os(tvOS)
@@ -54,25 +61,15 @@ struct PlayerControlsOverlay: View {
             PlayerPointerSurface(chrome: chrome)
             #endif
 
-            if chrome.controlsVisible {
-                scrims
-                controls
+            #if os(iOS)
+            if let tabletop {
+                tabletopLayout(tabletop)
                     .transition(.opacity)
-                    #if os(tvOS)
-                    .onAppear { seedFocus() }
-                    #endif
+            } else {
+                overlayLayers
             }
-
-            #if os(tvOS)
-            if !chrome.controlsVisible {
-                revealCatcher
-            }
-            #endif
-
-            segmentPrompt
-            // macOS docks the panels beside the video (see PlayerScreen).
-            #if !os(macOS)
-            panelHost
+            #else
+            overlayLayers
             #endif
         }
         .animation(.easeInOut(duration: 0.2), value: chrome.controlsVisible)
@@ -104,6 +101,48 @@ struct PlayerControlsOverlay: View {
             guard current == nil, let previous else { return }
             Task { @MainActor in focusedControl = .tool(previous) }
         }
+        // While the controls are hidden, focus rests on a prompt over the
+        // picture — the Up Next card ahead of a skip prompt — instead of the
+        // reveal catcher, so Select acts on it straight away. The controls
+        // keep their own focus while they are up.
+        .onChange(of: chrome.defaultPrompt, initial: true) { _, _ in focusPromptIfHidden() }
+        .onChange(of: chrome.controlsVisible) { _, _ in focusPromptIfHidden() }
+        .onChange(of: chrome.promptFocusRequest) { _, request in
+            guard request?.prompt == .segmentSkip else { return }
+            Task { @MainActor in segmentFocused = true }
+        }
+        #endif
+    }
+
+    /// The chrome laid over the full-screen picture.
+    @ViewBuilder
+    private var overlayLayers: some View {
+        if chrome.controlsVisible {
+            scrims
+            controls
+                .transition(.opacity)
+                #if os(tvOS)
+                .onAppear { seedFocus() }
+                #endif
+        }
+
+        #if os(tvOS)
+        if !chrome.controlsVisible {
+            revealCatcher
+        }
+        #endif
+
+        // A stream that ran out of data says so even with the chrome hidden;
+        // the picture would otherwise just stand still.
+        if !chrome.controlsVisible && player.isRebuffering {
+            bufferingIndicator
+                .allowsHitTesting(false)
+        }
+
+        segmentPrompt(bottomPadding: chrome.controlsVisible ? 100 : 48)
+        // macOS docks the panels beside the video (see PlayerScreen).
+        #if !os(macOS)
+        panelHost
         #endif
     }
 
@@ -115,8 +154,9 @@ struct PlayerControlsOverlay: View {
     /// Independent of the transport's auto-hide timer. The opaque semantic
     /// surface stays readable against bright video without covering subtitles
     /// at the center of the frame. No animated movement is needed for focus.
+    /// `bottomPadding` keeps it clear of the timeline when one is showing.
     @ViewBuilder
-    private var segmentPrompt: some View {
+    private func segmentPrompt(bottomPadding: CGFloat) -> some View {
         if let segment = visibleSegment {
             Button(action: session.skipCurrentSegment) {
                 Text(segment.kind.title)
@@ -134,13 +174,15 @@ struct PlayerControlsOverlay: View {
             .buttonStyle(.plain)
             .focused($segmentFocused)
             .focusEffectDisabled()
-            #if !os(tvOS)
+            #if os(tvOS)
+            .playerPromptRemoteMoves(chrome: chrome, prompt: .segmentSkip)
+            #else
             .onHover { segmentHovered = $0 }
             .keyboardShortcut("s", modifiers: [])
             #endif
             .accessibilityHint("Skip this segment and continue playback")
             .padding(.horizontal, 24)
-            .padding(.bottom, chrome.controlsVisible ? 100 : 48)
+            .padding(.bottom, bottomPadding)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             .transaction { if reduceMotion { $0.animation = nil } }
         }
@@ -152,6 +194,17 @@ struct PlayerControlsOverlay: View {
     /// accept it, and the move is silently dropped.
     private func seedFocus() {
         Task { @MainActor in focusedControl = .center }
+    }
+
+    /// Hands focus to the default prompt while the controls are hidden. A
+    /// tick later, like `seedFocus`: a prompt that has only just appeared
+    /// can't take focus yet, and the focus engine settles focus itself as
+    /// the controls leave.
+    private func focusPromptIfHidden() {
+        Task { @MainActor in
+            guard !chrome.controlsVisible else { return }
+            chrome.focusDefaultPrompt()
+        }
     }
     #endif
 
@@ -346,13 +399,17 @@ struct PlayerControlsOverlay: View {
 
     // MARK: - Center
 
+    private var bufferingIndicator: some View {
+        ProgressView()
+            .controlSize(.large)
+            .tint(Theme.gold)
+            .accessibilityLabel("Buffering")
+    }
+
     @ViewBuilder
     private var centerButton: some View {
-        if player.state == .opening || player.state == .buffering {
-            ProgressView()
-                .controlSize(.large)
-                .tint(Theme.gold)
-                .accessibilityLabel("Buffering")
+        if player.state == .opening || player.state == .buffering || player.isRebuffering {
+            bufferingIndicator
         } else {
             Button {
                 chrome.togglePlayPause()
@@ -400,6 +457,129 @@ struct PlayerControlsOverlay: View {
         }
         return player.currentTime.playbackSeconds
     }
+
+    // MARK: - Tabletop (iPhone Duo)
+
+    #if os(iOS)
+    /// Room left between the fold and the first control: the crease is hard
+    /// to see and to touch.
+    private static let foldClearance: CGFloat = 20
+
+    /// The iPhone Duo stood half-open. Nothing covers the picture above the
+    /// fold except a skip prompt; the flat half below holds the controls,
+    /// which stay up, or an open panel in their place.
+    private func tabletopLayout(_ layout: PlayerTabletopLayout) -> some View {
+        GeometryReader { proxy in
+            let insets = proxy.safeAreaInsets
+            VStack(spacing: 0) {
+                ZStack {
+                    segmentPrompt(bottomPadding: 16)
+                }
+                .padding(.trailing, insets.trailing)
+                .frame(maxWidth: .infinity)
+                .frame(height: layout.foldY)
+
+                tabletopDeck
+                    .padding(.top, Self.foldClearance)
+                    .padding(.bottom, max(insets.bottom, 12))
+                    .padding(.leading, insets.leading)
+                    .padding(.trailing, insets.trailing)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: layout.deckHeight)
+                    .background(Theme.background)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .ignoresSafeArea()
+        }
+    }
+
+    /// An open panel takes the controls' place below the fold, so the
+    /// picture stays in view while it is open.
+    @ViewBuilder
+    private var tabletopDeck: some View {
+        if let panel = chrome.activePanel {
+            PlayerPanelContent(panel: panel, chrome: chrome, player: player, item: item)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .accessibilityElement(children: .contain)
+                .id(panel)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else {
+            tabletopControls
+                .padding(.horizontal, 20)
+                .transition(.opacity)
+        }
+    }
+
+    /// Top to bottom: close and tools, the title, the timeline, transport,
+    /// then volume, as in the system player.
+    private var tabletopControls: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center) {
+                PlayerExitButton(action: exit, onFocus: chipDidFocus)
+                Spacer(minLength: 12)
+                trailingTools
+            }
+
+            titleBlock
+                .frame(maxWidth: 480)
+                .padding(.top, 12)
+
+            Spacer(minLength: 12)
+            bottomBar
+            Spacer(minLength: 12)
+
+            HStack(spacing: 40) {
+                tabletopSkipButton(.backward)
+                // Buffering swaps in a smaller spinner; hold the room so the
+                // skip buttons don't jump.
+                centerButton
+                    .frame(width: 88, height: 88)
+                tabletopSkipButton(.forward)
+            }
+
+            Spacer(minLength: 12)
+            tabletopVolume
+        }
+    }
+
+    /// Skips by the viewer's length, drawn with the same numbered arrow as
+    /// Settings ▸ Player Controls. Full screen, a double-tap does this.
+    private func tabletopSkipButton(_ direction: SkipDirection) -> some View {
+        let interval = chrome.controls.skipInterval(for: direction)
+        return PlayerIconChip(
+            icon: interval.icon(for: direction),
+            label: direction == .backward
+                ? String(localized: "Back \(interval.seconds) seconds")
+                : String(localized: "Forward \(interval.seconds) seconds"),
+            diameter: 64,
+            glyphSize: 28,
+            onFocus: chipDidFocus
+        ) {
+            chrome.skip(direction)
+        }
+    }
+
+    /// The player's own volume, which the right-side swipe changes full
+    /// screen. Moving it unmutes, as every volume change does.
+    private var tabletopVolume: some View {
+        HStack(spacing: 16) {
+            Text("Volume")
+                .labelCaps()
+                .accessibilityHidden(true)
+            Slider(
+                value: Binding(
+                    get: { Double(player.isMuted ? 0 : player.volume) },
+                    set: { chrome.setVolume(Float($0), showsHUD: false) }
+                ),
+                in: 0...1
+            ) {
+                Text("Volume")
+            }
+            .labelsHidden()
+            .tint(Theme.gold)
+        }
+    }
+    #endif
 
     // MARK: - Side panels
 
@@ -501,10 +681,16 @@ struct PlayerControlsOverlay: View {
     /// down peeks the timeline. While the controls are visible this view is
     /// gone, so the same swipes move focus between the actual buttons instead.
     /// A left/right press-and-*hold* is read separately by `TVRemoteInput`,
-    /// which drives slow/fast playback for as long as the thumb rests there.
+    /// which drives slow/fast playback for as long as the thumb rests there,
+    /// and so is a *circle* around the ring, which jogs the timeline.
     private var revealCatcher: some View {
         Button {
-            chrome.showControls()
+            // A click during a jog settles it where it is.
+            if chrome.jog != nil {
+                chrome.endJog()
+            } else {
+                chrome.showControls()
+            }
         } label: {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -513,15 +699,17 @@ struct PlayerControlsOverlay: View {
         .buttonStyle(RevealCatcherButtonStyle())
         .accessibilityLabel("Show playback controls")
         .onMoveCommand { direction in
+            // Swipes recognized inside a circle on the ring are part of
+            // the jog gesture, not skips (see TVRemoteInput).
+            guard !chrome.isRemoteCircling else { return }
             switch direction {
             case .left:
                 chrome.remoteSkip(.backward)
             case .right:
                 chrome.remoteSkip(.forward)
             case .down:
-                if visibleSegment != nil {
-                    segmentFocused = true
-                } else {
+                // Back onto a prompt a swipe left behind, else the timeline.
+                if !chrome.focusDefaultPrompt() {
                     chrome.showTimeline()
                 }
             case .up:
@@ -533,6 +721,40 @@ struct PlayerControlsOverlay: View {
     }
     #endif
 }
+
+#if os(tvOS)
+extension View {
+    /// A prompt holding the remote's focus while the controls are hidden
+    /// keeps the reveal catcher's swipes — left/right seek, up shows the
+    /// controls, down peeks the timeline — so only Select belongs to it.
+    /// Down from the Up Next card steps to a skip prompt first. While the
+    /// controls are up, swipes only move focus among them.
+    func playerPromptRemoteMoves(
+        chrome: PlayerChromeModel?,
+        prompt: PlayerLogic.Prompt
+    ) -> some View {
+        onMoveCommand { direction in
+            guard let chrome, !chrome.controlsVisible else { return }
+            switch direction {
+            case .left:
+                chrome.remoteSkip(.backward)
+            case .right:
+                chrome.remoteSkip(.forward)
+            case .up:
+                chrome.showControls()
+            case .down:
+                if prompt == .upNext, chrome.showsSegmentSkip {
+                    chrome.focus(.segmentSkip)
+                } else {
+                    chrome.showTimeline()
+                }
+            @unknown default:
+                break
+            }
+        }
+    }
+}
+#endif
 
 #if os(tvOS)
 /// Renders only the label so the full-screen reveal catcher stays invisible

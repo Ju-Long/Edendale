@@ -27,6 +27,13 @@ final class Movie {
     var dateAdded: Date
     /// True when the file lives in iCloud Drive and may not be locally present.
     var isICloudItem: Bool
+    /// When TMDB last answered with no match for this file. The metadata
+    /// sweep waits `LibraryController.unmatchedRetryInterval` before asking
+    /// again; a failed request leaves it nil so the next sweep retries.
+    var metadataCheckedAt: Date?
+    /// When this copy last started playing. Of several copies of one title
+    /// (different sources or endpoints), the one played last is the default.
+    var lastPlayedAt: Date?
 
     var folder: VideoFolder?
 
@@ -62,5 +69,13 @@ final class Movie {
         var descriptor = FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == tmdbId })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
+    }
+
+    /// The copy of a TMDB title to play when several sources hold one: the
+    /// copy played last, otherwise any.
+    static func preferredCopy(tmdbId: Int, in context: ModelContext) -> Movie? {
+        let descriptor = FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == tmdbId })
+        let copies = (try? context.fetch(descriptor)) ?? []
+        return PlaybackSources.mostRecentlyPlayed(copies, lastPlayed: \.lastPlayedAt) ?? copies.first
     }
 }

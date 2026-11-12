@@ -85,8 +85,10 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
     var theaterFeed: VisionTheaterScreenFeed? {
         didSet {
             guard oldValue !== theaterFeed else { return }
-            oldValue?.requestRedraw = nil
-            theaterFeed?.requestRedraw = { [weak self] in self?.setNeedsPausedRedraw() }
+            // The theater's own view takes the feed over as the player
+            // window closes, possibly before this one lets go of it.
+            if oldValue?.source === self { oldValue?.source = nil }
+            theaterFeed?.source = self
         }
     }
     #endif
@@ -303,17 +305,32 @@ public class EnhancedVideoView: MTKView, MTKViewDelegate {
 
     // MARK: - Layout & Surface Ready
 
+    /// The size the paused picture was last laid out at.
+    private var laidOutSize: CGSize = .zero
+
+    /// A paused picture is drawn once, at the size it had then. When the
+    /// view resizes without a SwiftUI update (the iPhone Duo's tabletop
+    /// split moves only the frame), draw it again at the new size rather
+    /// than leave the old drawable stretched over it.
+    private func redrawIfResizedWhilePaused() {
+        guard bounds.size != laidOutSize else { return }
+        laidOutSize = bounds.size
+        setNeedsPausedRedraw()
+    }
+
     #if os(macOS)
     public override func layout() {
         super.layout()
         updatePiPLayer()
         reportReadyIfNeeded()
+        redrawIfResizedWhilePaused()
     }
     #else
     public override func layoutSubviews() {
         super.layoutSubviews()
         updatePiPLayer()
         reportReadyIfNeeded()
+        redrawIfResizedWhilePaused()
     }
 
     public override func didMoveToWindow() {

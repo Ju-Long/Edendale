@@ -11,7 +11,10 @@ final class SpatialUpscaler: @unchecked Sendable {
     let device: MTLDevice
 
     #if canImport(MetalFX)
-    private var spatialScaler: MTLFXSpatialScaler?
+    /// The `MTLFXSpatialScaler`, held untyped: the tvOS SDK marks the scaler
+    /// tvOS 27.1+ while the TV target deploys to 18, and a stored property
+    /// can't carry a newer availability.
+    private var spatialScaler: AnyObject?
     #endif
     private var cachedScalerInputWidth: Int = 0
     private var cachedScalerInputHeight: Int = 0
@@ -103,7 +106,8 @@ final class SpatialUpscaler: @unchecked Sendable {
         commandBuffer: MTLCommandBuffer
     ) -> Bool {
         #if canImport(MetalFX)
-        guard MTLFXSpatialScalerDescriptor.supportsDevice(device) else {
+        guard #available(tvOS 27.1, *),
+              MTLFXSpatialScalerDescriptor.supportsDevice(device) else {
             return false
         }
 
@@ -142,7 +146,7 @@ final class SpatialUpscaler: @unchecked Sendable {
             cachedScalerPixelFormat = format
         }
 
-        guard let scaler = spatialScaler else { return false }
+        guard let scaler = spatialScaler as? any MTLFXSpatialScaler else { return false }
         // MetalFX requires its advertised usage flags and a private output texture.
         // Incompatible caller-owned textures can still use the Lanczos compute pass.
         guard source.usage.contains(scaler.colorTextureUsage),

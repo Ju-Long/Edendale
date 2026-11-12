@@ -24,15 +24,26 @@ extension View {
     }
 }
 
+extension EnvironmentValues {
+    /// Set on the rows of Apple TV Settings, a grouped system List: archive
+    /// buttons there draw as the system's list-row buttons instead.
+    @Entry var archiveButtonsUseSystemStyle = false
+}
+
 private struct ArchiveButtonFocusModifier: ViewModifier {
     let kind: ArchiveButtonStyle.Kind
     let isActive: Bool?
     @FocusState private var isFocused: Bool
+    @Environment(\.archiveButtonsUseSystemStyle) private var usesSystemStyle
 
     func body(content: Content) -> some View {
-        content
-            .focused($isFocused)
-            .buttonStyle(ArchiveButtonStyle(kind: kind, isActive: isActive, isFocused: isFocused))
+        if usesSystemStyle {
+            content.buttonStyle(.automatic)
+        } else {
+            content
+                .focused($isFocused)
+                .buttonStyle(ArchiveButtonStyle(kind: kind, isActive: isActive, isFocused: isFocused))
+        }
     }
 }
 

@@ -4,6 +4,11 @@
 //
 
 #import "EDBufferedByteSource.h"
+#import <TargetConditionals.h>
+#import <mach/mach.h>
+#if !TARGET_OS_OSX
+#import <os/proc.h>
+#endif
 
 /// The state the worker thread and FFmpeg's reads share. The thread keeps
 /// it alive until it exits, so the public object's dealloc can cancel it.
@@ -11,7 +16,10 @@
 @public
     NSInteger _chunkSize;
     NSInteger _readAheadBytes;
+    NSInteger _maxReadAheadBytes;
     NSInteger _cacheBytes;
+    int64_t _memoryTarget;
+    EDMemoryHeadroom _memoryHeadroom;
     NSArray<NSNumber *> *_retryDelays;
     NSTimeInterval _keepAliveInterval;
 }
@@ -22,6 +30,7 @@
                      into:(uint8_t *)buffer
                    length:(NSInteger)length
               shouldAbort:(BOOL (NS_NOESCAPE ^)(void))shouldAbort;
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete;
 - (void)cancel;
 @end
 
@@ -40,6 +49,18 @@
     int64_t _lastChunk;
     /// The chunk FFmpeg read last; read-ahead starts here.
     int64_t _readChunk;
+    /// Where FFmpeg's last read ended.
+    int64_t _readEnd;
+    /// The app had memory to spare at the worker's last look, so the
+    /// read-ahead may grow past `_readAheadBytes`.
+    BOOL _roomy;
+    /// Where reading was before it last jumped, or -1 once it has settled
+    /// at the new place. What is buffered there stays meanwhile: FFmpeg
+    /// jumps away for a moment (to a Matroska file's index at its end, on
+    /// the first seek) and comes straight back.
+    int64_t _heldChunk;
+    /// Chunks read on from the place of the last jump.
+    int64_t _sinceJump;
     /// The chunk a blocked read waits for, or -1.
     int64_t _wanted;
     /// A chunk whose fetch failed while a read waited for it, or -1.
@@ -54,6 +75,8 @@
     id<EDBufferedFile> _liveFile;
 
     // Worker thread only.
+    /// When read-ahead was last given back, in uptime seconds.
+    NSTimeInterval _lastTrim;
     id<EDBufferedFile> _file;
     BOOL _everOpened;
     NSTimeInterval _lastActivity;
@@ -67,10 +90,12 @@
         _chunks = [NSMutableDictionary dictionary];
         _size = -1;
         _lastChunk = INT64_MAX;
-        _wanted = _failedChunk = -1;
+        _wanted = _failedChunk = _heldChunk = -1;
         _chunkSize = 1 << 20;
         _readAheadBytes = 48 << 20;
+        _maxReadAheadBytes = 384 << 20;
         _cacheBytes = 64 << 20;
+        _memoryTarget = 500 << 20;
         _retryDelays = @[@0.25, @0.5, @1, @2, @4, @8];
         _keepAliveInterval = 20;
     }
@@ -81,8 +106,55 @@ static NSTimeInterval EDNow(void) {
     return NSProcessInfo.processInfo.systemUptime;
 }
 
+#if !TARGET_OS_OSX
+/// Memory left free below the app's limit.
+static const int64_t EDMemoryReserve = 256 << 20;
+#endif
+
+/// The app may pass its memory target by this much before read-ahead that
+/// grew into spare memory is given back. Keeps growing and trimming apart.
+static const int64_t EDMemoryTrimSlack = 32 << 20;
+
+/// Seconds between two trims. Freed memory leaves the app's footprint a few
+/// seconds late; trimming again before it has would give back too much.
+static const NSTimeInterval EDMemoryTrimInterval = 15;
+
+/// Reading this many chunks on from where it jumped to has settled there.
+static const int64_t EDJumpSettleChunks = 8;
+
 - (int64_t)aheadChunks {
     return MAX(1, _readAheadBytes / _chunkSize);
+}
+
+- (int64_t)maxAheadChunks {
+    return MAX([self aheadChunks], _maxReadAheadBytes / _chunkSize);
+}
+
+/// How far the worker reads ahead right now.
+- (int64_t)aheadLimitLocked {
+    return _roomy ? [self maxAheadChunks] : [self aheadChunks];
+}
+
+/// Chunks kept outside the read-ahead: just behind the read position, or
+/// left where reading was before a seek.
+- (int64_t)spareChunks {
+    return MAX(2, (_cacheBytes - _readAheadBytes) / _chunkSize);
+}
+
+/// The memory the app may still take before it reaches `_memoryTarget`;
+/// negative once it is past it. On iOS, tvOS and visionOS it also stays
+/// clear of the limit the system sets the app.
+- (int64_t)currentMemoryHeadroom {
+    if (_memoryHeadroom) return _memoryHeadroom();
+    task_vm_info_data_t info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    if (task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&info, &count) != KERN_SUCCESS) return 0;
+    int64_t headroom = _memoryTarget - (int64_t)info.phys_footprint;
+#if !TARGET_OS_OSX
+    // 0 when the app is already over its limit.
+    headroom = MIN(headroom, (int64_t)os_proc_available_memory() - EDMemoryReserve);
+#endif
+    return headroom;
 }
 
 #pragma mark Reads (FFmpeg's worker queue)
@@ -110,8 +182,17 @@ static NSTimeInterval EDNow(void) {
     [self startIfNeededLocked];
     int64_t index = offset / _chunkSize;
     if (_readChunk != index || _prefetchHalted) {
+        if (index == _readChunk + 1) {
+            if (_heldChunk >= 0 && ++_sinceJump >= EDJumpSettleChunks) _heldChunk = -1;
+        } else if (index != _readChunk) {
+            _heldChunk = _readChunk;
+            _sinceJump = 0;
+        }
         _readChunk = index;
         _prefetchHalted = NO;
+        // Chunks now behind the read position go at once, whether or not
+        // the worker has anything to fetch.
+        [self evictLocked];
         [_condition broadcast];
     }
     NSInteger result;
@@ -143,8 +224,30 @@ static NSTimeInterval EDNow(void) {
         [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
     }
     if (_wanted == index) _wanted = -1;
+    if (result >= 0) _readEnd = offset + result;
     [_condition unlock];
     return result;
+}
+
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete {
+    [_condition lock];
+    int64_t bytes = 0;
+    int64_t index = _readEnd / _chunkSize;
+    int64_t last = MIN(_lastChunk, _readChunk + [self maxAheadChunks]);
+    for (; index <= last; index++) {
+        NSData *chunk = _chunks[@(index)];
+        if (!chunk) break;
+        int64_t start = MAX(_readEnd - index * _chunkSize, 0);
+        bytes += MAX((int64_t)chunk.length - start, 0);
+    }
+    // The last chunk the worker fetches for this read position, with the
+    // memory there is now.
+    int64_t end = MIN(_lastChunk, _readChunk + [self aheadLimitLocked]);
+    // After a failure nothing more arrives until a read asks again.
+    BOOL done = _cancelled || _fatal || _prefetchHalted || (_opened && index > end);
+    [_condition unlock];
+    if (complete) *complete = done;
+    return bytes;
 }
 
 - (void)cancel {
@@ -171,6 +274,7 @@ static NSTimeInterval EDNow(void) {
     _started = YES;
     _chunkSize = MAX(_chunkSize, 1);
     _cacheBytes = MAX(_cacheBytes, _readAheadBytes + 2 * _chunkSize);
+    _maxReadAheadBytes = MAX(_maxReadAheadBytes, _readAheadBytes);
     // The thread retains the core until it exits.
     NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(run) object:nil];
     thread.name = @"Edendale.BufferedByteSource";
@@ -183,19 +287,26 @@ static NSTimeInterval EDNow(void) {
 - (void)run {
     for (;;) {
         @autoreleasepool {
+            // Asked outside the lock: it is a call into the kernel.
+            int64_t headroom = [self currentMemoryHeadroom];
             [_condition lock];
-            int64_t target = -1;
+            _roomy = headroom > 0;
+            if (headroom < -EDMemoryTrimSlack && EDNow() - _lastTrim > EDMemoryTrimInterval
+                && [self trimLocked:-headroom]) {
+                _lastTrim = EDNow();
+            }
+            int64_t target = _cancelled ? -1 : [self nextChunkLocked];
             BOOL keepAlive = NO;
-            while (!_cancelled) {
-                target = [self nextChunkLocked];
-                if (target >= 0) break;
+            if (!_cancelled && target < 0) {
                 NSTimeInterval wait = 3600;
                 if (_file && _keepAliveInterval > 0) {
                     NSTimeInterval idle = EDNow() - _lastActivity;
-                    if (idle >= _keepAliveInterval) { keepAlive = YES; break; }
-                    wait = _keepAliveInterval - idle;
+                    if (idle >= _keepAliveInterval) keepAlive = YES;
+                    else wait = _keepAliveInterval - idle;
                 }
-                [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:wait]];
+                // Any wake (a read moved on, a cancel, the timeout) goes
+                // round again and looks at memory afresh.
+                if (!keepAlive) [_condition waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:wait]];
             }
             BOOL cancelled = _cancelled;
             [_condition unlock];
@@ -205,7 +316,7 @@ static NSTimeInterval EDNow(void) {
                 // A dead connection reopens at the next fetch.
                 if (![_file keepAlive]) [self setFile:nil];
                 _lastActivity = EDNow();
-            } else {
+            } else if (target >= 0) {
                 [self fetchChunk:target];
             }
         }
@@ -220,7 +331,7 @@ static NSTimeInterval EDNow(void) {
     if (_fatal) return -1;
     if (_wanted >= 0 && _wanted != _failedChunk && !_chunks[@(_wanted)]) return _wanted;
     if (_prefetchHalted || !_opened) return -1;
-    int64_t end = MIN(_lastChunk, _readChunk + [self aheadChunks]);
+    int64_t end = MIN(_lastChunk, _readChunk + [self aheadLimitLocked]);
     for (int64_t index = _readChunk; index <= end; index++) {
         if (index != _failedChunk && !_chunks[@(index)]) return index;
     }
@@ -320,22 +431,60 @@ static NSTimeInterval EDNow(void) {
     return data;
 }
 
-/// Drops the chunks farthest from the read position, those behind it first.
+/// Whether `index` is in the read-ahead of the read position, or of the
+/// place reading has just jumped from.
+- (BOOL)isHeldLocked:(int64_t)index {
+    int64_t ahead = [self maxAheadChunks];
+    if (index >= _readChunk && index <= _readChunk + ahead) return YES;
+    return _heldChunk >= 0 && index >= _heldChunk && index <= _heldChunk + ahead;
+}
+
+/// Keeps the read-ahead and `spareChunks` more. Of the rest (chunks behind
+/// the read position, or left where reading was before a seek) the
+/// farthest go first, those behind before those ahead.
 - (void)evictLocked {
-    NSUInteger limit = (NSUInteger)MAX(_cacheBytes / _chunkSize, [self aheadChunks] + 2);
-    while (_chunks.count > limit) {
+    int64_t spare = [self spareChunks];
+    for (;;) {
         NSNumber *victim = nil;
         int64_t worst = -1;
+        int64_t outside = 0;
         for (NSNumber *key in _chunks) {
             int64_t index = key.longLongValue;
+            if ([self isHeldLocked:index]) continue;
+            outside++;
             int64_t distance = index < _readChunk ? (_readChunk - index) * 4 : index - _readChunk;
             if (distance > worst) {
                 worst = distance;
                 victim = key;
             }
         }
+        if (outside <= spare || !victim) return;
         [_chunks removeObjectForKey:victim];
     }
+}
+
+/// Gives back `bytes` of the read-ahead that grew into spare memory: first
+/// at the place reading jumped from, then here, the farthest chunks first.
+/// The read-ahead of `_readAheadBytes` always stays. Returns whether there
+/// was anything to give.
+- (BOOL)trimLocked:(int64_t)bytes {
+    int64_t keep = [self aheadChunks];
+    int64_t ahead = [self maxAheadChunks];
+    int64_t starts[2] = { _heldChunk, _readChunk };
+    BOOL trimmed = NO;
+    for (int i = 0; i < 2; i++) {
+        if (starts[i] < 0) continue;
+        for (int64_t index = starts[i] + ahead; index > starts[i] + keep && bytes > 0; index--) {
+            NSNumber *key = @(index);
+            NSData *chunk = _chunks[key];
+            // The other place's read-ahead is not this one's to give.
+            if (!chunk || (i == 0 && index >= _readChunk && index <= _readChunk + keep)) continue;
+            bytes -= (int64_t)chunk.length;
+            [_chunks removeObjectForKey:key];
+            trimmed = YES;
+        }
+    }
+    return trimmed;
 }
 
 @end
@@ -359,6 +508,12 @@ static NSTimeInterval EDNow(void) {
 - (void)setChunkSize:(NSInteger)chunkSize { _core->_chunkSize = chunkSize; }
 - (NSInteger)readAheadBytes { return _core->_readAheadBytes; }
 - (void)setReadAheadBytes:(NSInteger)bytes { _core->_readAheadBytes = bytes; }
+- (NSInteger)maxReadAheadBytes { return _core->_maxReadAheadBytes; }
+- (void)setMaxReadAheadBytes:(NSInteger)bytes { _core->_maxReadAheadBytes = bytes; }
+- (int64_t)memoryTarget { return _core->_memoryTarget; }
+- (void)setMemoryTarget:(int64_t)bytes { _core->_memoryTarget = bytes; }
+- (EDMemoryHeadroom)memoryHeadroom { return _core->_memoryHeadroom; }
+- (void)setMemoryHeadroom:(EDMemoryHeadroom)headroom { _core->_memoryHeadroom = [headroom copy]; }
 - (NSInteger)cacheBytes { return _core->_cacheBytes; }
 - (void)setCacheBytes:(NSInteger)bytes { _core->_cacheBytes = bytes; }
 - (NSArray<NSNumber *> *)retryDelays { return _core->_retryDelays; }
@@ -368,6 +523,7 @@ static NSTimeInterval EDNow(void) {
 
 - (int64_t)length { return _core.length; }
 - (NSString *)failureReason { return _core.failureReason; }
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete { return [_core bufferedBytesAheadComplete:complete]; }
 - (void)cancel { [_core cancel]; }
 
 - (NSInteger)readAtOffset:(int64_t)offset

@@ -73,9 +73,11 @@ xcodebuild -resolvePackageDependencies -project Edendale.xcodeproj
 xcodebuild -list -project Edendale.xcodeproj
 ```
 
-The FFmpeg source download is checked against a pinned SHA-256 checksum. Its
-source, intermediate frameworks, and final XCFramework are gitignored; commit
-the build script and Xcode project references, not the generated binaries.
+The FFmpeg source download is checked against a pinned SHA-256 checksum. If
+ffmpeg.org keeps failing, the script falls back to GitHub's archive of the same
+release tag, which has its own pinned checksum. FFmpeg's source, intermediate
+frameworks, and final XCFramework are gitignored; commit the build script and
+Xcode project references, not the generated binaries.
 For a faster single-platform setup, use
 `bash Vendor/FFmpeg/build-ffmpeg.sh --platform ios` (also accepts `macos`,
 `tvos`, and `visionos`). This replaces the XCFramework with only that platform's
@@ -166,6 +168,11 @@ Compile the visionOS app without launching a simulator:
 xcodebuild build -project Edendale.xcodeproj -scheme Edendale \
   -destination 'generic/platform=visionOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
+
+The FFmpeg script builds the visionOS Simulator slice for arm64 only, so the
+project excludes x86_64 when building for the visionOS Simulator
+(`EXCLUDED_ARCHS[sdk=xrsimulator*]`). The iOS and tvOS Simulator slices still
+include x86_64.
 
 ### Picture in Picture and subtitles
 
@@ -271,8 +278,8 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 ```
 
 Settings → Subtitles sets the text subtitle font, colours, and background
-opacity. On tvOS the opacity's − and + buttons sit beneath its name at the
-leading edge, like the chip rows above it. Android and Windows need
+opacity. On tvOS each of these rows opens a list of its choices, the way the
+system Settings app does. Android and Windows need
 independent native implementations of the subtitle cache; the static Web
 branch is unaffected.
 
@@ -297,8 +304,8 @@ Profiles and booster changes apply during playback and carry over between files.
 Night Mode changes the frequency balance; it does not compress dynamic range.
 These controls do not affect E-AC-3 audio (see [Surround and spatial
 audio](#surround-and-spatial-audio)) or visionOS spatial/multiview playback in
-the system player. tvOS uses remote-operated increment/decrement controls for
-adjustments.
+the system player. On tvOS, **Show equalizer** lists the preamp and the ten
+bands, and each opens a list of levels in 1 dB steps.
 
 Episodes automatically advance to the next stored episode in season/episode
 order, including the next season and stored specials, without replaying an
@@ -317,6 +324,75 @@ reachable when controls are visible. Movies, files without episode context,
 unknown durations, and the final stored episode do not show it. The native
 visionOS system-player route uses the same preview rule. Artwork has a
 readable fallback, focus is visible, and transitions honor Reduce Motion.
+
+### Titles in several sources
+
+One file can reach the library more than once: from two sources, or from
+one share linked through two endpoints (its LAN host name, such as
+`longs-mac-studio.local`, and its Tailscale address). Each copy keeps its
+own library record, tied to the others by its TMDB match, or before it has
+one by its parsed title (and year). The Downloaded grids and Search's
+library results show one card per title; Remove on a card held by several
+sources offers one Remove per source.
+
+The detail page's **Play From** chevron beside Play lists every copy of a
+movie, and tapping an episode held by several sources opens the same menu
+before the player starts. Each choice names the source and its endpoint
+(the server and any port given, or the account for cloud sources), then
+the kind and file name, and marks the source played last and any source
+the last scan couldn't reach. Playing a copy remembers it on this device
+(`lastPlayedAt` on the movie or on the show copy, library data that never
+syncs). Play, Continue Watching, and widget and Shortcuts routes start the
+reachable copy played last, else the first reachable one.
+
+Automatic advance, the Up Next card, and its preview stay on the copy that
+is playing. Only an episode that copy lacks comes from another copy (the
+first whose source is reachable), and the copy after that returns to the
+chosen source as soon as it has the next episode, so an episode stored in
+only one source is never skipped.
+
+**Clear Progress** deletes a saved position: from a Continue Watching card's
+context menu, an in-progress episode card's context menu on the show page,
+or an in-progress movie's poster on the Movies page. It is written as a
+removal (a tombstone), so other devices and sync spaces drop it too.
+
+**Mark Watched** on an episode (a show page's episode card, or the TMDB
+season browser) records the episode's show and its season and episode
+numbers, as finishing it in the player does. Before, a hand-made mark
+carried only the episode's TMDB ID, so Continue Watching never suggested
+the episode after it and the sync file, which names an episode by show,
+season, and number, left the mark out.
+
+TMDB enrichment no longer runs per import only. A sweep of the whole
+library runs at launch, after every import or rescan, and on every visit
+to Downloaded, and looks up each movie and show without a TMDB match and
+each episode without one whose show is matched, including episodes added
+to a show that was matched earlier (which previously stayed unmatched and
+saved no watch progress). A title is indexed once it has a TMDB ID. One
+TMDB answered without a match for is marked (`metadataCheckedAt`) and asked
+about again after seven days, or at once on a forced rescan (⌘R or a
+source's Rescan). A lookup that fails because TMDB is unreachable, refuses
+the credential, or rate-limits marks nothing and ends that sweep, so the
+next sweep resumes where it stopped. The sweep runs on the library's own
+task: leaving the page doesn't cancel it, and requests made while it runs
+queue a single extra pass.
+
+Run the regressions:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/LibraryEnrichmentTests \
+  -only-testing:EdendaleTests/MultipleSourcesTests \
+  -only-testing:EdendaleTests/PlaybackSourcesTests \
+  -only-testing:EdendaleTests/EpisodeProgressionTests \
+  -only-testing:EdendaleTests/ContinueWatchingTests \
+  -only-testing:EdendaleTests/UpcomingEpisodePreviewTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+These are product rules: the Android and Windows branches need their own
+native implementations; the static Web branch is unaffected.
 
 ### Surround and spatial audio
 
@@ -496,14 +572,15 @@ native implementations of the same behavior; the static Web branch is unaffected
 runs while a side of the video is held. **Skip Back** and **Skip Forward**
 each offer 10, 15, or 30 seconds (default 10) in a segmented control drawn
 with the matching arrow-rotate glyphs; VoiceOver reads each segment's length.
+On tvOS each opens a list of the lengths.
 The lengths apply to double-taps on either side of the video, the Left and
 Right Arrow keys, Siri Remote swipes and the tvOS timeline, the VoiceOver skip
 actions, and the Lock Screen and Control Center skip buttons, which relabel as
 soon as a length changes. Picture in Picture keeps the system's skip length.
 
 **Hold Left Side** and **Hold Right Side** set the press-and-hold speeds from
-0.25× to 3.00× in quarter steps (defaults 0.5× and 2×) with a stepper, or − and
-+ buttons on tvOS. Touch and hold on iOS and iPadOS, pinch and hold on
+0.25× to 3.00× in quarter steps (defaults 0.5× and 2×) with a stepper, or a
+list of speeds on tvOS. Touch and hold on iOS and iPadOS, pinch and hold on
 visionOS, click and hold in the macOS player, or rest a thumb on either side
 of the Siri Remote's touch surface; the speed reverts on release. A short
 macOS click still shows or hides the controls, and a drag does neither. The
@@ -556,36 +633,120 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 Android and Windows need their own native guides for their own controls; the
 static Web branch is unaffected.
 
+### Tabletop playback (iPhone Duo)
+
+Stand an iPhone Duo half-open in portrait, like a small laptop, and the
+player splits at the fold the way the system player does: the picture fills
+the upper half and the controls lie on the flat lower half. From the fold
+down they are the close button and toolbar chips, the title, the timeline,
+skip back, play/pause and skip forward (drawn with the **Player Controls**
+skip lengths), and the player's volume. These controls cover nothing, so they
+stay up instead of hiding after five seconds. The playlist and Player
+Adjustments panels open in their place below the fold, and a tap on the
+picture closes them. The picture keeps its gestures, the Up Next card, skip
+prompts, subtitles, and the gesture HUD. Opening the phone flat, closing it,
+turning it to landscape (where the fold runs down the middle of the picture),
+or sharing the screen with another app returns the full-screen layout.
+
+iOS 27.1's `UIHingeInteraction` says whether the hinge is closed, partly
+open, or fully open, but not where the fold lies. The Duo's inner screen folds
+across its middle in portrait, so `PlayerTabletopLayout` splits at the
+window's midline when the window is portrait and fills the screen.
+
+Run the tabletop tests:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=iOS Simulator,name=iPhone Duo' \
+  -only-testing:EdendaleTests/PlayerTabletopTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO ARCHS=arm64
+```
+
+Android needs its own native implementation for foldables (Jetpack
+WindowManager reports a half-opened `FoldingFeature`); Windows and the static
+Web branch are unaffected.
+
 ### Immersive theater (visionOS)
 
 On Apple Vision Pro the player's toolbar has a **Theatre** chip (the
 clapperboard). It opens one of three rooms around the viewer as a full
-immersive space: **Movie Theatre** (a stadium cinema, 12 m screen at 14 m),
-**Projector Room** (a 1920s hall, 5.6 m screen at 7.4 m), and **Performance
-Theatre** (a proscenium stage, 11 m screen at 14 m). It opens only when the
-viewer picks a room. Picking another room while one is open swaps it in place.
+immersive space, with the viewer seated near the front so the screen fills
+54–62° of the view: **Movie Theatre** (a stadium cinema, row 3 of 11, 12 m
+screen 10.55 m ahead), **Projector Room** (a 1920s hall, row 2 of 6, 5.6 m
+screen 5.5 m ahead), and **Performance Theatre** (a proscenium stage, row 4 of
+14, 11 m screen 9.25 m ahead). It opens only when the viewer picks a room.
+Picking another room while one is open swaps it in place.
 **Leave Theatre**, the Digital Crown, closing the player, or the next item
 going to the system player (spatial and multiview video) closes it.
 
-- **Picture.** The screen shows the frames the 2D player draws, after Video
+- **Picture.** The screen shows the frames the player draws, after Video
   Enhancement, so paused frames, seeks, and Up Next follow it without a second
   decoder. `EnhancedVideoView` hands each finished frame to
-  `VisionTheaterScreenFeed`. The feed draws it, fitted and letterboxed, into a
-  RealityKit `LowLevelTexture` of 1080 rows in the screen's shape, under an
-  unlit, untone-mapped material. RealityKit reads a `LowLevelTexture` as
-  Display P3, so the feed converts the player's sRGB pixels to P3 primaries;
-  colours then match the 2D window. The canvas has no mipmaps: from the seat
-  each screen is about 1,700 display pixels wide, and RealityKit sampled the
-  lower levels of a mipmapped canvas as blank.
+  `VisionTheaterScreenFeed`: the player window's view until that window has
+  closed, then the theater's own, hidden under the floor. The feed draws it,
+  fitted and letterboxed, into a RealityKit `LowLevelTexture` of 1440 rows in
+  the screen's shape, under an unlit, untone-mapped material. RealityKit
+  reads a `LowLevelTexture` as Display P3, so the feed converts the player's
+  sRGB pixels to P3 primaries; colours then match the 2D window. The canvas
+  has no mipmaps: from the best seat each screen is about 2,000–2,300 display
+  pixels wide, and RealityKit sampled the lower levels of a mipmapped canvas
+  as blank.
 - **Subtitles** are the 2D player's subtitle overlay, laid out in the screen's
   shape and floated 2 cm in front of the picture.
-- **Player window.** It stays open as the theater's remote: it shrinks to
-  960 × 540 points and covers its own picture with the room's name. Its size
-  comes back on leaving. visionOS keeps the window where it was, in front of
-  the lower half of the screen, so drag it below the screen to see subtitles.
-- **Placement.** Each room's `Seat` (the floor under the viewer) is put on the
-  immersive space's origin, the floor under the viewer. The picture is a quad
-  laid over the room's `Screen`, 5 mm in front of it.
+- **Controls.** While the theater is open the controls are on a panel of
+  their own (`VisionTheaterDock`) that never hides: close, Theatre,
+  Playlist, Adjustments, the title, the timeline, skip back, play/pause, skip
+  forward, a Skip Intro prompt and the Up Next card. A playlist or
+  adjustments panel opens in its place. It floats 0.65 m from the eyes and
+  45° below eye level, tilted to face them, so looking 45° down meets it
+  centred, and it follows the way the viewer faces: ARKit's world tracking
+  (no permission prompt) reports the head's pose each frame. Turns under 12°
+  and moves under 15 cm leave it still, so it holds while the viewer looks
+  across it or leans in to touch it; a bigger turn brings it back in front in
+  about half a second. The geometry is `TheaterLayout.Dock` and
+  `DockFollower`.
+- **Player window.** The main window closes once the theater is open, so
+  nothing floats in the room but the picture and the controls. visionOS has
+  no way to hide a window, only to close it. Leaving the theater, closing the
+  player, or the Digital Crown opens it again, in front of the viewer, with
+  the player still playing (or the library, after closing the player). The
+  library comes back on its first tab. The window's `WindowGroup` is named
+  `main` on visionOS for this.
+- **Seat panel.** A second panel (`VisionTheaterSeatPanel`) floats to the
+  left of the controls, at the same distance and 45° below eye level, and
+  follows the head with them. Turning left to look at it holds both still,
+  up to 46° further than on the right. It has:
+  - **Seats**, a map of the room's seats from above with the screen on top:
+    the viewer's seat in gold, the best seat (the default, near the front)
+    outlined. Pinch a seat to sit in it; hold the pinch and move the hand to
+    slide along the seats, named as they light, and let go to sit. **Best
+    Seat** goes back. Each room marks every seat with an empty,
+    `Seat_<row>_<number>` under `SeatMap`, on the floor under it
+    (`TheaterSeatMap`). The chosen seat is put on the immersive space's
+    origin, the floor under the viewer, and the room turns about the
+    vertical until the screen's centre is straight ahead, so an end seat
+    sees the screen at an angle without looking over a shoulder
+    (`TheaterLayout.roomPose`). Changing seats fades the room out for 0.2 s
+    and back in for 0.3 s: a room sliding past someone sitting still makes
+    them queasy. Each room remembers its seat on the device.
+  - **Lights**: **Normal**, **Dim**, or **Dark**, for every room, remembered
+    on the device. The rooms' light is baked into emissive materials, so the
+    lights scale every room material's emissive intensity, to 30% or 6%: the
+    screen's baked glow on the room dims with the house lights, and the
+    picture and the Projector Room's beam stay as they are.
+  - **Recentre** turns the theater to where the viewer looks, behind the
+    same fade. Within 20° of level it only turns, and its floor stays on the
+    real floor. Lying back or reclined, it tilts back with the viewer, so
+    the screen is in front of their eyes as it is from the seat, with the
+    seat's eyes 1.2 m above its floor placed on theirs; the panels then sit
+    below their line of sight as they lie, towards the chest. A head tipped
+    to one side doesn't tip the theater (`TheaterLayout.recenterPose`).
+    visionOS doesn't tilt an immersive space for a viewer lying down, so the
+    app does. Recentring lasts until the theater closes.
+- **Placement.** The picture is a quad laid over the room's `Screen`, 5 mm in
+  front of it. The picture, the subtitles, and the room move together as
+  one entity, which carries the seat's pose, inside another that carries
+  the recentring.
 - **Not offered** in the system player route for spatial and multiview video
   (`VisionNativePlayerScreen`).
 
@@ -605,12 +766,15 @@ done
 
 The menu and window strings are in `Shared/Theater.xcstrings`, in every app
 locale. Frame rate, heat, and comfort haven't been measured on a headset yet;
-everything above was checked in the visionOS 27.2 simulator. In RealityKit the
+everything above was checked in the visionOS 27.2 simulator, except the
+panels following a turn of the head and recentring while lying back, which
+the simulator can't script and the unit tests cover. In RealityKit the
 Projector Room's haze beam draws as a flat grey wedge, unlike Blender's
 preview; that needs a change to the scene on `scenes`.
 
 Run the theater tests on macOS (geometry and bundled exports) and on a visionOS
-simulator (which also loads every room and finds its `Seat` and `Screen`):
+simulator (which also loads every room, finds its `Screen`, `Seat`, and every
+seat of its seat map, and checks that the screen is straight ahead from each):
 
 ```sh
 xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
@@ -642,9 +806,12 @@ General, Player Controls, Audio, Subtitles, Library, Sync, Accounts, Parental
 Controls, and About beside the open category. (iPhone and iPad open Settings as
 a sheet from the gear button in each page's toolbar. There, and on Apple TV and
 Apple Vision Pro, Settings opens on the list of categories, and each one opens
-its own page; only the Mac has General. iPhone, iPad, and Apple Vision Pro show
-Parental Controls and About in place at the end of that list instead of as
-pages.) Parental Controls holds Young Audience Friendly, a local preference that shows only titles rated
+its own page; only the Mac has General. iPhone, iPad, Apple TV, and Apple
+Vision Pro show Parental Controls and About in place at the end of that list
+instead of as pages, in the system's grouped list.) On Apple TV, Back always
+returns from a pushed page, even when a swipe off the page's edge has opened
+the tab sidebar over it, and a cast member on a title's page opens that
+person's page in place rather than in the Search tab. Parental Controls holds Young Audience Friendly, a local preference that shows only titles rated
 PG or PG-13 (or TV-PG/TV-14). Watchlist and Downloaded are pages of their own and also
 disclose their sections as child rows, so one section opens without scrolling
 the whole page:
@@ -659,6 +826,22 @@ A child row appears only while its section has titles for the current
 audience setting. If the open section empties, the sidebar returns to the
 parent page. Choosing a row always opens that page at its root, and the
 search query survives visits to other pages.
+
+On iPhone and iPad (iOS 26.1 and later) the Downloaded sections extend out
+of the tab bar instead: while the Downloaded tab's root page is showing and
+at least two sections have titles, the tab bar's bottom accessory offers
+All, Watching (Continue Watching), Movies, and TV Shows. It sits above the
+tab bar on iPhone and at the foot of the screen on iPad, and becomes a menu
+naming the current choice beside a minimized tab bar. It hides on pushed
+pages and on other tabs, keeps its choice, scrolls the page back to the top
+on a change, and falls back to All when the chosen section empties; the
+page keeps the Downloaded title. A SwiftUI `TabSection` can't do this: on
+iPhone its tabs become separate top-level tabs (iOS 26.5 and 27.2 alike),
+and its header and `defaultSectionExpansion` apply only in a sidebar.
+Apple TV, Apple Vision Pro, and iOS before 26.1 have no tab bar accessory,
+so there the Downloaded page shows the same choices as chips above its
+content. Android and Windows need their own native section picker; the
+static Web branch is unaffected.
 
 Menu bar commands:
 
@@ -773,10 +956,16 @@ location is chosen.
 |---|---|---|
 | A folder picked in Files or Finder (iCloud Drive and other cloud apps' folders included) | iOS, iPadOS, macOS, visionOS | Security-scoped bookmark; `<id>.json.tmp` renamed over the file |
 | The app's own iCloud Drive folder (`iCloud Drive/Edendale`) | iOS, iPadOS, macOS, visionOS | The ubiquity container's `Documents`, coordinated writes, files downloaded on read |
-| Google Drive | All (Apple TV by handoff only) | `drive.file`; the app's `Edendale/<space>` folder in My Drive |
+| Google Drive | All (Apple TV by handoff only) | `drive.file`; the app's `Edendale/<space>` folder in My Drive. Signing in for sync skips Google's picker: there is nothing to choose |
 | OneDrive | All | `Files.ReadWrite.AppFolder`; `Apps/Edendale/<space>/` |
 | Dropbox | All | `files.content.write`; `/Edendale/<space>/` |
 | WebDAV, SMB, SFTP | All | A folder picked on the server with its saved login; the connectors gained `MKCOL`/`PUT`, libsmb2 writes, and SFTP write, mkdir, remove, and rename |
+
+Choosing Google Drive, OneDrive, or Dropbox in Settings → Sync never asks for
+videos or a folder. A OneDrive or Dropbox account linked before 27.1 is marked
+in the account list and signs in again from there, and an Apple TV asking an
+iPhone or iPad for the account gets a sign-in without Google's picker
+(ENHANCEMENT.md K.8).
 
 Every record carries one `updateTime` (UTC milliseconds) and the ID of the
 device that wrote it. The newest record wins as a whole; equal stamps go to

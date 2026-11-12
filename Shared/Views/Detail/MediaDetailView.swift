@@ -65,6 +65,7 @@ struct MediaDetailView: View {
             }
         }
         .background(Theme.background)
+        .pushedPage()
         .task(id: audienceVerificationKey) {
             await youngAudienceFilter.verify(sourceMediaRef.map { [$0] } ?? [])
         }
@@ -539,45 +540,58 @@ struct MediaDetailView: View {
     }
 
     /// One cast portrait. Tapping routes to the Search tab filtered to this
-    /// person's filmography. tvOS drops the system focus ring in favour of the
-    /// reserved-bounds enlargement used by posters (see `CardFocusButtonStyle`).
+    /// person's filmography. Apple TV pushes the person's page onto this
+    /// stack instead, so Back returns to this title rather than to the Search
+    /// tab's first page, where Back leaves the app. tvOS drops the system
+    /// focus ring in favour of the reserved-bounds enlargement used by posters
+    /// (see `CardFocusButtonStyle`).
     @ViewBuilder
     private func castCard(_ member: TMDBCastMember) -> some View {
-        Button {
-            searchCoordinator.pendingPerson = PersonRef(id: member.id, name: member.name)
-        } label: {
-            VStack(spacing: 8) {
-                ZStack {
-                    Theme.surface
-                    Image(.film)
-                        .font(.system(size: 20))
-                        .foregroundStyle(Theme.surfaceHigh)
-                    if let url = member.profileURL {
-                        KFImage(url)
-                            .resizable()
-                            .fade(duration: 0.25)
-                            .aspectRatio(contentMode: .fill)
-                    }
-                }
-                .frame(width: 84, height: 84)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
-                Text(member.name)
-                    .font(Typography.bodySM)
-                    .foregroundStyle(Theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .frame(width: 90)
-            }
-        }
+        let person = PersonRef(id: member.id, name: member.name)
         #if os(tvOS)
+        NavigationLink(value: person) {
+            castCardLabel(member)
+        }
         .buttonStyle(CardFocusButtonStyle())
+        .accessibilityLabel(member.name)
+        .accessibilityHint("Shows this person's filmography.")
         #else
+        Button {
+            searchCoordinator.pendingPerson = person
+        } label: {
+            castCardLabel(member)
+        }
         .buttonStyle(.plain)
-        #endif
         // The button already folds its portrait and caption into one element;
         // this pins the reading to the name and says where the tap goes.
         .accessibilityLabel(member.name)
         .accessibilityHint("Shows this person's filmography.")
+        #endif
+    }
+
+    private func castCardLabel(_ member: TMDBCastMember) -> some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Theme.surface
+                Image(.film)
+                    .font(.system(size: 20))
+                    .foregroundStyle(Theme.surfaceHigh)
+                if let url = member.profileURL {
+                    KFImage(url)
+                        .resizable()
+                        .fade(duration: 0.25)
+                        .aspectRatio(contentMode: .fill)
+                }
+            }
+            .frame(width: 84, height: 84)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+            Text(member.name)
+                .font(Typography.bodySM)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(width: 90)
+        }
     }
 
     // MARK: - Critical consensus
@@ -649,43 +663,66 @@ struct MediaDetailView: View {
     @ViewBuilder
     private func episodeCard(_ slot: PlaybackSources.EpisodeSlot, show: TVShow) -> some View {
         let episode = slot.primary
-        Button {
-            playEpisode(preferredCopy(slot.copies, folder: { $0.show?.folder }) ?? episode)
-        } label: {
-            LandscapeCard(
-                title: episode.displayTitle,
-                subtitle: episodeSubtitle(episode, copies: slot.copies.count),
-                imageURL: episode.stillURL ?? show.backdropURL,
-                placeholderIcon: "tv",
-                width: episodeCardWidth,
-                progress: episodeProgress(episode),
-                isWatched: episode.tmdbId.map { watchStore.isWatched($0, mediaType: .episode) } ?? false
-            )
+        let card = LandscapeCard(
+            title: episode.displayTitle,
+            subtitle: episodeSubtitle(episode, copies: slot.copies.count),
+            imageURL: episode.stillURL ?? show.backdropURL,
+            placeholderIcon: "tv",
+            width: episodeCardWidth,
+            progress: episodeProgress(episode),
+            isWatched: episode.tmdbId.map { watchStore.isWatched($0, mediaType: .episode) } ?? false
+        )
+        Group {
+            if slot.copies.count > 1 {
+                // Several sources hold this episode (or one share through
+                // several endpoints): the viewer picks one before the
+                // player opens. The source played last leads the menu.
+                Menu {
+                    Section("Play From") {
+                        let lastPlayed = lastPlayedCopy(slot.copies)
+                        ForEach(orderedForMenu(slot.copies)) { copy in
+                            sourceButton(
+                                folder: copy.show?.folder,
+                                filePath: copy.filePath,
+                                isLastPlayed: copy.id == lastPlayed?.id
+                            ) {
+                                playEpisode(copy)
+                            }
+                        }
+                    }
+                } label: {
+                    card
+                }
+                .menuStyle(.button)
+                .menuIndicator(.hidden)
+                .accessibilityHint("Chooses which source to play this episode from.")
+            } else {
+                Button {
+                    playEpisode(episode)
+                } label: {
+                    card
+                }
+                .accessibilityHint("Plays this episode.")
+            }
         }
         #if os(tvOS)
         .buttonStyle(CardFocusButtonStyle())
         #else
         .buttonStyle(.plain)
         #endif
-        .accessibilityHint(slot.copies.count > 1
-            ? "Plays this episode. More sources are in the context menu."
-            : "Plays this episode.")
         .contextMenu {
-            if slot.copies.count > 1 {
-                Section("Play From") {
-                    ForEach(slot.copies) { copy in
-                        sourceButton(folder: copy.show?.folder, filePath: copy.filePath) {
-                            playEpisode(copy)
-                        }
-                    }
-                }
-            }
             if let tmdbId = episode.tmdbId {
                 Button {
                     if watchStore.isWatched(tmdbId, mediaType: .episode) {
                         watchStore.remove(tmdbId: tmdbId, mediaType: .episode)
                     } else {
-                        watchStore.markCompleted(tmdbId: tmdbId, mediaType: .episode)
+                        watchStore.markCompleted(
+                            tmdbId: tmdbId,
+                            mediaType: .episode,
+                            showTmdbId: episode.show?.tmdbId,
+                            seasonNumber: episode.seasonNumber,
+                            episodeNumber: episode.episodeNumber
+                        )
                     }
                 } label: {
                     Label(
@@ -695,8 +732,25 @@ struct MediaDetailView: View {
                         image: "check"
                     )
                 }
+                if episodeProgress(episode) != nil {
+                    Button(role: .destructive) {
+                        watchStore.remove(tmdbId: tmdbId, mediaType: .episode)
+                    } label: {
+                        Label("Clear Progress", image: .trashCan)
+                    }
+                }
             }
         }
+    }
+
+    /// The episode copy whose show copy (source) played last.
+    private func lastPlayedCopy(_ copies: [Episode]) -> Episode? {
+        PlaybackSources.mostRecentlyPlayed(copies) { $0.show?.lastPlayedAt }
+    }
+
+    /// The Play From order for an episode: the source played last first.
+    private func orderedForMenu(_ copies: [Episode]) -> [Episode] {
+        PlaybackSources.lastPlayedFirst(copies) { $0.show?.lastPlayedAt }
     }
 
     private func episodeSubtitle(_ episode: Episode, copies: Int) -> String {
@@ -837,7 +891,7 @@ struct MediaDetailView: View {
     }
 
     private func play() {
-        guard let movie = preferredCopy(movieCopies, folder: \.folder) else { return }
+        guard let movie = preferredCopy(movieCopies, folder: \.folder, lastPlayed: \.lastPlayedAt) else { return }
         play(movie)
     }
 
@@ -849,38 +903,47 @@ struct MediaDetailView: View {
 
     // MARK: - Other copies
 
-    /// Every imported copy of this movie, this page's own first.
+    /// Every imported copy of this movie, this page's own first: other
+    /// sources, and the same share linked through other endpoints.
     private var movieCopies: [Movie] {
         guard let movie = localMovie else { return [] }
-        guard let tmdbId = movie.tmdbId else { return [movie] }
-        let others = libraryMovies.filter { $0.tmdbId == tmdbId && $0.id != movie.id }
+        let key = PlaybackSources.copyKey(movie)
+        let others = libraryMovies.filter { $0.id != movie.id && PlaybackSources.copyKey($0) == key }
         return PlaybackSources.order(primary: movie, others: others, folder: \.folder)
     }
 
     /// The show's episodes across every imported copy of it.
     private func episodeSlots(_ show: TVShow) -> [PlaybackSources.EpisodeSlot] {
-        let others = show.tmdbId.map { tmdbId in
-            libraryShows.filter { $0.tmdbId == tmdbId && $0.id != show.id }
-        } ?? []
+        let key = PlaybackSources.copyKey(show)
+        let others = libraryShows.filter { $0.id != show.id && PlaybackSources.copyKey($0) == key }
         return PlaybackSources.episodeSlots(primary: show, others: others)
     }
 
     /// A source the last scan couldn't reach, or whose login was refused.
     private func isUnavailable(_ folder: VideoFolder?) -> Bool {
-        guard let folder else { return false }
-        return library.sourceStates[folder.id] != nil
+        library.isOffline(folder)
     }
 
-    private func preferredCopy<Item>(_ copies: [Item], folder: (Item) -> VideoFolder?) -> Item? {
-        PlaybackSources.preferred(copies) { isUnavailable(folder($0)) }
+    private func preferredCopy<Item>(
+        _ copies: [Item],
+        folder: (Item) -> VideoFolder?,
+        lastPlayed: (Item) -> Date?
+    ) -> Item? {
+        PlaybackSources.preferred(copies, isOffline: { isUnavailable(folder($0)) }, lastPlayed: lastPlayed)
     }
 
-    /// The chevron beside Play: every copy of the movie, by source.
+    /// The chevron beside Play: every copy of the movie, by source and
+    /// endpoint, the one played last first.
     private var playFromMenu: some View {
         Menu {
             Section("Play From") {
-                ForEach(movieCopies) { movie in
-                    sourceButton(folder: movie.folder, filePath: movie.filePath) {
+                let lastPlayed = PlaybackSources.mostRecentlyPlayed(movieCopies, lastPlayed: \.lastPlayedAt)
+                ForEach(PlaybackSources.lastPlayedFirst(movieCopies, lastPlayed: \.lastPlayedAt)) { movie in
+                    sourceButton(
+                        folder: movie.folder,
+                        filePath: movie.filePath,
+                        isLastPlayed: movie.id == lastPlayed?.id
+                    ) {
                         play(movie)
                     }
                 }
@@ -897,16 +960,22 @@ struct MediaDetailView: View {
         .accessibilityHint("Chooses which source to play this title from.")
     }
 
-    /// One copy in a Play From menu: its source's name, then the kind and
-    /// file name, and whether the source is unreachable.
-    private func sourceButton(folder: VideoFolder?, filePath: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(folder?.name ?? PlaybackSources.fileName(of: filePath))
-            if isUnavailable(folder) {
-                Text("\(PlaybackSources.detail(folder: folder, filePath: filePath)) · Unavailable")
-            } else {
-                Text(PlaybackSources.detail(folder: folder, filePath: filePath))
-            }
+    /// One copy in a Play From menu: its source's name and endpoint (the
+    /// server, such as `longs-mac-studio.local` or a Tailscale address, or
+    /// the account), then the kind and file name, whether it's the source
+    /// played last, and whether it's unreachable.
+    private func sourceButton(
+        folder: VideoFolder?,
+        filePath: String,
+        isLastPlayed: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        var notes = [PlaybackSources.detail(folder: folder, filePath: filePath)]
+        if isLastPlayed { notes.append(String(localized: "Last Played")) }
+        if isUnavailable(folder) { notes.append(String(localized: "Unavailable")) }
+        return Button(action: action) {
+            Text(PlaybackSources.title(folder: folder, filePath: filePath))
+            Text(notes.joined(separator: " · "))
         }
     }
 

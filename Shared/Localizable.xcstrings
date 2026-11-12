@@ -2827,6 +2827,124 @@
         }
       }
     },
+    "%@ didn't allow Edendale to write its sync files. Sign in again and allow that access." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hat Edendale das Schreiben seiner Sync-Dateien nicht erlaubt. Melde dich erneut an und erlaube diesen Zugriff."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ didn't allow Edendale to write its sync files. Sign in again and allow that access."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ didn't allow Edendale to write its sync files. Sign in again and allow that access."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ didn't allow Edendale to write its sync files. Sign in again and allow that access."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ didn't allow Edendale to write its sync files. Sign in again and allow that access."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ didn't allow Edendale to write its sync files. Sign in again and allow that access."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no permitió que Edendale escribiera sus archivos de sincronización. Inicia sesión de nuevo y permite ese acceso."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no permitió que Edendale escribiera sus archivos de sincronización. Inicia sesión de nuevo y permite ese acceso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ n'a pas autorisé Edendale à écrire ses fichiers de synchronisation. Reconnectez-vous et autorisez cet accès."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ non ha consentito a Edendale di scrivere i suoi file di sincronizzazione. Accedi di nuovo e consenti questo accesso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ で Edendale による同期ファイルの書き込みが許可されませんでした。もう一度サインインして、そのアクセスを許可してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에서 Edendale의 동기화 파일 쓰기를 허용하지 않았습니다. 다시 로그인하고 해당 접근을 허용하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ heeft Edendale niet toegestaan zijn synchronisatiebestanden te schrijven. Log opnieuw in en sta die toegang toe."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não permitiu que o Edendale gravasse seus arquivos de sincronização. Entre novamente e permita esse acesso."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não permitiu que o Edendale escrevesse os seus ficheiros de sincronização. Inicie sessão novamente e permita esse acesso."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ не разрешил Edendale записывать файлы синхронизации. Войдите снова и разрешите этот доступ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ tillät inte Edendale att skriva sina synkfiler. Logga in igen och tillåt den åtkomsten."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 未允许 Edendale 写入同步文件。请重新登录并允许该访问权限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 未允許 Edendale 寫入同步檔案。請重新登入並允許該存取權限。"
+          }
+        }
+      }
+    },
     "%@ didn't grant lasting access. Sign in again and allow Edendale to stay connected." : {
       "localizations" : {
         "de" : {
@@ -14158,6 +14276,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外觀"
+          }
+        }
+      }
+    },
+    "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV erhält das Konto von deinem iPhone oder iPad. In Google Drive sieht Edendale nur die Sync-Dateien, die es selbst anlegt, und ändert nichts anderes."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Apple TV obtiene la cuenta de tu iPhone o iPad. En Google Drive, Edendale solo ve los archivos de sincronización que crea y no cambia nada más."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Apple TV obtiene la cuenta de tu iPhone o iPad. En Google Drive, Edendale solo ve los archivos de sincronización que crea y no cambia nada más."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'Apple TV reçoit le compte de votre iPhone ou iPad. Dans Google Drive, Edendale ne voit que les fichiers de synchronisation qu'il crée et ne modifie rien d'autre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV riceve l'account dal tuo iPhone o iPad. In Google Drive, Edendale vede solo i file di sincronizzazione che crea e non modifica nient'altro."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV は iPhone または iPad からアカウントを受け取ります。Google ドライブで Edendale が見られるのは自分で作成した同期ファイルだけで、それ以外は何も変更しません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV는 iPhone이나 iPad에서 계정을 받습니다. Google 드라이브에서 Edendale는 직접 만든 동기화 파일만 볼 수 있으며 그 밖에는 아무것도 변경하지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV krijgt het account van je iPhone of iPad. In Google Drive ziet Edendale alleen de synchronisatiebestanden die het zelf maakt, en verandert verder niets."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple TV recebe a conta do seu iPhone ou iPad. No Google Drive, o Edendale vê apenas os arquivos de sincronização que cria e não altera mais nada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple TV recebe a conta do seu iPhone ou iPad. No Google Drive, o Edendale vê apenas os ficheiros de sincronização que cria e não altera mais nada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV получает аккаунт с iPhone или iPad. В Google Диске Edendale видит только созданные им файлы синхронизации и больше ничего не меняет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV får kontot från din iPhone eller iPad. I Google Drive ser Edendale bara synkfilerna som den själv skapar, och ändrar inget annat."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 会从你的 iPhone 或 iPad 获取账户。在 Google 云端硬盘中，Edendale 只能看到其自己创建的同步文件，不会更改其他任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 會從你的 iPhone 或 iPad 取得帳戶。在 Google 雲端硬碟中，Edendale 只能看到其自己建立的同步檔案，不會更改其他任何內容。"
           }
         }
       }
@@ -73064,6 +73300,124 @@
         }
       }
     },
+    "Sign in again so Edendale can write its sync files here." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melde dich erneut an, damit Edendale hier seine Sync-Dateien schreiben kann."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in again so Edendale can write its sync files here."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in again so Edendale can write its sync files here."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in again so Edendale can write its sync files here."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in again so Edendale can write its sync files here."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in again so Edendale can write its sync files here."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión de nuevo para que Edendale pueda escribir aquí sus archivos de sincronización."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión de nuevo para que Edendale pueda escribir aquí sus archivos de sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnectez-vous pour qu'Edendale puisse écrire ici ses fichiers de synchronisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi di nuovo perché Edendale possa scrivere qui i suoi file di sincronizzazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale がここに同期ファイルを書き込めるように、もう一度サインインしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edendale가 여기에 동기화 파일을 쓸 수 있도록 다시 로그인하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log opnieuw in zodat Edendale hier zijn synchronisatiebestanden kan schrijven."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre novamente para que o Edendale possa gravar aqui seus arquivos de sincronização."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicie sessão novamente para que o Edendale possa escrever aqui os seus ficheiros de sincronização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите снова, чтобы Edendale мог записывать сюда свои файлы синхронизации."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logga in igen så att Edendale kan skriva sina synkfiler här."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请重新登录，以便 Edendale 在此写入同步文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請重新登入，以便 Edendale 在此寫入同步檔案。"
+          }
+        }
+      }
+    },
     "Sign in from Edendale on your iPhone, iPad, or Mac — your account syncs here through iCloud." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -86849,6 +87203,124 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此裝置上沒有已儲存的 %@ 登入資訊。請先在此處連結伺服器，或在 Apple TV 上輸入登入資訊。"
+          }
+        }
+      }
+    },
+    "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier musst du nichts auswählen: Edendale legt seine Sync-Dateien in einem Edendale-Ordner ab, den es selbst in deinem Google Drive anlegt. Es sieht nur die Dateien, die es selbst anlegt, verbindet sich nur von diesem Gerät aus und ändert nichts anderes."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay nada que elegir: Edendale guarda sus archivos de sincronización en una carpeta Edendale que crea en tu Google Drive. Solo ve los archivos que crea, se conecta solo desde este dispositivo y no cambia nada más."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay nada que elegir: Edendale guarda sus archivos de sincronización en una carpeta Edendale que crea en tu Google Drive. Solo ve los archivos que crea, se conecta solo desde este dispositivo y no cambia nada más."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à choisir : Edendale range ses fichiers de synchronisation dans un dossier Edendale qu'il crée dans votre Google Drive. Il ne voit que les fichiers qu'il crée, se connecte uniquement depuis cet appareil et ne modifie rien d'autre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non c'è niente da scegliere: Edendale tiene i suoi file di sincronizzazione in una cartella Edendale che crea nel tuo Google Drive. Vede solo i file che crea, si connette solo da questo dispositivo e non modifica nient'altro."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選ぶものはありません。Edendale は Google ドライブに自分で作成する Edendale フォルダに同期ファイルを保存します。見られるのは自分で作成したファイルだけで、このデバイスからのみ接続し、それ以外は何も変更しません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택할 것이 없습니다. Edendale는 Google 드라이브에 직접 만드는 Edendale 폴더에 동기화 파일을 보관합니다. 직접 만든 파일만 볼 수 있고, 이 기기에서만 접속하며, 그 밖에는 아무것도 변경하지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hoeft niets te kiezen: Edendale bewaart zijn synchronisatiebestanden in een Edendale-map die het zelf in je Google Drive maakt. Het ziet alleen de bestanden die het zelf maakt, maakt alleen vanaf dit apparaat verbinding en verandert verder niets."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não há nada para escolher: o Edendale guarda seus arquivos de sincronização em uma pasta Edendale que ele cria no seu Google Drive. Ele vê apenas os arquivos que cria, conecta-se apenas deste dispositivo e não altera mais nada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não há nada para escolher: o Edendale guarda os seus ficheiros de sincronização numa pasta Edendale que cria no seu Google Drive. Vê apenas os ficheiros que cria, liga-se apenas a partir deste dispositivo e não altera mais nada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ничего выбирать не нужно: Edendale хранит файлы синхронизации в папке Edendale, которую сам создаёт на вашем Google Диске. Он видит только созданные им файлы, подключается только с этого устройства и больше ничего не меняет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det finns inget att välja: Edendale lägger sina synkfiler i en Edendale-mapp som den själv skapar i din Google Drive. Den ser bara filerna som den själv skapar, ansluter bara från den här enheten och ändrar inget annat."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无需选择任何内容：Edendale 会把同步文件保存在它在你的 Google 云端硬盘中创建的 Edendale 文件夹里。它只能看到自己创建的文件，仅从此设备连接，不会更改其他任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無需選擇任何內容：Edendale 會把同步檔案儲存在它在你的 Google 雲端硬碟中建立的 Edendale 資料夾裡。它只能看到自己建立的檔案，僅從此裝置連線，不會更改其他任何內容。"
           }
         }
       }

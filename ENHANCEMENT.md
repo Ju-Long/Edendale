@@ -1343,7 +1343,11 @@ Wiring:
 - SMB, NFS, and SFTP read through `BufferedByteSource` (1 MiB chunks, 48 MiB
   read-ahead on a worker thread, reconnect with backoff, idle keep-alive):
   SMB and NFS with the libsmb2/libnfs symbols libvlc already exports, SFTP
-  with SwiftNIO SSH (`SFTPConnection`).
+  with SwiftNIO SSH (`SFTPConnection`). While the whole app uses less than
+  500 MiB the read-ahead grows, up to 384 MiB; past that it holds, and well
+  past it the extra is given back. When a link slower than the video still
+  empties it, playback stops and refills (`RebufferPolicy`) instead of
+  running ahead of its data.
 - The generic branch in `openURL:` rejects remote schemes instead of handing
   them to FFmpeg's unverified `https`, so no token or signed link can reach it.
 - visionOS: `VisionMediaInspector` can't open custom schemes, so remote items
@@ -2082,6 +2086,71 @@ A second pass, after reading the Android branch's handoff (Ju-Long/Edendale#9):
   the queued sync, season lookups, library matches, removed devices, and
   far-future CloudKit rows.
 
+### K.8 — Sync locations with nothing to choose, 2026-11-12
+
+**Owner request:** choosing a sync location must not ask the user to select
+anything in Google Drive or the other cloud locations. Settings → Sync
+reused Link Source's account step, so a Google Drive sign-in there opened
+Google's picker (choose the videos to play), and a OneDrive or Dropbox
+account from before the 27.1 write scopes was sent to Link Source, where
+both ask for a folder. Android did the same in its M.8 and listed this as a
+deviation from `apple-27.1`.
+
+**Change:**
+- `CloudProviders.SignInPurpose` (`.library`, `.sync`) and
+  `googleSyncParameters`: a sync sign-in to Google sends `access_type=offline`
+  and `prompt=consent select_account` but not `trigger_onepick`,
+  `allow_multiple`, or `mimetypes`, because `drive.file` already covers the
+  folder and files Edendale creates. Same client, redirect, and scope.
+  OneDrive and Dropbox configurations are the same for both purposes.
+- `CloudAccountStore.signIn(kind:loginHint:purpose:)` passes the purpose to
+  the configuration.
+- `CloudAccountStep(purpose: .sync)` from `SyncLocationSetupView`: signing in
+  skips the picker; Google's note says there is nothing to choose (tvOS: the
+  TV gets the account from the iPhone or iPad); a linked account without the
+  write scopes says "Sign in again so Edendale can write its sync files here"
+  and signs in again from its own row (with the account's email as the hint,
+  except Dropbox, whose authorize page takes none). If the new grant still
+  lacks the scope, the provider list says so. Apple TV keeps the old message
+  (it can't sign in itself).
+- `SyncHandoffView`'s Google follow-up (a location received from another
+  ecosystem) signs in for sync.
+- `AccountHandoff.Request.forSync` (optional, left out of library requests,
+  ignored by older builds): Apple TV sets it when choosing a sync location,
+  and an iPhone or iPad that has to sign in for it skips the picker.
+- Four new strings in all 18 locales.
+
+**Not changed:** a picked folder, and the folder chosen on a WebDAV, SMB, or
+SFTP server: there the folder is the location (a server has no folder of
+the app's own, and SMB needs a share). The space name step.
+
+**Acceptance:** `OAuthClientTests.syncSignInSkipsGooglesPicker` (no picker
+parameters, the refresh-token ones and a login hint kept, Link Source still
+opens the picker, OneDrive and Dropbox unchanged);
+`AccountHandoffTests.syncRequestsSayForSyncAndOlderOnesDecodeWithout`.
+
+**Results, 2026-11-12 (Xcode 27.2, unsigned):** iOS, visionOS, tvOS
+Simulator, and tvOS device builds pass. macOS `EdendaleTests`, built with
+`EXCLUDED_SOURCE_FILE_NAMES=ZZSearchFocusProbe.swift` because that UI-test
+probe doesn't compile for macOS (also on `apple-27.1`): 660 pass, against
+657 on a clean `apple-27.1` (b11eafb) run the same way. Both new tests pass.
+The failures are the same on both, all from before K.8: `CloudListingTests/
+driveIdentityComesFromAboutGet`, `SyncStorageTests/googleDriveFindsOrCreatesFoldersAndUploadsInPlace`,
+`PlayerSessionTransitionTests/terminalCreditsSkipHonorsLoopWithoutAdvancingEpisode`
+(plus `EnhancedVideoRenderingTests/pausedRedrawsWaitForALaterTurnAndCoalesce`
+on the base run only). Two suites crash the test host on both and were
+skipped in both runs: `WyzieSubtitleTests` (a SwiftData assertion in
+`LibraryController.save()` from `preparePlayback`) and `CloudListingTests/
+listsTheChosenDriveFilesSkippingFoldersAcrossPages` (an index out of range).
+The app's Google client, asked for the sync sign-in URL without signing in,
+reaches Google's sign-in page, as the picker URL does; a wrong redirect gets
+"Access blocked". Consent itself wasn't completed.
+
+Hardware and the owner's account: a Google sign-in from Settings → Sync on an
+iPhone (consent page without the picker; the sync folder created and read
+back), a pre-27.1 OneDrive or Dropbox account signing in again from its row,
+and an Apple TV sync request answered by an iPhone without a Google account.
+
 ### Section K — Tracking
 
 | Step | Description | Status |
@@ -2093,6 +2162,8 @@ A second pass, after reading the Android branch's handoff (Ju-Long/Edendale#9):
 | K.5 | Settings → Sync, location setup, handoff screens | [x] |
 | K.6 | Unit tests and vectors; all-platform build | [x] |
 | K.7 | Review fixes: sandbox, tvOS entitlements, Android interop, timeouts, batching, watchlist | [x] |
+| K.8 | Sync locations with nothing to choose: Google sign-in without the picker, re-sign-in from the account row, TV request flag | [x] |
+| — | K.8 on hardware with the owner's accounts | [ ] |
 | — | Copy in all 18 locales (113 keys) | [x] |
 | — | Entra `Files.ReadWrite.AppFolder`, Dropbox `files.content.write` (owner) | [ ] |
 | — | CloudKit schema deployment (owner) | [ ] |

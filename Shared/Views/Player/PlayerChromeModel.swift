@@ -50,10 +50,21 @@ final class PlayerChromeModel {
     }()
 
     /// An open panel is layered over the video, so the chrome stays up and
-    /// the Up Next card and skip prompts step aside. A docked panel leaves
-    /// the video uncovered.
+    /// the Up Next card and skip prompts step aside. A docked panel, or one
+    /// below the fold, leaves the video uncovered.
     var panelCoversVideo: Bool {
-        activePanel != nil && !Self.docksSidePanels
+        activePanel != nil && !Self.docksSidePanels && !isTabletop
+    }
+
+    /// An iPhone Duo stands half-open with the fold across the screen: the
+    /// picture fills the upper half and the controls lie on the lower half
+    /// (see `PlayerTabletopLayout`). Set by `PlayerScreen`; never true on
+    /// other devices. The controls cover nothing there, so they stay up.
+    var isTabletop = false {
+        didSet {
+            guard isTabletop != oldValue else { return }
+            showControls()
+        }
     }
 
     /// Seconds of inactivity before the controls hide.
@@ -120,6 +131,21 @@ final class PlayerChromeModel {
     private var remoteSeekTask: Task<Void, Never>?
     private var remoteSeekOriginSeconds: Double?
     private var remoteSeekOffsetSeconds: Double = 0
+
+    /// A circular jog on the remote's ring (see `RemoteJogDetector`). While
+    /// set, the timeline's playhead stretches into a capsule showing which
+    /// way, and how fast, the jog is winding.
+    struct Jog: Equatable {
+        var forward: Bool
+        /// 1…3, from `RemoteJog.speedTier`.
+        var speedTier: Int
+    }
+    private(set) var jog: Jog?
+    /// Last time the remote reported a circle under way, engaged or not.
+    @ObservationIgnored private var remoteCircleSeenAt: ContinuousClock.Instant?
+    /// The most recent committed remote seek, so a jog can take back skips
+    /// that the start of its own circle set off.
+    @ObservationIgnored private var lastRemoteSeekCommit: (at: ContinuousClock.Instant, origin: Double)?
     #endif
 
     #if os(iOS)
@@ -140,9 +166,58 @@ final class PlayerChromeModel {
             duration: player.duration,
             loopEnabled: loopEnabled,
             episode: session.item?.episode,
-            show: session.item?.episode?.show
+            show: session.item?.episode?.show,
+            otherCopies: session.otherCopiesOfCurrentShow(),
+            isOffline: session.isSourceOffline
         )
     }
+
+    #if os(tvOS)
+    // MARK: - Prompt focus
+
+    /// Asks the prompt it names to take the remote's focus; `serial` makes a
+    /// repeated request for the same prompt a change too.
+    struct PromptFocusRequest: Equatable {
+        let prompt: PlayerLogic.Prompt
+        let serial: Int
+    }
+
+    /// The latest focus request. The skip prompt and the Up Next card are
+    /// drawn by different views, each owning its own focus, so they take it
+    /// when a request names them.
+    private(set) var promptFocusRequest: PromptFocusRequest?
+
+    /// The skip prompt for the current intro, recap, or credits segment is
+    /// on screen.
+    var showsSegmentSkip: Bool {
+        !panelCoversVideo && !isScrubbing && session.segmentSkipping.activeSegment != nil
+    }
+
+    /// The prompt the remote's focus rests on while the controls are hidden,
+    /// or nil when neither prompt is on screen.
+    var defaultPrompt: PlayerLogic.Prompt? {
+        PlayerLogic.defaultPrompt(
+            showsUpNext: upcomingEpisode != nil && !panelCoversVideo && !isScrubbing,
+            showsSegmentSkip: showsSegmentSkip
+        )
+    }
+
+    /// Moves the remote's focus onto `defaultPrompt`. False when no prompt
+    /// is up, leaving focus where it is.
+    @discardableResult
+    func focusDefaultPrompt() -> Bool {
+        guard let prompt = defaultPrompt else { return false }
+        focus(prompt)
+        return true
+    }
+
+    func focus(_ prompt: PlayerLogic.Prompt) {
+        promptFocusRequest = PromptFocusRequest(
+            prompt: prompt,
+            serial: (promptFocusRequest?.serial ?? 0) + 1
+        )
+    }
+    #endif
 
     // MARK: - End-of-media bookkeeping
 
@@ -190,8 +265,16 @@ final class PlayerChromeModel {
     }
 
     /// Tap on an empty part of the overlay: hide when visible, show when not.
+    /// In tabletop the controls stay below the fold, and a tap on the
+    /// picture only closes an open panel there.
     func toggleControls() {
-        if controlsVisible {
+        if isTabletop {
+            if activePanel != nil {
+                closePanel()
+            } else {
+                showControls()
+            }
+        } else if controlsVisible {
             hideControls()
         } else {
             showControls()
@@ -204,9 +287,10 @@ final class PlayerChromeModel {
     }
 
     /// Auto-hide only makes sense while actively playing with nothing
-    /// covering the video.
+    /// covering the video, and with the controls over the picture.
     private var canAutoHide: Bool {
-        !panelCoversVideo
+        !isTabletop
+            && !panelCoversVideo
             && !isScrubbing
             && (player?.isPlaying ?? false)
     }
@@ -324,12 +408,14 @@ final class PlayerChromeModel {
     }
 
     /// Every volume change explicitly unmutes, including touch gestures.
-    func setVolume(_ level: Float) {
+    /// A control that shows its own level (the tabletop volume slider)
+    /// skips the HUD.
+    func setVolume(_ level: Float, showsHUD: Bool = true) {
         guard let player else { return }
         let normalized = min(max(level, 0), 1)
         player.isMuted = false
         player.volume = normalized
-        showHUD(.volume(normalized))
+        if showsHUD { showHUD(.volume(normalized)) }
     }
 
 
@@ -456,6 +542,116 @@ final class PlayerChromeModel {
         scheduleTimelineHide()
     }
 
+    // MARK: Jog
+
+    /// Swipes the focus engine reports while a circle is under way come from
+    /// the circle itself; the reveal catcher ignores them.
+    var isRemoteCircling: Bool {
+        if jog != nil { return true }
+        guard let remoteCircleSeenAt else { return false }
+        return ContinuousClock.now - remoteCircleSeenAt < .milliseconds(400)
+    }
+
+    func noteRemoteCircle() {
+        remoteCircleSeenAt = .now
+    }
+
+    /// A circle on the remote became a jog: show the timeline with the
+    /// stretched playhead. Swipes recognized in the circle's first stretch
+    /// may already have skipped, revealed the controls, or both, so the jog
+    /// starts from where playback stood before them and the controls go.
+    /// Returns false when the video can't be jogged (no known duration).
+    @discardableResult
+    func beginJog(forward: Bool) -> Bool {
+        guard let player, let duration = player.duration else { return false }
+        let durationSeconds = duration.playbackSeconds
+        guard durationSeconds > 0 else { return false }
+
+        remoteSeekTask?.cancel()
+        let rollback: Double? = if let origin = remoteSeekOriginSeconds {
+            origin
+        } else if let last = lastRemoteSeekCommit, ContinuousClock.now - last.at < .seconds(2) {
+            last.origin
+        } else {
+            nil
+        }
+        if let rollback {
+            remoteSeekOriginSeconds = rollback
+            remoteSeekOffsetSeconds = 0
+            scrubPosition = rollback / durationSeconds
+            isScrubbing = true
+        } else {
+            resetRemoteSeekState()
+        }
+        lastRemoteSeekCommit = nil
+        dismissHUD()
+
+        if controlsVisible { hideControls() }
+        timelineVisible = true
+        timelineTask?.cancel()
+        jog = Jog(forward: forward, speedTier: 1)
+        return true
+    }
+
+    /// An engaged jog turned by `radians` (clockwise positive) at
+    /// `turnsPerSecond`; faster spins cover more time per turn.
+    func jog(byRadians radians: Double, turnsPerSecond: Double) {
+        guard jog != nil, let player, let duration = player.duration else { return }
+        let durationSeconds = duration.playbackSeconds
+        guard durationSeconds > 0 else { return }
+
+        let tier = RemoteJog.speedTier(turnsPerSecond: turnsPerSecond)
+        let forward = radians == 0 ? jog?.forward ?? true : radians > 0
+        let updated = Jog(forward: forward, speedTier: tier)
+        if jog != updated { jog = updated }
+        guard radians != 0 else { return }
+
+        if remoteSeekOriginSeconds == nil {
+            remoteSeekOriginSeconds = min(max(player.currentTime.playbackSeconds, 0), durationSeconds)
+            remoteSeekOffsetSeconds = 0
+        }
+        let origin = remoteSeekOriginSeconds ?? 0
+        let step = RemoteJog.seconds(
+            forRadians: radians,
+            turnsPerSecond: turnsPerSecond,
+            durationSeconds: durationSeconds
+        )
+        // Clamp the gathered offset itself, so winding back from the end
+        // moves at once instead of first unwinding the overshoot.
+        let target = min(max(origin + remoteSeekOffsetSeconds + step, 0), durationSeconds)
+        remoteSeekOffsetSeconds = target - origin
+        scrubPosition = target / durationSeconds
+        isScrubbing = true
+        timelineVisible = true
+        timelineTask?.cancel()
+
+        let offset = target - origin
+        showHUD(
+            .scrub(
+                target: PlayerLogic.timestamp(target),
+                offset: (offset < 0 ? "−" : "+") + PlayerLogic.timestamp(abs(offset))
+            ),
+            sticky: true
+        )
+        scheduleRemoteSeekCommit(durationSeconds: durationSeconds)
+    }
+
+    /// The jog went quiet, or the viewer clicked to settle it: commit any
+    /// preview still pending and let the timeline fade as after a skip.
+    func endJog() {
+        guard jog != nil else { return }
+        remoteCircleSeenAt = nil
+        if isScrubbing, let duration = player?.duration?.playbackSeconds, duration > 0 {
+            remoteSeekTask?.cancel()
+            // Still jogging while it commits, so it isn't remembered as a
+            // skip to take back.
+            commitRemoteSeek(durationSeconds: duration)
+        } else {
+            scheduleTimelineHide()
+        }
+        jog = nil
+    }
+
     func hideTimeline() {
         timelineTask?.cancel()
         timelineVisible = false
@@ -464,6 +660,14 @@ final class PlayerChromeModel {
     /// Handles Menu while the lightweight timeline/HUD is presented.
     /// Returns true when something was dismissed instead of exiting.
     func dismissRemotePresentation() -> Bool {
+        if jog != nil {
+            // Menu backs out of a jog without moving: the preview, and any
+            // skip its circle set off, is dropped.
+            jog = nil
+            remoteCircleSeenAt = nil
+            if isScrubbing { cancelRemoteSeek() } else { hideTimeline() }
+            return true
+        }
         if isScrubbing {
             cancelRemoteSeek()
             return true
@@ -491,6 +695,9 @@ final class PlayerChromeModel {
 
         seek(toPosition: position)
         resetRemoteSeekState()
+        // Only swipe skips can be a circle's false start; a jog's own
+        // result is never taken back by the next jog.
+        lastRemoteSeekCommit = jog == nil ? (.now, origin) : nil
         showHUD(
             .scrub(
                 target: PlayerLogic.timestamp(targetSeconds),
@@ -518,7 +725,7 @@ final class PlayerChromeModel {
         timelineTask?.cancel()
         timelineTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(4))
-            guard !Task.isCancelled, self?.isScrubbing == false else { return }
+            guard !Task.isCancelled, self?.isScrubbing == false, self?.jog == nil else { return }
             self?.timelineVisible = false
         }
     }

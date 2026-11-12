@@ -75,6 +75,25 @@ nonisolated enum CloudProviders {
         }
         return parameters
     }
+
+    /// Why a sign-in runs. A library sign-in to Google Drive opens the
+    /// picker, where the user ticks the videos to play. A sync sign-in
+    /// (ENHANCEMENT.md K.8) has nothing to choose: `drive.file` already
+    /// covers the folder and files Edendale creates, so the picker's
+    /// parameters are left out and only the refresh-token ones stay.
+    /// OneDrive and Dropbox sign in the same way for both.
+    enum SignInPurpose: Sendable {
+        case library
+        case sync
+    }
+
+    /// Google's sign-in without the picker: a refresh token, and the
+    /// account chooser with the consent page.
+    static let googleSyncParameters = [
+        "access_type": "offline",
+        "prompt": "consent select_account"
+    ]
+
     /// 27.1 adds the app folder (`Apps/Edendale/`), where sync files live
     /// (FEATURES-27.1.md §5.2, decision 1). Consent fails until the Entra
     /// app registration lists `Files.ReadWrite.AppFolder`; existing
@@ -103,12 +122,20 @@ nonisolated enum CloudProviders {
     /// the `common` authority.
     static let microsoftAuthority = URL(string: "https://login.microsoftonline.com/common/oauth2/v2.0/")!
 
-    static func configuration(for kind: MediaSourceKind, bundle: Bundle = .main) -> OAuthConfiguration? {
+    static func configuration(
+        for kind: MediaSourceKind,
+        purpose: SignInPurpose = .library,
+        bundle: Bundle = .main
+    ) -> OAuthConfiguration? {
         guard let clientID = clientID(for: kind, bundle: bundle) else { return nil }
-        return configuration(for: kind, clientID: clientID)
+        return configuration(for: kind, clientID: clientID, purpose: purpose)
     }
 
-    static func configuration(for kind: MediaSourceKind, clientID: String) -> OAuthConfiguration? {
+    static func configuration(
+        for kind: MediaSourceKind,
+        clientID: String,
+        purpose: SignInPurpose = .library
+    ) -> OAuthConfiguration? {
         switch kind {
         case .googleDrive:
             // An iOS-type client redirects to its reversed client ID.
@@ -122,7 +149,7 @@ nonisolated enum CloudProviders {
                 redirectURI: "\(scheme):/oauth2redirect",
                 callbackScheme: scheme,
                 scopes: googleScopes,
-                additionalAuthorizationParameters: googlePickerParameters
+                additionalAuthorizationParameters: purpose == .sync ? googleSyncParameters : googlePickerParameters
             )
         case .oneDrive:
             let scheme = "msauth.com.BaBaSaMa.Edendale"

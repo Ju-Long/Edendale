@@ -37,6 +37,21 @@ import Testing
         #expect(decoded.version == AccountHandoff.version)
     }
 
+    @Test func syncRequestsSayForSyncAndOlderOnesDecodeWithout() throws {
+        // A TV choosing a sync location asks for a picker-free sign-in.
+        let sync = AccountHandoff.Request(kind: .googleDrive, deviceName: "Living Room", forSync: true)
+        let body = try unframe(AccountHandoff.frame(sync))
+        #expect(String(decoding: body, as: UTF8.self).contains(#""forSync":true"#))
+        #expect(try AccountHandoff.decodeRequest(body).forSync == true)
+
+        // Library requests leave the key out, as older builds do.
+        let library = AccountHandoff.Request(kind: .googleDrive, deviceName: "Living Room")
+        let libraryBody = try unframe(AccountHandoff.frame(library))
+        #expect(!String(decoding: libraryBody, as: UTF8.self).contains("forSync"))
+        let older = try AccountHandoff.decodeRequest(Data(#"{"version":1,"kind":"gdrive","deviceName":"TV"}"#.utf8))
+        #expect(older.forSync == nil)
+    }
+
     @Test func accountsRoundTripWithTheirKeyAndToken() throws {
         let response = AccountHandoff.Response(status: .approved, account: AccountHandoff.Account(account))
         let decoded = try AccountHandoff.decodeResponse(unframe(AccountHandoff.frame(response)))
