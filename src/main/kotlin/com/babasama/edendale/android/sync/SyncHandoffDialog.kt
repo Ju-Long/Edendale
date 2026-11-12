@@ -60,6 +60,8 @@ import com.babasama.edendale.handoff.AccountHandoff.HandoffException
 import com.babasama.edendale.handoff.HandoffProtocolV2
 import com.babasama.edendale.handoff.HandoffV2
 import com.babasama.edendale.handoff.PairingFlow
+import com.babasama.edendale.handoff.PairingFlow.GuestStep
+import com.babasama.edendale.handoff.PairingFlow.GuestView
 import com.babasama.edendale.sync.SyncProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -93,9 +95,6 @@ private data class OfferChoice(
         receiverPlatform,
     )
 }
-
-/** The guest's steps before the channel is up. */
-private enum class GuestStep { CONNECTING, PAIRING }
 
 /**
  * Setting up another device, or receiving from one, over the local network
@@ -327,9 +326,12 @@ internal fun SyncHandoffDialog(
         typed = ""
         codeError = null
         val myRole = chosenRole ?: return
+        val next = PairingFlow.retryMode(mode, modes)
         when {
-            mode == PairingFlow.Mode.SHOW -> startHosting(myRole)
-            mode == PairingFlow.Mode.SCAN && PairingFlow.Mode.SCAN !in modes -> mode = null
+            // The same code screen: a new code now (the effect doesn't run again for an unchanged mode).
+            next == PairingFlow.Mode.SHOW && mode == PairingFlow.Mode.SHOW -> startHosting(myRole)
+            // A link's code on a device that can't scan gives way to its own code, which the effect starts.
+            else -> mode = next
         }
     }
 
@@ -482,38 +484,41 @@ internal fun SyncHandoffDialog(
                             }
                         }
                     }
-                    guestStep == GuestStep.CONNECTING -> Waiting(stringResource(R.string.pairing_connecting))
-                    guestStep == GuestStep.PAIRING -> Waiting(stringResource(R.string.pairing_pairing))
-                    mode == PairingFlow.Mode.ENTER -> CodeEntry(
-                        isTelevision = isTelevision,
-                        devices = codeDevices,
-                        target = codeTarget,
-                        searchFailed = searchFailed,
-                        onlyQrHosts = PairingFlow.onlyQrHosts(foundHosts),
-                        typed = typed,
-                        locked = locked,
-                        error = codeError,
-                        otherAction = otherDeviceAction(context, myRole),
-                        onPick = { name ->
-                            picked = name
-                            typed = ""
-                            codeError = null
-                            attempts = PairingFlow.CodeAttempts()
-                        },
-                        onType = { digits ->
-                            typed = digits
-                            codeError = null
-                            // The code is read from this host: keep it even if another one appears.
-                            if (picked == null) picked = codeTarget?.name
-                        },
-                        onSubmit = { submitCode(myRole) },
-                    )
-                    else -> {
-                        QrCodeScanner(onCode = { payload ->
-                            scanned = payload
-                            startGuest(payload, myRole)
-                        })
-                        Note(stringResource(R.string.pairing_scan_instructions))
+                    // A code in hand (a pairing link's) shows it connecting at once: the scanner, which asks for the camera, never composes.
+                    else -> when (PairingFlow.guestView(mode, hasCode = scanned != null, step = guestStep)) {
+                        GuestView.CONNECTING -> Waiting(stringResource(R.string.pairing_connecting))
+                        GuestView.PAIRING -> Waiting(stringResource(R.string.pairing_pairing))
+                        GuestView.CODE_ENTRY -> CodeEntry(
+                            isTelevision = isTelevision,
+                            devices = codeDevices,
+                            target = codeTarget,
+                            searchFailed = searchFailed,
+                            onlyQrHosts = PairingFlow.onlyQrHosts(foundHosts),
+                            typed = typed,
+                            locked = locked,
+                            error = codeError,
+                            otherAction = otherDeviceAction(context, myRole),
+                            onPick = { name ->
+                                picked = name
+                                typed = ""
+                                codeError = null
+                                attempts = PairingFlow.CodeAttempts()
+                            },
+                            onType = { digits ->
+                                typed = digits
+                                codeError = null
+                                // The code is read from this host: keep it even if another one appears.
+                                if (picked == null) picked = codeTarget?.name
+                            },
+                            onSubmit = { submitCode(myRole) },
+                        )
+                        GuestView.SCANNER -> {
+                            QrCodeScanner(onCode = { payload ->
+                                scanned = payload
+                                startGuest(payload, myRole)
+                            })
+                            Note(stringResource(R.string.pairing_scan_instructions))
+                        }
                     }
                 }
             }

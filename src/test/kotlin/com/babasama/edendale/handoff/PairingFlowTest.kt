@@ -88,6 +88,32 @@ class PairingFlowTest {
         assertNull(PairingFlow.target(emptyList(), "Living Room TV"))
     }
 
+    // MARK: - A pairing link (Section T)
+
+    @Test
+    fun `a pairing link shows it connecting from the first frame, so the scanner never asks for the camera`() {
+        // The link's code is in hand before the connection starts.
+        assertEquals(PairingFlow.GuestView.CONNECTING, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = true, step = null))
+        assertEquals(PairingFlow.GuestView.CONNECTING, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = true, step = PairingFlow.GuestStep.CONNECTING))
+        assertEquals(PairingFlow.GuestView.PAIRING, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = true, step = PairingFlow.GuestStep.PAIRING))
+        // Without a code, the scanner shows only where the viewer chose to scan, and the field where they chose to type.
+        assertEquals(PairingFlow.GuestView.SCANNER, PairingFlow.guestView(PairingFlow.Mode.SCAN, hasCode = false, step = null))
+        assertEquals(PairingFlow.GuestView.CODE_ENTRY, PairingFlow.guestView(PairingFlow.Mode.ENTER, hasCode = false, step = null))
+        assertEquals(PairingFlow.GuestView.CONNECTING, PairingFlow.guestView(PairingFlow.Mode.ENTER, hasCode = false, step = PairingFlow.GuestStep.CONNECTING))
+        assertEquals(PairingFlow.GuestView.PAIRING, PairingFlow.guestView(PairingFlow.Mode.ENTER, hasCode = false, step = PairingFlow.GuestStep.PAIRING))
+    }
+
+    @Test
+    fun `Try Again after a link's code on a device that can't scan shows its own code`() {
+        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false)
+        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true)
+        assertEquals(PairingFlow.Mode.SHOW, PairingFlow.retryMode(PairingFlow.Mode.SCAN, television))
+        assertEquals(PairingFlow.Mode.SCAN, PairingFlow.retryMode(PairingFlow.Mode.SCAN, phone))
+        assertEquals(PairingFlow.Mode.ENTER, PairingFlow.retryMode(PairingFlow.Mode.ENTER, television))
+        assertEquals(PairingFlow.Mode.SHOW, PairingFlow.retryMode(PairingFlow.Mode.SHOW, phone))
+        assertNull(PairingFlow.retryMode(null, phone))
+    }
+
     // MARK: - Joining by the other device's code (Section T)
 
     @Test

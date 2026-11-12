@@ -50,6 +50,32 @@ object PairingFlow {
         Mode.ENTER, null -> false
     }
 
+    /** A joining device's steps once it has a code to use: connecting, then pairing on the open socket. */
+    enum class GuestStep { CONNECTING, PAIRING }
+
+    /** What a joining device shows. */
+    enum class GuestView { SCANNER, CODE_ENTRY, CONNECTING, PAIRING }
+
+    /**
+     * What the joining side shows. Once it holds a code (scanned, or opened
+     * as an `edendale://handoff` link) it shows the connection starting,
+     * even in the frame before the connection starts, so a pairing link
+     * never composes the scanner, which would ask for the camera.
+     */
+    fun guestView(mode: Mode?, hasCode: Boolean, step: GuestStep?): GuestView = when {
+        step == GuestStep.PAIRING -> GuestView.PAIRING
+        step == GuestStep.CONNECTING || hasCode -> GuestView.CONNECTING
+        mode == Mode.ENTER -> GuestView.CODE_ENTRY
+        else -> GuestView.SCANNER
+    }
+
+    /**
+     * Where Try Again goes: the same screen, except that a link's code on a
+     * device that can't scan gives way to the device's own code (never the
+     * scanner, nor a frame of the scan-or-show choice).
+     */
+    fun retryMode(mode: Mode?, modes: List<Mode>): Mode? = if (mode == Mode.SCAN && Mode.SCAN !in modes) modes.first() else mode
+
     /** A host found on the network (§9.1): the name, platform, and version it advertises, and its port. */
     data class Host(val name: String, val platform: String?, val version: Int, val port: Int = 0)
 
