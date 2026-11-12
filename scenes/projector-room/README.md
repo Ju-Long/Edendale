@@ -10,10 +10,11 @@ lobby's light through the door glass keep the room warm and dim.
 
 | | |
 |---|---|
-| Viewer | `Seat`, on the floor under the centre chair of row 4 of 6 (nine chairs a row) |
-| Screen | `Screen`, 5.6 × 3.15 m, 7.4 m ahead, its centre 2.725 m up: 42° wide from the seat |
+| Viewer | `Seat`, on the floor under the centre chair of row 2 of 6 (nine chairs a row); row 1 put the top of the screen out of a headset's view |
+| Seat map | `SeatMap`: 54 chairs, 6 rows of 9 |
+| Screen | `Screen`, 5.6 × 3.15 m, 5.48 m ahead, its centre 2.725 m up: 54° wide from the seat |
 | Room | 9 m wide, 13.6 m deep, 4.9 m to the ceiling; a flat floor |
-| Projector | lens 1.62 m up, 3.1 m behind the seat; the beam's lower edge clears a seated head by about 0.2 m |
+| Projector | lens 1.62 m up, 5.0 m behind the seat; the beam's lower edge clears a seated head by about 0.1 m |
 | Exported meshes | `Room` (7,306 triangles, `textures/room.jpg`, 4096²), `Chairs` (23,976, `textures/chairs.jpg`, 2048²), `Props` (projector, platform, film cans, piano: 3,928, `textures/props.jpg`, 2048²), `Projector beam` (8, `textures/beam.png`) |
 
 ## The beam

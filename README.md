@@ -24,6 +24,7 @@ The universal documents (`AGENTS.md`, `CLAUDE.md`, `DESIGN.md`, `MODEL.md`) are
 | `tools/bake_lighting.py` | Headless bake of a scene's lighting into its textures and exported meshes |
 | `tools/export_gltf.py` | Headless export to GLB, for `meta-horizon` |
 | `tools/export_usd.py` | Headless export to USDZ, for `apple` |
+| `tools/mark_seats.py` | Headless rewrite of a scene's seat markers (`SeatMap`) |
 | `tools/_theater_scene.py` | The checks and helpers both scripts share |
 | `out/` | Export output; ignored by git |
 
@@ -38,10 +39,23 @@ USDZ directly.
   up with -Z ahead, which is the forward axis of glTF, the Spatial SDK, and
   RealityKit, so the apps rotate nothing.
 - **Two named objects.** `Seat`, an empty at the origin, and `Screen`, a mesh
-  quad facing the seat and sized for a 16:9 picture. The Quest 3 spike used a
+  quad facing the seat and sized for a 16:9 picture. Seat the viewer where
+  the screen spans about 55–62° across: from the middle rows (41–46°) the
+  screens looked far away on Apple Vision Pro. To move the viewer, move
+  everything but `Seat` so the new place lands on the origin; lightmaps don't
+  change, so nothing needs baking again. The Quest 3 spike used a
   screen 4 m wide, 5 m ahead, with its centre 1.5 m up. The apps find both by
   name and place the video surface and the viewer from them; an export fails
   if either is missing.
+- **Seat map.** Every seat is marked for the apps' seat map: an empty
+  `SeatMap` at the origin in `Theater`, with one child empty per seat named
+  `Seat_<row>_<number>` (two digits each; `Seat_06_01`), on the floor under
+  the seat. Rows count from the front, seats from the left as the viewer
+  faces the screen. Apple Vision Pro draws the map from them, seats the
+  viewer in any of them, and turns the room so the screen is straight ahead
+  from the chosen one. `tools/mark_seats.py` writes them from the seat
+  objects in `Source`; run it again after adding or moving seats. Moving the
+  viewer moves them with everything else.
 - **Lighting is baked.** Bake with Cycles to textures saved under `textures/`,
   and give each material its baked image as base colour or emission. The
   theaters have no real-time lights; lights and cameras are not exported.
@@ -148,9 +162,9 @@ licence. All three were made in house and are MPL-2.0.
 
 | Scene | What it is | Screen from the seat | Triangles | GLB |
 |---|---|---|---|---|
-| [`movie-theatre`](scenes/movie-theatre/README.md) | A stadium-seated cinema, the viewer in its centre seat | 12 m wide, 14 m ahead (46°) | 93,322 | 7.2 MB |
-| [`projector-room`](scenes/projector-room/README.md) | A 1920s picture hall: wooden chairs, a reel projector behind, its beam overhead | 5.6 m wide, 7.4 m ahead (42°) | 35,220 | 4.1 MB |
-| [`performance-theatre`](scenes/performance-theatre/README.md) | A proscenium playhouse, red curtains tied back around the screen on the stage | 11 m wide, 14 m ahead (43°) | 149,432 | 11.4 MB |
+| [`movie-theatre`](scenes/movie-theatre/README.md) | A stadium-seated cinema, the viewer in row 3 of 11 | 12 m wide, 10.55 m ahead (59°) | 93,322 | 7.2 MB |
+| [`projector-room`](scenes/projector-room/README.md) | A 1920s picture hall: wooden chairs, a reel projector behind, its beam overhead | 5.6 m wide, 5.48 m ahead (54°) | 35,220 | 4.1 MB |
+| [`performance-theatre`](scenes/performance-theatre/README.md) | A proscenium playhouse, red curtains tied back around the screen on the stage | 11 m wide, 9.25 m ahead (62°) | 149,432 | 11.4 MB |
 
 All three are lit as if the film has started. Every baked material carries
 its light as emission, so an app can dim a room further by scaling the
