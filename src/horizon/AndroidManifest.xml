@@ -27,6 +27,25 @@
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"
         tools:node="remove" />
 
+    <!-- android's 27.1 pairing scans the other device's QR code with the
+         camera on phones and tablets. Meta reviews CAMERA, and a headset is
+         never offered the scanner (android's own headset check; a headset
+         only shows its QR code and six-digit code), so the permission and
+         its optional camera features come out here (B.14). Without the
+         permission the camera can't open even where the scanner is mounted
+         for a moment while a pairing link connects. -->
+    <uses-permission
+        android:name="android.permission.CAMERA"
+        tools:node="remove" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        tools:node="remove" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        tools:node="remove" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        tools:node="remove" />
     <uses-feature
         android:name="android.software.leanback"
         tools:node="remove" />

@@ -98,7 +98,19 @@ Store takes one APK, from `assembleHorizonRelease`. A Quest's theater is the
 one described next. The player never offers **Rotation Lock**. And
 **Settings → About** carries this build's own licence line (MPL-2.0 over an
 LGPL-2.1 FFmpeg, and the Spatial SDK in a theater build), which `android`'s
-Settings no longer has.
+Settings no longer has. android's pairing screen, rebuilt to match the Apple
+branch's and merged here on 2026-11-12, lets a phone or tablet scan the
+other device's QR code with its camera (Sync between devices, below). A
+headset is offered what a TV is: **Set Up Another Device** and **Receive
+from Another Device** each show the headset's QR code, with the six-digit
+code for a Windows PC under it, and the other device scans it from the
+opposite button. A headset is never offered **Scan the Other Device's
+Code**, so it pairs with a phone or tablet with a camera, an iPhone or iPad,
+or a Windows PC, but not with a TV or another headset, which also only show
+a code. The manifest overlay removes android's `CAMERA` permission, which
+Meta reviews, and its optional camera features, so this build asks for no
+camera permission (HORIZON.md B.14); CameraX is in the APK, but a headset
+never opens it.
 
 A build with `-Phorizon.theater=true` adds the **immersive theater**
 (HORIZON.md Section G): a Theater button in the player that puts the video on
@@ -139,7 +151,7 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, and three rooms together in a theater build |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no `CAMERA` (android's pairing scanner), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, and three rooms together in a theater build |
 | With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
 | Theater rooms (after a scene changes on `scenes`) | On `scenes`: `Blender --background scenes/<room>/<room>.blend --python tools/export_gltf.py -- out/<room>.glb`; then here: `python3 -I tools/horizon/prepare_theater_glb.py <scenes checkout>/out/*.glb` → `src/horizonTheater/assets/theater/` (HORIZON.md G.14) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
@@ -211,8 +223,11 @@ section picker; Settings' pages with B or Y as Back; Parental Controls with a
 PIN from the system keyboard and its gates; Delete Watch History; a sync
 location sent from an iPhone or iPad (Google's sign-in or the folder picker
 on the headset), the offer to delete the headset's file when the location
-changes, and a change written after leaving the app; and the player without
-a Rotation Lock or Picture in Picture button. For the
+changes, and a change written after leaving the app; pairing on the new
+screen (the headset showing its code both ways, a phone scanning it, a
+pairing link opened on the headset, and no camera permission in `adb shell
+dumpsys package com.babasama.edendale`); and the player without a Rotation
+Lock or Picture in Picture button. For the
 theater (HORIZON.md G.10): entering and leaving it from every source type;
 each room facing the viewer with the picture on its screen, the Room list,
 the screen's placement, a recenter, and the headset off and on; controllers

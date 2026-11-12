@@ -365,6 +365,9 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             if (simple in reviewRequired) notes += "permission $permission needs Meta's review; justify it in the submission"
         }
         if (permissions.any { it.endsWith("WRITE_EPG_DATA") }) failures += "WRITE_EPG_DATA (TV Watch Next) is still declared"
+        // B.14: android's pairing QR scanner asks for the camera; a headset never offers it,
+        // and Meta reviews the permission, so the overlay removes it.
+        if (permissions.any { it == "android.permission.CAMERA" }) failures += "CAMERA (android's pairing QR scanner) is still declared (HORIZON.md B.14)"
         notes += "permissions: ${permissions.joinToString()}"
 
         val features = manifest.elements("uses-feature")
