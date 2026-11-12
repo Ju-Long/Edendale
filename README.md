@@ -956,10 +956,16 @@ location is chosen.
 |---|---|---|
 | A folder picked in Files or Finder (iCloud Drive and other cloud apps' folders included) | iOS, iPadOS, macOS, visionOS | Security-scoped bookmark; `<id>.json.tmp` renamed over the file |
 | The app's own iCloud Drive folder (`iCloud Drive/Edendale`) | iOS, iPadOS, macOS, visionOS | The ubiquity container's `Documents`, coordinated writes, files downloaded on read |
-| Google Drive | All (Apple TV by handoff only) | `drive.file`; the app's `Edendale/<space>` folder in My Drive |
+| Google Drive | All (Apple TV by handoff only) | `drive.file`; the app's `Edendale/<space>` folder in My Drive. Signing in for sync skips Google's picker: there is nothing to choose |
 | OneDrive | All | `Files.ReadWrite.AppFolder`; `Apps/Edendale/<space>/` |
 | Dropbox | All | `files.content.write`; `/Edendale/<space>/` |
 | WebDAV, SMB, SFTP | All | A folder picked on the server with its saved login; the connectors gained `MKCOL`/`PUT`, libsmb2 writes, and SFTP write, mkdir, remove, and rename |
+
+Choosing Google Drive, OneDrive, or Dropbox in Settings → Sync never asks for
+videos or a folder. A OneDrive or Dropbox account linked before 27.1 is marked
+in the account list and signs in again from there, and an Apple TV asking an
+iPhone or iPad for the account gets a sign-in without Google's picker
+(ENHANCEMENT.md K.8).
 
 Every record carries one `updateTime` (UTC milliseconds) and the ID of the
 device that wrote it. The newest record wins as a whole; equal stamps go to

@@ -16,6 +16,11 @@
 //  the account's "Videos you chose" source is linked straight away. Apple
 //  TV never opens the picker; it lists what was chosen on other devices.
 //
+//  Settings → Sync uses the same step with `purpose: .sync` (ENHANCEMENT.md
+//  K.8): nothing is chosen there. Google's sign-in skips the picker, an
+//  account whose grant predates the 27.1 write scopes signs in again from
+//  its own row, and Apple TV asks the iPhone or iPad for a sync sign-in.
+//
 
 import SwiftUI
 #if os(tvOS)
@@ -25,6 +30,8 @@ import Network
 
 struct CloudAccountStep: View {
     let kind: MediaSourceKind
+    /// `.sync` (Settings → Sync): signing in skips Google's picker.
+    var purpose: CloudProviders.SignInPurpose = .library
     /// The account's top folder, to browse from.
     let onReady: (BrowseLocation) -> Void
     /// Google Drive: the account to link "Videos you chose" for, with any
@@ -44,15 +51,24 @@ struct CloudAccountStep: View {
                 Section {
                     ForEach(accounts) { account in
                         Button {
-                            open(account)
+                            choose(account)
                         } label: {
-                            Label(account.label, image: .circleUserFill)
-                                .foregroundStyle(Theme.textPrimary)
-                                #if os(tvOS)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(SettingsMetrics.highlightBleed)
-                                #endif
+                            VStack(alignment: .leading, spacing: 3) {
+                                Label(account.label, image: .circleUserFill)
+                                    .foregroundStyle(Theme.textPrimary)
+                                if needsSyncSignIn(account) {
+                                    Text("Sign in again so Edendale can write its sync files here.")
+                                        .font(Typography.bodySM)
+                                        .foregroundStyle(Theme.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            #if os(tvOS)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(SettingsMetrics.highlightBleed)
+                            #endif
                         }
+                        .disabled(isSigningIn)
                         #if os(tvOS)
                         // Keeps the light label legible when focused (see
                         // LinkSourceProviderList).
@@ -114,7 +130,8 @@ struct CloudAccountStep: View {
         HandoffButton(
             kind: kind,
             title: String(localized: "Continue on iPhone or iPad"),
-            opensOnAppear: store.accounts(of: kind).isEmpty
+            opensOnAppear: store.accounts(of: kind).isEmpty,
+            forSync: purpose == .sync
         ) { response in
             guard let account = response.account else { throw AccountHandoff.HandoffError.malformedMessage }
             open(try await store.adoptHandedOffAccount(account.cloudAccount))
@@ -159,6 +176,12 @@ struct CloudAccountStep: View {
     /// once the account is chosen as the sync location.
     private var privacyNote: String {
         switch kind {
+        case .googleDrive where purpose == .sync:
+            #if os(tvOS)
+            String(localized: "Apple TV gets the account from your iPhone or iPad. In Google Drive, Edendale sees only the sync files it creates and changes nothing else.")
+            #else
+            String(localized: "There's nothing to choose: Edendale keeps its sync files in an Edendale folder it creates in your Google Drive. It sees only the files it creates, connects from this device only, and changes nothing else.")
+            #endif
         case .googleDrive:
             #if os(tvOS)
             String(localized: "Choose your videos in Edendale on an iPhone, iPad, or Mac. Apple TV gets the account from your iPhone or iPad and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else.")
@@ -188,13 +211,36 @@ struct CloudAccountStep: View {
         onReady(BrowseLocation(connector: connector, url: connector.root, name: kind.displayName))
     }
 
+    /// A linked account whose grant can't write sync files: a OneDrive or
+    /// Dropbox sign-in from before 27.1 (FEATURES-27.1.md §10).
+    private func needsSyncSignIn(_ account: CloudAccount) -> Bool {
+        purpose == .sync && !CloudProviders.grantsSyncWrites(account)
+    }
+
+    /// A linked account's row. For sync, one without the write scopes signs
+    /// in again here instead of sending the user to Link Source, where
+    /// OneDrive and Dropbox would ask for a folder. Apple TV can't sign in
+    /// itself; Settings → Sync explains what to do there.
+    private func choose(_ account: CloudAccount) {
+        #if os(tvOS)
+        open(account)
+        #else
+        if needsSyncSignIn(account) {
+            // Dropbox's authorize page takes no login hint.
+            signIn(loginHint: kind == .dropbox ? nil : account.email)
+        } else {
+            open(account)
+        }
+        #endif
+    }
+
     #if !os(tvOS)
-    private func signIn() {
+    private func signIn(loginHint: String? = nil) {
         isSigningIn = true
         errorMessage = nil
         Task {
             do {
-                let signIn = try await store.signIn(kind: kind)
+                let signIn = try await store.signIn(kind: kind, loginHint: loginHint, purpose: purpose)
                 open(signIn.account, pickedFileIDs: signIn.pickedFileIDs)
             } catch OAuthError.cancelled {
             } catch {
@@ -268,6 +314,9 @@ struct HandoffButton: View {
     /// with no account on this Apple TV yet). Backing out of the list
     /// leaves the button and the step's other options.
     var opensOnAppear = false
+    /// Settings → Sync: the iPhone or iPad signs in without Google's
+    /// picker if it has to sign in at all.
+    var forSync = false
     let onResponse: (AccountHandoff.Response) async throws -> Void
     let onError: (String) -> Void
 
@@ -309,7 +358,7 @@ struct HandoffButton: View {
             isWaiting = true
             do {
                 let response = try await AccountHandoffClient.request(
-                    AccountHandoff.Request(kind: kind, deviceName: UIDevice.current.name),
+                    AccountHandoff.Request(kind: kind, deviceName: UIDevice.current.name, forSync: forSync ? true : nil),
                     endpoint: endpoint
                 )
                 try await onResponse(response)
