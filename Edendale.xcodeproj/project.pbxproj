@@ -25,6 +25,7 @@
 		27ED01AD00000000000000AD /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 27ED01B000000000000000B0 /* Drops */; };
 		27FF00010000000000000001 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
 		27FF00010000000000000002 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
+		27E5F00100000000000000A2 /* TopShelfExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 27E5F00100000000000000A1 /* TopShelfExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +50,13 @@
 			remoteGlobalIDString = 27BC63B52FBDBE64005EAD5C;
 			remoteInfo = Edendale;
 		};
+		27E5F00100000000000000A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 27BC63AE2FBDBE64005EAD5C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 27E5F00100000000000000A9;
+			remoteInfo = TopShelfExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -59,6 +67,17 @@
 			dstSubfolderSpec = 13;
 			files = (
 				270D2C723004C7B300741225 /* WidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27E5F00100000000000000A5 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				27E5F00100000000000000A2 /* TopShelfExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -76,6 +95,7 @@
 		27CF16C1000000000000A551 /* Shared Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Shared Assets.xcassets"; path = Shared/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		27ED01A100000000000000A1 /* Edendale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edendale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27FF00010000000000000003 /* Vendor/FFmpeg/FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = SOURCE_ROOT; };
+		27E5F00100000000000000A1 /* TopShelfExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TopShelfExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -133,6 +153,20 @@
 			);
 			target = 27ED01A200000000000000A2 /* Edendale TV */;
 		};
+		27E5F00100000000000000A8 /* Exceptions for "Shared" folder in "TopShelfExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Localizable.xcstrings,
+			);
+			target = 27E5F00100000000000000A9 /* TopShelfExtension */;
+		};
+		27E5F00100000000000000A7 /* Exceptions for "TopShelf" folder in "TopShelfExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 27E5F00100000000000000A9 /* TopShelfExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -169,8 +203,17 @@
 				2758F9DD2FDEA39F00D779E6 /* Exceptions for "Shared" folder in "Edendale" target */,
 				27ED01AA00000000000000AA /* Exceptions for "Shared" folder in "Edendale TV" target */,
 				272FE0663007C3CE00900892 /* Exceptions for "Shared" folder in "WidgetsExtension" target */,
+				27E5F00100000000000000A8 /* Exceptions for "Shared" folder in "TopShelfExtension" target */,
 			);
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		27E5F00100000000000000A6 /* TopShelf */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				27E5F00100000000000000A7 /* Exceptions for "TopShelf" folder in "TopShelfExtension" target */,
+			);
+			path = TopShelf;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -227,6 +270,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		27E5F00100000000000000AB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -257,6 +307,7 @@
 				27BC63CA2FBDBE65005EAD5C /* EdendaleTests */,
 				27BC63D42FBDBE65005EAD5C /* EdendaleUITests */,
 				270D2C663004C7B200741225 /* Widgets */,
+				27E5F00100000000000000A6 /* TopShelf */,
 				270D2C613004C7B200741225 /* Frameworks */,
 				27BC63B72FBDBE64005EAD5C /* Products */,
 				277905D82FFD27CC00F49E6F /* Recovered References */,
@@ -271,6 +322,7 @@
 				27BC63C72FBDBE65005EAD5C /* EdendaleTests.xctest */,
 				27BC63D12FBDBE65005EAD5C /* EdendaleUITests.xctest */,
 				270D2C603004C7B200741225 /* WidgetsExtension.appex */,
+				27E5F00100000000000000A1 /* TopShelfExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -384,10 +436,12 @@
 				27ED01A300000000000000A3 /* Sources */,
 				27ED01A400000000000000A4 /* Frameworks */,
 				27ED01A500000000000000A5 /* Resources */,
+				27E5F00100000000000000A5 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				27E5F00100000000000000A4 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				27BC63B82FBDBE64005EAD5C /* Edendale */,
@@ -405,6 +459,28 @@
 			productName = Edendale;
 			productReference = 27ED01A100000000000000A1 /* Edendale.app */;
 			productType = "com.apple.product-type.application";
+		};
+		27E5F00100000000000000A9 /* TopShelfExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 27E5F00100000000000000AD /* Build configuration list for PBXNativeTarget "TopShelfExtension" */;
+			buildPhases = (
+				27E5F00100000000000000AA /* Sources */,
+				27E5F00100000000000000AB /* Frameworks */,
+				27E5F00100000000000000AC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				27E5F00100000000000000A6 /* TopShelf */,
+			);
+			name = TopShelfExtension;
+			packageProductDependencies = (
+			);
+			productName = TopShelfExtension;
+			productReference = 27E5F00100000000000000A1 /* TopShelfExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -432,6 +508,9 @@
 					};
 					27ED01A200000000000000A2 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					27E5F00100000000000000A9 = {
+						CreatedOnToolsVersion = 27.2;
 					};
 				};
 			};
@@ -479,6 +558,7 @@
 				27BC63C62FBDBE65005EAD5C /* EdendaleTests */,
 				27BC63D02FBDBE65005EAD5C /* EdendaleUITests */,
 				270D2C5F3004C7B200741225 /* WidgetsExtension */,
+				27E5F00100000000000000A9 /* TopShelfExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -514,6 +594,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		27ED01A500000000000000A5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27E5F00100000000000000AC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -558,6 +645,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		27E5F00100000000000000AA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -580,6 +674,11 @@
 			isa = PBXTargetDependency;
 			target = 27BC63B52FBDBE64005EAD5C /* Edendale */;
 			targetProxy = 27BC63D22FBDBE65005EAD5C /* PBXContainerItemProxy */;
+		};
+		27E5F00100000000000000A4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 27E5F00100000000000000A9 /* TopShelfExtension */;
+			targetProxy = 27E5F00100000000000000A3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1118,6 +1217,72 @@
 			};
 			name = Release;
 		};
+		27E5F00100000000000000AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TopShelf/TopShelf.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5678544286;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TopShelf/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Edendale Top Shelf";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 27.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.TopShelf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 18.0;
+			};
+			name = Debug;
+		};
+		27E5F00100000000000000AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TopShelf/TopShelf.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5678544286;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TopShelf/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Edendale Top Shelf";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 27.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.BaBaSaMa.Edendale.TopShelf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 18.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1171,6 +1336,15 @@
 			buildConfigurations = (
 				27ED01A600000000000000A6 /* Debug */,
 				27ED01A700000000000000A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		27E5F00100000000000000AD /* Build configuration list for PBXNativeTarget "TopShelfExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27E5F00100000000000000AE /* Debug */,
+				27E5F00100000000000000AF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
