@@ -20530,6 +20530,118 @@
         }
       }
     },
+    "Circle your thumb around the edge of the clickpad to move through the timeline: clockwise goes forward, counterclockwise goes back. Spin faster to cover more with each turn; the arrows on the timeline show how fast. Stop or click to jump there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lass deinen Daumen am Rand des Clickpads kreisen, um dich durch die Zeitleiste zu bewegen: im Uhrzeigersinn geht es vorwärts, gegen den Uhrzeigersinn zurück. Je schneller du kreist, desto weiter kommst du mit jeder Runde; die Pfeile auf der Zeitleiste zeigen, wie schnell. Halte an oder klicke, um zu dieser Stelle zu springen."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circle your thumb around the edge of the clickpad to move through the timeline: clockwise goes forward, anticlockwise goes back. Spin faster to cover more with each turn; the arrows on the timeline show how fast. Stop or click to jump there."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circle your thumb around the edge of the clickpad to move through the timeline: clockwise goes forward, counterclockwise goes back. Spin faster to cover more with each turn; the arrows on the timeline show how fast. Stop or click to jump there."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circle your thumb around the edge of the clickpad to move through the timeline: clockwise goes forward, anticlockwise goes back. Spin faster to cover more with each turn; the arrows on the timeline show how fast. Stop or click to jump there."
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circle your thumb around the edge of the clickpad to move through the timeline: clockwise goes forward, counterclockwise goes back. Spin faster to cover more with each turn; the arrows on the timeline show how fast. Stop or click to jump there."
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira el pulgar por el borde del clickpad para moverte por la línea de tiempo: en el sentido de las agujas del reloj avanzas y en sentido contrario retrocedes. Gira más rápido para recorrer más en cada vuelta; las flechas de la línea de tiempo indican la velocidad. Detente o pulsa para saltar a ese momento."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira el pulgar por el borde del clickpad para moverte por la línea de tiempo: en el sentido de las manecillas del reloj avanzas y en sentido contrario retrocedes. Gira más rápido para recorrer más en cada vuelta; las flechas de la línea de tiempo indican la velocidad. Detente o presiona para saltar a ese momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites tourner le pouce le long du bord du pavé tactile pour parcourir la chronologie : dans le sens des aiguilles d’une montre pour avancer, dans le sens inverse pour reculer. Tournez plus vite pour aller plus loin à chaque tour ; les flèches sur la chronologie indiquent la vitesse. Arrêtez-vous ou appuyez pour accéder à ce moment."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai girare il pollice lungo il bordo del clickpad per spostarti nella timeline: in senso orario vai avanti, in senso antiorario torni indietro. Gira più veloce per coprire di più a ogni giro; le frecce sulla timeline indicano la velocità. Fermati o premi per saltare a quel momento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリックパッドの縁に沿って親指で円を描くと、タイムライン上を移動できます。時計回りで先に進み、反時計回りで戻ります。速く回すほど1周で大きく移動し、タイムラインの矢印が速さを示します。止めるか押すと、その位置にジャンプします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "클릭패드 가장자리를 따라 엄지로 원을 그리면 타임라인을 이동할 수 있습니다. 시계 방향으로 돌리면 앞으로, 반시계 방향으로 돌리면 뒤로 이동합니다. 빠르게 돌릴수록 한 바퀴에 더 많이 이동하며, 타임라인의 화살표가 속도를 보여 줍니다. 멈추거나 누르면 해당 지점으로 이동합니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat je duim langs de rand van de clickpad rondgaan om door de tijdlijn te bewegen: met de klok mee ga je vooruit, tegen de klok in terug. Draai sneller om met elke ronde verder te komen; de pijlen op de tijdlijn tonen hoe snel. Stop of klik om naar dat moment te springen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gire o polegar pela borda do clickpad para percorrer a linha do tempo: no sentido horário você avança e no sentido anti-horário volta. Gire mais rápido para ir mais longe a cada volta; as setas na linha do tempo mostram a velocidade. Pare ou clique para ir para esse momento."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rode o polegar pela margem do clickpad para percorrer a linha cronológica: no sentido dos ponteiros do relógio avança e no sentido contrário recua. Rode mais depressa para ir mais longe em cada volta; as setas na linha cronológica mostram a velocidade. Pare ou prima para saltar para esse momento."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ведите большим пальцем по кругу вдоль края кликпада, чтобы перемещаться по шкале времени: по часовой стрелке — вперед, против часовой стрелки — назад. Чем быстрее вращение, тем дальше каждый оборот; стрелки на шкале времени показывают скорость. Остановитесь или нажмите, чтобы перейти к этому моменту."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Låt tummen gå runt kanten på klickplattan för att röra dig längs tidslinjen: medurs går framåt, moturs går bakåt. Snurra snabbare för att komma längre med varje varv; pilarna på tidslinjen visar hur snabbt. Stanna eller klicka för att hoppa till det ögonblicket."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用拇指沿触控板边缘画圈即可在时间线中移动：顺时针前进，逆时针后退。转得越快，每圈移动得越远；时间线上的箭头会显示速度。停下或按下即可跳到该位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用拇指沿著觸控板邊緣畫圈即可在時間列中移動：順時針前進，逆時針倒退。轉得越快，每圈移動得越遠；時間列上的箭頭會顯示速度。停下或按下即可跳至該位置。"
+          }
+        }
+      }
+    },
     "Clear" : {
       "localizations" : {
         "de" : {
@@ -77873,6 +77985,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "速度、軌道、字幕和畫面"
+          }
+        }
+      }
+    },
+    "Spin to Seek" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreisen zum Spulen"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spin to Seek"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spin to Seek"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spin to Seek"
+          }
+        },
+        "en-US" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spin to Seek"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira para buscar"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira para buscar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tournez pour naviguer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ruota per cercare"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回してシーク"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "돌려서 탐색"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draai om te zoeken"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gire para buscar"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rode para procurar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вращение для перемотки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snurra för att söka"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转圈以定位"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轉圈以跳至指定位置"
           }
         }
       }

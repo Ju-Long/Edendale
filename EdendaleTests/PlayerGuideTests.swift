@@ -26,7 +26,16 @@ struct PlayerGuideTests {
         #expect(PlayerGuide.topics(for: .mac, hasKeyboard: false)
             == [.showControls, .holdSpeed, .keyboard, .tools])
         #expect(PlayerGuide.topics(for: .tv, hasKeyboard: false)
-            == [.showControls, .skip, .holdSpeed, .remoteButtons, .tools])
+            == [.showControls, .skip, .jog, .holdSpeed, .remoteButtons, .tools])
+    }
+
+    @Test func onlyTheSiriRemoteSpinsToSeek() {
+        for platform in [PlayerGuidePlatform.touch, .vision, .mac] {
+            for hasKeyboard in [false, true] {
+                #expect(!PlayerGuide.topics(for: platform, hasKeyboard: hasKeyboard).contains(.jog))
+            }
+        }
+        #expect(PlayerGuide.topics(for: .tv, hasKeyboard: true).contains(.jog))
     }
 
     @Test func touchPlatformsAddKeysOnlyWithAKeyboard() {
@@ -154,6 +163,19 @@ struct PlayerGuideTests {
         #expect(!PlayerGuide.isUnseen(in: store.defaults))
     }
 
+    @Test func theSpinPageReopensOnlyTheTVGuide() throws {
+        let store = try TestDefaults()
+        defer { store.remove() }
+        // A device that closed the first guide.
+        store.defaults.set(1, forKey: PlayerGuide.seenVersionKey)
+        #expect(PlayerGuide.isUnseen(in: store.defaults, platform: .tv))
+        for platform in [PlayerGuidePlatform.touch, .vision, .mac] {
+            #expect(!PlayerGuide.isUnseen(in: store.defaults, platform: platform))
+        }
+        PlayerGuide.markSeen(in: store.defaults, platform: .tv)
+        #expect(!PlayerGuide.isUnseen(in: store.defaults, platform: .tv))
+    }
+
     @Test func openingTheGuideClosesPanelsAndHeldSpeed() throws {
         let store = try TestDefaults()
         defer { store.remove() }
@@ -199,6 +221,56 @@ struct PlayerGuideTests {
                     || still.controls > 0)
             }
         }
+    }
+
+    /// The spin page plays the jog by the player's rules: nothing moves
+    /// until the first circle engages, clockwise winds forward through all
+    /// three speed marks, counterclockwise winds back, and the playhead's
+    /// chevrons always match the thumb's speed.
+    @Test func spinPageFollowsTheRemoteJog() throws {
+        let store = try TestDefaults()
+        defer { store.remove() }
+        let controls = PlayerControlPreferences(defaults: store.defaults)
+        let script = GuideScript(topic: .jog, platform: .tv, controls: controls)
+        let frames = (0..<900).map { script.frame(at: Double($0) / 900) }
+
+        let start = try #require(frames.first)
+        #expect(start.jog == nil && start.timeline == 0 && start.hudOpacity == 0)
+        // The thumb circles the clickpad's edge, out on the detector's ring.
+        for frame in frames {
+            guard let thumb = frame.remote.thumb, frame.remote.thumbOpacity > 0 else { continue }
+            #expect((thumb.x * thumb.x + thumb.y * thumb.y).squareRoot() >= RemoteJogDetector.ringRadius)
+        }
+
+        let jogging = frames.filter { $0.jog != nil }
+        #expect(!jogging.isEmpty)
+        // Before it engages the thumb has already turned, but the playhead hasn't moved.
+        let firstJog = try #require(frames.firstIndex { $0.jog != nil })
+        #expect(abs(frames[firstJog].progress - start.progress) < 0.001)
+        #expect(frames[..<firstJog].contains { ($0.remote.orbit?.turnsPerSecond ?? 0) > 0 })
+
+        let forward = jogging.filter { $0.jog?.forward == true }
+        let back = jogging.filter { $0.jog?.forward == false }
+        #expect(Set(forward.compactMap { $0.jog?.tier }) == [1, 2, 3])
+        #expect(back.contains { $0.jog?.tier == 2 })
+        let peak = try #require(frames.map(\.progress).max())
+        let end = try #require(frames.last { $0.jog != nil })
+        #expect(peak > start.progress)
+        #expect(end.progress < peak && end.progress > start.progress)
+
+        // The chevrons are the player's speed marks for the thumb's speed.
+        for (index, frame) in frames.enumerated() {
+            guard let jog = frame.jog, let orbit = frame.remote.orbit else { continue }
+            #expect(jog.tier == RemoteJog.speedTier(turnsPerSecond: abs(orbit.turnsPerSecond)), "frame \(index)")
+            if orbit.turnsPerSecond != 0 {
+                #expect(jog.forward == (orbit.turnsPerSecond > 0), "frame \(index)")
+            }
+        }
+
+        // The still frame catches the wind at full speed.
+        let still = script.frame(at: script.stillPhase)
+        #expect(still.jog?.tier == 3 && still.jog?.forward == true)
+        #expect(still.hudOpacity == 1)
     }
 }
 

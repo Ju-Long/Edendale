@@ -607,9 +607,12 @@ resumes the video the same way. Each page pairs a looping illustration with
 one control, chosen for the platform's input: tap, double-tap, swipe, hold, and
 hold-and-slide on iOS and iPadOS (keys too while a keyboard is attached); the
 same with look-and-tap and pinch gestures on visionOS; click, click-and-hold,
-and the key commands on macOS; and clickpad, swipe, resting thumb, Play/Pause,
-and Back on tvOS. The last page explains the toolbar chips. The pages quote the
-current **Player Controls** skip lengths and hold speeds.
+and the key commands on macOS; and clickpad, swipe, spin, resting thumb,
+Play/Pause, and Back on tvOS. The tvOS spin page plays the remote's jog by the
+player's own rules: the first circle only engages it, then the playhead's
+chevrons follow the thumb's speed as it winds forward and back. The last page
+explains the toolbar chips. The pages quote the current **Player Controls**
+skip lengths and hold speeds.
 
 The illustrations are SwiftUI drawings rather than recorded GIFs, so they
 follow those settings, the archive palette, and every localization. Under
@@ -617,8 +620,9 @@ Reduce Motion each holds a single frame. Swipe, the arrow keys, or the Back and
 Next buttons turn pages. Escape, the close chip, or tvOS Back close the guide.
 Reopen it with the info chip in **Player Adjustments** or the player guide
 entry at the end of **Settings → Player Controls**. Closing the guide stores
-`player.guideSeenVersion` in the device's preferences; raise
-`PlayerGuide.version` to show a revised guide once more.
+`player.guideSeenVersion` in the device's preferences; raise a platform's
+number in `PlayerGuide.version(for:)` to show its revised guide once more
+(tvOS is at 2 for the spin page, so Apple TV shows the guide once again).
 
 Run the guide tests:
 
