@@ -3,10 +3,14 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- SKIP PROMPTS (SegmentSkippingSection.swift): an opt-in network
-         feature, off by default. The copy says what leaves the device. -->
+    <!-- PLAYBACK (SegmentSkippingSection.swift), the second section of
+         Settings → Player Controls: Skip Prompts, an opt-in network feature,
+         off by default. The switch carries Apple's label and detail. Apple
+         moved the sentence on what TheIntroDB receives to its privacy policy;
+         Windows keeps it beside the switch, so the cost of turning it on is
+         stated where it is turned on. About credits the timestamps. -->
     <StackPanel>
-        <TextBlock x:Uid="SettingsSkipPromptsHeader" Text="SKIP PROMPTS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+        <TextBlock x:Uid="SettingsPlaybackHeader" Text="PLAYBACK" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
         <Border Style="{StaticResource SettingsGroupBorderStyle}">
             <StackPanel>
                 <Grid Style="{StaticResource SettingsRowGridStyle}">
@@ -16,12 +20,13 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock
                         x:Uid="SettingsSkipPromptsLabel"
-                        Text="Offer Skip Intro, Recap, and Credits"
+                        x:Name="PromptsLabel"
+                        Text="Skip Prompts"
                         Style="{StaticResource SettingsRowLabelTextStyle}"
                         Foreground="{StaticResource EdendaleTextPrimaryBrush}"
                         TextWrapping="Wrap" />
+                    <!-- One name for the switch here and in the player panel: its label's. -->
                     <ToggleSwitch
-                        x:Uid="SettingsSkipPromptsToggle"
                         x:Name="PromptsToggle"
                         Grid.Column="1"
                         OnContent=""
@@ -29,15 +34,22 @@
                         MinWidth="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
-                        AutomationProperties.Name="Skip prompts"
+                        AutomationProperties.Name="{x:Bind PromptsLabel.Text}"
                         Toggled="PromptsToggle_Toggled" />
                 </Grid>
 
                 <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
 
                 <TextBlock
+                    x:Uid="SettingsSkipPromptsDetail"
+                    Text="Show buttons to skip intros, recaps, and credits when community timestamps are available. Playback continues until you choose to skip."
+                    Style="{StaticResource SettingsBodyRowTextStyle}" />
+
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <TextBlock
                     x:Uid="SettingsSkipPromptsPrivacy"
-                    Text="When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press."
+                    Text="When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address."
                     Style="{StaticResource SettingsBodyRowTextStyle}" />
             </StackPanel>
         </Border>

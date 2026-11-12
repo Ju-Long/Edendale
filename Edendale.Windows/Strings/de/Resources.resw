@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Suchen</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>EINSTELLUNGEN</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>INFO</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Version</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows-Core</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB-Anmeldeinformationen</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Wiedergabefortschritt</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>DATENORDNER ÖFFNEN</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>QUELLENANGABE</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Dieses Produkt verwendet die TMDB-API, wird jedoch nicht von TMDB befürwortet oder zertifiziert.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale verbindet sich mit TMDB für Artwork und Metadaten, mit den verknüpften Quellen zum Auflisten und Abspielen deiner Dateien, mit Wyzie Subs, wenn du Untertitel suchst, mit TheIntroDB nur, solange Überspringen anbieten aktiv ist, und mit der datenschutzfreundlichen YouTube-Einbettung, wenn du einen Trailer abspielst. Niemals Analysen.</value>
+    <value>Edendale verbindet sich mit TMDB für Artwork und Metadaten, mit den verknüpften Quellen zum Auflisten und Abspielen deiner Dateien, mit dem Speicherort, den du für die Synchronisierung wählst, mit deinen anderen Geräten im lokalen Netzwerk, solange ein Kopplungsbildschirm geöffnet ist, mit Wyzie Subs, wenn du Untertitel suchst, und mit TheIntroDB nur, solange Überspringen anbieten aktiv ist. Ein Trailer öffnet sich auf YouTube in deinem Browser. Niemals Analysen.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>ARCHIV WIRD GELADEN</value>
@@ -617,12 +602,6 @@ IST STUMM</value>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>Entwickler-Build</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Konfiguriert</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Fehlt — führe init.ps1 aus, erstelle dann Edendale neu</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Repliziert auf {0}</value>
   </data>
@@ -631,9 +610,6 @@ IST STUMM</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Der Autostart-Eintrag konnte nicht aktualisiert werden — Windows hat die Änderung der Registrierung verweigert.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Nicht verfügbar — TMDB-Anmeldeinformationen fehlen</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Verbunden als {0}</value>
@@ -832,9 +808,6 @@ IST STUMM</value>
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Aus Watchlist entfernen</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>PUBLIKUM</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Für junges Publikum geeignet</value>
@@ -1085,9 +1058,6 @@ IST STUMM</value>
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>Super Resolution erfordert, dass Edendale auf der dedizierten Grafikkarte läuft. Stellen Sie Edendale unter Windows-Einstellungen › System › Anzeige › Grafik auf „Hohe Leistung“.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>APP-STEUERUNG</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Zurückspringen</value>
   </data>
@@ -1115,17 +1085,11 @@ IST STUMM</value>
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Vorspringen, {0} Sekunden</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>ÜBERSPRINGEN ANBIETEN</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>„Intro, Rückblick und Abspann überspringen“ anbieten</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Überspringen anbieten</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>Wenn aktiviert, erhält TheIntroDB die TMDB-ID des Titels, die Folgennummern, die Videodauer und Ihre IP-Adresse. Übersprungen wird immer nur auf Tastendruck.</value>
+    <value>Wenn aktiviert, erhält TheIntroDB die TMDB-ID des Titels, die Folgennummern, die Videodauer und deine IP-Adresse.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>KLANGOPTIMIERUNG</value>
@@ -1165,9 +1129,6 @@ IST STUMM</value>
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Nachtmodus</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>UNTERTITEL</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>So sehen Untertitel aus.</value>
@@ -1405,9 +1366,6 @@ IST STUMM</value>
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>TV-Serien</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>KONTEN</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Keine gespeicherten Anmeldungen</value>
@@ -1960,5 +1918,56 @@ IST STUMM</value>
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>ANMELDEN</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Allgemein</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Player-Steuerung</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Untertitel</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Bibliothek</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Synchronisierung</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Konten</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Kindersicherung</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>ZEITMARKEN VON THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>STEUERUNG</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>WIEDERGABE</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>DARSTELLUNG</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>GESPEICHERTE UNTERTITEL</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>VERKNÜPFTE KONTEN</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Tasten zum Überspringen von Intros, Rückblicken und Abspann anzeigen, wenn Zeitmarken der Community verfügbar sind. Die Wiedergabe läuft weiter, bis du dich zum Überspringen entscheidest.</value>
   </data>
 </root>

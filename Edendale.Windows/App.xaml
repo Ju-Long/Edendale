@@ -313,8 +313,11 @@
 
             <!-- Section header. Apple renders these in TextSecondary, not gold:
                  gold marks the current or primary state, never a caption. -->
+            <!-- Section headers are level-2 headings under the category's
+                 level-1 page title, so a screen reader can jump between them. -->
             <Style x:Key="SettingsSectionHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource LabelCapsTextStyle}">
                 <Setter Property="Margin" Value="0,0,0,8" />
+                <Setter Property="AutomationProperties.HeadingLevel" Value="Level2" />
             </Style>
 
             <!-- Row separator, inset from the leading edge to line up with row

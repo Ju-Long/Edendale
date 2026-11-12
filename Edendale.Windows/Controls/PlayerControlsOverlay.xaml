@@ -108,7 +108,7 @@
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="8">
-                    <!-- The skip glyphs, tooltips, and names follow Settings → App Controls. -->
+                    <!-- The skip glyphs, tooltips, and names follow Settings → Player Controls. -->
                     <Button x:Name="SkipBackButton" Style="{StaticResource ArchiveGhostButtonStyle}" Click="SkipBack_Click">
                         <controls:SvgIcon x:Name="SkipBackIcon" UriSource="ms-appx:///Assets/Icons/arrow-rotate-left-10.svg" Width="20" Height="20" />
                     </Button>

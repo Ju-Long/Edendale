@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Sök</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>INSTÄLLNINGAR</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>OM</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Version</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows-kärna</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB-inloggningsuppgifter</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Visningsförlopp</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>ÖPPNA DATAMAPP</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ERKÄNNANDE</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale ansluter till TMDB för bilder och metadata, till källorna du länkar för att lista och spela upp dina filer, till Wyzie Subs när du söker undertexter, till TheIntroDB bara medan hoppa över-förslag är på och till YouTubes integritetsförbättrade inbäddning när du spelar en trailer. Aldrig analys.</value>
+    <value>Edendale ansluter till TMDB för bilder och metadata, till källorna du länkar för att lista och spela upp dina filer, till synkplatsen du väljer, till dina andra enheter på det lokala nätverket medan en ihopparningsskärm är öppen, till Wyzie Subs när du söker undertexter och till TheIntroDB bara medan hoppa över-förslag är på. Trailrar öppnas på YouTube i din webbläsare. Aldrig analys.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>LÄSER IN ARKIVET</value>
@@ -617,12 +602,6 @@
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>utvecklingsbygge</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Konfigurerad</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Saknas — kör init.ps1, bygg sedan om Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Replikerad till {0}</value>
   </data>
@@ -631,9 +610,6 @@
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Kunde inte uppdatera uppstartsposten — Windows nekade registerändringen.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Otillgänglig — TMDB-inloggningsuppgifter saknas</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Ansluten som {0}</value>
@@ -832,9 +808,6 @@
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Ta bort från visningslista</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>PUBLIK</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Lämplig för ung publik</value>
@@ -1085,9 +1058,6 @@
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>Superupplösning kräver att Edendale körs på det dedikerade grafikkortet. Ställ in Edendale på Hög prestanda under Windows-inställningar › System › Bildskärm › Grafik.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>APPKONTROLLER</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Hoppa bakåt</value>
   </data>
@@ -1115,17 +1085,11 @@
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Hoppa framåt, {0} sekunder</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>HOPPA ÖVER-FÖRSLAG</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Erbjud att hoppa över intro, sammanfattning och eftertexter</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Hoppa över-förslag</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>När det är på får TheIntroDB titelns TMDB-id, avsnittsnummer, videons längd och din IP-adress. Att hoppa över kräver alltid ett knapptryck.</value>
+    <value>När det är på får TheIntroDB titelns TMDB-id, avsnittsnummer, videons längd och din IP-adress.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>LJUDFÖRBÄTTRING</value>
@@ -1165,9 +1129,6 @@
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Nattläge</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>UNDERTEXTER</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Så här kommer undertexterna att se ut.</value>
@@ -1405,9 +1366,6 @@
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>TV-serier</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>KONTON</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Inga sparade inloggningar</value>
@@ -1960,5 +1918,56 @@
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>LOGGA IN</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Allmänt</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Spelarreglage</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Ljud</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Undertexter</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Bibliotek</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Synkronisering</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Konton</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Föräldrakontroll</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>Om</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Inställningar</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>TIDSSTÄMPLAR FRÅN THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>REGLAGE</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>UPPSPELNING</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>UTSEENDE</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>SPARADE UNDERTEXTER</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>LÄNKADE KONTON</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Visa knappar för att hoppa över intron, sammanfattningar och eftertexter när det finns tidsstämplar från communityn. Uppspelningen fortsätter tills du väljer att hoppa över.</value>
   </data>
 </root>

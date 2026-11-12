@@ -5,7 +5,7 @@ using Windows.Globalization.NumberFormatting;
 
 namespace Edendale.Windows.Controls;
 
-/// <summary>Settings → App Controls (DIFF.md §3.1).</summary>
+/// <summary>Settings → Player Controls → Controls (DIFF.md §3.1).</summary>
 public sealed partial class AppControlsSettings : UserControl
 {
     private readonly ChipGroup<SkipInterval> _skipBack;

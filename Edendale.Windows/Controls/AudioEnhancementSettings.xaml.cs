@@ -8,7 +8,7 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Edendale.Windows.Controls;
 
-/// <summary>Settings → Audio Enhancement (DIFF.md §3.6).</summary>
+/// <summary>Settings → Audio → Audio Enhancement (DIFF.md §3.6).</summary>
 public sealed partial class AudioEnhancementSettings : UserControl
 {
     private readonly ChipGroup<AudioEnhancementProfile> _profiles;

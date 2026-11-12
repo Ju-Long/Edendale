@@ -95,13 +95,13 @@ public static class AppServices
     /// <summary>Device-local player preferences (player-settings.json), never replicated.</summary>
     public static PlayerSettingsStore PlayerSettings { get; } = new();
 
-    /// <summary>Settings → App Controls: skip lengths and hold speeds.</summary>
+    /// <summary>Settings → Player Controls: skip lengths and hold speeds.</summary>
     public static Core.PlayerControlPreferences Controls { get; } = new(PlayerSettings);
 
     /// <summary>Loop, Fit/Fill, skip prompts, and the per-title track memory.</summary>
     public static Core.PlayerPreferences PlayerPreferences { get; } = new(PlayerSettings);
 
-    /// <summary>Settings → Audio Enhancement and the booster.</summary>
+    /// <summary>Settings → Audio and the booster.</summary>
     public static Core.AudioEnhancement AudioEnhancement { get; } = new(PlayerSettings);
 
     /// <summary>Player Adjustments → Picture.</summary>

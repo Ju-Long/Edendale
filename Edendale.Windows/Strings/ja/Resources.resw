@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>検索</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>設定</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>概要</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>バージョン</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows コア</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB 認証情報</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>視聴状況</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>データ フォルダーを開く</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>帰属</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>この製品はTMDB APIを使用していますが、TMDBによる承認や認定は受けていません。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale が接続するのは、アートワークとメタデータのための TMDB、ファイルの一覧と再生のためにリンクしたソース、字幕を検索するときの Wyzie Subs、スキップの提案がオンのときだけの TheIntroDB、そして予告編を再生するときの YouTube のプライバシー強化埋め込みです。分析は一切ありません。</value>
+    <value>Edendale が接続するのは、アートワークとメタデータのための TMDB、ファイルの一覧と再生のためにリンクしたソース、選んだ同期の保存先、ペアリング画面を開いている間のローカル ネットワーク上のほかの端末、字幕を検索するときの Wyzie Subs、そしてスキップの提案がオンのときだけの TheIntroDB です。予告編を再生すると、ブラウザーで YouTube が開きます。分析は一切ありません。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>アーカイブを読み込み中</value>
@@ -617,12 +602,6 @@
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>開発ビルド</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>構成済み</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>見つかりません — init.ps1 を実行し、Edendale を再ビルドしてください</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>{0} に複製されました</value>
   </data>
@@ -631,9 +610,6 @@
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>スタートアップ エントリを更新できませんでした — Windows がレジストリの変更を拒否しました。</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>利用不可 — TMDB 認証情報が見つかりません</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>{0} として接続済み</value>
@@ -832,9 +808,6 @@
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>ウォッチリストから削除</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>視聴者</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>若い視聴者向け</value>
@@ -1085,9 +1058,6 @@
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>超解像には、Edendale を専用グラフィックスカードで実行する必要があります。Windows の設定 › システム › ディスプレイ › グラフィックで、Edendale を「高パフォーマンス」に設定してください。</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>アプリの操作</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>戻る</value>
   </data>
@@ -1115,17 +1085,11 @@
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>進む、{0}秒</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>スキップの提案</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>イントロ、あらすじ、クレジットのスキップを提案</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>スキップの提案</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>有効にすると、TheIntroDB にタイトルの TMDB ID、エピソード番号、動画の長さ、お使いの IP アドレスが送信されます。スキップは必ずボタンを押したときだけ行われます。</value>
+    <value>有効にすると、TheIntroDB にタイトルの TMDB ID、エピソード番号、動画の長さ、お使いの IP アドレスが送信されます。</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>音質向上</value>
@@ -1165,9 +1129,6 @@
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>ナイトモード</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>字幕</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>字幕はこのように表示されます。</value>
@@ -1405,9 +1366,6 @@
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>テレビ番組</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>アカウント</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>保存されたログイン情報はありません</value>
@@ -1960,5 +1918,56 @@
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>サインイン</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>プレーヤーの操作</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>オーディオ</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>ライブラリ</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>同期</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>ペアレンタルコントロール</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>概要</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>タイムスタンプ提供: TheIntroDB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>操作</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>外観</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>保存された字幕</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>リンク済みのアカウント</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>コミュニティのタイムスタンプがある場合に、イントロ、あらすじ、クレジットをスキップするボタンを表示します。スキップを選択するまで再生は続きます。</value>
   </data>
 </root>

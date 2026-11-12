@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Cerca</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>IMPOSTAZIONI</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>INFORMAZIONI</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Versione</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Core di Windows</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>Credenziali TMDB</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Avanzamento visione</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>APRI CARTELLA DATI</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ATTRIBUZIONE</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Questo prodotto utilizza l'API di TMDB ma non è approvato o certificato da TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale si collega a TMDB per immagini e metadati, alle sorgenti che colleghi per elencare e riprodurre i tuoi file, a Wyzie Subs quando cerchi sottotitoli, a TheIntroDB solo mentre gli inviti a saltare sono attivi e all’incorporamento YouTube con privacy avanzata quando riproduci un trailer. Mai analisi.</value>
+    <value>Edendale si collega a TMDB per immagini e metadati, alle sorgenti che colleghi per elencare e riprodurre i tuoi file, alla posizione di sincronizzazione che scegli, agli altri tuoi dispositivi sulla rete locale mentre è aperta una schermata di associazione, a Wyzie Subs quando cerchi sottotitoli e a TheIntroDB solo mentre gli inviti a saltare sono attivi. I trailer si aprono su YouTube nel tuo browser. Mai analisi.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>CARICAMENTO DELL'ARCHIVIO</value>
@@ -617,12 +602,6 @@
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>build di sviluppo</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Configurato</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Mancanti — esegui init.ps1, quindi ricompila Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Replicato su {0}</value>
   </data>
@@ -631,9 +610,6 @@
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Impossibile aggiornare la voce di avvio — Windows ha rifiutato la modifica al registro.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Non disponibile — credenziali TMDB mancanti</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Connesso come {0}</value>
@@ -832,9 +808,6 @@
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Rimuovi dalla watchlist</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>PUBBLICO</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Adatto a un pubblico giovane</value>
@@ -1085,9 +1058,6 @@
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>La super risoluzione richiede che Edendale usi la scheda grafica dedicata. In Impostazioni di Windows › Sistema › Schermo › Grafica, imposta Edendale su Prestazioni elevate.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>CONTROLLI DELL’APP</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Salta indietro</value>
   </data>
@@ -1115,17 +1085,11 @@
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Salta avanti, {0} secondi</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>INVITI A SALTARE</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Proponi di saltare intro, riassunto e titoli di coda</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Inviti a saltare</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>Se attivato, TheIntroDB riceve l’ID TMDB del titolo, i numeri degli episodi, la durata del video e il tuo indirizzo IP. Il salto richiede sempre la pressione di un pulsante.</value>
+    <value>Se attivato, TheIntroDB riceve l’ID TMDB del titolo, i numeri degli episodi, la durata del video e il tuo indirizzo IP.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>MIGLIORAMENTO AUDIO</value>
@@ -1165,9 +1129,6 @@
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Modalità notte</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>SOTTOTITOLI</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>I sottotitoli appariranno così.</value>
@@ -1405,9 +1366,6 @@
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>Programmi TV</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>ACCOUNT</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Nessuna credenziale salvata</value>
@@ -1960,5 +1918,56 @@
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>ACCEDI</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Generali</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Controlli del lettore</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Sottotitoli</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Libreria</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Sincronizzazione</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Controllo genitori</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>Informazioni</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Impostazioni</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>TEMPI FORNITI DA THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>CONTROLLI</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>RIPRODUZIONE</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>ASPETTO</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>SOTTOTITOLI SALVATI</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>ACCOUNT COLLEGATI</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Mostra i pulsanti per saltare intro, riassunti e titoli di coda quando sono disponibili i tempi della community. La riproduzione continua finché non scegli di saltare.</value>
   </data>
 </root>

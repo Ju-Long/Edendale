@@ -230,7 +230,16 @@ public sealed partial class MainWindow : Window
         AddShortcut(VirtualKey.N, VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu, () => WithDownloadedPage(page => page.LinkSourceAsync()));
         AddShortcut(VirtualKey.R, VirtualKeyModifiers.Control, Rescan);
         AddShortcut(VirtualKey.F5, VirtualKeyModifiers.None, Rescan);
+        // Ctrl+, opens Settings, the Windows counterpart of the Mac's ⌘,.
+        AddShortcut(CommaKey, VirtualKeyModifiers.Control, () =>
+        {
+            ShowSettings(focusCategories: true);
+            return true;
+        });
     }
+
+    /// <summary>VK_OEM_COMMA, the comma key on the common layouts; VirtualKey has no name for it.</summary>
+    private const VirtualKey CommaKey = (VirtualKey)188;
 
     private void AddShortcut(VirtualKey key, VirtualKeyModifiers modifiers, Func<bool> action)
     {
@@ -359,6 +368,33 @@ public sealed partial class MainWindow : Window
                 ShowActivationMessage(Loc.Get("Library_ItemMissing"));
                 break;
         }
+    }
+
+    /// <summary>
+    /// Opens Settings with the shell's Settings item selected: on
+    /// <paramref name="category"/>, or on the category last open this session
+    /// when it is null. With <paramref name="focusCategories"/> the keyboard
+    /// lands on the open category, as after Ctrl+,.
+    /// </summary>
+    public void ShowSettings(SettingsCategory? category = null, bool focusCategories = false)
+    {
+        _suppressNavSelection = true;
+        Nav.SelectedItem = Nav.SettingsItem;
+        _suppressNavSelection = false;
+
+        if (category is { } open)
+        {
+            // A category is a parameter, so even the Settings page already
+            // shown navigates to it (the page itself is cached).
+            _rootParameter = null;
+            NavigateRoot(typeof(SettingsPage), open);
+        }
+        else
+        {
+            NavigateRoot(typeof(SettingsPage));
+        }
+
+        if (focusCategories && RootFrame.Content is SettingsPage settings) settings.FocusCategories();
     }
 
     private void SelectSidebar(string tag)

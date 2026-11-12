@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Поиск</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>НАСТРОЙКИ</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>О ПРОГРАММЕ</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Версия</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Ядро Windows</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>Учетные данные TMDB</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Прогресс просмотра</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>ОТКРЫТЬ ПАПКУ ДАННЫХ</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>АВТОРСТВО</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale обращается к TMDB за обложками и метаданными, к привязанным источникам, чтобы показывать и воспроизводить ваши файлы, к Wyzie Subs при поиске субтитров, к TheIntroDB только при включённых предложениях пропуска и к YouTube с усиленной конфиденциальностью, когда вы смотрите трейлер. Никакой аналитики.</value>
+    <value>Edendale обращается к TMDB за обложками и метаданными, к привязанным источникам, чтобы показывать и воспроизводить ваши файлы, к выбранному вами месту синхронизации, к другим вашим устройствам в локальной сети, пока открыт экран связывания, к Wyzie Subs при поиске субтитров и к TheIntroDB только при включённых предложениях пропуска. Трейлеры открываются на YouTube в вашем браузере. Никакой аналитики.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>ЗАГРУЗКА АРХИВА</value>
@@ -617,12 +602,6 @@
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>сборка для разработки</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Настроено</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Отсутствуют — запустите init.ps1, затем пересоберите Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Реплицировано в {0}</value>
   </data>
@@ -631,9 +610,6 @@
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Не удалось обновить запись автозагрузки — Windows отклонила изменение реестра.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Недоступно — отсутствуют учетные данные TMDB</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Подключено как {0}</value>
@@ -832,9 +808,6 @@
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Удалить из списка просмотра</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>АУДИТОРИЯ</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Подходит для юной аудитории</value>
@@ -1085,9 +1058,6 @@
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>Для суперразрешения Edendale должен работать на дискретной видеокарте. В разделе «Параметры Windows › Система › Дисплей › Графика» выберите для Edendale «Высокая производительность».</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>УПРАВЛЕНИЕ</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Перемотка назад</value>
   </data>
@@ -1115,17 +1085,11 @@
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Вперёд, {0} с</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>ПРЕДЛОЖЕНИЯ ПРОПУСКА</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Предлагать пропуск заставки, краткого содержания и титров</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Предложения пропуска</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>Если функция включена, TheIntroDB получает TMDB ID произведения, номера серий, длительность видео и ваш IP-адрес. Пропуск всегда выполняется только по нажатию кнопки.</value>
+    <value>Если функция включена, TheIntroDB получает TMDB ID произведения, номера серий, длительность видео и ваш IP-адрес.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>УЛУЧШЕНИЕ ЗВУКА</value>
@@ -1165,9 +1129,6 @@
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Ночной режим</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>СУБТИТРЫ</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Так будут выглядеть субтитры.</value>
@@ -1405,9 +1366,6 @@
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>Сериалы</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>УЧЁТНЫЕ ЗАПИСИ</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Нет сохранённых данных для входа</value>
@@ -1960,5 +1918,56 @@
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>ВОЙТИ</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Основные</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Управление плеером</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Аудио</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Субтитры</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Библиотека</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Синхронизация</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Учётные записи</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Родительский контроль</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>О программе</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>МЕТКИ ВРЕМЕНИ ОТ THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>УПРАВЛЕНИЕ</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>ВОСПРОИЗВЕДЕНИЕ</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>ОФОРМЛЕНИЕ</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>СОХРАНЁННЫЕ СУБТИТРЫ</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>ПОДКЛЮЧЁННЫЕ УЧЁТНЫЕ ЗАПИСИ</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Показывать кнопки для пропуска вступлений, кратких содержаний и титров, когда доступны метки сообщества. Воспроизведение продолжается, пока вы не решите пропустить.</value>
   </data>
 </root>

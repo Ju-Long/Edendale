@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Rechercher</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>PARAMÈTRES</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>À PROPOS</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Version</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Noyau Windows</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>Identifiants TMDB</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Progression de lecture</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>OUVRIR LE DOSSIER DE DONNÉES</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ATTRIBUTION</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale contacte TMDB pour les illustrations et les métadonnées, les sources que vous liez pour lister et lire vos fichiers, Wyzie Subs quand vous cherchez des sous-titres, TheIntroDB uniquement quand les propositions de saut sont activées, et l’intégration YouTube à confidentialité renforcée quand vous lisez une bande-annonce. Jamais d’analyses.</value>
+    <value>Edendale contacte TMDB pour les illustrations et les métadonnées, les sources que vous liez pour lister et lire vos fichiers, l’emplacement de synchronisation que vous choisissez, vos autres appareils du réseau local tant qu’un écran de jumelage est ouvert, Wyzie Subs quand vous cherchez des sous-titres, et TheIntroDB uniquement quand les propositions de saut sont activées. Les bandes-annonces s’ouvrent sur YouTube dans votre navigateur. Jamais d’analyses.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>CHARGEMENT DE L'ARCHIVE</value>
@@ -617,12 +602,6 @@ EST SILENCIEUSE</value>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>version de développement</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Configuré</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Manquants — exécutez init.ps1, puis recompilez Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Répliqué sur {0}</value>
   </data>
@@ -631,9 +610,6 @@ EST SILENCIEUSE</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Impossible de mettre à jour l'entrée de démarrage — Windows a refusé la modification du registre.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Indisponible — identifiants TMDB manquants</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Connecté en tant que {0}</value>
@@ -832,9 +808,6 @@ EST SILENCIEUSE</value>
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Retirer de la liste à voir</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>PUBLIC</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Adapté au jeune public</value>
@@ -1085,9 +1058,6 @@ EST SILENCIEUSE</value>
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>La super-résolution nécessite qu’Edendale utilise la carte graphique dédiée. Dans Paramètres Windows › Système › Affichage › Graphiques, choisissez Performances élevées pour Edendale.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>COMMANDES DE L’APP</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Reculer</value>
   </data>
@@ -1115,17 +1085,11 @@ EST SILENCIEUSE</value>
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Avancer, {0} secondes</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>PROPOSITIONS DE SAUT</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Proposer de passer l’intro, le récapitulatif et le générique</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Propositions de saut</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>Une fois activé, TheIntroDB reçoit l’identifiant TMDB du titre, les numéros d’épisode, la durée de la vidéo et votre adresse IP. Le saut demande toujours d’appuyer sur un bouton.</value>
+    <value>Une fois activé, TheIntroDB reçoit l’identifiant TMDB du titre, les numéros d’épisode, la durée de la vidéo et votre adresse IP.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>AMÉLIORATION AUDIO</value>
@@ -1165,9 +1129,6 @@ EST SILENCIEUSE</value>
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Mode nuit</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>SOUS-TITRES</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Les sous-titres ressembleront à ceci.</value>
@@ -1405,9 +1366,6 @@ EST SILENCIEUSE</value>
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>Séries TV</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>COMPTES</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Aucun identifiant enregistré</value>
@@ -1960,5 +1918,56 @@ EST SILENCIEUSE</value>
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>SE CONNECTER</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Général</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Commandes du lecteur</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Sous-titres</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Bibliothèque</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Synchronisation</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Comptes</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Contrôle parental</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Paramètres</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>REPÈRES FOURNIS PAR THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>COMMANDES</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>LECTURE</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>APPARENCE</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>SOUS-TITRES ENREGISTRÉS</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>COMPTES LIÉS</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Afficher des boutons pour passer l’introduction, le résumé et le générique lorsque des repères de la communauté sont disponibles. La lecture continue jusqu’à ce que vous choisissiez de passer.</value>
   </data>
 </root>

@@ -95,6 +95,16 @@ internal static class AppText
         ["Enhancement_PresetBalanced"] = "Balanced",
         ["Enhancement_PresetHighQuality"] = "High Quality",
 
+        ["Settings_CategoryGeneral"] = "General",
+        ["Settings_CategoryPlayerControls"] = "Player Controls",
+        ["Settings_CategoryAudio"] = "Audio",
+        ["Settings_CategorySubtitles"] = "Subtitles",
+        ["Settings_CategoryLibrary"] = "Library",
+        ["Settings_CategorySync"] = "Sync",
+        ["Settings_CategoryAccounts"] = "Accounts",
+        ["Settings_CategoryParentalControls"] = "Parental Controls",
+        ["Settings_CategoryAbout"] = "About",
+
         ["SourceKind_Local"] = "Local Folder",
         ["SourceKind_S3"] = "S3-Compatible Storage",
         ["Source_Unavailable"] = "Unavailable",

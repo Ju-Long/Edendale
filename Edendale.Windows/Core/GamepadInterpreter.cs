@@ -40,7 +40,7 @@ public enum PadAction
 
 /// <summary>
 /// X.1: turns controller readings into player actions. A plays or pauses,
-/// the bumpers skip by the App Controls lengths, the D-pad seeks (repeating
+/// the bumpers skip by the Player Controls lengths, the D-pad seeks (repeating
 /// while held) and changes the volume, B backs out like Esc, View toggles
 /// full screen, and Menu opens Player Adjustments. The triggers drive the
 /// hold speeds with the Siri Remote's hysteresis: past 0.55 starts that

@@ -21,7 +21,7 @@ namespace Edendale.Windows.Controls;
 
 /// <summary>
 /// The player chrome over the video: title, transport, timeline, volume,
-/// skips that follow Settings → App Controls, the HUD, Up Next, skip prompts,
+/// skips that follow Settings → Player Controls, the HUD, Up Next, skip prompts,
 /// press-and-hold speed, and the online subtitle browser. Gestures and the
 /// HUD live in the partial files beside this one.
 /// </summary>

@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Search</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>SETTINGS</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>ABOUT</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Version</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows core</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB credentials</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Watch progress</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>OPEN DATA FOLDER</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ATTRIBUTION</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>This product uses the TMDB API but is not endorsed or certified by TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale reaches TMDB for artwork and metadata, the sources you link to list and play your files, Wyzie Subs when you search for subtitles, TheIntroDB only while skip prompts are on, and YouTube’s privacy-enhanced embed when you play a trailer. No analytics, ever.</value>
+    <value>Edendale reaches TMDB for artwork and metadata, the sources you link to list and play your files, the sync location you choose, your other devices on the local network while a pairing screen is open, Wyzie Subs when you search for subtitles, and TheIntroDB only while skip prompts are on. Playing a trailer opens it on YouTube in your browser. No analytics, ever.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>LOADING THE ARCHIVE</value>
@@ -617,12 +602,6 @@ IS SILENT</value>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>development build</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Configured</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Missing — run init.ps1, then rebuild Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Replicated to {0}</value>
   </data>
@@ -631,9 +610,6 @@ IS SILENT</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Could not update the startup entry — Windows refused the registry change.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Unavailable — TMDB credentials missing</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Connected as {0}</value>
@@ -832,9 +808,6 @@ IS SILENT</value>
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Remove from Watchlist</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>AUDIENCE</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Young Audience Friendly</value>
@@ -1085,9 +1058,6 @@ IS SILENT</value>
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>Super Resolution needs Edendale to run on the dedicated graphics card. In Windows Settings › System › Display › Graphics, set Edendale to High performance.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>APP CONTROLS</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Skip Back</value>
   </data>
@@ -1115,17 +1085,11 @@ IS SILENT</value>
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Skip forward, {0} seconds</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>SKIP PROMPTS</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Offer Skip Intro, Recap, and Credits</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Skip prompts</value>
+    <value>Skip Prompts</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address. Skipping always requires a button press.</value>
+    <value>When enabled, TheIntroDB receives the title’s TMDB ID, episode numbers, video duration, and your IP address.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>AUDIO ENHANCEMENT</value>
@@ -1165,9 +1129,6 @@ IS SILENT</value>
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Night Mode</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>SUBTITLES</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Subtitles will look like this.</value>
@@ -1405,9 +1366,6 @@ IS SILENT</value>
   </data>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>TV Shows</value>
-  </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>ACCOUNTS</value>
   </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>No saved logins</value>
@@ -1960,5 +1918,59 @@ IS SILENT</value>
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>SIGN IN</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>General</value>
+    <comment>Settings category (list, picker, and page title).</comment>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Player Controls</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Subtitles</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Library</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Sync</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Parental Controls</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Screen-reader name of the Settings category list and picker.</comment>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>TIMESTAMPS BY THEINTRODB</value>
+    <comment>Settings &gt; About: ghost button opening theintrodb.org.</comment>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>CONTROLS</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>PLAYBACK</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>APPEARANCE</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>SAVED SUBTITLES</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>LINKED ACCOUNTS</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Show buttons to skip intros, recaps, and credits when community timestamps are available. Playback continues until you choose to skip.</value>
   </data>
 </root>

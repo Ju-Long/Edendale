@@ -69,6 +69,8 @@
     <Compile Include="..\Edendale.Windows\Core\RefreshRateMatching.cs" Link="App\Core\RefreshRateMatching.cs" />
     <Compile Include="..\Edendale.Windows\Core\SshFingerprint.cs" Link="App\Core\SshFingerprint.cs" />
     <Compile Include="..\Edendale.Windows\Core\LibrarySections.cs" Link="App\Core\LibrarySections.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SettingsCategories.cs" Link="App\Core\SettingsCategories.cs" />
+    <Compile Include="..\Edendale.Windows\Core\AppVersionText.cs" Link="App\Core\AppVersionText.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaConnectors.cs" Link="App\Core\MediaConnectors.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlaybackSources.cs" Link="App\Core\PlaybackSources.cs" />
     <Compile Include="..\Edendale.Windows\Core\SourceUrls.cs" Link="App\Core\SourceUrls.cs" />

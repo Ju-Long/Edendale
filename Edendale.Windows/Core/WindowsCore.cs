@@ -14,7 +14,6 @@ public static class WindowsCore
 {
     private static readonly TmdbRepository Tmdb = new();
 
-    public static string CoreVersion => ".NET 8 (native C#)";
     public static bool HasTmdbCredentials => Tmdb.IsConfigured;
 
     public static ParsedMedia ParseMediaFile(string fileName) => MediaParser.Parse(fileName);

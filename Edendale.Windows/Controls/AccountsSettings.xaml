@@ -3,12 +3,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ACCOUNTS (AccountsSection.swift, DIFF.md §3.12): every saved login
+    <!-- LINKED ACCOUNTS (AccountsSection.swift, DIFF.md §3.12), the first
+         section of Settings → Accounts: every saved login
          and linked account, with the sources using each. Logins live on this
          device only (D11). Removing a source keeps its login; forgetting a
          login here is the one way to drop it. -->
     <StackPanel>
-        <TextBlock x:Uid="SettingsAccountsHeader" Text="ACCOUNTS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+        <TextBlock x:Uid="SettingsLinkedAccountsHeader" Text="LINKED ACCOUNTS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
         <Border Style="{StaticResource SettingsGroupBorderStyle}">
             <StackPanel>
                 <Border x:Name="NoAccountsRow">
