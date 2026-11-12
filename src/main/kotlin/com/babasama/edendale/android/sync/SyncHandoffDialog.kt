@@ -2,7 +2,6 @@ package com.babasama.edendale.android.sync
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,6 +50,8 @@ import com.babasama.edendale.android.handoff.HandoffDiscovery
 import com.babasama.edendale.android.handoff.PairingGuest
 import com.babasama.edendale.android.handoff.PairingHost
 import com.babasama.edendale.android.handoff.QrCodeScanner
+import com.babasama.edendale.android.handoff.headsetCanScan
+import com.babasama.edendale.android.handoff.isMetaHeadset
 import com.babasama.edendale.android.sourceKindLabel
 import com.babasama.edendale.android.tvFocusLift
 import com.babasama.edendale.android.xr.XrTheaterRules
@@ -101,8 +102,8 @@ private data class OfferChoice(
  * (SYNC-PROTOCOL.md §9), built as `apple-27.1`'s `SyncHandoffView`. The
  * button chose the direction ([role]); the sender first ticks what to send
  * (its sync location, other linked accounts, saved logins). Then a phone or
- * tablet scans the other device's QR code or shows one, and a TV or a
- * headset shows one ([PairingFlow.modes]). From the scanner, or under a code
+ * tablet, or a Quest 3, scans the other device's QR code or shows one, and a
+ * TV or another headset shows one ([PairingFlow.modes]). From the scanner, or under a code
  * shown by a device that can't scan, Enter the Other Device's Code joins
  * instead: pick the device found on the network (or the only one) and type
  * the six digits it shows (Section T). The sender confirms what goes to
@@ -125,7 +126,7 @@ internal fun SyncHandoffDialog(
     val scope = rememberCoroutineScope()
     val platform = sync.platform
     val deviceName = remember { sync.deviceName() }
-    val modes = remember(isTelevision) { PairingFlow.modes(isTelevision, isHeadset(context), hasCamera(context)) }
+    val modes = remember(isTelevision) { PairingFlow.modes(isTelevision, isHeadset(context), hasCamera(context), headsetCanScan(context)) }
     val linked = remember(scannedLink) { scannedLink?.let(PairingFlow::scanned) }
 
     var chosenRole by remember { mutableStateOf(role) }
@@ -594,10 +595,9 @@ private fun otherDeviceAction(context: Context, role: HandoffV2.Role): String = 
     if (role == HandoffV2.Role.SENDER) R.string.sync_receive_from_device else R.string.sync_set_up_device,
 )
 
-/** Phones and tablets scan; a headset shows its code, as Vision Pro does. */
+/** Phones and tablets scan; a headset shows its code, as Vision Pro does, unless it is a Quest 3 that reads codes with its passthrough camera ([headsetCanScan]). */
 private fun isHeadset(context: Context): Boolean =
-    context.packageManager.hasSystemFeature(XrTheaterRules.FEATURE_SPATIAL) ||
-        Build.MANUFACTURER.equals("Oculus", ignoreCase = true) || Build.MANUFACTURER.equals("Meta", ignoreCase = true)
+    context.packageManager.hasSystemFeature(XrTheaterRules.FEATURE_SPATIAL) || isMetaHeadset()
 
 private fun hasCamera(context: Context): Boolean = context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
 

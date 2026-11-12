@@ -15,8 +15,9 @@ import com.google.zxing.qrcode.QRCodeReader
  * (FEATURES-27.1.md §6.2). The direction comes first, from the button the
  * viewer chose (Set Up Another Device sends, Receive from Another Device
  * receives); the sender then ticks what to send. A phone or tablet with a
- * camera scans the other device's QR code or shows its own; a TV, a
- * headset, or a device without a camera shows one. Unlike Apple's, any
+ * camera, or a Quest 3 with its passthrough camera, scans the other
+ * device's QR code or shows its own; a TV, another headset, or a device
+ * without a camera shows one. Unlike Apple's, any
  * device can also join by entering the six-digit code the other device
  * shows (ENHANCEMENT.md Section T), so two devices that can only show a
  * code still pair: one shows, the other types.
@@ -31,12 +32,21 @@ object PairingFlow {
 
     /**
      * The ways offered first, the first one preselected where there is no
-     * choice. Entering a code isn't among them: it is offered from these
-     * screens ([offersEntry]), so the scanner stays the first choice where
-     * there is a camera.
+     * choice. A phone or tablet with a camera scans or shows; so does a
+     * headset whose passthrough camera an app can read ([headsetCamera]: a
+     * Quest 3 or 3S, [headsetScans]). A TV, any other headset, or a device
+     * without a camera shows. Entering a code isn't among them: it is offered
+     * from these screens ([offersEntry]), so the scanner stays the first
+     * choice where there is a camera.
      */
-    fun modes(isTelevision: Boolean, isHeadset: Boolean, hasCamera: Boolean): List<Mode> =
-        if (hasCamera && !isTelevision && !isHeadset) listOf(Mode.SCAN, Mode.SHOW) else listOf(Mode.SHOW)
+    fun modes(isTelevision: Boolean, isHeadset: Boolean, hasCamera: Boolean, headsetCamera: Boolean): List<Mode> {
+        val scans = when {
+            isTelevision -> false
+            isHeadset -> headsetCamera
+            else -> hasCamera
+        }
+        return if (scans) listOf(Mode.SCAN, Mode.SHOW) else listOf(Mode.SHOW)
+    }
 
     /**
      * Whether the screen for [mode] offers to enter the other device's code
@@ -131,6 +141,50 @@ object PairingFlow {
         fun failed(now: Long): CodeAttempts =
             if (wrong + 1 >= HandoffV2.MAX_CODE_FAILURES) CodeAttempts(0, now + HandoffV2.CODE_LOCKOUT_MILLIS) else CodeAttempts(wrong + 1, lockedUntil)
     }
+
+    /** The camera permission every scanner asks for. */
+    const val CAMERA_PERMISSION = "android.permission.CAMERA"
+
+    /**
+     * Meta's Passthrough Camera API (Quest 3 and 3S, Horizon OS v74 and
+     * later): the runtime permission a Quest app needs beside `CAMERA` to read
+     * the headset's front colour cameras. The `horizon` flavor declares it.
+     */
+    const val HEADSET_CAMERA_PERMISSION = "horizonos.permission.HEADSET_CAMERA"
+
+    /** Meta's vendor tags on a Quest's cameras: the source (0 is a passthrough camera) and the position (0 left, 1 right). */
+    const val META_CAMERA_SOURCE = "com.meta.extra_metadata.camera_source"
+    const val META_CAMERA_POSITION = "com.meta.extra_metadata.position"
+    const val META_SOURCE_PASSTHROUGH = 0
+
+    /** A camera as the scanner sees it: its ID, and Meta's tags where it has them. */
+    data class CameraTags(val id: String, val source: Int?, val position: Int?)
+
+    /**
+     * The camera a Quest reads codes with: a passthrough camera, the left one
+     * where both are listed. Null where there is none: a headset's other
+     * cameras (the avatar camera) can't see the other device's screen.
+     */
+    fun passthroughCamera(cameras: List<CameraTags>): String? =
+        cameras.filter { it.source == META_SOURCE_PASSTHROUGH }.minByOrNull { it.position ?: Int.MAX_VALUE }?.id
+
+    /** Quest 3 (`eureka`) and Quest 3S: the headsets with the Passthrough Camera API. */
+    private val PASSTHROUGH_MODELS = setOf("quest 3", "quest 3s")
+    private val PASSTHROUGH_DEVICES = setOf("eureka")
+
+    /**
+     * Whether a Meta headset scans codes: one of its cameras carries Meta's
+     * passthrough tag, or it is a Quest 3 or 3S, in case its cameras aren't
+     * listed before the permission is granted. A headset whose system is too
+     * old to open them says the camera isn't available, and the code can be
+     * entered instead.
+     */
+    fun headsetScans(passthroughListed: Boolean, model: String, device: String): Boolean =
+        passthroughListed || model.trim().lowercase() in PASSTHROUGH_MODELS || device.trim().lowercase() in PASSTHROUGH_DEVICES
+
+    /** The permissions the scanner asks for together: the camera, and on a Meta headset the headset camera as well. */
+    fun cameraPermissions(metaHeadset: Boolean): List<String> =
+        if (metaHeadset) listOf(CAMERA_PERMISSION, HEADSET_CAMERA_PERMISSION) else listOf(CAMERA_PERMISSION)
 
     /** A scanned code's text when it is a version-2 handoff code; anything else is ignored and the camera keeps looking. */
     fun scanned(text: String?): HandoffV2.QrPayload? = text?.takeIf { it.length <= MAX_CODE_TEXT }?.let(HandoffV2.QrPayload::parse)

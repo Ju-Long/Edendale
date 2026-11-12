@@ -38,13 +38,46 @@ class PairingFlowTest {
         HandoffV2.QrPayload(name, host, port, HandoffV2.newKeyPair().publicKey, HandoffV2.newSecret())
 
     @Test
-    fun `a phone or tablet with a camera scans or shows, everything else shows`() {
+    fun `a phone or tablet with a camera, or a Quest 3, scans or shows, everything else shows`() {
         val both = listOf(PairingFlow.Mode.SCAN, PairingFlow.Mode.SHOW)
         val show = listOf(PairingFlow.Mode.SHOW)
-        assertEquals(both, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true))
-        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false))
-        assertEquals(show, PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = true))
-        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true))
+        assertEquals(both, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true, headsetCamera = false))
+        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false, headsetCamera = false))
+        assertEquals(show, PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = true, headsetCamera = false))
+        // A headset scans only with a passthrough camera an app can read (Section T), whatever cameras it reports.
+        assertEquals(show, PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true, headsetCamera = false))
+        assertEquals(both, PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = false, headsetCamera = true))
+        assertEquals(show, PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = true, headsetCamera = true))
+    }
+
+    // MARK: - A Quest 3 scanning with its passthrough camera (Section T)
+
+    @Test
+    fun `a Quest 3 or 3S scans, by its cameras' tags or by its model`() {
+        assertTrue(PairingFlow.headsetScans(passthroughListed = true, model = "Quest Pro", device = "seacliff"))
+        assertTrue(PairingFlow.headsetScans(passthroughListed = false, model = "Quest 3", device = "eureka"))
+        assertTrue(PairingFlow.headsetScans(passthroughListed = false, model = "Quest 3S", device = "unknown"))
+        assertTrue(PairingFlow.headsetScans(passthroughListed = false, model = "", device = "eureka"))
+        assertFalse(PairingFlow.headsetScans(passthroughListed = false, model = "Quest 2", device = "hollywood"))
+        assertFalse(PairingFlow.headsetScans(passthroughListed = false, model = "Quest Pro", device = "seacliff"))
+    }
+
+    @Test
+    fun `the Quest reads codes with a passthrough camera, never the avatar camera`() {
+        val left = PairingFlow.CameraTags("50", source = 0, position = 0)
+        val right = PairingFlow.CameraTags("51", source = 0, position = 1)
+        val avatar = PairingFlow.CameraTags("1", source = null, position = null)
+        assertEquals("50", PairingFlow.passthroughCamera(listOf(avatar, right, left)))
+        assertEquals("51", PairingFlow.passthroughCamera(listOf(avatar, right)))
+        assertNull(PairingFlow.passthroughCamera(listOf(avatar)))
+        assertNull(PairingFlow.passthroughCamera(listOf(PairingFlow.CameraTags("2", source = 1, position = 0))))
+        assertNull(PairingFlow.passthroughCamera(emptyList()))
+    }
+
+    @Test
+    fun `a Meta headset asks for the headset camera with the camera`() {
+        assertEquals(listOf("android.permission.CAMERA", "horizonos.permission.HEADSET_CAMERA"), PairingFlow.cameraPermissions(metaHeadset = true))
+        assertEquals(listOf("android.permission.CAMERA"), PairingFlow.cameraPermissions(metaHeadset = false))
     }
 
     @Test
@@ -105,8 +138,8 @@ class PairingFlowTest {
 
     @Test
     fun `Try Again after a link's code on a device that can't scan shows its own code`() {
-        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false)
-        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true)
+        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false, headsetCamera = false)
+        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true, headsetCamera = false)
         assertEquals(PairingFlow.Mode.SHOW, PairingFlow.retryMode(PairingFlow.Mode.SCAN, television))
         assertEquals(PairingFlow.Mode.SCAN, PairingFlow.retryMode(PairingFlow.Mode.SCAN, phone))
         assertEquals(PairingFlow.Mode.ENTER, PairingFlow.retryMode(PairingFlow.Mode.ENTER, television))
@@ -118,10 +151,10 @@ class PairingFlowTest {
 
     @Test
     fun `entering the other device's code is offered from the scanner and wherever a device can only show`() {
-        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true)
-        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false)
-        val headset = PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true)
-        val noCamera = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false)
+        val phone = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = true, headsetCamera = false)
+        val television = PairingFlow.modes(isTelevision = true, isHeadset = false, hasCamera = false, headsetCamera = false)
+        val headset = PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = true, headsetCamera = false)
+        val noCamera = PairingFlow.modes(isTelevision = false, isHeadset = false, hasCamera = false, headsetCamera = false)
         // The scanner offers it on every device that has one: the camera may be refused.
         assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SCAN, phone))
         // A phone showing its code goes Back to the choice, where the scanner is.
@@ -130,6 +163,10 @@ class PairingFlowTest {
         assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, television))
         assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, headset))
         assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, noCamera))
+        // A Quest 3 scans, so it is offered entering as a phone is: from its scanner.
+        val quest3 = PairingFlow.modes(isTelevision = false, isHeadset = true, hasCamera = false, headsetCamera = true)
+        assertTrue(PairingFlow.offersEntry(PairingFlow.Mode.SCAN, quest3))
+        assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.SHOW, quest3))
         assertFalse(PairingFlow.offersEntry(PairingFlow.Mode.ENTER, television))
         assertFalse(PairingFlow.offersEntry(null, phone))
         // Entering is never one of the first choices: the scanner stays first where there is a camera.

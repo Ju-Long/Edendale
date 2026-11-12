@@ -1,12 +1,17 @@
 package com.babasama.edendale.android.handoff
 
-import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -55,7 +60,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The camera view that reads another device's pairing code on a phone or
- * tablet, as `QRScannerView` does on iPhone and iPad: the camera is asked
+ * tablet, as `QRScannerView` does on iPhone and iPad, and on a Quest 3 or
+ * 3S through Meta's Passthrough Camera API (Section T): the camera is asked
  * for when the viewer chooses to scan, frames are read on the device and
  * never kept, and the first `edendale://handoff` code seen is handed back
  * once; other codes are ignored. Without the camera (refused, or none that
@@ -64,17 +70,20 @@ import java.util.concurrent.atomic.AtomicBoolean
 @Composable
 fun QrCodeScanner(onCode: (HandoffV2.QrPayload) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var granted by remember {
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-    }
+    val metaHeadset = remember { isMetaHeadset() }
+    // A Quest needs Meta's headset camera permission beside the camera's; both are asked for at once.
+    val permissions = remember(metaHeadset) { PairingFlow.cameraPermissions(metaHeadset) }
+    fun allGranted() = permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+    var granted by remember { mutableStateOf(allGranted()) }
     var refused by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed ->
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val allowed = allGranted()
         granted = allowed
         refused = !allowed
     }
     LaunchedEffect(Unit) {
-        if (!granted) permission.launch(Manifest.permission.CAMERA)
+        if (!granted) permission.launch(permissions.toTypedArray())
     }
     val shape = RoundedCornerShape(EdendaleRadii.Card.dp)
     Box(
@@ -82,7 +91,7 @@ fun QrCodeScanner(onCode: (HandoffV2.QrPayload) -> Unit, modifier: Modifier = Mo
         contentAlignment = Alignment.Center,
     ) {
         when {
-            granted && !failed -> CameraPreview(onCode = onCode, onFailure = { failed = true })
+            granted && !failed -> CameraPreview(metaHeadset = metaHeadset, onCode = onCode, onFailure = { failed = true })
             refused || failed -> Text(
                 stringResource(R.string.pairing_camera_unavailable),
                 style = BodyCopyStyle(),
@@ -96,7 +105,7 @@ fun QrCodeScanner(onCode: (HandoffV2.QrPayload) -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-private fun CameraPreview(onCode: (HandoffV2.QrPayload) -> Unit, onFailure: () -> Unit) {
+private fun CameraPreview(metaHeadset: Boolean, onCode: (HandoffV2.QrPayload) -> Unit, onFailure: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnCode by rememberUpdatedState(onCode)
@@ -144,12 +153,9 @@ private fun CameraPreview(onCode: (HandoffV2.QrPayload) -> Unit, onFailure: () -
                 try {
                     val cameras = future.get()
                     provider = cameras
-                    val selector = when {
-                        cameras.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
-                        cameras.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
-                        else -> null
-                    }
+                    val selector = scannerCamera(cameras, metaHeadset)
                     if (selector == null) {
+                        SyncLog.log(TAG, "no camera to scan with (headset: $metaHeadset)")
                         currentOnFailure()
                         return@addListener
                     }
@@ -171,6 +177,59 @@ private fun CameraPreview(onCode: (HandoffV2.QrPayload) -> Unit, onFailure: () -
         }
     }
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+}
+
+/**
+ * The camera to read codes with: on a Quest, a passthrough camera picked by
+ * Meta's tags ([PairingFlow.passthroughCamera]), or none (its avatar camera
+ * can't see the other device); elsewhere the back camera, or the front one.
+ */
+@androidx.annotation.OptIn(markerClass = [ExperimentalCamera2Interop::class])
+private fun scannerCamera(cameras: ProcessCameraProvider, metaHeadset: Boolean): CameraSelector? {
+    if (metaHeadset) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        val source = CameraCharacteristics.Key(PairingFlow.META_CAMERA_SOURCE, Int::class.java)
+        val position = CameraCharacteristics.Key(PairingFlow.META_CAMERA_POSITION, Int::class.java)
+        val passthrough = CameraSelector.Builder().addCameraFilter { infos ->
+            val tagged = infos.map { info ->
+                val camera = Camera2CameraInfo.from(info)
+                PairingFlow.CameraTags(
+                    camera.cameraId,
+                    runCatching { camera.getCameraCharacteristic(source) }.getOrNull(),
+                    runCatching { camera.getCameraCharacteristic(position) }.getOrNull(),
+                )
+            }
+            val chosen = PairingFlow.passthroughCamera(tagged)
+            infos.filter { Camera2CameraInfo.from(it).cameraId == chosen }
+        }.build()
+        return passthrough.takeIf { runCatching { cameras.hasCamera(it) }.getOrDefault(false) }
+    }
+    return when {
+        cameras.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
+        cameras.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
+        else -> null
+    }
+}
+
+/** A Meta headset (Quest), by its manufacturer. */
+internal fun isMetaHeadset(): Boolean =
+    Build.MANUFACTURER.equals("Oculus", ignoreCase = true) || Build.MANUFACTURER.equals("Meta", ignoreCase = true)
+
+/**
+ * Whether this Meta headset can scan: a Quest 3 or 3S, or any headset that
+ * lists a camera carrying Meta's passthrough tag ([PairingFlow.headsetScans]).
+ * Reading a camera's characteristics needs no permission.
+ */
+internal fun headsetCanScan(context: Context): Boolean {
+    if (!isMetaHeadset()) return false
+    val listed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && runCatching {
+        val manager = context.getSystemService(CameraManager::class.java)
+        val source = CameraCharacteristics.Key(PairingFlow.META_CAMERA_SOURCE, Int::class.java)
+        manager != null && manager.cameraIdList.any { id ->
+            runCatching { manager.getCameraCharacteristics(id).get(source) }.getOrNull() == PairingFlow.META_SOURCE_PASSTHROUGH
+        }
+    }.getOrDefault(false)
+    return PairingFlow.headsetScans(listed, Build.MODEL, Build.DEVICE)
 }
 
 /** The scanner card's height, Apple's 360 points. */
