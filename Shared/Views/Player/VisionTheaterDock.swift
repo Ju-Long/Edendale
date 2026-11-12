@@ -292,7 +292,7 @@ struct VisionTheaterDock: View {
 
     @ViewBuilder
     private var centerButton: some View {
-        if player.state == .opening || player.state == .buffering {
+        if player.state == .opening || player.state == .buffering || player.isRebuffering {
             ProgressView()
                 .controlSize(.large)
                 .tint(Theme.gold)

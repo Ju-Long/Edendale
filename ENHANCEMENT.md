@@ -1343,7 +1343,11 @@ Wiring:
 - SMB, NFS, and SFTP read through `BufferedByteSource` (1 MiB chunks, 48 MiB
   read-ahead on a worker thread, reconnect with backoff, idle keep-alive):
   SMB and NFS with the libsmb2/libnfs symbols libvlc already exports, SFTP
-  with SwiftNIO SSH (`SFTPConnection`).
+  with SwiftNIO SSH (`SFTPConnection`). While the whole app uses less than
+  500 MiB the read-ahead grows, up to 384 MiB; past that it holds, and well
+  past it the extra is given back. When a link slower than the video still
+  empties it, playback stops and refills (`RebufferPolicy`) instead of
+  running ahead of its data.
 - The generic branch in `openURL:` rejects remote schemes instead of handing
   them to FFmpeg's unverified `https`, so no token or signed link can reach it.
 - visionOS: `VisionMediaInspector` can't open custom schemes, so remote items
