@@ -32,6 +32,8 @@ enum TMDBImage {
         case profileLarge = "h632"
         case still = "w300"
         case backdrop = "w780"
+        /// Full-screen artwork, such as the tvOS Top Shelf carousel.
+        case backdropLarge = "w1280"
         case original
     }
 

@@ -15,6 +15,9 @@ import WidgetKit
 #if canImport(AppIntents)
 import AppIntents
 #endif
+#if os(tvOS)
+import TVServices
+#endif
 
 struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
     let id: String
@@ -24,6 +27,18 @@ struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
     let posterURL: URL?
     let progress: Double?
     let deepLink: URL
+    // Optional fields for the tvOS Top Shelf carousel. Only Trending and
+    // Continue Watching items carry them; older snapshots decode without them,
+    // and the iOS widget extension ignores them.
+    /// 16:9 TMDB backdrop (w1280, or an episode still at original size).
+    let backdropURL: URL?
+    let overview: String?
+    /// "yyyy-MM-dd", or "yyyy" when only the year is known.
+    let releaseDate: String?
+    /// Running time in seconds, when the local file's length is known.
+    let duration: TimeInterval?
+    /// Detail page for items whose `deepLink` starts playback.
+    let detailLink: URL?
 
     init(
         id: String,
@@ -32,7 +47,12 @@ struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
         subtitle: String?,
         posterURL: URL?,
         progress: Double?,
-        deepLink: URL
+        deepLink: URL,
+        backdropURL: URL? = nil,
+        overview: String? = nil,
+        releaseDate: String? = nil,
+        duration: TimeInterval? = nil,
+        detailLink: URL? = nil
     ) {
         self.id = id
         self.parentID = parentID
@@ -41,6 +61,11 @@ struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
         self.posterURL = posterURL
         self.progress = progress
         self.deepLink = deepLink
+        self.backdropURL = backdropURL
+        self.overview = overview
+        self.releaseDate = releaseDate
+        self.duration = duration
+        self.detailLink = detailLink
     }
 }
 
@@ -130,6 +155,11 @@ enum WidgetSnapshotStore {
         #if canImport(AppIntents)
         EdendaleShortcuts.updateAppShortcutParameters()
         #endif
+
+        #if os(tvOS)
+        // Asks the Home Screen to reload the Top Shelf extension's content.
+        TVTopShelfContentProvider.topShelfContentDidChange()
+        #endif
     }
 
     @MainActor
@@ -151,7 +181,10 @@ enum WidgetSnapshotStore {
                         : String(localized: "Series")),
                 posterURL: item.posterURL,
                 progress: nil,
-                deepLink: deepLink
+                deepLink: deepLink,
+                backdropURL: TMDBImage.url(item.backdropPath, size: .backdropLarge),
+                overview: item.overview?.nonBlank,
+                releaseDate: item.releaseDate
             )
         }
 
@@ -167,7 +200,12 @@ enum WidgetSnapshotStore {
                     subtitle: String(localized: "\(Int((entry.position * 100).rounded()))% watched"),
                     posterURL: movie.posterURL,
                     progress: entry.position,
-                    deepLink: deepLink
+                    deepLink: deepLink,
+                    backdropURL: TMDBImage.url(movie.backdropPath, size: .backdropLarge),
+                    overview: movie.overview?.nonBlank,
+                    releaseDate: movie.releaseYear.map(String.init),
+                    duration: movie.duration > 0 ? movie.duration : nil,
+                    detailLink: AppRoute.localMovie(movie.id).url
                 )
 
             case .episode:
@@ -181,7 +219,13 @@ enum WidgetSnapshotStore {
                     subtitle: "\(episode.episodeCode) · \(episode.displayTitle)",
                     posterURL: episode.show?.posterURL,
                     progress: entry.position,
-                    deepLink: deepLink
+                    deepLink: deepLink,
+                    backdropURL: TMDBImage.url(episode.show?.backdropPath, size: .backdropLarge)
+                        ?? TMDBImage.url(episode.stillPath, size: .original),
+                    overview: episode.overview?.nonBlank ?? episode.show?.overview?.nonBlank,
+                    releaseDate: episode.airDate,
+                    duration: episode.duration > 0 ? episode.duration : nil,
+                    detailLink: episode.show.flatMap { AppRoute.localShow($0.id).url }
                 )
             }
         }
@@ -265,5 +309,11 @@ enum WidgetSnapshotStore {
             if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
             return $0.id < $1.id
         }
+    }
+}
+
+private extension String {
+    var nonBlank: String? {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : self
     }
 }

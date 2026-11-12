@@ -871,6 +871,41 @@ before a release build syncs them. Android and Windows implement the same
 format and handoff natively; the static Web branch only updates its privacy
 policy.
 
+### tvOS Top Shelf
+
+When Edendale sits in the Apple TV Home Screen's top row and has focus, the
+`TopShelfExtension` target (`TopShelf/`, embedded in **Edendale TV**) fills
+the screen with a full-screen carousel (`TVTopShelfCarouselContent`, details
+style): Continue Watching first, then this week's Trending titles, each over
+its TMDB backdrop (w1280 at 1x, original at 2x). Swiping up enters full screen.
+Continue Watching items have **Play** (resumes through `edendale://play/…`)
+and **More Info** (the library page); Trending items only open their detail
+page, so a trailer still starts only from inside the app. If no item has a
+backdrop, the extension falls back to "Continue Watching" and "Trending"
+poster rows. With no snapshot at all it returns nothing, and the static Top
+Shelf images in Brand Assets show.
+
+The extension reads only the display snapshot the app already publishes to the
+App Group for widgets (`edendale.widget.snapshot.v1`). It decodes its own copy
+of that model (`TopShelf/TopShelfSnapshot.swift`) and compiles nothing from
+`Shared/` except `Localizable.xcstrings`. It makes no network requests: the
+Home Screen fetches the `image.tmdb.org` URLs itself. The snapshot's Top Shelf
+fields (`backdropURL`, `overview`, `releaseDate`, `duration`, `detailLink`)
+are optional, so the iOS widget extension and older snapshots keep decoding.
+After the tvOS app publishes a changed snapshot it calls
+`TVTopShelfContentProvider.topShelfContentDidChange()`.
+
+Device builds need the `com.BaBaSaMa.Edendale.TopShelf` App ID with the
+`group.com.BaBaSaMa.Edendale` App Group. The target is the plain
+`com.apple.product-type.app-extension` type that Xcode's TV Top Shelf template
+uses. The legacy `tv-app-extension` type links `_TVExtensionMain`, and the
+extension then exits at launch with status 3.
+
+To check it in Simulator, build and install **Edendale TV** ad-hoc signed (see
+above), launch it once so it fetches Trending, then move it into the dock's
+first slot and return home. Swipe up for full screen, and click to show the
+summary and buttons.
+
 ### Xcode Cloud
 
 Xcode Cloud automatically runs the executable

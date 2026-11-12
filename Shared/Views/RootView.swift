@@ -73,6 +73,11 @@ struct RootView: View {
             NavigationStack {
                 MediaDetailView(source: destination.source)
             }
+            // The environment set above wraps `navigation` only, not this
+            // sheet; without it a routed link (widget, Top Shelf, Siri)
+            // traps on MediaDetailView's SearchCoordinator.
+            .environment(moviesModel)
+            .environment(searchCoordinator)
         }
         .confirmationDialog(
             "Pair with \(scannedHandoff?.name ?? "")?",
@@ -385,8 +390,9 @@ struct RootView: View {
         return await isVisibleToSelectedAudience(show)
     }
 
-    /// A compact change token prevents unnecessary WidgetKit reloads while
-    /// still reacting to shelf, library, metadata, and watch-progress changes.
+    /// A compact change token prevents unnecessary WidgetKit and Top Shelf
+    /// reloads while still reacting to shelf, library, metadata, and
+    /// watch-progress changes.
     private var widgetSnapshotRevision: Int {
         var hasher = Hasher()
         hasher.combine(youngAudienceFilter.isEnabled)
@@ -395,18 +401,21 @@ struct RootView: View {
             hasher.combine(item.mediaType)
             hasher.combine(item.title)
             hasher.combine(item.posterPath)
+            hasher.combine(item.backdropPath)
         }
         for movie in visibleLibraryMovies {
             hasher.combine(movie.id)
             hasher.combine(movie.tmdbId)
             hasher.combine(movie.displayTitle)
             hasher.combine(movie.posterPath)
+            hasher.combine(movie.backdropPath)
         }
         for show in visibleLibraryShows {
             hasher.combine(show.id)
             hasher.combine(show.tmdbId)
             hasher.combine(show.displayName)
             hasher.combine(show.posterPath)
+            hasher.combine(show.backdropPath)
             hasher.combine(show.episodes.count)
         }
         for episode in visibleLibraryEpisodes {
