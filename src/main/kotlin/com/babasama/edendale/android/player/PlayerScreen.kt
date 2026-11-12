@@ -694,6 +694,8 @@ private fun BoxScope.SkipPromptButton(
     ) {
         Text(
             text = label,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = if (highlighted) EdendaleColors.Gold else EdendaleColors.TextPrimary,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
@@ -1782,6 +1784,8 @@ private fun SpeedSection(player: ExoPlayer, chrome: PlayerChromeState, isTelevis
                 ) {
                     Text(
                         text = stringResource(R.string.player_reset).uppercase(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         style = MaterialTheme.typography.labelLarge,
                     )
@@ -2173,6 +2177,8 @@ internal fun SegmentChip(
     ) {
         Text(
             text = label.uppercase(),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelLarge,
         )

@@ -779,9 +779,12 @@ fun ArchiveButton(
             )
             Spacer(Modifier.width(8.dp))
         }
+        // One line: a squeezed button ellipsizes its label rather than
+        // cutting it off or stacking it a few letters to a line.
         Text(
             text = label.uppercase(),
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.labelLarge.copy(
                 fontSize = if (isTelevision) 16.sp else 12.sp,
                 lineHeight = if (isTelevision) 22.sp else 16.sp,

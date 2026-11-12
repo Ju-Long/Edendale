@@ -605,22 +605,29 @@ counts, file names, stamps, and error classes only, in debug builds only; a
 JVM test runs a whole pairing and sync through the log sink and checks that no
 code, QR secret, key, token, or password reaches it.
 
-**Set Up Another Device** and **Pair with Another Device** move the location
-and its login to a new device over the local network (handoff version 2,
-SYNC-PROTOCOL.md §9), so the second device needs no second sign-in. Either
-side may send; you pick the direction first. The host shows a QR code (an
-ephemeral X25519 key and a 128-bit secret) and a six-digit code, and
-advertises `_edendale-handoff._tcp` with `v=2` while the screen is open. The
-other device scans the QR code with its camera and opens the link (Edendale
-registers `edendale://handoff`), pastes the link, or picks the host from the
-list and types the code; the typed code runs J-PAKE over P-256 as the
-phone-to-TV handoff does. Both sides derive one AES-256-GCM key (HKDF-SHA256
+**Set Up Another Device** and **Receive from Another Device** move the
+location and its login to a new device over the local network (handoff
+version 2, SYNC-PROTOCOL.md §9), so the second device needs no second sign-in.
+The screen is built as the Apple branch's: the button picks the direction;
+the sender first ticks what to send (the location, and any other linked
+accounts and saved logins); then a phone or tablet with a camera chooses
+**Scan the Other Device's Code** or **Show a Code for the Other Device to
+Scan**, and a TV or headset shows one. The device showing the code (the host)
+shows a QR code (an ephemeral X25519 key and a 128-bit secret), replaced by a
+new one every two minutes, and advertises `_edendale-handoff._tcp` with `v=2`
+while the screen is open. The scanner reads it in the dialog with the camera
+(CameraX, asked for only when you choose to scan; frames are read on the
+device and never kept) and connects at the address the code carries, or finds
+the host by name. A code scanned by the system camera opens Edendale too
+(`edendale://handoff`), which asks which way to go. Below the QR code the host
+shows a six-digit code for a Windows PC, which has no camera; the typed code
+runs J-PAKE over P-256 as the phone-to-TV handoff does. Both sides derive one AES-256-GCM key (HKDF-SHA256
 over the transcript, HMAC proofs both ways; the nonce is the direction and a
 counter, and the label is authenticated data). A wrong code or QR code fails
 before anything is sent; a code lasts two minutes and one attempt, and five
-wrong codes in a row pause new codes for a minute. The sender confirms what
-to send with the other device's name on screen: the location, and any other
-linked accounts and saved logins it ticks. A folder location travels as its
+wrong codes in a row pause new codes for a minute. Once paired, the sender
+confirms what it ticked with the other device's name on screen (Send or Don't
+Send), and both devices list what the receiver kept. A folder location travels as its
 space name only; the receiver picks its own folder. Google Drive logins move
 only within an ecosystem (Android phone to Android TV or Quest): to an
 iPhone, Mac, or PC the handoff sends the account's email and the space
@@ -1064,9 +1071,12 @@ tests. Before a release, check on:
   share, an SMB share, and an SFTP server), watch on one and resume on the
   other after a sync; rate and un-rate a title and check the other device
   follows; set one device's clock a day ahead and check the warning names it;
-  pair a second device both ways (QR code through the camera and the typed
-  code), send the location with an account and with a saved login, and check
-  that a wrong code and a stale QR code fail before anything is sent; remove
+  pair a second device both ways (a phone scanning the other's QR code in
+  the dialog, a phone showing its code, a code scanned by the system camera,
+  and a PC typing a TV's code), refuse the camera once and check the dialog
+  says to show a code instead, send the location with an account and with a
+  saved login, and check that a wrong code and a stale QR code fail before
+  anything is sent and that a shown code renews after two minutes; remove
   a device's file and turn sync off with and without deleting the file. On a
   TV, host the pairing from the Sync screen and receive a location from a
   phone. Check that an OneDrive or Dropbox account from a build before 27.1
@@ -1138,7 +1148,8 @@ The Meta Quest app built from this branch is not GPL-3.0 as a whole:
 | AndroidX WorkManager | Background sync | Apache-2.0 |
 | Jetpack XR 1.0.0 (`androidx.xr.scenecore`, `androidx.xr.runtime`, `androidx.xr.arcore`, with Google's Impress renderer) | The Android XR theater; in the `xr` split only | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
-| ZXing core | TMDB sign-in and pairing QR codes | Apache-2.0 |
+| ZXing core | TMDB sign-in and pairing QR codes, and reading a scanned pairing code | Apache-2.0 |
+| AndroidX CameraX 1.4.2 (`camera-camera2`, `camera-lifecycle`, `camera-view`) | The pairing screen's QR scanner on phones and tablets | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
 | AMD FidelityFX Super Resolution 1.0 (EASU, ported to GLSL) | Upscaling | MIT |
 | Nunito | The Rounded subtitle font | SIL OFL 1.1 |

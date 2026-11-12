@@ -682,7 +682,11 @@ private fun DetailContent(
                         }) {
                             Icon(painterResource(id = if (showTrailer) R.drawable.ic_eye_slash else R.drawable.ic_play), contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(if (showTrailer) R.string.detail_hide_trailer else R.string.detail_watch_trailer))
+                            Text(
+                                stringResource(if (showTrailer) R.string.detail_hide_trailer else R.string.detail_watch_trailer),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
                     DetailMetadata(header, progress)

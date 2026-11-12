@@ -220,10 +220,11 @@ fun EdendaleApp(
         ) { unlockedPairingLink = link }
     }
     pendingPairingLink?.takeIf { it == unlockedPairingLink }?.let { link ->
-        com.babasama.edendale.android.sync.PairingDialog(
+        // As Apple's "Pair with …?": the dialog asks which way first, then connects to the scanned code.
+        com.babasama.edendale.android.sync.SyncHandoffDialog(
             isTelevision = isTelevision,
-            hosting = false,
-            initialLink = link,
+            role = null,
+            scannedLink = link,
             onDismiss = { com.babasama.edendale.android.sync.PendingPairing.link.value = null },
         )
     }
@@ -609,7 +610,12 @@ private fun WideNavigation(
                     )
                     if (extended) {
                         Spacer(Modifier.width(14.dp))
-                        Text(stringResource(R.string.action_settings), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.action_settings),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
                     }
                 }
             }
@@ -646,7 +652,12 @@ private fun NavigationButton(
             )
             if (extended) {
                 Spacer(Modifier.width(14.dp))
-                Text(stringResource(tab.label), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(tab.label),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
         }
     }
@@ -802,7 +813,12 @@ private fun TvNavigationTab(tab: AppTab, selected: Boolean, onClick: () -> Unit)
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Icon(painterResource(id = if (selected) tab.selectedIcon else tab.icon), contentDescription = null)
-            Text(stringResource(tab.label), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(tab.label),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleMedium,
+            )
         }
     }
 }
