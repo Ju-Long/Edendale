@@ -197,7 +197,8 @@ internal fun SyncHandoffDialog(
 
     /** Connects to the host the code names: at its address when the code has one, else found by its name (§9.1). */
     fun startGuest(payload: HandoffV2.QrPayload, myRole: HandoffV2.Role) {
-        if (guestJob != null) return
+        // Only a connection still running stops another; a finished typed attempt (Back to the scanner) doesn't.
+        if (guestJob?.isActive == true) return
         failure = null
         guestStep = GuestStep.CONNECTING
         discovery.start()
