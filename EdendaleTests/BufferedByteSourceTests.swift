@@ -6,7 +6,8 @@
 //  connections can be dropped, refused, or slowed: read-ahead, a seek
 //  jumping the read-ahead queue, reconnecting after a drop, giving up after
 //  the retries, failing a bad first login at once, interrupts, cancel,
-//  keep-alives, and eviction; and FFmpeg decoding a whole file through it
+//  keep-alives, eviction, and a read-ahead that grows into the app's spare
+//  memory and gives it back; and FFmpeg decoding a whole file through it
 //  while the connection keeps dropping. Small chunks keep the fixtures tiny.
 //
 
@@ -112,6 +113,19 @@ private final class FakeFile: NSObject, BufferedFile {
     }
 }
 
+/// The app's spare memory, as a test sets it.
+final class FakeHeadroom: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Int64
+
+    init(_ bytes: Int64) { value = bytes }
+
+    var bytes: Int64 {
+        get { lock.withLock { value } }
+        set { lock.withLock { value = newValue } }
+    }
+}
+
 @Suite struct BufferedByteSourceTests {
 
     private static let chunk = 1024
@@ -121,11 +135,16 @@ private final class FakeFile: NSObject, BufferedFile {
         aheadChunks: Int = 8,
         cacheChunks: Int = 16,
         retryDelays: [Double] = [0.01, 0.01, 0.01],
-        keepAlive: TimeInterval = 0
+        keepAlive: TimeInterval = 0,
+        maxAheadChunks: Int? = nil,
+        headroom: FakeHeadroom? = nil
     ) -> BufferedByteSource {
         let source = BufferedByteSource(host: "nas.local") { error in server.open(error) }
         source.chunkSize = Self.chunk
         source.readAheadBytes = aheadChunks * Self.chunk
+        // Without a test's say-so the read-ahead never grows with memory.
+        source.maxReadAheadBytes = (maxAheadChunks ?? aheadChunks) * Self.chunk
+        if let headroom { source.memoryHeadroom = { headroom.bytes } }
         source.cacheBytes = cacheChunks * Self.chunk
         source.retryDelays = retryDelays.map { NSNumber(value: $0) }
         source.keepAliveInterval = keepAlive
@@ -173,6 +192,180 @@ private final class FakeFile: NSObject, BufferedFile {
         #expect(server.readOffsets.allSatisfy { $0 % Int64(Self.chunk) == 0 })
         #expect(Set(server.readOffsets).count == server.readOffsets.count)
         #expect(server.openCount == 1)
+    }
+
+    private func ahead(_ source: BufferedByteSource) -> (bytes: Int64, complete: Bool) {
+        var complete: ObjCBool = false
+        let bytes = source.bufferedBytesAhead(complete: &complete)
+        return (bytes, complete.boolValue)
+    }
+
+    @Test func reportsWhatItHoldsPastTheLastRead() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 32 * 1024))
+        let source = makeSource(server)
+        defer { source.cancel() }
+
+        // Nothing is fetched before the first read.
+        #expect(ahead(source).bytes == 0)
+        #expect(!ahead(source).complete)
+
+        _ = await blockingRead(source, offset: 0, length: 100)
+        try await waitUntil { ahead(source).complete }
+        // The rest of the first chunk and the eight read ahead.
+        #expect(ahead(source).complete)
+        #expect(ahead(source).bytes == Int64(9 * Self.chunk - 100))
+
+        // Reading to the end of the chunk leaves the eight.
+        _ = await blockingRead(source, offset: 100, length: Self.chunk)
+        #expect(ahead(source).bytes == Int64(8 * Self.chunk))
+    }
+
+    @Test func holdsNothingOnceAStalledLinkHasEmptiedIt() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 32 * 1024))
+        let source = makeSource(server, aheadChunks: 4, cacheChunks: 8)
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: Self.chunk)
+        try await waitUntil { ahead(source).complete }
+        #expect(ahead(source).bytes == Int64(4 * Self.chunk))
+
+        // The link slows to a crawl while reading uses the buffer up.
+        server.delay = 0.3
+        for index in 1...4 {
+            _ = await blockingRead(source, offset: Int64(index * Self.chunk), length: Self.chunk)
+        }
+        #expect(ahead(source).bytes == 0)
+        #expect(!ahead(source).complete)
+
+        // It fills again behind the paused reader.
+        try await waitUntil({ ahead(source).complete }, timeout: 5)
+        #expect(ahead(source).bytes == Int64(4 * Self.chunk))
+    }
+
+    @Test func aReadAheadThatGaveUpCountsAsComplete() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 16 * 1024))
+        let source = makeSource(server, aheadChunks: 2, cacheChunks: 4, retryDelays: [0.01, 0.01])
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: Self.chunk)
+        try await waitUntil { ahead(source).complete }
+        server.drop(refuse: true)
+        // Chunk 1 is cached; fetching chunk 3 behind it fails for good.
+        _ = await blockingRead(source, offset: Int64(Self.chunk), length: Self.chunk)
+        try await waitUntil { ahead(source).complete }
+        // Playback goes on with what is left and meets the error at a read,
+        // rather than waiting for a buffer that will never fill.
+        #expect(ahead(source).complete)
+        #expect(ahead(source).bytes == Int64(Self.chunk))
+    }
+
+    @Test func readsFurtherAheadWhileTheAppHasMemoryToSpare() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 64 * 1024))
+        let source = makeSource(server, aheadChunks: 4, cacheChunks: 8,
+                                maxAheadChunks: 24, headroom: FakeHeadroom(1 << 20))
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: 100)
+        try await waitUntil { ahead(source).complete }
+        // The rest of the first chunk and 24 more, and no further.
+        #expect(ahead(source).bytes == Int64(25 * Self.chunk - 100))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!server.readOffsets.contains(25 * 1024))
+    }
+
+    @Test func keepsToTheSmallReadAheadWhenTheAppHasNoMemoryToSpare() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 64 * 1024))
+        let source = makeSource(server, aheadChunks: 4, cacheChunks: 8,
+                                maxAheadChunks: 24, headroom: FakeHeadroom(0))
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: 100)
+        try await waitUntil { ahead(source).complete }
+        #expect(ahead(source).bytes == Int64(5 * Self.chunk - 100))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!server.readOffsets.contains(5 * 1024))
+    }
+
+    @Test func stopsGrowingWhenMemoryFillsAndGoesOnWhenItFrees() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 64 * 1024))
+        server.delay = 0.02
+        let room = FakeHeadroom(1 << 20)
+        let source = makeSource(server, aheadChunks: 4, cacheChunks: 8, maxAheadChunks: 24, headroom: room)
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: Self.chunk)
+        try await waitUntil { server.readOffsets.contains(8 * 1024) }
+        // The app reaches its memory target: what is here stays, no more comes.
+        room.bytes = 0
+        try await waitUntil { ahead(source).complete }
+        let held = ahead(source).bytes
+        #expect(held >= Int64(8 * Self.chunk))
+        #expect(held < Int64(24 * Self.chunk))
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(ahead(source).bytes == held)
+
+        // Memory frees up; the next read that moves on sets it growing again.
+        server.delay = 0
+        room.bytes = 1 << 20
+        _ = await blockingRead(source, offset: Int64(Self.chunk), length: Self.chunk)
+        try await waitUntil { ahead(source).bytes == Int64(24 * Self.chunk) }
+        #expect(ahead(source).bytes == Int64(24 * Self.chunk))
+        #expect(ahead(source).complete)
+    }
+
+    @Test func givesTheExtraBackWhenTheAppRunsWellOverItsMemory() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 64 * 1024))
+        let room = FakeHeadroom(1 << 20)
+        let source = makeSource(server, aheadChunks: 4, cacheChunks: 8, maxAheadChunks: 24, headroom: room)
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: Self.chunk)
+        try await waitUntil { ahead(source).complete }
+        #expect(ahead(source).bytes == Int64(24 * Self.chunk))
+
+        // Something else in the app takes far more than the target allows.
+        room.bytes = -(64 << 20)
+        _ = await blockingRead(source, offset: Int64(Self.chunk), length: Self.chunk)
+        try await waitUntil { ahead(source).bytes <= Int64(4 * Self.chunk) }
+        // The read-ahead every device gets is all that is left.
+        #expect(ahead(source).bytes == Int64(4 * Self.chunk))
+        #expect(ahead(source).complete)
+        let fetches = server.readOffsets.count
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(server.readOffsets.count == fetches)
+    }
+
+    @Test func aBriefJumpAwayKeepsWhatWasBuffered() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 64 * 1024))
+        let source = makeSource(server, aheadChunks: 8, cacheChunks: 10)
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: 100)
+        try await waitUntil { ahead(source).complete }
+        // FFmpeg reads a Matroska file's index at its end on the first
+        // seek, then lands a little further on from where it was.
+        _ = await blockingRead(source, offset: 63 * 1024, length: 100)
+        let (count, bytes) = await blockingRead(source, offset: 3 * 1024, length: 100)
+        #expect(count == 100)
+        #expect(bytes == server.data.subdata(in: 3 * 1024..<3 * 1024 + 100))
+        for index in 3...8 {
+            #expect(server.readOffsets.filter { $0 == Int64(index * 1024) }.count == 1)
+        }
+    }
+
+    @Test func aSeekLetsGoOfTheOldPlaceOnceReadingHasSettled() async throws {
+        let server = FakeFileServer(data: makeTestData(count: 64 * 1024))
+        let source = makeSource(server, aheadChunks: 2, cacheChunks: 4)
+        defer { source.cancel() }
+
+        _ = await blockingRead(source, offset: 0, length: Self.chunk)
+        try await waitUntil { ahead(source).complete }
+        for index in 30..<40 {
+            _ = await blockingRead(source, offset: Int64(index * Self.chunk), length: Self.chunk)
+        }
+        // Ten chunks on, the start of the file is no longer kept.
+        _ = await blockingRead(source, offset: 0, length: 100)
+        #expect(server.readOffsets.filter { $0 == 0 }.count == 2)
     }
 
     @Test func aSeekJumpsTheReadAheadQueue() async throws {

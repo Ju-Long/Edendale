@@ -147,6 +147,26 @@ nonisolated final class RemoteByteSource: NSObject, ByteSource, @unchecked Senda
         }
     }
 
+    /// What is cached past the last read, for the player's rebuffering;
+    /// complete once no fetch is under way for the chunk after it.
+    func bufferedBytesAhead(complete: UnsafeMutablePointer<ObjCBool>) -> Int64 {
+        condition.lock()
+        defer { condition.unlock() }
+        let position = max(lastReadEnd, 0)
+        let chunkSize = configuration.chunkSize
+        var index = position / chunkSize
+        var bytes: Int64 = 0
+        while let data = chunks[index] {
+            bytes += max(Int64(data.count) - max(position - index * chunkSize, 0), 0)
+            index += 1
+            // A short chunk is the end of the file.
+            if Int64(data.count) < chunkSize { break }
+        }
+        let atEnd = knownLength >= 0 && index * chunkSize >= knownLength
+        complete.pointee = ObjCBool(isCancelled || atEnd || loads[index] == nil)
+        return bytes
+    }
+
     func cancel() {
         condition.lock()
         isCancelled = true

@@ -132,6 +132,13 @@ struct PlayerControlsOverlay: View {
         }
         #endif
 
+        // A stream that ran out of data says so even with the chrome hidden;
+        // the picture would otherwise just stand still.
+        if !chrome.controlsVisible && player.isRebuffering {
+            bufferingIndicator
+                .allowsHitTesting(false)
+        }
+
         segmentPrompt(bottomPadding: chrome.controlsVisible ? 100 : 48)
         // macOS docks the panels beside the video (see PlayerScreen).
         #if !os(macOS)
@@ -392,13 +399,17 @@ struct PlayerControlsOverlay: View {
 
     // MARK: - Center
 
+    private var bufferingIndicator: some View {
+        ProgressView()
+            .controlSize(.large)
+            .tint(Theme.gold)
+            .accessibilityLabel("Buffering")
+    }
+
     @ViewBuilder
     private var centerButton: some View {
-        if player.state == .opening || player.state == .buffering {
-            ProgressView()
-                .controlSize(.large)
-                .tint(Theme.gold)
-                .accessibilityLabel("Buffering")
+        if player.state == .opening || player.state == .buffering || player.isRebuffering {
+            bufferingIndicator
         } else {
             Button {
                 chrome.togglePlayPause()
