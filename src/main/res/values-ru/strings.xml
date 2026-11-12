@@ -738,6 +738,7 @@
     <string name="pairing_code_apple_only">Устройства Apple показывают только QR-код для сканирования, поэтому их здесь нет.</string>
     <string name="pairing_wrong_code">Код не совпал. Введите новый код, показанный на %1$s.</string>
     <string name="pairing_code_expired">Срок действия кода истёк. Введите код, который сейчас показан на %1$s.</string>
+    <string name="pairing_host_wrong_code">На другом устройстве введён неверный код. Введите новый код, показанный выше.</string>
     <string name="player_theater">Кинозал</string>
     <string name="xr_module_title">Android XR · Кинозал</string>
 </resources>

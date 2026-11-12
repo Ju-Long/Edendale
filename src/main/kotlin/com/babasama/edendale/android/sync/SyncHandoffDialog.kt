@@ -419,7 +419,7 @@ internal fun SyncHandoffDialog(
         PairingFlow.Mode.SCAN, PairingFlow.Mode.SHOW -> modes.size > 1 && linked == null
         null -> false
     }
-    // Enter the Other Device's Code, from the scanner or from a code shown by a device that can't scan.
+    // Enter the Other Device's Code, a row under the scanner or under a code shown by a device that can't scan.
     val offersEntry = myRole != null && !choosing && !inProgress && done == null && declinedBy == null && failure == null &&
         PairingFlow.offersEntry(mode, modes) && scanned == null
 
@@ -470,20 +470,25 @@ internal fun SyncHandoffDialog(
                             stringResource(R.string.pairing_connected, other.name)
                         },
                     )
-                    mode == PairingFlow.Mode.SHOW -> when {
-                        hostStatus is PairingHost.Status.Connected -> Waiting(stringResource(R.string.pairing_pairing))
-                        hostStatus is PairingHost.Status.LockedOut -> Statement(stringResource(R.string.pairing_locked_out))
-                        hostState?.qrUri == null -> Waiting(stringResource(R.string.pairing_starting))
-                        else -> {
-                            ApprovalQrCode(hostState.qrUri, stringResource(R.string.pairing_qr_description), isTelevision, Modifier.align(Alignment.CenterHorizontally))
-                            Note(stringResource(R.string.pairing_show_instructions, otherDeviceAction(context, myRole)))
-                            // FEATURES-27.1 §6.2: a PC has no camera, so it pairs by the typed code (J-PAKE, §9.4); so can
-                            // an Android device or a Quest that can't or won't scan (Section T). Apple's devices can't type it.
-                            hostState.code?.let { code -> Note(stringResource(R.string.pairing_pc_code, code.chunked(3).joinToString(" "))) }
-                            (hostStatus as? PairingHost.Status.Failed)?.let {
-                                Text(pairingFailureMessage(context, it.error), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    mode == PairingFlow.Mode.SHOW -> {
+                        when {
+                            hostStatus is PairingHost.Status.Connected -> Waiting(stringResource(R.string.pairing_pairing))
+                            hostStatus is PairingHost.Status.LockedOut -> Statement(stringResource(R.string.pairing_locked_out))
+                            hostState?.qrUri == null -> Waiting(stringResource(R.string.pairing_starting))
+                            else -> {
+                                ApprovalQrCode(hostState.qrUri, stringResource(R.string.pairing_qr_description), isTelevision, Modifier.align(Alignment.CenterHorizontally))
+                                Note(stringResource(R.string.pairing_show_instructions, otherDeviceAction(context, myRole)))
+                                // FEATURES-27.1 §6.2: a PC has no camera, so it pairs by the typed code (J-PAKE, §9.4); so can
+                                // an Android device or a Quest that can't or won't scan (Section T). Apple's devices can't type it.
+                                hostState.code?.let { code -> Note(stringResource(R.string.pairing_pc_code, code.chunked(3).joinToString(" "))) }
+                                (hostStatus as? PairingHost.Status.Failed)?.let {
+                                    // A wrong code typed on the other device: this screen already shows the new one.
+                                    ErrorText(if (it.error === HandoffException.WrongCode) stringResource(R.string.pairing_host_wrong_code) else pairingFailureMessage(context, it.error))
+                                }
                             }
                         }
+                        // A device that can't scan joins another that only shows a code by typing that code.
+                        if (offersEntry) EnterCodeRow(isTelevision) { enterCode() }
                     }
                     // A code in hand (a pairing link's) shows it connecting at once: the scanner, which asks for the camera, never composes.
                     else -> when (PairingFlow.guestView(mode, hasCode = scanned != null, step = guestStep)) {
@@ -519,6 +524,8 @@ internal fun SyncHandoffDialog(
                                 startGuest(payload, myRole)
                             })
                             Note(stringResource(R.string.pairing_scan_instructions))
+                            // The camera may be refused, missing, or unable to read the other screen.
+                            if (offersEntry) EnterCodeRow(isTelevision) { enterCode() }
                         }
                     }
                 }
@@ -557,7 +564,6 @@ internal fun SyncHandoffDialog(
                     kind = ArchiveButtonKind.Primary,
                     onClick = { submitCode(myRole) },
                 )
-                offersEntry -> ArchiveButton(label = stringResource(R.string.pairing_mode_enter), onClick = { enterCode() }, kind = ArchiveButtonKind.Secondary)
                 else -> Unit
             }
         },
@@ -757,6 +763,18 @@ private fun CodeEntry(
         if (onlyQrHosts) Note(stringResource(R.string.pairing_code_apple_only))
     }
     Note(stringResource(R.string.pairing_mode_footer, otherAction))
+}
+
+/** Enter the Other Device's Code, as a row beside the scan-or-show rows: it wraps where a one-line button would cut it short. */
+@Composable
+private fun EnterCodeRow(isTelevision: Boolean, onClick: () -> Unit) {
+    ChoiceRow(
+        label = stringResource(R.string.pairing_mode_enter),
+        selected = false,
+        iconRes = R.drawable.ic_ellipsis,
+        modifier = Modifier.tvFocusLift(isTelevision, RoundedCornerShape(EdendaleRadii.Soft.dp)),
+        onClick = onClick,
+    )
 }
 
 @Composable

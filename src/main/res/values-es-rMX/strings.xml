@@ -722,6 +722,7 @@
     <string name="pairing_code_apple_only">Los dispositivos Apple solo muestran un código QR para escanear, por eso no aparecen aquí.</string>
     <string name="pairing_wrong_code">Ese código no coincide. Ingresa el nuevo código que se muestra en %1$s.</string>
     <string name="pairing_code_expired">Ese código caducó. Ingresa el código que se muestra ahora en %1$s.</string>
+    <string name="pairing_host_wrong_code">Se ingresó un código incorrecto en el otro dispositivo. Ingresa el nuevo código de arriba.</string>
     <string name="player_theater">Cine</string>
     <string name="xr_module_title">Android XR · Cine</string>
 </resources>

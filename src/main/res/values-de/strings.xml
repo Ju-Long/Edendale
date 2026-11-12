@@ -720,6 +720,7 @@
     <string name="pairing_code_apple_only">Apple-Geräte zeigen nur einen QR-Code zum Scannen und erscheinen deshalb hier nicht.</string>
     <string name="pairing_wrong_code">Der Code stimmt nicht. Gib den neuen Code ein, der auf %1$s angezeigt wird.</string>
     <string name="pairing_code_expired">Der Code ist abgelaufen. Gib den Code ein, der jetzt auf %1$s angezeigt wird.</string>
+    <string name="pairing_host_wrong_code">Auf dem anderen Gerät wurde ein falscher Code eingegeben. Gib den neuen Code oben ein.</string>
     <string name="player_theater">Kino</string>
     <string name="xr_module_title">Android XR · Kino</string>
 </resources>

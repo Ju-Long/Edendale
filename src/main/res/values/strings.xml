@@ -769,6 +769,7 @@
     <string name="pairing_code_apple_only">Apple devices show only a QR code to scan, so they aren\'t listed here.</string>
     <string name="pairing_wrong_code">That code didn\'t match. Enter the new code shown on %1$s.</string>
     <string name="pairing_code_expired">That code has expired. Enter the code shown on %1$s now.</string>
+    <string name="pairing_host_wrong_code">A wrong code was entered on the other device. Enter the new code above.</string>
 
     <!-- Android XR theater (Section N) -->
     <string name="player_theater">Theater</string>

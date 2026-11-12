@@ -713,6 +713,7 @@
     <string name="pairing_code_apple_only">Apple 设备只显示供扫描的二维码，因此不会列在这里。</string>
     <string name="pairing_wrong_code">代码不匹配。请输入 %1$s 上显示的新代码。</string>
     <string name="pairing_code_expired">代码已过期。请输入 %1$s 上现在显示的代码。</string>
+    <string name="pairing_host_wrong_code">另一台设备上输入的代码不正确。请输入上方的新代码。</string>
     <string name="player_theater">影院</string>
     <string name="xr_module_title">Android XR · 影院</string>
 </resources>

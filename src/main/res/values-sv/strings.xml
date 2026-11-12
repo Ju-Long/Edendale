@@ -720,6 +720,7 @@
     <string name="pairing_code_apple_only">Apple-enheter visar bara en QR-kod att skanna, så de visas inte här.</string>
     <string name="pairing_wrong_code">Koden stämde inte. Ange den nya koden som visas på %1$s.</string>
     <string name="pairing_code_expired">Koden har gått ut. Ange koden som visas på %1$s nu.</string>
+    <string name="pairing_host_wrong_code">En fel kod angavs på den andra enheten. Ange den nya koden ovan.</string>
     <string name="player_theater">Biograf</string>
     <string name="xr_module_title">Android XR · Biograf</string>
 </resources>

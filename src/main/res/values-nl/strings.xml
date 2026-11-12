@@ -720,6 +720,7 @@
     <string name="pairing_code_apple_only">Apple-apparaten tonen alleen een QR-code om te scannen, dus ze staan hier niet.</string>
     <string name="pairing_wrong_code">Die code kwam niet overeen. Voer de nieuwe code in die op %1$s wordt getoond.</string>
     <string name="pairing_code_expired">Die code is verlopen. Voer de code in die nu op %1$s wordt getoond.</string>
+    <string name="pairing_host_wrong_code">Op het andere apparaat is een verkeerde code ingevoerd. Voer de nieuwe code hierboven in.</string>
     <string name="player_theater">Bioscoop</string>
     <string name="xr_module_title">Android XR · Bioscoop</string>
 </resources>

@@ -713,6 +713,7 @@
     <string name="pairing_code_apple_only">Apple の端末はスキャン用の QR コードしか表示しないため、ここには表示されません。</string>
     <string name="pairing_wrong_code">コードが一致しませんでした。%1$s に表示された新しいコードを入力してください。</string>
     <string name="pairing_code_expired">コードの有効期限が切れました。%1$s に今表示されているコードを入力してください。</string>
+    <string name="pairing_host_wrong_code">他の端末で間違ったコードが入力されました。上の新しいコードを入力してください。</string>
     <string name="player_theater">シアター</string>
     <string name="xr_module_title">Android XR · シアター</string>
 </resources>
