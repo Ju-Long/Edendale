@@ -55,7 +55,14 @@ struct AppControlsSection: View {
         Button { showGuide = true } label: {
             SettingsRowLabel(title: String(localized: "Show Player Guide"), detail: guideDetail)
         }
-        .sheet(isPresented: $showGuide) { guide }
+        // Full screen, the way it opens over the player. A tvOS sheet sizes
+        // itself to its content, and the guide fills whatever it is given,
+        // so a sheet shrank it to a sliver.
+        .fullScreenCover(isPresented: $showGuide) {
+            guide
+                // Back closes it, as in the player.
+                .onExitCommand { showGuide = false }
+        }
         #else
         Button("Show Player Guide") { showGuide = true }
             .sheet(isPresented: $showGuide) { guide }
@@ -72,7 +79,6 @@ struct AppControlsSection: View {
         // The guide keeps its own archive buttons; only the Settings rows
         // draw system ones.
         .environment(\.archiveButtonsUseSystemStyle, false)
-        .tvSheetInsets()
     }
 
     #if os(macOS) || os(tvOS)
