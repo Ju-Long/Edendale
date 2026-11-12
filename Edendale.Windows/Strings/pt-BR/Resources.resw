@@ -1109,12 +1109,6 @@ ESTÁ SILENCIOSA</value>
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Mostrar equalizador</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Ocultar equalizador</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Plano</value>
   </data>
@@ -1969,5 +1963,11 @@ ESTÁ SILENCIOSA</value>
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>Mostrar botões para pular aberturas, recapitulações e créditos quando houver tempos da comunidade disponíveis. A reprodução continua até você escolher pular.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equalizador</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

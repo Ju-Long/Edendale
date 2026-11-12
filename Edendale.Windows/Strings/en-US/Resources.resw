@@ -1109,12 +1109,6 @@ IS SILENT</value>
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Show equalizer</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Hide equalizer</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Flat</value>
   </data>
@@ -1972,5 +1966,13 @@ IS SILENT</value>
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>Show buttons to skip intros, recaps, and credits when community timestamps are available. Playback continues until you choose to skip.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equalizer</value>
+    <comment>Screen-reader name of the equalizer graph in Settings &gt; Audio.</comment>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
+    <comment>The unit under the equalizer graph's dB scale.</comment>
   </data>
 </root>

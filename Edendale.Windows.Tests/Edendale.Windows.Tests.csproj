@@ -65,6 +65,7 @@
     <Compile Include="..\Edendale.Windows\Services\YoungAudienceFilter.cs" Link="App\Services\YoungAudienceFilter.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
     <Compile Include="..\Edendale.Windows\Core\AudioEnhancement.cs" Link="App\Core\AudioEnhancement.cs" />
+    <Compile Include="..\Edendale.Windows\Core\EqualizerPlot.cs" Link="App\Core\EqualizerPlot.cs" />
     <Compile Include="..\Edendale.Windows\Core\GamepadInterpreter.cs" Link="App\Core\GamepadInterpreter.cs" />
     <Compile Include="..\Edendale.Windows\Core\RefreshRateMatching.cs" Link="App\Core\RefreshRateMatching.cs" />
     <Compile Include="..\Edendale.Windows\Core\SshFingerprint.cs" Link="App\Core\SshFingerprint.cs" />

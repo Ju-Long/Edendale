@@ -79,17 +79,37 @@ public static class AudioEnhancementProfiles
 
     public static double PeakBandBoost(this AudioEnhancementProfile profile) => profile.Bands().Max();
 
-    /// <summary>Clamps to −20…+20 dB; a non-finite value becomes 0.</summary>
+    /// <summary>Clamps a level to −20…+20 dB; a non-finite value becomes 0.</summary>
     public static double Clamp(double value) =>
         double.IsFinite(value) ? Math.Clamp(value, MinimumAmplification, MaximumAmplification) : 0;
+
+    /// <summary>
+    /// User adjustments are offsets from the profile, so they span the whole
+    /// range in both directions: every level stays reachable from any
+    /// profile (a +8 dB band can still be pulled down to −20 dB).
+    /// Apple's <c>AudioEnhancementProfile.adjustmentRange</c>.
+    /// </summary>
+    public const double MinimumAdjustment = -40;
+
+    /// <summary>The upper end of the offsets' range; see <see cref="MinimumAdjustment"/>.</summary>
+    public const double MaximumAdjustment = 40;
+
+    /// <summary>Clamps a stored offset to −40…+40 dB; a non-finite value becomes 0 (Apple's <c>clampAdjustment</c>).</summary>
+    public static double ClampAdjustment(double value) =>
+        double.IsFinite(value) ? Math.Clamp(value, MinimumAdjustment, MaximumAdjustment) : 0;
 }
 
 /// <summary>
-/// Settings → Audio Enhancement plus the Player Adjustments booster. User
-/// adjustments are stored separately and added to the profile; choosing
-/// another profile resets them. Every value clamps to −20…+20 dB. Keys are
-/// Apple's: <c>audio.enhancementProfile</c>, <c>audio.enhancementPreamp</c>,
-/// <c>audio.enhancementBands</c>, <c>audio.boosterEnabled</c>.
+/// Settings → Audio plus the Player Adjustments booster
+/// (AudioEnhancementController.swift). Settings works in absolute levels:
+/// the graph and the preamp slider show and set each level, and the level is
+/// stored as the user's offset from the selected profile, so choosing another
+/// profile resets the offsets and starts again from that profile's curve.
+/// Levels clamp to −20…+20 dB; the stored offsets clamp to −40…+40 dB, so
+/// every level is reachable from any profile. Keys are Apple's:
+/// <c>audio.enhancementProfile</c>, <c>audio.enhancementPreamp</c>,
+/// <c>audio.enhancementBands</c>, <c>audio.boosterEnabled</c>. Their shapes
+/// and meaning are unchanged since 27.0, so a saved file loads as it was.
 /// </summary>
 public sealed class AudioEnhancement
 {
@@ -115,17 +135,18 @@ public sealed class AudioEnhancement
 
     public bool BoosterEnabled => _store.GetBool(BoosterKey, fallback: false);
 
+    /// <summary>The user's offset from the profile's preamp, within ±40 dB.</summary>
     public double UserPreampAdjustment =>
-        _store.GetDouble(PreampKey) is double stored ? AudioEnhancementProfiles.Clamp(stored) : 0;
+        _store.GetDouble(PreampKey) is double stored ? AudioEnhancementProfiles.ClampAdjustment(stored) : 0;
 
-    /// <summary>Ten adjustments; a stored list of the wrong length is ignored.</summary>
+    /// <summary>Ten offsets from the profile's bands, each within ±40 dB; a stored list of the wrong length is ignored.</summary>
     public IReadOnlyList<double> UserBandAdjustments
     {
         get
         {
             var stored = _store.GetDoubleArray(BandsKey);
             return stored is { Length: AudioEnhancementProfiles.BandCount }
-                ? [.. stored.Select(AudioEnhancementProfiles.Clamp)]
+                ? [.. stored.Select(AudioEnhancementProfiles.ClampAdjustment)]
                 : new double[AudioEnhancementProfiles.BandCount];
         }
     }
@@ -143,8 +164,16 @@ public sealed class AudioEnhancement
         }
     }
 
+    /// <summary>Each band's level: the profile's plus the user's offset, within ±20 dB. The graph shows these.</summary>
     public IReadOnlyList<double> EffectiveBands =>
         [.. SelectedProfile.Bands().Zip(UserBandAdjustments, (profile, user) => AudioEnhancementProfiles.Clamp(profile + user))];
+
+    /// <summary>
+    /// The preamp the user sets: the profile's plus their adjustment, before
+    /// the booster's gain. The Settings slider shows this; the booster adds
+    /// its gain only to <see cref="EffectivePreamp"/>, which is what plays.
+    /// </summary>
+    public double PreampLevel => AudioEnhancementProfiles.Clamp(SelectedProfile.Preamp() + UserPreampAdjustment);
 
     /// <summary>When nothing would be audible, the equalizer is removed entirely.</summary>
     public bool IsEffectivelyFlat => EffectivePreamp == 0 && EffectiveBands.All(value => value == 0);
@@ -160,16 +189,40 @@ public sealed class AudioEnhancement
 
     public void SetBooster(bool enabled) => _store.SetBool(BoosterKey, enabled);
 
+    /// <summary>Stores the preamp offset, clamped to ±40 dB.</summary>
     public void SetUserPreampAdjustment(double value) =>
-        _store.SetDouble(PreampKey, AudioEnhancementProfiles.Clamp(value));
+        _store.SetDouble(PreampKey, AudioEnhancementProfiles.ClampAdjustment(value));
 
-    /// <summary>An index outside 0…9 is ignored.</summary>
+    /// <summary>Stores one band's offset, clamped to ±40 dB. An index outside 0…9 is ignored.</summary>
     public void SetUserBandAdjustment(double value, int index)
     {
         if (index is < 0 or >= AudioEnhancementProfiles.BandCount) return;
         var bands = UserBandAdjustments.ToArray();
-        bands[index] = AudioEnhancementProfiles.Clamp(value);
+        bands[index] = AudioEnhancementProfiles.ClampAdjustment(value);
         _store.SetDoubleArray(BandsKey, bands);
+    }
+
+    /// <summary>
+    /// Sets the preamp to an absolute level (before the booster), as the
+    /// Settings slider does; stored as an offset from the profile. A
+    /// non-finite level is ignored.
+    /// </summary>
+    public void SetPreampLevel(double level)
+    {
+        if (!double.IsFinite(level)) return;
+        SetUserPreampAdjustment(AudioEnhancementProfiles.Clamp(level) - SelectedProfile.Preamp());
+    }
+
+    /// <summary>
+    /// Sets one band to an absolute level, as the equalizer graph does;
+    /// stored as an offset from the profile, so changing profiles still
+    /// starts again from that profile's curve. A non-finite level or an index
+    /// outside 0…9 is ignored.
+    /// </summary>
+    public void SetBandLevel(double level, int index)
+    {
+        if (index is < 0 or >= AudioEnhancementProfiles.BandCount || !double.IsFinite(level)) return;
+        SetUserBandAdjustment(AudioEnhancementProfiles.Clamp(level) - SelectedProfile.Bands()[index], index);
     }
 
     public void ResetUserAdjustments()

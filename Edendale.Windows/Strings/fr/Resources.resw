@@ -1109,12 +1109,6 @@ EST SILENCIEUSE</value>
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Afficher l’égaliseur</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Masquer l’égaliseur</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Neutre</value>
   </data>
@@ -1969,5 +1963,11 @@ EST SILENCIEUSE</value>
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>Afficher des boutons pour passer l’introduction, le résumé et le générique lorsque des repères de la communauté sont disponibles. La lecture continue jusqu’à ce que vous choisissiez de passer.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Égaliseur</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

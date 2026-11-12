@@ -1109,12 +1109,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>显示均衡器</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>隐藏均衡器</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>平直</value>
   </data>
@@ -1969,5 +1963,11 @@
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>有社区时间戳时，显示跳过片头、前情提要和片尾的按钮。播放会继续，直到你选择跳过。</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>均衡器</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

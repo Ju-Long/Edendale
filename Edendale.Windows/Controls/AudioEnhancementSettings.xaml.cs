@@ -1,18 +1,26 @@
-using System.Globalization;
 using Edendale.Windows.Core;
 using Edendale.Windows.Services;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Documents;
 
 namespace Edendale.Windows.Controls;
 
-/// <summary>Settings → Audio → Audio Enhancement (DIFF.md §3.6).</summary>
+/// <summary>
+/// Settings → Audio → Audio Enhancement (DIFF.md §3.6,
+/// AudioEnhancementSection.swift): the profile chips, the equalizer graph,
+/// and the preamp, all in absolute levels. The graph and the slider ask for
+/// a level; the model stores it as an offset from the profile and this
+/// control draws the result back, so what is drawn is always what plays
+/// (before the player's booster). A profile change and Reset sweep the graph
+/// to its new curve; drags and keys move it at once.
+/// </summary>
 public sealed partial class AudioEnhancementSettings : UserControl
 {
     private readonly ChipGroup<AudioEnhancementProfile> _profiles;
-    private readonly List<(Slider Slider, TextBlock Value, int Band)> _rows = [];
     private bool _updating;
 
     public AudioEnhancementSettings()
@@ -25,89 +33,51 @@ public sealed partial class AudioEnhancementSettings : UserControl
                 profile, profile.DisplayName(), profile.DisplayName()))],
             profile =>
             {
+                // Another profile resets the adjustments: the points sweep to its curve.
                 AppServices.AudioEnhancement.SelectProfile(profile);
-                Refresh();
+                Refresh(animate: true);
             });
 
-        AddRow(PreampRow, Loc.Get("Audio_Preamp"), band: -1);
-        for (var band = 0; band < AudioEnhancementProfiles.BandCount; band++)
-        {
-            var row = new StackPanel();
-            BandGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Grid.SetColumn(row, band % 2);
-            Grid.SetRow(row, band / 2);
-            BandGrid.Children.Add(row);
-            AddRow(row, Loc.Format("Audio_BandHertz", AudioEnhancementProfiles.BandFrequencyLabels[band]), band);
-        }
+        PreampLabel.Text = Loc.Get("Audio_Preamp");
+        AutomationProperties.SetName(PreampSlider, PreampLabel.Text);
+        // Apple's monospacedDigit: the value keeps its width as it changes.
+        Typography.SetNumeralAlignment(PreampValue, FontNumeralAlignment.Tabular);
+        Graph.BandChanged += Graph_BandChanged;
 
-        UpdateEqualizerToggle();
-        Refresh();
-        // The booster in Player Adjustments changes the effective preamp.
+        Refresh(animate: false);
+        // Player Adjustments writes the booster into the same settings. It no
+        // longer moves the preamp shown here, but every write redraws, and
+        // levels that are already drawn change nothing (nor cut a sweep short).
         AppServices.PlayerSettings.Changed += (_, key) =>
         {
-            if (AudioEnhancement.Owns(key)) DispatcherQueue.TryEnqueue(Refresh);
+            if (AudioEnhancement.Owns(key)) DispatcherQueue.TryEnqueue(() => Refresh(animate: false));
         };
     }
 
-    /// <summary><paramref name="band"/> −1 is the preamp.</summary>
-    private void AddRow(Panel host, string title, int band)
+    private void Graph_BandChanged(object? sender, EqualizerBandChangedEventArgs e)
     {
-        var label = new TextBlock
-        {
-            Text = title,
-            Style = (Style)Application.Current.Resources["BodySMTextStyle"],
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        var value = new TextBlock
-        {
-            Style = (Style)Application.Current.Resources["BodySMTextStyle"],
-            Foreground = (Brush)Application.Current.Resources["EdendaleGoldBrush"],
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        var slider = new Slider
-        {
-            Minimum = AudioEnhancementProfiles.MinimumAmplification,
-            Maximum = AudioEnhancementProfiles.MaximumAmplification,
-            StepFrequency = 1,
-            SmallChange = 1,
-            LargeChange = 3,
-            IsThumbToolTipEnabled = false,
-        };
-        AutomationProperties.SetName(slider, title);
-        slider.ValueChanged += (_, args) =>
-        {
-            if (_updating) return;
-            if (band < 0) AppServices.AudioEnhancement.SetUserPreampAdjustment(args.NewValue);
-            else AppServices.AudioEnhancement.SetUserBandAdjustment(args.NewValue, band);
-            Refresh();
-        };
-
-        var header = new Grid();
-        header.Children.Add(label);
-        header.Children.Add(value);
-        host.Children.Add(header);
-        host.Children.Add(slider);
-        _rows.Add((slider, value, band));
+        AppServices.AudioEnhancement.SetBandLevel(e.Level, e.Band);
+        Refresh(animate: false);
     }
 
-    private void Refresh()
+    private void PreampSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (_updating) return;
+        AppServices.AudioEnhancement.SetPreampLevel(Math.Round(e.NewValue, MidpointRounding.AwayFromZero));
+        Refresh(animate: false);
+    }
+
+    private void Refresh(bool animate)
     {
         var audio = AppServices.AudioEnhancement;
         _updating = true;
         try
         {
             _profiles.Select(audio.SelectedProfile);
-            var user = audio.UserBandAdjustments;
-            var effective = audio.EffectiveBands;
-            foreach (var (slider, value, band) in _rows)
-            {
-                var adjustment = band < 0 ? audio.UserPreampAdjustment : user[band];
-                var heard = band < 0 ? audio.EffectivePreamp : effective[band];
-                slider.Value = adjustment;
-                value.Text = Decibels(heard);
-                AutomationProperties.SetHelpText(slider, Decibels(heard));
-            }
+            Graph.SetLevels(audio.EffectiveBands, animate);
+            var preamp = audio.PreampLevel;
+            PreampSlider.Value = preamp;
+            PreampValue.Text = DecibelLabel.Text(preamp);
             ResetRow.Visibility = audio.HasUserAdjustments ? Visibility.Visible : Visibility.Collapsed;
         }
         finally
@@ -116,25 +86,9 @@ public sealed partial class AudioEnhancementSettings : UserControl
         }
     }
 
-    private static string Decibels(double value) =>
-        string.Format(CultureInfo.CurrentCulture, "{0:+0;−0;0} dB", value);
-
-    private void EqualizerToggle_Click(object sender, RoutedEventArgs e)
-    {
-        EqualizerPanel.Visibility = EqualizerToggle.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-        UpdateEqualizerToggle();
-    }
-
-    private void UpdateEqualizerToggle()
-    {
-        var label = Loc.Get(EqualizerToggle.IsChecked == true ? "Audio_HideEqualizer" : "Audio_ShowEqualizer");
-        AutomationProperties.SetName(EqualizerToggle, label);
-        ToolTipService.SetToolTip(EqualizerToggle, label);
-    }
-
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
         AppServices.AudioEnhancement.ResetUserAdjustments();
-        Refresh();
+        Refresh(animate: true);
     }
 }

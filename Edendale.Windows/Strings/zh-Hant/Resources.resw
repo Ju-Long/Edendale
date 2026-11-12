@@ -1109,12 +1109,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>顯示等化器</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>隱藏等化器</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>平直</value>
   </data>
@@ -1969,5 +1963,11 @@
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>有社群時間戳記時，顯示略過片頭、前情提要和片尾的按鈕。播放會繼續，直到你選擇略過。</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>等化器</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

@@ -4,42 +4,48 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Edendale.Windows.Controls">
 
-    <!-- AUDIO ENHANCEMENT (AudioEnhancementSection.swift): five equalizer
-         profiles as chips, with the preamp and ten bands behind a toggle.
-         Changes reach the playing file at once. -->
+    <!-- AUDIO ENHANCEMENT (AudioEnhancementSection.swift), Settings → Audio:
+         five equalizer profiles as chips, then, always shown, the ten bands
+         as a graph whose centre line is 0 dB and the preamp. Both show
+         absolute levels: a profile sets them, the user moves them from there,
+         and choosing another profile starts again from its curve. The
+         player's Audio Booster adds its gain on top without moving the
+         preamp. Changes reach the playing file at once. -->
     <StackPanel>
         <TextBlock x:Uid="SettingsAudioEnhancementHeader" Text="AUDIO ENHANCEMENT" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
         <Border Style="{StaticResource SettingsGroupBorderStyle}">
             <StackPanel>
                 <StackPanel Padding="20,16" Spacing="12">
-                    <Grid>
-                        <TextBlock x:Uid="SettingsAudioProfileLabel" Text="Profile" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
-                        <ToggleButton
-                            x:Name="EqualizerToggle"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource ArchiveChipStyle}"
-                            Padding="10,6"
-                            Click="EqualizerToggle_Click">
-                            <controls:SvgIcon UriSource="ms-appx:///Assets/Icons/sliders.svg" Width="16" Height="16" />
-                        </ToggleButton>
-                    </Grid>
+                    <TextBlock x:Uid="SettingsAudioProfileLabel" Text="Profile" Style="{StaticResource SettingsRowLabelTextStyle}" Foreground="{StaticResource EdendaleTextPrimaryBrush}" />
                     <VariableSizedWrapGrid x:Name="ProfileChips" Orientation="Horizontal" ItemWidth="132" ItemHeight="40" />
                 </StackPanel>
 
-                <!-- The equalizer: preamp, then ten bands in two columns. The
-                     sliders move the reader's adjustment; the gold value is
-                     what plays (profile plus adjustment). -->
-                <Border x:Name="EqualizerPanel" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
-                    <StackPanel Padding="20,16" Spacing="14">
-                        <StackPanel x:Name="PreampRow" />
-                        <Grid x:Name="BandGrid" ColumnSpacing="32" RowSpacing="10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource SettingsRowSeparatorStyle}" />
+
+                <StackPanel Padding="20,16" Spacing="18">
+                    <controls:EqualizerGraph x:Name="Graph" />
+
+                    <!-- The preamp before the booster, in whole decibels. -->
+                    <StackPanel Spacing="4">
+                        <Grid>
+                            <TextBlock x:Name="PreampLabel" Style="{StaticResource BodySMTextStyle}" />
+                            <TextBlock
+                                x:Name="PreampValue"
+                                Style="{StaticResource BodySMTextStyle}"
+                                Foreground="{StaticResource EdendaleGoldBrush}"
+                                HorizontalAlignment="Right" />
                         </Grid>
+                        <controls:DecibelSlider
+                            x:Name="PreampSlider"
+                            Minimum="-20"
+                            Maximum="20"
+                            StepFrequency="1"
+                            SmallChange="1"
+                            LargeChange="3"
+                            IsThumbToolTipEnabled="False"
+                            ValueChanged="PreampSlider_ValueChanged" />
                     </StackPanel>
-                </Border>
+                </StackPanel>
 
                 <Border x:Name="ResetRow" Style="{StaticResource SettingsConditionalRowBorderStyle}" Visibility="Collapsed">
                     <controls:WrapPanel Style="{StaticResource SettingsActionRowPanelStyle}">

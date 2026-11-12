@@ -1109,12 +1109,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Mostra equalizzatore</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Nascondi equalizzatore</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Piatto</value>
   </data>
@@ -1969,5 +1963,11 @@
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>Mostra i pulsanti per saltare intro, riassunti e titoli di coda quando sono disponibili i tempi della community. La riproduzione continua finché non scegli di saltare.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equalizzatore</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

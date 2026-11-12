@@ -1109,12 +1109,6 @@ IS STIL</value>
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Equalizer tonen</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Equalizer verbergen</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Vlak</value>
   </data>
@@ -1969,5 +1963,11 @@ IS STIL</value>
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>Toon knoppen om intro’s, samenvattingen en aftiteling over te slaan als er tijdstempels van de community beschikbaar zijn. Het afspelen gaat door totdat je kiest om over te slaan.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equalizer</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

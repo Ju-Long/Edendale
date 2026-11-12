@@ -1109,12 +1109,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0}Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>이퀄라이저 표시</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>이퀄라이저 숨기기</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>플랫</value>
   </data>
@@ -1969,5 +1963,11 @@
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>커뮤니티 타임스탬프를 사용할 수 있을 때 인트로, 요약, 크레딧을 건너뛰는 버튼을 표시합니다. 건너뛰기를 선택할 때까지 재생이 계속됩니다.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>이퀄라이저</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
   </data>
 </root>

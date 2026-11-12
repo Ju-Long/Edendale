@@ -1109,12 +1109,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Гц</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Показать эквалайзер</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Скрыть эквалайзер</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Ровный</value>
   </data>
@@ -1969,5 +1963,11 @@
   </data>
   <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
     <value>Показывать кнопки для пропуска вступлений, кратких содержаний и титров, когда доступны метки сообщества. Воспроизведение продолжается, пока вы не решите пропустить.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Эквалайзер</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Гц</value>
   </data>
 </root>
