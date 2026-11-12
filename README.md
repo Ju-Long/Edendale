@@ -67,9 +67,10 @@ headset the app is a handheld app, never the TV shell: `DevicePolicy` turns
 off Picture-in-Picture (Horizon OS can't float it), Watch Next, the Video
 Enhancement default (until the viewer saves a preset of their own), the
 player's brightness and volume swipes (a panel ignores both), and Rotation
-Lock (a panel doesn't turn). Watch Trailer opens YouTube in the browser or
-the YouTube app instead of the inline player, which shows no picture in a
-panel. The release
+Lock (a panel doesn't turn). Watch Trailer opens YouTube's own watch page
+(`youtube.com/watch`, not the `youtube-nocookie.com` embed described above)
+in the browser or the YouTube app instead of the inline player, which shows
+no picture in a panel. The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 
@@ -91,10 +92,13 @@ differ. android's **Android XR theater** is not part of this branch's build:
 its `:xr` module (the `xr/` directory) needs Jetpack XR, which Horizon OS
 doesn't have, so `settings.gradle.kts` leaves it out and the "Immersive
 theater (Android XR)" section below, with its `xr-debug.apk`, describes
-`android` alone; a Quest's theater is the one described next. The player
-never offers **Rotation Lock**. And **Settings → About** carries this
-build's own licence line (MPL-2.0 over an LGPL-2.1 FFmpeg, and the Spatial
-SDK in a theater build), which `android`'s Settings no longer has.
+`android` alone, as does the App Bundle paragraph before it
+(`bundleRelease`, an `.aab` with `base/` and `xr/` inside): the Meta Horizon
+Store takes one APK, from `assembleHorizonRelease`. A Quest's theater is the
+one described next. The player never offers **Rotation Lock**. And
+**Settings → About** carries this build's own licence line (MPL-2.0 over an
+LGPL-2.1 FFmpeg, and the Spatial SDK in a theater build), which `android`'s
+Settings no longer has.
 
 A build with `-Phorizon.theater=true` adds the **immersive theater**
 (HORIZON.md Section G): a Theater button in the player that puts the video on
@@ -204,8 +208,11 @@ offline, each source failing on its own while the app stays usable. For
 27.1 (HORIZON.md B.14): installing over the previous build with the library,
 links, and progress kept; a downloaded title's page and the Downloaded
 section picker; Settings' pages with B or Y as Back; Parental Controls with a
-PIN from the system keyboard and its gates; Delete Watch History; and the
-player without a Rotation Lock or Picture in Picture button. For the
+PIN from the system keyboard and its gates; Delete Watch History; a sync
+location sent from an iPhone or iPad (Google's sign-in or the folder picker
+on the headset), the offer to delete the headset's file when the location
+changes, and a change written after leaving the app; and the player without
+a Rotation Lock or Picture in Picture button. For the
 theater (HORIZON.md G.10): entering and leaving it from every source type;
 each room facing the viewer with the picture on its screen, the Room list,
 the screen's placement, a recenter, and the headset off and on; controllers
