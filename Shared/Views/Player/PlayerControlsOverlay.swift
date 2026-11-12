@@ -501,10 +501,16 @@ struct PlayerControlsOverlay: View {
     /// down peeks the timeline. While the controls are visible this view is
     /// gone, so the same swipes move focus between the actual buttons instead.
     /// A left/right press-and-*hold* is read separately by `TVRemoteInput`,
-    /// which drives slow/fast playback for as long as the thumb rests there.
+    /// which drives slow/fast playback for as long as the thumb rests there,
+    /// and so is a *circle* around the ring, which jogs the timeline.
     private var revealCatcher: some View {
         Button {
-            chrome.showControls()
+            // A click during a jog settles it where it is.
+            if chrome.jog != nil {
+                chrome.endJog()
+            } else {
+                chrome.showControls()
+            }
         } label: {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -513,6 +519,9 @@ struct PlayerControlsOverlay: View {
         .buttonStyle(RevealCatcherButtonStyle())
         .accessibilityLabel("Show playback controls")
         .onMoveCommand { direction in
+            // Swipes recognized inside a circle on the ring are part of
+            // the jog gesture, not skips (see TVRemoteInput).
+            guard !chrome.isRemoteCircling else { return }
             switch direction {
             case .left:
                 chrome.remoteSkip(.backward)
