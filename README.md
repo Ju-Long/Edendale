@@ -633,12 +633,15 @@ TV (TVs smooth motion themselves), for SDR video at 30 fps or less, and only
 when the screen has a refresh rate that shows the doubled rate evenly: 24 fps
 needs a 48, 96, or 144 Hz mode, 25 fps 50 or 100 Hz, and 30 fps 60 or 120 Hz.
 Matroska files don't state their frame rate to the player, so for them it is
-measured from the first frames shown. It runs at 1× or slower, starts off, and
-once switched on stays on for later videos (saved on the device with the other
-Enhancement choices). The governor turns it off before anything else when the
-device falls behind, runs hot, or saves battery; over its own 8 ms budget it
-first searches for motion at half resolution. A scene cut repeats the previous
-frame instead of blending two shots.
+measured from the first frames shown. A one-time check, run on the device after
+Enhancement's own, times the real passes on 1080p frames: Motion Smoothing is
+offered only where a frame fits its budget, 40 % of a source frame's interval
+(13.3 ms at 30 fps), with the motion search at full or half resolution. It runs
+at 1× or slower, starts off, and once switched on stays on for later videos
+(saved on the device with the other Enhancement choices). The governor turns it
+off before anything else when the device falls behind, runs hot, or saves
+battery; over its budget it first searches for motion at half resolution. A
+scene cut repeats the previous frame instead of blending two shots.
 
 The upscaler is AMD FidelityFX Super Resolution 1.0's EASU, ported to GLSL in
 `src/main/assets/shaders/edendale_easu_es3.glsl` under the MIT licence
@@ -756,7 +759,9 @@ runs the same suite on an API 35 emulator in
 `build-and-test` job.
 
 Four Motion Smoothing probes (ENHANCEMENT.md Section G) are skipped unless
-asked for. Install both APKs with
+asked for; `MotionSmoothingCapabilityInstrumentedTest` also runs the device
+check and logs what it would decide (`adb logcat -s MotionSmoothingCheck`),
+without storing it. Install both APKs with
 `./gradlew installDebug installDebugAndroidTest`, which keeps the app's data,
 then time Apple's coarse motion search at 1080p on the device's GPU:
 
@@ -774,8 +779,9 @@ adb push clip.mp4 /data/local/tmp/
 adb shell am instrument -w -r -e g1Clip /data/local/tmp/clip.mp4 -e g1Fps 24 -e class com.babasama.edendale.android.player.video.framegen.FrameGenerationPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
-The third times every pass of Motion Smoothing itself at 1080p, at full and
-half resolution, and logs the medians (`adb logcat -s MotionSmoothingBench`):
+The third times Motion Smoothing itself at 1080p, at full and half
+resolution, whole and pass by pass, and logs the medians
+(`adb logcat -s MotionSmoothingBench`):
 
 ```sh
 adb shell am instrument -w -r -e motionSmoothingBenchmark true -e class com.babasama.edendale.android.player.video.MotionSmoothingPassesInstrumentedTest#benchmark1080p com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
