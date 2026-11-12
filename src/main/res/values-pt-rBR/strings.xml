@@ -440,6 +440,10 @@
     <string name="video_saturation">Saturação</string>
     <string name="video_hue">Matiz</string>
     <string name="video_show_original">Mostrar Original</string>
+    <string name="video_motion_smoothing">Suavização de Movimento</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">Pausado acima da velocidade 1×</string>
+    <string name="video_motion_smoothing_paused_busy">Pausado enquanto o dispositivo está quente, ocupado ou economizando bateria</string>
     <string name="video_enhancement">Aprimoramento</string>
     <string name="video_preset">Predefinição</string>
     <string name="video_preset_off">Desativado</string>

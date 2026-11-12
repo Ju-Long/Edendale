@@ -436,6 +436,10 @@
     <string name="video_saturation">飽和度</string>
     <string name="video_hue">色相</string>
     <string name="video_show_original">顯示原始畫面</string>
+    <string name="video_motion_smoothing">動態平滑</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">播放速度高於 1× 時暫停</string>
+    <string name="video_motion_smoothing_paused_busy">裝置發熱、忙碌或處於省電模式時暫停</string>
     <string name="video_enhancement">增強</string>
     <string name="video_preset">預設組合</string>
     <string name="video_preset_off">關閉</string>

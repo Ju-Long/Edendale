@@ -452,6 +452,10 @@
     <string name="video_saturation">Насыщенность</string>
     <string name="video_hue">Оттенок</string>
     <string name="video_show_original">Показать оригинал</string>
+    <string name="video_motion_smoothing">Сглаживание движения</string>
+    <string name="video_motion_smoothing_rates">%1$d к/с → %2$d к/с</string>
+    <string name="video_motion_smoothing_paused_speed">Приостановлено при скорости выше 1×</string>
+    <string name="video_motion_smoothing_paused_busy">Приостановлено, пока устройство нагрето, загружено или экономит заряд</string>
     <string name="video_enhancement">Улучшение</string>
     <string name="video_preset">Пресет</string>
     <string name="video_preset_off">Выкл.</string>

@@ -440,6 +440,10 @@
     <string name="video_saturation">Sättigung</string>
     <string name="video_hue">Farbton</string>
     <string name="video_show_original">Original anzeigen</string>
+    <string name="video_motion_smoothing">Bewegungsglättung</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">Pausiert bei mehr als 1× Geschwindigkeit</string>
+    <string name="video_motion_smoothing_paused_busy">Pausiert, solange das Gerät warm oder ausgelastet ist oder Energie spart</string>
     <string name="video_enhancement">Verbesserung</string>
     <string name="video_preset">Voreinstellung</string>
     <string name="video_preset_off">Aus</string>

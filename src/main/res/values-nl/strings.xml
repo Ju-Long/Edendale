@@ -440,6 +440,10 @@
     <string name="video_saturation">Verzadiging</string>
     <string name="video_hue">Tint</string>
     <string name="video_show_original">Toon origineel</string>
+    <string name="video_motion_smoothing">Vloeiende beweging</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">Gepauzeerd boven 1× snelheid</string>
+    <string name="video_motion_smoothing_paused_busy">Gepauzeerd zolang het apparaat warm of bezet is of batterij bespaart</string>
     <string name="video_enhancement">Verbetering</string>
     <string name="video_preset">Voorinstelling</string>
     <string name="video_preset_off">Uit</string>

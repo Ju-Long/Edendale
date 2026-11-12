@@ -440,6 +440,10 @@
     <string name="video_saturation">Mättnad</string>
     <string name="video_hue">Nyans</string>
     <string name="video_show_original">Visa original</string>
+    <string name="video_motion_smoothing">Rörelseutjämning</string>
+    <string name="video_motion_smoothing_rates">%1$d bilder/s → %2$d bilder/s</string>
+    <string name="video_motion_smoothing_paused_speed">Pausad över 1× hastighet</string>
+    <string name="video_motion_smoothing_paused_busy">Pausad medan enheten är varm, upptagen eller sparar batteri</string>
     <string name="video_enhancement">Förbättring</string>
     <string name="video_preset">Förinställning</string>
     <string name="video_preset_off">Av</string>

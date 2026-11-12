@@ -436,6 +436,10 @@
     <string name="video_saturation">彩度</string>
     <string name="video_hue">色相</string>
     <string name="video_show_original">オリジナルを表示</string>
+    <string name="video_motion_smoothing">モーションスムージング</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">1×を超える速度では一時停止</string>
+    <string name="video_motion_smoothing_paused_busy">デバイスが高温、高負荷、またはバッテリーセーバー中のため一時停止中</string>
     <string name="video_enhancement">補正</string>
     <string name="video_preset">プリセット</string>
     <string name="video_preset_off">オフ</string>

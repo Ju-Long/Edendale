@@ -238,6 +238,79 @@ class VideoEnhancementTest {
         assertFalse(governor.limit(all).denoise)
     }
 
+    // MARK: - Motion Smoothing in the governor (G.5.2)
+
+    @Test
+    fun motionSmoothingGoesFirstWhenTheEnhancementPassesRunOverBudget() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingActive = true
+        repeat(5) { governor.record(12.0) }
+        assertFalse(governor.allowsMotionSmoothing)
+        // Every enhancement stage is still there.
+        assertEquals(all, governor.limit(all))
+        assertEquals(0, governor.level)
+        // Next time over budget, denoise goes as before.
+        repeat(5) { governor.record(12.0) }
+        assertEquals(1, governor.level)
+        // Coming back under budget restores enhancement, not Motion Smoothing.
+        repeat(5) { governor.record(3.0) }
+        assertEquals(0, governor.level)
+        assertFalse(governor.allowsMotionSmoothing)
+        // The next video starts again.
+        governor.resetMotionSmoothing()
+        assertTrue(governor.allowsMotionSmoothing)
+    }
+
+    @Test
+    fun motionSmoothingOverItsOwnBudgetHalvesTheSearchThenTurnsOff() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingActive = true
+        repeat(5) { governor.recordMotionSmoothing(6.0) }
+        assertFalse(governor.motionSmoothingAtHalfResolution)
+        repeat(5) { governor.recordMotionSmoothing(11.0) }
+        assertTrue(governor.motionSmoothingAtHalfResolution)
+        assertTrue(governor.allowsMotionSmoothing)
+        repeat(5) { governor.recordMotionSmoothing(9.0) }
+        assertFalse(governor.allowsMotionSmoothing)
+        assertEquals(2, governor.motionSmoothingLevel)
+        // Off stays off: nothing measures it, and junk samples don't count.
+        repeat(10) { governor.recordMotionSmoothing(1.0) }
+        assertFalse(governor.recordMotionSmoothing(Double.NaN))
+        assertFalse(governor.allowsMotionSmoothing)
+        // Enhancement stages are untouched by Motion Smoothing's own budget.
+        assertEquals(all, governor.limit(all))
+    }
+
+    @Test
+    fun pressureTurnsMotionSmoothingOffUntilItClears() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingActive = true
+        governor.setPressure(thermalModerateOrWorse = false, batterySaver = true)
+        assertFalse(governor.allowsMotionSmoothing)
+        governor.setPressure(thermalModerateOrWorse = false, batterySaver = false)
+        assertTrue(governor.allowsMotionSmoothing)
+        // With Motion Smoothing off for this video, over budget drops denoise as it always did.
+        val plain = EnhancementGovernor(window = 5)
+        repeat(5) { plain.record(12.0) }
+        assertEquals(1, plain.level)
+        assertTrue(plain.allowsMotionSmoothing)
+    }
+
+    @Test
+    fun motionSmoothingIsSavedOffByDefaultAndReadBackSafely() {
+        val on = EnhancementSettings(preset = EnhancementPreset.SHARPEN_ONLY, motionSmoothing = true)
+        assertTrue(on.toJson().contains("\"motionSmoothing\":true"))
+        assertEquals(on, EnhancementSettings.fromJson(on.toJson()))
+        // A choice saved before G.5 has no such key: off.
+        assertEquals(false, EnhancementSettings.fromJson("""{"preset":"balanced","sharpness":0.5,"denoise":0.5}""")?.motionSmoothing)
+        // Anything but a JSON true reads as off.
+        assertEquals(false, EnhancementSettings.fromJson("""{"preset":"balanced","motionSmoothing":"true"}""")?.motionSmoothing)
+        assertEquals(false, EnhancementSettings.fromJson("""{"preset":"balanced","motionSmoothing":1}""")?.motionSmoothing)
+        // Nothing saved: off on every device class.
+        assertFalse(EnhancementSettings.initial(stored = null, isTelevision = false, capable = true).motionSmoothing)
+        assertTrue(EnhancementSettings.initial(stored = on, isTelevision = false, capable = true).motionSmoothing)
+    }
+
     @Test
     fun theTrackSizeStandsInForTheOneMedia3DoesNotReport() {
         // Media3 1.9.0 reports no video size while effects are installed; the track's own size,
