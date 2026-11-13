@@ -1,23 +1,32 @@
 package com.babasama.edendale.android.theater
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,352 +38,401 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.Player
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.EdendaleTheme
 import com.babasama.edendale.android.R
-import com.babasama.edendale.android.player.PlayerChromeState
-import com.babasama.edendale.android.player.PlayerSubtitleOverlay
-import com.babasama.edendale.android.player.PlayerTrackOption
-import com.babasama.edendale.android.player.SkipInterval
-import com.babasama.edendale.android.player.TrackLabels
-import java.util.Locale
+import com.babasama.edendale.android.xr.SeatID
+import com.babasama.edendale.android.xr.TheaterLights
+import com.babasama.edendale.android.xr.TheaterPlayback
+import com.babasama.edendale.android.xr.TheaterSeatMap
+import com.babasama.edendale.android.xr.TheaterSubtitleOverlay
+import com.babasama.edendale.android.xr.TheaterTrack
+import com.babasama.edendale.android.xr.TheaterUpNext
+import com.babasama.edendale.introdb.SegmentKind
 
-/** Which list the controls card shows in place of the transport. */
+/*
+ * The theater's floating panels (HORIZON.md G.8, G.15), android's Android XR
+ * dock and seat panel (ENHANCEMENT.md N.7) on the Quest: the controls dock
+ * below the line of sight and the seat panel to its left, both following the
+ * head, and the subtitles in front of the picture. Ordinary Compose in
+ * Spatial SDK panels; popups don't render in a panel, so a list replaces the
+ * transport in place.
+ */
+
+/** Which list the dock shows in place of the transport. */
 internal enum class TheaterMenu { AUDIO, SUBTITLES, ROOM }
 
 /**
- * What the controls panel draws (HORIZON.md G.8), set by [TheaterActivity]
- * from its player's callbacks and position ticker. Compose state, so the
- * panel redraws on its own.
+ * What the panels draw, set by [TheaterActivity]. Playback state comes from
+ * [playback] (android's shared `TheaterPlayback`, replaced when Up Next plays
+ * the next episode); the rest is the room, its seats, the lights, and which
+ * list is open. Compose state, so the panels redraw on their own.
  */
-internal class TheaterControlsState {
-    var title by mutableStateOf("")
-    var subtitle by mutableStateOf<String?>(null)
-    var isPlaying by mutableStateOf(false)
-    var positionMillis by mutableLongStateOf(0L)
-    var durationMillis by mutableLongStateOf(0L)
-    var audioOptions by mutableStateOf<List<PlayerTrackOption>>(emptyList())
-    var textOptions by mutableStateOf<List<PlayerTrackOption>>(emptyList())
-    var subtitlesOff by mutableStateOf(false)
-    var menu by mutableStateOf<TheaterMenu?>(null)
-    /** The room the viewer sits in (G.14); the Room list marks it. */
+internal class TheaterUiState {
+    var playback by mutableStateOf<TheaterPlayback?>(null)
+
+    /** The parental check has let the title play (G.15); until then the dock shows neither title nor transport. */
+    var admitted by mutableStateOf(false)
+
     var room by mutableStateOf(TheaterRoom.DEFAULT)
-    /** A playback error's message; the card then offers only Exit. */
-    var failure by mutableStateOf<String?>(null)
+
+    /** The room's seats; null without a usable room file (the sky), when there is nothing to choose or light. */
+    var seatMap by mutableStateOf<TheaterSeatMap?>(null)
+    var screenCenterX by mutableFloatStateOf(0f)
+    var screenWidth by mutableFloatStateOf(4f)
+    var seatedSeat by mutableStateOf<SeatID?>(null)
+    var pointedSeat by mutableStateOf<SeatID?>(null)
+    var menu by mutableStateOf<TheaterMenu?>(null)
+    var lights by mutableStateOf(TheaterLights.NORMAL)
+
+    /** The next episode's card, in an episode's last 30 seconds (G.15). */
+    var upNext by mutableStateOf<TheaterUpNext?>(null)
 }
 
-/** What the controls panel asks the activity to do. */
-internal interface TheaterControlsActions {
+/** What the panels ask the activity to do. */
+internal interface TheaterActions {
+    fun exit()
     fun togglePlayPause()
     fun skip(forward: Boolean)
     fun seekToFraction(fraction: Float)
-    fun selectAudio(option: PlayerTrackOption)
-    fun selectSubtitles(option: PlayerTrackOption?)
-    /** Moves the viewer to another room; the video keeps playing (G.14). */
-    fun selectRoom(room: TheaterRoom)
-    fun exit()
-    /** Any press keeps the panel up a while longer. */
-    fun noteInteraction()
+    fun selectAudio(id: String)
+    fun selectSubtitles(id: String?)
+    fun skipSegment()
+    fun playUpNext()
+    fun chooseRoom(room: TheaterRoom)
+    fun chooseSeat(seat: SeatID?)
+    fun recentre()
+    fun chooseLights(level: TheaterLights)
 }
 
-/**
- * The small controls card under the screen (G.8): title, skip, play and
- * pause, the timeline, the audio and subtitle tracks, the room (G.14), and
- * Exit. It is a
- * Compose panel the SDK renders to a compositor layer; the ray clicks it
- * with a trigger or a pinch. Popups don't render in a panel, so the track
- * lists open in place of the transport.
- */
+private val PanelShape = RoundedCornerShape(24.dp)
+
+/** A panel's card, at the bottom of its quad; the rest of the quad is transparent. */
 @Composable
-internal fun TheaterControlsPanel(state: TheaterControlsState, chrome: PlayerChromeState, actions: TheaterControlsActions) {
+private fun TheaterPanelSurface(content: @Composable ColumnScope.() -> Unit) {
     EdendaleTheme {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             Surface(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
-                    .border(1.dp, Color.White.copy(alpha = .06f), RoundedCornerShape(12.dp)),
-                shape = RoundedCornerShape(12.dp),
-                color = EdendaleColors.Surface.copy(alpha = .94f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .border(1.dp, Color.White.copy(alpha = 0.06f), PanelShape),
+                shape = PanelShape,
+                color = EdendaleColors.Background.copy(alpha = 0.82f),
+                contentColor = EdendaleColors.TextPrimary,
             ) {
-                val failure = state.failure
-                when {
-                    failure != null -> FailureCard(failure, actions)
-                    state.menu == TheaterMenu.AUDIO -> TrackList(
-                        title = stringResource(R.string.player_audio_track),
-                        options = state.audioOptions,
-                        offLabel = null,
-                        offSelected = false,
-                        label = { audioLabel(it) },
-                        onPick = { option -> if (option != null) actions.selectAudio(option) },
-                        onClose = { actions.noteInteraction(); state.menu = null },
-                    )
-                    state.menu == TheaterMenu.SUBTITLES -> TrackList(
-                        title = stringResource(R.string.player_subtitles),
-                        options = state.textOptions,
-                        offLabel = stringResource(R.string.player_subtitles_off),
-                        offSelected = state.subtitlesOff,
-                        label = { textLabel(it) },
-                        onPick = { option -> actions.selectSubtitles(option) },
-                        onClose = { actions.noteInteraction(); state.menu = null },
-                    )
-                    state.menu == TheaterMenu.ROOM -> RoomList(
-                        selected = state.room,
-                        onPick = { room -> actions.selectRoom(room) },
-                        onClose = { actions.noteInteraction(); state.menu = null },
-                    )
-                    else -> Transport(state, chrome, actions)
-                }
+                Column(Modifier.padding(24.dp), content = content)
             }
         }
     }
 }
 
+// ------------------------------------------------------------------
+// The dock
+// ------------------------------------------------------------------
+
+/**
+ * The controls dock (G.15, android's N-D11): Exit, the title, the track and
+ * room lists, the timeline, skip and play, the TheIntroDB prompt, and the Up
+ * Next card. It never hides: it sits below the line of sight.
+ */
 @Composable
-private fun Transport(state: TheaterControlsState, chrome: PlayerChromeState, actions: TheaterControlsActions) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = state.title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                state.subtitle?.let {
-                    Text(
-                        text = it,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            if (state.audioOptions.size > 1) {
-                MenuButton(R.drawable.ic_file_music, stringResource(R.string.player_audio_track)) {
-                    actions.noteInteraction(); state.menu = TheaterMenu.AUDIO
-                }
-            }
-            if (state.textOptions.isNotEmpty()) {
-                MenuButton(R.drawable.ic_subtitles, stringResource(R.string.player_subtitles)) {
-                    actions.noteInteraction(); state.menu = TheaterMenu.SUBTITLES
-                }
-            }
-            MenuButton(R.drawable.ic_theater, stringResource(R.string.theater_rooms)) {
-                actions.noteInteraction(); state.menu = TheaterMenu.ROOM
-            }
-            ExitButton(actions)
+internal fun TheaterDockPanel(ui: TheaterUiState, actions: TheaterActions) {
+    TheaterPanelSurface {
+        val playback = ui.playback
+        val failure = playback?.failure
+        when {
+            playback == null || !ui.admitted -> Waiting(actions)
+            failure != null -> FailureCard(failure, actions)
+            ui.menu == TheaterMenu.AUDIO -> TrackList(
+                title = stringResource(R.string.player_audio_track),
+                options = playback.audioTracks,
+                offLabel = null,
+                offSelected = false,
+                onPick = { it?.let(actions::selectAudio) },
+                onClose = { ui.menu = null },
+            )
+            ui.menu == TheaterMenu.SUBTITLES -> TrackList(
+                title = stringResource(R.string.player_subtitles),
+                options = playback.textTracks,
+                offLabel = stringResource(R.string.player_subtitles_off),
+                offSelected = playback.subtitlesOff,
+                onPick = actions::selectSubtitles,
+                onClose = { ui.menu = null },
+            )
+            ui.menu == TheaterMenu.ROOM -> RoomList(ui.room, onPick = actions::chooseRoom, onClose = { ui.menu = null })
+            else -> Transport(playback, ui, actions)
         }
+    }
+}
 
+/** Before the parental check has ruled: only Exit, and that something is on its way. */
+@Composable
+private fun ColumnScope.Waiting(actions: TheaterActions) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ExitButton(actions)
         Spacer(Modifier.weight(1f))
+        CircularProgressIndicator(color = EdendaleColors.Gold, modifier = Modifier.size(32.dp))
+    }
+}
 
-        val (backIcon, backString) = when (chrome.skipBackwardInterval) {
-            SkipInterval.TEN -> R.drawable.ic_arrow_rotate_left_10 to R.string.player_back_10
-            SkipInterval.FIFTEEN -> R.drawable.ic_arrow_rotate_left_15 to R.string.player_back_15
-            SkipInterval.THIRTY -> R.drawable.ic_arrow_rotate_left_30 to R.string.player_back_30
+@Composable
+private fun ColumnScope.Transport(playback: TheaterPlayback, ui: TheaterUiState, actions: TheaterActions) {
+    ui.upNext?.let { next ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Surface(
+                onClick = actions::playUpNext,
+                shape = RoundedCornerShape(8.dp),
+                color = EdendaleColors.Surface,
+                border = BorderStroke(1.dp, EdendaleColors.Outline),
+                modifier = Modifier.semantics { contentDescription = next.title },
+            ) {
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                    Text(
+                        stringResource(R.string.player_up_next).uppercase(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = EdendaleColors.Gold,
+                    )
+                    next.code?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary) }
+                    Text(next.title, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
         }
-        val (forwardIcon, forwardString) = when (chrome.skipForwardInterval) {
-            SkipInterval.TEN -> R.drawable.ic_arrow_rotate_right_10 to R.string.player_forward_10
-            SkipInterval.FIFTEEN -> R.drawable.ic_arrow_rotate_right_15 to R.string.player_forward_15
-            SkipInterval.THIRTY -> R.drawable.ic_arrow_rotate_right_30 to R.string.player_forward_30
+        Spacer(Modifier.height(12.dp))
+    }
+
+    // Header: Exit, the title, and the tools.
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ExitButton(actions)
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(playback.title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            playback.subtitle?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
+        if (playback.audioTracks.size > 1) {
+            MenuButton(R.drawable.ic_file_music, stringResource(R.string.player_audio_track)) { ui.menu = TheaterMenu.AUDIO }
+        }
+        if (playback.textTracks.isNotEmpty()) {
+            MenuButton(R.drawable.ic_subtitles, stringResource(R.string.player_subtitles)) { ui.menu = TheaterMenu.SUBTITLES }
+        }
+        MenuButton(R.drawable.ic_theater, stringResource(R.string.theater_rooms)) { ui.menu = TheaterMenu.ROOM }
+    }
+
+    Spacer(Modifier.height(16.dp))
+    Timeline(playback, actions)
+    Spacer(Modifier.height(16.dp))
+
+    // Transport: the skips around play and pause, the segment prompt at the trailing edge.
+    Box(Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterHorizontally),
+            Modifier.align(Alignment.Center),
+            horizontalArrangement = Arrangement.spacedBy(32.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { actions.skip(forward = false) }, modifier = Modifier.size(56.dp)) {
-                Icon(painterResource(backIcon), stringResource(backString), Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onBackground)
-            }
-            Surface(
-                onClick = { actions.togglePlayPause() },
-                modifier = Modifier.size(68.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(if (state.isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
-                        contentDescription = stringResource(if (state.isPlaying) R.string.action_pause else R.string.action_play),
-                        modifier = Modifier.size(32.dp),
-                    )
+            SkipButton(forward = false, seconds = playback.skipBackwardSeconds, actions)
+            Box(Modifier.size(72.dp), contentAlignment = Alignment.Center) {
+                if (playback.isBuffering && !playback.isPlaying) {
+                    CircularProgressIndicator(color = EdendaleColors.Gold, modifier = Modifier.size(40.dp))
+                } else {
+                    Surface(
+                        onClick = actions::togglePlayPause,
+                        modifier = Modifier.size(72.dp),
+                        shape = CircleShape,
+                        color = EdendaleColors.Gold,
+                        contentColor = EdendaleColors.OnGold,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painterResource(if (playback.isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
+                                contentDescription = stringResource(if (playback.isPlaying) R.string.action_pause else R.string.action_play),
+                                modifier = Modifier.size(32.dp),
+                            )
+                        }
+                    }
                 }
             }
-            IconButton(onClick = { actions.skip(forward = true) }, modifier = Modifier.size(56.dp)) {
-                Icon(painterResource(forwardIcon), stringResource(forwardString), Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onBackground)
+            SkipButton(forward = true, seconds = playback.skipForwardSeconds, actions)
+        }
+        playback.activeSegment?.let { segment ->
+            val label = when (segment.kind) {
+                SegmentKind.INTRO -> R.string.player_skip_intro
+                SegmentKind.RECAP -> R.string.player_skip_recap
+                SegmentKind.CREDITS -> R.string.player_skip_credits
+            }
+            Surface(
+                onClick = actions::skipSegment,
+                modifier = Modifier.align(Alignment.CenterEnd),
+                shape = RoundedCornerShape(8.dp),
+                color = EdendaleColors.Surface,
+                border = BorderStroke(1.dp, EdendaleColors.Outline),
+            ) {
+                Text(
+                    stringResource(label),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             }
         }
-
-        Spacer(Modifier.weight(1f))
-
-        Timeline(state, actions)
     }
 }
 
 /** The position as a slider: dragging previews, letting go seeks. */
 @Composable
-private fun Timeline(state: TheaterControlsState, actions: TheaterControlsActions) {
+private fun Timeline(playback: TheaterPlayback, actions: TheaterActions) {
     var dragging by remember { mutableStateOf(false) }
     var dragFraction by remember { mutableFloatStateOf(0f) }
-    val duration = state.durationMillis
-    val playedFraction = if (duration > 0) (state.positionMillis.toFloat() / duration).coerceIn(0f, 1f) else 0f
-    val shownFraction = if (dragging) dragFraction else playedFraction
-    val shownMillis = if (dragging && duration > 0) (dragFraction * duration).toLong() else state.positionMillis
-    val positionLabel = stringResource(R.string.theater_position)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(formatClock(shownMillis), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val duration = playback.durationMillis
+    val played = if (duration > 0) (playback.positionMillis.toFloat() / duration).coerceIn(0f, 1f) else 0f
+    val shown = if (dragging) dragFraction else played
+    val shownMillis = if (dragging && duration > 0) (dragFraction * duration).toLong() else playback.positionMillis
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(formatClock(shownMillis), style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary)
+        val description = stringResource(R.string.theater_position)
         Slider(
-            value = shownFraction,
-            onValueChange = {
-                dragging = true
-                dragFraction = it
-                actions.noteInteraction()
-            },
-            onValueChangeFinished = {
-                dragging = false
-                actions.seekToFraction(dragFraction)
-            },
+            value = shown,
+            onValueChange = { dragging = true; dragFraction = it },
+            onValueChangeFinished = { dragging = false; actions.seekToFraction(dragFraction) },
             enabled = duration > 0,
-            modifier = Modifier.weight(1f).semantics { contentDescription = positionLabel },
+            modifier = Modifier.weight(1f).semantics { contentDescription = description },
             colors = SliderDefaults.colors(
                 thumbColor = EdendaleColors.Gold,
                 activeTrackColor = EdendaleColors.Gold,
                 inactiveTrackColor = EdendaleColors.SurfaceHigh,
             ),
         )
-        Text(formatClock(duration), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(formatClock(duration), style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary)
+    }
+}
+
+@Composable
+private fun SkipButton(forward: Boolean, seconds: Int, actions: TheaterActions) {
+    val icon = when {
+        forward && seconds == 15 -> R.drawable.ic_arrow_rotate_right_15
+        forward && seconds == 30 -> R.drawable.ic_arrow_rotate_right_30
+        forward -> R.drawable.ic_arrow_rotate_right_10
+        seconds == 15 -> R.drawable.ic_arrow_rotate_left_15
+        seconds == 30 -> R.drawable.ic_arrow_rotate_left_30
+        else -> R.drawable.ic_arrow_rotate_left_10
+    }
+    val label = when {
+        forward && seconds == 15 -> R.string.player_forward_15
+        forward && seconds == 30 -> R.string.player_forward_30
+        forward -> R.string.player_forward_10
+        seconds == 15 -> R.string.player_back_15
+        seconds == 30 -> R.string.player_back_30
+        else -> R.string.player_back_10
+    }
+    IconButton(onClick = { actions.skip(forward) }, modifier = Modifier.size(60.dp)) {
+        Icon(painterResource(icon), contentDescription = stringResource(label), modifier = Modifier.size(32.dp), tint = EdendaleColors.TextPrimary)
     }
 }
 
 @Composable
 private fun MenuButton(iconRes: Int, label: String, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(48.dp)) {
-        Icon(painterResource(iconRes), label, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onBackground)
+        Icon(painterResource(iconRes), contentDescription = label, modifier = Modifier.size(24.dp), tint = EdendaleColors.TextPrimary)
     }
 }
 
 @Composable
-private fun ExitButton(actions: TheaterControlsActions) {
-    TextButton(onClick = { actions.exit() }, modifier = Modifier.heightIn(min = 48.dp)) {
-        Icon(painterResource(R.drawable.ic_xmark), null, Modifier.size(20.dp), tint = EdendaleColors.Gold)
+private fun ExitButton(actions: TheaterActions) {
+    TextButton(onClick = actions::exit, modifier = Modifier.heightIn(min = 48.dp)) {
+        Icon(painterResource(R.drawable.ic_xmark), contentDescription = null, modifier = Modifier.size(20.dp), tint = EdendaleColors.Gold)
         Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.theater_exit), color = EdendaleColors.Gold, style = MaterialTheme.typography.labelLarge)
+        Text(
+            stringResource(R.string.theater_exit),
+            color = EdendaleColors.Gold,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 @Composable
-private fun FailureCard(message: String, actions: TheaterControlsActions) {
-    Column(
-        Modifier.fillMaxSize().padding(20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            stringResource(R.string.theater_playback_failed),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            message,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        Spacer(Modifier.size(12.dp))
-        ExitButton(actions)
+private fun ColumnScope.FailureCard(message: String, actions: TheaterActions) {
+    Text(stringResource(R.string.theater_playback_failed), style = MaterialTheme.typography.bodyLarge)
+    Text(message, style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+    Spacer(Modifier.height(12.dp))
+    ExitButton(actions)
+}
+
+@Composable
+private fun ColumnScope.ListHeader(title: String, onClose: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+        IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
+            Icon(painterResource(R.drawable.ic_chevron_down), contentDescription = stringResource(R.string.action_close), modifier = Modifier.size(24.dp), tint = EdendaleColors.TextPrimary)
+        }
+    }
+}
+
+/** The track rows, with Off first for subtitles; a row's press picks it and closes the list. */
+@Composable
+private fun ColumnScope.TrackList(
+    title: String,
+    options: List<TheaterTrack>,
+    offLabel: String?,
+    offSelected: Boolean,
+    onPick: (String?) -> Unit,
+    onClose: () -> Unit,
+) {
+    ListHeader(title, onClose)
+    Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+        if (offLabel != null) {
+            ListRow(offLabel, selected = offSelected) { onPick(null); onClose() }
+        }
+        options.forEach { option ->
+            ListRow(option.label, selected = option.isSelected && !offSelected) { onPick(option.id); onClose() }
+        }
     }
 }
 
 /** The three rooms, the current one marked; a row's press moves there and closes the list (G.14). */
 @Composable
-private fun RoomList(selected: TheaterRoom, onPick: (TheaterRoom) -> Unit, onClose: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.theater_rooms),
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
-                Icon(painterResource(R.drawable.ic_chevron_down), null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onBackground)
-            }
-        }
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            TheaterRoom.entries.forEach { room ->
-                TrackRow(stringResource(room.titleRes), room == selected) { onPick(room); onClose() }
-            }
-        }
-    }
-}
-
-/** The room's name, as visionOS names the same three rooms. */
-internal val TheaterRoom.titleRes: Int
-    get() = when (this) {
-        TheaterRoom.MOVIE_THEATRE -> R.string.theater_room_movie_theatre
-        TheaterRoom.PROJECTOR_ROOM -> R.string.theater_room_projector_room
-        TheaterRoom.PERFORMANCE_THEATRE -> R.string.theater_room_performance_theatre
-    }
-
-/** The track rows, with Off first for subtitles; a row's press picks it and closes the list. */
-@Composable
-private fun TrackList(
-    title: String,
-    options: List<PlayerTrackOption>,
-    offLabel: String?,
-    offSelected: Boolean,
-    label: @Composable (PlayerTrackOption) -> String,
-    onPick: (PlayerTrackOption?) -> Unit,
-    onClose: () -> Unit,
-) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
-                Icon(painterResource(R.drawable.ic_chevron_down), null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onBackground)
-            }
-        }
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            if (offLabel != null) {
-                TrackRow(offLabel, offSelected) { onPick(null); onClose() }
-            }
-            options.forEach { option ->
-                TrackRow(label(option), option.isSelected && !offSelected) { onPick(option); onClose() }
-            }
-        }
+private fun ColumnScope.RoomList(selected: TheaterRoom, onPick: (TheaterRoom) -> Unit, onClose: () -> Unit) {
+    ListHeader(stringResource(R.string.theater_rooms), onClose)
+    TheaterRoom.entries.forEach { room ->
+        ListRow(stringResource(room.titleRes), selected = room == selected) { onPick(room); onClose() }
     }
 }
 
 @Composable
-private fun TrackRow(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun ListRow(text: String, selected: Boolean, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
+        Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(if (selected) EdendaleColors.SurfaceHigh else Color.Transparent)
-            .clickable(onClick = onClick)
+            // Radio semantics, so TalkBack says which track, room, or level is chosen.
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -384,63 +442,230 @@ private fun TrackRow(text: String, selected: Boolean, onClick: () -> Unit) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (selected) EdendaleColors.Gold else MaterialTheme.colorScheme.onBackground,
+            color = if (selected) EdendaleColors.Gold else EdendaleColors.TextPrimary,
         )
-        if (selected) Icon(painterResource(R.drawable.ic_check), null, Modifier.size(20.dp), tint = EdendaleColors.Gold)
+        if (selected) {
+            Icon(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(20.dp), tint = EdendaleColors.Gold)
+        }
+    }
+}
+
+/** The room's name, as visionOS and Android XR name the same three rooms. */
+internal val TheaterRoom.titleRes: Int
+    get() = when (this) {
+        TheaterRoom.MOVIE_THEATRE -> R.string.theater_room_movie_theatre
+        TheaterRoom.PROJECTOR_ROOM -> R.string.theater_room_projector_room
+        TheaterRoom.PERFORMANCE_THEATRE -> R.string.theater_room_performance_theatre
+    }
+
+/** h:mm:ss past an hour, else m:ss, in Western digits whatever the locale. */
+internal fun formatClock(millis: Long): String {
+    val total = (millis.coerceAtLeast(0L) / 1000)
+    val h = total / 3600
+    val m = (total % 3600) / 60
+    val s = total % 60
+    return if (h > 0) String.format(java.util.Locale.ROOT, "%d:%02d:%02d", h, m, s) else String.format(java.util.Locale.ROOT, "%d:%02d", m, s)
+}
+
+// ------------------------------------------------------------------
+// The seat panel
+// ------------------------------------------------------------------
+
+/**
+ * The seat panel to the left of the dock (G.15, android's N.7): the room's
+ * seat map (press, slide to sweep, release to sit), Best Seat, the house
+ * lights, and Recentre. Without a usable room file there are no seats or
+ * lights, and the panel holds Recentre alone.
+ */
+@Composable
+internal fun TheaterSeatPanel(ui: TheaterUiState, actions: TheaterActions) {
+    TheaterPanelSurface {
+        val map = ui.seatMap
+        if (map != null && map.seats.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.theater_seats), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                val shown = ui.pointedSeat ?: ui.seatedSeat
+                if (shown != null) {
+                    Text(
+                        stringResource(R.string.theater_seat_name, shown.row, shown.number),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (ui.pointedSeat != null) EdendaleColors.Gold else EdendaleColors.TextSecondary,
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            SeatMapCanvas(map, ui, actions)
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(14.dp).clip(RoundedCornerShape(4.dp)).background(EdendaleColors.Gold))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.theater_your_seat), style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary)
+                Spacer(Modifier.weight(1f))
+                val atBest = map.best == null || ui.seatedSeat == map.best?.id
+                Surface(
+                    onClick = { actions.chooseSeat(null) },
+                    enabled = !atBest,
+                    shape = CircleShape,
+                    color = EdendaleColors.Surface,
+                ) {
+                    Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(14.dp).clip(RoundedCornerShape(4.dp)).border(2.dp, EdendaleColors.Gold, RoundedCornerShape(4.dp)))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.theater_best_seat),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (atBest) EdendaleColors.TextSecondary else EdendaleColors.TextPrimary,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider(color = EdendaleColors.Outline)
+            Spacer(Modifier.height(16.dp))
+        }
+        if (map != null) {
+            LightsRow(ui, actions)
+            Spacer(Modifier.height(16.dp))
+        }
+        Surface(onClick = actions::recentre, shape = RoundedCornerShape(8.dp), color = EdendaleColors.Surface) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(R.drawable.ic_theater), contentDescription = null, modifier = Modifier.size(24.dp), tint = EdendaleColors.Gold)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(stringResource(R.string.theater_recentre), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.theater_recentre_caption), style = MaterialTheme.typography.bodySmall, color = EdendaleColors.TextSecondary)
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun audioLabel(option: PlayerTrackOption): String {
-    val locale = Locale.getDefault()
-    val otherTemplate = stringResource(R.string.player_audio_channels)
-    val channels = TrackLabels.channels(
-        option.channelCount,
-        mono = stringResource(R.string.player_audio_mono),
-        stereo = stringResource(R.string.player_audio_stereo),
-        other = { otherTemplate.format(it) },
-    )
-    return TrackLabels.audio(
-        label = option.label,
-        languageCode = option.language,
-        languageName = TrackLabels.languageName(option.language, locale),
-        channels = channels,
-        fallback = stringResource(R.string.player_track_number, option.trackIndex + 1),
-    )
+private fun SeatMapCanvas(map: TheaterSeatMap, ui: TheaterUiState, actions: TheaterActions) {
+    val seatsLabel = stringResource(R.string.theater_seats)
+    val screenLabel = stringResource(R.string.theater_screen)
+    var layout by remember { mutableStateOf(TheaterSeatMap.Layout.EMPTY) }
+    val textMeasurer = rememberTextMeasurer()
+    val labelStyle = MaterialTheme.typography.labelLarge.copy(color = EdendaleColors.TextSecondary)
+    Canvas(
+        Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .semantics { contentDescription = seatsLabel }
+            .pointerInput(map) {
+                // A trigger or a pinch is a press: hold and slide to sweep, release to sit.
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    ui.pointedSeat = map.nearestSeat(down.position.x, down.position.y, layout)?.id
+                    var last = down.position
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull() ?: break
+                        last = change.position
+                        ui.pointedSeat = map.nearestSeat(last.x, last.y, layout)?.id
+                        if (!change.pressed) break
+                    }
+                    val seat = map.nearestSeat(last.x, last.y, layout)?.id
+                    ui.pointedSeat = null
+                    seat?.let { actions.chooseSeat(it) }
+                }
+            },
+    ) {
+        layout = map.layout(size.width, size.height, ui.screenCenterX, ui.screenWidth)
+        if (layout.isEmpty) return@Canvas
+        val screen = layout.screen
+        drawRoundRect(
+            color = EdendaleColors.TextPrimary.copy(alpha = 0.85f),
+            topLeft = Offset(screen.x, screen.y),
+            size = Size(screen.width, screen.height),
+            cornerRadius = CornerRadius(4f, 4f),
+        )
+        val measured = textMeasurer.measure(screenLabel.uppercase(), labelStyle)
+        drawText(
+            textMeasurer,
+            screenLabel.uppercase(),
+            topLeft = Offset(screen.midX - measured.size.width / 2f, screen.maxY + 6f),
+            style = labelStyle,
+        )
+        val seatSize = layout.seatSize
+        val radius = CornerRadius(seatSize * 0.3f, seatSize * 0.3f)
+        map.seats.forEach { seat ->
+            val point = layout.points[seat.id] ?: return@forEach
+            val topLeft = Offset(point.first - seatSize / 2f, point.second - seatSize / 2f)
+            val color = when {
+                seat.id == ui.pointedSeat -> EdendaleColors.TextPrimary
+                seat.id == ui.seatedSeat -> EdendaleColors.Gold
+                else -> EdendaleColors.TextSecondary.copy(alpha = 0.35f)
+            }
+            drawRoundRect(color = color, topLeft = topLeft, size = Size(seatSize, seatSize), cornerRadius = radius)
+            if (seat.id == map.best?.id && seat.id != ui.seatedSeat) {
+                drawRoundRect(
+                    color = EdendaleColors.Gold,
+                    topLeft = topLeft,
+                    size = Size(seatSize, seatSize),
+                    cornerRadius = radius,
+                    style = Stroke(width = maxOf(seatSize * 0.14f, 1f)),
+                )
+            }
+        }
+    }
 }
 
+/** The house lights (G.15, android's N.9): Normal, Dim, Dark, the current level in gold. */
 @Composable
-private fun textLabel(option: PlayerTrackOption): String = TrackLabels.named(
-    label = option.label,
-    languageCode = option.language,
-    languageName = TrackLabels.languageName(option.language, Locale.getDefault()),
-    fallback = stringResource(R.string.player_track_number, option.trackIndex + 1),
-)
-
-/** h:mm:ss past an hour, else m:ss. */
-internal fun formatClock(millis: Long): String {
-    val totalSeconds = (millis.coerceAtLeast(0) / 1000)
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds) else "%d:%02d".format(minutes, seconds)
+private fun LightsRow(ui: TheaterUiState, actions: TheaterActions) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.theater_lights), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        TheaterLights.entries.forEach { level ->
+            val selected = ui.lights == level
+            Surface(
+                onClick = { actions.chooseLights(level) },
+                shape = CircleShape,
+                color = if (selected) EdendaleColors.Gold else EdendaleColors.Surface,
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .semantics {
+                        role = Role.RadioButton
+                        this.selected = selected
+                    },
+            ) {
+                Text(
+                    stringResource(level.labelRes),
+                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (selected) EdendaleColors.Background else EdendaleColors.TextPrimary,
+                )
+            }
+        }
+    }
 }
+
+private val TheaterLights.labelRes: Int
+    get() = when (this) {
+        TheaterLights.NORMAL -> R.string.theater_lights_normal
+        TheaterLights.DIM -> R.string.theater_lights_dim
+        TheaterLights.DARK -> R.string.theater_lights_dark
+    }
+
+// ------------------------------------------------------------------
+// Subtitles
+// ------------------------------------------------------------------
 
 /**
- * The subtitles, in a transparent panel just in front of the screen (G.8).
- * The 2D player draws its cues in Compose over its SurfaceView, which a
- * surface panel doesn't have, so the same overlay draws into this panel.
+ * The 2D player's cues in a transparent panel just in front of the picture
+ * (G.8), laid out in the picture's own shape (G.15) so nothing is stretched.
+ * It follows [TheaterUiState.playback], so the next episode's cues show.
  */
 @Composable
-internal fun TheaterSubtitlePanel(player: Player, chrome: PlayerChromeState) {
+internal fun TheaterSubtitlePanel(ui: TheaterUiState) {
     EdendaleTheme {
         Box(Modifier.fillMaxSize()) {
-            PlayerSubtitleOverlay(
-                player = player,
-                chrome = chrome,
-                controlsVisible = false,
-                effectsVideoSize = null,
-            )
+            val playback = ui.playback
+            if (playback != null && ui.admitted) TheaterSubtitleOverlay(playback, Modifier.fillMaxSize())
         }
     }
 }

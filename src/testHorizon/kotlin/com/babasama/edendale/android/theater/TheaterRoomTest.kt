@@ -1,5 +1,7 @@
 package com.babasama.edendale.android.theater
 
+import com.babasama.edendale.android.xr.SeatID
+import com.babasama.edendale.android.xr.TheaterSeatMap
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -12,9 +14,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * HORIZON.md G.14: the three rooms, and the GLBs that ship for them in
- * `src/horizonTheater/assets/theater/` (exported from `scenes` and prepared
- * by `tools/horizon/prepare_theater_glb.py`).
+ * HORIZON.md G.14, G.15: the three rooms, and the GLBs that ship for them in
+ * `src/horizonTheater/assets/theater/` (exported from `scenes` at adad81e
+ * and prepared by `tools/horizon/prepare_theater_glb.py`).
  */
 class TheaterRoomTest {
 
@@ -42,23 +44,65 @@ class TheaterRoomTest {
         assertEquals(TheaterRoom.entries.map { "${it.id}.glb" }.sorted(), shipped)
     }
 
-    /** Where the scenes' READMEs say each screen is: width, distance ahead, and its centre's height. */
+    /**
+     * Where each screen is in the `scenes` export at adad81e (the bigger
+     * screens: the viewer sits closer): width, distance ahead of `Seat`, and
+     * its centre's height.
+     */
     @Test
     fun eachRoomsScreenIsWhereItsSceneSaysItIs() {
         val expected = mapOf(
-            TheaterRoom.MOVIE_THEATRE to Triple(12f, 14f, 2.4f),
-            TheaterRoom.PROJECTOR_ROOM to Triple(5.6f, 7.4f, 2.725f),
-            TheaterRoom.PERFORMANCE_THEATRE to Triple(11f, 14f, 3.09375f),
+            TheaterRoom.MOVIE_THEATRE to Triple(12f, 10.55f, 3.6f),
+            TheaterRoom.PROJECTOR_ROOM to Triple(5.6f, 5.478f, 2.725f),
+            TheaterRoom.PERFORMANCE_THEATRE to Triple(11f, 9.25f, 3.84375f),
         )
         TheaterRoom.entries.forEach { room ->
-            val scene = File(assetDirectory, "${room.id}.glb").inputStream().use { TheaterScene.parse(it) }
+            val glb = roomFile(room).glb
             val (width, ahead, up) = expected.getValue(room)
-            assertEquals(width, scene.screen.width, 0.01f, "${room.id} width")
-            assertEquals(ahead, scene.screen.ahead, 0.01f, "${room.id} distance")
-            assertEquals(up, scene.screen.up, 0.01f, "${room.id} height")
-            assertEquals(0f, scene.screen.right, 0.01f, "${room.id} is centred")
+            val min = glb.screenBoundsMin
+            val max = glb.screenBoundsMax
+            assertEquals(width, max.x - min.x, 0.01f, "${room.id} width")
+            assertEquals(ahead, glb.seat.z - (min.z + max.z) / 2f, 0.01f, "${room.id} distance")
+            assertEquals(up, (min.y + max.y) / 2f - glb.seat.y, 0.01f, "${room.id} height")
+            assertEquals(0f, (min.x + max.x) / 2f - glb.seat.x, 0.01f, "${room.id} is centred")
             // Sized for a 16:9 picture (the scenes' authoring rule).
-            assertEquals(16f / 9f, scene.screen.width / scene.screen.height, 0.02f, "${room.id} aspect")
+            assertEquals(16f / 9f, (max.x - min.x) / (max.y - min.y), 0.02f, "${room.id} aspect")
+        }
+    }
+
+    /** G.15: every room carries its seat map, and the author's `Seat` is one of its seats (the best seat). */
+    @Test
+    fun eachRoomHasItsSeatMapAndABestSeat() {
+        val expected = mapOf(
+            TheaterRoom.MOVIE_THEATRE to (209 to SeatID(3, 10)),
+            TheaterRoom.PROJECTOR_ROOM to (54 to SeatID(2, 5)),
+            TheaterRoom.PERFORMANCE_THEATRE to (384 to SeatID(4, 14)),
+        )
+        TheaterRoom.entries.forEach { room ->
+            val glb = roomFile(room).glb
+            val map = TheaterSeatMap(glb.seatMarkers, glb.seat)
+            val (count, best) = expected.getValue(room)
+            assertEquals(count, map.seats.size, "${room.id} seats")
+            assertEquals(count, glb.seatMarkers.size, "${room.id} markers are all seats")
+            assertEquals(best, map.best?.id, "${room.id} best seat")
+        }
+    }
+
+    /**
+     * G.15: the house lights scale the baked atlases and nothing else: the
+     * screen's flat glow and the projector's blended beam stay as they are.
+     */
+    @Test
+    fun theLightsDimTheBakedMaterialsOnly() {
+        val expected = mapOf(
+            TheaterRoom.MOVIE_THEATRE to setOf("RoomBaked", "SeatsBaked"),
+            TheaterRoom.PROJECTOR_ROOM to setOf("ChairsBaked", "PropsBaked", "RoomBaked"),
+            TheaterRoom.PERFORMANCE_THEATRE to setOf("DrapesBaked", "RoomBaked", "SeatsBaked"),
+        )
+        TheaterRoom.entries.forEach { room ->
+            val dimmable = roomFile(room).dimmable
+            assertEquals(expected.getValue(room), dimmable.mapNotNull { it.name }.toSet(), "${room.id} dims its baked materials")
+            dimmable.forEach { assertEquals(listOf(1f, 1f, 1f, 1f), it.baseColor, "${room.id}/${it.name} starts at full brightness") }
         }
     }
 
@@ -78,6 +122,9 @@ class TheaterRoomTest {
             }
         }
     }
+
+    private fun roomFile(room: TheaterRoom): TheaterRoomFile =
+        File(assetDirectory, "${room.id}.glb").inputStream().use { TheaterRoomFile.read(it) }
 
     private fun glbJson(glb: ByteArray): String {
         val length = ByteBuffer.wrap(glb, 12, 4).order(ByteOrder.LITTLE_ENDIAN).int

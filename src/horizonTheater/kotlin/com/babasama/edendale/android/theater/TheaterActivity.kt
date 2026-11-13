@@ -2,44 +2,48 @@ package com.babasama.edendale.android.theater
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.Surface
+import android.view.View
+import android.widget.Toast
 import androidx.compose.ui.platform.ComposeView
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.Tracks
-import androidx.media3.common.VideoSize
-import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.MainActivity
+import com.babasama.edendale.android.PlaybackSources
 import com.babasama.edendale.android.R
+import com.babasama.edendale.android.YoungAudienceFilter
 import com.babasama.edendale.android.data.LocalDataStore
-import com.babasama.edendale.android.player.ContentPlayerPreferencesRules
-import com.babasama.edendale.android.player.EdendaleDataSource
-import com.babasama.edendale.android.player.EdendaleRenderersFactory
-import com.babasama.edendale.android.player.EqAudioProcessor
-import com.babasama.edendale.android.player.PlayerChromeState
+import com.babasama.edendale.android.parental.awaitReady
+import com.babasama.edendale.android.parental.parentalControls
+import com.babasama.edendale.android.parental.restrictedMessageRes
 import com.babasama.edendale.android.player.PlayerLogic
-import com.babasama.edendale.android.player.PlayerTrackOption
-import com.babasama.edendale.android.player.SharedPreferencesContentStore
-import com.babasama.edendale.android.player.applyContentPreferences
+import com.babasama.edendale.android.player.PlayerPlaylist
+import com.babasama.edendale.android.player.PlaylistEntry
 import com.babasama.edendale.android.player.audioTrackOptions
-import com.babasama.edendale.android.player.seekBy
-import com.babasama.edendale.android.player.selectAudioTrack
-import com.babasama.edendale.android.player.selectTextTrack
-import com.babasama.edendale.android.player.snapshotPreferences
+import com.babasama.edendale.android.player.loadPlayerPlaylist
+import com.babasama.edendale.android.player.permittedPlaylist
+import com.babasama.edendale.android.player.playlistAudienceRefs
 import com.babasama.edendale.android.player.textTrackOptions
+import com.babasama.edendale.android.xr.DockFollower
+import com.babasama.edendale.android.xr.DockPose
+import com.babasama.edendale.android.xr.HeadFrame
+import com.babasama.edendale.android.xr.Quat
+import com.babasama.edendale.android.xr.RoomPose
+import com.babasama.edendale.android.xr.SeatID
+import com.babasama.edendale.android.xr.TheaterDock
+import com.babasama.edendale.android.xr.TheaterGlb
+import com.babasama.edendale.android.xr.TheaterLights
+import com.babasama.edendale.android.xr.TheaterPlayback
+import com.babasama.edendale.android.xr.TheaterPreferencesRules
+import com.babasama.edendale.android.xr.TheaterSeatMap
+import com.babasama.edendale.android.xr.Vec3
+import com.babasama.edendale.android.youngAudienceFilter
 import com.babasama.edendale.domain.WatchMediaType
-import com.babasama.edendale.domain.WatchProgress
 import com.meta.spatial.compose.ComposeFeature
 import com.meta.spatial.compose.ComposeViewPanelRegistration
 import com.meta.spatial.core.Entity
@@ -48,6 +52,7 @@ import com.meta.spatial.core.Quaternion
 import com.meta.spatial.core.SpatialFeature
 import com.meta.spatial.core.SystemBase
 import com.meta.spatial.core.Vector3
+import com.meta.spatial.core.Vector4
 import com.meta.spatial.runtime.ReferenceSpace
 import com.meta.spatial.runtime.SceneMesh
 import com.meta.spatial.runtime.SceneObject
@@ -75,72 +80,117 @@ import com.meta.spatial.vr.LocomotionSystem
 import com.meta.spatial.vr.VRFeature
 import java.io.FileNotFoundException
 import java.util.concurrent.CompletableFuture
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The immersive theater (HORIZON.md Section G): the video on a large screen
- * inside an environment, through Meta's Spatial SDK. The library and the
- * player stay 2D panels; this activity opens from the player's Theater
- * button with a [TheaterHandover] and owns its own ExoPlayer, built with the
- * same renderers and data source as the panel player, so every source type
- * plays unchanged (G.5).
+ * inside one of the three `scenes` rooms, through Meta's Spatial SDK. The
+ * library and the player stay 2D panels; this activity opens from the
+ * player's Theater button with a [TheaterHandover].
  *
- * Rooms (G.7, G.14): one of the three `scenes` branch rooms ([TheaterRoom]),
- * the one the viewer last chose, placed so its `Seat` is under the viewer
- * and its `Screen` takes the picture. The controls card's Room list moves
- * to another room while the video plays. A room that can't be read falls
- * back to the spike's sky and a 4 m screen 5 m ahead. The screen is placed
- * from the head pose once tracking reports one, and again after a recenter;
- * the room turns by the `Seat` and `Screen` the SDK actually loaded
- * ([RoomFrame]). Controls and subtitles are Compose panels (G.8).
+ * Since G.15 it is android's Android XR theater (ENHANCEMENT.md Section N)
+ * on the Quest, through the shared code in `src/main`'s `xr` package:
+ * - playback is android's `TheaterPlayback` (built as the 2D player builds
+ *   its player, with the TheIntroDB prompts and the per-title memory);
+ * - the viewer is seated by android's recentre rule (level, or the whole
+ *   room tilted when lying back), in the chosen seat of the room's seat map,
+ *   the best seat by default and a remembered one per room;
+ * - the controls dock and the seat panel follow the head below the line of
+ *   sight (`DockFollower`) and never hide;
+ * - the house lights scale the room's baked materials, Recentre re-seats
+ *   the viewer where they look, the subtitles are laid out in the picture's
+ *   own shape, and Up Next plays the next episode here (the owner's choice).
+ *
+ * [TheaterStaging] and [TheaterFrames] turn the shared frame into the SDK's.
+ * The activity is exported (G.4, Meta's sample), so it runs the 2D player's
+ * parental check itself before anything plays ([TheaterAdmission]).
  * Exit (G.6) returns to Home with the panel focused, through Meta's hybrid
- * pattern, and progress is saved on exit, on stop, and every five seconds.
+ * pattern.
  */
-class TheaterActivity : AppSystemActivity() {
+class TheaterActivity : AppSystemActivity(), TheaterActions {
 
+    /** What plays now: the player's handover, or the episode Up Next moved to. */
     private var handover: TheaterHandover? = null
-    private var player: ExoPlayer? = null
-
-    /** Audio Enhancement's equalizer, in the audio sink as in the 2D player (E.1). */
-    private val equalizer = EqAudioProcessor()
-    private lateinit var chrome: PlayerChromeState
-    private lateinit var contentStore: SharedPreferencesContentStore
-    private var dataStore: LocalDataStore? = null
-    private val controls = TheaterControlsState()
-    private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var playback: TheaterPlayback? = null
+    private val ui = TheaterUiState()
+    private lateinit var settings: TheaterSettings
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    // The parental check (G.15) and the episode list, on the main thread as the 2D player runs them.
+    private val parentalScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var audience: YoungAudienceFilter? = null
+    private var admissionJob: Job? = null
+    private var playlistJob: Job? = null
+    private var playlist: PlayerPlaylist? = null
+    private var upcoming: PlaylistEntry? = null
+    /** Up Next was pressed and the next episode is being checked: the card stays away and a second press does nothing. */
+    private var upNextPending = false
+
+    /**
+     * The system holds the theater (headset off, the Meta button's menu, the
+     * activity stopped): a title the parental check admits meanwhile starts
+     * paused and resumes when the hold ends.
+     */
+    private var systemHeld = false
+
+    /** The screen panel's surface, kept so the next episode's player can draw on it. */
+    private var videoSurface: Surface? = null
+
+    /** The current subtitle panel's view; an older one disposes its composition once detached (its composition would outlive the entity). */
+    private var subtitleView: ComposeView? = null
+
+    // The room (G.14, G.15).
     private var room = TheaterRoom.DEFAULT
-    private var authoredScene: TheaterScene? = null
+    private var roomFile: TheaterRoomFile? = null
     private var roomEntity: Entity? = null
-    /** Where the SDK loaded the room's Seat and Screen; null until its mesh is in. */
-    private var roomFrame: RoomFrame? = null
     private var roomObject: CompletableFuture<SceneObject>? = null
-    /** The room is drawn: its frame is known, or waiting for it timed out. */
+    private var roomMesh: SceneMesh? = null
+    /** How the SDK turned the room when it loaded it ([TheaterFrames.importTurn]); null until its nodes are read. */
+    private var importTurn: Float? = null
+    /** The room is drawn: its turn is known, or waiting for it timed out. */
     private var roomShown = false
     private var roomWaitFrames = 0
+    private var roomGaveUp = false
+    /** The lights level last written to the current room's materials. */
+    private var lightsApplied: TheaterLights? = null
+    /** Frames the lights have found none of the room's materials to write, in case the SDK fills them in late. */
+    private var lightsMisses = 0
+
     private var screenEntity: Entity? = null
     private var subtitlesEntity: Entity? = null
-    private var controlsEntity: Entity? = null
+    private var dockEntity: Entity? = null
+    private var seatsEntity: Entity? = null
 
-    private var lastHead: HeadPose? = null
-    private var placed = false
-    private var aspectRatio: Float? = null
-    private var controlsVisible = false
-    private var hasRestoredPreferences = false
-    private var handoverTracksApplied = false
-    private var completedWritten = false
+    // The stage: where the viewer sits; null until seated, and again after a recentre.
+    private var stage: RoomPose? = null
+    private var seatedWithoutHead = false
+    private var framesWithoutHead = 0
+    private var lastFrameNanos = 0L
+    private var follower = DockFollower()
+    private var lastDock: DockPose? = null
+    private var lastSide: DockPose? = null
+    private var bodySystem: PlayerBodyAttachmentSystem? = null
+    private var placedAspect: Float? = null
+    /** The aspect the subtitle panel was laid out for (G.15); its entity is rebuilt when the picture changes shape. */
+    private var subtitleAspect: Float? = null
+    /** The room and the picture are hidden for a moment while the viewer changes seats. */
+    private var blinking = false
+
     private var exiting = false
     private var released = false
-    private var resumeWhenFocused = false
-    private var ticksSinceWrite = 0
 
-    private val hideControls = Runnable { setControlsVisible(false) }
+    private val endBlink = Runnable {
+        blinking = false
+        placeScene()
+    }
+
     private val tick = object : Runnable {
         override fun run() {
             onTick()
@@ -152,222 +202,199 @@ class TheaterActivity : AppSystemActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val handover = TheaterHandover.from(intent)
+        // A theater the system rebuilds plays what it played last (Up Next may have moved on), and checks it again.
+        val saved = TheaterHandover.from(savedInstanceState?.getBundle(STATE_HANDOVER))
+        val handover = saved ?: TheaterHandover.from(intent)
         if (handover == null) {
             // Only the player starts the theater; anything else has nothing to show.
             Log.w(TAG, "started without a handover")
             finish()
             return
         }
-        this.handover = handover
-        chrome = PlayerChromeState(getSharedPreferences("player", MODE_PRIVATE))
-        contentStore = SharedPreferencesContentStore(
-            getSharedPreferences(ContentPlayerPreferencesRules.PREFS_NAME, MODE_PRIVATE),
-        )
-        equalizer.update(chrome.preferences.audioEnhancement)
-        dataStore = LocalDataStore((application as EdendaleApplication).database)
-        controls.title = handover.title
-        controls.subtitle = handover.subtitle
-        controls.subtitlesOff = handover.subtitlesOff
-        room = TheaterRoom.fromId(getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(KEY_ROOM, null))
-        controls.room = room
-        authoredScene = loadAuthoredScene(room)
+        settings = TheaterSettings(getSharedPreferences(TheaterPreferencesRules.PREFS_NAME, MODE_PRIVATE))
+        room = settings.room
+        ui.lights = settings.lights
+        loadRoomFile(room)
 
         // A seated theater has no locomotion (G.9); Meta's media sample drops the system the same way.
         if (systemManager.tryFindSystem<LocomotionSystem>() != null) systemManager.unregisterSystem<LocomotionSystem>()
-        systemManager.registerSystem(
-            TheaterInputSystem(onActivate = { setControlsVisible(true) }, onBack = { exitTheater() }),
-        )
-        systemManager.registerSystem(PlacementSystem())
+        systemManager.registerSystem(TheaterInputSystem(onBack = { exit() }))
+        systemManager.registerSystem(StageSystem())
 
-        player = buildPlayer(handover)
+        // The player exists from the start, so the panels can bind to it; it loads nothing until admitted.
+        this.handover = handover
+        attach(TheaterPlayback(this, handover.toPlayback()))
+        admit(
+            handover,
+            ticket = if (saved != null) null else TheaterHandover.ticket(intent),
+            onAdmitted = { begin(handover) },
+            onRefused = {
+                refuse()
+                exitTheater()
+            },
+        )
         mainHandler.post(tick)
     }
 
+    /** The theater is singleTask: a second start while it runs plays nothing (only the player's own handover ever does). */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Log.w(TAG, "a second start while the theater runs was ignored")
+    }
+
+    /** What plays now and where, with no ticket, so a rebuilt theater picks up there after its own check. */
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val current = handover ?: return
+        val position = playback?.takeIf { ui.admitted }?.player?.currentPosition?.coerceAtLeast(0L) ?: current.positionMillis
+        outState.putBundle(STATE_HANDOVER, current.copy(positionMillis = position).extras())
+    }
+
     // ------------------------------------------------------------------
-    // The player
+    // Playback and the parental check (G.15)
     // ------------------------------------------------------------------
 
-    private fun buildPlayer(handover: TheaterHandover): ExoPlayer {
-        // The same factory as PlayerActivity: DefaultDataSource routes smb and
-        // the storage providers' schemes to EdendaleDataSource (H.2).
-        val mediaSourceFactory = DefaultMediaSourceFactory(
-            DataSource.Factory { DefaultDataSource(this, EdendaleDataSource(this)) },
+    private fun attach(next: TheaterPlayback) {
+        playback = next
+        ui.playback = next
+        videoSurface?.let { next.player.setVideoSurface(it) }
+    }
+
+    /**
+     * The 2D player's parental check (O.5), run here because the activity is
+     * exported: a handover with the player's [ticket] plays at once, as does
+     * any title while no rule is in force; anything else waits for the
+     * controls, is verified with TMDB, and plays only if the policy allows it.
+     */
+    private fun admit(handover: TheaterHandover, ticket: String?, onAdmitted: () -> Unit, onRefused: () -> Unit) {
+        val controls = parentalControls(this)
+        val look = TheaterAdmission.firstLook(
+            ticketRedeemed = TheaterTickets.redeem(ticket, handover),
+            controlsReady = controls.ready.value,
+            policyActive = controls.policy.value.isActive,
         )
-        val exoPlayer = ExoPlayer.Builder(this, EdendaleRenderersFactory(this, equalizer))
-            .setMediaSourceFactory(mediaSourceFactory)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .build(),
-                true,
-            )
-            .setHandleAudioBecomingNoisy(true)
-            // The headset keeps the app awake while worn, and this branch
-            // declares no WAKE_LOCK (A.2), so don't ask for one.
-            .setWakeMode(C.WAKE_MODE_NONE)
-            .build()
-        exoPlayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED) {
-                    writeProgress(completed = true)
-                    exitTheater()
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                controls.isPlaying = isPlaying
-            }
-
-            /** The screen takes the picture's shape (G.7): a wider or taller video resizes it. */
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                val width = videoSize.width * videoSize.pixelWidthHeightRatio
-                if (width > 0f && videoSize.height > 0) {
-                    aspectRatio = width / videoSize.height
-                    placeAgain()
-                }
-            }
-
-            // A new item first reports empty tracks; restore against the report that lists them.
-            override fun onTracksChanged(tracks: Tracks) {
-                controls.audioOptions = audioTrackOptions(tracks)
-                controls.textOptions = textTrackOptions(tracks)
-                if (tracks.isEmpty) return
-                if (!hasRestoredPreferences) {
-                    hasRestoredPreferences = true
-                    restoreContentPreferences(exoPlayer, tracks)
-                }
-                if (!handoverTracksApplied) {
-                    handoverTracksApplied = true
-                    applyHandoverChoices(exoPlayer, tracks)
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                controls.failure = error.message ?: error.errorCodeName
-                setControlsVisible(true)
-            }
-        })
-        exoPlayer.setMediaItem(MediaItem.fromUri(Uri.parse(handover.uri)), handover.positionMillis)
-        exoPlayer.prepare()
-        exoPlayer.playWhenReady = handover.playWhenReady
-        return exoPlayer
-    }
-
-    /** The per-title speed and track choices, the way the 2D player restores them. */
-    private fun restoreContentPreferences(exoPlayer: ExoPlayer, tracks: Tracks) {
-        val handover = handover ?: return
-        val key = ContentPlayerPreferencesRules.contentKey(
-            tmdbId = handover.tmdbId,
-            isEpisode = handover.isEpisode,
-            showTmdbId = handover.showTmdbId,
-        ) ?: return
-        val preferences = contentStore.get(key) ?: return
-        applyContentPreferences(preferences = preferences, player = exoPlayer, chrome = chrome, tracks = tracks)
-    }
-
-    /** What the viewer was hearing and reading when they pressed Theater wins over the stored match. */
-    private fun applyHandoverChoices(exoPlayer: ExoPlayer, tracks: Tracks) {
-        val handover = handover ?: return
-        matching(audioTrackOptions(tracks), handover.audioTrackId, handover.audioLanguage)
-            ?.let { selectAudioTrack(exoPlayer, it) }
-        if (handover.subtitlesOff) {
-            selectTextTrack(exoPlayer, null)
-        } else {
-            matching(textTrackOptions(tracks), handover.textTrackId, handover.textLanguage)
-                ?.let { selectTextTrack(exoPlayer, it) }
+        if (look == TheaterAdmission.FirstLook.PLAY) {
+            onAdmitted()
+            return
         }
-        chrome.setRate(exoPlayer, handover.speed)
+        admissionJob?.cancel()
+        admissionJob = parentalScope.launch {
+            controls.awaitReady()
+            val filter = audience()
+            val ref = TheaterAdmission.ref(handover)
+            if (ref != null && filter.isEnabled) filter.verify(listOf(ref))
+            if (released) return@launch
+            if (TheaterAdmission.permits(filter.isEnabled, ref, filter::allows)) onAdmitted() else onRefused()
+        }
     }
 
-    private fun matching(options: List<PlayerTrackOption>, id: String?, language: String?): PlayerTrackOption? =
-        options.firstOrNull { id != null && it.id == id }
-            ?: options.firstOrNull { language != null && it.language.equals(language, ignoreCase = true) }
+    private fun audience(): YoungAudienceFilter = audience ?: youngAudienceFilter(this, parentalScope).also { audience = it }
 
-    private fun saveContentPreferences() {
-        val handover = handover ?: return
-        val exoPlayer = player ?: return
-        val key = ContentPlayerPreferencesRules.contentKey(
-            tmdbId = handover.tmdbId,
-            isEpisode = handover.isEpisode,
-            showTmdbId = handover.showTmdbId,
-        ) ?: return
-        contentStore.save(
-            key,
-            snapshotPreferences(
-                baseRate = chrome.baseRate,
-                tracks = exoPlayer.currentTracks,
-                trackSelectionParameters = exoPlayer.trackSelectionParameters,
-                existing = contentStore.get(key),
-            ),
-        )
+    /** As the player refuses: its words for the policy in force, in a toast. */
+    private fun refuse() {
+        Log.i(TAG, "the parental policy refused a title")
+        Toast.makeText(applicationContext, getString(restrictedMessageRes(parentalControls(this).policy.value)), Toast.LENGTH_LONG).show()
     }
 
-    /** Continue Watching picks up where the theater left off (G.6, Functional.4), as PlayerActivity writes it. */
-    private fun writeProgress(completed: Boolean = false) {
-        val handover = handover ?: return
-        val tmdbId = handover.tmdbId ?: return
-        val store = dataStore ?: return
-        val exoPlayer = player ?: return
-        val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
-        val position = exoPlayer.currentPosition.coerceIn(0, duration)
-        val fraction = position.toDouble() / duration
-        val isCompleted = completed || fraction >= PlayerLogic.COMPLETE_FRACTION
-        if (completedWritten && !isCompleted) return
-        if (isCompleted) completedWritten = true
-        writeScope.launch {
-            store.updateWatchProgress(
-                WatchProgress(
-                    tmdbId = tmdbId,
-                    mediaType = if (handover.isEpisode) WatchMediaType.EPISODE else WatchMediaType.MOVIE,
-                    position = if (isCompleted) 1.0 else fraction,
-                    watchedSeconds = position / 1000.0,
-                    lastWatchedEpochMillis = System.currentTimeMillis(),
-                    isCompleted = isCompleted,
-                    showTmdbId = handover.showTmdbId,
-                    seasonNumber = handover.season,
-                    episodeNumber = handover.episode,
-                    // 27.1 sync sends the title's length with its position (SYNC-PROTOCOL.md §5).
-                    durationSeconds = duration / 1000.0,
-                ),
-            )
+    /** Admitted: the dock shows the title and the transport, and the item loads. */
+    private fun begin(handover: TheaterHandover) {
+        if (released) return
+        ui.admitted = true
+        playback?.start()
+        // Admitted while the system holds the theater: start paused, and resume when the hold ends.
+        if (systemHeld) playback?.pauseForSystem()
+        loadPlaylist(handover)
+    }
+
+    /**
+     * The episode list Up Next reads, as the 2D player loads it, filtered by
+     * the parental policy as the player filters it (O.5), so a restricted
+     * episode is never offered.
+     */
+    private fun loadPlaylist(handover: TheaterHandover) {
+        playlistJob?.cancel()
+        playlist = null
+        upcoming = null
+        ui.upNext = null
+        if (!handover.isEpisode) return
+        val app = application as? EdendaleApplication ?: return
+        playlistJob = parentalScope.launch {
+            val loaded = withContext(Dispatchers.IO) {
+                runCatching {
+                    loadPlayerPlaylist(
+                        dao = app.database.libraryDao(),
+                        uriString = handover.uri,
+                        showTmdbIdExtra = handover.showTmdbId,
+                        remembered = app.libraryRepository.sourceMemory.sourceFor(PlaybackSources.showMemoryKey(handover.showTmdbId, null)),
+                    )
+                }.getOrNull()
+            } ?: return@launch
+            val filter = audience()
+            if (filter.isEnabled) filter.verify(playlistAudienceRefs(loaded))
+            if (released || this@TheaterActivity.handover !== handover) return@launch
+            playlist = permittedPlaylist(loaded, filter.isEnabled, filter::allows)
         }
     }
 
     private fun onTick() {
-        val exoPlayer = player ?: return
-        controls.positionMillis = exoPlayer.currentPosition.coerceAtLeast(0)
-        controls.durationMillis = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: 0L
-        controls.isPlaying = exoPlayer.isPlaying
-        if (++ticksSinceWrite >= WRITE_EVERY_TICKS) {
-            ticksSinceWrite = 0
-            if (exoPlayer.isPlaying) writeProgress()
+        val current = playback ?: return
+        val handover = handover ?: return
+        if (!ui.admitted || exiting) return
+        // A natural end (or a credits skip to the end): the completed progress is written; back to the library (G.6).
+        if (current.ended) {
+            exitTheater()
+            return
         }
+        val next = if (upNextPending) null else TheaterUpNextRules.upcoming(playlist, handover.uri, handover.isEpisode, current.positionMillis, current.durationMillis)
+        if (next?.uri != upcoming?.uri) {
+            upcoming = next
+            ui.upNext = next?.let(TheaterUpNextRules::card)
+        }
+        val aspect = current.videoAspect
+        if (aspect != null && aspect != placedAspect) placeScene()
     }
 
     // ------------------------------------------------------------------
-    // The scene (G.7)
+    // The room (G.14, G.15)
     // ------------------------------------------------------------------
 
     /**
-     * The room's `Screen` and `Seat` from its GLB's JSON chunk (the textures
-     * aren't read); null means the sky. Every room ships in a theater build,
-     * so null is a broken asset, never a missing choice.
+     * The room's `Seat`, `Screen`, seat markers, and dimmable materials from
+     * its GLB's JSON chunk (the textures aren't read); null means the sky.
+     * Every room ships in a theater build, so null is a broken asset, never a
+     * missing choice.
      */
-    private fun loadAuthoredScene(room: TheaterRoom): TheaterScene? = try {
-        assets.open(room.assetPath).use { TheaterScene.parse(it) }
-    } catch (missing: FileNotFoundException) {
-        Log.w(TAG, "${room.assetPath} isn't in the APK; showing the sky instead")
-        null
-    } catch (error: Exception) {
-        Log.w(TAG, "${room.assetPath} is unusable; showing the sky instead", error)
-        null
+    private fun loadRoomFile(room: TheaterRoom) {
+        val file = try {
+            assets.open(room.assetPath).use { TheaterRoomFile.read(it) }
+        } catch (missing: FileNotFoundException) {
+            Log.w(TAG, "${room.assetPath} isn't in the APK; showing the sky instead")
+            null
+        } catch (error: Exception) {
+            Log.w(TAG, "${room.assetPath} is unusable; showing the sky instead", error)
+            null
+        }
+        roomFile = file
+        val map = file?.let { TheaterSeatMap(it.glb.seatMarkers, it.glb.seat) }
+        val screen = TheaterStaging.screen(file?.glb)
+        ui.room = room
+        ui.seatMap = map
+        ui.screenCenterX = screen.center.x
+        ui.screenWidth = screen.width
+        ui.seatedSeat = TheaterStaging.seatedSeat(map, settings.seat(room))
+        roomObject = null
+        roomMesh = null
+        importTurn = null
+        roomWaitFrames = 0
+        roomGaveUp = false
+        lightsApplied = null
+        lightsMisses = 0
+        roomShown = file == null
     }
 
     override fun onSceneReady() {
         super.onSceneReady()
-        // The floor is the origin's height, which is what a seat and a recenter need.
+        // The floor is the origin's height, which is what a seat and a recentre need.
         scene.setReferenceSpace(ReferenceSpace.LOCAL_FLOOR)
         // Nothing is lit: the sky is unlit, and the rooms' materials are
         // KHR_materials_unlit, their light baked into the textures (G.14).
@@ -376,62 +403,175 @@ class TheaterActivity : AppSystemActivity() {
             sunColor = Vector3(0f),
             sunDirection = Vector3(0f, -1f, 0f),
         )
-
         roomEntity = createRoomEntity()
-        // Hidden until the head is found and the screen has a place (G.7).
+        // Hidden until the viewer is seated (G.7, G.15).
         screenEntity = Entity.create(listOf(Panel(R.id.theater_screen), Transform(), Visible(false)))
-        subtitlesEntity = Entity.create(listOf(Panel(R.id.theater_subtitles), Transform(), Visible(false)))
-        controlsEntity = Entity.create(listOf(Panel(R.id.theater_controls), Transform(), Visible(false)))
+        dockEntity = Entity.create(listOf(Panel(R.id.theater_controls), Transform(), Visible(false)))
+        seatsEntity = Entity.create(listOf(Panel(R.id.theater_seats), Transform(), Visible(false)))
     }
 
     /**
      * The current room's mesh, hidden until the SDK has loaded it and the
-     * placement knows which way it faces; or the sky when the room is unusable.
-     * No shader override: the prepared GLB's materials say unlit themselves
-     * (`KHR_materials_unlit`), which keeps the projector beam's blending.
+     * placement knows which way it turned it; or the sky when the room file
+     * is unusable. No shader override: the prepared GLB's materials say unlit
+     * themselves (`KHR_materials_unlit`), which keeps the projector beam's
+     * blending.
      */
-    private fun createRoomEntity(): Entity {
-        roomFrame = null
-        roomObject = null
-        roomWaitFrames = 0
-        return if (authoredScene != null) {
-            roomShown = false
-            Entity.create(
-                listOf(
-                    Mesh(Uri.parse(room.meshUri), hittable = MeshCollision.NoCollision),
-                    Transform(),
-                    Visible(false),
-                ),
-            )
-        } else {
-            roomShown = true
-            Entity.create(
-                listOf(
-                    Mesh(Uri.parse("mesh://skybox"), hittable = MeshCollision.NoCollision),
-                    Material().apply {
-                        baseTextureAndroidResourceId = R.drawable.theater_sky
-                        unlit = true
-                    },
-                    Transform(),
-                ),
-            )
+    private fun createRoomEntity(): Entity = if (roomFile != null) {
+        Entity.create(
+            listOf(
+                Mesh(Uri.parse(room.meshUri), hittable = MeshCollision.NoCollision),
+                Transform(),
+                Visible(false),
+            ),
+        )
+    } else {
+        Entity.create(
+            listOf(
+                Mesh(Uri.parse("mesh://skybox"), hittable = MeshCollision.NoCollision),
+                Material().apply {
+                    baseTextureAndroidResourceId = R.drawable.theater_sky
+                    unlit = true
+                },
+                Transform(),
+            ),
+        )
+    }
+
+    /**
+     * Until the SDK has loaded the room's mesh: reads where it put `Seat` and
+     * `Screen`, which says how it turned the room ([TheaterFrames.importTurn]),
+     * and places the room by that. If the mesh hasn't reported them after
+     * [ROOM_FRAME_TIMEOUT_FRAMES], the room shows as if the SDK mirrored z
+     * (turn 0), and keeps looking until [ROOM_FRAME_GIVE_UP_FRAMES] in case
+     * the SDK only loads a mesh it draws.
+     */
+    private fun pollRoom() {
+        val entity = roomEntity ?: return
+        val file = roomFile ?: return
+        roomWaitFrames++
+        if (roomMesh == null) {
+            val future = roomObject
+                ?: systemManager.tryFindSystem<SceneObjectSystem>()?.getSceneObject(entity)?.also { roomObject = it }
+            if (future != null && future.isDone && !future.isCompletedExceptionally) {
+                roomMesh = runCatching { future.getNow(null)?.mesh }
+                    .onFailure { Log.w(TAG, "couldn't read ${room.id}'s mesh", it) }
+                    .getOrNull()
+            }
+        }
+        val mesh = roomMesh
+        if (mesh != null && importTurn == null) {
+            val turn = runCatching { readImportTurn(mesh, file.glb) }
+                .onFailure { Log.w(TAG, "couldn't read ${room.id}'s nodes", it) }
+                .getOrNull()
+            if (turn != null) {
+                importTurn = turn
+                roomShown = true
+                placeScene()
+                return
+            }
+        }
+        when {
+            !roomShown && roomWaitFrames > ROOM_FRAME_TIMEOUT_FRAMES -> {
+                Log.w(TAG, "${room.id} reported no Seat and Screen yet; showing it as if the SDK mirrored z")
+                roomShown = true
+                placeScene()
+            }
+            roomWaitFrames >= ROOM_FRAME_GIVE_UP_FRAMES -> {
+                roomGaveUp = true
+                Log.w(TAG, "${room.id} never reported Seat and Screen; it stays as if the SDK mirrored z")
+            }
         }
     }
 
     /**
+     * How the SDK turned the room, from `Seat` and `Screen` in the loaded
+     * mesh's frame, or null while it has neither. G.10 reads this line in
+     * `logcat`; the off-centre seat marker it names checks that the room was
+     * not also mirrored left to right (the seat map would then be too).
+     */
+    private fun readImportTurn(mesh: SceneMesh, glb: TheaterGlb): Float? {
+        if (mesh.getNodeCount() == 0) return null
+        val seatNode = mesh.getNodeIndex(TheaterGlb.SEAT).takeIf { it >= 0 } ?: return null
+        val screenNode = mesh.getNodeIndex(TheaterGlb.SCREEN).takeIf { it >= 0 } ?: return null
+        val loadedSeat = nodePosition(mesh, seatNode)
+        val loadedScreen = nodePosition(mesh, screenNode)
+        val fileScreen = (glb.screenBoundsMin + glb.screenBoundsMax) * 0.5f
+        val turn = TheaterFrames.importTurn(glb.seat, fileScreen, loadedSeat, loadedScreen) ?: return null
+        Log.i(TAG, "${room.id} loaded with Seat at $loadedSeat and Screen at $loadedScreen; import turn ${Math.toDegrees(turn.toDouble()).toInt()}°")
+        glb.seatMarkers.maxByOrNull { (_, position) -> abs(position.x) }?.let { (name, position) ->
+            val node = mesh.getNodeIndex(name)
+            if (node >= 0) {
+                val loaded = nodePosition(mesh, node)
+                val predicted = TheaterFrames.loadedPoint(position, turn)
+                val off = Vec3.distance(loaded, predicted)
+                val line = "$name loaded at $loaded, expected $predicted (${"%.3f".format(off)} m)"
+                if (off > MIRROR_CHECK_METRES) Log.w(TAG, "$line: the SDK's glTF import isn't the mirror this theater expects") else Log.i(TAG, line)
+            } else {
+                Log.i(TAG, "$name isn't in the loaded mesh; the import's left and right are unchecked")
+            }
+        }
+        return turn
+    }
+
+    private fun nodePosition(mesh: SceneMesh, node: Int): Vec3 {
+        val t = mesh.calculateNodeGlobalMatrix(node).decompose().first.t
+        return Vec3(t.x, t.y, t.z)
+    }
+
+    /**
+     * The house lights (G.15): every baked material of the loaded room at the
+     * level's brightness (its base colour factor, which an unlit material
+     * multiplies), by the material's name in the GLB and else by its index.
+     * The screen and the projector's beam stay as they are. Written in full
+     * every time, Normal included, because the SDK may hand a revisited room
+     * the same mesh with the old level still in it.
+     */
+    private fun applyLights(mesh: SceneMesh) {
+        val file = roomFile ?: return
+        val level = ui.lights
+        lightsApplied = level
+        val count = runCatching { mesh.materials?.size ?: 0 }.getOrDefault(0)
+        var written = 0
+        var byIndex = 0
+        for (material in file.dimmable) {
+            val named = material.name?.let { name -> runCatching { mesh.getMaterialIndex(name) }.getOrDefault(-1) } ?: -1
+            val index = if (named >= 0) named else material.index.also { byIndex++ }
+            if (index !in 0 until count) continue
+            val albedo = material.albedo(level)
+            runCatching {
+                val target = mesh.getMaterial(index) ?: error("no material at $index")
+                val attribute = target.getAttributeIndex(ALBEDO_FACTOR)
+                if (attribute >= 0) {
+                    target.setAttribute(attribute, Vector4(albedo[0], albedo[1], albedo[2], albedo[3]))
+                } else {
+                    target.setAlbedoColor(Color.valueOf(albedo[0], albedo[1], albedo[2], albedo[3]))
+                }
+            }.onSuccess { written++ }
+                .onFailure { Log.w(TAG, "lights: material $index of ${room.id} refused", it) }
+        }
+        if (written == 0 && file.dimmable.isNotEmpty() && ++lightsMisses < LIGHTS_MISS_FRAMES) {
+            // Nothing to write yet: try again next frame, and say so only once it gives up.
+            lightsApplied = null
+            return
+        }
+        lightsMisses = 0
+        Log.i(TAG, "lights ${level.raw}: $written of ${file.dimmable.size} materials of ${room.id} ($count loaded, $byIndex by index)")
+    }
+
+    /**
      * Moves the viewer to [next] (G.14). The video keeps playing on the same
-     * panel; the old room goes, the new one loads hidden, and the picture
-     * moves to the new room's screen. Remembered for the next visit.
+     * panel; the old room goes, the new one loads hidden in the seat last
+     * chosen there, and the picture moves to its screen.
      */
     private fun switchRoom(next: TheaterRoom) {
         if (next == room) return
         room = next
-        controls.room = next
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_ROOM, next.id).apply()
-        authoredScene = loadAuthoredScene(next)
+        settings.room = next
+        loadRoomFile(next)
         roomEntity?.destroy()
         roomEntity = createRoomEntity()
-        placeAgain()
+        placeScene()
     }
 
     override fun registerPanels(): List<PanelRegistration> = listOf(
@@ -439,7 +579,10 @@ class TheaterActivity : AppSystemActivity() {
         // Scale component fits it to the video (G.7).
         VideoSurfacePanelRegistration(
             R.id.theater_screen,
-            surfaceConsumer = { _, surface -> player?.setVideoSurface(surface) },
+            surfaceConsumer = { _, surface ->
+                videoSurface = surface
+                playback?.player?.setVideoSurface(surface)
+            },
             settingsCreator = {
                 MediaPanelSettings(
                     shape = QuadShapeOptions(width = BASE_SCREEN_WIDTH, height = BASE_SCREEN_HEIGHT),
@@ -449,33 +592,52 @@ class TheaterActivity : AppSystemActivity() {
                 )
             },
         ),
-        // The subtitles, the screen's size, 2 cm in front of it (G.8).
+        // The subtitles, in the picture's own shape, 2 cm in front of it (G.8, G.15).
         ComposeViewPanelRegistration(
             R.id.theater_subtitles,
             composeViewCreator = { _, context ->
                 ComposeView(context).apply {
-                    player?.let { exoPlayer -> setContent { TheaterSubtitlePanel(exoPlayer, chrome) } }
-                }
+                    setContent { TheaterSubtitlePanel(ui) }
+                    // The SDK keeps every panel's composition until the activity ends; a subtitle panel
+                    // made again for another shape lets its old one go once the SDK has taken it down.
+                    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                        override fun onViewAttachedToWindow(view: View) = Unit
+                        override fun onViewDetachedFromWindow(view: View) {
+                            if (view !== subtitleView) (view as ComposeView).disposeComposition()
+                        }
+                    })
+                }.also { subtitleView = it }
             },
             settingsCreator = {
+                val shape = TheaterSubtitleShape.of(subtitleAspect ?: 0f)
                 UIPanelSettings(
-                    shape = QuadShapeOptions(width = BASE_SCREEN_WIDTH, height = BASE_SCREEN_HEIGHT),
-                    // 1280 dp at 240 dpi is 1920 px: the same dp width as the panel player, so cues keep their size.
-                    display = DpDisplayOptions(width = 1280f, height = 720f, dpi = 240),
+                    shape = QuadShapeOptions(width = TheaterSubtitleShape.WIDTH_METRES, height = shape.heightMetres),
+                    // 1280 dp at 240 dpi is 1920 px: the panel player's dp width, so cues keep their size against the picture.
+                    display = DpDisplayOptions(width = shape.widthDp, height = shape.heightDp, dpi = PANEL_DPI),
                     style = PanelStyleOptions(themeResourceId = R.style.TheaterPanelTheme),
                 )
             },
         ),
-        // The controls card under the screen (G.8).
+        // The controls dock (G.15): 680 dp across 0.4 m, android's and visionOS's size.
         ComposeViewPanelRegistration(
             R.id.theater_controls,
-            composeViewCreator = { _, context ->
-                ComposeView(context).apply { setContent { TheaterControlsPanel(controls, chrome, controlsActions) } }
-            },
+            composeViewCreator = { _, context -> ComposeView(context).apply { setContent { TheaterDockPanel(ui, this@TheaterActivity) } } },
             settingsCreator = {
                 UIPanelSettings(
-                    shape = QuadShapeOptions(width = CONTROLS_WIDTH, height = CONTROLS_HEIGHT),
-                    display = DpDisplayOptions(width = 800f, height = 250f, dpi = 240),
+                    shape = QuadShapeOptions(width = TheaterDock.WIDTH, height = TheaterDock.WIDTH * DOCK_DP_HEIGHT / DOCK_DP_WIDTH),
+                    display = DpDisplayOptions(width = DOCK_DP_WIDTH, height = DOCK_DP_HEIGHT, dpi = PANEL_DPI),
+                    style = PanelStyleOptions(themeResourceId = R.style.TheaterPanelTheme),
+                )
+            },
+        ),
+        // The seat panel to the dock's left (G.15), at the dock's scale.
+        ComposeViewPanelRegistration(
+            R.id.theater_seats,
+            composeViewCreator = { _, context -> ComposeView(context).apply { setContent { TheaterSeatPanel(ui, this@TheaterActivity) } } },
+            settingsCreator = {
+                UIPanelSettings(
+                    shape = QuadShapeOptions(width = TheaterDock.SIDE_WIDTH, height = TheaterDock.SIDE_WIDTH * SEATS_DP_HEIGHT / SEATS_DP_WIDTH),
+                    display = DpDisplayOptions(width = SEATS_DP_WIDTH, height = SEATS_DP_HEIGHT, dpi = PANEL_DPI),
                     style = PanelStyleOptions(themeResourceId = R.style.TheaterPanelTheme),
                 )
             },
@@ -483,236 +645,305 @@ class TheaterActivity : AppSystemActivity() {
     )
 
     // ------------------------------------------------------------------
-    // Placement (G.7)
+    // Seating, the dock, and placement (G.15)
     // ------------------------------------------------------------------
 
-    /** Until the screen has a place, looks for the head every frame; until the room's frame is known, for its mesh. */
-    private inner class PlacementSystem : SystemBase() {
+    /** Once a frame: seats the viewer, reads the loaded room, keeps its lights, and moves the dock after the head. */
+    private inner class StageSystem : SystemBase() {
         override fun execute() {
-            if (!placed) tryPlace()
-            if (authoredScene != null && roomFrame == null && roomWaitFrames < ROOM_FRAME_GIVE_UP_FRAMES) pollRoomFrame()
+            if (released) return
+            val now = System.nanoTime()
+            val deltaTime = if (lastFrameNanos == 0L) 1f / 90f else ((now - lastFrameNanos) / 1e9f).coerceIn(0f, 0.1f)
+            lastFrameNanos = now
+
+            val head = readHead()
+            if (head == null) framesWithoutHead++ else framesWithoutHead = 0
+            // Seated before tracking found the head: seat again as soon as it does.
+            if (seatedWithoutHead && head != null) stage = null
+
+            var seated = this@TheaterActivity.stage
+            if (seated == null) {
+                seated = head?.let(TheaterStaging::stage)
+                    ?: if (head == null && framesWithoutHead > TheaterDock.HEAD_WAIT_FRAMES * 2) TheaterStaging.UNTRACKED_STAGE else null
+                if (seated == null) return
+                seatedWithoutHead = head == null
+                Log.i(TAG, if (head != null) "seated from the head at ${head.position}, gaze ${head.forward}" else "seated without tracking after $framesWithoutHead frames")
+                this@TheaterActivity.stage = seated
+                follower = DockFollower()
+                lastDock = null
+                lastSide = null
+                placeScene()
+            }
+
+            if (roomFile != null && !roomGaveUp && (roomMesh == null || importTurn == null)) pollRoom()
+            roomMesh?.let { if (lightsApplied != ui.lights) applyLights(it) }
+
+            // The follower works in the stage's frame, so the panels sit below the line of sight as the viewer lies.
+            val (eye, yaw) = when {
+                head != null -> TheaterStaging.dockInput(seated, head)
+                follower.pose == null && framesWithoutHead > TheaterDock.HEAD_WAIT_FRAMES -> TheaterDock.RESTING_EYE to 0f
+                else -> return
+            }
+            follower.update(yaw, eye, deltaTime)
+            follower.pose?.let { pose ->
+                if (pose != lastDock) {
+                    lastDock = pose
+                    dockEntity?.setComponents(listOf(Transform(TheaterStaging.sdkPanelPose(seated, pose).toPose()), Visible(true)))
+                }
+            }
+            follower.sidePose?.let { pose ->
+                if (pose != lastSide) {
+                    lastSide = pose
+                    seatsEntity?.setComponents(listOf(Transform(TheaterStaging.sdkPanelPose(seated, pose).toPose()), Visible(true)))
+                }
+            }
         }
+    }
+
+    /** The head from the local avatar, as Meta's samples read it; null until tracking reports a position (it starts at (0, 0, 0)). */
+    private fun readHead(): HeadFrame? {
+        val body = bodySystem ?: systemManager.tryFindSystem<PlayerBodyAttachmentSystem>()?.also { bodySystem = it } ?: return null
+        val pose = body.tryGetLocalPlayerAvatarBody()?.head?.tryGetComponent<Transform>()?.transform ?: return null
+        val position = Vec3(pose.t.x, pose.t.y, pose.t.z)
+        if (!position.isFinite || position.length < TRACKING_EPSILON) return null
+        return TheaterFrames.head(position, Quat(pose.q.x, pose.q.y, pose.q.z, pose.q.w))
     }
 
     /**
-     * Reads where the SDK put the room's `Seat` and `Screen`, once its mesh
-     * has loaded, and places the room by them. The SDK converts glTF into its
-     * own left-handed frame without saying which axis it turns, so the room
-     * is turned from what it actually loaded rather than from the GLB's JSON.
-     * If the mesh hasn't reported them after [ROOM_FRAME_TIMEOUT_FRAMES], the
-     * room shows with the JSON's frame (its screen along +Z), and keeps
-     * looking until [ROOM_FRAME_GIVE_UP_FRAMES] in case the SDK only loads a
-     * mesh it draws; the room turns as soon as its frame arrives.
+     * Puts the room, the picture, and the subtitles where the stage, the
+     * seat, the video's shape, and the room's import turn say. Nothing moves
+     * until the viewer is seated.
      */
-    private fun pollRoomFrame() {
-        val entity = roomEntity ?: return
-        val future = roomObject
-            ?: systemManager.tryFindSystem<SceneObjectSystem>()?.getSceneObject(entity)?.also { roomObject = it }
-        if (future != null && future.isDone && !future.isCompletedExceptionally) {
-            roomFrame = runCatching { future.getNow(null)?.mesh?.let(::readRoomFrame) }
-                .onFailure { Log.w(TAG, "couldn't read ${room.id}'s nodes", it) }
-                .getOrNull()
+    private fun placeScene() {
+        val stage = stage ?: return
+        val file = roomFile
+        // Until the item reports its shape (a new episode, say), keep the last one rather than fall back to 16:9 and back.
+        val aspect = playback?.videoAspect ?: placedAspect
+        placedAspect = aspect
+        val placement = TheaterStaging.place(
+            stage = stage,
+            seat = TheaterStaging.seatPosition(file?.glb, ui.seatMap, settings.seat(room)),
+            screen = TheaterStaging.screen(file?.glb),
+            aspect = aspect,
+            importTurn = importTurn ?: 0f,
+        )
+        if (file != null) {
+            roomEntity?.setComponents(listOf(Transform(placement.sdkRoom.toPose()), Visible(roomShown && !blinking)))
         }
-        val frame = roomFrame
-        roomWaitFrames++
-        when {
-            frame != null -> {
-                Log.i(TAG, "${room.id} loaded with Seat at ${frame.seat} and Screen at ${frame.screen}")
-                roomShown = true
-                placeAgain()
+        val fit = Scale(Vector3(placement.pictureWidth / BASE_SCREEN_WIDTH, placement.pictureHeight / BASE_SCREEN_HEIGHT, 1f))
+        screenEntity?.setComponents(listOf(Transform(placement.sdkPicture.toPose()), fit, Visible(!blinking)))
+        val subtitles = subtitlesFor(placement.pictureAspect)
+        val even = TheaterSubtitleShape.scale(placement.pictureWidth)
+        subtitles?.setComponents(listOf(Transform(placement.sdkSubtitles.toPose()), Scale(Vector3(even, even, 1f)), Visible(!blinking)))
+    }
+
+    /**
+     * The subtitle panel for a picture of [aspect]: laid out in that shape,
+     * and made again when the picture changes shape, since a panel's layout
+     * size is fixed when it is created (G.15).
+     */
+    private fun subtitlesFor(aspect: Float): Entity? {
+        val current = subtitlesEntity
+        if (current != null && TheaterSubtitleShape.fits(subtitleAspect, aspect)) return current
+        subtitleAspect = aspect
+        // The old view disposes its composition when the SDK detaches it (composeViewCreator).
+        subtitleView = null
+        current?.destroy()
+        return Entity.create(listOf(Panel(R.id.theater_subtitles), Transform(), Visible(false))).also { subtitlesEntity = it }
+    }
+
+    private fun RoomPose.toPose() = Pose(
+        Vector3(translation.x, translation.y, translation.z),
+        Quaternion(rotation.w, rotation.x, rotation.y, rotation.z),
+    )
+
+    // ------------------------------------------------------------------
+    // The dock's and the seat panel's actions
+    // ------------------------------------------------------------------
+
+    override fun togglePlayPause() {
+        playback?.togglePlayPause()
+    }
+
+    override fun skip(forward: Boolean) {
+        playback?.skip(forward)
+    }
+
+    override fun seekToFraction(fraction: Float) {
+        playback?.seekToFraction(fraction)
+    }
+
+    override fun selectAudio(id: String) {
+        playback?.selectAudio(id)
+    }
+
+    override fun selectSubtitles(id: String?) {
+        playback?.selectSubtitles(id)
+    }
+
+    override fun skipSegment() {
+        playback?.skipSegment()
+    }
+
+    override fun chooseRoom(room: TheaterRoom) = switchRoom(room)
+
+    /** Sits the viewer in [seat] (null: the best seat), remembered for the room; the room blinks out and back as it moves. */
+    override fun chooseSeat(seat: SeatID?) {
+        val map = ui.seatMap ?: return
+        val choice = TheaterStaging.storedChoice(map, seat)
+        settings.setSeat(room, choice)
+        ui.seatedSeat = TheaterStaging.seatedSeat(map, choice)
+        // Sliding a whole room past someone sitting still makes them queasy: hide, move, show.
+        mainHandler.removeCallbacks(endBlink)
+        blinking = true
+        placeScene()
+        mainHandler.postDelayed(endBlink, SEAT_BLINK_MILLIS)
+    }
+
+    /** Re-seats the viewer where they look now, lying down included (android's recentre rule). */
+    override fun recentre() {
+        stage = null
+    }
+
+    override fun chooseLights(level: TheaterLights) {
+        settings.lights = level
+        // The next frame writes it to the room's materials (StageSystem).
+        ui.lights = level
+    }
+
+    /**
+     * Up Next (G.15): the next episode on this screen, in this room and seat,
+     * after the same parental check as any title the theater didn't get from
+     * the player. It starts where its stored progress left off, at the
+     * viewer's speed, with the audio and subtitle languages on now.
+     */
+    override fun playUpNext() {
+        if (upNextPending) return
+        val entry = upcoming ?: return
+        val current = playback ?: return
+        val currentHandover = handover ?: return
+        upNextPending = true
+        // The languages on now, read as the 2D player reads them for its own handover.
+        val tracks = current.player.currentTracks
+        val audioLanguage = audioTrackOptions(tracks).firstOrNull { it.isSelected }?.language
+        val textLanguage = textTrackOptions(tracks).firstOrNull { it.isSelected }?.language
+        ui.upNext = null
+        upcoming = null
+        parentalScope.launch {
+            val app = application as? EdendaleApplication
+            val stored = entry.tmdbId?.takeIf { it > 0 }?.let { tmdbId ->
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        app?.let { LocalDataStore(it.database).getWatchProgress("${WatchMediaType.EPISODE.name.lowercase()}:$tmdbId") }
+                    }.getOrNull()
+                }
             }
-            !roomShown && roomWaitFrames > ROOM_FRAME_TIMEOUT_FRAMES -> {
-                Log.w(TAG, "${room.id} reported no Seat and Screen yet; showing it by its JSON frame")
-                roomShown = true
-                placeAgain()
+            if (released || handover !== currentHandover) {
+                upNextPending = false
+                return@launch
             }
-            roomWaitFrames >= ROOM_FRAME_GIVE_UP_FRAMES ->
-                Log.w(TAG, "${room.id} never reported Seat and Screen; it stays turned by its JSON frame")
-        }
-    }
-
-    /** Seat and Screen in the loaded mesh's own frame, or null while it has neither. */
-    private fun readRoomFrame(mesh: SceneMesh): RoomFrame? {
-        if (mesh.getNodeCount() == 0) return null
-        val seat = mesh.getNodeIndex(TheaterScene.SEAT).takeIf { it >= 0 } ?: return null
-        val screen = mesh.getNodeIndex(TheaterScene.SCREEN).takeIf { it >= 0 } ?: return null
-        fun position(node: Int): Point3 {
-            val t = mesh.calculateNodeGlobalMatrix(node).decompose().first.t
-            return Point3(t.x, t.y, t.z)
-        }
-        return RoomFrame(seat = position(seat), screen = position(screen))
-    }
-
-    /** The head's position and yaw from the local avatar, as Meta's samples read it. */
-    private fun readHead(): HeadPose? {
-        val head = systemManager.tryFindSystem<PlayerBodyAttachmentSystem>()
-            ?.tryGetLocalPlayerAvatarBody()?.head ?: return null
-        val pose = head.tryGetComponent<Transform>()?.transform ?: return null
-        val forward = pose.q * Vector3(0f, 0f, 1f)
-        return HeadPose(Point3(pose.t.x, pose.t.y, pose.t.z), HeadPose.yawOf(forward.x, forward.z))
-    }
-
-    private fun tryPlace() {
-        val head = readHead() ?: return
-        // (0, 0, 0) until tracking finds the head (Findings, 2026-10-25).
-        if (!TheaterLayout.isTracking(head)) return
-        lastHead = head
-        placed = true
-        applyPlacement(TheaterLayout.place(head, authoredScene, aspectRatio, roomFrame))
-    }
-
-    /** Keeps the viewer's place and refits the screen and the room (a new aspect ratio, room, or frame). */
-    private fun placeAgain() {
-        val head = lastHead ?: return
-        if (placed) applyPlacement(TheaterLayout.place(head, authoredScene, aspectRatio, roomFrame))
-    }
-
-    private fun applyPlacement(placement: TheaterPlacement) {
-        val forward = Vector3(sin(placement.yawRadians), 0f, cos(placement.yawRadians))
-        val screen = placement.screen
-        val center = screen.center.toVector3()
-        // The panel's +Z points away from the viewer, so its front faces them:
-        // the spike's screen on the Quest 3 was turned by lookRotation(forward).
-        val facing = Quaternion.lookRotationAroundY(forward)
-        val fit = Scale(Vector3(screen.width / BASE_SCREEN_WIDTH, screen.height / BASE_SCREEN_HEIGHT, 1f))
-
-        if (authoredScene != null) {
-            // The room's Seat under the viewer, its screen ahead (TheaterLayout, RoomFrame).
-            val roomForward = Vector3(sin(placement.roomYawRadians), 0f, cos(placement.roomYawRadians))
-            roomEntity?.setComponents(
-                listOf(
-                    Transform(Pose(placement.roomOrigin.toVector3(), Quaternion.lookRotationAroundY(roomForward))),
-                    Visible(roomShown),
-                ),
+            val next = TheaterUpNextRules.handover(
+                entry = entry,
+                resumeMillis = TheaterUpNextRules.resumeMillis(stored?.watchedSeconds, PlayerLogic.resumeFraction(stored)),
+                audioLanguage = audioLanguage,
+                subtitlesOff = current.subtitlesOff,
+                textLanguage = textLanguage,
+                speed = current.chrome.baseRate,
+            )
+            admit(
+                next,
+                ticket = null,
+                onAdmitted = {
+                    upNextPending = false
+                    playNext(next)
+                },
+                onRefused = {
+                    upNextPending = false
+                    refuse()
+                },
             )
         }
-        screenEntity?.setComponents(listOf(Transform(Pose(center, facing)), fit, Visible(true)))
-        subtitlesEntity?.setComponents(listOf(Transform(Pose(center - forward * SUBTITLE_OFFSET, facing)), fit, Visible(true)))
-        val controlsCenter = center - forward * CONTROLS_TOWARD_VIEWER - Vector3(0f, screen.height / 2f + CONTROLS_BELOW_SCREEN, 0f)
-        controlsEntity?.setComponents(listOf(Transform(Pose(controlsCenter, facing)), Visible(controlsVisible)))
     }
 
-    private fun Point3.toVector3() = Vector3(x, y, z)
-
-    // ------------------------------------------------------------------
-    // Controls (G.8)
-    // ------------------------------------------------------------------
-
-    /** Shows the card and hides it after five seconds; a failure keeps it up. */
-    private fun setControlsVisible(visible: Boolean) {
-        mainHandler.removeCallbacks(hideControls)
-        controlsVisible = visible
-        controlsEntity?.setComponent(Visible(visible && placed))
-        if (visible && controls.failure == null) mainHandler.postDelayed(hideControls, CONTROLS_TIMEOUT_MILLIS)
+    /** Swaps the playing episode for [next]: the old one's choices and progress are saved, the new one plays on the same surface. */
+    private fun playNext(next: TheaterHandover) {
+        if (released || exiting) return
+        val old = playback
+        old?.saveContentPreferences()
+        old?.writeProgress()
+        old?.release()
+        handover = next
+        // As the 2D player's switchTo: a relaunch rebuilds from the intent, which now names this episode (and has no ticket).
+        setIntent(next.intent(this, withTicket = false))
+        ui.menu = null
+        Log.i(TAG, "Up Next: playing the next episode in the theater")
+        attach(TheaterPlayback(this, next.toPlayback()))
+        begin(next)
+        placeScene()
     }
 
-    private val controlsActions = object : TheaterControlsActions {
-        override fun togglePlayPause() {
-            val exoPlayer = player ?: return
-            if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
-            noteInteraction()
-        }
-
-        override fun skip(forward: Boolean) {
-            val exoPlayer = player ?: return
-            seekBy(exoPlayer, chrome, if (forward) chrome.skipForwardInterval.millis else -chrome.skipBackwardInterval.millis)
-            noteInteraction()
-        }
-
-        override fun seekToFraction(fraction: Float) {
-            val exoPlayer = player ?: return
-            val duration = exoPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
-            exoPlayer.seekTo((duration * fraction.coerceIn(0f, 1f)).toLong())
-            noteInteraction()
-        }
-
-        override fun selectAudio(option: PlayerTrackOption) {
-            player?.let { selectAudioTrack(it, option) }
-            saveContentPreferences()
-            noteInteraction()
-        }
-
-        override fun selectSubtitles(option: PlayerTrackOption?) {
-            player?.let { selectTextTrack(it, option) }
-            controls.subtitlesOff = option == null
-            saveContentPreferences()
-            noteInteraction()
-        }
-
-        override fun selectRoom(room: TheaterRoom) {
-            switchRoom(room)
-            noteInteraction()
-        }
-
-        override fun exit() = exitTheater()
-
-        override fun noteInteraction() {
-            if (controlsVisible) setControlsVisible(true)
-        }
-    }
+    override fun exit() = exitTheater()
 
     // ------------------------------------------------------------------
     // Lifecycle and exit (G.6)
     // ------------------------------------------------------------------
 
-    /** A recenter moves the origin; the next frame places the room and the screen again. */
+    /** A recenter moves the origin; the next frame seats the viewer again where they look. */
     override fun onRecenter(isUserInitiated: Boolean) {
         super.onRecenter(isUserInitiated)
-        placed = false
+        stage = null
     }
 
     /** Taking the headset off pauses; putting it on resumes (B.4's choice). */
     override fun onHMDUnmounted() {
         super.onHMDUnmounted()
-        pauseForTheSystem()
+        holdForTheSystem()
     }
 
     override fun onHMDMounted() {
         super.onHMDMounted()
-        resumeAfterTheSystem()
+        releaseTheSystemHold()
     }
 
     override fun onVRPause() {
         super.onVRPause()
-        pauseForTheSystem()
+        holdForTheSystem()
     }
 
     override fun onVRReady() {
         super.onVRReady()
-        resumeAfterTheSystem()
+        releaseTheSystemHold()
     }
 
     /** The Meta button's menu takes focus without pausing the activity (Meta's media sample). */
     override fun onSessionStateChanged(state: SessionState) {
         super.onSessionStateChanged(state)
         when (state) {
-            SessionState.VISIBLE -> pauseForTheSystem()
-            SessionState.FOCUSED -> resumeAfterTheSystem()
+            SessionState.VISIBLE -> holdForTheSystem()
+            SessionState.FOCUSED -> releaseTheSystemHold()
             else -> Unit
         }
     }
 
-    private fun pauseForTheSystem() {
-        val exoPlayer = player ?: return
-        if (exoPlayer.isPlaying) {
-            resumeWhenFocused = true
-            exoPlayer.pause()
-            writeProgress()
-        }
+    private fun holdForTheSystem() {
+        systemHeld = true
+        playback?.pauseForSystem()
     }
 
-    private fun resumeAfterTheSystem() {
-        if (!resumeWhenFocused) return
-        resumeWhenFocused = false
-        player?.play()
+    private fun releaseTheSystemHold() {
+        systemHeld = false
+        playback?.resumeAfterSystem()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        systemHeld = false
     }
 
     override fun onStop() {
-        saveContentPreferences()
-        writeProgress()
-        pauseForTheSystem()
-        // As PlayerActivity: 27.1 sync writes the device file at once when playback stops (SYNC-PROTOCOL.md §8.1).
-        (application as? EdendaleApplication)?.sync?.flushSoon()
+        systemHeld = true
+        // Only an admitted title has choices and progress to keep: a refused one never played (G.15).
+        if (ui.admitted) playback?.onStop() else playback?.pauseForSystem()
         super.onStop()
     }
 
@@ -724,9 +955,13 @@ class TheaterActivity : AppSystemActivity() {
     private fun exitTheater() {
         if (exiting) return
         exiting = true
-        mainHandler.removeCallbacks(hideControls)
-        saveContentPreferences()
-        writeProgress()
+        mainHandler.removeCallbacks(endBlink)
+        if (ui.admitted) {
+            playback?.saveContentPreferences()
+            playback?.writeProgress()
+            // The SDK releases the player before onStop on a finish, so 27.1 sync's flush (SYNC-PROTOCOL.md §8.1) happens here.
+            (application as? EdendaleApplication)?.sync?.flushSoon()
+        }
         val panel = Intent(applicationContext, MainActivity::class.java).apply {
             action = Intent.ACTION_MAIN
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -759,38 +994,48 @@ class TheaterActivity : AppSystemActivity() {
         if (released) return
         released = true
         mainHandler.removeCallbacks(tick)
-        mainHandler.removeCallbacks(hideControls)
-        player?.setVideoSurface(null)
-        player?.release()
-        player = null
+        mainHandler.removeCallbacks(endBlink)
+        parentalScope.cancel()
+        ui.playback = null
+        playback?.release()
+        playback = null
     }
 
     companion object {
         private const val TAG = "TheaterActivity"
 
-        /** The room the viewer last chose (G.14): a device preference, never synced. */
-        private const val PREFS_NAME = "theater"
-        private const val KEY_ROOM = "room"
+        /** The saved state's handover (G.15): what plays now, where, and with no ticket. */
+        private const val STATE_HANDOVER = "edendale.theater.state.handover"
 
-        /** About three seconds at 90 fps for a room's mesh to load before it shows by its JSON frame. */
+        /** About three seconds at 90 fps for a room's mesh to load before it shows unturned. */
         private const val ROOM_FRAME_TIMEOUT_FRAMES = 270
-        /** About thirty seconds: after this the room stops looking for its loaded frame. */
+        /** About thirty seconds: after this the room stops looking for its loaded nodes. */
         private const val ROOM_FRAME_GIVE_UP_FRAMES = 2_700
+        /** A seat marker this far from where the import turn puts it means the SDK also mirrored the room left to right. */
+        private const val MIRROR_CHECK_METRES = 0.1f
+        /** Tracking reports the head at (0, 0, 0) until it finds it (Findings, 2026-10-25). */
+        private const val TRACKING_EPSILON = 1e-4f
+
+        /** About a second at 90 fps for a loaded room's materials to appear before the lights stop trying. */
+        private const val LIGHTS_MISS_FRAMES = 90
+
+        /** The unlit shader's base colour multiplier (the SDK's `MaterialUniform.albedoFactor`). */
+        private const val ALBEDO_FACTOR = "albedoFactor"
 
         /** The registered quad is 16:9; a Scale component fits it to the video. */
         private const val BASE_SCREEN_WIDTH = 4f
         private const val BASE_SCREEN_HEIGHT = 2.25f
-        private const val CONTROLS_WIDTH = 1.6f
-        private const val CONTROLS_HEIGHT = 0.5f
-        /** The subtitles sit 2 cm in front of the picture. */
-        private const val SUBTITLE_OFFSET = 0.02f
-        /** The controls card hangs under the screen's bottom edge, a little toward the viewer. */
-        private const val CONTROLS_BELOW_SCREEN = 0.35f
-        private const val CONTROLS_TOWARD_VIEWER = 0.5f
-        private const val CONTROLS_TIMEOUT_MILLIS = 5_000L
+
+        private const val PANEL_DPI = 240
+        /** android's dock and seat panel layouts (`TheaterStage`): 680 × 620 dp and 476 × 760 dp. */
+        private const val DOCK_DP_WIDTH = 680f
+        private const val DOCK_DP_HEIGHT = 620f
+        private const val SEATS_DP_WIDTH = 476f
+        private const val SEATS_DP_HEIGHT = 760f
+
+        /** How long the room is hidden while the viewer moves seats (visionOS fades out 0.2 s). */
+        private const val SEAT_BLINK_MILLIS = 200L
         private const val TICK_MILLIS = 500L
-        /** Progress every five seconds, as the 2D player writes it. */
-        private const val WRITE_EVERY_TICKS = 10
 
         /** Meta's hybrid-sample extra: Home starts this pending intent after it opens. */
         private const val EXTRA_LAUNCH_IN_HOME = "extra_launch_in_home_pending_intent"

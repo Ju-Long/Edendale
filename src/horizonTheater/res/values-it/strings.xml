@@ -14,4 +14,15 @@
     <string name="theater_room_movie_theatre">Sala cinematografica</string>
     <string name="theater_room_projector_room">Sala di proiezione</string>
     <string name="theater_room_performance_theatre">Teatro</string>
+    <string name="theater_seats">Posti</string>
+    <string name="theater_screen">Schermo</string>
+    <string name="theater_your_seat">Il tuo posto</string>
+    <string name="theater_best_seat">Posto migliore</string>
+    <string name="theater_seat_name">Fila %1$d, posto %2$d</string>
+    <string name="theater_lights">Luci</string>
+    <string name="theater_lights_normal">Normali</string>
+    <string name="theater_lights_dim">Soffuse</string>
+    <string name="theater_lights_dark">Quasi spente</string>
+    <string name="theater_recentre">Ricentra</string>
+    <string name="theater_recentre_caption">Porta lo schermo dove guardi, anche da sdraiato.</string>
 </resources>

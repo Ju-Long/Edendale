@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The theater's panel registrations (HORIZON.md G.7, G.8): the video surface,
-     the controls under it, and the subtitles in front of it. -->
+<!-- The theater's panel registrations (HORIZON.md G.7, G.8, G.15): the video
+     surface, the subtitles in front of it, the controls dock below the line of
+     sight, and the seat panel to the dock's left. -->
 <resources>
     <item type="id" name="theater_screen" />
     <item type="id" name="theater_controls" />
     <item type="id" name="theater_subtitles" />
+    <item type="id" name="theater_seats" />
 </resources>

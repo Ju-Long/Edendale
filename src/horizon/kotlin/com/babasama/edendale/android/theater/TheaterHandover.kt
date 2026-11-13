@@ -2,6 +2,9 @@ package com.babasama.edendale.android.theater
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import com.babasama.edendale.android.xr.XrTheaterHandover
 
 /**
  * What the player hands the theater (HORIZON.md G.5): the item, where it
@@ -34,28 +37,71 @@ data class TheaterHandover(
      * immersive for Horizon OS. The class is named rather than referenced
      * because it lives in src/horizonTheater, which a 2D build leaves out
      * (D15); the player sends it only when `DevicePolicy.offersImmersiveTheater` is true.
+     *
+     * It carries a ticket ([TheaterTickets]) that tells the theater the
+     * player's parental check has just passed this title (G.15), and, as
+     * android's `XrTheater.intent` does, a `content:` item as the intent's
+     * data with a read grant, so a file the player was only handed (Open
+     * With) stays readable after the player finishes. The theater itself
+     * asks for a ticketless copy ([withTicket] false) to remember what it
+     * plays now, so a theater the system rebuilds checks again.
      */
-    fun intent(context: Context): Intent = Intent().setClassName(context, THEATER_ACTIVITY).apply {
+    fun intent(context: Context, withTicket: Boolean = true): Intent = Intent().setClassName(context, THEATER_ACTIVITY).apply {
         action = Intent.ACTION_MAIN
         addCategory(CATEGORY_VR)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        putExtra(EXTRA_URI, uri)
-        putExtra(EXTRA_TITLE, title)
-        subtitle?.let { putExtra(EXTRA_SUBTITLE, it) }
-        putExtra(EXTRA_POSITION, positionMillis)
-        putExtra(EXTRA_PLAY_WHEN_READY, playWhenReady)
-        tmdbId?.let { putExtra(EXTRA_TMDB_ID, it) }
-        putExtra(EXTRA_IS_EPISODE, isEpisode)
-        showTmdbId?.let { putExtra(EXTRA_SHOW_TMDB_ID, it) }
-        season?.let { putExtra(EXTRA_SEASON, it) }
-        episode?.let { putExtra(EXTRA_EPISODE, it) }
-        audioTrackId?.let { putExtra(EXTRA_AUDIO_ID, it) }
-        audioLanguage?.let { putExtra(EXTRA_AUDIO_LANGUAGE, it) }
-        putExtra(EXTRA_SUBTITLES_OFF, subtitlesOff)
-        textTrackId?.let { putExtra(EXTRA_TEXT_ID, it) }
-        textLanguage?.let { putExtra(EXTRA_TEXT_LANGUAGE, it) }
-        putExtra(EXTRA_SPEED, speed)
+        val item = Uri.parse(uri)
+        if (item.scheme == "content") {
+            data = item
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        putExtras(extras())
+        if (withTicket) putExtra(EXTRA_TICKET, TheaterTickets.issue(this@TheaterHandover))
     }
+
+    /** The sixteen values as extras, never a ticket: the intent's, and the theater's saved state (G.15). */
+    fun extras(): Bundle = Bundle().apply {
+        putString(EXTRA_URI, uri)
+        putString(EXTRA_TITLE, title)
+        subtitle?.let { putString(EXTRA_SUBTITLE, it) }
+        putLong(EXTRA_POSITION, positionMillis)
+        putBoolean(EXTRA_PLAY_WHEN_READY, playWhenReady)
+        tmdbId?.let { putInt(EXTRA_TMDB_ID, it) }
+        putBoolean(EXTRA_IS_EPISODE, isEpisode)
+        showTmdbId?.let { putInt(EXTRA_SHOW_TMDB_ID, it) }
+        season?.let { putInt(EXTRA_SEASON, it) }
+        episode?.let { putInt(EXTRA_EPISODE, it) }
+        audioTrackId?.let { putString(EXTRA_AUDIO_ID, it) }
+        audioLanguage?.let { putString(EXTRA_AUDIO_LANGUAGE, it) }
+        putBoolean(EXTRA_SUBTITLES_OFF, subtitlesOff)
+        textTrackId?.let { putString(EXTRA_TEXT_ID, it) }
+        textLanguage?.let { putString(EXTRA_TEXT_LANGUAGE, it) }
+        putFloat(EXTRA_SPEED, speed)
+    }
+
+    /**
+     * The same handover in the form android's shared theater playback takes
+     * (`TheaterPlayback`, G.15): the two carry the same sixteen values under
+     * the same extra keys.
+     */
+    fun toPlayback(): XrTheaterHandover = XrTheaterHandover(
+        uri = uri,
+        title = title,
+        subtitle = subtitle,
+        positionMillis = positionMillis,
+        playWhenReady = playWhenReady,
+        tmdbId = tmdbId,
+        isEpisode = isEpisode,
+        showTmdbId = showTmdbId,
+        season = season,
+        episode = episode,
+        audioTrackId = audioTrackId,
+        audioLanguage = audioLanguage,
+        subtitlesOff = subtitlesOff,
+        textTrackId = textTrackId,
+        textLanguage = textLanguage,
+        speed = speed,
+    )
 
     companion object {
         const val CATEGORY_VR = "com.oculus.intent.category.VR"
@@ -77,28 +123,35 @@ data class TheaterHandover(
         private const val EXTRA_TEXT_ID = "edendale.theater.textId"
         private const val EXTRA_TEXT_LANGUAGE = "edendale.theater.textLanguage"
         private const val EXTRA_SPEED = "edendale.theater.speed"
+        private const val EXTRA_TICKET = "edendale.theater.ticket"
+
+        /** The player's ticket on [intent], if it has one (G.15); [TheaterTickets.redeem] says whether it is good. */
+        fun ticket(intent: Intent?): String? = intent?.getStringExtra(EXTRA_TICKET)
 
         /** Null when the intent isn't a handover (nothing but the player starts the theater). */
-        fun from(intent: Intent?): TheaterHandover? {
-            val uri = intent?.getStringExtra(EXTRA_URI) ?: return null
-            fun positive(key: String): Int? = intent.getIntExtra(key, -1).takeIf { it > 0 }
+        fun from(intent: Intent?): TheaterHandover? = from(intent?.extras)
+
+        /** The same from extras or a saved state; null when they aren't a handover. */
+        fun from(extras: Bundle?): TheaterHandover? {
+            val uri = extras?.getString(EXTRA_URI) ?: return null
+            fun positive(key: String): Int? = extras.getInt(key, -1).takeIf { it > 0 }
             return TheaterHandover(
                 uri = uri,
-                title = intent.getStringExtra(EXTRA_TITLE).orEmpty(),
-                subtitle = intent.getStringExtra(EXTRA_SUBTITLE),
-                positionMillis = intent.getLongExtra(EXTRA_POSITION, 0L).coerceAtLeast(0L),
-                playWhenReady = intent.getBooleanExtra(EXTRA_PLAY_WHEN_READY, true),
+                title = extras.getString(EXTRA_TITLE).orEmpty(),
+                subtitle = extras.getString(EXTRA_SUBTITLE),
+                positionMillis = extras.getLong(EXTRA_POSITION, 0L).coerceAtLeast(0L),
+                playWhenReady = extras.getBoolean(EXTRA_PLAY_WHEN_READY, true),
                 tmdbId = positive(EXTRA_TMDB_ID),
-                isEpisode = intent.getBooleanExtra(EXTRA_IS_EPISODE, false),
+                isEpisode = extras.getBoolean(EXTRA_IS_EPISODE, false),
                 showTmdbId = positive(EXTRA_SHOW_TMDB_ID),
-                season = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it >= 0 },
+                season = extras.getInt(EXTRA_SEASON, -1).takeIf { it >= 0 },
                 episode = positive(EXTRA_EPISODE),
-                audioTrackId = intent.getStringExtra(EXTRA_AUDIO_ID),
-                audioLanguage = intent.getStringExtra(EXTRA_AUDIO_LANGUAGE),
-                subtitlesOff = intent.getBooleanExtra(EXTRA_SUBTITLES_OFF, false),
-                textTrackId = intent.getStringExtra(EXTRA_TEXT_ID),
-                textLanguage = intent.getStringExtra(EXTRA_TEXT_LANGUAGE),
-                speed = intent.getFloatExtra(EXTRA_SPEED, 1f).takeIf { it > 0f } ?: 1f,
+                audioTrackId = extras.getString(EXTRA_AUDIO_ID),
+                audioLanguage = extras.getString(EXTRA_AUDIO_LANGUAGE),
+                subtitlesOff = extras.getBoolean(EXTRA_SUBTITLES_OFF, false),
+                textTrackId = extras.getString(EXTRA_TEXT_ID),
+                textLanguage = extras.getString(EXTRA_TEXT_LANGUAGE),
+                speed = extras.getFloat(EXTRA_SPEED, 1f).takeIf { it > 0f } ?: 1f,
             )
         }
     }

@@ -124,22 +124,36 @@ APK then has no Spatial SDK, no immersive activity, no hand-tracking
 permission, and no Theater button, and is about 72 MB instead of 142 MB. The
 theater's Spatial SDK code, manifest, and resources live in
 `src/horizonTheater/`, which Gradle adds only to a theater build; its pure
-layout and scene code stays in `src/horizon/.../theater/` with its tests.
-The theater is its own activity with its own ExoPlayer, built with the
-same renderers and data source as the panel player, so local, SMB, WebDAV,
-SFTP, S3, and cloud sources play unchanged. A trigger press or a pinch shows
-its controls (play and pause, skip, the timeline, audio and subtitle tracks,
-the room, Exit); B or Y, or Exit, returns to the panel; progress is saved as
-in the player. The viewer sits in one of three rooms from the `scenes`
-branch, the same three as on Apple Vision Pro: Movie Theater, Projector Room,
-and Performance Theater. The controls' Room list moves between them while the
-video plays, and the theater opens in the last one chosen. They ship as
-`src/horizonTheater/assets/theater/<room>.glb` (about 23 MB, theater builds
-only), exported from `scenes` with its `tools/export_gltf.py` and made unlit
-for the Spatial SDK by `tools/horizon/prepare_theater_glb.py`. The activity
-places the picture on each room's `Screen` and the viewer on its `Seat`; a
-room that can't be read falls back to a generated starfield
-(`tools/horizon/make_skybox.py`) and a 4 m screen. The SDK
+placement, seating, and admission code stays in `src/horizon/.../theater/`
+with its tests.
+
+Since HORIZON.md G.15 the Quest's theater is android's Android XR theater
+(see "Immersive theater (Android XR)" below) on the Spatial SDK: it plays
+through android's shared `TheaterPlayback` (built as the panel player builds
+its player, so local, SMB, WebDAV, SFTP, S3, and cloud sources play
+unchanged, with the per-title memory and Skip Intro, Recap, and Credits), and
+it seats, recentres, and docks by android's shared geometry, converted to the
+SDK's frame by `TheaterFrames`. The viewer sits in one of three rooms from the
+`scenes` branch, the same three as on Apple Vision Pro and Android XR: Movie
+Theater, Projector Room, and Performance Theater, in the room's best seat or
+the seat last chosen there on the **seat map**. The **controls dock** follows
+the head 45° below the line of sight and never hides: play and pause, skip,
+the timeline, audio and subtitle tracks, the Room list (it moves between
+rooms while the video plays; the theater opens in the last one), the Skip
+prompts, an **Up Next** card in an episode's last 30 seconds that plays the
+next episode right there, and Exit. The **seat panel** to its left holds the
+seat map, Best Seat, the house **Lights** (Normal, Dim, Dark), and
+**Recentre**, which seats the viewer again where they look, lying back
+included. Subtitles are laid out in the picture's own shape. B or Y, or Exit,
+returns to the panel; progress is saved as in the player. Because the
+theater's activity can be started from outside the app, it runs the player's
+parental check itself unless the player has just handed it the title. The
+rooms ship as `src/horizonTheater/assets/theater/<room>.glb` (about 23 MB,
+theater builds only), exported from `scenes` with its `tools/export_gltf.py`
+and made unlit for the Spatial SDK by `tools/horizon/prepare_theater_glb.py`;
+a room that can't be read falls back to a generated starfield
+(`tools/horizon/make_skybox.py`) and a 4 m screen. Meta's Spatial Simulator
+refuses immersive apps, so the theater runs only on a headset. The SDK
 is used without the Meta Platform SDK, without an account, and without the
 Spatial Gradle plugin, whose usage-data switch the build never turns on.
 
@@ -234,10 +248,13 @@ refused, **Enter the Other Device's Code** with a phone and with an Android
 TV, and both camera permissions in `adb shell dumpsys package
 com.babasama.edendale`; and the player without a Rotation Lock or Picture
 in Picture button. For the
-theater (HORIZON.md G.10): entering and leaving it from every source type;
+theater (HORIZON.md G.10, G.15): entering and leaving it from every source type;
 each room facing the viewer with the picture on its screen, the Room list,
-the screen's placement, a recenter, and the headset off and on; controllers
-and hands on the controls panel; DTS-HD MA, TrueHD, and E-AC-3; 30 minutes of
+the screen's placement, a recenter and the Recentre button (seated and lying
+back), and the headset off and on; the seat map, Best Seat, the lights, the
+dock following the head, a Skip prompt, Up Next, and subtitles on a 2.39:1
+film; a ticketless `adb shell am start` of the theater refused while a
+rating ceiling is on; controllers and hands on the dock and the seat panel; DTS-HD MA, TrueHD, and E-AC-3; 30 minutes of
 playback against VrApi's FPS line; and `dumpsys netstats` showing nothing
 from the app's UID.
 

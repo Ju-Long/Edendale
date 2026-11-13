@@ -14,4 +14,15 @@
     <string name="theater_room_movie_theatre">电影院</string>
     <string name="theater_room_projector_room">放映厅</string>
     <string name="theater_room_performance_theatre">剧院</string>
+    <string name="theater_seats">座位</string>
+    <string name="theater_screen">银幕</string>
+    <string name="theater_your_seat">你的座位</string>
+    <string name="theater_best_seat">最佳座位</string>
+    <string name="theater_seat_name">第 %1$d 排 %2$d 座</string>
+    <string name="theater_lights">灯光</string>
+    <string name="theater_lights_normal">正常</string>
+    <string name="theater_lights_dim">调暗</string>
+    <string name="theater_lights_dark">很暗</string>
+    <string name="theater_recentre">重新居中</string>
+    <string name="theater_recentre_caption">把银幕放到你正在看的方向，躺着也可以。</string>
 </resources>
