@@ -1182,6 +1182,12 @@ held back, and why, is at the end of this section.
   release) through `Core/AppVersionText.cs`.
 - [x] Ctrl+, opens Settings at the category used last, with the keyboard on
   its row, and the OneDrive offer opens Settings → Sync.
+- [x] The shell's notice bar (`ActivationBar`) has a solid surface: it floats
+  over the page, and with only the severity tint the category list showed
+  through it.
+- [x] Checked in the app (2026-11-13, x64 Debug): the nine categories, the
+  picker in a narrow window, About's version, the Audio graph, and Sync's
+  entries without a location.
 - [x] Tests: `SettingsCategoriesTests` and `AppVersionTextTests`.
 
 ### R.2 Equalizer graph
@@ -1396,6 +1402,9 @@ apple-27.1 ENHANCEMENT.md K.7, the handoff's half, and K.8.
   when the app runs 32 MiB over (at most every 15 s); evicts farthest first;
   and reports the bytes it holds past the last read. On Windows it serves
   SFTP.
+- [x] Checked in the app (2026-11-13, x64 Debug): a local file opened from
+  a second launch plays in the running window, pauses and resumes without
+  the ring, and closes at its natural end.
 - [ ] In the app: the ring on a slow SFTP or WebDAV stream, the pointer in a
   window and in full screen, a connection dropped mid-episode (LibVLC should
   report the end, and the error should show), and the dimming steps.

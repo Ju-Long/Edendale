@@ -168,12 +168,16 @@
              one-time notices (the Google Drive relink, the OneDrive sync
              offer). Sits above the player so messages raised during playback
              are seen. PlaceActivationBar centres it beside the sidebar, so a
-             long notice never covers the navigation rows. -->
+             long notice never covers the navigation rows. It floats over the
+             page, so it gets a solid surface: the severity tint alone is
+             nearly clear, and text under it (the Settings category list)
+             would show through. -->
         <InfoBar
             x:Name="ActivationBar"
             Grid.Row="1"
             VerticalAlignment="Top"
             HorizontalAlignment="Center"
+            Background="{StaticResource EdendaleSurfaceLowBrush}"
             Severity="Warning"
             IsOpen="False" />
     </Grid>
