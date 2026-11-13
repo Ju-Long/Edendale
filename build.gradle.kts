@@ -375,21 +375,13 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             if (simple in reviewRequired) notes += "permission $permission needs Meta's review; justify it in the submission"
         }
         if (permissions.any { it.endsWith("WRITE_EPG_DATA") }) failures += "WRITE_EPG_DATA (TV Watch Next) is still declared"
-        // B.15: a Quest 3's pairing scanner reads the passthrough camera, which Meta's
-        // Passthrough Camera API opens only with both permissions; one without the other
-        // is a scanner that can't open. Both are on Meta's review list (noted above).
-        val camera = "android.permission.CAMERA" in permissions
-        val headsetCamera = "horizonos.permission.HEADSET_CAMERA" in permissions
-        if (camera != headsetCamera) {
-            failures += "CAMERA and horizonos.permission.HEADSET_CAMERA must be declared together for the Quest 3's pairing scanner (HORIZON.md B.15)"
-        }
-        // D4: Meta's upload refused HEADSET_CAMERA as "incompatible" while the device list
-        // named Quest 2 and Pro, which have no Passthrough Camera API (2026-11-13).
-        val withoutPassthrough = supportedDevices.orEmpty().split('|').map { it.trim() }
-            .filter { it.isNotEmpty() && it !in setOf("quest3", "quest3s") }
-        if (headsetCamera && withoutPassthrough.isNotEmpty()) {
-            failures += "horizonos.permission.HEADSET_CAMERA with supportedDevices ${withoutPassthrough.joinToString("|")}, " +
-                "which have no passthrough camera; Meta's upload refuses it (HORIZON.md D4)"
+        // B.15: a Quest 3's pairing scanner reads the passthrough camera through
+        // horizonos.permission.HEADSET_CAMERA alone (on Meta's review list, noted above).
+        // Meta's upload refuses it beside android.permission.CAMERA as "incompatible"
+        // (2026-11-13), and android's scanner asks a Quest for HEADSET_CAMERA only.
+        if ("android.permission.CAMERA" in permissions) {
+            failures += "android.permission.CAMERA is declared; Meta's upload refuses it beside horizonos.permission.HEADSET_CAMERA, " +
+                "and the Quest's scanner needs only the latter (HORIZON.md B.15)"
         }
         notes += "permissions: ${permissions.joinToString()}"
 
@@ -497,6 +489,16 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             val focusAware = application?.elements("meta-data")
                 ?.any { it.attr("name") == "com.oculus.vr.focusaware" && it.attr("value") == "true" } == true
             if (!focusAware) failures += "a theater build lacks com.oculus.vr.focusaware=true; Meta's upload refuses it (VRC Quest.Input.4, G.4)"
+            // Meta's upload: "APK screen orientation is not landscape" (2026-11-13), with the
+            // player's sensorLandscape and the theater declaring none. Every declared
+            // orientation is landscape, the theater's included.
+            val orientations = manifest.elements("activity").associate { (it.attr("name") ?: "?") to it.attr("screenOrientation") }
+            val notLandscape = orientations.filter { (name, value) ->
+                value != null && value != "landscape" && value != "0" || name.endsWith(".TheaterActivity") && value == null
+            }
+            if (notLandscape.isNotEmpty()) {
+                failures += "a theater build's screenOrientation must be landscape: ${notLandscape.entries.joinToString { "${it.key.substringAfterLast('.')}=${it.value}" }} (G.4)"
+            }
             val missingRooms = expectedRooms.filterNot { it in theaterRooms }
             if (!theaterDeclared || !theaterCompiled) {
                 failures += "a theater build (horizon.theater=true) lacks TheaterActivity's " +

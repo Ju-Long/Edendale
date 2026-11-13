@@ -29,16 +29,22 @@
 
     <!-- B.15: a Quest 3 or 3S scans the other device's pairing code with its
          passthrough camera (Meta's Passthrough Camera API, Horizon OS v74 and
-         later), which needs android's CAMERA and Meta's HEADSET_CAMERA, both
-         asked for only when the viewer chooses to scan; frames are read on
-         the headset and never kept or sent. Meta reviews both, so the
-         submission justifies them (HORIZON.md B.15). Meta's upload refuses
-         HEADSET_CAMERA while the device list names a headset without the
-         passthrough camera, so the app supports the Quest 3 and 3S only (D4,
-         verifyHorizonRelease). android's three optional
-         camera features still come out, as in B.14: they are
-         required="false" and say nothing about a headset's cameras. -->
+         later) through Meta's HEADSET_CAMERA alone, which opens the
+         passthrough cameras and nothing else, asked for only when the viewer
+         chooses to scan; frames are read on the headset and never kept or
+         sent. Meta reviews it, so the submission justifies it. android's
+         CAMERA comes out: Meta's upload refused HEADSET_CAMERA beside it as
+         "incompatible" (Findings, 2026-11-13), and Meta's own scanner sample
+         declares HEADSET_CAMERA alone, with its optional feature below.
+         android's three optional camera features still come out, as in B.14:
+         they are required="false" and say nothing about a headset's cameras. -->
+    <uses-permission
+        android:name="android.permission.CAMERA"
+        tools:node="remove" />
     <uses-permission android:name="horizonos.permission.HEADSET_CAMERA" />
+    <uses-feature
+        android:name="horizonos.feature.HEADSET_CAMERA"
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.camera.any"
         tools:node="remove" />
@@ -61,9 +67,8 @@
 
     <application tools:remove="android:banner">
         <!-- D4 (owner, 2026-11-13): the Quest 3 and 3S, the headsets with the
-             passthrough camera the pairing scanner needs (B.15). Meta's upload
-             refused HEADSET_CAMERA while the list also named quest2 and questpro.
-             Findings records what each headset was tested on. -->
+             passthrough camera the pairing scanner reads (B.15). Findings
+             records what each headset was tested on. -->
         <meta-data
             android:name="com.oculus.supportedDevices"
             android:value="quest3|quest3s" />
@@ -78,11 +83,15 @@
         <!-- B.3: Horizon OS reports the PiP feature on the simulator but pins
              the window at nearly panel size (Findings, 2026-10-10), and the
              Quest 3 doesn't report it at all. DevicePolicy hides the button
-             and the Auto PiP setting; this keeps the system from trying. -->
+             and the Auto PiP setting; this keeps the system from trying.
+             Landscape rather than android's sensorLandscape: Meta's upload
+             refuses a theater build with an orientation that isn't landscape
+             (2026-11-13), and a panel never turns, so the two behave alike. -->
         <activity
             android:name=".player.PlayerActivity"
             android:supportsPictureInPicture="false"
-            tools:replace="android:supportsPictureInPicture" />
+            android:screenOrientation="landscape"
+            tools:replace="android:supportsPictureInPicture,android:screenOrientation" />
     </application>
 
 </manifest>

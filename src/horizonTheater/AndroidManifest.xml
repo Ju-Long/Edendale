@@ -53,10 +53,13 @@
              without LAUNCHER adds no icon, so the library still opens the
              panel. singleTask, the fullscreen theme, and the configuration
              changes follow Meta's hybrid sample. Exported, as in the sample;
-             G.10 checks whether exported="false" also works. -->
+             G.10 checks whether exported="false" also works. Landscape:
+             Meta's upload refuses an immersive app whose orientation isn't
+             (2026-11-13); a headset never turns it. -->
         <activity
             android:name=".theater.TheaterActivity"
             android:exported="true"
+            android:screenOrientation="landscape"
             android:launchMode="singleTask"
             android:excludeFromRecents="false"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"

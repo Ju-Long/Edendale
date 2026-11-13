@@ -73,9 +73,8 @@ in the browser or the YouTube app instead of the inline player, which shows
 no picture in a panel. Motion Smoothing (below) follows a phone's rules on a
 headset and starts off; whether a panel shows its doubled rate evenly is still
 to be checked on a headset (HORIZON.md B.16). The app supports the **Quest 3
-and 3S** only (`com.oculus.supportedDevices`, HORIZON.md D4): Meta's upload
-refuses the pairing scanner's `horizonos.permission.HEADSET_CAMERA` while the
-list also names the Quest 2 and Pro, which have no passthrough camera. The
+and 3S** only (`com.oculus.supportedDevices`, HORIZON.md D4), the headsets
+whose passthrough camera the pairing scanner reads. The
 flavor targets **SDK 34** (`android` targets 36 for Google Play), the highest
 Meta accepts for an app with an immersive activity (D2). The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
@@ -116,11 +115,11 @@ Device's Code** instead, pick the device showing a code, and type its six
 digits, so a
 headset pairs with a phone, a tablet, a TV, a Windows PC, or another
 headset (an iPhone or iPad can only scan). For the Quest 3's scanner this
-build declares android's `CAMERA` and Meta's
-`horizonos.permission.HEADSET_CAMERA`, both on Meta's review list and both
-asked for only when you choose to scan; frames are read on the headset and
-never kept or sent. The overlay still removes android's optional camera
-features (HORIZON.md B.15).
+build declares Meta's `horizonos.permission.HEADSET_CAMERA` alone, which
+opens only the passthrough cameras, is on Meta's review list, and is asked
+for only when you choose to scan; frames are read on the headset and never
+kept or sent. The overlay removes android's `CAMERA`, which Meta's upload
+refuses beside it, and android's optional camera features (HORIZON.md B.15).
 
 A build with `-Phorizon.theater=true` adds the **immersive theater**
 (HORIZON.md Section G): a Theater button in the player that puts the video on
@@ -175,7 +174,7 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk (32–37 for the 2D app, 32–34 with the theater), `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), `CAMERA` only together with `horizonos.permission.HEADSET_CAMERA` (the Quest 3's pairing scanner), and that permission only while the supported devices are the Quest 3 and 3S, no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, three rooms, a GLES 3.1 (or Vulkan) feature, and `com.oculus.vr.focusaware` together in a theater build |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk (32–37 for the 2D app, 32–34 with the theater), `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no `CAMERA` (the Quest 3's pairing scanner reads through `horizonos.permission.HEADSET_CAMERA` alone), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, three rooms, a GLES 3.1 (or Vulkan) feature, `com.oculus.vr.focusaware`, and every activity's orientation landscape together in a theater build |
 | With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
 | Theater rooms (after a scene changes on `scenes`) | On `scenes`: `Blender --background scenes/<room>/<room>.blend --python tools/export_gltf.py -- out/<room>.glb`; then here: `python3 -I tools/horizon/prepare_theater_glb.py <scenes checkout>/out/*.glb` → `src/horizonTheater/assets/theater/` (HORIZON.md G.14) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
