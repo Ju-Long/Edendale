@@ -59,6 +59,8 @@ import coil.compose.AsyncImage
 import com.babasama.edendale.domain.MediaDetail
 import com.babasama.edendale.domain.MediaItem
 import com.babasama.edendale.domain.MediaRef
+import com.babasama.edendale.domain.WatchMediaType
+import com.babasama.edendale.domain.WatchProgress
 import com.babasama.edendale.tmdb.CollectionFilter
 import com.babasama.edendale.tmdb.HeroScene
 import com.babasama.edendale.tmdb.collectionFilters
@@ -479,6 +481,8 @@ private fun HeroCopy(
             text = if (scene.isContinueWatching) {
                 listOfNotNull(
                     stringResource(R.string.hero_continue_watching).uppercase(),
+                    // The episode Resume plays: the one watched last.
+                    scene.progress?.heroEpisodeCode(),
                     scene.remainingText?.uppercase(),
                 ).joinToString("  ·  ")
             } else {
@@ -507,7 +511,7 @@ private fun HeroCopy(
                     uri = copy.uri,
                     title = detail.title,
                     tmdbId = scene.progress?.tmdbId ?: detail.ref.id,
-                    isEpisode = scene.progress?.mediaType == com.babasama.edendale.domain.WatchMediaType.EPISODE,
+                    isEpisode = scene.progress?.mediaType == WatchMediaType.EPISODE,
                     showTmdbId = scene.progress?.showTmdbId,
                     season = scene.progress?.seasonNumber,
                     episode = scene.progress?.episodeNumber,
@@ -559,6 +563,11 @@ private fun HeroCopy(
     }
 }
 
+/** "S01E04" for the episode a hero record resumes; null for a movie or a record without its numbers. */
+internal fun WatchProgress.heroEpisodeCode(): String? {
+    if (mediaType != WatchMediaType.EPISODE) return null
+    return episodeCode(seasonNumber ?: return null, episodeNumber ?: return null)
+}
 
 @Composable
 private fun HeroMetadata(detail: MediaDetail) {

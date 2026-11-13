@@ -102,22 +102,46 @@ class BrowseViewModel(
     private var seasonJob: Job? = null
 
     /**
-     * The latest watch rows. A deletion can land while [load] waits on TMDB
-     * (a launch sync applying another device's clear), before there is a
-     * catalog to strip, so [load] applies them to the catalog it assigns.
+     * The latest watch rows. A launch or foreground sync can apply another
+     * device's records while [load] waits on TMDB, before there is a catalog
+     * to follow them, so [load] follows them once it assigns one.
      */
     private var watchRows: List<WatchProgress>? = null
+    private var heroJob: Job? = null
+
+    /** Titles the hero couldn't fetch since the last [load], so playback's progress writes don't retry them every few seconds. */
+    private val heroMisses = HashSet<MediaRef>()
 
     init {
         load()
-        // The hero's progress is a snapshot: once its record is deleted, it stops offering to resume.
+        // The hero resumes the latest unfinished record, so it follows every change: a
+        // later episode, a newer position, a clear, or what a sync brings from another device.
         viewModelScope.launch {
             dataStore.observeWatchProgress().collect { rows ->
                 watchRows = rows
-                val catalog = state.catalog ?: return@collect
-                val kept = catalog.keepingProgressIn(rows)
-                if (kept !== catalog) state = state.copy(catalog = kept)
+                followWatchRows()
             }
+        }
+    }
+
+    private fun followWatchRows() {
+        val rows = watchRows ?: return
+        val catalog = state.catalog ?: return
+        heroJob?.cancel()
+        heroJob = viewModelScope.launch {
+            val followed = catalog.followingProgress(rows) { ref ->
+                if (ref in heroMisses) return@followingProgress null
+                try {
+                    repository.detail(ref)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    heroMisses += ref
+                    null
+                }
+            }
+            // A reload meanwhile follows the rows itself.
+            if (followed !== catalog && state.catalog === catalog) state = state.copy(catalog = followed)
         }
     }
 
@@ -129,9 +153,11 @@ class BrowseViewModel(
         viewModelScope.launch {
             state = state.copy(phase = LoadPhase.LOADING, errorMessage = null)
             try {
+                heroMisses.clear()
                 val progress = dataStore.getAllWatchProgress()
-                val catalog = repository.loadHome(progress).let { loaded -> watchRows?.let(loaded::keepingProgressIn) ?: loaded }
+                val catalog = repository.loadHome(progress)
                 state = state.copy(phase = LoadPhase.LOADED, catalog = catalog)
+                followWatchRows()
                 selectCollection(CollectionFilter.All)
             } catch (error: CancellationException) {
                 throw error

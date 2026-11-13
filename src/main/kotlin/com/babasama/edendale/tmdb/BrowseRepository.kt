@@ -22,12 +22,14 @@ data class HeroScene(
 ) {
     val isContinueWatching: Boolean get() = progress != null
 
+    /** What's left of the record's file: its own length when the player knew it, else TMDB's runtime. */
     val remainingText: String?
         get() {
-            val runtime = detail.runtimeMinutes ?: return null
             val currentProgress = progress ?: return null
-            if (runtime <= 0) return null
-            val seconds = (runtime * 60 * (1 - currentProgress.normalizedPosition)).toInt()
+            val length = currentProgress.durationSeconds.takeIf { it > 0 }
+                ?: detail.runtimeMinutes?.takeIf { it > 0 }?.let { it * 60.0 }
+                ?: return null
+            val seconds = (length * (1 - currentProgress.normalizedPosition)).toInt()
             val hours = seconds / 3600
             val minutes = (seconds % 3600) / 60
             val remainder = seconds % 60
@@ -44,19 +46,73 @@ data class HomeCatalog(
     val genres: List<Genre>,
 ) {
     /**
-     * A hero's resume state is a snapshot from [BrowseRepository.loadHome].
-     * Once its watch record is gone from [records] (Delete Watch History,
-     * Continue Watching's Clear Progress, or a clear synced from another
-     * device), the scene stays as a featured title instead of offering to
-     * resume. This same catalog when nothing changed.
+     * The hero after the watch rows changed: its Continue Watching scene
+     * follows [heroResumeRecord], so the episode watched since, a newer
+     * position, or another title watched since (here, or on another device
+     * once a sync lands) leads, and Resume plays it. The new lead replaces
+     * the scene it takes over from and a featured scene of its own title.
+     * [detail] fetches a title the hero doesn't hold yet; when it can't, the
+     * scenes keep their titles and only their records follow
+     * ([refreshingProgressIn]). With nothing left to resume, the lead stays
+     * as a featured title. This same catalog when nothing changed.
      */
-    fun keepingProgressIn(records: List<WatchProgress>): HomeCatalog {
-        val keys = records.mapTo(HashSet()) { it.storageKey }
-        fun HeroScene.isStale() = progress?.let { it.storageKey !in keys } == true
-        if (heroScenes.none { it.isStale() }) return this
-        return copy(heroScenes = heroScenes.map { if (it.isStale()) it.copy(progress = null) else it })
+    suspend fun followingProgress(
+        records: List<WatchProgress>,
+        detail: suspend (MediaRef) -> MediaDetail?,
+    ): HomeCatalog {
+        val record = records.heroResumeRecord() ?: return refreshingProgressIn(records)
+        val ref = record.heroRef() ?: return refreshingProgressIn(records)
+        val lead = heroScenes.firstOrNull()
+        if (lead?.detail?.ref == ref) {
+            return if (lead.progress == record) this
+            else copy(heroScenes = listOf(lead.copy(progress = record)) + heroScenes.drop(1))
+        }
+        val title = heroScenes.firstOrNull { it.detail.ref == ref }?.detail
+            ?: detail(ref)
+            ?: return refreshingProgressIn(records)
+        val others = heroScenes.filter { it.detail.ref != ref && !it.isContinueWatching }
+        return copy(heroScenes = listOf(HeroScene(title, record)) + others)
+    }
+
+    /**
+     * Each resuming scene with its record as it is now in [records]. Once
+     * the record is gone (Delete Watch History, Continue Watching's Clear
+     * Progress, or a clear synced from another device) or finished, the
+     * scene stays as a featured title instead of offering to resume. This
+     * same catalog when nothing changed.
+     */
+    fun refreshingProgressIn(records: List<WatchProgress>): HomeCatalog {
+        val byKey = records.associateBy { it.storageKey }
+        var changed = false
+        val scenes = heroScenes.map { scene ->
+            val progress = scene.progress ?: return@map scene
+            val current = byKey[progress.storageKey]?.takeUnless(WatchProgress::isCompleted)
+            if (current == progress) scene else scene.copy(progress = current).also { changed = true }
+        }
+        return if (changed) copy(heroScenes = scenes) else this
     }
 }
+
+/**
+ * The title a watch record resumes on the hero: a movie's own, an episode's
+ * show. Null for an episode whose show isn't known.
+ */
+fun WatchProgress.heroRef(): MediaRef? = when (mediaType) {
+    WatchMediaType.MOVIE -> MediaRef(tmdbId, MediaType.MOVIE)
+    WatchMediaType.EPISODE -> showTmdbId?.let { MediaRef(it, MediaType.TV) }
+}
+
+/**
+ * The record the hero's Continue Watching scene resumes: the unfinished one
+ * watched last, on this device or on another once a sync brings it. For a
+ * show that is the episode watched last, never just the show's first record,
+ * so Resume plays the latest episode at its latest position.
+ */
+fun List<WatchProgress>.heroResumeRecord(): WatchProgress? =
+    asSequence()
+        .filterNot(WatchProgress::isCompleted)
+        .filter { it.heroRef() != null }
+        .maxByOrNull(WatchProgress::lastWatchedEpochMillis)
 
 /**
  * The result of one scoped search. [titles] and [people] are both populated
@@ -101,24 +157,13 @@ class BrowseRepository(private val api: TmdbApi) {
         val topRated = ratedRequest.await()
         val genres = genresRequest.await()
 
-        val continueRef = progress
-            .asSequence()
-            .filterNot(WatchProgress::isCompleted)
-            .sortedByDescending(WatchProgress::lastWatchedEpochMillis)
-            .mapNotNull { item ->
-                when (item.mediaType) {
-                    WatchMediaType.MOVIE -> MediaRef(item.tmdbId, MediaType.MOVIE)
-                    WatchMediaType.EPISODE -> item.showTmdbId?.let { MediaRef(it, MediaType.TV) }
-                }
-            }
-            .firstOrNull()
+        // The scene resumes the very record that chose its title: for a show,
+        // the episode watched last, not whichever of its records came first.
+        val continueRecord = progress.heroResumeRecord()
+        val continueRef = continueRecord?.heroRef()
 
         val continueScene = continueRef?.let { ref ->
-            runCatching { api.mediaDetail(ref) }.getOrNull()?.let { detail ->
-                HeroScene(detail, progress.firstOrNull { item ->
-                    item.tmdbId == ref.id || item.showTmdbId == ref.id
-                })
-            }
+            optional(null) { api.mediaDetail(ref) }?.let { detail -> HeroScene(detail, continueRecord) }
         }
         val spotlightDetails = trending
             .asSequence()

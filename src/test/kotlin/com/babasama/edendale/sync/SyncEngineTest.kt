@@ -194,6 +194,23 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `launch and every return from the background sync, a rotation doesn't`() {
+        val tracker = SyncForegroundTracker()
+        // The first activity to start is the launch; a second one on top is nothing.
+        assertEquals(SyncForegroundTracker.Moment.LAUNCH, tracker.activityStarted())
+        assertNull(tracker.activityStarted())
+        assertNull(tracker.activityStopped(changingConfigurations = false))
+        // Rotating the last one recreates it without the app leaving.
+        assertNull(tracker.activityStopped(changingConfigurations = true))
+        assertNull(tracker.activityStarted())
+        // Leaving, then coming back from the background, each time.
+        assertEquals(SyncForegroundTracker.Moment.BACKGROUND, tracker.activityStopped(changingConfigurations = false))
+        assertEquals(SyncForegroundTracker.Moment.FOREGROUND, tracker.activityStarted())
+        assertEquals(SyncForegroundTracker.Moment.BACKGROUND, tracker.activityStopped(changingConfigurations = false))
+        assertEquals(SyncForegroundTracker.Moment.FOREGROUND, tracker.activityStarted())
+    }
+
+    @Test
     fun `the far-future guard warns and the removed device's file is deleted`() = runBlocking {
         val storage = MemorySyncStorage()
         val store = MemorySyncStore()

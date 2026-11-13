@@ -175,7 +175,10 @@ object SyncBackoff {
 /**
  * When the client syncs (§8.1): on launch and on return to the foreground,
  * 10 seconds after the last local change (at once when playback stops or the
- * app goes to the background), and every 5 minutes in the foreground. Pure
+ * app goes to the background), and every 5 minutes in the foreground. Launch
+ * and return to the foreground sync at once whatever the backoff, as Sync
+ * Now does: the viewer is about to look at their progress, and the home
+ * hero resumes the episode watched last, wherever it was watched. Pure
  * rules for the Android coordinator and its tests.
  */
 object SyncTriggers {
@@ -190,4 +193,40 @@ object SyncTriggers {
      * the sync started on leaving usually gets there first.
      */
     fun flushJobNeeded(syncOn: Boolean, writePending: Boolean): Boolean = syncOn && writePending
+}
+
+/**
+ * Tells the Android coordinator when the app opens and leaves (§8.1) from its
+ * activities starting and stopping. The first activity to start in the
+ * process is the [Moment.LAUNCH]; each later return from no started activity
+ * is a [Moment.FOREGROUND], and the last one stopping is the
+ * [Moment.BACKGROUND]. An activity recreated for a configuration change (a
+ * rotation, a window resize) stops and starts again without the app ever
+ * leaving, so it is neither. Pure.
+ */
+class SyncForegroundTracker {
+    enum class Moment { LAUNCH, FOREGROUND, BACKGROUND }
+
+    private var started = 0
+    private var launched = false
+    private var recreating = false
+
+    /** An activity started; the moment it makes, if any. */
+    fun activityStarted(): Moment? {
+        val first = started++ == 0
+        val recreated = recreating
+        recreating = false
+        if (!first || recreated) return null
+        return if (launched) Moment.FOREGROUND else Moment.LAUNCH.also { launched = true }
+    }
+
+    /** An activity stopped, about to be recreated when [changingConfigurations]; the moment it makes, if any. */
+    fun activityStopped(changingConfigurations: Boolean): Moment? {
+        started = (started - 1).coerceAtLeast(0)
+        if (changingConfigurations) {
+            recreating = true
+            return null
+        }
+        return if (started == 0) Moment.BACKGROUND else null
+    }
 }
