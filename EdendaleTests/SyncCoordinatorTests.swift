@@ -254,6 +254,82 @@ struct SyncCoordinatorTests {
         #expect(await storage.listings == 2)
     }
 
+    @Test func launchAndForegroundSyncsDoNotWaitOutTheBackoff() async throws {
+        let storage = MemorySyncStorage()
+        let phone = SyncTestDevice(storage: storage)
+        let movie = Int.random(in: 1_000_000...9_000_000)
+        phone.watchStore.update(WatchProgress(tmdbId: movie, mediaType: .movie, position: 0.3, watchedSeconds: 10))
+        await storage.fail(with: SyncStorageError.failed("reach the server"))
+        #expect(await phone.sync() == false)
+        await storage.fail(with: nil)
+
+        // Within the minute's backoff a change waits…
+        phone.coordinator.flush()
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(await storage.writes == 0)
+
+        // …but launch, or a return to the foreground, syncs at once.
+        phone.coordinator.sceneDidBecomeActive()
+        for _ in 0..<200 where await storage.writes == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await storage.names == [phone.fileName])
+        #expect(phone.coordinator.status.lastError == nil)
+    }
+
+    @Test func aForegroundSyncQueuedBehindAFailingSyncStillRuns() async throws {
+        let storage = GatedSyncStorage()
+        let (coordinator, suite) = Self.gatedCoordinator(storage)
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        await storage.failNextListing(with: SyncStorageError.failed("reach the server"))
+
+        // A sync iOS suspended in the background is still running on return.
+        let first = Task { await coordinator.runSync(reason: "background-flush") }
+        while await storage.listings < 1 { try await Task.sleep(for: .milliseconds(5)) }
+        coordinator.sceneDidBecomeActive()
+        await storage.release()
+        #expect(await first.value == false)
+
+        // The foreground sync it held up runs anyway, despite the backoff.
+        for _ in 0..<200 where coordinator.status.lastError != nil || coordinator.status.isSyncing {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await storage.listings == 2)
+        #expect(coordinator.status.lastError == nil)
+    }
+
+    @Test func aChangeQueuedBehindAFailingSyncWaitsOutTheBackoff() async throws {
+        let storage = GatedSyncStorage()
+        let (coordinator, suite) = Self.gatedCoordinator(storage)
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        await storage.failNextListing(with: SyncStorageError.failed("reach the server"))
+
+        let first = Task { await coordinator.runSync(reason: "test") }
+        while await storage.listings < 1 { try await Task.sleep(for: .milliseconds(5)) }
+        coordinator.flush()
+        await storage.release()
+        #expect(await first.value == false)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(await storage.listings == 1)
+    }
+
+    /// A coordinator over gated storage, and its defaults suite to remove.
+    private static func gatedCoordinator(_ storage: GatedSyncStorage) -> (SyncCoordinator, String) {
+        let suite = "EdendaleSyncTest-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let container = SyncTestDevice.makeContainer()
+        let stamper = SyncStamper(defaults: defaults, secrets: InMemorySecretStore())
+        let coordinator = SyncCoordinator(
+            watchStore: WatchProgressStore(container: container, stamper: stamper),
+            userMediaStore: UserMediaStore(container: container, stamper: stamper),
+            stamper: stamper, defaults: defaults,
+            libraryEpisodeIndex: { [:] }, seasonEpisodeIDs: { _, _ in nil },
+            storageFactory: { _ in storage }
+        )
+        coordinator.setLocation(SyncLocation(provider: .folder, space: "Family", folderPath: "/memory"), startSync: false)
+        return (coordinator, suite)
+    }
+
     @Test func episodesWaitForTMDBSeasonListsAFewSeasonsPerSync() async throws {
         let storage = MemorySyncStorage()
         let device = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b"

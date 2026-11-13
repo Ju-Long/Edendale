@@ -6,7 +6,8 @@
 //  one sync location, runs a sync on launch, on return to the foreground,
 //  ten seconds after the last local change (at once when playback stops or
 //  the app goes to the background), and every five minutes while active;
-//  backs off after failures; and keeps the per-file stamps so a file is
+//  backs off after failures (launch and foreground syncs still run at
+//  once); and keeps the per-file stamps so a file is
 //  read only when it changed. One sync lists the space, reads and merges
 //  the other devices' files into the local stores through a SyncLedger,
 //  and rewrites this device's file when anything changed.
@@ -86,6 +87,9 @@ final class SyncCoordinator {
 
     @ObservationIgnored private var dirty = true
     @ObservationIgnored private var syncAgain = false
+    /// The queued sync was a launch or foreground one, so it runs even if
+    /// the sync it waited behind fails and starts a backoff.
+    @ObservationIgnored private var syncAgainIgnoresBackoff = false
     @ObservationIgnored private var failures = 0
     @ObservationIgnored private var nextAttemptAt: Date?
     @ObservationIgnored private var debounceTask: Task<Void, Never>?
@@ -142,10 +146,13 @@ final class SyncCoordinator {
         sceneDidBecomeActive()
     }
 
-    /// Launch and return to the foreground: read, then write if needed.
+    /// Launch and return to the foreground: read, then write if needed, at
+    /// once — even while an earlier failure is backing off, since the
+    /// viewer is about to look at their progress. A sync still running
+    /// (one iOS suspended in the background) is followed by a fresh one.
     func sceneDidBecomeActive() {
         startPeriodicSync()
-        requestSync(reason: "foreground")
+        requestSync(reason: "foreground", ignoringBackoff: true)
     }
 
     /// Leaving the foreground: pending changes go out at once, and iOS
@@ -191,7 +198,7 @@ final class SyncCoordinator {
     /// The user asked: runs regardless of backoff.
     func syncNow() {
         nextAttemptAt = nil
-        requestSync(reason: "manual")
+        requestSync(reason: "manual", ignoringBackoff: true)
     }
 
     private func startPeriodicSync() {
@@ -205,16 +212,30 @@ final class SyncCoordinator {
         }
     }
 
-    private func requestSync(reason: String) {
+    private func requestSync(reason: String, ignoringBackoff: Bool = false) {
         guard location != nil else { return }
-        if let nextAttemptAt, now() < nextAttemptAt, reason != "manual" {
+        if !ignoringBackoff, let nextAttemptAt, now() < nextAttemptAt {
             return
         }
         if status.isSyncing {
             syncAgain = true
+            syncAgainIgnoresBackoff = syncAgainIgnoresBackoff || ignoringBackoff
             return
         }
         Task { await self.runSync(reason: reason) }
+    }
+
+    /// Runs the sync queued behind the one that just ended, after that one
+    /// has returned and cleared `isSyncing` (asking sooner would only queue
+    /// it again and lose it). After a failure only a queued launch or
+    /// foreground sync still runs; the others wait out the backoff.
+    private func runQueuedSync(afterFailure: Bool) {
+        guard syncAgain else { return }
+        let ignoresBackoff = syncAgainIgnoresBackoff
+        syncAgain = false
+        syncAgainIgnoresBackoff = false
+        if afterFailure, !ignoresBackoff { return }
+        Task { [weak self] in self?.requestSync(reason: "queued", ignoringBackoff: ignoresBackoff) }
     }
 
     // MARK: - Location
@@ -414,12 +435,7 @@ final class SyncCoordinator {
             nextAttemptAt = nil
             retryTask?.cancel()
             SyncLog.info("sync end files=\(entries.count) read=\(readFiles) applied=\(applied) pending=\(state.pendingProgress.count) warnings=\(warnings.count)")
-            if syncAgain {
-                syncAgain = false
-                // After this sync has returned and cleared `isSyncing`; asking
-                // now would only queue the request again and lose it.
-                Task { [weak self] in self?.requestSync(reason: "queued") }
-            }
+            runQueuedSync(afterFailure: false)
             return true
         } catch {
             failures += 1
@@ -428,6 +444,7 @@ final class SyncCoordinator {
             status.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             SyncLog.warning("sync failed: \(SyncLog.describe(error)); retry in \(Int(delay))s")
             scheduleRetry(after: delay)
+            runQueuedSync(afterFailure: true)
             return false
         }
     }

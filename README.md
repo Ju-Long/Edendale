@@ -316,6 +316,28 @@ completed one when that show has no episode already in progress. This also
 works after removing a watched file and does not create watch progress for the
 unwatched suggestion. Duplicate show records produce one next-up card.
 
+The Movies & Shows hero leads with the title watched most recently. Its
+**Resume Playback** goes straight to the player with what Continue Watching
+would play for that title: the movie from its saved position, or the show's
+episode watched last (the next stored episode once that one is finished),
+from the copy played last. The store is read at the tap, so progress synced
+from another device since the hero loaded counts. A title with nothing to
+resume in the library opens its detail page instead. The hero's Continue
+Watching scene also follows the store: progress that syncs in, or playback
+here, changes its title and time left without a relaunch. On Apple TV the
+hero stays one button that opens the detail page.
+
+Run the hero tests:
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' -only-testing:EdendaleTests/HeroResumeTests \
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+```
+
+Android and Windows need independent native implementations of hero resume;
+the static Web branch is unaffected.
+
 When a TV episode has a locally stored successor, an **Up Next** card appears
 at the top right during its final 30 seconds. It shows artwork, the episode
 code and title, and starts that episode when selected. The card clears when
@@ -636,6 +658,21 @@ xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
 
 Android and Windows need their own native guides for their own controls; the
 static Web branch is unaffected.
+
+### Time and battery in landscape
+
+A Face ID iPhone draws no status bar in landscape, whatever an app asks for.
+While the player's controls are up in landscape, its top bar shows the time
+(in the device's 12- or 24-hour format) and the battery level, with a bolt
+while charging, above the title. They hide with the controls, as the status
+bar does in portrait. Across the app Edendale asks the system to keep its
+status bar in landscape, which an iPhone with a Home button can honor; when
+the system shows one (the top safe-area inset is not zero), the player leaves
+its own out. A level the system can't report, as in the Simulator, leaves
+the battery out.
+
+Android and Windows decide their own landscape system bars; the static Web
+branch is unaffected.
 
 ### Tabletop playback (iPhone Duo)
 
@@ -981,7 +1018,10 @@ tombstones older than a year are omitted when writing. Sync runs at launch,
 on return to the foreground, ten seconds after the last local change (at once
 when playback stops or the app goes to the background), every five minutes
 while active, and on iOS through Background App Refresh when the system
-allows. Failures back off 1, 2, 4, 8 … minutes up to an hour. A file whose
+allows. Failures back off 1, 2, 4, 8 … minutes up to an hour, except that
+launch and a return to the foreground always sync at once. A launch or
+foreground sync asked for while another is still running (one iOS suspended
+in the background) runs as soon as that one ends, even if it failed. A file whose
 stamp (modification time, ETag, Drive `modifiedTime`, Graph `eTag`, or
 Dropbox `rev`) has not changed is not read again, and reading a file twice
 changes nothing.

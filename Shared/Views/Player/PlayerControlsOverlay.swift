@@ -30,6 +30,10 @@ struct PlayerControlsOverlay: View {
     /// Set while an iPhone Duo stands half-open in portrait: the controls
     /// move below the fold instead of covering the picture.
     var tabletop: PlayerTabletopLayout? = nil
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// The top bar's safe-area inset: the status bar's height while the
+    /// system shows one, zero on a Face ID iPhone held sideways.
+    @State private var topInset: CGFloat = 0
     #endif
 
     #if os(tvOS)
@@ -275,7 +279,18 @@ struct PlayerControlsOverlay: View {
             titleBlock
                 .offset(y: 42)
                 .frame(maxWidth: 480)
+
+            #if os(iOS)
+            // Above the title, standing in for the status bar the system
+            // won't show on a Face ID iPhone held sideways.
+            if PlayerDeviceStatus.isShown(compactHeight: verticalSizeClass == .compact, topInset: topInset) {
+                PlayerDeviceStatusView()
+            }
+            #endif
         }
+        #if os(iOS)
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
+        #endif
     }
 
     /// Focus moving between controls counts as activity: restart the

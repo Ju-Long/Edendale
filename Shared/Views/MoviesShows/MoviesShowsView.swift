@@ -63,6 +63,7 @@ struct MoviesShowsView: View {
     @Environment(MoviesShowsModel.self) private var model
     @Environment(TMDBAccountStore.self) private var tmdbAccount
     @Environment(WatchProgressStore.self) private var watchStore
+    @Environment(LibraryController.self) private var library
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     @Environment(\.modelContext) private var modelContext
     #if !os(macOS)
@@ -159,6 +160,13 @@ struct MoviesShowsView: View {
             .settingsToolbar()
         }
         .task { await model.load(watchStore: watchStore) }
+        // Progress synced from another device, or played here, moves the
+        // Continue Watching scene and its time left. Not while the player
+        // is open (it saves every ten seconds, and the macOS library window
+        // stays live beside it); closing it catches up.
+        .task(id: playerSession.isPlayerPresented ? nil : Array(watchStore.inProgress.prefix(3))) {
+            await model.refreshContinueWatching(watchStore: watchStore)
+        }
         .task(id: audienceVerificationKey) {
             await youngAudienceFilter.verify(audienceRefs)
         }
@@ -929,12 +937,24 @@ struct MoviesShowsView: View {
 
     // MARK: - Library lookups
 
-    /// Resume in the player when the item exists in the local library;
-    /// otherwise open its detail page (shows pick episodes there).
+    /// Resume Playback goes straight to the player with what Continue
+    /// Watching would play: the movie, or the show's episode watched last
+    /// (the next one once it's finished), read from the store at the tap so
+    /// a sync since the hero loaded counts. Play starts a library movie.
+    /// Anything else opens the detail page (shows pick episodes there).
     private func playOrOpen(_ hero: MoviesShowsModel.Hero) {
+        let ref = hero.detail.ref
         Task {
-            if hero.detail.ref.mediaType == .movie,
-               let movie = Movie.preferredCopy(tmdbId: hero.detail.ref.id, in: modelContext) {
+            if hero.isContinueWatching, let item = ResumeItem.latest(
+                for: ref,
+                watchStore: watchStore,
+                movies: ref.mediaType == .movie ? Movie.copies(tmdbId: ref.id, in: modelContext) : [],
+                shows: ref.mediaType == .tv ? TVShow.copies(tmdbId: ref.id, in: modelContext) : [],
+                isOffline: library.isOffline
+            ) {
+                await playerSession.play(item)
+            } else if ref.mediaType == .movie,
+                      let movie = Movie.preferredCopy(tmdbId: ref.id, in: modelContext) {
                 await playerSession.play(movie: movie)
             } else {
                 openHeroDetail(hero)

@@ -466,10 +466,7 @@ struct DownloadedView: View {
 
     private func resume(_ item: ResumeItem) {
         Task {
-            switch item.payload {
-            case .movie(let movie): await playerSession.play(movie: movie)
-            case .episode(let episode): await playerSession.play(episode: episode)
-            }
+            await playerSession.play(item)
         }
     }
 
@@ -860,6 +857,38 @@ struct ResumeItem: Identifiable {
         }
         guard let limit else { return sorted }
         return Array(sorted.prefix(limit))
+    }
+
+    /// The Continue Watching item for one title — the movie's resume point,
+    /// or the show's latest-watched episode (the one after it once that is
+    /// finished) — from the copy the shelf would play. `nil` when nothing
+    /// in the library resumes it. `movies` and `shows` may hold any titles.
+    @MainActor
+    static func latest(
+        for ref: MediaRef,
+        watchStore: WatchProgressStore,
+        movies: [Movie],
+        shows: [TVShow],
+        isOffline: (VideoFolder?) -> Bool = { _ in false }
+    ) -> ResumeItem? {
+        switch ref.mediaType {
+        case .movie:
+            items(
+                watchStore: watchStore,
+                movies: movies.filter { $0.tmdbId == ref.id },
+                shows: [],
+                limit: nil,
+                isOffline: isOffline
+            ).first
+        case .tv:
+            items(
+                watchStore: watchStore,
+                movies: [],
+                shows: shows.filter { $0.tmdbId == ref.id },
+                limit: nil,
+                isOffline: isOffline
+            ).first
+        }
     }
 
     var id: String {

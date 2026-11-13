@@ -143,6 +143,10 @@ struct RootView: View {
         .tint(Theme.gold)
         // The archive is dark by design — a lit theater breaks the vault.
         .preferredColorScheme(.dark)
+        #if os(iOS)
+        // iPhone hides the time and battery in landscape unless asked.
+        .statusBarHidden(false)
+        #endif
         .background(Theme.background)
         // Merge the connected TMDB account's lists on launch and again
         // whenever a sign-in completes (or arrives via iCloud Keychain).

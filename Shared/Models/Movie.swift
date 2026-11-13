@@ -74,8 +74,13 @@ final class Movie {
     /// The copy of a TMDB title to play when several sources hold one: the
     /// copy played last, otherwise any.
     static func preferredCopy(tmdbId: Int, in context: ModelContext) -> Movie? {
-        let descriptor = FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == tmdbId })
-        let copies = (try? context.fetch(descriptor)) ?? []
+        let copies = copies(tmdbId: tmdbId, in: context)
         return PlaybackSources.mostRecentlyPlayed(copies, lastPlayed: \.lastPlayedAt) ?? copies.first
+    }
+
+    /// Every imported copy of a TMDB title, across sources.
+    static func copies(tmdbId: Int, in context: ModelContext) -> [Movie] {
+        let descriptor = FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == tmdbId })
+        return (try? context.fetch(descriptor)) ?? []
     }
 }

@@ -63,4 +63,10 @@ final class TVShow {
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
     }
+
+    /// Every imported copy of a TMDB show, across sources.
+    static func copies(tmdbId: Int, in context: ModelContext) -> [TVShow] {
+        let descriptor = FetchDescriptor<TVShow>(predicate: #Predicate { $0.tmdbId == tmdbId })
+        return (try? context.fetch(descriptor)) ?? []
+    }
 }

@@ -59,6 +59,8 @@ final class MoviesShowsModel {
     var phase: Phase = .idle
     /// Scenes the hero rotates through; the view owns the rotation index.
     var heroScenes: [Hero] = []
+    /// The first hero load is under way; it reads the store itself.
+    @ObservationIgnored private var isLoadingHero = false
     var trending: [TMDBMediaItem] = []
     var popularMovies: [TMDBMediaItem] = []
     var popularShows: [TMDBMediaItem] = []
@@ -143,15 +145,12 @@ final class MoviesShowsModel {
     }
 
     private func loadHeroScenes(watchStore: WatchProgressStore) async {
+        isLoadingHero = true
         var scenes: [Hero] = []
 
         // Continue Watching leads the rotation when available.
-        for progress in watchStore.inProgress.prefix(3) {
-            guard let ref = heroRef(for: progress),
-                  let detail = try? await tmdb.mediaDetail(ref)
-            else { continue }
-            scenes.append(Hero(detail: detail, progress: progress))
-            break
+        if let lead = await continueWatchingScene(watchStore: watchStore, current: nil) {
+            scenes.append(lead)
         }
 
         // Then spotlight details for the recommended or trending titles, fetched
@@ -186,6 +185,46 @@ final class MoviesShowsModel {
         scenes += details.map { Hero(detail: $0, progress: nil) }
 
         heroScenes = scenes
+        isLoadingHero = false
+        // The launch sync often lands while the spotlights load.
+        await refreshContinueWatching(watchStore: watchStore)
+    }
+
+    /// Keeps the Continue Watching scene on the title watched last, and its
+    /// time left current, as the store changes — through a sync from
+    /// another device or playback here — instead of the snapshot taken
+    /// when the hero first loaded.
+    func refreshContinueWatching(watchStore: WatchProgressStore) async {
+        guard case .loaded = phase, !isLoadingHero else { return }
+        let current = heroScenes.first(where: \.isContinueWatching)
+        let lead = await continueWatchingScene(watchStore: watchStore, current: current)
+        // A newer change started another refresh while this one fetched.
+        guard !Task.isCancelled else { return }
+        if lead?.detail.ref == current?.detail.ref, lead?.progress == current?.progress { return }
+        heroScenes = Self.scenes(heroScenes, leadingWith: lead)
+    }
+
+    /// The rotation with `lead` as its Continue Watching scene: the old one
+    /// goes, and a spotlight of the same title gives way to it.
+    static func scenes(_ scenes: [Hero], leadingWith lead: Hero?) -> [Hero] {
+        var spotlights = scenes.filter { !$0.isContinueWatching }
+        guard let lead else { return spotlights }
+        spotlights.removeAll { $0.detail.ref == lead.detail.ref }
+        return [lead] + spotlights
+    }
+
+    /// The most recently watched in-progress title TMDB can describe. The
+    /// title already leading keeps its fetched details.
+    private func continueWatchingScene(watchStore: WatchProgressStore, current: Hero?) async -> Hero? {
+        for progress in watchStore.inProgress.prefix(3) {
+            guard let ref = heroRef(for: progress) else { continue }
+            if let current, current.detail.ref == ref {
+                return Hero(detail: current.detail, progress: progress)
+            }
+            guard let detail = try? await tmdb.mediaDetail(ref) else { continue }
+            return Hero(detail: detail, progress: progress)
+        }
+        return nil
     }
 
     // MARK: - Trailers

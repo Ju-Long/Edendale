@@ -189,6 +189,14 @@ final class PlayerSession {
         await presentPrepared(newItem, requestID: requestID)
     }
 
+    /// Plays a Continue Watching item: the movie, or the episode to resume.
+    func play(_ item: ResumeItem) async {
+        switch item.payload {
+        case .movie(let movie): await play(movie: movie)
+        case .episode(let episode): await play(episode: episode)
+        }
+    }
+
     /// Plays another file covered by the current item's security scope —
     /// used by the file-list sidebar for folder siblings.
     func play(siblingURL: URL) {
