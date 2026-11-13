@@ -172,7 +172,7 @@ steps until they are answered.
 | D9 | Google Drive sign-in | **Decided by the owner (2026-10-04): PKCE through Custom Tabs** (H.9.1's option 1), the flow H.6 already uses. Edendale gets an Android OAuth client with its custom URI scheme turned on, and the redirect is `com.babasama.edendale:/oauth2redirect`. If Google's verification refuses the custom scheme, ask the owner before falling back to Identity Services' `AuthorizationClient` (option 2), because it adds Play Services. **Amended 2026-10-17 (H.9.4):** the scope is now `drive.file` with Google's picker, so no restricted-scope verification is needed; the Custom Tab flow stays (D23). | — |
 | D10 | Home-server TLS | **Decided by the owner (2026-10-04), as proposed:** valid HTTPS always works; self-signed HTTPS works after the user approves the certificate's SHA-256 fingerprint, pinned per host; plain `http://` (`dav://`) only to private-network addresses. DIFF decision 4 asks Apple and Windows to match (L.4 note 6). | — |
 | D11 | Enhancement default | Apple starts each playback at Balanced, Sharpness 0.5, Denoise 0.5, Motion Smoothing off, and doesn't save changes. Android matches that (in memory, not saved), except: Off on devices that fail the capability check (F.6); Off on Android TV until F.1.6 passes on a real TV; and HDR / Dolby Vision always bypassed in this release. **Changed 2026-11-09 (owner request, P.9):** Android saves the viewer's preset, Sharpness, and Denoise on the device (`video.enhancement`, never Show Original); a saved choice wins on every device class, TV included, and the F.6 governor and the HDR / Dolby Vision bypass still apply. With nothing saved, the default is as above. Apple still starts each playback at Balanced. | — |
-| D12 | Frame generation | Phones and tablets only, off by default, behind the experiment in G.1. Never offered on Android TV. | G.2–G.6 |
+| D12 | Frame generation | Phones and tablets only, off by default, behind the experiment in G.1. Never offered on Android TV. **Decided by the owner (2026-11-12): go** (without G.1.3's phone timings), with Findings — G.1's display rule: offered only when the display has a mode at a whole multiple of twice the source rate (24 fps: 48, 96, or 144 Hz; 25 fps: 50 or 100 Hz; 30 fps: 60 or 120 Hz). Motion Smoothing is saved with the other enhancement choices once switched on (also the owner's choice that day; Apple starts each playback with it off). | — |
 | D13 | MediaSession scope | A `MediaSession` owned by `PlayerActivity`. No `MediaSessionService` and no background playback; playback still pauses in `onStop`. | — |
 | D14 | Instrumented tests | Add `src/androidTest` for GL, parser, and migration checks, run on a device or emulator. Adding them to CI is optional (A.5.4). | — |
 | D15 | Watch Next row | **Decided by the owner (2026-10-04): build it** on the platform's `WatchNextPrograms`, knowing Google ends support in the second half of 2027 (I.3.1). Opt-in, off by default. | — |
@@ -243,9 +243,9 @@ Each phase leaves the app shippable.
    - Device checks: I.1.D1 (OneDrive TV sign-in), I.3.D1 (Watch Next store instrumented test on TV)
 3. **Picture adjustments & enhancement verification:**
    - Device checks & benchmarks on physical hardware: F.1.5, F.1.6, F.3.4 (Snapdragon GSR benchmark), F.7.D1, F.8.1, F.8.2
-4. **Frame generation experiment:**
-   - G.1 feasibility probe and findings complete (`3bf5199`, Findings — G.1)
-   - G.2 → G.6: Blocked pending physical phone timings and owner go/no-go decision
+4. **Frame generation (Motion Smoothing):**
+   - G.1 feasibility probe and findings complete (`3bf5199`, Findings — G.1); the owner said go on 2026-11-12
+   - G.2 → G.6 landed on `android-27.1` (`fe675cc`, `d32bbd0`); G.1.3's phone timings and G.6.D1 are device checks
 5. **Release close-out:**
    - L.3: Draft `Play Console/27.0/release.txt` when owner requests (`versionCode 2` / `versionName 0.27` already set in `86df492`)
 
@@ -285,40 +285,40 @@ Remaining items are manual hardware device checks and benchmarks:
 
 ## Section G — Frame generation experiment (DIFF §3.17; Apple §I; D12)
 
-**Scope:** phones and tablets only; sources at 30 fps or less; displays whose refresh rate is at least twice the source rate (`Display.getSupportedModes()`). Never on Android TV, because TVs do their own motion smoothing. Off by default.
+**Scope:** phones and tablets only; SDR sources at 30 fps or less; displays with a mode at a whole multiple of twice the source rate (`Display.getSupportedModes()` at the current resolution; D12 as the owner decided it on 2026-11-12, tightened from "at least twice"). Never on Android TV, because TVs do their own motion smoothing. Off by default.
 
 ### G.1 — Feasibility status
 - [x] **G.1.1** One-day test: `MidpointFrameEffect` with 50/50 blend proved Media3 1.9.0's effects path releases added frames on time, sync holds, and seeks/flushes behave (`3bf5199`, Findings — G.1).
 - [x] **G.1.2** Custom renderer: not needed, since G.1.1 passed on Media3 1.9.0 (nothing to build).
-- [ ] **G.1.3** Estimate the cost: Coarse motion-estimation probe built (`CoarseMotionEstimationInstrumentedTest`), tested on emulator. Real phone timings not run.
+- [x] **G.1.3** Estimate the cost: Coarse motion-estimation probe built (`CoarseMotionEstimationInstrumentedTest`), tested on emulator. Real phone timings not run. *The owner said go on 2026-11-12 without them; `MotionSmoothingPassesInstrumentedTest#benchmark1080p` then timed the whole synthetic frame, pass by pass, on the owner's Pixel 3: 600 ms full and 153 ms half resolution, the coarse search 525 ms of it (Findings — G). Far over budget: the search needs reworking before any phone runs it in real time.*
 - [x] **G.1.4** **Findings — G.1** recorded with recommendation: conditional go pending phone timings. **Stop for owner review before G.2.**
 
-### G.2 — Motion estimation (Apple §I.1) [Blocked on G.1 go/no-go]
+### G.2 — Motion estimation (Apple §I.1)
 
-- [ ] **G.2.1** GLSL ES 3.1 compute shaders porting `MotionEstimation.metal`: coarse 16×16 blocks searched ±16 px with the per-pixel offset cost; a 4×4 refinement searched ±4 px around the coarse vector; and densifying to per-pixel vectors (RG16F), with an optional 3×3 median filter.
-- [ ] **G.2.2** Scene-cut counting on the GPU: a block is unmatched when its best match still differs by more than 0.06 mean luma, and a cut is 30 % or more unmatched blocks. On a cut, the synthetic slot repeats frame N−1, with no CPU readback.
-- [ ] **G.2.3** Sources wider than 1920 px run motion estimation at half resolution.
+- [x] **G.2.1** GLSL ES 3.1 compute shaders porting `MotionEstimation.metal`: coarse 16×16 blocks searched ±16 px with the per-pixel offset cost; a 4×4 refinement searched ±4 px around the coarse vector; and densifying to per-pixel vectors (RG16F), with an optional 3×3 median filter. *Built as OpenGL ES 3.0 fragment passes into integer textures, after a one-byte luma pass; densifying happens inside the warp (Deviations).* (`fe675cc`)
+- [x] **G.2.2** Scene-cut counting on the GPU: a block is unmatched when its best match still differs by more than 0.06 mean luma, and a cut is 30 % or more unmatched blocks. On a cut, the synthetic slot repeats frame N−1, with no CPU readback. *A two-step reduction (row sums, then the total) stands in for Apple's atomic counter.* (`fe675cc`)
+- [x] **G.2.3** Sources wider than 1920 px run motion estimation at half resolution. *The governor's first step down uses the same path (G.5.2).* (`fe675cc`)
 
-### G.3 — Warping and blending (Apple §I.2) [Blocked]
+### G.3 — Warping and blending (Apple §I.2)
 
-- [ ] **G.3.1** Port `FrameInterpolation.metal`: a two-way warp at t = 0.5, occlusion-aware blending, and hole filling from frame N.
+- [x] **G.3.1** Port `FrameInterpolation.metal`: a two-way warp at t = 0.5, occlusion-aware blending, and hole filling from frame N. *With Apple's densify, half-resolution upscale, cross median, and scene-cut hold in the same pass.* (`fe675cc`)
 
-### G.4 — Scheduling and presentation (Apple §I.3–I.4) [Blocked]
+### G.4 — Scheduling and presentation (Apple §I.3–I.4)
 
-- [ ] **G.4.1** Port `FrameInterpolationScheduler` as a pure Kotlin state machine: the synthetic frame first and the real frame one refresh later. Show the real frame directly for the first frame, after seeks, after dropped frames, and after gaps of 1.5 frame durations or more. No interpolation while paused or scrubbing.
-- [ ] **G.4.2** Reset on seek, pause, track switch, item switch, and size change. History is committed after interpolating, never before.
-- [ ] **G.4.3** Wire it into the presentation path chosen in G.1.
+- [x] **G.4.1** Port `FrameInterpolationScheduler` as a pure Kotlin state machine: the synthetic frame first and the real frame one refresh later. Show the real frame directly for the first frame, after seeks, after dropped frames, and after gaps of 1.5 frame durations or more. No interpolation while paused or scrubbing. *`MotionSmoothingSchedule`: Media3 releases each frame by its own timestamp, so the one-refresh hold is gone, as Findings — G.1 said; a redraw while paused has the same timestamp and makes nothing, and scrubbing is a run of seeks (flushes).* (`d32bbd0`)
+- [x] **G.4.2** Reset on seek, pause, track switch, item switch, and size change. History is committed after interpolating, never before. *Seeks and track switches flush, an item switch ends the stream, and a size or search-resolution change no longer matches; a pause needs no reset, because Media3 processes frames ahead and the frames on either side of a pause are still neighbours.* (`d32bbd0`)
+- [x] **G.4.3** Wire it into the presentation path chosen in G.1. *`MotionSmoothingEffect` after `EnhancementEffect`.* (`d32bbd0`)
 
-### G.5 — Gating and UI (Apple §I.6) [Blocked]
+### G.5 — Gating and UI (Apple §I.6)
 
-- [ ] **G.5.1** A **Motion Smoothing** toggle in the Enhancement section, shown only when eligible, labeled with the rates (for example `24 fps → 48 fps`).
-- [ ] **G.5.2** The governor turns Motion Smoothing off first when over budget or under thermal pressure, because it costs more than any enhancement stage.
+- [x] **G.5.1** A **Motion Smoothing** toggle in the Enhancement section, shown only when eligible, labeled with the rates (for example `24 fps → 48 fps`). *Rates rounded (23.976 reads as 24); while it's paused the line says why (above 1× speed; warm, busy, or saving battery). Where the container states no frame rate (Matroska, to Media3 1.9.0), the rate is measured from the first frames shown.* (`d32bbd0`)
+- [x] **G.5.2** The governor turns Motion Smoothing off first when over budget or under thermal pressure, because it costs more than any enhancement stage. *Also under battery saver; over its own budget (40 % of the source's frame interval) the search first drops to half resolution, then it turns off until the next video. A one-time device check (`MotionSmoothingCapability`) offers it only where a 1080p frame fits, and starts it at the resolution that did.* (`d32bbd0`, `5b1267a`)
 
-### G.6 — Tests and acceptance (Apple §I.7–I.8) [Blocked]
+### G.6 — Tests and acceptance (Apple §I.7–I.8)
 
-- [ ] **G.6.T1** (JVM) Port the `FrameInterpolationScheduler` draw-order cases from `FrameInterpolationTests`.
-- [ ] **G.6.T2** (instrumented) Port the GPU cases: a horizontal pan gives non-zero vectors of the right sign; a static scene gives near-zero vectors; unrelated frames trip the scene cut and repeat frame N−1; letterbox bars and flat areas stay unchanged; a fade of about 4 % blends; the interpolated pan lands at the midpoint.
-- [ ] **G.6.D1** **On device:** 30 minutes of 24 fps playback with Motion Smoothing on a flagship. Record the battery drop and thermal state, and review artifacts on pans, cuts, fades, and letterboxed scenes.
+- [x] **G.6.T1** (JVM) Port the `FrameInterpolationScheduler` draw-order cases from `FrameInterpolationTests`. *`MotionSmoothingTest`, with the display rule, the frame-rate estimator, and the cut count; governor and saved-choice cases in `VideoEnhancementTest`.* (`d32bbd0`)
+- [x] **G.6.T2** (instrumented) Port the GPU cases: a horizontal pan gives non-zero vectors of the right sign; a static scene gives near-zero vectors; unrelated frames trip the scene cut and repeat frame N−1; letterbox bars and flat areas stay unchanged; a fade of about 4 % blends; the interpolated pan lands at the midpoint. *`MotionSmoothingPassesInstrumentedTest`, plus the history rules and the half-resolution search; `MotionSmoothingPlaybackInstrumentedTest` (opt-in) plays a clip through the chain.* (`fe675cc`, `d32bbd0`)
+- [ ] **G.6.D1** **On device:** 30 minutes of 24 fps playback with Motion Smoothing on a flagship. Record the battery drop and thermal state, and review artifacts on pans, cuts, fades, and letterboxed scenes. *A 24 fps film needs a phone with a 48, 96, or 144 Hz mode (D12); on a 60/120 Hz phone use a 30 fps source. Run the benchmark and the playback probe there too (README).*
 
 ---
 
@@ -495,7 +495,7 @@ Decided by the owner on 2026-11-02: no Edendale server of any kind. Each device 
 - [x] **M.T1** (JVM) `SyncVectorsTest` (Appendix A.1 M1–M8, §5/§6 file rules, space names, backoff), `SyncConvergenceTest` (random devices, clocks, and read orders converge; a second read changes nothing), `SyncEngineTest` (one sync end to end, stamps, warnings, failures), `SyncStoragesTest` (WebDAV against an in-memory DAV server, SFTP against MINA SSHD, Drive, OneDrive, and Dropbox against recorded request shapes), `HandoffV2Test` (RFC 7748 §6.1, RFC 5869 A.1, RFC 4231 1–4, Appendix A.2 key schedule and QR link, A.3 nonces, messages, the Google rule, whole exchanges by QR and by code, wrong secret and wrong code before any payload, expiry, same role, decline, version 1 beside version 2), `LogHygieneTest` (H10), `SyncRowsTest` (row conversions).
 - [x] **M.6** Docs: README (Sync between devices, the scopes in the `secrets.json` table, dependencies, manual checks) and this section.
 - [ ] **M.D1** On two devices (ask the owner before using their AVDs): every location kind, resume across devices, the far-future warning, pairing by QR link and by code both ways, a wrong code and a stale QR code, Remove a Device, Turn Off with and without deleting the file, and an older OneDrive or Dropbox account asked to consent again. Not run on this branch so far.
-- [ ] **M.7** Owner: add `Files.ReadWrite.AppFolder` as a delegated permission on the Entra app registration, and enable `files.content.write` on the Dropbox app; until then OneDrive and Dropbox consent fails for the new scopes. Then the §11 probes: a `drive.file` folder made by the iOS client is listed by the Android client of the same Cloud project; OneDrive's app folder works for a personal account.
+- [ ] **M.7** Owner: add `Files.ReadWrite.AppFolder` as a delegated permission on the Entra app registration, and enable `files.content.write` on the Dropbox app; until then OneDrive and Dropbox consent fails for the new scopes. Then the §11 probes: a `drive.file` folder made by the iOS client is listed by the Android client of the same Cloud project; OneDrive's app folder works for a personal account. *2026-11-12: the owner added both (`Files.ReadWrite.AppFolder` on the Entra registration, `files.content.write` on the Dropbox app); the probes are the owner's, still to run.*
 - [x] **M.8** (2026-11-09, owner request) Choose a Location signs in on its own, so a library on SMB can keep its history in Google Drive without linking Drive as a source: on phones and tablets, below Linked accounts, **Sign In to Google Drive**, **Sign In to OneDrive**, and **Sign In to Dropbox** (headed Another Account when an account is already linked; only the preset provider during a handoff follow-up). `CloudAccounts.signInForSync` stores the account like any sign-in but links no library source; for Google it uses `CloudProviders.syncSignInConfiguration`, which drops the picker's `trigger_onepick`, `allow_multiple`, and `mimetypes` and keeps `access_type=offline` and `prompt=consent select_account`, because `drive.file` already covers the files Edendale creates. The new account is chosen at once; tapping the waiting row again stops a sign-in whose Custom Tab was closed. Save stays disabled until a folder, account, or saved login is chosen. The handoff follow-up's Google sign-in uses the same picker-free path. TVs are unchanged (Set Up Another Device). Existing strings only. **Deviation from `apple-27.1`:** iOS's sync setup reuses Link Source's account step, so its Google sign-in still opens the picker there.
 
 ---
@@ -1191,6 +1191,99 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
   is unverified. If it doesn't, the scanner says the camera isn't available
   and the typed code still works; a Camera2 path would be the fix. Section S's
   280 dp QR code filled the TV dialog and hid the six digits a PC types.
+- **Findings — G: Motion Smoothing on the emulator (2026-11-12).**
+  - *Where it ran:* the throwaway `edendale_phone` AVD (API 37,
+    `sdk_gphone16k_arm64`), headless with SwiftShader, so software GL on the
+    Mac's CPU, and one display mode, 60 Hz. As with G.1, it shows behaviour,
+    not phone performance.
+  - *The passes (G.6.T2):* all of `MotionSmoothingPassesInstrumentedTest`
+    passes: an 8 px pan gives (−8, 0) in at least 90 % of the interior
+    blocks, a still frame gives zero everywhere, the synthetic pan frame is
+    within 2 levels of the true midpoint, unrelated frames are a cut and
+    repeat frame N−1, letterbox bars and a flat box change by at most 2
+    levels, and a 4 % fade blends. The 1080p benchmark on SwiftShader: a
+    median 192 ms per synthetic frame with the full-resolution search and
+    61 ms at half resolution. Only the ratio carries over. The refinement
+    (±4 px around each 4×4 block, every pixel) reads about 336 million texels
+    at 1080p against the coarse pass's 151 million, so if a phone runs over
+    budget, the refinement is where to save first.
+  - *Playback (`MotionSmoothingPlaybackInstrumentedTest`, the 24 fps test
+    episode):* at 1× the software GPU managed about 9 fps through the chain,
+    with the full or the half-resolution search alike, so the chain itself is
+    SwiftShader's limit there, as G.1 saw for 30 → 60 fps at 720p. At 0.25×
+    ExoPlayer released exactly 2.00 frames per source frame with none
+    dropped (SurfaceFlinger: 11.9 fps presented, 24 × 0.25 × 2); with Motion
+    Smoothing paused mid-play, 0.98; a seek, a pause with a redraw, and a seek
+    back raised no error.
+  - *Matroska has no frame rate in Media3 1.9.0.* `MatroskaExtractor` reads
+    `DefaultDuration` only to time laced samples and never sets
+    `Format.frameRate`; MP4 sets it (`BoxParser`). Without a fallback no MKV
+    would ever be offered Motion Smoothing. `FrameRateEstimator` measures
+    the rate from the first 25 frames shown, while no midpoint is being
+    made. Matroska timestamps are often whole milliseconds, so 30 fps
+    arrives as 33 and 34 ms gaps; the median alone reads 30.3 fps, past
+    Apple's 30 fps limit, so the estimate is the mean of the gaps near the
+    median.
+  - *In the app:* the 24 fps episode isn't offered on the 60 Hz screen (D12).
+    A copy with Matroska's `TimecodeScale` changed from 1 000 000 to 800 000
+    (real 30 fps timestamps) showed **Motion Smoothing** under Sharpness;
+    switched on, it read "30 fps → 60 fps" and saved
+    `"motionSmoothing":true`, and within a minute the governor paused it
+    ("Paused while the device is warm, busy, or saving battery"): SwiftShader
+    has no timer queries, and dropped frames count as over budget. For this
+    the emulator's stored capability verdict was set to pass by hand and
+    restored to fail afterwards, and the enhancement choice the check saved
+    was removed again.
+  - *The picture:* a screenshot mid-play showed block-shaped steps along the
+    test pattern's thin moving diagonal: 4×4 block vectors can't follow a
+    line a few pixels wide crossing a different background. G.6.D1 judges
+    this on real films.
+  - *The owner's Pixel 3 (Adreno 630, Android 12; G.1.3 on a phone, 2026-11-12):*
+    the 9 GPU cases pass, but one synthetic 1080p frame takes a median
+    600 ms with the full-resolution search and 153 ms at half resolution,
+    against the 8 ms budget: about 75 times over, and slower than SwiftShader
+    on the Mac (192 and 61 ms). By pass at full resolution: coarse search
+    525 ms, refinement 70 ms, warp 3.3 ms, the copies, luma, and cut count
+    under 2 ms each (126, 20, and 3.7 ms at half resolution). The coarse
+    pass is one fragment per 16×16 block looping over all 289 even offsets
+    and 64 samples each, about 155 million iterations on 8,160 fragments,
+    too few to fill the GPU: it runs about 8 times slower per iteration
+    than the refinement, which has 16 times as many fragments. Apple's
+    exhaustive search doesn't fit a 2018 phone GPU in this form; Findings —
+    G.1's go/no-go line (about 2 ms for the coarse pass on a flagship) is
+    missed by two orders of magnitude here. This Pixel 3 also failed
+    Enhancement's own capability check (stored `fail`), so the app wouldn't
+    offer Motion Smoothing on it. A phone that passed that check but is
+    this slow would play badly until the governor stepped down, about 30
+    frames at each level.
+  - *Spread across the GPU (the owner's choice: keep Apple's search,
+    parallelise it; `5b1267a`).* The coarse search runs as one fragment per
+    block and even dy, scoring its 17 dx from one read of each sampled row,
+    and a pick pass takes the 17 row winners in Apple's order and then the
+    odd neighbours from one read of the 3 × 17 pixels they reach; the
+    refinement reads each row of frame N−1 once per dy for all 9 dx. The
+    same offsets win (the 9 GPU cases pass unchanged). Adreno keeps arrays
+    indexed in loops in slow memory: an array version of the refinement took
+    154 ms, twice the original, so rows are vec4s compared with fixed
+    swizzles. Pixel 3, 1080p: 39 ms full, 18 ms half (by pass at full:
+    coarse 13.5, pick 3.1, refinement 18.2, warp 3.5, the rest under 2 ms
+    each).
+  - *Playback on the Pixel 3 at 1× (`MotionSmoothingPlaybackInstrumentedTest`,
+    the 24 fps 720p test episode):* with the half-resolution search, 1.99
+    frames released per source frame, none dropped, 49 fps presented on its
+    60 Hz screen, at 13.4 ms of GPU per real frame (timer queries work on
+    Adreno 630); with the full-resolution search, 32 ms and 1.38 frames per
+    source frame, falling behind. So the limit is the share of the frame
+    interval (32 % played cleanly, 77 % didn't), not G.1's 8 ms, which came
+    from SwiftShader's CPU timings: the budget is now 40 % of the source's
+    frame interval (13.3 ms at 30 fps, 16.7 ms at 24).
+  - *The device check (`MotionSmoothingCapability`, `5b1267a`):* the real
+    passes on 1080p frames offscreen, full then half, once per app version
+    after Enhancement's check passes and never on TV; offered only where one
+    fits 13.3 ms (30 fps, the strictest case), starting at that resolution.
+    On the Pixel 3: 39.1 and 15.6 ms, "none". The Pixel 3 only offers 30 fps
+    sources anyway (60 Hz, D12), and at 1080p its half-resolution 15.6 ms
+    would be 47 % of a 30 fps frame.
 
 ## Deviations log
 
@@ -1262,6 +1355,12 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | T.2 | Any Android device can join by typing the other device's six-digit code (Enter the Other Device's Code); `apple-27.1` joins only by scanning. | FEATURES-27.1.md §6.2 offers the typed code where a vetted J-PAKE exists (Android, Quest, Windows). Without it two devices that can only show a code (two TVs, a TV and a headset, two headsets) can't pair, a headset joins only through a link, and a phone that refuses the camera can't join. Apple devices still can't type the code or show one to type, and the list leaves them out. | 2c81a4f |
 | T.2 | A TV shows its pairing code beside the QR code in a wider dialog; Apple's tvOS sheet stacks them. | Android TV's dialog is shorter than tvOS's full-screen sheet: the six digits and the new row fell below the fold, out of a remote's reach. | fecbfb1 |
 | T.4 | A Quest 3 or 3S scans the other device's code with its passthrough camera; Vision Pro only shows its code. | Owner's request (2026-11-12): a code shown inside a headset is hard for a phone to scan, while someone wearing a Quest 3 can look at the phone's screen. | b448ad5 |
+| G.2.1, G.3.1 | OpenGL ES 3.0 fragment passes into integer textures (RGBA16I, R32I) after an R8 luma pass, not ES 3.1 compute into RG16F; vectors are whole search pixels; Apple's densify, half-resolution upscale, and scene-cut hold run inside the warp pass; the passes compile through `FrameGenProgram` rather than Media3's `GlProgram`. | G.1.3 measured compute at the fragment pass's cost, and the enhancement passes already require ES 3.0; integer formats are colour-renderable in ES 3.0 without the half-float extension; folding the passes saves a full-size vector texture; `GlProgram` refuses `isampler2D`. | fe675cc |
+| G.2.2 | A two-step reduction (row sums, then the total) counts unmatched blocks. | ES 3.0 has no atomics; the decision still stays on the GPU. | fe675cc |
+| G.4.1, G.4.2 | No one-refresh hold of frame N, and no reset on pause. | Findings — G.1: Media3 releases each frame by its own timestamp and processes frames ahead, so the frames either side of a pause are still neighbours. | d32bbd0 |
+| G.5 | Offered only with a display mode at a whole multiple of twice the source rate, after a passed capability check, for SDR, at 1× or slower; saved once switched on; the rate measured from shown frames where the container gives none; the line under the switch says why it's paused. | The owner's decisions on 2026-11-12 (D12); Findings — G.1 (speed); Findings — G (Matroska). | d32bbd0 |
+| G.5.2 | Battery saver turns it off too, its own budget first halves the search (the eight samples after a step are ignored, being timed before the GL thread saw it), it goes before enhancement stages only while it actually runs, and once off for budget it stays off until the next video. | The same pressure rule as denoise; nothing measures it while it's off; the review of `d32bbd0`. | d32bbd0, 97db1e2 |
+| G.2.1, G.5 | The search spread across the GPU (coarse rows, a pick pass, a row-shared refinement) with the same winners; a one-time device check offers Motion Smoothing only where a 1080p frame fits the budget and starts it at that resolution; the budget is 40 % of the source's frame interval, not 8 ms. | The Pixel 3 needed 600 ms per frame for the direct port; the owner chose to keep Apple's search and parallelise it, with the check; the Pixel 3 played cleanly at 13.4 ms per 24 fps frame (Findings — G). | 5b1267a |
 
 ---
 
@@ -1315,6 +1414,8 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | 2026-11-11 | N.5, O.5: the Theater chip waits for the item (Claude, desktop session; found by the review of the merge into `meta-horizon-27.1`) | `./gradlew testDebugUnitTest assembleDebug` on a clean snapshot: pass, 845 JVM tests, 0 failures. | not run (the wait needs a parental rule and a slow certification lookup on the XR emulator) | `PlayerActivity.enterTheater` returns until `itemStarted` (Findings). No pure rule to test: the flag is the activity's. |
 | 2026-11-11 | R.1–R.7, R.D1 (Claude, desktop session started by the 2026-11-11 review session) | Other sessions were editing the shared checkout, so every commit's tree was built and tested on a clean snapshot in the scratchpad (`git archive` of HEAD or of the staged index, plus `local.properties`, without `secrets.json`): `./gradlew testDebugUnitTest assembleDebug` passed at each step, 847, 849, 852, 853, 856, 857, and 858 JVM tests, 0 failures (845 before). `./gradlew bundleRelease` once on a clean snapshot of `7d3883d`: success in 37 s, an unsigned `build/outputs/bundle/release/Edendale-release.aab` of 57.8 MB with `base/` and `xr/`. | Throwaway `edendale_phone` (API 37, headless) with a debug build of `6db4711` and the checkout's `secrets.json`. **R.5:** Watch Trailer on The Rings of Power's page plays YouTube's embed: Edendale's process holds a started `USAGE_MEDIA` AAudio player and a VP9 decoder, with no error 153 (the picture draws on an overlay `screencap` doesn't capture). **R.3:** with sync on at a folder (`Documents/SyncA`, space R3Test), choosing `Documents/SyncB` shows "This device's file is still in … Documents/SyncA (R3Test). Delete it, or keep it there." with Delete My File There and Keep It; Delete removed this device's file from SyncA only; switching back to SyncA offered SyncB, the offer survived a force-stop, and Keep It left SyncB's file. **Not run:** R.2 on `edendale_tv` (API 36), whose Sync buttons ask for a parental PIN another session set; two guesses failed, so its failure count stands at 2; the Google half of R.2 (needs an offer from an iPhone or a PC); R.1's notes on screen; R.7's job running. | The note names the old location with the Sync row's label, so a folder reads "still in A folder on this device · Documents/SyncA", as Turn Off's message already did. The phone was left with sync off and the test folders removed; both emulators were left running for the pairing session (Section S). |
 | 2026-11-12 | T.1–T.5, T.T1, T.D1 (Claude, desktop session started by the 2026-11-12 review session; T.4 at the owner's request) | Every commit's staged tree was built and tested on a clean snapshot (`git archive "$(git write-tree)"` plus `local.properties`): `./gradlew --no-configuration-cache testDebugUnitTest assembleDebug`, pass each time, 871 JVM tests after T.1 and 877 after T.4 and each later commit, 0 failures. `./gradlew lintDebug` reports no error in the changed Kotlin (no `NewApi` or `UnsafeOptInUsageError`); the run fails on errors that were already there (324 `MissingTranslation` for the `values-en-r*` overrides, Media3 opt-ins). | `edendale_phone` (sdk_gphone16k_arm64, API 37): a pairing link with the camera revoked showed Connecting and no camera prompt (`717a2ed`'s build flashed the prompt); Try Again opened the scanner, which asked; refusing it showed the message and Enter the Other Device's Code; the typed join end to end against a second copy of the app on the same emulator: the copy found the host alone and asked for its code, a wrong code was refused on both sides and the host showed a new one, the right code paired, the sender confirmed Send to …?, and both listed the SFTP login and the sync location. `edendale_tv` (sdk_google_atv64_arm64, API 36), two copies of the app (the installed app's Sync asks for the unknown PIN): the shown code beside its text, D-pad Down reaching Enter the Other Device's Code and OK opening it, the field focused with the numeric on-screen keyboard, the typed code pairing both TVs (both had chosen Receive, which they were told), five wrong codes locking both sides for a minute, both recovering, and Back returning to the TV's own code with a new one. Three fixes came from these checks (T.2: the button that cut its label, the host's TV wording, and the TV layout with the both-receive wording). **Not run:** any headset (the Quest 3's camera, the Quest's typed join), the two emulators against each other (no shared mDNS), the installed app on the TV (unknown parental PIN, left as it was), TalkBack's speech (the labels were read from `uiautomator`), a real scan. | The second copies were scratch builds with `applicationIdSuffix` `.peer` and `.peer2`; they were uninstalled afterwards and both emulators left with this branch's build. Reading the finished dialog afterwards found that a scan after a failed typed attempt never connected (`startGuest` waited on the finished code job); `ac40ce3` fixes it, not device-checked (the emulators can't feed a code to the camera). `meta-horizon-27.1` takes this by merge (HORIZON.md B.15). |
+| 2026-11-12 | G.2–G.5, G.6.T1, G.6.T2 (Claude, desktop session; the owner said go on frame generation and chose D12's even-display rule and a saved switch) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at `fe675cc`, `d32bbd0`, and `97db1e2`, 893 JVM tests, 0 failures (877 before). Instrumented suite (`am instrument -e package com.babasama.edendale`): 51 of 51 on `edendale_phone`, including the 8 new GPU cases; that run picked up the app APK from before `97db1e2` (the build had stopped at a failing unit test), so `97db1e2`'s passes were checked on the Pixel 3 instead: 9 of 9 GPU cases. An Opus reviewer read `fe675cc` and `d32bbd0`: no defect in the passes, GL state, or Media3 contract; four logic defects fixed in `97db1e2`. One run had `PairingFlowTest`'s padded-camera-plane case fail at its sideways decode and pass on five reruns: its QR code comes from a fresh random key each run, so it looks flaky (Section T's, untouched here). | `edendale_phone` (throwaway AVD, API 37, headless SwiftShader, 60 Hz only): the GPU cases, the 1080p benchmark (192 ms full, 61 ms half on SwiftShader), the playback probe (2.00 frames per source frame at 0.25×, 0.98 paused, about 9 fps at 1×), and the switch in the player on a 30 fps copy of a test episode (Findings — G). The capability verdict was set to pass for that check and restored to fail; the enhancement choice it saved was removed; the scratch clips were deleted. | G.1.3 run afterwards on the owner's Pixel 3: 600 ms full, 153 ms half per synthetic 1080p frame (Findings — G), far over budget. Not run: G.6.D1, a display that switches to 48/96/144 Hz, and PiP with Motion Smoothing on. Media3's MatroskaExtractor gives no frame rate, hence the estimator (Findings — G). Nothing committed beyond `android-27.1`; not pushed. |
+| 2026-11-12 | G.1.3 on a phone; G.2/G.5 reworked for speed (Claude, desktop session; the owner chose to keep Apple's search, parallelise it, and add a device check) | `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest`: pass at `5b1267a`, 896 JVM tests, 0 failures. Instrumented suite on `edendale_phone`: 52 of 52 at `5b1267a`. | The owner's Pixel 3 (Android 12, Adreno 630), Motion Smoothing classes only (the full suite would touch the phone's own data): the 9 GPU cases, the benchmark (600 → 39 ms full, 153 → 18 ms half at 1080p), the device check (39.1 / 15.6 ms, "none"), and the playback probe at 1× (half: 1.99 frames per source frame, none dropped, 13.4 ms GPU per real frame; full: 1.38, 32 ms). `edendale_phone`: opening the player ran the device check and stored "none"; with "half" set by hand the switch appeared, with "none" it didn't; Enhancement's verdict was set to pass for that and restored, the check's key removed. Test clips removed from both devices. | Not run: G.6.D1 (30 minutes on a phone the check passes; the Pixel 3 doesn't), a display with a 48/96/144 Hz mode. The Pixel 3's own Enhancement check says fail, so the app offers it neither Enhancement by default nor Motion Smoothing. |
 
 ---
 
@@ -1355,12 +1456,12 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | F.6 | Budget and capability | Complete | bba68d8, 753dd89 |
 | F.7 | Enhancement UI | Complete (F.7.D1 partly checked on the emulator; see the Handoff log) | bba68d8 |
 | F.8 | Enhancement acceptance | Not run (needs devices) | |
-| G.1 | Frame generation feasibility | G.1.1 passed on the emulator (Media3's effects path releases added frames on time); G.1.2 not needed; G.1.3 probe built, phone timings not run; Findings — G.1 written. Waiting for phone timings and the owner's go/no-go | 3bf5199 |
-| G.2 | Motion estimation | Blocked (G.1) | |
-| G.3 | Warping and blending | Blocked (G.1) | |
-| G.4 | Scheduling and presentation | Blocked (G.1) | |
-| G.5 | Gating and UI | Blocked (G.1) | |
-| G.6 | Tests and acceptance | Blocked (G.1) | |
+| G.1 | Frame generation feasibility | G.1.1 passed on the emulator (Media3's effects path releases added frames on time); G.1.2 not needed; G.1.3 on the Pixel 3 (2026-11-12): 600 ms full, 153 ms half per synthetic 1080p frame, about 75 times the budget (Findings — G); Findings — G.1 written. The owner said go on 2026-11-12 (D12) | 3bf5199 |
+| G.2 | Motion estimation | Complete (ES 3.0 fragment passes; G.6.T2 on the API 37 emulator and the Pixel 3; spread across the GPU after the Pixel 3's 600 ms: 39 ms full, 18 ms half at 1080p) | fe675cc, 5b1267a |
+| G.3 | Warping and blending | Complete (G.6.T2 on the API 37 emulator) | fe675cc |
+| G.4 | Scheduling and presentation | Complete (emulator: 2.00 frames per source frame at 0.25×, see Findings — G) | d32bbd0 |
+| G.5 | Gating and UI | Complete (emulator: the switch, the label, the saved choice, the governor's pause; review fixes 97db1e2; the device check and the per-interval budget 5b1267a, "none" on the Pixel 3) | d32bbd0, 97db1e2, 5b1267a |
+| G.6 | Tests and acceptance | G.6.T1 and G.6.T2 complete (893 JVM tests; 51 instrumented on the API 37 emulator); G.6.D1 not run (needs a phone) | fe675cc, d32bbd0 |
 | H.1 | Connector contract | Complete | 0b43a91 |
 | H.2 | Remote byte source | Complete | 91cbc0e |
 | H.3 | WebDAV | Complete; D10 checked on the phone emulator against a local server (self-signed review, pinned playback, changed certificate refused and re-trusted, LAN `http://` with a login, public `http://` refused); H.3.3 against a real server with a trusted certificate not run | c9b6f6a, 65219dd |
@@ -1396,7 +1497,7 @@ H.9.1, H.10.1, H.12.1, I.2.1, and I.3.1.
 | M.T1 | JVM tests: vectors, convergence, storages, handoff, log hygiene | Complete | 0cb6569 |
 | M.6 | README and this file | Complete | 32d04ca |
 | M.D1 | Two-device checks | Not run | |
-| M.7 | Owner's console changes and probes | Open | |
+| M.7 | Owner's console changes and probes | Console changes done by the owner (2026-11-12); probes and sign-in checks open | |
 | N.1 | The `:xr` feature module and the Section N plan | Complete (the split installs beside the base on the XR emulator: `splits=[base, xr]`) | e427c6e |
 | N.2 | `TheaterGlb`: seat, screen bounds, seat markers from a room's GLB | Complete (15 JVM tests) | f39f6d2 |
 | N.3 | Geometry, seat map, rooms, lights, preference rules | Complete (41 JVM tests: the 32 visionOS cases, the Quest's picture fit, the rooms' spans) | c611335 |

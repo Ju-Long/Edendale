@@ -440,6 +440,10 @@
     <string name="video_saturation">Saturación</string>
     <string name="video_hue">Tono</string>
     <string name="video_show_original">Mostrar original</string>
+    <string name="video_motion_smoothing">Suavizado de movimiento</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">En pausa a más de 1× de velocidad</string>
+    <string name="video_motion_smoothing_paused_busy">En pausa mientras el dispositivo está caliente, ocupado o ahorrando batería</string>
     <string name="video_enhancement">Mejora</string>
     <string name="video_preset">Preajuste</string>
     <string name="video_preset_off">Desactivado</string>

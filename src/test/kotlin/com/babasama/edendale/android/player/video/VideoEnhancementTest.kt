@@ -238,6 +238,117 @@ class VideoEnhancementTest {
         assertFalse(governor.limit(all).denoise)
     }
 
+    // MARK: - Motion Smoothing in the governor (G.5.2)
+
+    @Test
+    fun motionSmoothingGoesFirstWhenTheEnhancementPassesRunOverBudget() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingActive = true
+        repeat(5) { governor.record(12.0) }
+        assertFalse(governor.allowsMotionSmoothing)
+        // Every enhancement stage is still there.
+        assertEquals(all, governor.limit(all))
+        assertEquals(0, governor.level)
+        // Next time over budget, denoise goes as before.
+        repeat(5) { governor.record(12.0) }
+        assertEquals(1, governor.level)
+        // Coming back under budget restores enhancement, not Motion Smoothing.
+        repeat(5) { governor.record(3.0) }
+        assertEquals(0, governor.level)
+        assertFalse(governor.allowsMotionSmoothing)
+        // The next video starts again.
+        governor.resetMotionSmoothing()
+        assertTrue(governor.allowsMotionSmoothing)
+    }
+
+    @Test
+    fun motionSmoothingOverItsOwnBudgetHalvesTheSearchThenTurnsOff() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingBudgetMillis = 8.0
+        governor.motionSmoothingActive = true
+        repeat(5) { governor.recordMotionSmoothing(6.0) }
+        assertFalse(governor.motionSmoothingAtHalfResolution)
+        repeat(5) { governor.recordMotionSmoothing(11.0) }
+        assertTrue(governor.motionSmoothingAtHalfResolution)
+        assertTrue(governor.allowsMotionSmoothing)
+        // Frames timed at full resolution before the GL thread saw the step don't count against half resolution.
+        repeat(EnhancementGovernor.SETTLE_SAMPLES) { assertFalse(governor.recordMotionSmoothing(12.0)) }
+        repeat(5) { governor.recordMotionSmoothing(4.0) }
+        assertTrue(governor.allowsMotionSmoothing)
+        repeat(5) { governor.recordMotionSmoothing(13.0) }
+        assertFalse(governor.allowsMotionSmoothing)
+        assertEquals(2, governor.motionSmoothingLevel)
+        // Off stays off: nothing measures it, and junk samples don't count.
+        repeat(10) { governor.recordMotionSmoothing(1.0) }
+        assertFalse(governor.recordMotionSmoothing(Double.NaN))
+        assertFalse(governor.allowsMotionSmoothing)
+        // Enhancement stages are untouched by Motion Smoothing's own budget.
+        assertEquals(all, governor.limit(all))
+    }
+
+    @Test
+    fun aDeviceThatOnlyFitsHalfResolutionStartsThere() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingBudgetMillis = 8.0
+        governor.requireHalfResolution()
+        assertTrue(governor.motionSmoothingAtHalfResolution)
+        assertTrue(governor.allowsMotionSmoothing)
+        // Asking again changes nothing; over budget from there turns it off.
+        governor.requireHalfResolution()
+        assertEquals(1, governor.motionSmoothingLevel)
+        repeat(EnhancementGovernor.SETTLE_SAMPLES + 5) { governor.recordMotionSmoothing(12.0) }
+        assertFalse(governor.allowsMotionSmoothing)
+        // Off for budget isn't undone by the check's floor.
+        governor.requireHalfResolution()
+        assertEquals(2, governor.motionSmoothingLevel)
+    }
+
+    @Test
+    fun motionSmoothingsBudgetIsFortyPercentOfTheSourceFrame() {
+        assertEquals(13.33, EnhancementGovernor.motionSmoothingBudgetFor(30f), 0.01)
+        assertEquals(16.68, EnhancementGovernor.motionSmoothingBudgetFor(23.976f), 0.01)
+        // The default is the strictest case offered, 30 fps, and the device check uses it too.
+        assertEquals(EnhancementGovernor.motionSmoothingBudgetFor(30f), EnhancementGovernor().motionSmoothingBudgetMillis, 1e-9)
+        assertEquals(EnhancementGovernor.motionSmoothingBudgetFor(30f), MotionSmoothingCapability.CHECK_BUDGET_MILLIS, 1e-9)
+        // The Pixel 3 at 24 fps (Findings — G): 13.4 ms a real frame played cleanly, 32 ms didn't.
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingBudgetMillis = EnhancementGovernor.motionSmoothingBudgetFor(24f)
+        repeat(10) { governor.recordMotionSmoothing(13.4) }
+        assertEquals(0, governor.motionSmoothingLevel)
+        repeat(5) { governor.recordMotionSmoothing(32.0) }
+        assertTrue(governor.motionSmoothingAtHalfResolution)
+    }
+
+    @Test
+    fun pressureTurnsMotionSmoothingOffUntilItClears() {
+        val governor = EnhancementGovernor(window = 5)
+        governor.motionSmoothingActive = true
+        governor.setPressure(thermalModerateOrWorse = false, batterySaver = true)
+        assertFalse(governor.allowsMotionSmoothing)
+        governor.setPressure(thermalModerateOrWorse = false, batterySaver = false)
+        assertTrue(governor.allowsMotionSmoothing)
+        // With Motion Smoothing off for this video, over budget drops denoise as it always did.
+        val plain = EnhancementGovernor(window = 5)
+        repeat(5) { plain.record(12.0) }
+        assertEquals(1, plain.level)
+        assertTrue(plain.allowsMotionSmoothing)
+    }
+
+    @Test
+    fun motionSmoothingIsSavedOffByDefaultAndReadBackSafely() {
+        val on = EnhancementSettings(preset = EnhancementPreset.SHARPEN_ONLY, motionSmoothing = true)
+        assertTrue(on.toJson().contains("\"motionSmoothing\":true"))
+        assertEquals(on, EnhancementSettings.fromJson(on.toJson()))
+        // A choice saved before G.5 has no such key: off.
+        assertEquals(false, EnhancementSettings.fromJson("""{"preset":"balanced","sharpness":0.5,"denoise":0.5}""")?.motionSmoothing)
+        // Anything but a JSON true reads as off.
+        assertEquals(false, EnhancementSettings.fromJson("""{"preset":"balanced","motionSmoothing":"true"}""")?.motionSmoothing)
+        assertEquals(false, EnhancementSettings.fromJson("""{"preset":"balanced","motionSmoothing":1}""")?.motionSmoothing)
+        // Nothing saved: off on every device class.
+        assertFalse(EnhancementSettings.initial(stored = null, isTelevision = false, capable = true).motionSmoothing)
+        assertTrue(EnhancementSettings.initial(stored = on, isTelevision = false, capable = true).motionSmoothing)
+    }
+
     @Test
     fun theTrackSizeStandsInForTheOneMedia3DoesNotReport() {
         // Media3 1.9.0 reports no video size while effects are installed; the track's own size,

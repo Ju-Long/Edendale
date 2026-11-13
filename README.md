@@ -834,6 +834,24 @@ straight from the decoder to the screen. A governor keeps the passes within
 falls behind, runs hot, or saves battery. Nothing about performance leaves the
 device.
 
+**Motion Smoothing** (in Enhancement) doubles a video's frame rate by drawing
+a frame between each pair of frames on the GPU, a port of Apple's motion
+estimation and two-way warp, and shows the rates as `24 fps → 48 fps`. It is
+offered only on phones and tablets that pass the GPU check, never on Android
+TV (TVs smooth motion themselves), for SDR video at 30 fps or less, and only
+when the screen has a refresh rate that shows the doubled rate evenly: 24 fps
+needs a 48, 96, or 144 Hz mode, 25 fps 50 or 100 Hz, and 30 fps 60 or 120 Hz.
+Matroska files don't state their frame rate to the player, so for them it is
+measured from the first frames shown. A one-time check, run on the device after
+Enhancement's own, times the real passes on 1080p frames: Motion Smoothing is
+offered only where a frame fits its budget, 40 % of a source frame's interval
+(13.3 ms at 30 fps), with the motion search at full or half resolution. It runs
+at 1× or slower, starts off, and once switched on stays on for later videos
+(saved on the device with the other Enhancement choices). The governor turns it
+off before anything else when the device falls behind, runs hot, or saves
+battery; over its budget it first searches for motion at half resolution. A
+scene cut repeats the previous frame instead of blending two shots.
+
 The upscaler is AMD FidelityFX Super Resolution 1.0's EASU, ported to GLSL in
 `src/main/assets/shaders/edendale_easu_es3.glsl` under the MIT licence
 (Copyright © 2021 Advanced Micro Devices, Inc.; the notice is kept in the
@@ -949,8 +967,10 @@ runs the same suite on an API 35 emulator in
 `.github/workflows/instrumented.yml`, separately from the hermetic
 `build-and-test` job.
 
-Two probes for the frame-generation experiment (ENHANCEMENT.md G.1) are
-skipped unless asked for. Install both APKs with
+Four Motion Smoothing probes (ENHANCEMENT.md Section G) are skipped unless
+asked for; `MotionSmoothingCapabilityInstrumentedTest` also runs the device
+check and logs what it would decide (`adb logcat -s MotionSmoothingCheck`),
+without storing it. Install both APKs with
 `./gradlew installDebug installDebugAndroidTest`, which keeps the app's data,
 then time Apple's coarse motion search at 1080p on the device's GPU:
 
@@ -966,6 +986,25 @@ timestats on for the run:
 ```sh
 adb push clip.mp4 /data/local/tmp/
 adb shell am instrument -w -r -e g1Clip /data/local/tmp/clip.mp4 -e g1Fps 24 -e class com.babasama.edendale.android.player.video.framegen.FrameGenerationPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The third times Motion Smoothing itself at 1080p, at full and half
+resolution, whole and pass by pass, and logs the medians
+(`adb logcat -s MotionSmoothingBench`):
+
+```sh
+adb shell am instrument -w -r -e motionSmoothingBenchmark true -e class com.babasama.edendale.android.player.video.MotionSmoothingPassesInstrumentedTest#benchmark1080p com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The fourth plays a clip through the app's own chain (Enhancement, then Motion
+Smoothing) into a real surface and reports frames released per source frame
+(about two while it runs), the GPU time per frame where the driver reports it,
+and what SurfaceFlinger presented. Add `-e motionSmoothingHalf true` for the
+half-resolution search, or `-e motionSmoothingSpeed 0.25` on a software GPU
+such as the emulator's, which can't make the frames in real time:
+
+```sh
+adb shell am instrument -w -r -e motionSmoothingClip /data/local/tmp/clip.mp4 -e motionSmoothingFps 24 -e class com.babasama.edendale.android.player.video.MotionSmoothingPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 Build an unsigned release APK with:
@@ -1058,6 +1097,11 @@ tests. Before a release, check on:
 - **A mid-range phone (Adreno 6xx or Mali-G57 class):** Balanced and High
   Quality on 720p and 1080p video without dropped frames, and the governor
   stepping down when the device runs hot.
+- **A flagship phone, and a phone with a 48, 96, or 144 Hz mode if one is at
+  hand:** Motion Smoothing for 30 minutes on a 24 or 30 fps film (battery
+  drop, thermal state, the governor's steps), the display switching to the
+  doubled rate (`adb shell dumpsys SurfaceFlinger`), and the picture on pans,
+  scene cuts, fades, and letterboxed scenes.
 - **An Android TV box on a 4K panel, and a TV set running Google TV:** the
   remote's hold speeds and skip-prompt focus, the playlist with the D-pad, the
   system media controls, enhancement output at the panel's resolution, and

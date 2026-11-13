@@ -33,6 +33,7 @@ import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.player.video.EnhancementPreset
 import com.babasama.edendale.android.player.video.EnhancementSettings
+import com.babasama.edendale.android.player.video.MotionSmoothingPause
 import com.babasama.edendale.android.player.video.UpscaleRules
 import com.babasama.edendale.android.player.video.VideoAdjustment
 import com.babasama.edendale.android.player.video.VideoEffectsController
@@ -84,8 +85,9 @@ internal fun PictureSection(video: VideoEffectsController, chrome: PlayerChromeS
 
 /**
  * Enhancement (F.7), the panel's last section: the preset menu, Sharpness,
- * Denoise (High Quality), Show Original, and the resolution label. The preset
- * and sliders are saved on the device as the viewer changes them; Show
+ * Denoise (High Quality), Motion Smoothing where it's offered (G.5.1), Show
+ * Original, and the resolution label. The preset, the sliders, and Motion
+ * Smoothing are saved on the device as the viewer changes them; Show
  * Original never is.
  */
 @Composable
@@ -149,6 +151,22 @@ internal fun EnhancementSection(video: VideoEffectsController, chrome: PlayerChr
             ) {
                 video.setDenoise(it)
                 chrome.noteInteraction()
+            }
+        }
+        // G.5.1: only for a video and display it suits; the rates while it runs, else why it's paused.
+        video.motionSmoothingOffer?.let { offer ->
+            SwitchRow(stringResource(R.string.video_motion_smoothing), settings.motionSmoothing) {
+                video.setMotionSmoothing(it)
+                chrome.noteInteraction()
+            }
+            if (settings.motionSmoothing) {
+                SecondaryPanelCopy(
+                    when (video.motionSmoothingPause) {
+                        MotionSmoothingPause.SPEED -> stringResource(R.string.video_motion_smoothing_paused_speed)
+                        MotionSmoothingPause.BUSY -> stringResource(R.string.video_motion_smoothing_paused_busy)
+                        null -> stringResource(R.string.video_motion_smoothing_rates, offer.sourceLabelFps, offer.outputLabelFps)
+                    },
+                )
             }
         }
         SwitchRow(stringResource(R.string.video_show_original), settings.showOriginal) {

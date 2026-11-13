@@ -436,6 +436,10 @@
     <string name="video_saturation">채도</string>
     <string name="video_hue">색조</string>
     <string name="video_show_original">원본 보기</string>
+    <string name="video_motion_smoothing">모션 스무딩</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">1× 속도보다 빠르면 일시 중지됨</string>
+    <string name="video_motion_smoothing_paused_busy">기기가 뜨겁거나 사용량이 많거나 절전 모드일 때 일시 중지됨</string>
     <string name="video_enhancement">향상</string>
     <string name="video_preset">프리셋</string>
     <string name="video_preset_off">끔</string>

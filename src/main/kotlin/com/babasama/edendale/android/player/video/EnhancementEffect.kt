@@ -34,8 +34,17 @@ class VideoEffectsHolder {
     /** Bumped on a preset change or item switch; the denoise history resets when it moves. */
     @Volatile var historyGeneration: Int = 0
 
+    /** Motion Smoothing's switches for the GL thread (G.4, G.5), set by the player. */
+    @Volatile var motionSmoothing: MotionSmoothingRun = MotionSmoothingRun.OFF
+
+    /** Set on the GL thread when Motion Smoothing's shaders don't build here; the player stops offering it. */
+    @Volatile var motionSmoothingUnavailable: Boolean = false
+
     /** GPU time per frame for every pass together, from timer queries; read by the governor. */
     private val gpuSamples = ArrayDeque<Double>()
+
+    /** Motion Smoothing's GPU time per real frame (search, warp, and copies), for the governor (G.5.2). */
+    private val motionSmoothingSamples = ArrayDeque<Double>()
 
     @Synchronized
     fun recordGpuMillis(millis: Double) {
@@ -45,6 +54,15 @@ class VideoEffectsHolder {
 
     @Synchronized
     fun drainGpuMillis(): List<Double> = gpuSamples.toList().also { gpuSamples.clear() }
+
+    @Synchronized
+    fun recordMotionSmoothingMillis(millis: Double) {
+        motionSmoothingSamples.addLast(millis)
+        while (motionSmoothingSamples.size > 120) motionSmoothingSamples.removeFirst()
+    }
+
+    @Synchronized
+    fun drainMotionSmoothingMillis(): List<Double> = motionSmoothingSamples.toList().also { motionSmoothingSamples.clear() }
 
     /** The output size for a source, decided once per configure. */
     fun outputSizeFor(source: PixelSize): PixelSize {
@@ -56,9 +74,14 @@ class VideoEffectsHolder {
         }
     }
 
-    /** Whether anything needs the effects pipeline right now. */
+    /**
+     * Whether anything needs the effects pipeline right now. Motion Smoothing
+     * counts once the viewer turns it on, before the video's frame rate is
+     * known, so the pipeline is in place at the first prepare rather than
+     * re-preparing a moment into playback.
+     */
     val needsEffects: Boolean
-        get() = !isHdr && (!adjustments.isNeutral || enhancement.preset != EnhancementPreset.OFF)
+        get() = !isHdr && (!adjustments.isNeutral || enhancement.preset != EnhancementPreset.OFF || enhancement.motionSmoothing)
 }
 
 /**

@@ -488,6 +488,10 @@
     <string name="video_saturation">Saturation</string>
     <string name="video_hue">Hue</string>
     <string name="video_show_original">Show Original</string>
+    <string name="video_motion_smoothing">Motion Smoothing</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">Paused above 1× speed</string>
+    <string name="video_motion_smoothing_paused_busy">Paused while the device is warm, busy, or saving battery</string>
     <string name="video_enhancement">Enhancement</string>
     <string name="video_preset">Preset</string>
     <string name="video_preset_off">Off</string>
