@@ -75,8 +75,8 @@ class PairingFlowTest {
     }
 
     @Test
-    fun `a Meta headset asks for the headset camera with the camera`() {
-        assertEquals(listOf("android.permission.CAMERA", "horizonos.permission.HEADSET_CAMERA"), PairingFlow.cameraPermissions(metaHeadset = true))
+    fun `a Meta headset asks for the headset camera alone`() {
+        assertEquals(listOf("horizonos.permission.HEADSET_CAMERA"), PairingFlow.cameraPermissions(metaHeadset = true))
         assertEquals(listOf("android.permission.CAMERA"), PairingFlow.cameraPermissions(metaHeadset = false))
     }
 

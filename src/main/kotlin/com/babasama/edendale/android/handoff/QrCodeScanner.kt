@@ -71,7 +71,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 fun QrCodeScanner(onCode: (HandoffV2.QrPayload) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val metaHeadset = remember { isMetaHeadset() }
-    // A Quest needs Meta's headset camera permission beside the camera's; both are asked for at once.
+    // A Quest asks for Meta's headset camera permission alone; anything else for the camera's.
     val permissions = remember(metaHeadset) { PairingFlow.cameraPermissions(metaHeadset) }
     fun allGranted() = permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
     var granted by remember { mutableStateOf(allGranted()) }
