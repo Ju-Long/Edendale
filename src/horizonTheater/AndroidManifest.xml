@@ -21,12 +21,26 @@
         android:name="oculus.software.handtracking"
         android:required="false" />
     <uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
+    <!-- Meta's upload refuses an app with an immersive activity that declares
+         neither a GLES nor a Vulkan version (2026-11-13). The Spatial SDK
+         renders through OpenGL ES 3.1, as Meta's hybrid sample declares it. -->
+    <uses-feature
+        android:glEsVersion="0x00030001"
+        android:required="true" />
 
     <application>
         <!-- G.4: hand tracking's API version, as Meta's hybrid sample declares it. -->
         <meta-data
             android:name="com.oculus.handtracking.version"
             android:value="V2.0" />
+        <!-- VRC Quest.Input.4: an immersive app keeps rendering, and ignores
+             input, while a system overlay (the Meta button's menu) has focus;
+             the theater pauses playback there (onSessionStateChanged, G.6).
+             Meta's upload refuses an immersive activity without it
+             (2026-11-13); declared at the application, as in the hybrid sample. -->
+        <meta-data
+            android:name="com.oculus.vr.focusaware"
+            android:value="true" />
         <!-- The Spatial SDK's runtime library on the headset; optional so the
              manifest still installs where it's absent (the simulator, phones). -->
         <uses-native-library

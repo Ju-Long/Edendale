@@ -32,8 +32,10 @@
          later), which needs android's CAMERA and Meta's HEADSET_CAMERA, both
          asked for only when the viewer chooses to scan; frames are read on
          the headset and never kept or sent. Meta reviews both, so the
-         submission justifies them (HORIZON.md B.15). A Quest 2 or Pro never
-         offers the scanner and asks for neither. android's three optional
+         submission justifies them (HORIZON.md B.15). Meta's upload refuses
+         HEADSET_CAMERA while the device list names a headset without the
+         passthrough camera, so the app supports the Quest 3 and 3S only (D4,
+         verifyHorizonRelease). android's three optional
          camera features still come out, as in B.14: they are
          required="false" and say nothing about a headset's cameras. -->
     <uses-permission android:name="horizonos.permission.HEADSET_CAMERA" />
@@ -58,11 +60,13 @@
         android:version="1" />
 
     <application tools:remove="android:banner">
-        <!-- D4. Quest 2 and Pro have no AV1 hardware decoder and the app has no
-             software one; Findings records what each headset was tested on. -->
+        <!-- D4 (owner, 2026-11-13): the Quest 3 and 3S, the headsets with the
+             passthrough camera the pairing scanner needs (B.15). Meta's upload
+             refused HEADSET_CAMERA while the list also named quest2 and questpro.
+             Findings records what each headset was tested on. -->
         <meta-data
             android:name="com.oculus.supportedDevices"
-            android:value="quest2|questpro|quest3|quest3s" />
+            android:value="quest3|quest3s" />
 
         <activity android:name=".MainActivity">
             <intent-filter tools:node="remove">

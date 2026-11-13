@@ -158,9 +158,13 @@ android {
         create("horizon") {
             dimension = "store"
             // D2: Meta's recommended minimum for Quest-only apps (the allowed
-            // range is 29–34). targetSdk stays android's until the ALPHA
-            // upload probe (P.6) says otherwise.
+            // range is 29–34), and Meta's targetSdk for an app with an immersive
+            // activity (32–34; the theater's ALPHA upload was refused at 36 on
+            // 2026-11-13). Every Quest build targets 34, the 2D panel app too,
+            // so it doesn't change when the theater ships; android keeps its own
+            // (36) for Google Play.
             minSdk = 32
+            targetSdk = 34
             // The Horizon Store release's own name and code (owner, 2026-10-26),
             // shown in Settings and the store: "27.1" rather than android's
             // "0.27.1" (27.0 was android's 0.27.0.1). The code only has to beat
@@ -342,8 +346,14 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         val minSdk = usesSdk?.attr("minSdkVersion")?.toIntOrNull()
         val targetSdk = usesSdk?.attr("targetSdkVersion")?.toIntOrNull()
         if (minSdk == null || minSdk !in 29..34) failures += "minSdkVersion $minSdk is outside Meta's 29–34 (VRC Packaging.4)"
-        if (targetSdk == null || targetSdk !in 32..36) failures += "targetSdkVersion $targetSdk is outside 32–36 for 2D apps (VRC Packaging.4)"
-        notes += "minSdkVersion $minSdk, targetSdkVersion $targetSdk (decision D2: the ALPHA upload probe settles targetSdk)"
+        // Meta's ranges: 32–34 with an immersive activity (the theater), 32–37 for a 2D
+        // app. The upload refused the theater at 36 (2026-11-13); D2 sets 34 for both.
+        val targetRange = if (theaterBuilt.get()) 32..34 else 32..37
+        val appKind = if (theaterBuilt.get()) "an app with an immersive activity" else "2D apps"
+        if (targetSdk == null || targetSdk !in targetRange) {
+            failures += "targetSdkVersion $targetSdk is outside ${targetRange.first}–${targetRange.last} for $appKind (VRC Packaging.4, D2)"
+        }
+        notes += "minSdkVersion $minSdk, targetSdkVersion $targetSdk (D2)"
 
         val application = manifest.elements("application").firstOrNull()
         if (application == null) failures += "no <application>"
@@ -372,6 +382,14 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         val headsetCamera = "horizonos.permission.HEADSET_CAMERA" in permissions
         if (camera != headsetCamera) {
             failures += "CAMERA and horizonos.permission.HEADSET_CAMERA must be declared together for the Quest 3's pairing scanner (HORIZON.md B.15)"
+        }
+        // D4: Meta's upload refused HEADSET_CAMERA as "incompatible" while the device list
+        // named Quest 2 and Pro, which have no Passthrough Camera API (2026-11-13).
+        val withoutPassthrough = supportedDevices.orEmpty().split('|').map { it.trim() }
+            .filter { it.isNotEmpty() && it !in setOf("quest3", "quest3s") }
+        if (headsetCamera && withoutPassthrough.isNotEmpty()) {
+            failures += "horizonos.permission.HEADSET_CAMERA with supportedDevices ${withoutPassthrough.joinToString("|")}, " +
+                "which have no passthrough camera; Meta's upload refuses it (HORIZON.md D4)"
         }
         notes += "permissions: ${permissions.joinToString()}"
 
@@ -468,6 +486,17 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         }.orEmpty()
         val expectedRooms = listOf("movie-theatre", "projector-room", "performance-theatre").map { "assets/theater/$it.glb" }
         if (theaterBuilt.get()) {
+            // Meta's upload checks for an app with an immersive activity (2026-11-13): a
+            // graphics API declared (GLES 3.1, as Meta's hybrid sample has it, or Vulkan),
+            // and focus awareness (VRC Quest.Input.4).
+            val graphics = features.any { feature ->
+                (feature.attr("glEsVersion")?.removePrefix("0x")?.toIntOrNull(16) ?: 0) >= 0x00030001 ||
+                    feature.attr("name") == "android.hardware.vulkan.version"
+            }
+            if (!graphics) failures += "a theater build declares neither a GLES 3.1 nor a Vulkan version; Meta's upload refuses it (G.4)"
+            val focusAware = application?.elements("meta-data")
+                ?.any { it.attr("name") == "com.oculus.vr.focusaware" && it.attr("value") == "true" } == true
+            if (!focusAware) failures += "a theater build lacks com.oculus.vr.focusaware=true; Meta's upload refuses it (VRC Quest.Input.4, G.4)"
             val missingRooms = expectedRooms.filterNot { it in theaterRooms }
             if (!theaterDeclared || !theaterCompiled) {
                 failures += "a theater build (horizon.theater=true) lacks TheaterActivity's " +

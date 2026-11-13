@@ -72,7 +72,12 @@ Lock (a panel doesn't turn). Watch Trailer opens YouTube's own watch page
 in the browser or the YouTube app instead of the inline player, which shows
 no picture in a panel. Motion Smoothing (below) follows a phone's rules on a
 headset and starts off; whether a panel shows its doubled rate evenly is still
-to be checked on a headset (HORIZON.md B.16). The release
+to be checked on a headset (HORIZON.md B.16). The app supports the **Quest 3
+and 3S** only (`com.oculus.supportedDevices`, HORIZON.md D4): Meta's upload
+refuses the pairing scanner's `horizonos.permission.HEADSET_CAMERA` while the
+list also names the Quest 2 and Pro, which have no passthrough camera. The
+flavor targets **SDK 34** (`android` targets 36 for Google Play), the highest
+Meta accepts for an app with an immersive activity (D2). The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 
@@ -105,10 +110,10 @@ branch's (Sync between devices, below), works on a headset like this. A
 Quest 3 or 3S is offered what a phone is: **Scan the Other Device's Code**
 reads the other device's QR code with the headset's passthrough camera
 (Meta's Passthrough Camera API), or **Show a Code for the Other Device to
-Scan**. A Quest 2 or Pro is offered what a TV is: **Set Up Another Device**
-and **Receive from Another Device** each show the headset's QR code with its
-six-digit code. Either kind can choose **Enter the Other Device's Code**
-instead, pick the device showing a code, and type its six digits, so a
+Scan**. (A headset without the passthrough camera, which the app no longer
+lists, would be offered what a TV is.) It can also choose **Enter the Other
+Device's Code** instead, pick the device showing a code, and type its six
+digits, so a
 headset pairs with a phone, a tablet, a TV, a Windows PC, or another
 headset (an iPhone or iPad can only scan). For the Quest 3's scanner this
 build declares android's `CAMERA` and Meta's
@@ -170,7 +175,7 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), `CAMERA` only together with `horizonos.permission.HEADSET_CAMERA` (the Quest 3's pairing scanner), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, and three rooms together in a theater build |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk (32–37 for the 2D app, 32–34 with the theater), `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), `CAMERA` only together with `horizonos.permission.HEADSET_CAMERA` (the Quest 3's pairing scanner), and that permission only while the supported devices are the Quest 3 and 3S, no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, three rooms, a GLES 3.1 (or Vulkan) feature, and `com.oculus.vr.focusaware` together in a theater build |
 | With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
 | Theater rooms (after a scene changes on `scenes`) | On `scenes`: `Blender --background scenes/<room>/<room>.blend --python tools/export_gltf.py -- out/<room>.glb`; then here: `python3 -I tools/horizon/prepare_theater_glb.py <scenes checkout>/out/*.glb` → `src/horizonTheater/assets/theater/` (HORIZON.md G.14) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
@@ -225,7 +230,7 @@ software codecs, so codec and performance results come only from a headset.
 
 ### Manual checks on a headset
 
-Before a release, on a Quest 3 (and a Quest 2 while the listing keeps it):
+Before a release, on a Quest 3 (and a Quest 3S when one is at hand):
 install, launch, the panel's size and resizing; Touch controllers and hands,
 with B or Y as Back; Add Folder through the system picker, and the folder
 surviving a restart; "Open with Edendale" from the Files app; H.264, HEVC, VP9,
