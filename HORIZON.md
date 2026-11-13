@@ -7,11 +7,11 @@ against.
 
 | | |
 |---|---|
-| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05; `android-27.1` at `71a9007` (the rest of 27.1: parental controls, the ten requests, the Settings layout, the Downloaded section picker, and the Android XR theater's rules) merged on 2026-11-11 (B.14); `android-27.1` at `071d632` (the 27.1 review's fixes, ENHANCEMENT.md Section R) merged the same day as `0694582` (B.14); `android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, with a QR scanner on phones and tablets, and button text that shrinks or wraps on small screens, ENHANCEMENT.md Section S) merged on 2026-11-12 (B.14); `android-27.1` at `35bbf0c` (joining by the other device's code, a Quest 3 scanning with its passthrough camera, and a pairing link that asks for no camera, ENHANCEMENT.md Section T) merged on 2026-11-12, and `7c103f6` (a scan after a typed attempt connects) after it the same day (B.15); `android-27.1` at `e49e012` (Motion Smoothing, ENHANCEMENT.md Section G) merged on 2026-11-13 (B.16) |
+| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05; `android-27.1` at `71a9007` (the rest of 27.1: parental controls, the ten requests, the Settings layout, the Downloaded section picker, and the Android XR theater's rules) merged on 2026-11-11 (B.14); `android-27.1` at `071d632` (the 27.1 review's fixes, ENHANCEMENT.md Section R) merged the same day as `0694582` (B.14); `android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, with a QR scanner on phones and tablets, and button text that shrinks or wraps on small screens, ENHANCEMENT.md Section S) merged on 2026-11-12 (B.14); `android-27.1` at `35bbf0c` (joining by the other device's code, a Quest 3 scanning with its passthrough camera, and a pairing link that asks for no camera, ENHANCEMENT.md Section T) merged on 2026-11-12, and `7c103f6` (a scan after a typed attempt connects) after it the same day (B.15); `android-27.1` at `e49e012` (Motion Smoothing, ENHANCEMENT.md Section G) merged on 2026-11-13 (B.16); `android-27.1` at `76d1d8f` (the Movies & Shows hero resumes the episode watched last, and launch and every return to the foreground sync at once) merged the same day (B.17) |
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
-| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1`, where `android`'s 27.1 was merged the same day (B.13); the rest of android's 27.1 merged 2026-11-11 (B.14), and its review's fixes the same day; android's `717a2ed` (pairing as Apple's) merged 2026-11-12 (B.14); G.15 (android's Android XR theater features on the Quest: seats, lights, Recentre, the head-following dock, Skip prompts, Up Next, subtitles in the picture's shape, and the theater's own parental check) built 2026-11-13; android's Motion Smoothing merged the same day (B.16) |
+| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1`, where `android`'s 27.1 was merged the same day (B.13); the rest of android's 27.1 merged 2026-11-11 (B.14), and its review's fixes the same day; android's `717a2ed` (pairing as Apple's) merged 2026-11-12 (B.14); G.15 (android's Android XR theater features on the Quest: seats, lights, Recentre, the head-following dock, Skip prompts, Up Next, subtitles in the picture's shape, and the theater's own parental check) built 2026-11-13; android's Motion Smoothing merged the same day (B.16), and its hero and foreground sync after it (B.17) |
 
 **Why this is mostly packaging.** Horizon OS runs ordinary Android apps in a
 floating panel. Touch maps to controller rays, hand pinches, and (on Meta's VR
@@ -903,6 +903,81 @@ and record the result in Findings either way.
   - Where it isn't: no switch for an HDR video or one above 30 fps, and none
     for a 24 fps film unless the panel lists 48, 96, or 144 Hz.
 
+- [ ] **B.17** The hero resumes the episode watched last, and opening the
+  app syncs at once: `android-27.1` at `76d1d8f` merged on 2026-11-13 at
+  the owner's request, with no conflict and no new hook in `src/main`.
+  Built without a headset:
+  - **The hero.** Movies & Shows' hero leads with the unfinished record
+    watched last and follows the watch rows as they change
+    (`HomeCatalog.followingProgress`, fed by
+    `LocalDataStore.observeWatchProgress`), so **Resume** plays the latest
+    episode at its newest position, and the label names it (`S01E04`). The
+    theater writes the same rows through android's `TheaterPlayback`, with
+    the title's length (`durationSeconds`), so an episode watched in the
+    theater leads the hero with its own time left once the panel is back,
+    as one watched in the panel's player does. Nothing here is a headset's
+    own.
+  - **The foreground sync.** android's `SyncForegroundTracker` replaces
+    `SyncCoordinator`'s count of started activities. The first activity to
+    start in the process is the launch (no longer `Application.onCreate`,
+    so a process WorkManager starts for its job syncs through the job
+    alone); each later return from no started activity is a return to the
+    foreground; both sync at once, past the failure backoff, as Sync Now
+    does. The last activity to stop is the trip to the background, as
+    before. `SyncCoordinator`'s `platform` hook (B.13) merged on its own
+    beside it. README's "after a reboot the background sync waits for the
+    app's next launch, which syncs anyway" still holds: the launch sync now
+    runs when the panel's first activity starts.
+  - **Resizing a panel is no trip to the background.** `MainActivity`
+    declares no `configChanges`, so resizing the panel recreates it. The
+    old count reached zero there and synced on the way out and again on
+    the way back; the tracker ignores an activity recreated for a
+    configuration change (`isChangingConfigurations`), so a resize now
+    syncs nothing.
+  - **The theater needs no hook.** `TheaterActivity` runs in the app's
+    process (no `android:process`), so the tracker counts it like the
+    panel's activities, and it declares its configuration changes, so it is
+    never recreated for one. Entering: `enterHorizonTheater` starts the
+    theater, then finishes the player; Android starts the new activity
+    before it stops the old one, so the count never reaches zero. Leaving
+    by Exit: `exitTheater` writes the progress and calls `flushSoon()`,
+    starts Home with the panel's pending intent, and finishes. If the
+    panel stayed started while the theater ran (B.14's open question),
+    nothing more happens. If Horizon OS stopped it, the theater's stop is
+    the trip to the background (a sync, and R.7's one-off job if a write is
+    still pending), and the panel's start is a return to the foreground,
+    which now syncs at once, past the backoff, where it used to wait it out.
+    Either way the hero shows the theater's position from the local row
+    before any sync lands. A theater started in a fresh process (from
+    recents, or by `adb shell am start`) is the launch and syncs at once.
+  - **Sleep (B.4).** If the headset's sleep stops the app's activities, each
+    wake is a return to the foreground and syncs at once, past the backoff.
+    A location that keeps failing (Wi-Fi not yet up on wake) is tried on
+    each wake rather than once the backoff expires; the 5-minute foreground
+    timer still waits it out.
+  - **Tests.** android's new `SyncEngineTest` cases (the foreground
+    moments), `HomeCatalogProgressTest` (the hero's record, following, and
+    its fallbacks), and `LibraryPresentationTest` (the time left and the
+    episode label) run in `testHorizonDebugUnitTest`: 972 tests in each
+    build (965 before; android's seven new cases).
+
+  On the Quest 3 (a linked account or folder as the sync location, a debug
+  build for `adb logcat -s SyncCoordinator`), check:
+  - Watch an episode on a phone, then wake the headset or open the panel
+    from Home: `logcat` shows `sync (foreground) starting` (`launch` from a
+    cold start), and the hero names that episode with its time left;
+    **Resume** plays it from the phone's position.
+  - Resize the panel: no sync starts.
+  - A theater build: enter the theater and leave by Exit. Note which of
+    `sync (background)` and `sync (foreground)` appear between the
+    theater's `playback stopped` sync and the panel's return; that answers
+    B.14's question of whether the panel stays started while the theater
+    runs. The hero then leads with the episode the theater played, at its
+    position.
+  - With the sync location unreachable until the backoff has grown (Sync
+    shows an error), take the headset off until it sleeps and put it back
+    on: a sync starts at once.
+
 ---
 
 ## Section C — Things tied to the signing key
@@ -1656,6 +1731,7 @@ doesn't need any of G (D15).
 | Codecs, 4K, HDR (B.7) | ✓ | H.264, HEVC, VP9 | — |
 | Enhancement governor (B.8) | ✓ | ✓ | — |
 | Motion Smoothing (B.16) | ✓ | | — |
+| The hero's latest episode, the foreground sync (B.17) | ✓ | | ✓ |
 | Audio formats, EQ (B.9) | ✓ | | — |
 | SMB, WebDAV, SFTP, S3 (B.11) | ✓ | | ✓ |
 | Google Drive, OneDrive, Dropbox, TMDB sign-in (C) | ✓ | | ✓ |
@@ -1820,6 +1896,7 @@ For whoever reviews the implementation:
 | 2026-11-12 | B.15 (`android-27.1` `35bbf0c` merged) | Owner, Claude | The owner asked for a Quest 3 to scan ("Also let Quest 3 scan") and for this branch's part of it: the merge, the permissions, the store check, and this plan, unpushed. `git merge android-27.1` at `35bbf0c` (ENHANCEMENT.md Section T) onto `77972ba`: no conflict, `6091729`. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, and `git diff android-27.1 --stat -- src/main` lists the same eight files. Then the overlay and the store check (Deviations). Ran: `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 927 tests pass (916 before the merge), the store check passes and notes `CAMERA` and `horizonos.permission.HEADSET_CAMERA` for Meta's review, signed release 74.4 MB; and the same with `-Phorizon.theater=true`: 927 tests pass, the store check passes with `HAND_TRACKING` as well, 145.0 MB. android checked the typed join, the pairing link, and the TV layout on its emulators (ENHANCEMENT.md T.D1). Then `android-27.1` at `7c103f6` (`ac40ce3`: a scan after a failed typed attempt connects) merged as `7681222`, no conflict, and both commands ran again with the same results (927 tests each, 74.4 MB and 145.0 MB). **Not run:** a headset (whether CameraX opens the Quest 3's passthrough camera is unverified, Findings), the simulator, the instrumented tests. |
 | 2026-11-13 | G.15 (android's Android XR theater features on the Quest) | Owner, Claude | The owner asked to start `meta-horizon-27.1`'s port from `android-27.1` with the eight theater features the Quest lacked, and chose Up Next playing in the theater and a dock that never hides. Four readers mapped android's `xr` module, its shared `src/main` theater code, the Spatial SDK 0.14.0 AARs (javap), and the parental check; the rooms were exported again from `scenes` `adad81e` (Blender 5.2.3 LTS, `tools/export_gltf.py`, then `prepare_theater_glb.py`, both unchanged; geometry and markers equal to android's `xr` exports) and the eleven strings copied from `xr/src/main/res`. Built in `src/horizon` (`TheaterFrames`, `TheaterStaging`, `TheaterRoomFile`, `TheaterAdmission`, `TheaterUpNextRules`, the handover's ticket and `toPlayback`) and `src/horizonTheater` (the activity on android's `TheaterPlayback`, the dock and seat panel, `TheaterSettings`); `TheaterLayout` and `TheaterScene` deleted. A four-way review (geometry, lifecycle, SDK use, parity), each finding put to a skeptic, found no geometry or parity defect and four real ones, all fixed (G.15's Lifecycle); a second Opus pass over the fixes moved the subtitle composition's disposal to when the SDK detaches the old panel. `src/main` untouched (`git diff HEAD --stat -- src/main` empty). Ran (JDK 17): `./gradlew -Phorizon.theater=true testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 946 tests (927 before; G.14's two layout suites out, six theater suites in), the store check passes, signed release 145.1 MB (was 145.0); `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 946 tests, 74.4 MB. The Spatial Simulator refuses immersive launches (Findings), so nothing ran on a device. **Not run:** every G.15 device check (end of G.15), and the `android-27.1` commits after `7c103f6` (Motion Smoothing, Section G of ENHANCEMENT.md) aren't merged here. |
 | 2026-11-13 | B.16 (`android-27.1` `e49e012` merged) | Owner, Claude | The owner asked to commit G.15 (`744065f`) and merge android's Motion Smoothing. `git merge android-27.1` at `e49e012` (ENHANCEMENT.md Section G: `fe675cc`, `d32bbd0`, `97db1e2`, `1d970cd`, `6f32ad1`, `5b1267a`, `9331cf9`, and `e49e012`'s M.7 note) onto `744065f`: no conflict; `README.md` and `PlayerActivity.kt` merged on their own. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/main/assets`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, `git diff android-27.1 --stat -- src/main` lists the same eight files, and `src/androidTest` differs only by the D6 argument in `VideoEffectsPipelineInstrumentedTest`. No new hook: a headset gets a phone's rules (B.16), and what a panel's display reports is D18's open question. `./gradlew [-Phorizon.theater=true] testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease` (JDK 17): 965 tests pass in both builds; the signed theater release is 145.1 MB and the 2D release 74.5 MB, which carries the six `edendale_fg_*` shaders (both builds take `src/main/assets`); `assembleHorizonDebugAndroidTest` builds. **Not run:** anything on a headset; B.16's checks are listed there. |
+| 2026-11-13 | B.17 (`android-27.1` `76d1d8f` merged) | Owner, Claude | The owner asked for android's latest 27.1 work on this branch, in its own worktree (`claude/horizon-android-import-3d2f4e`, cut from `meta-horizon-27.1` at `11c2ba3`), while the ALPHA theater build was made from `meta-horizon-27.1` without it. Waited for `76d1d8f` (the Movies & Shows hero resumes the episode watched last and follows the watch rows; launch and every return to the foreground sync at once, past the backoff, through `SyncForegroundTracker`) to land on `android-27.1`. `git merge android-27.1` onto `11c2ba3`: no conflict, `68a5c65`; `README.md` and `SyncCoordinator.kt` (beside B.13's `platform` hook) merged on their own. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/main/assets`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, `git diff android-27.1 --stat -- src/main` lists the same eight files, and `src/androidTest` differs only by B.16's D6 argument. No new hook: `TheaterActivity` is in the app's process and declares its configuration changes, so the tracker counts it like the panel's activities; entering the theater never reaches zero started activities, and leaving by Exit either does nothing more or, if Horizon OS stopped the panel, is a trip to the background and a return that now syncs at once (B.17). A panel resize, which recreates `MainActivity`, no longer syncs on the way out and back. Ran (JDK 17, `local.properties` and the built `src/horizon/jniLibs/` copied in, no `.secret/`, so both releases are unsigned and the signature checks were skipped): `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 972 tests pass (965 before the merge), the store check passes with the same permissions as B.15, release 74.5 MB; and the same with `-Phorizon.theater=true`: 972 tests pass, the store check passes with `HAND_TRACKING` as well, 145.1 MB with the three rooms. **Not run:** anything on a headset (B.17's checks, including whether the panel stays started while the theater runs), the simulator, the instrumented tests, and a signed build. |
 
 ## Sources
 
