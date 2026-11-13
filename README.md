@@ -70,7 +70,9 @@ player's brightness and volume swipes (a panel ignores both), and Rotation
 Lock (a panel doesn't turn). Watch Trailer opens YouTube's own watch page
 (`youtube.com/watch`, not the `youtube-nocookie.com` embed described above)
 in the browser or the YouTube app instead of the inline player, which shows
-no picture in a panel. The release
+no picture in a panel. Motion Smoothing (below) follows a phone's rules on a
+headset and starts off; whether a panel shows its doubled rate evenly is still
+to be checked on a headset (HORIZON.md B.16). The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
 

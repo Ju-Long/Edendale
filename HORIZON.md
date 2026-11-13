@@ -7,11 +7,11 @@ against.
 
 | | |
 |---|---|
-| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05; `android-27.1` at `71a9007` (the rest of 27.1: parental controls, the ten requests, the Settings layout, the Downloaded section picker, and the Android XR theater's rules) merged on 2026-11-11 (B.14); `android-27.1` at `071d632` (the 27.1 review's fixes, ENHANCEMENT.md Section R) merged the same day as `0694582` (B.14); `android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, with a QR scanner on phones and tablets, and button text that shrinks or wraps on small screens, ENHANCEMENT.md Section S) merged on 2026-11-12 (B.14); `android-27.1` at `35bbf0c` (joining by the other device's code, a Quest 3 scanning with its passthrough camera, and a pairing link that asks for no camera, ENHANCEMENT.md Section T) merged on 2026-11-12, and `7c103f6` (a scan after a typed attempt connects) after it the same day (B.15) |
+| Baseline | `android` at `88d699d` (2026-10-10), where `meta-horizon` starts; `android-27.0.1` (`9df06dd`, Google Drive on `drive.file`) merged in on 2026-10-19; `android` at `9f99413` (27.1: sync and handoff version 2) merged into `meta-horizon-27.1` on 2026-11-05; `android-27.1` at `71a9007` (the rest of 27.1: parental controls, the ten requests, the Settings layout, the Downloaded section picker, and the Android XR theater's rules) merged on 2026-11-11 (B.14); `android-27.1` at `071d632` (the 27.1 review's fixes, ENHANCEMENT.md Section R) merged the same day as `0694582` (B.14); `android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, with a QR scanner on phones and tablets, and button text that shrinks or wraps on small screens, ENHANCEMENT.md Section S) merged on 2026-11-12 (B.14); `android-27.1` at `35bbf0c` (joining by the other device's code, a Quest 3 scanning with its passthrough camera, and a pairing link that asks for no camera, ENHANCEMENT.md Section T) merged on 2026-11-12, and `7c103f6` (a scan after a typed attempt connects) after it the same day (B.15); `android-27.1` at `e49e012` (Motion Smoothing, ENHANCEMENT.md Section G) merged on 2026-11-13 (B.16) |
 | Store | Meta Horizon Store, 2D Android app on Horizon OS (a hybrid app if Section G ships) |
 | Work branch | `meta-horizon`, the Meta Quest platform branch downstream of `android` (decision D0, revised 2026-10-19) |
 | Requirements read | Meta developer documentation as of 2026-10-10 (Sources, at the end) |
-| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1`, where `android`'s 27.1 was merged the same day (B.13); the rest of android's 27.1 merged 2026-11-11 (B.14), and its review's fixes the same day; android's `717a2ed` (pairing as Apple's) merged 2026-11-12 (B.14); G.15 (android's Android XR theater features on the Quest: seats, lights, Recentre, the head-following dock, Skip prompts, Up Next, subtitles in the picture's shape, and the theater's own parental check) built 2026-11-13 |
+| Written | 2026-10-10; Section G (immersive theater) added 2026-10-25, with scene authoring (G.7, D17) the same day; G.1–G.9 and G.T1 built 2026-10-25 (Handoff); G.14 (the three rooms) built 2026-11-05 on `meta-horizon-27.1`, where `android`'s 27.1 was merged the same day (B.13); the rest of android's 27.1 merged 2026-11-11 (B.14), and its review's fixes the same day; android's `717a2ed` (pairing as Apple's) merged 2026-11-12 (B.14); G.15 (android's Android XR theater features on the Quest: seats, lights, Recentre, the head-following dock, Skip prompts, Up Next, subtitles in the picture's shape, and the theater's own parental check) built 2026-11-13; android's Motion Smoothing merged the same day (B.16) |
 
 **Why this is mostly packaging.** Horizon OS runs ordinary Android apps in a
 floating panel. Touch maps to controller rays, hand pinches, and (on Meta's VR
@@ -140,6 +140,7 @@ on a device goes in Findings.
 | D15 | When the theater ships | **After the 2D release.** Sections A–F ship first, and the theater follows as an update, provided G.0 confirms that an app created as 2D can add an immersive activity later. | Open; **the first ALPHA build is 2D** (owner, 2026-10-26), so the theater is now built only with `-Phorizon.theater=true` (`src/horizonTheater`, Deviations). Whether it follows as an update still waits on G.0 |
 | D16 | APK size with the SDK | **Accept AGP's default**, which stores native libraries uncompressed and page-aligned: 130.1 MB against 70.6 MB, far under Meta's 1 GB limit, and the libraries load without extraction. The alternative is `packaging.jniLibs.useLegacyPackaging = true` for `horizon`. It shrinks the download (the SDK's 47.8 MB library compresses to about 19 MB) but extracts the libraries at install. | Open; the build keeps AGP's default (nothing set) |
 | D17 | The scenes: tool and where the sources live | **Blender, not Unity, with the sources on a `scenes` branch** (G.7, G.13). Blender produces data: glTF for this branch and USD for a visionOS counterpart on `apple`. Unity would be a second runtime inside each app, which the repository's no-shared-runtime rule forbids, and a theater has no game loop, physics, or scripting to justify one. The `scenes` branch holds the `.blend` files, their textures, and the export scripts, and nothing executable. Each platform branch commits only its exported artifact (here a GLB under `src/horizon/assets/`) and no build or CI checks `scenes` out, so AGENTS.md's hard constraints 1 and 2 hold. `scenes` needs a row in `main`'s branch tables (Hard rule 6). The alternative was keeping the sources under `tools/horizon/scenes/` here. | **Decided 2026-10-25** (owner) |
+| D18 | Motion Smoothing on a headset (B.16) | **Keep android's rules:** off until the viewer turns it on, offered where the GPU check passes and the panel lists a mode at a whole multiple of twice the source rate. If B.16 finds a panel listing rates the headset doesn't run, add a `DevicePolicy` hook that offers it only at the panel's current rate, or not at all on a headset. | Open |
 
 ---
 
@@ -849,6 +850,58 @@ and record the result in Findings either way.
   - `adb shell dumpsys package com.babasama.edendale` lists
     `android.permission.CAMERA` and `horizonos.permission.HEADSET_CAMERA`,
     granted only after a scan was allowed.
+
+- [ ] **B.16** Motion Smoothing (ENHANCEMENT.md Section G): `android-27.1`
+  at `e49e012` merged on 2026-11-13 at the owner's request, with no
+  conflict and no new hook in `src/main`. It doubles a video's frame rate by
+  drawing a frame between each pair on the GPU, and it is a switch in the
+  player's Enhancement section. Built without a headset:
+  - **A headset gets a phone's rules.** `PlayerActivity` passes
+    `DevicePolicy.usesTelevisionShell` where android asks "is this a TV?",
+    and it is false on a headset. So, as on a phone, the one-time GPU check
+    (`MotionSmoothingCapability`, stored as `video.motionSmoothingCapability`)
+    runs once Enhancement's own check has passed; B.8 hasn't recorded
+    whether a Quest 3 passes that one. The switch shows only for SDR video
+    at 30 fps or less, and only when the panel's display lists a mode at a
+    whole multiple of twice the source rate (android's D12: 24 fps needs 48,
+    96, or 144 Hz, 25 fps 50 or 100 Hz, 30 fps 60 or 120 Hz). It starts
+    off; once the viewer turns it on it stays on, saved with the other
+    Enhancement choices. Nothing runs until the viewer asks for it, which is
+    D6's caution without a hook.
+  - **Unknown: a panel's refresh rates.** What `Display.getSupportedModes()`
+    returns inside a panel hasn't been read on a Quest. android takes the
+    lowest qualifying mode from that list, and nothing in `src/main` selects
+    a display mode (no `preferredDisplayModeId`, no `Surface.setFrameRate`).
+    If a panel lists a rate the headset isn't running (120 Hz, say, while it
+    runs at the 72 Hz its stick events came at on 2026-10-26, Findings) and
+    the headset keeps its own rate, a smoothed 30 fps video is shown
+    unevenly, the judder D12's rule exists to prevent. D18 decides what
+    happens then.
+  - **Not in the theater.** `TheaterPlayback`, the shared playback the
+    theater runs on since G.15, installs no video effects, as in android's
+    Android XR theater: neither Enhancement nor Motion Smoothing runs there.
+  - **Tests.** android's `MotionSmoothingTest` and the new
+    `VideoEnhancementTest` cases run in `testHorizonDebugUnitTest`; the four
+    instrumented probes (README) build with `assembleHorizonDebugAndroidTest`.
+
+  On the Quest 3, check:
+  - The verdicts: after a first video in a debug build, `adb shell run-as
+    com.babasama.edendale cat shared_prefs/player.xml` shows
+    `video.enhancementCapability` and `video.motionSmoothingCapability`
+    (`full`, `half`, or `none`, with the app version). For the timings,
+    `MotionSmoothingCapabilityInstrumentedTest` logs them without storing a
+    verdict (`adb logcat -s MotionSmoothingCheck`): install with
+    `installHorizonDebug installHorizonDebugAndroidTest` and run it with `adb
+    shell am instrument`, never `connectedHorizonDebugAndroidTest`, which
+    uninstalls the app and its data.
+  - The panel's display: `adb shell dumpsys display`, its current mode and
+    its supported modes, at each refresh rate the headset's settings offer.
+  - Where it's offered: a 30 fps SDR video with Motion Smoothing on reads
+    `30 fps → 60 fps`; pans look even; it pauses above 1×; 30 minutes of
+    playback with the thermal state, whether the governor pauses it, and the
+    headset's frame rate (VrApi's FPS line, as in G.10).
+  - Where it isn't: no switch for an HDR video or one above 30 fps, and none
+    for a 24 fps film unless the panel lists 48, 96, or 144 Hz.
 
 ---
 
@@ -1602,6 +1655,7 @@ doesn't need any of G (D15).
 | Folder picker, Open with | ✓ | | ✓ |
 | Codecs, 4K, HDR (B.7) | ✓ | H.264, HEVC, VP9 | — |
 | Enhancement governor (B.8) | ✓ | ✓ | — |
+| Motion Smoothing (B.16) | ✓ | | — |
 | Audio formats, EQ (B.9) | ✓ | | — |
 | SMB, WebDAV, SFTP, S3 (B.11) | ✓ | | ✓ |
 | Google Drive, OneDrive, Dropbox, TMDB sign-in (C) | ✓ | | ✓ |
@@ -1765,6 +1819,7 @@ For whoever reviews the implementation:
 | 2026-11-12 | B.14 (`android-27.1` `717a2ed` merged) | Owner, Claude | The owner asked for the merge. `git merge android-27.1` at `717a2ed` (pairing rebuilt to match Apple's flow, ENHANCEMENT.md Section S, and button text that shrinks or wraps on small screens) onto `489f92a`: no conflict. `git diff 717a2ed --stat -- src/main` lists the same eight files as the previous row, and `git diff 717a2ed` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/test`, or `-- ENHANCEMENT.md` is empty. Then the overlay's removal of `CAMERA` and the three camera features, and the store check's failure on `CAMERA` (Deviations). Ran: `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 916 tests pass (908 before the merge), the store check passes with the same permissions as before and no `CAMERA`, signed release 74.3 MB; and `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease -Phorizon.theater=true`: 916 tests pass, the store check passes with the same permissions as before and no `CAMERA`, 144.9 MB. The merge was reviewed by two reviewers, each finding checked by a second: a headset now only shows its code, so it pairs only with a device that scans that code (a phone or tablet with a camera, an iPhone or iPad) or a Windows PC that types it, is a guest only through an `edendale://handoff` link, and can't pair with a TV or another headset; and with such a link android's dialog composes `QrCodeScanner` once before it connects, so the scanner asks for the `CAMERA` this build doesn't declare (android's to fix if it shows on a phone). Their headset questions are B.14's new checks, and their corrections to B.13, B.14, D.1, the header, the Deviations log, and the README's Meta Quest section are in this change. **Not run:** a headset, the simulator, the instrumented tests. |
 | 2026-11-12 | B.15 (`android-27.1` `35bbf0c` merged) | Owner, Claude | The owner asked for a Quest 3 to scan ("Also let Quest 3 scan") and for this branch's part of it: the merge, the permissions, the store check, and this plan, unpushed. `git merge android-27.1` at `35bbf0c` (ENHANCEMENT.md Section T) onto `77972ba`: no conflict, `6091729`. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, and `git diff android-27.1 --stat -- src/main` lists the same eight files. Then the overlay and the store check (Deviations). Ran: `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 927 tests pass (916 before the merge), the store check passes and notes `CAMERA` and `horizonos.permission.HEADSET_CAMERA` for Meta's review, signed release 74.4 MB; and the same with `-Phorizon.theater=true`: 927 tests pass, the store check passes with `HAND_TRACKING` as well, 145.0 MB. android checked the typed join, the pairing link, and the TV layout on its emulators (ENHANCEMENT.md T.D1). Then `android-27.1` at `7c103f6` (`ac40ce3`: a scan after a failed typed attempt connects) merged as `7681222`, no conflict, and both commands ran again with the same results (927 tests each, 74.4 MB and 145.0 MB). **Not run:** a headset (whether CameraX opens the Quest 3's passthrough camera is unverified, Findings), the simulator, the instrumented tests. |
 | 2026-11-13 | G.15 (android's Android XR theater features on the Quest) | Owner, Claude | The owner asked to start `meta-horizon-27.1`'s port from `android-27.1` with the eight theater features the Quest lacked, and chose Up Next playing in the theater and a dock that never hides. Four readers mapped android's `xr` module, its shared `src/main` theater code, the Spatial SDK 0.14.0 AARs (javap), and the parental check; the rooms were exported again from `scenes` `adad81e` (Blender 5.2.3 LTS, `tools/export_gltf.py`, then `prepare_theater_glb.py`, both unchanged; geometry and markers equal to android's `xr` exports) and the eleven strings copied from `xr/src/main/res`. Built in `src/horizon` (`TheaterFrames`, `TheaterStaging`, `TheaterRoomFile`, `TheaterAdmission`, `TheaterUpNextRules`, the handover's ticket and `toPlayback`) and `src/horizonTheater` (the activity on android's `TheaterPlayback`, the dock and seat panel, `TheaterSettings`); `TheaterLayout` and `TheaterScene` deleted. A four-way review (geometry, lifecycle, SDK use, parity), each finding put to a skeptic, found no geometry or parity defect and four real ones, all fixed (G.15's Lifecycle); a second Opus pass over the fixes moved the subtitle composition's disposal to when the SDK detaches the old panel. `src/main` untouched (`git diff HEAD --stat -- src/main` empty). Ran (JDK 17): `./gradlew -Phorizon.theater=true testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 946 tests (927 before; G.14's two layout suites out, six theater suites in), the store check passes, signed release 145.1 MB (was 145.0); `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 946 tests, 74.4 MB. The Spatial Simulator refuses immersive launches (Findings), so nothing ran on a device. **Not run:** every G.15 device check (end of G.15), and the `android-27.1` commits after `7c103f6` (Motion Smoothing, Section G of ENHANCEMENT.md) aren't merged here. |
+| 2026-11-13 | B.16 (`android-27.1` `e49e012` merged) | Owner, Claude | The owner asked to commit G.15 (`744065f`) and merge android's Motion Smoothing. `git merge android-27.1` at `e49e012` (ENHANCEMENT.md Section G: `fe675cc`, `d32bbd0`, `97db1e2`, `1d970cd`, `6f32ad1`, `5b1267a`, `9331cf9`, and `e49e012`'s M.7 note) onto `744065f`: no conflict; `README.md` and `PlayerActivity.kt` merged on their own. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/main/assets`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, `git diff android-27.1 --stat -- src/main` lists the same eight files, and `src/androidTest` differs only by the D6 argument in `VideoEffectsPipelineInstrumentedTest`. No new hook: a headset gets a phone's rules (B.16), and what a panel's display reports is D18's open question. `./gradlew [-Phorizon.theater=true] testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease` (JDK 17): 965 tests pass in both builds; the signed theater release is 145.1 MB and the 2D release 74.5 MB, which carries the six `edendale_fg_*` shaders (both builds take `src/main/assets`); `assembleHorizonDebugAndroidTest` builds. **Not run:** anything on a headset; B.16's checks are listed there. |
 
 ## Sources
 
