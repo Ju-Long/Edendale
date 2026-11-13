@@ -281,17 +281,38 @@ public static class HandoffMessages
         writer.WriteEndObject();
     }
 
+    /// <summary>
+    /// §9.7: the flat shape every platform reads (`user`, `password`, and
+    /// `s3` with `pathStyle`), or, during 27.1, the nested `credential`
+    /// (`username`, `password`, `s3` with `usesPathStyle`, `port`) that Apple
+    /// builds before 27.1 send. A login with `user` is flat, so when Apple
+    /// 27.1 writes both shapes in one object the flat fields win; a login with
+    /// neither is malformed rather than an empty guest login
+    /// (AccountHandoff.swift `Login.init(from:)`, Android R.4).
+    /// </summary>
     private static HandoffLogin ReadLogin(JsonObject node)
     {
-        int? port = node["port"] is JsonValue portValue && portValue.TryGetValue<int>(out var number) ? number : null;
-        HandoffS3? s3 = null;
-        if (node["s3"] is JsonObject s3Node)
+        var port = Integer(node, "port");
+        string user;
+        string password;
+        HandoffS3? s3;
+        if (node["user"] is JsonValue)
         {
-            s3 = new HandoffS3(
-                HandoffFrames.Require(s3Node, "endpoint"),
-                HandoffFrames.String(s3Node, "region") ?? "us-east-1",
-                HandoffFrames.Require(s3Node, "bucket"),
-                s3Node["pathStyle"] is JsonValue pathStyle && pathStyle.TryGetValue<bool>(out var flag) && flag);
+            user = HandoffFrames.Require(node, "user");
+            password = HandoffFrames.String(node, "password") ?? "";
+            s3 = node["s3"] is JsonObject flat ? ReadS3(flat, "pathStyle") : null;
+        }
+        else if (node["credential"] is JsonObject credential)
+        {
+            user = HandoffFrames.Require(credential, "username");
+            password = HandoffFrames.String(credential, "password") ?? "";
+            s3 = credential["s3"] is JsonObject nested ? ReadS3(nested, "usesPathStyle") : null;
+            // The nested shape keeps an SFTP port in the credential too.
+            port ??= Integer(credential, "port");
+        }
+        else
+        {
+            throw new HandoffException(HandoffError.Malformed, "login");
         }
         var addresses = new List<string>();
         if (node["addresses"] is JsonArray array)
@@ -305,13 +326,23 @@ public static class HandoffMessages
             HandoffFrames.Require(node, "kind"),
             HandoffFrames.Require(node, "host"),
             port,
-            HandoffFrames.String(node, "user") ?? "",
-            HandoffFrames.String(node, "password") ?? "",
+            user,
+            password,
             HandoffFrames.String(node, "hostKeyFingerprint"),
             HandoffFrames.String(node, "certificateFingerprint"),
             s3,
             addresses);
     }
+
+    /// <summary>A bucket's location; the flat shape names its addressing flag `pathStyle`, the nested one `usesPathStyle`.</summary>
+    private static HandoffS3 ReadS3(JsonObject node, string pathStyleField) => new(
+        HandoffFrames.Require(node, "endpoint"),
+        HandoffFrames.String(node, "region") ?? "us-east-1",
+        HandoffFrames.Require(node, "bucket"),
+        node[pathStyleField] is JsonValue pathStyle && pathStyle.TryGetValue<bool>(out var flag) && flag);
+
+    private static int? Integer(JsonObject node, string name) =>
+        node[name] is JsonValue value && value.TryGetValue<int>(out var number) ? number : null;
 
     // ------------------------------------------------------------------
     // result

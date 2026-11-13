@@ -52,7 +52,10 @@ public sealed class LibraryService
     public event EventHandler? Changed;
 
     public bool IsImporting { get; private set; }
-    public bool IsEnriching { get; private set; }
+
+    /// <summary>Whether the TMDB sweep is running (the Downloaded page's status row).</summary>
+    public bool IsEnriching => _metadata.IsRunning;
+
     public string? ErrorMessage { get; private set; }
 
     public LibraryService(SmbCredentialsStore smbCredentials)
@@ -70,6 +73,9 @@ public sealed class LibraryService
         {
             _data = new LibraryData();
         }
+
+        _metadata = new MetadataSweep(_data, _gate, MetadataLookup.Tmdb, () => DateTimeOffset.UtcNow, Save);
+        _metadata.RunningChanged += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public IReadOnlyList<LibraryFolder> Folders { get { lock (_gate) return [.. _data.Folders]; } }
@@ -111,6 +117,16 @@ public sealed class LibraryService
     public IReadOnlyList<LibraryShow> ShowsByTmdbId(int tmdbId)
     {
         lock (_gate) return [.. _data.Shows.Where(s => s.TmdbId == tmdbId)];
+    }
+
+    /// <summary>
+    /// Every identified episode's TMDB id by sync key (<c>tv:1399:2:4</c>),
+    /// in one pass under the lock without copying the library: how the sync
+    /// engine and the progress store place episodes from other devices.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> EpisodeIndex()
+    {
+        lock (_gate) return Core.Sync.SyncEpisodeIndex.FromLibrary(_data.Shows);
     }
 
     /// <summary>How many sources a saved login serves (Settings → Accounts).</summary>
@@ -168,6 +184,81 @@ public sealed class LibraryService
     public LibraryShow? ShowForEpisode(LibraryEpisode episode)
     {
         lock (_gate) return _data.Shows.FirstOrDefault(s => s.Episodes.Any(e => e.Id == episode.Id));
+    }
+
+    // ------------------------------------------------------------------
+    // Titles in several sources (apple-27.1 94a8b4f). The rules live in
+    // LibraryData and PlaybackSources, where the tests reach them.
+    // ------------------------------------------------------------------
+
+    /// <summary>Every copy of the movie's title, the movie first, in Play From order.</summary>
+    public IReadOnlyList<LibraryMovie> MovieCopies(LibraryMovie movie)
+    {
+        lock (_gate) return _data.MovieCopies(movie);
+    }
+
+    /// <summary>Every record of the show's title, the show first.</summary>
+    public IReadOnlyList<LibraryShow> ShowCopies(LibraryShow show)
+    {
+        lock (_gate) return _data.ShowCopies(show);
+    }
+
+    /// <summary>The sources holding a show title's episodes: local first, then by name and path.</summary>
+    public IReadOnlyList<Guid> ShowSources(IReadOnlyList<LibraryShow> copies)
+    {
+        lock (_gate) return PlaybackSources.ShowSources(copies, _data.FolderById);
+    }
+
+    /// <summary>
+    /// A show card's subtitle, with seasons and episodes counted across every
+    /// record of its title; null when the show is gone.
+    /// </summary>
+    public string? ShowSubtitle(Guid showId)
+    {
+        lock (_gate)
+        {
+            return _data.Shows.FirstOrDefault(show => show.Id == showId) is { } show
+                ? PlaybackSources.ShowSubtitle(_data.ShowCopies(show))
+                : null;
+        }
+    }
+
+    /// <summary>When an episode of the show's title last started playing from a source; null when never.</summary>
+    public DateTimeOffset? SourceLastPlayedAt(LibraryShow show, Guid folderId)
+    {
+        lock (_gate) return PlaybackSources.SourceLastPlayedAt(_data.ShowCopies(show), folderId);
+    }
+
+    /// <summary>
+    /// The copy of a TMDB movie that Continue Watching, the Movies &amp; Shows
+    /// hero, and play routes start: the reachable copy played last, else the
+    /// first reachable one.
+    /// </summary>
+    public LibraryMovie? PreferredMovie(int tmdbId)
+    {
+        lock (_gate) return _data.PreferredMovie(tmdbId, _sourceStates.ContainsKey);
+    }
+
+    /// <summary>
+    /// The file of a TMDB episode that Continue Watching and play routes
+    /// start: from the reachable source played last, else the first reachable one.
+    /// </summary>
+    public ShowEpisode? PreferredEpisode(int episodeTmdbId)
+    {
+        lock (_gate) return _data.PreferredEpisode(episodeTmdbId, _sourceStates.ContainsKey);
+    }
+
+    /// <summary>
+    /// Remembers that a library file started playing, so Play, Continue
+    /// Watching, and Play From default to the copy and source played last.
+    /// Device data in library.json: it never syncs. Saved off the calling
+    /// thread; a file outside the library changes nothing.
+    /// </summary>
+    public void NotePlayed(string filePath)
+    {
+        bool noted;
+        lock (_gate) noted = _data.NotePlayed(filePath, DateTimeOffset.UtcNow);
+        if (noted) _ = Task.Run(Save);
     }
 
     // ------------------------------------------------------------------
@@ -234,7 +325,15 @@ public sealed class LibraryService
         await ScanFolderAsync(folder, connector);
     }
 
-    public Task RescanFolderAsync(LibraryFolder folder) => ScanFolderAsync(folder);
+    /// <summary>
+    /// A source's Rescan: scans it, then asks TMDB again about every title it
+    /// had no match for (Apple LibraryController.rescanFolder).
+    /// </summary>
+    public async Task RescanFolderAsync(LibraryFolder folder)
+    {
+        await ScanFolderAsync(folder);
+        _ = EnrichPendingMetadata(retryingUnmatched: true);
+    }
 
     // ------------------------------------------------------------------
     // Google Drive (ENHANCEMENT.md 3.20)
@@ -324,6 +423,11 @@ public sealed class LibraryService
             {
                 if (force || folder.NeedsAutomaticRescan(now)) await ScanFolderAsync(folder);
             }
+            // Every visit also finishes what an earlier sweep left: an import
+            // interrupted by quitting, lookups made while offline, and episodes
+            // added to a show that was already matched. Ctrl+R and F5 also ask
+            // again about titles TMDB had no match for.
+            _ = EnrichPendingMetadata(retryingUnmatched: force);
         }
         finally
         {
@@ -347,7 +451,12 @@ public sealed class LibraryService
     {
         _data.Folders.RemoveAll(f => f.Id == folder.Id);
         _data.Movies.RemoveAll(m => m.FolderId == folder.Id);
-        foreach (var show in _data.Shows) show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
+        foreach (var show in _data.Shows)
+        {
+            show.Episodes.RemoveAll(e => e.FolderId == folder.Id);
+            // What played from the source is forgotten with it.
+            LibraryData.ForgetSource(show, folder.Id);
+        }
         _data.Shows.RemoveAll(s => s.Episodes.Count == 0);
         _sourceStates.Remove(folder.Id);
         _sourceNotes.Remove(folder.Id);
@@ -364,17 +473,23 @@ public sealed class LibraryService
         Save();
     }
 
-    /// <summary>A removed show's Google Drive episodes stay hidden from later scans (3.20 D2).</summary>
-    public void RemoveShow(LibraryShow show)
+    /// <summary>
+    /// Remove on a show card held by one source: every record of the title
+    /// goes. Removed Google Drive episodes stay hidden from later scans (3.20 D2).
+    /// </summary>
+    public void RemoveShows(IReadOnlyList<LibraryShow> copies)
     {
-        lock (_gate)
-        {
-            _data.Shows.RemoveAll(s => s.Id == show.Id);
-            foreach (var episodes in show.Episodes.GroupBy(e => e.FolderId))
-            {
-                HideRemovedItems(episodes.Key, episodes.Select(e => e.FilePath));
-            }
-        }
+        lock (_gate) _data.RemoveShows([.. copies.Select(show => show.Id)]);
+        Save();
+    }
+
+    /// <summary>
+    /// "Remove from" one source on a show card held by several: that source's
+    /// episodes of the title go and the other sources stay (LibraryData.RemoveShowSource).
+    /// </summary>
+    public void RemoveShowSource(IReadOnlyList<LibraryShow> copies, Guid folderId)
+    {
+        lock (_gate) _data.RemoveShowSource([.. copies.Select(show => show.Id)], folderId);
         Save();
     }
 
@@ -414,7 +529,7 @@ public sealed class LibraryService
             Changed?.Invoke(this, EventArgs.Empty);
         }
 
-        _ = EnrichAsync();
+        _ = EnrichPendingMetadata();
     }
 
     private readonly record struct ScanOutcome(bool Changed, SourceState? Failure);
@@ -604,122 +719,62 @@ public sealed class LibraryService
     // Background TMDB enrichment — never blocks the import fast path.
     // ------------------------------------------------------------------
 
-    private int _enrichmentRunning;
+    /// <summary>The library-wide TMDB sweep (MetadataSweep); it saves through <see cref="Save"/>.</summary>
+    private readonly MetadataSweep _metadata;
 
-    private async Task EnrichAsync()
-    {
-        if (!WindowsCore.HasTmdbCredentials) return;
-        if (Interlocked.Exchange(ref _enrichmentRunning, 1) == 1) return;
+    /// <summary>
+    /// Looks up every title still without TMDB metadata, on the sweep's own
+    /// task: at launch, after every import or rescan, and on every Downloaded
+    /// visit. A request while a sweep runs queues one more pass.
+    /// <paramref name="retryingUnmatched"/> (Ctrl+R, F5, a source's Rescan)
+    /// also asks again about titles TMDB had no match for, without waiting
+    /// out <see cref="LibraryEnrichment.UnmatchedRetryInterval"/>. A build
+    /// without TMDB credentials has nothing to ask.
+    /// </summary>
+    public Task EnrichPendingMetadata(bool retryingUnmatched = false) =>
+        WindowsCore.HasTmdbCredentials ? _metadata.Request(retryingUnmatched) : Task.CompletedTask;
 
-        IsEnriching = true;
-        Changed?.Invoke(this, EventArgs.Empty);
-        try
-        {
-            foreach (var movie in Movies.Where(m => m.TmdbId is null))
-            {
-                await EnrichMovieAsync(movie);
-            }
-            foreach (var show in Shows)
-            {
-                if (show.TmdbId is null) await EnrichShowAsync(show);
-                if (show.TmdbId is int showId)
-                {
-                    foreach (var episode in show.Episodes.Where(e => e.TmdbId is null).ToList())
-                    {
-                        await EnrichEpisodeAsync(showId, episode);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            Interlocked.Exchange(ref _enrichmentRunning, 0);
-            IsEnriching = false;
-            Save();
-        }
-    }
+    /// <summary>
+    /// Serializes the writes of library.json. Only file work runs under it,
+    /// never <see cref="_gate"/>, so the two locks can't deadlock.
+    /// </summary>
+    private readonly object _saveLock = new();
 
-    private async Task EnrichMovieAsync(LibraryMovie movie)
-    {
-        try
-        {
-            var results = await WindowsCore.SearchMediaAsync(movie.Title);
-            var match = results
-                .Where(item => item.MediaType == "movie")
-                .OrderByDescending(item => movie.Year is int year && item.Year == year)
-                .FirstOrDefault();
-            if (match is null) return;
+    /// <summary>Numbers each snapshot taken under <see cref="_gate"/>.</summary>
+    private long _snapshotSequence;
 
-            movie.TmdbId = match.Id;
-            movie.PosterUrl = match.PosterUrl;
-            movie.BackdropUrl = match.BackdropUrl;
-            movie.Overview ??= match.Overview;
-            movie.Year ??= match.Year;
+    /// <summary>The newest snapshot on disk; guarded by <see cref="_saveLock"/>.</summary>
+    private long _writtenSequence;
 
-            var detail = await WindowsCore.LoadMediaDetailAsync(match.Id, "movie");
-            movie.RuntimeMinutes = detail.RuntimeMinutes;
-            movie.Overview = detail.Overview ?? movie.Overview;
-        }
-        catch
-        {
-            // Enrichment is best-effort; the file stays usable without it.
-        }
-    }
-
-    private async Task EnrichShowAsync(LibraryShow show)
-    {
-        try
-        {
-            var results = await WindowsCore.SearchMediaAsync(show.Name);
-            var match = results.FirstOrDefault(item => item.MediaType == "tv");
-            if (match is null) return;
-
-            show.TmdbId = match.Id;
-            show.PosterUrl = match.PosterUrl;
-            show.BackdropUrl = match.BackdropUrl;
-            show.Overview = match.Overview;
-            show.FirstAirYear = match.Year;
-        }
-        catch
-        {
-            // Best-effort.
-        }
-    }
-
-    private async Task EnrichEpisodeAsync(int showTmdbId, LibraryEpisode episode)
-    {
-        try
-        {
-            var detail = await WindowsCore.LoadEpisodeDetailAsync(showTmdbId, episode.Season, episode.Episode);
-            if (detail.Id == 0) return;
-            episode.TmdbId = detail.Id;
-            episode.Title = detail.Name;
-            episode.StillUrl = detail.StillUrl;
-            episode.RuntimeMinutes = detail.RuntimeMinutes;
-        }
-        catch
-        {
-            // Best-effort.
-        }
-    }
-
+    /// <summary>
+    /// Persists the library. The JSON is built under <see cref="_gate"/>, so a
+    /// scan or a play stamp can't change an episode list or a dictionary while
+    /// it is read (that threw, and the save was silently lost). The file is
+    /// then written and moved into place under <see cref="_saveLock"/>, so
+    /// two saves never share the temporary file, and a snapshot older than
+    /// the one already written is dropped rather than put back over it.
+    /// </summary>
     private void Save()
     {
         try
         {
-            LibraryData snapshot;
+            string json;
+            long sequence;
             lock (_gate)
             {
-                snapshot = new LibraryData
-                {
-                    Folders = [.. _data.Folders],
-                    Movies = [.. _data.Movies],
-                    Shows = [.. _data.Shows],
-                };
+                json = JsonSerializer.Serialize(_data, JsonOptions);
+                sequence = ++_snapshotSequence;
             }
-            var temporary = AppPaths.LibraryFile + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(snapshot, JsonOptions));
-            File.Move(temporary, AppPaths.LibraryFile, overwrite: true);
+            lock (_saveLock)
+            {
+                if (sequence > _writtenSequence)
+                {
+                    var temporary = AppPaths.LibraryFile + ".tmp";
+                    File.WriteAllText(temporary, json);
+                    File.Move(temporary, AppPaths.LibraryFile, overwrite: true);
+                    _writtenSequence = sequence;
+                }
+            }
         }
         catch
         {

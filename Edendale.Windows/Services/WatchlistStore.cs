@@ -13,6 +13,19 @@ using Edendale.Windows.Models;
 
 namespace Edendale.Windows.Services;
 
+/// <summary>
+/// What <see cref="WatchlistStore.Changed"/> carries: whether file sync set
+/// the flag from another device's record, which the sync engine must not
+/// mirror back into the records it came from.
+/// </summary>
+public sealed class WatchlistChangedEventArgs(bool fromSync) : EventArgs
+{
+    public static readonly WatchlistChangedEventArgs Local = new(false);
+    public static readonly WatchlistChangedEventArgs Synced = new(true);
+
+    public bool FromSync { get; } = fromSync;
+}
+
 public sealed class WatchlistStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -35,7 +48,10 @@ public sealed class WatchlistStore
     private bool _pushRequested;
     private bool _pullRequested;
 
-    /// <summary>Any change to the watchlist (local edit, migration, or sync).</summary>
+    /// <summary>
+    /// Any change to the watchlist (local edit, migration, or sync). The
+    /// arguments are a <see cref="WatchlistChangedEventArgs"/>.
+    /// </summary>
     public event EventHandler? Changed;
 
     /// <param name="storePath">Watchlist JSON path; defaults to the app data file.</param>
@@ -87,7 +103,11 @@ public sealed class WatchlistStore
     public void Toggle(MediaRef reference, WatchlistMetadata? metadata = null) =>
         SetWatchlist(!IsInWatchlist(reference), reference, metadata);
 
-    public void SetWatchlist(bool inWatchlist, MediaRef reference, WatchlistMetadata? metadata = null)
+    /// <param name="fromSync">
+    /// File sync is setting the flag another device's record carries; the
+    /// change is raised as such, so the sync engine doesn't mirror it back.
+    /// </param>
+    public void SetWatchlist(bool inWatchlist, MediaRef reference, WatchlistMetadata? metadata = null, bool fromSync = false)
     {
         var changed = false;
         lock (_gate)
@@ -114,7 +134,7 @@ public sealed class WatchlistStore
         }
 
         Save();
-        RaiseChanged();
+        RaiseChanged(fromSync);
         if (changed) RequestPush();
     }
 
@@ -322,7 +342,8 @@ public sealed class WatchlistStore
         }
     }
 
-    private void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
+    private void RaiseChanged(bool fromSync = false) =>
+        Changed?.Invoke(this, fromSync ? WatchlistChangedEventArgs.Synced : WatchlistChangedEventArgs.Local);
 
     private static long NowMillis() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 }

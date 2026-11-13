@@ -5,7 +5,9 @@ using Edendale.Windows.Services.Handoff;
 using Edendale.Windows.Services.Remote;
 using Edendale.Windows.Services.Sync;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Markup;
 
 namespace Edendale.Windows.Controls;
 
@@ -16,7 +18,9 @@ namespace Edendale.Windows.Controls;
 /// or Dropbox account (or a new sign-in), or a server whose login is saved
 /// under Sources. One location per device: choosing another keeps the local
 /// store and offers to delete this PC's file at the old one (§4). The
-/// privacy sentence of §5.1 is always shown.
+/// privacy sentence of §5.1 is always shown. Choosing a cloud account never
+/// asks for videos or a folder (K.8 on apple-27.1): an account linked before
+/// 27.1 is marked in the list and signs in again when chosen.
 /// </summary>
 public static class SyncLocationDialog
 {
@@ -32,31 +36,54 @@ public static class SyncLocationDialog
         var form = new SyncLocationForm(root, presetSpace ?? previous?.Space, followUp, preferOneDrive);
         var chosen = await form.ShowAsync();
         if (chosen is null) return false;
-        if (previous is not null && !SameLocation(previous, chosen)) await OfferToDeleteOldFileAsync(root, previous);
+        if (previous is not null && !HandoffOffers.SameLocation(previous, chosen)) await OfferToDeleteOldFileAsync(root, previous);
         return true;
     }
 
-    private static bool SameLocation(SyncLocationSettings a, SyncLocationSettings b) =>
-        a.Kind == b.Kind && a.Space == b.Space && a.AccountKey == b.AccountKey
-        && string.Equals(a.Path?.TrimEnd('/', '\\'), b.Path?.TrimEnd('/', '\\'), StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>§4: the old location keeps its files; this PC's own file goes only when asked.</summary>
-    private static async Task OfferToDeleteOldFileAsync(XamlRoot root, SyncLocationSettings previous)
+    /// <summary>
+    /// §4: the old location keeps its files; this PC's own file goes only
+    /// when asked. Also offered after a handoff adopts a location outright.
+    /// A delete that fails (the old location is unreachable) says so.
+    /// </summary>
+    internal static async Task OfferToDeleteOldFileAsync(XamlRoot root, SyncLocationSettings previous)
     {
+        var where = AppServices.FileSync.Describe(previous);
         var dialog = new ContentDialog
         {
             Title = Loc.Get("Sync_SwitchTitle"),
-            Content = new TextBlock { Text = Loc.Format("Sync_SwitchMessage", AppServices.FileSync.Describe(previous), previous.Space), TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
+            Content = new TextBlock { Text = Loc.Format("Sync_SwitchMessage", where, previous.Space), TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
             PrimaryButtonText = Loc.Get("Sync_SwitchDelete"),
             CloseButtonText = Loc.Get("Sync_SwitchKeep"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = root,
         };
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        if (await AppServices.FileSync.DeleteOwnFileAtAsync(previous, CancellationToken.None)) return;
+        await new ContentDialog
         {
-            await AppServices.FileSync.DeleteOwnFileAtAsync(previous, CancellationToken.None);
-        }
+            Title = Loc.Get("Sync_SwitchTitle"),
+            Content = new TextBlock { Text = Loc.Format("Sync_DeleteOldFailed", where), TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
+            CloseButtonText = Loc.Get("Common_OK"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = root,
+        }.ShowAsync();
     }
+}
+
+/// <summary>
+/// One row of the Location list: the choice, and under it, for an account
+/// that must sign in again before Edendale can write there, why
+/// (CloudAccountStep.swift on apple-27.1). Public, because the list's
+/// template binds to it; its text is also what a screen reader and type-ahead
+/// use.
+/// </summary>
+public sealed class SyncLocationChoiceItem(string title, string? detail)
+{
+    public string Title { get; } = title;
+    public string? Detail { get; } = detail;
+    public Visibility DetailVisibility => string.IsNullOrEmpty(Detail) ? Visibility.Collapsed : Visibility.Visible;
+
+    public override string ToString() => string.IsNullOrEmpty(Detail) ? Title : $"{Title}, {Detail}";
 }
 
 /// <summary>The form behind <see cref="SyncLocationDialog"/>.</summary>
@@ -64,6 +91,8 @@ internal sealed class SyncLocationForm
 {
     private sealed record Choice(string Title, SyncLocationKind Kind)
     {
+        /// <summary>A second line under the title: a linked account that must sign in again.</summary>
+        public string? Detail { get; init; }
         public string? FolderRoot { get; init; }
         public bool PickFolder { get; init; }
         public CloudAccount? Account { get; init; }
@@ -101,7 +130,8 @@ internal sealed class SyncLocationForm
         {
             Header = Loc.Get("Sync_LocationLabel"),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = _choices.Select(choice => choice.Title).ToList(),
+            ItemsSource = _choices.Select(choice => new SyncLocationChoiceItem(choice.Title, choice.Detail)).ToList(),
+            ItemTemplate = ChoiceTemplate.Value,
             SelectedIndex = Math.Max(0, InitialChoice(preferOneDrive)),
         };
         _picker.SelectionChanged += (_, _) => BuildFields();
@@ -126,6 +156,22 @@ internal sealed class SyncLocationForm
     }
 
     private Choice Selected => _choices[Math.Clamp(_picker.SelectedIndex, 0, _choices.Count - 1)];
+
+    /// <summary>A choice's title, and its second line when it has one.</summary>
+    private static readonly Lazy<DataTemplate> ChoiceTemplate = new(() => (DataTemplate)XamlReader.Load(
+        """
+        <DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+            <StackPanel Spacing="2">
+                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                <TextBlock
+                    Text="{Binding Detail}"
+                    Visibility="{Binding DetailVisibility}"
+                    FontSize="12"
+                    Foreground="{StaticResource EdendaleTextSecondaryBrush}"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </DataTemplate>
+        """));
 
     private static SyncLocationKind KindOf(MediaSourceKind kind) => kind switch
     {
@@ -152,12 +198,18 @@ internal sealed class SyncLocationForm
         choices.Add(new Choice(Loc.Get("Sync_ProviderFolder"), SyncLocationKind.Folder) { PickFolder = true });
         foreach (var account in AppServices.CloudAccounts.All)
         {
-            choices.Add(new Choice($"{account.SourceKind.DisplayName()} · {account.Label}", KindOf(account.SourceKind)) { Account = account });
+            choices.Add(new Choice($"{account.SourceKind.DisplayName()} · {account.Label}", KindOf(account.SourceKind))
+            {
+                Account = account,
+                Detail = CloudProviders.CanWriteSyncFiles(account) ? null : Loc.Get("Sync_SignInAgainHere"),
+            });
         }
         foreach (var kind in new[] { MediaSourceKind.GoogleDrive, MediaSourceKind.OneDrive, MediaSourceKind.Dropbox })
         {
             if (!CloudProviders.IsConfigured(kind)) continue;
-            choices.Add(new Choice($"{kind.DisplayName()} · {Loc.Get("LinkSource_AnotherAccount")}", KindOf(kind)) { SignInKind = kind });
+            // "Sign In" until an account of that provider is linked, then "Another account…".
+            var label = AppServices.CloudAccounts.All.Any(account => account.SourceKind == kind) ? "LinkSource_AnotherAccount" : "LinkSource_SignIn";
+            choices.Add(new Choice($"{kind.DisplayName()} · {Loc.Get(label)}", KindOf(kind)) { SignInKind = kind });
         }
         foreach (var login in AppServices.ServerLogins.Logins.Where(login => login.Kind is MediaSourceKind.WebDav or MediaSourceKind.Sftp))
         {
@@ -244,9 +296,9 @@ internal sealed class SyncLocationForm
     {
         var resources = Application.Current.Resources;
         var content = new StackPanel { Spacing = 12, MinWidth = 440, MaxWidth = 520 };
-        if (_followUp is HandoffFollowUp.GoogleSignIn { Hint: { } hint } google)
+        if (_followUp is HandoffFollowUp.GoogleSignIn google)
         {
-            content.Children.Add(Note(Loc.Format("Sync_GoogleRelink", hint, google.Space)));
+            content.Children.Add(Note(HandoffDialog.GoogleSignInText(google)));
         }
         else if (_followUp is HandoffFollowUp.PickFolder folder)
         {
@@ -257,7 +309,8 @@ internal sealed class SyncLocationForm
         content.Children.Add(_space);
         content.Children.Add(Note(Loc.Get("Sync_SpaceHelp")));
         content.Children.Add(Note(Loc.Get("Sync_PrivacyNote")));
-        if (!_choices.Any(choice => choice.Account is not null || choice.ServerHost is not null)) content.Children.Add(Note(Loc.Get("Sync_ServersHint")));
+        // Cloud accounts sign in from this list; only servers that need a login are linked under Sources first.
+        if (!_choices.Any(choice => choice.ServerHost is not null)) content.Children.Add(Note(Loc.Get("Sync_ServerLoginsHint")));
         content.Children.Add(_progress);
         content.Children.Add(_error);
 
@@ -323,9 +376,26 @@ internal sealed class SyncLocationForm
             }
             _fields.Children.Add(_address);
         }
-        else if (choice.Account is { } account && !CloudProviders.CanWriteSyncFiles(account))
+        else if (choice.Account is not null || choice.SignInKind is not null)
         {
-            _fields.Children.Add(Note(Loc.Format("Sync_NeedsConsent", account.SourceKind.DisplayName())));
+            // What a cloud choice touches. Google's has nothing to pick: drive.file
+            // covers the folder Edendale creates (K.8 on apple-27.1).
+            var note = choice.Kind switch
+            {
+                SyncLocationKind.GoogleDrive => "Sync_GoogleNothingToChoose",
+                SyncLocationKind.OneDrive => "Sync_OneDriveWritesNote",
+                SyncLocationKind.Dropbox => "Sync_DropboxWritesNote",
+                _ => null,
+            };
+            if (note is not null) _fields.Children.Add(Note(Loc.Get(note)));
+        }
+
+        // The mark under a linked account is read with the list, and the
+        // button says what Connect will do: open the browser to sign in.
+        AutomationProperties.SetHelpText(_picker, choice.Detail ?? "");
+        if (_dialog is not null)
+        {
+            _dialog.PrimaryButtonText = Loc.Get(choice.SignInKind is not null || choice.Detail is not null ? "LinkSource_SignIn" : "LinkSource_Connect");
         }
     }
 

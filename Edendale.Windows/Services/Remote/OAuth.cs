@@ -5,10 +5,11 @@
 // the gitignored secrets.json (tools/Edendale.Secrets), and an empty value
 // hides that provider. The one client secret is Google's (D9): its Desktop
 // client type issues one that Google documents as not confidential, and it
-// comes from the same gitignored file. Google Drive's sign-in also opens
-// Google's picker (trigger_onepick), and the redirect names the files picked
-// (ENHANCEMENT.md 3.20). Nothing here logs tokens or secrets or puts them
-// into error messages.
+// comes from the same gitignored file. Google Drive's sign-in from Link
+// Source also opens Google's picker (trigger_onepick), and the redirect names
+// the files picked (ENHANCEMENT.md 3.20); a sign-in for the sync location
+// skips it (SignInPurpose.Sync). Nothing here logs tokens or secrets or puts
+// them into error messages.
 
 using System.Net;
 using System.Net.Sockets;
@@ -93,6 +94,12 @@ public enum OAuthFailure
     DriveAccessMissing,
     /// <summary>Choose More Videos came back signed in as another Google account.</summary>
     DifferentAccount,
+    /// <summary>
+    /// A sign-in for the sync location came back without the scope the sync
+    /// files need (FEATURES-27.1.md §10.5): the person unticked it, or the
+    /// provider didn't grant it. Nothing is saved as the location.
+    /// </summary>
+    SyncWriteMissing,
     Server,
     Http,
     MalformedResponse,
@@ -116,6 +123,7 @@ public sealed class OAuthException(OAuthFailure failure, string provider, string
         OAuthFailure.InvalidGrant => AppText.Format("OAuth_InvalidGrant", provider),
         OAuthFailure.DriveAccessMissing => AppText.Get("OAuth_DriveAccessMissing"),
         OAuthFailure.DifferentAccount => AppText.Format("OAuth_DifferentAccount", code, description),
+        OAuthFailure.SyncWriteMissing => AppText.Format("OAuth_SyncWriteMissing", provider),
         OAuthFailure.Server when !string.IsNullOrEmpty(description) => AppText.Format("OAuth_ServerDetail", provider, code, description),
         OAuthFailure.Server => AppText.Format("OAuth_Server", provider, code),
         OAuthFailure.Http => AppText.Format("Connector_ServerError", provider, status),
@@ -294,6 +302,20 @@ public sealed class OAuthClient(OAuthConfiguration configuration, HttpMessageInv
 }
 
 /// <summary>
+/// Why a sign-in runs (CloudProviders.swift `SignInPurpose`, ENHANCEMENT.md
+/// K.8 on apple-27.1). A library sign-in to Google Drive opens the picker,
+/// where the person ticks the videos to play. A sync sign-in has nothing to
+/// choose: drive.file already covers the folder and files Edendale creates,
+/// so the picker's parameters are left out and only the refresh-token ones
+/// stay. OneDrive and Dropbox sign in the same way for both.
+/// </summary>
+public enum SignInPurpose
+{
+    Library,
+    Sync,
+}
+
+/// <summary>
 /// Per-provider OAuth settings (CloudProviders.swift). Google Drive uses a
 /// Desktop-type OAuth client with a loopback redirect; its token endpoint
 /// expects the client secret Google issues to those clients (D9).
@@ -399,20 +421,41 @@ public static class CloudProviders
             : null;
 
     /// <summary>
-    /// Google sign-in for a sync location: drive.file consent without the
-    /// picker, since the app's own Edendale folder needs no pick (FEATURES-27.1.md
-    /// §6.4). <paramref name="loginHint"/> pre-fills the account a handoff named.
+    /// Fails a sign-in for the sync location whose grant can't write the sync
+    /// files (ENHANCEMENT.md K.8 on apple-27.1, SyncLocationSetupView
+    /// `chooseAccount`): the person unticked the write access, or the
+    /// provider left it out. The account itself stays linked, as Apple keeps
+    /// it: its read grant still serves its sources.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> GoogleSyncParameters(string? loginHint)
+    public static void CheckSyncWriteScope(CloudAccount account)
     {
-        var parameters = new Dictionary<string, string>
-        {
-            ["access_type"] = "offline",
-            ["prompt"] = string.IsNullOrEmpty(loginHint) ? "consent select_account" : "consent",
-        };
-        if (!string.IsNullOrEmpty(loginHint)) parameters["login_hint"] = loginHint;
-        return parameters;
+        if (!CanWriteSyncFiles(account)) throw new OAuthException(OAuthFailure.SyncWriteMissing, account.SourceKind.DisplayName());
     }
+
+    /// <summary>
+    /// Google's sign-in for the sync location (ENHANCEMENT.md K.8 on
+    /// apple-27.1, `googleSyncParameters`): a refresh token, and the account
+    /// chooser with the consent page, but not the picker's parameters,
+    /// because drive.file already covers the folder and files Edendale
+    /// creates (FEATURES-27.1.md §6.4). A login hint from a handoff goes per
+    /// request (<see cref="SyncLoginHint"/>), so the chooser stays.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> GoogleSyncParameters = new Dictionary<string, string>
+    {
+        ["access_type"] = "offline",
+        ["prompt"] = "consent select_account",
+    };
+
+    /// <summary>
+    /// The per-request login hint for a sync sign-in: the account a handoff
+    /// named, or the linked account signing in again. Null without a hint,
+    /// and for Dropbox, whose authorize page takes none (CloudAccountStep.swift
+    /// `choose`), so the address never lands in its URL for nothing.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string>? SyncLoginHint(MediaSourceKind kind, string? loginHint) =>
+        string.IsNullOrEmpty(loginHint) || kind == MediaSourceKind.Dropbox
+            ? null
+            : new Dictionary<string, string> { ["login_hint"] = loginHint };
 
     /// <summary>Personal and work/school Microsoft accounts both sign in through the common authority.</summary>
     public const string MicrosoftAuthority = "https://login.microsoftonline.com/common/oauth2/v2.0/";
@@ -420,13 +463,26 @@ public static class CloudProviders
     /// <summary>The fixed loopback port Dropbox's app registration names (http://127.0.0.1:49735/).</summary>
     public const int DropboxLoopbackPort = 49735;
 
-    /// <summary>The configuration for <paramref name="kind"/>, or null when this build has no client ID for it.</summary>
-    public static OAuthConfiguration? Configuration(MediaSourceKind kind) =>
-        CloudClientIds.For(kind) is { } clientId ? Configuration(kind, clientId, CloudClientIds.SecretFor(kind)) : null;
+    /// <summary>
+    /// The configuration for <paramref name="kind"/>, or null when this build
+    /// has no client ID for it. One parameter only: CloudTokenProvider takes
+    /// it as a <c>Func&lt;MediaSourceKind, OAuthConfiguration?&gt;</c>.
+    /// </summary>
+    public static OAuthConfiguration? Configuration(MediaSourceKind kind) => Configuration(kind, SignInPurpose.Library);
+
+    /// <summary>The configuration for a sign-in of <paramref name="purpose"/>, or null without a client ID.</summary>
+    public static OAuthConfiguration? Configuration(MediaSourceKind kind, SignInPurpose purpose) =>
+        CloudClientIds.For(kind) is { } clientId ? Configuration(kind, clientId, CloudClientIds.SecretFor(kind), purpose) : null;
 
     public static bool IsConfigured(MediaSourceKind kind) => Configuration(kind) is not null;
 
-    public static OAuthConfiguration? Configuration(MediaSourceKind kind, string clientId, string? clientSecret = null) => kind switch
+    /// <summary>
+    /// A provider's configuration. The purpose changes only Google's: the
+    /// same client, redirect, and drive.file scope, with the picker for a
+    /// library sign-in and without it for the sync location. OneDrive and
+    /// Dropbox sign in the same way for both.
+    /// </summary>
+    public static OAuthConfiguration? Configuration(MediaSourceKind kind, string clientId, string? clientSecret = null, SignInPurpose purpose = SignInPurpose.Library) => kind switch
     {
         MediaSourceKind.GoogleDrive => new OAuthConfiguration
         {
@@ -436,7 +492,7 @@ public static class CloudProviders
             AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
             TokenEndpoint = "https://oauth2.googleapis.com/token",
             Scopes = GoogleScopes,
-            AdditionalAuthorizationParameters = GooglePickerParameters,
+            AdditionalAuthorizationParameters = purpose == SignInPurpose.Sync ? GoogleSyncParameters : GooglePickerParameters,
         },
         MediaSourceKind.OneDrive => new OAuthConfiguration
         {

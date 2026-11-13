@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Edendale.Windows.Controls;
 
-/// <summary>Settings → Skip Prompts (DIFF.md §3.5).</summary>
+/// <summary>Settings → Player Controls → Playback → Skip Prompts (DIFF.md §3.5).</summary>
 public sealed partial class SkipPromptsSettings : UserControl
 {
     private bool _updating;

@@ -136,6 +136,17 @@ public sealed class SyncStateData
 
     /// <summary>The one-time offer of the OneDrive folder as the default location was shown.</summary>
     public bool DefaultLocationOffered { get; set; }
+
+    /// <summary>
+    /// Records stamped more than a day ahead were left out of the last
+    /// device file (K.7); the file is written again once the clock passes
+    /// this, the earliest one's stamp less the day's allowance. 0 when
+    /// nothing was held back.
+    /// </summary>
+    public long HeldBackUntil { get; set; }
+
+    /// <summary>The watchlist's launch reconcile (K.7) has completed on this PC.</summary>
+    public bool WatchlistSeeded { get; set; }
 }
 
 public sealed class SyncState
@@ -152,6 +163,7 @@ public sealed class SyncState
     private readonly string _path;
     private readonly object _gate = new();
     private readonly SyncStateData _data;
+    private int _generation;
 
     public SyncState(string? path = null)
     {
@@ -244,6 +256,28 @@ public sealed class SyncState
         }
     }
 
+    /// <summary>
+    /// Lowers a high-water mark that ran more than a day ahead (K.7), which
+    /// <see cref="HighWater"/>'s setter, rising only, can't do.
+    /// </summary>
+    public void ResetHighWater(long value)
+    {
+        lock (_gate)
+        {
+            _data.HighWater = value;
+            SaveLocked();
+        }
+    }
+
+    /// <summary>
+    /// Raised by every <see cref="SetLocation"/>, so a sync that began at the
+    /// old location records nothing against the new one. Not persisted.
+    /// </summary>
+    public int Generation
+    {
+        get { lock (_gate) return _generation; }
+    }
+
     public SyncLocationSettings? Location
     {
         get { lock (_gate) return _data.Location; }
@@ -265,6 +299,8 @@ public sealed class SyncState
             _data.LastSyncMillis = 0;
             _data.LastWriteMillis = 0;
             _data.WrittenHighWater = 0;
+            _data.HeldBackUntil = 0;
+            _generation++;
             SaveLocked();
         }
         Changed?.Invoke(this, EventArgs.Empty);
@@ -304,6 +340,35 @@ public sealed class SyncState
             SaveLocked();
         }
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// §8.2 and §8.3 after a listing: the read stamps of files no longer
+    /// listed go, so a file that comes back is read again, and, when the
+    /// listing isn't empty, so do the devices whose file is gone (an empty
+    /// listing clears nothing). Returns whether anything went.
+    /// </summary>
+    public bool ForgetMissing(IReadOnlyCollection<string> listedNames)
+    {
+        var removed = false;
+        lock (_gate)
+        {
+            var listed = new HashSet<string>(listedNames, StringComparer.Ordinal);
+            foreach (var name in _data.ReadStamps.Keys.Where(name => !listed.Contains(name)).ToList())
+            {
+                removed |= _data.ReadStamps.Remove(name);
+            }
+            if (listed.Count > 0)
+            {
+                foreach (var id in _data.Peers.Keys.Where(id => !listed.Contains(SyncFormat.FileName(id))).ToList())
+                {
+                    removed |= _data.Peers.Remove(id);
+                }
+            }
+            if (removed) SaveLocked();
+        }
+        if (removed) Changed?.Invoke(this, EventArgs.Empty);
+        return removed;
     }
 
     public IReadOnlyList<SyncPeer> Peers
@@ -366,6 +431,35 @@ public sealed class SyncState
             lock (_gate)
             {
                 _data.DefaultLocationOffered = value;
+                SaveLocked();
+            }
+        }
+    }
+
+    /// <summary>See <see cref="SyncStateData.HeldBackUntil"/>.</summary>
+    public long HeldBackUntil
+    {
+        get { lock (_gate) return _data.HeldBackUntil; }
+        set
+        {
+            lock (_gate)
+            {
+                if (_data.HeldBackUntil == value) return;
+                _data.HeldBackUntil = value;
+                SaveLocked();
+            }
+        }
+    }
+
+    /// <summary>See <see cref="SyncStateData.WatchlistSeeded"/>.</summary>
+    public bool WatchlistSeeded
+    {
+        get { lock (_gate) return _data.WatchlistSeeded; }
+        set
+        {
+            lock (_gate)
+            {
+                _data.WatchlistSeeded = value;
                 SaveLocked();
             }
         }

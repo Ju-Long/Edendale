@@ -296,4 +296,26 @@ public sealed class HandoffOffersTests
         Assert.AreEqual("pw", receiver.Stores.ServerLogins.Get(MediaSourceKind.WebDav, "nas.local")!.Password);
         Assert.AreNotEqual(sender.Stores.Sync.DeviceId, receiver.Stores.Sync.DeviceId, "the device ID never travels");
     }
+
+    /// <summary>
+    /// A location adopted outright replaces the old one, so the dialog offers
+    /// to delete this PC's file there (FEATURES-27.1.md §4,
+    /// SyncCoordinator.previousLocation on apple-27.1).
+    /// </summary>
+    [TestMethod]
+    public void AnAdoptedLocationThatDiffersReplacesThePreviousOne()
+    {
+        var oneDrive = new SyncLocationSettings { Kind = SyncLocationKind.OneDrive, Space = "Family", AccountKey = "onedrive:me" };
+        var webDav = new SyncLocationSettings { Kind = SyncLocationKind.WebDav, Space = "Family", Path = "davs://cloud.example.com/dav/" };
+        Assert.IsFalse(HandoffOffers.SameLocation(oneDrive, webDav));
+        Assert.IsTrue(HandoffOffers.SameLocation(webDav, webDav with { Path = "davs://cloud.example.com/dav" }), "a trailing slash is the same folder");
+        Assert.IsFalse(HandoffOffers.SameLocation(webDav, webDav with { Space = "Work" }), "another space is another file");
+
+        var adopted = new HandoffAdoption(HandoffResult.Empty, webDav, null);
+        Assert.AreEqual(oneDrive, adopted.Replaced(oneDrive));
+        Assert.IsNull(adopted.Replaced(webDav), "the same location came back");
+        Assert.IsNull(adopted.Replaced(null), "sync was off");
+        Assert.IsNull(new HandoffAdoption(HandoffResult.Empty, null, new HandoffFollowUp.PickFolder("Family", "folder")).Replaced(oneDrive),
+            "a follow-up's Location dialog asks itself");
+    }
 }

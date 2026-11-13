@@ -40,6 +40,7 @@
     <Compile Include="..\Edendale.Windows\Services\AppRoute.cs" Link="App\Services\AppRoute.cs" />
     <Compile Include="..\Edendale.Windows\Services\IntroDbClient.cs" Link="App\Services\IntroDbClient.cs" />
     <Compile Include="..\Edendale.Windows\Services\LibraryModels.cs" Link="App\Services\LibraryModels.cs" />
+    <Compile Include="..\Edendale.Windows\Services\MetadataSweep.cs" Link="App\Services\MetadataSweep.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSession.cs" Link="App\Services\PlayerSession.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerContext.cs" Link="App\Services\PlayerContext.cs" />
     <Compile Include="..\Edendale.Windows\Services\PlayerSettingsStore.cs" Link="App\Services\PlayerSettingsStore.cs" />
@@ -65,10 +66,15 @@
     <Compile Include="..\Edendale.Windows\Services\YoungAudienceFilter.cs" Link="App\Services\YoungAudienceFilter.cs" />
     <Compile Include="..\Edendale.Windows\Core\AppText.cs" Link="App\Core\AppText.cs" />
     <Compile Include="..\Edendale.Windows\Core\AudioEnhancement.cs" Link="App\Core\AudioEnhancement.cs" />
+    <Compile Include="..\Edendale.Windows\Core\EqualizerPlot.cs" Link="App\Core\EqualizerPlot.cs" />
     <Compile Include="..\Edendale.Windows\Core\GamepadInterpreter.cs" Link="App\Core\GamepadInterpreter.cs" />
     <Compile Include="..\Edendale.Windows\Core\RefreshRateMatching.cs" Link="App\Core\RefreshRateMatching.cs" />
     <Compile Include="..\Edendale.Windows\Core\SshFingerprint.cs" Link="App\Core\SshFingerprint.cs" />
     <Compile Include="..\Edendale.Windows\Core\LibrarySections.cs" Link="App\Core\LibrarySections.cs" />
+    <Compile Include="..\Edendale.Windows\Core\SettingsCategories.cs" Link="App\Core\SettingsCategories.cs" />
+    <Compile Include="..\Edendale.Windows\Core\AppVersionText.cs" Link="App\Core\AppVersionText.cs" />
+    <Compile Include="..\Edendale.Windows\Core\LibraryEnrichment.cs" Link="App\Core\LibraryEnrichment.cs" />
+    <Compile Include="..\Edendale.Windows\Core\CoalescingRunner.cs" Link="App\Core\CoalescingRunner.cs" />
     <Compile Include="..\Edendale.Windows\Core\MediaConnectors.cs" Link="App\Core\MediaConnectors.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlaybackSources.cs" Link="App\Core\PlaybackSources.cs" />
     <Compile Include="..\Edendale.Windows\Core\SourceUrls.cs" Link="App\Core\SourceUrls.cs" />
@@ -81,6 +87,8 @@
     <Compile Include="..\Edendale.Windows\Core\PlaybackTransitions.cs" Link="App\Core\PlaybackTransitions.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerControlPreferences.cs" Link="App\Core\PlayerControlPreferences.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerLogic.cs" Link="App\Core\PlayerLogic.cs" />
+    <Compile Include="..\Edendale.Windows\Core\PlaybackStallWatch.cs" Link="App\Core\PlaybackStallWatch.cs" />
+    <Compile Include="..\Edendale.Windows\Core\IdlePointer.cs" Link="App\Core\IdlePointer.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerPreferences.cs" Link="App\Core\PlayerPreferences.cs" />
     <Compile Include="..\Edendale.Windows\Core\PlayerTracks.cs" Link="App\Core\PlayerTracks.cs" />
     <Compile Include="..\Edendale.Windows\Core\SavedSubtitles.cs" Link="App\Core\SavedSubtitles.cs" />

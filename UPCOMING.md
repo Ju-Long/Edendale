@@ -96,8 +96,8 @@ argument instead of through the protocol.
 
 ### Fix
 
-- [ ] Declare the protocol in `Package.appxmanifest` (same `<Extensions>`
-  block as U.1):
+- [x] Declare the protocol in `Package.appxmanifest` (same `<Extensions>`
+  block as U.1). Done in 27.1 for handoff links (ENHANCEMENT.md R.4):
 
   ```xml
   <uap:Extension Category="windows.protocol">
@@ -207,7 +207,6 @@ case.
   - `Subtitles_QuotaReached`
   - `Enhancement_HybridLaptop`
   - `SettingsAppControlsDescription.Text`
-  - `SettingsSkipPromptsPrivacy.Text`
 - [ ] **Dutch "trending" and "popular" read the same.**
   `Section_TrendingToday` is "Vandaag populair", next to
   `Section_PopularFilms` / `Section_PopularSeries` ("Populaire …").
@@ -215,18 +214,20 @@ case.
 
 ## Also found while preparing the 27.0.1 listing
 
-- [ ] The `SettingsNetworkNote` string (all `Strings\*\Resources.resw`)
+- [x] The `SettingsNetworkNote` string (all `Strings\*\Resources.resw`)
   says trailers use YouTube's privacy-enhanced embed. The app actually
   opens youtube.com in the browser when the user clicks a trailer. Since
   27.1 it must also name the sync location the user chooses and the other
   devices reached while a pairing screen is open (README "Data and
-  privacy" already does). Fix both in one pass over the 18 files.
+  privacy" already does). Fix both in one pass over the 18 files. Fixed in
+  27.1: it names the sync location and the pairing screen, and says a
+  trailer opens on YouTube in the browser.
 - [ ] README says Edendale ships outside the Microsoft Store because of
   `broadFileSystemAccess`. This contradicts the Store submission. Update it,
   and keep the written justification for that restricted capability ready
   for certification.
-- [ ] `Directory.Build.props` still has `VersionPrefix` 26.0.0 while the
-  manifest is 27.0.1.0.
+- [x] `Directory.Build.props` still has `VersionPrefix` 26.0.0 while the
+  manifest is 27.0.1.0. Both are 27.1.0 now, and Settings → About shows it.
 - [ ] Confirm before advertising: the release build has client IDs for
   Google Drive, OneDrive, and Dropbox and a Wyzie key. Google Drive now
   asks only for the non-sensitive `drive.file` (ENHANCEMENT.md 3.20), so it

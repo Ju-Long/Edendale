@@ -7,13 +7,16 @@ namespace Edendale.Windows.Services.Remote;
 public sealed record CloudSignInResult(CloudAccount Account, IReadOnlyList<string> PickedFileIds);
 
 /// <summary>
-/// Links a Google Drive, OneDrive, or Dropbox account (DIFF.md §3.12): the system browser
-/// opens the provider's consent page, the loopback redirect receives the
-/// code, PKCE redeems it, and only the refresh token is kept (DPAPI). The
-/// account stays on this device (D11) and is separate from the OneDrive
-/// folder Edendale replicates watch state into (D12). Google's page also
-/// opens Google's picker, where the user ticks the videos Edendale may play
-/// (ENHANCEMENT.md 3.20).
+/// Links a Google Drive, OneDrive, or Dropbox account (DIFF.md §3.12): the
+/// system browser opens the provider's consent page, the loopback redirect
+/// receives the code, PKCE redeems it, and only the refresh token is kept
+/// (DPAPI). The account stays on this device (D11) unless the person sends it
+/// to another of their devices with the handoff. Since 27.1 the grant also
+/// covers the sync files, which Edendale writes only once the account is
+/// chosen as the sync location (FEATURES-27.1.md §10). From Link Source,
+/// Google's page also opens Google's picker, where the person ticks the
+/// videos Edendale may play (ENHANCEMENT.md 3.20); a sign-in for the sync
+/// location has nothing to choose and skips it (K.8 on apple-27.1).
 /// </summary>
 public static class CloudSignIn
 {
@@ -22,7 +25,7 @@ public static class CloudSignIn
 
     public static async Task<CloudSignInResult> SignInAsync(MediaSourceKind kind, string completedPage, CancellationToken cancellation)
     {
-        var (tokens, picked) = await AuthorizeAsync(kind, null, completedPage, cancellation).ConfigureAwait(false);
+        var (tokens, picked) = await AuthorizeAsync(kind, SignInPurpose.Library, null, completedPage, cancellation).ConfigureAwait(false);
         CloudProviders.CheckGrantedScopes(kind, tokens);
         var identity = await CloudProviders.IdentityAsync(kind, tokens, null, cancellation).ConfigureAwait(false);
         var account = CloudProviders.NewAccount(kind, tokens, identity);
@@ -42,7 +45,7 @@ public static class CloudSignIn
     {
         var kind = account.SourceKind;
         if (kind != MediaSourceKind.GoogleDrive) throw new OAuthException(OAuthFailure.NotConfigured, kind.DisplayName());
-        var (tokens, picked) = await AuthorizeAsync(kind, CloudProviders.GoogleChooseMoreParameters(account.Email), completedPage, cancellation)
+        var (tokens, picked) = await AuthorizeAsync(kind, SignInPurpose.Library, CloudProviders.GoogleChooseMoreParameters(account.Email), completedPage, cancellation)
             .ConfigureAwait(false);
         CloudProviders.CheckGrantedScopes(kind, tokens);
         var identity = await CloudProviders.IdentityAsync(kind, tokens, null, cancellation).ConfigureAwait(false);
@@ -54,42 +57,37 @@ public static class CloudSignIn
     }
 
     /// <summary>
-    /// Signs in an account for the sync location (FEATURES-27.1.md §5.2):
-    /// OneDrive and Dropbox with their write scopes, Google Drive with
-    /// drive.file but without the picker. <paramref name="loginHint"/> is the
-    /// email a handoff from another ecosystem names (§6.4). An account that
-    /// is already linked is replaced with the new grant, so its sources keep
-    /// working.
+    /// Signs in an account for the sync location (FEATURES-27.1.md §5.2,
+    /// ENHANCEMENT.md K.8 on apple-27.1): OneDrive and Dropbox with their
+    /// write scopes, Google Drive with drive.file but without the picker.
+    /// <paramref name="loginHint"/> is the email a handoff from another
+    /// ecosystem names (§6.4), or the linked account signing in again;
+    /// Dropbox gets none (<see cref="CloudProviders.SyncLoginHint"/>). An
+    /// account that is already linked is replaced with the new grant, so its
+    /// sources keep working. A grant that still can't write the sync files
+    /// is kept for those sources, but fails here with
+    /// <see cref="OAuthFailure.SyncWriteMissing"/>, so it never becomes the
+    /// location.
     /// </summary>
     public static async Task<CloudAccount> SignInForSyncAsync(MediaSourceKind kind, string? loginHint, string completedPage, CancellationToken cancellation)
     {
-        IReadOnlyDictionary<string, string>? parameters = null;
-        Func<OAuthConfiguration, OAuthConfiguration>? adjust = null;
-        if (kind == MediaSourceKind.GoogleDrive)
-        {
-            adjust = configuration => configuration with { AdditionalAuthorizationParameters = CloudProviders.GoogleSyncParameters(loginHint) };
-        }
-        else if (!string.IsNullOrEmpty(loginHint))
-        {
-            parameters = new Dictionary<string, string> { ["login_hint"] = loginHint };
-        }
-        var (tokens, _) = await AuthorizeAsync(kind, parameters, completedPage, cancellation, adjust).ConfigureAwait(false);
+        var (tokens, _) = await AuthorizeAsync(kind, SignInPurpose.Sync, CloudProviders.SyncLoginHint(kind, loginHint), completedPage, cancellation)
+            .ConfigureAwait(false);
         CloudProviders.CheckGrantedScopes(kind, tokens);
         var identity = await CloudProviders.IdentityAsync(kind, tokens, null, cancellation).ConfigureAwait(false);
         var account = CloudProviders.NewAccount(kind, tokens, identity);
         AppServices.CloudAccounts.Save(account);
         AppServices.CloudTokens.Store(tokens, account);
+        CloudProviders.CheckSyncWriteScope(account);
         return account;
     }
 
     /// <summary>The provider's page in the system browser, then the code exchange.</summary>
     private static async Task<(OAuthTokenResponse Tokens, IReadOnlyList<string> PickedFileIds)> AuthorizeAsync(
-        MediaSourceKind kind, IReadOnlyDictionary<string, string>? parameters, string completedPage, CancellationToken cancellation,
-        Func<OAuthConfiguration, OAuthConfiguration>? adjust = null)
+        MediaSourceKind kind, SignInPurpose purpose, IReadOnlyDictionary<string, string>? parameters, string completedPage, CancellationToken cancellation)
     {
         var provider = kind.DisplayName();
-        var configuration = CloudProviders.Configuration(kind) ?? throw new OAuthException(OAuthFailure.NotConfigured, provider);
-        if (adjust is not null) configuration = adjust(configuration);
+        var configuration = CloudProviders.Configuration(kind, purpose) ?? throw new OAuthException(OAuthFailure.NotConfigured, provider);
         var client = new OAuthClient(configuration);
         var verifier = Pkce.MakeVerifier();
         var state = Pkce.MakeState();

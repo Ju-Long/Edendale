@@ -361,24 +361,73 @@ public sealed class SyncLocationsTests
         Assert.AreEqual("Files.Read User.Read offline_access", stub.Requests.Single().Form["scope"]);
     }
 
-    [TestMethod]
-    public void Scopes_GoogleSyncSignInSkipsThePicker_AndCarriesTheHint()
-    {
-        var hinted = CloudProviders.GoogleSyncParameters("person@example.com");
-        Assert.AreEqual("person@example.com", hinted["login_hint"]);
-        Assert.AreEqual("consent", hinted["prompt"]);
-        Assert.AreEqual("offline", hinted["access_type"]);
-        Assert.IsFalse(hinted.ContainsKey("trigger_onepick"));
-        Assert.AreEqual("consent select_account", CloudProviders.GoogleSyncParameters(null)["prompt"]);
+    // ------------------------------------------------------------------
+    // K.8 on apple-27.1: sync locations with nothing to choose
+    // ------------------------------------------------------------------
 
-        var configuration = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, "id.apps.googleusercontent.com", "secret")! with
+    /// <summary>Ports OAuthTests.syncSignInSkipsGooglesPicker.</summary>
+    [TestMethod]
+    public void SyncSignInSkipsGooglesPicker_WithTheSameClientAndScope()
+    {
+        const string id = "1234-abc.apps.googleusercontent.com";
+        var library = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, id)!;
+        var sync = CloudProviders.Configuration(MediaSourceKind.GoogleDrive, id, null, SignInPurpose.Sync)!;
+        CollectionAssert.AreEqual(library.Scopes.ToArray(), sync.Scopes.ToArray());
+        Assert.AreEqual(library.AuthorizationEndpoint, sync.AuthorizationEndpoint);
+        Assert.AreEqual(library.TokenEndpoint, sync.TokenEndpoint);
+        Assert.AreEqual(library.LoopbackPort, sync.LoopbackPort);
+        Assert.AreEqual(library.ClientSecret, sync.ClientSecret);
+
+        var hint = CloudProviders.SyncLoginHint(MediaSourceKind.GoogleDrive, "me@example.com");
+        var syncQuery = OAuthClient.ParseQuery(new Uri(new OAuthClient(sync).AuthorizationUrl("http://127.0.0.1:1/", "s", "c", hint)).Query);
+        Assert.AreEqual(CloudProviders.GoogleDriveScope, syncQuery["scope"]);
+        Assert.AreEqual("offline", syncQuery["access_type"]);
+        Assert.AreEqual("consent select_account", syncQuery["prompt"], "the account chooser stays, hint or not");
+        Assert.AreEqual("me@example.com", syncQuery["login_hint"]);
+        Assert.IsFalse(syncQuery.ContainsKey("trigger_onepick"));
+        Assert.IsFalse(syncQuery.ContainsKey("allow_multiple"));
+        Assert.IsFalse(syncQuery.ContainsKey("mimetypes"));
+
+        var libraryQuery = OAuthClient.ParseQuery(new Uri(new OAuthClient(library).AuthorizationUrl("http://127.0.0.1:1/", "s", "c")).Query);
+        Assert.AreEqual("true", libraryQuery["trigger_onepick"], "Link Source still opens the picker");
+
+        foreach (var kind in new[] { MediaSourceKind.OneDrive, MediaSourceKind.Dropbox })
         {
-            AdditionalAuthorizationParameters = CloudProviders.GoogleSyncParameters("person@example.com"),
-        };
-        var url = new OAuthClient(configuration).AuthorizationUrl("http://127.0.0.1:1/", "s", "c");
-        var query = OAuthClient.ParseQuery(new Uri(url).Query);
-        Assert.AreEqual(CloudProviders.GoogleDriveScope, query["scope"]);
-        Assert.IsFalse(query.ContainsKey("trigger_onepick"));
-        Assert.AreEqual("person@example.com", query["login_hint"]);
+            var forLibrary = new OAuthClient(CloudProviders.Configuration(kind, "client")!).AuthorizationUrl("http://127.0.0.1:1/", "s", "c");
+            var forSync = new OAuthClient(CloudProviders.Configuration(kind, "client", null, SignInPurpose.Sync)!).AuthorizationUrl("http://127.0.0.1:1/", "s", "c");
+            Assert.AreEqual(forLibrary, forSync, $"{kind} signs in the same way for both");
+        }
+    }
+
+    [TestMethod]
+    public void SyncLoginHint_IsLeftOutForDropbox()
+    {
+        Assert.IsNull(CloudProviders.SyncLoginHint(MediaSourceKind.Dropbox, "me@example.com"), "Dropbox's authorize page takes no hint");
+        Assert.AreEqual("me@example.com", CloudProviders.SyncLoginHint(MediaSourceKind.OneDrive, "me@example.com")!["login_hint"]);
+        Assert.IsNull(CloudProviders.SyncLoginHint(MediaSourceKind.GoogleDrive, ""));
+        Assert.IsNull(CloudProviders.SyncLoginHint(MediaSourceKind.GoogleDrive, null));
+    }
+
+    [TestMethod]
+    public void ASyncGrantWithoutTheWriteScopeIsRefused_WithApplesMessage()
+    {
+        var oneDrive = Assert.ThrowsException<OAuthException>(() =>
+            CloudProviders.CheckSyncWriteScope(Account(MediaSourceKind.OneDrive, ["Files.Read", "User.Read", "offline_access"])));
+        Assert.AreEqual(OAuthFailure.SyncWriteMissing, oneDrive.Failure);
+        Assert.AreEqual("OneDrive didn’t allow Edendale to write its sync files. Sign in again and allow that access.", oneDrive.Message);
+        var dropbox = Assert.ThrowsException<OAuthException>(() =>
+            CloudProviders.CheckSyncWriteScope(Account(MediaSourceKind.Dropbox, ["files.metadata.read", "files.content.read", "account_info.read"])));
+        StringAssert.StartsWith(dropbox.Message, "Dropbox didn’t allow Edendale to write its sync files.");
+
+        CloudProviders.CheckSyncWriteScope(Account(MediaSourceKind.OneDrive, ["https://graph.microsoft.com/Files.Read", "Files.ReadWrite.AppFolder"]));
+        CloudProviders.CheckSyncWriteScope(Account(MediaSourceKind.Dropbox, CloudProviders.DropboxScopes));
+        CloudProviders.CheckSyncWriteScope(Account(MediaSourceKind.GoogleDrive, CloudProviders.GoogleScopes));
+
+        // A grant that came back narrowed fails; one that lists no scopes keeps what was asked for.
+        var identity = new CloudProviders.Identity("subject", null, null);
+        var narrowed = CloudProviders.NewAccount(MediaSourceKind.OneDrive, new OAuthTokenResponse { RefreshToken = "r", Scope = "Files.Read User.Read offline_access" }, identity);
+        Assert.IsFalse(CloudProviders.CanWriteSyncFiles(narrowed));
+        var unlisted = CloudProviders.NewAccount(MediaSourceKind.OneDrive, new OAuthTokenResponse { RefreshToken = "r" }, identity);
+        Assert.IsTrue(CloudProviders.CanWriteSyncFiles(unlisted));
     }
 }

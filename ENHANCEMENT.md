@@ -27,6 +27,11 @@ Windows, plus Windows gaps found while comparing the branches.
   [27.1 file sync and handoff version 2](#271-file-sync-and-handoff-version-2).
   Where this file mentions the replica (D12, "Windows today"), that section
   replaces it.
+- **Amended 2026-11-13:** apple-27.1's Settings categories, equalizer graph,
+  sync and handoff reviews, titles in several sources, library sweep,
+  Downloaded picker, and player changes; see
+  [apple-27.1 parity](#apple-271-parity). Where 3.4, 3.6, 3.7, 3.11, 3.13,
+  3.15, and 3.19 describe what changed, that section replaces them.
 
 ## How to use this file
 
@@ -111,6 +116,17 @@ Priority follows DIFF.md: **P1** parity, **P2** worthwhile, **P3** optional.
 
 - [ ] [27.1 file sync and handoff version 2](#271-file-sync-and-handoff-version-2) (P1; code and tests done, Windows checks and the owner's console changes open)
 
+**apple-27.1 parity** (reviewed 2026-11-12)
+
+- [x] [R.1 Settings categories](#r1-settings-categories) (P1)
+- [x] [R.2 Equalizer graph](#r2-equalizer-graph) (P1)
+- [x] [R.3 Sync review fixes](#r3-sync-review-fixes) (P1)
+- [ ] [R.4 Handoff and sync locations](#r4-handoff-and-sync-locations) (P1; code and tests done, Windows checks open)
+- [x] [R.5 Titles in several sources](#r5-titles-in-several-sources) (P1)
+- [x] [R.6 TMDB sweep and Clear Progress](#r6-tmdb-sweep-and-clear-progress) (P1)
+- [x] [R.7 Downloaded section picker](#r7-downloaded-section-picker) (P2)
+- [ ] [R.8 Player](#r8-player) (P1; code and tests done, Windows checks open)
+
 **Video enhancement, Option A** (DIFF.md §3.16–3.17)
 
 - [x] [E.1 GPU capability probe](#e1-gpu-capability-probe) (P2)
@@ -188,6 +204,7 @@ still open needs Windows hardware or a change on another branch.
   owner's account. See the checklist in 3.20.
 - 27.1 sync and handoff: S.D1 (every location, two PCs, pairing both ways),
   and the owner's console changes and probes in S.9.
+- R.4 and R.8: the checks in the app listed in each.
 
 **Changes on other branches** (AGENTS.md hard constraint 7)
 
@@ -206,6 +223,11 @@ still open needs Windows hardware or a change on another branch.
   `provider` choices the three branches share, and the OneDrive preset's
   `Apps` root (27.1 section). `web`: the privacy policy's sync and handoff
   text (FEATURES-27.1.md §6.6), which now applies to Windows too.
+- `main` DIFF.md, for apple-27.1 parity: R.8's dimming is a layer over the
+  picture rather than the display's brightness, the controls hide after 3 s
+  rather than 5, the rebuffer pause and the player guide are held back, and
+  Windows keeps the TheIntroDB note beside Skip Prompts (R.1). Android's
+  deviations log: Windows now has the Downloaded picker (R.7).
 
 ## Decisions
 
@@ -460,6 +482,9 @@ complete and closes the player.
 - [x] At the natural end (≥ 95 %, or within 2 s of the end), keep the
   completed state and play the next episode instead of closing. A newer manual
   play request cancels a pending advance.
+- [x] Since 27.1 (R.8), an end LibVLC reports after a remote read gave up,
+  short of the natural end, fails with the read's message and keeps the
+  position instead of completing and advancing.
 - [x] An Up Next card, top right, during the last 30 s of a TV episode that
   has a stored successor:
   - the episode still (falling back to the show backdrop), the episode code,
@@ -534,7 +559,8 @@ DIFF.md §3.6. LibVLC's equalizer uses the same ten bands (60, 170, 310, and
 
 - [x] `Core/AudioEnhancement.cs` holds the profiles above. User adjustments to
   the preamp and each band are stored separately and added to the profile.
-  Changing the profile resets them, and every value clamps to −20…+20 dB.
+  Changing the profile resets them, and every level clamps to −20…+20 dB
+  (since 27.1 the stored adjustments clamp to ±40 dB; R.2).
 - [x] Audio Booster, off by default, adds +10 dB of preamp through the same
   equalizer (not the volume) and restores the previous value when turned off.
 - [x] Keys `audio.enhancementProfile`, `audio.enhancementPreamp`,
@@ -543,8 +569,8 @@ DIFF.md §3.6. LibVLC's equalizer uses the same ten bands (60, 170, 310, and
   0–9, and `MediaPlayer.SetEqualizer`. Call `UnsetEqualizer()` when the
   effective preamp and every band are 0. Apply changes live and to every new
   `MediaPlayer`.
-- [x] Settings → Audio Enhancement (profile, preamp, ten bands, and reset), and
-  Player Adjustments → Audio Booster.
+- [x] Settings → Audio (profile, preamp, ten bands, and reset; the bands are a
+  graph since 27.1, R.2), and Player Adjustments → Audio Booster.
 - [x] Night Mode is a frequency balance, not a compressor. Keep LibVLC's
   `compressor` filter out of it.
 - [x] Tests: port `AudioEnhancementTests`.
@@ -569,8 +595,9 @@ DIFF.md §3.7. Needs F.1, which fixes LibVLC's Direct3D 11 adjust filter.
   restores neutral.
 - [x] Player Adjustments → Picture: a slider per row, Show Original (neutral
   values without changing the stored ones), and Reset.
-- [x] Ctrl+↑/↓ change brightness by one step and show the HUD (F.5), like
-  ⌘↑/↓ on macOS.
+- [x] Ctrl+↑/↓ changed brightness by one step and showed the HUD (F.5). Since
+  27.1 they dim the player instead, as ⌘↑/↓ dims the Mac's display, and
+  picture brightness stays in this panel (R.8).
 - [ ] Soak test: two hours with adjustments on, and memory use stays flat.
   Not run yet: needs a Windows machine.
 - [x] Tests: ranges, normalization, and hue mapping.
@@ -661,6 +688,8 @@ can already have several copies.
   "· Unavailable" for an offline source.
 - [x] Season lists merge every copy of the show into one list keyed by
   (season, episode), in airing order.
+- [x] Since 27.1, copies also tie by title, cards show one per title, and
+  Play From names endpoints and the copy played last (R.5).
 - [x] Tests: port `PlaybackSourcesTests`.
 
 ## Library and sources
@@ -748,7 +777,9 @@ DIFF.md §3.13.
   until it's measured.
 - [x] For `MediaInput` sources (SFTP and the others), a worker reads 1 MiB
   chunks up to 48 MiB ahead, within a 64 MiB cache. The chunk a blocked read
-  needs always goes first.
+  needs always goes first. Since 27.1 the read-ahead grows to 384 MiB while
+  the app's private bytes are under 500 MiB, and a brief jump keeps the
+  buffer (R.8).
 - [x] After a failure, reconnect with delays of 0.25, 0.5, 1, 2, 4, and 8 s.
   Send a keep-alive after 20 s idle. Cancellation fails blocked reads at once,
   and the error names the host.
@@ -767,7 +798,9 @@ DIFF.md §3.15.
   - Downloaded: Continue Watching, Movies, and TV Shows;
   - a child row shows only while its section has titles for the current
     audience setting, and if the open section empties, the sidebar returns to
-    the parent page.
+    the parent page;
+  - since 27.1 the Downloaded page also has section chips that show the same
+    choice (R.7).
 - [x] Choosing a row opens that page at its root, and the search query
   survives navigation.
 - [x] A Continue Watching page lists every resumable title. The Movies page
@@ -776,7 +809,8 @@ DIFF.md §3.15.
   - Ctrl+B toggles the sidebar;
   - Ctrl+N adds a media folder and Ctrl+Alt+N links a network source (on the
     Downloaded pages);
-  - Ctrl+R or F5 rescans (when a source is linked).
+  - Ctrl+R or F5 rescans (when a source is linked);
+  - Ctrl+, opens Settings (27.1, R.1).
 - [x] The Link Source dialog focuses the address on open. Enter connects when
   every field is filled and otherwise moves to the first empty field. A guest
   connection (no username or password) is one click.
@@ -796,6 +830,7 @@ DIFF.md §3.19.
 - [x] Order: About, Audience, Startup, Audio Enhancement, Subtitles, Skip
   Prompts, App Controls, Sources, Accounts, TMDB Account, then the
   Windows-only Your Archive and Attribution.
+- [x] Replaced in 27.1 by Apple's categories (R.1).
 
 ### 3.20 Google Drive with drive.file
 
@@ -1111,6 +1146,284 @@ wire choices are matched (below).
   RFC 8236 has no test vectors; the tests check agreement, the round-3
   failure, forgeries, and Android's wire shape. A test against a real
   Android device is part of S.D1.
+
+## apple-27.1 parity
+
+Reviewed 2026-11-12 against `apple-27.1`: the Settings redesign (`862f7e6`,
+`8bddb95`, `8d6bb20`, `39c776f`), its ENHANCEMENT.md K.7 and K.8 reviews of
+sync and handoff (`c2d7c9a`, `1f3a4bc`), titles in several sources and the
+library sweep (`94a8b4f`), and the player's `5020ec3`, `a4c8561`, `7c73875`,
+and `e90a988`. Work branch `claude/parity-27.1` from `windows-27.1`. What was
+held back, and why, is at the end of this section.
+
+### R.1 Settings categories
+
+`862f7e6`, `8bddb95`, `8d6bb20`, and `39c776f`; replaces 3.19.
+
+- [x] `Core/SettingsCategories.cs`: General, Player Controls, Audio,
+  Subtitles, Library, Sync, Accounts, Parental Controls, and About, with
+  Apple's icons. Parental Controls uses eye-slash: Apple's
+  person-breastfeeding symbol is an SF Symbols template with no Fluent match.
+- [x] `SettingsPage`: the category list beside the open page (list and
+  details, as on the Mac), and a picker above the page below 720 epx. Chosen
+  over child rows in the shell's sidebar, a nested NavigationView, and a
+  SelectorBar.
+- [x] Windows-only rows have homes: Startup and Your Archive in General,
+  Saved Subtitles in Subtitles under its own header, and the watch-progress
+  row at the top of Sync.
+- [x] Apple's in-page section titles: Controls, Playback (Skip Prompts),
+  Appearance and Saved Subtitles, and Linked Accounts. Audience is now
+  Parental Controls. Skip Prompts takes Apple's label and detail; the
+  TheIntroDB data note stays beside the switch (a Windows privacy choice),
+  and About credits TheIntroDB.
+- [x] The "Windows core" and "TMDB credentials" rows are gone, and the TMDB
+  section hides in builds without credentials.
+- [x] About shows the informational version ("27.1.0 (abc1234)" in a
+  release) through `Core/AppVersionText.cs`.
+- [x] Ctrl+, opens Settings at the category used last, with the keyboard on
+  its row, and the OneDrive offer opens Settings → Sync.
+- [x] The shell's notice bar (`ActivationBar`) has a solid surface: it floats
+  over the page, and with only the severity tint the category list showed
+  through it.
+- [x] Checked in the app (2026-11-13, x64 Debug): the nine categories, the
+  picker in a narrow window, About's version, the Audio graph, and Sync's
+  entries without a location.
+- [x] Tests: `SettingsCategoriesTests` and `AppVersionTextTests`.
+
+### R.2 Equalizer graph
+
+`8bddb95`; amends 3.6.
+
+- [x] Levels are absolute: a band's level is the profile's value plus the
+  stored adjustment, clamped to ±20 dB, and adjustments clamp to ±40 dB so
+  any level is reachable from any profile (`PreampLevel`, `SetPreampLevel`,
+  `SetBandLevel`).
+- [x] The preamp slider shows and sets its level before Audio Booster.
+- [x] `Controls/EqualizerGraph.cs`: ten points over a 0 dB centre line,
+  dragged in 1 dB steps; the held point fills and shows its level, and
+  choosing a profile sweeps the points over 300 ms (a snap with animations
+  off). Geometry and labels live in `Core/EqualizerPlot.cs`.
+- [x] Settings → Audio shows the graph and the preamp at all times; the Show
+  Equalizer toggle is gone.
+- [x] Windows keyboard extras: one Tab stop that returns to the last band,
+  ↑/↓ 1 dB, Page Up/Down 3 dB, Home/End to the limits (the old sliders had
+  them), and ←/→ between bands; the focused band shows its level.
+- [x] Tests: `EqualizerPlotTests` (geometry, drag rounding, the badge, the
+  curve, and `DecibelLabel`, in sv-SE too) and Apple's
+  `AudioEnhancementLevelTests` in `AudioEnhancementTests`.
+
+### R.3 Sync review fixes
+
+apple-27.1 ENHANCEMENT.md K.7, the engine's half.
+
+- [x] A sync asked for while one runs (Sync Now, the write when playback
+  stops or the window closes, a new location's first sync) runs after it
+  instead of being dropped, and a failed sync retries when its backoff ends.
+- [x] Devices whose files left the listing are forgotten, and this PC's own
+  file is written again when it is missing (§8.3).
+- [x] Far-future stamps: `SyncClock` ignores stamps more than a day ahead,
+  this PC's records stamped that far ahead stay out of its file until the
+  clock passes them, and a high-water mark that far ahead is lowered at
+  launch.
+- [x] The watchlist flag is reconciled at launch without new stamps
+  (`WatchlistLaunchReconcile`): a first 27.1 launch can't take titles off
+  other devices' watchlists, and flags another device stamped win.
+- [x] Episodes resolve through a library index (`SyncEpisodeIndex`) built
+  once per sync and after library changes (a 2 s debounce, off the UI
+  thread). Apple's TMDB season lookup isn't ported: an unresolved episode
+  keeps its sync key (show, season, and episode) with TMDB id 0 until the
+  library learns the id.
+- [x] Folder locations: a cloud download Windows refuses (OneDrive, iCloud,
+  or Dropbox placeholders) shows a warning that names the device
+  (`CloudFileErrors`), and a picked folder that is moved or renamed is
+  followed through its future-access token, retrying a move that meets a
+  sharing violation.
+- [x] Tests: `SyncReviewTests`, `WatchlistLaunchReconcileTests`, and
+  `ResourceCatalogTests` (every sync and handoff string in every locale).
+
+### R.4 Handoff and sync locations
+
+apple-27.1 ENHANCEMENT.md K.7, the handoff's half, and K.8.
+
+- [x] Logins are written flat (§9.7); Apple's nested `credential` is read
+  too, and flat fields win.
+- [x] The sender's result names each item ("Sync location", "OneDrive
+  account", "SFTP login for nas.local"), with or without a reason.
+- [x] Waits end on time: the receiver answers before its first sync (which
+  then runs on its own), reads have a watchdog for sockets that ignore
+  cancellation, a guest tries the code's address for 10 s and then browses
+  for the host by name (or the only host) for 15 s, and DNS-SD registration
+  is bounded at 5 s. The QR address prefers an adapter with a default
+  gateway, which skips Hyper-V and WSL switches.
+- [x] `edendale://handoff` links (Windows Camera, a phone) ask "Pair with
+  <device>?" with Send from This Device and Receive on This Device, then pair
+  at once; packaged builds declare the `edendale` protocol. "Pair with
+  Another Device" is now "Receive from Another Device", as on Apple and
+  Android, and the host's instructions name the other device's entry.
+- [x] Packaged builds add inbound TCP firewall rules for the listener on the
+  private and domain profiles, the Windows analog of the macOS
+  incoming-connections fix; public networks stay closed, and unpackaged
+  builds keep Windows' prompt.
+- [x] A location adopted through handoff offers to delete this PC's file at
+  the old location, and says so when the delete fails.
+- [x] Link Source notes no longer claim read-only access: the only files
+  Edendale writes are its sync files, at the location chosen in Settings →
+  Sync (every locale). "Learn about syncing" names the location.
+- [x] K.8 sign-ins: `SignInPurpose` and `SyncLoginHint`. Google's sync
+  sign-in keeps `prompt=consent select_account` with any hint, and Dropbox
+  gets no hint. A grant that still lacks the write scope is refused with
+  Apple's message, and nothing is saved (`CheckSyncWriteScope`). Linked
+  accounts that need a new sign-in are marked in the Location list, with
+  Sign In or Another account; Google's "nothing to choose" note shows for its
+  choices, and the servers hint names only the WebDAV, SMB, and SFTP servers
+  that need a login.
+- [ ] iCloud for Windows: where its preset writes is still S.9's probe, which
+  needs a PC with iCloud for Windows and an Apple device. `icloudDrive` on
+  the wire already works.
+- [ ] In the app (part of S.D1): a link from Windows Camera, the firewall
+  rules of an installed package, a guest falling back to browsing, and a
+  K.8 sign-in again for an older OneDrive and Dropbox account.
+- [x] Tests: `HandoffInteropTests`, `PackageManifestTests`, the handoff
+  cases in `AppRouteTests`, the previous location in `HandoffOffersTests`,
+  the K.8 sign-in and write-scope cases in `SyncLocationsTests`, and
+  `ChoosingALocationReturnsBeforeItsFirstSyncEnds` in `SyncReviewTests`.
+
+### R.5 Titles in several sources
+
+`94a8b4f`; amends 3.11.
+
+- [x] Copies tie by TMDB match, else by the parsed title (and year, for a
+  movie) (`PlaybackSources.CopyKey`).
+- [x] Downloaded and Search show one card per title. A show's card counts
+  seasons and episodes across every copy, and an episode two sources hold
+  counts once.
+- [x] Remove on a card held by several sources offers "Remove from <source>"
+  for each: per copy for a movie, per source for a show.
+- [x] Play From rows: source and endpoint ("Media (nas.local)"), then
+  kind · file, "Last Played", and "Unavailable", with the copy played last
+  first.
+- [x] The copy played last is remembered on this PC (`LastPlayedAt` per
+  movie copy, and per show and source) in `library.json`, which never syncs.
+  It is stamped at the first Playing event, so a copy that fails to open
+  isn't "last played".
+- [x] Clicking an episode that several sources hold opens Play From first.
+- [x] Play, Continue Watching, the Movies & Shows hero, the jump list (its
+  entries keep the preferred copy's exact file), and `edendale://play` routes
+  start the reachable copy played last, else the first reachable one.
+- [x] Auto-advance, Up Next, Next and Previous (media keys and the taskbar),
+  and the Episodes panel stay on the playing source. An episode only another
+  source holds comes from there (the first reachable), and the one after
+  returns to the playing source. The Episodes panel fills gaps from other
+  sources, a superset of Apple's.
+- [x] `library.json` saves are serialized under the library lock: a save
+  during a scan could throw and be lost.
+- [x] Tests: `MultipleSourcesTests` (Apple's, plus
+  `playingACopyRemembersItsSource` and
+  `continueWatchingResumesFromTheSourcePlayedLast`).
+
+### R.6 TMDB sweep and Clear Progress
+
+`94a8b4f`.
+
+- [x] The TMDB sweep covers the whole library at launch, after an import or
+  rescan, and on every Downloaded visit: each movie and show without a
+  match, and each unmatched episode of a matched show (episodes added to a
+  show matched earlier included). It runs on the library's own task, so
+  leaving the page doesn't stop it, and a request during a sweep queues one
+  more pass (`CoalescingRunner`).
+- [x] A title TMDB has no match for is asked again after 7 days
+  (`metadataCheckedAt` in `library.json`, never synced), or at once on
+  Ctrl+R, F5, or a source's Rescan.
+- [x] An unreachable, refused (401, 403), rate-limited (429), or failing
+  (5xx) TMDB ends the sweep, and what's left waits for the next one. TMDB
+  errors carry a `TmdbFailure` and the status code.
+- [x] Clear Progress on a Continue Watching card (not an Up Next card), an
+  in-progress movie's poster, and an in-progress episode's card on the show
+  page. It is written as a stamped removal, so other devices drop it too.
+- [x] Mark Watched and Unwatched keep the show, season, and episode a row
+  already has, so they never re-key a row.
+- [x] Tests: `LibraryEnrichmentTests` (Apple's, plus Windows cases),
+  `CoalescingRunnerTests`, and `ClearProgressTests`.
+
+### R.7 Downloaded section picker
+
+`94a8b4f`; amends 3.15.
+
+- [x] Chips for All, Continue Watching, Movies, and TV Shows (the sidebar
+  rows' words) on the Downloaded page, shown when two sections or more have
+  titles. They always show the same choice as the sidebar rows, which stay,
+  as on Android.
+- [x] A chip changes the section in place: no navigation, no rescan, and
+  focus stays. The sidebar row follows, an emptied section falls back to
+  All, and Back from a title keeps the picked section.
+- [x] Narrator hears a "Downloaded sections" group of radio buttons; the
+  arrow keys move between chips and Space chooses.
+- [x] Tests: the picker cases in `LibrarySectionsTests`.
+
+### R.8 Player
+
+`5020ec3`, `a4c8561`, `7c73875`, and `e90a988`; amends 3.4, 3.7, and 3.13.
+
+- [x] Buffering indicator (`5020ec3`): a 64 px gold ring in the play
+  button's place while the file opens, while LibVLC's buffer fills (its
+  Buffering event), and while the playback clock has stood still for a
+  second (`PlaybackStallWatch`), also with the controls hidden. LibVLC
+  reports buffering only after a blocked read returns, so the still clock is
+  what catches a stall while it lasts; the last 2 s, where the clock rests
+  while the decoders drain, don't count. It waits 250 ms, so quick opens and
+  seeks never flash it, and Narrator hears "Buffering" when a playing stream
+  stalls. F.3's Applying layer stands in for it while the engine reopens.
+- [x] Idle pointer (`a4c8561`, macOS): the mouse pointer hides after 5 s at
+  rest over the video (`IdlePointer`, Apple's rules). A report at the same
+  point is not a move, and a held button or the open subtitle browser keeps
+  the pointer; a move, a press, leaving the video, closing the player, or
+  another window taking focus shows it. Hidden with user32's `ShowCursor`,
+  called only when the state flips. The controls still hide after 3 s
+  (Apple: 5 s).
+- [x] Ctrl+↑/↓ (`7c73875`): the player's own brightness, in 5 % steps down
+  from 100 %. The Mac scales the display's gamma for its player, which a
+  Windows window can't do (gamma ramps far from identity need an admin
+  registry change, and `BrightnessOverride` needs a CoreWindow), so a black
+  layer below the controls dims the picture by Apple's `dimmingScale`, to
+  15 % at the lowest. The level holds across auto-advance and resets when
+  the player closes. Picture brightness stays in Player Adjustments (3.7).
+- [x] A remote read that gives up: LibVLC's custom input turns it into the
+  end of the stream, so a dropped link used to finish the episode and play
+  the next. An end short of the natural end with a failed source now shows
+  the read's message and keeps the position (`PlayerLogic.EndIsFailure`),
+  and an engine that ended or failed without a time never overwrites the
+  stored position.
+- [x] Home's hero and Continue Watching wait while the player is open
+  (`e90a988`, `PlayerSession.IsPresented`): the scene holds, and Continue
+  Watching refreshes once when the player closes.
+- [x] `BufferedByteSource` (`5020ec3`): reads 48 MiB ahead, or up to 384 MiB
+  while the app's private bytes are under 500 MiB; holds the pre-jump place,
+  so a detour to the file's index keeps the buffer; gives the extra back
+  when the app runs 32 MiB over (at most every 15 s); evicts farthest first;
+  and reports the bytes it holds past the last read. On Windows it serves
+  SFTP.
+- [x] Checked in the app (2026-11-13, x64 Debug): a local file opened from
+  a second launch plays in the running window, pauses and resumes without
+  the ring, and closes at its natural end.
+- [ ] In the app: the ring on a slow SFTP or WebDAV stream, the pointer in a
+  window and in full screen, a connection dropped mid-episode (LibVLC should
+  report the end, and the error should show), and the dimming steps.
+- [x] Tests: `PlaybackStallWatchTests`, `IdlePointerTests` (Apple's seven
+  cases with a fake clock), the buffering, failure, and dimming cases in
+  `PlayerLogicTests` (Apple's `ScreenBrightnessDimmingTests`), the
+  presentation case, and Apple's nine new `BufferedByteSourceTests`.
+
+**Held back** (tell the other branches)
+
+- **The rebuffer pause** (`5020ec3`'s `RebufferPolicy`): on Windows LibVLC
+  owns the clock and already re-buffers after a late PCR, if more crudely.
+  `BufferedByteSource` reporting its bytes ahead is the groundwork; adopt
+  the policy after measuring a 55 Mbit/s file over a slower link.
+- **The display's own brightness** (`7c73875` on iOS and macOS): Windows
+  offers it only through WMI for built-in panels or DDC/CI for monitors,
+  which are slow, missing on many monitors, docks, and TVs, and write to the
+  monitor's memory. The dimming layer covers the player.
+- **The player guide** and its row in Player Controls (`8d6bb20`).
 
 ## Video enhancement (Option A)
 
@@ -1588,3 +1901,12 @@ From DIFF.md §5. Tick a line when its cases are ported to
   `SyncEngineTests`, `SyncLocationsTests`, `ReplicaMigrationTests` (Windows
   only), `HandoffCryptoTests` (Appendix A.2–A.4), `EcJPakeTests`,
   `HandoffSessionTests`, `HandoffOffersTests`, and `LogHygieneTests`
+- [x] apple-27.1: `SettingsCategoriesTests` and `AppVersionTextTests` (R.1);
+  `EqualizerPlotTests` and the level cases in `AudioEnhancementTests` (R.2);
+  `SyncReviewTests`, `WatchlistLaunchReconcileTests`, and
+  `ResourceCatalogTests` (R.3); `HandoffInteropTests` and
+  `PackageManifestTests` (R.4); `MultipleSourcesTests` (R.5);
+  `LibraryEnrichmentTests`, `CoalescingRunnerTests`, and `ClearProgressTests`
+  (R.6); the picker cases in `LibrarySectionsTests` (R.7); and
+  `IdlePointerTests`, `PlaybackStallWatchTests`, and the new
+  `PlayerLogicTests` and `BufferedByteSourceTests` cases (R.8)

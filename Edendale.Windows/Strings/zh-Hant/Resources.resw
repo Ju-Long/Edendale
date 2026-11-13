@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>搜尋</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>設定</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>關於</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>版本</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows 核心</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB 憑證</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>觀看進度</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>開啟資料資料夾</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>歸屬</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>本產品使用 TMDB API，但未經 TMDB 認可或認證。</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale 會連線到 TMDB 取得圖片和中繼資料、連線到你連結的來源以列出和播放檔案、在你搜尋字幕時連線到 Wyzie Subs、僅在略過提示開啟時連線到 TheIntroDB，並在你播放預告片時使用 YouTube 隱私強化嵌入。絕無分析統計。</value>
+    <value>Edendale 會連線到 TMDB 取得圖片和中繼資料、連線到你連結的來源以列出和播放檔案、連線到你選擇的同步位置、在配對畫面開啟期間連線到區域網路上你的其他裝置、在你搜尋字幕時連線到 Wyzie Subs，並僅在略過提示開啟時連線到 TheIntroDB。播放預告片時，會在瀏覽器中開啟 YouTube。絕無分析統計。</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>正在載入典藏</value>
@@ -267,12 +252,6 @@
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>在典藏中搜尋電影、影集及製作人員。</value>
-  </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>移除</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>移除</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>媒體櫃
@@ -552,7 +531,7 @@
     <value>隱私保護源於設計</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>你的媒體櫃索引和觀看進度會保留在此裝置上。Edendale 會連線到 TMDB 取得圖片和中繼資料，除此之外只連線到你選擇的內容：你連結的來源、字幕搜尋、開啟時的略過提示以及你播放的預告片。不會傳送到其他任何地方。</value>
+    <value>你的媒體櫃索引會保留在此裝置上。Edendale 會連線到 TMDB 取得圖片和中繼資料，除此之外只連線到你選擇的內容：你連結的來源、你在「設定 → 同步」中選擇的同步位置、字幕搜尋、開啟時的略過提示以及你播放的預告片。不會傳送到其他任何地方。</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>挑選一天，接著挑選第二天以關閉範圍。</value>
@@ -617,12 +596,6 @@
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>開發版本</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>已設定</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>遺失 — 執行 init.ps1，然後重新建置 Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>複寫至 {0}</value>
   </data>
@@ -631,9 +604,6 @@
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>無法更新啟動項目 — Windows 拒絕了登錄檔變更。</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>無法使用 — 遺失 TMDB 憑證</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>已連線為 {0}</value>
@@ -832,9 +802,6 @@
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>從待看清單中移除</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>觀眾</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>適合青少年觀看</value>
@@ -1085,9 +1052,6 @@
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>超解析度需要 Edendale 在獨立顯示卡上執行。請在 Windows 設定 › 系統 › 顯示器 › 圖形中，將 Edendale 設為「高效能」。</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>App 控制</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>倒轉</value>
   </data>
@@ -1115,17 +1079,11 @@
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>快轉，{0} 秒</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>略過提示</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>提供略過片頭、前情提要和片尾</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>略過提示</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>啟用後，TheIntroDB 會收到該作品的 TMDB ID、集數編號、影片長度及你的 IP 位址。略過一律需要按下按鈕。</value>
+    <value>啟用後，TheIntroDB 會收到該作品的 TMDB ID、集數編號、影片長度及你的 IP 位址。</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>音訊增強</value>
@@ -1145,12 +1103,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>顯示等化器</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>隱藏等化器</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>平直</value>
   </data>
@@ -1165,9 +1117,6 @@
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>夜間模式</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>字幕</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>字幕將如此顯示。</value>
@@ -1406,9 +1355,6 @@
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>電視節目</value>
   </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>帳號</value>
-  </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>沒有已儲存的登入資訊</value>
   </data>
@@ -1494,10 +1440,10 @@
     <value>輸入伺服器和匯出路徑，例如 nas.local/export/video。該匯出必須允許來自非特權連接埠的連線（「insecure」選項）。</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>瀏覽器會開啟以登入 Microsoft。Edendale 只要求讀取你的檔案，並將此帳號與其複製觀看紀錄的 OneDrive 資料夾分開管理。</value>
+    <value>瀏覽器會開啟以登入 Microsoft。Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，並且只在你同步到該處時寫入它自己的 Apps/Edendale 資料夾。</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>瀏覽器會開啟以登入 Dropbox。Edendale 只要求讀取你的檔案和帳號名稱。</value>
+    <value>瀏覽器會開啟以登入 Dropbox。Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，並且只在你同步到該處時，將同步檔案寫入 Edendale 資料夾。</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>登入</value>
@@ -1620,7 +1566,7 @@
     <value>適用於 30 fps 以下、最高 4K 的影片。</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>瀏覽器會開啟以登入 Google。登入後會開啟 Google 的選擇器：請選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片，只會從此裝置連線，絕不會上傳或更改任何內容。</value>
+    <value>瀏覽器會開啟以登入 Google。登入後會開啟 Google 選擇器：選擇 Edendale 可以播放的影片。Edendale 只能看到這些影片及其自己建立的同步檔案，僅從此裝置連線，不會更改其他任何內容。</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google 雲端硬碟已將此檔案標示為可能有害，因此無法串流播放。</value>
@@ -1668,7 +1614,7 @@
     <value>選擇位置…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>與其他裝置配對…</value>
+    <value>從其他裝置接收…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>設定其他裝置…</value>
@@ -1677,7 +1623,7 @@
     <value>設定其他裝置</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>與其他裝置配對</value>
+    <value>從其他裝置接收</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>位置</value>
@@ -1770,7 +1716,7 @@
     <value>請選擇此裝置用於空間「{0}」的資料夾。</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>請以 {0} 登入 Google 以使用空間「{1}」。</value>
+    <value>以 {0} 登入 Google 雲端硬碟以加入空間「{1}」。</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>登入資訊要往哪個方向傳？</value>
@@ -1780,9 +1726,6 @@
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>在此裝置接收</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>在另一台裝置上開啟 設定 → 同步 → 與其他裝置配對，然後用它的相機掃描此 QR Code，或輸入數字。</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>或在另一台裝置上輸入此代碼</value>
@@ -1877,9 +1820,6 @@
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>請先在「來源」中連結此伺服器，以便將其登入資訊（以及 SFTP 的主機金鑰）儲存在此電腦上。</value>
   </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>若要透過雲端帳戶或伺服器同步，請先在「來源」中連結它。</value>
-  </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>刪除此電腦的舊同步檔案？</value>
   </data>
@@ -1960,5 +1900,149 @@
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>登入</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>播放器控制</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>音訊</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>媒體櫃</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>同步</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>帳號</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>家長控制</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>關於</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>時間戳記由 TheIntroDB 提供</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>控制</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>外觀</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>已儲存的字幕</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>已連結的帳號</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>有社群時間戳記時，顯示略過片頭、前情提要和片尾的按鈕。播放會繼續，直到你選擇略過。</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>等化器</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
+  </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>無法從雲端下載來自 {0} 的同步檔案。請確認同步此資料夾的應用程式正在執行，且 Windows 允許 Edendale 下載檔案。</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>無法保留 {0}（{1}）</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>無法保留 {0}。</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>同步位置</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0} 帳戶</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0} 登入（{1}）</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>登入 Google 雲端硬碟以加入空間「{0}」。</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>與 {0} 配對？</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>將此裝置的同步位置和登入資訊傳送到另一台裝置，或接收另一台裝置的。</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>從此裝置傳送</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>在此裝置接收</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>在另一台裝置上透過 Edendale 的「設定 → 同步 → {0}」掃描此代碼。每兩分鐘會出現新代碼。</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} 未允許 Edendale 寫入同步檔案。請重新登入並允許該存取權限。</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>請重新登入，以便 Edendale 在此寫入同步檔案。</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>無需選擇任何內容：Edendale 會把同步檔案儲存在它在你的 Google 雲端硬碟中建立的 Edendale 資料夾裡。它只能看到自己建立的檔案，僅從此裝置連線，不會更改其他任何內容。</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，並且只在你同步到該處時寫入它自己的 Apps/Edendale 資料夾。</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale 會讀取資料夾列表和你播放的影片，僅從此裝置連線，並且只在你同步到該處時，將同步檔案寫入 Edendale 資料夾。</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>若要透過需要登入的 WebDAV、SMB 或 SFTP 伺服器同步，請先在「來源」中連結它。</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale 無法從 {0} 刪除此裝置的檔案。</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>請關閉已開啟的對話方塊，然後重新開啟配對連結。</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>從{0}中移除</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>上次播放</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>選擇播放此影片所用的來源。</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>播放此集。</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>選擇播放此集所用的來源。</value>
+  </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>清除觀看進度</value>
+  </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>已下載分區</value>
+  </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>正在緩衝</value>
   </data>
 </root>

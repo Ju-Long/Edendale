@@ -98,8 +98,25 @@ public sealed class FolderSyncLocation : ISyncLocation
         var target = Path.Combine(directory, name);
         var temporary = target + ".tmp";
         await File.WriteAllBytesAsync(temporary, bytes.ToArray(), cancellation).ConfigureAwait(false);
-        File.Move(temporary, target, overwrite: true);
+        // A cloud client may hold the file open for a moment while it
+        // uploads it; the nearest Windows comes to Apple's coordinated write
+        // is to try again shortly.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                File.Move(temporary, target, overwrite: true);
+                return;
+            }
+            catch (IOException error) when (attempt < MoveAttempts && CloudFileErrors.IsInUse(error.HResult))
+            {
+                await Task.Delay(MoveRetryDelay, cancellation).ConfigureAwait(false);
+            }
+        }
     }
+
+    private const int MoveAttempts = 3;
+    private static readonly TimeSpan MoveRetryDelay = TimeSpan.FromMilliseconds(250);
 
     public Task DeleteAsync(string space, string name, CancellationToken cancellation) => Task.Run(() =>
     {

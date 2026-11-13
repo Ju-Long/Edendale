@@ -45,6 +45,9 @@ public sealed partial class MoviesShowsPage : Page
         // Playback here and merges from other devices move watch progress;
         // Continue Watching follows once a burst of changes settles.
         AppServices.WatchProgress.Changed += (_, _) => DispatcherQueue.TryEnqueue(ScheduleContinueRefresh);
+        // The page stays live under the player (e90a988): the hero holds its
+        // scene and Continue Watching waits, then both pick up on close.
+        AppServices.Player.PresentedChanged += (_, _) => DispatcherQueue.TryEnqueue(PlayerPresentedChanged);
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -205,11 +208,27 @@ public sealed partial class MoviesShowsPage : Page
         _heroTimer.Interval = TimeSpan.FromSeconds(HeroSceneSeconds);
         _heroTimer.Tick += (_, _) =>
         {
-            if (_heroHovered || HeroScenes.Count <= 1) return;
+            if (_heroHovered || AppServices.Player.IsPresented || HeroScenes.Count <= 1) return;
             _heroIndex = (_heroIndex + 1) % HeroScenes.Count;
             ApplyHeroScene();
         };
         _heroTimer.Start();
+    }
+
+    /// <summary>
+    /// Closing the player gives the hero scene on screen its full time again,
+    /// so it doesn't flip as the page comes back, and runs the Continue
+    /// Watching refresh that waited.
+    /// </summary>
+    private void PlayerPresentedChanged()
+    {
+        if (AppServices.Player.IsPresented) return;
+        if (_heroTimer is { } timer)
+        {
+            timer.Stop();
+            timer.Start();
+        }
+        if (_continueStale) ScheduleContinueRefresh();
     }
 
     private void Hero_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) =>
@@ -343,6 +362,12 @@ public sealed partial class MoviesShowsPage : Page
     private void ScheduleContinueRefresh()
     {
         _continueStale = true;
+        // Progress written every few seconds of playback waits for the player to close.
+        if (AppServices.Player.IsPresented)
+        {
+            _continueTimer?.Stop();
+            return;
+        }
         if (_continueTimer is null)
         {
             _continueTimer = DispatcherQueue.CreateTimer();
@@ -418,8 +443,9 @@ public sealed partial class MoviesShowsPage : Page
     {
         var scene = CurrentHero;
         if (scene is null) return;
+        // The reachable copy played last, else the first reachable one.
         if (scene.Detail.Ref.MediaType == "movie"
-            && AppServices.Library.MovieByTmdbId(scene.Detail.Ref.Id) is { } movie)
+            && AppServices.Library.PreferredMovie(scene.Detail.Ref.Id) is { } movie)
         {
             AppServices.Player.Play(movie);
         }

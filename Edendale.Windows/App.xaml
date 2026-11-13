@@ -265,6 +265,84 @@
                 </Setter>
             </Style>
 
+            <!-- ArchiveChipStyle as a radio button, for a choice that is one of a
+                 set (the Downloaded section picker). Its own check states, so
+                 hovering never replaces the checked chip's gold border: the
+                 hover outline is an overlay the checked state hides. The
+                 default radio button's minimum width and focus margin are
+                 undone. -->
+            <Style x:Key="ArchiveRadioChipStyle" TargetType="RadioButton">
+                <Setter Property="FontFamily" Value="{StaticResource TextFontFamily}" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{StaticResource EdendaleTextSecondaryBrush}" />
+                <Setter Property="Padding" Value="14,7" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="FocusVisualMargin" Value="0" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Grid x:Name="RootGrid">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="HoverBorder.BorderBrush" Value="{StaticResource EdendaleOutlineBrightBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootGrid.Opacity" Value="0.8" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootGrid.Opacity" Value="0.4" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                    <VisualStateGroup x:Name="CheckStates">
+                                        <VisualState x:Name="Checked">
+                                            <VisualState.Setters>
+                                                <Setter Target="RootBorder.Background" Value="{StaticResource EdendaleSurfaceBrush}" />
+                                                <Setter Target="RootBorder.BorderBrush" Value="{StaticResource EdendaleGoldBrush}" />
+                                                <Setter Target="ContentPresenter.Foreground" Value="{StaticResource EdendaleGoldBrush}" />
+                                                <Setter Target="HoverBorder.Opacity" Value="0" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Unchecked" />
+                                        <VisualState x:Name="Indeterminate" />
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <Border
+                                    x:Name="RootBorder"
+                                    Background="Transparent"
+                                    BorderBrush="{StaticResource EdendaleOutlineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="14" />
+                                <Border
+                                    x:Name="HoverBorder"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="1"
+                                    CornerRadius="14" />
+                                <ContentPresenter
+                                    x:Name="ContentPresenter"
+                                    Content="{TemplateBinding Content}"
+                                    Foreground="{TemplateBinding Foreground}"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- Chrome-free wrapper for poster/landscape cards: the card draws
                  its own hover state, the button contributes focus + invoke. -->
             <Style x:Key="CardButtonStyle" TargetType="Button">
@@ -313,8 +391,11 @@
 
             <!-- Section header. Apple renders these in TextSecondary, not gold:
                  gold marks the current or primary state, never a caption. -->
+            <!-- Section headers are level-2 headings under the category's
+                 level-1 page title, so a screen reader can jump between them. -->
             <Style x:Key="SettingsSectionHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource LabelCapsTextStyle}">
                 <Setter Property="Margin" Value="0,0,0,8" />
+                <Setter Property="AutomationProperties.HeadingLevel" Value="Level2" />
             </Style>
 
             <!-- Row separator, inset from the leading edge to line up with row

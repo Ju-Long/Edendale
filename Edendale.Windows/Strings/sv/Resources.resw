@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Sök</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>INSTÄLLNINGAR</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>OM</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Version</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows-kärna</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB-inloggningsuppgifter</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Visningsförlopp</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>ÖPPNA DATAMAPP</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ERKÄNNANDE</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Den här produkten använder TMDB API men är inte godkänd eller certifierad av TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale ansluter till TMDB för bilder och metadata, till källorna du länkar för att lista och spela upp dina filer, till Wyzie Subs när du söker undertexter, till TheIntroDB bara medan hoppa över-förslag är på och till YouTubes integritetsförbättrade inbäddning när du spelar en trailer. Aldrig analys.</value>
+    <value>Edendale ansluter till TMDB för bilder och metadata, till källorna du länkar för att lista och spela upp dina filer, till synkplatsen du väljer, till dina andra enheter på det lokala nätverket medan en ihopparningsskärm är öppen, till Wyzie Subs när du söker undertexter och till TheIntroDB bara medan hoppa över-förslag är på. Trailrar öppnas på YouTube i din webbläsare. Aldrig analys.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>LÄSER IN ARKIVET</value>
@@ -267,12 +252,6 @@
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Sök i arkivet efter filmer, serier och personerna som skapade dem.</value>
-  </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Ta bort</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Ta bort</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>BIBLIOTEKET
@@ -552,7 +531,7 @@
     <value>Designad för integritet</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Ditt biblioteksindex och ditt visningsförlopp stannar på den här enheten. Edendale kontaktar TMDB för bilder och metadata, och i övrigt bara det du väljer: källorna du länkar, undertextsökningar, hoppa över-förslag när de är på och trailers du spelar upp. Inget annat skickas någonstans.</value>
+    <value>Ditt biblioteksindex stannar på den här enheten. Edendale kontaktar TMDB för bilder och metadata, och i övrigt bara det du väljer: källorna du länkar, synkplatsen du väljer under Inställningar → Synkronisering, undertextsökningar, hoppa över-förslag när de är på och trailers du spelar upp. Inget annat skickas någonstans.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Välj en dag, och sedan en andra dag för att stänga intervallet.</value>
@@ -617,12 +596,6 @@
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>utvecklingsbygge</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Konfigurerad</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Saknas — kör init.ps1, bygg sedan om Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Replikerad till {0}</value>
   </data>
@@ -631,9 +604,6 @@
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Kunde inte uppdatera uppstartsposten — Windows nekade registerändringen.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Otillgänglig — TMDB-inloggningsuppgifter saknas</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Ansluten som {0}</value>
@@ -832,9 +802,6 @@
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Ta bort från visningslista</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>PUBLIK</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Lämplig för ung publik</value>
@@ -1085,9 +1052,6 @@
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>Superupplösning kräver att Edendale körs på det dedikerade grafikkortet. Ställ in Edendale på Hög prestanda under Windows-inställningar › System › Bildskärm › Grafik.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>APPKONTROLLER</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Hoppa bakåt</value>
   </data>
@@ -1115,17 +1079,11 @@
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Hoppa framåt, {0} sekunder</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>HOPPA ÖVER-FÖRSLAG</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Erbjud att hoppa över intro, sammanfattning och eftertexter</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Hoppa över-förslag</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>När det är på får TheIntroDB titelns TMDB-id, avsnittsnummer, videons längd och din IP-adress. Att hoppa över kräver alltid ett knapptryck.</value>
+    <value>När det är på får TheIntroDB titelns TMDB-id, avsnittsnummer, videons längd och din IP-adress.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>LJUDFÖRBÄTTRING</value>
@@ -1145,12 +1103,6 @@
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Visa equalizer</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Dölj equalizer</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Platt</value>
   </data>
@@ -1165,9 +1117,6 @@
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Nattläge</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>UNDERTEXTER</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Så här kommer undertexterna att se ut.</value>
@@ -1406,9 +1355,6 @@
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>TV-serier</value>
   </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>KONTON</value>
-  </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Inga sparade inloggningar</value>
   </data>
@@ -1494,10 +1440,10 @@
     <value>Ange server och export, till exempel nas.local/export/video. Exporten måste tillåta anslutningar från oprivilegierade portar (alternativet ”insecure”).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Microsoft. Edendale ber bara om att läsa dina filer och håller kontot åtskilt från OneDrive-mappen som visningshistoriken kopieras till.</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Microsoft. Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara till sin egen mapp Apps/Edendale, när du synkar där.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Dropbox. Edendale ber bara om att läsa dina filer och ditt kontonamn.</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Dropbox. Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara sina synkfiler, i mappen Edendale, när du synkar där.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Logga in</value>
@@ -1620,7 +1566,7 @@
     <value>Fungerar med video på högst 30 bilder/s, upp till 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Webbläsaren öppnas så att du kan logga in hos Google. När du har loggat in öppnas Googles väljare: välj de videor som Edendale får spela upp. Edendale ser bara dem, ansluter bara från den här enheten och laddar aldrig upp eller ändrar något.</value>
+    <value>Webbläsaren öppnas så att du kan logga in hos Google. När du loggat in öppnas Googles väljare: välj de videor Edendale får spela upp. Edendale ser bara dem och synkfilerna som den själv skapar, ansluter bara från den här enheten och ändrar inget annat.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive har flaggat filen som potentiellt skadlig, så den kan inte strömmas.</value>
@@ -1668,7 +1614,7 @@
     <value>VÄLJ EN PLATS…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>PARA IHOP MED EN ANNAN ENHET…</value>
+    <value>TA EMOT FRÅN EN ANNAN ENHET…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>KONFIGURERA EN ANNAN ENHET…</value>
@@ -1677,7 +1623,7 @@
     <value>Konfigurera en annan enhet</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Para ihop med en annan enhet</value>
+    <value>Ta emot från en annan enhet</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Plats</value>
@@ -1770,7 +1716,7 @@
     <value>Välj mappen som den här enheten ska använda för utrymmet ”{0}”.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Logga in på Google som {0} för att använda utrymmet ”{1}”.</value>
+    <value>Logga in på Google Drive som {0} för att gå med i utrymmet ”{1}”.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>Åt vilket håll ska inloggningarna gå?</value>
@@ -1780,9 +1726,6 @@
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Ta emot på den här enheten</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>Öppna Inställningar → Synkronisering → Para ihop med en annan enhet på den andra enheten, skanna sedan den här koden med dess kamera eller ange numret.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Eller ange den här koden på den andra enheten</value>
@@ -1877,9 +1820,6 @@
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Länka den här servern under Källor först, så att inloggningen och, för SFTP, värdnyckeln sparas på den här datorn.</value>
   </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Länka ett molnkonto eller en server under Källor först för att synka genom det.</value>
-  </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Radera den här datorns gamla synkfil?</value>
   </data>
@@ -1960,5 +1900,149 @@
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>LOGGA IN</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Allmänt</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Spelarreglage</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Ljud</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Undertexter</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Bibliotek</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Synkronisering</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Konton</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Föräldrakontroll</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>Om</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Inställningar</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>TIDSSTÄMPLAR FRÅN THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>REGLAGE</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>UPPSPELNING</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>UTSEENDE</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>SPARADE UNDERTEXTER</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>LÄNKADE KONTON</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Visa knappar för att hoppa över intron, sammanfattningar och eftertexter när det finns tidsstämplar från communityn. Uppspelningen fortsätter tills du väljer att hoppa över.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equalizer</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
+  </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Synkfilen från {0} kunde inte hämtas från molnet. Kontrollera att appen som synkar den här mappen körs och att Windows låter Edendale hämta filer.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>{0} kunde inte behållas ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>{0} kunde inte behållas.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Synkplats</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0}-konto</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0}-inloggning för {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Logga in på Google Drive för att gå med i utrymmet ”{0}”.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Para ihop med {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Skicka den här enhetens synkplats och inloggningar till den andra enheten, eller ta emot den andra enhetens.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Skicka från den här enheten</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Ta emot på den här enheten</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Skanna den här koden med Edendale på den andra enheten, från Inställningar → Synk → {0}. En ny kod visas varannan minut.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} tillät inte Edendale att skriva sina synkfiler. Logga in igen och tillåt den åtkomsten.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Logga in igen så att Edendale kan skriva sina synkfiler här.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Det finns inget att välja: Edendale lägger sina synkfiler i en Edendale-mapp som den själv skapar i din Google Drive. Den ser bara filerna som den själv skapar, ansluter bara från den här enheten och ändrar inget annat.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara till sin egen mapp Apps/Edendale, när du synkar där.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale läser mapplistor och videorna du spelar upp, ansluter bara från den här enheten och skriver bara sina synkfiler, i mappen Edendale, när du synkar där.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Länka en WebDAV-, SMB- eller SFTP-server som kräver inloggning under Källor först för att synka genom den.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale kunde inte ta bort den här enhetens fil från {0}.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Stäng den öppna dialogrutan och öppna sedan länken för ihopparning igen.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Ta bort från {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Senast uppspelad</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Väljer vilken källa titeln spelas upp från.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Spelar upp det här avsnittet.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Väljer vilken källa avsnittet spelas upp från.</value>
+  </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>Rensa förlopp</value>
+  </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>Alla</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sektioner i Nedladdat</value>
+  </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Buffrar</value>
   </data>
 </root>

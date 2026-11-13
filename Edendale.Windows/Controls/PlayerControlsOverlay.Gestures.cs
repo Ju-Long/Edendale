@@ -53,6 +53,7 @@ public sealed partial class PlayerControlsOverlay
 
     private void Surface_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        RestartIdlePointer(e);
         if (_mediaPlayer is null || IsInteractive(e.OriginalSource)) return;
         var point = e.GetCurrentPoint(RootGrid);
         if (point.PointerDeviceType == PointerDeviceType.Mouse && !point.Properties.IsLeftButtonPressed) return;

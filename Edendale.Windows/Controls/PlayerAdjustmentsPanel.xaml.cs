@@ -200,7 +200,7 @@ public sealed partial class PlayerAdjustmentsPanel : UserControl
         }
     }
 
-    /// <summary>Shows the stored values (Ctrl+↑/↓ changes brightness from outside the panel).</summary>
+    /// <summary>Shows the stored values.</summary>
     public void RefreshPicture()
     {
         _updating = true;

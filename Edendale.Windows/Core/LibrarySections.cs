@@ -49,6 +49,32 @@ public static class LibrarySections
 
     public static string Tag(this WatchlistSection section) =>
         section == WatchlistSection.Movies ? "movies" : "shows";
+
+    // ------------------------------------------------------------------
+    // The Downloaded page's own section picker (DownloadedSectionPicker.swift,
+    // apple-27.1 94a8b4f). The sidebar rows choose a section too; both show
+    // the same choice.
+    // ------------------------------------------------------------------
+
+    /// <summary>The picker's choices: the whole page (null), then each available section in sidebar order.</summary>
+    public static IReadOnlyList<DownloadedSection?> PickerChoices(IReadOnlyList<DownloadedSection> sections) =>
+        [null, .. sections.Select(section => (DownloadedSection?)section)];
+
+    /// <summary>With one section the whole page and that section list the same titles, so there is nothing to pick.</summary>
+    public static bool IsPickerOffered(IReadOnlyList<DownloadedSection> sections) => sections.Count > 1;
+
+    /// <summary>The section still shown: <paramref name="selection"/> while it has titles, else the whole page (null).</summary>
+    public static DownloadedSection? Resolved(DownloadedSection? selection, IReadOnlyList<DownloadedSection> available) =>
+        selection is { } section && available.Contains(section) ? section : null;
+
+    /// <summary>A choice's name, the same words as its sidebar row: All, Continue Watching, Movies, TV Shows.</summary>
+    public static string PickerTitle(this DownloadedSection? choice) => AppText.Get(choice switch
+    {
+        null => "DownloadedSection_All",
+        DownloadedSection.ContinueWatching => "Section_ContinueWatching",
+        DownloadedSection.Movies => "Section_Movies",
+        _ => "Section_TvShows",
+    });
 }
 
 /// <summary>
@@ -67,6 +93,9 @@ public sealed record SidebarItem(string Tab, string? Section = null)
     }
 
     public static SidebarItem For(DownloadedSection section) => new("downloaded", section.Tag());
+
+    /// <summary>The Downloaded row for a picker choice: the page itself for the whole page (null), else the section's row.</summary>
+    public static SidebarItem ForDownloaded(DownloadedSection? section) => section is { } chosen ? For(chosen) : new("downloaded");
 
     public static SidebarItem For(WatchlistSection section) => new("watchlist", section.Tag());
 
@@ -92,7 +121,7 @@ public sealed record SidebarItem(string Tab, string? Section = null)
     public SidebarItem Resolved(IReadOnlyList<WatchlistSection> watchlistSections, IReadOnlyList<DownloadedSection> downloadedSections)
     {
         if (Section is null) return this;
-        if (DownloadedSection is { } downloaded) return downloadedSections.Contains(downloaded) ? this : new SidebarItem(Tab);
+        if (DownloadedSection is { } downloaded) return ForDownloaded(LibrarySections.Resolved(downloaded, downloadedSections));
         if (WatchlistSection is { } watchlist) return watchlistSections.Contains(watchlist) ? this : new SidebarItem(Tab);
         return new SidebarItem(Tab);
     }

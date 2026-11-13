@@ -9,6 +9,13 @@ namespace Edendale.Windows.Core.Sync;
 /// The monotonic stamp of §7.2 and the high-water mark it rests on. One per
 /// device, shared by every store that writes records, and persisted with the
 /// sync state.
+///
+/// The mark never follows a stamp more than a day ahead of this device's
+/// clock (§7.1), whichever path brings it: a persisted mark, a record in a
+/// store loaded from disk, the one-time replica import, or this PC's own
+/// writes made while its clock ran ahead. Following one would stamp every
+/// later write past the point the other devices refuse. Ports
+/// SyncStamper.observe on origin/apple-27.1 (K.7).
 /// </summary>
 public sealed class SyncClock
 {
@@ -19,7 +26,7 @@ public sealed class SyncClock
     public SyncClock(Func<long>? now = null, long highWater = 0)
     {
         _now = now ?? (() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        _highWater = highWater;
+        _highWater = SyncMerge.IsFarFuture(highWater, _now()) ? 0 : highWater;
     }
 
     /// <summary>The highest stamp this device has applied or written.</summary>
@@ -47,14 +54,26 @@ public sealed class SyncClock
         return stamp;
     }
 
-    /// <summary>§7.1: a stamp that was applied raises the high-water mark.</summary>
-    public void Observe(long stamp)
+    /// <summary>
+    /// §7.1: a stamp that was applied raises the high-water mark, unless it
+    /// is more than a day ahead of this device's clock.
+    /// </summary>
+    public void Observe(long stamp) => ObserveAll([stamp]);
+
+    /// <summary>
+    /// <see cref="Observe"/> for the highest of <paramref name="stamps"/>
+    /// within a day of this device's clock, so one far-future stamp doesn't
+    /// hide the others; <see cref="HighWaterChanged"/> is raised at most once.
+    /// </summary>
+    public void ObserveAll(IEnumerable<long> stamps)
     {
         var moved = false;
         lock (_gate)
         {
-            if (stamp > _highWater)
+            var now = _now();
+            foreach (var stamp in stamps)
             {
+                if (stamp <= _highWater || SyncMerge.IsFarFuture(stamp, now)) continue;
                 _highWater = stamp;
                 moved = true;
             }
@@ -62,10 +81,16 @@ public sealed class SyncClock
         if (moved) HighWaterChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Restores a persisted mark without raising an event; the stores' records may be higher still.</summary>
+    /// <summary>
+    /// Restores a persisted mark without raising an event; the stores' records
+    /// may be higher still. A mark more than a day ahead is ignored.
+    /// </summary>
     public void Restore(long highWater)
     {
-        lock (_gate) _highWater = Math.Max(_highWater, highWater);
+        lock (_gate)
+        {
+            if (!SyncMerge.IsFarFuture(highWater, _now())) _highWater = Math.Max(_highWater, highWater);
+        }
     }
 }
 
@@ -107,12 +132,13 @@ public static class SyncMerge
     /// <summary>
     /// Applies the records of another device's file to <paramref name="store"/>,
     /// verbatim (device and stamp included), raising the clock's high-water mark
-    /// with every stamp that was not refused.
+    /// with every stamp that was not refused, once for the whole file.
     /// </summary>
     public static SyncMergeOutcome Apply<T>(IDictionary<string, T> store, IEnumerable<T> incoming, SyncClock clock) where T : SyncRecord
     {
         var outcome = new SyncMergeOutcome();
         var now = clock.Now;
+        var observed = new List<long>();
         foreach (var record in incoming)
         {
             if (IsFarFuture(record.UpdateTime, now))
@@ -131,8 +157,9 @@ public static class SyncMerge
             {
                 outcome.Ignored++;
             }
-            clock.Observe(record.UpdateTime);
+            observed.Add(record.UpdateTime);
         }
+        clock.ObserveAll(observed);
         return outcome;
     }
 

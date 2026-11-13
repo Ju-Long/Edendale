@@ -50,6 +50,9 @@ public sealed partial class MainWindow
     private readonly PlaybackTransitions _transitions = new();
     private bool _resumePending;
     private bool _titleMemoryPending;
+
+    /// <summary>Set when an item opens; its first Playing notes the copy as played last.</summary>
+    private bool _notePlayedPending;
     private ReopenState? _reopenState;
     private string? _reattachSelected;
     private bool _reattachPending;
@@ -76,6 +79,9 @@ public sealed partial class MainWindow
     private GamepadInput? _gamepad;
     private TaskbarButtons? _taskbarButtons;
 
+    /// <summary>Ctrl+↑/↓'s level, 1 for the picture as it is; it holds from file to file until the player closes.</summary>
+    private double _dimLevel = 1;
+
     /// <summary>X.2: the taskbar thumbnail's buttons follow the player.</summary>
     private void UpdateTaskbarButtons(bool playing) =>
         _taskbarButtons?.Update(
@@ -88,7 +94,13 @@ public sealed partial class MainWindow
     {
         AppWindow.Changed += AppWindow_Changed;
         _gamepad = new GamepadInput(DispatcherQueue, Gamepad_Action);
-        Activated += (_, args) => _gamepad.SetWindowActive(args.WindowActivationState != WindowActivationState.Deactivated);
+        Activated += (_, args) =>
+        {
+            var active = args.WindowActivationState != WindowActivationState.Deactivated;
+            _gamepad.SetWindowActive(active);
+            // a4c8561: a hidden pointer comes back when another window takes focus.
+            if (!active) ControlsOverlay.ReleaseIdlePointer();
+        };
         AppServices.PlayerSettings.Changed += (_, key) => DispatcherQueue.TryEnqueue(() => PlayerSetting_Changed(key));
         _ = GpuProbe.CapabilitiesAsync();
 
@@ -131,7 +143,9 @@ public sealed partial class MainWindow
 
         _transitions.Present();
         _currentPlayback = request;
-        _context = PlayerContext.Resolve(request, AppServices.Library.Shows);
+        // Every copy of the show, so the next episode stays on the playing source.
+        _context = PlayerContext.Resolve(request, AppServices.Library.Shows, AppServices.Library.IsUnavailable, AppServices.Library.FolderById);
+        _notePlayedPending = true;
         _resumePending = true;
         _titleMemoryPending = true;
         _reopenState = null;
@@ -153,11 +167,12 @@ public sealed partial class MainWindow
         AppServices.SegmentPrompts.Begin(IntroDbMedia.For(request));
 
         PlayerOverlay.Visibility = Visibility.Visible;
-        ApplyingLayer.Visibility = Visibility.Collapsed;
+        AppServices.Player.SetPresented(true);
+        SetApplying(false);
         _gamepad?.SetRunning(true);
         ControlsOverlay.SetMediaPlayer(null, request.Title.ToUpperInvariant(), request.Subtitle, request, _context);
         AdjustmentsPanel.Bind(null, _context);
-        if (_openPane == PlayerPane.Playlist) PlaylistPanel.Load(request);
+        if (_openPane == PlayerPane.Playlist) PlaylistPanel.Load(request, _context);
         if (_openPane == PlayerPane.None) ControlsOverlay.Focus(FocusState.Programmatic);
         _transport?.SetItem(request, _context);
         UpdateTaskbarButtons(playing: false);
@@ -393,7 +408,7 @@ public sealed partial class MainWindow
             _resumePending = false;
             _titleMemoryPending = false;
 
-            ApplyingLayer.Visibility = Visibility.Visible;
+            SetApplying(true);
             WriteProgress();
             DisposePlayer();
             await StartPlaybackAsync(request);
@@ -462,7 +477,7 @@ public sealed partial class MainWindow
         }
         if (!state.WasPlaying) player.SetPause(true);
 
-        ApplyingLayer.Visibility = Visibility.Collapsed;
+        SetApplying(false);
 
         static ContentPlayerPreferences Remembered(PlayerTrack track) => new()
         {
@@ -529,6 +544,16 @@ public sealed partial class MainWindow
             DisplayAwake.Hold(true);
             _transport?.SetPlaying(true);
             UpdateTaskbarButtons(playing: true);
+
+            // The first time this item plays, the library remembers its copy
+            // and source, so Play and Play From default to it next time. Once
+            // it is actually playing: a copy that fails to open isn't the one
+            // the viewer last watched.
+            if (_notePlayedPending && _currentPlayback is { } playing)
+            {
+                _notePlayedPending = false;
+                AppServices.Library.NotePlayed(playing.FilePath);
+            }
 
             if (_reopenState is { } state)
             {
@@ -604,7 +629,20 @@ public sealed partial class MainWindow
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (ReferenceEquals(player, _mediaPlayer)) HandleNaturalEnd(creditsSkip: false);
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
+            // LibVLC ends a custom input whose read gave up as if the file had
+            // ended. A dropped link short of the end keeps the place and says
+            // why, rather than finishing the episode and playing the next.
+            var failure = _mediaInput?.Source.FailureReason;
+            var length = player.Length;
+            if (PlayerLogic.EndIsFailure(failure is not null,
+                TimeSpan.FromMilliseconds(Math.Max(0, player.Time)),
+                length > 0 ? TimeSpan.FromMilliseconds(length) : null))
+            {
+                FailPlayback(failure);
+                return;
+            }
+            HandleNaturalEnd(creditsSkip: false);
         });
     }
 
@@ -724,7 +762,10 @@ public sealed partial class MainWindow
         if (_mediaPlayer is null || _currentPlayback?.TmdbId is not int tmdbId) return;
         var durationMilliseconds = _mediaPlayer.Length;
         if (durationMilliseconds <= 0) return;
-        var positionMilliseconds = Math.Max(0, _mediaPlayer.Time);
+        var time = _mediaPlayer.Time;
+        // An input that ended or failed without a time keeps the stored place.
+        if (time <= 0 && _mediaPlayer.State is VLCState.Ended or VLCState.Error) return;
+        var positionMilliseconds = Math.Max(0, time);
 
         AppServices.WatchProgress.Update(
             tmdbId,
@@ -835,7 +876,7 @@ public sealed partial class MainWindow
         }
         if (_isCompactOverlay || _currentPlayback is null) return;
 
-        if (pane == PlayerPane.Playlist) PlaylistPanel.Load(_currentPlayback);
+        if (pane == PlayerPane.Playlist) PlaylistPanel.Load(_currentPlayback, _context);
         PlaylistPanel.Visibility = pane == PlayerPane.Playlist ? Visibility.Visible : Visibility.Collapsed;
         AdjustmentsPanel.Visibility = pane == PlayerPane.Adjustments ? Visibility.Visible : Visibility.Collapsed;
         _openPane = pane;
@@ -1097,13 +1138,30 @@ public sealed partial class MainWindow
         e.Handled = true;
     }
 
-    /// <summary>Ctrl+↑/↓, like ⌘↑/↓ on macOS: one brightness step, shown in the HUD.</summary>
+    /// <summary>
+    /// Ctrl+↑/↓, like ⌘↑/↓ on macOS (apple-27.1 7c73875): the player's own
+    /// brightness, 5 % a step, shown in the HUD. The Mac scales the display's
+    /// light for the player; a window can't do that on Windows, so a black
+    /// layer over the picture dims it the same way, down to 15 % and never to
+    /// black, below the controls. It starts at 100 % (the picture as it is),
+    /// holds from file to file, and goes when the player closes; picture
+    /// brightness stays in Player Adjustments.
+    /// </summary>
     private void ChangeBrightness(int steps)
     {
         if (_mediaPlayer is null) return;
-        var value = AppServices.VideoAdjustments.Step(VideoAdjustment.Brightness, steps);
-        ControlsOverlay.ShowBrightness(value);
-        AdjustmentsPanel.RefreshPicture();
+        _dimLevel = PlayerLogic.AdjustedLevel(_dimLevel, steps * PlayerLogic.LevelStep);
+        ApplyDimming();
+        ControlsOverlay.ShowBrightness(_dimLevel);
+    }
+
+    private void ApplyDimming() => DimLayer.Opacity = 1 - PlayerLogic.DimmingScale(_dimLevel);
+
+    /// <summary>F.3's Applying layer, which also stands in for the overlay's buffering ring.</summary>
+    private void SetApplying(bool applying)
+    {
+        ApplyingLayer.Visibility = applying ? Visibility.Visible : Visibility.Collapsed;
+        ControlsOverlay.SuppressBuffering(applying);
     }
 
     // ------------------------------------------------------------------
@@ -1169,10 +1227,14 @@ public sealed partial class MainWindow
         SetFullScreen(false);
         SetCompactOverlay(false);
         PlayerOverlay.Visibility = Visibility.Collapsed;
+        AppServices.Player.SetPresented(false);
         _gamepad?.SetRunning(false);
         UpdateTaskbarButtons(playing: false);
-        ApplyingLayer.Visibility = Visibility.Collapsed;
+        SetApplying(false);
+        _dimLevel = 1;
+        ApplyDimming();
         ControlsOverlay.SetMediaPlayer(null, "", "", null, null);
+        ControlsOverlay.ReleaseIdlePointer();
         AdjustmentsPanel.Bind(null, null);
         DisplayAwake.Hold(false);
         _transport?.Clear();

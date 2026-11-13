@@ -105,22 +105,24 @@ public static class HandoffFrames
         await stream.FlushAsync(cancellation).ConfigureAwait(false);
     }
 
-    /// <summary>One frame's body within <paramref name="timeout"/>; a closed connection reads as malformed.</summary>
+    /// <summary>
+    /// One frame's body within <paramref name="timeout"/>; a closed connection
+    /// reads as malformed. The deadline closes the stream when it passes
+    /// (<see cref="HandoffDeadline"/>), so a read the stream never ends for a
+    /// cancelled token still ends; the session is over after a timeout anyway.
+    /// </summary>
     public static async Task<byte[]> ReadAsync(Stream stream, TimeSpan timeout, CancellationToken cancellation)
     {
-        using var timed = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
-        timed.CancelAfter(timeout);
         try
         {
-            var header = new byte[4];
-            await ReadExactlyAsync(stream, header, timed.Token).ConfigureAwait(false);
-            var body = new byte[BodyLength(header)];
-            await ReadExactlyAsync(stream, body, timed.Token).ConfigureAwait(false);
-            return body;
-        }
-        catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
-        {
-            throw new HandoffException(HandoffError.Timeout);
+            return await HandoffDeadline.RunAsync(timeout, stream.Dispose, async token =>
+            {
+                var header = new byte[4];
+                await ReadExactlyAsync(stream, header, token).ConfigureAwait(false);
+                var body = new byte[BodyLength(header)];
+                await ReadExactlyAsync(stream, body, token).ConfigureAwait(false);
+                return body;
+            }, cancellation).ConfigureAwait(false);
         }
         catch (EndOfStreamException)
         {

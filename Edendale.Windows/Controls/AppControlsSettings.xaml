@@ -4,11 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Edendale.Windows.Controls">
 
-    <!-- APP CONTROLS (AppControlsSection.swift): skip lengths and hold speeds.
+    <!-- CONTROLS (AppControlsSection.swift), the first section of Settings →
+         Player Controls: skip lengths and hold speeds.
          Device-local; the player reads them at every gesture. The chip rows
          wrap rather than clip in a narrow window. -->
     <StackPanel>
-        <TextBlock x:Uid="SettingsAppControlsHeader" Text="APP CONTROLS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
+        <TextBlock x:Uid="SettingsControlsHeader" Text="CONTROLS" Style="{StaticResource SettingsSectionHeaderTextStyle}" />
         <Border Style="{StaticResource SettingsGroupBorderStyle}">
             <StackPanel>
                 <StackPanel Padding="20,16" Spacing="10">

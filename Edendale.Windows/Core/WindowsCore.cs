@@ -3,8 +3,37 @@ using Edendale.Windows.Services;
 
 namespace Edendale.Windows.Core;
 
-/// <summary>Thrown when a Windows domain or TMDB operation cannot complete.</summary>
-public sealed class WindowsCoreException(string message) : Exception(message);
+/// <summary>
+/// Why a TMDB request failed, carried on <see cref="WindowsCoreException"/> so
+/// a caller that reacts to the kind of failure (the library's metadata sweep
+/// stops on a refused credential or a rate limit, LibraryEnrichment) doesn't
+/// read the localized message.
+/// </summary>
+public enum TmdbFailure
+{
+    /// <summary>Not a failed TMDB request: a domain rule, or a payload missing a field.</summary>
+    None,
+    /// <summary>This build has no TMDB credential.</summary>
+    MissingCredentials,
+    /// <summary>TMDB answered with an unsuccessful status, in <see cref="WindowsCoreException.StatusCode"/>.</summary>
+    HttpStatus,
+    /// <summary>TMDB's answer wasn't JSON.</summary>
+    InvalidJson,
+}
+
+/// <summary>
+/// Thrown when a Windows domain or TMDB operation cannot complete.
+/// <see cref="Failure"/> and <see cref="StatusCode"/> say how a TMDB request
+/// failed; the message is for people.
+/// </summary>
+public sealed class WindowsCoreException(string message, TmdbFailure failure = TmdbFailure.None, int? statusCode = null)
+    : Exception(message)
+{
+    public TmdbFailure Failure { get; } = failure;
+
+    /// <summary>The HTTP status TMDB answered with, when <see cref="Failure"/> is <see cref="TmdbFailure.HttpStatus"/>.</summary>
+    public int? StatusCode { get; } = statusCode;
+}
 
 /// <summary>
 /// Stable Windows facade used by the WinUI pages. Every implementation behind this
@@ -14,7 +43,6 @@ public static class WindowsCore
 {
     private static readonly TmdbRepository Tmdb = new();
 
-    public static string CoreVersion => ".NET 8 (native C#)";
     public static bool HasTmdbCredentials => Tmdb.IsConfigured;
 
     public static ParsedMedia ParseMediaFile(string fileName) => MediaParser.Parse(fileName);

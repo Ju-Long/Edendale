@@ -30,6 +30,15 @@ internal static class AppText
 
         ["Plural_DayOne"] = "{0} day",
         ["Plural_DayOther"] = "{0} days",
+        ["Plural_SeasonOne"] = "{0} season",
+        ["Plural_SeasonOther"] = "{0} seasons",
+        ["Plural_EpisodeOne"] = "{0} episode",
+        ["Plural_EpisodeOther"] = "{0} episodes",
+
+        ["DownloadedSection_All"] = "All",
+        ["Section_ContinueWatching"] = "Continue Watching",
+        ["Section_Movies"] = "Movies",
+        ["Section_TvShows"] = "TV Shows",
 
         ["Season_Number"] = "Season {0}",
         ["Season_Label"] = "Season",
@@ -95,9 +104,20 @@ internal static class AppText
         ["Enhancement_PresetBalanced"] = "Balanced",
         ["Enhancement_PresetHighQuality"] = "High Quality",
 
+        ["Settings_CategoryGeneral"] = "General",
+        ["Settings_CategoryPlayerControls"] = "Player Controls",
+        ["Settings_CategoryAudio"] = "Audio",
+        ["Settings_CategorySubtitles"] = "Subtitles",
+        ["Settings_CategoryLibrary"] = "Library",
+        ["Settings_CategorySync"] = "Sync",
+        ["Settings_CategoryAccounts"] = "Accounts",
+        ["Settings_CategoryParentalControls"] = "Parental Controls",
+        ["Settings_CategoryAbout"] = "About",
+
         ["SourceKind_Local"] = "Local Folder",
         ["SourceKind_S3"] = "S3-Compatible Storage",
         ["Source_Unavailable"] = "Unavailable",
+        ["Source_LastPlayed"] = "Last Played",
         ["Account_Guest"] = "Guest",
 
         ["Connector_InvalidAddress"] = "That server address doesn’t look right. Enter a hostname like nas.local or an IP address.",
@@ -130,6 +150,7 @@ internal static class AppText
         ["Sync_WarningTooLarge"] = "The sync file from {0} is too large, so it was skipped.",
         ["Sync_WarningSkipped"] = "The sync file from {0} couldn’t be read, so it was skipped.",
         ["Sync_WarningClockAhead"] = "The clock on {0} is more than a day ahead; its latest changes were not applied.",
+        ["Sync_WarningCloudDownload"] = "The sync file from {0} couldn’t be downloaded from the cloud. Make sure the app that syncs this folder is running and that Windows lets Edendale download files.",
         ["Sync_FolderOneDrive"] = "OneDrive folder on this PC",
         ["Sync_FolderICloud"] = "iCloud Drive folder on this PC",
 
@@ -148,6 +169,7 @@ internal static class AppText
         ["OAuth_Server"] = "{0} couldn’t complete sign-in ({1}).",
         ["OAuth_ServerDetail"] = "{0} couldn’t complete sign-in ({1}): {2}",
         ["OAuth_Malformed"] = "{0} sent a response Edendale couldn’t read.",
+        ["OAuth_SyncWriteMissing"] = "{0} didn’t allow Edendale to write its sync files. Sign in again and allow that access.",
     };
 
     /// <summary>The localized string for <paramref name="key"/>, or the English default.</summary>

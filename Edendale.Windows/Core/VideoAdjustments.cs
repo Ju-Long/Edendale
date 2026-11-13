@@ -153,7 +153,7 @@ public sealed class VideoAdjustments
         _store.SetObject(StorageKey, Values.With(adjustment, value));
     }
 
-    /// <summary>Moves one value by whole steps (Ctrl+↑/↓ changes brightness this way).</summary>
+    /// <summary>Moves one value by whole steps.</summary>
     public double Step(VideoAdjustment adjustment, int steps)
     {
         var next = adjustment.Normalized(Values[adjustment] + steps * adjustment.Step());
