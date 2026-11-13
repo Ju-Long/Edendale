@@ -29,31 +29,16 @@
 
     <!-- B.15: a Quest 3 or 3S scans the other device's pairing code with its
          passthrough camera (Meta's Passthrough Camera API, Horizon OS v74 and
-         later) through Meta's HEADSET_CAMERA alone, which opens the
-         passthrough cameras and nothing else, asked for only when the viewer
-         chooses to scan; frames are read on the headset and never kept or
-         sent. Meta reviews it, so the submission justifies it. android's
-         CAMERA comes out: Meta's upload refused HEADSET_CAMERA beside it as
-         "incompatible" (Findings, 2026-11-13), and Meta's own scanner sample
-         declares HEADSET_CAMERA alone, with its optional feature below.
-         android's three optional camera features still come out, as in B.14:
-         they are required="false" and say nothing about a headset's cameras. -->
-    <uses-permission
-        android:name="android.permission.CAMERA"
-        tools:node="remove" />
-    <uses-permission android:name="horizonos.permission.HEADSET_CAMERA" />
-    <uses-feature
-        android:name="horizonos.feature.HEADSET_CAMERA"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.camera.any"
-        tools:node="remove" />
-    <uses-feature
-        android:name="android.hardware.camera"
-        tools:node="remove" />
-    <uses-feature
-        android:name="android.hardware.camera.autofocus"
-        tools:node="remove" />
+         later), asked for only when the viewer chooses to scan; frames are
+         read on the headset and never kept or sent. Since 2026-11-13 (owner)
+         the build keeps android's CAMERA and its three optional camera
+         features, and declares nothing of Meta's: the upload refused
+         horizonos.permission.HEADSET_CAMERA as "incompatible" alone as well
+         as beside CAMERA (Findings), and Meta's Passthrough Camera API
+         overview says either permission opens the passthrough cameras. The
+         optional features keep CAMERA from implying a required camera with
+         autofocus, which a Quest doesn't report. Meta reviews CAMERA, so the
+         submission justifies it. -->
     <uses-feature
         android:name="android.software.leanback"
         tools:node="remove" />

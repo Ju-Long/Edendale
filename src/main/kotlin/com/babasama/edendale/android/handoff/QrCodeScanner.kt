@@ -71,8 +71,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 fun QrCodeScanner(onCode: (HandoffV2.QrPayload) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val metaHeadset = remember { isMetaHeadset() }
-    // A Quest asks for Meta's headset camera permission alone; anything else for the camera's.
-    val permissions = remember(metaHeadset) { PairingFlow.cameraPermissions(metaHeadset) }
+    // A Quest asks for Meta's headset camera permission alone where the app declares it; anything else for the camera's.
+    val permissions = remember(metaHeadset) { PairingFlow.cameraPermissions(metaHeadset, declaredPermissions(context)) }
     fun allGranted() = permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
     var granted by remember { mutableStateOf(allGranted()) }
     var refused by remember { mutableStateOf(false) }
@@ -210,6 +210,18 @@ private fun scannerCamera(cameras: ProcessCameraProvider, metaHeadset: Boolean):
         else -> null
     }
 }
+
+/** The permissions this app's manifest declares; none if the package can't be read. */
+private fun declaredPermissions(context: Context): List<String> = runCatching {
+    val manager = context.packageManager
+    val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        manager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong()))
+    } else {
+        @Suppress("DEPRECATION")
+        manager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+    }
+    info.requestedPermissions?.toList().orEmpty()
+}.getOrDefault(emptyList())
 
 /** A Meta headset (Quest), by its manufacturer. */
 internal fun isMetaHeadset(): Boolean =

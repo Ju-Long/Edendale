@@ -375,13 +375,16 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             if (simple in reviewRequired) notes += "permission $permission needs Meta's review; justify it in the submission"
         }
         if (permissions.any { it.endsWith("WRITE_EPG_DATA") }) failures += "WRITE_EPG_DATA (TV Watch Next) is still declared"
-        // B.15: a Quest 3's pairing scanner reads the passthrough camera through
-        // horizonos.permission.HEADSET_CAMERA alone (on Meta's review list, noted above).
-        // Meta's upload refuses it beside android.permission.CAMERA as "incompatible"
-        // (2026-11-13), and android's scanner asks a Quest for HEADSET_CAMERA only.
-        if ("android.permission.CAMERA" in permissions) {
-            failures += "android.permission.CAMERA is declared; Meta's upload refuses it beside horizonos.permission.HEADSET_CAMERA, " +
-                "and the Quest's scanner needs only the latter (HORIZON.md B.15)"
+        // B.15: a Quest 3's pairing scanner reads the passthrough camera through android's
+        // CAMERA (on Meta's review list, noted above). Meta's upload refused
+        // horizonos.permission.HEADSET_CAMERA as "incompatible" both beside CAMERA and
+        // alone (2026-11-13), so the overlay declares nothing of Meta's.
+        if ("horizonos.permission.HEADSET_CAMERA" in permissions) {
+            failures += "horizonos.permission.HEADSET_CAMERA is declared; Meta's upload refuses it as \"incompatible\", " +
+                "and the Quest's scanner asks for android.permission.CAMERA (HORIZON.md B.15)"
+        }
+        if ("android.permission.CAMERA" !in permissions) {
+            failures += "android.permission.CAMERA is missing; the Quest's pairing scanner can't open the camera (HORIZON.md B.15)"
         }
         notes += "permissions: ${permissions.joinToString()}"
 

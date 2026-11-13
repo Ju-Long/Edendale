@@ -149,8 +149,8 @@ object PairingFlow {
      * Meta's Passthrough Camera API (Quest 3 and 3S, Horizon OS v74 and
      * later): the runtime permission that reads the headset's front colour
      * cameras and nothing else (`CAMERA` would also open the avatar camera).
-     * A Quest asks for it alone: Meta's store refuses it beside `CAMERA`
-     * (2026-11-13). The `horizon` flavor declares it.
+     * A Quest asks for it alone where the app declares it: Meta's store
+     * refuses it beside `CAMERA` (2026-11-13).
      */
     const val HEADSET_CAMERA_PERMISSION = "horizonos.permission.HEADSET_CAMERA"
 
@@ -186,12 +186,15 @@ object PairingFlow {
 
     /**
      * The permissions the scanner asks for: the camera, or on a Meta headset
-     * the headset camera alone, as Meta's own scanner sample declares it.
-     * Meta's pages disagree on whether both are needed ("either" in the API's
-     * overview), and its store refuses `HEADSET_CAMERA` beside `CAMERA`.
+     * the headset camera alone where the app [declared] it, as Meta's own
+     * scanner sample does. Meta's pages disagree on whether both are needed
+     * ("either" in the API's overview), its store refuses `HEADSET_CAMERA`
+     * beside `CAMERA`, and a permission the app doesn't declare is refused
+     * without a prompt, so a build that declares only `CAMERA` asks a Quest
+     * for that.
      */
-    fun cameraPermissions(metaHeadset: Boolean): List<String> =
-        if (metaHeadset) listOf(HEADSET_CAMERA_PERMISSION) else listOf(CAMERA_PERMISSION)
+    fun cameraPermissions(metaHeadset: Boolean, declared: Collection<String>): List<String> =
+        if (metaHeadset && HEADSET_CAMERA_PERMISSION in declared) listOf(HEADSET_CAMERA_PERMISSION) else listOf(CAMERA_PERMISSION)
 
     /** A scanned code's text when it is a version-2 handoff code; anything else is ignored and the camera keeps looking. */
     fun scanned(text: String?): HandoffV2.QrPayload? = text?.takeIf { it.length <= MAX_CODE_TEXT }?.let(HandoffV2.QrPayload::parse)
