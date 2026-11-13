@@ -606,7 +606,9 @@ writes it once a network is up, even if the app's process has ended; it does
 nothing if the sync started on leaving already wrote it. A folder location
 has no file watcher: another device's change reaches this one at those same
 moments. A failed sync
-backs off 1, 2, 4, 8 minutes up to an hour. **Sync Now** ignores the backoff.
+backs off 1, 2, 4, 8 minutes up to an hour. Launch, return to the
+foreground, and **Sync Now** ignore the backoff and sync at once; rotating
+the screen or resizing the window is not a return to the foreground.
 **Turn Off** keeps the local copy and offers to delete this device's file.
 Choosing another location (in **Choose a Location** or through a handoff)
 keeps the old one's files, and the section then says this device's file is
@@ -636,6 +638,13 @@ reached, the page says the other devices follow once Edendale reaches it.
 With sync off, only this device's progress and its copy of the sync records
 are emptied, with no tombstones, so turning sync on later brings back what
 the other devices hold.
+
+The Movies & Shows hero leads with the unfinished title watched last, on
+this device or another: for a show, the episode watched last, which it names
+(`S01E04`) beside the time left. It follows the watch records as they
+change, so once the launch or foreground sync lands, **Resume** plays the
+episode and position another device last wrote. With nothing left to
+resume, the title stays in the hero as a featured one.
 
 A long press (Menu on a TV) on a part-watched Continue Watching card offers
 **Clear Progress**, as on Apple, which clears that title the same way. A
@@ -1169,7 +1178,9 @@ tests. Before a release, check on:
 - **Sync (27.1):** on two devices, choose the same location and space name
   (a picked folder on a phone, then Google Drive, OneDrive, Dropbox, a WebDAV
   share, an SMB share, and an SFTP server), watch on one and resume on the
-  other after a sync; rate and un-rate a title and check the other device
+  other after a sync — open the other from the background, and check that the
+  home hero names the episode just watched and its Resume plays it from
+  there; rate and un-rate a title and check the other device
   follows; set one device's clock a day ahead and check the warning names it;
   pair a second device both ways (a phone scanning the other's QR code in
   the dialog, a phone showing its code, a code scanned by the system camera,

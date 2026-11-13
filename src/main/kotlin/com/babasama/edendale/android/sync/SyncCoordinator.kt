@@ -22,6 +22,7 @@ import com.babasama.edendale.android.DevicePolicy
 import com.babasama.edendale.sync.SyncBackoff
 import com.babasama.edendale.sync.SyncDeviceInfo
 import com.babasama.edendale.sync.SyncEngine
+import com.babasama.edendale.sync.SyncForegroundTracker
 import com.babasama.edendale.sync.SyncLocation
 import com.babasama.edendale.sync.SyncLog
 import com.babasama.edendale.sync.SyncReport
@@ -89,8 +90,9 @@ sealed interface HistoryDeletion {
  * background, with a one-off WorkManager job behind it while a write is
  * pending), every 5 minutes in the foreground, and in the background
  * through a periodic WorkManager job with a network constraint. One sync at
- * a time; failures back off 1, 2, 4, 8 minutes up to an hour. Lives for the
- * process ([EdendaleApplication.sync]).
+ * a time; failures back off 1, 2, 4, 8 minutes up to an hour, except that
+ * launch and return to the foreground sync at once, as Sync Now does
+ * ([SyncTriggers]). Lives for the process ([EdendaleApplication.sync]).
  */
 class SyncCoordinator(private val app: EdendaleApplication) {
     val settings = SyncSettingsStore(app)
@@ -107,7 +109,7 @@ class SyncCoordinator(private val app: EdendaleApplication) {
 
     private var debounce: Job? = null
     private var periodic: Job? = null
-    private var startedActivities = 0
+    private val foreground = SyncForegroundTracker()
     private var consecutiveFailures = 0
     private var nextAllowedAt = 0L
 
@@ -122,12 +124,14 @@ class SyncCoordinator(private val app: EdendaleApplication) {
 
     fun start() {
         refreshStatus()
+        // The launch sync runs as the first activity starts, not here: a process
+        // WorkManager starts for the background job syncs through the job alone.
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) {
-                if (startedActivities++ == 0) onForeground()
+                foreground.activityStarted()?.let(::onMoment)
             }
             override fun onActivityStopped(activity: Activity) {
-                if (--startedActivities == 0) onBackground()
+                foreground.activityStopped(activity.isChangingConfigurations)?.let(::onMoment)
             }
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
             override fun onActivityResumed(activity: Activity) = Unit
@@ -135,15 +139,23 @@ class SyncCoordinator(private val app: EdendaleApplication) {
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
             override fun onActivityDestroyed(activity: Activity) = Unit
         })
-        if (settings.location != null) {
-            requestSync(reason = "launch")
-            scheduleBackgroundWork()
-        }
+        if (settings.location != null) scheduleBackgroundWork()
     }
 
-    private fun onForeground() {
+    private fun onMoment(moment: SyncForegroundTracker.Moment) = when (moment) {
+        SyncForegroundTracker.Moment.LAUNCH -> onForeground(reason = "launch")
+        SyncForegroundTracker.Moment.FOREGROUND -> onForeground(reason = "foreground")
+        SyncForegroundTracker.Moment.BACKGROUND -> onBackground()
+    }
+
+    /**
+     * The app opened, cold or from the background: sync at once, past any
+     * backoff, so the watch progress the viewer sees (the hero's Resume,
+     * Continue Watching) is what the other devices last wrote.
+     */
+    private fun onForeground(reason: String) {
         if (settings.location == null) return
-        requestSync(reason = "foreground")
+        requestSync(reason = reason, ignoreBackoff = true)
         periodic?.cancel()
         periodic = scope.launch {
             while (true) {
@@ -184,8 +196,8 @@ class SyncCoordinator(private val app: EdendaleApplication) {
         requestSync(reason = "manual")
     }
 
-    private fun requestSync(reason: String) {
-        scope.launch { runSync(reason) }
+    private fun requestSync(reason: String, ignoreBackoff: Boolean = false) {
+        scope.launch { runSync(reason, ignoreBackoff) }
     }
 
     /**

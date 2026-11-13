@@ -988,4 +988,12 @@ class LibraryPresentationTest {
         assertTrue(localMatches("", SearchScope.ALL, false, movies, shows).isEmpty)
         assertTrue(localMatches("   ", SearchScope.ALL, false, movies, shows).isEmpty)
     }
+
+    @Test
+    fun `the hero names the episode its Resume plays`() {
+        val episode = WatchProgress(tmdbId = 1_004, mediaType = WatchMediaType.EPISODE, showTmdbId = 95396, seasonNumber = 2, episodeNumber = 4)
+        assertEquals("S02E04", episode.heroEpisodeCode())
+        assertNull(episode.copy(episodeNumber = null).heroEpisodeCode())
+        assertNull(WatchProgress(tmdbId = 603, mediaType = WatchMediaType.MOVIE).heroEpisodeCode())
+    }
 }
