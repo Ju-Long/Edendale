@@ -5,7 +5,8 @@
 //  The client procedure of SYNC-PROTOCOL.md §8 on this device: holds the
 //  one sync location, runs a sync on launch, on return to the foreground,
 //  ten seconds after the last local change (at once when playback stops or
-//  the app goes to the background), and every five minutes while active;
+//  the app goes to the background; the player's saves while it is up wait
+//  for that), and every five minutes while active;
 //  backs off after failures (launch and foreground syncs still run at
 //  once); and keeps the per-file stamps so a file is
 //  read only when it changed. One sync lists the space, reads and merges
@@ -137,8 +138,9 @@ final class SyncCoordinator {
     func start() {
         guard observers.isEmpty else { return }
         let center = NotificationCenter.default
-        observers.append(center.addObserver(forName: WatchProgressStore.didChangeLocally, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.noteLocalChange() }
+        observers.append(center.addObserver(forName: WatchProgressStore.didChangeLocally, object: nil, queue: .main) { [weak self] note in
+            let whilePlaying = note.userInfo?[WatchProgressStore.whilePlayingKey] as? Bool == true
+            MainActor.assumeIsolated { self?.noteLocalChange(whilePlaying: whilePlaying) }
         })
         observers.append(center.addObserver(forName: Self.flushRequested, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.flush() }
@@ -175,10 +177,14 @@ final class SyncCoordinator {
     }
 
     /// A local change: this device's file is written after a pause, so
-    /// progress during playback coalesces into the latest position.
-    func noteLocalChange() {
+    /// progress during playback coalesces into the latest position. A save
+    /// the player made while it was up (`whilePlaying`) waits for playback
+    /// to stop (`flushRequested`), the app to leave the foreground, or the
+    /// periodic sync: the player saves every ten seconds, so the pause
+    /// would otherwise end just before each save and sync under the video.
+    func noteLocalChange(whilePlaying: Bool = false) {
         dirty = true
-        guard location != nil else { return }
+        guard location != nil, !whilePlaying else { return }
         debounceTask?.cancel()
         debounceTask = Task { [weak self] in
             try? await Task.sleep(for: Self.debounce)

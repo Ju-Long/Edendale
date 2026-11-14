@@ -82,7 +82,7 @@ NS_SWIFT_NAME(BufferedByteSource)
 /// than readAheadBytes. Default 384 MiB.
 @property (nonatomic) NSInteger maxReadAheadBytes;
 /// The app memory (its footprint, as Xcode's gauge shows it) up to which
-/// the read-ahead grows past readAheadBytes. Default 500 MiB.
+/// the read-ahead grows past readAheadBytes. Default 1.2 GB (1200 MiB).
 @property (nonatomic) int64_t memoryTarget;
 /// Replaces the measurement behind memoryTarget. Tests set it.
 @property (nonatomic, copy, nullable) EDMemoryHeadroom memoryHeadroom;

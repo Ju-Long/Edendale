@@ -558,6 +558,31 @@ can still point at them. Its idle keep-alive queries the file: libsmb2 6.1's
 seconds. On a device, pause an SMB video, lock for a few minutes (or switch
 between Wi-Fi and Tailscale), unlock, and play.
 
+### Saving progress while playing
+
+The player saves the position every ten seconds of playback. While the
+player is up, that save reaches the watch store, Core Data, and iCloud at
+once. The pages behind the player refresh only when it closes or moves to
+Picture in Picture, and the sync file is written when playback stops (or
+at the five-minute sync).
+
+Each save used to refresh every page showing the library on the main
+thread. It did so again when Core Data reported the save back to the watch
+and user-media stores, as it does for the app's own saves, and the widget
+snapshot was rebuilt three seconds later. A sync could also start, timed to
+land just before the next save. With 400 movies and 1,000 episodes, a Debug
+build on a Mac stalled about 60 ms after every save and again three seconds
+later, so the video dropped frames every ten seconds. Now no save causes a
+pause over 8 ms, and both stores skip a reload that changes nothing.
+
+```sh
+xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
+  -destination 'platform=macOS' \
+  -only-testing:EdendaleTests/WatchProgressPlaybackSaveTests \
+  -only-testing:EdendaleTests/SyncCoordinatorTests \
+  CODE_SIGNING_ALLOWED=NO
+```
+
 ### Intro, recap, and credits prompts
 
 Enable **Settings → Player Controls → Playback → Skip Prompts**, or **Player
@@ -1036,10 +1061,12 @@ device's clock is ignored with a warning naming the device; a stamp before
 2000 or missing counts as 0; a removal is a tombstone that stays, and
 tombstones older than a year are omitted when writing. Sync runs at launch,
 on return to the foreground, ten seconds after the last local change (at once
-when playback stops or the app goes to the background), every five minutes
-while active, and on iOS through Background App Refresh when the system
-allows. Failures back off 1, 2, 4, 8 … minutes up to an hour, except that
-launch and a return to the foreground always sync at once. A launch or
+when playback stops or the app goes to the background; the position the
+player saves while it is up waits for playback to stop or the five-minute
+sync), every five minutes while active, and on iOS through Background App
+Refresh when the system allows. Failures back off 1, 2, 4, 8 … minutes up
+to an hour, except that launch and a return to the foreground always sync at
+once. A launch or
 foreground sync asked for while another is still running (one iOS suspended
 in the background) runs as soon as that one ends, even if it failed. A file whose
 stamp (modification time, ETag, Drive `modifiedTime`, Graph `eTag`, or

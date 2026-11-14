@@ -95,7 +95,7 @@
         _readAheadBytes = 48 << 20;
         _maxReadAheadBytes = 384 << 20;
         _cacheBytes = 64 << 20;
-        _memoryTarget = 500 << 20;
+        _memoryTarget = (int64_t)1200 << 20; // 1.2 GB
         _retryDelays = @[@0.25, @0.5, @1, @2, @4, @8];
         _keepAliveInterval = 20;
     }

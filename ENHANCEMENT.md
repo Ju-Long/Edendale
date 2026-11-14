@@ -1344,7 +1344,7 @@ Wiring:
   read-ahead on a worker thread, reconnect with backoff, idle keep-alive):
   SMB and NFS with the libsmb2/libnfs symbols libvlc already exports, SFTP
   with SwiftNIO SSH (`SFTPConnection`). While the whole app uses less than
-  500 MiB the read-ahead grows, up to 384 MiB; past that it holds, and well
+  1.2 GB the read-ahead grows, up to 384 MiB; past that it holds, and well
   past it the extra is given back. When a link slower than the video still
   empties it, playback stops and refills (`RebufferPolicy`) instead of
   running ahead of its data.

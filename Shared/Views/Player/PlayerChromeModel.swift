@@ -809,6 +809,9 @@ final class PlayerChromeModel {
         let durationSeconds = duration.playbackSeconds
         guard durationSeconds > 0 else { return }
 
+        // The store has it at once; the pages wait for the player to close,
+        // as with every save made while it is up.
+        let whilePlaying = session.isPlayerPresented
         if let movie = item.movie, let tmdbId = movie.tmdbId {
             watchStore.update(WatchProgress(
                 tmdbId: tmdbId,
@@ -817,7 +820,7 @@ final class PlayerChromeModel {
                 watchedSeconds: durationSeconds,
                 isCompleted: true,
                 lastWatchedAt: Date()
-            ))
+            ), whilePlaying: whilePlaying)
         } else if let episode = item.episode, let tmdbId = episode.tmdbId {
             watchStore.update(WatchProgress(
                 tmdbId: tmdbId,
@@ -829,7 +832,7 @@ final class PlayerChromeModel {
                 seasonNumber: episode.seasonNumber,
                 episodeNumber: episode.episodeNumber,
                 lastWatchedAt: Date()
-            ))
+            ), whilePlaying: whilePlaying)
         }
         completionSaved = true
     }
@@ -901,6 +904,9 @@ final class PlayerChromeModel {
     private func saveProgress(time: Duration, duration: Duration) {
         let position = time.playbackSeconds / duration.playbackSeconds
         guard position > 0, position <= 1.0, let item = session.item else { return }
+        // While the player covers them, the library pages refresh once it
+        // closes (PlayerSession.end), not under the video at every save.
+        let whilePlaying = session.isPlayerPresented
 
         if let movie = item.movie, let tmdbId = movie.tmdbId {
             let progress = WatchProgress(
@@ -911,7 +917,7 @@ final class PlayerChromeModel {
                 isCompleted: reachedEndNaturally,
                 lastWatchedAt: Date()
             )
-            watchStore.update(progress)
+            watchStore.update(progress, whilePlaying: whilePlaying)
         } else if let episode = item.episode, let tmdbId = episode.tmdbId {
             let progress = WatchProgress(
                 tmdbId: tmdbId,
@@ -924,7 +930,7 @@ final class PlayerChromeModel {
                 episodeNumber: episode.episodeNumber,
                 lastWatchedAt: Date()
             )
-            watchStore.update(progress)
+            watchStore.update(progress, whilePlaying: whilePlaying)
         }
     }
 

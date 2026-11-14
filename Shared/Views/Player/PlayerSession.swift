@@ -150,6 +150,8 @@ final class PlayerSession {
     func pictureInPictureDidStart() {
         guard isPresented else { return }
         isHiddenForPictureInPicture = true
+        // The library is back in view: show what the player saved.
+        watchStore.refreshHeldChanges()
         chrome?.hideControls()
         setIdleTimerDisabled(false)
     }
@@ -465,6 +467,8 @@ final class PlayerSession {
         stopAndRetirePlayer()
         chrome = nil
         item = nil
+        // The pages behind the player show what it saved while it was up.
+        watchStore.refreshHeldChanges()
         // Playback stopped: the sync file is written at once (SYNC-PROTOCOL.md §8.1).
         NotificationCenter.default.post(name: SyncCoordinator.flushRequested, object: nil)
         reattachedSubtitleIDs = []
@@ -586,7 +590,8 @@ final class PlayerSession {
             episodeNumber: playbackItem.episode?.episodeNumber,
             lastWatchedAt: Date()
         )
-        watchStore.update(progress)
+        // As on the other platforms: the pages refresh when the player closes.
+        watchStore.update(progress, whilePlaying: isPlayerPresented)
     }
 
     private func progressKey(for playbackItem: PlaybackItem) -> (

@@ -319,7 +319,10 @@ final class UserMediaStore {
                     flagged.append((dto.ref, dto.isInWatchlist))
                 }
             }
-            states = rebuilt
+            // Saves of the shared store (a watch-progress save every ten
+            // seconds of playback) come back here too: leave the pages
+            // alone unless a row really changed.
+            if rebuilt != states { states = rebuilt }
             tombstones = cleared
             stamper.observe(stamps: stamps)
             for (ref, flag) in flagged {
