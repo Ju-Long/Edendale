@@ -28,7 +28,10 @@ final class PlayerSession {
     // MARK: - State
 
     /// The item being played; non-nil while the player is presented.
-    private(set) var item: PlaybackItem?
+    private(set) var item: PlaybackItem? {
+        // Library work held for the viewer waits while the player is up.
+        didSet { interactionGate?.set(.playback, active: item != nil) }
+    }
 
     /// Observable playback engine for the session. Created on first present,
     /// reused across media switches to preserve PiP, video surface, and
@@ -53,6 +56,9 @@ final class PlayerSession {
 
     private let library: LibraryController
     private let watchStore: WatchProgressStore
+    /// Told when the viewer asks to play and while the player is up, so
+    /// background library work stays off the main thread meanwhile.
+    private let interactionGate: InteractionGate?
     private let audioEnhancement: AudioEnhancementController
     private let videoAdjustment: VideoAdjustmentController
     /// Backs persisted player preferences (loop, fill, per-content choices).
@@ -104,9 +110,11 @@ final class PlayerSession {
         controls: PlayerControlPreferences? = nil,
         subtitleAppearance: SubtitleAppearance? = nil,
         subtitleCache: SubtitleCacheStore? = nil,
-        defaults: UserDefaults? = nil
+        defaults: UserDefaults? = nil,
+        interactionGate: InteractionGate? = nil
     ) {
         let defaults = defaults ?? AppIdentifiers.defaults
+        self.interactionGate = interactionGate
         self.library = library
         self.watchStore = watchStore
         self.defaults = defaults
@@ -212,6 +220,7 @@ final class PlayerSession {
     private var advanceInFlight: Bool { advanceRequestID != nil }
 
     private func beginPlaybackRequest() -> UUID {
+        interactionGate?.touch()
         let requestID = UUID()
         activePlaybackRequestID = requestID
         advanceRequestID = nil

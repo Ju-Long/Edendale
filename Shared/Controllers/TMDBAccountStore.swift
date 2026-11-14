@@ -116,7 +116,7 @@ final class TMDBAccountStore {
 
 /// The credential for a connected TMDB account. Stored as one keychain item so
 /// token and account id sync atomically through iCloud Keychain.
-struct TMDBUserSession: Codable, Sendable {
+nonisolated struct TMDBUserSession: Codable, Sendable {
     let accessToken: String
     /// TMDB v4 account object id — unused today, kept for future account
     /// features (lists, favorites) so signing in again isn't required.

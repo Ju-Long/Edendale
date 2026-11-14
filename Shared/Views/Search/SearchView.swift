@@ -62,6 +62,7 @@ struct SearchView: View {
                 }
                 .padding(.top, localMatches.isEmpty ? 0 : 8)
             }
+            .holdsBackgroundWorkWhileScrolling()
             #if os(iOS)
             // A tap on the results puts the keyboard away. Simultaneous, so
             // a poster still opens on the same tap.

@@ -102,6 +102,7 @@ struct MediaDetailView: View {
             }
             .padding(.bottom, 64)
         }
+        .holdsBackgroundWorkWhileScrolling()
         .ignoresSafeArea(.all, edges: .top)
         .background(Theme.background)
         .toolbar {

@@ -32,6 +32,7 @@ struct RootView: View {
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     @Environment(SyncCoordinator.self) private var sync
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.interactionGate) private var interactionGate
 
     @Query private var libraryMovies: [Movie]
     @Query private var libraryShows: [TVShow]
@@ -132,13 +133,15 @@ struct RootView: View {
             await youngAudienceFilter.verify(audienceRefs)
         }
         .task(id: widgetSnapshotRevision) {
-            WidgetSnapshotStore.publish(
-                trending: youngAudienceFilter.visible(moviesModel.trending),
-                movies: visibleLibraryMovies,
-                shows: visibleLibraryShows,
-                episodes: visibleLibraryEpisodes,
-                progress: watchStore.inProgress
-            )
+            // Changes arrive in bursts (batches of metadata, a sync, a
+            // rescan): the widgets, Top Shelf, and Siri get the last of a
+            // burst once it has been quiet a while, not a rebuild for each
+            // step, and not while the viewer scrolls. Playback doesn't
+            // hold it, so Continue Watching keeps up with a video.
+            guard (try? await Task.sleep(for: .seconds(3))) != nil else { return }
+            await interactionGate?.waitUntilSettled(includingPlayback: false)
+            guard !Task.isCancelled else { return }
+            publishWidgetSnapshot()
         }
         .tint(Theme.gold)
         // The archive is dark by design — a lit theater breaks the vault.
@@ -158,7 +161,11 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active: sync.sceneDidBecomeActive()
-            case .background: sync.sceneDidEnterBackground()
+            case .background:
+                sync.sceneDidEnterBackground()
+                // The Home Screen shows the widgets next: no waiting out
+                // the quiet period (unchanged snapshots aren't rewritten).
+                publishWidgetSnapshot()
             default: break
             }
             guard phase == .active, tmdbAccount.isSignedIn else { return }
@@ -438,6 +445,16 @@ struct RootView: View {
         guard youngAudienceFilter.isEnabled else { return true }
         guard let show = episode.show else { return false }
         return await isVisibleToSelectedAudience(show)
+    }
+
+    private func publishWidgetSnapshot() {
+        WidgetSnapshotStore.publish(
+            trending: youngAudienceFilter.visible(moviesModel.trending),
+            movies: visibleLibraryMovies,
+            shows: visibleLibraryShows,
+            episodes: visibleLibraryEpisodes,
+            progress: watchStore.inProgress
+        )
     }
 
     /// A compact change token prevents unnecessary WidgetKit and Top Shelf

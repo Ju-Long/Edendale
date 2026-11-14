@@ -23,7 +23,7 @@ nonisolated struct MediaRef: Hashable, Sendable {
 }
 
 /// TMDB image CDN URL builder.
-enum TMDBImage {
+nonisolated enum TMDBImage {
     enum Size: String {
         case poster = "w342"
         case posterLarge = "w500"

@@ -279,14 +279,17 @@ struct DownloadedView: View {
                 statusRows
                 switch section {
                 case nil:
-                    continueWatchingShelf
-                    moviesSection
+                    // Built once for the page: the shelf, and the movies the
+                    // grid leaves to it.
+                    let resume = resumeItems
+                    continueWatchingShelf(resume)
+                    moviesSection(hiding: Self.movieIDs(in: resume))
                     showsSection
                     sourcesSection
                 case .continueWatching:
                     continueWatchingGrid
                 case .movies:
-                    moviesSection
+                    moviesSection(hiding: [])
                 case .shows:
                     showsSection
                 }
@@ -294,6 +297,7 @@ struct DownloadedView: View {
             .padding(.vertical, 24)
             .padding(.bottom, 40)
         }
+        .holdsBackgroundWorkWhileScrolling()
         .scrollPosition($scrollPosition)
         .onChange(of: section) {
             scrollPosition.scrollTo(edge: .top)
@@ -361,16 +365,15 @@ struct DownloadedView: View {
     /// grid can drop them and avoid showing the same title (and progress bar)
     /// twice. Derived from the shelf's actual items — a movie in progress but
     /// beyond the shelf's cap still appears in the grid rather than vanishing.
-    private var resumeMovieIDs: Set<Int> {
-        Set(resumeItems.compactMap { item in
+    private static func movieIDs(in items: [ResumeItem]) -> Set<Int> {
+        Set(items.compactMap { item in
             if case .movie(let movie) = item.payload { return movie.tmdbId }
             return nil
         })
     }
 
     @ViewBuilder
-    private var continueWatchingShelf: some View {
-        let items = resumeItems
+    private func continueWatchingShelf(_ items: [ResumeItem]) -> some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: String(localized: "Continue Watching"))
@@ -388,6 +391,7 @@ struct DownloadedView: View {
                 // The hover/focus glow may bleed past the shelf bounds
                 // instead of being clipped to a hard edge.
                 .scrollClipDisabled()
+                .holdsBackgroundWorkWhileScrolling()
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Continue Watching")
@@ -472,15 +476,18 @@ struct DownloadedView: View {
 
     // MARK: - Poster grids
 
+    /// On the whole page, anything currently in Continue Watching is shown
+    /// there with its resume progress; leaving it out here (`hiding`) keeps
+    /// each movie to one card. The Movies page on its own lists every movie.
     @ViewBuilder
-    private var moviesSection: some View {
-        // On the whole page, anything currently in Continue Watching is shown
-        // there with its resume progress; leaving it out here keeps each
-        // movie to one card. The Movies page on its own lists every movie.
+    private func moviesSection(hiding resumeMovieIDs: Set<Int>) -> some View {
         // One card per title: copies in other sources, or the same share
-        // linked through another endpoint, are chosen on its page.
-        let titles = PlaybackSources.distinct(visibleMovies, key: { PlaybackSources.copyKey($0) })
-        let gridMovies = section == .movies ? titles : titles.filter { movie in
+        // linked through another endpoint, are chosen on its page. Grouped
+        // once here, not once per card.
+        let movies = visibleMovies
+        let copiesByKey = Dictionary(grouping: movies, by: { PlaybackSources.copyKey($0) })
+        let titles = PlaybackSources.distinct(movies, key: { PlaybackSources.copyKey($0) })
+        let gridMovies = titles.filter { movie in
             guard let id = movie.tmdbId else { return true }
             return !resumeMovieIDs.contains(id)
         }
@@ -507,7 +514,7 @@ struct DownloadedView: View {
                                 clearProgressButton(tmdbId: id, mediaType: .movie)
                             }
                             removeButtons(
-                                copies: copies(of: movie),
+                                copies: copies(of: movie, in: copiesByKey),
                                 folder: \.folder,
                                 filePath: \.filePath,
                                 remove: library.removeMovie
@@ -524,7 +531,9 @@ struct DownloadedView: View {
 
     @ViewBuilder
     private var showsSection: some View {
-        let titles = PlaybackSources.distinct(visibleShows, key: { PlaybackSources.copyKey($0) })
+        let shows = visibleShows
+        let copiesByKey = Dictionary(grouping: shows, by: { PlaybackSources.copyKey($0) })
+        let titles = PlaybackSources.distinct(shows, key: { PlaybackSources.copyKey($0) })
         if !titles.isEmpty {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: String(localized: "TV Shows"))
@@ -533,7 +542,7 @@ struct DownloadedView: View {
                         NavigationLink(value: show) {
                             PosterCard(
                                 title: show.displayName,
-                                subtitle: showSubtitle(show),
+                                subtitle: showSubtitle(show, copies: copies(of: show, in: copiesByKey)),
                                 posterURL: show.posterURL,
                                 placeholderIcon: "tv",
                                 width: posterWidth
@@ -543,7 +552,7 @@ struct DownloadedView: View {
                         .accessibilityHint("Opens the archive record.")
                         .contextMenu {
                             removeButtons(
-                                copies: copies(of: show),
+                                copies: copies(of: show, in: copiesByKey),
                                 folder: \.folder,
                                 filePath: { $0.folder?.folderPath ?? $0.name },
                                 remove: library.removeTVShow
@@ -566,17 +575,16 @@ struct DownloadedView: View {
         return parts.joined(separator: " · ")
     }
 
-    /// Every copy of the card's movie in the visible library, the card's first.
-    private func copies(of movie: Movie) -> [Movie] {
-        let key = PlaybackSources.copyKey(movie)
-        let others = visibleMovies.filter { $0.id != movie.id && PlaybackSources.copyKey($0) == key }
+    /// Every copy of the card's movie in the visible library, the card's
+    /// first; `copiesByKey` is the visible movies grouped by copy key.
+    private func copies(of movie: Movie, in copiesByKey: [String: [Movie]]) -> [Movie] {
+        let others = (copiesByKey[PlaybackSources.copyKey(movie)] ?? []).filter { $0.id != movie.id }
         return PlaybackSources.order(primary: movie, others: others, folder: \.folder)
     }
 
     /// Every copy of the card's show in the visible library, the card's first.
-    private func copies(of show: TVShow) -> [TVShow] {
-        let key = PlaybackSources.copyKey(show)
-        let others = visibleShows.filter { $0.id != show.id && PlaybackSources.copyKey($0) == key }
+    private func copies(of show: TVShow, in copiesByKey: [String: [TVShow]]) -> [TVShow] {
+        let others = (copiesByKey[PlaybackSources.copyKey(show)] ?? []).filter { $0.id != show.id }
         return PlaybackSources.order(primary: show, others: others, folder: \.folder)
     }
 
@@ -609,9 +617,8 @@ struct DownloadedView: View {
         }
     }
 
-    private func showSubtitle(_ show: TVShow) -> String {
+    private func showSubtitle(_ show: TVShow, copies: [TVShow]) -> String {
         // Counted across every copy: an episode in two sources is one.
-        let copies = copies(of: show)
         let slots = PlaybackSources.episodeSlots(primary: show, others: Array(copies.dropFirst()))
         let seasons = Set(slots.map(\.season)).count
         let episodes = slots.count

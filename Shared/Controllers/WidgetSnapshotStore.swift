@@ -256,30 +256,47 @@ enum WidgetSnapshotStore {
             )
         }
 
-        let localEpisodes = episodes.compactMap { episode -> WidgetMediaItem? in
+        // Episodes only fill the room the movies, shows, and trending leave
+        // (see `cappedCatalog`), and a large library has far more of them
+        // than that: rank them by title first, then build items for the
+        // ones that fit, instead of an item for every episode.
+        let primary = localMovies + localShows + trending
+        let room = max(0, maximumCatalogItems - primary.count)
+        let fallbackShowName = String(localized: "TV Episode")
+        let fittingEpisodes = room == 0 ? [] : episodes
+            .map { episode in
+                (
+                    episode: episode,
+                    title: "\(episode.show?.displayName ?? fallbackShowName) — \(episode.displayTitle)",
+                    id: "local:episode:\(episode.id.uuidString.lowercased())"
+                )
+            }
+            .sorted { stablyOrdered(($0.title, $0.id), ($1.title, $1.id)) }
+            .prefix(room)
+        let episodeProgress = Dictionary(
+            progress.filter { $0.mediaType == .episode }.map { ($0.tmdbId, $0.position) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        let localEpisodes = fittingEpisodes.compactMap { entry -> WidgetMediaItem? in
+            let episode = entry.episode
             guard let deepLink = AppRoute.playLocalEpisode(episode.id).url else { return nil }
-            let showName = episode.show?.displayName ?? String(localized: "TV Episode")
             let showID = episode.show.map {
                 "local:show:\($0.id.uuidString.lowercased())"
             }
-            let episodeProgress = episode.tmdbId.flatMap { tmdbID in
-                progress.first {
-                    $0.mediaType == .episode && $0.tmdbId == tmdbID
-                }?.position
-            }
             return WidgetMediaItem(
-                id: "local:episode:\(episode.id.uuidString.lowercased())",
+                id: entry.id,
                 parentID: showID,
-                title: "\(showName) — \(episode.displayTitle)",
+                title: entry.title,
                 subtitle: episode.episodeCode,
                 posterURL: episode.show?.posterURL,
-                progress: episodeProgress,
+                progress: episode.tmdbId.flatMap { episodeProgress[$0] },
                 deepLink: deepLink
             )
         }
 
         let catalog = cappedCatalog(
-            primary: localMovies + localShows + trending,
+            primary: primary,
             secondary: localEpisodes
         )
 
@@ -304,11 +321,14 @@ enum WidgetSnapshotStore {
     }
 
     private static func stablySorted(_ items: [WidgetMediaItem]) -> [WidgetMediaItem] {
-        items.sorted {
-            let titleOrder = $0.title.localizedStandardCompare($1.title)
-            if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
-            return $0.id < $1.id
-        }
+        items.sorted { stablyOrdered(($0.title, $0.id), ($1.title, $1.id)) }
+    }
+
+    /// Title order, then id order for equal titles.
+    private static func stablyOrdered(_ lhs: (title: String, id: String), _ rhs: (title: String, id: String)) -> Bool {
+        let titleOrder = lhs.title.localizedStandardCompare(rhs.title)
+        if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
+        return lhs.id < rhs.id
     }
 }
 

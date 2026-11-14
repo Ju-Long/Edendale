@@ -48,6 +48,7 @@ struct PersonDetailView: View {
             }
             .padding(.vertical, 24)
         }
+        .holdsBackgroundWorkWhileScrolling()
         .background(Theme.background)
         .pushedPage()
         #if !os(tvOS)

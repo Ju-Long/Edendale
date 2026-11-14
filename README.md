@@ -399,12 +399,32 @@ next sweep resumes where it stopped. The sweep runs on the library's own
 task: leaving the page doesn't cancel it, and requests made while it runs
 queue a single extra pass.
 
+The sweep keeps the main thread free for the viewer. Its TMDB lookups (the
+keychain read for a connected account, the request, and the JSON decoding)
+run off the main actor. What they find is written to the library in
+batches, at most one every two seconds, each with a single save, because
+every save refreshes each page showing the library. A batch waits while
+the viewer scrolls a library page or asks to play, and for as long as the
+player is open, then goes in once nothing has happened for 1.5 seconds
+(`InteractionGate`); the lookups carry on meanwhile. The widget, Top Shelf,
+and Siri snapshot is rebuilt once a burst of library changes has been quiet
+for three seconds and nothing is scrolling, and only the episodes that fit
+its 500-item catalog are built. Downloaded builds its Continue Watching
+shelf once per refresh, not once per movie card. On a library of 400 movies
+and 1,000 episodes in a Debug build, matching 360 titles at 25 ms per
+lookup used to keep the main thread busy 97% of the time, with a freeze of
+about 280 ms per title, and took 102 seconds; it now takes 10 seconds, with
+the main thread answering within 0.2 ms at the 95th percentile and its
+longest pause at 115 ms.
+
 Run the regressions:
 
 ```sh
 xcodebuild test -project Edendale.xcodeproj -scheme Edendale \
   -destination 'platform=macOS' \
   -only-testing:EdendaleTests/LibraryEnrichmentTests \
+  -only-testing:EdendaleTests/InteractionGateTests \
+  -only-testing:EdendaleTests/WidgetSnapshotTests \
   -only-testing:EdendaleTests/MultipleSourcesTests \
   -only-testing:EdendaleTests/PlaybackSourcesTests \
   -only-testing:EdendaleTests/EpisodeProgressionTests \

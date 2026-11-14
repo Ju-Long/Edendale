@@ -72,8 +72,11 @@ struct MoviesShowsView: View {
 
     @Environment(PlayerSession.self) private var playerSession
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.interactionGate) private var interactionGate
 
     @State private var path = NavigationPath()
+    /// The hero pager's scrolling, as the interaction gate knows it.
+    @State private var heroScrollActivity = UUID()
 
     // MARK: Hero rotation state
 
@@ -204,6 +207,7 @@ struct MoviesShowsView: View {
             }
             .padding(.bottom, 64)
         }
+        .holdsBackgroundWorkWhileScrolling()
         #if !os(tvOS)
         .onReceive(heroTimer) { _ in tickHeroRotation() }
         #endif
@@ -305,6 +309,10 @@ struct MoviesShowsView: View {
                 }
                 .onScrollPhaseChange { _, phase in
                     heroScrollPhaseDidChange(phase)
+                    interactionGate?.set(.scrolling(heroScrollActivity), active: phase.isScrolling)
+                }
+                .onDisappear {
+                    interactionGate?.set(.scrolling(heroScrollActivity), active: false)
                 }
                 .contentShape(Rectangle())
                 .highPriorityGesture(heroMouseDragGesture, isEnabled: !showingTrailer)

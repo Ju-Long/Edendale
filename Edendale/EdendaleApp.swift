@@ -28,6 +28,9 @@ struct EdendaleApp: App {
     @State private var videoAdjustment = VideoAdjustmentController()
     @State private var playerSession: PlayerSession
     @State private var appRouter = AppRouter.shared
+    /// Holds background library work (metadata matching) while the viewer
+    /// scrolls or watches.
+    @State private var interactionGate: InteractionGate
 
     #if os(iOS)
     // Reports the player's rotation lock; see OrientationLock.
@@ -36,8 +39,11 @@ struct EdendaleApp: App {
 
     init() {
         FontRegistrar.registerAll()
+        let interactionGate = InteractionGate()
+        _interactionGate = State(initialValue: interactionGate)
         let library = LibraryController(
-            modelContext: Persistence.sharedModelContainer.mainContext
+            modelContext: Persistence.sharedModelContainer.mainContext,
+            interactionGate: interactionGate
         )
         let ws = WatchProgressStore()
         let watchlistStore = WatchlistStore(
@@ -94,7 +100,7 @@ struct EdendaleApp: App {
         let subtitleCache = SubtitleCacheStore(
             modelContext: Persistence.subtitleCacheModelContainer.mainContext
         )
-        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment, subtitleCache: subtitleCache))
+        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment, subtitleCache: subtitleCache, interactionGate: interactionGate))
         // Downloaded subtitles unused for more than a month go at launch,
         // on a later main-actor turn. The unit-test host keeps its files.
         if !Persistence.isRunningUnitTests {
@@ -218,6 +224,7 @@ struct EdendaleApp: App {
             .environment(playerSession)
             .environment(appRouter)
             .environment(\.ratingProviders, [TMDBRatingsProvider()])
+            .environment(\.interactionGate, interactionGate)
     }
 }
 

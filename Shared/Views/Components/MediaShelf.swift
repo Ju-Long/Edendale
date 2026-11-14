@@ -66,6 +66,7 @@ struct MediaShelf: View {
                 // The hover/spotlight glow may bleed past the shelf bounds
                 // instead of being clipped to a hard edge.
                 .scrollClipDisabled()
+                .holdsBackgroundWorkWhileScrolling()
                 .onScrollGeometryChange(for: ShelfScrollMetrics.self) { geometry in
                     ShelfScrollMetrics(geometry)
                 } action: { _, new in

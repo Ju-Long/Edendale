@@ -63,6 +63,11 @@ final class FakeMetadata {
 }
 
 @MainActor
+private final class SaveCounter {
+    var count = 0
+}
+
+@MainActor
 struct LibraryEnrichmentTests {
 
     private let container: ModelContainer
@@ -223,6 +228,65 @@ struct LibraryEnrichmentTests {
         #expect(ronin.tmdbId == 8195)
         // Each title was asked about once.
         #expect(fake.requests.sorted() == ["movie:Heat", "movie:Ronin"])
+    }
+
+    /// Each save refreshes every page showing the library, so a sweep
+    /// writes its matches in batches: here the movies and shows together,
+    /// then the episodes found under the shows' matches.
+    @Test func writesMatchesInBatchesWithOneSaveEach() async throws {
+        let films = folder()
+        for title in ["Heat", "Ronin", "Collateral"] {
+            addMovie(title, to: films)
+            fake.movies[title] = FakeMetadata.movie(title.count, title)
+        }
+        let show = TVShow(name: "Severance")
+        films.tvShows.append(show)
+        let pilot = addEpisode(1, 1, to: show)
+        let second = addEpisode(1, 2, to: show)
+        fake.shows["Severance"] = FakeMetadata.show(95396, "Severance")
+        fake.episodes["95396-1-1"] = FakeMetadata.episode(500, season: 1, number: 1)
+        fake.episodes["95396-1-2"] = FakeMetadata.episode(501, season: 1, number: 2)
+        try context.save()
+
+        let saves = SaveCounter()
+        let observer = NotificationCenter.default.addObserver(
+            forName: ModelContext.didSave, object: context, queue: nil
+        ) { _ in MainActor.assumeIsolated { saves.count += 1 } }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        await sweep()
+
+        #expect(pilot.tmdbId == 500 && second.tmdbId == 501)
+        #expect(library.pendingMetadataCount() == 0)
+        #expect(saves.count == 2)
+    }
+
+    /// While the viewer scrolls or watches, the lookups carry on and what
+    /// they find waits; it is written once things settle.
+    @Test func holdsMatchesWhileTheViewerIsBusy() async throws {
+        let gate = InteractionGate(settleDelay: .milliseconds(50))
+        let library = LibraryController(modelContext: context, metadata: fake.lookup, interactionGate: gate)
+        let films = folder()
+        let heat = addMovie("Heat", to: films)
+        let ronin = addMovie("Ronin", to: films)
+        fake.movies["Heat"] = FakeMetadata.movie(949, "Heat")
+        fake.movies["Ronin"] = FakeMetadata.movie(8195, "Ronin")
+        gate.set(.playback, active: true)
+
+        let task = library.enrichPendingMetadata()
+        for _ in 0..<200 where fake.requests.count < 2 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(fake.requests.count == 2)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(heat.tmdbId == nil && ronin.tmdbId == nil)
+        #expect(library.isEnriching)
+
+        gate.set(.playback, active: false)
+        await task?.value
+        #expect(heat.tmdbId == 949)
+        #expect(ronin.tmdbId == 8195)
+        #expect(!library.isEnriching)
     }
 
     @Test func playingACopyRemembersItsSource() async throws {

@@ -95,6 +95,7 @@ struct WatchlistView: View {
                 .padding(.vertical, 24)
                 .padding(.bottom, 40)
             }
+            .holdsBackgroundWorkWhileScrolling()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background)
             #if !os(tvOS)
