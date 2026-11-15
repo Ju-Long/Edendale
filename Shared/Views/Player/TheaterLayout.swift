@@ -97,10 +97,15 @@ nonisolated enum TheaterLayout {
     /// `head` is the headset's pose in the immersive space. A head tipped to
     /// one side doesn't tip the theater: its left and right stay level.
     ///
-    /// Within `Recenter.levelPitch` of level the theater only turns, and its
-    /// floor stays on the real floor, so a seated or standing viewer gets
-    /// the theater upright again in front of them. Tilted, the seat's eye
-    /// point (`Recenter.seatedEyeHeight` above its floor) lands on the eyes.
+    /// Only a gaze more than `Recenter.levelPitch` above level tilts the
+    /// theater. Any lower gaze, however far down, only turns it to the
+    /// gaze's heading, and its floor stays on the real floor, so a seated
+    /// or standing viewer gets the theater upright again in front of them.
+    /// Recenter is on the seat panel, 45° and more below the line of
+    /// sight, so a viewer sitting up presses it looking down; tilted to
+    /// that gaze, the theater would point its screen at the floor. Tilted,
+    /// the seat's eye point (`Recenter.seatedEyeHeight` above its floor)
+    /// lands on the eyes.
     static func recenterPose(head: simd_float4x4) -> RoomPose? {
         let eye = SIMD3(head.columns.3.x, head.columns.3.y, head.columns.3.z)
         let headRight = SIMD3(head.columns.0.x, head.columns.0.y, head.columns.0.z)
@@ -111,7 +116,7 @@ nonisolated enum TheaterLayout {
         // Level and square to the gaze, whichever way the head is tipped.
         // Looking almost straight up or down the gaze gives no left and
         // right, and the head's own right, made level, says which way the
-        // viewer lies.
+        // viewer lies or, looking down, which way they face.
         var right = simd_cross(forward, SIMD3(0, 1, 0))
         if simd_length(right) < Recenter.nearVertical {
             right = SIMD3(headRight.x, 0, headRight.z)
@@ -120,7 +125,7 @@ nonisolated enum TheaterLayout {
         right = simd_normalize(right)
         let ahead = simd_normalize(forward - simd_dot(forward, right) * right)
 
-        if abs(asin(min(max(ahead.y, -1), 1))) < Recenter.levelPitch {
+        if asin(min(max(ahead.y, -1), 1)) < Recenter.levelPitch {
             let level = simd_cross(SIMD3<Float>(0, 1, 0), right)
             let rotation = simd_quatf(angle: atan2(-level.x, -level.z), axis: SIMD3(0, 1, 0))
             return RoomPose(rotation: rotation, translation: SIMD3(eye.x, 0, eye.z))
@@ -133,7 +138,9 @@ nonisolated enum TheaterLayout {
     }
 
     enum Recenter {
-        /// Looking less than this far up or down counts as level.
+        /// Looking up by more than this counts as lying back or reclined.
+        /// Anything lower, looking down at the panels included, counts as
+        /// sitting up.
         static let levelPitch: Float = 20 * .pi / 180
 
         /// The eyes of someone sitting in a theater seat, above its floor.

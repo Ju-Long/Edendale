@@ -202,6 +202,55 @@ struct TheaterLayoutTests {
         #expect(abs(pose.rotation.act(SIMD3(0, 1, 0)).y - 1) < 0.0001)
     }
 
+    /// A head at `eye` facing `yaw` (the turn about +Y from -Z) and looking
+    /// `pitch` up, or down when negative, not tipped to either side.
+    private static func head(at eye: SIMD3<Float>, yaw: Float, pitch: Float) -> simd_float4x4 {
+        let facing = SIMD3<Float>(-sin(yaw), 0, -cos(yaw))
+        let right = SIMD3<Float>(cos(yaw), 0, -sin(yaw))
+        let up = cos(pitch) * SIMD3<Float>(0, 1, 0) - sin(pitch) * facing
+        return head(at: eye, right: right, up: up)
+    }
+
+    @Test(arguments: [25, 50, 65, 89] as [Float])
+    func recentringLookingDownAtThePanelsOnlyTurnsAndKeepsTheFloor(degreesDown: Float) throws {
+        // Seated 0.3 m to the right, looking down and to the left at
+        // Recenter on the seat panel, which sits 45° below the eyes.
+        let eye = SIMD3<Float>(0.3, 1.2, -0.2)
+        let heading = Dock.sideTurn
+        let head = Self.head(at: eye, yaw: heading, pitch: -degreesDown * Self.degree)
+        let pose = try #require(TheaterLayout.recenterPose(head: head))
+        // The seat's floor lands under the eyes, on the real floor, and the
+        // theater stays upright: a tilt to the gaze would point the screen
+        // at the floor.
+        #expect(length(pose.apply(.zero) - SIMD3(eye.x, 0, eye.z)) < 0.0001)
+        #expect(length(pose.rotation.act(SIMD3(0, 1, 0)) - SIMD3(0, 1, 0)) < 0.0001)
+        // Straight ahead from the seat is the gaze's heading.
+        let facing = SIMD3<Float>(-sin(heading), 0, -cos(heading))
+        #expect(length(pose.rotation.act(SIMD3(0, 0, -1)) - facing) < 0.0001)
+    }
+
+    @Test func recentringOnlyTiltsForAGazeAboveLevel() throws {
+        let eye = SIMD3<Float>(0, 0.9, 0)
+        // A little up, at a screen above a sofa: still level.
+        let slightly = try #require(
+            TheaterLayout.recenterPose(head: Self.head(at: eye, yaw: 0, pitch: 15 * Self.degree))
+        )
+        #expect(length(slightly.rotation.act(SIMD3(0, 1, 0)) - SIMD3(0, 1, 0)) < 0.0001)
+        #expect(length(slightly.rotation.act(SIMD3(0, 0, -1)) - SIMD3(0, 0, -1)) < 0.0001)
+        #expect(length(slightly.apply(.zero) - SIMD3(eye.x, 0, eye.z)) < 0.0001)
+        // Further up, reclined or lying back: tilted to the gaze, with the
+        // seat's eyes on the viewer's.
+        let seatedEye = SIMD3<Float>(0, TheaterLayout.Recenter.seatedEyeHeight, 0)
+        for degreesUp: Float in [25, 50] {
+            let pose = try #require(
+                TheaterLayout.recenterPose(head: Self.head(at: eye, yaw: 0, pitch: degreesUp * Self.degree))
+            )
+            let ahead = pose.rotation.act(SIMD3(0, 0, -1))
+            #expect(abs(asin(ahead.y) - degreesUp * Self.degree) < 0.0001, "\(degreesUp)° up")
+            #expect(length(pose.apply(seatedEye) - eye) < 0.0001, "\(degreesUp)° up")
+        }
+    }
+
     @Test func recentringLyingBackTiltsTheTheaterOverhead() throws {
         // On the back, 0.5 m up, looking at the ceiling, the top of the
         // head towards +Z.

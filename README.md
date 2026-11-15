@@ -821,8 +821,12 @@ going to the system player (spatial and multiview video) closes it.
     screen's baked glow on the room dims with the house lights, and the
     picture and the Projector Room's beam stay as they are.
   - **Recentre** turns the theater to where the viewer looks, behind the
-    same fade. Within 20° of level it only turns, and its floor stays on the
-    real floor. Lying back or reclined, it tilts back with the viewer, so
+    same fade. Unless they look more than 20° up, it only turns, to the
+    heading of their gaze, and its floor stays on the real floor, however
+    far down they look: Recentre is on the seat panel, 45° and more below
+    the eyes, so a viewer sitting up presses it looking down, and tilting
+    to that gaze would point the screen at the floor. Lying back or
+    reclined, looking more than 20° up, it tilts back with the viewer, so
     the screen is in front of their eyes as it is from the seat, with the
     seat's eyes 1.2 m above its floor placed on theirs; the panels then sit
     below their line of sight as they lie, towards the chest. A head tipped
@@ -853,10 +857,11 @@ done
 The menu and window strings are in `Shared/Theater.xcstrings`, in every app
 locale. Frame rate, heat, and comfort haven't been measured on a headset yet;
 everything above was checked in the visionOS 27.2 simulator, except the
-panels following a turn of the head and recentring while lying back, which
-the simulator can't script and the unit tests cover. In RealityKit the
-Projector Room's haze beam draws as a flat grey wedge, unlike Blender's
-preview; that needs a change to the scene on `scenes`.
+panels following a turn of the head and recentring while lying back or
+looking down at the panels, which the simulator can't script and the unit
+tests cover. In RealityKit the Projector Room's haze beam draws as a flat
+grey wedge, unlike Blender's preview; that needs a change to the scene on
+`scenes`.
 
 Run the theater tests on macOS (geometry and bundled exports) and on a visionOS
 simulator (which also loads every room, finds its `Screen`, `Seat`, and every
