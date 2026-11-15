@@ -5,6 +5,7 @@ import com.babasama.edendale.android.xr.Quat
 import com.babasama.edendale.android.xr.RoomPose
 import com.babasama.edendale.android.xr.Vec3
 import com.babasama.edendale.android.xr.angleGap
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.hypot
 
@@ -42,6 +43,15 @@ object TheaterFrames {
 
     /** A seat-to-screen line shorter than this, ignoring height, says nothing about which way a room faces. */
     const val MIN_SCREEN_DISTANCE_METRES = 0.5f
+
+    /**
+     * The [importTurn] a room is shown with while its nodes don't say: π, the
+     * SDK flipping x. Seen on the Quest 3 on 2026-11-15 (Spatial SDK 0.14.0,
+     * Horizon OS v209), where no room reported `Seat` and `Screen` and the
+     * old fallback, 0, showed every room turned round: the picture hung over
+     * the projector behind the seats.
+     */
+    const val FALLBACK_IMPORT_TURN = PI.toFloat()
 
     /**
      * How the SDK turned the room when it loaded the GLB. Meta documents a

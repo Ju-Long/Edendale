@@ -368,7 +368,7 @@ Menu shortcut).
   section.
 
   *Since 2026-10-26 the `horizon` flavor sets both itself (Deviations): `27.1`,
-  versionCode 5, since B.14.*
+  versionCode 5 since B.14, 6 since G.16 (2026-11-15).*
 - [x] **A.5** Rename the tasks everywhere: `ci.yml` and `instrumented.yml`
   (`testPlayDebugUnitTest`, `connectedPlayDebugAndroidTest`, …), the README's
   commands, and the APK paths (`build/outputs/apk/<flavor>/<type>/Edendale-<flavor>-<type>.apk`).
@@ -839,6 +839,10 @@ and record the result in Findings either way.
     back: the theater declares `uses-horizonos-sdk` 69, while the
     Passthrough Camera API needs Horizon OS v74 and Meta's scanner
     showcase declares 74.
+    *2026-11-15, on the Quest 3 (Findings): it does. The prompt grants
+    `HEADSET_CAMERA` (Horizon OS splits `CAMERA` into it and
+    `AVATAR_CAMERA`), and CameraX opens camera 50, the left passthrough
+    camera, at 1280×960. Whether a code was read wasn't logged.*
   - **The pairing link.** android's dialog no longer composes the scanner
     while a link connects, so a link opened on the headset asks for no
     camera (B.14's check).
@@ -1398,7 +1402,9 @@ doesn't need any of G (D15).
   - Exit returns to Home with the panel focused, through Meta's hybrid-sample
     pattern: a `HOME` intent carrying `extra_launch_in_home_pending_intent`
     for `MainActivity`. A plain `finish()` also returns to Home, but leaves the
-    panel unfocused.
+    panel unfocused. *2026-11-15 (owner, G.16): Exit and Back open the 2D
+    player at the theater's position over the library; the end of the title
+    and a refusal open the library.*
   - Save progress on exit and on stop, as `PlayerActivity` does
     (Functional.4), so Continue Watching picks up where the theater left off.
   - Taking the headset off pauses, and putting it on resumes (B.4's choice).
@@ -1747,6 +1753,56 @@ doesn't need any of G (D15).
   - Not done: android's room fade (the Quest blinks); a separate prompt near
     the screen for Skip and Up Next (both sit in the dock, below the line of
     sight, as on android).
+- [x] **G.16** The theater's first headset run *(2026-11-15, the owner in the
+  Quest 3, Horizon OS v209; the signed theater release `27.1`, versionCode 5,
+  installed over the Store's `27.0` with the same certificate, so the library
+  stayed)*. Three faults the owner found, fixed, and checked on the headset:
+  1. **Every room was turned round.** The picture hung over the projector
+     behind the seats. No room reported its `Seat` and `Screen`, so the
+     placement fell back to import turn 0. The nodes are there (214, 390,
+     and so on, `Seat` and `Screen` among them), but
+     `SceneMesh.calculateNodeGlobalMatrix` hands over the native matrix as
+     it is: column-major, so `Matrix44.decompose()`, which reads the last
+     column, found every translation zero; and right-handed, so read from
+     the last row the Screen sat at z = +10.55 (Findings).
+     `TheaterActivity.nodePosition` now reads the row or the column,
+     whichever holds the translation, and mirrors it into the SDK's frame;
+     all three rooms then read "import turn 180°" with the seat-marker check
+     at 0.000 m, and the owner saw the picture on every room's screen. If a
+     room never reports its nodes, it shows at
+     `TheaterFrames.FALLBACK_IMPORT_TURN`, now π. The give-up line names
+     what the mesh held.
+  2. **Recentre tipped the room at the floor.** The dock's Recentre is
+     pressed looking down at the dock, 45° below the eyes, and android's
+     rule tilts the whole room for any gaze more than 20° off level; the
+     presses logged gazes 32° to 65° down. `TheaterStaging.stage` now levels
+     a gaze below level first (`levelledBelowLevel`: the gaze's heading, or
+     the top of the head's when looking nearly straight down), so only lying
+     back tilts the room (Deviations). Holding the Meta button already
+     recentred: Horizon OS's `RecenterLocalSpace` reaches `onRecenter`, and
+     the theater re-seats within 40 ms (a long hold fires it twice, which is
+     harmless).
+  3. **Exit went to the library, as if the app had started again.** Exit and
+     Back now open the 2D player at the theater's position, over the
+     library, as android's Android XR theater does (N-D7); the end of the
+     title and a refusal still open the library, and an open library is
+     brought back rather than a second one started (Deviations). On the
+     headset: "leaving for the player at 720469 ms", the library's task
+     brought to the front, the player on top, and the decoder running 3 s
+     after Exit.
+  - Seen and fine: the theater opens in about 0.5 s and seats the viewer
+    level; every lights level writes all of a room's dimmable materials
+    ("2 of 2", "3 of 3"); the Room list switches while the video plays.
+  - Tests: `TheaterStagingTest` gains a dock-gaze case (25° to 89° down
+    seats level, facing the heading) and a case that leaves a gaze above
+    level to android's rule.
+  - The owner judged the run good enough to ship (2026-11-15): versionCode
+    6 (5 may already have reached ALPHA on 2026-11-13), and later faults are
+    fixed as they come.
+  - Still open from G.10 and G.15: the lights' look, the seat map with a
+    controller and a pinch, Best Seat, a remembered seat per room, Recentre
+    lying back, Skip, Up Next, subtitles, the ticketless start, 30 minutes
+    of playback, and the rest of G.10's media and network checks.
 
 ---
 
@@ -1842,6 +1898,10 @@ For whoever reviews the implementation:
 | 2026-11-13 | Meta Horizon Store upload (Developer Dashboard, ALPHA); signed theater release `27.1` (versionCode 5) from `11c2ba3`, 145.1 MB | Refused before upload with four errors: "The app manifest specifies neither a Vulkan version nor a GLES version. At least one should be used."; "Android Target SDK version is 36, but should be 34 or lower (targetSdkVersion in AndroidManifest.xml)."; "The focus aware manifest meta-data tag must be set with required="true"" (VRC Quest.Input.4); and "This app as requested incompatible permissions with horizonos.permission.HEADSET_CAMERA" (pointing at the Passthrough Camera API overview, which names the Quest 3 and 3S only). The first three come from the theater's immersive activity (the 2D 27.0 was accepted at targetSdk 36 with neither declaration); Meta's hybrid sample declares `glEsVersion 0x00030001`, `com.oculus.vr.focusaware=true` at the application, and targetSdk 34, and Meta's manifest page allows 32–34 for immersive apps and 32–37 for 2D ones. No Meta page explains the fourth; the device list was the first suspect, and the next row rules it out. | D2 and D4 decided; the theater overlay declares GLES 3.1 and focus awareness; `verifyHorizonRelease` checks the first three (Handoff). |
 | 2026-11-13 | The same upload; signed theater release from `cac915d` (targetSdk 34, `quest3\|quest3s`, GLES 3.1, focus awareness) | The first three errors are gone. Two remain: "This app as requested incompatible permissions with horizonos.permission.HEADSET_CAMERA" again, and a new one, "APK screen orientation is not landscape (android:screenOrientation in AndroidManifest.xml)": the player declares android's `sensorLandscape` and the theater declares none. Meta's Spatial SDK scanner showcase (`Meta-Spatial-SDK-Samples`, `Showcases/meta_spatial_scanner`) declares `horizonos.permission.HEADSET_CAMERA` alone, never `android.permission.CAMERA`, with `horizonos.feature.HEADSET_CAMERA` (`required="false"`), `uses-horizonos-sdk` 74, and `quest2\|questpro\|quest3`: the device list wasn't the cause. Meta's Passthrough Camera API overview says "Either permission `android.permission.CAMERA` or `horizonos.permission.HEADSET_CAMERA` is required" and that the API covers "Camera1, Camera2 and CameraX"; its Spatial SDK Camera2 page and its native camera page (`pca-native-documentation`) say both are needed, though their manifest snippets declare `HEADSET_CAMERA` alone (with `android.hardware.camera2.any`, which the Quest 3 doesn't report: `pm list features` gives `android.hardware.camera`, `.camera.any`, `.camera.concurrent`, `.camera.external`, and `.camera.front`). The scanner already reads the camera through Camera2 (Meta's tags through `Camera2CameraInfo`, opened by CameraX's `camera-camera2`), and the upload reads the manifest, not the API. | The player and the theater are landscape, and `verifyHorizonRelease` checks it. The owner chose `HEADSET_CAMERA` alone (B.15's 2026-11-13 note); the next upload settles whether `CAMERA` was the cause. If not, the showcase's `uses-horizonos-sdk` 74 (the theater declares 69) is the next difference. |
 | 2026-11-13 | The same upload, as the owner reported it; signed theater release from `eb576f4` (`HORIZON.md` B.15's `HEADSET_CAMERA` alone, landscape) | Refused again for requesting incompatible permissions with `horizonos.permission.HEADSET_CAMERA`; none of the three refusals named `android.permission.CAMERA`, though the first two builds declared it. So neither `CAMERA` beside it nor the device list was the cause. | The owner chose `CAMERA` alone for the next ALPHA upload (B.15's later note). Still untried: the theater's `uses-horizonos-sdk` 69 against the API's Horizon OS v74. |
+| 2026-11-15 | Quest 3 (Horizon OS v209, build `UP1A.231005.007.A1`); signed theater release `27.1` (versionCode 5) from `2bc646e` plus G.16 | `SceneMesh.calculateNodeGlobalMatrix` (Spatial SDK 0.14.0) returns the native node matrix untranslated: column-major, so its translation is in `m30`–`m32` and `Matrix44.decompose()` (which multiplies by (0, 0, 0, 1) and reads `m03`–`m23`) gives (0, 0, 0) for every node; and in the native right-handed frame, so the movie theatre's Screen read (0, 3.6, +10.55) and `Seat_01_01` (5.4, −0.8, 2.3) against the file's (0, 3.6, −10.55) and (−5.4, −0.8, −2.3). Mirrored into the SDK's frame, all three rooms read import turn 180° (the SDK flips x) with the seat-marker check at 0.000 m; shown at turn 0, every room was turned round. `SceneMesh.nodeNameToId` and `computeCombinedBounds()` exist too; the rooms reach almost as far behind the seat as in front, so the bounds can't tell the two turns apart. | Fixed in G.16. If a later SDK converts the matrix itself, the mirrored reading turns the rooms round again: the seat-marker line would then warn by metres. |
+| 2026-11-15 | The same | The dock's Recentre is pressed looking 32° to 65° down (the dock sits 45° below the eyes), past android's 20° level band, so android's rule tilted the room at the floor. Holding the Meta button logs `RecenterLocalSpace` and reaches `onRecenter`; the theater re-seats within 40 ms, and a hold past about a second fires it twice. | G.16: a gaze below level is levelled first. android's Android XR theater uses the same rule with the same dock (ENHANCEMENT.md N), so it likely tilts the same way. |
+| 2026-11-15 | The same | Horizon OS treats `android.permission.CAMERA` as split into `horizonos.permission.HEADSET_CAMERA` and `horizonos.permission.AVATAR_CAMERA` (both `REVOKE_WHEN_REQUESTED`, listed by `dumpsys package` though the APK declares only `CAMERA`). Allowing the scanner's prompt granted `HEADSET_CAMERA` and left `CAMERA` itself `granted=false`; CameraX then listed cameras 1, 50, and 51, opened 50 (Meta's left passthrough camera, picked by its tags) with a 1280×960 preview, and closed it cleanly 36 s later. | B.15's first check: `CAMERA` alone opens the passthrough camera through CameraX; no Camera2 path is needed. |
+| 2026-11-15 | The same; Meta Quest Developer Hub's casting (`com.meta.magicisland`) | Casting showed Home and the panels but stayed on one frame while the theater ran, so the theater was judged from the owner's words and the logs. | Use the logs, or ask the owner. |
 
 ## Deviations log
 
@@ -1902,6 +1962,9 @@ For whoever reviews the implementation:
 | 2026-11-13 | G.4, B.3 | The player declares `landscape` instead of android's `sensorLandscape`, and the theater declares `landscape`, in every Quest build. | Meta's upload refused the theater build's orientation (Findings); a panel and an immersive activity never turn, so `landscape` and `sensorLandscape` behave alike on a headset. |
 | 2026-11-13 | B.15 | The Quest's scanner reads the passthrough camera through `horizonos.permission.HEADSET_CAMERA` alone: android's `PairingFlow.cameraPermissions` asks a Meta headset for it only, and the overlay removes `CAMERA` and declares the optional `horizonos.feature.HEADSET_CAMERA`. `android.hardware.camera2.any`, which Meta's camera pages list as required, isn't declared. | The owner's decision after Meta's upload refused the two together (Findings); Meta's scanner sample declares `HEADSET_CAMERA` alone. The Quest 3 doesn't report `android.hardware.camera2.any`, so requiring it could hide the app from the headsets it's for. |
 | 2026-11-13 | B.15 | Superseding the row above: the Quest's scanner reads the passthrough camera through android's `CAMERA` alone, with android's three optional camera features; nothing of Meta's (`HEADSET_CAMERA`, `horizonos.feature.HEADSET_CAMERA`) is declared, and `PairingFlow.cameraPermissions` asks a headset for `HEADSET_CAMERA` only where the app declares it. | The owner's decision after the upload refused `HEADSET_CAMERA` alone as well (Findings); the upload never flagged `CAMERA`, and Meta's overview accepts either permission. |
+| 2026-11-15 | G.15 (3), G.7 | Recentre levels a gaze below level before android's rule (`TheaterStaging.levelledBelowLevel`): looking down only turns the heading, and only a gaze more than 20° above level tilts the room. android tilts for a gaze more than 20° off level either way. | The dock is 45° below the eyes, so Recentre was always pressed looking down and tipped the room at the floor (Findings); nobody watches lying face down. |
+| 2026-11-15 | G.6, G.15 (6) | Exit and Back open the 2D player at the theater's position over the library, as android's N-D7 does; G.6 opened the library. The end of the title and a refusal still open the library. Up Next still plays in the theater (row of 2026-11-13). | The owner's request (2026-11-15): Exit landing in the library felt like the app starting again. |
+| 2026-11-15 | G.14, G.16 | A room whose nodes never report shows at import turn π (`TheaterFrames.FALLBACK_IMPORT_TURN`) instead of 0. | The turn the Quest 3 measured for every room (Findings). |
 
 ## Handoff log
 
@@ -1937,6 +2000,7 @@ For whoever reviews the implementation:
 | 2026-11-13 | B.17 (`android-27.1` `76d1d8f` merged) | Owner, Claude | The owner asked for android's latest 27.1 work on this branch, in its own worktree (`claude/horizon-android-import-3d2f4e`, cut from `meta-horizon-27.1` at `11c2ba3`), while the ALPHA theater build was made from `meta-horizon-27.1` without it. Waited for `76d1d8f` (the Movies & Shows hero resumes the episode watched last and follows the watch rows; launch and every return to the foreground sync at once, past the backoff, through `SyncForegroundTracker`) to land on `android-27.1`. `git merge android-27.1` onto `11c2ba3`: no conflict, `68a5c65`; `README.md` and `SyncCoordinator.kt` (beside B.13's `platform` hook) merged on their own. `git diff android-27.1` with `-- src/main/AndroidManifest.xml`, `-- src/main/res`, `-- src/main/assets`, `-- src/test`, or `-- ENHANCEMENT.md` is empty, `git diff android-27.1 --stat -- src/main` lists the same eight files, and `src/androidTest` differs only by B.16's D6 argument. No new hook: `TheaterActivity` is in the app's process and declares its configuration changes, so the tracker counts it like the panel's activities; entering the theater never reaches zero started activities, and leaving by Exit either does nothing more or, if Horizon OS stopped the panel, is a trip to the background and a return that now syncs at once (B.17). A panel resize, which recreates `MainActivity`, no longer syncs on the way out and back. Ran (JDK 17, `local.properties` and the built `src/horizon/jniLibs/` copied in, no `.secret/`, so both releases are unsigned and the signature checks were skipped): `./gradlew testHorizonDebugUnitTest assembleHorizonDebug assembleHorizonRelease verifyHorizonRelease`: 972 tests pass (965 before the merge), the store check passes with the same permissions as B.15, release 74.5 MB; and the same with `-Phorizon.theater=true`: 972 tests pass, the store check passes with `HAND_TRACKING` as well, 145.1 MB with the three rooms. **Not run:** anything on a headset (B.17's checks, including whether the panel stays started while the theater runs), the simulator, the instrumented tests, and a signed build. |
 | 2026-11-13 | B.17 merged here; G.4, B.3, B.15 (the theater's second ALPHA upload refused) | Owner, Claude | The owner asked to merge B.17's branch (`a40fa11`) into `meta-horizon-27.1` after `cac915d`: `c388bc6`, one conflict (this log, both rows kept); both builds 972 tests and the store check, signed. android's `PairingFlowTest` "reads a real handoff code from a padded camera plane" failed once and passed in the next seven runs: its code has a random key and secret. The second upload, from `cac915d`, was refused for the camera and the orientation (Findings). Orientation: the player and the theater declare `landscape`, and `verifyHorizonRelease` fails a theater build otherwise. The device check from `cac915d` (`HEADSET_CAMERA` beside a device without the passthrough camera) is removed: Meta's scanner sample shows the list wasn't the cause; D4 stays the owner's choice. Camera, the owner's decision: `android-27.1` `b683446` (T.4: `PairingFlow.cameraPermissions` asks a Meta headset for `HEADSET_CAMERA` alone; 903 android JVM tests pass), merged as `bc37b05` with no conflict and the usual `git diff android-27.1` checks; the overlay removes `CAMERA` and declares `horizonos.feature.HEADSET_CAMERA` (optional), and `verifyHorizonRelease` fails if `CAMERA` is declared. Ran (JDK 17, signed): `./gradlew -Phorizon.theater=false testHorizonDebugUnitTest assembleHorizonRelease verifyHorizonRelease`: 972 tests pass, the store check passes (permissions `HEADSET_CAMERA`, `INTERNET`, `ACCESS_NETWORK_STATE`, `FOREGROUND_SERVICE`), 74.5 MB; the same with `-Phorizon.theater=true`: 972 tests pass, the store check passes with `HAND_TRACKING` as well, 145.1 MB; `aapt2` reads both activities' orientation as landscape, no `CAMERA`, the optional headset-camera feature, GLES 3.1, focus awareness, and `quest3\|quest3s`. **Not run:** the third upload, a Quest 3 scanning with `HEADSET_CAMERA` alone (B.15), anything else on a headset. |
 | 2026-11-13 | B.15 (`CAMERA` alone, for the next ALPHA upload) | Owner, Claude | The owner reported the upload still refusing `horizonos.permission.HEADSET_CAMERA` (Findings) and never `CAMERA`, and asked for a build with the normal camera to upload. The overlay keeps android's `CAMERA` and its three optional camera features and declares nothing of Meta's; `PairingFlow.cameraPermissions(metaHeadset, declared)` asks a headset for `HEADSET_CAMERA` only where the app declares it (`QrCodeScanner` reads the package's requested permissions), so this build asks the Quest for `CAMERA`; `verifyHorizonRelease` fails on `HEADSET_CAMERA` or a missing `CAMERA`; README's Quest section, store-check row, and headset checks follow. **`src/main` and `src/test` now differ from android's** (`PairingFlow.kt`, `QrCodeScanner.kt`, `PairingFlowTest.kt`): the change is right on `android` too (android's build declares only `CAMERA`, so a Quest running it asked for a permission it can't get) and belongs there as its own commit (Hard rule: nothing merges back). Ran (JDK 17): `./gradlew -Phorizon.theater=true testHorizonDebugUnitTest assembleHorizonRelease verifyHorizonRelease`: 972 tests pass, the store check passes, signed 145.1 MB (versionCode 5, `27.1`, the Store 27.0's certificate `f2ce0d…`), staged at `release/horizon/27.1-alpha-camera/` (gitignored); `aapt2` reads `CAMERA` and no `horizonos` permission or feature, the three camera features not required, no implied camera feature, targetSdk 34, both orientations landscape; `-Phorizon.theater=false assembleHorizonRelease verifyHorizonRelease`: passes, 74.5 MB. **Not run:** the upload (the owner's), anything on a headset: whether `CAMERA` alone lists the passthrough cameras with Meta's tag is B.15's first check (`adb logcat -s PairingScanner`). |
+| 2026-11-15 | G.10, G.15, G.16, B.15 (first theater run on the Quest 3) | Owner, Claude | The owner asked to test on the Quest. The headset had the Store's `27.0` (versionCode 4, same certificate `f2ce0d…`); `-Phorizon.theater=true assembleHorizonRelease verifyHorizonRelease` from `2bc646e` installed over it with `adb install -r` (library kept). The owner tested in the headset while `adb logcat` was recorded; four more builds followed the faults: the node read's diagnostic, the π fallback and Recentre's levelling, the row-or-column read, its mirror (the owner confirmed every room), and Exit to the player. `./gradlew -Phorizon.theater=true testHorizonDebugUnitTest --tests '*Theater*' assembleHorizonRelease verifyHorizonRelease` passed for each (12 `TheaterStagingTest` cases). The owner then judged it ready to ship ("fix it when the problems arise"): versionCode 6, and `./gradlew -Phorizon.theater=true testHorizonDebugUnitTest assembleHorizonRelease verifyHorizonRelease` and the same with `-Phorizon.theater=false`: 974 tests pass in each (972 before, and G.16's two), the store check passes, signed 145.1 MB and 74.5 MB; `aapt2` reads versionCode 6, `27.1`, targetSdk 34, `CAMERA` alone, and the Store 27.0's certificate `f2ce0d…`; the theater APK (sha256 `234323b6…`) staged at `release/horizon/27.1-alpha-g16/` (gitignored) for the owner's ALPHA upload. **Not run:** the instrumented tests, whether a scanned code pairs (B.15), and the rest of G.10/G.15's list (G.16). |
 
 ## Sources
 

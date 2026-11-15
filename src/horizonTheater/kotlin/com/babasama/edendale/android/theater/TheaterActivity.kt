@@ -81,6 +81,7 @@ import com.meta.spatial.vr.VRFeature
 import java.io.FileNotFoundException
 import java.util.concurrent.CompletableFuture
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -440,11 +441,12 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
 
     /**
      * Until the SDK has loaded the room's mesh: reads where it put `Seat` and
-     * `Screen`, which says how it turned the room ([TheaterFrames.importTurn]),
-     * and places the room by that. If the mesh hasn't reported them after
-     * [ROOM_FRAME_TIMEOUT_FRAMES], the room shows as if the SDK mirrored z
-     * (turn 0), and keeps looking until [ROOM_FRAME_GIVE_UP_FRAMES] in case
-     * the SDK only loads a mesh it draws.
+     * `Screen` (or `Screen` alone), which says how it turned the room
+     * ([TheaterFrames.importTurn]), and places the room by that. If the mesh
+     * hasn't reported them after [ROOM_FRAME_TIMEOUT_FRAMES], the room shows
+     * at [TheaterFrames.FALLBACK_IMPORT_TURN], the turn seen on the Quest 3,
+     * and keeps looking until [ROOM_FRAME_GIVE_UP_FRAMES] in case the SDK only
+     * loads a mesh it draws.
      */
     private fun pollRoom() {
         val entity = roomEntity ?: return
@@ -473,13 +475,13 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
         }
         when {
             !roomShown && roomWaitFrames > ROOM_FRAME_TIMEOUT_FRAMES -> {
-                Log.w(TAG, "${room.id} reported no Seat and Screen yet; showing it as if the SDK mirrored z")
+                Log.w(TAG, "${room.id} reported no Seat and Screen yet; showing it with the fallback import turn (${describeNodes(mesh)})")
                 roomShown = true
                 placeScene()
             }
             roomWaitFrames >= ROOM_FRAME_GIVE_UP_FRAMES -> {
                 roomGaveUp = true
-                Log.w(TAG, "${room.id} never reported Seat and Screen; it stays as if the SDK mirrored z")
+                Log.w(TAG, "${room.id} never reported Seat and Screen; it stays at the fallback import turn (${describeNodes(mesh)})")
             }
         }
     }
@@ -492,13 +494,22 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
      */
     private fun readImportTurn(mesh: SceneMesh, glb: TheaterGlb): Float? {
         if (mesh.getNodeCount() == 0) return null
-        val seatNode = mesh.getNodeIndex(TheaterGlb.SEAT).takeIf { it >= 0 } ?: return null
         val screenNode = mesh.getNodeIndex(TheaterGlb.SCREEN).takeIf { it >= 0 } ?: return null
-        val loadedSeat = nodePosition(mesh, seatNode)
         val loadedScreen = nodePosition(mesh, screenNode)
         val fileScreen = (glb.screenBoundsMin + glb.screenBoundsMax) * 0.5f
-        val turn = TheaterFrames.importTurn(glb.seat, fileScreen, loadedSeat, loadedScreen) ?: return null
-        Log.i(TAG, "${room.id} loaded with Seat at $loadedSeat and Screen at $loadedScreen; import turn ${Math.toDegrees(turn.toDouble()).toInt()}°")
+        val seatNode = mesh.getNodeIndex(TheaterGlb.SEAT)
+        val turn = if (seatNode >= 0) {
+            val loadedSeat = nodePosition(mesh, seatNode)
+            val turn = TheaterFrames.importTurn(glb.seat, fileScreen, loadedSeat, loadedScreen) ?: return null
+            Log.i(TAG, "${room.id} loaded with Seat at $loadedSeat and Screen at $loadedScreen; import turn ${Math.toDegrees(turn.toDouble()).roundToInt()}°")
+            turn
+        } else {
+            // The SDK may drop an empty node such as Seat. An axis flip and a turn about +Y keep the file's origin
+            // where it was, so the origin-to-Screen line says the same as the Seat-to-Screen line.
+            val turn = TheaterFrames.importTurn(Vec3.ZERO, fileScreen, Vec3.ZERO, loadedScreen) ?: return null
+            Log.i(TAG, "${room.id} loaded without a Seat node, Screen at $loadedScreen; import turn ${Math.toDegrees(turn.toDouble()).roundToInt()}°")
+            turn
+        }
         glb.seatMarkers.maxByOrNull { (_, position) -> abs(position.x) }?.let { (name, position) ->
             val node = mesh.getNodeIndex(name)
             if (node >= 0) {
@@ -514,9 +525,44 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
         return turn
     }
 
+    /** What the loaded mesh holds, for the give-up line G.10 reads when `Seat` and `Screen` never turn up. */
+    private fun describeNodes(mesh: SceneMesh?): String = if (mesh == null) {
+        "the SDK never handed over the mesh"
+    } else {
+        runCatching {
+            val count = mesh.getNodeCount()
+            val seat = mesh.getNodeIndex(TheaterGlb.SEAT)
+            val screen = mesh.getNodeIndex(TheaterGlb.SCREEN)
+            val names = mesh.nodeNameToId.keys.filterNot { it.startsWith(TheaterGlb.SEAT_MAP) || it.startsWith("Seat_") }
+            val where = if (seat >= 0 && screen >= 0) {
+                "; Seat at ${nodePosition(mesh, seat)}, Screen at ${nodePosition(mesh, screen)}, Screen's matrix ${mesh.calculateNodeGlobalMatrix(screen)}"
+            } else {
+                ""
+            }
+            "$count nodes, Seat $seat, Screen $screen$where; names ${names.take(16)}"
+        }.getOrElse { "the mesh's nodes are unreadable: $it" }
+    }
+
+    /**
+     * A node's position in the loaded mesh, in the SDK's numbers.
+     * `calculateNodeGlobalMatrix` hands over the native matrix as it is (seen
+     * on the Quest 3 with SDK 0.14.0, 2026-11-15):
+     * - column-major, so the translation is in the last row (`m30`, `m31`,
+     *   `m32`), and `Matrix44.decompose()`, which reads the last column, found
+     *   zero for every node, the Screen's included;
+     * - in the native right-handed frame, z the opposite of the SDK's: the
+     *   movie theatre's Screen came back at z = +10.55 and its outermost seat
+     *   marker with x and z both negated, while the room drew turned round
+     *   (the picture over the projector behind the seats). Mirrored, both say
+     *   the SDK flipped x ([TheaterFrames.FALLBACK_IMPORT_TURN]).
+     * Whichever of the row and the column holds a translation is read, then
+     * mirrored into the SDK's frame.
+     */
     private fun nodePosition(mesh: SceneMesh, node: Int): Vec3 {
-        val t = mesh.calculateNodeGlobalMatrix(node).decompose().first.t
-        return Vec3(t.x, t.y, t.z)
+        val m = mesh.calculateNodeGlobalMatrix(node)
+        val column = Vec3(m.m03, m.m13, m.m23)
+        val row = Vec3(m.m30, m.m31, m.m32)
+        return TheaterFrames.mirror(if (row.length > column.length) row else column)
     }
 
     /**
@@ -725,7 +771,7 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
             seat = TheaterStaging.seatPosition(file?.glb, ui.seatMap, settings.seat(room)),
             screen = TheaterStaging.screen(file?.glb),
             aspect = aspect,
-            importTurn = importTurn ?: 0f,
+            importTurn = importTurn ?: TheaterFrames.FALLBACK_IMPORT_TURN,
         )
         if (file != null) {
             roomEntity?.setComponents(listOf(Transform(placement.sdkRoom.toPose()), Visible(roomShown && !blinking)))
@@ -882,7 +928,7 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
         placeScene()
     }
 
-    override fun exit() = exitTheater()
+    override fun exit() = exitTheater(toPlayer = true)
 
     // ------------------------------------------------------------------
     // Lifecycle and exit (G.6)
@@ -949,10 +995,17 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
 
     /**
      * Leaves for Home with the panel focused: Home starts with a pending
-     * intent for the library, Meta's hybrid pattern. A plain finish() also
+     * intent for the panel, Meta's hybrid pattern. A plain finish() also
      * returns to Home but leaves the panel unfocused (Findings, 2026-10-25).
+     *
+     * [toPlayer] (Exit and Back): the 2D player at this position, as
+     * android's Android XR theater returns (N-D7), over the library so that
+     * leaving the player goes back to it (owner, 2026-11-15: Exit had gone to
+     * the library, as if the app had started again). Otherwise (the end of
+     * the title, a refusal): the library, where Continue Watching has it.
+     * An open library is brought back rather than a second one started.
      */
-    private fun exitTheater() {
+    private fun exitTheater(toPlayer: Boolean = false) {
         if (exiting) return
         exiting = true
         mainHandler.removeCallbacks(endBlink)
@@ -962,16 +1015,20 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
             // The SDK releases the player before onStop on a finish, so 27.1 sync's flush (SYNC-PROTOCOL.md §8.1) happens here.
             (application as? EdendaleApplication)?.sync?.flushSoon()
         }
-        val panel = Intent(applicationContext, MainActivity::class.java).apply {
+        val library = Intent(applicationContext, MainActivity::class.java).apply {
             action = Intent.ACTION_MAIN
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        val pendingPanel = PendingIntent.getActivity(
-            applicationContext,
-            0,
-            panel,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val returning = playback?.takeIf { toPlayer && ui.admitted && !it.ended }
+        val player = returning?.returnToPlayerIntent()
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingPanel = if (player != null) {
+            Log.i(TAG, "leaving for the player at ${returning.player.currentPosition} ms")
+            PendingIntent.getActivities(applicationContext, REQUEST_RETURN_TO_PLAYER, arrayOf(library, player), flags)
+        } else {
+            Log.i(TAG, "leaving for the library")
+            PendingIntent.getActivity(applicationContext, REQUEST_RETURN_TO_LIBRARY, library, flags)
+        }
         val home = Intent(Intent.ACTION_MAIN)
             .addCategory(Intent.CATEGORY_HOME)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -1039,5 +1096,7 @@ class TheaterActivity : AppSystemActivity(), TheaterActions {
 
         /** Meta's hybrid-sample extra: Home starts this pending intent after it opens. */
         private const val EXTRA_LAUNCH_IN_HOME = "extra_launch_in_home_pending_intent"
+        private const val REQUEST_RETURN_TO_LIBRARY = 0
+        private const val REQUEST_RETURN_TO_PLAYER = 1
     }
 }

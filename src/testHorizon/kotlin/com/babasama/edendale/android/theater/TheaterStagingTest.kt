@@ -133,6 +133,35 @@ class TheaterStagingTest {
         assertTrue(placement.sdkPicture.translation.y > sdkEye.y + 5f, "and above the viewer")
     }
 
+    /**
+     * Recentre pressed on the dock, 45° below the eyes (2026-11-15, the Quest
+     * 3: gazes 32° to 65° down tilted the room at the floor): the room stays
+     * level and only turns to the heading, as for a level gaze.
+     */
+    @Test
+    fun lookingDownAtTheDockOnlyTurnsTheHeading() {
+        val sdkEye = Vec3(1f, 1.2f, 2f)
+        val ahead = 10.55f - 0.005f - TheaterStaging.PICTURE_LIFT
+        listOf(25f, 50f, 65f, 89f).forEach { degrees ->
+            // Facing +X in the SDK's numbers, then tipped down: a positive turn about the head's +X tips +Z down.
+            val sdkRotation = Quat.yaw(half) * Quat.axisAngle(Vec3(1f, 0f, 0f), degrees * PI.toFloat() / 180f)
+            val head = TheaterFrames.head(sdkEye, sdkRotation)
+            assertTrue(head.forward.y < -0.4f, "the shared gaze points down: ${head.forward}")
+            val stage = assertNotNull(TheaterStaging.stage(head))
+            val placement = TheaterStaging.place(stage, Vec3.ZERO, TheaterStaging.screen(cinema), 16f / 9f, 0f)
+            assertClose(Vec3(1f, 0f, 2f), placement.sdkRoom.apply(TheaterFrames.loadedPoint(Vec3.ZERO, 0f)), 1e-3f)
+            assertClose(Vec3(1f + ahead, 3.6f, 2f), placement.sdkPicture.translation, 1e-2f)
+        }
+    }
+
+    @Test
+    fun aGazeAboveLevelIsLeftToAndroidsRule() {
+        val head = TheaterFrames.head(Vec3(0f, 0.5f, 0f), Quat.axisAngle(Vec3(1f, 0f, 0f), -0.6f))
+        assertEquals(head, TheaterStaging.levelledBelowLevel(head))
+        val slightlyDown = TheaterFrames.head(Vec3(0f, 1.2f, 0f), Quat.axisAngle(Vec3(1f, 0f, 0f), 0.2f))
+        assertEquals(slightlyDown, TheaterStaging.levelledBelowLevel(slightlyDown))
+    }
+
     @Test
     fun anUntrackedViewerSitsAtTheOriginFacingTheSdksAhead() {
         val placement = TheaterStaging.place(TheaterStaging.UNTRACKED_STAGE, Vec3.ZERO, TheaterStaging.screen(cinema), null, 0f)

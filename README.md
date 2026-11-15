@@ -151,8 +151,11 @@ prompts, an **Up Next** card in an episode's last 30 seconds that plays the
 next episode right there, and Exit. The **seat panel** to its left holds the
 seat map, Best Seat, the house **Lights** (Normal, Dim, Dark), and
 **Recentre**, which seats the viewer again where they look, lying back
-included. Subtitles are laid out in the picture's own shape. B or Y, or Exit,
-returns to the panel; progress is saved as in the player. Because the
+included (looking down at the dock only turns the heading); holding the Meta
+button recentres the same way. Subtitles are laid out in the picture's own
+shape. B or Y, or Exit, returns to the panel player at the same position, over
+the library; the end of the title returns to the library; progress is saved
+as in the player. Because the
 theater's activity can be started from outside the app, it runs the player's
 parental check itself unless the player has just handed it the title. The
 rooms ship as `src/horizonTheater/assets/theater/<room>.glb` (about 23 MB,

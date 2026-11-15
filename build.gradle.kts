@@ -169,8 +169,10 @@ android {
             // shown in Settings and the store: "27.1" rather than android's
             // "0.27.1" (27.0 was android's 0.27.0.1). The code only has to beat
             // the store's last upload, so it moves with Horizon releases, not
-            // with android's (A.4): 5 for 27.1, after 27.0's 4 (B.14).
-            versionCode = 5
+            // with android's (A.4): 5 for 27.1, after 27.0's 4 (B.14); 6 for the
+            // build after the first theater run on the Quest 3 (G.16), as 5
+            // may already have reached ALPHA (2026-11-13 uploads).
+            versionCode = 6
             versionName = "27.1"
             buildConfigField("boolean", "HORIZON_OS", "true")
             buildConfigField("boolean", "HORIZON_THEATER", horizonTheater.toString())

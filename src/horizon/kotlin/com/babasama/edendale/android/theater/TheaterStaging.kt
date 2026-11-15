@@ -10,6 +10,7 @@ import com.babasama.edendale.android.xr.TheaterGeometry
 import com.babasama.edendale.android.xr.TheaterGlb
 import com.babasama.edendale.android.xr.TheaterSeatMap
 import com.babasama.edendale.android.xr.Vec3
+import kotlin.math.sin
 
 /**
  * Where everything in the theater goes once the viewer is seated (HORIZON.md
@@ -48,12 +49,35 @@ object TheaterStaging {
     val UNTRACKED_STAGE: RoomPose = RoomPose.IDENTITY
 
     /**
-     * The stage for [head]: android's recentre rule unchanged. Level within
-     * 20°, the seat's floor point lands on the floor under the eyes and only
-     * the heading turns; lying back, the whole room tilts so the seat's eye
-     * point lands on the eyes. Null for a head the rule can't use.
+     * The stage for [head]: android's recentre rule for a gaze level or
+     * above. Level within 20°, the seat's floor point lands on the floor under
+     * the eyes and only the heading turns; lying back, the whole room tilts so
+     * the seat's eye point lands on the eyes. A gaze below level only turns
+     * the heading ([levelledBelowLevel]). Null for a head the rule can't use.
      */
-    fun stage(head: HeadFrame): RoomPose? = TheaterGeometry.recenterPose(head)
+    fun stage(head: HeadFrame): RoomPose? = TheaterGeometry.recenterPose(levelledBelowLevel(head))
+
+    /**
+     * [head] facing level the way it faces, when its gaze is more than
+     * android's 20° below level; else [head] itself. The dock sits 45° below
+     * the eyes, so Recentre is pressed looking down at it, and android's rule
+     * then tilted the whole room down at the floor (seen on the Quest 3 on
+     * 2026-11-15, gazes 32° to 65° down). Nobody watches lying face down, so
+     * only a gaze above level tilts the room. Looking nearly straight down,
+     * the top of the head points the way the viewer faces.
+     */
+    fun levelledBelowLevel(head: HeadFrame): HeadFrame {
+        val gaze = head.forward
+        if (!gaze.isFinite || !(gaze.length > 0f)) return head
+        val forward = gaze.normalized()
+        if (forward.y >= -sin(TheaterGeometry.Recenter.LEVEL_PITCH)) return head
+        var ahead = Vec3(forward.x, 0f, forward.z)
+        if (ahead.length < TheaterGeometry.Recenter.NEAR_VERTICAL) ahead = Vec3(head.up.x, 0f, head.up.z)
+        if (!(ahead.length > 0.1f)) return head
+        ahead = ahead.normalized()
+        val right = (ahead cross Vec3.UP).normalized()
+        return HeadFrame(position = head.position, right = right, up = Vec3.UP, back = -ahead)
+    }
 
     /** The picture's frame on the room's screen, in the room file's frame; the spike's quad without a room. */
     fun screen(glb: TheaterGlb?): TheaterGeometry.ScreenPlacement =
