@@ -855,8 +855,10 @@ which put the viewer where the screen spans 54–62° and mark every seat.
 - **Seats.** The panel to the left of the dock maps every seat: pinch one to
   sit there, hold and slide to sweep, **Best Seat** goes back to the room's
   recommended place, and the room turns so the screen is straight ahead from
-  wherever you sit. **Recentre** puts the screen where you are looking, lying
-  down included.
+  wherever you sit. **Recentre** turns the room to face the way you are
+  looking, with the floor kept level, even when you press it looking down at
+  the panel; lying back, the whole room tilts so the screen is where you
+  look.
 - **Lights.** Normal, Dim, or Dark on the seat panel turns the room's baked
   light down to 30 % or 6 %; the picture, the screen's own surround, and the
   Projector Room's beam keep their brightness.
@@ -913,8 +915,9 @@ tests. Before a release, check on:
 - **An Android XR headset:** the Theater chip appears there and nowhere else;
   each room faces you with the picture on its screen and its baked colours
   showing; the dock stays still inside a 12° turn and catches up past it;
-  seats across the map, Best Seat, and Recentre (sitting and lying back);
-  subtitles and an audio switch; Exit returns to the player at the position
+  seats across the map, Best Seat, and Recentre (sitting, pressed looking down
+  at the panel without tilting the room, and lying back); subtitles and an
+  audio switch; Exit returns to the player at the position
   and the end of a video to the library; frame rate at the display's native
   rate in the Performance Theatre (the heaviest room, 149k triangles), and 30
   minutes of playback for heat; the Play delivery (the `xr` split arrives

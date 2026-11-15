@@ -174,6 +174,46 @@ class TheaterGeometryTest {
         assertEquals(1f, pose.rotation.rotate(Vec3.UP).y, 1e-4f)
     }
 
+    /**
+     * Recentre is pressed looking down at the panels, 45° below the eyes. On
+     * the Quest 3 (2026-11-15) gazes 32° to 65° down tilted the whole room at
+     * the floor; any gaze below level now only turns the heading, with the
+     * floor under the eyes, as a level one does.
+     */
+    @Test
+    fun `recentring looking down at the panels only turns the heading`() {
+        val eye = Vec3(0.3f, 1.2f, -0.2f)
+        listOf(25f, 50f, 65f, 89f).forEach { down ->
+            val pitch = down * degree
+            // Turned 90° to the right, then looking down.
+            val looking = head(eye, Vec3(0f, 0f, 1f), Vec3(sin(pitch), cos(pitch), 0f))
+            assertEquals(-sin(pitch), looking.forward.y, 1e-4f)
+            val pose = assertNotNull(TheaterGeometry.recenterPose(looking), "$down° down")
+            assertNear(Vec3(0.3f, 0f, -0.2f), pose.apply(Vec3.ZERO))
+            assertNear(Vec3(1f, 0f, 0f), pose.rotation.rotate(Vec3.FORWARD))
+            assertNear(Vec3.UP, pose.rotation.rotate(Vec3.UP))
+            // A screen 10.55 m ahead of the seat at eye height stays at eye height, not down at the floor.
+            assertNear(Vec3(10.85f, 1.2f, -0.2f), pose.apply(Vec3(0f, 1.2f, -10.55f)), 1e-3f)
+        }
+    }
+
+    @Test
+    fun `recentring above level keeps its band and tilts past it`() {
+        val eye = Vec3(0f, 0.9f, 0f)
+        fun lookingUp(degrees: Float) =
+            head(eye, Vec3(1f, 0f, 0f), Vec3(0f, cos(degrees * degree), sin(degrees * degree)))
+
+        val inBand = assertNotNull(TheaterGeometry.recenterPose(lookingUp(15f)))
+        assertNear(Vec3.FORWARD, inBand.rotation.rotate(Vec3.FORWARD))
+        assertNear(Vec3(0f, 0f, 0f), inBand.apply(Vec3.ZERO))
+
+        listOf(25f, 50f).forEach { up ->
+            val pose = assertNotNull(TheaterGeometry.recenterPose(lookingUp(up)), "$up° up")
+            assertNear(Vec3(0f, sin(up * degree), -cos(up * degree)), pose.rotation.rotate(Vec3.FORWARD))
+            assertNear(eye, pose.apply(Vec3(0f, TheaterGeometry.Recenter.SEATED_EYE_HEIGHT, 0f)))
+        }
+    }
+
     @Test
     fun `recentring lying back tilts the theater overhead`() {
         val eye = Vec3(0f, 0.5f, 0.4f)

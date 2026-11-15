@@ -1,6 +1,5 @@
 package com.babasama.edendale.android.xr
 
-import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.hypot
@@ -107,7 +106,11 @@ object TheaterGeometry {
 
     /** Recentring thresholds, shared with the panel copy that explains them. */
     object Recenter {
-        /** A gaze within this pitch of level is a seated or standing viewer: the floor stays on the floor. */
+        /**
+         * Only a gaze more than this above level is a viewer lying back. A
+         * gaze lower than that, level or any way down, is a seated or standing
+         * viewer: the floor stays on the floor.
+         */
         val LEVEL_PITCH = Math.toRadians(20.0).toFloat()
 
         /** Where a seated viewer's eyes are above the seat's floor point, so a tilted room meets a lying viewer's eyes. */
@@ -118,14 +121,18 @@ object TheaterGeometry {
     }
 
     /**
-     * The pose that puts the screen where the viewer is looking. Within
-     * [Recenter.LEVEL_PITCH] of level only the heading changes and the seat's
-     * floor point lands under the eyes on the real floor; lying back or
-     * reclined, the whole room tilts with the viewer and the seat's eye point
-     * lands on the real eyes, because the platform will not tilt the space
-     * for a viewer lying down. A side tilt of the head never tilts the room.
-     * Null for a head that cannot be used (non-finite, or a gaze with no
-     * usable right).
+     * The pose that puts the screen where the viewer is looking. A gaze less
+     * than [Recenter.LEVEL_PITCH] above level, however far down, only turns
+     * the heading, and the seat's floor point lands under the eyes on the
+     * real floor. Recentre sits on the panels 45° below the eyes
+     * ([TheaterDock.DECLINATION]), so it is pressed looking down, and nobody
+     * watches lying face down: a gaze 30–65° down tilted the whole room at
+     * the floor on the Quest 3 (2026-11-15) while this band was 20° either
+     * way. Lying back or reclined past the band, the whole room tilts with
+     * the viewer and the seat's eye point lands on the real eyes, because the
+     * platform will not tilt the space for a viewer lying down. A side tilt
+     * of the head never tilts the room. Null for a head that cannot be used
+     * (non-finite, or a gaze with no usable right).
      */
     fun recenterPose(head: HeadFrame): RoomPose? {
         val eye = head.position
@@ -135,14 +142,14 @@ object TheaterGeometry {
         // Level and square to the gaze, whatever the head's side tilt.
         var right = forward cross Vec3.UP
         if (right.length < Recenter.NEAR_VERTICAL) {
-            // Looking nearly straight up or down: the head's own right, made level, says which way the viewer lies.
+            // Looking nearly straight up or down: the head's own right, made level, says which way the viewer lies or faces.
             right = Vec3(head.right.x, 0f, head.right.z)
         }
         if (!(right.length > 0.1f)) return null
         right = right.normalized()
         val ahead = (forward - right * (forward dot right)).normalized()
         val pitch = asin(ahead.y.coerceIn(-1f, 1f))
-        return if (abs(pitch) < Recenter.LEVEL_PITCH) {
+        return if (pitch < Recenter.LEVEL_PITCH) {
             val level = Vec3.UP cross right
             RoomPose(Quat.yaw(atan2(-level.x, -level.z)), Vec3(eye.x, 0f, eye.z))
         } else {
