@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-11
+updated: 2026-11-16
 summary:
   - Edendale has no account system and no servers of its own. The apps contain no analytics, advertising, or tracking.
   - Your library, settings, saved logins, and parental controls stay on your device. Anything that syncs goes through storage or a service you control, such as iCloud or your own Google Drive, OneDrive, Dropbox, or server.
@@ -37,14 +37,24 @@ them only to fix problems.
 - **Your settings:** playback, audio, picture, subtitle, and control
   preferences, including the choices remembered for each title.
 - **Subtitles you download.**
-- **Saved logins and linked accounts:** server passwords, S3 access keys, and
-  cloud sign-in tokens, including the login for your sync location, kept in
-  the system's protected storage: the Keychain on Apple devices, storage
-  encrypted with the Android Keystore, and Windows Data Protection (DPAPI).
-  Short-lived access tokens are kept only in memory.
-- **Parental controls:** the rating limits, the other parental switches, and
+- **Saved logins and linked accounts:** server passwords, S3 access keys,
+  cloud sign-in tokens (including the login for your sync location), your
+  TMDB sign-in, and your subtitle API key, kept in the system's protected
+  storage: the Keychain on Apple devices, storage encrypted with the Android
+  Keystore, and Windows Data Protection (DPAPI). Short-lived access tokens are
+  kept only in memory.
+- **Parental controls:** the Young Audience Friendly switch and, on Android
+  and Meta Quest, also the rating limits, the other parental switches, and
   the parental PIN, which is stored only as a salted, slow hash. Edendale
   never syncs them, sends them to another device, or sends them anywhere else.
+  Your device's own backup may keep the Young Audience Friendly switch, but
+  never the PIN or the rating limits.
+- **What your device shows:** the titles you're watching, with their artwork
+  and progress, can appear outside the app: in Edendale's widgets, on Apple
+  TV's Top Shelf, in the Windows taskbar's jump list, in the system's media
+  controls while something plays, and, if you turn on **Continue Watching on
+  Home Screen**, in Android TV's Continue Watching row, which the TV's home
+  screen app can read. Anyone who can see your device can see them there.
 
 Edendale reads file names on your device to recognize movies and episodes
 before it contacts any online service, and it never uploads your videos.
@@ -56,18 +66,23 @@ turned them on:
 
 - **Sync between devices (Edendale 27.1 and later):** your watch history,
   through storage you choose, as described in the next section.
-- **Apple devices:** with iCloud, your watch progress, ratings, favorites, and
-  watchlist sync through your private iCloud database. Linked accounts and
-  saved logins sync through iCloud Keychain to your iPhone, iPad, Mac, and
-  Apple Vision Pro. Apple TV keeps its own copies.
-- **Windows:** if you turned on OneDrive replication before Edendale 27.1,
-  your watch progress and title states are copied through a folder in your own
-  OneDrive. Logins and accounts never leave the device. Edendale 27.1 replaces
-  it with sync between devices: it reads those files once and leaves them in
-  place.
-- **Android:** Android's own backup can include your library and watch data.
-  Logins, keys, account tokens, sync settings, and the parental PIN and rating
-  limits are excluded from backups and device transfers.
+- **Apple devices:** with iCloud, your watch progress, ratings, reviews,
+  favorites, and watchlist sync through your private iCloud database. Linked
+  accounts, saved logins, your TMDB sign-in, and your subtitle API key sync
+  through iCloud Keychain to your iPhone, iPad, Mac, and Apple Vision Pro.
+  Apple TV keeps its own copies. Your device's own backups include Edendale's
+  data, as they do any app's.
+- **Windows:** before Edendale 27.1, Edendale copied your watch progress and
+  title states through the `Apps/Edendale` folder in your own OneDrive
+  whenever OneDrive was set up on the PC. Logins and accounts never left the
+  device. Edendale 27.1 stops copying: it reads those files once, leaves them
+  in place, and offers that folder as your sync location. Sync stays off
+  until you agree.
+- **Android:** Android's own backup can include your library, with the email
+  address or name of the account each linked source belongs to, your watch
+  data, your settings, and the Young Audience Friendly switch. Logins, keys,
+  account tokens, sync settings, the parental PIN, and the other parental
+  controls are excluded from backups and device transfers.
 - **Meta Quest:** if Cloud backup is on in the headset's settings, Meta's
   backup uses Android's, with the same exclusions. Removing the app from the
   headset deletes everything it stored there. Meta keeps its backups, and
@@ -88,9 +103,10 @@ share the history only through storage you already own.
 - **What a sync file holds:** each device writes one file,
   `Edendale/<space name>/<device ID>.json`, with your watch progress and
   completion, ratings, reviews, favorites, and watchlist state, each keyed by
-  the title's TMDB ID; the device's name and platform; a random ID made for
-  sync; and the Edendale version. It never holds your library, file names or
-  paths, logins, your TMDB session, or parental controls.
+  the title's TMDB ID and stamped with the time it last changed and the device
+  that changed it; the space name; the device's name and platform; a random ID
+  made for sync; and the Edendale version. It never holds your library, file
+  names or paths, logins, your TMDB session, or parental controls.
 - **Where it lives:** in the location you choose and own: a folder on your
   device (iCloud Drive, or a folder another cloud app provides, included),
   Edendale's own iCloud Drive folder on Apple devices, your Google Drive,
@@ -101,8 +117,8 @@ share the history only through storage you already own.
   Edendale says so when you choose a location.
 - **How to stop:** **Turn Off** in Settings → Sync stops syncing on that
   device and offers to delete its file; the history on the device stays.
-  Removing a device in Settings → Sync deletes that device's file. On Android,
-  **Delete Watch History** deletes the progress and watched marks on the
+  Removing a device in Settings → Sync deletes that device's file. Clearing a
+  title's progress, or **Delete Watch History** on Android, clears it on the
   device and, with sync on, on your other devices as they next sync; the sync
   files then keep a marker for each cleared title, without its progress, for
   up to a year, so that an older copy can't bring it back. To remove
@@ -110,12 +126,17 @@ share the history only through storage you already own.
   from your storage.
 - **Setting up another device:** **Set Up Another Device** sends the sync
   location and its login, and any other accounts and logins you tick, directly
-  from one of your devices to another over your local network. The connection
-  is encrypted with a key the two devices agree on when you scan a QR code or
-  type a code shown on the other device, and the sending device asks you to
-  confirm the other device's name before anything is sent. Nothing passes
-  through us or anyone else. While the pairing screen is open, the device
-  announces its name on your local network so the other one can find it.
+  from one of your devices to another over your local network. One device
+  shows a QR code, which the other scans or opens as a link, or, where both
+  devices offer it, a code you type on the other. The two devices use it to
+  agree on a key that encrypts the connection, and the sending device asks
+  you to confirm the other device's name before anything is sent. Nothing
+  passes through us or anyone else. On iPhone, iPad, Android phones and
+  tablets, and Meta Quest 3 and 3S, Edendale can scan the code with the
+  camera: it asks for camera access only when you choose to scan, reads the
+  code on the device, and never saves or sends the camera's images. While the
+  pairing screen is open, the device announces its name and platform on your
+  local network so the other one can find it.
   Between platforms where a Google sign-in can't be moved, only the Google
   account's email address, the space name, and the sync folder's ID are sent,
   and you sign in to Google on the new device.
@@ -129,21 +150,25 @@ Each service below receives your device's IP address, as any internet
 connection does, along with the following:
 
 - **[TMDB](https://www.themoviedb.org/privacy-policy)** (The Movie Database),
-  for movie and show details and artwork: the title and year Edendale reads
-  from a file name (never the full file name, its folder, or the file itself)
-  and the TMDB IDs of the titles you browse. If you sign in, also your TMDB
-  session.
+  for movie and show details, artwork, and age ratings: the title Edendale
+  reads from a file name, sometimes with its year (never the full file name,
+  its folder, or the file itself), what you type into search, and the TMDB
+  IDs of the titles you browse or whose details Edendale looks up. If you
+  sign in, also your TMDB session.
 - **[Wyzie Subs](https://wyzie.io/privacy)**, only when you search for
   subtitles online: the title's TMDB ID, the season and episode numbers, the
-  languages you ask for, and your API key.
+  languages and subtitle formats Edendale asks for, whether to include
+  subtitles for the deaf and hard of hearing, and an API key: yours if you
+  entered one, otherwise Edendale's own.
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**, only while Skip
   Prompts is on (it is off by default): the title's TMDB ID, the season and
   episode numbers, and the video's duration.
 - **[YouTube](https://policies.google.com/privacy)**, only when you choose to
-  play a trailer. On Apple devices, and on Android devices other than Meta
-  Quest, Edendale plays it in YouTube's privacy-enhanced mode
-  (youtube-nocookie.com). On Windows, it opens the trailer on youtube.com in
-  your browser, and on Meta Quest, in the browser or the YouTube app.
+  play a trailer. On Apple devices other than Apple TV, and on Android
+  devices other than Meta Quest, Edendale plays it in YouTube's
+  privacy-enhanced mode (youtube-nocookie.com). On Apple TV, it opens the
+  trailer in the YouTube app; on Windows, on youtube.com in your browser; and
+  on Meta Quest, in the browser or the YouTube app.
 - **The storage you link**, and the storage you choose for sync, described in
   the next section.
 
@@ -181,7 +206,8 @@ passes through a server we operate.
 - **TVs:** an Apple TV can receive an account or login from your iPhone or
   iPad, and an Android TV from Edendale on another Android device, over an
   encrypted connection on your local network, only after you start the
-  transfer on the TV and confirm it on the other device. On a TV, OneDrive can
+  transfer on the TV and confirm it on the other device. While an Android TV
+  waits, it announces its name on your local network. On a TV, OneDrive can
   also sign in with a code that you approve on another device. From Edendale
   27.1, any of your devices can set up another one this way, as described in
   Sync between devices.
@@ -210,7 +236,7 @@ videos you picked and playing them, and, if you choose it, to keep your sync
 files in your Drive. It never uploads, changes, shares, or deletes your videos
 or any other file in your Drive. As with any source, Edendale reads file names
 on your device to recognize movies and episodes, and sends only the recognized
-title and year to TMDB to look up details.
+title, sometimes with its year, to TMDB to look up details.
 
 The data stays on your devices and in your own Drive: file details in your
 library, and the linked account (its ID, email address, name, and sign-in
@@ -218,22 +244,25 @@ token) in protected storage, as described above. On Apple devices, iCloud
 Keychain syncs the account to your other Apple devices. It reaches another
 device only when you confirm a transfer from one of yours; between platforms
 where a Google sign-in can't be moved, only the email address and the sync
-folder's ID are sent. If you remove a video from your library, Edendale keeps
-its file ID on that device only, so that the video isn't listed again. Google
-user data is never sent to us or to any server we operate, so we never see or
-read it. It is never sold, never used for advertising, and never used to
-develop, improve, or train artificial intelligence or machine learning models.
+folder's ID are sent. If you remove a video from your library, Edendale may
+keep its file ID on that device only, so that the video isn't listed again.
+Google user data is never sent to us or to any server we operate, so we never
+see or read it. It is never sold, never used for advertising, and never used
+to develop, improve, or train artificial intelligence or machine learning
+models.
 
 To end Edendale's access, remove the source, which also removes its files from
 your library, and sign out in **Settings → Accounts**. **Sign Out and Revoke
-Access** also revokes Edendale's access at Google. You can remove it at any
+Access**, or **Sign Out** on Windows, also revokes Edendale's access at
+Google. You can remove it at any
 time from your
 [Google Account's third-party connections](https://myaccount.google.com/connections).
 Revoking access ends it on every device, TVs included, and Google forgets the
 videos you picked. Sync files that Edendale created stay in your Drive until
 you delete them. Deleting the app deletes everything it stored on that device.
-A backup on Android or Meta Quest may keep a copy of your library, but never
-the linked account or its sign-in token.
+A backup on Android or Meta Quest may keep a copy of your library, including
+the email address or name of the account its videos come from, but never the
+account's sign-in token.
 
 Edendale's use and transfer to any other app of information received from
 Google APIs will adhere to the
@@ -248,8 +277,9 @@ one for sync, write access used only for Edendale's own sync files, in
 OneDrive's app folder (`Apps/Edendale`) or in the `Edendale` folder in your
 Dropbox. Edendale never changes or deletes anything else there. Account
 details and sign-in tokens are stored only on your devices. Sign out in
-**Settings → Accounts**. For Dropbox, **Sign Out and Revoke Access** also ends
-Edendale's access at Dropbox. You can also remove Edendale from the
+**Settings → Accounts**. On Apple devices and Android, **Sign Out and Revoke
+Access** also ends Edendale's access at Dropbox. You can also remove Edendale
+from the
 [apps that can access your Microsoft account](https://account.live.com/consent/Manage)
 or from your
 [Dropbox connected apps](https://www.dropbox.com/account/connected_apps).
@@ -276,11 +306,12 @@ to collect.
 ## Your choices
 
 You can see, change, or delete your data in the app at any time: remove a
-source, sign out of an account, turn off sync between devices, iCloud sync,
-OneDrive replication, or your device's backup, delete the sync files from your
-storage, or delete the app. Because we hold none of your personal data, those
-controls are how you exercise your rights to access or delete it. Data held by
-the services above is covered by their own privacy policies.
+source, sign out of an account, turn off sync between devices, iCloud sync, or
+your device's backup, delete the sync files (and, on Windows, the older
+OneDrive copies) from your storage, or delete the app. Because we hold none of
+your personal data, those controls are how you exercise your rights to access
+or delete it. Data held by the services above is covered by their own privacy
+policies.
 
 ## Changes to this policy
 

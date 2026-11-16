@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-11
+updated: 2026-11-16
 summary:
   - O Edendale não tem sistema de contas nem servidores próprios. Os apps não contêm analytics, publicidade nem rastreamento.
   - Sua biblioteca, seus ajustes, seus logins salvos e o controle dos pais ficam no seu dispositivo. O que é sincronizado passa por um armazenamento ou serviço que você controla, como o iCloud ou o seu próprio Google Drive, OneDrive, Dropbox ou servidor.
@@ -39,15 +39,26 @@ apenas para corrigir problemas.
   controles, incluindo as escolhas lembradas para cada título.
 - **As legendas que você baixa.**
 - **Logins salvos e contas vinculadas:** senhas de servidores, chaves de
-  acesso do S3 e tokens de login na nuvem, incluindo o login do seu local de
-  sincronização, guardados no armazenamento protegido do sistema: as Chaves
+  acesso do S3, tokens de login na nuvem (incluindo o login do seu local de
+  sincronização), seu login do TMDB e sua chave de API de legendas, guardados
+  no armazenamento protegido do sistema: as Chaves
   (Keychain) nos dispositivos Apple, um armazenamento criptografado com o
   Android Keystore e a Proteção de Dados do Windows (DPAPI). Tokens de acesso
   de curta duração ficam apenas na memória.
-- **Controle dos pais:** os limites de classificação indicativa, as demais
+- **Controle dos pais:** a opção “Adequado para público jovem” e, no Android
+  e no Meta Quest, também os limites de classificação indicativa, as demais
   opções do controle dos pais e o PIN dos pais, que é guardado apenas como um
   hash lento com sal. O Edendale nunca os sincroniza, nunca os envia a outro
-  dispositivo nem a nenhum outro lugar.
+  dispositivo nem a nenhum outro lugar. O próprio backup do seu dispositivo
+  pode manter a opção “Adequado para público jovem”, mas nunca o PIN nem os
+  limites de classificação.
+- **O que o seu dispositivo mostra:** os títulos que você está assistindo,
+  com a imagem e o progresso, podem aparecer fora do app: nos widgets do
+  Edendale, no Top Shelf da Apple TV, na lista de atalhos da barra de tarefas
+  do Windows, nos controles de mídia do sistema durante a reprodução e, se
+  você ativar **Continuar assistindo na tela inicial**, na fileira
+  “Continuar assistindo” da Android TV, que o app da tela inicial da TV pode
+  ler. Qualquer pessoa que veja o seu dispositivo pode vê-los ali.
 
 O Edendale lê os nomes dos arquivos no seu dispositivo para reconhecer filmes
 e episódios antes de contatar qualquer serviço online, e nunca envia seus
@@ -61,20 +72,25 @@ você os ativa:
 - **Sincronização entre dispositivos (Edendale 27.1 e posteriores):** seu
   histórico de reprodução, pelo armazenamento que você escolher, como descrito
   na próxima seção.
-- **Dispositivos Apple:** com o iCloud, seu progresso, suas avaliações, seus
-  favoritos e sua lista são sincronizados pelo seu banco de dados privado do
-  iCloud. Contas vinculadas e logins salvos são sincronizados pelas Chaves do
-  iCloud com seu iPhone, iPad, Mac e Apple Vision Pro. A Apple TV mantém suas
-  próprias cópias.
-- **Windows:** se você ativou a replicação pelo OneDrive antes do Edendale
-  27.1, seu progresso e o estado dos seus títulos são copiados por meio de uma
-  pasta no seu próprio OneDrive. Logins e contas nunca saem do dispositivo. O
-  Edendale 27.1 a substitui pela sincronização entre dispositivos: ele lê
-  esses arquivos uma vez e os deixa onde estão.
-- **Android:** o próprio backup do Android pode incluir sua biblioteca e seus
-  dados de reprodução. Logins, chaves, tokens de conta, os ajustes de
-  sincronização, e o PIN dos pais e os limites de classificação ficam fora dos
-  backups e das transferências entre dispositivos.
+- **Dispositivos Apple:** com o iCloud, seu progresso, suas avaliações, suas
+  resenhas, seus favoritos e sua lista são sincronizados pelo seu banco de
+  dados privado do iCloud. Contas vinculadas, logins salvos, seu login do
+  TMDB e sua chave de API de legendas são sincronizados pelas Chaves do iCloud
+  com seu iPhone, iPad, Mac e Apple Vision Pro. A Apple TV mantém suas
+  próprias cópias. Os backups do próprio dispositivo incluem os dados do
+  Edendale, como os de qualquer app.
+- **Windows:** antes do Edendale 27.1, o Edendale copiava seu progresso e o
+  estado dos seus títulos por meio da pasta `Apps/Edendale` no seu próprio
+  OneDrive sempre que o OneDrive estava configurado no PC. Logins e contas
+  nunca saíam do dispositivo. O Edendale 27.1 deixa de copiar: ele lê esses
+  arquivos uma vez, os deixa onde estão e oferece essa pasta como local de
+  sincronização. A sincronização continua desativada até você concordar.
+- **Android:** o próprio backup do Android pode incluir sua biblioteca (com o
+  e-mail ou o nome da conta a que pertence cada origem vinculada), seus dados
+  de reprodução, seus ajustes e a opção “Adequado para público jovem”. Logins,
+  chaves, tokens de conta, os ajustes de sincronização, o PIN dos pais e o
+  restante do controle dos pais ficam fora dos backups e das transferências
+  entre dispositivos.
 - **Meta Quest:** se o backup na nuvem estiver ativado nas configurações do
   headset, o backup da Meta usa o do Android, com as mesmas exclusões. Remover
   o app do headset apaga tudo o que ele guardou ali. A Meta mantém os backups
@@ -97,10 +113,11 @@ histórico apenas por um armazenamento que já é seu.
   arquivo, `Edendale/<nome do espaço>/<ID do dispositivo>.json`, com seu
   progresso de reprodução e se você terminou cada título, suas avaliações,
   resenhas, favoritos e o estado da sua lista, cada um identificado pelo ID do
-  TMDB do título; o nome e a plataforma do dispositivo; um ID aleatório criado
-  para a sincronização; e a versão do Edendale. Ele nunca contém sua
-  biblioteca, nomes ou caminhos de arquivos, logins, sua sessão do TMDB nem o
-  controle dos pais.
+  TMDB do título e marcado com a hora da última alteração e o dispositivo que
+  a fez; o nome do espaço; o nome e a plataforma do dispositivo; um ID
+  aleatório criado para a sincronização; e a versão do Edendale. Ele nunca
+  contém sua biblioteca, nomes ou caminhos de arquivos, logins, sua sessão do
+  TMDB nem o controle dos pais.
 - **Onde ele fica:** no local que você escolhe e que é seu: uma pasta do seu
   dispositivo (incluindo o iCloud Drive ou uma pasta oferecida por outro app
   de nuvem), a pasta do próprio Edendale no iCloud Drive nos dispositivos
@@ -113,9 +130,9 @@ histórico apenas por um armazenamento que já é seu.
 - **Como parar:** **Desativar** em Ajustes → Sincronização interrompe a
   sincronização naquele dispositivo e oferece apagar o arquivo dele; o
   histórico no dispositivo continua. Remover um dispositivo em Ajustes →
-  Sincronização apaga o arquivo desse dispositivo. No Android, **Excluir
-  histórico** apaga o progresso e as marcações de assistido no dispositivo e,
-  com a sincronização ativada, nos seus outros dispositivos quando eles
+  Sincronização apaga o arquivo desse dispositivo. Limpar o progresso de um
+  título, ou **Excluir histórico** no Android, o apaga no dispositivo e, com a
+  sincronização ativada, nos seus outros dispositivos quando eles
   sincronizarem de novo. Depois disso, os arquivos de sincronização mantêm por
   até um ano uma marcação para cada título apagado, sem o progresso, para que
   uma cópia mais antiga não o traga de volta. Para remover tudo, desative a
@@ -123,13 +140,18 @@ histórico apenas por um armazenamento que já é seu.
   armazenamento.
 - **Configurar outro dispositivo:** **Configurar outro dispositivo** envia o
   local de sincronização e o login dele, e as outras contas e logins que você
-  marcar, diretamente de um dispositivo seu para outro pela sua rede local. A
-  conexão é criptografada com uma chave que os dois dispositivos combinam
-  quando você escaneia um código QR ou digita um código mostrado no outro
-  dispositivo, e o dispositivo que envia pede que você confirme o nome do
-  outro antes de enviar qualquer coisa. Nada passa por nós nem por mais
-  ninguém. Enquanto a tela de pareamento está aberta, o dispositivo anuncia o
-  nome dele na sua rede local para que o outro possa encontrá-lo. Entre
+  marcar, diretamente de um dispositivo seu para outro pela sua rede local. Um
+  dispositivo mostra um código QR, que o outro escaneia ou abre como link, ou,
+  quando os dois dispositivos oferecem isso, um código que você digita no
+  outro. Os dois dispositivos o usam para combinar uma chave que criptografa a
+  conexão, e o dispositivo que envia pede que você confirme o nome do outro
+  antes de enviar qualquer coisa. Nada passa por nós nem por mais ninguém. No
+  iPhone, no iPad, em celulares e tablets Android e no Meta Quest 3 e 3S, o
+  Edendale pode escanear o código com a câmera: ele só pede acesso à câmera
+  quando você escolhe escanear, lê o código no dispositivo e nunca guarda nem
+  envia as imagens da câmera. Enquanto a tela de pareamento está aberta, o
+  dispositivo anuncia o nome e a plataforma dele na sua rede local para que o
+  outro possa encontrá-lo. Entre
   plataformas para as quais um login do Google não pode ser transferido, só
   são enviados o endereço de e-mail da Conta do Google, o nome do espaço e o
   ID da pasta de sincronização, e você entra no Google no novo dispositivo.
@@ -143,22 +165,25 @@ Cada serviço abaixo recebe o endereço IP do seu dispositivo, como em qualquer
 conexão com a internet, além do seguinte:
 
 - **[TMDB](https://www.themoviedb.org/privacy-policy)** (The Movie Database),
-  para detalhes e imagens de filmes e séries: o título e o ano que o Edendale
-  lê do nome de um arquivo (nunca o nome completo, a pasta ou o próprio
-  arquivo) e os IDs do TMDB dos títulos que você consulta. Se você entrar na
-  sua conta, também a sua sessão do TMDB.
+  para detalhes, imagens e classificações indicativas de filmes e séries: o
+  título que o Edendale lê do nome de um arquivo, às vezes com o ano (nunca o
+  nome completo, a pasta ou o próprio arquivo), o que você digita na busca e
+  os IDs do TMDB dos títulos que você consulta ou cujos detalhes o Edendale
+  busca. Se você entrar na sua conta, também a sua sessão do TMDB.
 - **[Wyzie Subs](https://wyzie.io/privacy)**, só quando você busca legendas
   online: o ID do TMDB do título, os números da temporada e do episódio, os
-  idiomas pedidos e a sua chave de API.
+  idiomas e formatos de legenda que o Edendale pede, se devem ser incluídas
+  legendas para surdos e ensurdecidos, e uma chave de API: a sua, se você
+  digitou uma, ou senão a do próprio Edendale.
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**, só enquanto os
   Botões para Pular estiverem ativados (vêm desativados): o ID do TMDB do
   título, os números da temporada e do episódio e a duração do vídeo.
 - **[YouTube](https://policies.google.com/privacy)**, só quando você escolhe
-  assistir a um trailer. Em dispositivos Apple, e em dispositivos Android que
-  não sejam Meta Quest, o Edendale o reproduz no modo de privacidade aprimorada
-  do YouTube (youtube-nocookie.com). No Windows, ele abre o trailer em
-  youtube.com no seu navegador e, no Meta Quest, no navegador ou no app do
-  YouTube.
+  assistir a um trailer. Em dispositivos Apple que não sejam a Apple TV, e em
+  dispositivos Android que não sejam Meta Quest, o Edendale o reproduz no modo
+  de privacidade aprimorada do YouTube (youtube-nocookie.com). Na Apple TV,
+  ele abre o trailer no app do YouTube; no Windows, em youtube.com no seu
+  navegador; e, no Meta Quest, no navegador ou no app do YouTube.
 - **O armazenamento que você vincula**, e o que você escolhe para a
   sincronização, descritos na próxima seção.
 
@@ -198,7 +223,8 @@ você escolheu. Nada passa por um servidor operado por nós.
 - **TVs:** uma Apple TV pode receber uma conta ou login do seu iPhone ou iPad,
   e uma Android TV do Edendale em outro dispositivo Android, por uma conexão
   criptografada na sua rede local, só depois que você inicia a transferência
-  na TV e a confirma no outro dispositivo. Em uma TV, o OneDrive também pode
+  na TV e a confirma no outro dispositivo. Enquanto uma Android TV espera,
+  ela anuncia o nome dela na sua rede local. Em uma TV, o OneDrive também pode
   entrar com um código que você aprova em outro dispositivo. A partir do
   Edendale 27.1, qualquer dispositivo seu pode configurar outro dessa forma,
   como descrito em “Sincronização entre dispositivos”.
@@ -228,7 +254,7 @@ manter seus arquivos de sincronização no seu Drive. Ele nunca envia, altera,
 compartilha nem apaga seus vídeos ou qualquer outro arquivo do seu Drive.
 Como em qualquer origem, o Edendale lê os nomes dos arquivos no seu
 dispositivo para reconhecer filmes e episódios e envia ao TMDB apenas o
-título e o ano reconhecidos para buscar os detalhes.
+título reconhecido, às vezes com o ano, para buscar os detalhes.
 
 Os dados ficam nos seus dispositivos e no seu próprio Drive: os dados dos
 arquivos na sua biblioteca, e a conta vinculada (ID, endereço de e-mail, nome
@@ -236,26 +262,27 @@ e token de login) no armazenamento protegido, como descrito acima. Nos
 dispositivos Apple, as Chaves do iCloud sincronizam a conta com seus outros
 dispositivos Apple. Ela só chega a outro dispositivo quando você confirma uma
 transferência a partir de um dos seus; entre plataformas para as quais um
-login do Google não pode ser transferido, só são enviados o endereço de
-e-mail e o ID da pasta de sincronização. Se você remover um vídeo da sua
-biblioteca, o Edendale guarda o ID do arquivo só naquele dispositivo, para que
-o vídeo não volte a ser listado. Os dados de usuário do Google nunca são
+login do Google não pode ser transferido, só são enviados o endereço de e-mail
+e o ID da pasta de sincronização. Se você remover um vídeo da sua biblioteca,
+o Edendale pode guardar o ID do arquivo só naquele dispositivo, para que o
+vídeo não volte a ser listado. Os dados de usuário do Google nunca são
 enviados para nós nem para qualquer servidor operado por nós, então nunca os
-vemos nem os lemos. Eles nunca são vendidos, nunca são usados para
-publicidade e nunca são usados para desenvolver, aprimorar ou treinar modelos
-de inteligência artificial ou de aprendizado de máquina.
+vemos nem os lemos. Eles nunca são vendidos, nunca são usados para publicidade
+e nunca são usados para desenvolver, aprimorar ou treinar modelos de
+inteligência artificial ou de aprendizado de máquina.
 
 Para encerrar o acesso do Edendale, remova a origem (o que também remove os
 arquivos dela da sua biblioteca) e finalize a sessão em **Ajustes → Contas**.
-**Finalizar Sessão e Revogar Acesso** também revoga o acesso do Edendale no
-Google. Você pode removê-lo a qualquer momento nas
+**Finalizar Sessão e Revogar Acesso**, ou **Finalizar Sessão** no Windows,
+também revoga o acesso do Edendale no Google. Você pode removê-lo a qualquer
+momento nas
 [conexões de terceiros da sua Conta do Google](https://myaccount.google.com/connections).
 Revogar o acesso o encerra em todos os dispositivos, incluindo as TVs, e o
 Google esquece os vídeos que você escolheu. Os arquivos de sincronização que o
 Edendale criou continuam no seu Drive até você apagá-los. Apagar o app apaga
 tudo o que ele guardou naquele dispositivo. Um backup no Android ou no Meta
-Quest pode manter uma cópia da sua biblioteca, mas nunca a conta vinculada nem
-o token de login dela.
+Quest pode manter uma cópia da sua biblioteca, incluindo o e-mail ou o nome da
+conta de onde vêm os vídeos dela, mas nunca o token de login da conta.
 
 O uso e a transferência, pelo Edendale, para qualquer outro app de
 informações recebidas das APIs do Google seguirão a
@@ -272,8 +299,9 @@ usado só para os arquivos de sincronização do próprio Edendale, na pasta de
 aplicativos do OneDrive (`Apps/Edendale`) ou na pasta `Edendale` do seu
 Dropbox. O Edendale nunca altera nem apaga mais nada ali. Os dados da conta e
 os tokens de login ficam guardados só nos seus dispositivos. Finalize a
-sessão em **Ajustes → Contas**. No Dropbox, **Finalizar Sessão e Revogar
-Acesso** também encerra o acesso do Edendale no Dropbox. Você também pode
+sessão em **Ajustes → Contas**. Nos dispositivos Apple e no Android,
+**Finalizar Sessão e Revogar Acesso** também encerra o acesso do Edendale no
+Dropbox. Você também pode
 remover o Edendale dos
 [apps com acesso à sua conta Microsoft](https://account.live.com/consent/Manage)
 ou dos seus
@@ -304,11 +332,11 @@ coletarmos.
 
 Você pode ver, alterar ou apagar seus dados no app a qualquer momento: remover
 uma origem, sair de uma conta, desativar a sincronização entre dispositivos, a
-sincronização do iCloud, a replicação pelo OneDrive ou o backup do seu
-dispositivo, apagar os arquivos de sincronização do seu armazenamento ou
-apagar o app. Como não temos nenhum dado pessoal seu, esses controles são a
-forma de exercer seus direitos de acesso e exclusão. Os dados mantidos pelos
-serviços acima seguem as políticas de privacidade deles.
+sincronização do iCloud ou o backup do seu dispositivo, apagar os arquivos de
+sincronização (e, no Windows, as cópias antigas do OneDrive) do seu
+armazenamento ou apagar o app. Como não temos nenhum dado pessoal seu, esses
+controles são a forma de exercer seus direitos de acesso e exclusão. Os dados
+mantidos pelos serviços acima seguem as políticas de privacidade deles.
 
 ## Alterações nesta política
 

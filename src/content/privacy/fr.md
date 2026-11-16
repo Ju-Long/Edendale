@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-11
+updated: 2026-11-16
 summary:
   - Edendale n’a ni système de compte ni serveurs à lui. Les apps ne contiennent ni analyse, ni publicité, ni pistage.
   - Votre bibliothèque, vos réglages, vos identifiants enregistrés et le contrôle parental restent sur votre appareil. Ce qui se synchronise passe par un stockage ou un service que vous contrôlez, comme iCloud ou votre propre Google Drive, OneDrive, Dropbox ou serveur.
@@ -40,16 +40,29 @@ confidentialité. Nous ne les utilisons que pour corriger des problèmes.
   et de commandes, y compris les choix mémorisés pour chaque titre.
 - **Les sous-titres que vous téléchargez.**
 - **Identifiants enregistrés et comptes associés :** mots de passe de
-  serveurs, clés d’accès S3 et jetons de connexion aux services en ligne, y
-  compris l’identifiant de votre emplacement de synchronisation, conservés
-  dans le stockage protégé du système : le trousseau (Keychain) sur les
+  serveurs, clés d’accès S3, jetons de connexion aux services en ligne (y
+  compris l’identifiant de votre emplacement de synchronisation), votre
+  connexion TMDB et votre clé d’API de sous-titres, conservés dans le stockage
+  protégé du système : le trousseau (Keychain) sur les
   appareils Apple, un stockage chiffré avec l’Android Keystore, et la
   protection des données de Windows (DPAPI). Les jetons d’accès de courte
   durée ne sont conservés qu’en mémoire.
-- **Contrôle parental :** les limites de classification par âge, les autres
-  options du contrôle parental et le code PIN parental, qui n’est enregistré
-  que sous forme de hachage lent et salé. Edendale ne les synchronise jamais,
-  ne les envoie jamais à un autre appareil ni nulle part ailleurs.
+- **Contrôle parental :** l’option « Adapté au jeune public » et, sous
+  Android et sur Meta Quest, également les limites de classification par âge,
+  les autres options du contrôle parental et le code PIN parental, qui n’est
+  enregistré que sous forme de hachage lent et salé. Edendale ne les
+  synchronise jamais, ne les envoie jamais à un autre appareil ni nulle part
+  ailleurs. La sauvegarde propre à votre appareil peut garder l’option
+  « Adapté au jeune public », mais jamais le code PIN ni les limites de
+  classification.
+- **Ce que votre appareil affiche :** les titres que vous regardez, avec leur
+  visuel et leur progression, peuvent apparaître hors de l’app : dans les
+  widgets d’Edendale, dans le Top Shelf de l’Apple TV, dans la liste de
+  raccourcis de la barre des tâches de Windows, dans les commandes multimédias
+  du système pendant la lecture et, si vous activez **Reprendre la lecture sur
+  l’écran d’accueil**, dans la rangée « Reprendre la lecture » d’Android TV,
+  que l’app d’écran d’accueil du téléviseur peut lire. Toute personne qui voit
+  votre appareil peut les y voir.
 
 Edendale lit les noms de fichiers sur votre appareil pour reconnaître les
 films et les épisodes avant de contacter le moindre service en ligne, et il
@@ -63,21 +76,28 @@ si vous les avez activés :
 - **Synchronisation entre appareils (Edendale 27.1 et versions
   ultérieures) :** votre historique de visionnage, via le stockage de votre
   choix, comme décrit dans la section suivante.
-- **Appareils Apple :** avec iCloud, votre progression, vos notes, vos favoris
-  et votre liste de suivi se synchronisent via votre base de données iCloud
-  privée. Les comptes associés et les identifiants enregistrés se
+- **Appareils Apple :** avec iCloud, votre progression, vos notes, vos
+  critiques, vos favoris et votre liste de suivi se synchronisent via votre
+  base de données iCloud privée. Les comptes associés, les identifiants
+  enregistrés, votre connexion TMDB et votre clé d’API de sous-titres se
   synchronisent via le trousseau iCloud avec votre iPhone, votre iPad, votre
-  Mac et votre Apple Vision Pro. L’Apple TV conserve ses propres copies.
-- **Windows :** si vous avez activé la réplication OneDrive avant Edendale
-  27.1, votre progression et l’état de vos titres sont copiés via un dossier
-  de votre propre OneDrive. Les identifiants et les comptes ne quittent jamais
-  l’appareil. Edendale 27.1 la remplace par la synchronisation entre
-  appareils : il lit ces fichiers une fois et les laisse en place.
-- **Android :** la sauvegarde d’Android peut inclure votre bibliothèque et vos
-  données de visionnage. Les identifiants, les clés, les jetons de compte, les
-  réglages de synchronisation, ainsi que le code PIN parental et les limites
-  de classification, sont exclus des sauvegardes et des transferts entre
-  appareils.
+  Mac et votre Apple Vision Pro. L’Apple TV conserve ses propres copies. Les
+  sauvegardes propres à votre appareil incluent les données d’Edendale, comme
+  celles de toute app.
+- **Windows :** avant Edendale 27.1, Edendale copiait votre progression et
+  l’état de vos titres via le dossier `Apps/Edendale` de votre propre
+  OneDrive dès que OneDrive était configuré sur le PC. Les identifiants et
+  les comptes ne quittaient jamais l’appareil. Edendale 27.1 arrête cette
+  copie : il lit ces fichiers une fois, les laisse en place et propose ce
+  dossier comme emplacement de synchronisation. La synchronisation reste
+  désactivée tant que vous n’avez pas accepté.
+- **Android :** la sauvegarde d’Android peut inclure votre bibliothèque (avec
+  l’adresse e-mail ou le nom du compte auquel appartient chaque source
+  associée), vos données de visionnage, vos réglages et l’option « Adapté au
+  jeune public ».
+  Les identifiants, les clés, les jetons de compte, les réglages de
+  synchronisation, le code PIN parental et le reste du contrôle parental sont
+  exclus des sauvegardes et des transferts entre appareils.
 - **Meta Quest :** si la sauvegarde dans le cloud est activée dans les
   paramètres du casque, la sauvegarde de Meta s’appuie sur celle d’Android,
   avec les mêmes exclusions. Retirer l’app du casque efface tout ce qu’elle y
@@ -102,7 +122,9 @@ partagent l’historique uniquement via un stockage qui vous appartient déjà.
   fichier, `Edendale/<nom de l’espace>/<identifiant de l’appareil>.json`, avec
   votre progression de visionnage et l’état « vu », vos notes, critiques,
   favoris et l’état de votre liste de suivi, chacun repéré par l’identifiant
-  TMDB du titre ; le nom et la plateforme de l’appareil ; un identifiant
+  TMDB du titre et accompagné de l’heure de sa dernière modification et de
+  l’appareil qui l’a faite ; le nom de l’espace ; le nom et la plateforme de
+  l’appareil ; un identifiant
   aléatoire créé pour la synchronisation ; et la version d’Edendale. Il ne
   contient jamais votre bibliothèque, de noms ni de chemins de fichiers,
   d’identifiants de connexion, votre session TMDB ni le contrôle parental.
@@ -119,8 +141,8 @@ partagent l’historique uniquement via un stockage qui vous appartient déjà.
 - **Pour arrêter :** **Désactiver** dans Réglages → Synchronisation arrête la
   synchronisation sur cet appareil et propose de supprimer son fichier ;
   l’historique reste sur l’appareil. Retirer un appareil dans Réglages →
-  Synchronisation supprime le fichier de cet appareil. Sous Android,
-  **Supprimer l’historique** efface la progression et les marques « vu » sur
+  Synchronisation supprime le fichier de cet appareil. Effacer la progression
+  d’un titre, ou **Supprimer l’historique** sous Android, l’efface sur
   l’appareil et, si la synchronisation est activée, sur vos autres appareils
   lors de leur prochaine synchronisation. Les fichiers de synchronisation
   gardent ensuite, pendant un an au plus, un marqueur pour chaque titre
@@ -129,18 +151,23 @@ partagent l’historique uniquement via un stockage qui vous appartient déjà.
   chaque appareil et supprimez le dossier `Edendale` de votre stockage.
 - **Configurer un autre appareil :** **Configurer un autre appareil** envoie
   l’emplacement de synchronisation et son identifiant, ainsi que les autres
-  comptes et identifiants que vous cochez, directement d’un de vos appareils
-  à un autre via votre réseau local. La connexion est chiffrée avec une clé
-  dont les deux appareils conviennent lorsque vous scannez un code QR ou
-  saisissez un code affiché sur l’autre appareil, et l’appareil qui envoie
-  vous demande de confirmer le nom de l’autre avant d’envoyer quoi que ce
-  soit. Rien ne passe par nous ni par qui que ce soit d’autre. Tant que
-  l’écran d’association est ouvert, l’appareil annonce son nom sur votre
-  réseau local pour que l’autre puisse le trouver. Entre des plateformes vers
-  lesquelles une connexion Google ne peut pas être transférée, seuls l’adresse
-  e-mail du compte Google, le nom de l’espace et l’identifiant du dossier de
-  synchronisation sont envoyés, et vous vous connectez vous-même à Google sur
-  le nouvel appareil.
+  comptes et identifiants que vous cochez, directement d’un de vos appareils à
+  un autre via votre réseau local. Un appareil affiche un code QR, que l’autre
+  scanne ou ouvre comme un lien, ou, si les deux appareils le proposent, un
+  code que vous saisissez sur l’autre. Les deux appareils s’en servent pour
+  convenir d’une clé qui chiffre la connexion, et l’appareil qui envoie vous
+  demande de confirmer le nom de l’autre avant d’envoyer quoi que ce soit.
+  Rien ne passe par nous ni par qui que ce soit d’autre. Sur iPhone, iPad, les
+  téléphones et tablettes Android, et les Meta Quest 3 et 3S, Edendale peut
+  scanner le code avec la caméra : il ne demande l’accès à la caméra que
+  lorsque vous choisissez de scanner, lit le code sur l’appareil, et
+  n’enregistre ni n’envoie jamais les images de la caméra. Tant que l’écran
+  d’association est ouvert, l’appareil annonce son nom et sa plateforme sur
+  votre réseau local pour que l’autre puisse le trouver. Entre des plateformes
+  vers lesquelles une connexion Google ne peut pas être transférée, seuls
+  l’adresse e-mail du compte Google, le nom de l’espace et l’identifiant du
+  dossier de synchronisation sont envoyés, et vous vous connectez vous-même à
+  Google sur le nouvel appareil.
 - **Un appareil que vous retirez** garde l’identifiant qu’il a reçu, et
   l’historique qu’il possède déjà, jusqu’à ce que vous révoquiez l’accès
   d’Edendale chez votre fournisseur de stockage ou changiez le mot de passe du
@@ -152,22 +179,27 @@ Chacun des services ci-dessous reçoit l’adresse IP de votre appareil, comme
 toute connexion à Internet, ainsi que ce qui suit :
 
 - **[TMDB](https://www.themoviedb.org/privacy-policy)** (The Movie Database),
-  pour les informations et les visuels des films et séries : le titre et
-  l’année qu’Edendale lit dans un nom de fichier (jamais le nom complet, son
-  dossier ni le fichier lui-même) et les identifiants TMDB des titres que vous
-  consultez. Si vous vous connectez, également votre session TMDB.
+  pour les informations, les visuels et les classifications par âge des films
+  et séries : le titre qu’Edendale lit dans un nom de fichier, parfois avec
+  l’année (jamais le nom complet, son dossier ni le fichier lui-même), ce que
+  vous tapez dans la recherche, et les identifiants TMDB des titres que vous
+  consultez ou dont Edendale cherche les informations. Si vous vous connectez,
+  également votre session TMDB.
 - **[Wyzie Subs](https://wyzie.io/privacy)**, uniquement lorsque vous cherchez
   des sous-titres en ligne : l’identifiant TMDB du titre, les numéros de
-  saison et d’épisode, les langues demandées et votre clé d’API.
+  saison et d’épisode, les langues et formats de sous-titres qu’Edendale
+  demande, s’il faut inclure les sous-titres pour sourds et malentendants, et
+  une clé d’API : la vôtre si vous en avez saisi une, sinon celle d’Edendale.
 - **[TheIntroDB](https://theintrodb.org/docs/privacy)**, uniquement tant que
   les Boutons pour passer sont activés (ils sont désactivés par défaut) :
   l’identifiant TMDB du titre, les numéros de saison et d’épisode, et la durée
   de la vidéo.
 - **[YouTube](https://policies.google.com/privacy)**, uniquement lorsque vous
-  choisissez de lire une bande-annonce. Sur les appareils Apple, et sur les
-  appareils Android autres que les Meta Quest, Edendale la lit dans le mode de
-  confidentialité renforcée de YouTube (youtube-nocookie.com). Sous Windows, il
-  ouvre la bande-annonce sur youtube.com dans votre navigateur, et sur Meta
+  choisissez de lire une bande-annonce. Sur les appareils Apple autres que
+  l’Apple TV, et sur les appareils Android autres que les Meta Quest, Edendale
+  la lit dans le mode de confidentialité renforcée de YouTube
+  (youtube-nocookie.com). Sur l’Apple TV, il ouvre la bande-annonce dans l’app
+  YouTube ; sous Windows, sur youtube.com dans votre navigateur ; et sur Meta
   Quest, dans le navigateur ou l’app YouTube.
 - **Les stockages que vous associez**, et celui que vous choisissez pour la
   synchronisation, décrits dans la section suivante.
@@ -212,7 +244,9 @@ au service choisi. Rien ne passe par un serveur que nous exploitons.
   depuis votre iPhone ou votre iPad, et un téléviseur Android TV depuis
   Edendale sur un autre appareil Android, via une connexion chiffrée sur
   votre réseau local, uniquement après que vous avez lancé le transfert sur
-  le téléviseur et l’avez confirmé sur l’autre appareil. Sur un téléviseur,
+  le téléviseur et l’avez confirmé sur l’autre appareil. Pendant qu’un
+  téléviseur Android TV attend, il annonce son nom sur votre réseau local. Sur
+  un téléviseur,
   OneDrive peut aussi se connecter avec un code que vous approuvez sur un
   autre appareil. À partir d’Edendale 27.1, n’importe lequel de vos appareils
   peut en configurer un autre de cette façon, comme décrit dans
@@ -246,8 +280,8 @@ choisissez, pour tenir vos fichiers de synchronisation dans votre Drive. Il
 n’envoie, ne modifie, ne partage ni ne supprime jamais vos vidéos ni aucun
 autre fichier de votre Drive. Comme pour toute source, Edendale lit les noms
 de fichiers sur votre appareil pour reconnaître les films et les épisodes, et
-n’envoie à TMDB que le titre et l’année reconnus afin d’obtenir les
-informations.
+n’envoie à TMDB que le titre reconnu, parfois avec l’année, afin d’obtenir
+les informations.
 
 Les données restent sur vos appareils et dans votre propre Drive : les
 informations sur les fichiers dans votre bibliothèque, et le compte associé
@@ -258,26 +292,27 @@ n’arrive sur un autre appareil que si vous confirmez un transfert depuis l’u
 des vôtres ; entre des plateformes vers lesquelles une connexion Google ne
 peut pas être transférée, seuls l’adresse e-mail et l’identifiant du dossier
 de synchronisation sont envoyés. Si vous retirez une vidéo de votre
-bibliothèque, Edendale conserve son identifiant de fichier sur cet appareil
-uniquement, pour qu’elle ne soit plus listée. Les données utilisateur Google
-ne nous sont jamais envoyées, ni à aucun serveur que nous exploitons : nous ne
-les voyons ni ne les lisons jamais. Elles ne sont jamais vendues, jamais
-utilisées à des fins publicitaires et jamais utilisées pour développer,
+bibliothèque, Edendale peut conserver son identifiant de fichier sur cet
+appareil uniquement, pour qu’elle ne soit plus listée. Les données utilisateur
+Google ne nous sont jamais envoyées, ni à aucun serveur que nous exploitons :
+nous ne les voyons ni ne les lisons jamais. Elles ne sont jamais vendues,
+jamais utilisées à des fins publicitaires et jamais utilisées pour développer,
 améliorer ou entraîner des modèles d’intelligence artificielle ou
 d’apprentissage automatique.
 
 Pour mettre fin à l’accès d’Edendale, retirez la source (ce qui retire aussi
 ses fichiers de votre bibliothèque) et déconnectez-vous dans **Réglages →
-Comptes**. **Se déconnecter et révoquer l’accès** révoque aussi l’accès
-d’Edendale chez Google. Vous pouvez le retirer à tout moment depuis les
+Comptes**. **Se déconnecter et révoquer l’accès**, ou **Se déconnecter** sous
+Windows, révoque aussi l’accès d’Edendale chez Google. Vous pouvez le retirer
+à tout moment depuis les
 [connexions tierces de votre compte Google](https://myaccount.google.com/connections).
 Révoquer l’accès y met fin sur tous les appareils, téléviseurs compris, et
 Google oublie les vidéos que vous avez choisies. Les fichiers de
 synchronisation créés par Edendale restent dans votre Drive jusqu’à ce que
 vous les supprimiez. Supprimer l’app efface tout ce qu’elle a enregistré sur
 cet appareil. Une sauvegarde sous Android ou sur Meta Quest peut garder une
-copie de votre bibliothèque, mais jamais le compte associé ni son jeton de
-connexion.
+copie de votre bibliothèque, y compris l’adresse e-mail ou le nom du compte
+d’où viennent ses vidéos, mais jamais le jeton de connexion du compte.
 
 L’utilisation et le transfert vers toute autre app, par Edendale, des
 informations reçues des API Google respecteront la
@@ -295,8 +330,9 @@ fichiers de synchronisation d’Edendale, dans le dossier d’application de
 OneDrive (`Apps/Edendale`) ou dans le dossier `Edendale` de votre Dropbox.
 Edendale n’y modifie ni n’y supprime jamais rien d’autre. Les informations du
 compte et les jetons de connexion ne sont conservés que sur vos appareils.
-Déconnectez-vous dans **Réglages → Comptes**. Pour Dropbox, **Se déconnecter
-et révoquer l’accès** met aussi fin à l’accès d’Edendale chez Dropbox. Vous
+Déconnectez-vous dans **Réglages → Comptes**. Sur les appareils Apple et sous
+Android, **Se déconnecter et révoquer l’accès** met aussi fin à l’accès
+d’Edendale chez Dropbox. Vous
 pouvez également retirer Edendale des
 [apps ayant accès à votre compte Microsoft](https://account.live.com/consent/Manage)
 ou de vos
@@ -327,12 +363,13 @@ puissions collecter.
 
 Vous pouvez consulter, modifier ou supprimer vos données dans l’app à tout
 moment : retirer une source, vous déconnecter d’un compte, désactiver la
-synchronisation entre appareils, la synchronisation iCloud, la réplication
-OneDrive ou la sauvegarde de votre appareil, supprimer les fichiers de
-synchronisation de votre stockage, ou supprimer l’app. Comme nous ne détenons
-aucune de vos données personnelles, ces commandes sont le moyen d’exercer vos
-droits d’accès et d’effacement. Les données conservées par les services
-ci-dessus relèvent de leurs propres politiques de confidentialité.
+synchronisation entre appareils, la synchronisation iCloud ou la sauvegarde de
+votre appareil, supprimer les fichiers de synchronisation (et, sous Windows,
+les anciennes copies OneDrive) de votre stockage, ou supprimer l’app. Comme
+nous ne détenons aucune de vos données personnelles, ces commandes sont le
+moyen d’exercer vos droits d’accès et d’effacement. Les données conservées par
+les services ci-dessus relèvent de leurs propres politiques de
+confidentialité.
 
 ## Modifications de cette politique
 

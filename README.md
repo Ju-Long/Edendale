@@ -271,10 +271,13 @@ Keep the policy true to the shipped apps. It names every service an app
 contacts (TMDB, Wyzie Subs, TheIntroDB, YouTube, and the storage providers),
 what each one receives, what syncs and through which user-controlled service
 (including what a 27.1 sync file holds and what the device-to-device handoff
-sends), and the OAuth scopes each provider is asked for. Change it, in every
-language and with a new `updated` date, alongside any platform change to data
-handling: a new provider or scope, a new online service, or a change to what
-sync writes or the handoff sends. Google's reviewers look for two passages in
+sends), what each platform's own backup keeps, the camera use for scanning a
+pairing code, where titles show outside the app (widgets, Top Shelf, Android
+TV's Continue Watching row, the Windows jump list), and the OAuth scopes each
+provider is asked for. Change it, in every language and with a new `updated`
+date, alongside any platform change to data handling: a new provider or scope,
+a new online service, a new permission, or a change to what sync writes, the
+handoff sends, or a backup keeps. Google's reviewers look for two passages in
 "Google user data"; keep both:
 
 - the Limited Use statement, which links the Google API Services User Data
