@@ -20,14 +20,22 @@ open-source project developed in public at
 ## We don't collect your data
 
 Edendale has no account system and runs no servers that receive information
-from the apps. The apps contain no analytics, advertising, tracking, or
-crash-reporting code. Your information never reaches us, so we have nothing to
-sell, rent, or share.
+from the apps. Apart from the Meta Quest theater described below, the apps
+contain no analytics, advertising, tracking, or crash-reporting code. Your
+information never reaches us, so we have nothing to sell, rent, or share.
 
 If you let your device share diagnostics with app developers, the store you
 installed Edendale from (Apple, Google, Meta, or Microsoft) may give us crash
 reports and aggregate usage statistics under its own privacy policy. We use
 them only to fix problems.
+
+Meta Quest's immersive theater, in versions of Edendale that include it, is
+built with Meta's Spatial SDK, which includes Meta's own analytics code. Under
+Meta's terms for that SDK, third parties, Meta included, may collect or
+receive information from apps that use it. Edendale doesn't sign you in to
+Meta or use Meta's platform services. The theater uses your hands and
+controllers only so you can point and select, and the room, lighting, and seat
+you choose are kept with your other settings on the headset.
 
 ## What stays on your device
 

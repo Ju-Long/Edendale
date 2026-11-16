@@ -20,8 +20,9 @@ désigne les personnes qui le développent.
 ## Nous ne collectons pas vos données
 
 Edendale n’a pas de système de compte et n’exploite aucun serveur qui
-recevrait des informations des apps. Les apps ne contiennent aucun code
-d’analyse, de publicité, de pistage ou de rapport de plantage. Vos
+recevrait des informations des apps. Hormis la salle de cinéma sur Meta Quest
+décrite plus bas, les apps ne contiennent aucun code d’analyse, de
+publicité, de pistage ou de rapport de plantage. Vos
 informations ne nous parviennent jamais : nous n’avons donc rien à vendre, à
 louer ni à partager.
 
@@ -30,6 +31,16 @@ développeurs d’apps, la boutique où vous avez installé Edendale (Apple, Goo
 Meta ou Microsoft) peut nous transmettre des rapports de plantage et des
 statistiques d’utilisation agrégées, selon sa propre politique de
 confidentialité. Nous ne les utilisons que pour corriger des problèmes.
+
+La salle de cinéma immersive sur Meta Quest, dans les versions d’Edendale qui
+l’incluent, est construite avec le Spatial SDK de Meta, qui contient le propre
+code d’analyse de Meta. Selon les conditions de Meta pour ce SDK, des tiers,
+Meta compris, peuvent collecter ou recevoir des informations des apps qui
+l’utilisent. Edendale ne vous connecte pas à Meta et n’utilise pas les
+services de plateforme de Meta. Elle utilise vos mains et vos manettes
+uniquement pour vous permettre de pointer et de sélectionner, et la salle,
+l’éclairage et le siège que vous choisissez sont conservés avec vos autres
+réglages sur le casque.
 
 ## Ce qui reste sur votre appareil
 

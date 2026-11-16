@@ -21,8 +21,9 @@ wird. „Wir“ und „uns“ meint die Menschen, die es entwickeln.
 ## Wir erheben keine Daten über dich
 
 Edendale hat kein Kontosystem und betreibt keine Server, die Informationen aus
-den Apps empfangen. Die Apps enthalten keinen Code für Analysen, Werbung,
-Tracking oder Absturzberichte. Deine Informationen erreichen uns nie, also
+den Apps empfangen. Abgesehen vom unten beschriebenen Kino auf Meta Quest
+enthalten die Apps keinen Code für Analysen, Werbung, Tracking oder
+Absturzberichte. Deine Informationen erreichen uns nie, also
 haben wir nichts zu verkaufen, zu vermieten oder weiterzugeben.
 
 Wenn du deinem Gerät erlaubst, Diagnosedaten mit App-Entwicklern zu teilen,
@@ -30,6 +31,15 @@ kann uns der Store, aus dem du Edendale installiert hast (Apple, Google, Meta
 oder Microsoft), Absturzberichte und zusammengefasste Nutzungsstatistiken gemäß
 seiner eigenen Datenschutzerklärung bereitstellen. Wir nutzen sie nur, um
 Fehler zu beheben.
+
+Das immersive Kino auf Meta Quest ist, in Edendale-Versionen, die es
+enthalten, mit Metas Spatial SDK gebaut, das Metas eigenen Analysecode
+enthält. Nach Metas Bedingungen für dieses SDK können Dritte, auch Meta,
+Informationen von Apps erheben oder erhalten, die es nutzen. Edendale meldet
+dich nicht bei Meta an und nutzt keine Plattformdienste von Meta. Das Kino
+nutzt deine Hände und Controller nur, damit du zeigen und auswählen kannst,
+und der Saal, die Beleuchtung und der Platz, die du wählst, werden mit deinen
+übrigen Einstellungen auf dem Headset gespeichert.
 
 ## Was auf deinem Gerät bleibt
 
