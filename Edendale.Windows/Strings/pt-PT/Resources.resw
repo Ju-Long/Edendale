@@ -65,7 +65,7 @@
     <value>Filmes e Séries</value>
   </data>
   <data name="DownloadedNavItem.Content" xml:space="preserve">
-    <value>Descargas</value>
+    <value>Transferências</value>
   </data>
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Pesquisar</value>
@@ -2040,7 +2040,7 @@ ESTÁ SILENCIOSA</value>
     <value>Tudo</value>
   </data>
   <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Secções de Descargas</value>
+    <value>Secções de Transferências</value>
   </data>
   <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>A carregar</value>
