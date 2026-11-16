@@ -97,7 +97,8 @@ internal fun AccountsSettingsSection(
     }
 
     SettingsSection(
-        header = stringResource(R.string.settings_section_accounts),
+        // The page is Accounts; this group is the storage accounts and server logins.
+        header = stringResource(R.string.link_source_linked_accounts),
         isTelevision = isTelevision,
         focusableContent = false,
         // A TV receives handoffs in Link Source; only handhelds send them.
@@ -105,23 +106,13 @@ internal fun AccountsSettingsSection(
             null
         } else {
             {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                // What it does first, then the button, so neither squeezes the other.
+                InfoRow(stringResource(R.string.handoff_link_to_tv_note))
+                SettingsActionRow {
                     ArchiveButton(
                         label = stringResource(R.string.handoff_link_to_tv),
                         onClick = { linkingToTelevision = true },
                         iconRes = R.drawable.ic_tv,
-                    )
-                    Text(
-                        text = stringResource(R.string.handoff_link_to_tv_note),
-                        modifier = Modifier.weight(1f),
-                        style = BodyCopyStyle(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

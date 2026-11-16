@@ -7,12 +7,18 @@ import com.babasama.edendale.domain.MediaType
 
 /**
  * One part of the Downloaded page shown on its own: the Downloaded row's
- * children in extended navigation (J.1). A null section is the whole page.
+ * children in extended navigation (J.1), and the choices of the page's
+ * section picker at every width (27.1). A null section is the whole page.
  */
-enum class DownloadedSection(@StringRes val title: Int, @DrawableRes val icon: Int) {
-    CONTINUE_WATCHING(R.string.section_continue_watching, R.drawable.ic_hourglass_half),
+enum class DownloadedSection(
+    @StringRes val title: Int,
+    @DrawableRes val icon: Int,
+    /** The picker's label, where four choices share one phone-width row. TalkBack still reads [title]. */
+    @StringRes val shortTitle: Int = title,
+) {
+    CONTINUE_WATCHING(R.string.section_continue_watching, R.drawable.ic_hourglass_half, R.string.section_watching_short),
     MOVIES(R.string.section_movies, R.drawable.ic_film),
-    SHOWS(R.string.section_tv_shows, R.drawable.ic_tv),
+    SHOWS(R.string.section_tv_shows, R.drawable.ic_tv, R.string.section_shows_short),
     ;
 
     companion object {
@@ -25,6 +31,12 @@ enum class DownloadedSection(@StringRes val title: Int, @DrawableRes val icon: I
                     SHOWS -> hasShows
                 }
             }
+
+        /** The section picker's choices: the whole page (null), then each section with something to show. */
+        fun pickerChoices(sections: List<DownloadedSection>): List<DownloadedSection?> = listOf(null) + sections
+
+        /** Offered once two sections have something to show; with one, the whole page and that section list the same titles. */
+        fun isPickerOffered(sections: List<DownloadedSection>): Boolean = sections.size > 1
     }
 }
 
@@ -70,13 +82,41 @@ internal sealed interface NavigationItem {
     /** The row's whole page. */
     val page: NavigationItem get() = of(tab)
 
-    /** A section row whose section has emptied falls back to its whole page. */
+    /**
+     * What a window shows for this row. Watchlist sections exist only as
+     * extended navigation's rows, so elsewhere they show their whole page;
+     * Downloaded's are also the page's own section picker (27.1), so they
+     * show at every width.
+     */
+    fun shown(extendedNavigation: Boolean): NavigationItem =
+        if (extendedNavigation || this is Downloaded) this else page
+
+    /**
+     * Whether [tab]'s own navigation row is lit while this is on screen.
+     * Extended navigation lists the sections as rows ([sectionRows]), so a
+     * section lights its row and the tab's row only its whole page. A rail, a
+     * bottom bar, and the TV strip list no sections, so there the tab stays
+     * lit while the page's picker shows one of its sections (27.1).
+     */
+    fun lights(tab: AppTab, sectionRows: Boolean): Boolean =
+        if (sectionRows) this == of(tab) else this.tab == tab
+
+    /**
+     * A section that has emptied falls back to its whole page, and so does a
+     * Downloaded section once the picker stops offering a choice where no
+     * navigation row lists it ([sectionRows] false): the page would be stuck
+     * on it with nothing to pick. A null list is one still loading, whose
+     * sections are left alone.
+     */
     fun resolved(
-        watchlistSections: List<WatchlistSection>,
-        downloadedSections: List<DownloadedSection>,
+        watchlistSections: List<WatchlistSection>?,
+        downloadedSections: List<DownloadedSection>?,
+        sectionRows: Boolean = true,
     ): NavigationItem = when {
-        this is Watchlist && section != null && section !in watchlistSections -> Watchlist()
-        this is Downloaded && section != null && section !in downloadedSections -> Downloaded()
+        this is Watchlist && section != null && watchlistSections != null && section !in watchlistSections -> Watchlist()
+        this is Downloaded && section != null && downloadedSections != null && (
+            section !in downloadedSections || !sectionRows && !DownloadedSection.isPickerOffered(downloadedSections)
+            ) -> Downloaded()
         else -> this
     }
 

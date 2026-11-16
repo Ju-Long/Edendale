@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
@@ -33,6 +34,8 @@ fun ApprovalQrCode(
     contentDescription: String,
     isTelevision: Boolean,
     modifier: Modifier = Modifier,
+    /** The code's side; the pairing dialog's TV layout sets it smaller so the code fits beside its text. */
+    size: Dp = if (isTelevision) 280.dp else 208.dp,
 ) {
     val bitmap = remember(url) { qrBitmap(url) }
     Surface(
@@ -45,7 +48,7 @@ fun ApprovalQrCode(
             contentDescription = contentDescription,
             modifier = Modifier
                 .padding(20.dp)
-                .size(if (isTelevision) 280.dp else 208.dp),
+                .size(size),
             contentScale = ContentScale.Fit,
             filterQuality = FilterQuality.None,
         )

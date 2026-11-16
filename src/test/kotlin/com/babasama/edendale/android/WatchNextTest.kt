@@ -111,6 +111,16 @@ class WatchNextTest {
     }
 
     @Test
+    fun aRowFromACardThatFellBackLeavesTheRememberedSourceAlone() {
+        assertTrue(WatchNext.program(movie()).play.remembersSource)
+        // The card fell back from the source the title last played from (27.1).
+        val fallback = WatchNext.program(movie().copy(remembersSource = false))
+        assertFalse(fallback.play.remembersSource)
+        // The row's request changed, so the row is rewritten.
+        assertNotEquals(WatchNext.program(movie()).signature, fallback.signature)
+    }
+
+    @Test
     fun theSignatureFollowsTheContentAndIsStable() {
         val program = WatchNext.program(movie())
         assertEquals(program.signature, WatchNext.program(movie()).signature)

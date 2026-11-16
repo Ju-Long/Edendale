@@ -1,6 +1,7 @@
 package com.babasama.edendale
 
 import android.content.Context
+import com.babasama.edendale.domain.MediaType
 import com.babasama.edendale.introdb.IntroDbResponse
 import com.babasama.edendale.introdb.IntroDbService
 import com.babasama.edendale.introdb.IntroDbTransport
@@ -27,8 +28,10 @@ import java.net.URLEncoder
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
 
 /** Android composition root for domain and TMDB services. */
 object AndroidEdendaleCore {
@@ -49,6 +52,23 @@ object AndroidEdendaleCore {
         regionProvider: () -> String,
     ): ContentCertificationProvider =
         TmdbContentCertificationProvider(TmdbApi(AndroidTmdbTransport()), regionProvider)
+
+    /**
+     * TMDB's certification lists for the parental ceiling (Section O). A
+     * failed request yields null, and the controls keep the lists they have.
+     */
+    fun certificationLists(): suspend (MediaType) -> JsonObject? {
+        val api = TmdbApi(AndroidTmdbTransport())
+        return { mediaType ->
+            try {
+                api.certificationList(mediaType)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
 
     fun wyzieService(): WyzieSubtitleService = WyzieSubtitleService(AndroidWyzieTransport())
 

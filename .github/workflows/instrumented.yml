@@ -8,9 +8,9 @@ name: Android instrumented tests
 
 on:
   push:
-    branches: [android, android-27.0]
+    branches: [android, android-27.1]
   pull_request:
-    branches: [android, android-27.0]
+    branches: [android, android-27.1]
   workflow_dispatch:
 
 permissions: {}

@@ -50,4 +50,34 @@ data class SyncLocation(
     init {
         require(SpaceName.isValid(space)) { "Invalid space name" }
     }
+
+    /**
+     * Whether [other] reads and writes the same device files: the same
+     * storage, the same folder in it, and the same space. The Google folder
+     * ID a sync learns later doesn't make it another location.
+     */
+    fun sameFiles(other: SyncLocation): Boolean =
+        provider == other.provider &&
+            space == other.space &&
+            accountKey == other.accountKey &&
+            host.equals(other.host, ignoreCase = true) &&
+            port == other.port &&
+            path == other.path
+
+    companion object {
+        /**
+         * The location to remember as left behind once [next] replaces
+         * [current] (FEATURES-27.1.md §5.1; SYNC-PROTOCOL.md §4 "One location
+         * per device"): its files stay until the viewer deletes this device's
+         * file there, and the app offers to. The latest one replaced wins over
+         * an older [remembered] one, as on Apple; a remembered location that
+         * [next] uses again is forgotten, so the app never offers to delete
+         * the file it is about to write.
+         */
+        fun previousAfter(current: SyncLocation?, next: SyncLocation, remembered: SyncLocation?): SyncLocation? = when {
+            current != null && !current.sameFiles(next) -> current
+            remembered != null && remembered.sameFiles(next) -> null
+            else -> remembered
+        }
+    }
 }

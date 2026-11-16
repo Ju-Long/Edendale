@@ -45,7 +45,12 @@ class EdendaleApplication : Application() {
             EdendaleDatabase::class.java,
             "edendale.db"
         )
-            .addMigrations(EdendaleDatabase.MIGRATION_1_2, EdendaleDatabase.MIGRATION_2_3, EdendaleDatabase.MIGRATION_3_4)
+            .addMigrations(
+                EdendaleDatabase.MIGRATION_1_2,
+                EdendaleDatabase.MIGRATION_2_3,
+                EdendaleDatabase.MIGRATION_3_4,
+                EdendaleDatabase.MIGRATION_4_5,
+            )
             .build()
         libraryRepository = LibraryRepository(this, database)
         // Sync logs carry counts and error classes only (SYNC-PROTOCOL.md §8.5), and only in debug builds.

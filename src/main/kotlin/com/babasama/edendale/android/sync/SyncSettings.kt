@@ -19,13 +19,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,7 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.babasama.edendale.android.ApprovalQrCode
 import com.babasama.edendale.android.ArchiveButton
 import com.babasama.edendale.android.ArchiveButtonKind
 import com.babasama.edendale.android.BodyCopyStyle
@@ -48,41 +45,38 @@ import com.babasama.edendale.android.EdendaleApplication
 import com.babasama.edendale.android.EdendaleColors
 import com.babasama.edendale.android.FocusableRows
 import com.babasama.edendale.android.InfoRow
+import com.babasama.edendale.android.SettingsActionRow
 import com.babasama.edendale.android.LabeledRow
 import com.babasama.edendale.android.R
 import com.babasama.edendale.android.SettingsRowDivider
 import com.babasama.edendale.android.SettingsSection
 import com.babasama.edendale.android.connectorFailureMessage
+import com.babasama.edendale.android.oauthFailureMessage
 import com.babasama.edendale.android.data.SavedServerLogin
 import com.babasama.edendale.android.data.SavedSmbLogin
 import com.babasama.edendale.android.data.ServerLoginStore
 import com.babasama.edendale.android.data.SmbCredentialsStore
-import com.babasama.edendale.android.handoff.DiscoveredTelevision
-import com.babasama.edendale.android.handoff.HandoffDiscovery
-import com.babasama.edendale.android.handoff.PairingGuest
-import com.babasama.edendale.android.handoff.PairingHost
 import com.babasama.edendale.android.handoff.handoffFailureMessage
+import com.babasama.edendale.android.parental.ParentalGate
 import com.babasama.edendale.android.sourceKindLabel
 import com.babasama.edendale.connectors.MediaSourceKind
-import com.babasama.edendale.handoff.AccountHandoff
+import com.babasama.edendale.parental.GatedAction
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
-import com.babasama.edendale.handoff.HandoffCrypto
-import com.babasama.edendale.handoff.HandoffProtocolV2
 import com.babasama.edendale.handoff.HandoffV2
 import com.babasama.edendale.oauth.CloudAccount
 import com.babasama.edendale.oauth.CloudProviders
+import com.babasama.edendale.oauth.OAuthException
+import com.babasama.edendale.oauth.OAuthFailure
 import com.babasama.edendale.sync.DeviceFileCodec
 import com.babasama.edendale.sync.SpaceName
 import com.babasama.edendale.sync.SyncLocation
 import com.babasama.edendale.sync.SyncProvider
 import com.babasama.edendale.sync.SyncWarning
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /** A pairing link waiting to be acted on: set by a scanned `edendale://handoff` QR code, cleared when the dialog closes. */
@@ -137,10 +131,12 @@ internal fun pairingFailureMessage(context: Context, error: Throwable): String =
  * Settings → Sync (FEATURES-27.1.md §5.1): off by default; a location and a
  * space name turn it on. On, it shows the location, the space, this device,
  * and the last sync, and offers Sync Now, pairing another device both ways,
- * removing a device, and turning off. Never claims instant sync.
+ * removing a device, and turning off. Never claims instant sync. The section
+ * stays readable while the parental controls are locked; every button asks
+ * for the PIN through [gate] (O-D14).
  */
 @Composable
-internal fun SyncSettingsSection(isTelevision: Boolean) {
+internal fun SyncSettingsSection(isTelevision: Boolean, gate: ParentalGate) {
     val context = LocalContext.current
     val app = context.applicationContext as EdendaleApplication
     val sync = app.sync
@@ -148,16 +144,25 @@ internal fun SyncSettingsSection(isTelevision: Boolean) {
     val changes by sync.settings.changes.collectAsState()
     val scope = rememberCoroutineScope()
     var choosing by remember { mutableStateOf(false) }
-    var pairing by remember { mutableStateOf<Boolean?>(null) } // true hosting, false guest
+    var pairing by remember { mutableStateOf<HandoffV2.Role?>(null) }
     var turningOff by remember { mutableStateOf(false) }
     var removingDevice by remember { mutableStateOf(false) }
     var accountLabel by remember { mutableStateOf<String?>(null) }
+    var previousAccountLabel by remember { mutableStateOf<String?>(null) }
+    var deletingOldFile by remember { mutableStateOf(false) }
+    var oldFileError by remember { mutableStateOf<String?>(null) }
+    // Every change in this section is a sync change the acceptance criteria put behind the PIN.
+    fun gated(action: () -> Unit): () -> Unit = { gate.require(GatedAction.SYNC, onUnlocked = action) }
 
     LaunchedEffect(changes) {
         sync.refreshStatus()
         val location = sync.settings.location
         accountLabel = location?.accountKey?.let { key ->
             location.provider.kind?.let { kind -> withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.account(kind, key)?.label }.getOrNull() } }
+        }
+        val previous = sync.settings.previousLocation
+        previousAccountLabel = previous?.accountKey?.let { key ->
+            previous.provider.kind?.let { kind -> withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.account(kind, key)?.label }.getOrNull() } }
         }
     }
 
@@ -166,27 +171,40 @@ internal fun SyncSettingsSection(isTelevision: Boolean) {
         isTelevision = isTelevision,
         focusableContent = false,
         actions = {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            SettingsActionRow {
                 if (status.isOn) {
-                    ArchiveButton(label = stringResource(R.string.sync_now), onClick = { sync.syncNow() }, enabled = !status.syncing, iconRes = R.drawable.ic_arrow_rotate_right)
-                    ArchiveButton(label = stringResource(R.string.sync_set_up_device), onClick = { pairing = true }, iconRes = R.drawable.ic_tv)
+                    ArchiveButton(label = stringResource(R.string.sync_now), onClick = gated { sync.syncNow() }, enabled = !status.syncing, iconRes = R.drawable.ic_arrow_rotate_right)
                 } else {
-                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = { choosing = true }, kind = ArchiveButtonKind.Primary, iconRes = R.drawable.ic_folder_circle_plus)
+                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true }, kind = ArchiveButtonKind.Primary, iconRes = R.drawable.ic_folder_circle_plus)
                 }
-                ArchiveButton(label = stringResource(R.string.sync_receive_from_device), onClick = { pairing = false }, iconRes = R.drawable.ic_link)
+                // As on Apple, both directions are always offered: without a location the sender can still send accounts and logins.
+                ArchiveButton(label = stringResource(R.string.sync_set_up_device), onClick = gated { pairing = HandoffV2.Role.SENDER }, iconRes = R.drawable.ic_forward)
+                ArchiveButton(label = stringResource(R.string.sync_receive_from_device), onClick = gated { pairing = HandoffV2.Role.RECEIVER }, iconRes = R.drawable.ic_backward)
             }
             if (status.isOn) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = { choosing = true })
-                    ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = { removingDevice = true })
-                    ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = { turningOff = true }, iconRes = R.drawable.ic_xmark)
+                SettingsActionRow {
+                    ArchiveButton(label = stringResource(R.string.sync_choose_location), onClick = gated { choosing = true })
+                    ArchiveButton(label = stringResource(R.string.sync_remove_device), onClick = gated { removingDevice = true })
+                    ArchiveButton(label = stringResource(R.string.sync_turn_off), onClick = gated { turningOff = true }, iconRes = R.drawable.ic_xmark)
+                }
+            }
+            // FEATURES-27.1 §5.1: a replaced location keeps this device's file until the viewer deletes it, and the app offers to.
+            if (status.previousLocation != null) {
+                SettingsActionRow {
+                    ArchiveButton(
+                        label = stringResource(if (deletingOldFile) R.string.watch_history_deleting else R.string.sync_previous_file_delete),
+                        enabled = !deletingOldFile,
+                        iconRes = R.drawable.ic_trash_can,
+                        onClick = gated {
+                            deletingOldFile = true
+                            oldFileError = null
+                            scope.launch {
+                                sync.deletePreviousFile().onFailure { oldFileError = syncErrorMessage(context, it) }
+                                deletingOldFile = false
+                            }
+                        },
+                    )
+                    ArchiveButton(label = stringResource(R.string.sync_previous_file_keep), enabled = !deletingOldFile, onClick = gated { oldFileError = null; sync.keepPreviousFile() })
                 }
             }
         },
@@ -221,13 +239,23 @@ internal fun SyncSettingsSection(isTelevision: Boolean) {
                 InfoRow(stringResource(R.string.sync_privacy_note))
             }
         }
+        status.previousLocation?.let { previous ->
+            FocusableRows(isTelevision) {
+                SettingsRowDivider()
+                InfoRow(stringResource(R.string.sync_previous_file_note, locationLabel(context, previous, previousAccountLabel), previous.space))
+                oldFileError?.let { message ->
+                    SettingsRowDivider()
+                    InfoRow(message)
+                }
+            }
+        }
     }
 
     if (choosing) {
         ChooseLocationDialog(isTelevision = isTelevision, onDismiss = { choosing = false })
     }
-    pairing?.let { hosting ->
-        PairingDialog(isTelevision = isTelevision, hosting = hosting, onDismiss = { pairing = null })
+    pairing?.let { role ->
+        SyncHandoffDialog(isTelevision = isTelevision, role = role, onDismiss = { pairing = null })
     }
     if (turningOff) {
         val location = status.location
@@ -249,6 +277,9 @@ internal fun SyncSettingsSection(isTelevision: Boolean) {
     }
 }
 
+/** The cloud providers Choose a Location can sign in to on its own, in the order Link Source lists them. */
+private val SYNC_SIGN_IN_KINDS = listOf(MediaSourceKind.GOOGLE_DRIVE, MediaSourceKind.ONE_DRIVE, MediaSourceKind.DROPBOX)
+
 /** The activity a Compose context belongs to, for a sign-in's Custom Tab. */
 private fun Context.findActivity(): Activity? {
     var current: Context? = this
@@ -261,7 +292,9 @@ private fun Context.findActivity(): Activity? {
 
 /**
  * Choose a Location (§5.2): a folder on this device (phones and tablets), a
- * linked cloud account, or a saved server login with the folder inside it,
+ * linked cloud account or one signed in to right here (phones and tablets;
+ * the library's sources are untouched, so videos can stay on SMB while the
+ * history goes to Drive), or a saved server login with the folder inside it,
  * plus the space name. Saving turns sync on and runs the first sync.
  */
 @Composable
@@ -280,6 +313,7 @@ internal fun ChooseLocationDialog(
     var space by remember { mutableStateOf(presetSpace ?: sync.settings.location?.space ?: "") }
     var accounts by remember { mutableStateOf<List<CloudAccount>>(emptyList()) }
     var serverLogins by remember { mutableStateOf<List<SavedServerLogin>>(emptyList()) }
+    var linkedFolderUris by remember { mutableStateOf<List<String>>(emptyList()) }
     var smbLogins by remember { mutableStateOf<List<SavedSmbLogin>>(emptyList()) }
     var chosenAccount by remember { mutableStateOf<CloudAccount?>(null) }
     var chosenServer by remember { mutableStateOf<Triple<SyncProvider, String, Int?>?>(null) }
@@ -287,12 +321,16 @@ internal fun ChooseLocationDialog(
     var folderUri by remember { mutableStateOf<Uri?>(null) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // A sign-in made from this dialog, so an account need not be linked as a library source first.
+    var signingIn by remember { mutableStateOf<MediaSourceKind?>(null) }
+    var signInJob by remember { mutableStateOf<Job?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             accounts = runCatching { app.cloudAccounts.vault.all() }.getOrDefault(emptyList())
             serverLogins = runCatching { ServerLoginStore(context).all().filter { it.kind == MediaSourceKind.WEBDAV || it.kind == MediaSourceKind.SFTP } }.getOrDefault(emptyList())
             smbLogins = runCatching { SmbCredentialsStore(context).savedLogins() }.getOrDefault(emptyList())
+            linkedFolderUris = runCatching { app.database.libraryDao().folders().map { it.treeUri } }.getOrDefault(emptyList())
         }
     }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -303,6 +341,39 @@ internal fun ChooseLocationDialog(
             folderUri = uri
             chosenAccount = null
             chosenServer = null
+        }
+    }
+
+    /**
+     * Signs in to [kind] for sync only (no library source, no Google picker)
+     * and chooses the new account. Tapping the waiting row again stops it:
+     * a Custom Tab closed without signing in never reports back.
+     */
+    fun signIn(kind: MediaSourceKind) {
+        if (signingIn != null) {
+            signInJob?.cancel()
+            return
+        }
+        val activity = context.findActivity() ?: return
+        signingIn = kind
+        error = null
+        signInJob = scope.launch {
+            try {
+                val account = app.cloudAccounts.signInForSync(activity, kind)
+                accounts = withContext(Dispatchers.IO) { runCatching { app.cloudAccounts.vault.all() }.getOrDefault(emptyList()) }
+                chosenAccount = accounts.firstOrNull { it.kind == account.kind && it.key == account.key } ?: account
+                chosenServer = null
+                folderUri = null
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: OAuthException) {
+                if (failure.failure != OAuthFailure.Cancelled) error = oauthFailureMessage(context, failure)
+            } catch (failure: Exception) {
+                error = connectorFailureMessage(context, failure) ?: context.getString(R.string.error_server_unreachable)
+            } finally {
+                signingIn = null
+                signInJob = null
+            }
         }
     }
 
@@ -384,6 +455,25 @@ internal fun ChooseLocationDialog(
                         }
                     }
                 }
+                // Signing in here stores the account for sync alone: a library can stay on SMB while its history goes to Drive.
+                val signInKinds = if (isTelevision) {
+                    emptyList()
+                } else {
+                    SYNC_SIGN_IN_KINDS.filter { app.cloudAccounts.isOffered(it) && (presetProvider == null || it == presetProvider.kind) }
+                }
+                if (signInKinds.isNotEmpty()) {
+                    if (offeredAccounts.isNotEmpty()) {
+                        Text(stringResource(R.string.link_source_another_account).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    signInKinds.forEach { kind ->
+                        val label = if (signingIn == kind) {
+                            stringResource(R.string.link_source_waiting, sourceKindLabel(kind))
+                        } else {
+                            stringResource(R.string.link_source_sign_in_to, sourceKindLabel(kind))
+                        }
+                        ChoiceRow(label = label, selected = false, iconRes = R.drawable.ic_link) { signIn(kind) }
+                    }
+                }
                 if (presetProvider == null && (serverLogins.isNotEmpty() || smbLogins.isNotEmpty())) {
                     Text(stringResource(R.string.sync_provider_servers).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     smbLogins.forEach { login ->
@@ -398,7 +488,13 @@ internal fun ChooseLocationDialog(
                         val provider = SyncProvider.forKind(login.kind) ?: return@forEach
                         ChoiceRow(label = "${sourceKindLabel(login.kind)} · ${login.user} @ ${login.address}", selected = chosenServer?.second == login.host && chosenServer?.first == provider, iconRes = R.drawable.ic_folder_tree) {
                             chosenServer = Triple(provider, login.host, login.port)
-                            if (serverFolder.isBlank()) serverFolder = if (provider == SyncProvider.WEBDAV) "https://${login.address}/" else "/"
+                            if (serverFolder.isBlank()) {
+                                serverFolder = if (provider == SyncProvider.WEBDAV) {
+                                    com.babasama.edendale.sync.defaultWebDavSyncFolder(login.host, login.port, linkedFolderUris)
+                                } else {
+                                    "/"
+                                }
+                            }
                             chosenAccount = null
                             folderUri = null
                         }
@@ -426,17 +522,22 @@ internal fun ChooseLocationDialog(
             }
         },
         confirmButton = {
-            ArchiveButton(label = stringResource(R.string.action_save), onClick = { save() }, enabled = !saving, kind = ArchiveButtonKind.Primary)
+            ArchiveButton(
+                label = stringResource(R.string.action_save),
+                onClick = { save() },
+                enabled = !saving && signingIn == null && (folderUri != null || chosenAccount != null || chosenServer != null),
+                kind = ArchiveButtonKind.Primary,
+            )
         },
         dismissButton = { ArchiveButton(label = stringResource(R.string.action_cancel), onClick = onDismiss) },
     )
 }
 
 @Composable
-private fun ChoiceRow(label: String, selected: Boolean, iconRes: Int, onClick: () -> Unit) {
+internal fun ChoiceRow(label: String, selected: Boolean, iconRes: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
     androidx.compose.material3.Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(com.babasama.edendale.android.EdendaleRadii.Soft.dp),
         color = if (selected) EdendaleColors.SurfaceLow else androidx.compose.ui.graphics.Color.Transparent,
     ) {
@@ -453,325 +554,16 @@ private fun ChoiceRow(label: String, selected: Boolean, iconRes: Int, onClick: (
 }
 
 @Composable
-private fun Waiting(text: String) {
+internal fun Waiting(text: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
-/** What the sender ticks (§9.6 step 2): the location, and each other account and login. */
-private data class OfferChoice(
-    val location: HandoffV2.LocationPayload?,
-    val accounts: List<AccountHandoff.Account>,
-    val logins: List<AccountHandoff.Login>,
-    val sendLocation: Boolean = location != null,
-    val tickedAccounts: Set<Int> = emptySet(),
-    val tickedLogins: Set<Int> = emptySet(),
-) {
-    val isEmpty: Boolean get() = location == null && accounts.isEmpty() && logins.isEmpty()
-}
-
-/**
- * Pairing with another device (§9), as host (this device shows the QR code
- * and the code) or guest (this device scans, pastes, finds, or types).
- * Either side may send; the viewer picks first. The sender confirms what to
- * send with the other device's name on screen before anything travels.
- */
-@Composable
-internal fun PairingDialog(isTelevision: Boolean, hosting: Boolean, onDismiss: () -> Unit, initialLink: String? = null) {
-    val context = LocalContext.current
-    val app = context.applicationContext as EdendaleApplication
-    val sync = app.sync
-    val handoff = remember(app) { SyncHandoff(app) }
-    val scope = rememberCoroutineScope()
-    var role by remember { mutableStateOf<HandoffV2.Role?>(null) }
-    var host by remember { mutableStateOf<PairingHost?>(null) }
-    val hostState = host?.state?.collectAsState()?.value
-    val discovery = remember(context) { HandoffDiscovery(context) }
-    val found by discovery.televisions.collectAsState()
-    var link by remember { mutableStateOf(initialLink.orEmpty()) }
-    var typedAddress by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf("") }
-    var target by remember { mutableStateOf<DiscoveredTelevision?>(null) }
-    var guestJob by remember { mutableStateOf<Job?>(null) }
-    var guestStatus by remember { mutableStateOf<String?>(null) }
-    var outcome by remember { mutableStateOf<Pair<HandoffV2.RoleMessage, HandoffV2.ResultMessage?>?>(null) }
-    var failure by remember { mutableStateOf<String?>(null) }
-    var followUp by remember { mutableStateOf<SyncHandoff.FollowUp?>(null) }
-    // The sender's confirmation, awaited by the protocol thread.
-    var pendingOffer by remember { mutableStateOf<Pair<HandoffV2.RoleMessage, CompletableDeferred<HandoffV2.Offer?>>?>(null) }
-    var choice by remember { mutableStateOf<OfferChoice?>(null) }
-
-    val platform = sync.platform
-    val deviceName = sync.deviceName()
-
-    suspend fun buildChoice(): OfferChoice {
-        val location = handoff.locationPayload()
-        val accounts = handoff.otherAccounts().filter { it.subject != location?.account?.subject }
-        val logins = handoff.otherLogins().filter { it.host != location?.login?.host || it.kind != location.login?.kind }
-        return OfferChoice(location, accounts, logins)
-    }
-
-    fun participant(myRole: HandoffV2.Role) = HandoffProtocolV2.Participant(
-        myRole, deviceName, platform,
-        offer = { peer ->
-            val deferred = CompletableDeferred<HandoffV2.Offer?>()
-            pendingOffer = peer to deferred
-            runBlocking { choice = buildChoice() }
-            runBlocking { deferred.await() }
-        },
-        receive = { incoming, _ ->
-            val received = runBlocking { handoff.receive(incoming) }
-            followUp = received.followUp
-            received.result
-        },
-    )
-
-    DisposableEffect(hosting) {
-        if (!hosting) discovery.start()
-        onDispose {
-            discovery.stop()
-            host?.stop()
-            guestJob?.cancel()
-            pendingOffer?.second?.complete(null)
-        }
-    }
-
-    fun startHost(chosen: HandoffV2.Role) {
-        val created = PairingHost(context, chosen, platform, deviceName, offer = { peer -> participant(chosen).offer(peer) }, receive = { incoming, peer -> participant(chosen).receive(incoming, peer) })
-        host = created
-        created.start(scope)
-    }
-
-    fun connect(address: java.net.InetAddress, port: Int, pairing: HandoffProtocolV2.GuestPairing, chosen: HandoffV2.Role, peerName: String) {
-        failure = null
-        guestStatus = context.getString(R.string.handoff_connecting, peerName)
-        guestJob = scope.launch(Dispatchers.IO) {
-            try {
-                val result = PairingGuest.run(address, port, pairing, participant(chosen))
-                outcome = result.peer to result.result
-                guestStatus = null
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                failure = pairingFailureMessage(context, error)
-                guestStatus = null
-            } finally {
-                pendingOffer = null
-            }
-        }
-    }
-
-    fun connectWithLink(chosen: HandoffV2.Role) {
-        val payload = HandoffV2.QrPayload.parse(link) ?: run { failure = context.getString(R.string.pairing_wrong_secret); return }
-        val address = payload.host?.let { runCatching { java.net.InetAddress.getByName(it) }.getOrNull() }
-            ?: found.firstOrNull { it.name == payload.name }?.host
-            ?: run { failure = context.getString(R.string.handoff_connection_failed); return }
-        val port = payload.port ?: found.firstOrNull { it.name == payload.name }?.port ?: run { failure = context.getString(R.string.handoff_connection_failed); return }
-        connect(address, port, HandoffProtocolV2.GuestPairing.Qr(payload), chosen, payload.name)
-    }
-
-    fun connectWithCode(chosen: HandoffV2.Role) {
-        val device = target ?: return
-        val typed = code.filter(Char::isDigit)
-        if (typed.length != HandoffCrypto.CODE_LENGTH) return
-        connect(device.host, device.port, HandoffProtocolV2.GuestPairing.Code(typed), chosen, device.name)
-    }
-
-    val finished = outcome ?: (hostState?.status as? PairingHost.Status.Done)?.let { it.peer to it.result }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                when {
-                    pendingOffer != null -> stringResource(R.string.pairing_confirm_send_title, pendingOffer!!.first.name)
-                    hosting -> stringResource(R.string.sync_set_up_device)
-                    else -> stringResource(R.string.sync_receive_from_device)
-                },
-            )
-        },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                val chosenRole = role
-                val offer = pendingOffer
-                val current = choice
-                when {
-                    finished != null -> {
-                        val (peer, result) = finished
-                        Text(stringResource(if (chosenRole == HandoffV2.Role.SENDER) R.string.pairing_sent else R.string.pairing_received, peer.name), style = MaterialTheme.typography.bodyMedium)
-                        result?.let {
-                            Text(context.resources.getQuantityString(R.plurals.pairing_stored_count, it.stored.size, it.stored.size), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (it.failed.isNotEmpty()) Text(context.resources.getQuantityString(R.plurals.pairing_failed_count, it.failed.size, it.failed.size), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.error)
-                        }
-                        when (val next = followUp) {
-                            is SyncHandoff.FollowUp.PickFolder -> Text(stringResource(R.string.sync_folder_relink, next.space), style = BodyCopyStyle(), color = EdendaleColors.Gold)
-                            is SyncHandoff.FollowUp.GoogleSignIn -> Text(stringResource(R.string.sync_google_relink, next.hint ?: "Google", next.space), style = BodyCopyStyle(), color = EdendaleColors.Gold)
-                            null -> Unit
-                        }
-                    }
-                    offer != null && current != null -> OfferChoices(current, context, onChange = { choice = it })
-                    offer != null -> Waiting(stringResource(R.string.pairing_connected, offer.first.name))
-                    chosenRole == null -> {
-                        Text(stringResource(R.string.pairing_role_question), style = MaterialTheme.typography.bodyMedium)
-                        ChoiceRow(label = stringResource(R.string.pairing_role_send), selected = false, iconRes = R.drawable.ic_forward) { role = HandoffV2.Role.SENDER; if (hosting) startHost(HandoffV2.Role.SENDER) }
-                        ChoiceRow(label = stringResource(R.string.pairing_role_receive), selected = false, iconRes = R.drawable.ic_backward) { role = HandoffV2.Role.RECEIVER; if (hosting) startHost(HandoffV2.Role.RECEIVER) }
-                        Text(stringResource(R.string.handoff_request_message), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    hosting -> {
-                        val state = hostState
-                        Text(stringResource(R.string.pairing_instructions), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        state?.qrUri?.let { ApprovalQrCode(it, stringResource(R.string.pairing_qr_description), isTelevision) }
-                        state?.code?.let { shown ->
-                            Text(stringResource(R.string.pairing_code_label), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(shown.chunked(3).joinToString(" "), style = MaterialTheme.typography.displaySmall, color = EdendaleColors.Gold)
-                        }
-                        if (!state?.addresses.isNullOrEmpty()) Text(stringResource(R.string.handoff_tv_address, state!!.addresses.joinToString("  ")), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        when (val status = state?.status) {
-                            is PairingHost.Status.Connected -> Waiting(status.peerName?.let { stringResource(R.string.pairing_connected, it) } ?: stringResource(R.string.handoff_tv_connected))
-                            is PairingHost.Status.Failed -> Text(pairingFailureMessage(context, status.error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                            is PairingHost.Status.LockedOut -> Text(stringResource(R.string.pairing_locked_out), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                            else -> Waiting(stringResource(R.string.pairing_waiting))
-                        }
-                    }
-                    guestStatus != null -> Waiting(guestStatus!!)
-                    target != null -> {
-                        OutlinedTextField(
-                            value = code,
-                            onValueChange = { code = it.filter(Char::isDigit).take(HandoffCrypto.CODE_LENGTH) },
-                            label = { Text(stringResource(R.string.pairing_enter_code, target!!.name)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Go),
-                            keyboardActions = KeyboardActions(onGo = { connectWithCode(chosenRole) }),
-                        )
-                    }
-                    else -> {
-                        Text(stringResource(R.string.pairing_scan_hint), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        OutlinedTextField(
-                            value = link,
-                            onValueChange = { link = it },
-                            label = { Text(stringResource(R.string.pairing_link_label)) },
-                            placeholder = { Text("edendale://handoff?v=2&…") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
-                            keyboardActions = KeyboardActions(onGo = { connectWithLink(chosenRole) }),
-                        )
-                        val hosts = found.filter { it.speaksVersion2 }
-                        if (hosts.isNotEmpty()) {
-                            Text(stringResource(R.string.pairing_devices_found).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            hosts.forEach { device -> ChoiceRow(label = device.name, selected = false, iconRes = R.drawable.ic_tv) { code = ""; target = device } }
-                        } else {
-                            Waiting(stringResource(R.string.pairing_searching))
-                        }
-                        OutlinedTextField(
-                            value = typedAddress,
-                            onValueChange = { typedAddress = it },
-                            label = { Text(stringResource(R.string.pairing_address_label)) },
-                            placeholder = { Text("192.168.1.20:40123") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
-                            keyboardActions = KeyboardActions(onGo = { typedDevice(typedAddress)?.let { code = ""; target = it } }),
-                        )
-                    }
-                }
-                failure?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
-            }
-        },
-        confirmButton = {
-            val chosenRole = role
-            val offer = pendingOffer
-            val current = choice
-            when {
-                finished != null -> {
-                    when (val next = followUp) {
-                        is SyncHandoff.FollowUp.PickFolder, is SyncHandoff.FollowUp.GoogleSignIn -> FollowUpButton(next, onDone = onDismiss)
-                        null -> ArchiveButton(label = stringResource(R.string.action_close), onClick = onDismiss, kind = ArchiveButtonKind.Primary)
-                    }
-                }
-                offer != null && current != null -> ArchiveButton(
-                    label = stringResource(R.string.pairing_send),
-                    enabled = !current.isEmpty,
-                    kind = ArchiveButtonKind.Primary,
-                    onClick = {
-                        val built = HandoffV2.offerFor(
-                            if (current.sendLocation) current.location else null,
-                            current.accounts.filterIndexed { index, _ -> index in current.tickedAccounts },
-                            current.logins.filterIndexed { index, _ -> index in current.tickedLogins },
-                            platform,
-                            offer.first.platform,
-                        )
-                        offer.second.complete(built)
-                        pendingOffer = null
-                        choice = null
-                    },
-                )
-                !hosting && chosenRole != null && target != null && guestStatus == null -> ArchiveButton(label = stringResource(R.string.action_connect), onClick = { connectWithCode(chosenRole) }, enabled = code.length == HandoffCrypto.CODE_LENGTH, kind = ArchiveButtonKind.Primary)
-                !hosting && chosenRole != null && target == null && guestStatus == null && link.isNotBlank() -> ArchiveButton(label = stringResource(R.string.action_connect), onClick = { connectWithLink(chosenRole) }, kind = ArchiveButtonKind.Primary)
-                !hosting && chosenRole != null && target == null && guestStatus == null && typedAddress.isNotBlank() -> ArchiveButton(label = stringResource(R.string.action_connect), onClick = { typedDevice(typedAddress)?.let { code = ""; target = it } }, enabled = typedDevice(typedAddress) != null, kind = ArchiveButtonKind.Primary)
-                else -> Unit
-            }
-        },
-        dismissButton = {
-            val offer = pendingOffer
-            if (offer != null) {
-                ArchiveButton(label = stringResource(R.string.handoff_decline), onClick = { offer.second.complete(null); pendingOffer = null; choice = null })
-            } else if (finished == null) {
-                ArchiveButton(
-                    label = stringResource(if (target != null && guestStatus == null) R.string.action_back else R.string.action_cancel),
-                    onClick = { if (target != null && guestStatus == null) target = null else onDismiss() },
-                )
-            }
-        },
-    )
-}
-
-@Composable
-private fun OfferChoices(choice: OfferChoice, context: Context, onChange: (OfferChoice) -> Unit) {
-    if (choice.isEmpty) {
-        Text(stringResource(R.string.pairing_nothing_to_send), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        return
-    }
-    Text(stringResource(R.string.handoff_request_message), style = BodyCopyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    choice.location?.let { location ->
-        val label = if (location.provider == SyncProvider.FOLDER) {
-            stringResource(R.string.pairing_send_location_folder, location.space)
-        } else {
-            stringResource(R.string.pairing_send_location, sourceKindLabel(location.provider.kind), location.space)
-        }
-        TickRow(label, choice.sendLocation) { onChange(choice.copy(sendLocation = it)) }
-    }
-    if (choice.accounts.isNotEmpty()) {
-        Text(stringResource(R.string.pairing_send_accounts).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        choice.accounts.forEachIndexed { index, account ->
-            TickRow("${sourceKindLabel(account.kind)} · ${account.email ?: account.displayName ?: account.subject}", index in choice.tickedAccounts) { ticked ->
-                onChange(choice.copy(tickedAccounts = if (ticked) choice.tickedAccounts + index else choice.tickedAccounts - index))
-            }
-        }
-    }
-    if (choice.logins.isNotEmpty()) {
-        Text(stringResource(R.string.pairing_send_logins).uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        choice.logins.forEachIndexed { index, login ->
-            TickRow("${sourceKindLabel(login.kind)} · ${login.user} @ ${login.host}${login.port?.let { ":$it" }.orEmpty()}", index in choice.tickedLogins) { ticked ->
-                onChange(choice.copy(tickedLogins = if (ticked) choice.tickedLogins + index else choice.tickedLogins - index))
-            }
-        }
-    }
-}
-
-@Composable
-private fun TickRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    androidx.compose.material3.Surface(onClick = { onChange(!checked) }, modifier = Modifier.fillMaxWidth(), color = androidx.compose.ui.graphics.Color.Transparent) {
-        Row(modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Checkbox(checked = checked, onCheckedChange = null)
-            Text(label, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
 /** After a handoff that needs one more step here: pick the folder, or sign in to Google with the hint, then turn sync on. */
 @Composable
-private fun FollowUpButton(followUp: SyncHandoff.FollowUp, onDone: () -> Unit) {
+internal fun FollowUpButton(followUp: SyncHandoff.FollowUp, onDone: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as EdendaleApplication
     val scope = rememberCoroutineScope()
@@ -796,7 +588,7 @@ private fun FollowUpButton(followUp: SyncHandoff.FollowUp, onDone: () -> Unit) {
                     val activity = context.findActivity() ?: return@ArchiveButton
                     scope.launch {
                         try {
-                            val account = app.cloudAccounts.signIn(activity, MediaSourceKind.GOOGLE_DRIVE, loginHint = followUp.hint).account
+                            val account = app.cloudAccounts.signInForSync(activity, MediaSourceKind.GOOGLE_DRIVE, loginHint = followUp.hint)
                             app.sync.enable(SyncLocation(SyncProvider.GOOGLE_DRIVE, followUp.space, accountKey = account.key, googleFolderId = followUp.folderId))
                             onDone()
                         } catch (cancelled: CancellationException) {
@@ -807,6 +599,7 @@ private fun FollowUpButton(followUp: SyncHandoff.FollowUp, onDone: () -> Unit) {
                     }
                 },
             )
+            is SyncHandoff.FollowUp.OnAnotherDevice -> Unit
         }
         ArchiveButton(label = stringResource(R.string.action_close), onClick = onDone)
         error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
@@ -854,13 +647,4 @@ private fun RemoveDeviceDialog(onDismiss: () -> Unit) {
         },
         confirmButton = { ArchiveButton(label = stringResource(R.string.action_close), onClick = onDismiss, kind = ArchiveButtonKind.Primary) },
     )
-}
-
-/** A host from an `address:port` the viewer typed off the other screen. */
-private fun typedDevice(text: String): DiscoveredTelevision? {
-    val trimmed = text.trim()
-    val port = trimmed.substringAfterLast(':', "").toIntOrNull()?.takeIf { it in 1..65535 } ?: return null
-    val host = trimmed.substringBeforeLast(':').trim('[', ']').takeIf { it.isNotBlank() } ?: return null
-    val address = runCatching { java.net.InetAddress.getByName(host) }.getOrNull() ?: return null
-    return DiscoveredTelevision(trimmed, address, port, version = 2)
 }

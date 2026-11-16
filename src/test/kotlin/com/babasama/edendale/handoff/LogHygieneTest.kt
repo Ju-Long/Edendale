@@ -3,6 +3,7 @@ package com.babasama.edendale.handoff
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.sync.MemorySyncStorage
 import com.babasama.edendale.sync.MemorySyncStore
+import com.babasama.edendale.sync.ProgressRecord
 import com.babasama.edendale.sync.SyncDeviceInfo
 import com.babasama.edendale.sync.SyncEngine
 import com.babasama.edendale.sync.SyncLog
@@ -24,9 +25,10 @@ import kotlin.test.assertTrue
 /**
  * FEATURES-27.1.md H10: no pairing code, QR secret, session key, refresh
  * token, or password reaches the log sink. A whole QR handoff, a whole
- * typed-code handoff, and a sync with a review in it run through a recording
- * sink; the lines are then searched for every secret in play, in hex,
- * base64url, and plain form, and for the review text and a title.
+ * typed-code handoff, and a sync with a review in it, then a watch history
+ * clear written out, run through a recording sink; the lines are then
+ * searched for every secret in play, in hex, base64url, and plain form, and
+ * for the review text, a title, and a record key.
  */
 class LogHygieneTest {
     private val workers = Executors.newCachedThreadPool { Thread(it).apply { isDaemon = true } }
@@ -88,18 +90,25 @@ class LogHygieneTest {
                 host.get(30, TimeUnit.SECONDS)
             }
         }
-        // A sync whose records carry a review.
+        // A sync whose records carry a review and progress, then Delete Watch History written out.
         runBlocking {
             val storage = MemorySyncStorage()
             val store = MemorySyncStore()
             val device = SyncDeviceInfo("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a", "Phone", "android", "27.1")
             store.write(1_762_000_000_000) { stamp -> UserMediaSyncRecord(SyncMediaType.MOVIE, 603, rating = 9.0, review = review, device = device.id, updateTime = stamp) }
-            SyncEngine(storage, store, device, "Family") { 1_762_000_000_000 }.sync()
+            val (watched, raised) = store.current.stamp(1_762_000_000_000)
+            store.current = raised.writing(ProgressRecord(SyncMediaType.TV, 1399, 1, 2, 600.0, 2_700.0, false, device = device.id, updateTime = watched))
+            val engine = SyncEngine(storage, store, device, "Family") { 1_762_000_000_000 }
+            engine.sync()
+            val (cleared, again) = store.current.stamp(1_762_000_000_000)
+            store.current = again.clearingAllProgress(cleared, device.id).first
+            store.dirty = true
+            engine.sync()
         }
 
         val lines = recording.lines
         assertTrue(lines.isNotEmpty(), "the sink saw log lines")
-        val forbidden = listOf(refreshToken, password, code, review, "000000", "me@example.com") +
+        val forbidden = listOf(refreshToken, password, code, review, "000000", "me@example.com", "tv:1399:1:2") +
             secrets.flatMap { listOf(HandoffV2.hex(it), HandoffV2.b64u(it), java.util.Base64.getEncoder().encodeToString(it)) }
         forbidden.forEach { secret ->
             assertFalse(lines.any { secret in it }, "a log line carries '$secret'")

@@ -1,6 +1,7 @@
 package com.babasama.edendale.handoff
 
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.connectors.S3Configuration
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
 import com.babasama.edendale.sync.SyncProvider
 import java.net.InetAddress
@@ -18,6 +19,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 /**
  * SYNC-PROTOCOL.md Appendix A.2–A.4 (from `main` at c620b21): the external
@@ -229,6 +232,79 @@ class HandoffV2Test {
         assertEquals("1AbC", across.location?.googleFolderId)
         assertEquals(listOf(oneDrive), across.accounts)
         assertEquals(listOf(login), across.logins)
+    }
+
+    @Test
+    fun `a Login without user is read from the nested credential Apple builds before 27_1 send`() {
+        // SYNC-PROTOCOL.md §9.7 (main 768f368): the nested shape, an SFTP location login and an S3 login.
+        val offer = HandoffV2.decodeOffer(
+            """
+            {"type":"offer","status":"approved",
+             "location":{"provider":"sftp","space":"Family","url":"sftp://nas.local:2222/home/me/",
+                         "login":{"kind":"sftp","host":"nas.local","hostKeyFingerprint":"SHA256:abc",
+                                  "credential":{"username":"me","password":"pw","port":2222}}},
+             "accounts":[],
+             "logins":[{"kind":"s3","host":"acct","port":null,
+                        "credential":{"username":"AKIA","password":"secret",
+                                      "s3":{"endpoint":"https://minio.local:9000","region":"us-east-1","bucket":"films","usesPathStyle":true}}}]}
+            """.trimIndent().toByteArray(),
+        )
+        assertEquals(AccountHandoff.Login(MediaSourceKind.SFTP, "nas.local", 2222, "me", "pw", hostKeyFingerprint = "SHA256:abc"), offer.location?.login)
+        assertEquals(
+            listOf(AccountHandoff.Login(MediaSourceKind.S3, "acct", null, "AKIA", "secret", s3 = S3Configuration("https://minio.local:9000", "us-east-1", "films", usesPathStyle = true))),
+            offer.logins,
+        )
+        // Apple 27.1 writes both shapes in one object: the flat fields win.
+        val both = AccountHandoff.decodeLogin(
+            Json.parseToJsonElement(
+                """{"kind":"sftp","host":"nas.local","port":22,"user":"me","password":"pw","credential":{"username":"old","password":"old","port":2200}}""",
+            ).jsonObject,
+        )
+        assertEquals(AccountHandoff.Login(MediaSourceKind.SFTP, "nas.local", 22, "me", "pw"), both)
+        // Neither shape: still malformed.
+        assertFailsWith<HandoffException.MalformedMessage> {
+            AccountHandoff.decodeLogin(Json.parseToJsonElement("""{"kind":"smb","host":"nas.local","credential":{"password":"pw"}}""").jsonObject)
+        }
+        assertFailsWith<HandoffException.MalformedMessage> {
+            AccountHandoff.decodeLogin(Json.parseToJsonElement("""{"kind":"smb","host":"nas.local"}""").jsonObject)
+        }
+    }
+
+    @Test
+    fun `a TV reports a location it can't finish and shows a note`() {
+        val folder = HandoffV2.LocationPayload(SyncProvider.FOLDER, "Family")
+        assertEquals(HandoffV2.LocationStep.PickFolder, HandoffV2.locationStep(folder, "android"))
+        assertEquals(HandoffV2.LocationStep.PickFolder, HandoffV2.locationStep(folder, "horizon"))
+        assertEquals(HandoffV2.LocationStep.Unavailable("unavailable"), HandoffV2.locationStep(folder, "androidtv"))
+        assertEquals(HandoffV2.LocationStep.Unavailable("unavailable"), HandoffV2.locationStep(folder, "tvOS"))
+        assertTrue(HandoffV2.canPickFolder("android"))
+        assertFalse(HandoffV2.canPickFolder("androidtv"))
+
+        // §9.8: a Google location from an iPhone reaches an Android TV without its account.
+        val google = HandoffV2.LocationPayload(SyncProvider.GOOGLE_DRIVE, "Family", account = account, googleFolderId = "1AbC")
+        val fromIphone = HandoffV2.offerFor(google, emptyList(), emptyList(), "ios", "androidtv").location!!
+        assertEquals(HandoffV2.LocationStep.Unavailable("google-sign-in-unavailable"), HandoffV2.locationStep(fromIphone, "androidtv"))
+        assertEquals(HandoffV2.LocationStep.GoogleSignIn, HandoffV2.locationStep(fromIphone, "android"))
+        // From an Android phone the account travels, and the TV stores it.
+        val fromPhone = HandoffV2.offerFor(google, emptyList(), emptyList(), "android", "androidtv").location!!
+        assertEquals(HandoffV2.LocationStep.Store, HandoffV2.locationStep(fromPhone, "androidtv"))
+        // Other providers carry their login; a missing one fails later as "account" or "login".
+        assertEquals(HandoffV2.LocationStep.Store, HandoffV2.locationStep(HandoffV2.LocationPayload(SyncProvider.ONE_DRIVE, "Family"), "androidtv"))
+        assertEquals(HandoffV2.LocationStep.Store, HandoffV2.locationStep(HandoffV2.LocationPayload(SyncProvider.SMB, "Family", login = login, path = "smb://nas/share/"), "androidtv"))
+    }
+
+    @Test
+    fun `the sender hears that a location still waits on the other device`() {
+        val pending = HandoffV2.ResultMessage(listOf("login:sftp:nas.local"), emptyList())
+        assertTrue(HandoffV2.locationPending(pending, sentLocation = true))
+        assertFalse(HandoffV2.locationPending(pending, sentLocation = false))
+        assertFalse(HandoffV2.locationPending(HandoffV2.ResultMessage(listOf("location"), emptyList()), sentLocation = true))
+        assertFalse(
+            HandoffV2.locationPending(
+                HandoffV2.ResultMessage(emptyList(), listOf(HandoffV2.ResultMessage.Failure("location", "unavailable"))),
+                sentLocation = true,
+            ),
+        )
     }
 
     // MARK: - Whole exchanges over a socket

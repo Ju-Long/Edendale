@@ -180,6 +180,37 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `the one-off flush job is needed only while a write is pending`() = runBlocking {
+        // FEATURES-27.1.md §8 (R.7): leaving the foreground with a pending write hands it to a one-off job.
+        assertFalse(SyncTriggers.flushJobNeeded(syncOn = false, writePending = true))
+        assertFalse(SyncTriggers.flushJobNeeded(syncOn = true, writePending = false))
+        val storage = MemorySyncStorage()
+        val store = MemorySyncStore()
+        store.write(now) { stamp -> UserMediaSyncRecord(SyncMediaType.MOVIE, 603, favourite = true, device = a.id, updateTime = stamp) }
+        assertTrue(SyncTriggers.flushJobNeeded(syncOn = true, writePending = store.isDirty()))
+        // The sync started on leaving wrote the file: the job, when it runs, has nothing left to do.
+        assertTrue(SyncEngine(storage, store, a, "Family") { now }.sync().wrote)
+        assertFalse(SyncTriggers.flushJobNeeded(syncOn = true, writePending = store.isDirty()))
+    }
+
+    @Test
+    fun `launch and every return from the background sync, a rotation doesn't`() {
+        val tracker = SyncForegroundTracker()
+        // The first activity to start is the launch; a second one on top is nothing.
+        assertEquals(SyncForegroundTracker.Moment.LAUNCH, tracker.activityStarted())
+        assertNull(tracker.activityStarted())
+        assertNull(tracker.activityStopped(changingConfigurations = false))
+        // Rotating the last one recreates it without the app leaving.
+        assertNull(tracker.activityStopped(changingConfigurations = true))
+        assertNull(tracker.activityStarted())
+        // Leaving, then coming back from the background, each time.
+        assertEquals(SyncForegroundTracker.Moment.BACKGROUND, tracker.activityStopped(changingConfigurations = false))
+        assertEquals(SyncForegroundTracker.Moment.FOREGROUND, tracker.activityStarted())
+        assertEquals(SyncForegroundTracker.Moment.BACKGROUND, tracker.activityStopped(changingConfigurations = false))
+        assertEquals(SyncForegroundTracker.Moment.FOREGROUND, tracker.activityStarted())
+    }
+
+    @Test
     fun `the far-future guard warns and the removed device's file is deleted`() = runBlocking {
         val storage = MemorySyncStorage()
         val store = MemorySyncStore()

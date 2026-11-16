@@ -397,7 +397,58 @@ object HandoffV2 {
     }
 
     /** Whether [platform] can sign in to Google itself; TVs can't (§9.8). */
-    fun canSignInToGoogle(platform: String): Boolean = platform.lowercase() !in setOf("tvos", "androidtv")
+    fun canSignInToGoogle(platform: String): Boolean = platform.lowercase() !in TELEVISIONS
+
+    /** Whether [platform] has a folder picker for a folder location; TVs don't. */
+    fun canPickFolder(platform: String): Boolean = platform.lowercase() !in TELEVISIONS
+
+    private val TELEVISIONS = setOf("tvos", "androidtv")
+
+    /** The result's reason for a folder location a TV can't use (Apple's spelling). */
+    const val REASON_UNAVAILABLE = "unavailable"
+
+    /** The result's reason for a Google location without its account on a TV (Apple's spelling). */
+    const val REASON_GOOGLE_SIGN_IN_UNAVAILABLE = "google-sign-in-unavailable"
+
+    /** What a receiver does with an offered location (§9.6 step 4, §9.8). */
+    sealed interface LocationStep {
+        /** Its account or login came with it: validate, store, and turn sync on. */
+        data object Store : LocationStep
+
+        /** A folder location: the viewer picks this device's folder first. */
+        data object PickFolder : LocationStep
+
+        /** A Google location from another ecosystem: the viewer signs in with the hint first. */
+        data object GoogleSignIn : LocationStep
+
+        /** This device can't finish it; the result names it failed with [reason], and the screen says what to do instead. */
+        data class Unavailable(val reason: String) : LocationStep
+    }
+
+    /**
+     * The step for [location] on [receiverPlatform]. A TV has neither a
+     * folder picker nor a Google sign-in, so it reports those locations as
+     * failed and shows a note instead (§9.8: "set up Google Drive from an
+     * Android phone").
+     */
+    fun locationStep(location: LocationPayload, receiverPlatform: String): LocationStep = when {
+        location.provider == SyncProvider.FOLDER ->
+            if (canPickFolder(receiverPlatform)) LocationStep.PickFolder else LocationStep.Unavailable(REASON_UNAVAILABLE)
+        location.provider == SyncProvider.GOOGLE_DRIVE && location.account == null ->
+            if (canSignInToGoogle(receiverPlatform)) LocationStep.GoogleSignIn else LocationStep.Unavailable(REASON_GOOGLE_SIGN_IN_UNAVAILABLE)
+        else -> LocationStep.Store
+    }
+
+    /**
+     * Whether the sender should say the receiver still finishes the location
+     * itself: one was sent, and the result names it neither stored nor
+     * failed (it waits for a folder or a Google sign-in there).
+     */
+    fun locationPending(result: ResultMessage, sentLocation: Boolean): Boolean =
+        sentLocation && LOCATION_ITEM !in result.stored && result.failed.none { it.item == LOCATION_ITEM }
+
+    /** The result's item name for the sync location (§9.6). */
+    const val LOCATION_ITEM = "location"
 
     /**
      * The offer as the sender builds it for [receiverPlatform]: Google

@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
+import androidx.room.withTransaction
 import com.babasama.edendale.AndroidEdendaleCore
 import com.babasama.edendale.android.CopySource
 import com.babasama.edendale.android.PlaybackSources
@@ -25,6 +27,7 @@ import com.babasama.edendale.connectors.S3Configuration
 import com.babasama.edendale.connectors.S3Connector
 import com.babasama.edendale.connectors.Sftp
 import com.babasama.edendale.connectors.SftpConnector
+import com.babasama.edendale.connectors.SourceEndpoint
 import com.babasama.edendale.connectors.SourceUrl
 import com.babasama.edendale.connectors.SshHostKey
 import com.babasama.edendale.connectors.VideoFiles
@@ -34,11 +37,10 @@ import com.babasama.edendale.handoff.AccountHandoff
 import com.babasama.edendale.oauth.CloudSignIn
 import com.babasama.edendale.remote.OkHttpRemoteHttp
 import com.babasama.edendale.remote.ServerLogin
-import com.babasama.edendale.domain.MediaParser
 import com.babasama.edendale.domain.MediaType
-import com.babasama.edendale.domain.ParsedMedia
 import com.babasama.edendale.domain.WatchMediaType
 import com.babasama.edendale.domain.WatchProgress
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,22 +50,29 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import com.babasama.edendale.android.AppStrings
 import com.babasama.edendale.android.connectorFailureMessage
 
 /** What the Downloaded tab shows while imports and enrichment run. */
 data class LibraryActivity(
-    val scanningFolder: String? = null,
+    /**
+     * The sources being scanned, `treeUri` to display name, in the order
+     * their scans began; a source stays here until its results are stored.
+     * Rows are marked by `treeUri`, as two sources can share a name (one
+     * share through its LAN host and a Tailscale address).
+     */
+    val scanningSources: Map<String, String> = emptyMap(),
     val isEnriching: Boolean = false,
     val errorMessage: String? = null,
 ) {
-    val isBusy: Boolean get() = scanningFolder != null || isEnriching
+    /** The source the Downloaded tab names while scanning: the latest scan to begin. */
+    val scanningFolder: String? get() = scanningSources.values.lastOrNull()
+    val isBusy: Boolean get() = scanningSources.isNotEmpty() || isEnriching
 }
 
 /**
@@ -80,7 +89,12 @@ class LibraryRepository(
     private val dao get() = database.libraryDao()
     private val browse = AndroidEdendaleCore.browseRepository()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val enrichmentLock = Mutex()
+
+    /** TMDB matching: one pass at a time, and a request during a pass gets one more. */
+    private val enrichment = CoalescingRunner(scope) { enrichPass() }
+
+    /** Whether this process has resumed the last one's unfinished work. */
+    private val resumed = AtomicBoolean(false)
     private val smbCredentialsStore = SmbCredentialsStore(context)
     private val serverLogins = ServerLoginStore(context)
     val sshHostKeys = SshHostKeyStore(context)
@@ -89,6 +103,10 @@ class LibraryRepository(
     private val tlsPins by lazy { (context.applicationContext as EdendaleApplication).tlsPins }
     private val googleDrive = GoogleDriveStore(context)
 
+    /**
+     * Also where a scan claims its source ([claimScan]), so every write is
+     * an atomic `update`: a plain read-and-set could drop a concurrent claim.
+     */
     private val _activity = MutableStateFlow(LibraryActivity())
     val activity: StateFlow<LibraryActivity> = _activity.asStateFlow()
 
@@ -104,8 +122,19 @@ class LibraryRepository(
     private val _needsGoogleDriveRelinkNotice = MutableStateFlow(false)
     val needsGoogleDriveRelinkNotice: StateFlow<Boolean> = _needsGoogleDriveRelinkNotice.asStateFlow()
 
+    /** The source each show and movie last played from on this device (27.1). */
+    val sourceMemory = PlaybackSourceMemory(context, scope)
+
     /** D20 (H.9.4), once per process before anything scans. */
     private val googleDriveMigration = scope.async { migrateGoogleDriveToFileAccess() }
+
+    init {
+        // Once per process, after D20 has removed what it removes: Play From's labels (27.1).
+        scope.launch {
+            googleDriveMigration.await()
+            runCatching { refreshSourceEndpoints() }
+        }
+    }
 
     val folders: Flow<List<LibraryFolderEntity>> = dao.observeFolders()
     val movies: Flow<List<LibraryMovieEntity>> = dao.observeMovies()
@@ -129,9 +158,7 @@ class LibraryRepository(
         scope.launch {
             val document = DocumentFile.fromTreeUri(context, treeUri)
             if (document == null || !document.isDirectory) {
-                _activity.value = _activity.value.copy(
-                    errorMessage = strings.folderNotOpened,
-                )
+                _activity.update { it.copy(errorMessage = strings.folderNotOpened) }
                 return@launch
             }
             val folder = LibraryFolderEntity(
@@ -154,9 +181,7 @@ class LibraryRepository(
         val url = SmbClient.normalizeUrl(input)
         val host = url?.let { Uri.parse(it).host }
         if (url == null || host.isNullOrBlank()) {
-            _activity.value = _activity.value.copy(
-                errorMessage = strings.notShareAddress(input.trim()),
-            )
+            _activity.update { it.copy(errorMessage = strings.notShareAddress(input.trim())) }
             return
         }
         scope.launch {
@@ -296,6 +321,8 @@ class LibraryRepository(
                 kind = MediaSourceKind.S3.raw,
                 displayPath = (listOf(configuration.bucket) + segments).joinToString(" › "),
                 accountKey = item.account,
+                // The URL's host is the account key; Play From names the server.
+                endpoint = configuration.endpoint,
             )
             dao.upsertFolder(folder)
             scan(folder)
@@ -314,9 +341,31 @@ class LibraryRepository(
         }
         scope.launch {
             val now = System.currentTimeMillis()
-            uris.forEach { uri ->
-                val name = displayName(uri) ?: uri.lastPathSegment ?: strings.defaultVideoName
-                classifyAndStore(uri.toString(), folderUri = null, fileName = name, now = now)
+            val files = uris.map { uri ->
+                uri.toString() to (displayName(uri) ?: uri.lastPathSegment ?: strings.defaultVideoName)
+            }
+            try {
+                // One plan and one transaction for the whole pick, so a kill
+                // can't store half of it: these files are never rescanned.
+                database.withTransaction {
+                    dao.insertPlanned(
+                        SourceScanRules.plan(
+                            files = files,
+                            complete = false,
+                            folderUri = null,
+                            storedMovieUris = emptyList(),
+                            storedEpisodeUris = emptyList(),
+                            knownUris = dao.libraryUris().toHashSet(),
+                            knownShowKeys = dao.showKeys().toHashSet(),
+                            now = now,
+                        ),
+                    )
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                Log.w(TAG, "picked files weren't stored: ${error.javaClass.simpleName}")
+                return@launch
             }
             enrich()
         }
@@ -331,26 +380,54 @@ class LibraryRepository(
 
     /**
      * The sweep on each Downloaded visit skips remote sources scanned in the
-     * last 15 minutes (D.3); [force] (a manual Rescan) scans every source.
+     * last 15 minutes (D.3), unless their last scan never finished; [force]
+     * (a manual Rescan) scans every source. The rule is checked again as
+     * each source's turn comes, as the sources before it can take minutes:
+     * the launch resume, or a sweep fired again, may have scanned it since.
      */
     fun rescanAll(force: Boolean = false) {
         scope.launch {
-            val now = System.currentTimeMillis()
-            dao.folders()
-                .filter { force || SourceScanRules.shouldAutoRescan(it, now) }
-                .forEach { scan(it) }
+            val due = { folder: LibraryFolderEntity ->
+                force || SourceScanRules.shouldAutoRescan(folder, System.currentTimeMillis())
+            }
+            dao.folders().filter(due).forEach { scan(it, due = due) }
+        }
+    }
+
+    /**
+     * Finishes what the last process didn't, once per process: every source
+     * whose scan began and never committed (the app was closed or killed
+     * mid-scan) is scanned again, whenever it was last scanned, and then
+     * titles still waiting for TMDB are matched. Called as the app's screens
+     * start rather than with the process, which background sync also starts,
+     * and not from the player, so a title opened from the TV's Watch Next row
+     * doesn't share the network with a scan. A source the Downloaded sweep
+     * finished, or one removed, while earlier ones were scanned is skipped.
+     * Not a library edit, so the parental PIN isn't asked (O.5).
+     */
+    fun resumeInterruptedWork() {
+        if (!resumed.compareAndSet(false, true)) return
+        scope.launch {
+            googleDriveMigration.await()
+            dao.interruptedFolders().forEach {
+                scan(it, enrichAfterwards = false, due = SourceScanRules::isInterrupted)
+            }
+            // One pass for these scans' new titles and any a killed pass left unmatched.
+            if (dao.pendingEnrichmentCount() > 0) enrich()
         }
     }
 
     /**
      * Unlinks a source: the folder and everything scanned from it go, and the
      * SAF grant is handed back. A network source's saved login is kept — it
-     * lives in Settings → Accounts until removed there (D.4).
+     * lives in Settings → Accounts until removed there (D.4). Titles that last
+     * played from it forget it (27.1).
      */
     fun removeFolder(treeUri: String) {
         scope.launch {
             dao.removeFolderTree(treeUri)
             googleDrive.clear(treeUri)
+            sourceMemory.forgetSource(treeUri)
             _sourceNotes.update { it - treeUri }
             if (treeUri.startsWith("content://")) {
                 runCatching {
@@ -385,12 +462,12 @@ class LibraryRepository(
     }
 
     fun clearError() {
-        _activity.value = _activity.value.copy(errorMessage = null)
+        _activity.update { it.copy(errorMessage = null) }
     }
 
     /** A library-wide message, such as a failed Choose More Videos (H.9.6). */
     fun showError(message: String) {
-        _activity.value = _activity.value.copy(errorMessage = message)
+        _activity.update { it.copy(errorMessage = message) }
     }
 
     /**
@@ -428,19 +505,45 @@ class LibraryRepository(
     }
 
     /**
+     * Continue Watching's Clear Progress: clears one title's progress. For
+     * 27.1 sync the clear is a write (a tombstone), so other devices drop it
+     * too. Runs in the repository's scope, because the card that asked can
+     * leave the screen as soon as its row is gone, before the tombstone is
+     * recorded.
+     */
+    fun clearWatchProgress(storageKey: String) {
+        scope.launch { LocalDataStore(database).deleteWatchProgress(storageKey) }
+    }
+
+    /**
      * Every imported copy of the movie or episode with [tmdbId], in Play From
-     * order (D.5): local folders first, then by source name. Empty when the
+     * order (D.5): local folders first, then by source name — except that
+     * copies on the source the movie or the episode's show last played from
+     * (27.1) come first and are marked [LocalCopy.lastPlayed]. Empty when the
      * library holds none. A show's own id matches nothing here.
      */
     suspend fun localCopiesFor(tmdbId: Int): List<LocalCopy> {
         val folders = dao.folders().associateBy { it.treeUri }
         val movies = dao.moviesByTmdbId(tmdbId)
+        val episodes = if (movies.isEmpty()) dao.episodesByTmdbId(tmdbId) else emptyList()
         val copies = movies.map { LocalCopy(it.uri, it.folderUri, isEpisode = false) }
-            .ifEmpty {
-                dao.episodesByTmdbId(tmdbId).map { LocalCopy(it.uri, it.folderUri, isEpisode = true) }
+            .ifEmpty { episodes.map { LocalCopy(it.uri, it.folderUri, isEpisode = true) } }
+        val showKeys = episodes.map { it.showKey }.distinct()
+        val showTmdbId = showKeys.firstNotNullOfOrNull { dao.showByKey(it)?.tmdbId }
+        val sources = withContext(Dispatchers.IO) { sourceMemory.sources() }
+        val remembered = if (movies.isNotEmpty()) {
+            PlaybackSources.movieMemoryKey(tmdbId)?.let(sources::get)
+        } else {
+            PlaybackSources.rememberedShowSource(sources, showTmdbId, showKeys)
+        }
+        val ordered = PlaybackSources.order(null, copies, { folders.copySource(it.folderUri) }, { it.uri })
+        return PlaybackSources.rememberedFirst(ordered, { PlaybackSources.sourceKey(it.folderUri) }, remembered)
+            .map { copy ->
+                copy.copy(
+                    source = folders.copySource(copy.folderUri),
+                    lastPlayed = remembered != null && PlaybackSources.sourceKey(copy.folderUri) == remembered,
+                )
             }
-        return PlaybackSources.order(null, copies, { folders.copySource(it.folderUri) }, { it.uri })
-            .map { it.copy(source = folders.copySource(it.folderUri)) }
     }
 
     // MARK: - Scan (classify-before-network: only MediaParser runs here)
@@ -459,52 +562,122 @@ class LibraryRepository(
         val complete: Boolean,
     )
 
-    private suspend fun scan(folder: LibraryFolderEntity) {
+    /**
+     * Scans [folder]: lists it, then plans and commits the changes in one
+     * transaction (D.3). The source's `scanStartedAt` is set first and
+     * cleared only by that commit or by a recorded failure, so a scan the
+     * process didn't live to finish is found and done again at the next
+     * launch ([resumeInterruptedWork]); its last scan time is written with
+     * the results, never before them. Returns false, doing nothing, while
+     * another scan of the same source runs. Once claimed, the source's row
+     * as it is now must pass [due]: a caller working through sources it read
+     * earlier passes the rule that chose them, so one another scan finished
+     * in the meantime isn't listed again, and a removed one never is. A
+     * stored scan asks for a TMDB pass unless [enrichAfterwards] is false.
+     */
+    private suspend fun scan(
+        folder: LibraryFolderEntity,
+        enrichAfterwards: Boolean = true,
+        due: (LibraryFolderEntity) -> Boolean = { true },
+    ): Boolean {
         googleDriveMigration.await()
-        _sourceNotes.update { it - folder.treeUri }
-        _activity.value = _activity.value.copy(
-            scanningFolder = folder.displayName,
-            errorMessage = null,
-        )
-        val listing = try {
-            connectorFor(folder)?.let { listConnector(it, folder) } ?: listDocuments(folder)
+        if (!claimScan(folder)) return false
+        var stored = false
+        try {
+            // Read under the claim, so an earlier scan of the source has committed.
+            val current = dao.folder(folder.treeUri)
+            if (current == null || !due(current)) return true
+            // Only a scan that goes ahead clears the last one's notice.
+            _activity.update { it.copy(errorMessage = null) }
+            _sourceNotes.update { it - folder.treeUri }
+            val listing = try {
+                dao.markScanStarted(folder.treeUri, System.currentTimeMillis())
+                connectorFor(folder)?.let { listConnector(it, folder) } ?: listDocuments(folder)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Throwable) {
+                // Recorded on the source's own row (D.3), not as a library-wide
+                // error on every visit; the next successful scan clears it.
+                recordScanFailure(folder.treeUri, error)
+                return true
+            }
+            stored = try {
+                store(folder.treeUri, listing)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Throwable) {
+                // The database refused the results: the source's row says the
+                // scan failed, and the app carries on. A crash here would
+                // come back at every launch, as the scan is resumed there.
+                Log.w(TAG, "a scan's results weren't stored: ${error.javaClass.simpleName}")
+                recordScanFailure(folder.treeUri, error)
+                return true
+            }
+            if (stored && !listing.complete) {
+                _activity.update { it.copy(errorMessage = strings.sourcePartialError(folder.displayName)) }
+            }
+        } finally {
+            _activity.update { it.copy(scanningSources = it.scanningSources - folder.treeUri) }
+        }
+        if (stored && enrichAfterwards) enrich()
+        return true
+    }
+
+    /**
+     * Claims [folder] for one scan, or returns false while another scan of
+     * it runs: the Downloaded sweep fires again on rotation and on every
+     * section change, and the launch resume may still be scanning when it
+     * does.
+     */
+    private fun claimScan(folder: LibraryFolderEntity): Boolean {
+        var claimed = false
+        _activity.update { current ->
+            claimed = folder.treeUri !in current.scanningSources
+            if (!claimed) {
+                current
+            } else {
+                current.copy(scanningSources = current.scanningSources + (folder.treeUri to folder.displayName))
+            }
+        }
+        return claimed
+    }
+
+    /**
+     * Plans [listing] against what the library holds and commits it, in one
+     * transaction so nothing changes in between (another source's commit
+     * can't prune a show this plan counts on). False when the source was
+     * removed while it was being listed.
+     */
+    private suspend fun store(treeUri: String, listing: Listing): Boolean {
+        val now = System.currentTimeMillis()
+        return database.withTransaction {
+            val plan = SourceScanRules.plan(
+                files = listing.files,
+                complete = listing.complete,
+                folderUri = treeUri,
+                storedMovieUris = dao.movieUrisInFolder(treeUri),
+                storedEpisodeUris = dao.episodeUrisInFolder(treeUri),
+                knownUris = dao.libraryUris().toHashSet(),
+                knownShowKeys = dao.showKeys().toHashSet(),
+                now = now,
+            )
+            dao.applyScan(treeUri, plan, now)
+        }
+    }
+
+    /**
+     * Records why a scan failed on the source's row, which also ends the
+     * scan. If the database can't take even that, the scan stays marked as
+     * started and the next launch tries the source again.
+     */
+    private suspend fun recordScanFailure(treeUri: String, error: Throwable) {
+        try {
+            dao.markFolderFailed(treeUri, SourceScanRules.classifyFailure(error).raw)
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (error: Throwable) {
-            // Recorded on the source's own row (D.3), not as a library-wide
-            // error on every visit; the next successful scan clears it.
-            dao.markFolderFailed(folder.treeUri, SourceScanRules.classifyFailure(error).raw)
-            null
-        } finally {
-            _activity.value = _activity.value.copy(scanningFolder = null)
+        } catch (unrecorded: Exception) {
+            Log.w(TAG, "a failed scan wasn't recorded: ${unrecorded.javaClass.simpleName}")
         }
-        if (listing == null) return
-        dao.markFolderScanned(folder.treeUri, System.currentTimeMillis())
-
-        if (listing.complete) {
-            // Drop records whose file disappeared since the last scan.
-            val foundUris = listing.files.mapTo(HashSet()) { it.first }
-            val staleMovies = dao.movies()
-                .filter { it.folderUri == folder.treeUri && it.uri !in foundUris }
-                .map { it.uri }
-            val staleEpisodes = dao.episodes()
-                .filter { it.folderUri == folder.treeUri && it.uri !in foundUris }
-                .map { it.uri }
-            if (staleMovies.isNotEmpty()) dao.deleteMovies(staleMovies)
-            if (staleEpisodes.isNotEmpty()) dao.deleteEpisodes(staleEpisodes)
-            dao.pruneOrphanShows()
-        } else {
-            _activity.value = _activity.value.copy(
-                errorMessage = strings.sourcePartialError(folder.displayName),
-            )
-        }
-
-        val known = (dao.movies().map { it.uri } + dao.episodes().map { it.uri }).toHashSet()
-        val now = System.currentTimeMillis()
-        listing.files.forEach { (uri, fileName) ->
-            if (uri !in known) classifyAndStore(uri, folder.treeUri, fileName, now)
-        }
-        enrich()
     }
 
     private fun listDocuments(folder: LibraryFolderEntity): Listing {
@@ -598,6 +771,8 @@ class LibraryRepository(
                 kind = kind.raw,
                 displayPath = trail.joinToString(" › "),
                 accountKey = accountKey,
+                // The URL's host is a hashed account key; Play From names the account.
+                endpoint = accountIdentity(kind, accountKey),
             )
             dao.upsertFolder(folder)
             scan(folder)
@@ -624,6 +799,9 @@ class LibraryRepository(
             googleDrive.updateHidden(treeUri) { GoogleDriveHiddenItems.unhiding(it, picked) }
             val existing = dao.folders().firstOrNull { it.treeUri == treeUri }
             val before = if (existing == null) emptySet() else googleDriveFileIds(treeUri)
+            // Play From names the source by its account (27.1); a new sign-in can bring a new email.
+            val identity = SourceEndpoint.accountIdentity(account.email, account.displayName)
+            if (existing != null && identity != null && existing.endpoint != identity) dao.setFolderEndpoint(treeUri, identity)
             val folder = existing ?: LibraryFolderEntity(
                 treeUri = treeUri,
                 displayName = strings.googleDriveChosenFolder,
@@ -632,8 +810,11 @@ class LibraryRepository(
                 // The account, as other cloud sources' paths start with it.
                 displayPath = "${account.label} › ${strings.googleDriveChosenFolder}",
                 accountKey = account.key,
+                endpoint = identity,
             ).also { dao.upsertFolder(it) }
-            scan(folder)
+            // A scan of this source already under way may have listed it
+            // before the pick: let it finish, then scan again.
+            while (!scan(folder)) _activity.first { treeUri !in it.scanningSources }
             if (picked.isEmpty() || dao.folders().firstOrNull { it.treeUri == treeUri }?.status != null) return@launch
             val added = picked.toSet().intersect(googleDriveFileIds(treeUri) - before).size
             _sourceNotes.update { it + (treeUri to strings.googleDriveAdded(added)) }
@@ -669,6 +850,37 @@ class LibraryRepository(
         if (removed) googleDrive.needsRelinkNotice = true
         _needsGoogleDriveRelinkNotice.value = googleDrive.needsRelinkNotice
         return removed
+    }
+
+    // MARK: - Where sources are reached from (27.1)
+
+    /** A linked cloud account's email, else its name, from this device's vault. */
+    private fun accountIdentity(kind: MediaSourceKind, accountKey: String): String? =
+        runCatching { cloud.vault.account(kind, accountKey) }.getOrNull()
+            ?.let { SourceEndpoint.accountIdentity(it.email, it.displayName) }
+
+    /**
+     * Gives each cloud and S3 source the endpoint Play From names it by, from
+     * what this device already holds — the account vault and the saved S3
+     * locations — so sources linked before v5 get one too and a signed-out
+     * account keeps its last one. Reads nothing from the network; writes only
+     * the rows whose value changes.
+     */
+    private suspend fun refreshSourceEndpoints() {
+        dao.folders().forEach { folder ->
+            val kind = SourceScanRules.kindOf(folder) ?: return@forEach
+            if (!kind.isCloudAccount && kind != MediaSourceKind.S3 && folder.endpoint == null) return@forEach
+            val accountKey = folder.accountKey ?: SourceUrl.credentialHost(folder.treeUri)
+            val fromStore = accountKey?.let { key ->
+                when {
+                    kind.isCloudAccount -> accountIdentity(kind, key)
+                    kind == MediaSourceKind.S3 -> runCatching { serverLogins.getS3(key) }.getOrNull()?.second?.endpoint
+                    else -> null
+                }
+            }
+            val value = SourceScanRules.endpointToRecord(kind, folder.endpoint, fromStore, folder.displayPath)
+            if (value != folder.endpoint) dao.setFolderEndpoint(folder.treeUri, value)
+        }
     }
 
     /** The viewer saw the notice. */
@@ -798,83 +1010,32 @@ class LibraryRepository(
         }
     }
 
-    private suspend fun classifyAndStore(
-        uri: String,
-        folderUri: String?,
-        fileName: String,
-        now: Long,
-    ) {
-        when (val parsed = MediaParser.parse(fileName)) {
-            is ParsedMedia.Movie -> dao.upsertMovie(
-                LibraryMovieEntity(
-                    uri = uri,
-                    folderUri = folderUri,
-                    fileName = fileName,
-                    title = parsed.title.ifBlank { fileName.substringBeforeLast('.') },
-                    year = parsed.year,
-                    tmdbId = null,
-                    posterPath = null,
-                    backdropPath = null,
-                    overview = null,
-                    runtimeMinutes = null,
-                    addedAtEpochMillis = now,
-                ),
-            )
-            is ParsedMedia.Episode -> {
-                val showName = parsed.showName.ifBlank { fileName.substringBeforeLast('.') }
-                val key = showName.lowercase()
-                if (dao.shows().none { it.key == key }) {
-                    dao.upsertShow(
-                        LibraryShowEntity(
-                            key = key,
-                            name = showName,
-                            tmdbId = null,
-                            posterPath = null,
-                            backdropPath = null,
-                            overview = null,
-                            firstAirYear = null,
-                        ),
-                    )
-                }
-                dao.upsertEpisode(
-                    LibraryEpisodeEntity(
-                        uri = uri,
-                        folderUri = folderUri,
-                        showKey = key,
-                        fileName = fileName,
-                        season = parsed.season,
-                        episode = parsed.episode,
-                        tmdbId = null,
-                        title = null,
-                        stillPath = null,
-                        runtimeMinutes = null,
-                        addedAtEpochMillis = now,
-                    ),
-                )
-            }
-        }
-    }
-
     // MARK: - Enrichment (best-effort, off the import fast path)
 
+    /**
+     * Asks for a TMDB pass over every unmatched title. One already running
+     * is followed by exactly one more, so titles stored during it don't wait
+     * for the next scan.
+     */
     fun enrich() {
         if (!AndroidEdendaleCore.hasTmdbCredentials()) return
-        scope.launch {
-            if (!enrichmentLock.tryLock()) return@launch
-            _activity.value = _activity.value.copy(isEnriching = true)
-            try {
-                dao.movies().filter { it.tmdbId == null }.forEach { enrichMovie(it) }
-                dao.shows().forEach { show ->
-                    val enriched = if (show.tmdbId == null) enrichShow(show) else show
-                    val showTmdbId = enriched?.tmdbId ?: return@forEach
-                    dao.episodesForShow(show.key)
-                        .filter { it.tmdbId == null }
-                        .forEach { enrichEpisode(showTmdbId, it) }
-                }
-            } finally {
-                _activity.value = _activity.value.copy(isEnriching = false)
-                enrichmentLock.unlock()
+        enrichment.request()
+    }
+
+    /** One pass, library-wide: movies, shows, and the episodes of matched shows. */
+    private suspend fun enrichPass() {
+        _activity.update { it.copy(isEnriching = true) }
+        try {
+            dao.movies().filter { it.tmdbId == null }.forEach { enrichMovie(it) }
+            dao.shows().forEach { show ->
+                val enriched = if (show.tmdbId == null) enrichShow(show) else show
+                val showTmdbId = enriched?.tmdbId ?: return@forEach
+                dao.episodesForShow(show.key)
+                    .filter { it.tmdbId == null }
+                    .forEach { enrichEpisode(showTmdbId, it) }
             }
+        } finally {
+            _activity.update { it.copy(isEnriching = false) }
         }
     }
 
@@ -885,15 +1046,14 @@ class LibraryRepository(
                 .sortedByDescending { movie.year != null && it.year == movie.year }
                 .firstOrNull() ?: return
             val detail = runCatching { browse.detail(match.ref) }.getOrNull()
-            dao.upsertMovie(
-                movie.copy(
-                    tmdbId = match.id,
-                    posterPath = match.posterPath,
-                    backdropPath = match.backdropPath,
-                    overview = detail?.overview ?: match.overview,
-                    runtimeMinutes = detail?.runtimeMinutes,
-                    year = movie.year ?: match.year,
-                ),
+            dao.updateMovieMatch(
+                uri = movie.uri,
+                tmdbId = match.id,
+                posterPath = match.posterPath,
+                backdropPath = match.backdropPath,
+                overview = detail?.overview ?: match.overview,
+                runtimeMinutes = detail?.runtimeMinutes,
+                year = movie.year ?: match.year,
             )
         }
     }
@@ -909,7 +1069,14 @@ class LibraryRepository(
                 overview = match.overview,
                 firstAirYear = match.year,
             )
-            dao.upsertShow(enriched)
+            dao.updateShowMatch(
+                key = show.key,
+                tmdbId = match.id,
+                posterPath = match.posterPath,
+                backdropPath = match.backdropPath,
+                overview = match.overview,
+                firstAirYear = match.year,
+            )
             enriched
         }.getOrNull()
 
@@ -917,13 +1084,12 @@ class LibraryRepository(
         runCatching {
             val detail = browse.episodeDetail(showTmdbId, episode.season, episode.episode)
             if (detail.id == 0) return
-            dao.upsertEpisode(
-                episode.copy(
-                    tmdbId = detail.id,
-                    title = detail.name,
-                    stillPath = detail.stillPath,
-                    runtimeMinutes = detail.runtimeMinutes,
-                ),
+            dao.updateEpisodeMatch(
+                uri = episode.uri,
+                tmdbId = detail.id,
+                title = detail.name,
+                stillPath = detail.stillPath,
+                runtimeMinutes = detail.runtimeMinutes,
             )
         }
     }
@@ -938,6 +1104,9 @@ class LibraryRepository(
         null,
     )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
 
+    private companion object {
+        const val TAG = "LibraryRepository"
+    }
 }
 
 /** One imported copy of a title and the source it came from (D.5). */
@@ -946,6 +1115,8 @@ data class LocalCopy(
     val folderUri: String?,
     val isEpisode: Boolean,
     val source: CopySource = CopySource("", null, isUnavailable = false),
+    /** On the source the title last played from on this device (27.1). */
+    val lastPlayed: Boolean = false,
 )
 
 /**

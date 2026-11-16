@@ -89,7 +89,7 @@ fun SeasonBrowser(
                 ArchiveFilterChip(
                     selected = season.seasonNumber == selectedSeason,
                     onClick = { onSelectSeason(season.seasonNumber) },
-                    label = { Text(seasonTitle(season).uppercase()) },
+                    label = { Text(seasonTitle(season).uppercase(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     isTelevision = isTelevision,
                 )
             }

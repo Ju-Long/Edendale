@@ -193,6 +193,28 @@ interface SyncDao {
 
     @Query("SELECT COUNT(*) FROM sync_user_media")
     suspend fun userMediaCount(): Int
+
+    /** Progress records that aren't tombstones: what Delete Watch History still has to clear, here or from other devices. */
+    @Query("SELECT COUNT(*) FROM sync_watch_progress WHERE cleared = 0")
+    fun observeLiveProgressCount(): Flow<Int>
+
+    /** This device's own view (`watch_progress`), emptied inside the transactions below. */
+    @Query("DELETE FROM watch_progress")
+    suspend fun deleteLocalProgress()
+
+    /** Delete Watch History with sync on: the tombstones and the emptied local view land together or not at all. */
+    @Transaction
+    suspend fun replaceProgress(tombstones: List<SyncProgressEntity>) {
+        upsertProgress(tombstones)
+        deleteLocalProgress()
+    }
+
+    /** Delete Watch History with sync off: both progress tables emptied, with no tombstones. */
+    @Transaction
+    suspend fun forgetProgress() {
+        clearProgress()
+        deleteLocalProgress()
+    }
 }
 
 @Dao
@@ -233,6 +255,10 @@ interface WatchProgressDao {
 
     @Query("SELECT * FROM watch_progress")
     suspend fun all(): List<WatchProgressEntity>
+
+    /** Titles and episodes with progress or a watched mark, for Settings → Sync → Watch History. */
+    @Query("SELECT COUNT(*) FROM watch_progress")
+    fun observeCount(): Flow<Int>
 
     @Query("SELECT * FROM watch_progress WHERE storageKey = :storageKey")
     suspend fun get(storageKey: String): WatchProgressEntity?
@@ -278,6 +304,18 @@ data class LibraryFolderEntity(
     val changeCursor: String? = null,
     /** `SourceStatus.raw` after a failed scan, or null (v3, D.3). */
     val status: String? = null,
+    /**
+     * Where the source is, when its URL can't say (v5): a cloud account's
+     * email (else its name) or an S3 endpoint URL. Null for local folders and
+     * servers, whose host is in [treeUri]. Play From names copies by it.
+     */
+    val endpoint: String? = null,
+    /**
+     * Epoch milliseconds when a scan of this source began and hasn't
+     * committed yet (v5). Still set after a restart, it means the process
+     * died mid-scan, so the scan is done again.
+     */
+    val scanStartedAt: Long? = null,
 )
 
 @Entity(tableName = "library_movie")
@@ -341,6 +379,10 @@ interface LibraryDao {
     @Query("SELECT * FROM library_folder")
     suspend fun folders(): List<LibraryFolderEntity>
 
+    /** One source's row as it is now, which a scan checks as it begins; null once removed. */
+    @Query("SELECT * FROM library_folder WHERE treeUri = :treeUri")
+    suspend fun folder(treeUri: String): LibraryFolderEntity?
+
     @Query("SELECT * FROM library_movie")
     suspend fun movies(): List<LibraryMovieEntity>
 
@@ -389,27 +431,121 @@ interface LibraryDao {
     @Query("SELECT * FROM library_episode WHERE folderUri = :folderUri")
     suspend fun episodesInFolder(folderUri: String): List<LibraryEpisodeEntity>
 
+    // What a scan plans against (SourceScanRules.plan): the URIs and show
+    // keys alone, not whole rows.
+
+    @Query("SELECT uri FROM library_movie WHERE folderUri = :treeUri")
+    suspend fun movieUrisInFolder(treeUri: String): List<String>
+
+    @Query("SELECT uri FROM library_episode WHERE folderUri = :treeUri")
+    suspend fun episodeUrisInFolder(treeUri: String): List<String>
+
+    /** Every movie and episode URI, whichever source holds it. */
+    @Query("SELECT uri FROM library_movie UNION ALL SELECT uri FROM library_episode")
+    suspend fun libraryUris(): List<String>
+
+    @Query("SELECT `key` FROM library_show")
+    suspend fun showKeys(): List<String>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM library_folder WHERE treeUri = :treeUri)")
+    suspend fun folderExists(treeUri: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertFolder(folder: LibraryFolderEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertMovie(movie: LibraryMovieEntity)
+    /**
+     * Records where a source is reached from (v5; a cloud account's email or
+     * an S3 endpoint URL). An update rather than an upsert: a folder row read
+     * earlier may be stale, and writing it back would undo a scan's status.
+     */
+    @Query("UPDATE library_folder SET endpoint = :endpoint WHERE treeUri = :treeUri")
+    suspend fun setFolderEndpoint(treeUri: String, endpoint: String?)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertShow(show: LibraryShowEntity)
+    // A scan adds rows and never rewrites them: IGNORE keeps a row that is
+    // already there, its TMDB match included, where REPLACE reset it.
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertEpisode(episode: LibraryEpisodeEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMovies(movies: List<LibraryMovieEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertShows(shows: List<LibraryShowEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertEpisodes(episodes: List<LibraryEpisodeEntity>)
+
+    // TMDB matches update the row in place: a write of the whole row would
+    // bring back one a scan deleted while the match was being looked up.
+
+    @Query(
+        "UPDATE library_movie SET tmdbId = :tmdbId, posterPath = :posterPath, backdropPath = :backdropPath, " +
+            "overview = :overview, runtimeMinutes = :runtimeMinutes, year = :year WHERE uri = :uri",
+    )
+    suspend fun updateMovieMatch(
+        uri: String,
+        tmdbId: Int,
+        posterPath: String?,
+        backdropPath: String?,
+        overview: String?,
+        runtimeMinutes: Int?,
+        year: Int?,
+    )
+
+    @Query(
+        "UPDATE library_show SET tmdbId = :tmdbId, posterPath = :posterPath, backdropPath = :backdropPath, " +
+            "overview = :overview, firstAirYear = :firstAirYear WHERE `key` = :key",
+    )
+    suspend fun updateShowMatch(
+        key: String,
+        tmdbId: Int,
+        posterPath: String?,
+        backdropPath: String?,
+        overview: String?,
+        firstAirYear: Int?,
+    )
+
+    @Query(
+        "UPDATE library_episode SET tmdbId = :tmdbId, title = :title, stillPath = :stillPath, " +
+            "runtimeMinutes = :runtimeMinutes WHERE uri = :uri",
+    )
+    suspend fun updateEpisodeMatch(uri: String, tmdbId: Int, title: String?, stillPath: String?, runtimeMinutes: Int?)
+
+    /**
+     * Titles still waiting for a TMDB match: unmatched movies and shows, and
+     * the unmatched episodes of matched shows (an unmatched show's episodes
+     * wait for the show). The launch resume runs a pass while any are left.
+     */
+    @Query(
+        "SELECT (SELECT COUNT(*) FROM library_movie WHERE tmdbId IS NULL) + " +
+            "(SELECT COUNT(*) FROM library_show WHERE tmdbId IS NULL) + " +
+            "(SELECT COUNT(*) FROM library_episode e JOIN library_show s ON e.showKey = s.`key` " +
+            "WHERE e.tmdbId IS NULL AND s.tmdbId IS NOT NULL)",
+    )
+    suspend fun pendingEnrichmentCount(): Int
 
     @Query("DELETE FROM library_folder WHERE treeUri = :treeUri")
     suspend fun deleteFolder(treeUri: String)
 
-    /** A scan finished: clears a failure status and records when (D.3). */
-    @Query("UPDATE library_folder SET status = NULL, lastScannedAt = :scannedAt WHERE treeUri = :treeUri")
-    suspend fun markFolderScanned(treeUri: String, scannedAt: Long)
+    /** A scan of the source began (v5); the scan's commit or a recorded failure clears it. */
+    @Query("UPDATE library_folder SET scanStartedAt = :at WHERE treeUri = :treeUri")
+    suspend fun markScanStarted(treeUri: String, at: Long)
 
-    /** A scan failed: records why on the source, keeping its last good scan time (D.3). */
-    @Query("UPDATE library_folder SET status = :status WHERE treeUri = :treeUri")
+    /**
+     * Sources whose scan began and never ended, because the process died
+     * mid-scan; the next launch scans them again.
+     */
+    @Query("SELECT * FROM library_folder WHERE scanStartedAt IS NOT NULL ORDER BY addedAtEpochMillis")
+    suspend fun interruptedFolders(): List<LibraryFolderEntity>
+
+    /** A scan committed: clears a failure status and the scan marker, and records when (D.3). */
+    @Query("UPDATE library_folder SET status = NULL, lastScannedAt = :at, scanStartedAt = NULL WHERE treeUri = :treeUri")
+    suspend fun finishScan(treeUri: String, at: Long)
+
+    /**
+     * A scan failed: records why on the source, keeping its last good scan
+     * time (D.3). A recorded failure also ends the scan, so a source that is
+     * offline or signed out isn't scanned again at every launch.
+     */
+    @Query("UPDATE library_folder SET status = :status, scanStartedAt = NULL WHERE treeUri = :treeUri")
     suspend fun markFolderFailed(treeUri: String, status: String)
 
     @Query("DELETE FROM library_movie WHERE folderUri = :treeUri")
@@ -433,6 +569,36 @@ interface LibraryDao {
     @Query("DELETE FROM library_show WHERE key NOT IN (SELECT DISTINCT showKey FROM library_episode)")
     suspend fun pruneOrphanShows()
 
+    /** Stores what [plan] adds, in one transaction; rows already there stay as they are. */
+    @Transaction
+    suspend fun insertPlanned(plan: ScanPlan) {
+        insertShows(plan.newShows)
+        insertMovies(plan.newMovies)
+        insertEpisodes(plan.newEpisodes)
+    }
+
+    /**
+     * Commits one scan of [treeUri] (D.3): stale rows go, new ones arrive,
+     * and the source is marked scanned, all together or not at all. A
+     * process that dies first leaves the source's `scanStartedAt` set, so
+     * the scan is done again at the next launch. Stale rows go a batch at a
+     * time: Android 8 to 11 bind at most 999 values per statement. Returns
+     * false, writing nothing, when the source was removed while it was being
+     * listed, so its rows can't outlive it.
+     */
+    @Transaction
+    suspend fun applyScan(treeUri: String, plan: ScanPlan, scannedAt: Long): Boolean {
+        if (!folderExists(treeUri)) return false
+        SourceScanRules.statementBatches(plan.staleMovieUris).forEach { deleteMovies(it) }
+        SourceScanRules.statementBatches(plan.staleEpisodeUris).forEach { deleteEpisodes(it) }
+        insertPlanned(plan)
+        // After the inserts: a show whose old episodes went stale keeps its
+        // row, and its match, when its renamed files are among the new ones.
+        pruneOrphanShows()
+        finishScan(treeUri, scannedAt)
+        return true
+    }
+
     /** Removes a source and everything scanned from it in one transaction. */
     @Transaction
     suspend fun removeFolderTree(treeUri: String) {
@@ -454,7 +620,7 @@ interface LibraryDao {
         SyncProgressEntity::class,
         SyncUserMediaEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class EdendaleDatabase : RoomDatabase() {
@@ -464,6 +630,19 @@ abstract class EdendaleDatabase : RoomDatabase() {
     abstract fun syncDao(): SyncDao
 
     companion object {
+        /**
+         * v5: each source's `endpoint` (a cloud account's email or an S3
+         * endpoint, for Play From's labels) and `scanStartedAt` (an unfinished
+         * scan, redone after a restart). Both start null; existing rows keep
+         * every value.
+         */
+        val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `library_folder` ADD COLUMN `endpoint` TEXT")
+                db.execSQL("ALTER TABLE `library_folder` ADD COLUMN `scanStartedAt` INTEGER")
+            }
+        }
+
         /**
          * v4 (27.1 sync): the portable record tables, and the title's duration
          * on `watch_progress`. Existing rows keep every value.

@@ -56,3 +56,6 @@ Web/dist/
 /release
 /.secret
 /Vendor
+/out
+/scenes
+/src/horizon

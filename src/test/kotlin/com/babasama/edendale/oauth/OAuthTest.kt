@@ -136,6 +136,32 @@ class OAuthTest {
     }
 
     @Test
+    fun `a sync-only sign-in skips Google's picker and keeps the refresh token`() {
+        val google = CloudProviders.configuration(MediaSourceKind.GOOGLE_DRIVE, "1234-abc.apps.googleusercontent.com")!!
+        val sync = CloudProviders.syncSignInConfiguration(google)
+        val values = query(OAuthClient(sync, OkHttpRemoteHttp()).authorizationUrl("state-1", "challenge-1"))
+        // drive.file still covers the files Edendale creates; the sync needs nothing picked.
+        assertEquals("https://www.googleapis.com/auth/drive.file", values["scope"])
+        assertEquals("offline", values["access_type"])
+        assertEquals("consent select_account", values["prompt"])
+        assertNull(values["trigger_onepick"])
+        assertNull(values["allow_multiple"])
+        assertNull(values["mimetypes"])
+        // The handoff's hint still reaches Google (FEATURES-27.1.md §6.4).
+        val hinted = query(OAuthClient(sync, OkHttpRemoteHttp()).authorizationUrl("s", "c", mapOf("login_hint" to "me@example.com")))
+        assertEquals("me@example.com", hinted["login_hint"])
+        assertNull(hinted["trigger_onepick"])
+        // Link Source keeps the picker.
+        assertEquals("true", query(OAuthClient(google, OkHttpRemoteHttp()).authorizationUrl("s", "c"))["trigger_onepick"])
+
+        // OneDrive and Dropbox have no picker: their sync sign-in is the library's.
+        val microsoft = CloudProviders.configuration(MediaSourceKind.ONE_DRIVE, "guid")!!
+        val dropbox = CloudProviders.configuration(MediaSourceKind.DROPBOX, "appkey")!!
+        assertEquals(microsoft, CloudProviders.syncSignInConfiguration(microsoft))
+        assertEquals(dropbox, CloudProviders.syncSignInConfiguration(dropbox))
+    }
+
+    @Test
     fun `reads the authorization code only with the matching state`() {
         val kind = MediaSourceKind.ONE_DRIVE
         assertEquals(

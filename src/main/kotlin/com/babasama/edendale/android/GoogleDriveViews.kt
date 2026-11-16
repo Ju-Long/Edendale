@@ -17,9 +17,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.babasama.edendale.android.parental.ParentalGate
 import com.babasama.edendale.connectors.ConnectorException
 import com.babasama.edendale.connectors.ConnectorFailure
 import com.babasama.edendale.connectors.MediaSourceKind
+import com.babasama.edendale.parental.GatedAction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,16 +35,26 @@ import kotlinx.coroutines.withContext
  * Tab, then rescans that account's "Videos you chose" here, adding the
  * source if this device has none. The source's row then says how many
  * videos were added. Handhelds only: a TV never opens the picker. Cancel
- * abandons the run and changes nothing.
+ * abandons the run and changes nothing. It is a library edit, so it asks for
+ * the parental PIN through [gate] while library changes are locked (O.5).
  */
 @Stable
-internal class ChooseMoreVideosState(private val context: Context, private val scope: CoroutineScope) {
+internal class ChooseMoreVideosState(
+    private val context: Context,
+    private val scope: CoroutineScope,
+    private val gate: ParentalGate,
+) {
     /** The account key whose picker is open, if any. */
     var choosingFor by mutableStateOf<String?>(null)
         private set
     private var job: Job? = null
 
     fun start(accountKey: String) {
+        if (job != null) return
+        gate.require(GatedAction.LIBRARY_EDIT) { begin(accountKey) }
+    }
+
+    private fun begin(accountKey: String) {
         val activity = context.findActivity() ?: return
         if (job != null) return
         val app = context.applicationContext as EdendaleApplication
@@ -71,10 +83,10 @@ internal class ChooseMoreVideosState(private val context: Context, private val s
 }
 
 @Composable
-internal fun rememberChooseMoreVideos(): ChooseMoreVideosState {
+internal fun rememberChooseMoreVideos(gate: ParentalGate): ChooseMoreVideosState {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    return remember(context, scope) { ChooseMoreVideosState(context, scope) }
+    return remember(context, scope, gate) { ChooseMoreVideosState(context, scope, gate) }
 }
 
 /**

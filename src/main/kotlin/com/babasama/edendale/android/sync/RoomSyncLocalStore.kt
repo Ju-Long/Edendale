@@ -13,6 +13,7 @@ import com.babasama.edendale.sync.DeviceFileCodec
 import com.babasama.edendale.sync.ProgressRecord
 import com.babasama.edendale.sync.SyncLedger
 import com.babasama.edendale.sync.SyncLocalStore
+import com.babasama.edendale.sync.SyncLog
 import com.babasama.edendale.sync.SyncMediaType
 import com.babasama.edendale.sync.UserMediaSyncRecord
 import kotlinx.coroutines.sync.Mutex
@@ -90,6 +91,13 @@ internal object SyncRows {
         }
         return ProgressRecord(type, tmdbId, season, episode, position, duration, progress.isCompleted, false, device, updateTime)
     }
+
+    /**
+     * The sync identities of this device's progress rows, as records stamped
+     * 0, for a clear to cover. An episode row without its show, season, or
+     * episode number never had a key, so it never synced and drops out.
+     */
+    fun identities(rows: List<WatchProgress>, device: String): List<ProgressRecord> = rows.mapNotNull { toRecord(it, device, 0L) }
 
     /** A received record as this device's row, given the row key and TMDB id the projection resolved. */
     fun toProgress(record: ProgressRecord, tmdbId: Int, mediaType: WatchMediaType): WatchProgress {
@@ -244,6 +252,37 @@ class RoomSyncLocalStore(private val database: EdendaleDatabase, private val set
         sync.upsertUserMedia(media.map(SyncRows::toEntity))
         (progress.map { it.updateTime } + media.map { it.updateTime }).maxOrNull()?.let(settings::raiseHighWater)
         if (progress.isNotEmpty() || media.isNotEmpty()) settings.dirty = true
+    }
+
+    // MARK: - Delete Watch History
+
+    /**
+     * Sync on: every progress key in the ledger or on this device becomes a
+     * tombstone by [deviceId] at [stamp] ([SyncLedger.clearingAllProgress]),
+     * and this device's own rows go, in one transaction. The store is marked
+     * dirty first, so a crash between the two can only cause one extra write,
+     * never tombstones that are never written. Returns how many keys were
+     * cleared. Logs counts only.
+     */
+    suspend fun clearAllProgress(deviceId: String, stamp: Long): Int = mutex.withLock {
+        val ledger = SyncLedger(progress = sync.allProgress().associate { it.key to SyncRows.toRecord(it) }, highWater = settings.highWater)
+        val rows = database.watchProgressDao().all().map { it.toDomain() }
+        val (cleared, keys) = ledger.clearingAllProgress(stamp, deviceId, SyncRows.identities(rows, deviceId))
+        if (keys.isNotEmpty()) settings.dirty = true
+        sync.replaceProgress(keys.map { SyncRows.toEntity(cleared.progress.getValue(it)) })
+        settings.raiseHighWater(cleared.highWater)
+        SyncLog.log(SyncCoordinator.TAG, "watch history cleared: ${keys.size} key(s) tombstoned, ${rows.size} row(s) deleted here")
+        keys.size
+    }
+
+    /**
+     * Sync off: this device's rows and every progress record in the ledger
+     * go, tombstones included, and none are written, so nothing reaches
+     * another device; turning sync on later brings back what they hold.
+     */
+    suspend fun forgetAllProgress() = mutex.withLock {
+        sync.forgetProgress()
+        SyncLog.log(SyncCoordinator.TAG, "watch history forgotten on this device")
     }
 }
 

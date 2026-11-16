@@ -105,8 +105,8 @@ android {
         applicationId = "com.babasama.edendale"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 3
-        versionName = "0.27.0.1"
+        versionCode = 4
+        versionName = "0.27.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Dropbox redirects to db-<app key>://, so the redirect activity's
@@ -135,6 +135,12 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // The Android XR theater lives in the :xr feature module (Section N). Play
+    // installs it only on devices that declare android.software.xr.api.spatial;
+    // a universal or debug install carries it everywhere and the player offers
+    // the theater only where that feature exists.
+    dynamicFeatures += setOf(":xr")
 
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
@@ -174,6 +180,9 @@ dependencies {
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.androidx.security.crypto)
     implementation(libs.zxing.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.work.runtime.ktx)

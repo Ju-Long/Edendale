@@ -59,13 +59,20 @@ class SyncEngine(
     private val space: String,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
-    /** Runs one sync; throws [IOException] when the location can't be listed or the file can't be written. */
+    /**
+     * Runs one sync; throws [IOException] when the location can't be listed
+     * or the file can't be written. With [readEveryFile], every other file is
+     * read again, changed or not, so the ledger takes in anything an earlier
+     * read held back behind a stamp that hasn't moved since (a record the
+     * far-future guard refused that is now in range): Delete Watch History
+     * reads this way before it clears, so its tombstones cover those keys too.
+     */
     @Throws(IOException::class)
-    suspend fun sync(): SyncReport {
+    suspend fun sync(readEveryFile: Boolean = false): SyncReport {
         storage.ensureSpace(space)
         val listed = storage.list(space)
         SyncLog.log(TAG, "listed ${listed.size} file(s) in space")
-        val known = store.stamps()
+        val known = if (readEveryFile) emptyMap() else store.stamps()
         val stamps = known.toMutableMap()
         val warnings = mutableListOf<SyncWarning>()
         var read = 0
@@ -168,10 +175,58 @@ object SyncBackoff {
 /**
  * When the client syncs (§8.1): on launch and on return to the foreground,
  * 10 seconds after the last local change (at once when playback stops or the
- * app goes to the background), and every 5 minutes in the foreground. Pure
- * constants for the Android coordinator and its tests.
+ * app goes to the background), and every 5 minutes in the foreground. Launch
+ * and return to the foreground sync at once whatever the backoff, as Sync
+ * Now does: the viewer is about to look at their progress, and the home
+ * hero resumes the episode watched last, wherever it was watched. Pure
+ * rules for the Android coordinator and its tests.
  */
 object SyncTriggers {
     const val DEBOUNCE_MILLIS = 10_000L
     const val PERIODIC_MILLIS = 5 * 60_000L
+
+    /**
+     * FEATURES-27.1.md §8, "a one-off job after local changes": leaving the
+     * foreground with a write still pending also hands it to a one-off
+     * background job, which outlives the process and waits for a network;
+     * the job writes only if the write is still pending when it runs, since
+     * the sync started on leaving usually gets there first.
+     */
+    fun flushJobNeeded(syncOn: Boolean, writePending: Boolean): Boolean = syncOn && writePending
+}
+
+/**
+ * Tells the Android coordinator when the app opens and leaves (§8.1) from its
+ * activities starting and stopping. The first activity to start in the
+ * process is the [Moment.LAUNCH]; each later return from no started activity
+ * is a [Moment.FOREGROUND], and the last one stopping is the
+ * [Moment.BACKGROUND]. An activity recreated for a configuration change (a
+ * rotation, a window resize) stops and starts again without the app ever
+ * leaving, so it is neither. Pure.
+ */
+class SyncForegroundTracker {
+    enum class Moment { LAUNCH, FOREGROUND, BACKGROUND }
+
+    private var started = 0
+    private var launched = false
+    private var recreating = false
+
+    /** An activity started; the moment it makes, if any. */
+    fun activityStarted(): Moment? {
+        val first = started++ == 0
+        val recreated = recreating
+        recreating = false
+        if (!first || recreated) return null
+        return if (launched) Moment.FOREGROUND else Moment.LAUNCH.also { launched = true }
+    }
+
+    /** An activity stopped, about to be recreated when [changingConfigurations]; the moment it makes, if any. */
+    fun activityStopped(changingConfigurations: Boolean): Moment? {
+        started = (started - 1).coerceAtLeast(0)
+        if (changingConfigurations) {
+            recreating = true
+            return null
+        }
+        return if (started == 0) Moment.BACKGROUND else null
+    }
 }

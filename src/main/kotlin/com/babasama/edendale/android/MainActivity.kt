@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Scans and TMDB matching the last process didn't live to finish; once per process.
+        (application as EdendaleApplication).libraryRepository.resumeInterruptedWork()
         handleIntent(intent)
         isTelevision = isTelevisionDevice()
         applyTelevisionWindow(isTelevision)

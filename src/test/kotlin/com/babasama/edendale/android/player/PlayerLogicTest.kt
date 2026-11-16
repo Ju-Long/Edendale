@@ -1,5 +1,7 @@
 package com.babasama.edendale.android.player
 
+import com.babasama.edendale.domain.WatchMediaType
+import com.babasama.edendale.domain.WatchProgress
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -116,6 +118,47 @@ class PlayerLogicTest {
     }
 
     // ------------------------------------------------------------------
+    // Another copy of the item playing (27.1)
+    // ------------------------------------------------------------------
+
+    @Test
+    fun anotherCopyCarriesOnFromThePositionOnlyOnceThePlayingCopyStarted() {
+        // Playing: the other link of the same episode continues at 20:00.
+        assertEquals(1_200_000L, PlayerLogic.copySwitchStartMillis(sameEpisode = true, started = true, positionMillis = 1_200_000))
+        // Still buffering at 0:00, before its 40% resume point applied: the
+        // pick resumes from the stored progress instead of restarting.
+        assertNull(PlayerLogic.copySwitchStartMillis(sameEpisode = true, started = false, positionMillis = 0))
+        // Another episode's copy starts from that episode's own progress.
+        assertNull(PlayerLogic.copySwitchStartMillis(sameEpisode = false, started = true, positionMillis = 1_200_000))
+        assertEquals(0L, PlayerLogic.copySwitchStartMillis(sameEpisode = true, started = true, positionMillis = -1))
+    }
+
+    // ------------------------------------------------------------------
+    // Resuming
+    // ------------------------------------------------------------------
+
+    private fun stoppedAt(position: Double, completed: Boolean = false) =
+        WatchProgress(tmdbId = 949, mediaType = WatchMediaType.MOVIE, position = position, isCompleted = completed)
+
+    @Test
+    fun resumeFractionKeepsThePlayersWindow() {
+        assertNull(PlayerLogic.resumeFraction(null))
+        assertEquals(0.5, PlayerLogic.resumeFraction(stoppedAt(0.5)))
+        assertEquals(0.02, PlayerLogic.resumeFraction(stoppedAt(0.02)))
+        assertEquals(0.94, PlayerLogic.resumeFraction(stoppedAt(0.94)))
+        // Barely started: nothing worth skipping.
+        assertNull(PlayerLogic.resumeFraction(stoppedAt(0.01)))
+        // Into the closing minutes: starting over is what a viewer wants.
+        assertNull(PlayerLogic.resumeFraction(stoppedAt(0.945)))
+    }
+
+    @Test
+    fun aFinishedTitleStartsFromTheTop() {
+        assertNull(PlayerLogic.resumeFraction(stoppedAt(0.5, completed = true)))
+        assertNull(PlayerLogic.resumeFraction(stoppedAt(1.0, completed = true)))
+    }
+
+    // ------------------------------------------------------------------
     // Seeking
     // ------------------------------------------------------------------
 
@@ -221,5 +264,30 @@ class PlayerLogicTest {
             listOf("Disk 10/a.mkv", "Disk 9/a.mkv").sortedWith(PlayerLogic.naturalOrder),
         )
         assertEquals(0, PlayerLogic.naturalOrder.compare("same", "same"))
+    }
+
+    @Test
+    fun aSwipeTheLengthOfTheTravelSweepsTheWholeRange() {
+        // Up (negative dy) raises; 280 px of travel spans 0…1.
+        assertEquals(0.75f, PlayerLogic.swipeLevel(baseline = 0.5f, dy = -70f, travel = 280f), 1e-6f)
+        assertEquals(0.25f, PlayerLogic.swipeLevel(baseline = 0.5f, dy = 70f, travel = 280f), 1e-6f)
+        assertEquals(1f, PlayerLogic.swipeLevel(baseline = 0f, dy = -280f, travel = 280f), 1e-6f)
+        assertEquals(1f, PlayerLogic.swipeLevel(baseline = 0.9f, dy = -500f, travel = 280f))
+        assertEquals(0f, PlayerLogic.swipeLevel(baseline = 0.1f, dy = 500f, travel = 280f))
+        // Degenerate input leaves the (clamped) baseline.
+        assertEquals(0.4f, PlayerLogic.swipeLevel(baseline = 0.4f, dy = -70f, travel = 0f))
+        assertEquals(0.4f, PlayerLogic.swipeLevel(baseline = 0.4f, dy = Float.NaN, travel = 280f))
+        assertEquals(0.4f, PlayerLogic.swipeLevel(baseline = 0.4f, dy = -70f, travel = Float.NaN))
+        assertEquals(1f, PlayerLogic.swipeLevel(baseline = 3f, dy = 0f, travel = 280f))
+        assertEquals(0.25f, PlayerLogic.swipeLevel(baseline = Float.NaN, dy = -70f, travel = 280f), 1e-6f)
+    }
+
+    @Test
+    fun levelLabelsAreWholePercentages() {
+        assertEquals("50%", PlayerLogic.levelLabel(0.5f, java.util.Locale.US))
+        assertEquals("0%", PlayerLogic.levelLabel(0.004f, java.util.Locale.US))
+        assertEquals("100%", PlayerLogic.levelLabel(1.4f, java.util.Locale.US))
+        assertEquals("0%", PlayerLogic.levelLabel(Float.NaN, java.util.Locale.US))
+        assertEquals("67%", PlayerLogic.levelLabel(10f / 15f, java.util.Locale.US))
     }
 }

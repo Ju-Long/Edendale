@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.babasama.edendale.android.player.AudioEnhancementProfile
 import com.babasama.edendale.android.player.AudioEnhancementRules
@@ -110,7 +111,7 @@ internal fun AudioEnhancementSettingsSection(isTelevision: Boolean) {
                     ArchiveFilterChip(
                         selected = settings.profile == profile,
                         onClick = { update(settings.selecting(profile)) },
-                        label = { Text(profileLabel(profile)) },
+                        label = { Text(profileLabel(profile), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         isTelevision = isTelevision,
                     )
                 }

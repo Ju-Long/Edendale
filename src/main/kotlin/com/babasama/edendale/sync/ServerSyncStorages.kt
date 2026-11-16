@@ -11,6 +11,24 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /**
+ * The folder the location chooser starts with for a saved WebDAV login. The
+ * login keeps only the host and port, so the scheme comes from a source
+ * already linked on that server (a plain `http` server on the viewer's own
+ * network is linked as `dav://`); with none, `https`.
+ */
+fun defaultWebDavSyncFolder(host: String, port: Int?, linkedFolderUris: List<String>): String {
+    val linked = linkedFolderUris.firstOrNull { uri ->
+        val scheme = uri.substringBefore("://", "").lowercase()
+        (scheme == "dav" || scheme == "davs") &&
+            com.babasama.edendale.connectors.SourceUrl.credentialHost(uri) == host.lowercase() &&
+            com.babasama.edendale.connectors.SourceUrl.port(uri) == port
+    }
+    val scheme = if (linked?.substringBefore("://")?.lowercase() == "dav") "http" else "https"
+    val address = if (port != null) "$host:$port" else host
+    return "$scheme://$address/"
+}
+
+/**
  * A WebDAV server as a sync location (SYNC-PROTOCOL.md §4): `MKCOL` for the
  * folders, `PUT` for the file, `PROPFIND` depth 1 for `getetag` and
  * `getlastmodified`. [base] is the configured folder, canonical

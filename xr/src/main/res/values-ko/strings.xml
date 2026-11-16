@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ko. Generated to match Apple/Shared/Theater.xcstrings and the Quest theater's strings;
+     anything absent falls back to values/strings.xml. -->
+<resources>
+    <string name="theater_exit">극장 나가기</string>
+    <string name="theater_position">재생 위치</string>
+    <string name="theater_playback_failed">여기에서 동영상을 재생할 수 없습니다. 극장에서 나가 플레이어로 돌아가세요.</string>
+    <string name="theater_rooms">시어터</string>
+    <string name="theater_room_movie_theatre">영화관</string>
+    <string name="theater_room_projector_room">영사실</string>
+    <string name="theater_room_performance_theatre">공연장</string>
+    <string name="theater_seats">좌석</string>
+    <string name="theater_screen">스크린</string>
+    <string name="theater_your_seat">내 좌석</string>
+    <string name="theater_best_seat">최적의 좌석</string>
+    <string name="theater_seat_name">%1$d열 %2$d번</string>
+    <string name="theater_lights">조명</string>
+    <string name="theater_lights_normal">기본</string>
+    <string name="theater_lights_dim">어둡게</string>
+    <string name="theater_lights_dark">아주 어둡게</string>
+    <string name="theater_recentre">중앙 재설정</string>
+    <string name="theater_recentre_caption">보고 있는 곳으로 스크린을 옮깁니다. 누워 있어도 됩니다.</string>
+    <string name="theater_look_down">컨트롤은 아래에 있습니다.</string>
+</resources>

@@ -8,8 +8,10 @@
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
         <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
         <exclude domain="sharedpref" path="edendale_google_drive.xml" />
+        <exclude domain="sharedpref" path="edendale_playback_sources.xml" />
         <exclude domain="sharedpref" path="edendale_wyzie.xml" />
         <exclude domain="sharedpref" path="edendale_sync.xml" />
+        <exclude domain="sharedpref" path="edendale_parental.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="edendale_tmdb_session.xml" />
@@ -19,7 +21,9 @@
         <exclude domain="sharedpref" path="edendale_tls_pins.xml" />
         <exclude domain="sharedpref" path="edendale_cloud_accounts.xml" />
         <exclude domain="sharedpref" path="edendale_google_drive.xml" />
+        <exclude domain="sharedpref" path="edendale_playback_sources.xml" />
         <exclude domain="sharedpref" path="edendale_wyzie.xml" />
         <exclude domain="sharedpref" path="edendale_sync.xml" />
+        <exclude domain="sharedpref" path="edendale_parental.xml" />
     </device-transfer>
 </data-extraction-rules>
