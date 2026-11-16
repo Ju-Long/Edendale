@@ -386,7 +386,8 @@ final class PlayerSession {
 
         Task {
             do {
-                debugPrint("[PlayerSession.startPlayback] opening url: \(url)")
+                // Never print the whole URL: SMB, SFTP and WebDAV URLs carry the password.
+                debugPrint("[PlayerSession.startPlayback] opening \(url.scheme ?? "?") url: \(url.lastPathComponent)")
                 try await engine.open(url: url)
                 guard self.activePlaybackRequestID == generation else {
                     debugPrint("[PlayerSession.startPlayback] ❌ generation mismatch after open")
