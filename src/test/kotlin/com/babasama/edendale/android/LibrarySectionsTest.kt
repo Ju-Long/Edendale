@@ -33,6 +33,24 @@ class LibrarySectionsTest {
     }
 
     @Test
+    fun `the section picker offers the whole page then each section`() {
+        val all = listOf(DownloadedSection.CONTINUE_WATCHING, DownloadedSection.MOVIES, DownloadedSection.SHOWS)
+        assertEquals(listOf(null) + all, DownloadedSection.pickerChoices(all))
+        assertEquals(listOf(null, DownloadedSection.SHOWS), DownloadedSection.pickerChoices(listOf(DownloadedSection.SHOWS)))
+        // One section alone lists what the whole page lists: no choice.
+        assertTrue(DownloadedSection.isPickerOffered(all))
+        assertTrue(DownloadedSection.isPickerOffered(listOf(DownloadedSection.MOVIES, DownloadedSection.SHOWS)))
+        assertFalse(DownloadedSection.isPickerOffered(listOf(DownloadedSection.MOVIES)))
+        assertFalse(DownloadedSection.isPickerOffered(emptyList()))
+        // Four choices share a phone-width row: Continue Watching and TV Shows say less there.
+        assertEquals(R.string.section_watching_short, DownloadedSection.CONTINUE_WATCHING.shortTitle)
+        assertEquals(R.string.section_continue_watching, DownloadedSection.CONTINUE_WATCHING.title)
+        assertEquals(DownloadedSection.MOVIES.title, DownloadedSection.MOVIES.shortTitle)
+        assertEquals(R.string.section_shows_short, DownloadedSection.SHOWS.shortTitle)
+        assertEquals(R.string.section_tv_shows, DownloadedSection.SHOWS.title)
+    }
+
+    @Test
     fun `watchlist sections follow media types`() {
         assertEquals(emptyList(), WatchlistSection.available(emptyList()))
         assertEquals(listOf(WatchlistSection.MOVIES), WatchlistSection.available(listOf(MediaType.MOVIE)))
@@ -116,6 +134,55 @@ class LibrarySectionsTest {
         )
         assertEquals(NavigationItem.Search, NavigationItem.Search.resolved(emptyList(), emptyList()))
         assertEquals(NavigationItem.Downloaded(null), NavigationItem.Downloaded(null).resolved(emptyList(), emptyList()))
+    }
+
+    @Test
+    fun `a section still loading is left alone`() {
+        val movies = NavigationItem.Downloaded(DownloadedSection.MOVIES)
+        assertEquals(movies, movies.resolved(watchlistSections = null, downloadedSections = null))
+        val shows = NavigationItem.Watchlist(WatchlistSection.SHOWS)
+        assertEquals(shows, shows.resolved(watchlistSections = null, downloadedSections = emptyList(), sectionRows = false))
+    }
+
+    @Test
+    fun `a downloaded section with nothing left to pick falls back where no row lists it`() {
+        val movies = NavigationItem.Downloaded(DownloadedSection.MOVIES)
+        val onlyMovies = listOf(DownloadedSection.MOVIES)
+        // No navigation row and no picker: the page would be stuck on Movies.
+        assertEquals(NavigationItem.Downloaded(null), movies.resolved(null, onlyMovies, sectionRows = false))
+        // Extended navigation still lists the Movies row.
+        assertEquals(movies, movies.resolved(emptyList(), onlyMovies, sectionRows = true))
+        // While the picker offers a choice, the section stays at any width.
+        val both = listOf(DownloadedSection.MOVIES, DownloadedSection.SHOWS)
+        assertEquals(movies, movies.resolved(null, both, sectionRows = false))
+    }
+
+    @Test
+    fun `downloaded sections show at every width and watchlist sections only beside their rows`() {
+        val movies = NavigationItem.Downloaded(DownloadedSection.MOVIES)
+        assertEquals(movies, movies.shown(extendedNavigation = false))
+        assertEquals(movies, movies.shown(extendedNavigation = true))
+        val shows = NavigationItem.Watchlist(WatchlistSection.SHOWS)
+        assertEquals(NavigationItem.Watchlist(), shows.shown(extendedNavigation = false))
+        assertEquals(shows, shows.shown(extendedNavigation = true))
+        assertEquals(NavigationItem.Search, NavigationItem.Search.shown(extendedNavigation = false))
+    }
+
+    @Test
+    fun `a tab stays lit over its sections where no row lists them`() {
+        val movies = NavigationItem.Downloaded(DownloadedSection.MOVIES)
+        // The rail, the bottom bar, and the TV strip: the picker's choice keeps Downloaded lit.
+        assertTrue(movies.lights(AppTab.DOWNLOADED, sectionRows = false))
+        assertTrue(NavigationItem.Downloaded().lights(AppTab.DOWNLOADED, sectionRows = false))
+        assertFalse(movies.lights(AppTab.WATCHLIST, sectionRows = false))
+        assertFalse(movies.lights(AppTab.SEARCH, sectionRows = false))
+        // Extended navigation: the section's own row is lit, the tab's row only for the whole page.
+        assertFalse(movies.lights(AppTab.DOWNLOADED, sectionRows = true))
+        assertTrue(NavigationItem.Downloaded().lights(AppTab.DOWNLOADED, sectionRows = true))
+        assertFalse(NavigationItem.Watchlist(WatchlistSection.SHOWS).lights(AppTab.WATCHLIST, sectionRows = true))
+        assertTrue(NavigationItem.Watchlist().lights(AppTab.WATCHLIST, sectionRows = true))
+        assertTrue(NavigationItem.Search.lights(AppTab.SEARCH, sectionRows = true))
+        assertFalse(NavigationItem.Search.lights(AppTab.MOVIES, sectionRows = false))
     }
 
     @Test

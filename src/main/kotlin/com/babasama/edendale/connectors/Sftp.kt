@@ -198,6 +198,76 @@ object Sftp {
     }
 
     internal fun openFile(session: Session, path: String): RemoteFile = session.sftp.open(path, EnumSet.of(OpenMode.READ))
+
+    // MARK: - Writing (27.1 sync locations)
+
+    /** The whole file at [path], at most [limit] bytes. Blocking. */
+    fun readAll(session: Session, path: String, limit: Int): ByteArray {
+        val file = openFile(session, path)
+        try {
+            val length = file.length().coerceAtMost(limit.toLong()).toInt()
+            val buffer = ByteArray(length)
+            val read = if (length == 0) 0 else readFully(file, 0, buffer, 0, length)
+            return if (read == buffer.size) buffer else buffer.copyOf(read)
+        } finally {
+            runCatching { file.close() }
+        }
+    }
+
+    /**
+     * Writes [bytes] to `<path>.tmp` and renames it over [path], so a reader
+     * never sees a half-written file (§4). A server that refuses to rename
+     * over an existing file (SFTP v3) gets the old file removed first.
+     */
+    fun writeReplacing(session: Session, path: String, bytes: ByteArray) {
+        val temporary = "$path.tmp"
+        session.sftp.open(temporary, EnumSet.of(OpenMode.WRITE, OpenMode.CREAT, OpenMode.TRUNC)).use { file ->
+            file.write(0, bytes, 0, bytes.size)
+        }
+        try {
+            session.sftp.rename(temporary, path, EnumSet.of(net.schmizz.sshj.sftp.RenameFlags.OVERWRITE))
+        } catch (error: IOException) {
+            runCatching { session.sftp.rm(path) }
+            try {
+                session.sftp.rename(temporary, path)
+            } catch (second: IOException) {
+                runCatching { session.sftp.rm(temporary) }
+                throw second
+            }
+        }
+    }
+
+    /** Creates [path] and every missing parent. */
+    fun mkdirs(session: Session, path: String) {
+        val segments = path.split('/').filter { it.isNotEmpty() }
+        var current = ""
+        segments.forEach { segment ->
+            current += "/$segment"
+            if (runCatching { session.sftp.statExistence(current) }.getOrNull() == null) session.sftp.mkdir(current)
+        }
+    }
+
+    /** Removes the file at [path]; one that is already gone is fine. */
+    fun remove(session: Session, path: String) {
+        if (runCatching { session.sftp.statExistence(path) }.getOrNull() == null) return
+        session.sftp.rm(path)
+    }
+
+    /** The regular files directly in [path] with their sizes and modification times; a missing folder lists as empty. */
+    fun listFiles(session: Session, path: String): List<ConnectorEntry> {
+        if (runCatching { session.sftp.statExistence(path) }.getOrNull() == null) return emptyList()
+        val base = if (path.endsWith("/")) path else "$path/"
+        return session.sftp.ls(path).mapNotNull { info ->
+            if (info.attributes.type != FileMode.Type.REGULAR) return@mapNotNull null
+            ConnectorEntry(
+                name = info.name,
+                url = "sftp://$base${info.name}",
+                isDirectory = false,
+                size = info.attributes.size.takeIf { it >= 0 },
+                modifiedEpochMillis = info.attributes.mtime.takeIf { it > 0 }?.let { it * 1_000 },
+            )
+        }
+    }
 }
 
 /**

@@ -1,5 +1,7 @@
 package com.babasama.edendale.android.player
 
+import com.babasama.edendale.domain.WatchProgress
+import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
@@ -72,6 +74,23 @@ object PlayerLogic {
     fun adjustedLevel(level: Float, delta: Float): Float {
         val hundredths = ((level + delta).toDouble() * 100).roundToLong()
         return (hundredths / 100.0).toFloat().coerceIn(0f, 1f)
+    }
+
+    /**
+     * Where a vertical swipe of [dy] pixels (down is positive) takes a level
+     * that started at [baseline]: a swipe [travel] pixels long sweeps the
+     * whole 0…1 range, up raises. Degenerate input leaves the baseline.
+     */
+    fun swipeLevel(baseline: Float, dy: Float, travel: Float): Float {
+        val start = if (baseline.isNaN()) 0f else baseline.coerceIn(0f, 1f)
+        if (!(travel > 0f) || !travel.isFinite() || !dy.isFinite()) return start
+        return (start - dy / travel).coerceIn(0f, 1f)
+    }
+
+    /** A 0…1 level as a whole percentage in [locale]'s style ("50%", "50 %", "%50"), for TalkBack. */
+    fun levelLabel(level: Float, locale: Locale): String {
+        val clamped = if (level.isNaN()) 0.0 else level.coerceIn(0f, 1f).toDouble()
+        return NumberFormat.getPercentInstance(locale).apply { maximumFractionDigits = 0 }.format(clamped)
     }
 
     // ------------------------------------------------------------------
@@ -166,6 +185,43 @@ object PlayerLogic {
         return positionMillis >= durationMillis * COMPLETE_FRACTION ||
             positionMillis >= durationMillis - 2_000
     }
+
+    // ------------------------------------------------------------------
+    // Another copy of the item playing (27.1)
+    // ------------------------------------------------------------------
+
+    /**
+     * Where a Play From pick in the episodes panel starts. Another copy of
+     * the episode playing ([sameEpisode]) carries on from [positionMillis]
+     * once the playing copy has [started] — reached READY with its stored
+     * resume point applied. Before that its position is still 0, so the pick
+     * gets null and resumes from the stored progress, which the copies share
+     * by TMDB id: picking the LAN link while the Tailscale one still buffers
+     * mustn't restart the episode. A pick of another episode starts the usual
+     * way (null).
+     */
+    fun copySwitchStartMillis(sameEpisode: Boolean, started: Boolean, positionMillis: Long): Long? =
+        if (sameEpisode && started) positionMillis.coerceAtLeast(0L) else null
+
+    // ------------------------------------------------------------------
+    // Resuming
+    // ------------------------------------------------------------------
+
+    /**
+     * Fractions of a title worth resuming from: before 2% there is nothing
+     * to skip, and from the last few percent on, starting over is what a
+     * viewer wants.
+     */
+    val RESUME_WINDOW: ClosedFloatingPointRange<Double> = 0.02..0.94
+
+    /**
+     * Where the player resumes a title, as a fraction of its length, or null
+     * when it starts from the top: a finished title, or a stop outside
+     * [RESUME_WINDOW]. The detail page labels Play as Resume by the same
+     * rule, so the label and the player agree.
+     */
+    fun resumeFraction(progress: WatchProgress?): Double? =
+        progress?.takeIf { !it.isCompleted }?.normalizedPosition?.takeIf { it in RESUME_WINDOW }
 
     // ------------------------------------------------------------------
     // Seeking

@@ -10,8 +10,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.net.InetAddress
 import java.util.ArrayDeque
 
-/** A TV offering a handoff on this network, resolved to an address the phone can connect to. */
-data class DiscoveredTelevision(val name: String, val host: InetAddress, val port: Int)
+/**
+ * A device offering a handoff on this network, resolved to an address to
+ * connect to. [version] and [platform] come from the TXT records a
+ * version-2 host advertises (SYNC-PROTOCOL.md §9.1); a version-1 TV has
+ * `v=1` and no platform.
+ */
+data class DiscoveredTelevision(
+    val name: String,
+    val host: InetAddress,
+    val port: Int,
+    val version: Int = 1,
+    val platform: String? = null,
+) {
+    val speaksVersion2: Boolean get() = version >= 2
+}
 
 /**
  * The phone side's search for TVs (I.2.2): browses `_edendale-handoff._tcp`
@@ -70,7 +83,15 @@ class HandoffDiscovery(context: Context) {
                 override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
                     val host = serviceInfo.host
                     if (host != null && serviceInfo.port > 0) {
-                        val television = DiscoveredTelevision(serviceInfo.serviceName, host, serviceInfo.port)
+                        val attributes = runCatching { serviceInfo.attributes }.getOrNull().orEmpty()
+                        fun text(key: String) = attributes[key]?.let { String(it, Charsets.UTF_8) }
+                        val television = DiscoveredTelevision(
+                            name = text("name")?.takeIf { it.isNotBlank() } ?: serviceInfo.serviceName,
+                            host = host,
+                            port = serviceInfo.port,
+                            version = text("v")?.toIntOrNull() ?: 1,
+                            platform = text("platform"),
+                        )
                         _televisions.value = (_televisions.value.filterNot { it.name == television.name } + television).sortedBy { it.name.lowercase() }
                     }
                     finished()

@@ -17,8 +17,11 @@ keeps library and watch data under the user's control.
 - Use the navigation, accessibility, input, storage, and media capabilities
   native to each supported platform.
 
-Trailers open only after an explicit user action. Edendale contains no
-analytics.
+Trailers open only after an explicit user action. They play in YouTube's
+privacy-enhanced embed (`youtube-nocookie.com`), which refuses to play
+(error 153) unless the app names itself, so the request carries a `Referer`
+of `https://com.babasama.edendale/`, the application ID and nothing else, as
+YouTube asks of apps that embed its player. Edendale contains no analytics.
 
 ## Repository model
 
@@ -62,11 +65,62 @@ in `src/horizon` (the manifest overlay and `DevicePolicy`) and
 `src/testHorizon`, so merges from `android` touch `src/main` alone. On a
 headset the app is a handheld app, never the TV shell: `DevicePolicy` turns
 off Picture-in-Picture (Horizon OS can't float it), Watch Next, the Video
-Enhancement default, and the player's brightness and volume swipes (a panel
-ignores both). Watch Trailer opens YouTube in the browser or the YouTube app
-instead of the inline player, which shows no picture in a panel. The release
+Enhancement default (until the viewer saves a preset of their own), the
+player's brightness and volume swipes (a panel ignores both), and Rotation
+Lock (a panel doesn't turn). Watch Trailer opens YouTube's own watch page
+(`youtube.com/watch`, not the `youtube-nocookie.com` embed described above)
+in the browser or the YouTube app instead of the inline player, which shows
+no picture in a panel. Motion Smoothing (below) follows a phone's rules on a
+headset and starts off; whether a panel shows its doubled rate evenly is still
+to be checked on a headset (HORIZON.md B.16). The app supports the **Quest 3
+and 3S** only (`com.oculus.supportedDevices`, HORIZON.md D4), the headsets
+whose passthrough camera the pairing scanner reads. The
+flavor targets **SDK 34** (`android` targets 36 for Google Play), the highest
+Meta accepts for an app with an immersive activity (D2). The release
 APK is arm64-only, as Meta requires; the debug APK keeps every ABI for
 emulators. Both still need JDK 17 and the Android SDK, as below.
+
+27.1's sync and handoff version 2 come from `android` as they are (Sync
+between devices, below), with three changes for a headset (HORIZON.md B.13).
+The device file and the handoff name the headset `horizon`
+(SYNC-PROTOCOL.md §3), which the Google Drive rule groups with Android. The
+theater, which keeps its own progress, writes the title's length and starts a
+sync when it stops, as the 2D player does. The manifest overlay removes
+WorkManager's `RECEIVE_BOOT_COMPLETED`, which Meta reviews, so after a
+reboot the background sync waits for the app's next launch, which syncs
+anyway.
+
+The rest of android's 27.1 arrived on 2026-11-11 (HORIZON.md B.14): parental
+controls, detail pages for downloaded titles, one poster per title, Play
+From by source, Delete Watch History, the Settings pages, and the Downloaded
+page's section picker work on a headset as they do on a phone. Three things
+differ. android's **Android XR theater** is not part of this branch's build:
+its `:xr` module (the `xr/` directory) needs Jetpack XR, which Horizon OS
+doesn't have, so `settings.gradle.kts` leaves it out and the "Immersive
+theater (Android XR)" section below, with its `xr-debug.apk`, describes
+`android` alone, as does the App Bundle paragraph before it
+(`bundleRelease`, an `.aab` with `base/` and `xr/` inside): the Meta Horizon
+Store takes one APK, from `assembleHorizonRelease`. A Quest's theater is the
+one described next. The player never offers **Rotation Lock**. And
+**Settings → About** carries this build's own licence line (MPL-2.0 over an
+LGPL-2.1 FFmpeg, and the Spatial SDK in a theater build), which `android`'s
+Settings no longer has. android's pairing screen, rebuilt to match the Apple
+branch's (Sync between devices, below), works on a headset like this. A
+Quest 3 or 3S is offered what a phone is: **Scan the Other Device's Code**
+reads the other device's QR code with the headset's passthrough camera
+(Meta's Passthrough Camera API), or **Show a Code for the Other Device to
+Scan**. (A headset without the passthrough camera, which the app no longer
+lists, would be offered what a TV is.) It can also choose **Enter the Other
+Device's Code** instead, pick the device showing a code, and type its six
+digits, so a
+headset pairs with a phone, a tablet, a TV, a Windows PC, or another
+headset (an iPhone or iPad can only scan). For the Quest 3's scanner this
+build keeps android's `CAMERA` (Meta's Passthrough Camera API accepts it in
+place of Meta's own permission), which is on Meta's review list and is asked
+for only when you choose to scan; frames are read on the headset and never
+kept or sent. It declares nothing of Meta's: the upload refused
+`horizonos.permission.HEADSET_CAMERA` as "incompatible", both beside
+`CAMERA` and alone (HORIZON.md B.15).
 
 A build with `-Phorizon.theater=true` adds the **immersive theater**
 (HORIZON.md Section G): a Theater button in the player that puts the video on
@@ -74,18 +128,42 @@ a large screen inside an environment, through Meta's Spatial SDK, which makes
 the app a hybrid app. The store's first release is the 2D panel app without
 it (HORIZON.md D15), so `gradle.properties` sets `horizon.theater=false`: the
 APK then has no Spatial SDK, no immersive activity, no hand-tracking
-permission, and no Theater button, and is about 71 MB instead of 130 MB. The
+permission, and no Theater button, and is about 72 MB instead of 142 MB. The
 theater's Spatial SDK code, manifest, and resources live in
 `src/horizonTheater/`, which Gradle adds only to a theater build; its pure
-layout and scene code stays in `src/horizon/.../theater/` with its tests.
-The theater is its own activity with its own ExoPlayer, built with the
-same renderers and data source as the panel player, so local, SMB, WebDAV,
-SFTP, S3, and cloud sources play unchanged. A trigger press or a pinch shows
-its controls (play and pause, skip, the timeline, audio and subtitle tracks,
-Exit); B or Y, or Exit, returns to the panel; progress is saved as in the
-player. Its environment is `src/horizon/assets/theater.glb` when the
-`scenes` branch has exported one (the activity reads the `Screen` and `Seat`
-nodes), else a generated starfield (`tools/horizon/make_skybox.py`). The SDK
+placement, seating, and admission code stays in `src/horizon/.../theater/`
+with its tests.
+
+Since HORIZON.md G.15 the Quest's theater is android's Android XR theater
+(see "Immersive theater (Android XR)" below) on the Spatial SDK: it plays
+through android's shared `TheaterPlayback` (built as the panel player builds
+its player, so local, SMB, WebDAV, SFTP, S3, and cloud sources play
+unchanged, with the per-title memory and Skip Intro, Recap, and Credits), and
+it seats, recentres, and docks by android's shared geometry, converted to the
+SDK's frame by `TheaterFrames`. The viewer sits in one of three rooms from the
+`scenes` branch, the same three as on Apple Vision Pro and Android XR: Movie
+Theater, Projector Room, and Performance Theater, in the room's best seat or
+the seat last chosen there on the **seat map**. The **controls dock** follows
+the head 45° below the line of sight and never hides: play and pause, skip,
+the timeline, audio and subtitle tracks, the Room list (it moves between
+rooms while the video plays; the theater opens in the last one), the Skip
+prompts, an **Up Next** card in an episode's last 30 seconds that plays the
+next episode right there, and Exit. The **seat panel** to its left holds the
+seat map, Best Seat, the house **Lights** (Normal, Dim, Dark), and
+**Recentre**, which seats the viewer again where they look, lying back
+included (looking down at the dock only turns the heading); holding the Meta
+button recentres the same way. Subtitles are laid out in the picture's own
+shape. B or Y, or Exit, returns to the panel player at the same position, over
+the library; the end of the title returns to the library; progress is saved
+as in the player. Because the
+theater's activity can be started from outside the app, it runs the player's
+parental check itself unless the player has just handed it the title. The
+rooms ship as `src/horizonTheater/assets/theater/<room>.glb` (about 23 MB,
+theater builds only), exported from `scenes` with its `tools/export_gltf.py`
+and made unlit for the Spatial SDK by `tools/horizon/prepare_theater_glb.py`;
+a room that can't be read falls back to a generated starfield
+(`tools/horizon/make_skybox.py`) and a 4 m screen. Meta's Spatial Simulator
+refuses immersive apps, so the theater runs only on a headset. The SDK
 is used without the Meta Platform SDK, without an account, and without the
 Spatial Gradle plugin, whose usage-data switch the build never turns on.
 
@@ -100,8 +178,9 @@ its store-rule check without it (see DTS and TrueHD, and Licence, below).
 | Hermetic JVM tests | `./gradlew testHorizonDebugUnitTest` |
 | Debug APK | `./gradlew assembleHorizonDebug` → `build/outputs/apk/horizon/debug/Edendale-horizon-debug.apk` |
 | Release APK | `./gradlew assembleHorizonRelease` → `build/outputs/apk/horizon/release/Edendale-horizon-release.apk` (`…-release-unsigned.apk` without the key below) |
-| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk, `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry and class together in a theater build |
+| Store-rule check | `./gradlew verifyHorizonRelease`: minSdk and targetSdk (32–37 for the 2D app, 32–34 with the theater), `installLocation`, the supported-devices tag, Meta's prohibited permissions (`gradle/meta-prohibited-permissions.txt`), `CAMERA` and no `horizonos.permission.HEADSET_CAMERA` (Meta's upload refuses it; the Quest 3's pairing scanner reads through `CAMERA`), no TV entries, arm64 only, the size limit, `libffmpegJNI.so` present, no `org.jellyfin` artifact, nothing of android's Android XR theater, the v2 signature and certificate when signed, and the theater: none of it in a 2D build, and its manifest entry, class, three rooms, a GLES 3.1 (or Vulkan) feature, `com.oculus.vr.focusaware`, and every activity's orientation landscape together in a theater build |
 | With the immersive theater | Add `-Phorizon.theater=true` to any command above (HORIZON.md D15) |
+| Theater rooms (after a scene changes on `scenes`) | On `scenes`: `Blender --background scenes/<room>/<room>.blend --python tools/export_gltf.py -- out/<room>.glb`; then here: `python3 -I tools/horizon/prepare_theater_glb.py <scenes checkout>/out/*.glb` → `src/horizonTheater/assets/theater/` (HORIZON.md G.14) |
 | Instrumented tests | `./gradlew connectedHorizonDebugAndroidTest` on an emulator, never on your own headset: it uninstalls the app and its data afterwards. On a headset, `./gradlew installHorizonDebug installHorizonDebugAndroidTest` and then `adb shell am instrument` keep the data. |
 
 ### Signing
@@ -119,8 +198,8 @@ and its passwords never enter the repository or a CI log.
 
 `versionCode` and `versionName` in `defaultConfig` are `android`'s and arrive
 with its merges, but the `horizon` flavor overrides both: `versionName` is the
-Horizon release's own (`27.0`, not android's `0.27.0.1`), which Settings and
-the store show, and `versionCode` (4) only has to be higher than the Meta
+Horizon release's own (`27.1`, not android's `0.27.1`), which Settings and
+the store show, and `versionCode` (5) only has to be higher than the Meta
 Horizon Store's last upload. Set both in the flavor for each release.
 
 ### The Spatial Simulator
@@ -154,18 +233,38 @@ software codecs, so codec and performance results come only from a headset.
 
 ### Manual checks on a headset
 
-Before a release, on a Quest 3 (and a Quest 2 while the listing keeps it):
+Before a release, on a Quest 3 (and a Quest 3S when one is at hand):
 install, launch, the panel's size and resizing; Touch controllers and hands,
 with B or Y as Back; Add Folder through the system picker, and the folder
 surviving a restart; "Open with Edendale" from the Files app; H.264, HEVC, VP9,
 and AV1 at 1080p and 4K, and HDR on the panel; the audio formats and the
 equalizer; Google Drive, OneDrive, Dropbox, and TMDB sign-in from the panel's
-browser and their return to the app; the trailer opening outside the app; the
-headset off and on mid-playback; a second account on the headset; and,
-offline, each source failing on its own while the app stays usable. For the
-theater (HORIZON.md G.10): entering and leaving it from every source type;
-the screen's placement, a recenter, and the headset off and on; controllers
-and hands on the controls panel; DTS-HD MA, TrueHD, and E-AC-3; 30 minutes of
+browser and their return to the app; the trailer opening outside the app;
+Settings → Sync with a folder and with a linked account, the headset's file
+naming it `horizon`, and pairing with a phone in both directions (HORIZON.md
+B.13); the headset off and on mid-playback; a second account on the headset; and,
+offline, each source failing on its own while the app stays usable. For
+27.1 (HORIZON.md B.14): installing over the previous build with the library,
+links, and progress kept; a downloaded title's page and the Downloaded
+section picker; Settings' pages with B or Y as Back; Parental Controls with a
+PIN from the system keyboard and its gates; Delete Watch History; a sync
+location sent from an iPhone or iPad (Google's sign-in or the folder picker
+on the headset), the offer to delete the headset's file when the location
+changes, and a change written after leaving the app; pairing on the new
+screen (the headset showing its code both ways, a phone scanning it, and a
+pairing link opened on the headset with no camera prompt); for B.15, a
+Quest 3 scanning a phone's code with its passthrough camera, the camera
+refused, **Enter the Other Device's Code** with a phone and with an Android
+TV, and `CAMERA` alone in `adb shell dumpsys package
+com.babasama.edendale`; and the player without a Rotation Lock or Picture
+in Picture button. For the
+theater (HORIZON.md G.10, G.15): entering and leaving it from every source type;
+each room facing the viewer with the picture on its screen, the Room list,
+the screen's placement, a recenter and the Recentre button (seated and lying
+back), and the headset off and on; the seat map, Best Seat, the lights, the
+dock following the head, a Skip prompt, Up Next, and subtitles on a 2.39:1
+film; a ticketless `adb shell am start` of the theater refused while a
+rating ceiling is on; controllers and hands on the dock and the seat panel; DTS-HD MA, TrueHD, and E-AC-3; 30 minutes of
 playback against VrApi's FPS line; and `dumpsys netstats` showing nothing
 from the app's UID.
 
@@ -209,9 +308,19 @@ way.
 Online subtitle search, like trailer playback, starts only after an explicit
 user action; opening the player or its settings panel never sends a search.
 
+### Settings
+
+Settings opens as a sheet on phones and tablets and full screen on TV, laid
+out as on iOS 27.1: a first page listing Player Controls, Audio, Subtitles,
+Library, Sync, and Accounts (and Android TV on a TV), then Parental Controls
+and About, which holds the version, TMDB's notice, the Nunito credit, and (on
+phones and tablets) the TheIntroDB link. Each category opens as its own page.
+Back, or the page's Back chip, returns to the list; on a TV, focus lands on the
+row the page was opened from, and Back on the list closes Settings.
+
 ### Intro, recap, and credits prompts
 
-Enable **Settings → Playback → Skip Prompts**, or **Player Adjustments →
+Enable **Settings → Player Controls → Skip Prompts**, or **Player Adjustments →
 Playback → Skip Prompts**, to use community timestamps from
 [TheIntroDB](https://theintrodb.org/docs). The setting defaults off. The legacy
 90-second recap and final-three-minutes credits auto-skips have been removed;
@@ -245,9 +354,9 @@ network errors, invalid ranges, and rate limits leave normal playback
 available without a prompt. Playback and initial import never wait for this
 service.
 
-### App Controls and player memory
+### Player Controls and player memory
 
-**Settings → App Controls** sets the skip lengths (10, 15, or 30 seconds,
+**Settings → Player Controls** sets the skip lengths (10, 15, or 30 seconds,
 for back and forward separately) and the hold speeds (0.25× to 3.00× for each
 side). One skip length drives every skip: double-tap, the on-screen buttons,
 the D-pad and TV timeline, media keys, Picture-in-Picture actions, and the
@@ -260,6 +369,22 @@ show as a whole, the player remembers the speed, the audio track, the
 subtitle track or that subtitles were off, and the video track, matching
 tracks by language and then by name. These settings stay on the device and
 are never synced.
+
+On phones and tablets, a vertical swipe on the right of the video changes the
+device's media volume, the one the hardware keys and Android's volume panel
+set. With headphones in, a raise past Android's safe level shows Android's
+hearing warning; a device with a fixed volume changes the player's own volume
+instead. A swipe on the left changes the screen's brightness on Android's own
+slider scale, for the player only: the brightness is handed back while the
+video floats in Picture in Picture or another app is in use, comes back with
+the player unless you changed it meanwhile, and ends when the player closes.
+A vertical swipe never counts as a tap, and Android XR has no brightness
+swipe. **Rotation Lock**, next to Picture in Picture, holds the orientation
+on screen until you turn it off or close the player, through episode
+switches, Picture in Picture, and Android relaunching the player. It is never
+saved, and it isn't offered on TV, Android XR, in split screen or desktop
+windows, or on Android 16 tablets and unfolded foldables, which ignore app
+orientation requests.
 
 ### Network shares
 
@@ -284,9 +409,9 @@ straight to the service; nothing passes through an Edendale server.
 | WebDAV (Nextcloud, ownCloud, Synology, QNAP, pCloud, Koofr, rclone) | User and password (Basic or Digest), or guest; a self-signed certificate is approved on first use | The login once the server asks for it, `PROPFIND` listings, and byte ranges of the files that play |
 | SFTP (any server you can reach over SSH) | User and password; the server's host key is approved on first use | The login, folder listings, and pipelined reads of the files that play |
 | S3-compatible (AWS, Backblaze B2, Cloudflare R2, Wasabi, MinIO) | Access key ID and secret; a self-signed certificate is approved on first use | Signed listing requests and pre-signed byte-range requests |
-| OneDrive (personal, work, school) | Microsoft sign-in, read-only | The sign-in, folder listings, and byte ranges from short-lived download links |
-| Dropbox | Dropbox sign-in, read-only | The sign-in, folder listings, and byte ranges from temporary links |
-| Google Drive | Google sign-in with Google's picker, limited to the files you choose (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play |
+| OneDrive (personal, work, school) | Microsoft sign-in; Edendale writes only to its app folder, `Apps/Edendale/`, and only when OneDrive is the sync location | The sign-in, folder listings, and byte ranges from short-lived download links; the sync files when it is the sync location |
+| Dropbox | Dropbox sign-in; Edendale writes only its sync files, in `Edendale/`, and only when Dropbox is the sync location | The sign-in, folder listings, and byte ranges from temporary links; the sync files when it is the sync location |
+| Google Drive | Google sign-in with Google's picker, limited to the files you choose and the sync files Edendale creates (`drive.file`) | The sign-in, the list of files you chose, and byte ranges of the files that play; the sync files when it is the sync location |
 
 Logins, key pairs, and account tokens are stored encrypted on the device,
 excluded from backup and device transfer, and listed in **Settings →
@@ -355,12 +480,16 @@ the code, the address to enter it at, and a QR code for that address, and
 waits while you approve on a phone or computer. Dropbox and Google Drive come
 to a TV from a phone (see Phone-to-TV handoff). Edendale uses no provider SDK
 and ships no client secret. OneDrive and Dropbox receive the sign-in, folder
-listings, and the byte ranges of what plays.
+listings, and the byte ranges of what plays. Since 27.1 the grant also covers
+Edendale's own sync files (OneDrive's app folder, `Apps/Edendale/`; Dropbox's
+`Edendale/`), written only once you choose that account in **Settings →
+Sync**; Edendale writes nothing else there. Link Source says so under the
+sign-in.
 
 Google Drive asks only for `drive.file`, so Edendale sees only the files you
-choose. Signing in opens Google's picker in the same Custom Tab: tick the
-videos to add, from My Drive, Shared with me, or a shared drive. There are no
-folders to browse, and a picked folder never shares what's inside it, so the
+choose and the sync files it creates, and changes nothing else. Signing in
+opens Google's picker in the same Custom Tab: tick the videos to add, from
+My Drive, Shared with me, or a shared drive. There are no folders to browse, and a picked folder never shares what's inside it, so the
 picker offers video files only. Each account gets one source, **Videos you
 chose**, which lists every video picked with that Google account on any
 device. New episodes don't appear on
@@ -374,7 +503,8 @@ scan would bring the file back. Shortcuts are followed,
 Google formats are skipped, videos are recognized by file extension, and
 subtitles beside a video load only if they were picked too. Google receives
 the sign-in, the file listing (`files.list`), the account's name and email
-(`about`), and the byte ranges of what plays.
+(`about`), the byte ranges of what plays, and, when Drive is the sync
+location, the sync files.
 
 Accounts linked by a build that asked for `drive.readonly` can't open the
 picker, and their folder sources can't be listed under `drive.file`. The
@@ -394,8 +524,8 @@ hides that provider:
 
 | Key | Registration | Redirect URI |
 |---|---|---|
-| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read User.Read offline_access`), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
-| `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read account_info.read`) | `db-<app key>://2/token` |
+| `MICROSOFT_OAUTH_CLIENT_ID` | An Entra public client for personal and work or school accounts (`Files.Read Files.ReadWrite.AppFolder User.Read offline_access`; the app-folder scope is new in 27.1 for sync and must be added as a delegated permission), with public client flows enabled for TV sign-in | `msauth://com.babasama.edendale/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D` (Android platform: package `com.babasama.edendale` and signature hash `VzSiQcXRmi2kyjzcA+mYLEtbGVs=`) |
+| `DROPBOX_APP_KEY` | A scoped app with Full Dropbox access (`files.metadata.read files.content.read files.content.write account_info.read`; `files.content.write` is new in 27.1 for sync and must be enabled on the app) | `db-<app key>://2/token` |
 | `GOOGLE_OAUTH_CLIENT_ID` | An Android OAuth client (package `com.babasama.edendale` and the SHA-1 of each signing certificate) with its custom URI scheme turned on (Advanced settings), in a Cloud project with the Google Picker API enabled and `https://www.googleapis.com/auth/drive.file` on the consent screen's Data Access page. `drive.file` is non-sensitive, so no scope verification is needed (D9, H.9.4) | `com.babasama.edendale:/oauth2redirect` |
 
 ### Phone-to-TV handoff
@@ -434,25 +564,266 @@ about it is logged. The TV offers the handoff for every provider it has a
 client ID for and for every server kind; OneDrive can also sign in with a code
 on its own.
 
+### Sync between devices
+
+**Settings → Sync** keeps watch progress, favourites, watchlist, and ratings
+the same on every device you own, through storage you already own
+(FEATURES-27.1.md §5 and SYNC-PROTOCOL.md on `main`). Edendale runs no
+server. Sync is off until you choose a **location** and a **space name**:
+
+| Location | How |
+|---|---|
+| A folder on this device | The system folder picker, with a persisted read and write permission (phones and tablets; TVs have no picker) |
+| Google Drive | A linked account, or **Sign In to Google Drive** in the dialog itself; the folders are created under `drive.file`, so Edendale sees only what it made. Signing in from the dialog skips Google's video picker and links no library source |
+| OneDrive | A linked account, or **Sign In to OneDrive** in the dialog; the files live in the app folder, `Apps/Edendale/`, with `Files.ReadWrite.AppFolder` |
+| Dropbox | A linked account, or **Sign In to Dropbox** in the dialog, with `files.content.write` |
+| WebDAV, SMB, SFTP | A saved login and the folder inside the server; the connectors create folders and write files (`MKCOL` and `PUT`, SMB create and rename, SFTP write and rename) |
+
+The location doesn't have to be where your videos are: a library on an SMB
+share can keep its history in Google Drive. Signing in from **Choose a
+Location** (phones and tablets) only stores the account for sync; a TV gets
+its location from a phone through **Set Up Another Device**.
+
+Inside the location every device writes one file,
+`Edendale/<space name>/<device id>.json`: its whole watch state as readable
+JSON, with one `updateTime` (UTC milliseconds) and the writing device's ID on
+every record. It reads the other devices' files and merges them locally: for
+each title the newest record wins as a whole; equal times go to the lexically
+smaller device ID; a device never stamps a write below the highest time it
+has applied, so a slow clock still orders its own write after what it just
+received; a record stamped more than a day ahead is not applied and the
+device is named in a warning; and clearing a rating or progress writes a
+tombstone so an older copy can't bring it back (written for a year and a
+day). Files that fail
+validation are skipped with a warning naming the device, and never remove
+local data. Nothing but watch records is written there: no library, file
+paths, logins, or TMDB session. When you choose a location the app says so in
+one sentence: anyone who can open the folder can read your watch history.
+
+Sync runs on launch, on return to the foreground, ten seconds after the last
+change (at once when playback stops or the app goes to the background), every
+five minutes in the foreground, and in the background through a periodic
+WorkManager job with a network constraint, which Doze defers. Leaving the
+app with a change not yet written also queues a one-off WorkManager job that
+writes it once a network is up, even if the app's process has ended; it does
+nothing if the sync started on leaving already wrote it. A folder location
+has no file watcher: another device's change reaches this one at those same
+moments. A failed sync
+backs off 1, 2, 4, 8 minutes up to an hour. Launch, return to the
+foreground, and **Sync Now** ignore the backoff and sync at once; rotating
+the screen or resizing the window is not a return to the foreground.
+**Turn Off** keeps the local copy and offers to delete this device's file.
+Choosing another location (in **Choose a Location** or through a handoff)
+keeps the old one's files, and the section then says this device's file is
+still there, with **Delete My File There** and **Keep It**; the old location
+is remembered in `edendale_sync.xml` until you answer, and a failed deletion
+can be tried again.
+**Remove a Device** deletes another device's file and links to the provider's
+page where you revoke Edendale's access, because a removed device keeps its
+login until you do. Episodes are keyed by show, season, and episode number;
+one received from another device appears here once the library knows the
+episode, and travels on to other devices either way. Values pulled from a
+TMDB account become new local writes stamped when they are pulled.
+
+**Watch History**, below the Sync group, counts the titles and episodes this
+device holds progress or a watched mark for, and **Delete Watch History…**
+deletes them, behind the parental PIN like every Sync button (on a TV the
+dialog opens on Cancel). Only progress and watched marks go: favourites,
+watchlist, ratings, the library, and the TMDB account stay. With sync on, the
+deletion is a write like any clear: Edendale first reads every device file in
+full, then gives each title one tombstone, empties this device's progress in
+the same transaction, and writes its own file at once. Each other device
+applies the tombstones at its next sync and rewrites its own file; until then
+that file still holds its history, and a device that no longer syncs keeps
+its copy until **Remove a Device** deletes its file. Anything watched
+elsewhere after the deletion is newer and stays. If the location can't be
+reached, the page says the other devices follow once Edendale reaches it.
+With sync off, only this device's progress and its copy of the sync records
+are emptied, with no tombstones, so turning sync on later brings back what
+the other devices hold.
+
+The Movies & Shows hero leads with the unfinished title watched last, on
+this device or another: for a show, the episode watched last, which it names
+(`S01E04`) beside the time left. It follows the watch records as they
+change, so once the launch or foreground sync lands, **Resume** plays the
+episode and position another device last wrote. With nothing left to
+resume, the title stays in the hero as a featured one.
+
+A long press (Menu on a TV) on a part-watched Continue Watching card offers
+**Clear Progress**, as on Apple, which clears that title the same way. A
+movie, or a show's first episode, leaves the shelf; an episode that follows a
+finished one comes back as the show's Up Next card. An Up Next card has no
+record of its own, so it has no menu.
+
+The device ID and the location settings live in `edendale_sync.xml`, excluded
+from backup and device transfer like the logins, so a restored device makes a
+new ID. The sync tables are in the Room database (schema 5). Sync logs carry
+counts, file names, stamps, and error classes only, in debug builds only; a
+JVM test runs a whole pairing and sync through the log sink and checks that no
+code, QR secret, key, token, or password reaches it.
+
+**Set Up Another Device** and **Receive from Another Device** move the
+location and its login to a new device over the local network (handoff
+version 2, SYNC-PROTOCOL.md §9), so the second device needs no second sign-in.
+The screen is built as the Apple branch's: the button picks the direction;
+the sender first ticks what to send (the location, and any other linked
+accounts and saved logins); then a phone or tablet with a camera, or a Quest
+3 or 3S (Meta's Passthrough Camera API reads its front cameras), chooses
+**Scan the Other Device's Code** or **Show a Code for the Other Device to
+Scan**, and a TV, another headset, or a device without a camera shows one.
+The device showing the code (the host)
+shows a QR code (an ephemeral X25519 key and a 128-bit secret), replaced by a
+new one every two minutes, and advertises `_edendale-handoff._tcp` with `v=2`
+while the screen is open. The scanner reads it in the dialog with the camera
+(CameraX, asked for only when you choose to scan; frames are read on the
+device and never kept) and connects at the address the code carries, or finds
+the host by name. A code scanned by the system camera opens Edendale too
+(`edendale://handoff`), which asks which way to go, and shows it connecting
+without opening the camera. Beside the QR code the host shows a six-digit code
+(on a TV the two sit side by side, so the remote never has to scroll). Any
+Android device joins with it instead of scanning: **Enter the Other Device's
+Code**, under the scanner (also when the camera is refused) and under the code
+a TV, a headset, or a phone without a camera shows, lists the devices on the
+network that show one (Apple's show only a QR code and aren't listed), takes
+the only one at once, and asks for its six digits; so two TVs, a TV and a
+headset, or two headsets pair with one showing and the other typing, and a
+Windows PC types it too. The typed code runs J-PAKE over P-256 as the
+phone-to-TV handoff does; a wrong code asks for the new one the host shows,
+and after five wrong codes the field waits the minute the host does. Both sides derive one AES-256-GCM key (HKDF-SHA256
+over the transcript, HMAC proofs both ways; the nonce is the direction and a
+counter, and the label is authenticated data). A wrong code or QR code fails
+before anything is sent; a code lasts two minutes and one attempt, and five
+wrong codes in a row pause new codes for a minute. Once paired, the sender
+confirms what it ticked with the other device's name on screen (Send or Don't
+Send), and both devices list what the receiver kept. A folder location travels as its
+space name only; the receiver picks its own folder. Google Drive logins move
+only within an ecosystem (Android phone to Android TV or Quest): to an
+iPhone, Mac, or PC the handoff sends the account's email and the space
+folder's Drive ID instead, and that device signs in to Google with the email
+pre-filled. Until the folder is picked or the sign-in is done, the location is
+not reported as stored, and the sender says the other device still has to
+finish it. A TV has neither a folder picker nor a Google sign-in (SYNC-PROTOCOL
+§9.8): it reports such a location as failed and says to set it up on a phone
+and send it with **Set Up Another Device**. The phone-to-TV handoff for library
+sources (version 1) is unchanged; a Link Source host tells a version-2 guest to
+use the Sync screen.
+
+OneDrive and Dropbox accounts linked before 27.1 lack the write scopes: the
+Sync screen says to sign in again before such an account can be a location.
+
 ### Sources and accounts
 
-Each visit to Downloaded rescans local folders; a remote source is rescanned
-only if its last scan was over 15 minutes ago, and **Rescan** always scans.
+Each visit to Downloaded rescans local folders (coming back from a title's
+page isn't a new visit); a remote source is rescanned only if its last scan
+was over 15 minutes ago, and **Rescan** always scans. A scan stores what it
+found all at once when it finishes. If Edendale is closed or killed before
+then, it scans that source again the next time it opens, whichever page it
+opens on, and matches any titles still waiting for TMDB details.
 A source that can't be reached, or whose login was refused, says so on its own
-row in Settings → Sources and in Downloaded, where its rescan button becomes
+row in Settings → Library and in Downloaded, where its rescan button becomes
 Try Again, instead of an error for the whole library. Removing a source keeps its login: **Settings →
 Accounts** lists every saved login with the number of sources using it, and
 removes a login only when you ask.
 
-When the same title is imported from several sources, each file stays its
-own record. **Play** uses the first copy whose source is reachable (the page's
-own copy, then local folders, then the rest by source name), and **Play
-From** picks a copy: beside Play for movies, and in an episode's long-press
-menu (the menu key on TV) for episodes.
+Tapping a movie or a show in Downloaded, or in Search's From Your Library,
+opens its page, as on Apple's platforms. A movie's page has **Play**
+(**Resume** once the player would resume) and **Play From** when the library
+holds it more than once; a show's page lists its episodes by season in place
+of TMDB's season browser. Both carry your marks, and TMDB's story and cast
+when the title has a match; an unmatched file or show, or a device without
+TMDB, shows its own title, year, and artwork. A TMDB page for a title the
+library holds plays it the same way. Back returns to the same place in
+Downloaded or Search (on TV, to the same poster). Continue Watching cards
+still play at once.
+
+One file reached through several links — a share linked over the LAN as
+`longs-mac-studio.local` and through Tailscale as `100.x.y.z`, say — is one
+poster, and so is a title imported from several sources: copies are the
+same file at the same path on the share (or the same S3 key, cloud file, or
+document) whatever the address, or files matched to one TMDB title; files
+matched to different titles stay apart. The poster says how many sources
+hold it, and a long press (the menu key on TV) opens Play From, then Remove
+from Library for each copy where removing lasts. A show counts each episode
+once, however many copies it has.
+
+Each file stays its own record. **Play From** names each copy by where it's
+reached from — **This device**, a server's address such as
+`longs-mac-studio.local` or `100.101.102.103`, or an account such as
+`Google Drive - me@example.com` — then its kind and file name. **Play** starts
+the source the title last played from on this device when it's reachable,
+else the first reachable copy: local folders, then servers on your network,
+then Tailscale addresses, then everything else. Falling back doesn't change
+which source is remembered. **Play From** sits beside Play for movies;
+tapping an episode with several copies (or its chevron) opens it with the
+last-played copy checked, and the player's Episodes panel has the same
+chevron. Once an episode plays, the next ones — Up Next, auto-advance,
+Continue Watching, the TV's Watch Next row — stay on its source. Which source
+a title last played from stays on this device: it is never synced or backed
+up.
+
+### Parental controls
+
+**Settings → Parental Controls** keeps the library fit for whoever holds the
+remote, and everything in it stays on this device (FEATURES-27.1.md §4).
+Young Audience Friendly sits on Settings' first page; the ceilings, switches,
+and PIN open from **Ratings, Locks, and PIN** beneath it:
+
+- **Young Audience Friendly** is the preset from 27.0: only titles rated PG
+  or PG-13, or their TV equivalents.
+- **Maximum movie rating** and **Maximum TV rating** set a ceiling from
+  TMDB's ordered certification lists for the device's region, which the
+  detail line names; "No limit" is the first choice. When TMDB publishes no
+  list for that region, the ceiling and the per-title lookups both use the
+  US list, and the section says so. A title's own certification comes from
+  TMDB as before; a title without one, or a file the library has not
+  matched to TMDB, counts as restricted while a ceiling or the preset is
+  on, and with both on a title must pass both. The two lists are fetched
+  when the section opens or a ceiling is set, kept on the device, and
+  refreshed at most once a day.
+- **Hide restricted titles** (on by default) keeps restricted titles out of
+  Home, Search, Watchlist, Downloaded, filmographies, the player's episode
+  and folder lists, and the TV home screen's Watch Next row. Off, they stay
+  in the lists, but their page shows the restricted state and the player
+  refuses them; Watch Next stays strict either way. The player applies the
+  same rule to whatever it is asked to play — a poster, a Continue Watching
+  card, a Watch Next row, or a file opened from another app — and lists
+  only permitted titles, so Up Next, auto-advance, and the system media
+  controls' next and previous never reach a restricted one.
+- **Block trailers and links** hides Watch Trailer on the detail page and
+  stops the app asking TMDB for trailers at all.
+- **Require PIN for settings** asks for the PIN when Settings opens, on TV
+  and handhelds alike, which covers every setting and link inside it.
+  **Require PIN for library changes** asks before Add Local Folder, Link
+  Network Source, Rescan, Remove, Remove from Library, Choose More Videos,
+  and their keyboard shortcuts; the automatic rescan on opening Downloaded
+  is not a change. Turning either on before a PIN exists sets one first.
+- **Set PIN**, **Change PIN**, and **Remove PIN**: 4 to 8 digits, typed
+  masked (on a TV through the on-screen keyboard). Once a PIN exists, the
+  Parental Controls section itself and every button in Settings → Sync
+  (Choose a Location, Sync Now, both pairing roles, Remove a Device, Turn
+  Off) ask for it too, and a pairing link opened from a QR code asks before
+  the pairing dialog; a wrong or cancelled PIN there drops the link. A
+  correct PIN unlocks for five minutes or until Settings closes, whichever
+  comes first.
+
+The PIN itself is never stored: an Argon2id hash (64 MiB, 3 iterations, one
+lane, a 16-byte salt, a 32-byte hash, with the parameters beside it) lives
+with the ceiling, the switches, the back-off state, and the cached
+certification lists in `edendale_parental.xml`, an encrypted preferences
+file under an Android Keystore key, excluded from backup and device transfer
+like the logins, so a restored device keeps the Young Audience preset (which
+stays in `edendale_audience.xml`) but has no PIN. The first three wrong
+attempts are free; every further wrong PIN waits 30 seconds, then 1, 5, 15,
+and 60 minutes, with the countdown in the dialog, and the wait survives a
+force-stop, a reboot, and a clock change. The PIN is separate from the
+pairing code. Nothing from this section is synced, handed off, or sent
+anywhere, and the logs carry counts and outcomes only; its only requests are
+TMDB's two certification lists and the per-title certification lookups the
+filter already made.
 
 ### Audio Enhancement
 
-**Settings → Audio Enhancement** applies a 10-band equalizer (60 Hz to 16 kHz)
+**Settings → Audio** applies a 10-band equalizer (60 Hz to 16 kHz)
 through a Media3 audio processor: choose Flat, Movies (the default), Music,
 Dialogue, or Night Mode, then fine-tune the preamp and each band; changing the
 profile resets the adjustments. **Audio Booster** (also in Player Adjustments →
@@ -469,10 +840,11 @@ and hue, saved on the device; **Show Original** compares without changing them,
 and **Reset** returns to neutral. **Enhancement** upscales and sharpens video
 on the GPU: Off, Sharpen Only, Balanced (upscale and sharpen), or High Quality
 (adds temporal denoise), with Sharpness and Denoise and the resolution change
-shown as `1280×720 → 1920×1080`. Enhancement settings last until the app
-closes and are never saved. It starts at Balanced on phones and tablets that
-pass a one-time on-device GPU check, and at Off on Android TV and on devices
-that don't. HDR and Dolby Vision video skip every effect.
+shown as `1280×720 → 1920×1080`. The preset, Sharpness, and Denoise are
+saved on the device (Show Original never is) and apply on every device, TV
+included. Until you choose, Enhancement starts at Balanced on phones and
+tablets that pass a one-time on-device GPU check, and at Off on Android TV and
+on devices that don't. HDR and Dolby Vision video skip every effect.
 
 The effects run through Media3's video effects (`androidx.media3:media3-effect`)
 and are installed only while something needs them; otherwise video goes
@@ -480,6 +852,24 @@ straight from the decoder to the screen. A governor keeps the passes within
 8 ms of GPU time per frame, dropping denoise and then the upscale when a device
 falls behind, runs hot, or saves battery. Nothing about performance leaves the
 device.
+
+**Motion Smoothing** (in Enhancement) doubles a video's frame rate by drawing
+a frame between each pair of frames on the GPU, a port of Apple's motion
+estimation and two-way warp, and shows the rates as `24 fps → 48 fps`. It is
+offered only on phones and tablets that pass the GPU check, never on Android
+TV (TVs smooth motion themselves), for SDR video at 30 fps or less, and only
+when the screen has a refresh rate that shows the doubled rate evenly: 24 fps
+needs a 48, 96, or 144 Hz mode, 25 fps 50 or 100 Hz, and 30 fps 60 or 120 Hz.
+Matroska files don't state their frame rate to the player, so for them it is
+measured from the first frames shown. A one-time check, run on the device after
+Enhancement's own, times the real passes on 1080p frames: Motion Smoothing is
+offered only where a frame fits its budget, 40 % of a source frame's interval
+(13.3 ms at 30 fps), with the motion search at full or half resolution. It runs
+at 1× or slower, starts off, and once switched on stays on for later videos
+(saved on the device with the other Enhancement choices). The governor turns it
+off before anything else when the device falls behind, runs hot, or saves
+battery; over its budget it first searches for motion at half resolution. A
+scene cut repeats the previous frame instead of blending two shots.
 
 The upscaler is AMD FidelityFX Super Resolution 1.0's EASU, ported to GLSL in
 `src/main/assets/shaders/edendale_easu_es3.glsl` under the MIT licence
@@ -506,9 +896,18 @@ Google Fonts' `ofl/nunito/Nunito[wght].ttf` with fontTools'
 
 ### Keyboard and large screens
 
+Once at least two of Continue Watching, Movies, and TV Shows have titles, the
+Downloaded page heads itself with segmented buttons — All, Watching, Movies,
+and Shows — that show the whole library or one section of it. On phones and
+tablets they stay pinned under the top bar while the page scrolls, across the
+width on a phone and at the top left on wider windows; on TV they sit under
+the page heading, and Left and Right stop at the ends.
+
 In windows at least 1100 dp wide, the navigation lists Watchlist → Movies and
 TV Shows, and Downloaded → Continue Watching, Movies, and TV Shows, as rows of
 their own while each has titles for the current audience setting. The
+Downloaded rows and the page's segmented buttons show the same choice, and
+either one changes it. The
 Continue Watching page lists every title in progress; the shelf on the
 Downloaded page keeps its 12. In the player, the playlist and Player
 Adjustments dock beside the video instead of covering it.
@@ -522,7 +921,7 @@ With a hardware keyboard:
 | Ctrl+Alt+N | Link a network source (Downloaded) |
 | Ctrl+R or F5 | Rescan every source (Downloaded) |
 | Space | Play or pause |
-| ← and → | Skip back or forward by the App Controls lengths |
+| ← and → | Skip back or forward by the Player Controls lengths |
 | S | Skip an intro, recap, or credits when offered |
 | Esc | Close a panel, then the player |
 
@@ -537,7 +936,7 @@ tapping the rule beside the Episodes heading.
 While a video plays, the player publishes a Media3 `MediaSession`
 (`androidx.media3:media3-session`), so headset buttons, Bluetooth controls,
 Google Assistant, and Android TV's system media UI reach it, including in
-Picture-in-Picture. Skip back and forward use the **Settings → App Controls**
+Picture-in-Picture. Skip back and forward use the **Settings → Player Controls**
 lengths, and next and previous play the neighboring playlist entry. The session
 lives only as long as the player: there is no background playback service, and
 playback still pauses when the player leaves the screen. The artwork it reports
@@ -558,7 +957,8 @@ Selecting a row opens the player at the saved position, just like the shelf
 card. Rows update after playback pauses or stops, disappear when a title is
 finished or its file is deleted, and all disappear when the setting is turned
 off. A row removed from the home screen comes back only after you watch that
-title again. Titles hidden by Young Audience Friendly never appear.
+title again. Titles the parental controls restrict never appear, even
+while Hide restricted titles is off.
 
 The rows stay on the TV and Edendale sends nothing over the network for them,
 but the launcher (Google's app on Google TV) can read them, which is why the
@@ -586,8 +986,10 @@ runs the same suite on an API 35 emulator in
 `.github/workflows/instrumented.yml`, separately from the hermetic
 `build-and-test` job.
 
-Two probes for the frame-generation experiment (ENHANCEMENT.md G.1) are
-skipped unless asked for. Install both APKs with
+Four Motion Smoothing probes (ENHANCEMENT.md Section G) are skipped unless
+asked for; `MotionSmoothingCapabilityInstrumentedTest` also runs the device
+check and logs what it would decide (`adb logcat -s MotionSmoothingCheck`),
+without storing it. Install both APKs with
 `./gradlew installDebug installDebugAndroidTest`, which keeps the app's data,
 then time Apple's coarse motion search at 1080p on the device's GPU:
 
@@ -605,6 +1007,25 @@ adb push clip.mp4 /data/local/tmp/
 adb shell am instrument -w -r -e g1Clip /data/local/tmp/clip.mp4 -e g1Fps 24 -e class com.babasama.edendale.android.player.video.framegen.FrameGenerationPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
+The third times Motion Smoothing itself at 1080p, at full and half
+resolution, whole and pass by pass, and logs the medians
+(`adb logcat -s MotionSmoothingBench`):
+
+```sh
+adb shell am instrument -w -r -e motionSmoothingBenchmark true -e class com.babasama.edendale.android.player.video.MotionSmoothingPassesInstrumentedTest#benchmark1080p com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The fourth plays a clip through the app's own chain (Enhancement, then Motion
+Smoothing) into a real surface and reports frames released per source frame
+(about two while it runs), the GPU time per frame where the driver reports it,
+and what SurfaceFlinger presented. Add `-e motionSmoothingHalf true` for the
+half-resolution search, or `-e motionSmoothingSpeed 0.25` on a software GPU
+such as the emulator's, which can't make the frames in real time:
+
+```sh
+adb shell am instrument -w -r -e motionSmoothingClip /data/local/tmp/clip.mp4 -e motionSmoothingFps 24 -e class com.babasama.edendale.android.player.video.MotionSmoothingPlaybackInstrumentedTest com.babasama.edendale.test/androidx.test.runner.AndroidJUnitRunner
+```
+
 Build an unsigned release APK with:
 
 ```sh
@@ -616,6 +1037,65 @@ The commands produce `build/outputs/apk/debug/Edendale-debug.apk` and
 not stored in the repository and must be supplied through protected local or
 CI configuration before distribution.
 
+Google Play takes an Android App Bundle, which carries the base and the
+`:xr` feature module (see Immersive theater below); Play builds each device's
+APKs from it and delivers the module only to Android XR devices:
+
+```sh
+./gradlew bundleRelease
+```
+
+It writes `build/outputs/bundle/release/Edendale-release.aab` (about 58 MB
+on 2026-11-11, with the module's rooms; `base/` and `xr/` inside), unsigned
+until the upload key is supplied as above.
+
+### Immersive theater (Android XR)
+
+On an Android XR headset the player's **Theater** chip seats you in one of
+three rooms built in Blender on the `scenes` branch, with the video on the
+room's screen: the **Movie Theater**, the **Projector Room**, and the
+**Performance Theater**, the same rooms the Apple Vision Pro and Meta Quest
+builds have (FEATURES-27.1.md §3; ENHANCEMENT.md Section N). The rooms are
+the `scenes` exports of `tools/export_gltf.py` from `06fb0c7` plus the
+owner's seat-forward edits of 2026-11-08 (`claude/scenes-bigger-screen`),
+which put the viewer where the screen spans 54–62° and mark every seat.
+
+- **Entering and leaving.** The chip hands the item, its position, the speed,
+  and the audio and subtitle choices to the theater, which plays on with its
+  own player; the per-title memory and the skip prompts work as in the 2D
+  player. **Exit theater** returns to the 2D player at the same position; when
+  the video ends, the title is marked complete and the library takes over.
+  The theater never starts on its own.
+- **The dock.** The controls float 0.65 m from your eyes, 45° below your line
+  of sight, and follow your head once you turn more than 12° or move more than
+  15 cm: title, timeline, skip back and forward with your intervals,
+  play/pause, Skip Intro / Recap / Credits, Up Next, and the audio, subtitle,
+  and room lists. Subtitles are drawn just in front of the picture.
+- **Seats.** The panel to the left of the dock maps every seat: pinch one to
+  sit there, hold and slide to sweep, **Best Seat** goes back to the room's
+  recommended place, and the room turns so the screen is straight ahead from
+  wherever you sit. **Recentre** puts the screen where you are looking, lying
+  down included.
+- **Lights.** Normal, Dim, or Dark on the seat panel turns the room's baked
+  light down to 30 % or 6 %; the picture, the screen's own surround, and the
+  Projector Room's beam keep their brightness.
+- **What stays on the device.** The last room, the lights, and the seat per
+  room live in the `theater` preferences and are never synced.
+- **Comfort.** Seated, no locomotion, nothing animates but the video and a
+  short fade when the seat changes. Video Enhancement is off in the theater.
+
+The theater is a Play Feature Delivery module, `:xr`, that Play installs with
+the app only on devices declaring `android.software.xr.api.spatial`; phones
+and TVs never download its rooms (30 MB with their atlases) or renderer. It
+holds Jetpack XR SceneCore, Runtime, and ARCore 1.0.0 (Apache-2.0); the Play
+Services AR runtime and Google's ARCore SDK are excluded, and the split
+carries no copy of Media3. `./gradlew assembleDebug` builds
+`xr/build/outputs/apk/debug/xr-debug.apk` beside the base APK (copying each
+room's atlases out of its GLB on the way, for the lights); install both with
+`adb install-multiple -r Edendale-debug.apk xr-debug.apk`. The chip appears
+only on an XR device that has the `xr` split installed. The base APK alone,
+or a phone, shows no theater.
+
 ### Manual device checks
 
 Some behavior needs real hardware and isn't covered by the JVM or instrumented
@@ -625,10 +1105,22 @@ tests. Before a release, check on:
   Picture-in-Picture; per-title track memory; the track pickers and playlist
   with TalkBack; subtitle appearance in Fit and Fill; the Up Next card and skip
   prompts; equalizer changes while playing; Picture and Enhancement presets on
-  SDR video, with HDR video bypassed.
+  SDR video, with HDR video bypassed, and the chosen preset after a restart;
+  the volume swipe against the hardware keys and Android's volume panel (with
+  headphones in, the hearing warning without Android's panel on Android 12+,
+  with it on Android 8–11) and a slow swipe inside one step keeping the pill
+  up; the brightness swipe against Quick Settings' slider, in and out of
+  Picture in Picture and split screen; Rotation Lock in both landscape
+  directions, after Picture in Picture, after an episode switch, and after
+  connecting a keyboard.
 - **A mid-range phone (Adreno 6xx or Mali-G57 class):** Balanced and High
   Quality on 720p and 1080p video without dropped frames, and the governor
   stepping down when the device runs hot.
+- **A flagship phone, and a phone with a 48, 96, or 144 Hz mode if one is at
+  hand:** Motion Smoothing for 30 minutes on a 24 or 30 fps film (battery
+  drop, thermal state, the governor's steps), the display switching to the
+  doubled rate (`adb shell dumpsys SurfaceFlinger`), and the picture on pans,
+  scene cuts, fades, and letterboxed scenes.
 - **An Android TV box on a 4K panel, and a TV set running Google TV:** the
   remote's hold speeds and skip-prompt focus, the playlist with the D-pad, the
   system media controls, enhancement output at the panel's resolution, and
@@ -637,8 +1129,36 @@ tests. Before a release, check on:
 - **A tablet, Chromebook, or desktop-windowing device:** the navigation's child
   rows, docked panels, the keyboard shortcuts, and Meta+/.
 - **A Bluetooth headset:** play, pause, and skip from its buttons.
+- **An Android XR headset:** the Theater chip appears there and nowhere else;
+  each room faces you with the picture on its screen and its baked colours
+  showing; the dock stays still inside a 12° turn and catches up past it;
+  seats across the map, Best Seat, and Recentre (sitting and lying back);
+  subtitles and an audio switch; Exit returns to the player at the position
+  and the end of a video to the library; frame rate at the display's native
+  rate in the Performance Theatre (the heaviest room, 149k triangles), and 30
+  minutes of playback for heat; the Play delivery (the `xr` split arrives
+  with the app on an XR device and on no other).
 - **An SMB server over a phone hotspot or Tailscale:** steady playback, and
   recovery after the connection drops.
+- **One share linked twice (27.1):** link the same SMB or WebDAV share by its
+  LAN name and by its Tailscale address. Downloaded and Search show one poster
+  per title ("2 sources"); its long press and its page's Play From name both
+  addresses, LAN first; Play starts the LAN copy, or the Tailscale one after a
+  Play From pick, and keeps to it after a restart; with the LAN source
+  offline, Play falls back without forgetting the pick. A show's page lists
+  each episode once; the next episode, Up Next, and auto-advance stay on the
+  source playing. Kill the app during a scan of a large source and check the
+  next launch scans it again.
+- **Detail pages (27.1):** on a phone and a TV, open a downloaded movie and
+  show and a Search library result. Play or Resume starts where the player
+  would; Play From lists every copy and skips an offline source; an unmatched
+  file or show shows its own title and plays; a movie that is also
+  downloaded, opened from the Watchlist tab in airplane mode, shows the
+  file's artwork and a filled bookmark. Back lands on the same row in
+  Downloaded and Search, also after the first play adds Continue Watching; on
+  TV, focus returns to the same poster, and a show page opens on its first
+  episode. With a parental rule on, an unmatched file or show shows the
+  restricted state.
 - **Storage services:** link a folder, scan it, and play and seek a file on an
   SFTP server (password authentication, host-key fingerprint check on first use,
   and changed-key rejection), a Nextcloud or Synology server over HTTPS (a
@@ -658,6 +1178,39 @@ tests. Before a release, check on:
   the account, the TV then browses the folders (Google Drive links Videos you
   chose and lists what the phone picked), and a rescan on the TV lists videos
   picked on the phone afterwards.
+- **Sync (27.1):** on two devices, choose the same location and space name
+  (a picked folder on a phone, then Google Drive, OneDrive, Dropbox, a WebDAV
+  share, an SMB share, and an SFTP server), watch on one and resume on the
+  other after a sync — open the other from the background, and check that the
+  home hero names the episode just watched and its Resume plays it from
+  there; rate and un-rate a title and check the other device
+  follows; set one device's clock a day ahead and check the warning names it;
+  pair a second device both ways (a phone scanning the other's QR code in
+  the dialog, a phone showing its code, a code scanned by the system camera,
+  and a PC typing a TV's code), refuse the camera once and check the dialog
+  says to show a code instead, join by **Enter the Other Device's Code**
+  (two TVs, a TV and a phone without the camera, a wrong code, five wrong
+  codes), open a pairing link on a phone that hasn't allowed the camera and
+  check no camera prompt appears, send the location with an account and with a
+  saved login, and check that a wrong code and a stale QR code fail before
+  anything is sent and that a shown code renews after two minutes; remove
+  a device's file and turn sync off with and without deleting the file. On a
+  TV, host the pairing from the Sync screen and receive a location from a
+  phone. Check that an OneDrive or Dropbox account from a build before 27.1
+  is asked to sign in again before it can be a location. Delete Watch
+  History on one device (Delete Everywhere): Continue Watching, watched
+  ticks, the home hero, and the TV's Watch Next row empty on both once the
+  other syncs, while favourites and ratings stay; in airplane mode the page
+  says the others follow later. Clear a part-watched movie, and an episode
+  after a finished one, from Continue Watching by long press and by the TV's
+  Menu key.
+- **Parental controls (27.1):** on a phone and a TV, set a PIN, see the
+  back-off after four wrong tries and its countdown survive a force-stop,
+  set a PG-13 ceiling and watch an R title leave Home, Search, Downloaded,
+  the player's episode list, and Watch Next, open its page and get the
+  restricted state, see Watch Trailer gone with the switch on, have Settings,
+  Add Local Folder, and a pairing link ask for the PIN, remove the PIN, and
+  run TalkBack over the rating picker.
 
 ### DTS and TrueHD
 
@@ -708,9 +1261,12 @@ The Meta Quest app built from this branch is not GPL-3.0 as a whole:
 | OkHttp | Storage providers' HTTP | Apache-2.0 |
 | AndroidX Browser | Custom Tabs for cloud sign-in | Apache-2.0 |
 | sshj, with asn-one and SLF4J | SFTP | Apache-2.0 (SLF4J: MIT) |
-| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE for the phone-to-TV handoff | MIT (Bouncy Castle Licence) |
+| Bouncy Castle (bcprov, bcpkix, bcutil) | sshj's cryptography; J-PAKE, X25519, and HKDF for the device handoffs | MIT (Bouncy Castle Licence) |
+| AndroidX WorkManager | Background sync | Apache-2.0 |
+| Jetpack XR 1.0.0 (`androidx.xr.scenecore`, `androidx.xr.runtime`, `androidx.xr.arcore`, with Google's Impress renderer) | The Android XR theater; in the `xr` split only | Apache-2.0 |
 | Coil | Images | Apache-2.0 |
-| ZXing core | TMDB sign-in QR code | Apache-2.0 |
+| ZXing core | TMDB sign-in and pairing QR codes, and reading a scanned pairing code | Apache-2.0 |
+| AndroidX CameraX 1.4.2 (`camera-camera2`, `camera-lifecycle`, `camera-view`) | The pairing screen's QR scanner on phones and tablets, and on a Quest 3 or 3S through its passthrough camera (`Camera2CameraInfo` reads Meta's camera tags) | Apache-2.0 |
 | kotlinx.coroutines, kotlinx.serialization | Concurrency, JSON | Apache-2.0 |
 | AMD FidelityFX Super Resolution 1.0 (EASU, ported to GLSL) | Upscaling | MIT |
 | Nunito | The Rounded subtitle font | SIL OFL 1.1 |

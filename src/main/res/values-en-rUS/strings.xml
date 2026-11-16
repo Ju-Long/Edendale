@@ -2,9 +2,52 @@
 <!-- en-US. Generated to match Apple/Shared/Localizable.xcstrings;
      anything absent falls back to values/strings.xml. -->
 <resources>
-    <string name="settings_backup_note">Watch progress, favorites, watchlist, and ratings ride Android Auto Backup to your Google Drive, so they return when you set up a new device. Backup follows your device\'s system setting — Edendale adds nothing of its own.</string>
     <string name="tmdb_account_intro">Connect your TMDB account to sync favorites, your watchlist, and ratings across devices. Watch time stays out of TMDB.</string>
-    <string name="settings_section_app_controls">App Controls</string>
+
+    <!-- Young Audience filter and parental controls (Section O) -->
+    <string name="settings_young_audience_title">Young Audience Friendly</string>
+    <string name="settings_young_audience_description">Only show movies and series rated PG or PG-13, including equivalent TV labels.</string>
+    <string name="audience_verifying">Verifying audience ratings</string>
+    <string name="audience_restricted_title">Unavailable for Young Audiences</string>
+    <string name="audience_restricted_message">This title is not verified as PG or PG-13.</string>
+    <string name="watchlist_no_young_audience_titles">No PG or PG-13 titles are currently in your watchlist.</string>
+    <string name="filmography_no_young_audience_titles">No PG or PG-13 titles are available in this filmography.</string>
+    <string name="settings_section_parental_controls">Parental Controls</string>
+    <string name="parental_pin">PIN</string>
+    <string name="parental_enter_pin">Enter the parental PIN</string>
+    <string name="parental_unlock">Unlock</string>
+    <string name="parental_wrong_pin">That PIN didn\'t match.</string>
+    <string name="parental_pin_length">Use 4 to 8 digits.</string>
+    <string name="parental_locked_out">Too many wrong PINs. Try again in %1$s.</string>
+    <string name="parental_checking_pin">Checking the PIN…</string>
+    <string name="parental_pairing_link_message">A pairing link needs the parental PIN. A wrong PIN discards the link.</string>
+    <string name="parental_restricted_title">Restricted</string>
+    <string name="parental_restricted_message">This title is above the rating limit set on this device.</string>
+    <string name="parental_max_rating_movies">Maximum movie rating</string>
+    <string name="parental_max_rating_tv">Maximum TV rating</string>
+    <string name="parental_no_limit">No limit</string>
+    <string name="parental_region_note">Ratings for %1$s, from TMDB</string>
+    <string name="parental_region_fallback">TMDB has no rating list for %1$s, so %2$s ratings are used.</string>
+    <string name="parental_loading_ratings">Loading ratings…</string>
+    <string name="parental_ratings_unavailable">The rating list couldn\'t be loaded.</string>
+    <string name="parental_hide_restricted">Hide restricted titles</string>
+    <string name="parental_hide_restricted_detail">When off, restricted titles stay in lists but can\'t be opened or played.</string>
+    <string name="parental_block_trailers">Block trailers and links</string>
+    <string name="parental_block_trailers_detail">Hides Watch Trailer and never asks TMDB for trailers.</string>
+    <string name="parental_lock_settings">Require PIN for settings</string>
+    <string name="parental_lock_settings_detail">Opening Settings asks for the PIN.</string>
+    <string name="parental_lock_library">Require PIN for library changes</string>
+    <string name="parental_lock_library_detail">Adding, linking, rescanning, or removing sources and titles asks for the PIN.</string>
+    <string name="parental_set_pin">Set PIN</string>
+    <string name="parental_change_pin">Change PIN</string>
+    <string name="parental_remove_pin">Remove PIN</string>
+    <string name="parental_new_pin">New PIN</string>
+    <string name="parental_confirm_pin">Confirm PIN</string>
+    <string name="parental_current_pin">Current PIN</string>
+    <string name="parental_pins_differ">The PINs don\'t match.</string>
+    <string name="parental_next">Next</string>
+    <string name="parental_set_pin_first">Set a PIN to use this lock.</string>
+    <string name="parental_local_note">These settings stay on this device. They are never synced or sent to another device.</string>
     <string name="settings_app_controls_skip_backward">Skip Back</string>
     <string name="settings_app_controls_skip_forward">Skip Forward</string>
     <string name="settings_app_controls_skip_note">Double-tap the left or right side of the video to skip back or forward.</string>
@@ -118,6 +161,10 @@
     <string name="video_saturation">Saturation</string>
     <string name="video_hue">Hue</string>
     <string name="video_show_original">Show Original</string>
+    <string name="video_motion_smoothing">Motion Smoothing</string>
+    <string name="video_motion_smoothing_rates">%1$d fps → %2$d fps</string>
+    <string name="video_motion_smoothing_paused_speed">Paused above 1× speed</string>
+    <string name="video_motion_smoothing_paused_busy">Paused while the device is warm, busy, or saving battery</string>
     <string name="video_enhancement">Enhancement</string>
     <string name="video_preset">Preset</string>
     <string name="video_preset_off">Off</string>
@@ -190,7 +237,7 @@
     <string name="link_source_another_account">Another Account</string>
     <string name="link_source_sign_in_to">Sign In to %1$s</string>
     <string name="link_source_waiting">Waiting for %1$s…</string>
-    <string name="link_source_cloud_privacy">Edendale asks %1$s for read-only access. It connects from this device only, reads folder listings and the videos you play, and never uploads or changes anything.</string>
+    <string name="link_source_cloud_privacy">Edendale reads folder listings and the videos you play, connects from this device only, and writes only its sync files, in the Edendale folder, when you sync there.</string>
     <!-- I.1 OneDrive sign-in on the TV -->
     <string name="device_code_instructions">On your phone or computer, open %1$s%2$s and enter this code:</string>
     <string name="device_code_accessibility">Code %1$s</string>
@@ -226,8 +273,8 @@
     <string name="connector_certificate_unverified">The certificate for %1$s hasn\'t been approved yet. Link the server again to review it.</string>
     <string name="connector_certificate_mismatch">The certificate for %1$s has changed. Edendale won\'t connect until you approve the new one by linking the server again.</string>
     <string name="link_source_gdrive_description">Videos you choose from Google Drive.</string>
-    <string name="link_source_gdrive_privacy">After you sign in, Google\'s picker opens: choose the videos Edendale may play. Edendale sees only those, connects from this device only, and never uploads or changes anything.</string>
-    <string name="link_source_gdrive_privacy_tv">Choose your videos in Edendale on a phone or tablet. The TV gets the account from your phone and lists every video you chose. Edendale sees only those videos and never uploads or changes anything.</string>
+    <string name="link_source_gdrive_privacy">After you sign in, Google\'s picker opens: choose the videos Edendale may play. Edendale sees only those and the sync files it creates, connects from this device only, and changes nothing else.</string>
+    <string name="link_source_gdrive_privacy_tv">Choose your videos in Edendale on a phone or tablet. The TV gets the account from your phone and lists every video you chose. Edendale sees only those videos and the sync files it creates, and changes nothing else.</string>
     <string name="gdrive_chosen_folder">Videos you chose</string>
     <string name="gdrive_choose_more">Choose More Videos</string>
     <string name="gdrive_choose_on_another_device">Choose videos for this source in Edendale on a phone or tablet, then rescan here.</string>
@@ -273,5 +320,71 @@
     <string name="handoff_rejected_plain">The TV couldn\'t use what was sent.</string>
     <string name="handoff_tv_address">If your phone doesn\'t find this TV, enter its address instead: %1$s</string>
     <string name="handoff_address_label">Or enter the address shown on the TV</string>
+
+    <!-- 27.1 sync and handoff version 2 -->
+    <string name="settings_section_sync">Sync</string>
+    <string name="sync_off_note">Keep watch progress, favorites, watchlist, and ratings the same on all your devices through a folder or account you own. Edendale runs no server: each device writes one readable file.</string>
+    <string name="sync_choose_location">Choose a Location</string>
+    <string name="sync_receive_from_device">Receive from Another Device</string>
+    <string name="sync_set_up_device">Set Up Another Device</string>
+    <string name="sync_location_label">Location</string>
+    <string name="sync_space_label">Space</string>
+    <string name="sync_device_label">This device</string>
+    <string name="sync_last_synced">Last synced %1$s</string>
+    <string name="sync_never_synced">Not synced yet</string>
+    <string name="sync_syncing">Syncing…</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="sync_turn_off">Turn Off</string>
+    <string name="sync_remove_device">Remove a Device</string>
+    <string name="sync_needs_consent">Sign in to %1$s again so Edendale can write its sync files there.</string>
+    <string name="sync_login_missing">The login for this location is gone from this device. Choose the location again.</string>
+    <string name="sync_warning_skipped">The file from %1$s was skipped (%2$s).</string>
+    <string name="sync_warning_newer_format">Update Edendale to sync with %1$s.</string>
+    <string name="sync_warning_far_future">The clock on %1$s is more than a day ahead; its latest changes were not applied.</string>
+    <string name="sync_failed">The last sync failed: %1$s</string>
+    <string name="sync_privacy_note">Anyone who can open this folder can read your watch history. The files hold titles by TMDB ID, progress, ratings, watchlist, favorites, and reviews; never your library, file paths, or logins.</string>
+    <string name="sync_dialog_title">Choose a Location</string>
+    <string name="sync_space_hint">Space name</string>
+    <string name="sync_space_help">Devices pointing at the same location and space name sync with each other. Up to 64 characters, with no / \\ : * ? \" &lt; &gt; |.</string>
+    <string name="sync_provider_folder">A folder on this device</string>
+    <string name="sync_pick_folder">Pick Folder</string>
+    <string name="sync_provider_accounts">Linked accounts</string>
+    <string name="sync_provider_servers">Saved logins</string>
+    <string name="sync_no_accounts">Link an account or server in Link Source first.</string>
+    <string name="sync_server_folder_label">Folder on %1$s</string>
+    <string name="sync_google_tv_note">A TV can\'t sign in to Google. Set up Google Drive on an Android phone and send it here with Set Up Another Device.</string>
+    <string name="sync_turn_off_title">Turn off sync?</string>
+    <string name="sync_turn_off_message">Your watch history stays on this device. The files in %1$s stay too unless you delete this device\'s file.</string>
+    <string name="sync_turn_off_delete">Turn Off and Delete My File</string>
+    <string name="sync_turn_off_keep">Turn Off, Keep the File</string>
+    <string name="sync_remove_device_title">Remove a Device</string>
+    <string name="sync_remove_device_message">Deleting a device\'s file stops its history reaching the others. That device keeps its login and its local copy until you revoke Edendale\'s access at the provider or change the server password.</string>
+    <string name="sync_manage_access">Manage access at %1$s</string>
+    <string name="sync_no_other_devices">No other device has written to this space yet.</string>
+    <!-- Settings → Sync → Watch History, and Continue Watching's Clear Progress -->
+    <string name="watch_history_kept">Favorites, watchlist, ratings, reviews, your library, and your TMDB account stay as they are.</string>
+    <string name="sync_folder_relink">Pick the folder this device should use for the space “%1$s”.</string>
+    <string name="sync_google_relink">Sign in to Google as %1$s to use the space “%2$s”.</string>
+    <string name="pairing_role_send">Send from this device</string>
+    <string name="pairing_role_receive">Receive on this device</string>
+    <string name="pairing_connected">Connected to %1$s.</string>
+    <string name="pairing_locked_out">Too many wrong codes. A new code appears in a minute.</string>
+    <string name="pairing_qr_description">QR code for pairing another Edendale device</string>
+    <string name="pairing_confirm_send_title">Send to %1$s?</string>
+    <string name="pairing_send_location">Sync location: %1$s</string>
+    <string name="pairing_send_location_folder">The other device picks its own folder for the space “%1$s”.</string>
+    <string name="pairing_send_accounts">Accounts</string>
+    <string name="pairing_send_logins">Saved logins</string>
+    <string name="pairing_send">Send</string>
+    <string name="pairing_wrong_secret">The QR code has expired or was wrong. Show a new one and try again.</string>
+    <string name="pairing_same_role">Both devices chose to send. Choose who sends on one device.</string>
+    <string name="pairing_busy">The other device is busy with another pairing.</string>
     <string name="player_theater">Theater</string>
+    <string name="xr_module_title">Android XR theater</string>
+    <string name="settings_player_controls">Player Controls</string>
+    <string name="settings_audio">Audio</string>
+    <string name="settings_library">Library</string>
+    <string name="settings_section_controls">Controls</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_parental_more">Ratings, Locks, and PIN</string>
 </resources>

@@ -845,9 +845,14 @@ private fun CloudAccountStep(
 ) {
     val provider = sourceKindLabel(kind)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // What Edendale may do with the account. Since 27.1 the grant also
+        // covers the sync files, written only once the account is the sync
+        // location (Apple's `CloudAccountStep.privacyNote`): OneDrive's app
+        // folder, Dropbox's `Edendale/`, Drive's `drive.file`.
         Text(
             text = when {
-                kind != MediaSourceKind.GOOGLE_DRIVE -> stringResource(R.string.link_source_cloud_privacy, provider)
+                kind == MediaSourceKind.ONE_DRIVE -> stringResource(R.string.link_source_onedrive_privacy)
+                kind != MediaSourceKind.GOOGLE_DRIVE -> stringResource(R.string.link_source_cloud_privacy)
                 isTelevision -> stringResource(R.string.link_source_gdrive_privacy_tv)
                 else -> stringResource(R.string.link_source_gdrive_privacy)
             },

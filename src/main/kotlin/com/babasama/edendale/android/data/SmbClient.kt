@@ -78,6 +78,57 @@ internal object SmbClient {
             .filterNot { name -> name.endsWith("$") }
             .sortedBy { name -> name.lowercase() }
 
+    // MARK: - Files (27.1 sync locations)
+
+    /** The regular files directly under [url] with sizes and modification times; a missing folder lists as empty. Blocking. */
+    fun listFiles(url: String, context: CIFSContext): List<Triple<String, Long, Long>> {
+        val folder = SmbFile(url, context)
+        if (!folder.exists()) return emptyList()
+        return folder.listFiles().orEmpty().mapNotNull { file ->
+            if (!file.isFile) return@mapNotNull null
+            val name = file.name?.trimEnd('/')?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            Triple(name, file.length(), file.lastModified())
+        }
+    }
+
+    /** Creates [url] and every missing parent folder. Blocking. */
+    fun mkdirs(url: String, context: CIFSContext) {
+        val folder = SmbFile(if (url.endsWith("/")) url else "$url/", context)
+        if (!folder.exists()) folder.mkdirs()
+    }
+
+    /** The whole file at [url], at most [limit] bytes. Blocking. */
+    fun read(url: String, context: CIFSContext, limit: Int): ByteArray =
+        SmbFile(url, context).openInputStream().use { input ->
+            val out = java.io.ByteArrayOutputStream()
+            val buffer = ByteArray(64 * 1024)
+            while (out.size() < limit) {
+                val count = input.read(buffer, 0, minOf(buffer.size, limit - out.size()))
+                if (count < 0) break
+                out.write(buffer, 0, count)
+            }
+            out.toByteArray()
+        }
+
+    /** Writes [bytes] to `<url>.tmp` and renames it over [url], so a reader never sees a half-written file. Blocking. */
+    fun writeReplacing(url: String, context: CIFSContext, bytes: ByteArray) {
+        val temporary = SmbFile("$url.tmp", context)
+        temporary.openOutputStream().use { it.write(bytes) }
+        val target = SmbFile(url, context)
+        try {
+            temporary.renameTo(target, true)
+        } catch (error: Exception) {
+            runCatching { temporary.delete() }
+            throw error
+        }
+    }
+
+    /** Removes the file at [url]; one that is already gone is fine. Blocking. */
+    fun delete(url: String, context: CIFSContext) {
+        val file = SmbFile(url, context)
+        if (file.exists()) file.delete()
+    }
+
     /**
      * The host an SMB source belongs to, or null for a local SAF tree. This is
      * the key the credential store is written under, so removal must derive it

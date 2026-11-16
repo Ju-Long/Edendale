@@ -18,7 +18,27 @@
     <uses-permission
         android:name="android.permission.WAKE_LOCK"
         tools:node="remove" />
+    <!-- WorkManager (27.1 sync's background job) declares it, and Meta
+         reviews it. It only re-registers the job after a reboot; WorkManager
+         also does that whenever the app starts, and the app syncs on launch.
+         WorkManager takes a wake lock only for foreground work, which sync
+         doesn't use, or in its pre-API-23 alarm scheduler. -->
+    <uses-permission
+        android:name="android.permission.RECEIVE_BOOT_COMPLETED"
+        tools:node="remove" />
 
+    <!-- B.15: a Quest 3 or 3S scans the other device's pairing code with its
+         passthrough camera (Meta's Passthrough Camera API, Horizon OS v74 and
+         later), asked for only when the viewer chooses to scan; frames are
+         read on the headset and never kept or sent. Since 2026-11-13 (owner)
+         the build keeps android's CAMERA and its three optional camera
+         features, and declares nothing of Meta's: the upload refused
+         horizonos.permission.HEADSET_CAMERA as "incompatible" alone as well
+         as beside CAMERA (Findings), and Meta's Passthrough Camera API
+         overview says either permission opens the passthrough cameras. The
+         optional features keep CAMERA from implying a required camera with
+         autofocus, which a Quest doesn't report. Meta reviews CAMERA, so the
+         submission justifies it. -->
     <uses-feature
         android:name="android.software.leanback"
         tools:node="remove" />
@@ -31,11 +51,12 @@
         android:version="1" />
 
     <application tools:remove="android:banner">
-        <!-- D4. Quest 2 and Pro have no AV1 hardware decoder and the app has no
-             software one; Findings records what each headset was tested on. -->
+        <!-- D4 (owner, 2026-11-13): the Quest 3 and 3S, the headsets with the
+             passthrough camera the pairing scanner reads (B.15). Findings
+             records what each headset was tested on. -->
         <meta-data
             android:name="com.oculus.supportedDevices"
-            android:value="quest2|questpro|quest3|quest3s" />
+            android:value="quest3|quest3s" />
 
         <activity android:name=".MainActivity">
             <intent-filter tools:node="remove">
@@ -47,11 +68,15 @@
         <!-- B.3: Horizon OS reports the PiP feature on the simulator but pins
              the window at nearly panel size (Findings, 2026-10-10), and the
              Quest 3 doesn't report it at all. DevicePolicy hides the button
-             and the Auto PiP setting; this keeps the system from trying. -->
+             and the Auto PiP setting; this keeps the system from trying.
+             Landscape rather than android's sensorLandscape: Meta's upload
+             refuses a theater build with an orientation that isn't landscape
+             (2026-11-13), and a panel never turns, so the two behave alike. -->
         <activity
             android:name=".player.PlayerActivity"
             android:supportsPictureInPicture="false"
-            tools:replace="android:supportsPictureInPicture" />
+            android:screenOrientation="landscape"
+            tools:replace="android:supportsPictureInPicture,android:screenOrientation" />
     </application>
 
 </manifest>

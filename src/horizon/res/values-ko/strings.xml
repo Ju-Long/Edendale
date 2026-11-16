@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- G.2: overrides src/main's About line. This build isn't GPL-3.0: Edendale is
+    <!-- G.2: this build's About line (src/main has none since android's 27.1
+         Settings; B.14). This build isn't GPL-3.0: Edendale is
          MPL-2.0 and FFmpeg is LGPL-2.1 (assets/licenses). With the theater built,
          src/horizonTheater overrides it again to name the Spatial SDK. -->
     <string name="settings_open_source">Edendale · 무료 오픈 소스(MPL-2.0). DTS와 TrueHD는 FFmpeg 6.0.2(LGPL-2.1)로 재생합니다. 라이선스 전문은 앱 안(assets/licenses)과 github.com/Ju-Long/Edendale에 있습니다.</string>

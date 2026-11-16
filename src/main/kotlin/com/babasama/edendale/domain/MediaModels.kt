@@ -167,6 +167,8 @@ data class WatchProgress(
     val showTmdbId: Int? = null,
     val seasonNumber: Int? = null,
     val episodeNumber: Int? = null,
+    /** The title's length in seconds when the player knew it; 0 for a Mark Watched or an older row. */
+    val durationSeconds: Double = 0.0,
 ) {
     val normalizedPosition: Double get() = position.coerceIn(0.0, 1.0)
     val storageKey: String get() = "${mediaType.name.lowercase()}:$tmdbId"

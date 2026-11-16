@@ -28,7 +28,7 @@ import javax.xml.parsers.SAXParserFactory
 object WebDav {
 
     const val PROPFIND_BODY = """<?xml version="1.0" encoding="utf-8"?>
-<d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/><d:getcontentlength/><d:getlastmodified/><d:displayname/></d:prop></d:propfind>"""
+<d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/><d:getcontentlength/><d:getlastmodified/><d:getetag/><d:displayname/></d:prop></d:propfind>"""
 
     /**
      * `https://host/path` → `davs://host/path/`, `http://…` → `dav://…`; a bare
@@ -87,6 +87,7 @@ object WebDav {
                 isDirectory = response.isCollection,
                 size = if (response.isCollection) null else response.size,
                 modifiedEpochMillis = response.modified?.let(::parseHttpDate),
+                changeTag = response.etag,
             )
         }
     }
@@ -119,6 +120,7 @@ object WebDav {
         var isCollection = false
         var size: Long? = null
         var modified: String? = null
+        var etag: String? = null
     }
 
     /** `response` elements with the properties their 200 `propstat` blocks report. */
@@ -133,6 +135,7 @@ object WebDav {
             private var propCollection = false
             private var propSize: Long? = null
             private var propModified: String? = null
+            private var propEtag: String? = null
             private var propStatus: String? = null
 
             override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
@@ -144,6 +147,7 @@ object WebDav {
                         propCollection = false
                         propSize = null
                         propModified = null
+                        propEtag = null
                         propStatus = null
                     }
                     "collection" -> if ("resourcetype" in stack) propCollection = true
@@ -165,11 +169,13 @@ object WebDav {
                     "href" -> if (response != null && stack.lastOrNull() == "response") response.href = value
                     "getcontentlength" -> propSize = value.toLongOrNull()
                     "getlastmodified" -> propModified = value.ifEmpty { null }
+                    "getetag" -> propEtag = value.ifEmpty { null }
                     "status" -> if (stack.lastOrNull() == "propstat") propStatus = value
                     "propstat" -> if (response != null && (propStatus == null || " 200" in propStatus!!)) {
                         if (propCollection) response.isCollection = true
                         if (response.size == null) response.size = propSize
                         if (response.modified == null) response.modified = propModified
+                        if (response.etag == null) response.etag = propEtag
                     }
                     "response" -> response?.let { responses += it }.also { current = null }
                 }
@@ -237,6 +243,58 @@ class WebDavConnector(
         val entries = WebDav.parseMultistatus(response.body, httpUrl, folder)
             ?: throw ConnectorException(ConnectorFailure.ListingFailed(path))
         entries.filterNot { it.isHidden }.sortedWith(FOLDERS_FIRST)
+    }
+
+    // MARK: - Writing (27.1 sync locations)
+
+    /**
+     * Downloads the file at [url] (a canonical `dav(s)://` URL), at most
+     * [limit] bytes. A missing file is a [ConnectorFailure.ListingFailed].
+     */
+    suspend fun get(url: String, limit: Int): ByteArray = withContext(Dispatchers.IO) {
+        val response = send(RemoteRequest(url = httpUrl(url)), url, bodyLimit = limit)
+        if (response.status !in 200..299) throw failure(response.status, url)
+        response.body
+    }
+
+    /** Replaces the file at [url] with [bytes] in one `PUT`; the folder must exist. */
+    suspend fun put(url: String, bytes: ByteArray, contentType: String = "application/json; charset=utf-8") = withContext(Dispatchers.IO) {
+        val response = send(RemoteRequest(url = httpUrl(url), method = "PUT", body = bytes, contentType = contentType), url, bodyLimit = 4_096)
+        if (response.status !in 200..299) throw failure(response.status, url)
+    }
+
+    /** Creates the folder at [url] with `MKCOL`; a folder that already exists (405) is fine. */
+    suspend fun mkcol(url: String) = withContext(Dispatchers.IO) {
+        val folder = WebDav.directoryUrl(url)
+        val response = send(RemoteRequest(url = httpUrl(folder), method = "MKCOL"), folder, bodyLimit = 4_096)
+        if (response.status !in 200..299 && response.status != 405) throw failure(response.status, folder)
+    }
+
+    /** Deletes the file at [url]; a file that is already gone (404) is fine. */
+    suspend fun delete(url: String) = withContext(Dispatchers.IO) {
+        val response = send(RemoteRequest(url = httpUrl(url), method = "DELETE"), url, bodyLimit = 4_096)
+        if (response.status !in 200..299 && response.status != 404) throw failure(response.status, url)
+    }
+
+    private fun httpUrl(url: String): String = WebDav.httpUrl(url) ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
+
+    private fun send(request: RemoteRequest, url: String, bodyLimit: Int): com.babasama.edendale.remote.RemoteResponse {
+        val host = SourceUrl.credentialHost(url) ?: throw ConnectorException(ConnectorFailure.InvalidAddress)
+        return try {
+            auth.execute(http, request, bodyLimit = bodyLimit)
+        } catch (error: IOException) {
+            throw ConnectorException(ConnectorFailure.transport(error, host), error)
+        }
+    }
+
+    private fun failure(status: Int, url: String): ConnectorException {
+        val host = SourceUrl.credentialHost(url).orEmpty()
+        val path = SourceUrl.pathSegments(url).joinToString("/", prefix = "/")
+        return when (status) {
+            401, 403 -> ConnectorException(ConnectorFailure.AuthenticationFailed(host))
+            404, 409 -> ConnectorException(ConnectorFailure.ListingFailed(path))
+            else -> ConnectorException(ConnectorFailure.ServerError(kind, status))
+        }
     }
 
     companion object {

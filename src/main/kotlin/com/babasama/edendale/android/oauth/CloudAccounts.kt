@@ -71,10 +71,27 @@ class CloudAccounts(context: Context) {
      * [OAuthException]; cancelling the calling coroutine abandons the
      * sign-in and changes nothing.
      */
-    suspend fun signIn(activity: Activity, kind: MediaSourceKind): CloudSignIn {
+    suspend fun signIn(activity: Activity, kind: MediaSourceKind, loginHint: String? = null): CloudSignIn {
         val configuration = configuration(kind) ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
-        val (response, picked) = authorize(activity, configuration)
+        // A sync location handed over from another ecosystem names the Google account to sign in as (FEATURES-27.1.md §6.4).
+        val parameters = loginHint?.takeIf { it.isNotBlank() }?.let { mapOf("login_hint" to it) }.orEmpty()
+        val (response, picked) = authorize(activity, configuration, parameters)
         return CloudSignIn(CloudSignIn.store(kind, configuration, response, http, vault, tokens), picked)
+    }
+
+    /**
+     * Signs in only to use the account as the sync location (FEATURES-27.1.md
+     * §5.2): the account is stored as any sign-in stores it, but no library
+     * source is linked and Google's picker never opens, since sync needs no
+     * picked videos. [loginHint] names the Google account a handoff from
+     * another ecosystem expects (§6.4).
+     */
+    suspend fun signInForSync(activity: Activity, kind: MediaSourceKind, loginHint: String? = null): CloudAccount {
+        val configuration = configuration(kind)?.let(CloudProviders::syncSignInConfiguration)
+            ?: throw OAuthException(kind, OAuthFailure.NotConfigured)
+        val parameters = loginHint?.takeIf { it.isNotBlank() }?.let { mapOf("login_hint" to it) }.orEmpty()
+        val (response, _) = authorize(activity, configuration, parameters)
+        return CloudSignIn.store(kind, configuration, response, http, vault, tokens)
     }
 
     /**

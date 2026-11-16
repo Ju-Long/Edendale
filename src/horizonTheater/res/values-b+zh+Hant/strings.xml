@@ -10,4 +10,19 @@
          Edendale is MPL-2.0, FFmpeg is LGPL-2.1 (assets/licenses), and the
          Spatial SDK is under Meta's licence. -->
     <string name="settings_open_source">Edendale · 免費開源（MPL-2.0）。DTS 與 TrueHD 透過 FFmpeg 6.0.2（LGPL-2.1）播放；影院使用 Meta 授權下的 Meta Spatial SDK。授權全文隨應用程式提供（assets/licenses），也見 github.com/Ju-Long/Edendale。</string>
+    <string name="theater_rooms">影廳</string>
+    <string name="theater_room_movie_theatre">電影院</string>
+    <string name="theater_room_projector_room">放映廳</string>
+    <string name="theater_room_performance_theatre">劇院</string>
+    <string name="theater_seats">座位</string>
+    <string name="theater_screen">銀幕</string>
+    <string name="theater_your_seat">你的座位</string>
+    <string name="theater_best_seat">最佳座位</string>
+    <string name="theater_seat_name">第 %1$d 排 %2$d 座</string>
+    <string name="theater_lights">燈光</string>
+    <string name="theater_lights_normal">正常</string>
+    <string name="theater_lights_dim">調暗</string>
+    <string name="theater_lights_dark">很暗</string>
+    <string name="theater_recentre">重新置中</string>
+    <string name="theater_recentre_caption">把銀幕放到你正在看的方向，躺著也可以。</string>
 </resources>

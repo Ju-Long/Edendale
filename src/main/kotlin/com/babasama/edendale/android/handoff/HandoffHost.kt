@@ -8,8 +8,10 @@ import android.provider.Settings
 import com.babasama.edendale.connectors.MediaSourceKind
 import com.babasama.edendale.handoff.AccountHandoff
 import com.babasama.edendale.handoff.AccountHandoff.HandoffException
+import com.babasama.edendale.handoff.FrameStream
 import com.babasama.edendale.handoff.HandoffCrypto
 import com.babasama.edendale.handoff.HandoffProtocol
+import com.babasama.edendale.handoff.HandoffV2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -96,7 +98,15 @@ class HandoffHost(
         _state.value = current.copy(status = Status.Connected)
         try {
             val request = AccountHandoff.Request(kind, deviceName)
-            val response = HandoffProtocol.receive(connection, current.code, request) { answer ->
+            // Link Source speaks version 1 only; a version-2 guest (the Sync pairing screen) is told so (§9.9).
+            val frames = FrameStream(connection.getInputStream(), connection.getOutputStream())
+            connection.soTimeout = HandoffProtocol.HANDSHAKE_TIMEOUT_MILLIS
+            val first = frames.read()
+            if (HandoffV2.peek(first).first == HandoffV2.VERSION) {
+                runCatching { frames.write(HandoffV2.errorFrame(HandoffV2.ErrorReason.VERSION)) }
+                throw HandoffException.UnsupportedVersion(HandoffV2.VERSION)
+            }
+            val response = HandoffProtocol.receive(connection, current.code, request, frames, first) { answer ->
                 _state.value = _state.value.copy(status = Status.Validating)
                 runBlocking { store(answer) }
             }

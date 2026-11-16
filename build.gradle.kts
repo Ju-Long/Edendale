@@ -135,8 +135,8 @@ android {
         applicationId = "com.babasama.edendale"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 3
-        versionName = "0.27.0.1"
+        versionCode = 4
+        versionName = "0.27.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Dropbox redirects to db-<app key>://, so the redirect activity's
@@ -158,15 +158,22 @@ android {
         create("horizon") {
             dimension = "store"
             // D2: Meta's recommended minimum for Quest-only apps (the allowed
-            // range is 29–34). targetSdk stays android's until the ALPHA
-            // upload probe (P.6) says otherwise.
+            // range is 29–34), and Meta's targetSdk for an app with an immersive
+            // activity (32–34; the theater's ALPHA upload was refused at 36 on
+            // 2026-11-13). Every Quest build targets 34, the 2D panel app too,
+            // so it doesn't change when the theater ships; android keeps its own
+            // (36) for Google Play.
             minSdk = 32
+            targetSdk = 34
             // The Horizon Store release's own name and code (owner, 2026-10-26),
-            // shown in Settings and the store: "27.0" rather than android's
-            // "0.27.0.1". The code only has to beat the store's last upload, so
-            // it moves with Horizon releases, not with android's (A.4).
-            versionCode = 4
-            versionName = "27.0"
+            // shown in Settings and the store: "27.1" rather than android's
+            // "0.27.1" (27.0 was android's 0.27.0.1). The code only has to beat
+            // the store's last upload, so it moves with Horizon releases, not
+            // with android's (A.4): 5 for 27.1, after 27.0's 4 (B.14); 6 for the
+            // build after the first theater run on the Quest 3 (G.16), as 5
+            // may already have reached ALPHA (2026-11-13 uploads).
+            versionCode = 6
+            versionName = "27.1"
             buildConfigField("boolean", "HORIZON_OS", "true")
             buildConfigField("boolean", "HORIZON_THEATER", horizonTheater.toString())
         }
@@ -205,13 +212,22 @@ android {
         buildConfig = true
     }
 
+    // HORIZON.md B.14: android declares its :xr feature module here
+    // (`dynamicFeatures += setOf(":xr")`, the Android XR theater of Section N).
+    // This branch builds one APK for the Meta Horizon Store and leaves the
+    // module out (settings.gradle.kts), so no Jetpack XR code, room, or
+    // activity reaches a Quest; the player offers that theater only where the
+    // module is installed, which is never here.
+
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
         // HORIZON.md D15: the theater layer, only with horizon.theater=true. Its code
-        // joins the flavor; its resources and manifest join the variant source sets,
-        // which outrank src/horizon, so its About line (naming the Spatial SDK) wins.
+        // and its rooms (G.14: the three GLBs, about 23 MB) join the flavor; its
+        // resources and manifest join the variant source sets, which outrank
+        // src/horizon, so its About line (naming the Spatial SDK) wins.
         if (horizonTheater) {
             getByName("horizon").kotlin.srcDir("src/horizonTheater/kotlin")
+            getByName("horizon").assets.srcDir("src/horizonTheater/assets")
             for (variant in listOf("horizonDebug", "horizonRelease")) {
                 maybeCreate(variant).res.srcDir("src/horizonTheater/res")
                 maybeCreate(variant).manifest.srcFile("src/horizonTheater/AndroidManifest.xml")
@@ -267,8 +283,12 @@ dependencies {
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.androidx.security.crypto)
     implementation(libs.zxing.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.work.runtime.ktx)
     debugImplementation(libs.compose.ui.tooling)
 
     // JVM unit tests only (src/test): the suite is hermetic — no emulator or
@@ -328,8 +348,14 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         val minSdk = usesSdk?.attr("minSdkVersion")?.toIntOrNull()
         val targetSdk = usesSdk?.attr("targetSdkVersion")?.toIntOrNull()
         if (minSdk == null || minSdk !in 29..34) failures += "minSdkVersion $minSdk is outside Meta's 29–34 (VRC Packaging.4)"
-        if (targetSdk == null || targetSdk !in 32..36) failures += "targetSdkVersion $targetSdk is outside 32–36 for 2D apps (VRC Packaging.4)"
-        notes += "minSdkVersion $minSdk, targetSdkVersion $targetSdk (decision D2: the ALPHA upload probe settles targetSdk)"
+        // Meta's ranges: 32–34 with an immersive activity (the theater), 32–37 for a 2D
+        // app. The upload refused the theater at 36 (2026-11-13); D2 sets 34 for both.
+        val targetRange = if (theaterBuilt.get()) 32..34 else 32..37
+        val appKind = if (theaterBuilt.get()) "an app with an immersive activity" else "2D apps"
+        if (targetSdk == null || targetSdk !in targetRange) {
+            failures += "targetSdkVersion $targetSdk is outside ${targetRange.first}–${targetRange.last} for $appKind (VRC Packaging.4, D2)"
+        }
+        notes += "minSdkVersion $minSdk, targetSdkVersion $targetSdk (D2)"
 
         val application = manifest.elements("application").firstOrNull()
         if (application == null) failures += "no <application>"
@@ -351,6 +377,17 @@ abstract class VerifyHorizonRelease : DefaultTask() {
             if (simple in reviewRequired) notes += "permission $permission needs Meta's review; justify it in the submission"
         }
         if (permissions.any { it.endsWith("WRITE_EPG_DATA") }) failures += "WRITE_EPG_DATA (TV Watch Next) is still declared"
+        // B.15: a Quest 3's pairing scanner reads the passthrough camera through android's
+        // CAMERA (on Meta's review list, noted above). Meta's upload refused
+        // horizonos.permission.HEADSET_CAMERA as "incompatible" both beside CAMERA and
+        // alone (2026-11-13), so the overlay declares nothing of Meta's.
+        if ("horizonos.permission.HEADSET_CAMERA" in permissions) {
+            failures += "horizonos.permission.HEADSET_CAMERA is declared; Meta's upload refuses it as \"incompatible\", " +
+                "and the Quest's scanner asks for android.permission.CAMERA (HORIZON.md B.15)"
+        }
+        if ("android.permission.CAMERA" !in permissions) {
+            failures += "android.permission.CAMERA is missing; the Quest's pairing scanner can't open the camera (HORIZON.md B.15)"
+        }
         notes += "permissions: ${permissions.joinToString()}"
 
         val features = manifest.elements("uses-feature")
@@ -417,6 +454,18 @@ abstract class VerifyHorizonRelease : DefaultTask() {
         if (jellyfin.isNotEmpty()) failures += "GPL-3.0 artifacts in the release runtime classpath: ${jellyfin.joinToString()} (HORIZON.md G.1)"
         else notes += "no org.jellyfin artifact in the release runtime classpath"
 
+        // B.14: android's Android XR theater (its :xr feature module, Jetpack XR) is not
+        // part of this branch's build. A merge that brought it back would put the
+        // feature's activity in this manifest, or Jetpack XR in the classpath.
+        val androidXr = buildList {
+            if (manifest.elements("activity").any { it.attr("name")?.endsWith(".XrTheaterActivity") == true }) {
+                add("XrTheaterActivity's manifest entry")
+            }
+            addAll(runtimeComponents.get().filter { it.startsWith("androidx.xr") })
+        }
+        if (androidXr.isNotEmpty()) failures += "android's Android XR theater is in the build: ${androidXr.joinToString()} (HORIZON.md B.14)"
+        else notes += "no Android XR theater: neither android's :xr activity nor a Jetpack XR artifact (B.14)"
+
         // D15: a 2D build carries nothing of the theater. A theater build says so, since
         // shipping the Spatial SDK (D12) and the theater (D15) are the owner's decisions,
         // and its manifest and code must agree: a declared activity without its class
@@ -428,17 +477,47 @@ abstract class VerifyHorizonRelease : DefaultTask() {
                     .contains("Lcom/babasama/edendale/android/theater/TheaterActivity;")
             }
         }
+        // G.14: the rooms the theater offers (TheaterRoom), as assets/theater/<id>.glb.
+        val theaterRooms = apk?.let { file ->
+            ZipFile(file).use { zip -> zip.entries().asSequence().map { it.name }.filter { it.startsWith("assets/theater/") }.toSet() }
+        }.orEmpty()
+        val expectedRooms = listOf("movie-theatre", "projector-room", "performance-theatre").map { "assets/theater/$it.glb" }
         if (theaterBuilt.get()) {
+            // Meta's upload checks for an app with an immersive activity (2026-11-13): a
+            // graphics API declared (GLES 3.1, as Meta's hybrid sample has it, or Vulkan),
+            // and focus awareness (VRC Quest.Input.4).
+            val graphics = features.any { feature ->
+                (feature.attr("glEsVersion")?.removePrefix("0x")?.toIntOrNull(16) ?: 0) >= 0x00030001 ||
+                    feature.attr("name") == "android.hardware.vulkan.version"
+            }
+            if (!graphics) failures += "a theater build declares neither a GLES 3.1 nor a Vulkan version; Meta's upload refuses it (G.4)"
+            val focusAware = application?.elements("meta-data")
+                ?.any { it.attr("name") == "com.oculus.vr.focusaware" && it.attr("value") == "true" } == true
+            if (!focusAware) failures += "a theater build lacks com.oculus.vr.focusaware=true; Meta's upload refuses it (VRC Quest.Input.4, G.4)"
+            // Meta's upload: "APK screen orientation is not landscape" (2026-11-13), with the
+            // player's sensorLandscape and the theater declaring none. Every declared
+            // orientation is landscape, the theater's included.
+            val orientations = manifest.elements("activity").associate { (it.attr("name") ?: "?") to it.attr("screenOrientation") }
+            val notLandscape = orientations.filter { (name, value) ->
+                value != null && value != "landscape" && value != "0" || name.endsWith(".TheaterActivity") && value == null
+            }
+            if (notLandscape.isNotEmpty()) {
+                failures += "a theater build's screenOrientation must be landscape: ${notLandscape.entries.joinToString { "${it.key.substringAfterLast('.')}=${it.value}" }} (G.4)"
+            }
+            val missingRooms = expectedRooms.filterNot { it in theaterRooms }
             if (!theaterDeclared || !theaterCompiled) {
                 failures += "a theater build (horizon.theater=true) lacks TheaterActivity's " +
                     listOfNotNull("manifest entry".takeIf { !theaterDeclared }, "class".takeIf { !theaterCompiled }).joinToString(" and ")
+            } else if (missingRooms.isNotEmpty()) {
+                failures += "a theater build (horizon.theater=true) lacks the rooms ${missingRooms.joinToString()} (G.14)"
             } else {
-                notes += "the immersive theater is built in (horizon.theater=true): TheaterActivity and the Spatial SDK ship (D12, D15)"
+                notes += "the immersive theater is built in (horizon.theater=true): TheaterActivity, its ${expectedRooms.size} rooms, and the Spatial SDK ship (D12, D15, G.14)"
             }
         } else {
             val theaterLeft = buildList {
                 if (theaterDeclared) add("TheaterActivity's manifest entry")
                 if (theaterCompiled) add("TheaterActivity's class")
+                addAll(theaterRooms)
                 if (permissions.any { it.endsWith(".HAND_TRACKING") }) add("the HAND_TRACKING permission")
                 addAll(runtimeComponents.get().filter { it.startsWith("com.meta.spatial") })
             }

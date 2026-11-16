@@ -296,6 +296,14 @@ class TmdbApi(private val transport: TmdbTransport) {
             )
         }
 
+    /**
+     * TMDB's ordered certification lists for every region, for the parental
+     * ceiling (Section O). The request carries nothing but the credential;
+     * null when the body has no `certifications` object.
+     */
+    suspend fun certificationList(mediaType: MediaType): JsonObject? =
+        fetch("/certification/${mediaType.pathSegment}/list").takeIf { it["certifications"] is JsonObject }
+
     private suspend fun fetch(
         path: String,
         parameters: Map<String, String> = emptyMap(),

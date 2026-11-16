@@ -1,6 +1,7 @@
 package com.babasama.edendale.android.data
 
 import com.babasama.edendale.AndroidEdendaleCore
+import com.babasama.edendale.android.sync.SyncRecorder
 import com.babasama.edendale.domain.MediaRef
 import com.babasama.edendale.domain.UserMediaRecord
 import com.babasama.edendale.domain.WatchProgress
@@ -41,6 +42,7 @@ class LocalDataStore(private val database: EdendaleDatabase) {
         val current = getUserMedia(ref) ?: UserMediaRecord(ref.id, ref.mediaType)
         val updated = current.settingFavourite(isFavourite, now).withDisplay(title, posterPath)
         database.userMediaDao().upsert(UserMediaEntity.fromDomain(updated))
+        syncRecorder?.userMediaChanged(updated)
         sharedEdits.tryEmit(Unit)
     }
 
@@ -54,6 +56,7 @@ class LocalDataStore(private val database: EdendaleDatabase) {
         val current = getUserMedia(ref) ?: UserMediaRecord(ref.id, ref.mediaType)
         val updated = current.settingWatchlist(inWatchlist, now).withDisplay(title, posterPath)
         database.userMediaDao().upsert(UserMediaEntity.fromDomain(updated))
+        syncRecorder?.userMediaChanged(updated)
         sharedEdits.tryEmit(Unit)
     }
 
@@ -67,6 +70,7 @@ class LocalDataStore(private val database: EdendaleDatabase) {
         val current = getUserMedia(ref) ?: UserMediaRecord(ref.id, ref.mediaType)
         val updated = current.settingRating(rating, now).withDisplay(title, posterPath)
         database.userMediaDao().upsert(UserMediaEntity.fromDomain(updated))
+        syncRecorder?.userMediaChanged(updated)
         sharedEdits.tryEmit(Unit)
     }
 
@@ -74,6 +78,8 @@ class LocalDataStore(private val database: EdendaleDatabase) {
         val localRecords = database.userMediaDao().all().map { it.toDomain() }
         val result = AndroidEdendaleCore.syncEngine().sync(session, localRecords, System.currentTimeMillis())
         database.userMediaDao().replaceAll(result.records.map { UserMediaEntity.fromDomain(it) })
+        // A value pulled from TMDB is a new local write for 27.1 sync, stamped when it is pulled (FEATURES-27.1.md §5.5).
+        syncRecorder?.tmdbRoundApplied(localRecords, result.records)
         return result
     }
 
@@ -93,14 +99,22 @@ class LocalDataStore(private val database: EdendaleDatabase) {
 
     suspend fun updateWatchProgress(progress: WatchProgress) {
         database.watchProgressDao().upsert(WatchProgressEntity.fromDomain(progress))
+        syncRecorder?.progressWritten(progress)
     }
 
+    /** Clears a title's progress; for 27.1 sync the clear is a write (a tombstone), so other devices don't bring it back. */
     suspend fun deleteWatchProgress(storageKey: String) {
+        val previous = database.watchProgressDao().get(storageKey)?.toDomain()
         database.watchProgressDao().delete(storageKey)
+        syncRecorder?.progressCleared(previous)
     }
 
-    private companion object {
+    companion object {
         /** All LocalDataStore instances publish into one app-wide edit stream. */
-        val sharedEdits = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+        private val sharedEdits = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+        /** Where every write is mirrored as a portable sync record (27.1); installed by the application at startup. */
+        @Volatile
+        var syncRecorder: SyncRecorder? = null
     }
 }

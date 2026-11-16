@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import com.babasama.edendale.android.player.PlayerPreferences
@@ -153,7 +154,7 @@ private fun <T> PresetRow(
                 ArchiveFilterChip(
                     selected = option == selected,
                     onClick = { onSelect(option) },
-                    label = { Text(label(option)) },
+                    label = { Text(label(option), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     isTelevision = isTelevision,
                 )
             }

@@ -7,44 +7,27 @@ import com.meta.spatial.toolkit.Controller
 import com.meta.spatial.toolkit.ControllerType
 
 /**
- * The controllers' and hands' buttons in the theater (HORIZON.md G.6, G.8),
- * polled once a frame as Meta's samples do: a press that began this frame
- * has its bit set in both `changedButtons` and `buttonState`.
- *
- * A trigger, A, or X, or a hand's pinch, calls [onActivate] (the controls
- * panel shows). B or Y on a controller calls [onBack] (the theater exits,
- * as Back closes the 2D player). A hand's pinch arrives on the A and Y bits,
- * so hands never trigger Back. Presses on the panels themselves reach the
- * panels through the SDK's own input and also pass through here, which only
- * keeps the controls up longer.
+ * The controllers' Back in the theater (HORIZON.md G.6), polled once a frame
+ * as Meta's samples do: a press that began this frame has its bit set in
+ * both `changedButtons` and `buttonState`. B or Y on a controller calls
+ * [onBack] (the theater exits, as Back closes the 2D player). A hand's pinch
+ * arrives on the A and Y bits, so hands never trigger Back. The dock no
+ * longer needs summoning (G.15: it follows the head and never hides), so
+ * the trigger and a pinch only press what the ray points at.
  */
-class TheaterInputSystem(
-    private val onActivate: () -> Unit,
-    private val onBack: () -> Unit,
-) : SystemBase() {
+class TheaterInputSystem(private val onBack: () -> Unit) : SystemBase() {
 
     override fun execute() {
-        var activate = false
         var back = false
         for (entity in Query.where { has(Controller.id) }.eval()) {
             if (!entity.isLocal()) continue
             val controller = entity.getComponent<Controller>()
-            if (!controller.isActive) continue
+            if (!controller.isActive || controller.type == ControllerType.HAND) continue
             val pressed = controller.changedButtons and controller.buttonState
-            if (controller.type == ControllerType.HAND) {
-                if (pressed and pinchBits != 0) activate = true
-            } else {
-                if (pressed and backBits != 0) back = true
-                if (pressed and activateBits != 0) activate = true
-            }
+            if (pressed and backBits != 0) back = true
         }
-        when {
-            back -> onBack()
-            activate -> onActivate()
-        }
+        if (back) onBack()
     }
 
-    private val pinchBits = ButtonBits.ButtonA or ButtonBits.ButtonY
     private val backBits = ButtonBits.ButtonB or ButtonBits.ButtonY
-    private val activateBits = ButtonBits.ButtonA or ButtonBits.ButtonX or ButtonBits.ButtonTriggerL or ButtonBits.ButtonTriggerR
 }
