@@ -54,9 +54,16 @@ jobs:
             src/horizon/jniLibs
           key: ffmpeg-decoder-${{ runner.os }}-${{ hashFiles('tools/horizon/build-ffmpeg-decoder.sh', 'src/horizon/java/androidx/media3/decoder/ffmpeg/*.java') }}
 
+      # sdkmanager runs as root, so the Android user folder it creates in the
+      # runner's home (~/.config/.android) belongs to root, and Gradle then
+      # can't create the debug keystore there. Hand those folders back.
       - name: Install NDK r26b and CMake 3.22.1
         if: steps.decoder-cache.outputs.cache-hit != 'true'
-        run: sudo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" "cmake;3.22.1" > /dev/null
+        run: |
+          sudo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;26.1.10909125" "cmake;3.22.1" > /dev/null
+          for dir in "$HOME/.config" "$HOME/.android"; do
+            if [ -e "$dir" ]; then sudo chown -R "$(id -u):$(id -g)" "$dir"; fi
+          done
 
       - name: Build the LGPL FFmpeg decoder library (HORIZON.md G.1)
         if: steps.decoder-cache.outputs.cache-hit != 'true'
