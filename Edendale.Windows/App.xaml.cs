@@ -63,9 +63,11 @@ public partial class App : Application
         state.DefaultLocationOffered = true;
         shell.ShowOffer(Loc.Get("Sync_OfferTitle"), Loc.Get("Sync_OfferMessage"), Loc.Get("Sync_OfferAction"), async () =>
         {
-            if (shell.Content.XamlRoot is { } root)
+            // Once a location is set, Settings → Sync shows it syncing.
+            if (shell.Content.XamlRoot is { } root
+                && await Controls.SyncLocationDialog.ShowAsync(root, Controls.SyncLocationDialog.SuggestedSpace, preferOneDrive: true))
             {
-                await Controls.SyncLocationDialog.ShowAsync(root, Controls.SyncLocationDialog.SuggestedSpace, preferOneDrive: true);
+                shell.ShowSettings(Core.SettingsCategory.Sync);
             }
         });
     }

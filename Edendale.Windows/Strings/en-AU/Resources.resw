@@ -82,12 +82,6 @@
   <data name="SettingsAudioResetButton.Content" xml:space="preserve">
     <value>RESET EQUALISER</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Show equaliser</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Hide equaliser</value>
-  </data>
   <data name="SettingsSubtitleTextColorLabel.Text" xml:space="preserve">
     <value>Text Colour</value>
   </data>
@@ -99,5 +93,8 @@
   </data>
   <data name="Sync_PrivacyNote" xml:space="preserve">
     <value>Anyone who can open this folder can read your watch history. The files hold titles by TMDB ID, progress, ratings, watchlist, favourites, and reviews; never your library, file paths, or logins.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equaliser</value>
   </data>
 </root>

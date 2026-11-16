@@ -21,13 +21,17 @@ namespace Edendale.Windows.Controls;
 
 /// <summary>
 /// The player chrome over the video: title, transport, timeline, volume,
-/// skips that follow Settings → App Controls, the HUD, Up Next, skip prompts,
+/// skips that follow Settings → Player Controls, the HUD, Up Next, skip prompts,
 /// press-and-hold speed, and the online subtitle browser. Gestures and the
 /// HUD live in the partial files beside this one.
 /// </summary>
 public sealed partial class PlayerControlsOverlay : UserControl
 {
     private MediaPlayer? _mediaPlayer;
+
+    /// <summary>Removes the handlers <see cref="Attach"/> gave the current player.</summary>
+    private Action? _detachPlayer;
+
     private DispatcherQueueTimer _hideTimer;
     private DispatcherQueueTimer _progressTimer;
     private bool _isSliderManipulating;
@@ -90,6 +94,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         InitializeGestures();
         InitializeHud();
+        InitializeBuffering();
+        InitializePointer();
 
         TimelineSlider.AddHandler(PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
         TimelineSlider.AddHandler(PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
@@ -120,15 +126,8 @@ public sealed partial class PlayerControlsOverlay : UserControl
     public void SetMediaPlayer(
         MediaPlayer? player, string title, string? subtitle, PlaybackRequest? request, PlayerContext? context)
     {
-        if (_mediaPlayer != null)
-        {
-            _mediaPlayer.Playing -= MediaPlayer_StateChanged;
-            _mediaPlayer.Paused -= MediaPlayer_StateChanged;
-            _mediaPlayer.Stopped -= MediaPlayer_StateChanged;
-            _mediaPlayer.EndReached -= MediaPlayer_StateChanged;
-            _mediaPlayer.EncounteredError -= MediaPlayer_StateChanged;
-            _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
-        }
+        _detachPlayer?.Invoke();
+        _detachPlayer = null;
 
         // A different item invalidates any in-flight search, the speed, and Up Next.
         if (!ReferenceEquals(request, _playback))
@@ -145,6 +144,9 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         _mediaPlayer = player;
         _audioApplied = false;
+        ResetBuffering();
+        // Between two files the pointer shows; the next player hides it again.
+        ApplyIdlePointer();
         if (title.Length > 0 || player is null)
         {
             TitleText.Text = title;
@@ -154,12 +156,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         if (_mediaPlayer != null)
         {
-            _mediaPlayer.Playing += MediaPlayer_StateChanged;
-            _mediaPlayer.Paused += MediaPlayer_StateChanged;
-            _mediaPlayer.Stopped += MediaPlayer_StateChanged;
-            _mediaPlayer.EndReached += MediaPlayer_StateChanged;
-            _mediaPlayer.EncounteredError += MediaPlayer_StateChanged;
-            _mediaPlayer.LengthChanged += MediaPlayer_LengthChanged;
+            Attach(_mediaPlayer);
 
             _mediaPlayer.SetRate((float)_baseRate);
             UpdatePlayPauseIcon();
@@ -200,11 +197,13 @@ public sealed partial class PlayerControlsOverlay : UserControl
     private void UserControl_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         TrackPointerDrag(e);
-        ShowControls();
+        // A report at the point the mouse already had is not a move (a4c8561).
+        if (TrackIdlePointer(e)) ShowControls();
     }
 
     private void UserControl_PointerExited(object sender, PointerRoutedEventArgs e)
     {
+        IdlePointerLeft(e);
         HideControls();
     }
 
@@ -580,12 +579,41 @@ public sealed partial class PlayerControlsOverlay : UserControl
         flyout.Items.Add(online);
     }
 
-    private void MediaPlayer_StateChanged(object? sender, EventArgs args)
+    /// <summary>
+    /// LibVLCSharp raises MediaPlayer events with its internal event manager
+    /// as the sender, not the player, so each handler is bound to the player
+    /// it was attached to. That keeps a late event from a replaced player
+    /// apart from the current one's.
+    /// </summary>
+    private void Attach(MediaPlayer player)
+    {
+        EventHandler<EventArgs> stateChanged = (_, _) => MediaPlayer_StateChanged(player);
+        player.Playing += stateChanged;
+        player.Paused += stateChanged;
+        player.Stopped += stateChanged;
+        player.EndReached += stateChanged;
+        player.EncounteredError += stateChanged;
+        player.LengthChanged += MediaPlayer_LengthChanged;
+        var detachBuffering = AttachBuffering(player);
+        _detachPlayer = () =>
+        {
+            detachBuffering();
+            player.Playing -= stateChanged;
+            player.Paused -= stateChanged;
+            player.Stopped -= stateChanged;
+            player.EndReached -= stateChanged;
+            player.EncounteredError -= stateChanged;
+            player.LengthChanged -= MediaPlayer_LengthChanged;
+        };
+    }
+
+    private void MediaPlayer_StateChanged(MediaPlayer player)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (!ReferenceEquals(sender, _mediaPlayer)) return;
+            if (!ReferenceEquals(player, _mediaPlayer)) return;
             UpdatePlayPauseIcon();
+            BufferingStateChanged(player);
             if (_mediaPlayer?.IsPlaying == true)
             {
                 if (!_audioApplied)
@@ -700,6 +728,7 @@ public sealed partial class PlayerControlsOverlay : UserControl
 
         UpdateUpNext(position, duration);
         UpdateSegmentPrompt(position, duration);
+        WatchForStall(_mediaPlayer, duration);
     }
 
     // ------------------------------------------------------------------

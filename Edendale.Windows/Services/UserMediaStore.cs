@@ -51,7 +51,7 @@ public sealed class UserMediaStore
         {
             // A corrupt store starts fresh rather than blocking launch.
         }
-        foreach (var record in _records.Values) _clock.Observe(record.UpdateTime);
+        _clock.ObserveAll(_records.Values.Select(record => record.UpdateTime));
     }
 
     /// <summary>Every record, tombstones included.</summary>
@@ -104,9 +104,11 @@ public sealed class UserMediaStore
 
     /// <summary>
     /// Keeps the watchlist flag of the sync record in step with the watchlist
-    /// store. A change takes a fresh stamp (or <paramref name="stamp"/> when
-    /// the watchlist's own time is adopted at first run); the TMDB push is not
-    /// involved, the watchlist store has its own. Returns whether anything changed.
+    /// store. A change takes a fresh stamp, or <paramref name="stamp"/> when a
+    /// caller adopts a time of its own, which never lowers the record's stamp
+    /// (the whole record is stamped, so a lower one would date a newer
+    /// favourite or rating back). The TMDB push is not involved, the watchlist
+    /// store has its own. Returns whether anything changed.
     /// </summary>
     public bool SetWatchlistMirror(int tmdbId, string mediaType, bool inWatchlist, long? stamp = null, string? title = null, string? posterPath = null)
     {
@@ -120,14 +122,63 @@ public sealed class UserMediaStore
             record.Title ??= title;
             record.PosterPath ??= posterPath;
             record.Watchlist = inWatchlist;
-            record.UpdateTime = stamp is long given && given > 0 ? given : _clock.Stamp();
-            if (stamp is long observed) _clock.Observe(observed);
+            if (stamp is long given && given > 0)
+            {
+                record.UpdateTime = Math.Max(record.EffectiveUpdateTime, given);
+                _clock.Observe(record.UpdateTime);
+            }
+            else
+            {
+                record.UpdateTime = _clock.Stamp();
+            }
             record.Device = _deviceId();
             _records[key] = record;
         }
         Save();
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
+    }
+
+    /// <summary>
+    /// The sync engine's watchlist reconcile at launch (WatchlistLaunchReconcile):
+    /// rows take the watchlist's flag without a fresh stamp, and titles only
+    /// the watchlist lists get a row. A seed's stamp never lowers a row's,
+    /// and a new row carries no device, like every row from before sync.
+    /// One save; not a local edit, so no TMDB push.
+    /// </summary>
+    public void ApplyLaunchSeed(IEnumerable<WatchlistFlagUpdate> seeds)
+    {
+        var changed = false;
+        lock (_gate)
+        {
+            foreach (var seed in seeds)
+            {
+                var key = $"{seed.MediaType}:{seed.TmdbId}";
+                var record = _records.GetValueOrDefault(key);
+                if (record is null)
+                {
+                    if (!seed.InWatchlist) continue;
+                    record = new UserMediaRecord { TmdbId = seed.TmdbId, MediaType = seed.MediaType };
+                }
+                record.Title ??= seed.Title;
+                record.PosterPath ??= seed.PosterPath;
+                record.Watchlist = seed.InWatchlist;
+                if (seed.UpdateTime > record.UpdateTime) record.UpdateTime = seed.UpdateTime;
+                if (!record.HasState && record.UpdateTime == 0)
+                {
+                    _records.Remove(key); // a legacy flag was all it held
+                }
+                else
+                {
+                    _records[key] = record;
+                }
+                changed = true;
+            }
+            if (changed) _clock.ObserveAll(_records.Values.Select(record => record.UpdateTime));
+        }
+        if (!changed) return;
+        Save();
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -147,7 +198,7 @@ public sealed class UserMediaStore
                 if (!record.HasState && record.UpdateTime == 0) continue;
                 _records[record.StorageKey] = record;
             }
-            foreach (var record in _records.Values) _clock.Observe(record.UpdateTime);
+            _clock.ObserveAll(_records.Values.Select(record => record.UpdateTime));
             needsPush = _records.Values.Count(record => record.FavouriteDirty || record.RatingDirty) > before;
         }
         Save();

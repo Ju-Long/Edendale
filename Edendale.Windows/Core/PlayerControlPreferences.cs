@@ -18,7 +18,7 @@ public enum SkipDirection
 }
 
 /// <summary>
-/// Settings → App Controls: how far a skip jumps back and forward, and the
+/// Settings → Player Controls: how far a skip jumps back and forward, and the
 /// speeds a press-and-hold on the left or right of the video engages. Ports
 /// PlayerControlPreferences.swift. Values are device-local and read at every
 /// gesture, so a change applies without restarting playback.

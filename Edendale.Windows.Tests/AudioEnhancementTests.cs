@@ -251,4 +251,105 @@ public sealed class AudioEnhancementTests
         controller.SetUserBandAdjustment(4, 5);
         Assert.IsFalse(controller.IsEffectivelyFlat);
     }
+
+    // ------------------------------------------------------------------
+    // Absolute levels (AudioEnhancementLevelTests.swift, apple-27.1): the
+    // graph and the preamp slider set levels, stored as offsets from the
+    // profile within ±40 dB so every level is reachable from any profile.
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public void ChoosingAProfileMovesTheLevelsToItsCurve()
+    {
+        var controller = NewController();
+        foreach (var profile in AudioEnhancementProfiles.All)
+        {
+            controller.SelectProfile(profile);
+            CollectionAssert.AreEqual(profile.Bands().ToArray(), controller.EffectiveBands.ToArray(), profile.RawValue());
+            Assert.AreEqual(profile.Preamp(), controller.PreampLevel, profile.RawValue());
+        }
+    }
+
+    [TestMethod]
+    public void SettingABandLevelStoresTheOffsetFromTheProfile()
+    {
+        var controller = NewController();
+        controller.SelectProfile(AudioEnhancementProfile.Movies);
+        controller.SetBandLevel(3, 0);
+        Assert.AreEqual(3, controller.EffectiveBands[0]);
+        Assert.AreEqual(3 - 8, controller.UserBandAdjustments[0]);
+        Assert.IsTrue(controller.HasUserAdjustments);
+
+        // Back to the profile's own level: no adjustment is left.
+        controller.SetBandLevel(8, 0);
+        Assert.IsFalse(controller.HasUserAdjustments);
+    }
+
+    [TestMethod]
+    public void EveryLevelIsReachableFromABoostedBand()
+    {
+        var controller = NewController();
+        controller.SelectProfile(AudioEnhancementProfile.Movies);
+        controller.SetBandLevel(-20, 0);
+        Assert.AreEqual(-20, controller.EffectiveBands[0]);
+        controller.SetBandLevel(-99, 0);
+        Assert.AreEqual(-20, controller.EffectiveBands[0]);
+        Assert.AreEqual(-28, controller.UserBandAdjustments[0]);
+
+        controller.SetPreampLevel(20);
+        Assert.AreEqual(20, controller.PreampLevel);
+        controller.SetPreampLevel(-20);
+        Assert.AreEqual(-20, controller.PreampLevel);
+
+        var restored = NewController();
+        Assert.AreEqual(-20, restored.EffectiveBands[0]);
+        Assert.AreEqual(-20, restored.PreampLevel);
+    }
+
+    [TestMethod]
+    public void BoosterAddsGainWithoutMovingThePreampLevel()
+    {
+        var controller = NewController();
+        controller.SelectProfile(AudioEnhancementProfile.Movies);
+        controller.SetPreampLevel(-4);
+        controller.SetBooster(true);
+        Assert.AreEqual(-4, controller.PreampLevel);
+        Assert.AreEqual(-4 + AudioEnhancement.BoosterGain, controller.EffectivePreamp);
+    }
+
+    [TestMethod]
+    public void InvalidLevelsAreIgnored()
+    {
+        var controller = NewController();
+        var bands = controller.EffectiveBands.ToArray();
+        controller.SetBandLevel(double.NaN, 0);
+        controller.SetBandLevel(5, AudioEnhancementProfiles.BandCount);
+        controller.SetBandLevel(5, -1);
+        controller.SetPreampLevel(double.PositiveInfinity);
+        CollectionAssert.AreEqual(bands, controller.EffectiveBands.ToArray());
+        Assert.AreEqual(controller.SelectedProfile.Preamp(), controller.PreampLevel);
+        Assert.IsFalse(controller.HasUserAdjustments);
+    }
+
+    [TestMethod]
+    public void ClampAdjustmentKeepsOffsetsWithinFortyDecibels()
+    {
+        Assert.AreEqual(-40, AudioEnhancementProfiles.ClampAdjustment(-99));
+        Assert.AreEqual(40, AudioEnhancementProfiles.ClampAdjustment(99));
+        Assert.AreEqual(-28, AudioEnhancementProfiles.ClampAdjustment(-28));
+        Assert.AreEqual(0, AudioEnhancementProfiles.ClampAdjustment(double.NaN));
+        Assert.AreEqual(0, AudioEnhancementProfiles.ClampAdjustment(double.PositiveInfinity));
+    }
+
+    [TestMethod]
+    public void StoredOffsetsBeyondTwentySurviveAReload()
+    {
+        File.WriteAllText(_path, """{ "audio.enhancementPreamp": 28, "audio.enhancementBands": [-28, 0, 0, 0, 0, 0, 0, 0, 0, 0] }""");
+        var controller = NewController();
+        Assert.AreEqual(28, controller.UserPreampAdjustment);
+        Assert.AreEqual(-28, controller.UserBandAdjustments[0]);
+        Assert.AreEqual(AudioEnhancementProfile.Movies, controller.SelectedProfile);
+        Assert.AreEqual(-20, controller.EffectiveBands[0]);
+        Assert.AreEqual(20, controller.PreampLevel);
+    }
 }

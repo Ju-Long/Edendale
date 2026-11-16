@@ -33,6 +33,12 @@ public sealed class HandoffHostListener : IDisposable
 {
     public const string ServiceType = "_edendale-handoff._tcp";
 
+    /// <summary>
+    /// How long DNS-SD registration may take before the code is shown
+    /// without it: the QR code and the address on screen still reach this PC.
+    /// </summary>
+    public static readonly TimeSpan RegistrationTimeout = TimeSpan.FromSeconds(5);
+
     private readonly StreamSocketListener _listener = new();
     private readonly Func<Stream, Task> _serve;
     private DnssdServiceInstance? _service;
@@ -62,7 +68,9 @@ public sealed class HandoffHostListener : IDisposable
             _service.TextAttributes["v"] = HandoffFrames.Version.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _service.TextAttributes["name"] = deviceName;
             _service.TextAttributes["platform"] = SyncFormat.WindowsPlatform;
-            var registration = await _service.RegisterStreamSocketListenerAsync(_listener);
+            // Bounded: a registration that never answers would otherwise keep the code off screen.
+            using var deadline = new CancellationTokenSource(RegistrationTimeout);
+            var registration = await _service.RegisterStreamSocketListenerAsync(_listener).AsTask(deadline.Token).WaitAsync(RegistrationTimeout);
             IsAdvertised = registration.Status == DnssdRegistrationStatus.Success;
         }
         catch (Exception error)
@@ -213,11 +221,19 @@ public sealed class HandoffBrowser : IDisposable
 public static class HandoffConnections
 {
     /// <summary>A TCP connection to a host, within the handshake timeout.</summary>
-    public static async Task<(Stream Stream, IDisposable Connection)> ConnectAsync(string host, int port, CancellationToken cancellation)
+    public static Task<(Stream Stream, IDisposable Connection)> ConnectAsync(string host, int port, CancellationToken cancellation) =>
+        ConnectAsync(host, port, HandoffFrames.HandshakeTimeout, cancellation);
+
+    /// <summary>
+    /// A TCP connection to a host within <paramref name="limit"/>; a refusal
+    /// or the limit passing is <see cref="HandoffError.ConnectionFailed"/>,
+    /// so a scanned code's address can give way to browsing (<see cref="HandoffTargets"/>).
+    /// </summary>
+    public static async Task<(Stream Stream, IDisposable Connection)> ConnectAsync(string host, int port, TimeSpan limit, CancellationToken cancellation)
     {
         var client = new TcpClient();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
-        timeout.CancelAfter(HandoffFrames.HandshakeTimeout);
+        timeout.CancelAfter(limit);
         try
         {
             await client.ConnectAsync(host, port, timeout.Token);
@@ -244,8 +260,11 @@ public static class HandoffConnections
 
     /// <summary>
     /// This PC's address on the local network for the QR code's `h`: the
-    /// first private IPv4 address of an interface that is up, Ethernet and
-    /// Wi-Fi first.
+    /// first private IPv4 address of an interface that is up, those with an
+    /// IPv4 default gateway first, then Ethernet and Wi-Fi. Hyper-V and WSL
+    /// switches are Ethernet-typed too, but have no gateway, and an address
+    /// on one is unreachable from a phone. A wrong guess costs the guest 10
+    /// seconds before it browses instead (<see cref="HandoffTargets"/>).
     /// </summary>
     public static string? LocalAddress()
     {
@@ -254,8 +273,10 @@ public static class HandoffConnections
             return NetworkInterface.GetAllNetworkInterfaces()
                 .Where(adapter => adapter.OperationalStatus == OperationalStatus.Up
                     && adapter.NetworkInterfaceType is not (NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel))
-                .OrderBy(adapter => adapter.NetworkInterfaceType is NetworkInterfaceType.Ethernet or NetworkInterfaceType.Wireless80211 ? 0 : 1)
-                .SelectMany(adapter => adapter.GetIPProperties().UnicastAddresses)
+                .Select(adapter => (Adapter: adapter, Properties: adapter.GetIPProperties()))
+                .OrderBy(entry => HasIPv4Gateway(entry.Properties) ? 0 : 1)
+                .ThenBy(entry => entry.Adapter.NetworkInterfaceType is NetworkInterfaceType.Ethernet or NetworkInterfaceType.Wireless80211 ? 0 : 1)
+                .SelectMany(entry => entry.Properties.UnicastAddresses)
                 .Select(unicast => unicast.Address)
                 .Where(address => address.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(address) && IsPrivate(address))
                 .Select(address => address.ToString())
@@ -266,6 +287,9 @@ public static class HandoffConnections
             return null;
         }
     }
+
+    private static bool HasIPv4Gateway(IPInterfaceProperties properties) =>
+        properties.GatewayAddresses.Any(gateway => gateway.Address.AddressFamily == AddressFamily.InterNetwork && !gateway.Address.Equals(IPAddress.Any));
 
     private static bool IsPrivate(IPAddress address)
     {

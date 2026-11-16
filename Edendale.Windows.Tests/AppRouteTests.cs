@@ -145,4 +145,37 @@ public sealed class AppRouteTests
         Assert.IsNull(Parse("edendale://delete/movie/603"));
         Assert.IsNull(Parse("edendale://"));
     }
+
+    // ------------------------------------------------------------------
+    // handoff: the pairing QR code opened as a link (§9.3)
+    // ------------------------------------------------------------------
+
+    private const string Secret = "AAECAwQFBgcICQoLDA0ODw";
+    private const string Key = "hSDwCYkwp1R0i33ctD73Wg2_Og0mOBr066SpjqqbTmo";
+
+    [TestMethod]
+    public void Handoff_OpensAPairingCode()
+    {
+        var route = Parse($"edendale://handoff?v=2&n=Living%20Room%20TV&k={Key}&s={Secret}") as AppRoute.Handoff;
+        Assert.IsNotNull(route);
+        Assert.AreEqual("Living Room TV", route.Code.Name);
+    }
+
+    [TestMethod]
+    public void Handoff_NeverPrintsTheSecret()
+    {
+        var route = Parse($"edendale://handoff?v=2&n=TV&h=192.168.1.20&p=50123&k={Key}&s={Secret}")!;
+        Assert.IsFalse(route.ToString().Contains(Secret));
+        Assert.IsFalse(((AppRoute.Handoff)route).Code.ToString().Contains(Secret));
+        Assert.IsFalse(((AppRoute.Handoff)route).Code.ToString().Contains("192.168.1.20"));
+    }
+
+    [TestMethod]
+    public void Handoff_RefusesAnythingButAVersion2Code()
+    {
+        Assert.IsNull(Parse("edendale://handoff?v=1&k=x&s=y"), "a bad code is a bad link");
+        Assert.IsNull(Parse($"edendale://handoff?v=2&n=TV&k={Key}"), "no secret");
+        Assert.IsFalse(Parse($"https://edendale.babasama.com/handoff?v=2&n=TV&k={Key}&s={Secret}") is AppRoute.Handoff,
+            "a web link never starts a pairing");
+    }
 }

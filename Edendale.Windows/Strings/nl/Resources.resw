@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Zoek</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>INSTELLINGEN</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>OVER</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Versie</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Windows-kern</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>TMDB-referenties</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Kijkvoortgang</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>GEGEVENSMAP OPENEN</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>VERMELDINGEN</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale maakt verbinding met TMDB voor artwork en metadata, met de bronnen die je koppelt om je bestanden te tonen en af te spelen, met Wyzie Subs als je ondertitels zoekt, met TheIntroDB alleen zolang overslaan voorstellen aanstaat, en met de privacyvriendelijke YouTube-embed als je een trailer afspeelt. Nooit analytics.</value>
+    <value>Edendale maakt verbinding met TMDB voor artwork en metadata, met de bronnen die je koppelt om je bestanden te tonen en af te spelen, met de synchronisatielocatie die je kiest, met je andere apparaten op het lokale netwerk zolang een koppelscherm open is, met Wyzie Subs als je ondertitels zoekt, en met TheIntroDB alleen zolang overslaan voorstellen aanstaat. Een trailer opent op YouTube in je browser. Nooit analytics.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>HET ARCHIEF LADEN</value>
@@ -267,12 +252,6 @@
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Doorzoek het archief naar films, series en de mensen die ze hebben gemaakt.</value>
-  </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Verwijder</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Verwijder</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>DE BIBLIOTHEEK
@@ -552,7 +531,7 @@ IS STIL</value>
     <value>Ontworpen voor privacy</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>Je bibliotheekindex en kijkvoortgang blijven op dit apparaat. Edendale neemt contact op met TMDB voor artwork en metadata, en verder alleen met wat jij kiest: de bronnen die je koppelt, ondertitelzoekopdrachten, overslaan voorstellen als dat aanstaat en trailers die je afspeelt. Verder wordt niets verstuurd.</value>
+    <value>Je bibliotheekindex blijft op dit apparaat. Edendale neemt contact op met TMDB voor artwork en metadata, en verder alleen met wat jij kiest: de bronnen die je koppelt, de synchronisatielocatie die je kiest in Instellingen → Synchronisatie, ondertitelzoekopdrachten, overslaan voorstellen als dat aanstaat en trailers die je afspeelt. Verder wordt niets verstuurd.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Kies een dag en vervolgens een tweede dag om het bereik te sluiten.</value>
@@ -617,12 +596,6 @@ IS STIL</value>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>ontwikkelversie</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Geconfigureerd</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Ontbreekt — voer init.ps1 uit en bouw Edendale opnieuw</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Gerepliceerd naar {0}</value>
   </data>
@@ -631,9 +604,6 @@ IS STIL</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>Kan het opstartitem niet bijwerken — Windows heeft de registerwijziging geweigerd.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>Niet beschikbaar — TMDB-referenties ontbreken</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Verbonden als {0}</value>
@@ -832,9 +802,6 @@ IS STIL</value>
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Verwijderen uit kijklijst</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>PUBLIEK</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Geschikt voor jong publiek</value>
@@ -1085,9 +1052,6 @@ IS STIL</value>
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>Superresolutie vereist dat Edendale op de dedicated videokaart draait. Stel Edendale in via Windows-instellingen › Systeem › Beeldscherm › Grafische instellingen op Hoge prestaties.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>APPBEDIENING</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Terugspringen</value>
   </data>
@@ -1115,17 +1079,11 @@ IS STIL</value>
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Vooruitspringen, {0} seconden</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>OVERSLAAN VOORSTELLEN</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Overslaan van intro, samenvatting en aftiteling voorstellen</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Overslaan voorstellen</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>Indien ingeschakeld ontvangt TheIntroDB de TMDB-ID van de titel, afleveringsnummers, de videoduur en je IP-adres. Overslaan gebeurt altijd pas na een druk op de knop.</value>
+    <value>Indien ingeschakeld ontvangt TheIntroDB de TMDB-ID van de titel, afleveringsnummers, de videoduur en je IP-adres.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>AUDIOVERBETERING</value>
@@ -1145,12 +1103,6 @@ IS STIL</value>
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Equalizer tonen</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Equalizer verbergen</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Vlak</value>
   </data>
@@ -1165,9 +1117,6 @@ IS STIL</value>
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Nachtmodus</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>ONDERTITELS</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Zo zien ondertitels eruit.</value>
@@ -1406,9 +1355,6 @@ IS STIL</value>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>Tv-series</value>
   </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>ACCOUNTS</value>
-  </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>Geen bewaarde logins</value>
   </data>
@@ -1494,10 +1440,10 @@ IS STIL</value>
     <value>Voer de server en export in, bijvoorbeeld nas.local/export/video. De export moet verbindingen vanaf niet-geprivilegieerde poorten toestaan (de optie ‘insecure’).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Je browser opent om bij Microsoft in te loggen. Edendale vraagt alleen om je bestanden te lezen en houdt dit account gescheiden van de OneDrive-map waarnaar het je kijkgeschiedenis kopieert.</value>
+    <value>Je browser opent om bij Microsoft in te loggen. Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen naar zijn eigen map Apps/Edendale, als je daar synchroniseert.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Je browser opent om bij Dropbox in te loggen. Edendale vraagt alleen om je bestanden en accountnaam te lezen.</value>
+    <value>Je browser opent om bij Dropbox in te loggen. Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen zijn synchronisatiebestanden, in de map Edendale, als je daar synchroniseert.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Inloggen</value>
@@ -1620,7 +1566,7 @@ IS STIL</value>
     <value>Werkt bij video van 30 fps of minder, tot 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Je browser opent om bij Google in te loggen. Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die video’s, maakt alleen verbinding vanaf dit apparaat en uploadt of wijzigt nooit iets.</value>
+    <value>Je browser opent om bij Google in te loggen. Na het inloggen opent de kiezer van Google: kies de video’s die Edendale mag afspelen. Edendale ziet alleen die en de synchronisatiebestanden die het zelf maakt, maakt alleen vanaf dit apparaat verbinding en verandert verder niets.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive heeft dit bestand als mogelijk schadelijk gemarkeerd, dus het kan niet worden gestreamd.</value>
@@ -1668,7 +1614,7 @@ IS STIL</value>
     <value>LOCATIE KIEZEN…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>KOPPELEN MET ANDER APPARAAT…</value>
+    <value>ONTVANGEN VAN EEN ANDER APPARAAT…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>ANDER APPARAAT INSTELLEN…</value>
@@ -1677,7 +1623,7 @@ IS STIL</value>
     <value>Ander apparaat instellen</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Koppelen met ander apparaat</value>
+    <value>Ontvangen van een ander apparaat</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Locatie</value>
@@ -1770,7 +1716,7 @@ IS STIL</value>
     <value>Kies de map die dit apparaat voor de ruimte “{0}” moet gebruiken.</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Log in bij Google als {0} om de ruimte “{1}” te gebruiken.</value>
+    <value>Log in bij Google Drive als {0} om deel te nemen aan de ruimte “{1}”.</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>Welke kant moeten de logins op?</value>
@@ -1780,9 +1726,6 @@ IS STIL</value>
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Ontvangen op dit apparaat</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>Open op het andere apparaat Instellingen → Synchronisatie → Koppelen met ander apparaat, scan dan deze code met zijn camera of voer het nummer in.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>Of voer deze code in op het andere apparaat</value>
@@ -1877,9 +1820,6 @@ IS STIL</value>
   <data name="Sync_ServerNeedsLogin" xml:space="preserve">
     <value>Koppel deze server eerst bij Bronnen, zodat de login en bij SFTP de hostsleutel op deze pc zijn opgeslagen.</value>
   </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Koppel een cloudaccount of server eerst bij Bronnen om erlangs te synchroniseren.</value>
-  </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>Het oude synchronisatiebestand van deze pc verwijderen?</value>
   </data>
@@ -1960,5 +1900,149 @@ IS STIL</value>
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>INLOGGEN</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>Algemeen</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Spelerbediening</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Ondertitels</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Bibliotheek</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Synchronisatie</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Ouderlijk toezicht</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>Over</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Instellingen</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>TIJDSTEMPELS VAN THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>BEDIENING</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>AFSPELEN</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>WEERGAVE</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>BEWAARDE ONDERTITELS</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>GEKOPPELDE ACCOUNTS</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Toon knoppen om intro’s, samenvattingen en aftiteling over te slaan als er tijdstempels van de community beschikbaar zijn. Het afspelen gaat door totdat je kiest om over te slaan.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Equalizer</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
+  </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>Het synchronisatiebestand van {0} kon niet uit de cloud worden gedownload. Controleer of de app die deze map synchroniseert actief is en of Windows Edendale bestanden laat downloaden.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>{0} kon niet worden bewaard ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>{0} kon niet worden bewaard.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Synchronisatielocatie</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>{0}-account</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>{0}-login voor {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Log in bij Google Drive om deel te nemen aan de ruimte “{0}”.</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>Koppelen met {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Verstuur de synchronisatielocatie en logins van dit apparaat naar het andere apparaat, of ontvang die van het andere apparaat.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Verzenden vanaf dit apparaat</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Ontvangen op dit apparaat</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Scan deze code met Edendale op het andere apparaat, via Instellingen → Synchronisatie → {0}. Elke twee minuten verschijnt een nieuwe code.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} heeft Edendale niet toegestaan zijn synchronisatiebestanden te schrijven. Log opnieuw in en sta die toegang toe.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Log opnieuw in zodat Edendale hier zijn synchronisatiebestanden kan schrijven.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>Je hoeft niets te kiezen: Edendale bewaart zijn synchronisatiebestanden in een Edendale-map die het zelf in je Google Drive maakt. Het ziet alleen de bestanden die het zelf maakt, maakt alleen vanaf dit apparaat verbinding en verandert verder niets.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen naar zijn eigen map Apps/Edendale, als je daar synchroniseert.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale leest mapinhoud en de video’s die je afspeelt, maakt alleen vanaf dit apparaat verbinding en schrijft alleen zijn synchronisatiebestanden, in de map Edendale, als je daar synchroniseert.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Koppel een WebDAV-, SMB- of SFTP-server waarvoor je moet inloggen eerst bij Bronnen om erlangs te synchroniseren.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale kon het bestand van dit apparaat niet uit {0} verwijderen.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Sluit het geopende dialoogvenster en open de koppellink daarna opnieuw.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Verwijderen uit {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Laatst afgespeeld</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Kiest van welke bron deze titel wordt afgespeeld.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Speelt deze aflevering af.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Kiest van welke bron deze aflevering wordt afgespeeld.</value>
+  </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>Voortgang wissen</value>
+  </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>Alles</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Secties van Gedownload</value>
+  </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bufferen</value>
   </data>
 </root>

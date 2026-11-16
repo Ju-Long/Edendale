@@ -64,8 +64,11 @@ public static class AppServices
         UserMedia,
         Watchlist,
         settings => Sync.SyncLocationFactory.Create(settings, Connectors, ConnectSmbAsync),
-        ResolveEpisode,
-        AppVersion);
+        Library.EpisodeIndex,
+        AppVersion)
+    {
+        FollowMovedFolder = FollowMovedSyncFolderAsync,
+    };
 
     /// <summary>The app version a device file names (informational, §5).</summary>
     public static string AppVersion =>
@@ -78,14 +81,29 @@ public static class AppServices
         Task.Run(() => NetworkShare.TryConnect(uncPath, SmbCredentials), cancellation);
 
     /// <summary>
-    /// An episode from another device arrives as show, season, and episode;
-    /// the library knows its own TMDB id once the show is matched.
+    /// K.7: a picked sync folder that was moved or renamed is found again
+    /// through the future-access token saved when it was picked. Only a
+    /// packaged build has one; elsewhere there is nothing to follow.
     /// </summary>
-    private static int? ResolveEpisode(int showTmdbId, int season, int episode) =>
-        Library.Shows
-            .Where(show => show.TmdbId == showTmdbId)
-            .SelectMany(show => show.Episodes)
-            .FirstOrDefault(item => item.Season == season && item.Episode == episode && item.TmdbId is not null)?.TmdbId;
+    private static async Task<string?> FollowMovedSyncFolderAsync(Sync.SyncLocationSettings settings, CancellationToken cancellation)
+    {
+        if (settings.FutureAccessToken is not { Length: > 0 } token) return null;
+        try
+        {
+            var list = global::Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList;
+            if (!list.ContainsItem(token)) return null;
+            var folder = await list.GetFolderAsync(token).AsTask(cancellation).ConfigureAwait(false);
+            return folder.Path;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // No package identity, or the folder itself is gone.
+            return null;
+        }
+    }
+
+    /// <summary>Episodes from other devices wait for the library to learn their ids; this coalesces its changes.</summary>
+    private static Timer? _episodeResolve;
 
     /// <summary>App-wide PG / PG-13 audience preference and certification cache.</summary>
     public static YoungAudienceFilter YoungAudience { get; } = new();
@@ -95,13 +113,13 @@ public static class AppServices
     /// <summary>Device-local player preferences (player-settings.json), never replicated.</summary>
     public static PlayerSettingsStore PlayerSettings { get; } = new();
 
-    /// <summary>Settings → App Controls: skip lengths and hold speeds.</summary>
+    /// <summary>Settings → Player Controls: skip lengths and hold speeds.</summary>
     public static Core.PlayerControlPreferences Controls { get; } = new(PlayerSettings);
 
     /// <summary>Loop, Fit/Fill, skip prompts, and the per-title track memory.</summary>
     public static Core.PlayerPreferences PlayerPreferences { get; } = new(PlayerSettings);
 
-    /// <summary>Settings → Audio Enhancement and the booster.</summary>
+    /// <summary>Settings → Audio and the booster.</summary>
     public static Core.AudioEnhancement AudioEnhancement { get; } = new(PlayerSettings);
 
     /// <summary>Player Adjustments → Picture.</summary>
@@ -137,12 +155,21 @@ public static class AppServices
         return accounts + sources > 0;
     }
 
-    /// <summary>Launch-time side effects: file sync (with the one-time replica import) and TMDB account sync.</summary>
+    /// <summary>Launch-time side effects: file sync (with the one-time replica import), the library's TMDB sweep, and TMDB account sync.</summary>
     public static void StartBackgroundSync()
     {
         FileSync.Start();
-        // Episodes received before their show was matched pick up their ids as the library fills in.
-        Library.Changed += (_, _) => WatchProgress.ResolveEpisodeIds(ResolveEpisode);
+        // Episodes received before their show was matched pick up their ids
+        // as the library fills in: once the library has been quiet for 2 s,
+        // and off the UI thread, since a scan raises Changed many times.
+        _episodeResolve = new Timer(_ =>
+        {
+            if (WatchProgress.HasUnresolvedEpisodes) WatchProgress.ResolveEpisodeIds(Library.EpisodeIndex());
+        });
+        Library.Changed += (_, _) => _episodeResolve.Change(TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+        // Titles a previous launch left unmatched (quit mid-import, offline)
+        // are looked up again without waiting for a visit to Downloaded.
+        _ = Library.EnrichPendingMetadata();
         Account.SyncOnLaunch();
 
         // The watchlist has its own cloud-priority sync: once at launch and

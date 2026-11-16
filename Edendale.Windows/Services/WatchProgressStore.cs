@@ -165,6 +165,7 @@ public sealed class WatchProgressStore
         lock (_gate)
         {
             var existing = Find(tmdbId, mediaType, showTmdbId, seasonNumber, episodeNumber);
+            var (show, season, episode) = Context(mediaType, existing, showTmdbId, seasonNumber, episodeNumber);
             var record = new WatchProgress
             {
                 TmdbId = tmdbId,
@@ -174,9 +175,9 @@ public sealed class WatchProgressStore
                 WatchedSeconds = existing?.DurationSeconds > 0 ? existing.DurationSeconds : existing?.WatchedSeconds ?? 0,
                 DurationSeconds = existing?.DurationSeconds ?? 0,
                 IsCompleted = true,
-                ShowTmdbId = showTmdbId ?? existing?.ShowTmdbId,
-                SeasonNumber = seasonNumber ?? existing?.SeasonNumber,
-                EpisodeNumber = episodeNumber ?? existing?.EpisodeNumber,
+                ShowTmdbId = show,
+                SeasonNumber = season,
+                EpisodeNumber = episode,
             };
             InheritShowInfo(record);
             Stamp(record);
@@ -199,14 +200,15 @@ public sealed class WatchProgressStore
             {
                 return; // Nothing to clear, and nothing another device could know about.
             }
+            var (show, season, episode) = Context(mediaType, existing, showTmdbId, seasonNumber, episodeNumber);
             var tombstone = new WatchProgress
             {
                 TmdbId = tmdbId,
                 MediaType = mediaType,
                 IsCleared = true,
-                ShowTmdbId = showTmdbId ?? existing?.ShowTmdbId,
-                SeasonNumber = seasonNumber ?? existing?.SeasonNumber,
-                EpisodeNumber = episodeNumber ?? existing?.EpisodeNumber,
+                ShowTmdbId = show,
+                SeasonNumber = season,
+                EpisodeNumber = episode,
             };
             InheritShowInfo(tombstone);
             Stamp(tombstone);
@@ -234,21 +236,30 @@ public sealed class WatchProgressStore
         RaiseChanged(local: false);
     }
 
+    /// <summary>Whether an episode received from another device still waits for this PC's id.</summary>
+    public bool HasUnresolvedEpisodes
+    {
+        get
+        {
+            lock (_gate) return _records.Values.Any(record => record is { MediaType: "episode", TmdbId: 0, IsSyncable: true });
+        }
+    }
+
     /// <summary>
-    /// Fills in the TMDB ids of episodes received from other devices, from
-    /// <paramref name="resolve"/> (show, season, episode → episode id). Returns
+    /// Fills in the TMDB ids of episodes received from other devices from
+    /// the library's <paramref name="index"/> by sync key
+    /// (<c>tv:&lt;show&gt;:&lt;season&gt;:&lt;episode&gt;</c>, SyncEpisodeIndex). Returns
     /// how many were matched.
     /// </summary>
-    public int ResolveEpisodeIds(Func<int, int, int, int?> resolve)
+    public int ResolveEpisodeIds(IReadOnlyDictionary<string, int> index)
     {
         var resolved = 0;
         lock (_gate)
         {
-            foreach (var record in _records.Values.ToList())
+            foreach (var record in _records.Values)
             {
-                if (record.MediaType != "episode" || record.TmdbId != 0) continue;
-                if (record is not { ShowTmdbId: int show, SeasonNumber: int season, EpisodeNumber: int episode }) continue;
-                if (resolve(show, season, episode) is not int id || id <= 0) continue;
+                if (record is not { MediaType: "episode", TmdbId: 0, IsSyncable: true }) continue;
+                if (!index.TryGetValue(record.SyncKey, out var id) || id <= 0) continue;
                 record.TmdbId = id;
                 _episodes[id] = record;
                 resolved++;
@@ -265,6 +276,22 @@ public sealed class WatchProgressStore
     // ------------------------------------------------------------------
     // Internals
     // ------------------------------------------------------------------
+
+    /// <summary>
+    /// The show, season, and episode a mark or a removal writes. For an
+    /// episode, what its row already has wins and the caller's fills only
+    /// what it lacks (WatchProgressStore.markCompleted on apple-27.1:
+    /// "context a row already has is kept"), so a mark never re-keys a row
+    /// and leaves its old sync key behind without a tombstone, which another
+    /// device's copy would bring back.
+    /// </summary>
+    private static (int? Show, int? Season, int? Episode) Context(
+        string mediaType, WatchProgress? existing, int? showTmdbId, int? seasonNumber, int? episodeNumber) =>
+        mediaType == "episode"
+            ? (existing?.ShowTmdbId is > 0 ? existing.ShowTmdbId : showTmdbId ?? existing?.ShowTmdbId,
+                existing?.SeasonNumber ?? seasonNumber,
+                existing?.EpisodeNumber ?? episodeNumber)
+            : (showTmdbId ?? existing?.ShowTmdbId, seasonNumber ?? existing?.SeasonNumber, episodeNumber ?? existing?.EpisodeNumber);
 
     private WatchProgress? Find(int tmdbId, string mediaType, int? showTmdbId, int? seasonNumber, int? episodeNumber)
     {

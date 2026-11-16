@@ -70,20 +70,8 @@
   <data name="SearchNavItem.Content" xml:space="preserve">
     <value>Buscar</value>
   </data>
-  <data name="SettingsTitle.Text" xml:space="preserve">
-    <value>CONFIGURACIÓN</value>
-  </data>
-  <data name="SettingsAboutHeader.Text" xml:space="preserve">
-    <value>ACERCA DE</value>
-  </data>
   <data name="SettingsVersionLabel.Text" xml:space="preserve">
     <value>Versión</value>
-  </data>
-  <data name="SettingsWindowsCoreLabel.Text" xml:space="preserve">
-    <value>Núcleo de Windows</value>
-  </data>
-  <data name="SettingsTmdbCredentialsLabel.Text" xml:space="preserve">
-    <value>Credenciales de TMDB</value>
   </data>
   <data name="SettingsWatchProgressLabel.Text" xml:space="preserve">
     <value>Progreso de visualización</value>
@@ -157,14 +145,11 @@
   <data name="OpenDataFolderLabel.Text" xml:space="preserve">
     <value>ABRIR CARPETA DE DATOS</value>
   </data>
-  <data name="SettingsAttributionHeader.Text" xml:space="preserve">
-    <value>ATRIBUCIÓN</value>
-  </data>
   <data name="TmdbAttribution.Text" xml:space="preserve">
     <value>Este producto utiliza la API de TMDB, pero no está avalado ni certificado por TMDB.</value>
   </data>
   <data name="SettingsNetworkNote.Text" xml:space="preserve">
-    <value>Edendale se conecta a TMDB para ilustraciones y metadatos, a las fuentes que vinculas para listar y reproducir tus archivos, a Wyzie Subs cuando buscas subtítulos, a TheIntroDB solo mientras los avisos para saltar están activados y a la inserción de YouTube con privacidad mejorada cuando reproduces un tráiler. Nunca hay analíticas.</value>
+    <value>Edendale se conecta a TMDB para ilustraciones y metadatos, a las fuentes que vinculas para listar y reproducir tus archivos, a la ubicación de sincronización que eliges, a tus otros dispositivos de la red local mientras hay una pantalla de emparejamiento abierta, a Wyzie Subs cuando buscas subtítulos y a TheIntroDB solo mientras los avisos para saltar están activados. Los tráileres se abren en YouTube en tu navegador. Nunca hay analíticas.</value>
   </data>
   <data name="LoadingTheArchive.Text" xml:space="preserve">
     <value>CARGANDO EL ARCHIVO</value>
@@ -267,12 +252,6 @@
   </data>
   <data name="SearchIdleMessage.Text" xml:space="preserve">
     <value>Busca en el archivo películas, series y las personas que las hicieron.</value>
-  </data>
-  <data name="RemoveMovieMenuItem.Text" xml:space="preserve">
-    <value>Eliminar</value>
-  </data>
-  <data name="RemoveShowMenuItem.Text" xml:space="preserve">
-    <value>Eliminar</value>
   </data>
   <data name="LibraryIsSilentTitle.Text" xml:space="preserve">
     <value>LA BIBLIOTECA
@@ -552,7 +531,7 @@ ESTÁ EN SILENCIO</value>
     <value>Privacidad desde el diseño</value>
   </data>
   <data name="Privacy_Body" xml:space="preserve">
-    <value>El índice de tu biblioteca y tu progreso de visionado se quedan en este dispositivo. Edendale contacta con TMDB para ilustraciones y metadatos y, por lo demás, solo con lo que tú eliges: las fuentes que vinculas, las búsquedas de subtítulos, los avisos para saltar cuando están activados y los tráileres que reproduces. No se envía nada más.</value>
+    <value>El índice de tu biblioteca se queda en este dispositivo. Edendale contacta con TMDB para ilustraciones y metadatos y, por lo demás, solo con lo que tú eliges: las fuentes que vinculas, la ubicación de sincronización que eliges en Configuración → Sincronización, las búsquedas de subtítulos, los avisos para saltar cuando están activados y los tráileres que reproduces. No se envía nada más.</value>
   </data>
   <data name="Heatmap_PickFirstDay" xml:space="preserve">
     <value>Elige un día y, a continuación, un segundo día para cerrar el intervalo.</value>
@@ -617,12 +596,6 @@ ESTÁ EN SILENCIO</value>
   <data name="Settings_DevelopmentBuild" xml:space="preserve">
     <value>compilación de desarrollo</value>
   </data>
-  <data name="Settings_Configured" xml:space="preserve">
-    <value>Configurado</value>
-  </data>
-  <data name="Settings_CredentialsMissing" xml:space="preserve">
-    <value>Faltan — ejecuta init.ps1 y vuelve a compilar Edendale</value>
-  </data>
   <data name="Settings_ReplicatedTo" xml:space="preserve">
     <value>Replicado en {0}</value>
   </data>
@@ -631,9 +604,6 @@ ESTÁ EN SILENCIO</value>
   </data>
   <data name="Settings_StartupRefused" xml:space="preserve">
     <value>No se pudo actualizar la entrada de inicio — Windows rechazó el cambio en el registro.</value>
-  </data>
-  <data name="Settings_TmdbUnavailable" xml:space="preserve">
-    <value>No disponible — faltan las credenciales de TMDB</value>
   </data>
   <data name="Settings_ConnectedAs" xml:space="preserve">
     <value>Conectado como {0}</value>
@@ -832,9 +802,6 @@ ESTÁ EN SILENCIO</value>
   </data>
   <data name="RemoveFromWatchlistMenuItem.Text" xml:space="preserve">
     <value>Quitar de la lista de seguimiento</value>
-  </data>
-  <data name="SettingsAudienceHeader.Text" xml:space="preserve">
-    <value>AUDIENCIA</value>
   </data>
   <data name="SettingsYoungAudienceLabel.Text" xml:space="preserve">
     <value>Apto para público joven</value>
@@ -1085,9 +1052,6 @@ ESTÁ EN SILENCIO</value>
   <data name="Enhancement_HybridLaptop" xml:space="preserve">
     <value>La superresolución necesita que Edendale use la tarjeta gráfica dedicada. En Configuración de Windows › Sistema › Pantalla › Gráficos, elige Alto rendimiento para Edendale.</value>
   </data>
-  <data name="SettingsAppControlsHeader.Text" xml:space="preserve">
-    <value>CONTROLES DE LA APP</value>
-  </data>
   <data name="SettingsSkipBackLabel.Text" xml:space="preserve">
     <value>Retroceder</value>
   </data>
@@ -1115,17 +1079,11 @@ ESTÁ EN SILENCIO</value>
   <data name="Settings_SkipForwardSeconds" xml:space="preserve">
     <value>Avanzar, {0} segundos</value>
   </data>
-  <data name="SettingsSkipPromptsHeader.Text" xml:space="preserve">
-    <value>AVISOS PARA SALTAR</value>
-  </data>
   <data name="SettingsSkipPromptsLabel.Text" xml:space="preserve">
-    <value>Ofrecer saltar intro, resumen y créditos</value>
-  </data>
-  <data name="SettingsSkipPromptsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Avisos para saltar</value>
   </data>
   <data name="SettingsSkipPromptsPrivacy.Text" xml:space="preserve">
-    <value>Si lo activas, TheIntroDB recibe el ID de TMDB del título, los números de episodio, la duración del vídeo y tu dirección IP. Saltar siempre requiere pulsar un botón.</value>
+    <value>Si lo activas, TheIntroDB recibe el ID de TMDB del título, los números de episodio, la duración del vídeo y tu dirección IP.</value>
   </data>
   <data name="SettingsAudioEnhancementHeader.Text" xml:space="preserve">
     <value>MEJORA DE AUDIO</value>
@@ -1145,12 +1103,6 @@ ESTÁ EN SILENCIO</value>
   <data name="Audio_BandHertz" xml:space="preserve">
     <value>{0} Hz</value>
   </data>
-  <data name="Audio_ShowEqualizer" xml:space="preserve">
-    <value>Mostrar ecualizador</value>
-  </data>
-  <data name="Audio_HideEqualizer" xml:space="preserve">
-    <value>Ocultar ecualizador</value>
-  </data>
   <data name="Audio_ProfileFlat" xml:space="preserve">
     <value>Plano</value>
   </data>
@@ -1165,9 +1117,6 @@ ESTÁ EN SILENCIO</value>
   </data>
   <data name="Audio_ProfileNightMode" xml:space="preserve">
     <value>Modo nocturno</value>
-  </data>
-  <data name="SettingsSubtitlesHeader.Text" xml:space="preserve">
-    <value>SUBTÍTULOS</value>
   </data>
   <data name="SettingsSubtitlePreviewText.Text" xml:space="preserve">
     <value>Así se verán los subtítulos.</value>
@@ -1406,9 +1355,6 @@ ESTÁ EN SILENCIO</value>
   <data name="WatchlistShowsNavItem.Content" xml:space="preserve">
     <value>Series de TV</value>
   </data>
-  <data name="SettingsAccountsHeader.Text" xml:space="preserve">
-    <value>CUENTAS</value>
-  </data>
   <data name="SettingsNoAccountsText.Text" xml:space="preserve">
     <value>No hay inicios de sesión guardados</value>
   </data>
@@ -1494,10 +1440,10 @@ ESTÁ EN SILENCIO</value>
     <value>Introduce el servidor y la exportación, por ejemplo nas.local/export/video. La exportación debe permitir conexiones desde puertos sin privilegios (la opción “insecure”).</value>
   </data>
   <data name="LinkSource_OneDriveNote" xml:space="preserve">
-    <value>Tu navegador se abrirá para iniciar sesión en Microsoft. Edendale solo pide leer tus archivos y mantiene esta cuenta separada de la carpeta de OneDrive en la que copia tu historial de visionado.</value>
+    <value>Tu navegador se abrirá para iniciar sesión en Microsoft. Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe en su propia carpeta Apps/Edendale, cuando sincronizas allí.</value>
   </data>
   <data name="LinkSource_DropboxNote" xml:space="preserve">
-    <value>Tu navegador se abrirá para iniciar sesión en Dropbox. Edendale solo pide leer tus archivos y el nombre de tu cuenta.</value>
+    <value>Tu navegador se abrirá para iniciar sesión en Dropbox. Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe sus archivos de sincronización, en la carpeta Edendale, cuando sincronizas allí.</value>
   </data>
   <data name="LinkSource_SignIn" xml:space="preserve">
     <value>Iniciar sesión</value>
@@ -1620,7 +1566,7 @@ ESTÁ EN SILENCIO</value>
     <value>Funciona con vídeo de 30 fps o menos, hasta 4K.</value>
   </data>
   <data name="LinkSource_GoogleDriveNote" xml:space="preserve">
-    <value>Tu navegador se abrirá para iniciar sesión en Google. Después de iniciar sesión, se abre el selector de Google: elige los vídeos que Edendale puede reproducir. Edendale solo ve esos, se conecta únicamente desde este dispositivo y nunca sube ni cambia nada.</value>
+    <value>Tu navegador se abrirá para iniciar sesión en Google. Al iniciar sesión se abre el selector de Google: elige los vídeos que Edendale puede reproducir. Edendale solo ve esos y los archivos de sincronización que crea, se conecta solo desde este dispositivo y no cambia nada más.</value>
   </data>
   <data name="Connector_AbusiveFile" xml:space="preserve">
     <value>Google Drive ha marcado este archivo como potencialmente dañino, así que no se puede transmitir.</value>
@@ -1668,7 +1614,7 @@ ESTÁ EN SILENCIO</value>
     <value>ELEGIR UBICACIÓN…</value>
   </data>
   <data name="Sync_PairButton" xml:space="preserve">
-    <value>EMPAREJAR CON OTRO DISPOSITIVO…</value>
+    <value>RECIBIR DE OTRO DISPOSITIVO…</value>
   </data>
   <data name="Sync_SetUpButton" xml:space="preserve">
     <value>CONFIGURAR OTRO DISPOSITIVO…</value>
@@ -1677,7 +1623,7 @@ ESTÁ EN SILENCIO</value>
     <value>Configurar otro dispositivo</value>
   </data>
   <data name="Pairing_Title" xml:space="preserve">
-    <value>Emparejar con otro dispositivo</value>
+    <value>Recibir de otro dispositivo</value>
   </data>
   <data name="Sync_LocationLabel" xml:space="preserve">
     <value>Ubicación</value>
@@ -1770,7 +1716,7 @@ ESTÁ EN SILENCIO</value>
     <value>Elige la carpeta que este dispositivo usará para el espacio «{0}».</value>
   </data>
   <data name="Sync_GoogleRelink" xml:space="preserve">
-    <value>Inicia sesión en Google como {0} para usar el espacio «{1}».</value>
+    <value>Inicia sesión en Google Drive como {0} para unirte al espacio «{1}».</value>
   </data>
   <data name="Pairing_RoleQuestion" xml:space="preserve">
     <value>¿En qué dirección van los inicios de sesión?</value>
@@ -1780,9 +1726,6 @@ ESTÁ EN SILENCIO</value>
   </data>
   <data name="Pairing_RoleReceive" xml:space="preserve">
     <value>Recibir en este dispositivo</value>
-  </data>
-  <data name="Pairing_Instructions" xml:space="preserve">
-    <value>En el otro dispositivo, abre Ajustes → Sincronización → Emparejar con otro dispositivo y escanea este código con su cámara o introduce el número.</value>
   </data>
   <data name="Pairing_CodeLabel" xml:space="preserve">
     <value>O introduce este código en el otro dispositivo</value>
@@ -1874,9 +1817,6 @@ ESTÁ EN SILENCIO</value>
   <data name="Sync_WarningTooLarge" xml:space="preserve">
     <value>El archivo de sincronización de {0} es demasiado grande, así que se omitió.</value>
   </data>
-  <data name="Sync_ServersHint" xml:space="preserve">
-    <value>Para sincronizar con una cuenta en la nube o un servidor, vincúlalo primero en Fuentes.</value>
-  </data>
   <data name="Sync_SwitchTitle" xml:space="preserve">
     <value>¿Eliminar el archivo de sincronización antiguo de este PC?</value>
   </data>
@@ -1960,5 +1900,149 @@ ESTÁ EN SILENCIO</value>
   </data>
   <data name="Sync_SignInButton" xml:space="preserve">
     <value>INICIAR SESIÓN</value>
+  </data>
+  <data name="Settings_CategoryGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings_CategoryPlayerControls" xml:space="preserve">
+    <value>Controles del reproductor</value>
+  </data>
+  <data name="Settings_CategoryAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings_CategorySubtitles" xml:space="preserve">
+    <value>Subtítulos</value>
+  </data>
+  <data name="Settings_CategoryLibrary" xml:space="preserve">
+    <value>Biblioteca</value>
+  </data>
+  <data name="Settings_CategorySync" xml:space="preserve">
+    <value>Sincronización</value>
+  </data>
+  <data name="Settings_CategoryAccounts" xml:space="preserve">
+    <value>Cuentas</value>
+  </data>
+  <data name="Settings_CategoryParentalControls" xml:space="preserve">
+    <value>Control parental</value>
+  </data>
+  <data name="Settings_CategoryAbout" xml:space="preserve">
+    <value>Acerca de</value>
+  </data>
+  <data name="Settings_CategoryListName" xml:space="preserve">
+    <value>Configuración</value>
+  </data>
+  <data name="SettingsTheIntroDbLabel.Text" xml:space="preserve">
+    <value>MARCAS DE TIEMPO DE THEINTRODB</value>
+  </data>
+  <data name="SettingsControlsHeader.Text" xml:space="preserve">
+    <value>CONTROLES</value>
+  </data>
+  <data name="SettingsPlaybackHeader.Text" xml:space="preserve">
+    <value>REPRODUCCIÓN</value>
+  </data>
+  <data name="SettingsSubtitleAppearanceHeader.Text" xml:space="preserve">
+    <value>APARIENCIA</value>
+  </data>
+  <data name="SettingsSavedSubtitlesHeader.Text" xml:space="preserve">
+    <value>SUBTÍTULOS GUARDADOS</value>
+  </data>
+  <data name="SettingsLinkedAccountsHeader.Text" xml:space="preserve">
+    <value>CUENTAS VINCULADAS</value>
+  </data>
+  <data name="SettingsSkipPromptsDetail.Text" xml:space="preserve">
+    <value>Mostrar botones para omitir intros, resúmenes y créditos cuando haya marcas de tiempo de la comunidad. La reproducción continúa hasta que decidas omitir.</value>
+  </data>
+  <data name="Audio_Equalizer" xml:space="preserve">
+    <value>Ecualizador</value>
+  </data>
+  <data name="Audio_HertzUnit" xml:space="preserve">
+    <value>Hz</value>
+  </data>
+  <data name="Sync_WarningCloudDownload" xml:space="preserve">
+    <value>No se pudo descargar de la nube el archivo de sincronización de {0}. Comprueba que la app que sincroniza esta carpeta está abierta y que Windows permite a Edendale descargar archivos.</value>
+  </data>
+  <data name="Pairing_FailedItemReason" xml:space="preserve">
+    <value>No se pudo conservar {0} ({1})</value>
+  </data>
+  <data name="Pairing_FailedItem" xml:space="preserve">
+    <value>No se pudo conservar {0}.</value>
+  </data>
+  <data name="Pairing_ItemLocation" xml:space="preserve">
+    <value>Ubicación de sincronización</value>
+  </data>
+  <data name="Pairing_ItemAccount" xml:space="preserve">
+    <value>Cuenta de {0}</value>
+  </data>
+  <data name="Pairing_ItemLogin" xml:space="preserve">
+    <value>Inicio de sesión de {0} para {1}</value>
+  </data>
+  <data name="Sync_GoogleRelinkNoHint" xml:space="preserve">
+    <value>Inicia sesión en Google Drive para unirte al espacio «{0}».</value>
+  </data>
+  <data name="Pairing_LinkTitle" xml:space="preserve">
+    <value>¿Emparejar con {0}?</value>
+  </data>
+  <data name="Pairing_LinkMessage" xml:space="preserve">
+    <value>Envía la ubicación de sincronización y los inicios de sesión de este dispositivo al otro, o recibe los del otro dispositivo.</value>
+  </data>
+  <data name="Pairing_LinkSend" xml:space="preserve">
+    <value>Enviar desde este dispositivo</value>
+  </data>
+  <data name="Pairing_LinkReceive" xml:space="preserve">
+    <value>Recibir en este dispositivo</value>
+  </data>
+  <data name="Pairing_ScanInstructions" xml:space="preserve">
+    <value>Escanea este código con Edendale en el otro dispositivo, desde Ajustes → Sincronización → {0}. Cada dos minutos aparece un código nuevo.</value>
+  </data>
+  <data name="OAuth_SyncWriteMissing" xml:space="preserve">
+    <value>{0} no permitió que Edendale escribiera sus archivos de sincronización. Inicia sesión de nuevo y permite ese acceso.</value>
+  </data>
+  <data name="Sync_SignInAgainHere" xml:space="preserve">
+    <value>Inicia sesión de nuevo para que Edendale pueda escribir aquí sus archivos de sincronización.</value>
+  </data>
+  <data name="Sync_GoogleNothingToChoose" xml:space="preserve">
+    <value>No hay nada que elegir: Edendale guarda sus archivos de sincronización en una carpeta Edendale que crea en tu Google Drive. Solo ve los archivos que crea, se conecta solo desde este dispositivo y no cambia nada más.</value>
+  </data>
+  <data name="Sync_OneDriveWritesNote" xml:space="preserve">
+    <value>Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe en su propia carpeta Apps/Edendale, cuando sincronizas allí.</value>
+  </data>
+  <data name="Sync_DropboxWritesNote" xml:space="preserve">
+    <value>Edendale lee los listados de carpetas y los vídeos que reproduces, se conecta solo desde este dispositivo y solo escribe sus archivos de sincronización, en la carpeta Edendale, cuando sincronizas allí.</value>
+  </data>
+  <data name="Sync_ServerLoginsHint" xml:space="preserve">
+    <value>Para sincronizar con un servidor WebDAV, SMB o SFTP que requiera inicio de sesión, vincúlalo primero en Fuentes.</value>
+  </data>
+  <data name="Sync_DeleteOldFailed" xml:space="preserve">
+    <value>Edendale no pudo eliminar el archivo de este dispositivo de {0}.</value>
+  </data>
+  <data name="Activation_DialogOpen" xml:space="preserve">
+    <value>Cierra el cuadro de diálogo abierto y vuelve a abrir el enlace de emparejamiento.</value>
+  </data>
+  <data name="Library_RemoveFrom" xml:space="preserve">
+    <value>Quitar de {0}</value>
+  </data>
+  <data name="Source_LastPlayed" xml:space="preserve">
+    <value>Última reproducción</value>
+  </data>
+  <data name="DetailPlayFromButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Elige desde qué fuente se reproduce este título.</value>
+  </data>
+  <data name="Detail_EpisodePlayHint" xml:space="preserve">
+    <value>Reproduce este episodio.</value>
+  </data>
+  <data name="Detail_EpisodePlayFromHint" xml:space="preserve">
+    <value>Elige desde qué fuente se reproduce este episodio.</value>
+  </data>
+  <data name="Library_ClearProgress" xml:space="preserve">
+    <value>Borrar progreso</value>
+  </data>
+  <data name="DownloadedSection_All" xml:space="preserve">
+    <value>Todo</value>
+  </data>
+  <data name="DownloadedSectionPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Secciones de Descargas</value>
+  </data>
+  <data name="PlayerBufferingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Cargando en búfer</value>
   </data>
 </root>

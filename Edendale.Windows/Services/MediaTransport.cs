@@ -1,6 +1,6 @@
 // 3.18: the Windows media flyout, media keys, and headset buttons through the
 // System Media Transport Controls of the shell window. Play and pause, next
-// and previous episode, and rewind and fast-forward by the App Controls
+// and previous episode, and rewind and fast-forward by the Player Controls
 // lengths; the title, episode, and artwork appear in the flyout. Button
 // presses arrive on a background thread and are handed to the UI thread.
 

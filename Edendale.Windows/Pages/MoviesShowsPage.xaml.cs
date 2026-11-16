@@ -26,6 +26,14 @@ public sealed partial class MoviesShowsPage : Page
     private bool _trailerUnavailable;
     private TrailerVideo? _heroTrailer;
 
+    private DispatcherQueueTimer? _continueTimer;
+
+    /// <summary>Watch progress changed since Home last read it.</summary>
+    private bool _continueStale;
+
+    /// <summary>Guards a slow detail lookup from painting over a later refresh.</summary>
+    private int _continueRequest;
+
     public MoviesShowsPage()
     {
         InitializeComponent();
@@ -34,6 +42,12 @@ public sealed partial class MoviesShowsPage : Page
         // certification decision changes.
         AppServices.YoungAudience.Changed += (_, _) =>
             DispatcherQueue.TryEnqueue(() => ApplyAudienceContent(resetHero: false));
+        // Playback here and merges from other devices move watch progress;
+        // Continue Watching follows once a burst of changes settles.
+        AppServices.WatchProgress.Changed += (_, _) => DispatcherQueue.TryEnqueue(ScheduleContinueRefresh);
+        // The page stays live under the player (e90a988): the hero holds its
+        // scene and Continue Watching waits, then both pick up on close.
+        AppServices.Player.PresentedChanged += (_, _) => DispatcherQueue.TryEnqueue(PlayerPresentedChanged);
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -58,6 +72,8 @@ public sealed partial class MoviesShowsPage : Page
         if (HomeSession.Catalog is not null)
         {
             ShowContent();
+            // A refresh that failed while Home was away tries again.
+            if (_continueStale) await RefreshContinueWatchingAsync();
             return;
         }
 
@@ -72,6 +88,8 @@ public sealed partial class MoviesShowsPage : Page
         SwitchState(LoadingState);
         try
         {
+            // The catalog reads this snapshot; a change after it refreshes below.
+            _continueStale = false;
             HomeSession.Catalog = await WindowsCore.LoadHomeCatalogAsync(AppServices.WatchProgress.All);
             HomeSession.SelectedCollectionId = "all";
             HomeSession.CollectionItems = await WindowsCore.LoadCollectionAsync("all");
@@ -81,7 +99,9 @@ public sealed partial class MoviesShowsPage : Page
         {
             ErrorMessageText.Text = failure.Message;
             SwitchState(ErrorState);
+            return;
         }
+        if (_continueStale) await RefreshContinueWatchingAsync();
     }
 
     private async void Retry_Click(object sender, RoutedEventArgs e)
@@ -121,7 +141,7 @@ public sealed partial class MoviesShowsPage : Page
         BindShelf(TopRatedShelf, TopRatedRepeater, filter.Visible(catalog.TopRated));
         CollectionRepeater.ItemsSource = filter.Visible(HomeSession.CollectionItems).Take(12).ToList();
 
-        var newHero = catalog.HeroScenes.Where(scene => filter.Allows(scene.Detail.Ref)).ToList();
+        var newHero = VisibleHeroScenes(catalog);
         var heroChanged = resetHero
             || !newHero.Select(scene => scene.Detail.Ref.Id).SequenceEqual(_visibleHeroScenes.Select(scene => scene.Detail.Ref.Id));
         _visibleHeroScenes = newHero;
@@ -178,6 +198,9 @@ public sealed partial class MoviesShowsPage : Page
 
     private List<HeroScene> HeroScenes => _visibleHeroScenes;
 
+    private static List<HeroScene> VisibleHeroScenes(HomeCatalog catalog) =>
+        catalog.HeroScenes.Where(scene => AppServices.YoungAudience.Allows(scene.Detail.Ref)).ToList();
+
     private void StartHeroTimer()
     {
         if (_heroTimer is not null || HeroScenes.Count <= 1) return;
@@ -185,11 +208,27 @@ public sealed partial class MoviesShowsPage : Page
         _heroTimer.Interval = TimeSpan.FromSeconds(HeroSceneSeconds);
         _heroTimer.Tick += (_, _) =>
         {
-            if (_heroHovered || HeroScenes.Count <= 1) return;
+            if (_heroHovered || AppServices.Player.IsPresented || HeroScenes.Count <= 1) return;
             _heroIndex = (_heroIndex + 1) % HeroScenes.Count;
             ApplyHeroScene();
         };
         _heroTimer.Start();
+    }
+
+    /// <summary>
+    /// Closing the player gives the hero scene on screen its full time again,
+    /// so it doesn't flip as the page comes back, and runs the Continue
+    /// Watching refresh that waited.
+    /// </summary>
+    private void PlayerPresentedChanged()
+    {
+        if (AppServices.Player.IsPresented) return;
+        if (_heroTimer is { } timer)
+        {
+            timer.Stop();
+            timer.Start();
+        }
+        if (_continueStale) ScheduleContinueRefresh();
     }
 
     private void Hero_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) =>
@@ -217,21 +256,26 @@ public sealed partial class MoviesShowsPage : Page
             : null;
         HeroTitleText.Text = detail.Title.ToUpperInvariant();
 
-        ContinueRow.Visibility = scene.IsContinueWatching ? Visibility.Visible : Visibility.Collapsed;
-        RemainingText.Text = scene.RemainingText?.ToUpperInvariant() ?? "";
-        RemainingText.Visibility = string.IsNullOrEmpty(scene.RemainingText)
-            ? Visibility.Collapsed
-            : Visibility.Visible;
-
         BuildHeroMeta(detail);
 
         var inLibrary = detail.Ref.MediaType == "movie"
             ? AppServices.Library.MovieByTmdbId(detail.Ref.Id) is not null
             : AppServices.Library.ShowByTmdbId(detail.Ref.Id) is not null;
         HeroPlayButton.Visibility = inLibrary ? Visibility.Visible : Visibility.Collapsed;
-        HeroPlayLabel.Text = Loc.Get(scene.IsContinueWatching ? "Detail_ResumePlayback" : "Detail_Play");
+        ApplyContinueState(scene);
 
         UpdateHeroDots();
+    }
+
+    /// <summary>The kicker, the time left, and Play or Resume: what follows watch progress.</summary>
+    private void ApplyContinueState(HeroScene scene)
+    {
+        ContinueRow.Visibility = scene.IsContinueWatching ? Visibility.Visible : Visibility.Collapsed;
+        RemainingText.Text = scene.RemainingText?.ToUpperInvariant() ?? "";
+        RemainingText.Visibility = string.IsNullOrEmpty(scene.RemainingText)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+        HeroPlayLabel.Text = Loc.Get(scene.IsContinueWatching ? "Detail_ResumePlayback" : "Detail_Play");
     }
 
     private void BuildHeroMeta(MediaDetail detail)
@@ -307,6 +351,91 @@ public sealed partial class MoviesShowsPage : Page
     }
 
     // ------------------------------------------------------------------
+    // Continue Watching
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Watch progress changed: playback here, or a merge from another device
+    /// (sync runs at launch, on return to the foreground, every 5 minutes,
+    /// and after playback). Refreshes once the changes settle.
+    /// </summary>
+    private void ScheduleContinueRefresh()
+    {
+        _continueStale = true;
+        // Progress written every few seconds of playback waits for the player to close.
+        if (AppServices.Player.IsPresented)
+        {
+            _continueTimer?.Stop();
+            return;
+        }
+        if (_continueTimer is null)
+        {
+            _continueTimer = DispatcherQueue.CreateTimer();
+            _continueTimer.Interval = TimeSpan.FromSeconds(1);
+            _continueTimer.IsRepeating = false;
+            _continueTimer.Tick += async (_, _) => await RefreshContinueWatchingAsync();
+        }
+        _continueTimer.Stop();
+        _continueTimer.Start();
+    }
+
+    /// <summary>
+    /// Points Continue Watching at the newest unfinished title and its latest
+    /// position without reloading the shelves: an unchanged title reuses its
+    /// details, so a new position costs no request. The pager stays on the
+    /// title it shows.
+    /// </summary>
+    private async Task RefreshContinueWatchingAsync()
+    {
+        if (HomeSession.Catalog is not { } catalog) return;
+        _continueStale = false;
+        var request = ++_continueRequest;
+        HeroScene? scene;
+        try
+        {
+            var known = catalog.HeroScenes.FirstOrDefault(item => item.IsContinueWatching)?.Detail;
+            scene = await WindowsCore.LoadContinueSceneAsync(AppServices.WatchProgress.All, known);
+        }
+        catch
+        {
+            // The scenes on screen stay; the next change or visit tries again.
+            _continueStale = true;
+            return;
+        }
+        if (request != _continueRequest || !ReferenceEquals(catalog, HomeSession.Catalog)) return;
+
+        var scenes = HomeHero.WithContinueScene(catalog.HeroScenes, scene);
+        var titlesChanged = !HomeHero.SameTitles(catalog.HeroScenes, scenes);
+        catalog.HeroScenes = scenes;
+        // Until the content shows, ShowContent binds the new scenes itself.
+        if (ContentScroll.Visibility != Visibility.Visible) return;
+
+        var shown = CurrentHero;
+        var previous = _visibleHeroScenes;
+        _visibleHeroScenes = VisibleHeroScenes(catalog);
+        _heroIndex = HomeHero.StableIndex(previous, _heroIndex, _visibleHeroScenes);
+        if (!HomeHero.SameTitles(previous, _visibleHeroScenes)) BuildHeroDots();
+        if (CurrentHero is { } current && shown is not null && HomeHero.SameTitle(current.Detail.Ref, shown.Detail.Ref))
+        {
+            // The same title: its progress changes, its backdrop and trailer stay.
+            ApplyContinueState(current);
+            UpdateHeroDots();
+        }
+        else
+        {
+            ApplyHeroScene();
+        }
+        if (IsLoaded) StartHeroTimer();
+
+        // A new title waits for the audience filter like the rest of Home.
+        if (titlesChanged)
+        {
+            UpdateAudienceVerifying();
+            _ = VerifyAudienceAsync();
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Hero actions
     // ------------------------------------------------------------------
 
@@ -314,8 +443,9 @@ public sealed partial class MoviesShowsPage : Page
     {
         var scene = CurrentHero;
         if (scene is null) return;
+        // The reachable copy played last, else the first reachable one.
         if (scene.Detail.Ref.MediaType == "movie"
-            && AppServices.Library.MovieByTmdbId(scene.Detail.Ref.Id) is { } movie)
+            && AppServices.Library.PreferredMovie(scene.Detail.Ref.Id) is { } movie)
         {
             AppServices.Player.Play(movie);
         }
@@ -346,7 +476,8 @@ public sealed partial class MoviesShowsPage : Page
             {
                 _heroTrailer = null;
             }
-            if (!ReferenceEquals(scene, CurrentHero)) return;
+            // A progress refresh replaces the scene but keeps the title.
+            if (CurrentHero is not { } shown || !HomeHero.SameTitle(shown.Detail.Ref, scene.Detail.Ref)) return;
         }
 
         if (_heroTrailer is null)

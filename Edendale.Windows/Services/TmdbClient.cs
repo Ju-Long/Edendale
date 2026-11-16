@@ -37,7 +37,7 @@ internal sealed class TmdbClient
         if (!IsConfigured)
         {
             throw new WindowsCoreException(
-                AppText.Get("Tmdb_NotConfigured"));
+                AppText.Get("Tmdb_NotConfigured"), TmdbFailure.MissingCredentials);
         }
 
         var query = new List<string>();
@@ -74,7 +74,9 @@ internal sealed class TmdbClient
             var detail = TryReadStatusMessage(body);
             throw new WindowsCoreException(
                 AppText.Format("Tmdb_RequestFailed", (int)response.StatusCode) +
-                (detail is null ? "." : $": {detail}"));
+                (detail is null ? "." : $": {detail}"),
+                TmdbFailure.HttpStatus,
+                (int)response.StatusCode);
         }
 
         try
@@ -84,7 +86,7 @@ internal sealed class TmdbClient
         }
         catch (JsonException error)
         {
-            throw new WindowsCoreException(AppText.Format("Tmdb_InvalidJson", error.Message));
+            throw new WindowsCoreException(AppText.Format("Tmdb_InvalidJson", error.Message), TmdbFailure.InvalidJson);
         }
     }
 

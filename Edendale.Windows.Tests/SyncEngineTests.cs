@@ -37,7 +37,15 @@ public sealed class SyncEngineTests
     /// <summary>One simulated device: its own stores, state, and engine, sharing the folder location.</summary>
     internal sealed class Device : IDisposable
     {
-        public Device(string root, string name, long now, string location, Func<int, int, int, int?>? resolver = null, bool withWatchlist = true, Func<SyncLocationSettings, ISyncLocation?>? locations = null)
+        public Device(
+            string root,
+            string name,
+            long now,
+            string location,
+            Func<IReadOnlyDictionary<string, int>>? episodes = null,
+            bool withWatchlist = true,
+            Func<SyncLocationSettings, ISyncLocation?>? locations = null,
+            Func<SyncLocationSettings, CancellationToken, Task<string?>>? follow = null)
         {
             Directory.CreateDirectory(Path.Combine(root, name));
             // A picked folder exists before it is chosen; the location never creates its own root.
@@ -48,12 +56,19 @@ public sealed class SyncEngineTests
             Progress = new WatchProgressStore(Path.Combine(root, name, "watch-progress.json"), Clock, () => State.DeviceId);
             Media = new UserMediaStore(Path.Combine(root, name, "user-media.json"), Clock, () => State.DeviceId);
             Watchlist = withWatchlist ? new WatchlistStore(new FakeRemote(), () => false, Path.Combine(root, name, "watchlist.json"), Path.Combine(root, name, "none.json")) : null;
-            Engine = new SyncEngine(State, Clock, Progress, Media, Watchlist, locations ?? (settings => new FolderSyncLocation(settings.Path!)), resolver, "27.1-test")
+            Engine = new SyncEngine(State, Clock, Progress, Media, Watchlist, locations ?? (settings => new FolderSyncLocation(settings.Path!)), episodes, "27.1-test")
             {
                 ReplicaDirectory = null,
+                FollowMovedFolder = follow,
             };
             State.DeviceName = name;
-            State.SetLocation(new SyncLocationSettings { Kind = SyncLocationKind.Folder, Path = location, Space = "Family" });
+            State.SetLocation(new SyncLocationSettings
+            {
+                Kind = SyncLocationKind.Folder,
+                Path = location,
+                Space = "Family",
+                FutureAccessToken = follow is null ? null : "syncFolder",
+            });
         }
 
         public long Now { get; set; }
@@ -186,7 +201,7 @@ public sealed class SyncEngineTests
         var location = Path.Combine(_root, "location");
         using var a = new Device(_root, "A", T0, location);
         // B knows episode 62085 is show 1399 S1E2 from its library.
-        using var b = new Device(_root, "B", T0 + 1000, location, resolver: (show, season, episode) => show == 1399 && season == 1 && episode == 2 ? 62085 : null);
+        using var b = new Device(_root, "B", T0 + 1000, location, episodes: () => new Dictionary<string, int> { ["tv:1399:1:2"] = 62085 });
 
         a.Progress.Update(99001, "episode", 0.4, 1200, showTmdbId: 1399, seasonNumber: 1, episodeNumber: 2, durationSeconds: 3000);
         a.Progress.MarkCompleted(99002, "episode"); // no show info: local only, never written
@@ -210,7 +225,9 @@ public sealed class SyncEngineTests
         using var c = new Device(_root, "C", T0 + 2000, location);
         await c.SyncAsync();
         Assert.AreEqual(0, c.Progress.GetEpisode(1399, 1, 2)!.TmdbId);
-        Assert.AreEqual(1, c.Progress.ResolveEpisodeIds((show, season, ep) => 62085));
+        Assert.IsTrue(c.Progress.HasUnresolvedEpisodes);
+        Assert.AreEqual(1, c.Progress.ResolveEpisodeIds(new Dictionary<string, int> { ["tv:1399:1:2"] = 62085 }));
+        Assert.IsFalse(c.Progress.HasUnresolvedEpisodes);
         Assert.AreEqual(62085, c.Progress.Get(62085, "episode")!.TmdbId);
     }
 

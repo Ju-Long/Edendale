@@ -54,7 +54,18 @@ public abstract record HandoffFollowUp
 }
 
 /// <summary>The receiver's outcome: the result to send back, and what follows.</summary>
-public sealed record HandoffAdoption(HandoffResult Result, SyncLocationSettings? Location, HandoffFollowUp? FollowUp);
+public sealed record HandoffAdoption(HandoffResult Result, SyncLocationSettings? Location, HandoffFollowUp? FollowUp)
+{
+    /// <summary>
+    /// The location this device synced to before, when the adopted one
+    /// replaced it (FEATURES-27.1.md §4): this device's file stays there until
+    /// the person deletes it, and the app offers to, as SyncCoordinator's
+    /// `previousLocation` does on apple-27.1. Null when no location was
+    /// adopted (a follow-up's dialog asks itself) or the same one came back.
+    /// </summary>
+    public SyncLocationSettings? Replaced(SyncLocationSettings? previous) =>
+        previous is not null && Location is not null && !HandoffOffers.SameLocation(previous, Location) ? previous : null;
+}
 
 /// <summary>How the receiver proves an item works before storing it; the app connects for real, tests fake it.</summary>
 public sealed class HandoffValidators
@@ -340,6 +351,15 @@ public static class HandoffOffers
                 break;
         }
     }
+
+    /// <summary>
+    /// Whether two locations hold the same device file: the same kind, space,
+    /// account, and folder. Switching between two that differ leaves this
+    /// device's file behind in the old one (§4).
+    /// </summary>
+    public static bool SameLocation(SyncLocationSettings a, SyncLocationSettings b) =>
+        a.Kind == b.Kind && a.Space == b.Space && a.AccountKey == b.AccountKey
+        && string.Equals(a.Path?.TrimEnd('/', '\\'), b.Path?.TrimEnd('/', '\\'), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>A short reason for the sender's screen: the readable message, which never carries a secret.</summary>
     private static string Reason(Exception error) => error switch

@@ -183,8 +183,10 @@ it (D9). It stays in the gitignored `secrets.json` like the TMDB token.
   the Google Auth Platform's Data Access page, and create an OAuth client of
   type **Desktop app**. Its client ID and secret are the two Google values.
   Desktop clients accept any loopback port, so no redirect URI is
-  registered. Edendale asks for `drive.file` alone and opens Google's picker
-  inside the sign-in page, so it sees only the files the user picks.
+  registered. Edendale asks for `drive.file` alone. Linking a source opens
+  Google's picker inside the sign-in page, so Edendale sees only the files
+  the user picks; signing in for the sync location skips the picker, since
+  Edendale's own folder needs no pick.
   `drive.file` is non-sensitive: publishing needs no scope verification or
   security assessment. While the consent screen is in Testing, only listed
   test users can sign in and their sign-in lasts 7 days.
@@ -275,19 +277,68 @@ bounds sent to TMDB — stay on `CultureInfo.InvariantCulture` so a Buddhist or
 Hijri regional calendar cannot reach the wire, mirroring the Gregorian
 `HeatmapCalendar` the Apple branch pins.
 
+### Library and Settings
+
+- **Settings** has nine categories, listed beside the open page: General,
+  Player Controls, Audio, Subtitles, Library, Sync, Accounts, Parental
+  Controls, and About. In a narrow window (under 720 epx) the list becomes a
+  picker above the page. Ctrl+, opens Settings at the category used last,
+  with the keyboard on its row. A build without TMDB credentials hides the
+  TMDB section, and About shows the build's version ("27.1.0 (abc1234)" in a
+  release).
+- **One title, several sources:** copies of a title tie by their TMDB match,
+  or by the parsed title (and year, for a movie) until there is one.
+  Downloaded and Search show one card per title, and a show's card counts its
+  seasons and episodes across every copy. Remove on a card held by several
+  sources offers one "Remove from …" per source.
+- **Play From** names each copy's source and endpoint ("Media (nas.local)"),
+  then its kind and file, "Last Played", and "Unavailable", with the copy
+  played last first. Clicking an episode that several sources hold opens Play
+  From first. Play, Continue Watching, the Movies & Shows hero, the jump
+  list, and `edendale://play` links start the reachable copy played last,
+  else the first reachable one. Which copy played last is library data on
+  this PC and never syncs.
+- **Downloaded sections:** chips for All, Continue Watching, Movies, and TV
+  Shows appear on the page when two sections or more have titles, and always
+  show the same choice as the sidebar rows. A chip changes the section in
+  place; a section that empties falls back to All.
+- **TMDB matching** sweeps the whole library at launch, after an import or a
+  rescan, and on each visit to Downloaded: every movie and show without a
+  match, and every unmatched episode of a matched show. A title TMDB has no
+  match for is asked again after 7 days, or at once on Rescan, Ctrl+R, or F5.
+  A TMDB that is unreachable, refuses the token, limits the rate, or fails
+  ends the sweep, and the rest waits for the next one.
+- **Clear Progress** removes a saved position: on a Continue Watching card,
+  on an in-progress movie's poster, and on an in-progress episode on its
+  show's page. It is written as a removal, so other devices drop it too.
+- The rotating hero on Movies & Shows holds its scene while the player is
+  open, and Continue Watching catches up when the player closes.
+
 ### Player
 
 The player follows DIFF.md §3.1–3.11 and §3.18 natively:
 
-- **App Controls:** Settings sets the skip lengths (10, 15, or 30 s each way),
-  used by ←/→, the skip buttons, double taps on touch, the media keys, and a
-  controller's bumpers. Holding either half of the video for 0.4 s plays at
-  that side's speed until it is released.
+- **Player Controls:** Settings → Player Controls sets the skip lengths (10,
+  15, or 30 s each way), used by ←/→, the skip buttons, double taps on touch,
+  the media keys, and a controller's bumpers. Holding either half of the
+  video for 0.4 s plays at that side's speed until it is released.
 - **Keyboard:** Space plays or pauses, ↑/↓ change the volume in 5 % steps,
-  Ctrl+↑/↓ change brightness, M mutes, F or F11 toggles full screen, S takes
-  a skip prompt, and Esc backs out one layer at a time (a panel, full screen
-  or Picture in Picture, then the player). A HUD confirms each change and
-  screen readers hear it.
+  Ctrl+↑/↓ dim or brighten the player, M mutes, F or F11 toggles full
+  screen, S takes a skip prompt, and Esc backs out one layer at a time (a
+  panel, full screen or Picture in Picture, then the player). A HUD confirms
+  each change and screen readers hear it.
+- **Dimming:** Ctrl+↑/↓ is the player's own brightness, as ⌘↑/↓ is on a
+  Mac. It starts at 100 %, the picture as it is, and dims in 5 % steps to
+  15 % under a black layer below the controls. The level holds from episode
+  to episode and resets when the player closes; the picture's own brightness
+  is in Player Adjustments.
+- **Buffering:** a gold ring takes the play button's place while a file
+  opens, while LibVLC refills after a seek, and when a stream has stalled for
+  a second, also with the controls hidden. Screen readers hear "Buffering"
+  when a playing stream stalls.
+- **Pointer:** the mouse pointer hides after resting 5 s over the video.
+  Moving it, clicking, leaving the video, or switching windows brings it
+  back.
 - **Player Adjustments,** docked beside the video: video, audio, and subtitle
   tracks; picture adjustments with Show Original; video enhancement; speed on
   a 0.05 grid from 0.25× to 3×; Audio Booster; Headphone Surround; skip
@@ -299,20 +350,27 @@ The player follows DIFF.md §3.1–3.11 and §3.18 natively:
   `%LOCALAPPDATA%\Edendale\player-settings.json` and never syncs.
 - **Episodes:** at the end of an episode the next one plays, and an Up Next
   card appears for the last 30 s. Continue Watching suggests the episode
-  after the last one finished.
+  after the last one finished. A remote stream that drops before the end
+  shows why and keeps its place; it doesn't count as finished or move on.
 - **Skip prompts,** off by default: TheIntroDB marks intros, recaps, and
   credits, and a button skips them only when pressed.
-- **Audio Enhancement and Subtitles** in Settings: equalizer profiles with a
-  preamp and ten bands, and subtitle font, size, color, background, and
-  outline presets. Rounded is not offered on Windows, which ships no rounded
-  family.
+- **Settings → Audio:** equalizer profiles, a preamp slider that shows its
+  level before Audio Booster, and the ten bands as a graph around a 0 dB
+  line. Drag a point, or press ↑/↓ on a focused band, to move it 1 dB (Page
+  Up/Down 3 dB, Home/End to −20 or +20 dB, ←/→ to the next band). Choosing a
+  profile moves every point to its levels and resets the adjustments.
+- **Settings → Subtitles:** font, size, color, background, and outline
+  presets. Rounded is not offered on Windows, which ships no rounded family.
 - **Saved subtitles:** a subtitle downloaded from the online search is kept
   for that movie or episode. Playing the title again, from any copy, attaches
   it without a search, and the one that was on last time is on again. One not
   turned on for 30 days is deleted; Settings → Subtitles can switch that off
   or remove them all.
-- **Play From:** a title imported from several sources plays the first
-  reachable copy; the detail page lists every copy.
+- **Play From:** a title in several sources plays the copy played last, or
+  the first reachable one ([Library and Settings](#library-and-settings)).
+  Auto-advance, Up Next, Next and Previous, and the Episodes panel stay on
+  the playing source; an episode only another source holds plays from there,
+  and the one after returns to the playing source.
 - **Windows integration:** the media flyout, media keys, and headset buttons;
   previous, play/pause, and next buttons on the taskbar thumbnail; a
   Continue Watching jump list; an audio output picker; the display kept awake
@@ -373,7 +431,7 @@ Motion Smoothing: turning either on turns the other off. While it's on:
 
 ### Storage providers
 
-Settings → Sources and the Downloaded page link these, through one Link
+Settings → Library and the Downloaded page link these, through one Link
 Source form (DIFF.md §3.12):
 
 | Kind | How Edendale reaches it |
@@ -407,9 +465,14 @@ Source form (DIFF.md §3.12):
   fingerprint and key type, pins it, and refuses a changed key until it is
   approved again.
 - **Streaming:** HTTP sources play through 4 MiB range reads with read-ahead
-  and an 8-chunk cache; SFTP through a 1 MiB-chunk buffer that reads up to
-  48 MiB ahead and reconnects with backoff. LibVLC never sees a token or a
-  signed link.
+  and an 8-chunk cache. SFTP plays through a 1 MiB-chunk buffer that reads
+  48 MiB ahead, or up to 384 MiB while Edendale uses less than 500 MiB of
+  memory; keeps what it buffered across a brief jump, such as a seek that
+  reads the file's index first; and reconnects with backoff. LibVLC never
+  sees a token or a signed link.
+- **Writes:** linking a source never changes it. The only files Edendale
+  writes are its own sync files, at the location chosen in Settings → Sync,
+  and Link Source says so for each cloud account.
 - A source that is offline or needs signing in says so on its own row. The
   automatic rescan skips remote sources scanned in the last 15 minutes;
   Rescan, Ctrl+R, and F5 always scan.
@@ -437,8 +500,10 @@ merges them locally. Sync is off until the user chooses a location in Settings
   `max(now, highest stamp applied + 1)`, a record stamped more than a day
   ahead of this PC's clock is refused with a warning that names the device,
   and a cleared value is kept as a tombstone for 366 days so an older copy
-  can't bring it back. Files that break the format are skipped whole and never
-  remove local data.
+  can't bring it back. This PC keeps its own records stamped that far ahead
+  out of its file until its clock passes them, and lowers a high-water stamp
+  that far ahead at launch. Files that break the format are skipped whole and
+  never remove local data.
 - **Locations:** one per PC. The OneDrive folder on this PC (its root is
   `%OneDrive%\Apps`, so the files land in `Apps\Edendale\<space>`, the folder
   the OneDrive API location and the old replica use), the iCloud for Windows
@@ -446,22 +511,35 @@ merges them locally. Sync is off until the user chooses a location in Settings
   future-access list), Google Drive under `drive.file` (the app creates
   `Edendale/` and the space folder; no picker), OneDrive's app folder through
   Microsoft Graph, Dropbox (`/Edendale/`), and WebDAV, SMB, or SFTP servers
-  whose logins are saved under Sources. Folder writes go to `<id>.json.tmp`,
-  then a rename; API writes replace the file in one upload.
+  whose logins are saved. Folder writes go to `<id>.json.tmp`, then a rename;
+  API writes replace the file in one upload.
+- **Choosing a location:** Google Drive, OneDrive, and Dropbox ask for no
+  videos or folder, and Google's sign-in skips the picker. An account linked
+  before 27.1 is marked in the list and signs in again when chosen, and a
+  sign-in that still lacks write access is refused with nothing saved. A
+  picked folder that is moved or renamed is followed. A cloud file Windows
+  refuses to download (a OneDrive, iCloud, or Dropbox placeholder) shows a
+  warning naming its device.
 - **When:** at launch, on return to the foreground, 10 seconds after the last
   change, at once when playback stops or the window loses focus or closes,
   and every 5 minutes in the foreground. Unchanged files (by modification
   time, ETag, Drive `modifiedTime`, Graph `eTag`, or Dropbox `rev`) are not
   read again, and reading a file twice changes nothing. Failures back off 1,
-  2, 4, and 8 minutes up to an hour.
+  2, 4, and 8 minutes up to an hour, and the sync runs again when the wait
+  ends. A sync asked for while one runs (Sync Now, playback stopping, a new
+  location) runs right after it.
 - **Migration:** the first launch of 27.1 reads `%OneDrive%\Apps\Edendale\`
   `user-media.json` and `watch-progress.json` once, stamps each record with
   its own time and this PC's ID, merges them, and leaves both files in place.
   A PC with OneDrive is then offered its OneDrive folder once, with the space
-  `Family` suggested so every PC that accepts lands in the same space.
+  `Family` suggested so every PC that accepts lands in the same space. The
+  watchlist flag is reconciled at launch without new stamps, so a first 27.1
+  launch can't take titles off another device's watchlist.
 - **Remove a device** deletes its file; its records are already in every
   other file. The dialog links to the provider's account page, because the
-  removed device keeps its login until access is revoked there (H6).
+  removed device keeps its login until access is revoked there (H6). A
+  device whose file is gone leaves the list at the next sync, and a removed
+  PC that syncs again writes a new file and reappears.
 - **Device ID and state:** `%LOCALAPPDATA%\Edendale\sync-state.json` holds
   this PC's random device ID, the location (without credentials), the space,
   the high-water stamp, and the stamps of the files read. It is never written
@@ -469,19 +547,26 @@ merges them locally. Sync is off until the user chooses a location in Settings
 
 **Setting up another device** (handoff version 2, SYNC-PROTOCOL.md §9) moves
 the sync location and, if the user ticks them, other linked accounts and saved
-logins, directly over the local network. The person first picks which way the
-logins go, then which device shows the code:
+logins, directly over the local network. Settings → Sync starts it with
+**Set Up Another Device…** (this PC sends) or **Receive from Another
+Device…** (this PC receives); the person then picks which device shows the
+code, and the instructions name the other device's entry:
 
 - **This PC shows the code** (host): a QR code
   (`edendale://handoff?v=2&n&h&p&k&s`, X25519 key and a 16-byte secret) and a
   6-digit code, each valid for 2 minutes and one attempt. While that screen is
   open the PC advertises `_edendale-handoff._tcp` with DNS-SD (TXT `v=2`,
-  `name`, `platform`); it stops when the screen closes. Five failures in a row
-  lock pairing for a minute.
+  `name`, `platform`); it stops when the screen closes, and the QR code and
+  the code still work if registering takes over 5 seconds. The address in
+  the QR code is the adapter with a default gateway, which skips Hyper-V and
+  WSL switches. Five failures in a row lock pairing for a minute.
 - **This PC enters the code** (guest): it browses for hosts and takes the
   6-digit code (J-PAKE over P-256, participant IDs `edendale-host` and
-  `edendale-guest`) or a QR link pasted from the other device. A PC has no QR
-  scanner.
+  `edendale-guest`) or a QR link pasted from the other device. It tries the
+  code's address for 10 seconds, then looks for the host by name (or the
+  only host) for 15 more. A PC has no QR scanner of its own, but an
+  `edendale://handoff` link opened from Windows Camera or a phone asks to
+  pair with that device, sending or receiving, and starts at once.
 - After pairing, frames are AES-256-GCM with the direction-and-counter nonce
   of §9.5. The sender shows what it is about to send, with the receiver's
   name, before anything goes. The receiver refreshes each token, connects to
@@ -490,6 +575,15 @@ logins go, then which device shows the code:
   Windows PC; a phone, Mac, or TV gets the account's email and the space
   folder's Drive ID and signs in to Google itself (§9.8). A folder location
   sends only the space; the receiving device picks its own folder.
+- The receiver answers before its first sync, which then runs on its own;
+  its progress and errors show in Settings → Sync. The sender's result names
+  each item ("OneDrive account", "SFTP login for nas.local"), with the reason
+  when there is one. A location received this way offers to delete this PC's
+  file at the old location. Logins are written flat (§9.7), and Apple's
+  nested `credential` is read too.
+- The packaged build adds inbound TCP firewall rules for the pairing
+  listener on private and domain networks; public networks stay closed. An
+  unpackaged build gets Windows' prompt instead.
 
 The typed-code J-PAKE is a port of Bouncy Castle Java's `ecjpake` (the code
 the Android handoff runs) onto Bouncy Castle C#'s elliptic-curve arithmetic,
@@ -506,8 +600,9 @@ Library, watch-progress, user-media, and player-settings JSON live under
 `%LOCALAPPDATA%\Edendale`. When the user turns on sync, watch and user-media
 state also travels as one readable JSON file per device through the folder or
 account they chose (above); anyone who can open that folder can read it, and
-the app says so when a location is chosen. The library, including the IDs of
-Google Drive videos removed from it, never syncs.
+the app says so when a location is chosen. The library, including which copy
+of a title played last and the IDs of Google Drive videos removed from it,
+never syncs.
 
 Subtitles downloaded from Wyzie Subs are kept in
 `%LOCALAPPDATA%\Edendale\Subtitles`, indexed by title in

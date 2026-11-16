@@ -59,6 +59,11 @@ public sealed partial class MainWindow : Window
         UpdateDownloadedSections();
 
         AddShortcuts();
+
+        // The activation bar moves with the sidebar as Ctrl+B folds it, and with the player.
+        Nav.RegisterPropertyChangedCallback(NavigationView.IsPaneOpenProperty, (_, _) => PlaceActivationBar());
+        PlayerOverlay.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => PlaceActivationBar());
+        PlaceActivationBar();
     }
 
     // ------------------------------------------------------------------
@@ -107,8 +112,8 @@ public sealed partial class MainWindow : Window
         var library = AppServices.Library;
         var movies = library.Movies.Where(movie => DownloadedPage.AudienceAllows(movie.TmdbId, "movie")).ToList();
         var shows = library.Shows.Count(show => DownloadedPage.AudienceAllows(show.TmdbId, "tv"));
-        var hasResume = DownloadedPage.ContinueWatchingEntries(library, movies, limit: 1).Count > 0;
-        _downloadedSections = LibrarySections.AvailableDownloaded(hasResume, movies.Count, shows);
+        // The same rule as the page's section picker, so the rows and the chips agree.
+        _downloadedSections = DownloadedPage.AvailableSections(library, movies, shows);
 
         DownloadedContinueNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.ContinueWatching));
         DownloadedMoviesNavItem.Visibility = Shown(_downloadedSections.Contains(DownloadedSection.Movies));
@@ -225,7 +230,16 @@ public sealed partial class MainWindow : Window
         AddShortcut(VirtualKey.N, VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu, () => WithDownloadedPage(page => page.LinkSourceAsync()));
         AddShortcut(VirtualKey.R, VirtualKeyModifiers.Control, Rescan);
         AddShortcut(VirtualKey.F5, VirtualKeyModifiers.None, Rescan);
+        // Ctrl+, opens Settings, the Windows counterpart of the Mac's ⌘,.
+        AddShortcut(CommaKey, VirtualKeyModifiers.Control, () =>
+        {
+            ShowSettings(focusCategories: true);
+            return true;
+        });
     }
+
+    /// <summary>VK_OEM_COMMA, the comma key on the common layouts; VirtualKey has no name for it.</summary>
+    private const VirtualKey CommaKey = (VirtualKey)188;
 
     private void AddShortcut(VirtualKey key, VirtualKeyModifiers modifiers, Func<bool> action)
     {
@@ -305,7 +319,8 @@ public sealed partial class MainWindow : Window
             case AppRoute.PlayMovie playMovie:
                 _ = GatedPlayAsync(playMovie.TmdbId, "movie", () =>
                 {
-                    if (AppServices.Library.MovieByTmdbId(playMovie.TmdbId) is { } libraryMovie)
+                    // Of several copies, the reachable one played last, else the first reachable.
+                    if (AppServices.Library.PreferredMovie(playMovie.TmdbId) is { } libraryMovie)
                     {
                         AppServices.Player.Play(libraryMovie);
                     }
@@ -320,8 +335,7 @@ public sealed partial class MainWindow : Window
                 break;
 
             case AppRoute.PlayEpisode playEpisode:
-                if (AppServices.Library.EpisodeByTmdbId(playEpisode.TmdbId) is { } episode
-                    && AppServices.Library.ShowForEpisode(episode) is { } episodeShow)
+                if (AppServices.Library.PreferredEpisode(playEpisode.TmdbId) is var (episodeShow, episode))
                 {
                     _ = GatedPlayShowAsync(episodeShow, () => AppServices.Player.Play(episodeShow, episode));
                 }
@@ -350,10 +364,60 @@ public sealed partial class MainWindow : Window
                 }
                 break;
 
+            case AppRoute.Handoff handoff:
+                // Only one ContentDialog can be open: a link that arrives
+                // during another dialog says so instead of replacing it.
+                if (Content.XamlRoot is not { } root) break;
+                if (Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(root).Any(popup => popup.Child is ContentDialog))
+                {
+                    ShowActivationMessage(Loc.Get("Activation_DialogOpen"));
+                    break;
+                }
+                _ = Controls.HandoffDialog.ShowForLinkAsync(root, handoff.Code);
+                break;
+
             default:
                 ShowActivationMessage(Loc.Get("Library_ItemMissing"));
                 break;
         }
+    }
+
+    /// <summary>
+    /// Opens Settings with the shell's Settings item selected: on
+    /// <paramref name="category"/>, or on the category last open this session
+    /// when it is null. With <paramref name="focusCategories"/> the keyboard
+    /// lands on the open category, as after Ctrl+,.
+    /// </summary>
+    public void ShowSettings(SettingsCategory? category = null, bool focusCategories = false)
+    {
+        _suppressNavSelection = true;
+        Nav.SelectedItem = Nav.SettingsItem;
+        _suppressNavSelection = false;
+
+        if (category is { } open)
+        {
+            // A category is a parameter, so even the Settings page already
+            // shown navigates to it (the page itself is cached).
+            _rootParameter = null;
+            NavigateRoot(typeof(SettingsPage), open);
+        }
+        else
+        {
+            NavigateRoot(typeof(SettingsPage));
+        }
+
+        if (focusCategories && RootFrame.Content is SettingsPage settings) settings.FocusCategories();
+    }
+
+    /// <summary>
+    /// The Downloaded page's own picker chose <paramref name="section"/>
+    /// (null: the whole page) without navigating: the sidebar row follows,
+    /// and choosing a row later still navigates.
+    /// </summary>
+    public void FollowDownloadedSection(DownloadedSection? section)
+    {
+        _rootParameter = section;
+        SelectSidebar(SidebarItem.ForDownloaded(section).NavTag);
     }
 
     private void SelectSidebar(string tag)
@@ -363,6 +427,21 @@ public sealed partial class MainWindow : Window
             .SelectMany(item => item.MenuItems.OfType<NavigationViewItem>().Prepend(item))
             .FirstOrDefault(item => item.Tag as string == tag);
         _suppressNavSelection = false;
+    }
+
+    private const double ActivationBarGutter = 24;
+
+    /// <summary>
+    /// Centres the activation bar over the page beside the sidebar, open or
+    /// folded to its icons, so a long notice such as the OneDrive offer never
+    /// covers the navigation rows. The player covers the sidebar, so over it
+    /// the bar centres on the whole window.
+    /// </summary>
+    private void PlaceActivationBar()
+    {
+        var sidebar = PlayerOverlay.Visibility == Visibility.Visible ? 0
+            : Nav.IsPaneOpen ? Nav.OpenPaneLength : Nav.CompactPaneLength;
+        ActivationBar.Margin = new Thickness(sidebar + ActivationBarGutter, 12, ActivationBarGutter, 0);
     }
 
     public void ShowActivationMessage(string message)

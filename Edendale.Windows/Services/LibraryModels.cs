@@ -125,6 +125,16 @@ public sealed class LibraryMovie
     public string Title { get; set; } = "";
     public int? Year { get; set; }
     public int? TmdbId { get; set; }
+
+    /// <summary>
+    /// When TMDB last answered with no match for this file. The metadata
+    /// sweep waits <see cref="LibraryEnrichment.UnmatchedRetryInterval"/>
+    /// before asking again, and a forced rescan asks at once; a failed request
+    /// leaves it null so the next sweep retries (Apple Movie.metadataCheckedAt).
+    /// Library data: it stays in library.json and never syncs.
+    /// </summary>
+    public DateTimeOffset? MetadataCheckedAt { get; set; }
+
     public string? PosterUrl { get; set; }
     public string? BackdropUrl { get; set; }
     public string? Overview { get; set; }
@@ -141,6 +151,14 @@ public sealed class LibraryMovie
             return parts.Count > 0 ? string.Join(" · ", parts) : AppText.Get("Library_AwaitingMetadata");
         }
     }
+
+    /// <summary>
+    /// When this copy last started playing on this PC. Of several copies of
+    /// one title (different sources or endpoints), the one played last is the
+    /// default (Movie.lastPlayedAt, apple-27.1 94a8b4f). Library data: it
+    /// never syncs. Null in libraries written before 27.1.
+    /// </summary>
+    public DateTimeOffset? LastPlayedAt { get; set; }
 }
 
 public sealed class LibraryEpisode
@@ -152,6 +170,13 @@ public sealed class LibraryEpisode
     public int Episode { get; set; }
     public string? Title { get; set; }
     public int? TmdbId { get; set; }
+
+    /// <summary>
+    /// When TMDB last had no such episode for the matched show (see
+    /// <see cref="LibraryMovie.MetadataCheckedAt"/>).
+    /// </summary>
+    public DateTimeOffset? MetadataCheckedAt { get; set; }
+
     public string? StillUrl { get; set; }
     public int? RuntimeMinutes { get; set; }
     public DateTimeOffset DateAdded { get; set; } = DateTimeOffset.UtcNow;
@@ -165,6 +190,13 @@ public sealed class LibraryShow
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "";
     public int? TmdbId { get; set; }
+
+    /// <summary>
+    /// When TMDB last answered with no match for this show (see
+    /// <see cref="LibraryMovie.MetadataCheckedAt"/>).
+    /// </summary>
+    public DateTimeOffset? MetadataCheckedAt { get; set; }
+
     public string? PosterUrl { get; set; }
     public string? BackdropUrl { get; set; }
     public string? Overview { get; set; }
@@ -178,17 +210,22 @@ public sealed class LibraryShow
     public IReadOnlyList<LibraryEpisode> EpisodesFor(int season) =>
         [.. Episodes.Where(episode => episode.Season == season).OrderBy(episode => episode.Episode)];
 
-    public string DisplaySubtitle
-    {
-        get
-        {
-            var seasons = AvailableSeasons.Count;
-            var episodes = Episodes.Count;
-            var seasonText = seasons == 1 ? "1 season" : $"{seasons} seasons";
-            var episodeText = episodes == 1 ? "1 episode" : $"{episodes} episodes";
-            return $"{seasonText} · {episodeText}";
-        }
-    }
+    /// <summary>
+    /// "1 season · 3 episodes" for this record alone, an episode held by two
+    /// sources counted once. A card that stands for several records counts
+    /// them together (PlaybackSources.ShowSubtitle).
+    /// </summary>
+    public string DisplaySubtitle => PlaybackSources.ShowSubtitle([this]);
+
+    /// <summary>
+    /// When an episode of this show last started playing on this PC, by the
+    /// source (folder id) it played from. One Windows record can span
+    /// sources, so this is Apple's per-copy TVShow.lastPlayedAt kept per
+    /// source: it remembers the source, or endpoint, the viewer chose for the
+    /// show, and outlives the file that was watched. Library data: it never
+    /// syncs. Null until something plays, and in libraries before 27.1.
+    /// </summary>
+    public Dictionary<Guid, DateTimeOffset>? LastPlayedAtBySource { get; set; }
 }
 
 public sealed class LibraryData
@@ -196,6 +233,146 @@ public sealed class LibraryData
     public List<LibraryFolder> Folders { get; set; } = [];
     public List<LibraryMovie> Movies { get; set; } = [];
     public List<LibraryShow> Shows { get; set; } = [];
+
+    // ------------------------------------------------------------------
+    // Titles in several sources (apple-27.1 94a8b4f). LibraryService calls
+    // these under its lock; they live here so the tests can reach them.
+    // ------------------------------------------------------------------
+
+    public LibraryFolder? FolderById(Guid id) => Folders.FirstOrDefault(folder => folder.Id == id);
+
+    /// <summary>
+    /// Every copy of <paramref name="movie"/>'s title (PlaybackSources.CopyKey):
+    /// the movie first, then the others local first, then by source name and
+    /// path, as Play From lists them.
+    /// </summary>
+    public IReadOnlyList<LibraryMovie> MovieCopies(LibraryMovie movie)
+    {
+        var key = PlaybackSources.CopyKey(movie);
+        var others = Movies
+            .Where(copy => copy.Id != movie.Id && PlaybackSources.CopyKey(copy) == key)
+            .OrderByDescending(copy => copy.DateAdded);
+        return PlaybackSources.Order(movie, others, copy => FolderById(copy.FolderId));
+    }
+
+    /// <summary>
+    /// Every record of <paramref name="show"/>'s title: the show first, then
+    /// the others newest first. A record can hold several sources, and two
+    /// names for one show ("Severance" and "Severance (2022)") make two
+    /// records that a TMDB match ties together.
+    /// </summary>
+    public IReadOnlyList<LibraryShow> ShowCopies(LibraryShow show)
+    {
+        var key = PlaybackSources.CopyKey(show);
+        return
+        [
+            show,
+            .. Shows
+                .Where(copy => copy.Id != show.Id && PlaybackSources.CopyKey(copy) == key)
+                .OrderByDescending(copy => copy.DateAdded),
+        ];
+    }
+
+    /// <summary>
+    /// Notes that the file at <paramref name="filePath"/> started playing: a
+    /// movie copy's own stamp, or for an episode, its show record's stamp for
+    /// the episode's source. Paths compare the way scans store them. False
+    /// when the file isn't in the library (Open With of a loose file).
+    /// </summary>
+    public bool NotePlayed(string filePath, DateTimeOffset at)
+    {
+        var comparison = SourceUrl.IsUrl(filePath) ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        if (Movies.FirstOrDefault(movie => string.Equals(movie.FilePath, filePath, comparison)) is { } played)
+        {
+            played.LastPlayedAt = at;
+            return true;
+        }
+        foreach (var show in Shows)
+        {
+            if (show.Episodes.FirstOrDefault(episode => string.Equals(episode.FilePath, filePath, comparison)) is { } episode)
+            {
+                (show.LastPlayedAtBySource ??= [])[episode.FolderId] = at;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// The copy of a TMDB movie to play when several sources hold one: the
+    /// reachable copy played last, else the first reachable in Play From
+    /// order starting from the newest copy, as the Downloaded card's detail
+    /// page would pick.
+    /// </summary>
+    public LibraryMovie? PreferredMovie(int tmdbId, Func<Guid, bool> isUnavailable)
+    {
+        var newest = Movies.Where(movie => movie.TmdbId == tmdbId).MaxBy(movie => movie.DateAdded);
+        return newest is null
+            ? null
+            : PlaybackSources.Preferred(MovieCopies(newest), movie => isUnavailable(movie.FolderId), movie => movie.LastPlayedAt);
+    }
+
+    /// <summary>
+    /// The file of a TMDB episode to play when several sources hold it: the
+    /// one in the first source of PlaybackSources.SourcePreference (the
+    /// reachable source played last, else the first reachable), with the
+    /// record holding it.
+    /// </summary>
+    public ShowEpisode? PreferredEpisode(int episodeTmdbId, Func<Guid, bool> isUnavailable)
+    {
+        var candidates = Shows
+            .OrderByDescending(show => show.DateAdded)
+            .SelectMany(show => show.Episodes
+                .Where(episode => episode.TmdbId == episodeTmdbId)
+                .Select(episode => new ShowEpisode(show, episode)))
+            .ToList();
+        if (candidates.Count == 0) return null;
+        var preference = PlaybackSources.SourcePreference(ShowCopies(candidates[0].Show), FolderById, isUnavailable);
+        return PlaybackSources.PreferredEpisode(candidates, preference);
+    }
+
+    /// <summary>
+    /// Removes one source's episodes from a show title's records (Remove
+    /// from "Media (nas)"), and that source's play memory with them. Records
+    /// left empty go; a Google Drive source keeps the removed files hidden
+    /// from later scans (ENHANCEMENT.md 3.20 D2). The other sources stay.
+    /// </summary>
+    public bool RemoveShowSource(IReadOnlyCollection<Guid> showIds, Guid folderId)
+    {
+        var removed = new List<string>();
+        foreach (var show in Shows.Where(show => showIds.Contains(show.Id)))
+        {
+            removed.AddRange(show.Episodes.Where(episode => episode.FolderId == folderId).Select(episode => episode.FilePath));
+            show.Episodes.RemoveAll(episode => episode.FolderId == folderId);
+            ForgetSource(show, folderId);
+        }
+        var dropped = Shows.RemoveAll(show => showIds.Contains(show.Id) && show.Episodes.Count == 0);
+        FolderById(folderId)?.Hide(removed);
+        return removed.Count > 0 || dropped > 0;
+    }
+
+    /// <summary>
+    /// Removes every record of a show title, as Remove on its card does when
+    /// one source holds it; removed Google Drive files stay hidden from later
+    /// scans (ENHANCEMENT.md 3.20 D2).
+    /// </summary>
+    public bool RemoveShows(IReadOnlyCollection<Guid> showIds)
+    {
+        var removed = Shows.Where(show => showIds.Contains(show.Id)).ToList();
+        foreach (var episodes in removed.SelectMany(show => show.Episodes).GroupBy(episode => episode.FolderId))
+        {
+            FolderById(episodes.Key)?.Hide(episodes.Select(episode => episode.FilePath));
+        }
+        return Shows.RemoveAll(show => showIds.Contains(show.Id)) > 0;
+    }
+
+    /// <summary>Forgets that anything of the show played from a source, as when the source goes.</summary>
+    public static void ForgetSource(LibraryShow show, Guid folderId)
+    {
+        if (show.LastPlayedAtBySource is not { } stamps) return;
+        stamps.Remove(folderId);
+        if (stamps.Count == 0) show.LastPlayedAtBySource = null;
+    }
 }
 
 /// <summary>Why a linked source couldn't be scanned (DIFF.md §3.12).</summary>

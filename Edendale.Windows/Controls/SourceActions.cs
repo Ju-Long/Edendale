@@ -8,7 +8,7 @@ namespace Edendale.Windows.Controls;
 
 /// <summary>
 /// What a source row says and does, shared by the Downloaded page and
-/// Settings → Sources (SourceRow.swift): the kind and item count, the last
+/// Settings → Library → Sources (SourceRow.swift): the kind and item count, the last
 /// scan's failure, Rescan, Sign In, and Remove. A Google Drive source also
 /// offers Choose More Videos, which reopens Google's picker.
 /// </summary>

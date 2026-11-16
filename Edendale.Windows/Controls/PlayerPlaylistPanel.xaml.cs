@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Edendale.Windows.Core;
 using Edendale.Windows.Services;
 
 namespace Edendale.Windows.Controls;
@@ -44,12 +45,21 @@ public sealed partial class PlayerPlaylistPanel : UserControl
         CloseRequested?.Invoke(this, new RoutedEventArgs());
     }
 
-    public void Load(PlaybackRequest request)
+    /// <param name="context">The playing item's copies: an episode lists every episode once, from its source.</param>
+    public void Load(PlaybackRequest request, PlayerContext? context = null)
     {
         ItemsPanel.Children.Clear();
         _currentRow = null;
 
         bool isEpisode = request.MediaType == "episode" || request.EpisodeNumber.HasValue;
+
+        if (isEpisode && context is { Episode: { } playing } && context.PlaylistEpisodes() is { Count: > 0 } entries)
+        {
+            HeaderText.Text = Loc.Get("Playlist_Episodes");
+            PopulateEpisodes(entries, playing);
+            ScrollToCurrent();
+            return;
+        }
 
         if (isEpisode)
         {
@@ -82,6 +92,49 @@ public sealed partial class PlayerPlaylistPanel : UserControl
             VerticalAlignmentRatio = 0.3,
             AnimationDesired = false,
         }));
+    }
+
+    /// <summary>
+    /// One row per episode across every copy of the show (EpisodeProgression.PlaylistEpisodes):
+    /// one share linked through two endpoints lists each episode once. A row
+    /// another source fills in names that source.
+    /// </summary>
+    private void PopulateEpisodes(IReadOnlyList<ShowEpisode> entries, LibraryEpisode playing)
+    {
+        foreach (var season in entries.GroupBy(entry => entry.Episode.Season))
+        {
+            var seasonStack = new StackPanel { Spacing = 6 };
+            seasonStack.Children.Add(new TextBlock
+            {
+                Text = Loc.Format("Playlist_Season", season.Key),
+                Style = (Style)Application.Current.Resources["LabelCapsTextStyle"]
+            });
+
+            foreach (var (show, episode) in season)
+            {
+                var isCurrent = episode.Id == playing.Id;
+                var identified = episode.TmdbId is not null;
+                var detail = episode.RuntimeMinutes is int minutes && minutes > 0
+                    ? $"{episode.EpisodeCode} · {Loc.Format("Playlist_Runtime", minutes)}"
+                    : episode.EpisodeCode;
+                if (episode.FolderId != playing.FolderId)
+                {
+                    detail += " · " + PlaybackSources.Title(AppServices.Library.FolderById(episode.FolderId), episode.FilePath);
+                }
+                seasonStack.Children.Add(CreateRow(
+                    title: episode.DisplayTitle,
+                    detail: detail,
+                    artwork: identified ? episode.StillUrl ?? show.BackdropUrl : null,
+                    showArtwork: identified,
+                    isCurrent: isCurrent,
+                    action: () =>
+                    {
+                        if (isCurrent) return;
+                        PlayRequested?.Invoke(this, PlayerSession.RequestFor(show, episode));
+                    }));
+            }
+            ItemsPanel.Children.Add(seasonStack);
+        }
     }
 
     private void PopulateShow(LibraryShow show, string currentFilePath)

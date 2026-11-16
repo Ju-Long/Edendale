@@ -144,6 +144,9 @@ public sealed record HandoffQrCode(string Name, string? Host, int? Port, byte[] 
     public const string Scheme = "edendale";
     public const string Path = "handoff";
 
+    /// <summary>Never the secret, nor the address: this can reach a log line.</summary>
+    public override string ToString() => nameof(HandoffQrCode);
+
     public string ToUri()
     {
         var query = new List<string> { "v=2", "n=" + Uri.EscapeDataString(Name) };

@@ -1,5 +1,5 @@
 // One device-local store for every player preference introduced in 27.0:
-// App Controls, Loop and Fit/Fill, skip prompts, audio enhancement, picture
+// Player Controls, Loop and Fit/Fill, skip prompts, audio enhancement, picture
 // adjustments, subtitle appearance, video enhancement, and the per-title
 // track memory. Keys are Apple's (`player.skipBackwardSeconds`, …) so the two
 // platforms describe the same settings the same way, but nothing is shared or

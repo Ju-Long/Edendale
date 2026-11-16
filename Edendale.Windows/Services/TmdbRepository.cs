@@ -25,25 +25,8 @@ internal sealed class TmdbRepository
 
         var trending = await trendingTask;
         var genres = await genresTask;
-        var continueProgress = progress
-            .Where(item => !item.IsCompleted)
-            .OrderByDescending(item => item.LastWatchedEpochMillis)
-            .FirstOrDefault(item =>
-                item.MediaType == "movie" || (item.MediaType == "episode" && item.ShowTmdbId is not null));
-        MediaRef? continueRef = continueProgress switch
-        {
-            { MediaType: "movie" } => new MediaRef
-            {
-                Id = continueProgress.TmdbId,
-                MediaType = "movie",
-            },
-            { MediaType: "episode", ShowTmdbId: int showId } => new MediaRef
-            {
-                Id = showId,
-                MediaType = "tv",
-            },
-            _ => null,
-        };
+        var continueProgress = HomeHero.ContinueProgress(progress);
+        var continueRef = HomeHero.ContinueRef(continueProgress);
 
         HeroScene? continueScene = null;
         if (continueRef is not null)
@@ -91,6 +74,22 @@ internal sealed class TmdbRepository
                 }),
             ],
         };
+    }
+
+    /// <summary>
+    /// Home's Continue Watching scene for <paramref name="progress"/> as it is
+    /// now, or null when nothing is left to continue. While the title is still
+    /// <paramref name="known"/>'s only the position moved, so its details are
+    /// reused and no request is made.
+    /// </summary>
+    public async Task<HeroScene?> ContinueSceneAsync(IReadOnlyList<WatchProgress> progress, MediaDetail? known)
+    {
+        var continueProgress = HomeHero.ContinueProgress(progress);
+        if (HomeHero.ContinueRef(continueProgress) is not { } continueRef) return null;
+        var detail = known is not null && HomeHero.SameTitle(known.Ref, continueRef)
+            ? known
+            : await MediaDetailAsync(continueRef.Id, continueRef.MediaType);
+        return CreateHeroScene(detail, continueProgress);
     }
 
     public Task<List<MediaItem>> LoadCollectionAsync(string filter)

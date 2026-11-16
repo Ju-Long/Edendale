@@ -1,11 +1,13 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Edendale.Windows.Core;
 using Edendale.Windows.Models;
 using Edendale.Windows.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
@@ -24,6 +26,12 @@ public sealed class ResumeEntry
     public LibraryShow? Show { get; init; }
     public LibraryEpisode? Episode { get; init; }
 
+    /// <summary>
+    /// The saved position behind a resumable card; null for a next-up
+    /// suggestion, which has none of its own.
+    /// </summary>
+    public WatchProgress? Record { get; init; }
+
     /// <summary>Orders resumable titles and next-up suggestions together.</summary>
     public long LastWatchedEpochMillis { get; init; }
 }
@@ -37,8 +45,12 @@ public sealed partial class DownloadedPage : Page
 {
     private bool _rescannedThisVisit;
 
-    /// <summary>The sidebar section this visit shows, or null for the whole page (DIFF.md §3.15).</summary>
+    /// <summary>The section shown, or null for the whole page (DIFF.md §3.15): a sidebar row's, or the picker's.</summary>
     private Core.DownloadedSection? _section;
+
+    /// <summary>The section picker's chips, rebuilt only when the choices change so a pick keeps its focus.</summary>
+    private Controls.ChipGroup<Core.DownloadedSection?>? _picker;
+    private IReadOnlyList<Core.DownloadedSection?> _pickerChoices = [];
 
     public DownloadedPage()
     {
@@ -78,7 +90,9 @@ public sealed partial class DownloadedPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        _section = e.Parameter is Core.DownloadedSection section ? section : null;
+        // Back from a title keeps the section on screen: a pick changed it
+        // without navigating, so the stack entry still names the old one.
+        if (e.NavigationMode != NavigationMode.Back) _section = e.Parameter is Core.DownloadedSection section ? section : null;
         // A new section starts at the top; Back keeps the reader's place.
         if (e.NavigationMode != NavigationMode.Back) LibraryScroll.ChangeView(null, 0, null, disableAnimation: true);
         RefreshAll();
@@ -96,9 +110,41 @@ public sealed partial class DownloadedPage : Page
         _rescannedThisVisit = false;
     }
 
+    /// <summary>
+    /// The sections with titles for the current audience, in sidebar order:
+    /// one rule for the sidebar rows and the page's picker, so they agree.
+    /// </summary>
+    internal static IReadOnlyList<Core.DownloadedSection> AvailableSections(
+        LibraryService library, IReadOnlyList<LibraryMovie> visibleMovies, int visibleShowCount) =>
+        Core.LibrarySections.AvailableDownloaded(
+            ContinueWatchingEntries(library, visibleMovies, limit: 1).Count > 0, visibleMovies.Count, visibleShowCount);
+
     /// <summary>x:Bind hook for the poster grid's watched check.</summary>
     public static bool MovieWatched(int? tmdbId) =>
         tmdbId is int id && AppServices.WatchProgress.IsWatched(id, "movie");
+
+    /// <summary>
+    /// x:Bind hook for a Continue Watching card's menu: Clear Progress, which
+    /// deletes the saved position and takes the title off the shelf (it syncs
+    /// to other devices as a removal). An Up Next card gets no menu.
+    /// </summary>
+    public static FlyoutBase? ResumeContextFlyout(WatchProgress? record)
+    {
+        if (record is null) return null;
+        var clear = new MenuFlyoutItem { Text = Loc.Get("Library_ClearProgress") };
+        clear.Click += (_, _) => ClearProgress(record);
+        return new MenuFlyout { Items = { clear } };
+    }
+
+    /// <summary>Writes the position away as a removal (a stamped tombstone the sync files carry).</summary>
+    internal static void ClearProgress(WatchProgress record) =>
+        AppServices.WatchProgress.Remove(record.TmdbId, record.MediaType, record.ShowTmdbId, record.SeasonNumber, record.EpisodeNumber);
+
+    /// <summary>
+    /// x:Bind hook for a show card's subtitle: seasons and episodes counted
+    /// across every record of its title, an episode two sources hold once.
+    /// </summary>
+    public static string ShowSubtitle(Guid showId) => AppServices.Library.ShowSubtitle(showId) ?? "";
 
     // ------------------------------------------------------------------
     // Rendering
@@ -112,7 +158,7 @@ public sealed partial class DownloadedPage : Page
         LibraryScroll.Visibility = library.IsEmpty ? Visibility.Collapsed : Visibility.Visible;
         if (library.IsEmpty) return;
 
-        // Status row
+        // Status row: only while something is under way.
         if (library.IsImporting)
         {
             StatusRing.IsActive = true;
@@ -133,6 +179,7 @@ public sealed partial class DownloadedPage : Page
             StatusRing.IsActive = false;
             StatusText.Text = "";
         }
+        StatusRow.Visibility = StatusRing.IsActive ? Visibility.Visible : Visibility.Collapsed;
         ErrorText.Text = library.ErrorMessage ?? "";
         ErrorText.Visibility = library.ErrorMessage is null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -140,6 +187,11 @@ public sealed partial class DownloadedPage : Page
         // The audience filter hides blocked titles here and in every grid below.
         var movies = library.Movies.Where(m => AudienceAllows(m.TmdbId, "movie")).ToList();
         var shows = library.Shows.Where(s => AudienceAllows(s.TmdbId, "tv")).ToList();
+        // One card per title, however many sources hold a copy: the newest
+        // copy stands for it, and its page plays and lists every copy.
+        var movieTitles = PlaybackSources.Distinct(movies, PlaybackSources.CopyKey);
+        var showTitles = PlaybackSources.Distinct(shows, PlaybackSources.CopyKey);
+        UpdateSectionPicker(AvailableSections(library, movies, shows.Count));
 
         if (_section is { } section)
         {
@@ -153,10 +205,10 @@ public sealed partial class DownloadedPage : Page
                 : [];
             ContinueGridSection.Visibility = everyResume.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ResumeGridRepeater.ItemsSource = everyResume;
-            var sectionMovies = section == Core.DownloadedSection.Movies ? movies : [];
+            var sectionMovies = section == Core.DownloadedSection.Movies ? movieTitles : [];
             MoviesSection.Visibility = sectionMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             MoviesRepeater.ItemsSource = sectionMovies;
-            var sectionShows = section == Core.DownloadedSection.Shows ? shows : [];
+            var sectionShows = section == Core.DownloadedSection.Shows ? showTitles : [];
             ShowsSection.Visibility = sectionShows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ShowsRepeater.ItemsSource = sectionShows;
             _ = VerifyAudienceAsync();
@@ -173,14 +225,14 @@ public sealed partial class DownloadedPage : Page
             .Where(entry => entry.Movie?.TmdbId is not null)
             .Select(entry => entry.Movie!.TmdbId!.Value)
             .ToHashSet();
-        var gridMovies = movies
+        var gridMovies = movieTitles
             .Where(movie => movie.TmdbId is not int id || !resumeMovieIds.Contains(id))
             .ToList();
         MoviesSection.Visibility = gridMovies.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         MoviesRepeater.ItemsSource = gridMovies;
 
-        ShowsSection.Visibility = shows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        ShowsRepeater.ItemsSource = shows;
+        ShowsSection.Visibility = showTitles.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowsRepeater.ItemsSource = showTitles;
 
         BuildSources(library);
 
@@ -190,10 +242,58 @@ public sealed partial class DownloadedPage : Page
     }
 
     /// <summary>
+    /// The page's own section picker: hidden with fewer than two sections;
+    /// a section that emptied falls back to the whole page here, as its
+    /// sidebar row does; and the chips are rebuilt only when the choices
+    /// change, so a pick keeps keyboard focus on its chip.
+    /// </summary>
+    private void UpdateSectionPicker(IReadOnlyList<Core.DownloadedSection> sections)
+    {
+        if (_section is not null && Core.LibrarySections.Resolved(_section, sections) is null)
+        {
+            _section = null;
+            (App.MainWindow as MainWindow)?.FollowDownloadedSection(null);
+        }
+
+        var offered = Core.LibrarySections.IsPickerOffered(sections);
+        SectionPicker.Visibility = offered ? Visibility.Visible : Visibility.Collapsed;
+        if (!offered) return;
+
+        var choices = Core.LibrarySections.PickerChoices(sections);
+        if (_picker is null || !choices.SequenceEqual(_pickerChoices))
+        {
+            _pickerChoices = choices;
+            _picker = new Controls.ChipGroup<Core.DownloadedSection?>(
+                SectionPicker,
+                [.. choices.Select(choice => new Controls.ChipOption<Core.DownloadedSection?>(choice, choice.PickerTitle(), choice.PickerTitle()))],
+                PickSection,
+                radio: true);
+        }
+        _picker.Select(_section);
+    }
+
+    /// <summary>
+    /// A chip changes the section in place, as Apple's and Android's do: no
+    /// navigation, so no transition, no second rescan, and focus stays on the
+    /// chip. The sidebar row follows, and the page starts again at the top.
+    /// </summary>
+    private void PickSection(Core.DownloadedSection? choice)
+    {
+        if (choice == _section) return;
+        _section = choice;
+        (App.MainWindow as MainWindow)?.FollowDownloadedSection(choice);
+        LibraryScroll.ChangeView(null, 0, null, disableAnimation: true);
+        RefreshAll();
+    }
+
+    /// <summary>
     /// Half-watched titles plus, for each show with nothing in progress, the
     /// stored episode after the furthest completed one (DIFF.md §3.4). The
     /// suggestion works after the watched file was deleted, merges duplicate
-    /// show records into one card, and never writes progress.
+    /// show records into one card, and never writes progress. Each card
+    /// starts the reachable copy played last, else the first reachable one
+    /// (ResumeItem.items at apple-27.1 94a8b4f); so do the jump-list entries
+    /// built from these.
     /// </summary>
     internal static List<ResumeEntry> ContinueWatchingEntries(LibraryService library, IReadOnlyList<LibraryMovie> movies, int? limit)
     {
@@ -203,7 +303,7 @@ public sealed partial class DownloadedPage : Page
         {
             if (progress.MediaType == "movie")
             {
-                var movie = movies.FirstOrDefault(m => m.TmdbId == progress.TmdbId);
+                var movie = movies.Any(m => m.TmdbId == progress.TmdbId) ? library.PreferredMovie(progress.TmdbId) : null;
                 if (movie is null) continue;
                 entries.Add(new ResumeEntry
                 {
@@ -213,15 +313,14 @@ public sealed partial class DownloadedPage : Page
                     Progress = progress.Position,
                     PlaceholderAsset = "ms-appx:///Assets/Icons/film.svg",
                     Movie = movie,
+                    Record = progress,
                     LastWatchedEpochMillis = progress.LastWatchedEpochMillis,
                 });
             }
             else
             {
-                var episode = library.EpisodeByTmdbId(progress.TmdbId);
-                if (episode is null) continue;
-                var show = library.ShowForEpisode(episode);
-                if (show is null || !AudienceAllows(show.TmdbId, "tv")) continue;
+                if (library.PreferredEpisode(progress.TmdbId) is not var (show, episode)) continue;
+                if (!AudienceAllows(show.TmdbId, "tv")) continue;
                 entries.Add(new ResumeEntry
                 {
                     Title = show.Name,
@@ -231,6 +330,7 @@ public sealed partial class DownloadedPage : Page
                     PlaceholderAsset = "ms-appx:///Assets/Icons/tv.svg",
                     Show = show,
                     Episode = episode,
+                    Record = progress,
                     LastWatchedEpochMillis = progress.LastWatchedEpochMillis,
                 });
             }
@@ -240,7 +340,13 @@ public sealed partial class DownloadedPage : Page
             .Where(progress => progress.MediaType == "episode" && progress.ShowTmdbId is not null)
             .Select(progress => progress.ShowTmdbId!.Value)
             .ToHashSet();
-        foreach (var nextUp in Core.EpisodeProgression.NextUpEpisodes(AppServices.WatchProgress.All, inProgressShows, library.Shows))
+        // The next episode comes from the show's reachable source played last, else the first reachable one.
+        var nextUps = EpisodeProgression.NextUpEpisodes(
+            AppServices.WatchProgress.All,
+            inProgressShows,
+            library.Shows,
+            copies => PlaybackSources.SourcePreference(copies, library.FolderById, library.IsUnavailable));
+        foreach (var nextUp in nextUps)
         {
             if (!AudienceAllows(nextUp.Show.TmdbId, "tv")) continue;
             entries.Add(new ResumeEntry
@@ -417,20 +523,76 @@ public sealed partial class DownloadedPage : Page
         }
     }
 
-    private void RemoveMovie_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// A movie card's menu, built as it opens so it is current: Clear
+    /// Progress while the movie is under way, then Remove for a title one
+    /// source holds, or one "Remove from Media (nas.local)" per copy, its kind
+    /// and file name beside it, which tells apart two files in one source
+    /// (DownloadedView at apple-27.1 94a8b4f). Removing one copy leaves the
+    /// others.
+    /// </summary>
+    private void MovieMenu_Opening(object? sender, object e)
     {
-        if ((sender as FrameworkElement)?.Tag is LibraryMovie movie)
+        if (sender is not MenuFlyout menu || menu.Target is not FrameworkElement { Tag: LibraryMovie movie }) return;
+        var library = AppServices.Library;
+        menu.Items.Clear();
+        if (movie.TmdbId is int id && AppServices.WatchProgress.Get(id, "movie") is { IsCompleted: false, Position: > 0 } progress)
         {
-            AppServices.Library.RemoveMovie(movie);
+            menu.Items.Add(MenuItem(Loc.Get("Library_ClearProgress"), null, () => ClearProgress(progress)));
+        }
+        var copies = library.MovieCopies(movie);
+        if (copies.Count <= 1)
+        {
+            menu.Items.Add(MenuItem(Loc.Get("Common_Remove"), null, () => library.RemoveMovie(movie)));
+            return;
+        }
+        foreach (var copy in copies)
+        {
+            var folder = library.FolderById(copy.FolderId);
+            menu.Items.Add(MenuItem(
+                Loc.Format("Library_RemoveFrom", PlaybackSources.Title(folder, copy.FilePath)),
+                PlaybackSources.Detail(folder, copy.FilePath),
+                () => library.RemoveMovie(copy)));
         }
     }
 
-    private void RemoveShow_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// A show card's menu: Remove for a title one source holds, or one
+    /// "Remove from …" per source, which takes that source's episodes of the
+    /// show and leaves the others. One record can span sources on Windows, so
+    /// a source is what Apple calls a copy of the show.
+    /// </summary>
+    private void ShowMenu_Opening(object? sender, object e)
     {
-        if ((sender as FrameworkElement)?.Tag is LibraryShow show)
+        if (sender is not MenuFlyout menu || menu.Target is not FrameworkElement { Tag: LibraryShow show }) return;
+        var library = AppServices.Library;
+        menu.Items.Clear();
+        var copies = library.ShowCopies(show);
+        var sources = library.ShowSources(copies);
+        if (sources.Count <= 1)
         {
-            AppServices.Library.RemoveShow(show);
+            menu.Items.Add(MenuItem(Loc.Get("Common_Remove"), null, () => library.RemoveShows(copies)));
+            return;
         }
+        foreach (var id in sources)
+        {
+            var folder = library.FolderById(id);
+            var name = folder is null ? Loc.Get("Source_Unavailable") : PlaybackSources.Title(folder, folder.Path);
+            menu.Items.Add(MenuItem(Loc.Format("Library_RemoveFrom", name), null, () => library.RemoveShowSource(copies, id)));
+        }
+    }
+
+    /// <summary>A menu row; <paramref name="detail"/> sits on the right and is read with the row's name.</summary>
+    private static MenuFlyoutItem MenuItem(string text, string? detail, Action action)
+    {
+        var item = new MenuFlyoutItem { Text = text };
+        if (detail is not null)
+        {
+            item.KeyboardAcceleratorTextOverride = detail;
+            AutomationProperties.SetName(item, $"{text}, {detail}");
+        }
+        item.Click += (_, _) => action();
+        return item;
     }
 
     private void Resume_Click(object sender, RoutedEventArgs e)
