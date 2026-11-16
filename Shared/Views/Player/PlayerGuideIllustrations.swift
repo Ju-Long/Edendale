@@ -58,6 +58,8 @@ struct GuideFrame {
     /// Opacity of a bare timeline shown without the rest of the chrome
     /// (a hold-drag scrub, or the tvOS remote-seek overlay).
     var timeline: Double = 0
+    /// The bare timeline's playhead stretched by a Siri Remote jog.
+    var jog: GuideJog?
     /// Picture brightness, drawn as the scenery's opacity over black.
     var brightness: Double = 1
     /// How far the cloud has drifted through its loop, 0..<1; follows the
@@ -108,7 +110,40 @@ struct GuideRemote {
     var ripple: Double?
     var hold: Double = 0
     var trailStart: CGPoint?
+    /// A thumb circling the clickpad's edge, drawn as an arc trail.
+    var orbit: GuideOrbit?
     var pressed: Key?
+}
+
+/// A thumb going around the clickpad, in the clickpad's unit coordinates.
+struct GuideOrbit: Equatable {
+    var radius: Double
+    /// Where the thumb is, in radians from the right, clockwise positive
+    /// (screen coordinates).
+    var angle: Double
+    /// How fast it goes around, clockwise positive. A faster spin leaves a
+    /// longer streak behind the thumb.
+    var turnsPerSecond: Double
+
+    /// How far back along the circle the streak reaches, in radians, with
+    /// the sign of the turning.
+    var trail: Double {
+        let length = 2 * Double.pi * min(abs(turnsPerSecond) * 0.3, 0.6)
+        return turnsPerSecond < 0 ? -length : length
+    }
+}
+
+/// The timeline's playhead during a jog, as PlayerTVTimelineOverlay draws
+/// it: a capsule with one to three chevrons pointing the way it winds.
+struct GuideJog: Equatable {
+    var forward: Bool
+    /// Chevrons shown, 1...3 (`RemoteJog.speedTier`).
+    var tier: Int
+    /// The capsule's length in speed marks, eased toward `tier` the way the
+    /// player's spring eases it.
+    var stretch: Double
+    /// 0 is the round playhead, 1 the full capsule.
+    var amount: Double
 }
 
 // MARK: - Curves
@@ -174,6 +209,7 @@ struct GuideScript {
         case .levels: platform == .vision ? 3 : 5
         case .holdSpeed: 5.6
         case .scrub: 5
+        case .jog: JogDemo.duration
         case .remoteButtons: 6
         case .keyboard, .tools: 1
         }
@@ -188,6 +224,8 @@ struct GuideScript {
         case .levels: platform == .vision ? 0.6 : 0.32
         case .holdSpeed: 0.3
         case .scrub: 0.6
+        // Winding forward at full speed: three chevrons.
+        case .jog: 3.3 / JogDemo.duration
         case .remoteButtons: 0.56
         case .keyboard, .tools: 0
         }
@@ -204,6 +242,7 @@ struct GuideScript {
         case .levels: platform == .vision ? volumeOnly(phase) : levels(phase)
         case .holdSpeed: holdSpeed(phase)
         case .scrub: scrub(phase)
+        case .jog: remoteJog(phase)
         case .remoteButtons: remoteButtons(phase)
         case .keyboard, .tools: GuideFrame()
         }
@@ -441,6 +480,66 @@ struct GuideScript {
         return frame
     }
 
+    // MARK: Jog
+
+    /// The Siri Remote's jog, run through the player's own rules
+    /// (`RemoteJogDetector`, `RemoteJog`): the first three quarters of a
+    /// circle only engage it, then every turn moves the playhead, further
+    /// the faster the thumb spins, and the playhead's chevrons follow the
+    /// speed. The thumb winds clockwise up through all three speeds and
+    /// eases off, turns back counterclockwise, and stops; the jog settles
+    /// where it stopped.
+    private func remoteJog(_ p: Double) -> GuideFrame {
+        let t = p * JogDemo.duration
+        let sample = JogDemo.sample(at: t)
+        let speed = JogDemo.turnsPerSecond(at: t)
+        var frame = GuideFrame()
+        frame.drift = p
+        frame.progress = JogDemo.startPosition + sample.offset / Self.filmSeconds
+
+        let radius = JogDemo.ringRadius
+        frame.remote.thumb = CGPoint(x: radius * cos(sample.angle), y: radius * sin(sample.angle))
+        frame.remote.thumbOpacity = min(
+            Curve.ramp(t, JogDemo.touchDown - 0.25, JogDemo.touchDown),
+            1 - Curve.ramp(t, JogDemo.stop, JogDemo.stop + 0.25)
+        )
+        frame.remote.orbit = GuideOrbit(radius: radius, angle: sample.angle, turnsPerSecond: speed)
+
+        let engage = JogDemo.engageTime
+        guard t >= engage else { return frame }
+
+        // The player commits the preview 0.8 s after the last turn and
+        // shows the result for a second; the jog itself ends once the ring
+        // has been still for the detector's idle timeout.
+        let settled = JogDemo.stop + RemoteJogDetector.idleTimeout
+        let amount = min(Curve.ramp(t, engage, engage + 0.25), 1 - Curve.ramp(t, settled, settled + 0.25))
+        frame.timeline = min(Curve.ramp(t, engage, engage + 0.2), 1 - Curve.ramp(t, settled + 0.4, settled + 0.8))
+        frame.hudOpacity = min(
+            Curve.ramp(t, engage, engage + 0.2),
+            1 - Curve.ramp(t, JogDemo.stop + 1.6, JogDemo.stop + 1.8)
+        )
+        frame.hud = .scrub(
+            target: timestamp(frame.progress),
+            offset: (sample.offset < 0 ? "−" : "+") + PlayerLogic.timestamp(abs(sample.offset))
+        )
+
+        if amount > 0 {
+            // The player springs the capsule between lengths; averaging the
+            // last moments' speed marks eases it the same way.
+            let marks = (0..<8).map { step in
+                let past = max(t - Double(step) * 0.03, engage)
+                return Double(RemoteJog.speedTier(turnsPerSecond: abs(JogDemo.turnsPerSecond(at: past))))
+            }
+            frame.jog = GuideJog(
+                forward: speed == 0 ? sample.forward : speed > 0,
+                tier: RemoteJog.speedTier(turnsPerSecond: abs(speed)),
+                stretch: marks.reduce(0, +) / Double(marks.count),
+                amount: amount
+            )
+        }
+        return frame
+    }
+
     // MARK: Remote buttons
 
     private func remoteButtons(_ p: Double) -> GuideFrame {
@@ -464,6 +563,96 @@ struct GuideScript {
         frame.drift = p
         return frame
     }
+}
+
+/// The jog page's thumb: when it sets down, how fast it turns, and where
+/// the player puts the playhead for that turning.
+private enum JogDemo {
+    static let duration: Double = 9
+    /// The playhead before the jog, as a share of the film.
+    static let startPosition = 0.4
+    /// Near the clickpad's edge; the player takes anything past
+    /// `RemoteJogDetector.ringRadius` as the ring.
+    static let ringRadius = 0.95
+    /// The thumb sets down at the top of the clickpad.
+    static let startAngle = -Double.pi / 2
+
+    /// Turning speed in turns per second (clockwise positive) at moments
+    /// of the loop, eased between: a steady first circle, a wind up through
+    /// all three speed marks, easing off, a reversal, and a stop.
+    private static let keys: [(time: Double, turnsPerSecond: Double)] = [
+        (0.5, 0), (0.65, 0.6), (1.9, 0.6), (3.1, 2.2), (3.6, 2.2),
+        (4.5, 0.5), (4.9, -0.6), (5.7, -1.6), (6.0, -1.6), (6.5, 0),
+    ]
+    static var touchDown: Double { keys[0].time }
+    static var stop: Double { keys[keys.count - 1].time }
+
+    static func turnsPerSecond(at time: Double) -> Double {
+        guard time > touchDown, time < stop else { return 0 }
+        for (from, to) in zip(keys, keys.dropFirst()) where time <= to.time {
+            return Curve.lerp(from.turnsPerSecond, to.turnsPerSecond, Curve.ramp(time, from.time, to.time))
+        }
+        return 0
+    }
+
+    struct Sample {
+        /// The thumb's angle, as `GuideOrbit.angle`.
+        var angle: Double
+        /// Media seconds the jog has moved the playhead.
+        var offset: Double
+        /// The way the thumb last turned.
+        var forward: Bool
+    }
+
+    /// When the first circle becomes a jog.
+    static var engageTime: Double { integrated.engageTime }
+
+    static func sample(at time: Double) -> Sample {
+        let samples = integrated.samples
+        let position = min(max(time, 0), duration) * rate
+        let index = min(Int(position), samples.count - 2)
+        let fraction = position - Double(index)
+        let (a, b) = (samples[index], samples[index + 1])
+        return Sample(
+            angle: Curve.lerp(a.angle, b.angle, fraction),
+            offset: Curve.lerp(a.offset, b.offset, fraction),
+            forward: a.forward
+        )
+    }
+
+    private static let rate: Double = 240
+
+    /// The turning followed through the loop once, the way the remote's
+    /// samples feed the detector and then the player.
+    private static let integrated: (samples: [Sample], engageTime: Double) = {
+        var samples: [Sample] = []
+        var angle = startAngle
+        var sweep = 0.0
+        var offset = 0.0
+        var forward = true
+        var engageTime: Double?
+        let step = 1 / rate
+        for index in 0...Int((duration * rate).rounded()) {
+            let time = Double(index) * step
+            samples.append(Sample(angle: angle, offset: offset, forward: forward))
+            let speed = turnsPerSecond(at: time + step / 2)
+            let radians = 2 * Double.pi * speed * step
+            angle += radians
+            if speed != 0 { forward = speed > 0 }
+            if engageTime == nil {
+                // Turning before the jog engages doesn't move the playhead.
+                sweep += radians
+                if sweep >= RemoteJogDetector.engageArc { engageTime = time + step }
+            } else {
+                offset += RemoteJog.seconds(
+                    forRadians: radians,
+                    turnsPerSecond: abs(speed),
+                    durationSeconds: GuideScript.filmSeconds
+                )
+            }
+        }
+        return (samples, engageTime ?? duration)
+    }()
 }
 
 // MARK: - Scene
@@ -515,7 +704,7 @@ private struct GuidePicture: View {
                 GuideZoneLines(zones: frame.zones, unit: u, size: size)
 
                 if frame.timeline > 0 {
-                    GuideTimeline(progress: frame.progress, unit: u, size: size, showsScrim: true)
+                    GuideTimeline(progress: frame.progress, unit: u, size: size, showsScrim: true, jog: frame.jog)
                         .opacity(frame.timeline * (1 - frame.controls))
                 }
                 if frame.controls > 0 {
@@ -739,6 +928,7 @@ private struct GuideTimeline: View {
     let unit: CGFloat
     let size: CGSize
     let showsScrim: Bool
+    var jog: GuideJog?
 
     var body: some View {
         let u = unit
@@ -774,11 +964,34 @@ private struct GuideTimeline: View {
                 .fill(Theme.gold)
                 .frame(width: max(fill, 0.8 * u), height: 0.8 * u)
                 .position(x: inset + max(fill, 0.8 * u) / 2, y: y)
-            Circle()
-                .fill(Theme.gold)
-                .frame(width: 2.2 * u, height: 2.2 * u)
+            playhead
                 .position(x: inset + fill, y: y)
         }
+    }
+
+    /// A gold dot, which a jog stretches into PlayerTVTimelineOverlay's
+    /// capsule of chevrons, drawn at the miniature's scale.
+    private var playhead: some View {
+        // The player's playhead is 18 points across; here it is 2.2 units.
+        let scale = 2.2 * unit / 18
+        let amount = jog?.amount ?? 0
+        let width = Curve.lerp(18, 40 + 24 * (jog?.stretch ?? 0), amount)
+        let height = Curve.lerp(18, 32, amount)
+        return Capsule()
+            .fill(Theme.gold)
+            .frame(width: CGFloat(width) * scale, height: CGFloat(height) * scale)
+            .overlay {
+                if let jog {
+                    HStack(spacing: -6 * scale) {
+                        ForEach(0..<jog.tier, id: \.self) { _ in
+                            Image(jog.forward ? .chevronRight : .chevronLeft)
+                        }
+                    }
+                    .font(.system(size: 18 * scale, weight: .bold))
+                    .foregroundStyle(Theme.background)
+                    .opacity(amount)
+                }
+            }
     }
 }
 
@@ -1041,6 +1254,9 @@ private struct GuideRemoteView: View {
             let point = CGPoint(x: padCenter.x + thumb.x * reach, y: padCenter.y + thumb.y * reach)
             let diameter = width * 0.24
             ZStack {
+                if let orbit = remote.orbit {
+                    orbitTrail(orbit, center: padCenter, reach: reach, width: width, diameter: diameter)
+                }
                 if let start = remote.trailStart {
                     Path { path in
                         path.move(to: CGPoint(x: padCenter.x + start.x * reach, y: padCenter.y + start.y * reach))
@@ -1056,6 +1272,41 @@ private struct GuideRemoteView: View {
                     .position(point)
             }
             .opacity(remote.thumbOpacity)
+        }
+    }
+
+    /// The circle the thumb follows around the clickpad's edge, and a
+    /// streak along it where the thumb has just been.
+    private func orbitTrail(
+        _ orbit: GuideOrbit,
+        center: CGPoint,
+        reach: CGFloat,
+        width: CGFloat,
+        diameter: CGFloat
+    ) -> some View {
+        let radius = CGFloat(orbit.radius) * reach
+        return ZStack {
+            Circle()
+                .stroke(
+                    Theme.outlineBright,
+                    style: StrokeStyle(lineWidth: max(1, width * 0.012), dash: [width * 0.03, width * 0.03])
+                )
+                .frame(width: radius * 2, height: radius * 2)
+                .position(center)
+            if orbit.trail != 0 {
+                Path { path in
+                    let steps = 32
+                    for step in 0...steps {
+                        let angle = orbit.angle - orbit.trail * Double(step) / Double(steps)
+                        let point = CGPoint(
+                            x: center.x + CGFloat(cos(angle)) * radius,
+                            y: center.y + CGFloat(sin(angle)) * radius
+                        )
+                        if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+                    }
+                }
+                .stroke(Theme.goldGlow, style: StrokeStyle(lineWidth: diameter * 0.7, lineCap: .round, lineJoin: .round))
+            }
         }
     }
 

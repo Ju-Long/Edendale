@@ -20,17 +20,55 @@ struct PlayerScreen: View {
     private var pipSource: SampleBufferPiPSource? { session.player?.pipSource }
     #endif
 
+    #if os(visionOS)
+    @Environment(\.dismissWindow) private var dismissWindow
+    #endif
+
     #if !os(tvOS)
     @FocusState private var keyboardFocused: Bool
     #endif
 
+    #if os(iOS)
+    /// The hinge, window and screen, read for the iPhone Duo's tabletop
+    /// layout.
+    @State private var fold = PlayerFoldState()
+    #endif
+    /// The window's top safe-area inset; the tabletop picture starts below it.
+    @State private var safeAreaTop: CGFloat = 0
+
     /// Dismisses the hosting scene (cover or window) and ends the session.
     let exit: () -> Void
+
+    /// The picture above the fold and the controls below it while an iPhone
+    /// Duo stands half-open in portrait; `nil` for the full-screen layout.
+    private var tabletop: PlayerTabletopLayout? {
+        #if os(iOS)
+        PlayerTabletopLayout.resolve(fold)
+        #else
+        nil
+        #endif
+    }
+
+    /// False while the visionOS theater is open: its own panel, which
+    /// follows the viewer around the room, carries the controls then.
+    private var controlsInWindow: Bool {
+        #if os(visionOS)
+        !session.theater.isImmersed
+        #else
+        true
+        #endif
+    }
 
     var body: some View {
         ZStack {
             Theme.background
                 .ignoresSafeArea()
+
+            #if os(iOS)
+            PlayerFoldReader { fold = $0 }
+                .ignoresSafeArea()
+                .accessibilityHidden(true)
+            #endif
 
             if let player = session.player,
                let item = session.item, item.scope != nil,
@@ -73,12 +111,28 @@ struct PlayerScreen: View {
         }
         #endif
         #if os(iOS)
-        .statusBarHidden(!(session.chrome?.controlsVisible ?? true))
+        // The status bar would sit over the picture, which fills the upper
+        // half in tabletop.
+        .statusBarHidden(tabletop != nil || !(session.chrome?.controlsVisible ?? true))
         .persistentSystemOverlays(
             (session.chrome?.controlsVisible ?? true) ? .automatic : .hidden
         )
         .onChange(of: session.chrome?.autoPiP ?? true, initial: true) { _, enabled in
             pipSource?.automaticallyStartsFromInline = enabled
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { top in
+            safeAreaTop = top
+        }
+        // A new session brings a new chrome model, which starts out of
+        // tabletop.
+        .onChange(
+            of: TabletopBinding(
+                chrome: session.chrome.map(ObjectIdentifier.init),
+                isTabletop: tabletop != nil
+            ),
+            initial: true
+        ) { _, binding in
+            session.chrome?.isTabletop = binding.isTabletop
         }
         #endif
         #if os(tvOS)
@@ -92,7 +146,28 @@ struct PlayerScreen: View {
         }
         .onExitCommand { handleExitCommand() }
         #endif
+        #if os(visionOS)
+        // The theater draws the picture and carries the controls, so the
+        // window closes while it is open (see VisionTheaterController).
+        // visionOS can pass over a request, or bring the window back, while
+        // the space settles, so ask again until the window has gone.
+        .task(id: session.theater.wantsPlayerWindowClosed) {
+            for _ in 0..<4 {
+                guard !Task.isCancelled, session.theater.wantsPlayerWindowClosed else { return }
+                session.theater.playerWindowWillClose()
+                dismissWindow()
+                try? await Task.sleep(for: .seconds(1.5))
+            }
+        }
+        .onAppear {
+            session.theater.playerScreenDidAppear()
+        }
+        #endif
         .onDisappear {
+            #if os(visionOS)
+            // The theater closed the window and draws the picture itself.
+            if session.theater.playerScreenDidDisappear() { return }
+            #endif
             session.surfaceDidDetach()
             // The host closed underneath us (macOS red button or cover
             // dismissal), so release the player and its file access. On
@@ -118,6 +193,9 @@ struct PlayerScreen: View {
         // the video narrows beside an open panel instead of sitting under it.
         HStack(spacing: 0) {
             playbackLayers(player: player, item: item)
+                // A resting pointer hides over the video, but stays over a
+                // docked panel and the guide, which are there to be read.
+                .hidesIdlePointer(session.chrome?.guideVisible != true)
             if let chrome = session.chrome, let panel = chrome.activePanel {
                 PlayerDockedPanel(panel: panel, chrome: chrome, player: player, item: item)
                     .transition(.move(edge: .trailing))
@@ -134,43 +212,65 @@ struct PlayerScreen: View {
 
     @ViewBuilder
     private func playbackLayers(player: PlaybackEngine, item: PlaybackItem) -> some View {
+        let tabletop = tabletop
         ZStack {
-            videoSurface(player: player)
-                .ignoresSafeArea()
+            // In tabletop the picture keeps to the upper half. The frame
+            // changes rather than the layers, so the video surface carries
+            // on through a fold.
+            ZStack {
+                videoSurface(player: player)
+                    .ignoresSafeArea()
 
-            PlayerSubtitleOverlay(
-                engine: player.subtitleEngine,
-                appearance: session.subtitleAppearance,
-                time: CMTime(seconds: player.currentTime.playbackSeconds, preferredTimescale: 60000),
-                videoSize: player.decoder?.mediaInfo?.naturalSize ?? .zero,
-                aspectFill: session.chrome?.aspectFill == true,
-                controlsVisible: session.chrome?.controlsVisible == true
-            )
-            .ignoresSafeArea()
-
-            #if os(visionOS)
-            // The picture and subtitles are on the theater's screen, so the
-            // window turns into its remote instead of showing them twice.
-            if session.theater.isImmersed {
-                VisionTheaterRemoteBackdrop(
-                    environment: session.theater.environment,
-                    showsLabel: session.chrome?.controlsVisible != true
+                PlayerSubtitleOverlay(
+                    engine: player.subtitleEngine,
+                    appearance: session.subtitleAppearance,
+                    time: CMTime(seconds: player.currentTime.playbackSeconds, preferredTimescale: 60000),
+                    videoSize: player.decoder?.mediaInfo?.naturalSize ?? .zero,
+                    aspectFill: session.chrome?.aspectFill == true,
+                    controlsVisible: session.chrome?.controlsVisible == true && tabletop == nil
                 )
                 .ignoresSafeArea()
-                .transition(.opacity)
-            }
-            #endif
 
-            #if os(iOS) || os(visionOS)
-            if let chrome = session.chrome, !chrome.guideVisible {
-                PlayerGestureLayer(chrome: chrome, player: player)
-                    .ignoresSafeArea()
+                #if os(visionOS)
+                // The picture, subtitles, and controls are in the theater.
+                // The window closes then; until it has, it only says where
+                // they went instead of showing them twice.
+                if session.theater.isImmersed {
+                    VisionTheaterRemoteBackdrop(environment: session.theater.environment)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                }
+                #endif
+
+                #if os(iOS) || os(visionOS)
+                if let chrome = session.chrome, !chrome.guideVisible, controlsInWindow {
+                    PlayerGestureLayer(chrome: chrome, player: player)
+                        .ignoresSafeArea()
+                }
+                #endif
             }
-            #endif
+            // Clear of the camera and status bar above, which the picture
+            // would otherwise run under in the shorter upper half.
+            .padding(.top, tabletop == nil ? 0 : safeAreaTop)
+            .frame(height: tabletop?.foldY)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .ignoresSafeArea()
+            // The video's drawable can't follow an animated resize; the
+            // picture jumps while the controls fade.
+            .animation(nil, value: tabletop)
 
             // The guide stands in for every control while it is up.
-            if let chrome = session.chrome, !chrome.guideVisible {
-                #if os(iOS) || os(macOS)
+            if let chrome = session.chrome, !chrome.guideVisible, controlsInWindow {
+                #if os(iOS)
+                PlayerControlsOverlay(
+                    chrome: chrome,
+                    player: player,
+                    item: item,
+                    exit: exit,
+                    pipSource: pipSource,
+                    tabletop: tabletop
+                )
+                #elseif os(macOS)
                 PlayerControlsOverlay(
                     chrome: chrome,
                     player: player,
@@ -201,10 +301,12 @@ struct PlayerScreen: View {
                     VStack {
                         HStack {
                             Spacer()
-                            PlayerUpNextView(episode: upcoming) {
+                            PlayerUpNextView(episode: upcoming, chrome: chrome) {
                                 Task { await session.play(episode: upcoming) }
                             }
-                            .padding(.top, chrome.controlsVisible ? upNextControlsInset : 16)
+                            // Tabletop controls sit below the fold, not over
+                            // the picture this card shares.
+                            .padding(.top, chrome.controlsVisible && tabletop == nil ? upNextControlsInset : 16)
                             .padding(.trailing, upNextTrailingInset)
                         }
                         Spacer()
@@ -217,6 +319,7 @@ struct PlayerScreen: View {
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: session.chrome?.upcomingEpisode?.id)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: tabletop)
         // The guide waits for the viewer's first playback on this device.
         .onAppear { session.chrome?.presentGuideIfFirstRun() }
         #if os(tvOS)
@@ -260,17 +363,24 @@ struct PlayerScreen: View {
             onSurfaceReady: { _ in session.surfaceDidAttach() }
         )
         #elseif os(visionOS)
-        EnhancedVideoPlayer(
-            ringBuffer: player.ringBuffer,
-            presentationTime: player.videoPresentationTime,
-            aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
-            isPaused: !player.isPlaying,
-            enhancementPipeline: player.enhancementPipeline,
-            frameInterpolator: player.frameInterpolator,
-            sourceFrameRate: player.sourceFrameRate,
-            onSurfaceReady: { _ in session.surfaceDidAttach() }
-        )
-        .theaterFeed(session.theater.screenFeed)
+        if session.theater.isPlayerWindowClosed {
+            // visionOS brought the window back while the theater draws the
+            // picture; it closes again at once, and must not take frames
+            // or the screen from the theater's own view meanwhile.
+            Color.black
+        } else {
+            EnhancedVideoPlayer(
+                ringBuffer: player.ringBuffer,
+                presentationTime: player.videoPresentationTime,
+                aspectMode: (session.chrome?.aspectFill == true) ? .fill : .fit,
+                isPaused: !player.isPlaying,
+                enhancementPipeline: player.enhancementPipeline,
+                frameInterpolator: player.frameInterpolator,
+                sourceFrameRate: player.sourceFrameRate,
+                onSurfaceReady: { _ in session.surfaceDidAttach() }
+            )
+            .theaterFeed(session.theater.screenFeed)
+        }
         #else
         EnhancedVideoPlayer(
             ringBuffer: player.ringBuffer,
@@ -386,6 +496,15 @@ struct PlayerScreen: View {
     }
     #endif
 }
+
+#if os(iOS)
+/// The tabletop flag and the chrome model it belongs to, so a model that
+/// replaces the old one mid-fold picks the flag up too.
+private struct TabletopBinding: Equatable {
+    let chrome: ObjectIdentifier?
+    let isTabletop: Bool
+}
+#endif
 
 // MARK: - Docked panel (macOS)
 

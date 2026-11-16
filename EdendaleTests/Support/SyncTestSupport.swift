@@ -76,12 +76,17 @@ actor GatedSyncStorage: SyncStorage {
     private let inner = MemorySyncStorage()
     private var waiting: [CheckedContinuation<Void, Never>] = []
     private var open = false
+    private var nextFailure: Error?
     private(set) var listings = 0
 
     func listSpace() async throws -> [SyncFileEntry] {
         listings += 1
         if !open {
             await withCheckedContinuation { waiting.append($0) }
+        }
+        if let failure = nextFailure {
+            nextFailure = nil
+            throw failure
         }
         return try await inner.listSpace()
     }
@@ -90,6 +95,11 @@ actor GatedSyncStorage: SyncStorage {
         open = true
         waiting.forEach { $0.resume() }
         waiting = []
+    }
+
+    /// Makes the next listing fail once it is released.
+    func failNextListing(with error: Error) {
+        nextFailure = error
     }
 
     func read(_ name: String) async throws -> Data { try await inner.read(name) }

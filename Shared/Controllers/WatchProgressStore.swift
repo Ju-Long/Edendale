@@ -21,15 +21,30 @@ final class WatchProgressStore {
     /// Posted after a local change (never after a synced one), so sync
     /// can write this device's file after a pause.
     nonisolated static let didChangeLocally = Notification.Name("Edendale.WatchState.didChangeLocally")
+    /// In `didChangeLocally`'s user info, `true` when the player saved the
+    /// change while it was up (see `update(_:whilePlaying:)`).
+    nonisolated static let whilePlayingKey = "whilePlaying"
 
     private let container: NSPersistentCloudKitContainer
     private var viewContext: NSManagedObjectContext { container.viewContext }
     private let stamper: SyncStamper
 
-    /// In-memory cache of live rows; mutating it triggers SwiftUI re-renders via @Observable.
-    private(set) var progressMap: [String: WatchProgress] = [:]
+    /// Live rows. Views read them through `progressMap`, which observes
+    /// `revision`, so a row can change without refreshing them.
+    @ObservationIgnored private var rows: [String: WatchProgress] = [:]
+    /// Bumped when the pages showing progress should refresh.
+    private var revision = 0
+    /// Rows changed while the player was up that the pages haven't shown yet.
+    @ObservationIgnored private var holdsChanges = false
     /// Cleared rows, kept for the sync file.
     @ObservationIgnored private(set) var tombstones: [String: WatchProgress] = [:]
+
+    /// In-memory cache of live rows; SwiftUI views reading it re-render when
+    /// it changes, except for saves the player makes while it is up.
+    var progressMap: [String: WatchProgress] {
+        _ = revision
+        return rows
+    }
 
     init(container: NSPersistentCloudKitContainer = Persistence.cloudPersistentContainer, stamper: SyncStamper = .shared) {
         self.container = container
@@ -98,21 +113,54 @@ final class WatchProgressStore {
     // MARK: - Write
 
     func update(_ progress: WatchProgress) {
+        update(progress, whilePlaying: false)
+    }
+
+    /// Saves a row. `whilePlaying` is for the player's saves while it is
+    /// up: the row is stored and saved as usual, but the pages behind the
+    /// player refresh once it closes (`refreshHeldChanges()`), and sync
+    /// writes it when playback stops instead of ten seconds later. Each
+    /// refresh rebuilt every page showing the library on the main thread,
+    /// which cost the video a frame at every 10-second save.
+    func update(_ progress: WatchProgress, whilePlaying: Bool) {
         var stamped = progress
         let stamp = stamper.stamp()
         stamped.updateTime = stamp.updateTime
         stamped.deviceID = stamp.device
         stamped.cleared = false
-        persist([stamped], local: true)
+        persist([stamped], local: true, whilePlaying: whilePlaying)
     }
 
-    func markCompleted(tmdbId: Int, mediaType: WatchMediaType) {
-        var p = progressMap[cacheKey(tmdbId, mediaType)]
+    /// Refreshes the pages for rows saved while the player was up.
+    func refreshHeldChanges() {
+        guard holdsChanges else { return }
+        holdsChanges = false
+        revision &+= 1
+    }
+
+    /// Marks an item watched. An episode passes its show and numbers: they
+    /// are how Continue Watching finds the next episode and how the sync
+    /// file names the record (SYNC-PROTOCOL.md §6.1); without them a mark
+    /// made by hand neither suggested the next episode nor reached devices
+    /// syncing through files. Context a row already has is kept.
+    func markCompleted(
+        tmdbId: Int,
+        mediaType: WatchMediaType,
+        showTmdbId: Int? = nil,
+        seasonNumber: Int? = nil,
+        episodeNumber: Int? = nil
+    ) {
+        var p = rows[cacheKey(tmdbId, mediaType)]
             ?? tombstones[cacheKey(tmdbId, mediaType)]
             ?? WatchProgress(tmdbId: tmdbId, mediaType: mediaType)
         p.position = 1.0
         p.isCompleted = true
         p.lastWatchedAt = Date()
+        if mediaType == .episode {
+            p.showTmdbId = p.showTmdbId.flatMap { $0 > 0 ? $0 : nil } ?? showTmdbId
+            p.seasonNumber = p.seasonNumber ?? seasonNumber
+            p.episodeNumber = p.episodeNumber ?? episodeNumber
+        }
         update(p)
     }
 
@@ -120,7 +168,7 @@ final class WatchProgressStore {
     /// so an older copy on another device cannot bring it back.
     func remove(tmdbId: Int, mediaType: WatchMediaType) {
         let key = cacheKey(tmdbId, mediaType)
-        guard var p = progressMap[key] ?? tombstones[key] else { return }
+        guard var p = rows[key] ?? tombstones[key] else { return }
         let stamp = stamper.stamp()
         p.position = 0
         p.watchedSeconds = 0
@@ -148,15 +196,15 @@ final class WatchProgressStore {
 
     // MARK: - Private
 
-    private func persist(_ records: [WatchProgress], local: Bool) {
+    private func persist(_ records: [WatchProgress], local: Bool, whilePlaying: Bool = false) {
         for progress in records {
             let key = cacheKey(progress.tmdbId, progress.mediaType)
             if progress.cleared {
-                progressMap.removeValue(forKey: key)
+                rows.removeValue(forKey: key)
                 tombstones[key] = progress
             } else {
                 tombstones.removeValue(forKey: key)
-                progressMap[key] = progress
+                rows[key] = progress
             }
             let request = CDWatchProgress.fetchRequest(tmdbId: progress.tmdbId, mediaType: progress.mediaType)
             do {
@@ -169,13 +217,23 @@ final class WatchProgressStore {
                 print("[WatchProgressStore] Failed to fetch for saving: \(error)")
             }
         }
+        if whilePlaying {
+            holdsChanges = true
+        } else {
+            holdsChanges = false
+            revision &+= 1
+        }
         do {
             if viewContext.hasChanges { try viewContext.save() }
         } catch {
             print("[WatchProgressStore] Failed to save: \(error)")
         }
         if local {
-            NotificationCenter.default.post(name: Self.didChangeLocally, object: nil)
+            NotificationCenter.default.post(
+                name: Self.didChangeLocally,
+                object: nil,
+                userInfo: whilePlaying ? [Self.whilePlayingKey: true] : nil
+            )
         }
     }
 
@@ -202,7 +260,15 @@ final class WatchProgressStore {
                 }
                 stamps.append(dto.updateTime)
             }
-            progressMap = rebuilt
+            // Every save of this store, local ones included, comes back
+            // here as a "remote" change: refresh the pages only when the
+            // rows really differ, or a save made while playing would
+            // refresh them after all.
+            if rebuilt != rows {
+                rows = rebuilt
+                holdsChanges = false
+                revision &+= 1
+            }
             tombstones = cleared
             // Stamps that arrived through CloudKit order this device's
             // next writes after them (§7.2); the stamper ignores any more

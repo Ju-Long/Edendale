@@ -2,14 +2,17 @@
 //  SettingsView.swift
 //  Edendale
 //
-//  The settings surface, grouped into categories: General, Player Controls,
-//  Audio, Subtitles, Library, Sync, Accounts, and About. tvOS and visionOS
-//  give it its own tab, and macOS its own window from the app menu
-//  (Edendale ▸ Settings…, ⌘,); iPhone and iPad reach it from a toolbar item
-//  as a sheet. macOS lists the categories in a sidebar beside the open one,
-//  the way System Settings does; every other platform lists them on a first
-//  page that each category's own page pushes onto. macOS and tvOS draw the
-//  pages as full archive pages, iOS and visionOS as grouped lists.
+//  The settings surface, grouped into categories: General (macOS only),
+//  Player Controls, Audio, Subtitles, Library, Sync, Accounts, Parental
+//  Controls, and About. tvOS and visionOS give it its own tab, and macOS its
+//  own window from the app menu (Edendale ▸ Settings…, ⌘,); iPhone and iPad
+//  reach it from a toolbar item as a sheet. macOS lists the categories in a
+//  sidebar beside the open one, the way System Settings does; every other
+//  platform lists them on a first page that each category's own page pushes
+//  onto. On iPhone, iPad, Apple TV, and Vision Pro that first page ends with
+//  the Parental Controls and About sections themselves rather than links to
+//  them. macOS draws the pages as full archive pages; iOS, tvOS, and
+//  visionOS as grouped lists.
 //
 
 import SwiftUI
@@ -17,6 +20,7 @@ import UniformTypeIdentifiers
 
 /// One page of Settings.
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
+    /// Only the Mac has general settings (starting at login).
     case general
     case playerControls
     case audio
@@ -24,9 +28,34 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     case library
     case sync
     case accounts
+    case parentalControls
     case about
 
     var id: Self { self }
+
+    /// The categories this platform lists, in order. The grouped List on
+    /// iPhone, iPad, Apple TV, and Vision Pro shows Parental Controls and
+    /// About in place at the end of the first page instead of linking to them.
+    static var listed: [SettingsCategory] {
+        allCases.filter { category in
+            switch category {
+            case .general:
+                #if os(macOS)
+                true
+                #else
+                false
+                #endif
+            case .parentalControls, .about:
+                #if os(macOS)
+                true
+                #else
+                false
+                #endif
+            default:
+                true
+            }
+        }
+    }
 
     var title: String {
         switch self {
@@ -37,6 +66,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         case .library: String(localized: "Library")
         case .sync: String(localized: "Sync")
         case .accounts: String(localized: "Accounts")
+        case .parentalControls: String(localized: "Parental Controls")
         case .about: String(localized: "About")
         }
     }
@@ -50,7 +80,22 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         case .library: .folderTree
         case .sync: .arrowRotateRight
         case .accounts: .circleUserFill
+        case .parentalControls: .personBreastfeeding
         case .about: .filmCircleInfo
+        }
+    }
+    
+    var iconText: String {
+        switch self {
+        case .general: "gear-complex"
+        case .playerControls: "play"
+        case .audio: "file-music"
+        case .subtitles: "subtitles"
+        case .library: "folder-tree"
+        case .sync: "arrow-rotate-right"
+        case .accounts: "circle-user-fill"
+        case .parentalControls: "person-breastfeeding"
+        case .about: "film-circle-info"
         }
     }
 }
@@ -74,7 +119,7 @@ struct SettingsView: View {
             // full screen and the Menu button walks back out of it. Both
             // pickers hang off the whole stack, so the Library page can open
             // them wherever it sits.
-            .sheet(isPresented: $showLinkSource) { AddNetworkSourceView() }
+            .sheet(isPresented: $showLinkSource) { AddNetworkSourceView().tvSheetInsets() }
             #if !os(tvOS)
             .fileImporter(
                 isPresented: $showImporter,
@@ -94,24 +139,14 @@ struct SettingsView: View {
     @ViewBuilder
     private var container: some View {
         #if os(macOS)
-        HStack(spacing: 0) {
-            List(selection: $selection) {
-                ForEach(SettingsCategory.allCases) { category in
+        TabView {
+            ForEach(SettingsCategory.listed) { category in
+                Tab {
+                    page(category)
+                } label: {
                     SettingsCategoryLabel(category: category)
-                        .tag(category)
                 }
             }
-            .listStyle(.sidebar)
-            .frame(width: 200)
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(width: 1)
-                .accessibilityHidden(true)
-
-            page(selection)
-                .id(selection)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Theme.background)
         .navigationTitle(selection.title)
@@ -120,17 +155,15 @@ struct SettingsView: View {
             categoryList
                 .background(Theme.background)
                 .settingsCloseButton(closeSettings)
-                // tvOS renders a navigation title over a scrolling page as a
-                // giant mid-screen overlay; its sidebar already names the tab.
-                #if !os(tvOS)
                 .navigationTitle("Settings")
+                #if os(tvOS)
+                // The title is the list's first row (see SettingsPageTitle).
+                .toolbar(.hidden, for: .navigationBar)
                 #endif
                 .navigationDestination(for: SettingsCategory.self) { category in
                     page(category)
                         .settingsCloseButton(closeSettings)
-                        #if !os(tvOS)
-                        .navigationTitle(category.title)
-                        #endif
+                        .settingsPageChrome(category.title)
                 }
         }
         #endif
@@ -153,36 +186,21 @@ struct SettingsView: View {
     #if !os(macOS)
     @ViewBuilder
     private var categoryList: some View {
-        #if os(tvOS)
-        SettingsPage {
-            SettingsSection(nil) {
-                ForEach(SettingsCategory.allCases) { category in
-                    NavigationLink(value: category) {
-                        HStack(spacing: 24) {
-                            SettingsCategoryLabel(category: category)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Image(.chevronRight)
-                                .foregroundStyle(Theme.textSecondary)
-                                .accessibilityHidden(true)
-                        }
-                        .padding(SettingsMetrics.highlightBleed)
-                        .contentShape(Rectangle())
-                    }
-                    .archiveRowStyle()
-                    .padding(-SettingsMetrics.highlightBleed)
-                }
-            }
-        }
-        #else
         List {
+            #if os(tvOS)
+            SettingsPageTitle(String(localized: "Settings"))
+            #endif
             Section {
-                ForEach(SettingsCategory.allCases) { category in
+                ForEach(SettingsCategory.listed) { category in
                     NavigationLink(value: category) {
                         SettingsCategoryLabel(category: category)
                     }
                 }
             }
+            ParentalControlsSection(title: SettingsCategory.parentalControls.title)
+            AboutSettingsSection(title: SettingsCategory.about.title)
         }
+        #if !os(tvOS)
         .scrollContentBackground(.hidden)
         #endif
     }
@@ -196,21 +214,26 @@ private struct SettingsCategoryLabel: View {
     var body: some View {
         Label {
             Text(category.title)
-                #if os(tvOS)
-                .font(SettingsMetrics.titleFont)
-                .foregroundStyle(Theme.textPrimary)
-                #endif
         } icon: {
             Image(category.icon)
+                #if os(tvOS)
+                // The system grey, which follows the focused row's light
+                // platter; the hierarchical `.secondary` would resolve
+                // against the gold tint the list gives row icons. A column
+                // wide enough for the widest glyph lines the names up.
+                .foregroundStyle(Color.secondary)
+                .frame(width: 40)
+                #else
                 .foregroundStyle(Theme.textSecondary)
+                #endif
         }
     }
 }
 
 // MARK: - Category pages
 
-/// The sections of one category, as a full page (macOS, tvOS) or a grouped
-/// list (iOS, visionOS).
+/// The sections of one category, as a full page (macOS) or a grouped list
+/// (iOS, tvOS, visionOS).
 struct SettingsCategoryPage: View {
     let category: SettingsCategory
     /// Owned by SettingsView: the pickers must hang off its navigation
@@ -225,11 +248,18 @@ struct SettingsCategoryPage: View {
 
     @ViewBuilder
     private var content: some View {
-        #if os(macOS) || os(tvOS)
+        #if os(macOS)
         SettingsPage { sections }
         #else
-        List { sections }
+        List {
+            #if os(tvOS)
+            SettingsPageTitle(category.title)
+            #endif
+            sections
+        }
+            #if !os(tvOS)
             .scrollContentBackground(.hidden)
+            #endif
         #endif
     }
 
@@ -237,7 +267,11 @@ struct SettingsCategoryPage: View {
     private var sections: some View {
         switch category {
         case .general:
-            GeneralSettingsSections()
+            #if os(macOS)
+            StartupSettingsSection()
+            #else
+            EmptyView()
+            #endif
         case .playerControls:
             AppControlsSection()
             SegmentSkippingSection()
@@ -262,23 +296,24 @@ struct SettingsCategoryPage: View {
         case .accounts:
             AccountsSection()
             TMDBAccountSection()
+        case .parentalControls:
+            ParentalControlsSection(title: nil)
         case .about:
-            AboutSettingsSection()
+            AboutSettingsSection(title: nil)
         }
     }
 }
 
-/// Settings → General: who the library is for and, on the Mac, starting
-/// at login.
-private struct GeneralSettingsSections: View {
+/// Settings → Parental Controls: who the library is for. The preference is
+/// this device's own; nothing locks it, and it is never synced. Its own page
+/// on the Mac (untitled, under the page's title); a titled section above
+/// About on the first page everywhere else.
+private struct ParentalControlsSection: View {
+    let title: String?
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
-    #if os(macOS)
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var loginItem = LoginItemController()
-    #endif
 
     var body: some View {
-        SettingsSection(String(localized: "Audience")) {
+        SettingsSection(title) {
             SettingsToggleRow(
                 String(localized: "Young Audience Friendly"),
                 detail: String(localized: "Only show movies and series rated PG or PG-13, including equivalent TV labels."),
@@ -288,8 +323,16 @@ private struct GeneralSettingsSections: View {
                 )
             )
         }
+    }
+}
 
-        #if os(macOS)
+#if os(macOS)
+/// Settings → General on the Mac: starting at login.
+private struct StartupSettingsSection: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var loginItem = LoginItemController()
+
+    var body: some View {
         SettingsSection(String(localized: "Startup")) {
             SettingsToggleRow(
                 String(localized: "Launch at Login"),
@@ -320,14 +363,18 @@ private struct GeneralSettingsSections: View {
                 loginItem.refresh()
             }
         }
-        #endif
     }
 }
+#endif
 
-/// Settings → About: the version and the services Edendale credits.
+/// Settings → About: the version and the services Edendale credits. Its own
+/// page on the Mac (untitled, under the page's title); a titled section at
+/// the end of the first page everywhere else.
 private struct AboutSettingsSection: View {
+    let title: String?
+
     var body: some View {
-        SettingsSection(nil) {
+        SettingsSection(title) {
             SettingsRow(String(localized: "Version"), value: appVersion)
             // TMDB's API terms ask for this notice wherever the app credits
             // its sources.
@@ -367,7 +414,7 @@ private struct SettingsCloseButton: ViewModifier {
 
     func body(content: Content) -> some View {
         content.toolbar {
-            ToolbarItem(placement: .cancellationAction) {
+            ToolbarItem(placement: .confirmationAction) {
                 Button("", image: .xmark) { close() }
                     .archiveButtonStyle(.ghost)
                     // The title is empty so the glyph can stand alone.

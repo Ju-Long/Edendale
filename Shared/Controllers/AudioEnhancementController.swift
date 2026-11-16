@@ -90,6 +90,16 @@ enum AudioEnhancementProfile: String, CaseIterable, Identifiable, Sendable {
         return min(max(value, preampRange.lowerBound), preampRange.upperBound)
     }
 
+    /// User adjustments are offsets from the profile, so they span the whole
+    /// range in both directions: every level stays reachable from any
+    /// profile (a +8 dB band can still be pulled down to −20 dB).
+    static let adjustmentRange: ClosedRange<Float> = -40...40
+
+    static func clampAdjustment(_ value: Float) -> Float {
+        guard value.isFinite else { return 0 }
+        return min(max(value, adjustmentRange.lowerBound), adjustmentRange.upperBound)
+    }
+
     static let bandFrequencyLabels = [
         "60", "170", "310", "600", "1k", "3k", "6k", "12k", "14k", "16k"
     ]
@@ -153,12 +163,12 @@ final class AudioEnhancementController {
         boosterEnabled = defaults.bool(forKey: DefaultsKey.booster)
 
         if let storedPreamp = defaults.object(forKey: DefaultsKey.userPreamp) as? Float {
-            _userPreampAdjustment = AudioEnhancementProfile.clampPreamp(storedPreamp)
+            _userPreampAdjustment = AudioEnhancementProfile.clampAdjustment(storedPreamp)
         }
         if let storedBands = defaults.array(forKey: DefaultsKey.userBands) as? [Float],
            storedBands.count == AudioEnhancementProfile.bandCount {
             _userBandAdjustments = storedBands.map {
-                AudioEnhancementProfile.clampAmplification($0)
+                AudioEnhancementProfile.clampAdjustment($0)
             }
         }
 
@@ -192,6 +202,12 @@ final class AudioEnhancementController {
         }
     }
 
+    /// The preamp the user sets: the profile's plus their adjustment,
+    /// before the booster's gain.
+    var preampLevel: Float {
+        AudioEnhancementProfile.clampPreamp(selectedProfile.preamp + _userPreampAdjustment)
+    }
+
     /// True when the equalizer would have no audible effect.
     var isEffectivelyFlat: Bool {
         effectivePreamp == 0 && effectiveBands.allSatisfy { $0 == 0 }
@@ -200,16 +216,34 @@ final class AudioEnhancementController {
     // MARK: - User adjustments
 
     func setUserPreampAdjustment(_ value: Float) {
-        _userPreampAdjustment = AudioEnhancementProfile.clampPreamp(value)
+        _userPreampAdjustment = AudioEnhancementProfile.clampAdjustment(value)
         persistUserAdjustments()
         pushToProcessor()
     }
 
     func setUserBandAdjustment(_ value: Float, at index: Int) {
         guard index >= 0, index < AudioEnhancementProfile.bandCount else { return }
-        _userBandAdjustments[index] = AudioEnhancementProfile.clampAmplification(value)
+        _userBandAdjustments[index] = AudioEnhancementProfile.clampAdjustment(value)
         persistUserAdjustments()
         pushToProcessor()
+    }
+
+    /// Sets the preamp to an absolute level (before the booster), as the
+    /// Settings slider does; stored as an offset from the profile.
+    func setPreampLevel(_ level: Float) {
+        guard level.isFinite else { return }
+        let target = AudioEnhancementProfile.clampPreamp(level)
+        setUserPreampAdjustment(target - selectedProfile.preamp)
+    }
+
+    /// Sets one band to an absolute level, as the equalizer graph does;
+    /// stored as an offset from the profile, so changing profiles still
+    /// starts again from that profile's curve.
+    func setBandLevel(_ level: Float, at index: Int) {
+        guard index >= 0, index < AudioEnhancementProfile.bandCount,
+              level.isFinite else { return }
+        let target = AudioEnhancementProfile.clampAmplification(level)
+        setUserBandAdjustment(target - selectedProfile.bands[index], at: index)
     }
 
     func resetUserAdjustments() {

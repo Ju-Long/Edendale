@@ -433,3 +433,82 @@ struct AudioEQProcessorTests {
         return output
     }
 }
+
+/// The Settings graph and preamp slider work in absolute levels around a
+/// 0 dB center line; profiles move the levels, not the center.
+@MainActor
+struct AudioEnhancementLevelTests {
+
+    private func makeController() -> (AudioEnhancementController, UserDefaults, String) {
+        let suite = "test.audio.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        return (AudioEnhancementController(defaults: defaults), defaults, suite)
+    }
+
+    @Test func choosingAProfileMovesTheLevelsToItsCurve() {
+        let (controller, defaults, suite) = makeController()
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        for profile in AudioEnhancementProfile.allCases {
+            controller.selectProfile(profile)
+            #expect(controller.effectiveBands == profile.bands)
+            #expect(controller.preampLevel == profile.preamp)
+        }
+    }
+
+    @Test func settingABandLevelStoresTheOffsetFromTheProfile() {
+        let (controller, defaults, suite) = makeController()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        controller.selectProfile(.movies)
+
+        controller.setBandLevel(3, at: 0)
+        #expect(controller.effectiveBands[0] == 3)
+        #expect(controller.userBandAdjustments[0] == 3 - AudioEnhancementProfile.movies.bands[0])
+
+        controller.setBandLevel(AudioEnhancementProfile.movies.bands[0], at: 0)
+        #expect(!controller.hasUserAdjustments)
+    }
+
+    @Test func everyLevelIsReachableFromABoostedBand() {
+        let (controller, defaults, suite) = makeController()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        controller.selectProfile(.movies) // +8 dB at 60 Hz, −8 dB preamp
+
+        controller.setBandLevel(-20, at: 0)
+        #expect(controller.effectiveBands[0] == -20)
+        controller.setBandLevel(-99, at: 0)
+        #expect(controller.effectiveBands[0] == -20)
+
+        controller.setPreampLevel(20)
+        #expect(controller.preampLevel == 20)
+        controller.setPreampLevel(-20)
+        #expect(controller.preampLevel == -20)
+
+        let restored = AudioEnhancementController(defaults: defaults)
+        #expect(restored.effectiveBands[0] == -20)
+        #expect(restored.preampLevel == -20)
+    }
+
+    @Test func boosterAddsGainWithoutMovingThePreampLevel() {
+        let (controller, defaults, suite) = makeController()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        controller.selectProfile(.movies)
+        controller.setPreampLevel(-4)
+
+        controller.setBooster(true)
+        #expect(controller.preampLevel == -4)
+        #expect(controller.effectivePreamp == -4 + AudioEnhancementController.boosterGain)
+    }
+
+    @Test func invalidLevelsAreIgnored() {
+        let (controller, defaults, suite) = makeController()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let before = controller.effectiveBands
+
+        controller.setBandLevel(.nan, at: 0)
+        controller.setBandLevel(5, at: AudioEnhancementProfile.bandCount)
+        controller.setPreampLevel(.infinity)
+        #expect(controller.effectiveBands == before)
+        #expect(controller.preampLevel == controller.selectedProfile.preamp)
+    }
+}

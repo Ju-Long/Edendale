@@ -965,24 +965,59 @@ struct FFmpegDecoderTests {
         try await wait { decoder.state == .ended }
     }
 
-    @Test func outputChangesRefillAudioOnceFromThePlayhead() async throws {
+    /// The renderer may drop its queue at a speed change (1× to 2× and back)
+    /// or on a new output. Each time, the audio goes back in from the
+    /// playhead, even twice within a second, and nothing seeks.
+    @Test func droppedRendererAudioGoesBackInFromThePlayheadWithoutSeeking() async throws {
         let decoder = FFmpegDecoder()
         decoder.isMuted = true
         defer { decoder.close() }
         var discontinuities = 0
         decoder.onDiscontinuity = { discontinuities += 1 }
+        var frames = 0
+        decoder.onVideoFrame = { _ in frames += 1 }
+        var enqueued: [(start: Double, end: Double)] = []
+        decoder.onAudioEnqueued = {
+            enqueued.append(($0.presentationTimeStamp.seconds, ($0.presentationTimeStamp + $0.duration).seconds))
+        }
         _ = try await decoder.open(url: fixture())
         decoder.play()
-        try await wait { decoder.currentTime.seconds > 0.5 }
+        try await wait { decoder.currentTime.seconds > 0.3 }
         let renderer = try #require(Mirror(reflecting: decoder).descendant("audioRenderer") as? AVSampleBufferAudioRenderer)
+        func dropRendererQueue(_ name: Notification.Name) async throws {
+            // What the system does before it posts the notification.
+            renderer.flush()
+            enqueued.removeAll()
+            let playhead = decoder.currentTime.seconds
+            NotificationCenter.default.post(name: name, object: renderer)
+            try await wait { enqueued.contains { $0.start <= playhead + 0.03 && $0.end > playhead } }
+        }
+        decoder.setRate(2)
+        try await dropRendererQueue(.AVSampleBufferAudioRendererWasFlushedAutomatically)
+        try await Task.sleep(for: .milliseconds(200))
+        decoder.setRate(1)
+        try await dropRendererQueue(.AVSampleBufferAudioRendererWasFlushedAutomatically)
+        try await dropRendererQueue(.AVSampleBufferAudioRendererOutputConfigurationDidChange)
+        let shown = frames
         let playhead = decoder.currentTime.seconds
-        // A route change can flush the renderer and change its output format at once.
-        NotificationCenter.default.post(name: .AVSampleBufferAudioRendererWasFlushedAutomatically, object: renderer)
-        NotificationCenter.default.post(name: .AVSampleBufferAudioRendererOutputConfigurationDidChange, object: renderer)
-        try await wait { discontinuities == 1 && decoder.state == .playing }
-        #expect(decoder.currentTime.seconds >= playhead - 0.05)
-        try await wait { decoder.currentTime.seconds > playhead + 0.5 }
-        #expect(discontinuities == 1)
+        try await wait { decoder.currentTime.seconds > playhead + 0.3 && frames > shown }
+        #expect(discontinuities == 0)
+        #expect(decoder.state == .playing)
+    }
+
+    /// The renderer holds about a second of real time, so at 2× the decoded
+    /// audio reaches twice as far ahead in media time.
+    @Test func audioLeadFollowsThePlaybackSpeed() async throws {
+        let decoder = FFmpegDecoder()
+        decoder.isMuted = true
+        defer { decoder.close() }
+        _ = try await decoder.open(url: fixture())
+        decoder.play()
+        try await wait { decoder.currentTime.seconds > 0.2 }
+        decoder.setRate(2)
+        try await wait { decoder.currentTime.seconds > 0.8 }
+        let audioUntil = try #require(Mirror(reflecting: decoder).descendant("audioBufferedUntil") as? Double)
+        #expect(audioUntil - decoder.currentTime.seconds > 1.4)
     }
 
     @Test func equalizerFollowsTheDecodedChannels() async throws {

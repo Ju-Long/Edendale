@@ -5,9 +5,9 @@
 //  Settings for how text subtitles look: the typeface, the text colour,
 //  and the colour and opacity of the box behind each cue, above a preview
 //  frame that draws a sample cue exactly as the player will. The Settings
-//  page (macOS/tvOS) offers the choices as chips; the grouped list
-//  (iOS/visionOS) keeps menu pickers. tvOS has no slider, so opacity steps
-//  with − and + buttons there, beneath its name like the chip rows.
+//  page (macOS) offers the choices as chips; the grouped list
+//  (iOS/tvOS/visionOS) keeps menu pickers. tvOS has no slider, so opacity
+//  is a menu of its steps there too.
 //
 
 import SwiftUI
@@ -54,9 +54,9 @@ struct SubtitleAppearanceSection: View {
                 resetButton
             }
         } footer: {
-            #if !os(macOS) && !os(tvOS)
+            #if !os(macOS)
             Text("Applies to text subtitles. Image-based subtitles keep the look they were authored with.")
-                .font(Typography.bodySM)
+                .font(SettingsMetrics.detailFont)
                 .foregroundStyle(Theme.textSecondary)
             #endif
         }
@@ -71,7 +71,7 @@ struct SubtitleAppearanceSection: View {
         name: KeyPath<Option, String>,
         selection: Binding<Option>
     ) -> some View {
-        #if os(macOS) || os(tvOS)
+        #if os(macOS)
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
                 .font(SettingsMetrics.titleFont)
@@ -90,6 +90,8 @@ struct SubtitleAppearanceSection: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(title)
         }
+        #elseif os(tvOS)
+        SettingsChoiceRow(title, selection: selection, options: options) { $0[keyPath: name] }
         #else
         Picker(title, selection: selection) {
             ForEach(options) { option in
@@ -101,13 +103,9 @@ struct SubtitleAppearanceSection: View {
         #endif
     }
 
-    private var chipSize: FilterChip.Size {
-        #if os(tvOS)
-        .large
-        #else
-        .regular
-        #endif
-    }
+    #if os(macOS)
+    private let chipSize: FilterChip.Size = .regular
+    #endif
 
     // MARK: - Opacity
 
@@ -120,35 +118,16 @@ struct SubtitleAppearanceSection: View {
     @ViewBuilder
     private var opacityRow: some View {
         #if os(tvOS)
-        // Laid out like the choices above: the name, then the control
-        // beneath it at the leading edge.
-        VStack(alignment: .leading, spacing: 14) {
-            Text(opacityTitle)
-                .font(SettingsMetrics.titleFont)
-                .foregroundStyle(Theme.textPrimary)
-            HStack(spacing: 16) {
-                // Archive chrome: the system focus platter turns white under
-                // parchment glyphs and hides them.
-                Button("−") { stepOpacity(by: -1) }
-                    .archiveButtonStyle(.secondary)
-                Text(opacityLabel)
-                    .font(SettingsMetrics.titleFont)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.gold)
-                    .frame(minWidth: 110)
-                Button("+") { stepOpacity(by: 1) }
-                    .archiveButtonStyle(.secondary)
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(opacityTitle)
-            .accessibilityValue(opacityLabel)
-            .accessibilityAdjustableAction { direction in
-                switch direction {
-                case .increment: stepOpacity(by: 1)
-                case .decrement: stepOpacity(by: -1)
-                @unknown default: break
-                }
-            }
+        let step = SubtitleAppearance.backgroundOpacityStep
+        SettingsChoiceRow(
+            opacityTitle,
+            selection: Binding(
+                get: { Int((appearance.backgroundOpacity / step).rounded()) },
+                set: { appearance.setBackgroundOpacity(Double($0) * step) }
+            ),
+            options: Array(0...Int((1 / step).rounded()))
+        ) { steps in
+            (Double(steps) * step).formatted(.percent.precision(.fractionLength(0)))
         }
         #else
         VStack(alignment: .leading, spacing: 4) {
@@ -180,18 +159,11 @@ struct SubtitleAppearanceSection: View {
         #endif
     }
 
-    #if os(tvOS)
-    private func stepOpacity(by steps: Double) {
-        appearance.setBackgroundOpacity(
-            appearance.backgroundOpacity + steps * SubtitleAppearance.backgroundOpacityStep
-        )
-    }
-    #endif
-
     // MARK: - Reset
 
     private var resetButton: some View {
         #if os(macOS) || os(tvOS)
+        // A system list button on Apple TV (see archiveButtonsUseSystemStyle).
         Button("Reset Subtitle Style") {
             appearance.reset()
         }
@@ -224,7 +196,7 @@ private struct SubtitleAppearancePreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            #if os(macOS) || os(tvOS)
+            #if os(macOS)
             Text("Preview")
                 .font(SettingsMetrics.titleFont)
                 .foregroundStyle(Theme.textPrimary)
@@ -253,7 +225,7 @@ private struct SubtitleAppearancePreview: View {
                     .strokeBorder(Theme.hairline, lineWidth: 1)
             }
             .frame(maxWidth: .infinity)
-            #if !os(macOS) && !os(tvOS)
+            #if !os(macOS)
             .padding(.vertical, 6)
             #endif
         }

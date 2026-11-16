@@ -25,6 +25,8 @@ nonisolated enum PlayerGuideTopic: String, CaseIterable, Identifiable, Sendable 
     case holdSpeed
     /// Press and hold, then slide sideways through the timeline.
     case scrub
+    /// Circle the Siri Remote's clickpad to wind through the timeline.
+    case jog
     /// The player's key commands.
     case keyboard
     /// Play/Pause and Back on the Siri Remote.
@@ -94,19 +96,31 @@ struct PlayerGuideTool: Identifiable, Equatable {
 }
 
 enum PlayerGuide {
-    /// Raise when the guide gains something worth showing again to viewers
-    /// who already closed it.
-    static let version = 1
+    /// This device's guide version.
+    static var version: Int { version(for: .current) }
+
+    /// Raise a platform's number when its guide gains something worth
+    /// showing again to viewers who already closed it. Each device keeps
+    /// the version it closed, so one platform's new page doesn't reopen an
+    /// unchanged guide elsewhere.
+    static func version(for platform: PlayerGuidePlatform) -> Int {
+        switch platform {
+        // 2: spin the clickpad to seek.
+        case .tv: 2
+        case .touch, .vision, .mac: 1
+        }
+    }
+
     /// The newest guide version the viewer has closed on this device.
     nonisolated static let seenVersionKey = "player.guideSeenVersion"
 
     /// Whether the guide still has to open by itself on this device.
-    static func isUnseen(in defaults: UserDefaults) -> Bool {
-        defaults.integer(forKey: seenVersionKey) < version
+    static func isUnseen(in defaults: UserDefaults, platform: PlayerGuidePlatform = .current) -> Bool {
+        defaults.integer(forKey: seenVersionKey) < version(for: platform)
     }
 
-    static func markSeen(in defaults: UserDefaults) {
-        defaults.set(version, forKey: seenVersionKey)
+    static func markSeen(in defaults: UserDefaults, platform: PlayerGuidePlatform = .current) {
+        defaults.set(version(for: platform), forKey: seenVersionKey)
     }
 
     // MARK: - Pages
@@ -122,7 +136,7 @@ enum PlayerGuide {
         case .mac:
             [.showControls, .holdSpeed, .keyboard, .tools]
         case .tv:
-            [.showControls, .skip, .holdSpeed, .remoteButtons, .tools]
+            [.showControls, .skip, .jog, .holdSpeed, .remoteButtons, .tools]
         }
     }
 
@@ -242,6 +256,14 @@ enum PlayerGuide {
                 topic: topic,
                 title: String(localized: "Hold and Slide to Seek"),
                 message: String(localized: "Touch and hold the video, then slide sideways to move through the timeline. Let go to jump to that moment.")
+            )
+
+        // Only the Siri Remote has the jog (RemoteJogDetector).
+        case (.jog, _):
+            return PlayerGuidePage(
+                topic: topic,
+                title: String(localized: "Spin to Seek"),
+                message: String(localized: "Circle your thumb around the edge of the clickpad to move through the timeline: clockwise goes forward, counterclockwise goes back. Spin faster to cover more with each turn; the arrows on the timeline show how fast. Stop or click to jump there.")
             )
 
         case (.keyboard, .mac):

@@ -95,6 +95,7 @@ struct WatchlistView: View {
                 .padding(.vertical, 24)
                 .padding(.bottom, 40)
             }
+            .holdsBackgroundWorkWhileScrolling()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background)
             #if !os(tvOS)
@@ -107,6 +108,8 @@ struct WatchlistView: View {
             .navigationDestination(for: MediaRef.self) { ref in
                 MediaDetailView(source: .tmdb(ref))
             }
+            // Apple TV opens a detail page's cast in place (see MediaDetailView).
+            .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             .settingsToolbar()
             .task(id: audienceVerificationKey) {
                 await youngAudienceFilter.verify(watchlistItems.map(\.ref))

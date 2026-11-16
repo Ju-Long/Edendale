@@ -31,6 +31,41 @@ struct LibrarySectionsTests {
         #expect(DownloadedSection.available(hasResumeItems: false, movies: [], shows: [show]) == [.shows])
     }
 
+    @Test func tabBarSectionPickerOffersTheWholePageThenEachSection() {
+        let all: [DownloadedSection] = [.continueWatching, .movies, .shows]
+        #expect(DownloadedSectionPicker.choices(for: all) == [nil, .continueWatching, .movies, .shows])
+        #expect(DownloadedSectionPicker.choices(for: [.shows]) == [nil, .shows])
+        // One section alone lists what the whole page lists: no choice.
+        #expect(DownloadedSectionPicker.isOffered(for: all))
+        #expect(DownloadedSectionPicker.isOffered(for: [.movies, .shows]))
+        #expect(!DownloadedSectionPicker.isOffered(for: [.movies]))
+        #expect(!DownloadedSectionPicker.isOffered(for: []))
+        #expect(DownloadedSectionPicker.title(nil) == String(localized: "All"))
+        #expect(DownloadedSectionPicker.title(.continueWatching) == DownloadedSection.continueWatching.title)
+        #expect(DownloadedSectionPicker.shortTitle(.continueWatching) == String(localized: "Watching"))
+        #expect(DownloadedSectionPicker.shortTitle(.shows) == DownloadedSection.shows.title)
+    }
+
+    @Test func pickedSectionThatEmptiesFallsBackToTheWholePage() {
+        #expect(DownloadedSection.resolved(.movies, available: [.movies, .shows]) == .movies)
+        #expect(DownloadedSection.resolved(.continueWatching, available: [.movies, .shows]) == nil)
+        #expect(DownloadedSection.resolved(nil, available: [.movies, .shows]) == nil)
+    }
+
+    @Test func onlyIOSCarriesThePickerOnTheTabBar() {
+        #if os(iOS)
+        if #available(iOS 26.1, *) {
+            #expect(DownloadedSectionPicker.ridesOnTabBar)
+        } else {
+            #expect(!DownloadedSectionPicker.ridesOnTabBar)
+        }
+        #else
+        // macOS lists the sections in its sidebar; Apple TV and Vision Pro
+        // show the picker on the page.
+        #expect(!DownloadedSectionPicker.ridesOnTabBar)
+        #endif
+    }
+
     @Test func watchlistSectionsFollowMediaTypes() {
         let movie = WatchlistItem(ref: MediaRef(id: 27205, mediaType: .movie))
         let show = WatchlistItem(ref: MediaRef(id: 1396, mediaType: .tv))

@@ -25,7 +25,8 @@ struct AccountsSection: View {
     @State private var loginToForget: SavedServerLogin?
     /// The account whose picker is open.
     @State private var choosingFor: CloudAccount?
-    @State private var chooseError: String?
+    /// Why Google's picker failed, and for which account.
+    @State private var chooseError: (accountID: CloudAccount.ID, message: String)?
 
     var body: some View {
         SettingsSection(String(localized: "Linked Accounts")) {
@@ -54,12 +55,35 @@ struct AccountsSection: View {
                         }
                         .archiveButtonStyle(.ghost)
                         .disabled(choosingFor != nil)
+                        .alert("Choose More Videos", isPresented: isShowingChooseError(account)) {
+                            Button("OK") {}
+                        } message: {
+                            Text(chooseError?.message ?? "")
+                        }
                     }
                     #endif
+                    // Each dialog hangs off the button that opens it. Outside
+                    // the Mac this section is a List Section, which hands its
+                    // modifiers to each of its rows: a dialog on the whole
+                    // section is presented once per row, and the failed extra
+                    // attempts dismiss Settings itself.
                     Button("Sign Out", role: .destructive) {
                         accountToSignOut = account
                     }
                     .archiveButtonStyle(.ghost)
+                    .confirmationDialog("Sign Out", isPresented: isSigningOut(account)) {
+                        Button("Sign Out", role: .destructive) {
+                            Task { await store.signOut(account, revoke: false) }
+                        }
+                        if CloudProviders.supportsRevocation(account.kind) {
+                            Button("Sign Out and Revoke Access", role: .destructive) {
+                                Task { await store.signOut(account, revoke: true) }
+                            }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text(signOutMessage(account))
+                    }
                 }
             }
 
@@ -73,47 +97,44 @@ struct AccountsSection: View {
                         loginToForget = login
                     }
                     .archiveButtonStyle(.ghost)
+                    .confirmationDialog("Forget Login", isPresented: isForgetting(login)) {
+                        Button("Forget", role: .destructive) { store.forget(login) }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text(forgetMessage(login))
+                    }
                 }
             }
 
             SettingsNote(syncNote)
         }
         .onAppear { store.reload() }
-        .confirmationDialog(
-            "Sign Out",
-            isPresented: Binding(get: { accountToSignOut != nil }, set: { if !$0 { accountToSignOut = nil } }),
-            presenting: accountToSignOut
-        ) { account in
-            Button("Sign Out", role: .destructive) {
-                Task { await store.signOut(account, revoke: false) }
-            }
-            if CloudProviders.supportsRevocation(account.kind) {
-                Button("Sign Out and Revoke Access", role: .destructive) {
-                    Task { await store.signOut(account, revoke: true) }
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { account in
-            Text(signOutMessage(account))
-        }
-        .confirmationDialog(
-            "Forget Login",
-            isPresented: Binding(get: { loginToForget != nil }, set: { if !$0 { loginToForget = nil } }),
-            presenting: loginToForget
-        ) { login in
-            Button("Forget", role: .destructive) { store.forget(login) }
-            Button("Cancel", role: .cancel) {}
-        } message: { login in
-            Text(forgetMessage(login))
-        }
-        .alert(
-            "Choose More Videos",
-            isPresented: Binding(get: { chooseError != nil }, set: { if !$0 { chooseError = nil } })
-        ) {
-            Button("OK") {}
-        } message: {
-            Text(chooseError ?? "")
-        }
+    }
+
+    // MARK: - Dialogs
+
+    /// Whether the Sign Out dialog is up for this account.
+    private func isSigningOut(_ account: CloudAccount) -> Binding<Bool> {
+        Binding(
+            get: { accountToSignOut?.id == account.id },
+            set: { if !$0 { accountToSignOut = nil } }
+        )
+    }
+
+    /// Whether the Forget Login dialog is up for this login.
+    private func isForgetting(_ login: SavedServerLogin) -> Binding<Bool> {
+        Binding(
+            get: { loginToForget?.id == login.id },
+            set: { if !$0 { loginToForget = nil } }
+        )
+    }
+
+    /// Whether this account's picker failure is showing.
+    private func isShowingChooseError(_ account: CloudAccount) -> Binding<Bool> {
+        Binding(
+            get: { chooseError?.accountID == account.id },
+            set: { if !$0 { chooseError = nil } }
+        )
     }
 
     #if !os(tvOS)
@@ -126,7 +147,7 @@ struct AccountsSection: View {
                 try await library.chooseMoreVideos(for: account, accounts: store)
             } catch OAuthError.cancelled {
             } catch {
-                chooseError = error.localizedDescription
+                chooseError = (account.id, error.localizedDescription)
             }
             choosingFor = nil
         }

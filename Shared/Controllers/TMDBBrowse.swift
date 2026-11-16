@@ -23,7 +23,7 @@ nonisolated struct MediaRef: Hashable, Sendable {
 }
 
 /// TMDB image CDN URL builder.
-enum TMDBImage {
+nonisolated enum TMDBImage {
     enum Size: String {
         case poster = "w342"
         case posterLarge = "w500"
@@ -32,6 +32,8 @@ enum TMDBImage {
         case profileLarge = "h632"
         case still = "w300"
         case backdrop = "w780"
+        /// Full-screen artwork, such as the tvOS Top Shelf carousel.
+        case backdropLarge = "w1280"
         case original
     }
 

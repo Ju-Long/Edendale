@@ -5,7 +5,8 @@
 //  Choosing where sync files live (FEATURES-27.1.md §5.2): a folder from
 //  Files or Finder, the app's own iCloud Drive folder, a linked Google
 //  Drive, OneDrive, or Dropbox account (signing in if needed, and again
-//  when an account predates the write scopes), or a folder on a WebDAV,
+//  when an account predates the write scopes; nothing to choose there, not
+//  even in Google's picker, K.8), or a folder on a WebDAV,
 //  SMB, or SFTP server through the Link Source forms. Then the space name.
 //  Nothing is saved until the last step; the chosen login goes to the
 //  Keychain with it. Apple TV offers only the account and server kinds.
@@ -54,7 +55,7 @@ struct SyncLocationSetupView: View {
                 .navigationDestination(for: Step.self) { step in
                     switch step {
                     case .account(let kind):
-                        CloudAccountStep(kind: kind) { location in
+                        CloudAccountStep(kind: kind, purpose: .sync) { location in
                             guard let key = SourceURL.credentialHost(of: location.url) else { return }
                             chooseAccount(kind: kind, key: key)
                         } onGoogleDriveReady: { signIn in
@@ -195,7 +196,13 @@ struct SyncLocationSetupView: View {
     private func chooseAccount(kind: MediaSourceKind, key: String) {
         guard let provider = SyncLocation.Provider(mediaSourceKind: kind) else { return }
         if let account = accounts.vault.account(kind: kind, key: key), !CloudProviders.grantsSyncWrites(account) {
+            #if os(tvOS)
             errorMessage = String(localized: "\(kind.displayName) needs to be signed in again before Edendale can write sync files there. Sign in once more from Link Source.")
+            #else
+            // The account step already signed in again: the grant came back
+            // without the write scope.
+            errorMessage = String(localized: "\(kind.displayName) didn't allow Edendale to write its sync files. Sign in again and allow that access.")
+            #endif
             path = NavigationPath()
             return
         }

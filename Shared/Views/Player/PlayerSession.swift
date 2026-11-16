@@ -28,7 +28,10 @@ final class PlayerSession {
     // MARK: - State
 
     /// The item being played; non-nil while the player is presented.
-    private(set) var item: PlaybackItem?
+    private(set) var item: PlaybackItem? {
+        // Library work held for the viewer waits while the player is up.
+        didSet { interactionGate?.set(.playback, active: item != nil) }
+    }
 
     /// Observable playback engine for the session. Created on first present,
     /// reused across media switches to preserve PiP, video surface, and
@@ -41,7 +44,7 @@ final class PlayerSession {
     private(set) var chrome: PlayerChromeModel?
 
     let segmentSkipping: PlayerSegmentController
-    /// Skip lengths and press-and-hold speeds (Settings ▸ App Controls).
+    /// Skip lengths and press-and-hold speeds (Settings ▸ Player Controls).
     let controls: PlayerControlPreferences
     /// Text subtitle font, colours, and box (Settings ▸ Subtitles).
     let subtitleAppearance: SubtitleAppearance
@@ -53,6 +56,9 @@ final class PlayerSession {
 
     private let library: LibraryController
     private let watchStore: WatchProgressStore
+    /// Told when the viewer asks to play and while the player is up, so
+    /// background library work stays off the main thread meanwhile.
+    private let interactionGate: InteractionGate?
     private let audioEnhancement: AudioEnhancementController
     private let videoAdjustment: VideoAdjustmentController
     /// Backs persisted player preferences (loop, fill, per-content choices).
@@ -104,9 +110,11 @@ final class PlayerSession {
         controls: PlayerControlPreferences? = nil,
         subtitleAppearance: SubtitleAppearance? = nil,
         subtitleCache: SubtitleCacheStore? = nil,
-        defaults: UserDefaults? = nil
+        defaults: UserDefaults? = nil,
+        interactionGate: InteractionGate? = nil
     ) {
         let defaults = defaults ?? AppIdentifiers.defaults
+        self.interactionGate = interactionGate
         self.library = library
         self.watchStore = watchStore
         self.defaults = defaults
@@ -142,6 +150,8 @@ final class PlayerSession {
     func pictureInPictureDidStart() {
         guard isPresented else { return }
         isHiddenForPictureInPicture = true
+        // The library is back in view: show what the player saved.
+        watchStore.refreshHeldChanges()
         chrome?.hideControls()
         setIdleTimerDisabled(false)
     }
@@ -189,6 +199,14 @@ final class PlayerSession {
         await presentPrepared(newItem, requestID: requestID)
     }
 
+    /// Plays a Continue Watching item: the movie, or the episode to resume.
+    func play(_ item: ResumeItem) async {
+        switch item.payload {
+        case .movie(let movie): await play(movie: movie)
+        case .episode(let episode): await play(episode: episode)
+        }
+    }
+
     /// Plays another file covered by the current item's security scope —
     /// used by the file-list sidebar for folder siblings.
     func play(siblingURL: URL) {
@@ -204,6 +222,7 @@ final class PlayerSession {
     private var advanceInFlight: Bool { advanceRequestID != nil }
 
     private func beginPlaybackRequest() -> UUID {
+        interactionGate?.touch()
         let requestID = UUID()
         activePlaybackRequestID = requestID
         advanceRequestID = nil
@@ -279,6 +298,7 @@ final class PlayerSession {
         // render a fully-formed session. Retain old scope alongside.
         let oldScope = item?.scope
         item = newItem
+        showCopiesCache = nil
         reattachedSubtitleIDs = []
 
         segmentSkipping.begin(itemID: newItem.id, media: newItem.segmentLookup)
@@ -366,7 +386,8 @@ final class PlayerSession {
 
         Task {
             do {
-                debugPrint("[PlayerSession.startPlayback] opening url: \(url)")
+                // Never print the whole URL: SMB, SFTP and WebDAV URLs carry the password.
+                debugPrint("[PlayerSession.startPlayback] opening \(url.scheme ?? "?") url: \(url.lastPathComponent)")
                 try await engine.open(url: url)
                 guard self.activePlaybackRequestID == generation else {
                     debugPrint("[PlayerSession.startPlayback] ❌ generation mismatch after open")
@@ -447,6 +468,8 @@ final class PlayerSession {
         stopAndRetirePlayer()
         chrome = nil
         item = nil
+        // The pages behind the player show what it saved while it was up.
+        watchStore.refreshHeldChanges()
         // Playback stopped: the sync file is written at once (SYNC-PROTOCOL.md §8.1).
         NotificationCenter.default.post(name: SyncCoordinator.flushRequested, object: nil)
         reattachedSubtitleIDs = []
@@ -568,7 +591,8 @@ final class PlayerSession {
             episodeNumber: playbackItem.episode?.episodeNumber,
             lastWatchedAt: Date()
         )
-        watchStore.update(progress)
+        // As on the other platforms: the pages refresh when the player closes.
+        watchStore.update(progress, whilePlaying: isPlayerPresented)
     }
 
     private func progressKey(for playbackItem: PlaybackItem) -> (
@@ -783,7 +807,12 @@ final class PlayerSession {
 
         guard let currentEpisode = item?.episode,
               let show = currentEpisode.show,
-              let next = PlayerLogic.nextEpisode(after: currentEpisode, in: show)
+              let next = PlayerLogic.nextEpisode(
+                after: currentEpisode,
+                in: show,
+                otherCopies: otherCopiesOfCurrentShow(),
+                isOffline: isSourceOffline
+              )
         else {
             end()
             return
@@ -806,6 +835,26 @@ final class PlayerSession {
                 self.advanceRequestID = nil
             }
         }
+    }
+
+    /// Other copies of the playing episode's show (other sources, or the
+    /// same share through another endpoint), looked up once per item: the
+    /// Up Next preview asks on every clock tick.
+    @ObservationIgnored private var showCopiesCache: (showID: UUID, copies: [TVShow])?
+
+    /// The next episode comes from the copy playing now — the source the
+    /// viewer chose — and from one of these only when that copy lacks it.
+    func otherCopiesOfCurrentShow() -> [TVShow] {
+        guard let show = item?.episode?.show else { return [] }
+        if let cache = showCopiesCache, cache.showID == show.id { return cache.copies }
+        let copies = library.otherCopies(of: show)
+        showCopiesCache = (show.id, copies)
+        return copies
+    }
+
+    /// Whether the last scan couldn't reach this copy's source.
+    func isSourceOffline(_ show: TVShow) -> Bool {
+        library.isOffline(show.folder)
     }
 
     private func replayCurrent() {

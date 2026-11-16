@@ -114,6 +114,17 @@ private nonisolated final class FFmpegWorker: @unchecked Sendable {
 
     func interrupt() { reader.interrupt() }
 
+    /// What the byte source holds past the reader's position; nil for a
+    /// local file. Safe to call while a read is blocked.
+    func bufferedAhead() -> RebufferPolicy.Source? {
+        var complete: ObjCBool = false
+        let bytes = reader.bufferedBytesAhead(complete: &complete)
+        return bytes < 0 ? nil : RebufferPolicy.Source(bytes: bytes, complete: complete.boolValue)
+    }
+
+    /// Size of the streamed file, or -1.
+    var sourceLength: Int64 { reader.byteSourceLength }
+
     func close() {
         reader.interrupt()
         queue.async { self.reader.close() }
@@ -149,6 +160,8 @@ public final class FFmpegDecoder: MediaDecoder {
     var onSubtitleConfiguration: ((SubtitleTrackFormat?, Data) -> Void)?
     var onSubtitleEvent: ((DecodedSubtitleEvent) -> Void)?
     var onImageSubtitleCue: ((ImageSubtitleCue) -> Void)?
+    /// Each buffer as it goes to the audio renderer, refills included.
+    var onAudioEnqueued: ((CMSampleBuffer) -> Void)?
     private var selectedSubtitleIndex: Int?
     private var subtitleSelectionGeneration = 0
     public var volume: Float = 1 { didSet { audioRenderer?.volume = min(max(volume, 0), 1) } }
@@ -165,7 +178,10 @@ public final class FFmpegDecoder: MediaDecoder {
     private var synchronizer: AVSampleBufferRenderSynchronizer?
     private var audioRenderer: AVSampleBufferAudioRenderer?
     private var rendererObservers: [NSObjectProtocol] = []
-    private var lastAudioRefill: CFTimeInterval = 0
+    /// Audio the renderer has been given and may not have played yet, oldest
+    /// first, already equalized. When the renderer drops its queue (see
+    /// `refillAudio`), this goes back in from the playhead.
+    private var enqueuedAudio: [CMSampleBuffer] = []
     private var displayLink: DisplayLinkDriver?
     private var pump: Task<Void, Never>?
     private var generation = 0
@@ -184,14 +200,28 @@ public final class FFmpegDecoder: MediaDecoder {
     private var clockRunning = false
     private var previewPending = true
     private var playbackRate: Float = 1
+    /// Streamed data ran out mid-playback: the clock is stopped until the
+    /// source has refilled (see `RebufferPolicy`).
+    public private(set) var isBuffering = false {
+        didSet { if isBuffering != oldValue { onBufferingChanged?(isBuffering) } }
+    }
+    var onBufferingChanged: ((Bool) -> Void)?
+    private var rebuffer = RebufferPolicy()
+    /// When the clock last started, for `startGrace`.
+    private var clockStartedAt: CFTimeInterval = 0
+    /// After the clock starts, the queues get this long to fill before an
+    /// empty one counts as running out. On a link that keeps up they fill in
+    /// a fraction of it.
+    private static let startGrace = 0.75
 
     // Wall-clock fallback for video-only files where the synchronizer has no renderer
     private var usingWallClock = false
     private var wallClockStart: CFTimeInterval = 0
     private var wallClockOffset: Double = 0
 
-    /// Decoded audio never runs further ahead of the clock than this (0.4 MB/s
-    /// of 48 kHz stereo PCM, 1.5 MB/s at 7.1); reading pauses there instead.
+    /// Decoded audio never runs further ahead of the clock than this many
+    /// seconds of real time (0.4 MB/s of 48 kHz stereo PCM, 1.5 MB/s at 7.1);
+    /// reading pauses there instead. See `audioAheadLimit`.
     private static let maxAudioAhead = 4.0
 
     public init(hardwareDecoding: Bool = true, passesThroughEAC3: Bool = true) {
@@ -254,6 +284,7 @@ public final class FFmpegDecoder: MediaDecoder {
             }
             synchronizer = sync
             mediaInfo = info
+            rebuffer = RebufferPolicy(length: worker.sourceLength, duration: info.duration.seconds)
             displayLink = DisplayLinkDriver { [weak self] in
                 Task { @MainActor [weak self] in self?.tick() }
             }
@@ -295,6 +326,7 @@ public final class FFmpegDecoder: MediaDecoder {
 
     public func pause() {
         wantsToPlay = false
+        isBuffering = false
         if usingWallClock {
             if clockRunning {
                 wallClockOffset = currentTime.seconds
@@ -334,9 +366,11 @@ public final class FFmpegDecoder: MediaDecoder {
             synchronizer.rate = 0
         }
         clockRunning = false
+        isBuffering = false
         state = .seeking
         videos.removeAll()
         pendingAudio.removeAll()
+        enqueuedAudio.removeAll()
         readerBlockedOnVideo = false
         audioRenderer?.flush()
         onDiscontinuity?()
@@ -433,12 +467,12 @@ public final class FFmpegDecoder: MediaDecoder {
         }
         rendererObservers.forEach(NotificationCenter.default.removeObserver)
         rendererObservers.removeAll()
-        lastAudioRefill = 0
         audioRenderer?.flush()
         audioRenderer = nil
         synchronizer = nil
         videos.removeAll()
         pendingAudio.removeAll()
+        enqueuedAudio.removeAll()
         readerBlockedOnVideo = false
         mediaInfo = nil
         bufferedUntil = 0
@@ -446,6 +480,7 @@ public final class FFmpegDecoder: MediaDecoder {
         eof = false
         wantsToPlay = false
         clockRunning = false
+        isBuffering = false
         previewPending = true
         playbackRate = 1
         usingWallClock = false
@@ -490,6 +525,7 @@ public final class FFmpegDecoder: MediaDecoder {
                     self.synchronizer?.rate = 0
                 }
                 self.clockRunning = false
+                self.isBuffering = false
                 self.displayLink?.stop()
                 self.state = .error(error)
             }
@@ -501,14 +537,20 @@ public final class FFmpegDecoder: MediaDecoder {
         guard !eof else { return false }
         if readerBlockedOnVideo && !videoNeedsData { return false }
         let audioAhead = audioBufferedUntil - currentTime.seconds
-        if !usingWallClock && audioAhead >= Self.maxAudioAhead { return false }
+        if !usingWallClock && audioAhead >= audioAheadLimit { return false }
         // Audio asks for more only while the renderer has room; video reads on
         // past it, parking the audio decoded on the way in `pendingAudio`.
-        let audioNeedsData = !usingWallClock && pendingAudio.isEmpty && audioAhead < 1.0
+        let audioNeedsData = !usingWallClock && pendingAudio.isEmpty && audioAhead < audioSpeed
         return audioNeedsData || videoNeedsData
     }
 
     private var videoNeedsData: Bool { isVideoDecodingEnabled && videos.count < 12 }
+
+    /// Media seconds that play in one second faster than 1×. The renderer
+    /// counts its queue in real time, so audio leads scale with it: at 2× a
+    /// one-second lead would otherwise last half a second.
+    private var audioSpeed: Double { Double(max(playbackRate, 1)) }
+    private var audioAheadLimit: Double { Self.maxAudioAhead * audioSpeed }
 
     private func accept(_ frame: EDFFmpegFrame) {
         if let subtitle = frame.subtitle {
@@ -559,14 +601,31 @@ public final class FFmpegDecoder: MediaDecoder {
             pendingAudio.removeAll()
             return
         }
+        forgetPlayedAudio()
         var fed = 0
         while fed < pendingAudio.count && renderer.isReadyForMoreMediaData {
             // Equalize at hand-off, so settings changes are heard no later than before.
             equalize(pendingAudio[fed])
             renderer.enqueue(pendingAudio[fed])
+            onAudioEnqueued?(pendingAudio[fed])
             fed += 1
         }
+        enqueuedAudio.append(contentsOf: pendingAudio.prefix(fed))
         pendingAudio.removeFirst(fed)
+    }
+
+    /// Keeps `enqueuedAudio` to what the renderer may still play. Runs with
+    /// every feed, which also happens in the background where no display
+    /// link ticks.
+    private func forgetPlayedAudio() {
+        guard !enqueuedAudio.isEmpty else { return }
+        let time = currentTime.seconds
+        let played = enqueuedAudio.prefix { Self.end(of: $0) <= time }.count
+        if played > 0 { enqueuedAudio.removeFirst(played) }
+    }
+
+    private static func end(of sample: CMSampleBuffer) -> Double {
+        (CMSampleBufferGetPresentationTimeStamp(sample) + CMSampleBufferGetDuration(sample)).seconds
     }
 
     private func equalize(_ sample: CMSampleBuffer) {
@@ -583,7 +642,8 @@ public final class FFmpegDecoder: MediaDecoder {
         processor.processSampleBuffer(sample)
     }
 
-    /// The renderer drops its queued audio when playback moves to another
+    /// The renderer drops its queued audio when the playback rate changes to
+    /// another speed (1× to 2× and back) or playback moves to another
     /// output, and reports when the output hardware changes format, for
     /// example when a receiver switches on. Refilling from the playhead
     /// configures the new output for the audio's channels.
@@ -597,21 +657,27 @@ public final class FFmpegDecoder: MediaDecoder {
         }
     }
 
+    /// Puts the audio the renderer dropped back in from the playhead. It is
+    /// all still in `enqueuedAudio`, so the clock and the picture carry on:
+    /// no seek, no re-decoding from the previous keyframe, and every
+    /// notification of a burst is answered at the cost of a few enqueues.
     private func refillAudio() {
         switch state {
         case .ready, .playing, .paused:
-            // One refill answers a burst of notifications.
-            let now = CACurrentMediaTime()
-            guard now - lastAudioRefill > 1 else { return }
-            lastAudioRefill = now
+            guard let renderer = audioRenderer else { return }
             let time = currentTime.seconds
-            let request = generation
-            debugPrint("[FFmpegDecoder] audio output changed; refilling from \(time)s")
-            Task { [weak self] in
-                // A seek that started meanwhile refills at its own target.
-                guard let self, self.generation == request else { return }
-                try? await self.reposition(seconds: time, audioTrack: nil)
+            debugPrint("[FFmpegDecoder] audio renderer flushed or output changed; refilling from \(time)s")
+            // Also clears anything enqueued after the automatic flush and
+            // before this notification, which would otherwise stay queued.
+            renderer.flush()
+            let unplayed = enqueuedAudio.drop { Self.end(of: $0) <= time }
+            // No more than the renderer held a moment ago, so no readiness check.
+            for sample in unplayed {
+                renderer.enqueue(sample)
+                onAudioEnqueued?(sample)
             }
+            enqueuedAudio = Array(unplayed)
+            feedAudioRenderer()
         default:
             // A seek refills anyway; nothing plays before opening or after the end.
             break
@@ -624,8 +690,15 @@ public final class FFmpegDecoder: MediaDecoder {
         // Start picture and sound together: wait for the first video frame at
         // this position, unless reading has stopped before it could decode.
         if previewPending && isVideoDecodingEnabled && !eof && mediaInfo?.videoTracks.isEmpty == false
-            && (usingWallClock || audioBufferedUntil - currentTime.seconds < Self.maxAudioAhead) {
+            && (usingWallClock || audioBufferedUntil - currentTime.seconds < audioAheadLimit) {
             return
+        }
+        if isBuffering {
+            // Refill the player's own queues first, then wait until the
+            // source holds enough that playback doesn't stop again at once.
+            if shouldRead(generation: generation) == true { return }
+            if !eof, let source = worker?.bufferedAhead(), !rebuffer.canResume(source) { return }
+            isBuffering = false
         }
         if usingWallClock {
             wallClockStart = CACurrentMediaTime()
@@ -633,10 +706,37 @@ public final class FFmpegDecoder: MediaDecoder {
             synchronizer?.rate = playbackRate
         }
         clockRunning = true
+        clockStartedAt = CACurrentMediaTime()
+    }
+
+    /// Stops the clock when streamed data has run out. Left running, it
+    /// would pass the frames still to arrive: the picture would show stills
+    /// ever further behind it and the sound would be dropped as late.
+    private func pauseIfStarved(at time: Double) {
+        // A clock that has only just started gets time to fill the queues.
+        guard clockRunning, !isBuffering, !eof,
+              CACurrentMediaTime() - clockStartedAt > Self.startGrace else { return }
+        let hasVideo = isVideoDecodingEnabled && mediaInfo?.videoTracks.isEmpty == false
+        let queued = hasVideo ? videos.count : nil
+        let audioAhead = usingWallClock ? nil : audioBufferedUntil - time
+        // Ask the source only once the player itself is about to run out.
+        let empty = RebufferPolicy.Source(bytes: 0, complete: false)
+        guard rebuffer.shouldPause(source: empty, queuedVideoFrames: queued, audioAhead: audioAhead),
+              let source = worker?.bufferedAhead(),
+              rebuffer.shouldPause(source: source, queuedVideoFrames: queued, audioAhead: audioAhead)
+        else { return }
+        if usingWallClock {
+            wallClockOffset = time
+        } else {
+            synchronizer?.rate = 0
+        }
+        clockRunning = false
+        isBuffering = true
     }
 
     private func tick() {
         feedAudioRenderer()
+        pauseIfStarved(at: currentTime.seconds)
         let time = currentTime
         var latest: DecodedVideoFrame?
         while let first = videos.first, first.presentationTime <= time {

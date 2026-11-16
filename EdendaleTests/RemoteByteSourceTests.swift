@@ -121,6 +121,41 @@ func makeTestData(count: Int) -> Data {
         }
     }
 
+    @Test func reportsTheCachedBytesPastTheLastRead() async throws {
+        let host = HTTPStub.uniqueHost()
+        let data = makeTestData(count: 8 * 1024)
+        HTTPStub.register(host: host) { StubResponse.file(data, request: $0) }
+        defer { HTTPStub.unregister(host: host) }
+        let source = makeSource(resolver: StubResolver(host: host))
+        defer { source.cancel() }
+
+        func ahead() -> (bytes: Int64, complete: Bool) {
+            var complete: ObjCBool = false
+            let bytes = source.bufferedBytesAhead(complete: &complete)
+            return (bytes, complete.boolValue)
+        }
+
+        _ = await blockingRead(source, offset: 0, length: 512)
+        #expect(ahead().bytes == 512)
+        _ = await blockingRead(source, offset: 512, length: 512)
+        // The sequential read set chunk 1 loading; once it is in, nothing
+        // more comes until the next read.
+        let deadline = Date().addingTimeInterval(3)
+        while !ahead().complete, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(ahead().complete)
+        #expect(ahead().bytes == 1024)
+
+        // At the end of the file there is nothing left to wait for.
+        var collected = 1024
+        while collected < data.count {
+            collected += await blockingRead(source, offset: Int64(collected), length: 1024).count
+        }
+        #expect(ahead().complete)
+        #expect(ahead().bytes == 0)
+    }
+
     @Test func prefetchesTheNextChunkDuringSequentialReads() async throws {
         let host = HTTPStub.uniqueHost()
         let data = makeTestData(count: 8 * 1024)

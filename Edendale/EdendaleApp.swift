@@ -28,6 +28,9 @@ struct EdendaleApp: App {
     @State private var videoAdjustment = VideoAdjustmentController()
     @State private var playerSession: PlayerSession
     @State private var appRouter = AppRouter.shared
+    /// Holds background library work (metadata matching) while the viewer
+    /// scrolls or watches.
+    @State private var interactionGate: InteractionGate
 
     #if os(iOS)
     // Reports the player's rotation lock; see OrientationLock.
@@ -36,8 +39,11 @@ struct EdendaleApp: App {
 
     init() {
         FontRegistrar.registerAll()
+        let interactionGate = InteractionGate()
+        _interactionGate = State(initialValue: interactionGate)
         let library = LibraryController(
-            modelContext: Persistence.sharedModelContainer.mainContext
+            modelContext: Persistence.sharedModelContainer.mainContext,
+            interactionGate: interactionGate
         )
         let ws = WatchProgressStore()
         let watchlistStore = WatchlistStore(
@@ -50,6 +56,9 @@ struct EdendaleApp: App {
         // leaves the Keychain and library alone.
         if !Persistence.isRunningUnitTests {
             cloudAccounts.migrateGoogleDriveToFileAccess(library: library)
+            // Titles a previous launch left unmatched (quit mid-import,
+            // offline) are looked up again without waiting for a rescan.
+            library.enrichPendingMetadata()
         }
         _cloudAccounts = State(initialValue: cloudAccounts)
         _watchStore = State(initialValue: ws)
@@ -91,7 +100,7 @@ struct EdendaleApp: App {
         let subtitleCache = SubtitleCacheStore(
             modelContext: Persistence.subtitleCacheModelContainer.mainContext
         )
-        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment, subtitleCache: subtitleCache))
+        _playerSession = State(initialValue: PlayerSession(library: library, watchStore: ws, audioEnhancement: audioEnhancement, videoAdjustment: videoAdjustment, subtitleCache: subtitleCache, interactionGate: interactionGate))
         // Downloaded subtitles unused for more than a month go at launch,
         // on a later main-actor turn. The unit-test host keeps its files.
         if !Persistence.isRunningUnitTests {
@@ -109,8 +118,18 @@ struct EdendaleApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        mainWindow
+            .modelContainer(Persistence.sharedModelContainer)
+            #if os(macOS)
+            .commands { EdendaleCommands() }
+            #endif
+
+        #if os(visionOS)
+        // The player's Theater menu opens this around the viewer. Its
+        // controls panel hosts the player's own panels, so it gets the
+        // environment the player window has.
+        ImmersiveSpace(id: VisionTheaterController.spaceID) {
+            VisionTheaterSpace()
                 .environment(library)
                 .environment(watchStore)
                 .environment(watchlistStore)
@@ -118,9 +137,6 @@ struct EdendaleApp: App {
                 .environment(tmdbAccount)
                 .environment(cloudAccounts)
                 .environment(sync)
-                #if os(iOS)
-                .environment(accountHandoff)
-                #endif
                 .environment(wyzieKeys)
                 .environment(youngAudienceFilter)
                 .environment(audioEnhancement)
@@ -128,18 +144,7 @@ struct EdendaleApp: App {
                 .environment(playerSession)
                 .environment(appRouter)
                 .environment(\.ratingProviders, [TMDBRatingsProvider()])
-        }
-        .modelContainer(Persistence.sharedModelContainer)
-        #if os(macOS)
-        .commands { EdendaleCommands() }
-        #endif
-
-        #if os(visionOS)
-        // The player's Theater menu opens this around the viewer; the
-        // player window stays open as its remote.
-        ImmersiveSpace(id: VisionTheaterController.spaceID) {
-            VisionTheaterSpace()
-                .environment(playerSession)
+                .modelContainer(Persistence.sharedModelContainer)
         }
         .immersionStyle(selection: .constant(.full), in: .full)
         #endif
@@ -187,6 +192,39 @@ struct EdendaleApp: App {
         }
         .modelContainer(Persistence.sharedModelContainer)
         #endif
+    }
+
+    /// The library, with the player over it on every platform but macOS.
+    /// visionOS names the window, so the theater can reopen it after
+    /// closing it (see VisionTheaterController).
+    private var mainWindow: some Scene {
+        #if os(visionOS)
+        WindowGroup(id: VisionTheaterController.playerWindowID) { mainContent }
+        #else
+        WindowGroup { mainContent }
+        #endif
+    }
+
+    private var mainContent: some View {
+        ContentView()
+            .environment(library)
+            .environment(watchStore)
+            .environment(watchlistStore)
+            .environment(userMediaStore)
+            .environment(tmdbAccount)
+            .environment(cloudAccounts)
+            .environment(sync)
+            #if os(iOS)
+            .environment(accountHandoff)
+            #endif
+            .environment(wyzieKeys)
+            .environment(youngAudienceFilter)
+            .environment(audioEnhancement)
+            .environment(videoAdjustment)
+            .environment(playerSession)
+            .environment(appRouter)
+            .environment(\.ratingProviders, [TMDBRatingsProvider()])
+            .environment(\.interactionGate, interactionGate)
     }
 }
 

@@ -35,6 +35,12 @@ NS_SWIFT_NAME(ByteSource)
 /// Why the last read failed, for the player's error message. Never contains
 /// a URL, token, or password.
 @property (nonatomic, readonly, nullable, copy) NSString *failureReason;
+@optional
+/// For the player's rebuffering. Returns the bytes already fetched past the
+/// end of the last read, contiguously, and sets `complete` when the source
+/// will fetch no more until reading goes on: its read-ahead is full, it
+/// reaches the end of the file, or it stopped after a failure. Thread-safe.
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete NS_SWIFT_NAME(bufferedBytesAhead(complete:));
 @end
 
 /// All operations run on one worker queue, except interrupt, which is thread-safe.
@@ -76,6 +82,13 @@ NS_SWIFT_NAME(ByteSource)
 /// Select a subtitle decoder (-1 disables). Returns format/header configuration.
 /// Cues are decoded incrementally by readBatch along with audio and video.
 - (nullable NSDictionary<NSString *, id> *)selectSubtitleTrack:(NSInteger)index error:(NSError **)error;
+/// What the byte source holds past its last read (see EDByteSource), or -1
+/// when the media isn't streamed through a source that reports it.
+/// Thread-safe, like -interrupt.
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete NS_SWIFT_NAME(bufferedBytesAhead(complete:));
+/// Size of the streamed file in bytes, or -1 when unknown or not streamed.
+/// Thread-safe.
+@property (nonatomic, readonly) int64_t byteSourceLength;
 - (void)interrupt;
 - (void)close;
 @end

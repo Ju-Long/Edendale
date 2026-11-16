@@ -32,6 +32,7 @@ struct RootView: View {
     @Environment(YoungAudienceFilter.self) private var youngAudienceFilter
     @Environment(SyncCoordinator.self) private var sync
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.interactionGate) private var interactionGate
 
     @Query private var libraryMovies: [Movie]
     @Query private var libraryShows: [TVShow]
@@ -50,6 +51,17 @@ struct RootView: View {
     @State private var searchModel = SearchModel()
     #else
     @State private var selectedTab: RootTab = .movies
+    /// What the Downloaded tab shows: its whole page, or one section, as
+    /// chosen in the section picker the tab bar carries (see
+    /// DownloadedSectionPicker); the macOS sidebar lists them as rows.
+    @State private var downloadedSection: DownloadedSection?
+    /// Pages pushed on the Downloaded tab's stack: the tab bar's section
+    /// picker shows only over the tab's root page.
+    @State private var downloadedDepth = 0
+    #endif
+    #if os(tvOS)
+    /// So Back in the sidebar returns from a pushed page (see PushedPage).
+    @State private var pushedPages = PushedPages()
     #endif
     @State private var externalDetail: RoutedMediaDetail?
     /// A handoff code opened as a link (the Camera app, a tap): the code
@@ -72,7 +84,16 @@ struct RootView: View {
         .sheet(item: $externalDetail) { destination in
             NavigationStack {
                 MediaDetailView(source: destination.source)
+                    // Apple TV opens a detail page's cast in place (see
+                    // MediaDetailView).
+                    .navigationDestination(for: PersonRef.self) { PersonDetailView(person: $0) }
             }
+            // The environment set above wraps `navigation` only, not this
+            // sheet; without it a routed link (widget, Top Shelf, Siri)
+            // traps on MediaDetailView's SearchCoordinator.
+            .environment(moviesModel)
+            .environment(searchCoordinator)
+            .tvSheetInsets()
         }
         .confirmationDialog(
             "Pair with \(scannedHandoff?.name ?? "")?",
@@ -88,6 +109,7 @@ struct RootView: View {
         }
         .sheet(item: $handoff) { request in
             SyncHandoffView(role: request.role, scanned: request.payload)
+                .tvSheetInsets()
         }
         // A cast tap anywhere sets `pendingPerson`; jump to the Search tab so
         // it can load that person's filmography.
@@ -111,17 +133,23 @@ struct RootView: View {
             await youngAudienceFilter.verify(audienceRefs)
         }
         .task(id: widgetSnapshotRevision) {
-            WidgetSnapshotStore.publish(
-                trending: youngAudienceFilter.visible(moviesModel.trending),
-                movies: visibleLibraryMovies,
-                shows: visibleLibraryShows,
-                episodes: visibleLibraryEpisodes,
-                progress: watchStore.inProgress
-            )
+            // Changes arrive in bursts (batches of metadata, a sync, a
+            // rescan): the widgets, Top Shelf, and Siri get the last of a
+            // burst once it has been quiet a while, not a rebuild for each
+            // step, and not while the viewer scrolls. Playback doesn't
+            // hold it, so Continue Watching keeps up with a video.
+            guard (try? await Task.sleep(for: .seconds(3))) != nil else { return }
+            await interactionGate?.waitUntilSettled(includingPlayback: false)
+            guard !Task.isCancelled else { return }
+            publishWidgetSnapshot()
         }
         .tint(Theme.gold)
         // The archive is dark by design — a lit theater breaks the vault.
         .preferredColorScheme(.dark)
+        #if os(iOS)
+        // iPhone hides the time and battery in landscape unless asked.
+        .statusBarHidden(false)
+        #endif
         .background(Theme.background)
         // Merge the connected TMDB account's lists on launch and again
         // whenever a sign-in completes (or arrives via iCloud Keychain).
@@ -133,7 +161,11 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active: sync.sceneDidBecomeActive()
-            case .background: sync.sceneDidEnterBackground()
+            case .background:
+                sync.sceneDidEnterBackground()
+                // The Home Screen shows the widgets next: no waiting out
+                // the quiet period (unchanged snapshots aren't rewritten).
+                publishWidgetSnapshot()
             default: break
             }
             guard phase == .active, tmdbAccount.isSignedIn else { return }
@@ -175,6 +207,7 @@ struct RootView: View {
             )
         }
         #else
+        let downloadedSections = self.downloadedSections
         TabView(selection: $selectedTab) {
             Tab("Movies & Shows", image: "clapperboard", value: RootTab.movies) {
                 MoviesShowsView()
@@ -187,7 +220,12 @@ struct RootView: View {
             }
 
             Tab("Downloaded", image: "folder-closed", value: RootTab.downloaded) {
-                DownloadedView()
+                DownloadedView(
+                    section: downloadedSection,
+                    // Where the tab bar can't carry the picker, the page does.
+                    sectionSelection: DownloadedSectionPicker.ridesOnTabBar ? nil : $downloadedSection,
+                    onNavigationDepthChange: { downloadedDepth = $0 }
+                )
             }
 
             #if os(tvOS) || os(visionOS)
@@ -201,6 +239,25 @@ struct RootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        #if os(iOS)
+        // Downloaded's sections extend out of the tab bar instead of
+        // becoming sidebar rows, and only over that tab's root page.
+        .modifier(DownloadedSectionAccessory(
+            isEnabled: selectedTab == .downloaded
+                && downloadedDepth == 0
+                && DownloadedSectionPicker.isOffered(for: downloadedSections),
+            selection: $downloadedSection,
+            sections: downloadedSections
+        ))
+        #endif
+        // A section that empties falls back to the whole page.
+        .onChange(of: downloadedSections) { _, sections in
+            downloadedSection = DownloadedSection.resolved(downloadedSection, available: sections)
+        }
+        #if os(tvOS)
+        .sidebarBackReturnsFromPushedPages()
+        .environment(pushedPages)
+        #endif
         #endif
     }
 
@@ -228,7 +285,10 @@ struct RootView: View {
             $0.isInWatchlist && youngAudienceFilter.allows($0.ref)
         })
     }
+    #endif
 
+    /// The Downloaded sections with something to show: the macOS sidebar's
+    /// child rows, and the choices of the tab bar's section picker.
     private var downloadedSections: [DownloadedSection] {
         // Same show order as the Downloaded page, which decides between
         // duplicate show records.
@@ -245,7 +305,6 @@ struct RootView: View {
             shows: shows
         )
     }
-    #endif
 
     private var hasWatchlistItems: Bool {
         watchlistStore.items.contains {
@@ -327,7 +386,9 @@ struct RootView: View {
             guard await isVisibleToSelectedAudience(
                 MediaRef(id: tmdbId, mediaType: .movie)
             ) else { return }
-            if let movie = libraryMovies.first(where: { $0.tmdbId == tmdbId }) {
+            // Of several copies, the one played last (its source).
+            let copies = libraryMovies.filter { $0.tmdbId == tmdbId }
+            if let movie = PlaybackSources.mostRecentlyPlayed(copies, lastPlayed: \.lastPlayedAt) ?? copies.first {
                 await playerSession.play(movie: movie)
             } else {
                 selectedTab = .movies
@@ -337,7 +398,8 @@ struct RootView: View {
             }
 
         case .playEpisode(let tmdbId):
-            if let episode = libraryEpisodes.first(where: { $0.tmdbId == tmdbId }) {
+            let copies = libraryEpisodes.filter { $0.tmdbId == tmdbId }
+            if let episode = PlaybackSources.mostRecentlyPlayed(copies, lastPlayed: { $0.show?.lastPlayedAt }) ?? copies.first {
                 guard await isVisibleToSelectedAudience(episode) else { return }
                 await playerSession.play(episode: episode)
             } else {
@@ -385,8 +447,19 @@ struct RootView: View {
         return await isVisibleToSelectedAudience(show)
     }
 
-    /// A compact change token prevents unnecessary WidgetKit reloads while
-    /// still reacting to shelf, library, metadata, and watch-progress changes.
+    private func publishWidgetSnapshot() {
+        WidgetSnapshotStore.publish(
+            trending: youngAudienceFilter.visible(moviesModel.trending),
+            movies: visibleLibraryMovies,
+            shows: visibleLibraryShows,
+            episodes: visibleLibraryEpisodes,
+            progress: watchStore.inProgress
+        )
+    }
+
+    /// A compact change token prevents unnecessary WidgetKit and Top Shelf
+    /// reloads while still reacting to shelf, library, metadata, and
+    /// watch-progress changes.
     private var widgetSnapshotRevision: Int {
         var hasher = Hasher()
         hasher.combine(youngAudienceFilter.isEnabled)
@@ -395,18 +468,21 @@ struct RootView: View {
             hasher.combine(item.mediaType)
             hasher.combine(item.title)
             hasher.combine(item.posterPath)
+            hasher.combine(item.backdropPath)
         }
         for movie in visibleLibraryMovies {
             hasher.combine(movie.id)
             hasher.combine(movie.tmdbId)
             hasher.combine(movie.displayTitle)
             hasher.combine(movie.posterPath)
+            hasher.combine(movie.backdropPath)
         }
         for show in visibleLibraryShows {
             hasher.combine(show.id)
             hasher.combine(show.tmdbId)
             hasher.combine(show.displayName)
             hasher.combine(show.posterPath)
+            hasher.combine(show.backdropPath)
             hasher.combine(show.episodes.count)
         }
         for episode in visibleLibraryEpisodes {

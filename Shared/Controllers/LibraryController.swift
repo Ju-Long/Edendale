@@ -57,23 +57,41 @@ final class LibraryController {
     /// double-add files. Not observed — it only gates work, never drives UI.
     @ObservationIgnored private var isRescanning = false
 
+    /// A title TMDB had no match for is asked about again after this long
+    /// by the automatic sweep; a forced rescan (⌘R, Rescan) asks at once.
+    nonisolated static let unmatchedRetryInterval: TimeInterval = 7 * 24 * 60 * 60
+
+    /// The running metadata sweep; a request while it runs queues one more
+    /// pass instead of a second sweep over the same items.
+    @ObservationIgnored private var enrichmentTask: Task<Void, Never>?
+    @ObservationIgnored private var enrichmentQueued = false
+    @ObservationIgnored private var enrichmentRetriesUnmatched = false
+
     // MARK: - Dependencies
 
     private let modelContext: ModelContext
-    private let tmdb = TMDBService.shared
+    private let metadata: MetadataLookup
     /// Where a stored source's login or account comes from on rescans.
     private let connectors: ConnectorFactory.Environment
     private let enrichesMetadata: Bool
+    /// Holds enrichment's writes while the viewer scrolls or watches;
+    /// `nil` writes as soon as a batch is due.
+    private let interactionGate: InteractionGate?
 
-    /// Tests pass in-memory stores and turn TMDB enrichment off.
+    /// Tests pass in-memory stores and either turn TMDB enrichment off or
+    /// answer its lookups themselves.
     init(
         modelContext: ModelContext,
         connectors: ConnectorFactory.Environment = .live,
-        enrichesMetadata: Bool = true
+        enrichesMetadata: Bool = true,
+        metadata: MetadataLookup? = nil,
+        interactionGate: InteractionGate? = nil
     ) {
         self.modelContext = modelContext
         self.connectors = connectors
         self.enrichesMetadata = enrichesMetadata
+        self.metadata = metadata ?? .tmdb
+        self.interactionGate = interactionGate
         repairLegacyRemoteItems()
     }
 
@@ -108,7 +126,7 @@ final class LibraryController {
 
         save()
 
-        Task { await enrichFolder(folder) }
+        enrichPendingMetadata()
     }
 
     // MARK: - Network sources
@@ -169,7 +187,7 @@ final class LibraryController {
 
         save()
 
-        Task { await enrichFolder(folder) }
+        enrichPendingMetadata()
     }
 
     /// Rebuilds the connector for a stored network source (login or account
@@ -305,8 +323,12 @@ final class LibraryController {
 
         let folders = (try? modelContext.fetch(FetchDescriptor<VideoFolder>())) ?? []
         for folder in folders where force || Self.needsAutomaticRescan(folder, now: now) {
-            await rescanFolder(folder)
+            await scanForNewFiles(folder)
         }
+        // Every visit also finishes what an earlier sweep left: an import
+        // interrupted by quitting, lookups made while offline, and episodes
+        // added to a show that was already matched.
+        enrichPendingMetadata(retryingUnmatched: force)
     }
 
     /// Local folders always; remote sources once their last scan is older
@@ -318,8 +340,14 @@ final class LibraryController {
         return now.timeIntervalSince(lastScannedAt) >= automaticRescanInterval
     }
 
-    /// Re-scans a folder and adds any newly discovered files.
+    /// Re-scans a folder and adds any newly discovered files (a source's
+    /// Rescan), then asks TMDB again about titles it had no match for.
     func rescanFolder(_ folder: VideoFolder) async {
+        await scanForNewFiles(folder)
+        enrichPendingMetadata(retryingUnmatched: true)
+    }
+
+    private func scanForNewFiles(_ folder: VideoFolder) async {
         if folder.isRemote {
             await rescanRemoteFolder(folder)
             return
@@ -341,7 +369,7 @@ final class LibraryController {
             insert(file, into: folder)
         }
         save()
-        Task { await enrichFolder(folder) }
+        enrichPendingMetadata()
     }
 
     /// Re-walks a network source and adds newly discovered files. A failure
@@ -387,7 +415,7 @@ final class LibraryController {
             insert(file, into: folder)
         }
         save()
-        Task { await enrichFolder(folder) }
+        enrichPendingMetadata()
     }
 
     // MARK: - Playback preparation
@@ -429,6 +457,7 @@ final class LibraryController {
     /// show the reason instead of a silent black screen.
     func preparePlayback(movie: Movie) async -> PlaybackItem {
         if let scope = remoteScope(filePath: movie.filePath) {
+            notePlayed(movie)
             return PlaybackItem(scope: scope, movie: movie)
         }
         do {
@@ -438,6 +467,7 @@ final class LibraryController {
                 folder: movie.folder
             ) { movie.bookmarkData = $0 }
             if movie.isICloudItem { try await triggerCloudDownload(url: scope.url) }
+            notePlayed(movie)
             return PlaybackItem(scope: scope, movie: movie)
         } catch {
             return PlaybackItem(failed: error.localizedDescription)
@@ -448,6 +478,7 @@ final class LibraryController {
     /// show's folder bookmark when the episode itself has none.
     func preparePlayback(episode: Episode) async -> PlaybackItem {
         if let scope = remoteScope(filePath: episode.filePath) {
+            notePlayed(episode)
             return PlaybackItem(scope: scope, episode: episode)
         }
         do {
@@ -457,10 +488,44 @@ final class LibraryController {
                 folder: episode.show?.folder
             ) { episode.bookmarkData = $0 }
             if episode.isICloudItem { try await triggerCloudDownload(url: scope.url) }
+            notePlayed(episode)
             return PlaybackItem(scope: scope, episode: episode)
         } catch {
             return PlaybackItem(failed: error.localizedDescription)
         }
+    }
+
+    // MARK: - Copies across sources
+
+    /// Remembers the copy that started playing, so Play, Continue Watching,
+    /// and the episode menus default to the source (or endpoint) the viewer
+    /// chose last. Library data: it stays on this device.
+    func notePlayed(_ movie: Movie, at date: Date = Date()) {
+        movie.lastPlayedAt = date
+        save()
+    }
+
+    /// Remembers the copy of the show (and with it the source) an episode
+    /// was played from; see `notePlayed(_:)` for movies.
+    func notePlayed(_ episode: Episode, at date: Date = Date()) {
+        guard let show = episode.show else { return }
+        show.lastPlayedAt = date
+        save()
+    }
+
+    /// The show's other copies: the same title imported from other sources
+    /// or reached through other endpoints.
+    func otherCopies(of show: TVShow) -> [TVShow] {
+        let key = PlaybackSources.copyKey(show)
+        let shows = (try? modelContext.fetch(FetchDescriptor<TVShow>())) ?? []
+        let others = shows.filter { $0.id != show.id && PlaybackSources.copyKey($0) == key }
+        return Array(PlaybackSources.order(primary: show, others: others, folder: \.folder).dropFirst())
+    }
+
+    /// Whether the last scan of `folder` couldn't reach it or was refused.
+    func isOffline(_ folder: VideoFolder?) -> Bool {
+        guard let folder else { return false }
+        return sourceStates[folder.id] != nil
     }
 
     /// Playback scope for a network item. SMB gets the host's Keychain login
@@ -715,24 +780,171 @@ final class LibraryController {
 
     // MARK: - TMDB Enrichment
 
-    private func enrichFolder(_ folder: VideoFolder) async {
-        guard enrichesMetadata else { return }
-        isEnriching = true
-        defer { isEnriching = false }
-
-        for movie in folder.movies where movie.tmdbId == nil {
-            await enrichMovie(movie)
+    /// Matches every title in the library that still lacks TMDB metadata,
+    /// on a task of the controller's own, so leaving the page that asked
+    /// doesn't cancel it. A title is indexed once it has a `tmdbId`; one
+    /// TMDB had no match for carries `metadataCheckedAt` and waits
+    /// `unmatchedRetryInterval` (or a forced rescan) before it's asked
+    /// about again. A lookup that fails — offline, rate-limited, no
+    /// credentials — marks nothing and ends the pass, and the next sweep
+    /// (every library visit, each rescan, each launch) picks up from there.
+    /// Calls while a sweep runs queue one more pass and return its task.
+    ///
+    /// The lookups run off the main thread (see `TMDBService`). What they
+    /// find is written in batches (see `enrichmentBatchInterval`), each
+    /// with one save, and only while the interaction gate is settled: a
+    /// save refreshes every page showing the library, which shouldn't land
+    /// while the viewer scrolls or starts a video.
+    @discardableResult
+    func enrichPendingMetadata(retryingUnmatched: Bool = false) -> Task<Void, Never>? {
+        guard enrichesMetadata else { return nil }
+        enrichmentQueued = true
+        enrichmentRetriesUnmatched = enrichmentRetriesUnmatched || retryingUnmatched
+        if let enrichmentTask { return enrichmentTask }
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.runEnrichmentPasses()
         }
-        for show in folder.tvShows where show.tmdbId == nil {
-            await enrichShow(show)
+        enrichmentTask = task
+        return task
+    }
+
+    /// The least time between two batches of matches written to the
+    /// library, so a large first import refreshes the pages in a few steps
+    /// rather than once per title.
+    nonisolated static let enrichmentBatchInterval: Duration = .seconds(2)
+
+    /// Titles a sweep would look up now: no TMDB match yet, and not marked
+    /// unmatched within `unmatchedRetryInterval`. Episodes count once their
+    /// show is matched. Zero means everything matchable is indexed.
+    func pendingMetadataCount(now: Date = Date()) -> Int {
+        let due = { (checked: Date?) in Self.isDue(checked, now: now, retryingUnmatched: false) }
+        return unmatchedMovies().filter { due($0.metadataCheckedAt) }.count
+            + unmatchedShows().filter { due($0.metadataCheckedAt) }.count
+            + unmatchedEpisodes().filter { due($0.metadataCheckedAt) }.count
+    }
+
+    nonisolated static func isDue(_ checkedAt: Date?, now: Date, retryingUnmatched: Bool) -> Bool {
+        guard let checkedAt, !retryingUnmatched else { return true }
+        return now.timeIntervalSince(checkedAt) >= unmatchedRetryInterval
+    }
+
+    private func runEnrichmentPasses() async {
+        isEnriching = true
+        defer {
+            isEnriching = false
+            enrichmentTask = nil
+        }
+        while enrichmentQueued {
+            enrichmentQueued = false
+            let retrying = enrichmentRetriesUnmatched
+            enrichmentRetriesUnmatched = false
+            await sweepMetadata(retryingUnmatched: retrying, now: Date())
+        }
+    }
+
+    /// TMDB can't be reached or refuses the request, so every lookup after
+    /// this one would fail the same way.
+    private struct EnrichmentHalted: Error {}
+
+    /// What a lookup answered for one title, waiting to be written to it;
+    /// `nil` when TMDB has no match.
+    private enum FoundMetadata {
+        case movie(Movie, TMDBMovieResult?)
+        case show(TVShow, TMDBTVResult?)
+        case episode(Episode, TMDBEpisodeDetail?)
+    }
+
+    private func sweepMetadata(retryingUnmatched: Bool, now: Date) async {
+        let due = { (checked: Date?) in Self.isDue(checked, now: now, retryingUnmatched: retryingUnmatched) }
+        var found: [FoundMetadata] = []
+        var lastWrite = ContinuousClock.now
+
+        /// Writes what was found once a batch is due and nothing is going
+        /// on; otherwise the lookups carry on and the batch grows.
+        func writeIfDue() {
+            guard !found.isEmpty,
+                  ContinuousClock.now - lastWrite >= Self.enrichmentBatchInterval,
+                  interactionGate?.isSettled() ?? true
+            else { return }
+            write(found, now: now)
+            found = []
+            lastWrite = .now
+        }
+
+        do {
+            for movie in unmatchedMovies() where due(movie.metadataCheckedAt) {
+                let title = movie.localTitle, year = movie.releaseYear
+                let result = try await lookup { try await self.metadata.searchMovie(title, year) }
+                found.append(.movie(movie, result))
+                writeIfDue()
+            }
+            for show in unmatchedShows() where due(show.metadataCheckedAt) {
+                let name = show.name
+                let result = try await lookup { try await self.metadata.searchTV(name) }
+                found.append(.show(show, result))
+                writeIfDue()
+            }
+            // Episodes are looked up under their show's match, so the
+            // shows just matched are written first.
+            await interactionGate?.waitUntilSettled()
+            write(found, now: now)
+            found = []
+            lastWrite = .now
+            // Fetched after the shows so the ones just matched are included,
+            // along with episodes added to a show matched in an earlier sweep.
+            for episode in unmatchedEpisodes() where due(episode.metadataCheckedAt) {
+                guard let showId = episode.show?.tmdbId else { continue }
+                let season = episode.seasonNumber, number = episode.episodeNumber
+                let detail = try await lookup { try await self.metadata.fetchEpisode(showId, season, number) }
+                found.append(.episode(episode, detail))
+                writeIfDue()
+            }
+        } catch {
+            // EnrichmentHalted: what's left stays unmarked for the next sweep.
+        }
+        await interactionGate?.waitUntilSettled()
+        write(found, now: now)
+    }
+
+    private func unmatchedMovies() -> [Movie] {
+        let descriptor = FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == nil })
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private func unmatchedShows() -> [TVShow] {
+        let descriptor = FetchDescriptor<TVShow>(predicate: #Predicate { $0.tmdbId == nil })
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    /// Episodes without a match whose show has one; an unmatched show's
+    /// episodes have nothing to be looked up against yet.
+    private func unmatchedEpisodes() -> [Episode] {
+        let descriptor = FetchDescriptor<Episode>(predicate: #Predicate { $0.tmdbId == nil })
+        return ((try? modelContext.fetch(descriptor)) ?? []).filter { $0.show?.tmdbId != nil }
+    }
+
+    /// Writes a batch of lookups to their titles with one save, so every
+    /// page showing the library refreshes once for the whole batch.
+    private func write(_ batch: [FoundMetadata], now: Date) {
+        guard !batch.isEmpty else { return }
+        for entry in batch {
+            switch entry {
+            case .movie(let movie, let result): apply(result, to: movie, now: now)
+            case .show(let show, let result): apply(result, to: show, now: now)
+            case .episode(let episode, let detail): apply(detail, to: episode, now: now)
+            }
         }
         save()
     }
 
-    private func enrichMovie(_ movie: Movie) async {
-        guard let result = try? await tmdb.searchMovie(
-            title: movie.localTitle, year: movie.releaseYear
-        ) else { return }
+    private func apply(_ result: TMDBMovieResult?, to movie: Movie, now: Date) {
+        // Removed from the library while TMDB answered.
+        guard !Self.isGone(movie) else { return }
+        guard let result else {
+            movie.metadataCheckedAt = now
+            return
+        }
 
         movie.tmdbId      = result.id
         movie.tmdbTitle   = result.title
@@ -740,35 +952,72 @@ final class LibraryController {
         movie.posterPath  = result.posterPath
         movie.backdropPath = result.backdropPath
         movie.voteAverage = result.voteAverage
+        movie.metadataCheckedAt = nil
         if let dateStr = result.releaseDate {
             movie.releaseYear = Int(String(dateStr.prefix(4)))
         }
     }
 
-    private func enrichShow(_ show: TVShow) async {
-        guard let tvResult = try? await tmdb.searchTV(name: show.name) else { return }
-
-        show.tmdbId      = tvResult.id
-        show.tmdbName    = tvResult.name
-        show.overview    = tvResult.overview
-        show.posterPath  = tvResult.posterPath
-        show.backdropPath = tvResult.backdropPath
-        show.firstAirDate = tvResult.firstAirDate
-
-        for episode in show.episodes where episode.tmdbId == nil {
-            guard let detail = try? await tmdb.fetchEpisode(
-                showId: tvResult.id,
-                season: episode.seasonNumber,
-                episode: episode.episodeNumber
-            ) else { continue }
-
-            episode.tmdbId       = detail.id
-            episode.episodeTitle = detail.name
-            episode.overview     = detail.overview
-            episode.stillPath    = detail.stillPath
-            episode.airDate      = detail.airDate
-            episode.voteAverage  = detail.voteAverage
+    private func apply(_ result: TMDBTVResult?, to show: TVShow, now: Date) {
+        guard !Self.isGone(show) else { return }
+        guard let result else {
+            show.metadataCheckedAt = now
+            return
         }
+
+        show.tmdbId      = result.id
+        show.tmdbName    = result.name
+        show.overview    = result.overview
+        show.posterPath  = result.posterPath
+        show.backdropPath = result.backdropPath
+        show.firstAirDate = result.firstAirDate
+        show.metadataCheckedAt = nil
+    }
+
+    private func apply(_ detail: TMDBEpisodeDetail?, to episode: Episode, now: Date) {
+        guard !Self.isGone(episode) else { return }
+        guard let detail else {
+            // TMDB has no such episode under that numbering.
+            episode.metadataCheckedAt = now
+            return
+        }
+
+        episode.tmdbId       = detail.id
+        episode.episodeTitle = detail.name
+        episode.overview     = detail.overview
+        episode.stillPath    = detail.stillPath
+        episode.airDate      = detail.airDate
+        episode.voteAverage  = detail.voteAverage
+        episode.metadataCheckedAt = nil
+    }
+
+    /// One lookup: `nil` when TMDB answered without a usable match (no
+    /// results, a 404, a payload that didn't decode); `EnrichmentHalted`
+    /// when it couldn't be reached or refused the request.
+    private func lookup<Result>(_ request: () async throws -> Result?) async throws -> Result? {
+        do {
+            return try await request()
+        } catch where Self.haltsEnrichment(error) {
+            throw EnrichmentHalted()
+        } catch {
+            return nil
+        }
+    }
+
+    nonisolated static func haltsEnrichment(_ error: any Error) -> Bool {
+        if error is CancellationError { return true }
+        if let error = error as? URLError {
+            return error.code != .badURL && error.code != .unsupportedURL
+        }
+        switch error as? TMDBError {
+        case .missingCredentials: return true
+        case .badStatus(let code): return code == 401 || code == 403 || code == 429 || code >= 500
+        case nil: return false
+        }
+    }
+
+    private static func isGone(_ model: some PersistentModel) -> Bool {
+        model.modelContext == nil || model.isDeleted
     }
 
     // MARK: - VLC metadata
@@ -851,6 +1100,22 @@ final class LibraryController {
             return false
         }
     }
+}
+
+// MARK: - Metadata lookups
+
+/// The TMDB lookups library enrichment makes. Tests answer them without
+/// the network.
+struct MetadataLookup {
+    var searchMovie: (_ title: String, _ year: Int?) async throws -> TMDBMovieResult?
+    var searchTV: (_ name: String) async throws -> TMDBTVResult?
+    var fetchEpisode: (_ showId: Int, _ season: Int, _ episode: Int) async throws -> TMDBEpisodeDetail
+
+    static let tmdb = MetadataLookup(
+        searchMovie: { try await TMDBService.shared.searchMovie(title: $0, year: $1) },
+        searchTV: { try await TMDBService.shared.searchTV(name: $0) },
+        fetchEpisode: { try await TMDBService.shared.fetchEpisode(showId: $0, season: $1, episode: $2) }
+    )
 }
 
 // MARK: - Errors

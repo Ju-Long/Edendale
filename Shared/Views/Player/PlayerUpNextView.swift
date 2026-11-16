@@ -11,6 +11,9 @@ import Kingfisher
 
 struct PlayerUpNextView: View {
     let episode: Episode
+    /// On tvOS the card takes the remote's focus when this chrome asks for
+    /// it, and then keeps the remote's swipes (see `PlayerControlsOverlay`).
+    var chrome: PlayerChromeModel? = nil
     let onPlay: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -37,7 +40,13 @@ struct PlayerUpNextView: View {
         .buttonStyle(.plain)
         .focused($isFocused)
         .focusEffectDisabled()
-        #if !os(tvOS)
+        #if os(tvOS)
+        .onChange(of: chrome?.promptFocusRequest) { _, request in
+            guard request?.prompt == .upNext else { return }
+            Task { @MainActor in isFocused = true }
+        }
+        .playerPromptRemoteMoves(chrome: chrome, prompt: .upNext)
+        #else
         .onHover { isHovered = $0 }
         #endif
         .frame(maxWidth: 280)

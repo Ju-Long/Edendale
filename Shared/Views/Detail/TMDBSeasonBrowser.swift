@@ -185,7 +185,13 @@ struct TMDBSeasonBrowser: View {
         if watchStore.isWatched(episode.id, mediaType: .episode) {
             watchStore.remove(tmdbId: episode.id, mediaType: .episode)
         } else {
-            watchStore.markCompleted(tmdbId: episode.id, mediaType: .episode)
+            watchStore.markCompleted(
+                tmdbId: episode.id,
+                mediaType: .episode,
+                showTmdbId: showId,
+                seasonNumber: episode.seasonNumber,
+                episodeNumber: episode.episodeNumber
+            )
         }
     }
 

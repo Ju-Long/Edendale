@@ -18,22 +18,25 @@ struct TMDBService {
     static let shared = TMDBService()
     private init() {}
 
-    private static let baseURL = "https://api.themoviedb.org/3"
+    nonisolated private static let baseURL = "https://api.themoviedb.org/3"
 
     // convertFromSnakeCase handles all snake_case → camelCase mappings automatically.
-    private static let decoder: JSONDecoder = {
+    nonisolated private static let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
         return d
     }()
 
-    var apiKey: String {
+    // The credentials are read from the bundle and the keychain, both safe
+    // off the main actor, so library matching can look them up there.
+
+    nonisolated var apiKey: String {
         (Bundle.main.object(forInfoDictionaryKey: "TMDBAPIKey") as? String) ?? ""
     }
 
     /// TMDB "API Read Access Token" (a long JWT from the same settings page as the key).
     /// Tolerates a pasted "Bearer " prefix — the header is always built here, not in the config.
-    var readAccessToken: String {
+    nonisolated var readAccessToken: String {
         let raw = (Bundle.main.object(forInfoDictionaryKey: "TMDBReadAccessToken") as? String) ?? ""
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
         return trimmed.hasPrefix("Bearer ") ? String(trimmed.dropFirst("Bearer ".count)) : trimmed
@@ -41,7 +44,7 @@ struct TMDBService {
 
     /// The Bearer credential for requests: a connected account's user token wins
     /// over the build-time app token. Empty when only the legacy api_key exists.
-    private var bearerToken: String {
+    nonisolated private var bearerToken: String {
         let userToken = TMDBUserSession.current?.accessToken ?? ""
         return userToken.isEmpty ? readAccessToken : userToken
     }
@@ -50,29 +53,31 @@ struct TMDBService {
     /// credential — browse UIs show a setup state instead of calling out.
     var isConfigured: Bool { !bearerToken.isEmpty || !apiKey.isEmpty }
 
-    // MARK: - Movie
+    // MARK: - Library matching
+
+    // These three run off the main actor (`@concurrent`): library
+    // enrichment makes one per title, and the keychain read, the request,
+    // and the decoding stay off the main thread the viewer scrolls on.
 
     /// Returns the best-matching movie result for the given title and optional year.
-    func searchMovie(title: String, year: Int?) async throws -> TMDBMovieResult? {
+    @concurrent nonisolated func searchMovie(title: String, year: Int?) async throws -> TMDBMovieResult? {
         var query = [
             URLQueryItem(name: "query", value: title),
             URLQueryItem(name: "include_adult", value: "false")
         ]
         if let year { query.append(URLQueryItem(name: "year", value: "\(year)")) }
-        return try await fetch(TMDBPagedResponse<TMDBMovieResult>.self, path: "/search/movie", query: query).results.first
+        return try await load(TMDBPagedResponse<TMDBMovieResult>.self, path: "/search/movie", query: query).results.first
     }
 
-    // MARK: - TV
-
     /// Returns the best-matching TV show for the given name.
-    func searchTV(name: String) async throws -> TMDBTVResult? {
+    @concurrent nonisolated func searchTV(name: String) async throws -> TMDBTVResult? {
         let query = [URLQueryItem(name: "query", value: name)]
-        return try await fetch(TMDBPagedResponse<TMDBTVResult>.self, path: "/search/tv", query: query).results.first
+        return try await load(TMDBPagedResponse<TMDBTVResult>.self, path: "/search/tv", query: query).results.first
     }
 
     /// Fetches full details for a specific episode.
-    func fetchEpisode(showId: Int, season: Int, episode: Int) async throws -> TMDBEpisodeDetail {
-        try await fetch(
+    @concurrent nonisolated func fetchEpisode(showId: Int, season: Int, episode: Int) async throws -> TMDBEpisodeDetail {
+        try await load(
             TMDBEpisodeDetail.self,
             path: "/tv/\(showId)/season/\(season)/episode/\(episode)"
         )
@@ -83,6 +88,21 @@ struct TMDBService {
     /// Authentication happens here for every endpoint: Bearer header when any access
     /// token is set, otherwise the legacy api_key query param. Call sites never pass credentials.
     func fetch<T: Decodable>(_ type: T.Type, path: String, query: [URLQueryItem] = []) async throws -> T {
+        try await load(type, path: path, query: query)
+    }
+
+    /// `fetch` on whichever executor calls it: the main actor for browsing,
+    /// the library-matching lookups' own off it.
+    nonisolated private func load<T: Decodable>(_ type: T.Type, path: String, query: [URLQueryItem] = []) async throws -> T {
+        let request = try authorizedRequest(path: path, query: query)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw TMDBError.badStatus(http.statusCode)
+        }
+        return try Self.decoder.decode(T.self, from: data)
+    }
+
+    nonisolated private func authorizedRequest(path: String, query: [URLQueryItem]) throws -> URLRequest {
         let bearer = bearerToken
         guard !bearer.isEmpty || !apiKey.isEmpty else { throw TMDBError.missingCredentials }
         var components = URLComponents(string: "\(Self.baseURL)\(path)")!
@@ -96,15 +116,11 @@ struct TMDBService {
         if !bearer.isEmpty {
             request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
         }
-        let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw TMDBError.badStatus(http.statusCode)
-        }
-        return try Self.decoder.decode(T.self, from: data)
+        return request
     }
 }
 
-enum TMDBError: Error, LocalizedError {
+nonisolated enum TMDBError: Error, LocalizedError {
     case missingCredentials
     case badStatus(Int)
 
@@ -118,13 +134,13 @@ enum TMDBError: Error, LocalizedError {
 
 // MARK: - Response types
 
-struct TMDBPagedResponse<T: Decodable>: Decodable {
+nonisolated struct TMDBPagedResponse<T: Decodable>: Decodable {
     let results: [T]
     /// Present on list endpoints (search/discover); nil on single-object appends.
     let totalPages: Int?
 }
 
-struct TMDBMovieResult: Decodable, Sendable {
+nonisolated struct TMDBMovieResult: Decodable, Sendable {
     let id: Int
     let title: String
     let releaseDate: String?
@@ -134,7 +150,7 @@ struct TMDBMovieResult: Decodable, Sendable {
     let voteAverage: Double?
 }
 
-struct TMDBTVResult: Decodable, Sendable {
+nonisolated struct TMDBTVResult: Decodable, Sendable {
     let id: Int
     let name: String
     let firstAirDate: String?
@@ -143,7 +159,7 @@ struct TMDBTVResult: Decodable, Sendable {
     let backdropPath: String?
 }
 
-struct TMDBEpisodeDetail: Decodable, Identifiable, Hashable, Sendable {
+nonisolated struct TMDBEpisodeDetail: Decodable, Identifiable, Hashable, Sendable {
     let id: Int
     let name: String
     let overview: String?

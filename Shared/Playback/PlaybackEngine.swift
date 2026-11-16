@@ -82,6 +82,9 @@ final class PlaybackEngine {
     /// Whether the loaded media supports seeking.
     private(set) var isSeekable: Bool = true
     private(set) var videoPresentationTime: CMTime = .invalid
+    /// Streamed playback has run out of data and waits for more of the file;
+    /// the picture holds still. `state` stays `.playing` meanwhile.
+    private(set) var isRebuffering = false
 
     /// The source content's native frame rate (e.g. 24, 30, 60).
     var sourceFrameRate: Float { decoder?.mediaInfo?.frameRate ?? 0 }
@@ -442,6 +445,7 @@ final class PlaybackEngine {
         decoder?.close()
         state = .stopped
         isPlaying = false
+        isRebuffering = false
     }
 
     func close() {
@@ -460,6 +464,7 @@ final class PlaybackEngine {
         #endif
         state = .idle
         isPlaying = false
+        isRebuffering = false
         currentTime = .zero
         duration = nil
         playbackRate = 1
@@ -605,6 +610,10 @@ final class PlaybackEngine {
             }
         } else if let ffmpeg = decoder as? FFmpegDecoder {
             ffmpeg.onVideoFrame = receiveFrame
+            ffmpeg.onBufferingChanged = { [weak self, weak ffmpeg] buffering in
+                guard let self, self.decoder === ffmpeg else { return }
+                self.isRebuffering = buffering
+            }
             ffmpeg.onSubtitleConfiguration = { [weak self, weak ffmpeg] format, header in
                 guard let self, self.decoder === ffmpeg,
                       let track = self.selectedSubtitleTrack, !track.id.hasPrefix("ext-") else { return }

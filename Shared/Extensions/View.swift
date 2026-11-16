@@ -47,4 +47,24 @@ extension View {
     func labelCaps(_ color: Color = Theme.textSecondary) -> some View {
         modifier(LabelCaps(color: color))
     }
+
+    /// Holds a sheet's content clear of the sheet's top and bottom edges on
+    /// Apple TV, where content running to those edges was hidden. Put it on
+    /// the content of every sheet that can show on tvOS; elsewhere it does
+    /// nothing. It widens the safe area rather than padding, so backgrounds
+    /// still reach the edges and lists scroll through the inset.
+    @ViewBuilder
+    func tvSheetInsets() -> some View {
+        #if os(tvOS)
+        safeAreaPadding(.vertical, SheetMetrics.tvVerticalInset)
+        #else
+        self
+        #endif
+    }
+}
+
+enum SheetMetrics {
+    /// The extra top and bottom inset `tvSheetInsets()` gives tvOS sheets.
+    /// Started at 12; step to 16, then 20, if content is still hidden.
+    static let tvVerticalInset: CGFloat = 12
 }

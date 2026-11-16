@@ -108,6 +108,39 @@ import Testing
         #expect(url.absoluteString.contains("prompt=consent%20select_account"))
     }
 
+    @Test func syncSignInSkipsGooglesPicker() throws {
+        let clientID = "1234-abc.apps.googleusercontent.com"
+        let library = try #require(CloudProviders.configuration(for: .googleDrive, clientID: clientID))
+        let sync = try #require(CloudProviders.configuration(for: .googleDrive, clientID: clientID, purpose: .sync))
+        // Same client, redirect, and drive.file scope: only the picker goes.
+        #expect(sync.scopes == library.scopes)
+        #expect(sync.redirectURI == library.redirectURI)
+        #expect(sync.callbackScheme == library.callbackScheme)
+
+        let url = OAuthClient(configuration: sync).authorizationURL(
+            state: "s", codeChallenge: "c", parameters: ["login_hint": "me@example.com"]
+        )
+        let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
+        #expect(value("scope") == CloudProviders.googleDriveFileScope)
+        #expect(value("access_type") == "offline")
+        #expect(value("prompt") == "consent select_account")
+        #expect(value("login_hint") == "me@example.com")
+        #expect(value("trigger_onepick") == nil)
+        #expect(value("allow_multiple") == nil)
+        #expect(value("mimetypes") == nil)
+
+        // Link Source keeps the picker.
+        let libraryURL = OAuthClient(configuration: library).authorizationURL(state: "s", codeChallenge: "c")
+        #expect(libraryURL.absoluteString.contains("trigger_onepick=true"))
+
+        // OneDrive and Dropbox have no picker: both purposes sign in alike.
+        for kind in [MediaSourceKind.oneDrive, .dropbox] {
+            #expect(CloudProviders.configuration(for: kind, clientID: "id", purpose: .sync)
+                == CloudProviders.configuration(for: kind, clientID: "id"))
+        }
+    }
+
     @Test func choosingMoreVideosHintsTheLinkedAccount() throws {
         let google = try #require(CloudProviders.configuration(for: .googleDrive, clientID: "1234-abc.apps.googleusercontent.com"))
         let client = OAuthClient(configuration: google)

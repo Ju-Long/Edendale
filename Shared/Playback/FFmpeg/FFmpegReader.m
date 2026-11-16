@@ -1,4 +1,5 @@
 #import "FFmpegReader.h"
+#import <os/lock.h>
 #import "FFmpegBridge.h"
 #import "EDSMBFile.h"
 #import <FFmpeg/FFmpeg.h>
@@ -247,6 +248,8 @@ static void EDPCMLayout(int channels, AVChannelLayout *layout, AudioChannelLayou
     AVIOContext *_customIO;
     int _fileFD;
     id<EDByteSource> _byteSource;
+    /// Guards writes to `_byteSource`, and its reads from other threads.
+    os_unfair_lock _byteSourceLock;
     EDByteSourceContext *_byteSourceContext;
     AVCodecContext *_video;
     AVCodecContext *_audio;
@@ -354,12 +357,37 @@ static int EDInterrupt(void *opaque) {
         _mediaInfo = @{};
         _heldVideo = [NSMutableArray array];
         atomic_init(&_interrupted, false);
+        _byteSourceLock = OS_UNFAIR_LOCK_INIT;
         atomic_init(&_deadline, 0);
     }
     return self;
 }
 
 - (void)interrupt { atomic_store(&_interrupted, true); }
+
+/// The open byte source, for callers off the worker queue.
+- (id<EDByteSource>)currentByteSource {
+    os_unfair_lock_lock(&_byteSourceLock);
+    id<EDByteSource> source = _byteSource;
+    os_unfair_lock_unlock(&_byteSourceLock);
+    return source;
+}
+
+- (int64_t)bufferedBytesAheadComplete:(BOOL *)complete {
+    id<EDByteSource> source = [self currentByteSource];
+    BOOL done = YES;
+    int64_t bytes = -1;
+    if ([source respondsToSelector:@selector(bufferedBytesAheadComplete:)]) {
+        bytes = [source bufferedBytesAheadComplete:&done];
+    }
+    if (complete) *complete = done;
+    return bytes;
+}
+
+- (int64_t)byteSourceLength {
+    id<EDByteSource> source = [self currentByteSource];
+    return source ? source.length : -1;
+}
 - (BOOL)atEnd { return _drained; }
 
 - (void)close {
@@ -384,7 +412,9 @@ static int EDInterrupt(void *opaque) {
         _fileFD = -1;
     }
     [_byteSource cancel];
+    os_unfair_lock_lock(&_byteSourceLock);
     _byteSource = nil;
+    os_unfair_lock_unlock(&_byteSourceLock);
     free(_byteSourceContext);
     _byteSourceContext = NULL;
     av_packet_free(&_packet);
@@ -580,7 +610,9 @@ static int EDInterrupt(void *opaque) {
         [source cancel];
         return NO;
     }
+    os_unfair_lock_lock(&_byteSourceLock);
     _byteSource = source;
+    os_unfair_lock_unlock(&_byteSourceLock);
     _byteSourceContext = (EDByteSourceContext *)calloc(1, sizeof(EDByteSourceContext));
     if (!_byteSourceContext) {
         atomic_store(&_deadline, 0);

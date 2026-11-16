@@ -15,6 +15,9 @@ import WidgetKit
 #if canImport(AppIntents)
 import AppIntents
 #endif
+#if os(tvOS)
+import TVServices
+#endif
 
 struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
     let id: String
@@ -24,6 +27,18 @@ struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
     let posterURL: URL?
     let progress: Double?
     let deepLink: URL
+    // Optional fields for the tvOS Top Shelf carousel. Only Trending and
+    // Continue Watching items carry them; older snapshots decode without them,
+    // and the iOS widget extension ignores them.
+    /// 16:9 TMDB backdrop (w1280, or an episode still at original size).
+    let backdropURL: URL?
+    let overview: String?
+    /// "yyyy-MM-dd", or "yyyy" when only the year is known.
+    let releaseDate: String?
+    /// Running time in seconds, when the local file's length is known.
+    let duration: TimeInterval?
+    /// Detail page for items whose `deepLink` starts playback.
+    let detailLink: URL?
 
     init(
         id: String,
@@ -32,7 +47,12 @@ struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
         subtitle: String?,
         posterURL: URL?,
         progress: Double?,
-        deepLink: URL
+        deepLink: URL,
+        backdropURL: URL? = nil,
+        overview: String? = nil,
+        releaseDate: String? = nil,
+        duration: TimeInterval? = nil,
+        detailLink: URL? = nil
     ) {
         self.id = id
         self.parentID = parentID
@@ -41,6 +61,11 @@ struct WidgetMediaItem: Codable, Hashable, Identifiable, Sendable {
         self.posterURL = posterURL
         self.progress = progress
         self.deepLink = deepLink
+        self.backdropURL = backdropURL
+        self.overview = overview
+        self.releaseDate = releaseDate
+        self.duration = duration
+        self.detailLink = detailLink
     }
 }
 
@@ -130,6 +155,11 @@ enum WidgetSnapshotStore {
         #if canImport(AppIntents)
         EdendaleShortcuts.updateAppShortcutParameters()
         #endif
+
+        #if os(tvOS)
+        // Asks the Home Screen to reload the Top Shelf extension's content.
+        TVTopShelfContentProvider.topShelfContentDidChange()
+        #endif
     }
 
     @MainActor
@@ -151,7 +181,10 @@ enum WidgetSnapshotStore {
                         : String(localized: "Series")),
                 posterURL: item.posterURL,
                 progress: nil,
-                deepLink: deepLink
+                deepLink: deepLink,
+                backdropURL: TMDBImage.url(item.backdropPath, size: .backdropLarge),
+                overview: item.overview?.nonBlank,
+                releaseDate: item.releaseDate
             )
         }
 
@@ -167,7 +200,12 @@ enum WidgetSnapshotStore {
                     subtitle: String(localized: "\(Int((entry.position * 100).rounded()))% watched"),
                     posterURL: movie.posterURL,
                     progress: entry.position,
-                    deepLink: deepLink
+                    deepLink: deepLink,
+                    backdropURL: TMDBImage.url(movie.backdropPath, size: .backdropLarge),
+                    overview: movie.overview?.nonBlank,
+                    releaseDate: movie.releaseYear.map(String.init),
+                    duration: movie.duration > 0 ? movie.duration : nil,
+                    detailLink: AppRoute.localMovie(movie.id).url
                 )
 
             case .episode:
@@ -181,7 +219,13 @@ enum WidgetSnapshotStore {
                     subtitle: "\(episode.episodeCode) · \(episode.displayTitle)",
                     posterURL: episode.show?.posterURL,
                     progress: entry.position,
-                    deepLink: deepLink
+                    deepLink: deepLink,
+                    backdropURL: TMDBImage.url(episode.show?.backdropPath, size: .backdropLarge)
+                        ?? TMDBImage.url(episode.stillPath, size: .original),
+                    overview: episode.overview?.nonBlank ?? episode.show?.overview?.nonBlank,
+                    releaseDate: episode.airDate,
+                    duration: episode.duration > 0 ? episode.duration : nil,
+                    detailLink: episode.show.flatMap { AppRoute.localShow($0.id).url }
                 )
             }
         }
@@ -212,30 +256,47 @@ enum WidgetSnapshotStore {
             )
         }
 
-        let localEpisodes = episodes.compactMap { episode -> WidgetMediaItem? in
+        // Episodes only fill the room the movies, shows, and trending leave
+        // (see `cappedCatalog`), and a large library has far more of them
+        // than that: rank them by title first, then build items for the
+        // ones that fit, instead of an item for every episode.
+        let primary = localMovies + localShows + trending
+        let room = max(0, maximumCatalogItems - primary.count)
+        let fallbackShowName = String(localized: "TV Episode")
+        let fittingEpisodes = room == 0 ? [] : episodes
+            .map { episode in
+                (
+                    episode: episode,
+                    title: "\(episode.show?.displayName ?? fallbackShowName) — \(episode.displayTitle)",
+                    id: "local:episode:\(episode.id.uuidString.lowercased())"
+                )
+            }
+            .sorted { stablyOrdered(($0.title, $0.id), ($1.title, $1.id)) }
+            .prefix(room)
+        let episodeProgress = Dictionary(
+            progress.filter { $0.mediaType == .episode }.map { ($0.tmdbId, $0.position) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        let localEpisodes = fittingEpisodes.compactMap { entry -> WidgetMediaItem? in
+            let episode = entry.episode
             guard let deepLink = AppRoute.playLocalEpisode(episode.id).url else { return nil }
-            let showName = episode.show?.displayName ?? String(localized: "TV Episode")
             let showID = episode.show.map {
                 "local:show:\($0.id.uuidString.lowercased())"
             }
-            let episodeProgress = episode.tmdbId.flatMap { tmdbID in
-                progress.first {
-                    $0.mediaType == .episode && $0.tmdbId == tmdbID
-                }?.position
-            }
             return WidgetMediaItem(
-                id: "local:episode:\(episode.id.uuidString.lowercased())",
+                id: entry.id,
                 parentID: showID,
-                title: "\(showName) — \(episode.displayTitle)",
+                title: entry.title,
                 subtitle: episode.episodeCode,
                 posterURL: episode.show?.posterURL,
-                progress: episodeProgress,
+                progress: episode.tmdbId.flatMap { episodeProgress[$0] },
                 deepLink: deepLink
             )
         }
 
         let catalog = cappedCatalog(
-            primary: localMovies + localShows + trending,
+            primary: primary,
             secondary: localEpisodes
         )
 
@@ -260,10 +321,19 @@ enum WidgetSnapshotStore {
     }
 
     private static func stablySorted(_ items: [WidgetMediaItem]) -> [WidgetMediaItem] {
-        items.sorted {
-            let titleOrder = $0.title.localizedStandardCompare($1.title)
-            if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
-            return $0.id < $1.id
-        }
+        items.sorted { stablyOrdered(($0.title, $0.id), ($1.title, $1.id)) }
+    }
+
+    /// Title order, then id order for equal titles.
+    private static func stablyOrdered(_ lhs: (title: String, id: String), _ rhs: (title: String, id: String)) -> Bool {
+        let titleOrder = lhs.title.localizedStandardCompare(rhs.title)
+        if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
+        return lhs.id < rhs.id
+    }
+}
+
+private extension String {
+    var nonBlank: String? {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : self
     }
 }
