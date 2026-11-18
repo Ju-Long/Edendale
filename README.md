@@ -246,12 +246,13 @@ remove the beta panel along with its `beta.*` and `platforms.beta*` strings.
 ### Privacy policy
 
 `/privacy/` and `/<locale>/privacy/` hold the privacy policy for every
-Edendale app and for this site. Google requires it before it verifies the
-Google Drive source's restricted `drive.readonly` scope: a public home page on
-a verified domain that describes the app and why it requests user data, linked
-to a privacy policy that discloses how the app accesses, uses, stores, and
-shares Google user data. Microsoft Entra's app branding takes a privacy
-statement URL as well. Register these addresses:
+Edendale app and for this site. Google's OAuth consent screen asks for a
+public home page on a verified domain that describes the app and why it
+requests user data, linked to a privacy policy that discloses how the app
+accesses, uses, stores, and shares Google user data. Every platform now asks
+Google only for the non-sensitive `drive.file` scope, so the scope itself
+needs no verification, but the pages are still required. Microsoft Entra's app
+branding takes a privacy statement URL as well. Register these addresses:
 
 | Field | URL |
 |---|---|
@@ -268,12 +269,16 @@ half-translated.
 
 Keep the policy true to the shipped apps. It names every service an app
 contacts (TMDB, Wyzie Subs, TheIntroDB, YouTube, and the storage providers),
-what each one receives, what syncs and through which user-controlled service,
-and the OAuth scopes each provider is asked for. Change it, in every language
-and with a new `updated` date, alongside any platform change to data handling:
-a new provider or scope, a new online service, or Google Drive reaching
-Android or Windows (today it is Apple-only). Google's reviewers look for two
-passages in "Google user data"; keep both:
+what each one receives, what syncs and through which user-controlled service
+(including what a 27.1 sync file holds and what the device-to-device handoff
+sends), what each platform's own backup keeps, the camera use for scanning a
+pairing code, where titles show outside the app (widgets, Top Shelf, Android
+TV's Continue Watching row, the Windows jump list), and the OAuth scopes each
+provider is asked for. Change it, in every language and with a new `updated`
+date, alongside any platform change to data handling: a new provider or scope,
+a new online service, a new permission, or a change to what sync writes, the
+handoff sends, or a backup keeps. Google's reviewers look for two passages in
+"Google user data"; keep both:
 
 - the Limited Use statement, which links the Google API Services User Data
   Policy; and
